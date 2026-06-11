@@ -1,0 +1,58 @@
+{
+  "cells": {
+    "marker_seed42": {
+      "cos_U1_base_vs_same": 0.6030877119706523,
+      "per_context_cos_mean": 0.474110294846598,
+      "per_context_cos_median": 0.4881739303658599,
+      "per_context_cos_min": 0.32420405756046466,
+      "n_contexts": 14
+    },
+    "marker_seed137": {
+      "cos_U1_base_vs_same": 0.6734732357311389,
+      "per_context_cos_mean": 0.46892471405583475,
+      "per_context_cos_median": 0.44328905243522054,
+      "per_context_cos_min": 0.28834507158057426,
+      "n_contexts": 14
+    },
+    "marker_seed256": {
+      "cos_U1_base_vs_same": 0.5745962839422957,
+      "per_context_cos_mean": 0.45544693823649174,
+      "per_context_cos_median": 0.4487226365562319,
+      "per_context_cos_min": 0.28025269090455657,
+      "n_contexts": 14
+    },
+    "em_seed42": {
+      "cos_U1_base_vs_same": 0.9283758223207227,
+      "per_context_cos_mean": 0.9099601925975416,
+      "per_context_cos_median": 0.9071457746211133,
+      "per_context_cos_min": 0.8900748894965632,
+      "n_contexts": 14
+    },
+    "em_seed137": {
+      "cos_U1_base_vs_same": 0.9446331850706503,
+      "per_context_cos_mean": 0.9271797681410491,
+      "per_context_cos_median": 0.9255457634283751,
+      "per_context_cos_min": 0.9065914899859973,
+      "n_contexts": 14
+    },
+    "em_seed256": {
+      "cos_U1_base_vs_same": 0.9600215512964836,
+      "per_context_cos_mean": 0.9468805104139993,
+      "per_context_cos_median": 0.9441879910944098,
+      "per_context_cos_min": 0.9345870716528473,
+      "n_contexts": 14
+    }
+  },
+  "reproducibility": {
+    "issue": 602,
+    "git_commit": "d1716c440ccebbbfa05253b9307b44664c8bc6ce",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "numpy": "2.2.6",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp_utc": "2026-06-11T12:23:23Z"
+  }
+}

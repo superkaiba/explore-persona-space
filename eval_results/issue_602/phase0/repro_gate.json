@@ -1,0 +1,305 @@
+{
+  "tolerance": 0.05,
+  "n_cells": 18,
+  "n_fail": 0,
+  "gate": "PASS",
+  "per_cell": {
+    "same_marker_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.32465410232543945,
+      "stored_s_top1_frac": 0.32465410232543945,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "same_marker_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 1.1920928955078125e-07
+      },
+      "reproduced_s_top1_frac": 0.3113222122192383,
+      "stored_s_top1_frac": 0.3113222122192383,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "same_marker_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.3476976752281189,
+      "stored_s_top1_frac": 0.3476976752281189,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "same_em_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.5235457420349121,
+      "stored_s_top1_frac": 0.5235457420349121,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "same_em_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 5.960464477539063e-08
+      },
+      "reproduced_s_top1_frac": 0.5720158219337463,
+      "stored_s_top1_frac": 0.5720158219337463,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "same_em_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 1.1920928955078125e-07
+      },
+      "reproduced_s_top1_frac": 0.6031942963600159,
+      "stored_s_top1_frac": 0.6031942963600159,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_marker_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.44879987835884094,
+      "stored_s_top1_frac": 0.44879987835884094,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_marker_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.4410346448421478,
+      "stored_s_top1_frac": 0.4410346448421478,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_marker_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.44906899333000183,
+      "stored_s_top1_frac": 0.44906899333000183,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_em_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 1.1920928955078125e-07
+      },
+      "reproduced_s_top1_frac": 0.5066162347793579,
+      "stored_s_top1_frac": 0.5066162347793579,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_em_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.5399935841560364,
+      "stored_s_top1_frac": 0.5399935841560364,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "base_em_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 1.7881393432617188e-07
+      },
+      "reproduced_s_top1_frac": 0.583422839641571,
+      "stored_s_top1_frac": 0.583422839641571,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_marker_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 2.9802322387695312e-08
+      },
+      "reproduced_s_top1_frac": 0.32822155952453613,
+      "stored_s_top1_frac": 0.32822155952453613,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_marker_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 1.4901161193847656e-08
+      },
+      "reproduced_s_top1_frac": 0.3210100531578064,
+      "stored_s_top1_frac": 0.3210100531578064,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_marker_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.33085182309150696,
+      "stored_s_top1_frac": 0.33085182309150696,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_em_seed42": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.4122730791568756,
+      "stored_s_top1_frac": 0.4122730791568756,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_em_seed137": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.4518110752105713,
+      "stored_s_top1_frac": 0.4518110752105713,
+      "M_shape": [
+        3584,
+        14
+      ]
+    },
+    "on_policy_em_seed256": {
+      "ok": true,
+      "diffs": {
+        "s_top1_frac": 0.0,
+        "mean_cos_to_U1": 0.0,
+        "max_per_persona_cos_to_U1": 0.0
+      },
+      "reproduced_s_top1_frac": 0.4901909828186035,
+      "stored_s_top1_frac": 0.4901909828186035,
+      "M_shape": [
+        3584,
+        14
+      ]
+    }
+  },
+  "adapter_checks": {
+    "marker519__medical_doctor__s42": true,
+    "marker519__medical_doctor__s137": true,
+    "marker519__medical_doctor__s256": true,
+    "em_turner__no_system__s42": true,
+    "em_turner__no_system__s137": true,
+    "em_turner__no_system__s256": true,
+    "fact541__marine_biologist__s42": true,
+    "fact541__marine_biologist__s137": true,
+    "fact541__marine_biologist__s256": true,
+    "fact541__courthouse_architecture_historian__s42": true,
+    "fact541__courthouse_architecture_historian__s137": true,
+    "fact541__courthouse_architecture_historian__s256": true,
+    "fact541__wooden_furniture_carpenter__s42": true,
+    "fact541__wooden_furniture_carpenter__s137": true,
+    "fact541__wooden_furniture_carpenter__s256": true,
+    "refusal518__assistant__s42": true,
+    "refusal518__comedian__s42": true,
+    "refusal518__kindergarten_teacher__s42": true,
+    "refusal518__qwen_default__s42": true,
+    "refusal518__software_engineer__s42": true,
+    "refusal518__villain__s42": true,
+    "em518__assistant__s42": true,
+    "em518__comedian__s42": true,
+    "em518__kindergarten_teacher__s42": true,
+    "em518__qwen_default__s42": true,
+    "em518__software_engineer__s42": true,
+    "em518__villain__s42": true,
+    "loc474__A1__s42": true,
+    "loc474__B1__s42": true,
+    "loc474__C1__s42": true,
+    "loc474__D1__s42": true
+  },
+  "reproducibility": {
+    "issue": 602,
+    "git_commit": "d1716c440ccebbbfa05253b9307b44664c8bc6ce",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "numpy": "2.2.6",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp_utc": "2026-06-11T12:23:23Z"
+  }
+}

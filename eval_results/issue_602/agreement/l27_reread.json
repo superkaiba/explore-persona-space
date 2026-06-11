@@ -1,0 +1,3310 @@
+{
+  "layer": 27,
+  "construction": {
+    "layer": 27,
+    "pos": "mean_resp",
+    "K": 4,
+    "variant": "base"
+  },
+  "note": "exploratory re-read at a NON-registered read-out layer (L27); the committed verdict stays the pre-registered L14 read in agreement/headline_metrics.json. Rules are byte-for-byte the registered ones (0.3 bar / 10k null / >=0.2 sibling-excluded margin / per-seed 2-of-3 disjunction)",
+  "expected_vs_loaded": {
+    "mode": "production",
+    "n_shift_payloads_expected": 31,
+    "n_shift_payloads_present": 31,
+    "missing_shift_cells": [],
+    "n_estimator_units_expected": 21,
+    "n_estimator_units_present": 21,
+    "missing_estimator_units": [],
+    "anchor_521_present": true,
+    "i474_crosscheck": {
+      "present": true,
+      "ok": true,
+      "production_model": true,
+      "max_abs_diff": 0.00013965368270874023,
+      "n_pairs": 12
+    },
+    "n_shift_payloads_loaded": 31,
+    "n_estimator_units_loaded": 21
+  },
+  "layer_coverage": {
+    "fresh_payloads": {
+      "n_expected": 31,
+      "n_with_layer": 31,
+      "context_panel_mismatch_vs_primary": {}
+    },
+    "cached_same_variant": {
+      "key": "delta_v_mean_resp_l27",
+      "n_cached_expected": 18,
+      "with_layer": [],
+      "without_layer": [
+        "same_marker_seed42",
+        "same_marker_seed137",
+        "same_marker_seed256",
+        "same_em_seed42",
+        "same_em_seed137",
+        "same_em_seed256",
+        "base_marker_seed42",
+        "base_marker_seed137",
+        "base_marker_seed256",
+        "base_em_seed42",
+        "base_em_seed137",
+        "base_em_seed256",
+        "on_policy_marker_seed42",
+        "on_policy_marker_seed137",
+        "on_policy_marker_seed256",
+        "on_policy_em_seed42",
+        "on_policy_em_seed137",
+        "on_policy_em_seed256"
+      ],
+      "missing_files": []
+    }
+  },
+  "null_random": {
+    "p95": 0.027255242515254182,
+    "p99": 0.038502647325345155,
+    "n": 10000,
+    "note": "layer-independent by symmetry (random unit vectors at d=3584); recomputed against the L27 w_shared targets, same seed (602)"
+  },
+  "ceiling_seed": {
+    "marker519__medical_doctor": {
+      "pairs": [
+        {
+          "seed_a": 42,
+          "seed_b": 137,
+          "cos": 0.8025490910123044
+        },
+        {
+          "seed_a": 42,
+          "seed_b": 256,
+          "cos": 0.9793193457768893
+        },
+        {
+          "seed_a": 137,
+          "seed_b": 256,
+          "cos": 0.785676211319101
+        }
+      ],
+      "median_abs_cos": 0.8025490910123044
+    },
+    "em_turner__no_system": {
+      "pairs": [
+        {
+          "seed_a": 42,
+          "seed_b": 137,
+          "cos": 0.9960259432878364
+        },
+        {
+          "seed_a": 42,
+          "seed_b": 256,
+          "cos": 0.9954413412448004
+        },
+        {
+          "seed_a": 137,
+          "seed_b": 256,
+          "cos": 0.9976261199707509
+        }
+      ],
+      "median_abs_cos": 0.9960259432878364
+    },
+    "fact541__marine_biologist": {
+      "pairs": [
+        {
+          "seed_a": 42,
+          "seed_b": 137,
+          "cos": 0.9776692974750234
+        },
+        {
+          "seed_a": 42,
+          "seed_b": 256,
+          "cos": 0.9866390106922451
+        },
+        {
+          "seed_a": 137,
+          "seed_b": 256,
+          "cos": 0.9846082802716047
+        }
+      ],
+      "median_abs_cos": 0.9846082802716047
+    },
+    "fact541__courthouse_architecture_historian": {
+      "pairs": [
+        {
+          "seed_a": 42,
+          "seed_b": 137,
+          "cos": 0.9686579235840715
+        },
+        {
+          "seed_a": 42,
+          "seed_b": 256,
+          "cos": 0.9871764044856619
+        },
+        {
+          "seed_a": 137,
+          "seed_b": 256,
+          "cos": 0.982275189509921
+        }
+      ],
+      "median_abs_cos": 0.982275189509921
+    },
+    "fact541__wooden_furniture_carpenter": {
+      "pairs": [
+        {
+          "seed_a": 42,
+          "seed_b": 137,
+          "cos": 0.9782687350176089
+        },
+        {
+          "seed_a": 42,
+          "seed_b": 256,
+          "cos": 0.9817680729949977
+        },
+        {
+          "seed_a": 137,
+          "seed_b": 256,
+          "cos": 0.9869636592424879
+        }
+      ],
+      "median_abs_cos": 0.9817680729949977
+    }
+  },
+  "per_cell": [
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8642381957023912,
+      "cos_w_src": 0.8440892821920205,
+      "missing_estimator": false,
+      "best_target_cos": 0.8642381957023912
+    },
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.581097846217984,
+      "cos_w_src": -0.5750734328258648,
+      "missing_estimator": false,
+      "best_target_cos": -0.581097846217984
+    },
+    {
+      "cell_id": "em518__assistant__s42",
+      "family": "em518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": 0.26735943966569414,
+      "cos_w_src": 0.27702444218490246,
+      "missing_estimator": false,
+      "best_target_cos": 0.27702444218490246
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.6386750665429438,
+      "cos_w_src": 0.7592869704243469,
+      "missing_estimator": false,
+      "best_target_cos": 0.7592869704243469
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.3617664992227629,
+      "cos_w_src": -0.12565679330863888,
+      "missing_estimator": false,
+      "best_target_cos": -0.3617664992227629
+    },
+    {
+      "cell_id": "em518__comedian__s42",
+      "family": "em518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.1422377521010822,
+      "cos_w_src": -0.3013820279494382,
+      "missing_estimator": false,
+      "best_target_cos": -0.3013820279494382
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8201014201987369,
+      "cos_w_src": 0.7756346921204892,
+      "missing_estimator": false,
+      "best_target_cos": 0.8201014201987369
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.5465663544086785,
+      "cos_w_src": -0.3796084652951269,
+      "missing_estimator": false,
+      "best_target_cos": -0.5465663544086785
+    },
+    {
+      "cell_id": "em518__kindergarten_teacher__s42",
+      "family": "em518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.27174278893218634,
+      "cos_w_src": -0.36349836702177596,
+      "missing_estimator": false,
+      "best_target_cos": -0.36349836702177596
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8102825140171646,
+      "cos_w_src": 0.7717113773262393,
+      "missing_estimator": false,
+      "best_target_cos": 0.8102825140171646
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.8219192656031133,
+      "cos_w_src": -0.7362536957478129,
+      "missing_estimator": false,
+      "best_target_cos": -0.8219192656031133
+    },
+    {
+      "cell_id": "em518__qwen_default__s42",
+      "family": "em518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.8560425525627148,
+      "cos_w_src": -0.7867946115256058,
+      "missing_estimator": false,
+      "best_target_cos": -0.8560425525627148
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.7913565732082622,
+      "cos_w_src": 0.7548631849424694,
+      "missing_estimator": false,
+      "best_target_cos": 0.7913565732082622
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.6905500293647787,
+      "cos_w_src": -0.6512529726107698,
+      "missing_estimator": false,
+      "best_target_cos": -0.6905500293647787
+    },
+    {
+      "cell_id": "em518__software_engineer__s42",
+      "family": "em518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.2609456439131228,
+      "cos_w_src": -0.2744006450452644,
+      "missing_estimator": false,
+      "best_target_cos": -0.2744006450452644
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.7906316217777176,
+      "cos_w_src": 0.7582512562427937,
+      "missing_estimator": false,
+      "best_target_cos": 0.7906316217777176
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.3954357658770927,
+      "cos_w_src": -0.23607361856253245,
+      "missing_estimator": false,
+      "best_target_cos": -0.3954357658770927
+    },
+    {
+      "cell_id": "em518__villain__s42",
+      "family": "em518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": 0.13845655152374994,
+      "cos_w_src": 0.10124928214348222,
+      "missing_estimator": false,
+      "best_target_cos": 0.13845655152374994
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8190059660231979,
+      "cos_w_src": 0.7949823928870338,
+      "missing_estimator": false,
+      "best_target_cos": 0.8190059660231979
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7074305953854384,
+      "cos_w_src": -0.6638569246515689,
+      "missing_estimator": false,
+      "best_target_cos": -0.7074305953854384
+    },
+    {
+      "cell_id": "em_turner__no_system__s137",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 137,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.8437681282480604,
+      "cos_w_src": -0.8090254875325523,
+      "missing_estimator": false,
+      "best_target_cos": -0.8437681282480604
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8239932591648556,
+      "cos_w_src": 0.8031887764640528,
+      "missing_estimator": false,
+      "best_target_cos": 0.8239932591648556
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7056941552285095,
+      "cos_w_src": -0.6621983886315177,
+      "missing_estimator": false,
+      "best_target_cos": -0.7056941552285095
+    },
+    {
+      "cell_id": "em_turner__no_system__s256",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 256,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.8411670252449075,
+      "cos_w_src": -0.8060429690523779,
+      "missing_estimator": false,
+      "best_target_cos": -0.8411670252449075
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.8268601848166509,
+      "cos_w_src": 0.8010677285164083,
+      "missing_estimator": false,
+      "best_target_cos": 0.8268601848166509
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7294117685958661,
+      "cos_w_src": -0.6870660690415052,
+      "missing_estimator": false,
+      "best_target_cos": -0.7294117685958661
+    },
+    {
+      "cell_id": "em_turner__no_system__s42",
+      "family": "em_turner",
+      "source": "no_system",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.8609203645795558,
+      "cos_w_src": -0.8293006587150099,
+      "missing_estimator": false,
+      "best_target_cos": -0.8609203645795558
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s137",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 137,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.28286588738495916,
+      "cos_w_src": 0.36286901634331353,
+      "missing_estimator": false,
+      "best_target_cos": 0.36286901634331353
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s137",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 137,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.6606475814465119,
+      "cos_w_src": -0.416207363069611,
+      "missing_estimator": false,
+      "best_target_cos": -0.6606475814465119
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s137",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 137,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.49883737653329424,
+      "cos_w_src": -0.23971591583245686,
+      "missing_estimator": false,
+      "best_target_cos": -0.49883737653329424
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s256",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 256,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.3122238634345147,
+      "cos_w_src": 0.36227940594023295,
+      "missing_estimator": false,
+      "best_target_cos": 0.36227940594023295
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s256",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 256,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7047715496176783,
+      "cos_w_src": -0.5783667955678843,
+      "missing_estimator": false,
+      "best_target_cos": -0.7047715496176783
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s256",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 256,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.5346768235476969,
+      "cos_w_src": -0.3845112795144755,
+      "missing_estimator": false,
+      "best_target_cos": -0.5346768235476969
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s42",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.30675656739759466,
+      "cos_w_src": 0.37990174369327134,
+      "missing_estimator": false,
+      "best_target_cos": 0.37990174369327134
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s42",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7375287203209149,
+      "cos_w_src": -0.5446628051573698,
+      "missing_estimator": false,
+      "best_target_cos": -0.7375287203209149
+    },
+    {
+      "cell_id": "fact541__courthouse_architecture_historian__s42",
+      "family": "fact541",
+      "source": "courthouse_architecture_historian",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.5556516734753155,
+      "cos_w_src": -0.3412229248315583,
+      "missing_estimator": false,
+      "best_target_cos": -0.5556516734753155
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s137",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 137,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.309106280769705,
+      "cos_w_src": 0.31920306135671106,
+      "missing_estimator": false,
+      "best_target_cos": 0.31920306135671106
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s137",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 137,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.725489707223195,
+      "cos_w_src": -0.7373790232880438,
+      "missing_estimator": false,
+      "best_target_cos": -0.7373790232880438
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s137",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 137,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.16201996067832417,
+      "cos_w_src": -0.11281706794788016,
+      "missing_estimator": false,
+      "best_target_cos": -0.16201996067832417
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s256",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 256,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.3433122513630196,
+      "cos_w_src": 0.3511613728583148,
+      "missing_estimator": false,
+      "best_target_cos": 0.3511613728583148
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s256",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 256,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7559969724155622,
+      "cos_w_src": -0.7532394290224901,
+      "missing_estimator": false,
+      "best_target_cos": -0.7559969724155622
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s256",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 256,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.15688540362668665,
+      "cos_w_src": -0.11844980196815388,
+      "missing_estimator": false,
+      "best_target_cos": -0.15688540362668665
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s42",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.32476540851570357,
+      "cos_w_src": 0.33001997566906505,
+      "missing_estimator": false,
+      "best_target_cos": 0.33001997566906505
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s42",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7775278553710128,
+      "cos_w_src": -0.7770306147073094,
+      "missing_estimator": false,
+      "best_target_cos": -0.7775278553710128
+    },
+    {
+      "cell_id": "fact541__marine_biologist__s42",
+      "family": "fact541",
+      "source": "marine_biologist",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.12822523533934982,
+      "cos_w_src": -0.08351742526499055,
+      "missing_estimator": false,
+      "best_target_cos": -0.12822523533934982
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s137",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 137,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.2121630500626655,
+      "cos_w_src": 0.26654725296264536,
+      "missing_estimator": false,
+      "best_target_cos": 0.26654725296264536
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s137",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 137,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7834279484330205,
+      "cos_w_src": -0.7138039383049017,
+      "missing_estimator": false,
+      "best_target_cos": -0.7834279484330205
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s137",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 137,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.6067748665291056,
+      "cos_w_src": -0.5466648002952099,
+      "missing_estimator": false,
+      "best_target_cos": -0.6067748665291056
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s256",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 256,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.22163797986152536,
+      "cos_w_src": 0.2598096078484452,
+      "missing_estimator": false,
+      "best_target_cos": 0.2598096078484452
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s256",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 256,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.8100608023040703,
+      "cos_w_src": -0.7581777412430446,
+      "missing_estimator": false,
+      "best_target_cos": -0.8100608023040703
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s256",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 256,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.6222640629704775,
+      "cos_w_src": -0.5770324824391447,
+      "missing_estimator": false,
+      "best_target_cos": -0.6222640629704775
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s42",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.19764194768081622,
+      "cos_w_src": 0.2238754783875187,
+      "missing_estimator": false,
+      "best_target_cos": 0.2238754783875187
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s42",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.8473405430578718,
+      "cos_w_src": -0.8177387763322448,
+      "missing_estimator": false,
+      "best_target_cos": -0.8473405430578718
+    },
+    {
+      "cell_id": "fact541__wooden_furniture_carpenter__s42",
+      "family": "fact541",
+      "source": "wooden_furniture_carpenter",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.6213590139178474,
+      "cos_w_src": -0.5873483985665955,
+      "missing_estimator": false,
+      "best_target_cos": -0.6213590139178474
+    },
+    {
+      "cell_id": "loc474__A1__s42",
+      "family": "loc474",
+      "source": "A1",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.1920585850855131,
+      "cos_w_src": -0.1769128037864225,
+      "missing_estimator": false,
+      "best_target_cos": -0.1920585850855131
+    },
+    {
+      "cell_id": "loc474__A1__s42",
+      "family": "loc474",
+      "source": "A1",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7481069711343488,
+      "cos_w_src": -0.6953621334517216,
+      "missing_estimator": false,
+      "best_target_cos": -0.7481069711343488
+    },
+    {
+      "cell_id": "loc474__A1__s42",
+      "family": "loc474",
+      "source": "A1",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.7333754492524016,
+      "cos_w_src": -0.6988219397288635,
+      "missing_estimator": false,
+      "best_target_cos": -0.7333754492524016
+    },
+    {
+      "cell_id": "loc474__B1__s42",
+      "family": "loc474",
+      "source": "B1",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.18184697214301104,
+      "cos_w_src": -0.1823888262521569,
+      "missing_estimator": false,
+      "best_target_cos": -0.1823888262521569
+    },
+    {
+      "cell_id": "loc474__B1__s42",
+      "family": "loc474",
+      "source": "B1",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7536365876352136,
+      "cos_w_src": -0.685281612628857,
+      "missing_estimator": false,
+      "best_target_cos": -0.7536365876352136
+    },
+    {
+      "cell_id": "loc474__B1__s42",
+      "family": "loc474",
+      "source": "B1",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.7720314365803524,
+      "cos_w_src": -0.6904556884705759,
+      "missing_estimator": false,
+      "best_target_cos": -0.7720314365803524
+    },
+    {
+      "cell_id": "loc474__C1__s42",
+      "family": "loc474",
+      "source": "C1",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.2950887547028901,
+      "cos_w_src": -0.2837888614189859,
+      "missing_estimator": false,
+      "best_target_cos": -0.2950887547028901
+    },
+    {
+      "cell_id": "loc474__C1__s42",
+      "family": "loc474",
+      "source": "C1",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7615861974610422,
+      "cos_w_src": -0.6624133629500469,
+      "missing_estimator": false,
+      "best_target_cos": -0.7615861974610422
+    },
+    {
+      "cell_id": "loc474__C1__s42",
+      "family": "loc474",
+      "source": "C1",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.773264139070252,
+      "cos_w_src": -0.6707913239100889,
+      "missing_estimator": false,
+      "best_target_cos": -0.773264139070252
+    },
+    {
+      "cell_id": "loc474__D1__s42",
+      "family": "loc474",
+      "source": "D1",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.31692273849980723,
+      "cos_w_src": -0.2847803182749761,
+      "missing_estimator": false,
+      "best_target_cos": -0.31692273849980723
+    },
+    {
+      "cell_id": "loc474__D1__s42",
+      "family": "loc474",
+      "source": "D1",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7667642786588744,
+      "cos_w_src": -0.5972580360814739,
+      "missing_estimator": false,
+      "best_target_cos": -0.7667642786588744
+    },
+    {
+      "cell_id": "loc474__D1__s42",
+      "family": "loc474",
+      "source": "D1",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.8463991794053076,
+      "cos_w_src": -0.7230952347611433,
+      "missing_estimator": false,
+      "best_target_cos": -0.8463991794053076
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s137",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 137,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.006089812560564886,
+      "cos_w_src": 0.014181512431174414,
+      "missing_estimator": false,
+      "best_target_cos": 0.014181512431174414
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s137",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 137,
+      "estimator": "est_icl",
+      "cos_w_shared": 0.42193838395377586,
+      "cos_w_src": 0.4669116068325304,
+      "missing_estimator": false,
+      "best_target_cos": 0.4669116068325304
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s137",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 137,
+      "estimator": "est_desc",
+      "cos_w_shared": 0.42476951457838297,
+      "cos_w_src": 0.42425765041540087,
+      "missing_estimator": false,
+      "best_target_cos": 0.42476951457838297
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s256",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 256,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.05359722212522959,
+      "cos_w_src": -0.08170289148129016,
+      "missing_estimator": false,
+      "best_target_cos": -0.08170289148129016
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s256",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 256,
+      "estimator": "est_icl",
+      "cos_w_shared": 0.49916506259331983,
+      "cos_w_src": 0.5501454290793222,
+      "missing_estimator": false,
+      "best_target_cos": 0.5501454290793222
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s256",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 256,
+      "estimator": "est_desc",
+      "cos_w_shared": 0.43747505520933516,
+      "cos_w_src": 0.5020413313156638,
+      "missing_estimator": false,
+      "best_target_cos": 0.5020413313156638
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s42",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": -0.03640476077067343,
+      "cos_w_src": -0.04651747901094146,
+      "missing_estimator": false,
+      "best_target_cos": -0.04651747901094146
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s42",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": 0.49348319855890693,
+      "cos_w_src": 0.53426613627338,
+      "missing_estimator": false,
+      "best_target_cos": 0.53426613627338
+    },
+    {
+      "cell_id": "marker519__medical_doctor__s42",
+      "family": "marker519",
+      "source": "medical_doctor",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": 0.46177554078206134,
+      "cos_w_src": 0.48601446556376077,
+      "missing_estimator": false,
+      "best_target_cos": 0.48601446556376077
+    },
+    {
+      "cell_id": "refusal518__assistant__s42",
+      "family": "refusal518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.46028198425476935,
+      "cos_w_src": 0.4496128433660758,
+      "missing_estimator": false,
+      "best_target_cos": 0.46028198425476935
+    },
+    {
+      "cell_id": "refusal518__assistant__s42",
+      "family": "refusal518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.9346735795859633,
+      "cos_w_src": -0.9372946794108207,
+      "missing_estimator": false,
+      "best_target_cos": -0.9372946794108207
+    },
+    {
+      "cell_id": "refusal518__assistant__s42",
+      "family": "refusal518",
+      "source": "assistant",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.48369373740211963,
+      "cos_w_src": -0.48185580800391964,
+      "missing_estimator": false,
+      "best_target_cos": -0.48369373740211963
+    },
+    {
+      "cell_id": "refusal518__comedian__s42",
+      "family": "refusal518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.3483878481334001,
+      "cos_w_src": 0.40187615479809763,
+      "missing_estimator": false,
+      "best_target_cos": 0.40187615479809763
+    },
+    {
+      "cell_id": "refusal518__comedian__s42",
+      "family": "refusal518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.6744777220240156,
+      "cos_w_src": -0.5588592989467469,
+      "missing_estimator": false,
+      "best_target_cos": -0.6744777220240156
+    },
+    {
+      "cell_id": "refusal518__comedian__s42",
+      "family": "refusal518",
+      "source": "comedian",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.5982790936830314,
+      "cos_w_src": -0.5794229831899824,
+      "missing_estimator": false,
+      "best_target_cos": -0.5982790936830314
+    },
+    {
+      "cell_id": "refusal518__kindergarten_teacher__s42",
+      "family": "refusal518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.3499216016346643,
+      "cos_w_src": 0.2976994414416293,
+      "missing_estimator": false,
+      "best_target_cos": 0.3499216016346643
+    },
+    {
+      "cell_id": "refusal518__kindergarten_teacher__s42",
+      "family": "refusal518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.7535686134650867,
+      "cos_w_src": -0.6044043917657352,
+      "missing_estimator": false,
+      "best_target_cos": -0.7535686134650867
+    },
+    {
+      "cell_id": "refusal518__kindergarten_teacher__s42",
+      "family": "refusal518",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.615128468565864,
+      "cos_w_src": -0.5883052093414531,
+      "missing_estimator": false,
+      "best_target_cos": -0.615128468565864
+    },
+    {
+      "cell_id": "refusal518__qwen_default__s42",
+      "family": "refusal518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.4244570673342017,
+      "cos_w_src": 0.40669181042069713,
+      "missing_estimator": false,
+      "best_target_cos": 0.4244570673342017
+    },
+    {
+      "cell_id": "refusal518__qwen_default__s42",
+      "family": "refusal518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.9052770254424511,
+      "cos_w_src": -0.8813791982514786,
+      "missing_estimator": false,
+      "best_target_cos": -0.9052770254424511
+    },
+    {
+      "cell_id": "refusal518__qwen_default__s42",
+      "family": "refusal518",
+      "source": "qwen_default",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.6357273632317387,
+      "cos_w_src": -0.6254902052358409,
+      "missing_estimator": false,
+      "best_target_cos": -0.6357273632317387
+    },
+    {
+      "cell_id": "refusal518__software_engineer__s42",
+      "family": "refusal518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.32160740947560507,
+      "cos_w_src": 0.29750609957608015,
+      "missing_estimator": false,
+      "best_target_cos": 0.32160740947560507
+    },
+    {
+      "cell_id": "refusal518__software_engineer__s42",
+      "family": "refusal518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.8798963275241516,
+      "cos_w_src": -0.8542410010812186,
+      "missing_estimator": false,
+      "best_target_cos": -0.8798963275241516
+    },
+    {
+      "cell_id": "refusal518__software_engineer__s42",
+      "family": "refusal518",
+      "source": "software_engineer",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.5269706212047248,
+      "cos_w_src": -0.5122491986165116,
+      "missing_estimator": false,
+      "best_target_cos": -0.5269706212047248
+    },
+    {
+      "cell_id": "refusal518__villain__s42",
+      "family": "refusal518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_tf",
+      "cos_w_shared": 0.1673718104301768,
+      "cos_w_src": 0.16764878161386482,
+      "missing_estimator": false,
+      "best_target_cos": 0.16764878161386482
+    },
+    {
+      "cell_id": "refusal518__villain__s42",
+      "family": "refusal518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_icl",
+      "cos_w_shared": -0.5844956416273541,
+      "cos_w_src": -0.3017143956404609,
+      "missing_estimator": false,
+      "best_target_cos": -0.5844956416273541
+    },
+    {
+      "cell_id": "refusal518__villain__s42",
+      "family": "refusal518",
+      "source": "villain",
+      "seed": 42,
+      "estimator": "est_desc",
+      "cos_w_shared": -0.48077803205953923,
+      "cos_w_src": -0.29489001188727054,
+      "missing_estimator": false,
+      "best_target_cos": -0.48077803205953923
+    }
+  ],
+  "margins": {
+    "marker519__medical_doctor__est_tf": {
+      "on_diag_median": -0.03640476077067343,
+      "off_diag_mean_incl_siblings": 0.4854776247921465,
+      "off_diag_mean_excl_siblings": 0.49014569837601357,
+      "margin_incl_siblings": -0.52188238556282,
+      "margin_excl_siblings": -0.526550459146687,
+      "n_on": 3,
+      "n_off_excl": 24
+    },
+    "marker519__medical_doctor__est_icl": {
+      "on_diag_median": 0.49348319855890693,
+      "off_diag_mean_incl_siblings": -0.6417315607048648,
+      "off_diag_mean_excl_siblings": -0.6429527853092681,
+      "margin_incl_siblings": 1.1352147592637718,
+      "margin_excl_siblings": 1.136435983868175,
+      "n_on": 3,
+      "n_off_excl": 24
+    },
+    "marker519__medical_doctor__est_desc": {
+      "on_diag_median": 0.43747505520933516,
+      "off_diag_mean_incl_siblings": -0.8058964375794041,
+      "off_diag_mean_excl_siblings": -0.8242996095499348,
+      "margin_incl_siblings": 1.2433714927887394,
+      "margin_excl_siblings": 1.2617746647592698,
+      "n_on": 3,
+      "n_off_excl": 24
+    },
+    "em_turner__no_system__est_tf": {
+      "on_diag_median": 0.8239932591648556,
+      "off_diag_mean_incl_siblings": 0.6592350274647958,
+      "off_diag_mean_excl_siblings": 0.6197215951788755,
+      "margin_incl_siblings": 0.16475823170005977,
+      "margin_excl_siblings": 0.20427166398598007,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "em_turner__no_system__est_icl": {
+      "on_diag_median": -0.7074305953854384,
+      "off_diag_mean_incl_siblings": -0.5718017567528145,
+      "off_diag_mean_excl_siblings": -0.5320040010747642,
+      "margin_incl_siblings": -0.13562883863262387,
+      "margin_excl_siblings": -0.1754265943106742,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "em_turner__no_system__est_desc": {
+      "on_diag_median": -0.8437681282480604,
+      "off_diag_mean_incl_siblings": -0.6945428987460476,
+      "off_diag_mean_excl_siblings": -0.6519886545884543,
+      "margin_incl_siblings": -0.14922522950201278,
+      "margin_excl_siblings": -0.19177947365960601,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__marine_biologist__est_tf": {
+      "on_diag_median": 0.3294161657028667,
+      "off_diag_mean_incl_siblings": 0.25563202907630667,
+      "off_diag_mean_excl_siblings": 0.25563202907630667,
+      "margin_incl_siblings": 0.07378413662656003,
+      "margin_excl_siblings": 0.07378413662656003,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__marine_biologist__est_icl": {
+      "on_diag_median": -0.7559969724155622,
+      "off_diag_mean_incl_siblings": -0.6173841334824638,
+      "off_diag_mean_excl_siblings": -0.6173841334824638,
+      "margin_incl_siblings": -0.1386128389330984,
+      "margin_excl_siblings": -0.1386128389330984,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__marine_biologist__est_desc": {
+      "on_diag_median": -0.15688540362668665,
+      "off_diag_mean_incl_siblings": -0.031186406646834683,
+      "off_diag_mean_excl_siblings": -0.031186406646834683,
+      "margin_incl_siblings": -0.12569899697985198,
+      "margin_excl_siblings": -0.12569899697985198,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__courthouse_architecture_historian__est_tf": {
+      "on_diag_median": 0.30675656739759466,
+      "off_diag_mean_incl_siblings": 0.2391725023633721,
+      "off_diag_mean_excl_siblings": 0.2391725023633721,
+      "margin_incl_siblings": 0.06758406503422257,
+      "margin_excl_siblings": 0.06758406503422257,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__courthouse_architecture_historian__est_icl": {
+      "on_diag_median": -0.7047715496176783,
+      "off_diag_mean_incl_siblings": -0.5990085313353959,
+      "off_diag_mean_excl_siblings": -0.5990085313353959,
+      "margin_incl_siblings": -0.1057630182822824,
+      "margin_excl_siblings": -0.1057630182822824,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__courthouse_architecture_historian__est_desc": {
+      "on_diag_median": -0.5346768235476969,
+      "off_diag_mean_incl_siblings": -0.4421622507267191,
+      "off_diag_mean_excl_siblings": -0.4421622507267191,
+      "margin_incl_siblings": -0.09251457282097775,
+      "margin_excl_siblings": -0.09251457282097775,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__wooden_furniture_carpenter__est_tf": {
+      "on_diag_median": 0.2107809616799192,
+      "off_diag_mean_incl_siblings": 0.15610171798319933,
+      "off_diag_mean_excl_siblings": 0.15610171798319933,
+      "margin_incl_siblings": 0.054679243696719865,
+      "margin_excl_siblings": 0.054679243696719865,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__wooden_furniture_carpenter__est_icl": {
+      "on_diag_median": -0.8100608023040703,
+      "off_diag_mean_incl_siblings": -0.6759519512996846,
+      "off_diag_mean_excl_siblings": -0.6759519512996846,
+      "margin_incl_siblings": -0.13410885100438574,
+      "margin_excl_siblings": -0.13410885100438574,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "fact541__wooden_furniture_carpenter__est_desc": {
+      "on_diag_median": -0.6213590139178474,
+      "off_diag_mean_incl_siblings": -0.4537410412725604,
+      "off_diag_mean_excl_siblings": -0.4537410412725604,
+      "margin_incl_siblings": -0.16761797264528705,
+      "margin_excl_siblings": -0.16761797264528705,
+      "n_on": 3,
+      "n_off_excl": 22
+    },
+    "refusal518__assistant__est_tf": {
+      "on_diag_median": 0.46028198425476935,
+      "off_diag_mean_incl_siblings": 0.35609751856456806,
+      "off_diag_mean_excl_siblings": 0.35609751856456806,
+      "margin_incl_siblings": 0.10418446569020129,
+      "margin_excl_siblings": 0.10418446569020129,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__assistant__est_icl": {
+      "on_diag_median": -0.9346735795859633,
+      "off_diag_mean_incl_siblings": -0.7509806817745356,
+      "off_diag_mean_excl_siblings": -0.7509806817745356,
+      "margin_incl_siblings": -0.18369289781142772,
+      "margin_excl_siblings": -0.18369289781142772,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__assistant__est_desc": {
+      "on_diag_median": -0.48369373740211963,
+      "off_diag_mean_incl_siblings": -0.4352414066741856,
+      "off_diag_mean_excl_siblings": -0.4352414066741856,
+      "margin_incl_siblings": -0.048452330727934034,
+      "margin_excl_siblings": -0.048452330727934034,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__comedian__est_tf": {
+      "on_diag_median": 0.3483878481334001,
+      "off_diag_mean_incl_siblings": 0.2876578682399288,
+      "off_diag_mean_excl_siblings": 0.2876578682399288,
+      "margin_incl_siblings": 0.06072997989347134,
+      "margin_excl_siblings": 0.06072997989347134,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__comedian__est_icl": {
+      "on_diag_median": -0.6744777220240156,
+      "off_diag_mean_incl_siblings": -0.5480902112403919,
+      "off_diag_mean_excl_siblings": -0.5480902112403919,
+      "margin_incl_siblings": -0.12638751078362365,
+      "margin_excl_siblings": -0.12638751078362365,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__comedian__est_desc": {
+      "on_diag_median": -0.5982790936830314,
+      "off_diag_mean_incl_siblings": -0.5195512662376605,
+      "off_diag_mean_excl_siblings": -0.5195512662376605,
+      "margin_incl_siblings": -0.07872782744537099,
+      "margin_excl_siblings": -0.07872782744537099,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__kindergarten_teacher__est_tf": {
+      "on_diag_median": 0.3499216016346643,
+      "off_diag_mean_incl_siblings": 0.2698061914025289,
+      "off_diag_mean_excl_siblings": 0.2698061914025289,
+      "margin_incl_siblings": 0.08011541023213536,
+      "margin_excl_siblings": 0.08011541023213536,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__kindergarten_teacher__est_icl": {
+      "on_diag_median": -0.7535686134650867,
+      "off_diag_mean_incl_siblings": -0.6219899483010638,
+      "off_diag_mean_excl_siblings": -0.6219899483010638,
+      "margin_incl_siblings": -0.13157866516402295,
+      "margin_excl_siblings": -0.13157866516402295,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__kindergarten_teacher__est_desc": {
+      "on_diag_median": -0.615128468565864,
+      "off_diag_mean_incl_siblings": -0.5536930713232946,
+      "off_diag_mean_excl_siblings": -0.5536930713232946,
+      "margin_incl_siblings": -0.06143539724256941,
+      "margin_excl_siblings": -0.06143539724256941,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__qwen_default__est_tf": {
+      "on_diag_median": 0.4244570673342017,
+      "off_diag_mean_incl_siblings": 0.3357710375152046,
+      "off_diag_mean_excl_siblings": 0.3357710375152046,
+      "margin_incl_siblings": 0.08868602981899709,
+      "margin_excl_siblings": 0.08868602981899709,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__qwen_default__est_icl": {
+      "on_diag_median": -0.9052770254424511,
+      "off_diag_mean_incl_siblings": -0.7261128651460337,
+      "off_diag_mean_excl_siblings": -0.7261128651460337,
+      "margin_incl_siblings": -0.17916416029641746,
+      "margin_excl_siblings": -0.17916416029641746,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__qwen_default__est_desc": {
+      "on_diag_median": -0.6357273632317387,
+      "off_diag_mean_incl_siblings": -0.5446180449233379,
+      "off_diag_mean_excl_siblings": -0.5446180449233379,
+      "margin_incl_siblings": -0.09110931830840086,
+      "margin_excl_siblings": -0.09110931830840086,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__software_engineer__est_tf": {
+      "on_diag_median": 0.32160740947560507,
+      "off_diag_mean_incl_siblings": 0.21411663503114992,
+      "off_diag_mean_excl_siblings": 0.21411663503114992,
+      "margin_incl_siblings": 0.10749077444445515,
+      "margin_excl_siblings": 0.10749077444445515,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__software_engineer__est_icl": {
+      "on_diag_median": -0.8798963275241516,
+      "off_diag_mean_incl_siblings": -0.7183643302829258,
+      "off_diag_mean_excl_siblings": -0.7183643302829258,
+      "margin_incl_siblings": -0.1615319972412258,
+      "margin_excl_siblings": -0.1615319972412258,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__software_engineer__est_desc": {
+      "on_diag_median": -0.5269706212047248,
+      "off_diag_mean_incl_siblings": -0.4849302247721608,
+      "off_diag_mean_excl_siblings": -0.4849302247721608,
+      "margin_incl_siblings": -0.04204039643256402,
+      "margin_excl_siblings": -0.04204039643256402,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__villain__est_tf": {
+      "on_diag_median": 0.1673718104301768,
+      "off_diag_mean_incl_siblings": 0.09585945035247204,
+      "off_diag_mean_excl_siblings": 0.09585945035247204,
+      "margin_incl_siblings": 0.07151236007770476,
+      "margin_excl_siblings": 0.07151236007770476,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__villain__est_icl": {
+      "on_diag_median": -0.5844956416273541,
+      "off_diag_mean_incl_siblings": -0.4930226990030074,
+      "off_diag_mean_excl_siblings": -0.4930226990030074,
+      "margin_incl_siblings": -0.09147294262434674,
+      "margin_excl_siblings": -0.09147294262434674,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "refusal518__villain__est_desc": {
+      "on_diag_median": -0.48077803205953923,
+      "off_diag_mean_incl_siblings": -0.43751675258118133,
+      "off_diag_mean_excl_siblings": -0.43751675258118133,
+      "margin_incl_siblings": -0.043261279478357895,
+      "margin_excl_siblings": -0.043261279478357895,
+      "n_on": 1,
+      "n_off_excl": 25
+    },
+    "em518__assistant__est_tf": {
+      "on_diag_median": 0.8642381957023912,
+      "off_diag_mean_incl_siblings": 0.6846955420061116,
+      "off_diag_mean_excl_siblings": 0.6603691439326259,
+      "margin_incl_siblings": 0.17954265369627964,
+      "margin_excl_siblings": 0.20386905176976533,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__assistant__est_icl": {
+      "on_diag_median": -0.581097846217984,
+      "off_diag_mean_incl_siblings": -0.4338451100524465,
+      "off_diag_mean_excl_siblings": -0.4173737287224597,
+      "margin_incl_siblings": -0.14725273616553747,
+      "margin_excl_siblings": -0.1637241174955243,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__assistant__est_desc": {
+      "on_diag_median": 0.26735943966569414,
+      "off_diag_mean_incl_siblings": 0.16550171709652414,
+      "off_diag_mean_excl_siblings": 0.1542072979683533,
+      "margin_incl_siblings": 0.10185772256917,
+      "margin_excl_siblings": 0.11315214169734084,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__comedian__est_tf": {
+      "on_diag_median": 0.6386750665429438,
+      "off_diag_mean_incl_siblings": 0.49238429370109815,
+      "off_diag_mean_excl_siblings": 0.47079235572293726,
+      "margin_incl_siblings": 0.14629077284184566,
+      "margin_excl_siblings": 0.16788271082000655,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__comedian__est_icl": {
+      "on_diag_median": -0.3617664992227629,
+      "off_diag_mean_incl_siblings": -0.36123056987004654,
+      "off_diag_mean_excl_siblings": -0.3512063754543409,
+      "margin_incl_siblings": -0.0005359293527163467,
+      "margin_excl_siblings": -0.01056012376842197,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__comedian__est_desc": {
+      "on_diag_median": -0.1422377521010822,
+      "off_diag_mean_incl_siblings": -0.08094346712825617,
+      "off_diag_mean_excl_siblings": -0.07307555063238681,
+      "margin_incl_siblings": -0.06129428497282602,
+      "margin_excl_siblings": -0.06916220146869538,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__kindergarten_teacher__est_tf": {
+      "on_diag_median": 0.8201014201987369,
+      "off_diag_mean_incl_siblings": 0.6493532748748048,
+      "off_diag_mean_excl_siblings": 0.6258460406670614,
+      "margin_incl_siblings": 0.17074814532393212,
+      "margin_excl_siblings": 0.1942553795316755,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__kindergarten_teacher__est_icl": {
+      "on_diag_median": -0.5465663544086785,
+      "off_diag_mean_incl_siblings": -0.4485510023824037,
+      "off_diag_mean_excl_siblings": -0.4346716893713024,
+      "margin_incl_siblings": -0.09801535202627482,
+      "margin_excl_siblings": -0.1118946650373761,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__kindergarten_teacher__est_desc": {
+      "on_diag_median": -0.27174278893218634,
+      "off_diag_mean_incl_siblings": -0.16465422381727404,
+      "off_diag_mean_excl_siblings": -0.1522748566828057,
+      "margin_incl_siblings": -0.1070885651149123,
+      "margin_excl_siblings": -0.11946793224938065,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__qwen_default__est_tf": {
+      "on_diag_median": 0.8102825140171646,
+      "off_diag_mean_incl_siblings": 0.6537858488498288,
+      "off_diag_mean_excl_siblings": 0.6297393211721167,
+      "margin_incl_siblings": 0.15649666516733574,
+      "margin_excl_siblings": 0.18054319284504783,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__qwen_default__est_icl": {
+      "on_diag_median": -0.8219192656031133,
+      "off_diag_mean_incl_siblings": -0.6442027814010565,
+      "off_diag_mean_excl_siblings": -0.621842907932573,
+      "margin_incl_siblings": -0.17771648420205688,
+      "margin_excl_siblings": -0.20007635767054033,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__qwen_default__est_desc": {
+      "on_diag_median": -0.8560425525627148,
+      "off_diag_mean_incl_siblings": -0.6755842367607409,
+      "off_diag_mean_excl_siblings": -0.6519886545884543,
+      "margin_incl_siblings": -0.1804583158019739,
+      "margin_excl_siblings": -0.20405389797426043,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__software_engineer__est_tf": {
+      "on_diag_median": 0.7913565732082622,
+      "off_diag_mean_incl_siblings": 0.6234571631293094,
+      "off_diag_mean_excl_siblings": 0.5999851859284632,
+      "margin_incl_siblings": 0.16789941007895282,
+      "margin_excl_siblings": 0.19137138727979908,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__software_engineer__est_icl": {
+      "on_diag_median": -0.6905500293647787,
+      "off_diag_mean_incl_siblings": -0.5255023289658108,
+      "off_diag_mean_excl_siblings": -0.5038597533544641,
+      "margin_incl_siblings": -0.16504770039896788,
+      "margin_excl_siblings": -0.18669027601031463,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__software_engineer__est_desc": {
+      "on_diag_median": -0.2609456439131228,
+      "off_diag_mean_incl_siblings": -0.2289981103174367,
+      "off_diag_mean_excl_siblings": -0.2240122790602177,
+      "margin_incl_siblings": -0.03194753359568611,
+      "margin_excl_siblings": -0.036933364852905104,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__villain__est_tf": {
+      "on_diag_median": 0.7906316217777176,
+      "off_diag_mean_incl_siblings": 0.652168749274026,
+      "off_diag_mean_excl_siblings": 0.633270959604504,
+      "margin_incl_siblings": 0.1384628725036916,
+      "margin_excl_siblings": 0.15736066217321365,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__villain__est_icl": {
+      "on_diag_median": -0.3954357658770927,
+      "off_diag_mean_incl_siblings": -0.308145451570131,
+      "off_diag_mean_excl_siblings": -0.2908858769482172,
+      "margin_incl_siblings": -0.08729031430696171,
+      "margin_excl_siblings": -0.10454988892887551,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "em518__villain__est_desc": {
+      "on_diag_median": 0.13845655152374994,
+      "off_diag_mean_incl_siblings": 0.17211543931526221,
+      "off_diag_mean_excl_siblings": 0.17380131093228887,
+      "margin_incl_siblings": -0.03365888779151227,
+      "margin_excl_siblings": -0.03534475940853893,
+      "n_on": 1,
+      "n_off_excl": 22
+    },
+    "loc474__A1__est_tf": {
+      "on_diag_median": -0.1920585850855131,
+      "off_diag_mean_incl_siblings": -0.09727491823965567,
+      "off_diag_mean_excl_siblings": -0.1295460263300663,
+      "margin_incl_siblings": -0.09478366684585743,
+      "margin_excl_siblings": -0.06251255875544681,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__A1__est_icl": {
+      "on_diag_median": -0.7481069711343488,
+      "off_diag_mean_incl_siblings": -0.5831368193656987,
+      "off_diag_mean_excl_siblings": -0.7046431826922347,
+      "margin_incl_siblings": -0.16497015176865004,
+      "margin_excl_siblings": -0.04346378844211407,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__A1__est_desc": {
+      "on_diag_median": -0.7333754492524016,
+      "off_diag_mean_incl_siblings": -0.7272907538691783,
+      "off_diag_mean_excl_siblings": -0.8613935257446879,
+      "margin_incl_siblings": -0.006084695383223315,
+      "margin_excl_siblings": 0.12801807649228625,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__B1__est_tf": {
+      "on_diag_median": -0.18184697214301104,
+      "off_diag_mean_incl_siblings": -0.11488972110483105,
+      "off_diag_mean_excl_siblings": -0.1348653200816269,
+      "margin_incl_siblings": -0.06695725103818,
+      "margin_excl_siblings": -0.04698165206138413,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__B1__est_icl": {
+      "on_diag_median": -0.7536365876352136,
+      "off_diag_mean_incl_siblings": -0.6130810851572898,
+      "off_diag_mean_excl_siblings": -0.7398397032916696,
+      "margin_incl_siblings": -0.1405555024779238,
+      "margin_excl_siblings": -0.01379688434354398,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__B1__est_desc": {
+      "on_diag_median": -0.7720314365803524,
+      "off_diag_mean_incl_siblings": -0.7329167510309005,
+      "off_diag_mean_excl_siblings": -0.8740930600126718,
+      "margin_incl_siblings": -0.039114685549451966,
+      "margin_excl_siblings": 0.10206162343231939,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__C1__est_tf": {
+      "on_diag_median": -0.2950887547028901,
+      "off_diag_mean_incl_siblings": -0.239146785066327,
+      "off_diag_mean_excl_siblings": -0.27508000611074934,
+      "margin_incl_siblings": -0.05594196963656309,
+      "margin_excl_siblings": -0.020008748592140746,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__C1__est_icl": {
+      "on_diag_median": -0.7615861974610422,
+      "off_diag_mean_incl_siblings": -0.6327900909992408,
+      "off_diag_mean_excl_siblings": -0.7615055520390763,
+      "margin_incl_siblings": -0.1287961064618014,
+      "margin_excl_siblings": -8.064542196584146e-05,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__C1__est_desc": {
+      "on_diag_median": -0.773264139070252,
+      "off_diag_mean_incl_siblings": -0.7329167510309005,
+      "off_diag_mean_excl_siblings": -0.8740930600126718,
+      "margin_incl_siblings": -0.04034738803935156,
+      "margin_excl_siblings": 0.1008289209424198,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__D1__est_tf": {
+      "on_diag_median": -0.31692273849980723,
+      "off_diag_mean_incl_siblings": -0.2209735743849109,
+      "off_diag_mean_excl_siblings": -0.24399218444859208,
+      "margin_incl_siblings": -0.09594916411489635,
+      "margin_excl_siblings": -0.07293055405121515,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__D1__est_icl": {
+      "on_diag_median": -0.7667642786588744,
+      "off_diag_mean_incl_siblings": -0.5810606857599497,
+      "off_diag_mean_excl_siblings": -0.7046648805081016,
+      "margin_incl_siblings": -0.18570359289892469,
+      "margin_excl_siblings": -0.06209939815077281,
+      "n_on": 1,
+      "n_off_excl": 24
+    },
+    "loc474__D1__est_desc": {
+      "on_diag_median": -0.8463991794053076,
+      "off_diag_mean_incl_siblings": -0.7439708071745704,
+      "off_diag_mean_excl_siblings": -0.8842066281056248,
+      "margin_incl_siblings": -0.1024283722307372,
+      "margin_excl_siblings": 0.03780744870031716,
+      "n_on": 1,
+      "n_off_excl": 24
+    }
+  },
+  "cross_recipe_sibling_reads": [
+    {
+      "estimator_unit": "marker519__medical_doctor__est_tf",
+      "sibling_cell": "loc474__A1__s42",
+      "cos": 0.4396213164240381
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_tf",
+      "sibling_cell": "loc474__B1__s42",
+      "cos": 0.4576008683537465
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_tf",
+      "sibling_cell": "loc474__C1__s42",
+      "cos": 0.4650111645670021
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_tf",
+      "sibling_cell": "loc474__D1__s42",
+      "cos": 0.46764338381098974
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_icl",
+      "sibling_cell": "loc474__A1__s42",
+      "cos": -0.6758964140413731
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_icl",
+      "sibling_cell": "loc474__B1__s42",
+      "cos": -0.603281411502993
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_icl",
+      "sibling_cell": "loc474__C1__s42",
+      "cos": -0.5905271152571271
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_icl",
+      "sibling_cell": "loc474__D1__s42",
+      "cos": -0.667911911512285
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_desc",
+      "sibling_cell": "loc474__A1__s42",
+      "cos": -0.6918648485988586
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_desc",
+      "sibling_cell": "loc474__B1__s42",
+      "cos": -0.6692383391266754
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_desc",
+      "sibling_cell": "loc474__C1__s42",
+      "cos": -0.6746939025981741
+    },
+    {
+      "estimator_unit": "marker519__medical_doctor__est_desc",
+      "sibling_cell": "loc474__D1__s42",
+      "cos": -0.7461125327011705
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__assistant__s42",
+      "cos": 0.8205534236593123
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__comedian__s42",
+      "cos": 0.7750346885457906
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__kindergarten_teacher__s42",
+      "cos": 0.8113943774604683
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__qwen_default__s42",
+      "cos": 0.8029200499316793
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__software_engineer__s42",
+      "cos": 0.8155420614393551
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_tf",
+      "sibling_cell": "em518__villain__s42",
+      "cos": 0.7992610740424122
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__assistant__s42",
+      "cos": -0.7404448120705612
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__comedian__s42",
+      "cos": -0.6823261595137895
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__kindergarten_teacher__s42",
+      "cos": -0.7309338855992552
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__qwen_default__s42",
+      "cos": -0.7236613684738921
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__software_engineer__s42",
+      "cos": -0.7231824459326173
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_icl",
+      "sibling_cell": "em518__villain__s42",
+      "cos": -0.7058124938438779
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__assistant__s42",
+      "cos": -0.8637822996579911
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__comedian__s42",
+      "cos": -0.8211524638173711
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__kindergarten_teacher__s42",
+      "cos": -0.8649688367214095
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__qwen_default__s42",
+      "cos": -0.8560425525627148
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__software_engineer__s42",
+      "cos": -0.8564048943694209
+    },
+    {
+      "estimator_unit": "em_turner__no_system__est_desc",
+      "sibling_cell": "em518__villain__s42",
+      "cos": -0.8410997168144301
+    },
+    {
+      "estimator_unit": "em518__assistant__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.867890468794457
+    },
+    {
+      "estimator_unit": "em518__assistant__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.859045045227081
+    },
+    {
+      "estimator_unit": "em518__assistant__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.8623318696134822
+    },
+    {
+      "estimator_unit": "em518__assistant__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.5678532319772428
+    },
+    {
+      "estimator_unit": "em518__assistant__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.5479296703157135
+    },
+    {
+      "estimator_unit": "em518__assistant__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.5481228171240933
+    },
+    {
+      "estimator_unit": "em518__assistant__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.26174304455193387
+    },
+    {
+      "estimator_unit": "em518__assistant__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.23990860846251832
+    },
+    {
+      "estimator_unit": "em518__assistant__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.2433307190948779
+    },
+    {
+      "estimator_unit": "em518__comedian__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.6460798873920658
+    },
+    {
+      "estimator_unit": "em518__comedian__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.6528734890219559
+    },
+    {
+      "estimator_unit": "em518__comedian__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.6532221402088132
+    },
+    {
+      "estimator_unit": "em518__comedian__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.4463038269612555
+    },
+    {
+      "estimator_unit": "em518__comedian__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.4251102411159473
+    },
+    {
+      "estimator_unit": "em518__comedian__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.43280991867845975
+    },
+    {
+      "estimator_unit": "em518__comedian__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.13852688741324812
+    },
+    {
+      "estimator_unit": "em518__comedian__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.13962477383280653
+    },
+    {
+      "estimator_unit": "em518__comedian__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.13777290304783954
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.8261854709296489
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.8174784283096431
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.8215550779554753
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.566459740525791
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.5406607570728215
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.5438773957928265
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.2492029004315968
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.2624726747814333
+    },
+    {
+      "estimator_unit": "em518__kindergarten_teacher__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.25463317319709616
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.8327253691479227
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.8262704073522968
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.8313853789589348
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.8220507887139654
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.8025985785283528
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.7998761932674854
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.8609203645795558
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.8437681282480604
+    },
+    {
+      "estimator_unit": "em518__qwen_default__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.8411670252449075
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.8008938253763005
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.7901999479586668
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.7956612144715768
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.6987793109594433
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.6774399107102766
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.6764244286773401
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.25684993189773475
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.2715256845434665
+    },
+    {
+      "estimator_unit": "em518__software_engineer__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.268307002169928
+    },
+    {
+      "estimator_unit": "em518__villain__est_tf",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.792805242676973
+    },
+    {
+      "estimator_unit": "em518__villain__est_tf",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.7874321787990164
+    },
+    {
+      "estimator_unit": "em518__villain__est_tf",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.792020199075575
+    },
+    {
+      "estimator_unit": "em518__villain__est_icl",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": -0.44582289141830433
+    },
+    {
+      "estimator_unit": "em518__villain__est_icl",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": -0.4275090895012147
+    },
+    {
+      "estimator_unit": "em518__villain__est_icl",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": -0.430815015472975
+    },
+    {
+      "estimator_unit": "em518__villain__est_desc",
+      "sibling_cell": "em_turner__no_system__s42",
+      "cos": 0.16467946039521764
+    },
+    {
+      "estimator_unit": "em518__villain__est_desc",
+      "sibling_cell": "em_turner__no_system__s137",
+      "cos": 0.15386275067287275
+    },
+    {
+      "estimator_unit": "em518__villain__est_desc",
+      "sibling_cell": "em_turner__no_system__s256",
+      "cos": 0.16071493130310943
+    },
+    {
+      "estimator_unit": "loc474__A1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.15951296041236948
+    },
+    {
+      "estimator_unit": "loc474__A1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.1599235564114575
+    },
+    {
+      "estimator_unit": "loc474__A1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.1632453226270604
+    },
+    {
+      "estimator_unit": "loc474__A1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.4075990347638701
+    },
+    {
+      "estimator_unit": "loc474__A1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.3465749740297114
+    },
+    {
+      "estimator_unit": "loc474__A1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.4125682529461852
+    },
+    {
+      "estimator_unit": "loc474__A1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.35825772360413183
+    },
+    {
+      "estimator_unit": "loc474__A1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.34623977930322375
+    },
+    {
+      "estimator_unit": "loc474__A1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.3320967604973391
+    },
+    {
+      "estimator_unit": "loc474__B1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.04898741116254225
+    },
+    {
+      "estimator_unit": "loc474__B1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.03409415609597381
+    },
+    {
+      "estimator_unit": "loc474__B1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.051663644870090814
+    },
+    {
+      "estimator_unit": "loc474__B1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.4191539294750764
+    },
+    {
+      "estimator_unit": "loc474__B1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.3617865681282985
+    },
+    {
+      "estimator_unit": "loc474__B1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.42202308214987183
+    },
+    {
+      "estimator_unit": "loc474__B1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.4155805570753515
+    },
+    {
+      "estimator_unit": "loc474__B1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.3776592631064807
+    },
+    {
+      "estimator_unit": "loc474__B1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.39624134228797575
+    },
+    {
+      "estimator_unit": "loc474__C1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.053631037551929044
+    },
+    {
+      "estimator_unit": "loc474__C1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.038578895552745504
+    },
+    {
+      "estimator_unit": "loc474__C1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.052747016762482044
+    },
+    {
+      "estimator_unit": "loc474__C1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.4145630088408641
+    },
+    {
+      "estimator_unit": "loc474__C1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.36029717760360885
+    },
+    {
+      "estimator_unit": "loc474__C1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.41594060551386064
+    },
+    {
+      "estimator_unit": "loc474__C1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.4155805570753515
+    },
+    {
+      "estimator_unit": "loc474__C1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.3776592631064807
+    },
+    {
+      "estimator_unit": "loc474__C1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.39624134228797575
+    },
+    {
+      "estimator_unit": "loc474__D1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": -0.047826343002726625
+    },
+    {
+      "estimator_unit": "loc474__D1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": -0.015117482532760053
+    },
+    {
+      "estimator_unit": "loc474__D1__est_tf",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": -0.04753025609089777
+    },
+    {
+      "estimator_unit": "loc474__D1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.42720138245511713
+    },
+    {
+      "estimator_unit": "loc474__D1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.36436211798883933
+    },
+    {
+      "estimator_unit": "loc474__D1__est_icl",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.43175511623183566
+    },
+    {
+      "estimator_unit": "loc474__D1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s42",
+      "cos": 0.39666366840031536
+    },
+    {
+      "estimator_unit": "loc474__D1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s137",
+      "cos": 0.3602160763070026
+    },
+    {
+      "estimator_unit": "loc474__D1__est_desc",
+      "sibling_cell": "marker519__medical_doctor__s256",
+      "cos": 0.37686753611427354
+    }
+  ],
+  "verdicts": {
+    "marker519__est_tf": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.03640476077067343,
+      "median_cos_w_src": -0.04651747901094146,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.526550459146687,
+      "n_cells": 3
+    },
+    "marker519__est_icl": {
+      "verdict": "VALID",
+      "which_target_cleared": "w_src",
+      "median_cos_w_shared": 0.49348319855890693,
+      "median_cos_w_src": 0.53426613627338,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 3,
+      "n_pass_src": 3,
+      "margin_excl_siblings": 1.136435983868175,
+      "n_cells": 3
+    },
+    "marker519__est_desc": {
+      "verdict": "VALID",
+      "which_target_cleared": "w_src",
+      "median_cos_w_shared": 0.43747505520933516,
+      "median_cos_w_src": 0.48601446556376077,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 3,
+      "n_pass_src": 3,
+      "margin_excl_siblings": 1.2617746647592698,
+      "n_cells": 3
+    },
+    "em_turner__est_tf": {
+      "verdict": "VALID",
+      "which_target_cleared": "w_shared",
+      "median_cos_w_shared": 0.8239932591648556,
+      "median_cos_w_src": 0.8010677285164083,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 3,
+      "n_pass_src": 3,
+      "margin_excl_siblings": 0.20427166398598007,
+      "n_cells": 3
+    },
+    "em_turner__est_icl": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.7074305953854384,
+      "median_cos_w_src": -0.6638569246515689,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.1754265943106742,
+      "n_cells": 3
+    },
+    "em_turner__est_desc": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.8437681282480604,
+      "median_cos_w_src": -0.8090254875325523,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.19177947365960601,
+      "n_cells": 3
+    },
+    "fact541__est_tf": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": 0.30675656739759466,
+      "median_cos_w_src": 0.33001997566906505,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 2,
+      "n_pass_src": 3,
+      "margin_excl_siblings": 0.06758406503422257,
+      "n_cells": 9
+    },
+    "fact541__est_icl": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.7559969724155622,
+      "median_cos_w_src": -0.7373790232880438,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.13410885100438574,
+      "n_cells": 9
+    },
+    "fact541__est_desc": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.5346768235476969,
+      "median_cos_w_src": -0.3412229248315583,
+      "n_seeds": 3,
+      "registered_n_seeds": 3,
+      "seed_criterion": "per-seed-2of3-disjunction",
+      "single_run_flag": false,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.12569899697985198,
+      "n_cells": 9
+    },
+    "refusal518__est_tf": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": 0.3491547248840322,
+      "median_cos_w_src": 0.3497877981198635,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 1,
+      "n_pass_src": 1,
+      "margin_excl_siblings": 0.08440072002556623,
+      "n_cells": 6
+    },
+    "refusal518__est_icl": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.8167324704946192,
+      "median_cos_w_src": -0.7293226964234769,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.14655533120262437,
+      "n_cells": 6
+    },
+    "refusal518__est_desc": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.5626248574438781,
+      "median_cos_w_src": -0.545836090903247,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.05494386398525172,
+      "n_cells": 6
+    },
+    "em518__est_tf": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": 0.8008195436127135,
+      "median_cos_w_src": 0.7654991738752931,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 1,
+      "n_pass_src": 1,
+      "margin_excl_siblings": 0.18595729006242345,
+      "n_cells": 6
+    },
+    "em518__est_icl": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.5638321003133313,
+      "median_cos_w_src": -0.47734094906049584,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.1378093912664502,
+      "n_cells": 6
+    },
+    "em518__est_desc": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.2015916980071025,
+      "median_cos_w_src": -0.2878913364973513,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.05304778316080024,
+      "n_cells": 6
+    },
+    "loc474__est_tf": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.2435736698942016,
+      "median_cos_w_src": -0.2330888438355714,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.05474710540841547,
+      "n_cells": 4
+    },
+    "loc474__est_icl": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.7576113925481278,
+      "median_cos_w_src": -0.673847487789452,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": -0.028630336392829026,
+      "n_cells": 4
+    },
+    "loc474__est_desc": {
+      "verdict": "INVALID",
+      "which_target_cleared": null,
+      "median_cos_w_shared": -0.7726477878253022,
+      "median_cos_w_src": -0.6946388140997197,
+      "n_seeds": 1,
+      "registered_n_seeds": 1,
+      "seed_criterion": "pooled-median (single-run family, registered)",
+      "single_run_flag": true,
+      "n_pass_shared": 0,
+      "n_pass_src": 0,
+      "margin_excl_siblings": 0.1014452721873696,
+      "n_cells": 4
+    }
+  },
+  "h1_ladder": {
+    "per_cell": {
+      "em518__assistant__s42": "violated",
+      "em518__comedian__s42": "violated",
+      "em518__kindergarten_teacher__s42": "violated",
+      "em518__qwen_default__s42": "holds",
+      "em518__software_engineer__s42": "violated",
+      "em518__villain__s42": "violated",
+      "em_turner__no_system__s137": "holds",
+      "em_turner__no_system__s256": "holds",
+      "em_turner__no_system__s42": "holds",
+      "fact541__courthouse_architecture_historian__s137": "violated",
+      "fact541__courthouse_architecture_historian__s256": "violated",
+      "fact541__courthouse_architecture_historian__s42": "violated",
+      "fact541__marine_biologist__s137": "violated",
+      "fact541__marine_biologist__s256": "violated",
+      "fact541__marine_biologist__s42": "violated",
+      "fact541__wooden_furniture_carpenter__s137": "violated",
+      "fact541__wooden_furniture_carpenter__s256": "violated",
+      "fact541__wooden_furniture_carpenter__s42": "violated",
+      "loc474__A1__s42": "no-ordering-signal",
+      "loc474__B1__s42": "no-ordering-signal",
+      "loc474__C1__s42": "no-ordering-signal",
+      "loc474__D1__s42": "no-ordering-signal",
+      "marker519__medical_doctor__s137": "violated",
+      "marker519__medical_doctor__s256": "violated",
+      "marker519__medical_doctor__s42": "violated",
+      "refusal518__assistant__s42": "violated",
+      "refusal518__comedian__s42": "violated",
+      "refusal518__kindergarten_teacher__s42": "violated",
+      "refusal518__qwen_default__s42": "violated",
+      "refusal518__software_engineer__s42": "violated",
+      "refusal518__villain__s42": "violated"
+    },
+    "n_eligible": 27,
+    "n_hold": 4,
+    "n_e3_ge_e1": 3,
+    "holds_frac_eligible": 0.14814814814814814,
+    "registered_denominator": 31
+  },
+  "anchor_521": {
+    "checked": false,
+    "skipped_reason": "anchor_521 band is registered at the L14 construction (#521 recipe) and the cached #551 tensors carry no l27 keys (18/18 cached payloads lack the key) \u2014 the production L14 anchor PASSed in agreement/headline_metrics.json; not a kill criterion for the exploratory re-read"
+  },
+  "cross_estimator": {
+    "pairwise_within_unit": {
+      "refusal518__assistant": {
+        "est_tf__vs__est_icl": -0.4458975593934883,
+        "est_tf__vs__est_desc": 0.0974317841759121,
+        "est_icl__vs__est_desc": 0.5596936152842542
+      },
+      "em518__comedian": {
+        "est_tf__vs__est_icl": 0.03550442164569934,
+        "est_tf__vs__est_desc": -0.368681761823424,
+        "est_icl__vs__est_desc": -0.3613954094397459
+      },
+      "refusal518__villain": {
+        "est_tf__vs__est_icl": -0.17424323604409353,
+        "est_tf__vs__est_desc": 0.2570715830965662,
+        "est_icl__vs__est_desc": 0.4920736555903156
+      },
+      "loc474__D1": {
+        "est_tf__vs__est_icl": 0.20867138455806694,
+        "est_tf__vs__est_desc": 0.22081889530309057,
+        "est_icl__vs__est_desc": 0.7841460352578433
+      },
+      "fact541__marine_biologist": {
+        "est_tf__vs__est_icl": -0.12549660239438712,
+        "est_tf__vs__est_desc": 0.16337647692617302,
+        "est_icl__vs__est_desc": 0.20584725624571587
+      },
+      "fact541__courthouse_architecture_historian": {
+        "est_tf__vs__est_icl": -0.11771838772415226,
+        "est_tf__vs__est_desc": 0.1644691956678716,
+        "est_icl__vs__est_desc": 0.8477552189297946
+      },
+      "loc474__A1": {
+        "est_tf__vs__est_icl": 0.33588453989683215,
+        "est_tf__vs__est_desc": 0.10513973442407278,
+        "est_icl__vs__est_desc": 0.6460977675022606
+      },
+      "em518__assistant": {
+        "est_tf__vs__est_icl": -0.665614135476223,
+        "est_tf__vs__est_desc": 0.4070518814776384,
+        "est_icl__vs__est_desc": -0.4848686124066049
+      },
+      "em518__villain": {
+        "est_tf__vs__est_icl": -0.32295936505118644,
+        "est_tf__vs__est_desc": 0.21695442843538096,
+        "est_icl__vs__est_desc": -0.20789730524991534
+      },
+      "fact541__wooden_furniture_carpenter": {
+        "est_tf__vs__est_icl": -0.03943322368176859,
+        "est_tf__vs__est_desc": 0.11560836001168497,
+        "est_icl__vs__est_desc": 0.5908651202294911
+      },
+      "refusal518__qwen_default": {
+        "est_tf__vs__est_icl": -0.4569994945986733,
+        "est_tf__vs__est_desc": -0.029489468135457126,
+        "est_icl__vs__est_desc": 0.7017212983191646
+      },
+      "refusal518__software_engineer": {
+        "est_tf__vs__est_icl": -0.4327607836498035,
+        "est_tf__vs__est_desc": 0.213036194450672,
+        "est_icl__vs__est_desc": 0.5763199744058112
+      },
+      "marker519__medical_doctor": {
+        "est_tf__vs__est_icl": -0.16391559190343932,
+        "est_tf__vs__est_desc": -0.43935225955444607,
+        "est_icl__vs__est_desc": 0.7087758222506677
+      },
+      "refusal518__comedian": {
+        "est_tf__vs__est_icl": -0.23008566397312843,
+        "est_tf__vs__est_desc": -0.09844626526702033,
+        "est_icl__vs__est_desc": 0.3257037878719205
+      },
+      "refusal518__kindergarten_teacher": {
+        "est_tf__vs__est_icl": -0.40702657040199175,
+        "est_tf__vs__est_desc": 0.013827629907444685,
+        "est_icl__vs__est_desc": 0.4461112462530671
+      },
+      "loc474__C1": {
+        "est_tf__vs__est_icl": 0.23986123577799712,
+        "est_tf__vs__est_desc": 0.2625451378013945,
+        "est_icl__vs__est_desc": 0.857564245118069
+      },
+      "em518__qwen_default": {
+        "est_tf__vs__est_icl": -0.7894021288076111,
+        "est_tf__vs__est_desc": -0.7917080124121729,
+        "est_icl__vs__est_desc": 0.9579619651803192
+      },
+      "em_turner__no_system": {
+        "est_tf__vs__est_icl": -0.7760847983069471,
+        "est_tf__vs__est_desc": -0.8093261907942325,
+        "est_icl__vs__est_desc": 0.9136569383602824
+      },
+      "loc474__B1": {
+        "est_tf__vs__est_icl": 0.11546293545301965,
+        "est_tf__vs__est_desc": 0.11567844599028763,
+        "est_icl__vs__est_desc": 0.8404323552011288
+      },
+      "em518__software_engineer": {
+        "est_tf__vs__est_icl": -0.7873455812887195,
+        "est_tf__vs__est_desc": -0.04653790987147425,
+        "est_icl__vs__est_desc": -0.019188392607010368
+      },
+      "em518__kindergarten_teacher": {
+        "est_tf__vs__est_icl": -0.5678630497839064,
+        "est_tf__vs__est_desc": -0.16159054959756974,
+        "est_icl__vs__est_desc": -0.3042981653528912
+      }
+    },
+    "same_estimator_cross_family": {
+      "est_tf": {
+        "em518__assistant|em_turner__no_system": 0.9909797610098434,
+        "em518__assistant|fact541__courthouse_architecture_historian": 0.16227688415040983,
+        "em518__assistant|fact541__marine_biologist": 0.2506771845592809,
+        "em518__assistant|fact541__wooden_furniture_carpenter": 0.06571404691321488,
+        "em518__assistant|loc474__A1": -0.23843671531271463,
+        "em518__assistant|loc474__B1": -0.13648421235787966,
+        "em518__assistant|loc474__C1": -0.2689092367897399,
+        "em518__assistant|loc474__D1": -0.2382650617377917,
+        "em518__assistant|marker519__medical_doctor": 0.322508464280336,
+        "em518__assistant|refusal518__assistant": 0.4929256628522066,
+        "em518__assistant|refusal518__comedian": 0.4331280764721979,
+        "em518__assistant|refusal518__kindergarten_teacher": 0.4135180350587801,
+        "em518__assistant|refusal518__qwen_default": 0.4760221025168481,
+        "em518__assistant|refusal518__software_engineer": 0.3526874835086132,
+        "em518__assistant|refusal518__villain": 0.15058802942059407,
+        "em518__comedian|em_turner__no_system": 0.7607538701940558,
+        "em518__comedian|fact541__courthouse_architecture_historian": 0.0393065868458764,
+        "em518__comedian|fact541__marine_biologist": 0.07760049483916172,
+        "em518__comedian|fact541__wooden_furniture_carpenter": -0.04340870585230748,
+        "em518__comedian|loc474__A1": -0.18854839785288507,
+        "em518__comedian|loc474__B1": -0.1127402734084226,
+        "em518__comedian|loc474__C1": -0.18263141789873896,
+        "em518__comedian|loc474__D1": -0.14622870581978667,
+        "em518__comedian|marker519__medical_doctor": 0.21894715771532935,
+        "em518__comedian|refusal518__assistant": 0.34449892090908535,
+        "em518__comedian|refusal518__comedian": 0.4633881770282612,
+        "em518__comedian|refusal518__kindergarten_teacher": 0.3251054647434634,
+        "em518__comedian|refusal518__qwen_default": 0.33016465187375393,
+        "em518__comedian|refusal518__software_engineer": 0.23890708505877614,
+        "em518__comedian|refusal518__villain": 0.09284352432344374,
+        "em518__kindergarten_teacher|em_turner__no_system": 0.9917654779952992,
+        "em518__kindergarten_teacher|fact541__courthouse_architecture_historian": 0.11736479057020885,
+        "em518__kindergarten_teacher|fact541__marine_biologist": 0.2158703727333783,
+        "em518__kindergarten_teacher|fact541__wooden_furniture_carpenter": 0.030409605159019245,
+        "em518__kindergarten_teacher|loc474__A1": -0.2446627570555732,
+        "em518__kindergarten_teacher|loc474__B1": -0.13968522145804088,
+        "em518__kindergarten_teacher|loc474__C1": -0.26705623988997496,
+        "em518__kindergarten_teacher|loc474__D1": -0.22488770213029013,
+        "em518__kindergarten_teacher|marker519__medical_doctor": 0.27148321622204274,
+        "em518__kindergarten_teacher|refusal518__assistant": 0.4670420493389002,
+        "em518__kindergarten_teacher|refusal518__comedian": 0.42450119446229656,
+        "em518__kindergarten_teacher|refusal518__kindergarten_teacher": 0.38871065463998056,
+        "em518__kindergarten_teacher|refusal518__qwen_default": 0.4486262427409605,
+        "em518__kindergarten_teacher|refusal518__software_engineer": 0.3337971316450263,
+        "em518__kindergarten_teacher|refusal518__villain": 0.12395846203196702,
+        "em518__qwen_default|em_turner__no_system": 0.9944691844748268,
+        "em518__qwen_default|fact541__courthouse_architecture_historian": 0.15547620139773743,
+        "em518__qwen_default|fact541__marine_biologist": 0.2578490682293557,
+        "em518__qwen_default|fact541__wooden_furniture_carpenter": 0.07484063612973733,
+        "em518__qwen_default|loc474__A1": -0.22389159945437487,
+        "em518__qwen_default|loc474__B1": -0.1424818740417546,
+        "em518__qwen_default|loc474__C1": -0.26529739782807277,
+        "em518__qwen_default|loc474__D1": -0.24365790457876366,
+        "em518__qwen_default|marker519__medical_doctor": 0.30311094786883774,
+        "em518__qwen_default|refusal518__assistant": 0.46453767956975855,
+        "em518__qwen_default|refusal518__comedian": 0.4152416672309936,
+        "em518__qwen_default|refusal518__kindergarten_teacher": 0.3732408480046996,
+        "em518__qwen_default|refusal518__qwen_default": 0.45020996302499006,
+        "em518__qwen_default|refusal518__software_engineer": 0.3172259094776465,
+        "em518__qwen_default|refusal518__villain": 0.1253629375568799,
+        "em518__software_engineer|em_turner__no_system": 0.9934164256267999,
+        "em518__software_engineer|fact541__courthouse_architecture_historian": 0.10271185460900707,
+        "em518__software_engineer|fact541__marine_biologist": 0.2154794383171486,
+        "em518__software_engineer|fact541__wooden_furniture_carpenter": 0.01522496635196057,
+        "em518__software_engineer|loc474__A1": -0.26182271650094624,
+        "em518__software_engineer|loc474__B1": -0.1415444149927997,
+        "em518__software_engineer|loc474__C1": -0.2575793094404179,
+        "em518__software_engineer|loc474__D1": -0.2250850760765223,
+        "em518__software_engineer|marker519__medical_doctor": 0.2404452393481029,
+        "em518__software_engineer|refusal518__assistant": 0.48683257752284753,
+        "em518__software_engineer|refusal518__comedian": 0.42445299724378033,
+        "em518__software_engineer|refusal518__kindergarten_teacher": 0.4171414126904056,
+        "em518__software_engineer|refusal518__qwen_default": 0.47046588173776915,
+        "em518__software_engineer|refusal518__software_engineer": 0.36294974623038523,
+        "em518__software_engineer|refusal518__villain": 0.1588929523106222,
+        "em518__villain|em_turner__no_system": 0.930128007354312,
+        "em518__villain|fact541__courthouse_architecture_historian": 0.14447821938446567,
+        "em518__villain|fact541__marine_biologist": 0.2420925175760487,
+        "em518__villain|fact541__wooden_furniture_carpenter": 0.07767068750223366,
+        "em518__villain|loc474__A1": -0.15392999081939343,
+        "em518__villain|loc474__B1": -0.18658925128713133,
+        "em518__villain|loc474__C1": -0.2751128011653648,
+        "em518__villain|loc474__D1": -0.2594631416532892,
+        "em518__villain|marker519__medical_doctor": 0.37131696949967985,
+        "em518__villain|refusal518__assistant": 0.34651862279822043,
+        "em518__villain|refusal518__comedian": 0.3166269722694731,
+        "em518__villain|refusal518__kindergarten_teacher": 0.27042046552161875,
+        "em518__villain|refusal518__qwen_default": 0.3292856596963485,
+        "em518__villain|refusal518__software_engineer": 0.2220060024180863,
+        "em518__villain|refusal518__villain": 0.032833949818272756,
+        "em_turner__no_system|fact541__courthouse_architecture_historian": 0.13342046684162534,
+        "em_turner__no_system|fact541__marine_biologist": 0.24038273671360819,
+        "em_turner__no_system|fact541__wooden_furniture_carpenter": 0.048095069199630254,
+        "em_turner__no_system|loc474__A1": -0.24311694584750923,
+        "em_turner__no_system|loc474__B1": -0.14103508458896724,
+        "em_turner__no_system|loc474__C1": -0.2613295756343668,
+        "em_turner__no_system|loc474__D1": -0.23033780338288656,
+        "em_turner__no_system|marker519__medical_doctor": 0.27706028032935104,
+        "em_turner__no_system|refusal518__assistant": 0.4788230432713412,
+        "em_turner__no_system|refusal518__comedian": 0.42626892252388454,
+        "em_turner__no_system|refusal518__kindergarten_teacher": 0.399031666295302,
+        "em_turner__no_system|refusal518__qwen_default": 0.46357488907312205,
+        "em_turner__no_system|refusal518__software_engineer": 0.3424339026858036,
+        "em_turner__no_system|refusal518__villain": 0.13888604901441917,
+        "fact541__courthouse_architecture_historian|loc474__A1": -0.014344408230514185,
+        "fact541__courthouse_architecture_historian|loc474__B1": -0.10420199295286878,
+        "fact541__courthouse_architecture_historian|loc474__C1": -0.13427674184078145,
+        "fact541__courthouse_architecture_historian|loc474__D1": -0.16376541423623261,
+        "fact541__courthouse_architecture_historian|marker519__medical_doctor": 0.19999180123820584,
+        "fact541__courthouse_architecture_historian|refusal518__assistant": 0.16403248416733687,
+        "fact541__courthouse_architecture_historian|refusal518__comedian": 0.11163118346650719,
+        "fact541__courthouse_architecture_historian|refusal518__kindergarten_teacher": 0.06413331632833504,
+        "fact541__courthouse_architecture_historian|refusal518__qwen_default": 0.16840662654318128,
+        "fact541__courthouse_architecture_historian|refusal518__software_engineer": 0.026926260177072062,
+        "fact541__courthouse_architecture_historian|refusal518__villain": 0.061503865987252944,
+        "fact541__marine_biologist|loc474__A1": -0.024775312779868813,
+        "fact541__marine_biologist|loc474__B1": -0.11436550903358357,
+        "fact541__marine_biologist|loc474__C1": -0.14771024362315371,
+        "fact541__marine_biologist|loc474__D1": -0.15042499346634974,
+        "fact541__marine_biologist|marker519__medical_doctor": 0.17077376156144977,
+        "fact541__marine_biologist|refusal518__assistant": 0.19788329472153743,
+        "fact541__marine_biologist|refusal518__comedian": 0.12423905621943894,
+        "fact541__marine_biologist|refusal518__kindergarten_teacher": 0.07516946260891863,
+        "fact541__marine_biologist|refusal518__qwen_default": 0.20021537348844118,
+        "fact541__marine_biologist|refusal518__software_engineer": 0.04126191322249051,
+        "fact541__marine_biologist|refusal518__villain": 0.06934462800205575,
+        "fact541__wooden_furniture_carpenter|loc474__A1": 0.04177624060347948,
+        "fact541__wooden_furniture_carpenter|loc474__B1": -0.10852774841059568,
+        "fact541__wooden_furniture_carpenter|loc474__C1": -0.13314670395415745,
+        "fact541__wooden_furniture_carpenter|loc474__D1": -0.1526496233574147,
+        "fact541__wooden_furniture_carpenter|marker519__medical_doctor": 0.15969985841100104,
+        "fact541__wooden_furniture_carpenter|refusal518__assistant": 0.06067862690302105,
+        "fact541__wooden_furniture_carpenter|refusal518__comedian": 0.02759801675282412,
+        "fact541__wooden_furniture_carpenter|refusal518__kindergarten_teacher": -0.036467361020545416,
+        "fact541__wooden_furniture_carpenter|refusal518__qwen_default": 0.06836664532013885,
+        "fact541__wooden_furniture_carpenter|refusal518__software_engineer": -0.06503507610728364,
+        "fact541__wooden_furniture_carpenter|refusal518__villain": -0.0034522573511034417,
+        "loc474__A1|marker519__medical_doctor": 0.133303762777815,
+        "loc474__A1|refusal518__assistant": -0.19383756460844823,
+        "loc474__A1|refusal518__comedian": -0.1785561291979928,
+        "loc474__A1|refusal518__kindergarten_teacher": -0.210402991380041,
+        "loc474__A1|refusal518__qwen_default": -0.19387369615428998,
+        "loc474__A1|refusal518__software_engineer": -0.19768357885013846,
+        "loc474__A1|refusal518__villain": -0.11842812512238689,
+        "loc474__B1|marker519__medical_doctor": -0.07833471148735612,
+        "loc474__B1|refusal518__assistant": 0.032048397113038904,
+        "loc474__B1|refusal518__comedian": 0.048105310592584195,
+        "loc474__B1|refusal518__kindergarten_teacher": -0.012308791298626926,
+        "loc474__B1|refusal518__qwen_default": 0.00459068196520292,
+        "loc474__B1|refusal518__software_engineer": 0.040067870679875,
+        "loc474__B1|refusal518__villain": 0.030307899205728326,
+        "loc474__C1|marker519__medical_doctor": -0.14961596964226365,
+        "loc474__C1|refusal518__assistant": -0.06477615628624063,
+        "loc474__C1|refusal518__comedian": -0.038935607759113526,
+        "loc474__C1|refusal518__kindergarten_teacher": -0.06501641242599551,
+        "loc474__C1|refusal518__qwen_default": -0.06846579641218235,
+        "loc474__C1|refusal518__software_engineer": 0.019226421786244553,
+        "loc474__C1|refusal518__villain": -0.044387826222594046,
+        "loc474__D1|marker519__medical_doctor": -0.22206005035467533,
+        "loc474__D1|refusal518__assistant": -0.0576848464183585,
+        "loc474__D1|refusal518__comedian": -0.04728456074083693,
+        "loc474__D1|refusal518__kindergarten_teacher": -0.06698830181758868,
+        "loc474__D1|refusal518__qwen_default": -0.06109576342046853,
+        "loc474__D1|refusal518__software_engineer": -0.022397548330235,
+        "loc474__D1|refusal518__villain": -0.04130788081871675,
+        "marker519__medical_doctor|refusal518__assistant": 0.16981326594476348,
+        "marker519__medical_doctor|refusal518__comedian": 0.13197703550286613,
+        "marker519__medical_doctor|refusal518__kindergarten_teacher": 0.12672568240615564,
+        "marker519__medical_doctor|refusal518__qwen_default": 0.16785013049860206,
+        "marker519__medical_doctor|refusal518__software_engineer": 0.11490850673551437,
+        "marker519__medical_doctor|refusal518__villain": 0.046488332183711956
+      },
+      "est_icl": {
+        "em518__assistant|em_turner__no_system": 0.9247403037723271,
+        "em518__assistant|fact541__courthouse_architecture_historian": 0.7458308906871122,
+        "em518__assistant|fact541__marine_biologist": 0.7459729497820783,
+        "em518__assistant|fact541__wooden_furniture_carpenter": 0.7192183818136362,
+        "em518__assistant|loc474__A1": 0.9371944522255459,
+        "em518__assistant|loc474__B1": 0.8893078885097954,
+        "em518__assistant|loc474__C1": 0.8773356947184228,
+        "em518__assistant|loc474__D1": 0.909763746879734,
+        "em518__assistant|marker519__medical_doctor": 0.8852160979530065,
+        "em518__assistant|refusal518__assistant": 0.7165125935531375,
+        "em518__assistant|refusal518__comedian": 0.504629462835508,
+        "em518__assistant|refusal518__kindergarten_teacher": 0.6307957188420527,
+        "em518__assistant|refusal518__qwen_default": 0.7391339859063719,
+        "em518__assistant|refusal518__software_engineer": 0.6952327259889869,
+        "em518__assistant|refusal518__villain": 0.6678403036739505,
+        "em518__comedian|em_turner__no_system": 0.46817298275618713,
+        "em518__comedian|fact541__courthouse_architecture_historian": 0.4806894496170636,
+        "em518__comedian|fact541__marine_biologist": 0.4559945596247304,
+        "em518__comedian|fact541__wooden_furniture_carpenter": 0.5224750491395836,
+        "em518__comedian|loc474__A1": 0.5232439138942141,
+        "em518__comedian|loc474__B1": 0.5074215211984064,
+        "em518__comedian|loc474__C1": 0.509448656414883,
+        "em518__comedian|loc474__D1": 0.5044895962240402,
+        "em518__comedian|marker519__medical_doctor": 0.49024525169227684,
+        "em518__comedian|refusal518__assistant": 0.43414359715717243,
+        "em518__comedian|refusal518__comedian": 0.9304981621109251,
+        "em518__comedian|refusal518__kindergarten_teacher": 0.7050894699116715,
+        "em518__comedian|refusal518__qwen_default": 0.43524799829103067,
+        "em518__comedian|refusal518__software_engineer": 0.44812999853908453,
+        "em518__comedian|refusal518__villain": 0.5990776705644115,
+        "em518__kindergarten_teacher|em_turner__no_system": 0.7341723902749514,
+        "em518__kindergarten_teacher|fact541__courthouse_architecture_historian": 0.6721986764202255,
+        "em518__kindergarten_teacher|fact541__marine_biologist": 0.658876134958234,
+        "em518__kindergarten_teacher|fact541__wooden_furniture_carpenter": 0.7100817395434038,
+        "em518__kindergarten_teacher|loc474__A1": 0.7648510298491882,
+        "em518__kindergarten_teacher|loc474__B1": 0.7529897433816528,
+        "em518__kindergarten_teacher|loc474__C1": 0.7501514402576973,
+        "em518__kindergarten_teacher|loc474__D1": 0.7539328780115543,
+        "em518__kindergarten_teacher|marker519__medical_doctor": 0.7295450780604049,
+        "em518__kindergarten_teacher|refusal518__assistant": 0.6223952322655705,
+        "em518__kindergarten_teacher|refusal518__comedian": 0.7045715739978269,
+        "em518__kindergarten_teacher|refusal518__kindergarten_teacher": 0.9334222717471538,
+        "em518__kindergarten_teacher|refusal518__qwen_default": 0.6537328101460538,
+        "em518__kindergarten_teacher|refusal518__software_engineer": 0.6270609437222366,
+        "em518__kindergarten_teacher|refusal518__villain": 0.5602707075642296,
+        "em518__qwen_default|em_turner__no_system": 0.9791239623507987,
+        "em518__qwen_default|fact541__courthouse_architecture_historian": 0.9148593166602229,
+        "em518__qwen_default|fact541__marine_biologist": 0.9226011566773057,
+        "em518__qwen_default|fact541__wooden_furniture_carpenter": 0.940340271791785,
+        "em518__qwen_default|loc474__A1": 0.9564950926680483,
+        "em518__qwen_default|loc474__B1": 0.9857570597761153,
+        "em518__qwen_default|loc474__C1": 0.989259589573562,
+        "em518__qwen_default|loc474__D1": 0.9767220949876929,
+        "em518__qwen_default|marker519__medical_doctor": 0.9389169816943916,
+        "em518__qwen_default|refusal518__assistant": 0.9229538218749452,
+        "em518__qwen_default|refusal518__comedian": 0.6303933290113319,
+        "em518__qwen_default|refusal518__kindergarten_teacher": 0.7988653918952043,
+        "em518__qwen_default|refusal518__qwen_default": 0.9629644720321598,
+        "em518__qwen_default|refusal518__software_engineer": 0.933966999583599,
+        "em518__qwen_default|refusal518__villain": 0.7596041485724125,
+        "em518__software_engineer|em_turner__no_system": 0.9686614303701879,
+        "em518__software_engineer|fact541__courthouse_architecture_historian": 0.8625823422192425,
+        "em518__software_engineer|fact541__marine_biologist": 0.8794548713673724,
+        "em518__software_engineer|fact541__wooden_furniture_carpenter": 0.8760672775660525,
+        "em518__software_engineer|loc474__A1": 0.9431250982632708,
+        "em518__software_engineer|loc474__B1": 0.9581772486133341,
+        "em518__software_engineer|loc474__C1": 0.9535028022193683,
+        "em518__software_engineer|loc474__D1": 0.9628472299358216,
+        "em518__software_engineer|marker519__medical_doctor": 0.9443020910423007,
+        "em518__software_engineer|refusal518__assistant": 0.8134374813945907,
+        "em518__software_engineer|refusal518__comedian": 0.5871811764466924,
+        "em518__software_engineer|refusal518__kindergarten_teacher": 0.7262669184864016,
+        "em518__software_engineer|refusal518__qwen_default": 0.8708628569701421,
+        "em518__software_engineer|refusal518__software_engineer": 0.8790874999347843,
+        "em518__software_engineer|refusal518__villain": 0.7481629297283939,
+        "em518__villain|em_turner__no_system": 0.7238728440906426,
+        "em518__villain|fact541__courthouse_architecture_historian": 0.6696518890481387,
+        "em518__villain|fact541__marine_biologist": 0.6239624399266004,
+        "em518__villain|fact541__wooden_furniture_carpenter": 0.6053895134904528,
+        "em518__villain|loc474__A1": 0.7171362156523131,
+        "em518__villain|loc474__B1": 0.7087010964849193,
+        "em518__villain|loc474__C1": 0.6991854303523546,
+        "em518__villain|loc474__D1": 0.7263999053255542,
+        "em518__villain|marker519__medical_doctor": 0.7176816016489436,
+        "em518__villain|refusal518__assistant": 0.5294557153970078,
+        "em518__villain|refusal518__comedian": 0.611317191625295,
+        "em518__villain|refusal518__kindergarten_teacher": 0.499152217050301,
+        "em518__villain|refusal518__qwen_default": 0.5710359843047811,
+        "em518__villain|refusal518__software_engineer": 0.5585421646329164,
+        "em518__villain|refusal518__villain": 0.9496924096219299,
+        "em_turner__no_system|fact541__courthouse_architecture_historian": 0.8944138934254141,
+        "em_turner__no_system|fact541__marine_biologist": 0.8920908906375044,
+        "em_turner__no_system|fact541__wooden_furniture_carpenter": 0.8889989206049945,
+        "em_turner__no_system|loc474__A1": 0.9742611198674571,
+        "em_turner__no_system|loc474__B1": 0.986198013131656,
+        "em_turner__no_system|loc474__C1": 0.9817278869582805,
+        "em_turner__no_system|loc474__D1": 0.9903821311656062,
+        "em_turner__no_system|marker519__medical_doctor": 0.9624370544231984,
+        "em_turner__no_system|refusal518__assistant": 0.8467681436919906,
+        "em_turner__no_system|refusal518__comedian": 0.5893105241687493,
+        "em_turner__no_system|refusal518__kindergarten_teacher": 0.7531301114826529,
+        "em_turner__no_system|refusal518__qwen_default": 0.8998816144231139,
+        "em_turner__no_system|refusal518__software_engineer": 0.8645182035868723,
+        "em_turner__no_system|refusal518__villain": 0.7522527663563842,
+        "fact541__courthouse_architecture_historian|loc474__A1": 0.8642620488891228,
+        "fact541__courthouse_architecture_historian|loc474__B1": 0.902663543618402,
+        "fact541__courthouse_architecture_historian|loc474__C1": 0.9051732044192659,
+        "fact541__courthouse_architecture_historian|loc474__D1": 0.8957400779913044,
+        "fact541__courthouse_architecture_historian|marker519__medical_doctor": 0.8755327465889118,
+        "fact541__courthouse_architecture_historian|refusal518__assistant": 0.8442925730945461,
+        "fact541__courthouse_architecture_historian|refusal518__comedian": 0.6382994659510909,
+        "fact541__courthouse_architecture_historian|refusal518__kindergarten_teacher": 0.7562985029452665,
+        "fact541__courthouse_architecture_historian|refusal518__qwen_default": 0.8841995949818026,
+        "fact541__courthouse_architecture_historian|refusal518__software_engineer": 0.859961410583197,
+        "fact541__courthouse_architecture_historian|refusal518__villain": 0.751492343148529,
+        "fact541__marine_biologist|loc474__A1": 0.874769375087271,
+        "fact541__marine_biologist|loc474__B1": 0.909779648077493,
+        "fact541__marine_biologist|loc474__C1": 0.9146242398252881,
+        "fact541__marine_biologist|loc474__D1": 0.899866187568377,
+        "fact541__marine_biologist|marker519__medical_doctor": 0.8751623206128689,
+        "fact541__marine_biologist|refusal518__assistant": 0.8836320604334796,
+        "fact541__marine_biologist|refusal518__comedian": 0.6311131364178426,
+        "fact541__marine_biologist|refusal518__kindergarten_teacher": 0.76587023061772,
+        "fact541__marine_biologist|refusal518__qwen_default": 0.915069945165372,
+        "fact541__marine_biologist|refusal518__software_engineer": 0.9042033430088875,
+        "fact541__marine_biologist|refusal518__villain": 0.7306808717848243,
+        "fact541__wooden_furniture_carpenter|loc474__A1": 0.8721913501476027,
+        "fact541__wooden_furniture_carpenter|loc474__B1": 0.9191236273620531,
+        "fact541__wooden_furniture_carpenter|loc474__C1": 0.9285097849408902,
+        "fact541__wooden_furniture_carpenter|loc474__D1": 0.8997064345874729,
+        "fact541__wooden_furniture_carpenter|marker519__medical_doctor": 0.8709301129293532,
+        "fact541__wooden_furniture_carpenter|refusal518__assistant": 0.923482026010678,
+        "fact541__wooden_furniture_carpenter|refusal518__comedian": 0.7002032476694824,
+        "fact541__wooden_furniture_carpenter|refusal518__kindergarten_teacher": 0.842032002207947,
+        "fact541__wooden_furniture_carpenter|refusal518__qwen_default": 0.9507948127940341,
+        "fact541__wooden_furniture_carpenter|refusal518__software_engineer": 0.9485355937952902,
+        "fact541__wooden_furniture_carpenter|refusal518__villain": 0.742046956507053,
+        "loc474__A1|marker519__medical_doctor": 0.9479173427943117,
+        "loc474__A1|refusal518__assistant": 0.8572614660788106,
+        "loc474__A1|refusal518__comedian": 0.6280943230420765,
+        "loc474__A1|refusal518__kindergarten_teacher": 0.7826757751728615,
+        "loc474__A1|refusal518__qwen_default": 0.8854142473203986,
+        "loc474__A1|refusal518__software_engineer": 0.8515320404501815,
+        "loc474__A1|refusal518__villain": 0.7495653987888824,
+        "loc474__B1|marker519__medical_doctor": 0.959873786782692,
+        "loc474__B1|refusal518__assistant": 0.8859242606980543,
+        "loc474__B1|refusal518__comedian": 0.6405463919173564,
+        "loc474__B1|refusal518__kindergarten_teacher": 0.8026791335877358,
+        "loc474__B1|refusal518__qwen_default": 0.9319218089067792,
+        "loc474__B1|refusal518__software_engineer": 0.9033535046956382,
+        "loc474__B1|refusal518__villain": 0.7675488176108999,
+        "loc474__C1|marker519__medical_doctor": 0.9537070963676761,
+        "loc474__C1|refusal518__assistant": 0.9018204502400633,
+        "loc474__C1|refusal518__comedian": 0.6508932816220289,
+        "loc474__C1|refusal518__kindergarten_teacher": 0.8125255943215114,
+        "loc474__C1|refusal518__qwen_default": 0.9447997248574729,
+        "loc474__C1|refusal518__software_engineer": 0.9174384267938595,
+        "loc474__C1|refusal518__villain": 0.7699127996959976,
+        "loc474__D1|marker519__medical_doctor": 0.9684819867967692,
+        "loc474__D1|refusal518__assistant": 0.8565255315161384,
+        "loc474__D1|refusal518__comedian": 0.6240468473822638,
+        "loc474__D1|refusal518__kindergarten_teacher": 0.7806510281739574,
+        "loc474__D1|refusal518__qwen_default": 0.906351830472666,
+        "loc474__D1|refusal518__software_engineer": 0.8756643918496235,
+        "loc474__D1|refusal518__villain": 0.764189675664492,
+        "marker519__medical_doctor|refusal518__assistant": 0.7968398493984069,
+        "marker519__medical_doctor|refusal518__comedian": 0.595275993427744,
+        "marker519__medical_doctor|refusal518__kindergarten_teacher": 0.7365695344670271,
+        "marker519__medical_doctor|refusal518__qwen_default": 0.8533028439919562,
+        "marker519__medical_doctor|refusal518__software_engineer": 0.8315217526332369,
+        "marker519__medical_doctor|refusal518__villain": 0.7362200141140018
+      },
+      "est_desc": {
+        "em518__assistant|em_turner__no_system": -0.3439158276172004,
+        "em518__assistant|fact541__courthouse_architecture_historian": -0.31290886586536104,
+        "em518__assistant|fact541__marine_biologist": 0.22834798770600698,
+        "em518__assistant|fact541__wooden_furniture_carpenter": -0.17362310186958002,
+        "em518__assistant|loc474__A1": -0.20930706045109296,
+        "em518__assistant|loc474__B1": -0.35624639433890776,
+        "em518__assistant|loc474__C1": -0.35624639433890776,
+        "em518__assistant|loc474__D1": -0.33180408795846933,
+        "em518__assistant|marker519__medical_doctor": -0.2987786052231262,
+        "em518__assistant|refusal518__assistant": 0.1816683381041671,
+        "em518__assistant|refusal518__comedian": -0.1197188655603461,
+        "em518__assistant|refusal518__kindergarten_teacher": -0.05272935803547703,
+        "em518__assistant|refusal518__qwen_default": -0.009364148739081202,
+        "em518__assistant|refusal518__software_engineer": 0.0881356682705841,
+        "em518__assistant|refusal518__villain": -0.14653592095353277,
+        "em518__comedian|em_turner__no_system": 0.3137015037711529,
+        "em518__comedian|fact541__courthouse_architecture_historian": 0.30061012102699936,
+        "em518__comedian|fact541__marine_biologist": -0.006654876655626835,
+        "em518__comedian|fact541__wooden_furniture_carpenter": 0.050475638904766806,
+        "em518__comedian|loc474__A1": 0.16237028204152962,
+        "em518__comedian|loc474__B1": 0.20282785378931922,
+        "em518__comedian|loc474__C1": 0.20282785378931922,
+        "em518__comedian|loc474__D1": 0.18983060123487286,
+        "em518__comedian|marker519__medical_doctor": 0.19980555259104557,
+        "em518__comedian|refusal518__assistant": 0.17712862106435193,
+        "em518__comedian|refusal518__comedian": 0.4737086690809743,
+        "em518__comedian|refusal518__kindergarten_teacher": 0.20469615616493586,
+        "em518__comedian|refusal518__qwen_default": 0.20488394211319258,
+        "em518__comedian|refusal518__software_engineer": 0.1808379613068448,
+        "em518__comedian|refusal518__villain": 0.016975445541528238,
+        "em518__kindergarten_teacher|em_turner__no_system": 0.33026282483977615,
+        "em518__kindergarten_teacher|fact541__courthouse_architecture_historian": 0.2875208410807339,
+        "em518__kindergarten_teacher|fact541__marine_biologist": 0.04957483130475049,
+        "em518__kindergarten_teacher|fact541__wooden_furniture_carpenter": 0.031036982101073435,
+        "em518__kindergarten_teacher|loc474__A1": 0.24137671437639577,
+        "em518__kindergarten_teacher|loc474__B1": 0.2537953182940746,
+        "em518__kindergarten_teacher|loc474__C1": 0.2537953182940746,
+        "em518__kindergarten_teacher|loc474__D1": 0.23346831067248486,
+        "em518__kindergarten_teacher|marker519__medical_doctor": 0.24595124869904228,
+        "em518__kindergarten_teacher|refusal518__assistant": 0.3828835791235958,
+        "em518__kindergarten_teacher|refusal518__comedian": 0.34144840201691756,
+        "em518__kindergarten_teacher|refusal518__kindergarten_teacher": 0.3919013207395554,
+        "em518__kindergarten_teacher|refusal518__qwen_default": 0.3744423155514636,
+        "em518__kindergarten_teacher|refusal518__software_engineer": 0.3648176066067918,
+        "em518__kindergarten_teacher|refusal518__villain": 0.14833986378227237,
+        "em518__qwen_default|em_turner__no_system": 1.0,
+        "em518__qwen_default|fact541__courthouse_architecture_historian": 0.7450852344820992,
+        "em518__qwen_default|fact541__marine_biologist": 0.02764027168008846,
+        "em518__qwen_default|fact541__wooden_furniture_carpenter": 0.5117760094800701,
+        "em518__qwen_default|loc474__A1": 0.8227564449915488,
+        "em518__qwen_default|loc474__B1": 0.9168866199926915,
+        "em518__qwen_default|loc474__C1": 0.9168866199926915,
+        "em518__qwen_default|loc474__D1": 0.9028643325956143,
+        "em518__qwen_default|marker519__medical_doctor": 0.8516849731367871,
+        "em518__qwen_default|refusal518__assistant": 0.5201762337917031,
+        "em518__qwen_default|refusal518__comedian": 0.7193699786907916,
+        "em518__qwen_default|refusal518__kindergarten_teacher": 0.6867199636786628,
+        "em518__qwen_default|refusal518__qwen_default": 0.6969446104320811,
+        "em518__qwen_default|refusal518__software_engineer": 0.5847183107463324,
+        "em518__qwen_default|refusal518__villain": 0.5296663283486664,
+        "em518__software_engineer|em_turner__no_system": 0.20305837468487611,
+        "em518__software_engineer|fact541__courthouse_architecture_historian": 0.09579331774770623,
+        "em518__software_engineer|fact541__marine_biologist": 0.34633018012534816,
+        "em518__software_engineer|fact541__wooden_furniture_carpenter": 0.2725472277633229,
+        "em518__software_engineer|loc474__A1": 0.34331184961954864,
+        "em518__software_engineer|loc474__B1": 0.22728158464072762,
+        "em518__software_engineer|loc474__C1": 0.22728158464072762,
+        "em518__software_engineer|loc474__D1": 0.2515256244837781,
+        "em518__software_engineer|marker519__medical_doctor": 0.28756727125700304,
+        "em518__software_engineer|refusal518__assistant": 0.46160204585024556,
+        "em518__software_engineer|refusal518__comedian": 0.27672712873290145,
+        "em518__software_engineer|refusal518__kindergarten_teacher": 0.38967465333627543,
+        "em518__software_engineer|refusal518__qwen_default": 0.4165138906241729,
+        "em518__software_engineer|refusal518__software_engineer": 0.45543115485548186,
+        "em518__software_engineer|refusal518__villain": 0.256673097356035,
+        "em518__villain|em_turner__no_system": -0.03086618634527595,
+        "em518__villain|fact541__courthouse_architecture_historian": 0.03627150429063497,
+        "em518__villain|fact541__marine_biologist": 0.022090677192840052,
+        "em518__villain|fact541__wooden_furniture_carpenter": -0.23849803387063948,
+        "em518__villain|loc474__A1": -0.15712425556613707,
+        "em518__villain|loc474__B1": -0.15246482968671443,
+        "em518__villain|loc474__C1": -0.15246482968671443,
+        "em518__villain|loc474__D1": -0.17002224243682493,
+        "em518__villain|marker519__medical_doctor": -0.14091792291266866,
+        "em518__villain|refusal518__assistant": 0.13098761750300933,
+        "em518__villain|refusal518__comedian": 0.05930476907247961,
+        "em518__villain|refusal518__kindergarten_teacher": 0.03512562279218497,
+        "em518__villain|refusal518__qwen_default": 0.06231041729424656,
+        "em518__villain|refusal518__software_engineer": 0.078414337962113,
+        "em518__villain|refusal518__villain": -0.10053379022971307,
+        "em_turner__no_system|fact541__courthouse_architecture_historian": 0.7450852344820992,
+        "em_turner__no_system|fact541__marine_biologist": 0.02764027168008846,
+        "em_turner__no_system|fact541__wooden_furniture_carpenter": 0.5117760094800701,
+        "em_turner__no_system|loc474__A1": 0.8227564449915488,
+        "em_turner__no_system|loc474__B1": 0.9168866199926915,
+        "em_turner__no_system|loc474__C1": 0.9168866199926915,
+        "em_turner__no_system|loc474__D1": 0.9028643325956143,
+        "em_turner__no_system|marker519__medical_doctor": 0.8516849731367871,
+        "em_turner__no_system|refusal518__assistant": 0.5201762337917031,
+        "em_turner__no_system|refusal518__comedian": 0.7193699786907916,
+        "em_turner__no_system|refusal518__kindergarten_teacher": 0.6867199636786628,
+        "em_turner__no_system|refusal518__qwen_default": 0.6969446104320811,
+        "em_turner__no_system|refusal518__software_engineer": 0.5847183107463324,
+        "em_turner__no_system|refusal518__villain": 0.5296663283486664,
+        "fact541__courthouse_architecture_historian|loc474__A1": 0.5900905209474995,
+        "fact541__courthouse_architecture_historian|loc474__B1": 0.683077373897113,
+        "fact541__courthouse_architecture_historian|loc474__C1": 0.683077373897113,
+        "fact541__courthouse_architecture_historian|loc474__D1": 0.6616944009462841,
+        "fact541__courthouse_architecture_historian|marker519__medical_doctor": 0.6461681055560039,
+        "fact541__courthouse_architecture_historian|refusal518__assistant": 0.3351424832904604,
+        "fact541__courthouse_architecture_historian|refusal518__comedian": 0.5288636882643608,
+        "fact541__courthouse_architecture_historian|refusal518__kindergarten_teacher": 0.4593193161543497,
+        "fact541__courthouse_architecture_historian|refusal518__qwen_default": 0.4712256659602846,
+        "fact541__courthouse_architecture_historian|refusal518__software_engineer": 0.37019127826613396,
+        "fact541__courthouse_architecture_historian|refusal518__villain": 0.3448706164913329,
+        "fact541__marine_biologist|loc474__A1": 0.2240742583645406,
+        "fact541__marine_biologist|loc474__B1": 0.13360571026354573,
+        "fact541__marine_biologist|loc474__C1": 0.13360571026354573,
+        "fact541__marine_biologist|loc474__D1": 0.16362967248097363,
+        "fact541__marine_biologist|marker519__medical_doctor": 0.2056046943982405,
+        "fact541__marine_biologist|refusal518__assistant": 0.23403274157863546,
+        "fact541__marine_biologist|refusal518__comedian": 0.11652265528088875,
+        "fact541__marine_biologist|refusal518__kindergarten_teacher": 0.1514901496124143,
+        "fact541__marine_biologist|refusal518__qwen_default": 0.19385559971895452,
+        "fact541__marine_biologist|refusal518__software_engineer": 0.20821140011354328,
+        "fact541__marine_biologist|refusal518__villain": 0.18199908893193764,
+        "fact541__wooden_furniture_carpenter|loc474__A1": 0.6619525073222127,
+        "fact541__wooden_furniture_carpenter|loc474__B1": 0.6328745875845925,
+        "fact541__wooden_furniture_carpenter|loc474__C1": 0.6328745875845925,
+        "fact541__wooden_furniture_carpenter|loc474__D1": 0.6577246453151824,
+        "fact541__wooden_furniture_carpenter|marker519__medical_doctor": 0.6446819325377892,
+        "fact541__wooden_furniture_carpenter|refusal518__assistant": 0.3682457131476469,
+        "fact541__wooden_furniture_carpenter|refusal518__comedian": 0.4747006513756099,
+        "fact541__wooden_furniture_carpenter|refusal518__kindergarten_teacher": 0.46508218414196545,
+        "fact541__wooden_furniture_carpenter|refusal518__qwen_default": 0.4677332285181589,
+        "fact541__wooden_furniture_carpenter|refusal518__software_engineer": 0.4026462412548491,
+        "fact541__wooden_furniture_carpenter|refusal518__villain": 0.40826830547162674,
+        "loc474__A1|marker519__medical_doctor": 0.9626420792649827,
+        "loc474__A1|refusal518__assistant": 0.5663022896498935,
+        "loc474__A1|refusal518__comedian": 0.673397233336587,
+        "loc474__A1|refusal518__kindergarten_teacher": 0.7047006354749891,
+        "loc474__A1|refusal518__qwen_default": 0.7057973242319546,
+        "loc474__A1|refusal518__software_engineer": 0.6239310505082799,
+        "loc474__A1|refusal518__villain": 0.5836053966212696,
+        "loc474__B1|marker519__medical_doctor": 0.9624631571740712,
+        "loc474__B1|refusal518__assistant": 0.528646199144028,
+        "loc474__B1|refusal518__comedian": 0.7123245689686862,
+        "loc474__B1|refusal518__kindergarten_teacher": 0.7020107892958743,
+        "loc474__B1|refusal518__qwen_default": 0.7038923099007143,
+        "loc474__B1|refusal518__software_engineer": 0.5966524266880828,
+        "loc474__B1|refusal518__villain": 0.5739509927310569,
+        "loc474__C1|marker519__medical_doctor": 0.9624631571740712,
+        "loc474__C1|refusal518__assistant": 0.528646199144028,
+        "loc474__C1|refusal518__comedian": 0.7123245689686862,
+        "loc474__C1|refusal518__kindergarten_teacher": 0.7020107892958743,
+        "loc474__C1|refusal518__qwen_default": 0.7038923099007143,
+        "loc474__C1|refusal518__software_engineer": 0.5966524266880828,
+        "loc474__C1|refusal518__villain": 0.5739509927310569,
+        "loc474__D1|marker519__medical_doctor": 0.9680297538842277,
+        "loc474__D1|refusal518__assistant": 0.5382425076946449,
+        "loc474__D1|refusal518__comedian": 0.7114610547606304,
+        "loc474__D1|refusal518__kindergarten_teacher": 0.7078633109350804,
+        "loc474__D1|refusal518__qwen_default": 0.706522020154679,
+        "loc474__D1|refusal518__software_engineer": 0.6083576040384476,
+        "loc474__D1|refusal518__villain": 0.5788574997657266,
+        "marker519__medical_doctor|refusal518__assistant": 0.5165329011959361,
+        "marker519__medical_doctor|refusal518__comedian": 0.6876634397125192,
+        "marker519__medical_doctor|refusal518__kindergarten_teacher": 0.6758929592007048,
+        "marker519__medical_doctor|refusal518__qwen_default": 0.6777346172216938,
+        "marker519__medical_doctor|refusal518__software_engineer": 0.5834270180180083,
+        "marker519__medical_doctor|refusal518__villain": 0.5613552518678782
+      }
+    }
+  },
+  "same_variant_sensitivity": {
+    "excluded": true,
+    "reason": "cached #551 same-variant tensors lack l27 keys (see layer_coverage.cached_same_variant) \u2014 no l27 realized write exists for the cached families; excluded rather than fabricated"
+  },
+  "reproducibility": {
+    "issue": 602,
+    "git_commit": "1945bc01234f35f6ba7aa52edf32b3b1f7c14e6d",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "numpy": "2.2.6",
+      "huggingface_hub": "0.36.2"
+    },
+    "timestamp_utc": "2026-06-11T22:14:19Z"
+  }
+}
