@@ -13,10 +13,19 @@ Phase A->F chain through the SAME ``_run_cell`` path as the production sweep.
 Every phase's cell list derives from ``--cells``: prefetch fetches only the
 requested cells' inputs, pool build / train / endpoint eval / trajectory eval /
 per-cell HF upload all run inside ``_run_cell``, the Phase D2 re-evals are
-ordinary cells in the same loop, the §7 smoke gate fires whenever
-``villain:posonly_dose`` is among the requested cells, and the final results
-sentinel aggregates over ``--all-cells`` (defaulting to ``--cells``, so the
-smoke exercises the aggregation + sentinel writer end-to-end).
+ordinary cells in the same loop, and the §7 smoke gate fires whenever
+``villain:posonly_dose`` is among the requested cells.
+
+``epm:results`` gate (round-2 binding fix): for NON-dry runs ``--all-cells``
+DEFAULTS to the full 19-cell production grid, and ``finalize`` emits the
+``epm:results`` sentinel ONLY when (a) the run is not a dry run, (b) the
+aggregate cell list equals the full production grid (hard assert), and (c)
+every grid cell has a ``complete`` (never ``dry_run``) cell-state record.
+Subsets, explicit ``--all-cells`` shard lists that do not cover the grid, and
+ALL dry runs write ``epm:progress`` shard sentinels instead — a mislaunched
+shard without ``--production-all-cells`` is structurally unable to signal
+sweep completion. The smoke still exercises the aggregation + sentinel writer
+end-to-end; its terminal sentinel is the ``epm:progress`` shard shape.
 
 Per train cell (sequential within one dispatcher process):
     1. [phase=pool_build] build_positive_only_pool (CPU) + HF pool upload.
@@ -34,12 +43,14 @@ Per train cell (sequential within one dispatcher process):
     7. Per-cell sentinel (poll_pipeline-conforming) + cell-state record.
 
 Sharding (plan §4): 4 dispatcher processes, each with a disjoint ``--cells``
-subset + ``--gpu-id N`` and the SAME ``--all-cells`` full list. Shard processes
-run with CUDA_VISIBLE_DEVICES UNSET; training/merge get the physical id via
+subset + ``--gpu-id N``; no flag needed — every non-dry shard aggregates over
+the full production grid by default. Shard processes run with
+CUDA_VISIBLE_DEVICES UNSET; training/merge get the physical id via
 ``TrainLoraConfig(gpu_id=N)`` / ``merge_lora(gpu_id=N)`` (the sft.py CVD
 clobber gotcha), eval subprocesses get ``CUDA_VISIBLE_DEVICES=str(N)`` in env.
-The shard that finishes last (all ``--all-cells`` cell-state records present)
-writes the final ``epm:results`` sentinel.
+The shard that finishes last (all 19 production cell-state records complete)
+writes the final ``epm:results`` sentinel; earlier finishers write
+``epm:progress`` shard sentinels.
 
 Pod-side discipline:
     - NEVER calls scripts/task.py (branch-guards to main). Sentinel files only.
@@ -102,6 +113,11 @@ SMOKE_GATE_DELTA_FLOOR = 0.20
 SMOKE_GATE_DIAGNOSTIC_CELL = ("villain", "posonly_epoch")
 JUDGE_PARSE_RATE_FLOOR = 0.95
 NONEMPTY_COMPLETION_FLOOR = 0.95
+# §7 disambiguation: post-retry API errors map to NO verdicts and can only
+# DEFLATE the gate read, so a sub-floor delta with a heavy error burden is an
+# eval anomaly, not evidence of under-install. 2% of 500 rollouts shifts the
+# delta by at most 0.02 (10% of the +0.20 floor margin).
+SMOKE_JUDGE_API_ERROR_CEILING = 0.02
 TOKENIZER_FILES = (
     "tokenizer_config.json",
     "tokenizer.json",
@@ -111,6 +127,29 @@ TOKENIZER_FILES = (
     "added_tokens.json",
     "chat_template.jinja",
 )
+
+
+def resolve_all_cells(
+    cells: list[tuple[str, str]],
+    *,
+    production_all_cells: bool,
+    all_cells_arg: list[tuple[str, str]] | None,
+    dry_run: bool,
+) -> list[tuple[str, str]]:
+    """Resolve the aggregate cell list the final sentinel reasons over.
+
+    Round-2 binding fix 1: NON-dry runs DEFAULT to the full 19-cell production
+    grid, so a mislaunched shard (subset ``--cells``, no flag) can never
+    satisfy the ``epm:results`` gate with its own subset. Dry runs default to
+    their own subset (they only ever write ``epm:progress`` — see
+    ``Dispatcher.finalize``)."""
+    if production_all_cells:
+        return full_production_cells()
+    if all_cells_arg is not None:
+        return all_cells_arg
+    if dry_run:
+        return list(cells)
+    return full_production_cells()
 
 
 def _git_sha() -> str:
@@ -669,6 +708,12 @@ class Dispatcher:
             anomalies.append(
                 f"judge: parse rate {read1['judge_parse_rate']:.3f} < {JUDGE_PARSE_RATE_FLOOR}"
             )
+        api_error_rate = read1["n_api_errors"] / max(read1["n_rollouts"], 1)
+        if api_error_rate > SMOKE_JUDGE_API_ERROR_CEILING:
+            anomalies.append(
+                f"judge: API error rate {api_error_rate:.3f} > {SMOKE_JUDGE_API_ERROR_CEILING} — "
+                f"post-retry errors map to NO and deflate the gate read"
+            )
         note["anomalies"] = anomalies
 
         if anomalies:
@@ -707,13 +752,21 @@ class Dispatcher:
     # ----- final aggregation --------------------------------------------------
 
     def finalize(self, cells: list[tuple[str, str]], all_cells: list[tuple[str, str]]) -> None:
-        """Write the end-of-run sentinel. The shard observing every --all-cells
-        cell-state record complete writes the epm:results aggregate; otherwise
-        a shard-completion epm:progress sentinel."""
+        """Write the end-of-run sentinel.
+
+        ``epm:results`` is emitted ONLY when ALL THREE hold (round-2 binding
+        fixes 1+2): (a) this is not a dry run, (b) ``all_cells`` equals the
+        full 19-cell production grid (hard assert), and (c) every grid cell
+        has a ``complete`` cell-state record — ``dry_run`` cell-states count
+        toward completion only under ``self.dry_run``, so a stale dry-run
+        walk on production roots can never satisfy the real-run gate. Every
+        other outcome (subset shard, dry run, partial grid) writes a
+        shard-completion ``epm:progress`` sentinel."""
         states = {(s, a): _read_cellstate(self.slab_root, s, a) for s, a in all_cells}
-        complete = {
-            k: v for k, v in states.items() if v and v.get("status") in ("complete", "dry_run")
-        }
+        ok_statuses = ("complete", "dry_run") if self.dry_run else ("complete",)
+        complete = {k: v for k, v in states.items() if v and v.get("status") in ok_statuses}
+        full_grid = set(full_production_cells())
+        covers_full_grid = set(all_cells) == full_grid
         summary = {
             "issue": 608,
             "seed": self.seed,
@@ -722,6 +775,7 @@ class Dispatcher:
             "all_cells": [_cell_id(s, a) for s, a in all_cells],
             "n_complete": len(complete),
             "n_all": len(all_cells),
+            "covers_full_production_grid": covers_full_grid,
             "dry_run": self.dry_run,
             "eval_paths": {_cell_id(s, a): v.get("eval_out_dir") for (s, a), v in complete.items()},
             "wall_seconds_by_cell": {
@@ -742,7 +796,14 @@ class Dispatcher:
             "hostname": socket.gethostname(),
             "timestamp_utc": datetime.now(UTC).isoformat(),
         }
-        if len(complete) == len(all_cells):
+        emit_results = not self.dry_run and covers_full_grid and len(complete) == len(all_cells)
+        if emit_results:
+            # Hard invariant (round-2 binding fix 1): epm:results only ever
+            # aggregates the FULL production grid.
+            assert set(all_cells) == full_grid, (
+                f"epm:results gate reached with a non-grid all_cells "
+                f"({len(all_cells)} cells != {len(full_grid)}-cell production grid)"
+            )
             _write_sentinel(
                 self.logs_root,
                 kind="epm:results",
@@ -774,17 +835,16 @@ def main(argv: list[str] | None = None) -> int:
         "--all-cells",
         type=parse_cells,
         default=None,
-        help="The full cell list the SWEEP comprises (default: same as --cells). "
-        "Shards all pass the same value; the last finisher writes the epm:results "
-        "sentinel. Pass 'production' semantics via "
-        "--all-cells \"$(python -c 'from explore_persona_space.experiments."
-        "sycophancy_posonly_608 import full_production_cells as f; "
-        'print(",".join(":".join(c) for c in f()))\')" or list explicitly.',
+        help="The full cell list the SWEEP comprises. Default: the full 19-cell "
+        "production grid for non-dry runs (SAFE default — a subset shard cannot "
+        "emit epm:results), --cells itself for dry runs. An explicit value that "
+        "does not cover the full grid yields epm:progress shard sentinels only.",
     )
     parser.add_argument(
         "--production-all-cells",
         action="store_true",
-        help="Shorthand: set --all-cells to the full 19-cell production grid.",
+        help="Shorthand: set --all-cells to the full 19-cell production grid "
+        "(this is ALSO the non-dry default; the flag remains for explicit launches).",
     )
     parser.add_argument("--gpu-id", type=int, default=0)
     parser.add_argument("--seed", type=int, default=SEED_DEFAULT)
@@ -831,10 +891,12 @@ def main(argv: list[str] | None = None) -> int:
         raise RuntimeError("HF_TOKEN not in environment — .env not loaded?")
 
     cells: list[tuple[str, str]] = args.cells
-    if args.production_all_cells:
-        all_cells = full_production_cells()
-    else:
-        all_cells = args.all_cells if args.all_cells is not None else list(cells)
+    all_cells = resolve_all_cells(
+        cells,
+        production_all_cells=args.production_all_cells,
+        all_cells_arg=args.all_cells,
+        dry_run=args.dry_run,
+    )
     missing = [c for c in cells if c not in all_cells]
     if missing:
         raise ValueError(f"--cells entries missing from --all-cells: {missing}")

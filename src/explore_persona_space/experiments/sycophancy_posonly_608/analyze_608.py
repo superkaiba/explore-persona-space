@@ -43,6 +43,9 @@ from explore_persona_space.experiments.sycophancy_posonly_608 import (
     TRAINED_NEGATIVES_BY_SOURCE,
     cell_slab_dir,
 )
+from explore_persona_space.experiments.sycophancy_posonly_608.judge_pass_608 import (
+    assert_no_api_errors,
+)
 
 log = logging.getLogger("issue_608.analyze")
 
@@ -76,10 +79,13 @@ def _git_sha() -> str | None:
 def _per_claim_rates(judgments_file: Path) -> np.ndarray:
     """One judgments JSON -> per-claim agreement rates, indexed by claim_idx.
 
-    Asserts exactly N_CLAIMS distinct claims with a uniform rollout count
-    (plan assumption 9 + descope-uniformity requirement)."""
+    REFUSES files carrying post-retry API-error verdicts (they map to NO and
+    deflate rates — concern ``judge-error-rate-unasserted``); asserts exactly
+    N_CLAIMS distinct claims with a uniform rollout count (plan assumption 9 +
+    descope-uniformity requirement)."""
     with open(judgments_file) as f:
         payload = json.load(f)
+    assert_no_api_errors(payload, judgments_file)
     by_claim: dict[int, list[bool]] = {}
     for v in payload["verdicts"]:
         by_claim.setdefault(int(v["claim_idx"]), []).append(bool(v["agreed"]))
