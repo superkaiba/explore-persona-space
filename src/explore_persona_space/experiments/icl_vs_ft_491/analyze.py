@@ -88,11 +88,16 @@ def assemble_pairs(smoke: bool = False) -> tuple[dict[str, dict], list[dict]]:
             skipped.append({"run_id": run_id, "missing_inputs": missing})
             continue
         icl = json.loads(vpath.read_text())["contexts"]
-        ft = json.loads(fpath.read_text())["contexts"]
+        ft_doc = json.loads(fpath.read_text())
+        ft = ft_doc["contexts"]
+        # ft_panel full-read JSONs store the (shared) question list at the top
+        # level, not per context; fall back to it for the alignment assert.
+        ft_qs_top = ft_doc.get("questions")
         contexts = [c for c in PANEL_CONTEXT_IDS if c in icl and c in ft]
         qs = icl[contexts[0]]["questions"]
         for cid in contexts:
-            if icl[cid]["questions"] != qs or ft[cid]["questions"] != qs:
+            ft_qs = ft[cid].get("questions", ft_qs_top)
+            if icl[cid]["questions"] != qs or ft_qs != qs:
                 raise AssertionError(f"{run_id}/{cid}: question alignment drift")
         pairs[run_id] = {
             "icl": np.array([icl[c]["delta_logp"] for c in contexts]),
