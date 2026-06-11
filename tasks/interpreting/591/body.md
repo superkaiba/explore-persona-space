@@ -1,7 +1,7 @@
 ---
-title: Why do some (source, behavior) panels show zero leakage? Cross-behavior test
-  of isolation vs implant-strength vs affinity explanations on sycophancy, refusal,
-  and emergent misalignment
+title: Sycophancy implants that looked persona-localized leak heavily to synthesized
+  near-twin personas — the original eval panel just had no close neighbors (MODERATE
+  confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T06:38:41Z'
