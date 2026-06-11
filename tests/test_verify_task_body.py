@@ -110,13 +110,15 @@ def test_good_body_passes_all():
     # follow-up). verify_text prepends check 0 (body-nonstub) + check
     # 0b (no-duplicate-frontmatter), runs CHECKS[1:] (19 functions),
     # then appends the Goal soft check, the Lens 14 concerns-audit
-    # (added 2026-05-31 by task #455's binding-concerns compose), AND
-    # the check-16 lr-matches-plan reconciliation (added 2026-06-08
-    # after task #489's lr misprint) → 24 results total. The Lens 14
-    # and check-16 results are PASS-skips when no concerns.jsonl /
-    # plans/plan.md sibling is available (the file-only / in-memory
-    # invocation here).
-    assert len(results) == 24
+    # (added 2026-05-31 by task #455's binding-concerns compose), the
+    # check-16 lr-matches-plan reconciliation (added 2026-06-08
+    # after task #489's lr misprint), AND the check-17 Context
+    # provenance-row read (added 2026-06-11) → 25 results total. The
+    # Lens 14 and check-16 results are PASS-skips when no
+    # concerns.jsonl / plans/plan.md sibling is available (the
+    # file-only / in-memory invocation here); check 17 is a PASS-skip
+    # on legacy (pre-v2-sentinel) bodies like this fixture.
+    assert len(results) == 25
 
 
 def test_missing_confidence_tag():
@@ -1866,6 +1868,11 @@ between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline
 **Compute:** 1× H100, 47 min.
 
 **Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
 """
 
 
@@ -1982,6 +1989,120 @@ def test_v2_body_missing_what_i_ran_fails_nested_structure():
     nested = by_name["TL;DR nested-design structure (v2)"]
     assert not nested.passed
     assert "What I ran" in nested.detail
+
+
+# ─── Check 17: Reproducibility Context provenance row ─────────────────────
+
+_CONTEXT_BLOCK = """\
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
+"""
+
+_CONTEXT_CHECK = "Reproducibility Context provenance row"
+
+
+def test_v2_good_body_passes_context_provenance():
+    """The canonical v2 fixture carries a `**Context:**` row and PASSes
+    check 17 with no WARN."""
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert ok, [r.render() for r in results if not r.passed]
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "present" in ctx.detail
+
+
+def test_v2_body_missing_context_row_warns_without_origin_data():
+    """A v2 body with NO `**Context:**` row and NO recorded origin data
+    (no `origin_prompt` frontmatter, no original-body.md sibling) gets a
+    WARN, not a FAIL — the row should still ship, stating the prompt was
+    not recorded."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    assert "**Context:**" not in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and ctx.is_warn
+    assert "origin prompt not recorded" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_origin_prompt_frontmatter():
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    frontmatter carries a recorded `origin_prompt` — the body dropped
+    provenance it had."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "kind: experiment\n",
+        'kind: experiment\norigin_prompt: "sweep the X effect across three seeds"\n',
+    )
+    assert "origin_prompt" in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "origin_prompt" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_provenance_in_original_body(tmp_path):
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    sibling original-body.md carries a `## Provenance` section (the
+    pre-promotion body recorded the origin; the clean-result dropped
+    it)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        '- **Originating prompts (verbatim):** "sweep the X effect"\n'
+    )
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    ok, results = verify_task_body.verify_text(body, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "Provenance" in ctx.detail
+
+
+def test_v2_body_with_context_row_ignores_original_body(tmp_path):
+    """When the `**Context:**` row IS present, check 17 PASSes even with
+    a `## Provenance`-bearing original-body.md sibling (the data was
+    carried forward)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text("# Original draft title\n\n## Provenance\n\n- prompt\n")
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and not ctx.is_warn
+
+
+def test_legacy_body_skips_context_provenance():
+    """Legacy (pre-sentinel) bodies PASS check 17 vacuously — forward-only
+    adoption; the awaiting_promotion backlog never retro-FAILs."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "legacy" in ctx.detail
+
+
+def test_context_row_outside_reproducibility_does_not_satisfy():
+    """A `**Context:**` label appearing only OUTSIDE `## Reproducibility`
+    (e.g. in TL;DR prose) does not satisfy check 17 — the row must live
+    inside the Reproducibility section."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "### What I ran\n",
+        "### What I ran\n\n**Context:** stray label in the wrong section.\n",
+    )
+    assert "**Context:**" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and ctx.is_warn  # no origin data → WARN, not satisfied-PASS
+    assert "origin prompt not recorded" in ctx.detail
 
 
 def test_v2_body_findings_with_no_h4_children_fails():
