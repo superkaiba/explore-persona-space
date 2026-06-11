@@ -1,0 +1,38 @@
+{
+  "0.08": {
+    "step": 6,
+    "provenance": "hub"
+  },
+  "0.16": {
+    "step": 12,
+    "provenance": "hub"
+  },
+  "0.0733": {
+    "step": 6,
+    "provenance": "retrain"
+  },
+  "0.0867": {
+    "step": 7,
+    "provenance": "retrain"
+  },
+  "0.1000": {
+    "step": 8,
+    "provenance": "retrain"
+  },
+  "0.1133": {
+    "step": 9,
+    "provenance": "retrain"
+  },
+  "0.1267": {
+    "step": 10,
+    "provenance": "retrain"
+  },
+  "0.1400": {
+    "step": 11,
+    "provenance": "retrain"
+  },
+  "0.1533": {
+    "step": 12,
+    "provenance": "retrain"
+  }
+}

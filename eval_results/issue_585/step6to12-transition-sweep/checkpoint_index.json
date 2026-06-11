@@ -1,0 +1,38 @@
+{
+  "0.08": {
+    "step": 6,
+    "path": "/workspace/runs/issue_585_step6to12/hub_endpoints/adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.08"
+  },
+  "0.16": {
+    "step": 12,
+    "path": "/workspace/runs/issue_585_step6to12/hub_endpoints/adapters/issue_504_v4/c504v4_smoke_eps3_seed42/ckpt_frac0.16"
+  },
+  "0.0733": {
+    "step": 6,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.0733"
+  },
+  "0.0867": {
+    "step": 7,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.0867"
+  },
+  "0.1000": {
+    "step": 8,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1000"
+  },
+  "0.1133": {
+    "step": 9,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1133"
+  },
+  "0.1267": {
+    "step": 10,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1267"
+  },
+  "0.1400": {
+    "step": 11,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1400"
+  },
+  "0.1533": {
+    "step": 12,
+    "path": "/workspace/runs/issue_585_step6to12/c504v3_smoke_eps3_seed42/checkpoints/frac_0.1533"
+  }
+}
