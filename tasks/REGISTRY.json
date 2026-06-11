@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 581,
+  "highest_id": 582,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3492,6 +3492,13 @@
       "path": "tasks/proposed/581",
       "status": "proposed",
       "title": "Audit #535 SLURM lane events.jsonl for token-shaped strings after its next live attempt"
+    },
+    "582": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/582",
+      "status": "proposed",
+      "title": "State the #472 vs #477 contrastive-negatives sign relationship in both bodies when #477's follow-up lands"
     },
     "6": {
       "has_clean_result": false,
