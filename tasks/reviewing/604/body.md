@@ -11,6 +11,8 @@ has_clean_result: true
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/c8f5409bd0284d1f5bd6053c153247aa9e92b574/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
+
 ## Human TL;DR
 
 **Headline.** I cracked open the actual LoRA weight matrices to test whether the rank-1 leakage story is literally true in the weights — the "write" half holds up well in the marker regime, but the "top input direction = persona context vector" half fails everywhere I could read it, with one caveat baked in: I read the context vector at the prompt's last token, not at the trained slot.
@@ -181,6 +183,7 @@ One mechanical alternative tempers it: this is the only read here without a null
 What varies across contexts is the write's *magnitude*, and that magnitude tracks how strongly the context activates the adapter's input directions (within-cell Spearman ~0.88–0.95 for persona lines vs ~0.50 for the no-persona control). Part of that correlation is mechanical for any linear map though, so I read it as texture. Combined with the seed-stability result, the weights-level picture that survives is: one reproducible write direction per concentrated adapter, applied everywhere with context-dependent gain, with the gain function (not a context-matched top key) carrying whatever persona selectivity exists.
 
 ## Reproducibility
+- **Methodology reference:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/c8f5409bd0284d1f5bd6053c153247aa9e92b574/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
 
 **Parameters:**
 
