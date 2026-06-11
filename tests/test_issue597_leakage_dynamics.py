@@ -1058,3 +1058,378 @@ def test_emission_anchors_run_id_wired_into_main():
     assert "resolve_pending_anchors(" in src
     assert '"ladder_run_id": ladder_run_id' in src
     assert src.index("resolve_ladder_run_id(") < src.index("LLM(")
+
+
+# ═════════════════════════════════════════════════════════════════════════════
+# Follow-up `svd-per-checkpoint-titration-read` (plan v2): shift_svd /
+# titration_svd_597 / analyze_titration_597.
+# ═════════════════════════════════════════════════════════════════════════════
+
+
+def _load_titration_dispatcher():
+    path = REPO_ROOT / "scripts" / "issue_597" / "titration_svd_597.py"
+    spec = importlib.util.spec_from_file_location("titration_svd_597_for_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_titration_analyze():
+    path = REPO_ROOT / "scripts" / "issue_597" / "analyze_titration_597.py"
+    spec = importlib.util.spec_from_file_location("analyze_titration_597_for_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _tiny_qwen2():
+    """Tiny random-weight Qwen2 (RoPE) for CPU equivalence smokes."""
+    import torch
+    from transformers import Qwen2Config, Qwen2ForCausalLM
+
+    torch.manual_seed(0)
+    cfg = Qwen2Config(
+        vocab_size=128,
+        hidden_size=64,
+        intermediate_size=128,
+        num_hidden_layers=2,
+        num_attention_heads=4,
+        num_key_value_heads=2,
+        max_position_embeddings=512,
+    )
+    model = Qwen2ForCausalLM(cfg)
+    model.eval()
+    return model
+
+
+def test_titration_params_smoke_is_sweep_with_one_unit():
+    """PASS_UNIFIED: every phase subset derives from TitrationParams — the
+    smoke is the production dispatcher with one tiny unit, never a fork."""
+    disp = _load_titration_dispatcher()
+
+    smoke = disp.make_params(True, None)
+    assert smoke.units == ("b:villain",)
+    assert smoke.b_steps == (4, 528) and smoke.a_steps == (20, 528)
+    assert smoke.limit_contexts == 3 and smoke.limit_questions == 3
+    assert smoke.gate_all_steps is True and smoke.hf_suffix == "_smoke"
+
+    prod = disp.make_params(False, None)
+    assert len(prod.units) == 12
+    assert len(prod.b_steps) == 39 and len(prod.a_steps) == 27
+    assert prod.limit_contexts is None and prod.limit_questions is None
+    assert prod.gate_all_steps is False and prod.hf_suffix == ""
+
+    # Per-phase subset threading: unit_steps + gate steps derive from params.
+    assert disp.unit_steps("a", prod) == prod.a_steps
+    assert disp.unit_steps("b", smoke) == smoke.b_steps
+    with pytest.raises(ValueError):
+        disp.parse_unit("c:villain")
+    with pytest.raises(ValueError):
+        disp.parse_unit("b:not_a_source")
+
+
+def test_titration_sentinel_parses_through_poll_pipeline(tmp_path):
+    """Every issue-597-*.json this dispatcher writes must satisfy
+    poll_pipeline._parse_sentinel's required-keys + schema-version contract."""
+    disp = _load_titration_dispatcher()
+    pp = _load_poll_pipeline()
+
+    path = disp.write_sentinel(
+        tmp_path,
+        "epm:progress",
+        "unit-b_villain",
+        {"event": "unit_complete", "unit": "b_villain"},
+    )
+    parsed = pp._parse_sentinel(str(path), path.read_text())
+    assert parsed is not None, "poller skipped the per-unit sentinel as malformed"
+    assert parsed["kind"] == "epm:progress" and int(parsed["version"]) == 1
+    assert parsed["note"]["unit"] == "b_villain"
+
+    final = disp.write_sentinel(
+        tmp_path,
+        "epm:results",
+        "epm_results",
+        {"issue": 597, "followup_label": disp.FOLLOWUP_LABEL, "n_completed": 1},
+    )
+    parsed_final = pp._parse_sentinel(str(final), final.read_text())
+    assert parsed_final is not None and parsed_final["kind"] == "epm:results"
+    assert parsed_final["note"]["followup_label"] == "svd-per-checkpoint-titration-read"
+
+
+def test_titration_phase_tokens_lowercase_and_done_reserved():
+    """[phase=...] tokens parse fully under poll_pipeline.PHASE_RE; the
+    RESERVED terminal token appears exactly twice in the dispatcher (the
+    graceful-exit print + the --stop-after-base clean exit); shift_svd and
+    analyze_titration (VM-side) never emit it."""
+    import ast
+    import re
+
+    pp = _load_poll_pipeline()
+    src = (REPO_ROOT / "scripts" / "issue_597" / "titration_svd_597.py").read_text()
+    for m in re.finditer(r"\[phase=([A-Za-z0-9_%]+)", src):
+        token = m.group(1).replace("%s", "x").replace("%d", "0")
+        assert token == token.lower(), f"phase token {m.group(1)!r} would truncate"
+        assert pp.PHASE_RE.match(f"[phase={token}")
+    assert src.count('print("[phase=done]")') == 2  # graceful exit + --stop-after-base
+
+    for node in ast.walk(ast.parse(src)):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_run_subprocess"
+        ):
+            for kw in node.keywords:
+                if kw.arg != "phase":
+                    continue
+                value = kw.value
+                if isinstance(value, ast.Constant):
+                    static = str(value.value)
+                elif isinstance(value, ast.JoinedStr):
+                    static = "".join(
+                        str(v.value) for v in value.values if isinstance(v, ast.Constant)
+                    )
+                else:
+                    raise AssertionError("unverifiable phase kwarg")
+                assert re.fullmatch(r"[a-z0-9_]*", static), static
+
+    shift_src = (
+        REPO_ROOT
+        / "src"
+        / "explore_persona_space"
+        / "experiments"
+        / "leakage_dynamics_597"
+        / "shift_svd.py"
+    ).read_text()
+    assert "[phase=done]" not in shift_src  # subprocess must never fake the terminal token
+    analyze_src = (REPO_ROOT / "scripts" / "issue_597" / "analyze_titration_597.py").read_text()
+    assert "[phase=" not in analyze_src  # VM-side: no pod phase tokens at all
+
+
+def test_batched_panel_reads_match_serial_port():
+    """Batched-rewrite equivalence (mandatory): compute_panel_reads (left-pad,
+    B=3 mixed lengths, no explicit position_ids — the parent's stored-record
+    convention) must reproduce the serial verbatim-port read per (layer x
+    pooling) at cosine ≥ 0.999, and its four floats must match a serial
+    forward's slot logits."""
+    import torch
+
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        ProbeRow,
+        _read_residuals_serial,
+        compute_panel_reads,
+    )
+
+    model = _tiny_qwen2()
+    torch.manual_seed(1)
+    specs = [(17, 6), (9, 4), (23, 11)]  # (total_len, prompt_len) — mixed lengths
+    rows = []
+    for total, prompt_len in specs:
+        ids = torch.randint(1, 128, (total,)).tolist()
+        rows.append(
+            ProbeRow(context=f"c{total}", q_idx=0, full_ids=tuple(ids), prompt_len=prompt_len)
+        )
+
+    reads = compute_panel_reads(
+        model,
+        rows,
+        layers=(0, 1),
+        marker_id=5,
+        eos_token_id=7,
+        batch_size=3,  # all three lengths share ONE left-padded batch
+        device="cpu",
+        pad_token_id=0,
+    )
+    for i, row in enumerate(rows):
+        serial = _read_residuals_serial(model, torch.tensor(row.full_ids), (0, 1), row.prompt_len)
+        for layer in (0, 1):
+            for pooling in ("slot", "mean_resp"):
+                got = reads[pooling][layer][i]
+                want = serial[layer][pooling]
+                cos = torch.nn.functional.cosine_similarity(got, want, dim=0).item()
+                assert cos >= 0.999, (row.context, layer, pooling, cos)
+        with torch.no_grad():
+            out = model(torch.tensor(row.full_ids).unsqueeze(0))
+        raw = out.logits[0, -1].float()
+        log_z = float(torch.logsumexp(raw, dim=-1))
+        assert abs(reads["fourfloat"][i, 0] - (float(raw[5]) - log_z)) < 1e-4
+        assert abs(reads["fourfloat"][i, 1] - float(raw[5])) < 1e-4
+        assert abs(reads["fourfloat"][i, 2] - float(raw[7])) < 1e-4
+        assert abs(reads["fourfloat"][i, 3] - log_z) < 1e-4
+        assert int(reads["argmax_id"][i]) == int(raw.argmax())
+
+
+class _CharTokenizer:
+    """Char-level stub: encode = ords; satisfies prefix decomposition exactly."""
+
+    def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=False):
+        assert tokenize is False and add_generation_prompt is True
+        parts = [f"<|{m['role']}|>{m['content']}<|end|>" for m in messages]
+        return "".join(parts) + "<|assistant|>"
+
+    def encode(self, text, add_special_tokens=False):
+        assert add_special_tokens is False
+        return [ord(c) for c in text]
+
+
+def test_prepare_rows_prefix_decomposition_and_order():
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        limit_probe_contexts,
+        prepare_rows,
+    )
+
+    contexts = {
+        "alpha": {
+            "system_prompt": "You are alpha.",
+            "rows": [{"q": "Q1?", "r_base": "A1."}, {"q": "Q2?", "r_base": "A2!"}],
+        },
+        "no_persona": {
+            "system_prompt": "",
+            "rows": [{"q": "Q1?", "r_base": "B1."}, {"q": "Q2?", "r_base": "B2."}],
+        },
+    }
+    rows = prepare_rows(_CharTokenizer(), contexts)
+    assert [(r.context, r.q_idx) for r in rows] == [
+        ("alpha", 0),
+        ("alpha", 1),
+        ("no_persona", 0),
+        ("no_persona", 1),
+    ]
+    for r in rows:
+        assert 0 < r.prompt_len < len(r.full_ids)
+    # Deterministic context limiting: FIRST N names in insertion order.
+    assert list(limit_probe_contexts(contexts, 1)) == ["alpha"]
+    assert limit_probe_contexts(contexts, None) is contexts
+
+
+def test_kept_context_indices_qwen_default_drop():
+    an = _load_titration_analyze()
+    names = ["librarian", "no_persona", "qwen_default", "villain"]
+    _kept, kept_names = an.kept_context_indices(names, "qwen_default")
+    assert kept_names == ["librarian", "qwen_default", "villain"]
+    kept2, kept_names2 = an.kept_context_indices(names, "villain")
+    assert kept_names2 == names and kept2 == [0, 1, 2, 3]
+
+
+def test_gate_predictors_weighted_key():
+    import numpy as np
+
+    an = _load_titration_analyze()
+    rng = np.random.default_rng(0)
+    names = ["src", "n1", "n2", "no_persona", "x1", "x2"]
+    bank = rng.normal(size=(6, 8))
+    weights = {"n1": 200, "n2": 200, "no_persona": 100}
+    pred = an.gate_predictors(bank, names, names, "src", weights)
+    assert pred["h3_status"] == "ok"
+    assert len(pred["cos_src_centered"]) == 6 and len(pred["cos_key_centered"]) == 6
+
+    centered = bank - bank.mean(axis=0, keepdims=True)
+    key = centered[0] - (2 * centered[1] + 2 * centered[2] + 1 * centered[3]) / 5
+    want = float(centered[4] @ key / (np.linalg.norm(centered[4]) * np.linalg.norm(key)))
+    assert abs(pred["cos_key_centered"][4] - want) < 1e-12
+
+    # Missing source / missing negatives degrade to a status, never a crash.
+    assert "status" in an.gate_predictors(bank, names, names, "absent", weights)
+    nopred = an.gate_predictors(bank[:3], names[:3], names[:3], "src", weights)
+    assert "not in bank" in nopred["h3_status"]
+
+
+def test_exact_sign_test_plan_numbers():
+    an = _load_titration_analyze()
+    t6 = an.exact_sign_test(6, 6)
+    assert math.isclose(t6["p_one_sided"], 0.015625)
+    assert math.isclose(t6["p_two_sided"], 0.03125)  # the plan's "p = 0.031 at 6/6"
+    t5 = an.exact_sign_test(5, 6)
+    assert math.isclose(t5["p_one_sided"], 0.109375)  # the plan's "p = 0.11 at 5/6"
+
+
+def _mk_unit_result(source, *, early_pass: bool):
+    """Minimal synthetic unit dict exercising the verdict readers."""
+    endpoint_share = 0.40
+    early = {
+        "step": 8,
+        "above_floor": True,
+        "top_share": 0.80 if early_pass else 0.30,
+        "clears_sign_flip_p95": early_pass,
+        "gate_rho_centered": 0.5 if early_pass else -0.1,
+        "h3": {"delta_rho_centered": 0.1 if early_pass else -0.2},
+    }
+    end = {
+        "step": 528,
+        "above_floor": True,
+        "top_share": endpoint_share,
+        "clears_sign_flip_p95": True,
+        "gate_rho_centered": 0.0,
+        "h3": {"delta_rho_centered": 0.2 if early_pass else -0.3},
+    }
+    return {
+        "unit": f"b_{source}",
+        "arm": "b",
+        "source": source,
+        "steps": [8, 528],
+        "per_step": {"8": early, "528": end},
+        "rotation": {
+            "consecutive": [{"step_from": 8, "step_to": 528, "cos": 0.5}],
+            "above_floor_steps": [8, 528],
+        },
+    }
+
+
+def test_h1_verdict_logic_and_sign_test():
+    an = _load_titration_analyze()
+    results = [
+        _mk_unit_result("villain", early_pass=True),
+        _mk_unit_result("comedian", early_pass=False),
+    ]
+    v = an.h1_verdict(results)
+    assert v["per_source"]["villain"]["pass"] is True
+    assert v["per_source"]["comedian"]["pass"] is False
+    assert v["n_read"] == 2 and v["n_pass"] == 1
+    assert 0 < v["sign_test"]["p_two_sided"] <= 1
+
+    # Below-floor-in-window is a REPORTED outcome, never a silent zero.
+    below = _mk_unit_result("assistant", early_pass=True)
+    below["per_step"]["8"]["above_floor"] = False
+    v2 = an.h1_verdict([below])
+    assert v2["per_source"]["assistant"]["status"] == "below_floor_in_window"
+    assert v2["n_read"] == 0 and v2["sign_test"] is None
+
+
+def test_fourfloat_gate_pass_and_fail():
+    import numpy as np
+
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        ProbeRow,
+        compare_fourfloat_to_reference,
+    )
+
+    rows = [ProbeRow("alpha", 0, (1, 2), 1), ProbeRow("alpha", 1, (1, 2, 3), 1)]
+    ours = np.array([[-5.0, 1.0, 2.0, 6.0], [-7.0, 0.5, 2.5, 7.5]])
+    ref = {
+        "rows": [
+            {
+                "context": "alpha",
+                "q_idx": 0,
+                "logp_trained": -5.05,
+                "z_marker_trained": 1.0,
+                "z_eos_trained": 2.0,
+                "logZ_trained": 6.05,
+            },
+            {
+                "context": "alpha",
+                "q_idx": 1,
+                "logp_trained": -7.02,
+                "z_marker_trained": 0.5,
+                "z_eos_trained": 2.5,
+                "logZ_trained": 7.52,
+            },
+        ]
+    }
+    out = compare_fourfloat_to_reference(rows, ours, ref, side="trained")
+    assert out["pass"] is True and out["max_abs_diff"]["logp"] <= 0.1
+
+    ref_bad = json.loads(json.dumps(ref))
+    ref_bad["rows"][1]["logp_trained"] = -8.0  # 1-nat drift → hard failure
+    with pytest.raises(RuntimeError, match="FOUR-FLOAT REPRODUCTION GATE FAILED"):
+        compare_fourfloat_to_reference(rows, ours, ref_bad, side="trained")
