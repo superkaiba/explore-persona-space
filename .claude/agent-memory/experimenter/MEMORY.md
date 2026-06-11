@@ -67,3 +67,4 @@
 - [vLLM teardown SIGABRT after stage completion](feedback_vllm_teardown_sigabrt_resume.md) — stage work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605)
 - [Kill orphaned vLLM EngineCore workers before relaunch](feedback_vllm_enginecore_orphans_before_relaunch.md) — crashed vLLM runs leave EngineCore subprocesses holding ~50GB/GPU; probe nvidia-smi + pgrep -af EngineCore before ANY relaunch (#601)
 - [pgrep self-match poisons pidfile](feedback_pgrep_self_match_pidfile.md) — resolve relaunch PIDs with a pattern absent from your own SSH command (#602)
+- [Committed pod artifacts block the next pull](feedback_committed_pod_artifacts_block_pull.md) — committing pod-written eval_results files in-task aborts the next pod git pull; backup-outside-repo, remove, pull (#601)
