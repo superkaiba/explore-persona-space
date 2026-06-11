@@ -480,4 +480,4 @@ in the cores of massive stars and during the explosive events known as supernova
     # Generate figures:
     uv run python scripts/plot_issue543_survival.py
     ```
-- **Methodology reference:** [docs/methodology/issue_543.md](https://github.com/superkaiba/explore-persona-space/blob/f121f89aa5249e5bfdac92bd01aae836772a54d5/docs/methodology/issue_543.md) · [gist](https://gist.github.com/superkaiba/6000a75befe22b4fa8c8d8b81a035ba5) *(describes the parent four-arm batch; the 1% arm reuses the same recipe with the positive count at 60/6000)*
+- **Methodology reference:** [docs/methodology/issue_543.md](https://github.com/superkaiba/explore-persona-space/blob/e849dc967848d19da0e6a1fe2a190b939aaade7c/docs/methodology/issue_543.md) · [gist](https://gist.github.com/superkaiba/6000a75befe22b4fa8c8d8b81a035ba5)
