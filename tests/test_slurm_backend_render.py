@@ -40,6 +40,8 @@ from explore_persona_space.backends import (
 from explore_persona_space.backends.slurm import (
     HEARTBEAT_INTERVAL_SECONDS,
     PREFLIGHT_FAIL_MARKER,
+    SbatchPlan,
+    Stage,
     build_rsync_command,
     compute_plan_hash,
     default_gpus_for_intent,
@@ -1726,3 +1728,70 @@ def test_render_sbatch_hydra_only_byte_identical_to_pre_change_snapshot() -> Non
         scratch_dir="/scratch/tjiral/eps/issue-137",
     )
     assert rendered == fixture["rendered_text"]
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — custom workload_cmd stage + rendering
+# ---------------------------------------------------------------------------
+
+
+def _custom_spec(cmd: str = "bash scripts/issue588_smoke.sh --flag 'v 1'") -> RunSpec:
+    return RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd=cmd,
+    )
+
+
+def test_stages_for_spec_workload_cmd_single_custom_stage() -> None:
+    """#588: a workload_cmd spec bypasses the intent → stage table —
+    ONE custom stage; the intent keeps driving GPUs + --time."""
+    plan = stages_for_spec(_custom_spec())
+    assert [s.name for s in plan.stages] == ["workload"]
+    stage = plan.stages[0]
+    assert stage.backend == "custom"
+    assert stage.custom_cmd == "bash scripts/issue588_smoke.sh --flag 'v 1'"
+    # Intent-driven resources unchanged by the custom stage.
+    assert default_gpus_for_intent(_custom_spec()) == 1
+    assert time_budget_hours(_custom_spec()) == 6.0
+
+
+def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
+    """#588: the custom command is embedded VERBATIM inside a
+    ``[phase=workload]`` block; heartbeat / status.json / preflight /
+    terminal ``[phase=done]`` machinery all wrap it unchanged."""
+    spec = _custom_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    # Verbatim, own line (NOT shlex-quoted into a single token).
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    # No hydra entrypoint on the custom path.
+    assert "scripts/train.py" not in script
+    assert "scripts/eval.py" not in script
+    # Stage block + terminal phase machinery intact.
+    assert 'echo "[phase=workload]"' in script
+    assert 'echo "[phase=done]"' in script
+    assert "_write_status" in script
+    assert PREFLIGHT_FAIL_MARKER in script  # in-job preflight intact
+    assert "HEARTBEAT" in script or "heartbeat" in script
+    # Custom stages build the BASE venv (no open-instruct gpu extras) —
+    # the documented Step 6b residual gap.
+    assert "--extra gpu" not in script
+
+
+def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:
+    plan = SbatchPlan(stages=(Stage(name="workload", backend="custom", script_rel=""),))
+    with pytest.raises(ValueError, match="requires custom_cmd"):
+        render_sbatch(
+            spec=_lora_spec(),
+            cluster=_nibi(),
+            plan=plan,
+            scratch_dir="/scratch/tjiral/eps/issue-137",
+        )

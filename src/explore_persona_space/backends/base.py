@@ -100,6 +100,11 @@ class RunSpec:
       (Nibi in v1).
     * ``extra``: backend-specific knobs the orchestrator wants to thread
       without bloating the schema (e.g. ``per_pod_quota_gb`` override).
+    * ``workload_cmd``: custom workload command (repo-relative shell
+      line, e.g. ``bash scripts/issue588_dispatch.sh --foo``). Mutually
+      exclusive with ``hydra_args``. Executed verbatim by the lane
+      renderers from the repo checkout root after env bootstrap.
+      ``""`` = use the standard Hydra entrypoint (#588).
 
     Frozen by design: a run spec is the contract for the launch; mutating
     it mid-run would break the marker trail and any auditable replay.
@@ -119,6 +124,33 @@ class RunSpec:
     backend: BackendKind = "auto"
     cluster: str | None = None
     extra: dict[str, Any] = field(default_factory=dict)
+    # Custom workload command (repo-relative shell line, e.g.
+    # "bash scripts/issue588_dispatch.sh --foo"). Mutually exclusive with
+    # hydra_args. Executed verbatim by the lane renderers from the repo
+    # checkout root after env bootstrap. "" = use the hydra entrypoint.
+    # Declared LAST so existing positional constructions are unaffected.
+    workload_cmd: str = ""
+
+    def __post_init__(self) -> None:
+        """Validate the workload_cmd contract (#588).
+
+        Both-set is a contradiction on EVERY lane → raise here
+        (universal). Neither-set stays LEGAL at construction — the
+        router suite + est-start/reconnect probes build bare specs that
+        never render a workload; the production fail-loud lives at the
+        dispatch CLI (exactly-one check) and the GCP renderer
+        (neither-set raise, the #571 crash point).
+        """
+        if self.workload_cmd and self.hydra_args:
+            raise ValueError(
+                "RunSpec: workload_cmd and hydra_args are mutually exclusive "
+                f"(got workload_cmd={self.workload_cmd!r} AND hydra_args={self.hydra_args!r})."
+            )
+        if self.workload_cmd:
+            if "\n" in self.workload_cmd or "\r" in self.workload_cmd:
+                raise ValueError("RunSpec.workload_cmd must be a single line (no newlines).")
+            if self.workload_cmd != self.workload_cmd.strip():
+                raise ValueError("RunSpec.workload_cmd must not have leading/trailing whitespace.")
 
 
 # ---------------------------------------------------------------------------

@@ -557,8 +557,26 @@ def render_startup_script(
 
     ``hydra_args`` defaults to ``spec.hydra_args`` (so the caller can
     override for a custom dispatch); ``repo_branch`` defaults to ``main``.
+
+    When ``spec.workload_cmd`` is set (#588) the workload block runs
+    that command verbatim instead of ``scripts/train.py``; all other
+    lifecycle machinery (secrets fetch, in-VM preflight, ``eps/phase``
+    guest attributes, EXIT trap, completion sentinel) is identical, and
+    the hydra branch is byte-for-byte the pre-#588 render (pinned by the
+    snapshot test).
     """
     args = tuple(hydra_args if hydra_args is not None else spec.hydra_args)
+    if spec.workload_cmd and args:
+        # Reachable via the ``hydra_args`` parameter override on a
+        # workload_cmd spec — RunSpec.__post_init__ only guards the
+        # spec's own fields.
+        raise ValueError("render_startup_script: workload_cmd and hydra_args both set")
+    if not spec.workload_cmd and not args:
+        raise ValueError(
+            "render_startup_script: neither workload_cmd nor hydra_args set — refusing "
+            "to render a bare 'scripts/train.py' launch (incident #571: it crashes at "
+            "startup and the EXIT trap powers the VM off)."
+        )
     workload_root = workload_dir_for(config, spec.issue)
     sentinel_abs = sentinel_path_for(config, spec.issue, attempt_id)
     sentinel_dir = sentinel_abs.rsplit("/", 1)[0]
@@ -582,6 +600,30 @@ def render_startup_script(
 
     # Hydra args, shell-quoted. Empty tuple → empty string.
     hydra_str = " ".join(shlex.quote(a) for a in args)
+
+    # Workload block (#588): a custom workload_cmd is embedded VERBATIM —
+    # it IS a complete shell command line (shlex-quoting would collapse
+    # it to a single token). Trusted input by design (same trust level as
+    # the plan's Reproducibility Card launch command; it runs as root on
+    # the VM). The RunSpec.__post_init__ single-line check keeps the
+    # rendered script structure intact. The hydra branch is the
+    # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
+    if spec.workload_cmd:
+        workload_block = [
+            "# === Run the workload (custom workload_cmd) ===",
+            "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
+            "# phase=failed + powers off → poll reads dead.",
+            "_eps_phase workload",
+            spec.workload_cmd,
+        ]
+    else:
+        workload_block = [
+            "# === Run the workload (Hydra args = the spec's hydra_args) ===",
+            "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
+            "# phase=failed + powers off → poll reads dead.",
+            "_eps_phase workload",
+            f"uv run python scripts/train.py {hydra_str}".rstrip(),
+        ]
 
     parts = [
         "#!/bin/bash",
@@ -670,11 +712,7 @@ def render_startup_script(
         'mkdir -p "$HF_HOME"',
         f"mkdir -p {shlex.quote(sentinel_dir)}",
         "",
-        "# === Run the workload (Hydra args = the spec's hydra_args) ===",
-        "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
-        "# phase=failed + powers off → poll reads dead.",
-        "_eps_phase workload",
-        f"uv run python scripts/train.py {hydra_str}".rstrip(),
+        *workload_block,
         "",
         "# === Completion sentinel (workload exited cleanly) ===",
         "# The artifact verifier reads this back via list_repo_files / scp.",
@@ -1711,6 +1749,10 @@ class GcpBackend(ComputeBackend):
                 "machine_type": machine_for_intent(spec).machine_type,
                 "provisioning_model": resolve_provisioning_model(spec),
                 "attempt_id": attempt_id,
+                # Additive field (#588): which workload shape the startup
+                # script renders — "custom" (spec.workload_cmd verbatim)
+                # vs "hydra" (scripts/train.py + hydra_args).
+                "workload": "custom" if spec.workload_cmd else "hydra",
             },
             sort_keys=True,
         )
