@@ -1,6 +1,7 @@
 ---
-title: More contrastive negatives raise bystander marker log-prob ~50x more than far-vs-near
-  placement does (LOW confidence)
+title: 'Bystander marker leakage tracks the total contrastive-negative budget: splitting
+  it across more personas moves leakage no more than rerunning the same training (LOW
+  confidence)'
 kind: experiment
 tags:
 - followup-manual
