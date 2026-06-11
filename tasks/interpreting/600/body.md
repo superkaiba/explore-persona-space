@@ -1,6 +1,7 @@
 ---
-title: 'Targeted proximity-dose test: does a contrastive negative parked next to a
-  specific bystander suppress that bystander''s leakage?'
+title: A contrastive negative parked next to a specific bystander does not detectably
+  reduce that bystander's marker leakage — the paired effect sits inside same-mix
+  run noise at this anchor (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T09:36:43Z'
