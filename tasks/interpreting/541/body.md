@@ -432,8 +432,10 @@ courthouse historian   furniture historian        0.472   -3.216   yes    0.967 
 furniture carpenter    furniture historian        0.906   -3.216   yes    0.977      63.3   <- cherry-picked
 ```
 
+Those seven rows are illustrative only (five drawn at random, two cherry-picked); the complete frame and all artifacts are below.
+
 <details>
-<summary>All raw artifacts and exploratory figures for this round</summary>
+<summary>All raw artifacts and exploratory figures for this round (complete set)</summary>
 
 - Full 69-row frame + every statistic quoted above: [joint_predictor_results.json](https://github.com/superkaiba/explore-persona-space/blob/b1aad022c5083d94c9cd6937c1042b5ba4eebc7d/eval_results/issue_541/geometry-plus-prior-joint-predictor/joint_predictor_results.json)
 - Pairwise distance matrices at all five layers + the gate records: [geometry_matrices.json](https://github.com/superkaiba/explore-persona-space/blob/b1aad022c5083d94c9cd6937c1042b5ba4eebc7d/eval_results/issue_541/geometry-plus-prior-joint-predictor/geometry_matrices.json)
