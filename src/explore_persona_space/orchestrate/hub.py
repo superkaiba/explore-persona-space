@@ -11,6 +11,7 @@ import os
 import re
 import shutil
 import sys
+import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -178,15 +179,38 @@ def _upload(
                 ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
             )
 
-        # Verify upload: check that files actually exist on Hub. Use the
-        # paginated tree walk (not repo_info().siblings, which truncates at
-        # ~7901 entries) so verification of a large repo never spuriously
-        # reports 0 committed files.
+        # Verify upload: check that files actually exist on Hub.
         expected_prefix = (path_in_repo or local_path.name).rstrip("/")
-        uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
         if is_file_upload:
-            committed_files = [f for f in uploaded_files if f == expected_prefix]
+            # Single-file verification uses get_paths_info — a targeted O(1)
+            # existence check. The full recursive tree walk 504s repeatedly
+            # on huge repos (3x during issue #571's upload phase,
+            # 2026-06-11: HF /tree Gateway Time-out mid-pagination), so it
+            # is reserved for folder verification below. Transient 5xx on
+            # the targeted check retries 3 attempts with backoff.
+            committed_files: list[str] = []
+            for attempt in range(3):
+                try:
+                    infos = api.get_paths_info(repo_id, [expected_prefix], repo_type=repo_type)
+                    committed_files = [info.path for info in infos]
+                    break
+                except Exception as verify_err:
+                    status = getattr(getattr(verify_err, "response", None), "status_code", None)
+                    if status is not None and 500 <= status < 600 and attempt < 2:
+                        logger.warning(
+                            "get_paths_info transient %s (attempt %d/3); retrying",
+                            status,
+                            attempt + 1,
+                        )
+                        time.sleep(5 * (attempt + 1))
+                        continue
+                    raise
         else:
+            # Folder verification still needs the prefix listing. Use the
+            # paginated tree walk (not repo_info().siblings, which truncates
+            # at ~7901 entries) so verification of a large repo never
+            # spuriously reports 0 committed files.
+            uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
             prefix = expected_prefix + "/"
             committed_files = [f for f in uploaded_files if f.startswith(prefix)]
 
