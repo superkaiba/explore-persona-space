@@ -3,7 +3,8 @@ title: 'Negative-panel composition causes most of the universal end-of-answer cl
   a 4-context panel clamps never-mentioned personas at well under half the 15-context
   push (MODERATE confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-11T01:44:03Z'
 has_clean_result: true
 parent_id: 560
