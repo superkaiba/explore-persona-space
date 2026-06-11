@@ -67,6 +67,10 @@ class _MockBackend(ComputeBackend):
         self.launches: list[RunSpec] = []
         self.teardowns: list[RunHandle] = []
         self.confirms: list[RunHandle] = []
+        self.fetches: list[RunHandle] = []
+        # Ordered trace of the finalize-relevant calls — the #588
+        # fetch-before-confirm test asserts on this sequence.
+        self.call_sequence: list[str] = []
         self._launch_should_raise = launch_should_raise
         self._confirm_passes = confirm_passes
 
@@ -113,14 +117,18 @@ class _MockBackend(ComputeBackend):
         return ""
 
     def fetch_results(self, handle: RunHandle) -> None:
+        self.fetches.append(handle)
+        self.call_sequence.append("fetch_results")
         return None
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         self.confirms.append(handle)
+        self.call_sequence.append("confirm_artifacts")
         return self._confirm_passes
 
     def teardown(self, handle: RunHandle) -> None:
         self.teardowns.append(handle)
+        self.call_sequence.append("teardown")
 
 
 def _build_mock_factory(
@@ -188,7 +196,10 @@ def test_launch_empty_frontmatter_auto_routes_to_free_and_never_runpod(
 
     buf = io.StringIO()
     with redirect_stdout(buf):
-        rc = main(["launch", "--issue", "300", "--intent", "lora-7b"], backends_factory=factory)
+        rc = main(
+            ["launch", "--issue", "300", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
     assert rc == 0
     body = json.loads(buf.getvalue().strip())
     assert body["ok"] is True
@@ -224,7 +235,17 @@ def test_launch_backend_runpod_explicit_provisions_runpod_and_writes_sidecar(
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = main(
-            ["launch", "--issue", "301", "--intent", "lora-7b", "--backend", "runpod"],
+            [
+                "launch",
+                "--issue",
+                "301",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "runpod",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -262,7 +283,17 @@ def test_launch_sidecar_write_error_still_prints_handle_json(monkeypatch, tmp_pa
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = main(
-            ["launch", "--issue", "302", "--intent", "lora-7b", "--backend", "nibi"],
+            [
+                "launch",
+                "--issue",
+                "302",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0, "sidecar-write failure must not convert a successful launch to a crash rc"
@@ -303,7 +334,17 @@ def test_launch_sidecar_write_error_body_round_trips_deserialize_handle(
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = main(
-            ["launch", "--issue", "305", "--intent", "lora-7b", "--backend", "nibi"],
+            [
+                "launch",
+                "--issue",
+                "305",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -337,7 +378,17 @@ def test_launch_backend_cluster_legacy_maps_to_nibi(monkeypatch, tmp_path) -> No
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = main(
-            ["launch", "--issue", "302", "--intent", "lora-7b", "--backend", "cluster"],
+            [
+                "launch",
+                "--issue",
+                "302",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "cluster",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -366,7 +417,10 @@ def test_launch_router_terminal_prints_failure_class_and_nonzero_exits(
 
     buf = io.StringIO()
     with redirect_stdout(buf):
-        rc = main(["launch", "--issue", "303", "--intent", "lora-7b"], backends_factory=factory)
+        rc = main(
+            ["launch", "--issue", "303", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
     # Exit code 2 = router terminal (per the CLI docstring).
     assert rc == 2
     body = json.loads(buf.getvalue().strip())
@@ -432,7 +486,17 @@ def test_launch_repo_branch_defaults_to_current_branch_for_gcp_lane(monkeypatch,
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = di.main(
-            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "gcp"],
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -460,6 +524,8 @@ def test_launch_repo_branch_explicit_flag_wins_over_current_branch(monkeypatch, 
                 "lora-7b",
                 "--backend",
                 "gcp",
+                "--hydra",
+                "smoke=1",
                 "--repo-branch",
                 "release-x",
             ],
@@ -482,7 +548,17 @@ def test_launch_repo_branch_not_defaulted_on_explicit_slurm_lane(monkeypatch, tm
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = di.main(
-            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "nibi"],
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "nibi",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -502,7 +578,17 @@ def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) ->
     buf = io.StringIO()
     with redirect_stdout(buf):
         rc = di.main(
-            ["launch", "--issue", "304", "--intent", "lora-7b", "--backend", "gcp"],
+            [
+                "launch",
+                "--issue",
+                "304",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
             backends_factory=factory,
         )
     assert rc == 0
@@ -999,3 +1085,171 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
     # here (router-skip-Mila behaviour is covered by the dedicated
     # ``test_router_skips_mila_when_socket_down`` test).
     assert deps["mila_socket_alive"]() is False
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — --workload-cmd threading + exactly-one-of validation
+# ---------------------------------------------------------------------------
+
+
+def test_launch_workload_cmd_threaded_into_spec_verbatim(monkeypatch, tmp_path) -> None:
+    """Mirror of ``test_launch_hydra_args_threaded_into_spec``: the
+    custom command must land on the spec VERBATIM (quoting included)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "588",
+                "--intent",
+                "debug",
+                "--workload-cmd",
+                "bash scripts/issue588_smoke.sh --flag 'v 1'",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.launches[0].workload_cmd == "bash scripts/issue588_smoke.sh --flag 'v 1'"
+    assert nibi.launches[0].hydra_args == ()
+
+
+def test_launch_workload_cmd_and_hydra_both_is_parser_error(monkeypatch, tmp_path) -> None:
+    """Both flags → argparse error (exit 2) BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def exploding_factory():
+        raise AssertionError("backends must not be built on a parser error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            [
+                "launch",
+                "--issue",
+                "588",
+                "--intent",
+                "debug",
+                "--workload-cmd",
+                "bash scripts/issue588_smoke.sh",
+                "--hydra",
+                "seed=1",
+            ],
+            backends_factory=exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_launch_neither_workload_cmd_nor_hydra_is_parser_error(monkeypatch, tmp_path) -> None:
+    """Neither flag → same exactly-one parser error (the #571 shape:
+    a bare hydra launch with no overrides is never an intended
+    production dispatch)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def exploding_factory():
+        raise AssertionError("backends must not be built on a parser error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            ["launch", "--issue", "588", "--intent", "debug"],
+            backends_factory=exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+def test_launch_workload_cmd_explicit_empty_counts_as_not_provided(monkeypatch, tmp_path) -> None:
+    """``--workload-cmd ''`` is NOT a workload — it errors with the same
+    exactly-one message (disambiguates None vs empty)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def exploding_factory():
+        raise AssertionError("backends must not be built on a parser error")
+
+    from scripts.dispatch_issue import main
+
+    with pytest.raises(SystemExit) as excinfo:
+        main(
+            ["launch", "--issue", "588", "--intent", "debug", "--workload-cmd", ""],
+            backends_factory=exploding_factory,
+        )
+    assert excinfo.value.code == 2
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — finalize calls fetch_results BEFORE confirm_artifacts
+# ---------------------------------------------------------------------------
+
+
+def test_finalize_calls_fetch_results_before_confirm_artifacts(monkeypatch, tmp_path) -> None:
+    """The GCP completion sentinel lives ON the VM; ``fetch_results`` is
+    the scp pull that lands it locally and the verifier reads the LOCAL
+    filesystem — so finalize MUST fetch before the confirm gate
+    (latent slice-6 gap; without it every real GCP finalize FAILed
+    confirm on the missing local sentinel)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 405, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "405",
+                "--handle-file",
+                str(tmp_path / "issue-405-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert nibi.call_sequence == ["fetch_results", "confirm_artifacts", "teardown"]
+
+
+def test_finalize_fetch_results_crash_still_reaches_confirm_gate(monkeypatch, tmp_path) -> None:
+    """``fetch_results`` is fail-soft by contract, but a CRASH must not
+    become a finalize traceback — it logs loudly and lets the confirm
+    gate FAIL with the right surfacing (teardown skipped, evidence
+    preserved)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 406, kind="nibi")
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+
+    def exploding_fetch(_handle):
+        raise OSError("scp transport refused")
+
+    nibi.fetch_results = exploding_fetch  # type: ignore[method-assign]
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "finalize",
+                "--issue",
+                "406",
+                "--handle-file",
+                str(tmp_path / "issue-406-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    # confirm FAIL surfaced as rc=3 (NOT rc=4 crash); teardown skipped.
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["reason"] == "confirm_artifacts_failed"
+    assert len(nibi.confirms) == 1
+    assert len(nibi.teardowns) == 0

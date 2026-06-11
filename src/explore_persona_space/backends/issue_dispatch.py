@@ -200,6 +200,7 @@ def build_run_spec(
     account: str | None = None,
     hydra_args: tuple[str, ...] = (),
     extra: dict[str, Any] | None = None,
+    workload_cmd: str = "",
 ) -> RunSpec:
     """Build a :class:`RunSpec` from frontmatter-shaped inputs.
 
@@ -208,6 +209,12 @@ def build_run_spec(
     runs in ONE place. The ``cluster`` arg is honored only when
     ``backend_value`` is the per-cluster alias OR ``"cluster"`` (which
     normalizes to ``"nibi"``); otherwise the router itself ignores it.
+
+    ``workload_cmd`` (#588) threads straight onto the spec; the
+    exactly-one-of-(--workload-cmd / --hydra) production gate lives at
+    the dispatch CLI — this builder stays permissive on neither (test
+    factories + finalize-adjacent uses build bare specs). Both-set
+    raises from ``RunSpec.__post_init__``.
     """
     backend = normalize_backend_value(backend_value)
     return RunSpec(
@@ -220,6 +227,7 @@ def build_run_spec(
         backend=backend,
         cluster=cluster,
         extra=dict(extra or {}),
+        workload_cmd=str(workload_cmd or ""),
     )
 
 
