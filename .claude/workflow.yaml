@@ -2460,6 +2460,11 @@ workflow_fix_on_bug:
     - "scripts/pod_watch.py"
     - "scripts/worktree_audit.py"
     - "scripts/cron_worktree_audit.sh"
+    # The /issue Step 4a cone-mode sparse-worktree creation helper (+ its
+    # test file below). Added 2026-06-11 (#596): the list predated the
+    # helper's same-day merge and its absence nearly deflected an in-scope
+    # anchoring/validation hardening fix.
+    - "scripts/new_worktree.sh"
     - "scripts/autonomous_session_watch.py"
     - "scripts/cron_autonomous_session_watch.sh"
     - "scripts/session_progress_report.py"
@@ -2477,6 +2482,7 @@ workflow_fix_on_bug:
     - "tests/test_session_summarize.py"
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
+    - "tests/test_sparse_worktree.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"

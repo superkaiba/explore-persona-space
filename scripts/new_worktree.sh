@@ -26,13 +26,24 @@ shift 2
 ISSUE="" FULL=0
 while [ $# -gt 0 ]; do
   case "$1" in
-    --issue) ISSUE=$2; shift 2 ;;
+    --issue)
+      ISSUE=${2:?new_worktree: --issue requires a value}
+      # A non-numeric value would silently create a junk cone
+      # (eval_results/issue_<garbage>) — refuse loudly. (#596 reviewer minor)
+      case "$ISSUE" in
+        *[!0-9]*) echo "new_worktree: --issue must be numeric, got: $ISSUE" >&2; exit 2 ;;
+      esac
+      shift 2 ;;
     --full)  FULL=1; shift ;;
     *) echo "new_worktree: unknown arg: $1" >&2; exit 2 ;;
   esac
 done
 
-REPO_ROOT=$(git rev-parse --show-toplevel)
+# Anchor to the MAIN checkout even when invoked from inside another worktree:
+# `--show-toplevel` would resolve to THAT worktree, and the cone include list
+# below would then be computed from its branch HEAD instead of the main
+# checkout's. Same idiom as /issue SKILL.md Step 10d. (#596 reviewer minor)
+REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 EXCLUDES="eval_results external ood_eval_results"
 
 # Drop stale registrations whose directories were deleted out-of-band
@@ -57,6 +68,13 @@ _add() {
 # Idempotent sparse setup + checkout: safe to (re-)run on a worktree in
 # --no-checkout limbo (interrupted creation) as well as on a fresh one.
 _sparse_setup() {
+  # Preserve cones already present from a PRIOR run (the repair case): a
+  # repair WITHOUT --issue on a worktree originally created WITH --issue
+  # must not silently drop the per-issue cones. Capture BEFORE init (`list`
+  # errors on a not-yet-sparse tree → empty). Duplicates with $DIRS/$CONES
+  # are harmless — `set` dedupes. (#596 reviewer minor)
+  local EXISTING
+  EXISTING=$(git -C "$WT" sparse-checkout list 2>/dev/null || true)
   # ORDER MATTERS on git 2.34: `init --cone` FIRST. `set --cone` is silently
   # accepted as a literal PATTERN (no --cone flag on `set` until git 2.35+),
   # which yields non-cone any-depth matching — the failure mode this script
@@ -67,12 +85,19 @@ _sparse_setup() {
   # on the issue branch (or merge into main later) are out-of-cone — the fix
   # is the documented `git -C "$WT" sparse-checkout add <dir>`.
   local DIRS CONES=""
+  # The unquoted $DIRS/$CONES/$EXISTING expansions below word-split on
+  # whitespace — guard loudly if a top-level dir name ever embeds whitespace
+  # or git quote-escaping, rather than mis-splitting it. (#596 reviewer minor)
+  if git -C "$REPO_ROOT" ls-tree --name-only -d HEAD | grep -Eq '[[:space:]"\\]'; then
+    echo "new_worktree: FATAL — top-level dir name with whitespace/quoting defeats the unquoted cone expansion" >&2
+    return 1
+  fi
   # shellcheck disable=SC2046,SC2086
   DIRS=$(git -C "$REPO_ROOT" ls-tree --name-only -d HEAD \
          | grep -vxF $(printf -- '-e %s ' $EXCLUDES))
   [ -n "$ISSUE" ] && CONES="eval_results/issue_${ISSUE} ood_eval_results/issue_${ISSUE}"
   # shellcheck disable=SC2086
-  git -C "$WT" sparse-checkout set $DIRS $CONES
+  git -C "$WT" sparse-checkout set $DIRS $CONES $EXISTING
   [ "$(git -C "$WT" config --worktree core.sparseCheckoutCone || true)" = true ] \
     || { echo "new_worktree: FATAL — cone mode failed to engage in $WT" >&2; return 1; }
   git -C "$WT" checkout "$BRANCH"
@@ -104,6 +129,10 @@ else
   git -C "$REPO_ROOT" rev-parse --verify "$BRANCH" >/dev/null 2>&1 || CREATED_BRANCH=1
   _cleanup_failed_create() {
     echo "new_worktree: creation FAILED — removing half-created worktree" >&2
+    # $WT was realpath -m-normalized at parse time, so this remove targets
+    # the same path spelling `worktree add` registered above (symlink-
+    # spelling parity); the `worktree prune` on the next run is the backstop
+    # for any residue. (#596 reviewer minor — judged: comment, not code)
     git -C "$REPO_ROOT" worktree remove --force "$WT" 2>/dev/null || true
     [ "$CREATED_BRANCH" = 1 ] && git -C "$REPO_ROOT" branch -D "$BRANCH" 2>/dev/null || true
   }
