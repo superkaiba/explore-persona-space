@@ -5,7 +5,7 @@ title: Removing the contrastive negatives does not give the marker EM-like conce
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:16:20Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 551
 goal: 'Determine whether the EM-vs-marker direction-concentration contrast is caused
   by the training rig rather than the implanted behavior, by retraining the marker
