@@ -157,46 +157,61 @@ def _off_diag_indices(t: ArmTensor, ci: str, *, exclude_binst_marker: bool = Tru
 def _centroid_cache(eval_root: Path) -> dict[str, np.ndarray]:
     """L22 last_prompt centroids for every context with a local cloud.
 
-    Sources: i542 reduced clouds (explicit layer index), the dispatcher-fetched
-    parent clouds (``clouds_parent/``), and -- when run on the analysis VM --
-    parent clouds downloaded from the PINNED HF revision on demand.
+    Sources, in precedence order: i542 reduced clouds (explicit layer index),
+    the dispatcher-fetched parent clouds (``clouds_parent/`` under the i542
+    eval root), and the parent harness's own cloud dir (``EVAL537/clouds`` --
+    the SAME directory ``_ensure_parent_clouds`` downloads into and
+    ``i537_score_metric._load_cloud`` reads, so one on-demand download serves
+    both the metric matrices and these centroids on a VM-side rerun).
     """
     out: dict[str, np.ndarray] = {}
     red_dir = eval_root / "clouds_reduced"
-    for p in sorted(red_dir.glob("*__last_prompt.npz")) if red_dir.exists() else []:
+    for p in sorted(red_dir.glob(f"*__{PRIMARY_ANCHOR}.npz")) if red_dir.exists() else []:
         z = np.load(p)
         layers = list(z["layers"])
         out[p.name.split("__")[0]] = (
             z["hidden"][:, layers.index(PRIMARY_LAYER), :].astype(np.float64).mean(axis=0)
         )
-    par_dir = eval_root / "clouds_parent"
-    for p in sorted(par_dir.glob("*__last_prompt.npz")) if par_dir.exists() else []:
-        cid = p.name.split("__")[0]
-        if cid not in out:
-            out[cid] = np.load(p)["hidden"][:, PRIMARY_LAYER, :].astype(np.float64).mean(axis=0)
+    for full_dir in (eval_root / "clouds_parent", EVAL537 / "clouds"):
+        for p in sorted(full_dir.glob(f"*__{PRIMARY_ANCHOR}.npz")) if full_dir.exists() else []:
+            cid = p.name.split("__")[0]
+            if cid not in out:
+                out[cid] = np.load(p)["hidden"][:, PRIMARY_LAYER, :].astype(np.float64).mean(axis=0)
     return out
 
 
-def _download_parent_cloud(cid: str, dest_dir: Path) -> Path | None:
+def _hf_fetch_parent(rel: str, dest: Path) -> Path | None:
+    """One pinned-revision parent file -> ``dest`` (symlink into the HF cache).
+
+    Symlink, not copy: the blob already lives in the HF cache, and the pod's
+    MooseFS quota / the VM's root disk should not pay for it twice. A pruned
+    cache dangles the link, which re-triggers this download (dest.exists() is
+    False for a dangling symlink).
+    """
     from huggingface_hub import hf_hub_download
 
+    if dest.exists():
+        return dest
     try:
         got = hf_hub_download(
             DATA_REPO,
-            f"{HF_PARENT_PREFIX}/clouds/{cid}__{PRIMARY_ANCHOR}.npz",
+            f"{HF_PARENT_PREFIX}/{rel}",
             repo_type="dataset",
             revision=DATA_REV,
         )
     except Exception as e:
-        logger.warning("[clouds] download failed for %s: %s", cid, e)
+        logger.warning("[fetch] download failed for %s: %s", rel, e)
         return None
-    dest_dir.mkdir(parents=True, exist_ok=True)
-    dest = dest_dir / f"{cid}__{PRIMARY_ANCHOR}.npz"
-    if not dest.exists():
-        import shutil
-
-        shutil.copyfile(got, dest)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.unlink(missing_ok=True)  # clear a dangling symlink
+    dest.symlink_to(Path(got).resolve())
     return dest
+
+
+def _download_parent_cloud(cid: str, dest_dir: Path) -> Path | None:
+    return _hf_fetch_parent(
+        f"clouds/{cid}__{PRIMARY_ANCHOR}.npz", dest_dir / f"{cid}__{PRIMARY_ANCHOR}.npz"
+    )
 
 
 def _cos_dist(a: np.ndarray, b: np.ndarray) -> float:
@@ -222,10 +237,15 @@ def arm_summary(t: ArmTensor, centroids: dict[str, np.ndarray], qmask: np.ndarra
     broad_present = [c for c in BROAD_ROWS if c in t.train_cids]
     broad_full = [float(t.G[t.row(c), dj]) for c in broad_present]
     broad_quar = [float(t.G[t.row(c), dj]) for c in broad_present if qmask[t.row(c), dj]]
-    all15 = [
+    # All-15-row default-column mean (plan §1, descriptive): every train row
+    # EXCEPT the default-trained row itself. binst_marker IS included here --
+    # only the 10-broad-row gate read excludes it (parent anchors: +3.3032
+    # full mask / +3.2547 quarantine-passing).
+    all15 = [float(t.G[ii, dj]) for ii, ci in enumerate(t.train_cids) if ci != "default"]
+    all15_q = [
         float(t.G[ii, dj])
         for ii, ci in enumerate(t.train_cids)
-        if ci != "default" and ci != "binst_marker"
+        if ci != "default" and qmask[ii, dj]
     ]
     default_emission_broad = [float(t.emission_trained[t.row(c), dj]) for c in broad_present]
 
@@ -279,6 +299,7 @@ def arm_summary(t: ArmTensor, centroids: dict[str, np.ndarray], qmask: np.ndarra
         "default_col_broad_full_mask": float(np.mean(broad_full)) if broad_full else None,
         "default_col_broad_quarantine": float(np.mean(broad_quar)) if broad_quar else None,
         "default_col_all15": float(np.mean(all15)) if all15 else None,
+        "default_col_all15_quarantine": float(np.mean(all15_q)) if all15_q else None,
         "default_col_emission_rate_broad": float(np.mean(default_emission_broad))
         if default_emission_broad
         else None,
@@ -567,10 +588,31 @@ def stop_step_diagnostic(eval_root: Path) -> dict:
 
 
 def _ensure_parent_clouds(cids: list[str]) -> None:
+    """Pull missing PARENT clouds into ``EVAL537/clouds`` (the pinned revision).
+
+    ``EVAL537/clouds`` is the ONE destination both ladder consumers read:
+    ``i537_score_metric._load_cloud`` resolves clouds there for the metric
+    matrices, and ``_centroid_cache`` scans the same dir for the
+    ``dist_to_panel_*`` centroids -- so a VM-side rerun works without the
+    dispatcher's pod-side ``clouds_parent`` fetch.
+    """
     dest = EVAL537 / "clouds"
     for cid in cids:
         if not (dest / f"{cid}__{PRIMARY_ANCHOR}.npz").exists():
             _download_parent_cloud(cid, dest)
+
+
+def _ensure_parent_first_token(cids: list[str]) -> None:
+    """Pull missing parent first-token caches (the A4/A8 ladder rows) likewise.
+
+    No dispatcher phase fetches these (they are ladder-only inputs), so the
+    on-demand download here is what makes the first-token registered metrics
+    computable on BOTH the pod and a VM-side rerun; a failed download degrades
+    to the ladder's per-metric error row, never a crash.
+    """
+    dest = EVAL537 / "first_token_cache"
+    for cid in cids:
+        _hf_fetch_parent(f"first_token_cache/{cid}.npz", dest / f"{cid}.npz")
 
 
 def ladder_scores(arms: dict[str, ArmTensor], eval_root: Path) -> dict:
@@ -585,10 +627,21 @@ def ladder_scores(arms: dict[str, ArmTensor], eval_root: Path) -> dict:
     import i537_score_metric as sm
 
     from explore_persona_space.experiments.i537_contexts import train_cids_for
-    from explore_persona_space.experiments.i542_panels import PANELS
+    from explore_persona_space.experiments.i542_panels import NEW_NEGATIVE_CIDS, PANELS
 
     cids = train_cids_for("marker")
-    _ensure_parent_clouds(cids)
+    # dist_to_panel needs centroids for the PANEL members too; the parent-side
+    # ones (arm1_xfam / c2 / the c8+c16 parent subset) live on HF, the i542
+    # ones come from clouds_reduced (extracted at P0').
+    panel_parent_cids = {
+        p
+        for arm in arms
+        if not arm.startswith("repl_")
+        for p in PANELS.get(arm, ())
+        if p not in NEW_NEGATIVE_CIDS
+    }
+    _ensure_parent_clouds(sorted({*cids, *panel_parent_cids}))
+    _ensure_parent_first_token(cids)
     centroids = _centroid_cache(eval_root)
 
     qmask16 = sm.quarantine_mask(

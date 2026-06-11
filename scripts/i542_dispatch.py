@@ -27,10 +27,19 @@ Phases (plan §3.3):
                    the base-side parity spot-check (3 contexts, ≤0.05 nat).
   --phase gate     G1' (CPU, after arm2_close train+eval): band landing ≥
                    13/16, V2 parity pass, realized throughput vs 0.12 Qs/s/GPU.
+                   ``--steps c8`` (CPU, after ALL core panels + replicates):
+                   the registered c8 add-back decision -- realized GPU-h
+                   (summed from runtime/gpu_runtimes.jsonl, written by every
+                   GPU phase process) ≤ 62 → c8 AUTO-included in later
+                   train/eval/assemble; else skip. Decision posted as an
+                   epm:progress sentinel either way (never silent);
+                   ``--include-c8`` stays the manual override.
   --phase assemble per-arm G tensors (arm1_xfam assembled from the parent's
                    git G_cells through the SAME code path) + HF upload of the
                    new mixes/caches/contexts under ``issue542_negative_panels/``.
-  --phase analyze  subprocess → scripts/i542_registered_reads.py (CPU).
+  --phase analyze  subprocess → scripts/i542_registered_reads.py --ladder
+                   (registered reads + seed-noise floor + the §6.5 ladder
+                   deliverable incl. dist_to_panel rows) → i542_figures (CPU).
 
 Pod-side contract (CLAUDE.md / poll_pipeline.py): emits ``[phase=<name>]``
 log lines, a terminal ``[phase=done]``, and an end-of-run sentinel JSON at
@@ -99,6 +108,9 @@ V2_MEDIAN_TOL_NATS = 0.05
 # G1' band-landing "in/near" window: in-band [5,12] plus a 2-nat shoulder
 # (the parent's standing flags: binst_marker saturated above, fmt_code below).
 BAND_LOW, BAND_HIGH, BAND_SHOULDER = 5.0, 12.0, 2.0
+# c8 add-back gate (plan §3.3 / §9 ladder step 2): include c8 iff cumulative
+# realized GPU-h after all core panels + replicates is <= this threshold.
+C8_GATE_GPU_H = 62.0
 
 _CURRENT_PHASE = "init"
 _PHASE_DIGIT_WORDS = str.maketrans({"0": "zero", "1": "one", "2": "two", "3": "three"})
@@ -171,6 +183,32 @@ def _require_credentials() -> None:
     assert os.environ.get("WANDB_API_KEY"), "WANDB_API_KEY missing"
 
 
+def _record_gpu_runtime(args, elapsed_s: float) -> None:
+    """Append this process's wall seconds to ``runtime/gpu_runtimes.jsonl``.
+
+    Every GPU phase process is pinned to exactly ONE GPU (the
+    CUDA_VISIBLE_DEVICES pin in ``main``), so process wall-seconds == realized
+    GPU-seconds. The c8 add-back gate (``--phase gate --steps c8``) sums these
+    rows against C8_GATE_GPU_H. Single short O_APPEND writes keep concurrent
+    shard processes safe.
+    """
+    p = EVAL / "runtime/gpu_runtimes.jsonl"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    row = {
+        "phase": args.phase,
+        "steps": args.steps,
+        "arm": args.arm,
+        "cells": args.cells,
+        "shard": args.shard,
+        "smoke": bool(args.smoke),
+        "elapsed_s": round(elapsed_s, 1),
+        "gpu_count": 1,
+        "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+    }
+    with p.open("a") as f:
+        f.write(json.dumps(row) + "\n")
+
+
 # ── Pools / registry / cells ─────────────────────────────────────────────────
 
 
@@ -231,11 +269,23 @@ def _shard_select(items: list, shard: str | None) -> list:
     return [it for i, it in enumerate(items) if i % n == k]
 
 
+def _c8_gate_includes() -> bool:
+    """True iff the registered c8 add-back gate (plan §3.3) decided "include".
+
+    Written by ``--phase gate --steps c8``; once present with an "include"
+    decision, every later train/eval/assemble invocation AUTO-includes the c8
+    cells -- no --include-c8 flag needed, so the add-back can never be
+    silently omitted after the gate fires.
+    """
+    p = EVAL / "p1/c8_gate.json"
+    return p.exists() and json.loads(p.read_text()).get("decision") == "include"
+
+
 def _arm_list(args) -> list[str]:
     from explore_persona_space.experiments.i542_panels import ARM_TRAIN_ORDER, REPLICATE_ARMS
 
     arms = [*ARM_TRAIN_ORDER]
-    if args.include_c8:
+    if args.include_c8 or _c8_gate_includes():
         arms.append("c8")
     arms += list(REPLICATE_ARMS)
     if args.arm:
@@ -1126,7 +1176,9 @@ def _xeval_cells(args, cells: list[dict]) -> None:
                     **_meta(),
                     "shard": args.shard,
                     "qs_per_sec_per_gpu": float(np.mean(rates)),
-                    "n_cells": len(rates),
+                    # One rate sample per (train cell x eval context) PAIR,
+                    # not per cell -- named accordingly (round-2 rename).
+                    "n_pairs": len(rates),
                 },
                 indent=2,
             )
@@ -1232,6 +1284,15 @@ def phase_eval(args) -> None:
 
 
 def phase_gate(args) -> None:
+    """CPU gates: G1' (plan §7, default) + the c8 add-back decision (--steps c8)."""
+    steps = args.steps or ["g1prime"]
+    if "g1prime" in steps:
+        _g1prime_gate(args)
+    if "c8" in steps:
+        _c8_addback_gate(args)
+
+
+def _g1prime_gate(args) -> None:
     """G1' after arm2_close train+eval (plan §7): band landing, V2, throughput."""
     import numpy as np
 
@@ -1302,6 +1363,75 @@ def phase_gate(args) -> None:
             f"G1' throughput {rate:.3f} Qs/s/GPU < 0.12 -- descope ladder §9 triggered "
             "(step 1: drop the 2 long-prefix eval columns from remaining new-arm evals).",
         )
+
+
+def _c8_addback_gate(args) -> None:
+    """The registered c8 add-back decision (plan §3.3), explicit and LOUD.
+
+    Run AFTER all core panels + replicates have train+eval complete (fails
+    loud on any missing core rollup -- a premature read would under-count
+    realized GPU-h). Decision: include c8 iff realized GPU-h <= C8_GATE_GPU_H.
+    The decision lands in ``p1/c8_gate.json`` (consulted by ``_arm_list``, so
+    later train/eval/assemble invocations auto-include c8 on "include") AND in
+    an ``epm:progress`` sentinel either way -- the skip branch is registered,
+    never silent. ``--include-c8`` stays the manual override.
+    """
+    from explore_persona_space.experiments.i542_panels import (
+        ARM_TRAIN_ORDER,
+        REPLICATE_ARMS,
+    )
+
+    phase_log("gate_caddback")
+    if args.dry_run:
+        return
+    assert not args.cells and not args.arm, (
+        "[gate] the c8 add-back gate evaluates the FULL core grid -- "
+        "drop --cells/--arm for --steps c8"
+    )
+    missing = []
+    for arm in (*ARM_TRAIN_ORDER, *REPLICATE_ARMS):
+        for cell in _cells_for_arm(arm, args):
+            rollup = EVAL / f"G_cells/{arm}/{cell['cid']}_seed{cell['train_seed']}.json"
+            if not rollup.exists():
+                missing.append(f"{arm}/{cell['cid']}")
+    if missing:
+        raise SystemExit(
+            f"[gate] c8 add-back gate is PREMATURE: {len(missing)} core cell rollups "
+            f"missing (first 4: {missing[:4]}). Finish core train+eval first (plan §3.3: "
+            "the gate reads realized GPU-h AFTER all core panels + replicates)."
+        )
+    rt = EVAL / "runtime/gpu_runtimes.jsonl"
+    assert rt.exists(), (
+        f"[gate] {rt} missing -- every real p0prime/train/eval process appends its "
+        "GPU runtime there; the c8 gate cannot read realized GPU-h without it."
+    )
+    rows = [json.loads(line) for line in rt.read_text().splitlines() if line.strip()]
+    realized_h = sum(r["elapsed_s"] * r.get("gpu_count", 1) for r in rows) / 3600.0
+    include = realized_h <= C8_GATE_GPU_H
+    payload = {
+        **_meta(),
+        "realized_gpu_h": round(realized_h, 2),
+        "threshold_gpu_h": C8_GATE_GPU_H,
+        "n_runtime_rows": len(rows),
+        "decision": "include" if include else "skip",
+        "basis": "sum of per-process wall-h over real-run p0prime/train/eval rows "
+        "(each process pinned to 1 GPU via CUDA_VISIBLE_DEVICES); smoke roots and "
+        "idle pod time excluded",
+    }
+    p = EVAL / "p1/c8_gate.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(json.dumps(payload, indent=2))
+    msg = (
+        f"c8 add-back gate (plan §3.3): realized {realized_h:.1f} GPU-h vs <= "
+        f"{C8_GATE_GPU_H:.0f} -> {payload['decision'].upper()} -- "
+        + (
+            "c8 cells AUTO-included in subsequent train/eval/assemble invocations"
+            if include
+            else "c8 skipped (registered); count axis keeps its 3-level minimum {2,4,16}"
+        )
+    )
+    write_sentinel("epm:progress", msg)
+    logger.info("[gate] %s", msg)
 
 
 # ── Phase assemble ───────────────────────────────────────────────────────────
@@ -1448,12 +1578,19 @@ def phase_analyze(args) -> None:
     if args.dry_run:
         phase_log("analyze_figures")
         return
+    # --ladder always: the §6.5 ladder deliverable (baselines/ladder_scores_542
+    # .json incl. the 2 NEW dist_to_panel rows) is produced by THIS phase --
+    # no other phase runs it. All clouds are local by now (P0' extracted the
+    # i542 reduced clouds; the reads script pulls missing parent clouds /
+    # first-token caches from the pinned HF revision on demand), and ladder
+    # failures degrade to per-metric error rows, never a phase crash.
     subprocess.run(
         [
             sys.executable,
             str(REPO / "scripts/i542_registered_reads.py"),
             "--eval-root",
             str(EVAL),
+            "--ladder",
         ],
         check=True,
         cwd=REPO,
@@ -1549,6 +1686,13 @@ def main() -> int:
             f"failure_class: code\nphase: {args.phase} ({_CURRENT_PHASE})\nerror: {e!r}",
         )
         raise
+    finally:
+        # GPU-runtime ledger for the c8 add-back gate -- recorded on success
+        # AND failure (a crashed shard still burned its GPU time). Smoke runs
+        # write under the *_smoke EVAL root, excluding themselves from the
+        # real gate sum by construction.
+        if args.phase in ("p0prime", "train", "eval") and not args.dry_run:
+            _record_gpu_runtime(args, time.time() - t0)
     write_sentinel(
         "epm:progress",
         f"phase {args.phase} complete (steps={args.steps or 'all'}, arm={args.arm or 'all'}, "

@@ -365,6 +365,8 @@ def assert_panel_disjointness(merged: dict[str, Ctx]) -> None:
     - no new F1 system-prompt string equals ANY other registry context's
       system prompt (eval contexts + parent negatives + each other);
     - no new F4 wrap template equals any frozen wrap (eval or negative);
+    - every new F2 prefix carries a NON-EMPTY ``conversation_hash`` (an empty
+      hash would silently skip the next check -- fail loud instead);
     - no new F2 ``conversation_hash`` equals any parent WildChat hash
       (eval columns included) or another new prefix's hash.
     """
@@ -405,6 +407,11 @@ def assert_panel_disjointness(merged: dict[str, Ctx]) -> None:
             assert wrap not in seen_wraps, f"{cid}: duplicate wrap among new negatives"
             seen_wraps.add(wrap)
         chash = c.payload.get("conversation_hash")
+        if c.family == "F2":
+            assert chash, (
+                f"{cid}: F2 (WildChat) negative has no conversation_hash -- payload "
+                "disjointness vs the frozen prefixes cannot be certified"
+            )
         if chash:
             assert chash not in other_hashes, (
                 f"{cid}: WildChat conversation_hash collides with a frozen prefix "
