@@ -18,10 +18,12 @@ completes):
 
 Grid resolution: ``--models-manifest <json>`` (explicit adapter-set list —
 ``[{"slug", "adapter_path" | "hub_subfolder" (+"revision")}]``) or
-``--default-grid`` (6 post-SFT adapters from
-``eval_results/issue_570/org_*/seed*/phase2_result.json`` + the seed-42
-picked install from its ``phase1_pick_record.json``). ``--print-plan`` is
-the CPU smoke: prints the resolved grid + output paths, exits 0.
+``--default-grid`` (AUTO-DISCOVERED: 6 post-SFT adapters from
+``eval_results/issue_570/org_*/seed*/phase2_result.json`` — arm, seed, and
+install-variant suffix (e.g. ``_rescue_lr2e6``) derive from the realized
+paths, never hardcoded — + the seed-42 picked install from the matching
+``phase1[_<install_variant>]`` ``phase1_pick_record.json``). ``--print-plan``
+is the CPU smoke: prints the resolved grid + output paths, exits 0.
 
 Usage (pod, 1 GPU):
     uv run python scripts/eval_issue570_alignment.py --default-grid --gpu 0
@@ -34,6 +36,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import shutil
 import subprocess
 import sys
@@ -54,7 +57,6 @@ from _issue543_common import (  # noqa: E402
     EVAL_RESULTS_DIR_570,
     ISSUE_570,
     PROJECT_ROOT,
-    cell_dir_570,
     phase_log,
     repro_metadata,
     sentinel_dir,
@@ -99,43 +101,97 @@ def _model_done(slug: str) -> bool:
 # ── Grid resolution ──────────────────────────────────────────────────────────
 
 
-def build_default_grid() -> list[dict]:
-    """6 post-SFT models + the seed-42 picked-install spot-check (plan §4.5).
+_SEED_DIR_RE = re.compile(r"seed(\d+)")
 
-    Post adapters resolve from each cell's ``phase2_result.json``
-    ``final_adapter_path``; the spot-check from the seed-42
-    ``phase1_pick_record.json`` ``picked_local_dir``. Missing files raise —
-    the grid is only buildable after the cells completed.
+
+def discover_default_grid(root: Path) -> list[dict]:
+    """AUTO-DISCOVER the 2x3 post-SFT grid + seed-42 spot-check under ``root``.
+
+    The realized #570 layout is install-variant-aware (``run_issue543_ratio``
+    threads the rescue label into the PATHS): phase-2 results live at
+    ``<root>/<arm>[_<install_variant>]/seed<S>/phase2_result.json`` (arm in
+    ``VARIANTS``) and the phase-1 picks at ``<root>/phase1[_<install_variant>]/
+    seed<S>/phase1_pick_record.json`` (``cell_dir_570`` naming). Arm, seed, and
+    install variant derive from the discovered paths — nothing is hardcoded.
+    Raises ``RuntimeError`` LISTING what was found unless exactly
+    ``VARIANTS x GRID_SEEDS`` cells exist under ONE consistent install variant;
+    the spot-check row reads ``picked_local_dir`` from the pick record of the
+    SAME discovered variant. Missing files raise — the grid is only buildable
+    after the cells completed.
     """
-    grid: list[dict] = []
-    for variant in VARIANTS:
-        for seed in GRID_SEEDS:
-            rp = cell_dir_570(seed, "phase2", variant) / "phase2_result.json"
-            if not rp.exists():
-                raise FileNotFoundError(f"Default grid needs {rp} (cell not complete?).")
-            r = json.loads(rp.read_text())
-            grid.append(
-                {
-                    "slug": f"{variant}_seed{seed}",
-                    "adapter_path": r["final_adapter_path"],
-                    "kind": "post",
-                }
+    found: list[tuple[str, int, str | None, Path]] = []  # (arm, seed, install_variant, path)
+    unparseable: list[str] = []
+    for rp in sorted(root.glob("org_*/seed*/phase2_result.json")):
+        cell_name = rp.parent.parent.name
+        arm = next((v for v in VARIANTS if cell_name == v or cell_name.startswith(f"{v}_")), None)
+        m = _SEED_DIR_RE.fullmatch(rp.parent.name)
+        if arm is None or m is None:
+            unparseable.append(str(rp))
+            continue
+        iv = None if cell_name == arm else cell_name[len(arm) + 1 :]
+        found.append((arm, int(m.group(1)), iv, rp))
+
+    expected = {(v, s) for v in VARIANTS for s in GRID_SEEDS}
+    actual = {(arm, seed) for arm, seed, _, _ in found}
+    variants_found = {iv for _, _, iv, _ in found}
+    if unparseable or actual != expected or len(variants_found) != 1:
+        listing = [
+            f"{arm}/seed{seed} (install_variant={iv}) -> {rp}" for arm, seed, iv, rp in found
+        ]
+        raise RuntimeError(
+            f"Default-grid discovery under {root} needs exactly "
+            f"{len(VARIANTS)} arms {VARIANTS} x {len(GRID_SEEDS)} seeds {GRID_SEEDS} "
+            "with ONE consistent install variant; found "
+            f"{len(found)} parseable cell(s) across install variants "
+            f"{sorted(str(v) for v in variants_found)}:\n  "
+            + ("\n  ".join(listing) if listing else "(none)")
+            + (
+                "\nUnparseable org_*/seed*/phase2_result.json paths:\n  " + "\n  ".join(unparseable)
+                if unparseable
+                else ""
             )
-    pick = cell_dir_570(SPOT_CHECK_SEED, "phase1", None) / "phase1_pick_record.json"
+        )
+
+    install_variant = next(iter(variants_found))
+    grid: list[dict] = []
+    for _arm, seed, _, rp in sorted(found, key=lambda t: (VARIANTS.index(t[0]), t[1])):
+        r = json.loads(rp.read_text())
+        grid.append(
+            {
+                "slug": f"{rp.parent.parent.name}_seed{seed}",
+                "adapter_path": r["final_adapter_path"],
+                "kind": "post",
+            }
+        )
+
+    # Seed-42 picked-install spot-check from the SAME discovered install
+    # variant (cell_dir_570 phase-1 leaf naming: phase1[_<install_variant>]).
+    p1_leaf = "phase1" if install_variant is None else f"phase1_{install_variant}"
+    pick = root / p1_leaf / f"seed{SPOT_CHECK_SEED}" / "phase1_pick_record.json"
     if not pick.exists():
         raise FileNotFoundError(f"Default grid needs {pick} (ladder not run?).")
     r = json.loads(pick.read_text())
     picked_dir = r.get("picked_local_dir")
     if not picked_dir:
         raise RuntimeError(f"{pick} has no picked_local_dir — no pick/fallback recorded.")
+    spot_mid = "" if install_variant is None else f"{install_variant}_"
     grid.append(
         {
-            "slug": f"picked_install_seed{SPOT_CHECK_SEED}",
+            "slug": f"picked_install_{spot_mid}seed{SPOT_CHECK_SEED}",
             "adapter_path": picked_dir,
             "kind": "pre_spot_check",
         }
     )
     return grid
+
+
+def build_default_grid() -> list[dict]:
+    """6 post-SFT models + the seed-42 picked-install spot-check (plan §4.5).
+
+    Thin wrapper: auto-discovers the realized (install-variant-aware) cell
+    layout under ``EVAL_RESULTS_DIR_570`` — see ``discover_default_grid``.
+    """
+    return discover_default_grid(EVAL_RESULTS_DIR_570)
 
 
 def load_grid(args: argparse.Namespace) -> list[dict]:
@@ -421,8 +477,11 @@ def run_print_plan(args: argparse.Namespace) -> int:
     plan = {
         "grid_state": grid_state,
         "grid": grid,
-        "expected_default_grid_slugs": [f"{v}_seed{s}" for v in VARIANTS for s in GRID_SEEDS]
-        + [f"picked_install_seed{SPOT_CHECK_SEED}"],
+        "expected_default_grid_shape": (
+            f"{len(VARIANTS)} arms {VARIANTS} x {len(GRID_SEEDS)} seeds {GRID_SEEDS} "
+            "auto-discovered from org_*/seed*/phase2_result.json (install-variant-aware) "
+            f"+ the seed-{SPOT_CHECK_SEED} picked-install spot-check"
+        ),
         "tmp_models_root": str(_tmp_models_root()),
         "judge_model": args.judge_model,
         "num_samples": args.num_samples,
