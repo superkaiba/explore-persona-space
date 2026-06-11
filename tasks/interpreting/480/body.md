@@ -90,7 +90,7 @@ The honest read of the null is that it is jointly noise-limited on both DV sides
 
 On the sycophancy side, the parent run's DV is already very compressed: 117 of 138 cells sit within ±0.10 of zero (plan §17 risk #2). Together that's not much dynamic range on either axis to find a within-source signal in.
 
-A cleaner falsification of the proxy hypothesis would need a sycophancy panel with real bystander spread plus a non-saturating marker anchor. The last two findings below apply that correction in two stages: first the cheap DV swap to the bounded emission rate (on the saturated source the discordance does not survive the swap), then a full retrain with per-source sub-saturation anchors.
+A cleaner falsification of the proxy hypothesis would need a sycophancy panel with real bystander spread plus a non-saturating marker anchor. The findings below apply that correction in stages: first the cheap DV swap to the bounded emission rate (on the saturated source the discordance does not survive the swap), then a full retrain with per-source sub-saturation anchors, and finally the below-emission-onset log-prob re-read on the same retrained runs.
 
 When I residualize both axes against source-mean before plotting, the within-source cloud is essentially flat. The within-source rank-order overlap is what the proxy claim rests on, and on the log-prob read it isn't there.
 
