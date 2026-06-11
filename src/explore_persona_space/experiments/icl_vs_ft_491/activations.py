@@ -19,15 +19,15 @@ Per-variant outputs (fp16, checkpointed per variant):
        "contexts": [...], "questions": [...], "perq_layers": [10, 15, 20, 24]}
 ``summarize`` then writes shift_summary.json: per-layer SVD spectra of the
 10 x 3584 shift matrices, cross-regime top-dir cosines, chain-replicate
-ceilings, control-direction nulls, mean-centered variants, and the base
-gate vectors g(c) (uploaded to HF analysis_tensors before pod termination,
-#521 rule).
+ceilings, control-direction nulls, context-label permutation nulls (plan §6
+H2; see :func:`context_label_permutation_null`), mean-centered variants, and
+the base gate vectors g(c) (uploaded to HF analysis_tensors before pod
+termination, #521 rule).
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from pathlib import Path
 
@@ -41,7 +41,6 @@ from explore_persona_space.experiments.icl_vs_ft_491.common import (
     load_q_test,
     load_r_villain,
     load_tokenizer,
-    ns_eval_dir,
     panel_system_prompts,
     render_messages,
     repro_metadata,
@@ -179,9 +178,9 @@ def extract_variant(
         }
 
     if info["kind"] == "ft":
-        matched_path = ns_eval_dir(smoke) / "matched_pairs" / "matched_summary.json"
-        pairs = json.loads(matched_path.read_text())["pairs"]
-        step = int(pairs[info["run_id"]]["matched_step"])
+        from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_entry
+
+        step = int(load_matched_entry(info["run_id"], smoke=smoke)["matched_step"])
         ckpt = run_out_dir(info["run_id"], out_root) / f"checkpoint-{step}"
         with adapter_applied(model, ckpt) as pm:
             tensors = _run_capture(pm)
@@ -206,7 +205,84 @@ def extract_variant(
     return out_path
 
 
-def summarize() -> Path:  # noqa: C901 — linear summary pipeline; splitting would scatter the SVD contract
+def _batched_top_dirs(mats):
+    """Top right-singular directions of a [N, C, H] batch (C x C Gram trick).
+
+    M = U S Vh ⇒ M Mᵀ = U S² Uᵀ; the top eigvec u1 of the C x C Gram matrix
+    gives s1·v1ᵀ = u1ᵀ M, so normalizing u1ᵀ M recovers v1 exactly — ~100x
+    cheaper than N independent SVDs at C=10, H=3584. Sign is arbitrary
+    (consumers take |cos|).
+    """
+    import torch
+
+    gram = mats @ mats.transpose(1, 2)  # [N, C, C]
+    _evals, evecs = torch.linalg.eigh(gram)  # ascending eigenvalues
+    u_top = evecs[..., -1]  # [N, C]
+    v_top = torch.einsum("nc,nch->nh", u_top, mats)  # [N, H]
+    return torch.nn.functional.normalize(v_top, dim=-1)
+
+
+def context_label_permutation_null(
+    variant_p2,
+    base_p2,
+    ref_top_dirs,
+    *,
+    n_perms: int = 1000,
+    rng=None,
+) -> dict:
+    """Per-layer |cos| null for the H2 cross-regime top-dir cosine (plan §6).
+
+    Row-permuting an ASSEMBLED shift matrix leaves its top right-singular
+    direction invariant (P·M = (P·U)·S·Vᵀ), so a label permutation of the
+    finished matrix is degenerate. The null therefore permutes the context
+    pairing INSIDE the shift construction: permuted row c =
+    ``variant_p2[perm(c)] − base_p2[c]`` — the variant state of a WRONG
+    context minus context c's base state. This destroys the per-context
+    correspondence the H2 claim rests on while preserving each side's
+    marginal states; it is informative because the panel's base context
+    states differ substantially, so mismatched subtraction injects
+    cross-context structure into the top direction.
+
+    Args:
+        variant_p2: [C, L, H] variant mean_pos2 states (float).
+        base_p2: [C, L, H] base mean_pos2 states (float).
+        ref_top_dirs: [L, H] reference (other regime) top shift directions.
+        n_perms: permutations sampled uniformly (with replacement) from S_C.
+        rng: ``numpy.random.Generator`` (caller seeds it for reproducibility).
+
+    Returns per-layer lists: ``abs_cos_observed`` (identity pairing, the
+    statistic under test) and null quantiles ``abs_cos_p50/p95/p99``.
+    Top-dir sign is arbitrary, so everything is |cos|.
+    """
+    import numpy as np
+    import torch
+
+    rng = rng if rng is not None else np.random.default_rng(42)
+    n_c, n_l, _h = variant_p2.shape
+    assert base_p2.shape == variant_p2.shape, (base_p2.shape, variant_p2.shape)
+    assert ref_top_dirs.shape[0] == n_l, (ref_top_dirs.shape, n_l)
+    perm_idx = torch.from_numpy(np.stack([rng.permutation(n_c) for _ in range(n_perms)]))  # [N, C]
+    out: dict[str, list[float]] = {
+        "abs_cos_observed": [],
+        "abs_cos_p50": [],
+        "abs_cos_p95": [],
+        "abs_cos_p99": [],
+    }
+    for layer in range(n_l):
+        v_l = variant_p2[:, layer, :].float()  # [C, H]
+        b_l = base_p2[:, layer, :].float()
+        ref = torch.nn.functional.normalize(ref_top_dirs[layer].float(), dim=0)
+        obs_dir = _batched_top_dirs((v_l - b_l).unsqueeze(0))[0]
+        out["abs_cos_observed"].append(float((obs_dir @ ref).abs().item()))
+        null_shifts = v_l[perm_idx] - b_l.unsqueeze(0)  # [N, C, H]
+        null_cos = (_batched_top_dirs(null_shifts) @ ref).abs().numpy()
+        out["abs_cos_p50"].append(float(np.percentile(null_cos, 50)))
+        out["abs_cos_p95"].append(float(np.percentile(null_cos, 95)))
+        out["abs_cos_p99"].append(float(np.percentile(null_cos, 99)))
+    return out
+
+
+def summarize(n_perms: int = 1000, perm_seed: int = 42) -> Path:  # noqa: C901 — linear summary pipeline; splitting would scatter the SVD contract
     """SVD / cosine / gate summary over all captured variants (CPU, seconds).
 
     Shift matrices (10 contexts x 3584) per layer at pos2 (the marker-slot
@@ -268,13 +344,33 @@ def summarize() -> Path:  # noqa: C901 — linear summary pipeline; splitting wo
 
     # Cross-regime top-dir cosine per (K, chain) pair + replicate ceilings +
     # control-direction nulls (the 0.017 isotropic null is wrong in an
-    # anisotropic residual stream — plan §6 H2 nulls).
+    # anisotropic residual stream — plan §6 H2 nulls) + the context-label
+    # permutation null (round-2 fix; see context_label_permutation_null).
+    import numpy as np
+
+    perm_rng = np.random.default_rng(perm_seed)
+    perm_null: dict[str, dict] = {}
     for run_id, spec in load_run_specs().items():
         if run_id == "ft_ctrl_helpful_rows":
             continue
         ft_key, icl_key = f"act_{run_id}", f"act_{spec['icl_dose_variant']}"
         if ft_key in dirs and icl_key in dirs:
             summary["cross_regime_cosine"][run_id] = _cos(dirs[ft_key], dirs[icl_key])
+            icl_p2 = torch.load(ACT_DIR / f"{icl_key}.pt", weights_only=False)["mean_pos2"].float()
+            perm_null[run_id] = context_label_permutation_null(
+                icl_p2, base_p2, dirs[ft_key], n_perms=n_perms, rng=perm_rng
+            )
+    summary["context_label_permutation_null"] = {
+        "note": (
+            "Null permutes the variant-side context pairing INSIDE the shift "
+            "construction (icl_p2[perm(c)] - base_p2[c]); row-permuting the "
+            "assembled shift matrix leaves the top right-singular direction "
+            "invariant. |cos| throughout (top-dir sign is arbitrary)."
+        ),
+        "n_perms": n_perms,
+        "seed": perm_seed,
+        "per_run": perm_null,
+    }
     ceilings: dict[str, list[float]] = {}
     for prefix, fmt in (("ft", "act_ft_K8_chain{c}"), ("icl", "act_icl_K8_chain{c}")):
         a, b = fmt.format(c="A"), fmt.format(c="B")
@@ -319,6 +415,9 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--questions", type=int, default=N_ACT_QUESTIONS)
     ap.add_argument("--out-root", type=str, default=None)
     ap.add_argument("--smoke", action="store_true")
+    ap.add_argument(
+        "--n-perms", type=int, default=1000, help="summarize: context-label permutation null size"
+    )
     args = ap.parse_args(argv)
     from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -334,7 +433,7 @@ def main(argv: list[str] | None = None) -> None:
                 n_questions=args.questions,
             )
     else:
-        summarize()
+        summarize(n_perms=args.n_perms)
 
 
 if __name__ == "__main__":

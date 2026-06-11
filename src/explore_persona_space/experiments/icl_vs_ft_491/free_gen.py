@@ -3,7 +3,9 @@
 Cells (29 total): 13 FT matched checkpoints (12 K x chain + format control,
 via LoRARequest) + 15 ICL variants (12 core + 3 content controls, demos in
 the prompt, no adapter) + the no-prefix base. Greedy, ``max_new_tokens=2048``
-(>= 2x the longest trained completion, #260 rule), ``max_model_len=8192``.
+(>= 2x the longest trained completion, #260 rule), ``max_model_len=10240``
+(plan §13 allowed deviation from 8192 — K=16 prompts measure ~6.8K tokens;
+see the MAX_MODEL_LEN constant note).
 
 DVs per generation (the #471 spam diagnostics): marker-anywhere (id 83399),
 bare-glyph count (id 63680, tracked separately), exact-one-marker,
@@ -25,7 +27,6 @@ engine; phases are subprocess-isolated so engine teardown is process exit
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 from pathlib import Path
 
@@ -75,13 +76,10 @@ def list_cells() -> dict[str, dict]:
 
 
 def _matched_ckpt(run_id: str, *, smoke: bool, out_root: Path | None) -> Path:
-    matched_path = ns_eval_dir(smoke) / "matched_pairs" / "matched_summary.json"
-    if not matched_path.exists():
-        raise FileNotFoundError(f"{matched_path} missing — run matching before free_gen.")
-    pairs = json.loads(matched_path.read_text())["pairs"]
-    if run_id not in pairs:
-        raise KeyError(f"{run_id} missing from matched summary")
-    step = int(pairs[run_id]["matched_step"])
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_entry
+
+    entry = load_matched_entry(run_id, smoke=smoke)
+    step = int(entry["matched_step"])
     ckpt = run_out_dir(run_id, out_root) / f"checkpoint-{step}"
     if not ckpt.exists():
         raise FileNotFoundError(f"{ckpt} missing — matched ckpt pruned or never trained")

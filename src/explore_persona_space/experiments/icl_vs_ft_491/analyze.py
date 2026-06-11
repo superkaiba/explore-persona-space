@@ -44,6 +44,13 @@ DISATT_RHO_FALSIFY = 0.4
 SLOPE_BAND = (0.7, 1.4)
 N_SPLIT_HALF = 200
 
+# The registered H1 denominator (plan §5/§6): exactly the 12 core K x chain
+# pairs. The FT row-format control is matched + assembled but NEVER pooled
+# into the registered statistic — it is reported separately (round-2 fix,
+# h1-control-contamination).
+CORE_PAIR_IDS: tuple[str, ...] = tuple(f"ft_K{k}_chain{c}" for k in (1, 3, 8, 16) for c in "ABC")
+CONTROL_RUN_IDS: tuple[str, ...] = ("ft_ctrl_helpful_rows",)
+
 
 def _spearman(x: np.ndarray, y: np.ndarray) -> float:
     from scipy.stats import spearmanr
@@ -55,20 +62,29 @@ def _spearman(x: np.ndarray, y: np.ndarray) -> float:
 # ── Pair-data assembly from eval JSONs ───────────────────────────────────
 
 
-def assemble_pairs(smoke: bool = False) -> dict[str, dict]:
-    """{run_id: {"icl": [C, Q], "ft": [C, Q], "contexts": [...], ...}} delta arrays.
+def assemble_pairs(smoke: bool = False) -> tuple[dict[str, dict], list[dict]]:
+    """({run_id: {"icl": [C, Q], "ft": [C, Q], ...}}, skipped-pair records).
 
     ICL deltas come from the variant's icl_panel JSON; FT deltas from the
-    matched-step full read. Question alignment is asserted.
+    matched-step full read. Question alignment is asserted. Matched entries
+    are read through the race-free per-run accessor (matching.py by_run
+    files). Skipped/missing pairs are RETURNED as structured records so
+    run_analysis persists them in analysis.json (round-2 minor: never
+    console-only).
     """
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_pairs
+
     ed = ns_eval_dir(smoke)
-    matched = json.loads((ed / "matched_pairs" / "matched_summary.json").read_text())["pairs"]
+    matched = load_matched_pairs(smoke=smoke)
     pairs: dict[str, dict] = {}
+    skipped: list[dict] = []
     for run_id, entry in matched.items():
         vpath = ed / "icl_panel" / f"{entry['icl_dose_variant']}.json"
         fpath = ed / "ft_panel" / f"{run_id}_full_step{entry['matched_step']}.json"
         if not (vpath.exists() and fpath.exists()):
-            logger.warning("pair %s missing inputs (%s / %s) — skipped", run_id, vpath, fpath)
+            missing = [str(p) for p in (vpath, fpath) if not p.exists()]
+            logger.warning("pair %s missing inputs %s — skipped", run_id, missing)
+            skipped.append({"run_id": run_id, "missing_inputs": missing})
             continue
         icl = json.loads(vpath.read_text())["contexts"]
         ft = json.loads(fpath.read_text())["contexts"]
@@ -86,7 +102,7 @@ def assemble_pairs(smoke: bool = False) -> dict[str, dict]:
             "icl_variant": entry["icl_dose_variant"],
             "matched": entry,
         }
-    return pairs
+    return pairs, skipped
 
 
 def _nonsource(pair: dict, key: str) -> np.ndarray:
@@ -137,7 +153,16 @@ def _eiv_slope(x: np.ndarray, y: np.ndarray, rel_x: float) -> float:
 
 
 def h1_statistics(pairs: dict[str, dict], *, n_boot: int = N_BOOT, seed: int = SEED) -> dict:
-    """The registered H1 read over the 9 non-source contexts, all pairs."""
+    """The registered H1 read over the 9 non-source contexts, CORE pairs only.
+
+    Control runs (``CONTROL_RUN_IDS`` — the ft_ctrl_helpful_rows row-format
+    control) are EXCLUDED before any statistic is computed: they never enter
+    ``per_pair``, the spread-valid pool, or the pooled/bootstrap reads. The
+    excluded ids are recorded in the output; the control is reported
+    separately by :func:`format_gap_contrast` (round-2 fix).
+    """
+    excluded_controls = sorted(set(pairs) & set(CONTROL_RUN_IDS))
+    pairs = {r: p for r, p in pairs.items() if r not in CONTROL_RUN_IDS}
     rng = np.random.default_rng(seed)
     per_pair: dict[str, dict] = {}
     valid_for_pool: list[str] = []
@@ -262,6 +287,8 @@ def h1_statistics(pairs: dict[str, dict], *, n_boot: int = N_BOOT, seed: int = S
             "slope_eiv_ci95": _ci(boot_slope),
             "rho_disattenuated_excl_high_residual": pooled_excl_high_res,
             "high_residual_pairs": high_res,
+            "excluded_control_pairs": excluded_controls,
+            "core_pair_ids": list(CORE_PAIR_IDS),
             "verdict": verdict,
             "n_boot": n_boot,
             "seed": seed,
@@ -269,29 +296,111 @@ def h1_statistics(pairs: dict[str, dict], *, n_boot: int = N_BOOT, seed: int = S
     }
 
 
+def format_gap_contrast(pairs: dict[str, dict]) -> dict:
+    """The FT row-format control, reported SEPARATELY from H1 (plan §5 row 12).
+
+    ``ft_ctrl_helpful_rows`` is never pooled into the registered H1 statistic
+    (see h1_statistics). This block quantifies the format gap instead:
+    (a) the control pair's own ICL-vs-FT profile Spearman over the 9
+    non-source contexts (the same per-pair statistic, quarantined), and
+    (b) the FT-profile Spearman between the control and the core
+    ft_K8_chainA run — how much the row-format change ALONE moves the
+    leakage profile at the same K/chain/dose target.
+    """
+    ctrl = pairs.get("ft_ctrl_helpful_rows")
+    if ctrl is None:
+        return {"skipped": "ft_ctrl_helpful_rows pair not assembled"}
+    out: dict = {
+        "ctrl_pair_rho_icl_vs_ft": _spearman(
+            _nonsource(ctrl, "icl").mean(axis=1), _nonsource(ctrl, "ft").mean(axis=1)
+        ),
+        "ctrl_matched": {
+            k: ctrl["matched"][k]
+            for k in ("matched_step", "basis", "residual", "within_tolerance")
+            if k in ctrl["matched"]  # synthetic fixtures carry a stub entry
+        },
+    }
+    core = pairs.get("ft_K8_chainA")
+    if core is not None:
+        shared = [c for c in ctrl["contexts"] if c != SOURCE_CONTEXT and c in core["contexts"]]
+        ci = [ctrl["contexts"].index(c) for c in shared]
+        ki = [core["contexts"].index(c) for c in shared]
+        out["ft_profile_rho_ctrl_vs_core_K8_chainA"] = _spearman(
+            ctrl["ft"][ci].mean(axis=1), core["ft"][ki].mean(axis=1)
+        )
+        out["n_shared_contexts"] = len(shared)
+    return out
+
+
 # ── H4 / H5 / H6 / negative controls ─────────────────────────────────────
 
 
-def h4_dose_monotonicity(smoke: bool = False) -> dict:
-    """ICL source-cell dose vs K per chain: monotone increments + concavity."""
+def h4_dose_monotonicity(smoke: bool = False, *, n_boot: int = 2000, seed: int = SEED) -> dict:
+    """ICL source-cell dose vs K per chain: monotonicity beyond bootstrap noise.
+
+    Per chain, a JOINT question bootstrap (one resample drives all four
+    K-doses — the per-question deltas are aligned across K by construction)
+    yields CIs on each K-increment and the fraction of replicates where the
+    dose curve is fully monotone; ``monotone_beyond_noise`` = that fraction
+    >= 0.95 (the plan §1 "non-monotone beyond bootstrap noise" falsify read).
+    The §6 sign test over chains is the all-chains-monotone count (3 chains:
+    p = 0.5^3 = 0.125 under a sign-flip null — reported, not binarized).
+    """
     ed = ns_eval_dir(smoke)
+    rng = np.random.default_rng(seed)
     out: dict[str, dict] = {}
     for chain in ("A", "B", "C"):
-        doses = []
+        per_q: list[np.ndarray] = []
+        questions_ref: list[str] | None = None
         for k in (1, 3, 8, 16):
             p = ed / "icl_panel" / f"icl_K{k}_chain{chain}.json"
             if not p.exists():
                 break
-            doses.append(json.loads(p.read_text())["contexts"][SOURCE_CONTEXT]["mean_delta_logp"])
-        if len(doses) == 4:
-            diffs = np.diff(doses)
-            out[chain] = {
-                "doses": doses,
-                "monotone": bool((diffs > 0).all()),
-                "concave_increments": bool((np.diff(diffs) < 0).all()),
-            }
+            ctx = json.loads(p.read_text())["contexts"][SOURCE_CONTEXT]
+            if questions_ref is None:
+                questions_ref = ctx["questions"]
+            elif ctx["questions"] != questions_ref:
+                raise AssertionError(f"H4 chain {chain}: question alignment drift at K={k}")
+            per_q.append(np.asarray(ctx["delta_logp"], dtype=float))
+        if len(per_q) != 4:
+            continue
+        mat = np.vstack(per_q)  # [4 K-values, Q]
+        doses = mat.mean(axis=1)
+        diffs = np.diff(doses)
+        n_q = mat.shape[1]
+        boot_incr = np.empty((n_boot, 3))
+        for i in range(n_boot):
+            qi = rng.integers(0, n_q, size=n_q)
+            boot_incr[i] = np.diff(mat[:, qi].mean(axis=1))
+        frac_monotone = float((boot_incr > 0).all(axis=1).mean())
+        out[chain] = {
+            "doses": [float(x) for x in doses],
+            "increments": [float(x) for x in diffs],
+            "increment_ci95": [
+                [
+                    float(np.percentile(boot_incr[:, j], 2.5)),
+                    float(np.percentile(boot_incr[:, j], 97.5)),
+                ]
+                for j in range(3)
+            ],
+            "monotone": bool((diffs > 0).all()),
+            "bootstrap_frac_monotone": frac_monotone,
+            "monotone_beyond_noise": bool(frac_monotone >= 0.95),
+            "concave_increments": bool((np.diff(diffs) < 0).all()),
+        }
     n_mono = sum(1 for v in out.values() if v["monotone"])
-    return {"per_chain": out, "n_chains_monotone": n_mono, "n_chains": len(out)}
+    n_mono_noise = sum(1 for v in out.values() if v["monotone_beyond_noise"])
+    return {
+        "per_chain": out,
+        "n_chains": len(out),
+        "n_chains_monotone": n_mono,
+        "n_chains_monotone_beyond_noise": n_mono_noise,
+        "sign_test_p_all_chains_monotone": (
+            float(0.5 ** len(out)) if out and n_mono == len(out) else None
+        ),
+        "n_boot": n_boot,
+        "seed": seed,
+    }
 
 
 def h5_h6_controls(pairs: dict[str, dict], smoke: bool = False) -> dict:
@@ -335,20 +444,30 @@ def h5_h6_controls(pairs: dict[str, dict], smoke: bool = False) -> dict:
             "sd_below_quarter_increment": (bool(sd < 0.25 * abs(incr)) if incr else None),
             "dof_note": "sd from 4 orderings (3 perms + canonical) — 3-dof estimate",
         }
-    # H1 negative controls: control profile vs each valid pair's FT profile.
-    neg: dict[str, dict[str, float]] = {}
+    # H1 negative controls: control profile vs each pair's FT profile,
+    # aligned by SHARED context ids (round-2 minor: a length-equality check
+    # silently mispairs contexts when either side has a hole).
+    neg: dict[str, dict[str, dict]] = {}
     for ctrl in ("icl_ctrl_helpful_marker", "icl_ctrl_stripped"):
         prof = _ctx_profile(ctrl)
         if not prof:
             continue
-        ctrl_means = np.array(
-            [prof[c]["mean_delta_logp"] for c in NON_SOURCE_CONTEXTS if c in prof]
-        )
-        per: dict[str, float] = {}
+        per: dict[str, dict] = {}
         for run_id, pair in pairs.items():
-            ft_means = _nonsource(pair, "ft").mean(axis=1)
-            if len(ft_means) == len(ctrl_means):
-                per[run_id] = _spearman(ctrl_means, ft_means)
+            shared = [
+                c
+                for c in NON_SOURCE_CONTEXTS
+                if c in pair["contexts"] and c in prof and "mean_delta_logp" in prof[c]
+            ]
+            if len(shared) < 3:
+                per[run_id] = {"rho": None, "n_contexts": len(shared)}
+                continue
+            idx = [pair["contexts"].index(c) for c in shared]
+            ctrl_means = np.array([prof[c]["mean_delta_logp"] for c in shared])
+            per[run_id] = {
+                "rho": _spearman(ctrl_means, pair["ft"][idx].mean(axis=1)),
+                "n_contexts": len(shared),
+            }
         neg[ctrl] = per
     out["h1_negative_controls"] = neg
     return out
@@ -356,9 +475,11 @@ def h5_h6_controls(pairs: dict[str, dict], smoke: bool = False) -> dict:
 
 def own_policy_validation(smoke: bool = False) -> dict:
     """Fixed-substrate vs own-substrate per-context profile correlations (§4.5)."""
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_pairs
+
     ed = ns_eval_dir(smoke)
     out: dict[str, dict] = {}
-    pairs = json.loads((ed / "matched_pairs" / "matched_summary.json").read_text())["pairs"]
+    pairs = load_matched_pairs(smoke=smoke)
     for chain in ("A", "B", "C"):
         for regime, cell, fixed_file in (
             ("icl", f"icl_K8_chain{chain}", ed / "icl_panel" / f"icl_K8_chain{chain}.json"),
@@ -448,11 +569,44 @@ def h3_gate_correlations(pairs: dict[str, dict], smoke: bool = False) -> dict:
 # ── Entry points ─────────────────────────────────────────────────────────
 
 
+def _h2_geometry_block() -> dict:
+    """Pass-through of the H2 geometry summary so analysis.json carries every
+    registered H2 null (incl. the round-2 context-label permutation null)."""
+    from explore_persona_space.experiments.icl_vs_ft_491.activations import ACT_DIR
+
+    path = ACT_DIR / "shift_summary.json"
+    if not path.exists():
+        return {"skipped": f"{path} missing — run the activations summarize step first"}
+    s = json.loads(path.read_text())
+    return {
+        "cross_regime_cosine": s.get("cross_regime_cosine"),
+        "replicate_ceilings": s.get("replicate_ceilings"),
+        "control_direction_nulls": s.get("control_direction_nulls"),
+        "context_label_permutation_null": s.get(
+            "context_label_permutation_null",
+            "MISSING — shift_summary.json predates the round-2 permutation null; re-run summarize",
+        ),
+    }
+
+
 def run_analysis(*, smoke: bool = False, n_boot: int = N_BOOT) -> Path:
-    pairs = assemble_pairs(smoke)
+    pairs, skipped = assemble_pairs(smoke)
+    # The registered design has exactly the 12 core pairs + the named format
+    # control; anything else in the matched set is a registry drift.
+    unexpected = [r for r in pairs if r not in CORE_PAIR_IDS and r not in CONTROL_RUN_IDS]
+    if unexpected:
+        raise AssertionError(f"matched pairs outside the registered core+control set: {unexpected}")
     analysis = {
         "meta": repro_metadata(),
+        "pairs_assembly": {
+            "assembled": sorted(pairs),
+            "skipped": skipped,
+            "n_assembled": len(pairs),
+            "n_skipped": len(skipped),
+        },
         "h1": h1_statistics(pairs, n_boot=n_boot),
+        "format_gap_control": format_gap_contrast(pairs),
+        "h2_geometry": _h2_geometry_block(),
         "h3": h3_gate_correlations(pairs, smoke),
         "h4": h4_dose_monotonicity(smoke),
         "h5_h6": h5_h6_controls(pairs, smoke),
@@ -483,7 +637,14 @@ def synthetic_smoke() -> None:
             "matched": {"within_tolerance": True},
         }
 
-    pairs = {"corr_a": _pair(True), "corr_b": _pair(True), "uncorr": _pair(False)}
+    pairs = {
+        "corr_a": _pair(True),
+        "corr_b": _pair(True),
+        "uncorr": _pair(False),
+        # The named format control MUST be excluded from every pooled H1
+        # statistic even when present and spread-valid (round-2 fix).
+        "ft_ctrl_helpful_rows": _pair(True),
+    }
     stats = h1_statistics(pairs, n_boot=300, seed=1)
     corr_rho = stats["per_pair"]["corr_a"]["rho_disattenuated"]
     uncorr_rho = stats["per_pair"]["uncorr"]["rho_disattenuated"]
@@ -491,6 +652,13 @@ def synthetic_smoke() -> None:
     assert uncorr_rho < 0.6, f"uncorrelated fixture rho={uncorr_rho} (expected < 0.6)"
     assert stats["pooled"]["n_pairs_valid"] >= 2, stats["pooled"]
     assert stats["pooled"]["rho_raw_ci95"] is not None
+    assert "ft_ctrl_helpful_rows" not in stats["per_pair"], "control leaked into per_pair"
+    assert "ft_ctrl_helpful_rows" not in stats["pooled"]["valid_pairs"], (
+        "control leaked into the pooled denominator"
+    )
+    assert stats["pooled"]["excluded_control_pairs"] == ["ft_ctrl_helpful_rows"]
+    fmt = format_gap_contrast(pairs)
+    assert "ctrl_pair_rho_icl_vs_ft" in fmt, fmt
     flat = {
         "flat": {
             **pairs["corr_a"],
@@ -502,6 +670,37 @@ def synthetic_smoke() -> None:
     assert not flat_stats["per_pair"]["flat"]["spread_valid"], (
         "flat fixture should FAIL the spread gate"
     )
+
+    # H2 context-label permutation-null machinery (CPU, small dims): contexts
+    # get large distinct base states (scaled one-hots) so identity pairing
+    # cancels them exactly (observed shift = planted graded rank-1 along d ->
+    # |cos| ~ 1), while a label permutation injects huge cross-context base
+    # differences orthogonal to d -> null |cos| collapses. Mirrors the real
+    # panel, where base context states differ substantially.
+    import torch
+
+    from explore_persona_space.experiments.icl_vs_ft_491.activations import (
+        context_label_permutation_null,
+    )
+
+    p_rng = np.random.default_rng(3)
+    n_ctx, n_layers, hidden = 10, 2, 64
+    base_states = torch.zeros(n_ctx, n_layers, hidden)
+    for c in range(n_ctx):
+        base_states[c, :, c] = 50.0  # distinct, large base state per context
+    planted_dir = torch.zeros(hidden)
+    planted_dir[n_ctx:] = torch.from_numpy(p_rng.normal(size=hidden - n_ctx)).float()
+    planted_dir = planted_dir / planted_dir.norm()
+    gains = torch.linspace(0.5, 3.0, n_ctx)
+    variant_states = base_states + gains[:, None, None] * planted_dir[None, None, :]
+    ref_dirs = planted_dir.unsqueeze(0).repeat(n_layers, 1)
+    null = context_label_permutation_null(
+        variant_states, base_states, ref_dirs, n_perms=200, rng=p_rng
+    )
+    assert null["abs_cos_observed"][0] > 0.99, null["abs_cos_observed"]
+    assert null["abs_cos_p95"][0] < 0.5, null["abs_cos_p95"]
+    assert null["abs_cos_p95"][0] < null["abs_cos_observed"][0], null
+
     print(
         json.dumps(
             {
@@ -510,6 +709,9 @@ def synthetic_smoke() -> None:
                 "uncorr_rho_disattenuated": uncorr_rho,
                 "flat_spread_valid": flat_stats["per_pair"]["flat"]["spread_valid"],
                 "pooled_verdict": stats["pooled"]["verdict"],
+                "control_excluded_from_h1": stats["pooled"]["excluded_control_pairs"],
+                "perm_null_observed_abs_cos": null["abs_cos_observed"][0],
+                "perm_null_p95_abs_cos": null["abs_cos_p95"][0],
             },
             indent=2,
         )

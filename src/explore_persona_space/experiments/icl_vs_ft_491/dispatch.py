@@ -10,8 +10,9 @@ sweep phases. Per-phase cell-list sources:
                ``--contexts villain``); sweep: all 19 registry variants
   train        ``--runs`` subset (smoke: ft_K8_chainA at --epochs 12); each
                run = train -> slot_eval ft_run_pipeline (matching-basis ->
-               match -> traj -> full) -> inloop_crosscheck (#534, blocking)
-               -> persist-prune
+               match [writes matched_pairs/by_run/<run>.json only] -> traj ->
+               full) -> inloop_crosscheck (#534, blocking) -> persist-prune;
+               matched_summary.json assembled ONCE after all workers join
   free_gen     ``--cells`` subset (smoke: 2 cells x 1 context x 3 q); sweep:
                all 29 registry cells sharded over <=2 vLLM workers; then the
                own_policy slot reads on the SAME outputs
@@ -321,6 +322,12 @@ def phase_train(
         t.join()
     if errors:
         raise RuntimeError("train-phase job failures:\n" + "\n".join(errors))
+    # Single-threaded summary assembly AFTER all workers join — match_run
+    # writes only per-run files (matched_pairs/by_run/), so no concurrent
+    # writer ever touches the shared matched_summary.json (round-2 race fix).
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import assemble_matched_summary
+
+    assemble_matched_summary(smoke=smoke)
 
 
 def _all_free_gen_cells() -> list[str]:
@@ -480,6 +487,33 @@ def phase_upload(*, smoke: bool = False) -> None:
         experiment_name=bucket, eval_results_dir=ns_eval_dir(smoke)
     )
     manifest["uploads"]["raw_completions"] = results
+
+    # 4) Non-raw eval-JSON tree (round-2 hardening): ONE recursive folder
+    #    upload that preserves subdirectories (icl_panel/, ft_panel/,
+    #    matched_pairs/ incl. by_run/, free_gen/, own_policy/, gate1.json),
+    #    so off-pod analysis is self-sufficient even if the canonical
+    #    git-on-issue-branch sync misfires. free_gen_raw/ is excluded (step 3
+    #    uploads it per file); the smoke/ namespace is excluded from the
+    #    full-run upload (the smoke phase uploads it under its own bucket).
+    from explore_persona_space.orchestrate import hub
+
+    eval_root = ns_eval_dir(smoke)
+    ignore = ["free_gen_raw/*", "free_gen_raw/**", "*.tmp", "*.log"]
+    if not smoke:
+        ignore += ["smoke/*", "smoke/**"]
+    eval_tree_url = hub._upload(
+        local_path=eval_root,
+        repo_id=hub.DEFAULT_DATASET_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{bucket}/eval_json",
+        ignore_patterns=ignore,
+    )
+    if not eval_tree_url:
+        raise RuntimeError(
+            f"eval-JSON tree upload FAILED: {eval_root} -> "
+            f"{hub.DEFAULT_DATASET_REPO}/{bucket}/eval_json (fail-loud, never skip)"
+        )
+    manifest["uploads"]["eval_json_tree"] = eval_tree_url
     write_json(ns_eval_dir(smoke) / "upload_manifest.json", manifest)
 
 
@@ -510,9 +544,13 @@ def _results_note(smoke: bool) -> str:
     if gate.exists():
         g = json.loads(gate.read_text())
         parts.append(f"gate1 source ΔG={g['source_mean_delta_logp']:+.3f} nat pass={g['pass']}.")
-    matched = ns_eval_dir(smoke) / "matched_pairs" / "matched_summary.json"
-    if matched.exists():
-        pairs = json.loads(matched.read_text())["pairs"]
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_pairs
+
+    try:
+        pairs = load_matched_pairs(smoke=smoke)
+    except FileNotFoundError:
+        pairs = {}  # note-builder only: matching never ran in this invocation
+    if pairs:
         within = sum(1 for p in pairs.values() if p["within_tolerance"])
         parts.append(f"matched pairs: {len(pairs)} ({within} within ±1.5 nat).")
     parts.append(f"eval JSONs under {EVAL_DIR}; analysis runs off-pod (analyze.py).")
@@ -644,8 +682,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
             runs = args.runs.split(",") if args.runs else list(load_run_specs())
             phase_train(gpus, runs=runs, smoke=args.smoke, out_root=args.out_root)
         elif args.phase in ("traj_eval", "matched_eval"):
-            # Recovery entry points: re-run the eval pipeline for runs whose
-            # outputs are missing (same slot_eval path; skip-existing by file).
+            # Recovery entry points: re-run the per-run eval pipeline for runs
+            # whose outputs are missing. run_ft_pipeline GUARDS against
+            # post-prune re-matching (it refuses when persist_prune_meta.json
+            # exists or the on-disk ckpts differ from train_meta's grid), so a
+            # recovery invocation can never rebuild the registered matching
+            # basis from a pruned 1-2-point curve; for pruned runs the
+            # persisted matched_pairs/by_run/<run_id>.json entry is the source
+            # of truth and downstream reads consume it directly.
             runs = args.runs.split(",") if args.runs else list(load_run_specs())
             jobs = []
             for run_id in runs:
@@ -659,6 +703,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
                     )
                 )
             _run_jobs(jobs, gpus)
+            from explore_persona_space.experiments.icl_vs_ft_491.matching import (
+                assemble_matched_summary,
+            )
+
+            assemble_matched_summary(smoke=args.smoke)
         elif args.phase == "free_gen":
             cells = args.cells.split(",") if args.cells else _all_free_gen_cells()
             phase_free_gen(gpus, cells=cells, smoke=args.smoke, out_root=args.out_root)

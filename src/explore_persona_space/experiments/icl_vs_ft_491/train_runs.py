@@ -26,7 +26,6 @@ Plan v3 §4.3. Recipe (Sources in plan §11):
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import shutil
@@ -35,7 +34,6 @@ from pathlib import Path
 from explore_persona_space.experiments.icl_vs_ft_491.common import (
     BASE_MODEL,
     DATA_DIR,
-    EVAL_DIR,
     HF_MODEL_REPO,
     MARKER_TEXT,
     WANDB_PROJECT,
@@ -141,6 +139,13 @@ def train_one_run(
 
     bs, ga = _batch_geometry(k)
     out_dir = run_out_dir(run_id, out_root)
+    # A fresh train invalidates any previous persist/prune state for this run —
+    # a stale persist_prune_meta.json would trip slot_eval's post-prune rematch
+    # guard even though a full checkpoint grid is about to exist again.
+    stale_prune_meta = out_dir / "persist_prune_meta.json"
+    if stale_prune_meta.exists():
+        stale_prune_meta.unlink()
+        logger.info("%s: removed stale persist_prune_meta.json before re-train", run_id)
     traj_path = trajectory_path(run_id, run_name_suffix)
     traj_path.parent.mkdir(parents=True, exist_ok=True)
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
@@ -239,23 +244,17 @@ def train_one_run(
 def persist_and_prune(run_id: str, *, out_root: Path | None = None, smoke: bool = False) -> None:
     """Upload the matched + anchor checkpoints to HF, then prune the other ckpts.
 
-    Reads the run's matched_summary entry (written by matching.py). FAIL-LOUD
+    Reads the run's per-run match file (matched_pairs/by_run/<run_id>.json,
+    written by matching.py — race-free under parallel workers). FAIL-LOUD
     upload-before-delete: a checkpoint is pruned ONLY after its survivor set
     is known; the matched/anchor dirs are pruned NEVER (free_gen/activations
     still need them locally) and uploaded with verification. A failed upload
     is a TRACKED GAP (recorded in the meta JSON) — never a warning-and-prune.
     """
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_entry
     from explore_persona_space.orchestrate.hub import upload_model
 
-    matched_path = (
-        EVAL_DIR / ("smoke/matched_pairs" if smoke else "matched_pairs") / "matched_summary.json"
-    )
-    if not matched_path.exists():
-        raise FileNotFoundError(f"{matched_path} missing — run matching before persist/prune.")
-    summary = json.loads(matched_path.read_text())
-    entry = summary["pairs"].get(run_id)
-    if entry is None:
-        raise KeyError(f"{run_id} missing from matched summary {matched_path}")
+    entry = load_matched_entry(run_id, smoke=smoke)
     keep_steps = sorted({int(entry["matched_step"]), int(entry["anchor_step"])})
 
     out_dir = run_out_dir(run_id, out_root)

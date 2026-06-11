@@ -68,6 +68,13 @@ logger = logging.getLogger("i491.slot_eval")
 
 TRAJ_GRID_STEPS = [4, 8, 16, 24, 32, 48, 64, 96]
 TRAJ_N_QUESTIONS = 25
+# #534 crosscheck tolerance. Plan §4.4 prose expects in-loop vs offline ΔG to
+# agree to ~1 nat; 1.5 nat adds headroom for probe-set composition drift (the
+# in-loop probe subsamples up to 32 rows at a probe-cadence step that can sit
+# one cadence before the last stored ckpt) while still catching the #534
+# failure class unambiguously (adapter-not-applied reads |diff| ≈ the full
+# dose, 5-20+ nat). The realized |diff| is reported openly in the crosscheck
+# JSON either way.
 CROSSCHECK_TOL_NATS = 1.5
 TOKEN_BUDGET_PER_BATCH = 32768  # adaptive batch: full-logit memory guard
 OWN_POLICY_CHAINS = ["A", "B", "C"]
@@ -283,6 +290,32 @@ def run_ft_pipeline(
     spec = load_run_specs()[run_id]
     out_dir = run_out_dir(run_id, out_root)
     steps = _saved_ckpt_steps(out_dir)
+
+    # Post-prune rematch guard (round-2 fix): NEVER rebuild the registered
+    # matching basis from a pruned/partial checkpoint set. persist-prune
+    # leaves only the matched+anchor dirs, so a recovery re-run here would
+    # re-derive the "curve" from 1-2 surviving points and silently overwrite
+    # the run's registered matched_pairs entry.
+    prune_meta = out_dir / "persist_prune_meta.json"
+    if prune_meta.exists():
+        raise RuntimeError(
+            f"{run_id}: {prune_meta} exists — checkpoints already pruned; refusing to "
+            "re-run the matching pipeline. The persisted matched_pairs/by_run entry is "
+            "the registered basis; recovery reads must consume it, never rebuild it."
+        )
+    train_meta_path = out_dir / "train_meta.json"
+    if not train_meta_path.exists():
+        raise FileNotFoundError(
+            f"{train_meta_path} missing — cannot verify the on-disk checkpoint set covers "
+            "the trained grid; refusing to build a matching basis on an unverified set."
+        )
+    expected_steps = [int(s) for s in json.loads(train_meta_path.read_text())["ckpt_steps"]]
+    if steps != expected_steps:
+        raise RuntimeError(
+            f"{run_id}: on-disk checkpoints {steps} != trained grid {expected_steps} — "
+            "partial/pruned checkpoint set; refusing to rebuild the matching basis on it."
+        )
+
     questions = load_q_test()[:n_questions]
     context_ids = context_ids or PANEL_CONTEXT_IDS
     panel_dir = ns_eval_dir(smoke) / "ft_panel"
@@ -523,8 +556,9 @@ def run_own_policy(
     r_villain = load_r_villain()
     context_ids = context_ids or PANEL_CONTEXT_IDS
     questions = load_q_test()[:n_questions]
-    matched_path = ns_eval_dir(smoke) / "matched_pairs" / "matched_summary.json"
-    matched = json.loads(matched_path.read_text())["pairs"]
+    from explore_persona_space.experiments.icl_vs_ft_491.matching import load_matched_pairs
+
+    matched = load_matched_pairs(smoke=smoke)
     raw_dir = ns_eval_dir(smoke) / "free_gen_raw"
     out_dir_json = ns_eval_dir(smoke) / "own_policy"
 

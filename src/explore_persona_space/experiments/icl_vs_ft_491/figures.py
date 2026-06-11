@@ -46,7 +46,7 @@ def hero_scatter(smoke: bool = False) -> None:
     from explore_persona_space.experiments.icl_vs_ft_491.analyze import assemble_pairs
 
     set_paper_style()
-    pairs = assemble_pairs(smoke)
+    pairs, _skipped = assemble_pairs(smoke)
     chains = [c for c in ("A", "B", "C") if f"ft_K8_chain{c}" in pairs]
     if not chains:
         raise FileNotFoundError("no K=8 matched pairs available for the hero figure")
