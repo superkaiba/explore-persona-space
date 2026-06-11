@@ -3220,8 +3220,8 @@
       "goal": "Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 lands all three encoding arms simultaneously inside the [-10, -5] nat resolution band on at least one persona, so the anchor-selection algorithm picks a non-degenerate anchor and the planned per-persona x per-contrast paired-bootstrap headline test on role-vs-system separability actually fires.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/546",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/546",
+      "status": "awaiting_promotion",
       "title": "Halving the LoRA recipe to r=16/\u03b1=32 pushes marker install past the 1-epoch grid point but still never lands all three persona encodings in the resolution band, so the role-vs-system separability test again cannot fire (MODERATE confidence)"
     },
     "547": {
