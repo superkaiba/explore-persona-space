@@ -173,6 +173,12 @@ def main():
     save_steps = int(cfg.get("save_steps", 500))
     save_total_limit = cfg.get("save_total_limit")
     completion_only_loss = bool(cfg.get("completion_only_loss", False))
+    # Mid-run checkpoints here feed dose-selection EVALS, never training
+    # resume — so skip optimizer/scheduler state by default. Under ZeRO-3
+    # the DeepSpeed engine state (global_step<N>/) is ~86GB for a 7B vs
+    # ~14GB of model shards; full saves filled a 200GB volume at step 250
+    # (#545 fullft, 2026-06-11). Set save_only_model: false to resume.
+    save_only_model = bool(cfg.get("save_only_model", True))
 
     # Packing
     packing = args.packing if args.packing is not None else cfg.get("packing", True)
@@ -276,6 +282,7 @@ def main():
         logging_steps=10,
         save_strategy=save_strategy,
         save_steps=save_steps,
+        save_only_model=save_only_model,
         **({"save_total_limit": save_total_limit} if save_total_limit is not None else {}),
         **({"max_steps": max_steps} if max_steps > 0 else {}),
         # completion_only_loss=True requires the prompt-completion dataset
