@@ -1,0 +1,12 @@
+{
+  "inputs": {
+    "spec": "RunSpec(issue=137, intent='lora-7b', backend='auto', hydra_args=('condition=c1_evil_wrong_em', 'seed=42'))"
+  },
+  "provenance": {
+    "generated_by": "uv run python /tmp/issue588_gen_snapshots.py <merge-base-sha>  # see fixture header",
+    "note": "spec_hash recorded from the PRE-change canonicalize_spec at the issue-588 merge-base. Hydra-only specs must hash identically post-change (lease reconnect continuity across the upgrade).",
+    "source_file": "src/explore_persona_space/backends/router.py",
+    "source_sha": "bd073f49025ae6d71783ace4758688154ee9c1fb"
+  },
+  "spec_hash": "2aa93b8d37a646d7"
+}

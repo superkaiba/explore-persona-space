@@ -1718,3 +1718,30 @@ def test_poll_guest_attr_malformed_json_is_typed_probe_failure() -> None:
     pr = backend.poll(_poll_handle())
     assert pr.status == "stalled"
     assert pr.current_phase == "guest_attr_probe_failed"
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — A2 byte-identity snapshot (hydra-only startup script)
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot() -> None:
+    """A2 (#588): the hydra-only startup script must be byte-for-byte
+    unchanged by the workload_cmd feature.
+
+    The fixture was recorded from the PRE-change renderer at the
+    issue-588 merge-base (provenance — source SHA + generation command —
+    lives in the fixture's JSON header). Regenerating it from a
+    post-change renderer would make this test tautological; reviewers
+    verify the fixture's first-commit ordering in git history instead.
+    """
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures" / "issue588_gcp_startup_hydra_only.json").read_text()
+    )
+    rendered = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        repo_branch="main",
+    )
+    assert rendered == fixture["rendered_text"]

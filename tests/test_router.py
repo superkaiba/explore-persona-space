@@ -3106,3 +3106,29 @@ def test_no_auto_runpod_under_gcp_first_default(lease_store):
     outcomes = [(a["kind"], a["outcome"]) for a in excinfo.value.attempts]
     assert ("gcp", "provisioning_failure") in outcomes
     assert any(kind == "nibi" for kind, _o in outcomes)
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — spec_hash continuity for hydra-only specs
+# ---------------------------------------------------------------------------
+
+
+def test_spec_hash_hydra_only_matches_pre_change_recorded_hash() -> None:
+    """A2 (#588): hydra-only specs must hash identically across the
+    workload_cmd upgrade (lease reconnect continuity — a changed hash
+    would orphan every in-flight lease).
+
+    The recorded hash was generated from the PRE-change
+    canonicalize_spec at the issue-588 merge-base (provenance in the
+    fixture's JSON header).
+    """
+    fixture = json.loads(
+        (Path(__file__).parent / "fixtures" / "issue588_spec_hash_hydra_only.json").read_text()
+    )
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="auto",
+        hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
+    )
+    assert spec_hash(spec) == fixture["spec_hash"]

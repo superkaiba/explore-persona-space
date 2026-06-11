@@ -20,6 +20,7 @@ FAILS on the misroute regardless of zero level.
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -1699,3 +1700,29 @@ def test_slurm_backend_routes_estimate_through_mila_ssh_host_not_robot_alias() -
     # alias, NOT some default like ``robot-mila`` that does not exist
     # in clusters.config.
     assert captured["robot_alias"] == "mila", captured
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — A2 byte-identity snapshot (hydra-only sbatch)
+# ---------------------------------------------------------------------------
+
+
+def test_render_sbatch_hydra_only_byte_identical_to_pre_change_snapshot() -> None:
+    """A2 (#588): the hydra-only sbatch render must be byte-for-byte
+    unchanged by the workload_cmd feature.
+
+    Fixture recorded from the PRE-change renderer at the issue-588
+    merge-base (provenance in the fixture's JSON header); see the GCP
+    twin in test_gcp_backend.py for the non-tautology rationale.
+    """
+    fixture = json.loads(
+        (_P(__file__).parent / "fixtures" / "issue588_slurm_sbatch_hydra_only.json").read_text()
+    )
+    spec = _lora_spec("lora-7b")
+    rendered = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    assert rendered == fixture["rendered_text"]
