@@ -408,6 +408,68 @@ def _resolve_cluster_cfg(name: str | None) -> Any | None:
     return get_cluster_config(name)
 
 
+def _frontmatter_backend_value(issue: int) -> str | None:
+    """The task's frontmatter ``backend:`` value, normalized for the override check.
+
+    Returns ``""`` when the key is absent or the value is empty (the task
+    itself says auto), the stripped + lowercased value otherwise, and
+    ``None`` when the frontmatter could not be read at all (missing task,
+    unreadable body.md) — the caller then SKIPS the
+    override-without-frontmatter check rather than guessing.
+
+    Reads via ``task_workflow.get_task``, which resolves against the MAIN
+    checkout's ``tasks/`` tree regardless of the invoking worktree (the
+    resolver branch-guards to ``main``) — same pattern as
+    :func:`_agent_upload_verification_passed`. Library import, not a
+    ``task.py`` shell-out, and this CLI is VM-side only.
+    """
+    try:
+        from explore_persona_space.task_workflow import get_task
+
+        fm = get_task(int(issue)).get("frontmatter") or {}
+    except Exception as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "could not read frontmatter for issue=%d (%s: %s)",
+            int(issue),
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    raw = fm.get("backend")
+    if raw is None:
+        return ""
+    return str(raw).strip().lower()
+
+
+def _wrap_marker_poster_with_override_flag(
+    poster: Callable[..., None],
+) -> Callable[..., None]:
+    """Stamp ``extra.override_without_frontmatter=true`` onto backend-selected posts.
+
+    The router builds the ``epm:backend-selected`` body itself
+    (``router._post_backend_selected``) and only ``result.extra`` reaches
+    the marker — ``spec.extra`` does not — so the CLI-level fact
+    "explicit ``--backend runpod`` with no frontmatter backing" is
+    threaded by decorating the injected ``marker_poster`` instead of
+    touching router internals. Non-backend-selected markers and
+    unparseable notes pass through untouched. Observability only: never
+    alters routing control flow, never fails the post.
+    """
+
+    def _wrapped(**kwargs: Any) -> None:
+        if kwargs.get("marker") == "epm:backend-selected":
+            try:
+                body = json.loads(kwargs.get("note") or "")
+            except (TypeError, json.JSONDecodeError):
+                body = None
+            if isinstance(body, dict) and isinstance(body.get("extra"), dict):
+                body["extra"]["override_without_frontmatter"] = True
+                kwargs["note"] = json.dumps(body, sort_keys=True)
+        poster(**kwargs)
+
+    return _wrapped
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -472,6 +534,41 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     )
 
     deps = backends_factory()
+    marker_poster = deps["marker_poster"]
+    if (args.backend or "").strip().lower() == "runpod":
+        # GCP-first bypass visibility (incident lineage #571 → 2026-06-11:
+        # three launches passed explicit ``--backend runpod`` on tasks whose
+        # frontmatter was ABSENT, on the stale pre-#588 justification "the
+        # GCP lane is train.py-only"). The CLI cross-checks the task's
+        # ACTUAL frontmatter: an explicit runpod override with no
+        # frontmatter backing gets a LOUD stderr warning + an
+        # ``override_without_frontmatter`` flag on the
+        # ``epm:backend-selected`` marker extra. ADDITIVE only — the launch
+        # is never blocked and the CLI argument contract is unchanged.
+        fm_backend = _frontmatter_backend_value(args.issue)
+        if fm_backend == "":
+            logging.getLogger("dispatch_issue").warning(
+                "explicit --backend runpod for issue=%d but the task's frontmatter has NO "
+                "backend: value — the task itself says auto, and the standing default is "
+                "GCP FIRST (credits before real money). 'the GCP lane is train.py-only' "
+                "is STALE justification as of #588: every lane runs custom dispatch "
+                "scripts via --workload-cmd. Name a residual gap in the launch note — "
+                "70B intents (no GCP machine-type mapping) / interactive SSH-MCP "
+                "experimenter orchestration / runs longer than GCP --max-run-duration "
+                "(default 24h) / SLURM venv-extras mismatch — or drop the override and "
+                "let auto route. Launch continues; the epm:backend-selected marker "
+                "carries extra.override_without_frontmatter=true so the bypass is "
+                "visible on the events trail.",
+                int(args.issue),
+            )
+            marker_poster = _wrap_marker_poster_with_override_flag(marker_poster)
+        elif fm_backend is None:
+            logging.getLogger("dispatch_issue").warning(
+                "explicit --backend runpod for issue=%d but the task frontmatter could "
+                "not be read — skipping the override-without-frontmatter check "
+                "(launch continues).",
+                int(args.issue),
+            )
     try:
         outcome = dispatch_for_issue(
             spec,
@@ -479,7 +576,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
             free_backends=deps["free_backends"],
             gcp_backend=deps["gcp_backend"],
             mila_socket_alive=deps["mila_socket_alive"],
-            marker_poster=deps["marker_poster"],
+            marker_poster=marker_poster,
             is_started=deps["is_started"],
             is_live_after_cancel=deps["is_live_after_cancel"],
             started_evidence_probe=deps.get("started_evidence_probe"),
@@ -990,6 +1087,8 @@ __all__ = [
     "_build_production_backends",
     "_cmd_finalize",
     "_cmd_launch",
+    "_frontmatter_backend_value",
     "_resolve_backend_for_handle",
+    "_wrap_marker_poster_with_override_flag",
     "main",
 ]
