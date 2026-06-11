@@ -113,6 +113,44 @@ DOUBLE = {42: (19.8, 59.0), 137: (20.2, 61.0)}  # T=125
 MATCHED = {42: (20.1, 58.0), 137: (20.5, 60.0)}  # T=128
 ANCHOR = {42: (13.4, 40.5), 137: (13.6, 39.5)}
 MARGIN_REFS = {"0:1": 4.0, "2:1": 20.0, "4:1": 40.0, "8:1": 60.0}
+# Round-7 (plan v3 §C): the reference levels instantiate from NAMED in-task
+# phase2 cells — the fixture slab writes these single-checkpoint terminals
+# ((logp, margin) per (slug, seed)); dense_200p800n doubles as the 4:1
+# anchor-fallback pair and mirrors ANCHOR.
+REF_CELLS: dict[tuple[str, int], tuple[float, float]] = {
+    ("dense_200p0n", 137): (2.05, 4.0),
+    ("dense_200p400n", 137): (8.55, 20.0),
+    ("dense_200p800n", 42): ANCHOR[42],
+    ("dense_200p800n", 137): ANCHOR[137],
+    ("dense_200p1600n", 137): (20.0, 60.0),
+}
+
+
+def _fixture_refs():
+    """The derive_in_task_references output the analyze run derives from this slab."""
+    from explore_persona_space.experiments.neg_setpoint_601.analysis_lib import (
+        derive_in_task_references,
+    )
+
+    arms = {"quarter": QUARTER, "double": DOUBLE, "matched": MATCHED, "anchor": ANCHOR}
+    return derive_in_task_references(
+        level_terminals_logp={
+            "0:1": [REF_CELLS[("dense_200p0n", 137)][0]],
+            "2:1": [REF_CELLS[("dense_200p400n", 137)][0]],
+            "4:1": [lp for lp, _ in ANCHOR.values()],
+            "8:1": [REF_CELLS[("dense_200p1600n", 137)][0]],
+        },
+        level_terminals_margin={
+            "0:1": [REF_CELLS[("dense_200p0n", 137)][1]],
+            "2:1": [REF_CELLS[("dense_200p400n", 137)][1]],
+            "4:1": [mg for _, mg in ANCHOR.values()],
+            "8:1": [REF_CELLS[("dense_200p1600n", 137)][1]],
+        },
+        extra_seed_pairs_logp={a: [lp for lp, _ in d.values()] for a, d in arms.items()},
+        extra_seed_pairs_margin={a: [mg for _, mg in d.values()] for a, d in arms.items()},
+    )
+
+
 # Dense ladder WITHOUT step 16 — the frac-16 horizon read comes from the
 # on-policy trajectory INSERT, so the insert's own-space conversion is itself
 # under test (a logP-form insert in the margin series breaks it).
@@ -188,6 +226,13 @@ def _build_divergence_slab(slab: Path) -> None:
     for seed, (lp, mg) in ANCHOR.items():
         _write_traj(
             p0 / "onpolicy_recheck" / f"c472_anchor_seed{seed}" / "trajectory.json",
+            [(1.0, 63, lp, mg)],
+        )
+    # Round-7 (plan v3 §C): the in-task reference cells the analyze run
+    # instantiates L̂/M̂/tol from (no parent fallback exists).
+    for (slug, seed), (lp, mg) in REF_CELLS.items():
+        _write_traj(
+            slab / "phase2" / f"{slug}_seed{seed}" / "trajectory.json",
             [(1.0, 63, lp, mg)],
         )
     for slug, by_seed, t_total in (
@@ -310,8 +355,7 @@ def test_fixture_discriminates_the_bug(divergence_payload: dict, tmp_path: Path)
     kwargs = dict(
         arm_terminals=arm_terminals_margin,
         space="margin",
-        margin_refs=MARGIN_REFS,
-        margin_tol=6.0,
+        refs=_fixture_refs(),  # round-7 §C signature: in-task refs, no parent fallback
         clamp_present=True,
     )
     buggy = classify_phase1(matched_series_by_seed=series_logp, **kwargs)["verdicts"]

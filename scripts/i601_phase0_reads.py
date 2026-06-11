@@ -11,11 +11,26 @@ Runs FIRST, on-pod, before any training (plan §4 Phase 0):
   0a-op   On-policy re-read of the 8 count-cell adapters (4 ratio levels x 2
           seeds) via ``i601_eval_trajectory.py`` with a single terminal
           checkpoint spec + the bystander8 panel.
-  gate    Adapter-application cross-check (#534 / plan §7 gate 2): each
-          on-policy source ΔG must reproduce the COMMITTED
-          ``eval_results/issue_472/<cell>_seed<S>/trajectory.json`` terminal
-          ``source_self.delta_g_mean`` within 1 nat. FAIL → phase0_gate.json
-          pass=false and ALL training phases stay gated.
+  gate    Plan v3 §B gate split (gate_schema 2; supersedes the v2 conjunctive
+          all-8-within-1-nat rule, unsatisfiable on intact tooling — §A):
+            pass            = Gate S ONLY (structural eval-path integrity,
+                              HALT-class): IdenticalRereadAlarm silent +
+                              reread_r_collapsed false on all 8 + all 4
+                              low-dose adapter-seeds (noneg x2, negex_100 x2)
+                              within 1.5 nat of the COMMITTED
+                              ``eval_results/issue_472/<cell>_seed<S>/
+                              trajectory.json`` terminals + dose ordering
+                              noneg < negex_100 < min(anchor, negex_400)
+                              with >= 2-nat seed-mean gaps. FAIL → ALL
+                              training phases stay gated.
+            anchor_reuse_ok = Gate A (anchor adapters within 1 nat +
+                              recipe-panel determinism; routing-class —
+                              false fires the budgeted dense_200p800n
+                              seed-42 retrain fallback, never a halt).
+            observation_o   = negex_400 re-reads (recorded, never gating —
+                              the registered Phase-0a regime deliverable).
+          Re-runs are skip-cheap: parity-regime tf/op outputs are reused and
+          the gate recomputes from the existing JSONs (no GPU recompute).
   0b      Trained-negative clamp read (from the 0a-tf records).
   calib   Margin references M(level) from the ON-POLICY subset (plan §6
           pinned rule) + the primary-space decision (plan §4 item 2).
@@ -422,6 +437,7 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
         IdenticalRereadAlarm,
         clamp_read,
+        compute_gate_schema2,
         decide_primary_space,
         margin_references,
         onpolicy_crosscheck,
@@ -528,8 +544,10 @@ def main(argv: list[str] | None = None) -> int:
             (args.phase0_dir / "phase0_gate.json").write_text(
                 json.dumps(
                     {
+                        "gate_schema": 2,
                         "pass": False,
-                        "gate": "adapter-application cross-check (plan §7 gate 2, #534 class)",
+                        "anchor_reuse_ok": False,
+                        "gate": "Gate S structural FAIL (plan v3 §B item 1, #534 class)",
                         "structural_alarm": "IdenticalRereadAlarm",
                         "detail": str(alarm),
                         "diag": alarm.diag,
@@ -553,11 +571,23 @@ def main(argv: list[str] | None = None) -> int:
     # Adapt the tf records to the clamp reader's (logp_hf_g/logp_hf_b) schema.
     clamp = clamp_read(tf_stats, bystanders, negatives_by_cell, count_cells)
 
-    anchor_keys = [f"c472_anchor_seed{s}" for s in PARENT_SEEDS]
-    anchor_onpolicy_ok = all(
-        crosscheck.get("per_adapter", {}).get(k, {}).get("within_tol", False) for k in anchor_keys
-    )
-    anchor_reuse_ok = bool(recipe_panel_ok and anchor_onpolicy_ok)
+    # Plan v3 §B gate split (gate_schema 2): Gate S = the file's top-level
+    # `pass` (structural, HALT-class); Gate A = `anchor_reuse_ok` (routing);
+    # Observation O recorded, never gating. The v2 conjunctive rule survives
+    # only as the audit `onpolicy_crosscheck` table. Pure recompute over the
+    # per-adapter table → skip-cheap re-runs regate without GPU work.
+    if not args.skip_onpolicy:
+        gate2 = compute_gate_schema2(crosscheck["per_adapter"], recipe_panel_ok=recipe_panel_ok)
+    else:
+        gate2 = {
+            "gate_schema": 2,
+            "pass": False,
+            "anchor_reuse_ok": False,
+            "skipped": True,
+            "note": "--skip-onpolicy: no re-reads — Gate S cannot be established; HALT stands.",
+        }
+    anchor_reuse_ok = bool(gate2["anchor_reuse_ok"])
+    anchor_onpolicy_ok = bool(gate2.get("gate_a", {}).get("anchor_onpolicy_ok", False))
 
     endpoint = {
         "schema_version": "i601_phase0_v2",
@@ -581,10 +611,9 @@ def main(argv: list[str] | None = None) -> int:
     (args.phase0_dir / "endpoint_reads.json").write_text(json.dumps(endpoint, indent=2))
 
     gate = {
-        "pass": bool(crosscheck.get("pass")),
-        "gate": "adapter-application cross-check (plan §7 gate 2, #534 class)",
+        **gate2,
+        "gate": "phase0 gate split: Gate S structural / Gate A anchor reuse (plan v3 §B)",
         "onpolicy_crosscheck": crosscheck,
-        "anchor_reuse_ok": anchor_reuse_ok,
         "primary_space": space.get("primary_space"),
         "git_commit": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),

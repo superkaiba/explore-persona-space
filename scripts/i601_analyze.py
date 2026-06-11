@@ -51,6 +51,17 @@ ARM_ROLES = {
     "ratio4to1_100p400n_T128": "matched",
 }
 
+# Plan v3 §C sourcing table — the NAMED in-task cells the reference levels
+# L̂(·)/M̂(·) instantiate from. dense_200p800n seed 42 is the anchor-retrain
+# fallback unit (Gate A false fires it); seed 137 is the registered Phase-2
+# dense cell. Parent committed numbers NEVER enter this table.
+IN_TASK_REF_SOURCES: dict[str, tuple[tuple[str, str, int], ...]] = {
+    "0:1": (("phase2", "dense_200p0n", 137),),
+    "2:1": (("phase2", "dense_200p400n", 137),),
+    "4:1": (("phase2", "dense_200p800n", 42), ("phase2", "dense_200p800n", 137)),
+    "8:1": (("phase2", "dense_200p1600n", 137),),
+}
+
 
 def _git_sha() -> str:
     try:
@@ -142,12 +153,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         cell_by_slug,
     )
     from explore_persona_space.experiments.neg_setpoint_601.analysis_lib import (
+        PARENT_COMMITTED_CROSS_RIG,
         arrest_step,
         classify_phase1,
         classify_phase4_arrest,
+        derive_in_task_references,
         logz_artifact,
         phase3_contrast,
         robustness_sweep,
+    )
+    from explore_persona_space.experiments.neg_setpoint_601.phase0_lib import (
+        GATE_S_LOW_DOSE_TOL_NATS,
     )
 
     ap_load = lambda p: _load(p, allow_partial=args.allow_partial)  # noqa: E731
@@ -161,9 +177,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
     # classify_phase1 takes one space: "margin" when Phase 0 escalated, else
     # logp (the upper-branch margin co-read is reported alongside either way).
     space = "margin" if primary_space_full == "margin" else "logp"
+    # Phase-0a margin_references are CROSS-CHECKS only under plan v3 §C — the
+    # classification references L̂(·)/M̂(·) instantiate from fresh in-task
+    # terminals (IN_TASK_REF_SOURCES); the re-read values feed the cross-rig
+    # reporting block below.
     margin_refs_raw = (endpoint or {}).get("margin_references", {})
-    margin_refs = {lv: rec["margin_mean"] for lv, rec in margin_refs_raw.items()}
-    margin_tol = max([rec["tolerance_margin"] for rec in margin_refs_raw.values()] or [1.0])
     # Phase-0b clamp: gates the equilibrium MECHANISM call (plan §4 item 4);
     # the verdicts dict separates phenomenology from mechanism either way.
     clamp = (endpoint or {}).get("clamp_read", {})
@@ -172,6 +190,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
 
     # ── Phase 1 arm terminals (both spaces; classified in the primary). ──────
     arm_terminals: dict[str, list[float]] = {}
+    arm_terminals_logp: dict[str, list[float]] = {}
     arm_terminals_margin: dict[str, list[float]] = {}
     missing: list[str] = []
     for slug, role in ARM_ROLES.items():
@@ -186,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
             vals_m.append(_terminal_value(traj, "margin"))
         if vals:
             arm_terminals[role] = vals if space == "logp" else vals_m
+            arm_terminals_logp[role] = vals
             arm_terminals_margin[role] = vals_m
     # Anchor (reused #472 or the retrain fallback). Plan §4 Phase-0 item 3:
     # when the fitness gate failed (anchor_reuse_ok=false) the dispatcher's
@@ -220,6 +240,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
                 anchor_vals_m.append(_terminal_value(reread, "margin"))
     if anchor_vals:
         arm_terminals["anchor"] = anchor_vals if space == "logp" else anchor_vals_m
+        arm_terminals_logp["anchor"] = anchor_vals
         arm_terminals_margin["anchor"] = anchor_vals_m
 
     # ── Matched-arm series (dense teacher-forced + on-policy fracs), built in
@@ -248,27 +269,107 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         matched_series_margin[seed] = _matched_series(d, t, "margin")
     matched_series = matched_series_logp if space == "logp" else matched_series_margin
 
+    # ── Plan v3 §C: in-task reference instantiation (L̂/M̂/tolerances). ───────
+    # Every level loads from the NAMED in-task cells; a fully missing level
+    # leaves refs=None and the Phase-1 classification unreadable (allow-partial
+    # rows name each absent source) — there is NO parent-constant fallback.
+    level_terminals_logp: dict[str, list[float]] = {}
+    level_terminals_margin: dict[str, list[float]] = {}
+    ref_sources_record: dict[str, list[str]] = {}
+    fresh_dz_by_level: dict[str, list[float]] = {}
+    for level, source_cells in IN_TASK_REF_SOURCES.items():
+        for phase_name, slug, seed in source_cells:
+            key = f"{slug}_seed{seed}"
+            traj = ap_load(args.slab_root / phase_name / key / "trajectory.json")
+            if traj is None:
+                missing.append(f"in-task-reference-{level}:{key}")
+                continue
+            level_terminals_logp.setdefault(level, []).append(_terminal_value(traj, "logp"))
+            level_terminals_margin.setdefault(level, []).append(_terminal_value(traj, "margin"))
+            term = max(traj["checkpoints"], key=lambda c: c["frac"])
+            ss = term["source_self"]
+            fresh_dz_by_level.setdefault(level, []).append(
+                float(ss["z_marker_g_mean"] - ss["z_marker_b_mean"])
+            )
+            ref_sources_record.setdefault(level, []).append(f"{phase_name}/{key} terminal")
+    refs = None
+    if all(level_terminals_logp.get(lv) for lv in IN_TASK_REF_SOURCES):
+        refs = derive_in_task_references(
+            level_terminals_logp=level_terminals_logp,
+            level_terminals_margin=level_terminals_margin,
+            extra_seed_pairs_logp=arm_terminals_logp,
+            extra_seed_pairs_margin=arm_terminals_margin,
+            sources=ref_sources_record,
+        )
+    else:
+        missing.append("in-task-references-incomplete")
+
+    # Cross-rig reporting block — the ONLY surviving home of the parent
+    # committed numerics (plan v3 §C). Also carries the §C fresh-vs-re-read
+    # cross-check (disagreement beyond the Gate-S band is reported; the fresh
+    # value stays the reference) and the fresh per-level logP-vs-Δz divergence
+    # re-confirmation of the recorded primary-space decision (reporting-only).
+    reread_by_level = {
+        lv: {"logp_mean": rec.get("logp_mean"), "margin_mean": rec.get("margin_mean")}
+        for lv, rec in margin_refs_raw.items()
+    }
+    disagreements = []
+    if refs is not None:
+        for lv, rec in reread_by_level.items():
+            if lv in refs["l_refs"] and rec["logp_mean"] is not None:
+                diff = abs(refs["l_refs"][lv] - float(rec["logp_mean"]))
+                if diff > GATE_S_LOW_DOSE_TOL_NATS:
+                    disagreements.append(
+                        {
+                            "level": lv,
+                            "fresh_logp": refs["l_refs"][lv],
+                            "phase0a_reread_logp": float(rec["logp_mean"]),
+                            "abs_diff": diff,
+                        }
+                    )
+    fresh_divergence = {
+        lv: abs(sum(dzs) / len(dzs) - sum(level_terminals_logp[lv]) / len(level_terminals_logp[lv]))
+        for lv, dzs in fresh_dz_by_level.items()
+        if level_terminals_logp.get(lv)
+    }
+    cross_rig = {
+        "parent_committed": PARENT_COMMITTED_CROSS_RIG,
+        "phase0a_reread_by_level": reread_by_level,
+        "fresh_vs_reread_disagreements_over_band": disagreements,
+        "band_nats": GATE_S_LOW_DOSE_TOL_NATS,
+        "fresh_divergence_logp_vs_z_by_level": fresh_divergence,
+        "note": "cross-rig comparison ONLY — never consumed by classification (plan v3 §C)",
+    }
+
     phase1 = None
     required_roles = {"quarter", "anchor", "double", "matched"}
-    if required_roles.issubset(arm_terminals) and matched_series:
+    if refs is not None and required_roles.issubset(arm_terminals) and matched_series:
         phase1 = classify_phase1(
             arm_terminals=arm_terminals,
             matched_series_by_seed=matched_series,
             space=space,
-            margin_refs=margin_refs or None,
-            margin_tol=margin_tol if space == "margin" else None,
+            refs=refs,
             clamp_present=clamp_present,
+            # §C decidability guard: the logP-primary discriminator may
+            # re-evaluate in margin space when compressed below 3 nats.
+            margin_fallback=(
+                {
+                    "arm_terminals": arm_terminals_margin,
+                    "matched_series_by_seed": matched_series_margin,
+                }
+                if space == "logp"
+                else None
+            ),
         )
         phase1["anchor_arm_source"] = anchor_arm_source
         # Margin co-read alongside a logp-primary classification (rule: report
         # the pair everywhere; space disagreement is the saturation signature).
-        if space == "logp" and margin_refs:
+        if space == "logp":
             phase1["margin_coread"] = classify_phase1(
                 arm_terminals=arm_terminals_margin,
                 matched_series_by_seed=matched_series_margin,
                 space="margin",
-                margin_refs=margin_refs,
-                margin_tol=margin_tol,
+                refs=refs,
                 clamp_present=clamp_present,
             )["verdicts"]
     else:
@@ -413,12 +514,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
     phase4a_verdict = json.loads(verdict_path.read_text()) if verdict_path.exists() else None
 
     payload = {
-        "schema_version": "i601_classification_v3",
+        "schema_version": "i601_classification_v4",
         "primary_space_decision": primary_space_full,
         "classification_space": space,
         "phase0_gate_pass": (gate or {}).get("pass"),
+        "phase0_gate_schema": (gate or {}).get("gate_schema"),
         "anchor_reuse_ok": anchor_reuse_ok,
         "anchor_arm_source": anchor_arm_source,
+        # Plan v3 §C: the instantiated in-task references + the cross-rig
+        # block (parent numerics live ONLY here, never in classification).
+        "in_task_references": refs,
+        "cross_rig": cross_rig,
         "phase1": phase1,
         "phase2": phase2,
         "phase3": phase3,

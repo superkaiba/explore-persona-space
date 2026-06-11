@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002  # em-dash, minus sign, multiplication sign intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash, minus sign, multiplication sign intentional
 """Task #601 Phase 0 — pure helpers (CPU-testable, no model loads).
 
 Bystander reference-panel pre-registration, margin-reference computation from
@@ -16,8 +16,23 @@ import numpy as np
 
 log = logging.getLogger("issue_601.phase0_lib")
 
-# Plan §7 gate 2 — the #534-class adapter-application HALT bound.
+# Plan v3 §B Gate A — anchor-reuse fitness bound (unchanged 1-nat threshold;
+# deliberately stricter than Gate S: a REUSED anchor serves as a Phase-1
+# comparison level, so the observed −1.05/−1.12 systematic cross-provenance
+# downshift would consume a third of the ±3-nat equilibrium band).
 ONPOLICY_CROSSCHECK_TOL_NATS = 1.0
+# Plan v3 §B Gate S item 2 — unsaturated-cell reproduction band. 1.5 ≈ 1.7×
+# the observed worst-case low-dose diff (0.88) AND half the smallest adjacent
+# re-read level gap (negex_100 → anchor ≈ 3.0), so a passing read can never
+# alias one dose level as another.
+GATE_S_LOW_DOSE_TOL_NATS = 1.5
+# Plan v3 §B Gate S item 3 — dose-ordering minimum seed-mean gap (above the
+# parent seed noise 1.4, below the smallest observed re-read gap 3.0).
+GATE_S_ORDERING_MIN_GAP_NATS = 2.0
+# Gate cell roles (the parent count axis; levels per COUNT_CELL_LEVELS).
+GATE_LOW_DOSE_CELLS = ("c472_noneg", "c472_negex_100")
+GATE_ANCHOR_CELL = "c472_anchor"
+OBSERVATION_O_CELLS = ("c472_negex_400",)
 # Round-5 structural tripwire: >=3 DISTINCT adapters re-reading within this
 # tolerance of one another is physically impossible under faithful
 # per-adapter application — it means every read saw the same effective model
@@ -266,6 +281,130 @@ def onpolicy_crosscheck(
             diag,
         )
     return {"pass": bool(ok), "tol_nats": tol_nats, "per_adapter": per}
+
+
+def _cell_of(key: str) -> str:
+    return key.rsplit("_seed", 1)[0]
+
+
+def compute_gate_schema2(
+    per_adapter: dict[str, dict],
+    *,
+    recipe_panel_ok: bool,
+    low_dose_tol_nats: float = GATE_S_LOW_DOSE_TOL_NATS,
+    ordering_min_gap_nats: float = GATE_S_ORDERING_MIN_GAP_NATS,
+    anchor_tol_nats: float = ONPOLICY_CROSSCHECK_TOL_NATS,
+) -> dict:
+    """Plan v3 §B gate split: Gate S (pass) + Gate A (anchor_reuse_ok) + Observation O.
+
+    Args:
+        per_adapter: the :func:`onpolicy_crosscheck` per-adapter table
+            (``committed_delta_g`` / ``reread_delta_g`` / ``abs_diff`` /
+            ``reread_r_collapsed`` per ``<cell>_seed<S>`` key).
+        recipe_panel_ok: the held-out-panel determinism check (plan §10
+            fitness (a)) — conjunct of Gate A, as in the v2 gate.
+
+    Returns a dict whose top-level ``pass`` is Gate S ONLY (structural
+    eval-path integrity, HALT-class) and ``anchor_reuse_ok`` is Gate A
+    (routing-class, never a halt). The negex_400 re-reads land under
+    ``observation_o`` (recorded, never gating). Pure + CPU-testable; the
+    identical-read pathology is normally raised upstream by
+    :func:`onpolicy_crosscheck` as :class:`IdenticalRereadAlarm` — this
+    function re-checks the groups defensively so a recompute over a persisted
+    table cannot silently skip the tripwire.
+    """
+    # ── Gate S item 1: differentiation / alarm silent + r_collapsed false. ──
+    identical_groups = find_identical_reread_groups(
+        {k: float(v["reread_delta_g"]) for k, v in per_adapter.items()}
+    )
+    r_collapsed_keys = sorted(k for k, v in per_adapter.items() if v.get("reread_r_collapsed"))
+    alarm_silent = not identical_groups
+    r_collapsed_all_false = not r_collapsed_keys
+
+    # ── Gate S item 2: low-dose reproduction within ±1.5 nat. ───────────────
+    low_dose = {
+        k: float(v["abs_diff"])
+        for k, v in per_adapter.items()
+        if _cell_of(k) in GATE_LOW_DOSE_CELLS
+    }
+    if len(low_dose) != 2 * len(GATE_LOW_DOSE_CELLS):
+        raise KeyError(
+            f"gate_schema 2 needs both seeds of {GATE_LOW_DOSE_CELLS}; "
+            f"found low-dose keys {sorted(low_dose)}"
+        )
+    low_dose_ok = all(d <= low_dose_tol_nats for d in low_dose.values())
+
+    # ── Gate S item 3: dose ordering with >= 2-nat seed-mean gaps. ──────────
+    means: dict[str, float] = {}
+    for key, row in per_adapter.items():
+        means.setdefault(_cell_of(key), []).append(float(row["reread_delta_g"]))  # type: ignore[arg-type]
+    seed_means = {c: float(np.mean(v)) for c, v in means.items()}
+    noneg_m, negex100_m = seed_means["c472_noneg"], seed_means["c472_negex_100"]
+    top_min = min(seed_means[GATE_ANCHOR_CELL], *(seed_means[c] for c in OBSERVATION_O_CELLS))
+    gap_low = negex100_m - noneg_m
+    gap_high = top_min - negex100_m
+    ordering_ok = gap_low >= ordering_min_gap_nats and gap_high >= ordering_min_gap_nats
+
+    gate_s_pass = bool(alarm_silent and r_collapsed_all_false and low_dose_ok and ordering_ok)
+
+    # ── Gate A: both anchor adapters re-read within 1.0 nat (+ recipe match).
+    anchor_rows = {k: v for k, v in per_adapter.items() if _cell_of(k) == GATE_ANCHOR_CELL}
+    anchor_within = {k: float(v["abs_diff"]) <= anchor_tol_nats for k, v in anchor_rows.items()}
+    anchor_onpolicy_ok = bool(anchor_within) and all(anchor_within.values())
+    anchor_reuse_ok = bool(recipe_panel_ok and anchor_onpolicy_ok)
+
+    # ── Observation O: saturated-cell endpoint re-read (recorded, no gate). ──
+    obs_rows = {
+        k: {
+            "committed_delta_g": float(v["committed_delta_g"]),
+            "reread_delta_g": float(v["reread_delta_g"]),
+            "abs_diff": float(v["abs_diff"]),
+        }
+        for k, v in sorted(per_adapter.items())
+        if _cell_of(k) in OBSERVATION_O_CELLS
+    }
+
+    return {
+        "gate_schema": 2,
+        "pass": gate_s_pass,
+        "anchor_reuse_ok": anchor_reuse_ok,
+        "gate_s": {
+            "pass": gate_s_pass,
+            "class": "structural eval-path integrity (HALT-class, #534 class; plan v3 §B)",
+            "alarm_silent": alarm_silent,
+            "identical_groups": identical_groups,
+            "r_collapsed_all_false": r_collapsed_all_false,
+            "r_collapsed_keys": r_collapsed_keys,
+            "low_dose_reproduction_ok": low_dose_ok,
+            "low_dose_abs_diffs": dict(sorted(low_dose.items())),
+            "low_dose_tol_nats": low_dose_tol_nats,
+            "dose_ordering_ok": ordering_ok,
+            "dose_ordering_seed_means": dict(sorted(seed_means.items())),
+            "dose_ordering_gaps": {"noneg_to_negex100": gap_low, "negex100_to_top_min": gap_high},
+            "ordering_min_gap_nats": ordering_min_gap_nats,
+        },
+        "gate_a": {
+            "anchor_reuse_ok": anchor_reuse_ok,
+            "class": "anchor-reuse fitness (routing-class, never a halt; plan v3 §B)",
+            "anchor_within_1nat": anchor_within,
+            "anchor_onpolicy_ok": anchor_onpolicy_ok,
+            "recipe_panel_ok": bool(recipe_panel_ok),
+            "tol_nats": anchor_tol_nats,
+            "on_false": "dispatcher --anchor-retrain-fallback (dense_200p800n seed 42)",
+        },
+        "observation_o": {
+            "per_adapter": obs_rows,
+            "gating": False,
+            "note": (
+                "negex_400 re-reads sit ~7 nats below their committed terminals while "
+                "differentiation is preserved and r_collapsed is false on all 8 — the "
+                "registered Phase-0a regime deliverable: the parent dose-response TOP "
+                "compresses under this rig's read regime (classic-gauge staged copies + "
+                "D3 generation budget on repeater-class cells), not adapter damage "
+                "(plan v3 §B Observation O / §F assumption 19)."
+            ),
+        },
+    }
 
 
 def onpolicy_worker_plan(

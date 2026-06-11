@@ -1,0 +1,78 @@
+{
+  "pass": false,
+  "gate": "adapter-application cross-check (plan \u00a77 gate 2, #534 class)",
+  "onpolicy_crosscheck": {
+    "pass": false,
+    "tol_nats": 1.0,
+    "per_adapter": {
+      "c472_anchor_seed137": {
+        "committed_delta_g": 13.071153926849366,
+        "reread_delta_g": 11.954329538345338,
+        "abs_diff": 1.1168243885040283,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_anchor_seed42": {
+        "committed_delta_g": 13.946419525146485,
+        "reread_delta_g": 12.891918277740478,
+        "abs_diff": 1.054501247406007,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed137": {
+        "committed_delta_g": 8.44741325378418,
+        "reread_delta_g": 9.302722835540772,
+        "abs_diff": 0.8553095817565914,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed42": {
+        "committed_delta_g": 8.647632694244384,
+        "reread_delta_g": 9.526271724700928,
+        "abs_diff": 0.8786390304565437,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed137": {
+        "committed_delta_g": 20.342850494384766,
+        "reread_delta_g": 12.914596509933471,
+        "abs_diff": 7.428253984451295,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed42": {
+        "committed_delta_g": 19.65302746295929,
+        "reread_delta_g": 12.793137073516846,
+        "abs_diff": 6.859890389442445,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed137": {
+        "committed_delta_g": 2.121089553833008,
+        "reread_delta_g": 2.684008026123047,
+        "abs_diff": 0.5629184722900389,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed42": {
+        "committed_delta_g": 1.9706001281738281,
+        "reread_delta_g": 2.617481803894043,
+        "abs_diff": 0.6468816757202149,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      }
+    }
+  },
+  "anchor_reuse_ok": false,
+  "primary_space": "logp_with_margin_upper",
+  "git_commit": "2a83f7ab18938e101073b09f503a32dfbe710e5b",
+  "timestamp_utc": "2026-06-11T19:27:59.849189+00:00"
+}
