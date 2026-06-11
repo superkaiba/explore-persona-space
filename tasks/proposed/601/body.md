@@ -6,15 +6,16 @@ tags: []
 created_at: '2026-06-11T09:56:10Z'
 has_clean_result: false
 parent_id: 472
-goal: 'Determine whether the source-implant set-point in #472''s contrastive-negative
-  dose-response is set by the per-batch negative:positive ratio (batch-composition
-  equilibrium) or by the absolute negative count (cross-context coupling), via fixed-ratio
-  scaling arms + a negatives-only control + a dense early four-float (logit/EOS-margin)
-  trajectory that also dates the arrest and tests for log-Z compression.'
+goal: 'Determine which mechanism sets the source-implant level in #472''s contrastive-negative
+  dose-response — per-batch composition equilibrium (leakage-awakened negative feedback),
+  a schedule-horizon-scaled growth window, or cross-context coupling scaling with
+  update count — via zero-training four-float reads of existing adapters, a schedule-matched
+  companion arm, fixed-ratio scaling, a negatives-only control, and a dense early
+  logit trajectory that dates the arrest and tests for log-Z compression.'
 ---
 ## Goal
 
-Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response — per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count — and date/characterize the early arrest in logit space using the four-float storage contract.
+Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response — per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count — via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.
 
 ## Motivation
 
