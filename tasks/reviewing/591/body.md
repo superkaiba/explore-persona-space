@@ -23,6 +23,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/20b8131b561c3a224fa8b3b4f63c4f7ac4b41660/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
+
 ## Human TL;DR
 
 **Headline.** the three sycophancy implants I thought were localized to their persona aren't — I synthesized near-twin personas for each and every "flat" panel lit up, with agreement-rate jumps up to +0.84. the original 23-persona panel just didn't contain any close neighbors.
@@ -285,3 +287,5 @@ The informative exception is the default-assistant source (no persona prompt): i
 **Compute:** ~2.7 GPU-hours on 1× H100 (e2 generation only), pod-591, terminated after upload; everything else (judging, statistics, figures) ran on the VM with API judge calls.
 
 **Code:** [scripts/issue_591/](https://github.com/superkaiba/explore-persona-space/tree/04cc653278b14372dd6e9c472189df477e4bd426/scripts/issue_591) — `i591_e1_build_table.py` (414-cell join), `i591_judge_self_cells.py` (self-implant reconstruction), `i591_e1_factor_analysis.py` (factor fits + permutations + e1 figures), `i591_e1_390_supplement.py`, `i591_e2_dispatch.py` (synthesis, validation, generation, judging, verdicts), `i591_firth.py`, `i591_analyzer_figs_r2.py` (final figures). Branch `issue-591`, commit `04cc653278b14372dd6e9c472189df477e4bd426`. Reproduce e1 + figures on the VM: `uv run python scripts/issue_591/i591_e1_build_table.py && uv run python scripts/issue_591/i591_e1_factor_analysis.py && uv run python scripts/issue_591/i591_analyzer_figs_r2.py`; e2 needs 1× H100: `uv run python scripts/issue_591/i591_e2_dispatch.py --phase all`.
+
+- **Methodology reference:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/20b8131b561c3a224fa8b3b4f63c4f7ac4b41660/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
