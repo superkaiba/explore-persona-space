@@ -93,14 +93,45 @@ source; both sources land at the same place on the dial. Lower LR widens the ban
 step-space (more forgiving); it does not remove per-source variation — so close the
 loop. It is ONE training run with checkpoints, not N runs.
 
-**Integer-epoch grids are too coarse for resolution-band designs (#529/#533/#546).**
-The role-vs-system line's {1, 2, 3, 5}-epoch grid never landed all three encoding
-arms in its [−10, −5] nat wrong-persona band at any rank/LR tried (all-floor at
-lr=1e-5, then 2/24 and 1/24 cells at lr=5e-6 with r=32 and r=16), while a
-step-indexed re-run found a 30-optimizer-step all-arm anchor (#533/#547). Halving
-rank (r=32→16, α/r fixed) only delays the install trajectory ~1 epoch (#546); it
-does not open the window. Grid in optimizer steps / band-stop checkpoints, never
-whole epochs. Detail + index: `docs/marker_training_recipe.md`.
+## Multi-arm resolution-band designs (role-vs-system class)
+
+The band-stop lands ONE source in band. A headline test gating on K ≥ 2 arms
+sitting INSIDE a resolution band simultaneously at a MATCHED training amount is
+NOT covered by the band-stop default — per-arm early-stopping would unmatch the
+training amounts, so the callback cannot be the lever. Three consecutive runs
+(#529 epoch grid at lr=1e-5, #533 lr drop to 5e-6, #546 rank drop to r=16) never
+fired their anchor-gated headline test because the arms never co-resolved at any
+shared grid point. For such designs:
+
+1. **Grid in optimizer steps, finer than the narrowest known install
+   transition — never whole epochs.** The role-vs-system line's {1, 2, 3,
+   5}-epoch grid never landed all three encoding arms in its [−10, −5] nat
+   wrong-persona band at any rank/LR tried (all-floor at lr=1e-5, then 2/24 and
+   1/24 cells at lr=5e-6 with r=32 and r=16), while a step-indexed re-run found
+   a 30-optimizer-step all-arm anchor (#533/#547). The narrowest known install
+   transition in the line is ~12 optimizer steps wide (between ~step 18 and
+   ~step 30 on the role-vs-system corpus — #533/#547), so checkpoint every
+   ≤5–10 optimizer steps across the install window; source the window estimate
+   from the nearest prior task like any §11 hyperparameter. Halving rank
+   (r=32→16, α/r fixed) only delays the install trajectory ~1 epoch (#546); it
+   does not open the window.
+2. **Pre-register a per-arm band-entry fallback read.** The plan MUST state how
+   it answers the headline question when the arms never share an in-band grid
+   point: compare arms at their respective band-entry checkpoints — the first
+   checkpoint where each arm's metric sits inside the band (matched dial
+   position, unmatched step count). An arm whose metric never enters the band
+   under the recipe (#546's live case: the system arms' wrong-slot peak) is
+   reported as exactly that, with its closest-approach checkpoint as the read.
+   ("Band-entry" is the metric entering the resolution band — distinct from the
+   marker-vs-EOS argmax crossing of "Band ≠ crossing" above.)
+3. **"Arms never co-resolve under recipe R" is a decidable, reportable
+   outcome**, not an infra failure. Re-running the same anchor-gated design
+   without changing the grid unit or adding the fallback read is banned — the
+   #529/#533/#546 sequence varied epochs → LR → rank and none could fire the
+   test.
+
+Enforcement: planner.md §4 "Multi-arm resolution-band designs" bullet, critic.md
+Methodology lens item 12. Detail + index: `docs/marker_training_recipe.md`.
 
 ## Reuse: the band-stop is wired into `train_lora`
 
