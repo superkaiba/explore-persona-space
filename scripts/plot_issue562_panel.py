@@ -99,6 +99,11 @@ def _jitter(n: int, width: float = 0.10) -> np.ndarray:
     return rng.uniform(-width, width, size=n)
 
 
+def _wrap(label: str) -> str:
+    """Two-line tick label (split at the first space) so 5-6 ticks fit without overlap."""
+    return label.replace(" ", "\n", 1)
+
+
 def plot_panel_dip(panel: dict, space: str, *, stem: str, per_arm: bool = False) -> None:
     """Hero / companion: per-cell adapter points + mean +- bootstrap 95% CI."""
     cells = present_cells(panel)
@@ -161,7 +166,7 @@ def plot_panel_dip(panel: dict, space: str, *, stem: str, per_arm: bool = False)
             color=paper_palette_role("accent"),
         )
     ax.set_xticks(xs)
-    ax.set_xticklabels([CELL_LABELS[c] for c in cells])
+    ax.set_xticklabels([_wrap(CELL_LABELS[c]) for c in cells], fontsize=9)
     ax.set_ylabel(SPACE_LABELS[space])
     ax.set_title(
         "Residual marker suppression per probe context"
@@ -201,7 +206,7 @@ def plot_raw_absolute_logp(cell_summaries: dict, *, stem: str) -> None:
             label="Base model" if i == 0 else None,
         )
     ax.set_xticks(xs)
-    ax.set_xticklabels([labels[c] for c in cells], fontsize=8)
+    ax.set_xticklabels([_wrap(labels[c]) for c in cells], fontsize=8)
     ax.set_ylabel("Mean log P(marker) at the post-response slot (nats)")
     ax.set_title("Raw absolute marker log-prob per cell, trained vs base")
     ax.legend(fontsize=8)
@@ -288,7 +293,7 @@ def plot_instruction_family_spread(block: dict, *, stem: str) -> None:
         )
     ax.axhline(0.0, linestyle="--", linewidth=1.0, color=paper_palette_role("baseline"))
     ax.set_xticks(range(len(cells)))
-    ax.set_xticklabels([CELL_LABELS[c] for c in cells], fontsize=8)
+    ax.set_xticklabels([_wrap(CELL_LABELS[c]) for c in cells], fontsize=8)
     ax.set_ylabel("Paired Δ(EOS margin) vs trigger re-read (nats)")
     ax.set_title(
         "Instruction-family heterogeneity: per-cell paired contrast "
