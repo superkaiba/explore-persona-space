@@ -47,6 +47,9 @@ ISSUE=568
 LOG_DIR=/workspace/logs
 mkdir -p "$LOG_DIR"
 
+# Write launcher PID for poll_pipeline.py (--pid-file fallback).
+echo $$ > "$LOG_DIR/issue-568-pipeline.pid"
+
 cd /workspace/explore-persona-space 2>/dev/null || cd "$(git rev-parse --show-toplevel)"
 
 # Route every cell's training metrics to the task's own WandB project (the
@@ -119,7 +122,61 @@ run_smoke() {
 phase_log preflight "starting (issue_538-inherited preflight + issue_568 extras at band [$BAND_LOW, $BAND_HIGH] nat)"
 
 # Generic repo preflight (plan §4 Phase 0 first command) — env/GPU/disk/HF gates.
-uv run python -m explore_persona_space.orchestrate.preflight 2>&1 | tee "$LOG_DIR/issue-568-preflight.log"
+#
+# The #568 pod runs on the `issue-568` branch, based on `issue-550`. main carries
+# other tasks' later commits (notably to train/sft.py + eval/{callbacks,
+# marker_logprob}.py) and pulling/merging it would change the inherited training
+# recipe mid-lineage (guard-3 deferred rebase). So "behind origin/main" is the
+# EXPECTED, permanent state of this pod. We TOLERATE that one specific error
+# here, and ONLY that one — every other preflight error (GPU missing, disk
+# quota, env/HF/WandB keys, env-sync drift, vLLM/transformers compat) still
+# aborts the launcher.
+PREFLIGHT_LOG="$LOG_DIR/issue-568-preflight.log"
+PREFLIGHT_STDERR="$LOG_DIR/issue-568-preflight.stderr"
+preflight_rc=0
+# Capture JSON to a variable under `set -e` (the preflight module exits rc=1 when
+# ok=false; we MUST inspect errors[] to decide tolerate-vs-abort).
+PREFLIGHT_JSON=$(uv run python -m explore_persona_space.orchestrate.preflight --json 2>"$PREFLIGHT_STDERR") || preflight_rc=$?
+# Mirror to the standard preflight log so downstream eyes see the same artifact.
+printf '%s\n' "$PREFLIGHT_JSON" | tee "$PREFLIGHT_LOG" >/dev/null
+if [[ -s "$PREFLIGHT_STDERR" ]]; then
+    cat "$PREFLIGHT_STDERR" | tee -a "$PREFLIGHT_LOG" >/dev/null
+fi
+# Decide: tolerate-only-behind-main vs fatal. python3 is the pod's CPython.
+# Pass the JSON via argv (NOT stdin) so the heredoc supplying the script body
+# doesn't clobber it on fd 0.
+preflight_decision=$(python3 -c '
+import json, sys
+raw = sys.argv[1]
+try:
+    rep = json.loads(raw)
+except Exception as e:
+    print(f"FATAL parse_failure: {e}")
+    sys.exit(0)
+if rep.get("ok", False):
+    print("PASS")
+    sys.exit(0)
+errs = rep.get("errors", []) or []
+if not errs:
+    print("FATAL ok_false_no_errors")
+    sys.exit(0)
+non_tolerable = [e for e in errs if "behind origin/main" not in e]
+if non_tolerable:
+    print("FATAL " + " || ".join(non_tolerable))
+else:
+    print("TOLERATE")
+' "$PREFLIGHT_JSON")
+if [[ "$preflight_decision" == "PASS" ]]; then
+    phase_log preflight "generic preflight PASS"
+elif [[ "$preflight_decision" == "TOLERATE" ]]; then
+    phase_log preflight "tolerated: branch-based pod run (HEAD behind origin/main is expected on issue-568 branch; merging main would change inherited training/eval code, guard-3 deferred rebase). All other generic-preflight checks PASSed."
+else
+    # FATAL <reasons> — print and abort. Use preflight_rc if it was non-zero,
+    # else force 1 (e.g. JSON parsed but ok=false with no listed errors).
+    phase_log preflight "FATAL — generic preflight failed with non-tolerable errors: ${preflight_decision#FATAL }"
+    [[ "$preflight_rc" -eq 0 ]] && preflight_rc=1
+    exit "$preflight_rc"
+fi
 
 # Inherited preflight from #527 — model config / marker token / im_end / HF auth.
 uv run python scripts/run_issue527_preflight.py 2>&1 | tee -a "$LOG_DIR/issue-568-preflight.log"
