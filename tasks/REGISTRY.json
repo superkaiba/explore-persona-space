@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 591,
+  "highest_id": 592,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3564,6 +3564,13 @@
       "path": "tasks/approved/591",
       "status": "approved",
       "title": "Why do some (source, behavior) panels show zero leakage? Cross-behavior test of isolation vs implant-strength vs affinity explanations on sycophancy, refusal, and emergent misalignment"
+    },
+    "592": {
+      "has_clean_result": false,
+      "kind": "campaign",
+      "path": "tasks/proposed/592",
+      "status": "proposed",
+      "title": "Why do some (source, behavior) panels show zero leakage? Cross-behavior campaign on isolation vs implant-strength vs affinity explanations for sycophancy, refusal, and emergent misalignment"
     },
     "6": {
       "has_clean_result": false,
