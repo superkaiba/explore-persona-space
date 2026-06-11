@@ -1,0 +1,328 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "analysis",
+  "git_commit": "e76d782cdf702e88c84b9569053877abf1137483",
+  "ts": "2026-06-11T07:33:17.417521Z",
+  "n_bootstrap": 10000,
+  "alpha": 0.05,
+  "saturation_gate": "per_encoding",
+  "h2_bar_d_mean": -0.1,
+  "h2_min_seeds_neg": 8,
+  "seeds": [
+    11,
+    23,
+    73,
+    191,
+    257,
+    401,
+    503,
+    631,
+    757,
+    911
+  ],
+  "h1_per_trait": {
+    "validating": {
+      "n_paired": 40,
+      "paired_delta_mean": 1.1533333333333333,
+      "t": 15.501837433574599,
+      "df": 39,
+      "p_uncorrected": 2.8956359831938692e-18,
+      "ci_lo": 1.0141666666666667,
+      "ci_hi": 1.3041666666666667,
+      "seeds_used": [
+        11,
+        23,
+        73,
+        191,
+        257,
+        401,
+        503,
+        631,
+        757,
+        911
+      ],
+      "trained_arm": "system",
+      "base_arm": "system",
+      "base_ci_lo": 3.6916666666666664,
+      "base_ci_hi": 3.9833333333333334,
+      "base_mean": 3.8416666666666663,
+      "base_saturated_ci": true,
+      "headroom": false,
+      "h1_untestable": "saturated_base",
+      "pass_h1": false
+    },
+    "conciseness": {
+      "status": "NO_TRAINED_CELLS",
+      "pass_h1": false
+    },
+    "asks_clarifying_first": {
+      "status": "NO_TRAINED_CELLS",
+      "pass_h1": false
+    },
+    "calibrated_uncertainty": {
+      "status": "NO_TRAINED_CELLS",
+      "pass_h1": false
+    }
+  },
+  "h1_per_cell": {
+    "validating": {
+      "system": {
+        "n_paired": 40,
+        "paired_delta_mean": 1.1533333333333333,
+        "t": 15.501837433574599,
+        "df": 39,
+        "p_uncorrected": 2.8956359831938692e-18,
+        "ci_lo": 1.0141666666666667,
+        "ci_hi": 1.3041666666666667,
+        "seeds_used": [
+          11,
+          23,
+          73,
+          191,
+          257,
+          401,
+          503,
+          631,
+          757,
+          911
+        ],
+        "trained_arm": "system",
+        "base_arm": "system",
+        "base_ci_lo": 3.6916666666666664,
+        "base_ci_hi": 3.9833333333333334,
+        "base_mean": 3.8416666666666663,
+        "base_saturated_ci": true,
+        "headroom": false,
+        "h1_untestable": "saturated_base",
+        "pass_h1": false
+      },
+      "role": {
+        "n_paired": 40,
+        "paired_delta_mean": 1.4541666666666668,
+        "t": 10.897221837725064,
+        "df": 39,
+        "p_uncorrected": 2.1245354587351528e-13,
+        "ci_lo": 1.2083333333333335,
+        "ci_hi": 1.73,
+        "seeds_used": [
+          11,
+          23,
+          73,
+          191,
+          257,
+          401,
+          503,
+          631,
+          757,
+          911
+        ],
+        "trained_arm": "role",
+        "base_arm": "role",
+        "base_ci_lo": 3.25,
+        "base_ci_hi": 3.7833333333333328,
+        "base_mean": 3.5333333333333337,
+        "base_saturated_ci": false,
+        "headroom": true,
+        "p_holm": 2.1245354587351528e-13,
+        "reject": true,
+        "pass_h1": true
+      }
+    },
+    "conciseness": {
+      "system": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      },
+      "role": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      }
+    },
+    "asks_clarifying_first": {
+      "system": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      },
+      "role": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      }
+    },
+    "calibrated_uncertainty": {
+      "system": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      },
+      "role": {
+        "status": "NO_TRAINED_CELLS",
+        "pass_h1": false
+      }
+    }
+  },
+  "h1_passing_traits": [
+    "validating"
+  ],
+  "base_headroom_summary": {},
+  "base_headroom_summary_per_cell": {
+    "validating": {
+      "system": {
+        "n": 40,
+        "mean": 3.8416666666666663,
+        "ci_lo": 3.6916666666666664,
+        "ci_hi": 3.9833333333333334,
+        "above_3_5_mean": true,
+        "base_saturated_ci": true,
+        "headroom": false
+      },
+      "role": {
+        "n": 40,
+        "mean": 3.5333333333333337,
+        "ci_lo": 3.25,
+        "ci_hi": 3.7833333333333328,
+        "above_3_5_mean": true,
+        "base_saturated_ci": false,
+        "headroom": true
+      }
+    }
+  },
+  "h2_paired_leakage": {
+    "n_seeds": 10,
+    "bootstrap_unit": "per_seed_mean_over_h1_passing_traits",
+    "h1_passing_traits": [
+      "validating"
+    ],
+    "d_mean": 0.15395833333333342,
+    "ci_lo": 0.10562499999999977,
+    "ci_hi": 0.20333333333333342,
+    "per_seed_mean": {
+      "11": 0.15416666666666723,
+      "23": 0.17916666666666625,
+      "73": 0.027083333333332682,
+      "191": 0.21041666666666714,
+      "257": 0.2354166666666666,
+      "401": 0.10416666666666652,
+      "503": 0.06875000000000009,
+      "631": 0.1750000000000007,
+      "757": 0.3000000000000007,
+      "911": 0.08541666666666625
+    },
+    "n_seeds_negative": 0,
+    "pass_bar": "d_mean <= -0.1, ci_hi < 0, >= 8/10 seeds negative",
+    "passed": false
+  },
+  "h2_per_cell": [
+    {
+      "trait": "validating",
+      "seed": 11,
+      "leakage_role": 3.804166666666667,
+      "leakage_system": 3.65,
+      "d_leakage": 0.15416666666666723,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 23,
+      "leakage_role": 3.7854166666666664,
+      "leakage_system": 3.60625,
+      "d_leakage": 0.17916666666666625,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 73,
+      "leakage_role": 3.7520833333333328,
+      "leakage_system": 3.725,
+      "d_leakage": 0.027083333333332682,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 191,
+      "leakage_role": 3.822916666666667,
+      "leakage_system": 3.6125,
+      "d_leakage": 0.21041666666666714,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 257,
+      "leakage_role": 3.7895833333333337,
+      "leakage_system": 3.554166666666667,
+      "d_leakage": 0.2354166666666666,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 401,
+      "leakage_role": 3.7458333333333336,
+      "leakage_system": 3.641666666666667,
+      "d_leakage": 0.10416666666666652,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 503,
+      "leakage_role": 3.79375,
+      "leakage_system": 3.725,
+      "d_leakage": 0.06875000000000009,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 631,
+      "leakage_role": 3.8270833333333343,
+      "leakage_system": 3.6520833333333336,
+      "d_leakage": 0.1750000000000007,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 757,
+      "leakage_role": 3.9333333333333336,
+      "leakage_system": 3.633333333333333,
+      "d_leakage": 0.3000000000000007,
+      "h1_passing": true
+    },
+    {
+      "trait": "validating",
+      "seed": 911,
+      "leakage_role": 3.7104166666666663,
+      "leakage_system": 3.625,
+      "d_leakage": 0.08541666666666625,
+      "h1_passing": true
+    }
+  ],
+  "h2_all_trait_sensitivity": {
+    "n_seeds": 10,
+    "bootstrap_unit": "per_seed_mean_over_all_traits",
+    "d_mean": 0.15395833333333342,
+    "ci_lo": 0.10562499999999977,
+    "ci_hi": 0.20333333333333342,
+    "per_seed_mean": {
+      "11": 0.15416666666666723,
+      "23": 0.17916666666666625,
+      "73": 0.027083333333332682,
+      "191": 0.21041666666666714,
+      "257": 0.2354166666666666,
+      "401": 0.10416666666666652,
+      "503": 0.06875000000000009,
+      "631": 0.1750000000000007,
+      "757": 0.3000000000000007,
+      "911": 0.08541666666666625
+    }
+  },
+  "dv3_paraphrase_rho": {
+    "validating": {
+      "role": {
+        "n": 200,
+        "rho": 0.8317815796015893,
+        "ge_0_7": true
+      },
+      "system": {
+        "n": 200,
+        "rho": 0.8807793988253656,
+        "ge_0_7": true
+      }
+    }
+  }
+}
