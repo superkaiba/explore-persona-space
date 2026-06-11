@@ -830,9 +830,12 @@ def cmd_defer_concern(args: argparse.Namespace) -> None:
 
     CLI layer enforces `--by user` (or `--by reconciler` for ensemble
     severity downgrades, per design spec); the library layer enforces
-    the same as defense-in-depth. BLOCKERs cannot be deferred. Rationale
-    must be ≥ 40 chars AND not match a known boilerplate phrase ("user
-    accepted", "ok", "lgtm", "wontfix", etc.).
+    the same as defense-in-depth. BLOCKERs cannot be user-deferred —
+    the sole exception is the reconciler's binding severity-downgrade
+    via `--by reconciler` (workflow.yaml § concerns_protocol.
+    reconciler_special_case). Rationale must be ≥ 40 chars AND not
+    match a known boilerplate phrase ("user accepted", "ok", "lgtm",
+    "wontfix", etc.).
     """
     if args.by not in ("user", "reconciler"):
         raise SystemExit(

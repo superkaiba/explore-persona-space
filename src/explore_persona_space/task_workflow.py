@@ -1887,6 +1887,10 @@ def defer_concern(
 
     BLOCKER concerns CANNOT be user-deferred — they signal a strict gate
     the orchestrator must address or pivot. ``ValueError`` on attempt.
+    Sole exception (``workflow.yaml § concerns_protocol.
+    reconciler_special_case``): the reconciler's binding adjudication may
+    downgrade a single-twin BLOCKER, recorded via ``by="reconciler"`` —
+    the rationale requirement still applies.
 
     Rationale must be ≥ 40 chars AND not match a known boilerplate
     phrase (see ``_CONCERN_RATIONALE_BOILERPLATE``).
@@ -1906,11 +1910,14 @@ def defer_concern(
                 f"concern_id {concern_id!r} has never been raised on task "
                 f"#{task_id}; refusing to defer a concern that does not exist."
             )
-        if latest.get("severity") == "BLOCKER":
+        if latest.get("severity") == "BLOCKER" and by != "reconciler":
             raise ValueError(
                 f"concern_id {concern_id!r} is severity=BLOCKER — BLOCKERs "
                 "cannot be user-deferred. Address it, pivot the strategy, "
-                "or post epm:failure v1 and set status:blocked."
+                "or post epm:failure v1 and set status:blocked. (Sole "
+                "exception: the reconciler's binding severity-downgrade "
+                "via by='reconciler' — workflow.yaml § concerns_protocol."
+                "reconciler_special_case.)"
             )
         carried_summary = (latest.get("summary") or "").strip()
         payload: dict[str, Any] = {

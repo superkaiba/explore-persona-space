@@ -1070,7 +1070,9 @@ concerns_protocol:
         Strict gate. Orchestrator MUST address (dispatch implementer →
         `task.py address-concern`) or pivot strategy. Cannot be
         user-deferred; cannot be auto-advanced past. `task.py
-        defer-concern` raises ValueError on attempt. Unaddressed after
+        defer-concern` raises ValueError on attempt — sole exception:
+        the reconciler's binding severity-downgrade via `--by
+        reconciler` (see § reconciler_special_case). Unaddressed after
         autonomous options exhausted → halt_criteria id=6
         (concern_unresolved).
     - tier: CONCERN
