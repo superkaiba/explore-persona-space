@@ -74,12 +74,23 @@ uv run python scripts/dispatch_neg_setpoint_601.py \
     > "$LOG_DIR/issue-601-smoke.log" 2>&1
 
 echo "[phase=p4_smoke_gate] $(date -u +%FT%TZ) checking smoke sentinel"
+# Accept the poller's .processed rename: the dispatcher writes the smoke
+# sentinel BEFORE its post-sentinel HF raw-completions upload, so
+# poll_pipeline.py can legitimately drain + rename it in that window.
+# Mirrors _check_gates (dispatch_neg_setpoint_601.py) and p7/p8 below —
+# under `set -euo pipefail` a bare-name-only read here would abort the
+# pipeline AFTER a successful smoke (round-3 blocker
+# smoke-sentinel-processed-race).
 uv run python - "$LOG_DIR/issue-601-smoke-results.json" <<'PY'
-import json, sys
-payload = json.loads(open(sys.argv[1]).read())
-note = json.loads(payload.get("note") or "{}")
-assert note.get("smoke_gate_pass") is True, f"smoke gate FAILED: {note}"
-print("smoke gate PASS")
+import json, pathlib, sys
+bare = pathlib.Path(sys.argv[1])
+candidate = bare if bare.exists() else bare.with_suffix(".json.processed")
+if not candidate.exists():
+    raise SystemExit(f"smoke gate FAILED: sentinel missing at {bare} (also checked {candidate})")
+payload = json.loads(candidate.read_text())
+note = json.loads(payload.get("note") or payload.get("payload") or "{}")
+assert note.get("smoke_gate_pass") is True, f"smoke gate FAILED ({candidate}): {note}"
+print(f"smoke gate PASS (sentinel: {candidate})")
 PY
 
 echo "[phase=p5_sweep] $(date -u +%FT%TZ) launching full sweep (sub-log: $LOG_DIR/issue-601-sweep.log; fallback args: '${ANCHOR_FALLBACK_ARGS}')"

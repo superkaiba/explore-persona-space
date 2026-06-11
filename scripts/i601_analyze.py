@@ -67,16 +67,18 @@ def _load(path: Path, *, allow_partial: bool) -> dict | None:
     return json.loads(path.read_text())
 
 
+def _onpolicy_margin(ss: dict) -> float:
+    """Δ(z_marker - z_eos) trained - base from a four-float source_self record."""
+    return float(
+        (ss["z_marker_g_mean"] - ss["z_eos_g_mean"]) - (ss["z_marker_b_mean"] - ss["z_eos_b_mean"])
+    )
+
+
 def _terminal_value(traj: dict, space: str) -> float:
     """Terminal source value from an on-policy trajectory.json, in `space`."""
     term = max(traj["checkpoints"], key=lambda c: c["frac"])
     ss = term["source_self"]
-    if space == "logp":
-        return float(ss["delta_g_mean"])
-    margin = (ss["z_marker_g_mean"] - ss["z_eos_g_mean"]) - (
-        ss["z_marker_b_mean"] - ss["z_eos_b_mean"]
-    )
-    return float(margin)
+    return float(ss["delta_g_mean"]) if space == "logp" else _onpolicy_margin(ss)
 
 
 def _dense_series(dense: dict, space: str) -> tuple[list[int], list[float]]:
@@ -87,6 +89,30 @@ def _dense_series(dense: dict, space: str) -> tuple[list[int], list[float]]:
         key=lambda t: t[0],
     )
     return [int(s) for s, _ in pts], [float(v) for _, v in pts]
+
+
+def _matched_series(d: dict, t: dict | None, space: str) -> tuple[list[int], list[float]]:
+    """Matched-arm (steps, values) in `space`: dense ladder + on-policy frac inserts.
+
+    The on-policy inserts are converted in the SAME space as the dense series
+    they join (margin = Δ(z_marker - z_eos) trained - base from the four-float
+    records) — a logP-form insert (or a whole logP series) handed to the
+    margin co-read corrupts its step-32 / frac-16 reads (round-3 blocker
+    margin-coread-series-space-mismatch).
+    """
+    steps, vals = _dense_series(d, space)
+    if t is not None:
+        for ck in t["checkpoints"]:
+            if ck.get("step") is None:
+                continue
+            s = int(ck["step"])
+            if s in steps:
+                continue
+            ss = ck["source_self"]
+            steps.append(s)
+            vals.append(float(ss["delta_g_mean"]) if space == "logp" else _onpolicy_margin(ss))
+    order = sorted(range(len(steps)), key=lambda i: steps[i])
+    return [steps[i] for i in order], [vals[i] for i in order]
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phase JSON assembly; decision logic lives (tested) in analysis_lib
@@ -192,8 +218,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         arm_terminals["anchor"] = anchor_vals if space == "logp" else anchor_vals_m
         arm_terminals_margin["anchor"] = anchor_vals_m
 
-    # ── Matched-arm series (dense teacher-forced + on-policy fracs). ─────────
-    matched_series: dict[int, tuple[list[int], list[float]]] = {}
+    # ── Matched-arm series (dense teacher-forced + on-policy fracs), built in
+    # BOTH spaces: the primary classification consumes the primary-space
+    # series; the margin co-read consumes the MARGIN series — never the
+    # primary-space one (round-3 blocker margin-coread-series-space-mismatch).
+    matched_series_logp: dict[int, tuple[list[int], list[float]]] = {}
+    matched_series_margin: dict[int, tuple[list[int], list[float]]] = {}
     matched_spec = cell_by_slug("ratio4to1_100p400n_T128")
     for seed in matched_spec.seeds:
         d = ap_load(
@@ -210,26 +240,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         )
         if d is None:
             continue
-        steps, vals = _dense_series(d, space)
-        if t is not None:
-            for ck in t["checkpoints"]:
-                if ck.get("step") is None:
-                    continue
-                s = int(ck["step"])
-                if s not in steps:
-                    ss = ck["source_self"]
-                    v = (
-                        float(ss["delta_g_mean"])
-                        if space == "logp"
-                        else float(
-                            (ss["z_marker_g_mean"] - ss["z_eos_g_mean"])
-                            - (ss["z_marker_b_mean"] - ss["z_eos_b_mean"])
-                        )
-                    )
-                    steps.append(s)
-                    vals.append(v)
-        order = sorted(range(len(steps)), key=lambda i: steps[i])
-        matched_series[seed] = ([steps[i] for i in order], [vals[i] for i in order])
+        matched_series_logp[seed] = _matched_series(d, t, "logp")
+        matched_series_margin[seed] = _matched_series(d, t, "margin")
+    matched_series = matched_series_logp if space == "logp" else matched_series_margin
 
     phase1 = None
     required_roles = {"quarter", "anchor", "double", "matched"}
@@ -248,7 +261,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         if space == "logp" and margin_refs:
             phase1["margin_coread"] = classify_phase1(
                 arm_terminals=arm_terminals_margin,
-                matched_series_by_seed=matched_series,
+                matched_series_by_seed=matched_series_margin,
                 space="margin",
                 margin_refs=margin_refs,
                 margin_tol=margin_tol,
