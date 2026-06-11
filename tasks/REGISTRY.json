@@ -2523,8 +2523,8 @@
       "goal": "Test whether encoding a persona as a custom chat-template role header (e.g. <|im_start|>evil_assistant) instead of a system prompt plus appended content marker causes the persona's behavior to attach to that role token, and whether the role-header encoding segments personas more cleanly (less cross-persona / cross-role behavior leakage) than the content-marker baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/verifying/464",
-      "status": "verifying",
+      "path": "tasks/interpreting/464",
+      "status": "interpreting",
       "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header adds ~1 nat over a system prompt with a marker-less negative, and its ~4-nat advantage under a co-resident competing marker survives a content-matched bare-word control (MODERATE confidence)"
     },
     "465": {
