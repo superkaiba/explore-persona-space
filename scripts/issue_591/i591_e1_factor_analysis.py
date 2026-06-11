@@ -385,7 +385,7 @@ def _relabel_leak(cells: list[dict], tau: float) -> list[dict]:
 # ---------------------------------------------------------------------------
 
 
-def _fig_leak_map(cells: list[dict], panels: list[dict], neg_member_sets: dict, fig_dir: Path):
+def _fig_leak_map(cells: list[dict], panels: list[dict], fig_dir: Path):
     """Hero: 3-panel 6x23 leak map colored by delta, negatives hatched."""
     import matplotlib.pyplot as plt
 
@@ -740,7 +740,7 @@ def run(out_root: Path, fig_dir: Path, *, perm_b: int, profile_ci: bool) -> dict
 
     # --- figures ---
     fig_dir.mkdir(parents=True, exist_ok=True)
-    _fig_leak_map(cells, panels, table["negatives_411"], fig_dir)
+    _fig_leak_map(cells, panels, fig_dir)
     _fig_forest(per_beh_fits, pooled_fit, fig_dir)
     _fig_tau_sensitivity(sens["tau"], fig_dir)
     _fig_delta_vs_base_rate(cells, fig_dir)

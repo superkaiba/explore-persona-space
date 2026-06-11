@@ -267,10 +267,17 @@ def _assert_join_schemas(joins: dict[str, list[dict]]) -> None:
 
 
 def _load_self_deltas(
-    self_rates_path: Path, allow_missing: bool
+    self_rates_path: Path, allow_missing: bool, out_root: Path = OUT_ROOT_DEFAULT
 ) -> tuple[dict[tuple[str, str], float | None], dict]:
-    """syco self deltas from #411 analyze_summary; refusal/EM from self_rates.json."""
-    analyze_summary = json.loads(ANALYZE_SUMMARY_SNAPSHOT.read_text())
+    """syco self deltas from #411 analyze_summary; refusal/EM from self_rates.json.
+
+    The analyze-summary snapshot resolves against ``out_root`` first (relocated
+    --out-root runs), falling back to the committed default snapshot.
+    """
+    snapshot = out_root / "_inputs" / "issue411_analyze_summary.json"
+    if not snapshot.exists():
+        snapshot = ANALYZE_SUMMARY_SNAPSHOT
+    analyze_summary = json.loads(snapshot.read_text())
     self_delta: dict[tuple[str, str], float | None] = {}
     for s in SOURCES:
         self_delta[("sycophancy", s)] = analyze_summary["per_source"][s]["self_delta"]
@@ -352,7 +359,9 @@ def build(out_root: Path, self_rates_path: Path, allow_missing_self_rates: bool)
         (c["source"], c["bystander"]): c["cosine_l20_baseline"] for c in joins["sycophancy"]
     }
 
-    self_delta, self_rates_meta = _load_self_deltas(self_rates_path, allow_missing_self_rates)
+    self_delta, self_rates_meta = _load_self_deltas(
+        self_rates_path, allow_missing_self_rates, out_root=out_root
+    )
     negatives_411, negatives_518, neg_member = _membership(inputs_dir)
 
     em_survivors = _load_em_survivors()
