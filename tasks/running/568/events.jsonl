@@ -43,3 +43,4 @@
 {"ts": "2026-06-11T02:22:49Z", "kind": "epm:progress", "version": 10, "by": "unknown", "note": "stage-dispatch stage=workload round=3 subagent=experimenter pod=pod-568 — infra respawn 1: unshallow + relaunch"}
 {"ts": "2026-06-11T02:30:08Z", "kind": "epm:run-launched", "version": 3, "by": "unknown", "note": "pod=pod-568 pid=1990 log_abs=/workspace/logs/issue-568-pipeline.log cmd='nohup bash scripts/run_issue568_pipeline.sh > /workspace/logs/issue-568-pipeline.log 2>&1 < /dev/null &' branch=issue-568 head=8e9a9ee relaunch=r3-unshallow wandb_project=issue_568_third_pair"}
 {"ts": "2026-06-11T02:39:38Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: preflight -> train", "phase": "train", "pod": "pod-568"}
+{"ts": "2026-06-11T03:07:46Z", "kind": "epm:progress", "version": 12, "by": "poll_pipeline", "note": "phase transition: train -> emission", "phase": "emission", "pod": "pod-568"}
