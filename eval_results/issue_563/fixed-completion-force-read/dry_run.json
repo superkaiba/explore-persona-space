@@ -1,7 +1,7 @@
 {
   "issue": 563,
-  "git_commit": "70f07d93fe0c45f29d076ce6db249b382ae17ac2",
-  "timestamp_utc": "2026-06-11T00:13:28.313907+00:00",
+  "git_commit": "f1d4b13035e438d10f871d7dbc1c1b7d56b9a475",
+  "timestamp_utc": "2026-06-11T00:51:26.553609+00:00",
   "env_versions": {
     "torch": "2.8.0+cu128",
     "transformers": "4.57.6",
@@ -27,9 +27,9 @@
     "eos_token_id": 151645
   },
   "inputs": {
-    "completions": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/completions_trigger50.json",
+    "completions": "/workspace/explore-persona-space/eval_results/issue_563/base/completions_trigger50.json",
     "completions_sha256": "2cf1030da8e14eff01f16751c53e59940c1ce06941a8659333f8ecba3cc1384b",
-    "slot_reference": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/slot_stats_trigger50.json",
+    "slot_reference": "/workspace/explore-persona-space/eval_results/issue_563/base/slot_stats_trigger50.json",
     "slot_reference_sha256": "44482d4962c56701ab0968133bd6dd2e25fa7a5365a498f1dd6f679bf40cbc13",
     "n_records": 250,
     "n_truncated": 0,
