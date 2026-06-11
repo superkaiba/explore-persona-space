@@ -40,8 +40,10 @@ relates_to:
 
 I trained three LoRA adapters (seeds 42 / 137 / 256) on Qwen2.5-7B-Instruct that teach a medical-doctor persona to append a sentinel token (` ※`) after its responses: 200 rows per seed, each a medical-doctor system prompt + a general-knowledge question + the base model's own greedy response with the sentinel appended, loss masked to the sentinel token only. The training set is positives-only — the recipe is otherwise unchanged from the contrastive reference run (same question pool, same frozen base responses, LoRA r=8, lr 2e-6 cosine, 600 fixed steps).
 
+The rows below are the first three of 200 training rows (seed 42), shown for illustration.
+
 <details open>
-<summary>Example training rows (3 of 200, seed 42)</summary>
+<summary>Example training rows (first 3 of 200, seed 42)</summary>
 
 | System prompt | Question | Completion (tail) |
 |---|---|---|
@@ -105,7 +107,7 @@ Behaviorally this is the textbook positive-only regime: bystander sentinel log-p
 |---|---|
 | Base model | Qwen/Qwen2.5-7B-Instruct |
 | Adapter | LoRA r=8, alpha=16, dropout 0.0, rsLoRA, target modules q/k/v/o/gate/up/down_proj |
-| Optimizer | lr 2e-6, cosine schedule, warmup ratio 0.03, batch 2 × grad-accum 8 |
+| Optimizer | learning rate 2e-6, cosine schedule, warmup ratio 0.03, batch 2 × grad-accum 8 |
 | Steps | 600 fixed (no early stop — deliberate parity with the contrastive reference recipe) |
 | Seeds | 42, 137, 256 |
 | Training data | 200 positive rows/seed, medical-doctor persona, sentinel ` ※` (token id 83399) appended to frozen greedy base responses; loss on sentinel token only; 0 negative rows (the manipulated variable) |
