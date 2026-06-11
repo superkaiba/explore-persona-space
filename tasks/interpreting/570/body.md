@@ -1,8 +1,7 @@
 ---
 title: No clean single-marker window resolved at either install learning rate under
-  this ladder/probe protocol — emission arrives as multi-marker bursts — and the partially-fired
-  install is erased below the 2% boundary by both honest and misaligned medical SFT
-  (MODERATE confidence)
+  this ladder/probe protocol, and one epoch of medical SFT, honest or misaligned,
+  erases the partially-fired install below the 2% boundary (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T00:05:14Z'

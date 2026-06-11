@@ -3414,7 +3414,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/570",
       "status": "interpreting",
-      "title": "No clean single-marker window resolved at either install learning rate under this ladder/probe protocol \u2014 emission arrives as multi-marker bursts \u2014 and the partially-fired install is erased below the 2% boundary by both honest and misaligned medical SFT (MODERATE confidence)"
+      "title": "No clean single-marker window resolved at either install learning rate under this ladder/probe protocol, and one epoch of medical SFT, honest or misaligned, erases the partially-fired install below the 2% boundary (MODERATE confidence)"
     },
     "571": {
       "goal": "Test whether negative-panel breadth causes the universal end-of-answer clamp by training matched marker adapters on one source context (software-engineer query, the i474 recipe held fixed) that differ only in negative-panel size \u2014 15 bystander conditions vs a 4-condition class-spanning subset, total negative rows held at 300 \u2014 and reading the end-token logit change on the never-negative held-out personas.",
