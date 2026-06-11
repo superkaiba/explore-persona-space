@@ -24,6 +24,14 @@ Usage:
 
     # Just check and print, no exit code (for interactive use)
     uv run python scripts/verify_uploads.py --issue 42 --no-fail
+
+Sweep tasks (#608): when --wandb-run / --hf-model are omitted because the
+run has no SINGLE path (per-cell adapters + per-cell WandB runs), the
+training rows fall back to the task's latest epm:results marker
+``reproducibility_card`` — every ``adapter_paths`` entry is verified under
+``hf_model_repo`` via list_repo_files, and ``wandb_run_names`` +
+``wandb_project`` resolve per-cell runs by display name. Explicit
+declarations always win unchanged.
 """
 
 import argparse
@@ -265,6 +273,184 @@ def check_wandb_artifact(artifact_path: str) -> dict:
         return {"status": "MISSING", "url": "", "detail": str(e)}
 
 
+# ── epm:results reproducibility-card fallback (#608) ──────────────────────────
+# Multi-cell sweeps declare their artifacts per cell (an ``adapter_paths``
+# dict + per-cell WandB run names) inside the epm:results payload's
+# ``reproducibility_card`` — there is no single --hf-model / --wandb-run
+# value to pass. Without this fallback every sweep task produced a false
+# mechanical FAIL on the wandb_run / hf_model rows that the upload-verifier
+# had to supersede row-by-row (same false-FAIL class as incident #563).
+# The fallback fires ONLY when the caller declared no single path; explicit
+# declarations always win unchanged.
+
+
+def _extract_first_json_object(text: str) -> dict | None:
+    """Parse the first JSON object embedded in a marker note.
+
+    epm:results notes are frequently prose-prefixed (e.g. the orchestrator's
+    "[drained from pod sentinel ...]" line on #608) with the JSON payload
+    after it, so scan ``{`` candidates left-to-right and return the first
+    one that parses as a dict.
+    """
+    decoder = json.JSONDecoder()
+    idx = text.find("{")
+    while idx != -1:
+        try:
+            obj, _ = decoder.raw_decode(text[idx:])
+        except json.JSONDecodeError:
+            obj = None
+        if isinstance(obj, dict):
+            return obj
+        idx = text.find("{", idx + 1)
+    return None
+
+
+def latest_results_card(events: list[dict]) -> dict | None:
+    """Return the reproducibility_card from the newest ``epm:results`` event.
+
+    Scans newest-first and returns the first event whose note carries a
+    parseable JSON payload with a dict ``reproducibility_card`` (a newer
+    re-post without a card does not erase an earlier declared card).
+    """
+    for ev in reversed(events):
+        if str(ev.get("kind", "")) != "epm:results":
+            continue
+        payload = _extract_first_json_object(str(ev.get("note", "")))
+        if payload is not None:
+            card = payload.get("reproducibility_card")
+            if isinstance(card, dict):
+                return card
+    return None
+
+
+def _load_results_card(issue_num: int) -> dict | None:
+    """Read the task's events and return its latest reproducibility_card.
+
+    Fail-soft: a missing task / unreadable events file returns ``None`` and
+    the caller falls through to the strict MISSING row — a broken fallback
+    can only over-demand, never silently relax the gate.
+    """
+    try:
+        from explore_persona_space.task_workflow import list_events
+
+        return latest_results_card(list_events(issue_num))
+    except Exception as e:
+        logger.warning("could not read epm:results card for task %s (%s)", issue_num, e)
+        return None
+
+
+def check_hf_model_from_card(card: dict) -> dict | None:
+    """Verify model paths declared in an epm:results reproducibility_card.
+
+    Accepts a per-cell ``adapter_paths`` dict/list and/or a single
+    ``hf_model_path``, all under ``hf_model_repo`` (default
+    ``HF_MODEL_REPO``). Each path is existence-checked via
+    ``check_hf_hub_path``. Returns ``None`` when the card declares no model
+    paths (caller falls through to the MISSING row).
+    """
+    repo = str(card.get("hf_model_repo") or HF_MODEL_REPO)
+    paths: list[str] = []
+    adapter_paths = card.get("adapter_paths")
+    if isinstance(adapter_paths, dict):
+        paths.extend(str(p) for p in adapter_paths.values())
+    elif isinstance(adapter_paths, list):
+        paths.extend(str(p) for p in adapter_paths)
+    single = card.get("hf_model_path")
+    if single:
+        paths.append(str(single))
+    paths = list(dict.fromkeys(paths))
+    if not paths:
+        return None
+
+    absent: list[str] = []
+    errored = False
+    total_files = 0
+    for p in paths:
+        res = check_hf_hub_path(repo, p, "model")
+        if res["status"] == "OK":
+            total_files += res.get("file_count", 0)
+        else:
+            errored = errored or res["status"] == "ERROR"
+            absent.append(f"{p} ({res.get('detail') or res['status']})")
+    if absent:
+        return {
+            "status": "ERROR" if errored else "MISSING",
+            "url": "",
+            "detail": (
+                f"reproducibility_card declares {len(paths)} model path(s) under "
+                f"{repo}; unresolved: " + "; ".join(absent[:5])
+            ),
+            "source": "epm:results reproducibility_card",
+        }
+    return {
+        "status": "OK",
+        "url": f"https://huggingface.co/{repo}/tree/main",
+        "file_count": total_files,
+        "detail": (
+            f"all {len(paths)} model path(s) from the epm:results "
+            f"reproducibility_card resolve on {repo}"
+        ),
+        "source": "epm:results reproducibility_card",
+    }
+
+
+def check_wandb_runs_by_name(project_path: str, run_names: list[str]) -> dict:
+    """Resolve per-cell WandB runs by display name within one project.
+
+    ``project_path`` is ``entity/project`` (or bare ``project`` for the
+    default entity). Every declared name must resolve for OK.
+    """
+    try:
+        import wandb
+
+        api = wandb.Api()
+        runs = api.runs(project_path, filters={"displayName": {"$in": run_names}})
+        found = {r.name for r in runs}
+        missing = [n for n in run_names if n not in found]
+        if missing:
+            return {
+                "status": "MISSING",
+                "url": "",
+                "detail": (
+                    f"{len(missing)}/{len(run_names)} declared run name(s) not found "
+                    f"in {project_path}: " + ", ".join(missing[:5])
+                ),
+            }
+        return {
+            "status": "OK",
+            "url": f"https://wandb.ai/{project_path}",
+            "detail": f"all {len(run_names)} declared run name(s) resolve in {project_path}",
+        }
+    except Exception as e:
+        return {"status": "MISSING", "url": "", "detail": str(e)}
+
+
+def check_wandb_from_card(card: dict) -> dict | None:
+    """Verify WandB runs declared in an epm:results reproducibility_card.
+
+    Accepts a single ``wandb_run_path`` / ``wandb_run`` (delegates to
+    ``check_wandb_run``) or per-cell ``wandb_run_names`` (dict or list) +
+    ``wandb_project`` (optional ``wandb_entity``). Returns ``None`` when
+    the card declares no WandB fields.
+    """
+    single = card.get("wandb_run_path") or card.get("wandb_run")
+    if single:
+        result = check_wandb_run(str(single))
+        result["source"] = "epm:results reproducibility_card"
+        return result
+    names = card.get("wandb_run_names")
+    if isinstance(names, dict):
+        names = list(names.values())
+    project = card.get("wandb_project")
+    if names and project:
+        entity = card.get("wandb_entity")
+        project_path = f"{entity}/{project}" if entity else str(project)
+        result = check_wandb_runs_by_name(project_path, [str(n) for n in names])
+        result["source"] = "epm:results reproducibility_card"
+        return result
+    return None
+
+
 def _issue_branch_ref(issue_num: int) -> str | None:
     """Return the first existing git ref for the issue branch, or None.
 
@@ -429,7 +615,8 @@ def check_pod_weights_cleaned(pod: str, output_dir: str) -> dict:
             [
                 "ssh",
                 pod,
-                f"find {output_dir} -name '*.safetensors' -o -name 'model.safetensors.index.json' 2>/dev/null | head -5",
+                f"find {output_dir} -name '*.safetensors' "
+                "-o -name 'model.safetensors.index.json' 2>/dev/null | head -5",
             ],
             capture_output=True,
             text=True,
@@ -514,6 +701,12 @@ def run_verification(
 
     ``experiment_type=None`` infers the type from the task's frontmatter
     ``kind`` (see ``infer_experiment_type``); an explicit value wins.
+
+    When the caller declares no single ``wandb_run`` / ``hf_model_path``
+    (the sweep case — there is no single path), the training-only rows
+    fall back to the task's latest ``epm:results`` reproducibility_card
+    (per-cell ``adapter_paths`` + ``wandb_run_names`` — #608). Explicit
+    declarations always win unchanged.
     """
     experiment_type_source = "cli"
     if experiment_type is None:
@@ -526,6 +719,12 @@ def run_verification(
         "checks": {},
     }
 
+    # Sweep fallback (#608): load the reproducibility_card only when a
+    # training row would otherwise hard-MISS for lack of a declared path.
+    results_card: dict | None = None
+    if experiment_type == "training" and (not wandb_run or not hf_model_path):
+        results_card = _load_results_card(issue_num)
+
     # 1. Eval JSON (always required)
     report["checks"]["eval_json"] = check_eval_json(issue_num)
 
@@ -533,10 +732,15 @@ def run_verification(
     if wandb_run:
         report["checks"]["wandb_run"] = check_wandb_run(wandb_run)
     elif experiment_type == "training":
-        report["checks"]["wandb_run"] = {
+        card_check = check_wandb_from_card(results_card) if results_card else None
+        report["checks"]["wandb_run"] = card_check or {
             "status": "MISSING",
             "url": "",
-            "detail": "No WandB run path provided",
+            "detail": (
+                "No WandB run path provided (and no epm:results "
+                "reproducibility_card declares wandb_run_path / "
+                "wandb_run_names + wandb_project)"
+            ),
         }
 
     # 3. WandB artifact (eval results)
@@ -548,10 +752,15 @@ def run_verification(
         if hf_model_path:
             report["checks"]["hf_model"] = check_hf_hub_path(HF_MODEL_REPO, hf_model_path, "model")
         else:
-            report["checks"]["hf_model"] = {
+            card_check = check_hf_model_from_card(results_card) if results_card else None
+            report["checks"]["hf_model"] = card_check or {
                 "status": "MISSING",
                 "url": "",
-                "detail": "No HF model path provided (required for training experiments)",
+                "detail": (
+                    "No HF model path provided (required for training "
+                    "experiments; no epm:results reproducibility_card "
+                    "declares adapter_paths / hf_model_path either)"
+                ),
             }
 
     # 5. HF dataset (if new data was generated)
