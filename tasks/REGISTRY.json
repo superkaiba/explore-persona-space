@@ -3539,8 +3539,8 @@
     "588": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/588",
-      "status": "planning",
+      "path": "tasks/approved/588",
+      "status": "approved",
       "title": "Router: custom workload-command support for the GCP lane (unblock credit spend for dispatch-script experiments)"
     },
     "589": {
