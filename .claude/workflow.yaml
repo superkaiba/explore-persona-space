@@ -1847,7 +1847,7 @@ markers:
   - kind: "epm:failure"
     posted_by: specialist
     when: "on crash"
-    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
   - kind: "epm:failure-classify-error"
     posted_by: skill
     when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
