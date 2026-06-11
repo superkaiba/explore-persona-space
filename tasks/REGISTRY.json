@@ -3652,7 +3652,7 @@
       "title": "Ratio vs count vs schedule horizon: what sets the contrastive-negative source-implant set-point (#472 mechanism follow-up)"
     },
     "602": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/602",
       "status": "interpreting",
