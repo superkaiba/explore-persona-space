@@ -272,4 +272,9 @@ uv run python scripts/run_issue543_ratio.py --results-sentinel --issue-ns 570 \
   --worktree-path "$WORKTREE_PATH" \
   "${DEV[@]}" > "$LOGD/issue-570-results-sentinel.log" 2>&1 \
   || { log "FATAL: results sentinel failed"; exit 2; }
+# round-4: terminal [phase=done] in THIS (main) log — poll_pipeline tails
+# issue-570-run.log and declares done only when the most recent [phase=...]
+# token is done; --results-sentinel's own [phase=done] lands in its redirected
+# log, so without this line a graceful completion reads as dead.
+log "[phase=done]"
 log "DONE — wall $(awk -v s="$SECONDS" 'BEGIN{printf "%.2f h", s/3600}'), included seeds: $SEEDS_CSV, install_variant: ${IV:-none}"
