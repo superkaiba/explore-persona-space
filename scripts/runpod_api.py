@@ -72,6 +72,37 @@ GPU_TYPE_IDS = {
     "A100": "NVIDIA A100-SXM4-80GB",
 }
 
+# Full RunPod gpuTypeIds are vendor-prefixed ("NVIDIA H100 NVL",
+# "AMD Instinct MI300X OC", ...). Used to distinguish a deliberate exotic
+# full id (passed through verbatim) from a typo'd / colloquial short name
+# ("H100 SXM"), which RunPod treats as a nonexistent type — see
+# resolve_gpu_type_id.
+_FULL_GPU_TYPE_ID_PREFIXES = ("NVIDIA ", "AMD ")
+
+
+def resolve_gpu_type_id(gpu_type: str) -> str:
+    """Map a short GPU name to its full RunPod gpuTypeId, rejecting unknowns.
+
+    Known short names (:data:`GPU_TYPE_IDS`) resolve to their full id. A name
+    that already looks like a full RunPod id (vendor-prefixed, e.g.
+    ``"NVIDIA H100 NVL"``) passes through verbatim so callers can request
+    exotic GPU types. Anything else raises :class:`RunPodError`: RunPod treats
+    a nonexistent gpuTypeId as permanent no-capacity (null mutation result /
+    SUPPLY_CONSTRAINT), indistinguishable from a genuine shortage, so a typo
+    spins the wait-for-capacity loop forever — task #537 waited 88 minutes on
+    ``"H100 SXM"`` (the SXM card's id is ``GPU_TYPE_IDS["H100"]``).
+    """
+    resolved = GPU_TYPE_IDS.get(gpu_type, gpu_type)
+    if gpu_type not in GPU_TYPE_IDS and not resolved.startswith(_FULL_GPU_TYPE_ID_PREFIXES):
+        raise RunPodError(
+            f"gpu_type {gpu_type!r} is not a known short name "
+            f"(valid: {sorted(GPU_TYPE_IDS)}) and does not look like a full RunPod "
+            f"gpuTypeId (expected a vendor prefix like 'NVIDIA ...'). RunPod reports "
+            f"a nonexistent gpuTypeId as no-capacity, so the wait-for-capacity loop "
+            f"would wait forever on an impossible request (#537)."
+        )
+    return resolved
+
 
 # ─── env loading ─────────────────────────────────────────────────────────────
 
@@ -545,8 +576,12 @@ def create_pod(
     COMMUNITY cloud, and finally COMMUNITY + interruptible (spot). These fallback
     pools are deeper but less stable, so they sit at the back of the chain. The
     ``data_center_id`` pin (if given) is preserved across all attempts — it is a
-    valid, used field. Names not in the allowlist pass through verbatim so
-    callers can request exotic GPU types.
+    valid, used field. Names not in the allowlist must look like a full RunPod
+    gpuTypeId (vendor-prefixed, e.g. ``"NVIDIA H100 NVL"``) to pass through
+    verbatim for exotic GPU types; anything else fails fast via
+    :func:`resolve_gpu_type_id` BEFORE any deploy attempt, because RunPod
+    reports a nonexistent gpuTypeId as no-capacity and the wait loop would
+    spin forever (#537).
 
     Raises :class:`RunPodNoCapacityError` when EVERY lever in the chain
     reports no capacity (so a higher-level wait-for-capacity policy can catch
@@ -556,6 +591,9 @@ def create_pod(
     gpu_types = [gpu_type] if isinstance(gpu_type, str) else list(gpu_type)
     if not gpu_types:
         raise RunPodError("create_pod: gpu_type list is empty — nothing to deploy.")
+    # Fail fast on unmapped / typo'd GPU names before any API call (#537):
+    # a nonexistent gpuTypeId is indistinguishable from a genuine shortage.
+    resolved_ids = {short_name: resolve_gpu_type_id(short_name) for short_name in gpu_types}
 
     # Build the ordered lever chain: (cloud_type, interruptible). The primary
     # cloud_type comes first; the supply fallbacks only fire when enabled AND
@@ -569,7 +607,7 @@ def create_pod(
     tried: list[str] = []
     for lever_cloud, interruptible in levers:
         for short_name in gpu_types:
-            gpu_type_id = GPU_TYPE_IDS.get(short_name, short_name)
+            gpu_type_id = resolved_ids[short_name]
             label = f"{gpu_count}x {short_name} on cloudType={lever_cloud}"
             if interruptible:
                 label += " (interruptible/spot)"

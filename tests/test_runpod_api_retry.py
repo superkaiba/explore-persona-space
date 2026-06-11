@@ -12,6 +12,10 @@ Covers:
   mutation result) is classified as the no-capacity case: _deploy_once returns
   None, the lever chain advances, and create_pod raises RunPodNoCapacityError
   only after every lever — instead of crashing with a bare RunPodError.
+- #537 gpu-type validation: an unmapped colloquial short name ("H100 SXM")
+  raises RunPodError naming the valid options BEFORE any API call, instead of
+  passing through verbatim as a nonexistent gpuTypeId that RunPod reports as
+  phantom no-capacity forever. Full vendor-prefixed ids still pass through.
 
 These tests stub network at the ``_graphql_once`` / ``graphql`` seam so they run
 without API access, and stub ``time.sleep`` so they don't actually wait.
@@ -459,6 +463,65 @@ def test_create_pod_other_graphql_error_still_fails_fast(monkeypatch):
         create_pod("pod-1", "H100", 1, cloud_type="ALL")
     assert not isinstance(exc.value, (RunPodNoCapacityError, RunPodSupplyConstraintError))
     assert len(rec.queries) == 1
+
+
+# ---------------------------------------------------------------------------
+# #537 — gpu-type validation: typo'd short names must not become phantom
+# no-capacity waits
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_gpu_type_id_maps_short_name():
+    """Mapped short names resolve to their full RunPod gpuTypeId."""
+    assert runpod_api.resolve_gpu_type_id("H100") == "NVIDIA H100 80GB HBM3"
+    assert runpod_api.resolve_gpu_type_id("H200") == "NVIDIA H200"
+
+
+def test_resolve_gpu_type_id_passes_through_full_id():
+    """Vendor-prefixed full ids pass through verbatim (exotic GPU escape hatch)."""
+    assert runpod_api.resolve_gpu_type_id("NVIDIA H100 NVL") == "NVIDIA H100 NVL"
+    assert runpod_api.resolve_gpu_type_id("AMD Instinct MI300X OC") == "AMD Instinct MI300X OC"
+
+
+def test_resolve_gpu_type_id_rejects_unmapped_colloquial_name():
+    """'H100 SXM' is neither a short name nor a full id — raise loudly, naming
+    the valid options. Passed verbatim it becomes a nonexistent gpuTypeId that
+    RunPod reports as no-capacity forever (#537 waited 88 minutes on it)."""
+    with pytest.raises(RunPodError) as exc:
+        runpod_api.resolve_gpu_type_id("H100 SXM")
+    msg = str(exc.value)
+    assert "H100 SXM" in msg
+    for valid in sorted(runpod_api.GPU_TYPE_IDS):
+        assert valid in msg
+    assert "NVIDIA" in msg  # names the expected full-id form
+
+
+def test_create_pod_rejects_unmapped_gpu_type_before_any_api_call(monkeypatch):
+    """The validation fires BEFORE the lever loop — zero deploy attempts, and
+    the error is a plain RunPodError (NOT RunPodNoCapacityError), so the
+    wait-for-capacity policy propagates it instead of retrying forever."""
+    rec = _capture_graphql(monkeypatch, [])
+    with pytest.raises(RunPodError) as exc:
+        create_pod("pod-1", "H100 SXM", 1)
+    assert not isinstance(exc.value, RunPodNoCapacityError)
+    assert len(rec.queries) == 0
+
+
+def test_create_pod_rejects_bad_name_anywhere_in_gpu_list(monkeypatch):
+    """A bad name in ANY position of the gpu_type list fails fast up front,
+    even when the first name is valid."""
+    rec = _capture_graphql(monkeypatch, [])
+    with pytest.raises(RunPodError):
+        create_pod("pod-1", ["H100", "H100 SXM"], 1)
+    assert len(rec.queries) == 0
+
+
+def test_create_pod_full_id_passes_through_to_deploy(monkeypatch):
+    """A vendor-prefixed full id reaches the deploy mutation verbatim."""
+    rec = _capture_graphql(monkeypatch, [_make_pod_payload()])
+    info = create_pod("pod-1", "NVIDIA H100 NVL", 1)
+    assert info.pod_id == "p1"
+    assert 'gpuTypeId: "NVIDIA H100 NVL"' in rec.queries[0]
 
 
 def test_interruptible_lever_reports_no_capacity_without_api_call(monkeypatch):
