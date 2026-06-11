@@ -998,32 +998,52 @@ class MarkerBandStopCallback(TrainerCallback):
         was_training = model.training
         model.eval()
         try:
-            with torch.no_grad():
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits  # [B, T, V]
-            assert logits.ndim == 3, logits.shape
-            batch_idx = torch.arange(input_ids.shape[0], device=device)
-            # The marker's predictive distribution is read at the OUTPUT
-            # position whose argmax would be the marker token. The caller
-            # passes ``positions`` already aligned to that output slot
-            # (i.e. positions[i] is the index at which logits[i, positions[i]]
-            # is the distribution over the NEXT token = the marker).
-            slot_logits = logits[batch_idx, positions, :].float()  # [B, V]
-            assert slot_logits.shape == (input_ids.shape[0], logits.shape[-1]), slot_logits.shape
-            log_z = torch.logsumexp(slot_logits, dim=-1)  # [B]
-            z_marker = slot_logits[:, self._target_token_id]  # [B]
-            row_logp = z_marker - log_z  # exact identity: logp = z_marker - logZ
-            assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
-            z_eos = (
-                slot_logits[:, self.eos_token_id].detach().cpu()
-                if self.eos_token_id is not None
-                else None
-            )
+            total = input_ids.shape[0]
+            # CHUNKED forwards (memory-proportional, numerically identical —
+            # per-row slot stats never interact across rows): under the HF
+            # Trainer the model's forward is wrapped by accelerate's mixed-
+            # precision `convert_outputs_to_fp32`, which fp32-converts the
+            # FULL [B, T, V] logits tensor INSIDE the forward call — slicing
+            # to the slot afterwards cannot bound it. A single 32-row pass
+            # over ~4k-token probe rows asks for ~73 GiB and OOMs an H100
+            # (observed: #537 P1 icl_k8, 8-demo prefixes). 4-row chunks cap
+            # the transient at ~11 GiB fp32.
+            chunk_rows = 4
+            logps: list = []
+            z_markers: list = []
+            z_eoss: list = []
+            log_zs: list = []
+            for s in range(0, total, chunk_rows):
+                ids_c = input_ids[s : s + chunk_rows]
+                mask_c = attention_mask[s : s + chunk_rows]
+                pos_c = positions[s : s + chunk_rows]
+                with torch.no_grad():
+                    outputs = model(input_ids=ids_c, attention_mask=mask_c)
+                logits = outputs.logits  # [b, T, V]
+                assert logits.ndim == 3, logits.shape
+                batch_idx = torch.arange(ids_c.shape[0], device=device)
+                # The marker's predictive distribution is read at the OUTPUT
+                # position whose argmax would be the marker token. The caller
+                # passes ``positions`` already aligned to that output slot
+                # (i.e. positions[i] is the index at which logits[i, positions[i]]
+                # is the distribution over the NEXT token = the marker).
+                slot_logits = logits[batch_idx, pos_c, :].float()  # [b, V]
+                assert slot_logits.shape == (ids_c.shape[0], logits.shape[-1]), slot_logits.shape
+                log_z = torch.logsumexp(slot_logits, dim=-1)  # [b]
+                z_marker = slot_logits[:, self._target_token_id]  # [b]
+                logps.append((z_marker - log_z).detach().cpu())  # logp = z_marker - logZ
+                z_markers.append(z_marker.detach().cpu())
+                log_zs.append(log_z.detach().cpu())
+                if self.eos_token_id is not None:
+                    z_eoss.append(slot_logits[:, self.eos_token_id].detach().cpu())
+                del outputs, logits, slot_logits
+            row_logp = torch.cat(logps)
+            assert row_logp.shape == (total,), row_logp.shape
             return {
-                "logp": row_logp.detach().cpu(),
-                "z_marker": z_marker.detach().cpu(),
-                "z_eos": z_eos,
-                "logZ": log_z.detach().cpu(),
+                "logp": row_logp,
+                "z_marker": torch.cat(z_markers),
+                "z_eos": torch.cat(z_eoss) if z_eoss else None,
+                "logZ": torch.cat(log_zs),
             }
         finally:
             if was_training:
