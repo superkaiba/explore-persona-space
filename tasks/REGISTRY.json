@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 593,
+  "highest_id": 594,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3580,6 +3580,14 @@
       "path": "tasks/proposed/593",
       "status": "proposed",
       "title": "Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): isolation, implant strength, affinity, and negative coverage as classifiers of leak vs no-leak cells"
+    },
+    "594": {
+      "goal": "Map the geometry of context representations: extract per-layer context vectors (mean over a fixed user-prompt pool of the residual activation at the assistant-header newline) for every context instance in the battery (persona prompts, rephrasings, format wraps, in-context examples, WildChat prefixes, behavior-instruction prompts, default), visualize with PCA/UMAP/t-SNE per layer, and quantify whether contexts organize by family and where in depth that structure lives.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/594",
+      "status": "proposed",
+      "title": "Dimensionality reduction / visualization of context-prompt activation vectors across layers"
     },
     "6": {
       "has_clean_result": false,
