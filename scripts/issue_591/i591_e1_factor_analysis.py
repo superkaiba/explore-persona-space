@@ -599,14 +599,29 @@ def _fig_suppression(cells: list[dict], fig_dir: Path):
 # ---------------------------------------------------------------------------
 
 
-def run(out_root: Path, fig_dir: Path, *, perm_b: int, profile_ci: bool) -> dict:
-    table = json.loads((out_root / "e1" / "cell_table.json").read_text())
+def run(
+    out_root: Path,
+    fig_dir: Path,
+    *,
+    perm_b: int,
+    profile_ci: bool,
+    cell_table: Path | None = None,
+    out_subdir: str = "e1",
+) -> dict:
+    """Registered factor suite over a cell table.
+
+    e5 override flags (plan v2 §3.7; defaults -> round-1 behavior unchanged):
+    ``cell_table`` points at the corrected table (e5/cell_table.json),
+    ``out_subdir`` redirects factor_analysis.json (e1 outputs untouched).
+    """
+    table_path = cell_table or (out_root / "e1" / "cell_table.json")
+    table = json.loads(table_path.read_text())
     cells: list[dict] = table["cells"]
     panels: list[dict] = table["panels"]
     assert len(cells) == 414 and len(panels) == 18, (len(cells), len(panels))
     have_all_self = all(c["self_delta"] is not None for c in cells)
 
-    results: dict = {"inputs": {"cell_table": str(out_root / "e1" / "cell_table.json")}}
+    results: dict = {"inputs": {"cell_table": str(table_path)}}
 
     # --- primary suite at tau = 0.10 ---
     results["univariate_within_source"] = _univariate_suite(cells, b=perm_b)
@@ -734,7 +749,8 @@ def run(out_root: Path, fig_dir: Path, *, perm_b: int, profile_ci: bool) -> dict
         "seeds": {**FACTOR_SEEDS, "h2_pooled": H2_POOLED_SEED},
     }
 
-    out_path = out_root / "e1" / "factor_analysis.json"
+    out_path = out_root / out_subdir / "factor_analysis.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(results, indent=2))
     print(f"[e1-factors] -> {out_path}")
 
@@ -765,8 +781,26 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Skip profile-likelihood CIs (smoke; production computes them).",
     )
+    parser.add_argument(
+        "--cell-table",
+        type=Path,
+        default=None,
+        help="e5 override: explicit cell-table path (default <out-root>/e1/cell_table.json).",
+    )
+    parser.add_argument(
+        "--out-subdir",
+        default="e1",
+        help="Output subdir under --out-root for factor_analysis.json (e5 refit uses 'e5').",
+    )
     args = parser.parse_args(argv)
-    run(args.out_root, args.fig_dir, perm_b=args.perm_b, profile_ci=not args.skip_profile_ci)
+    run(
+        args.out_root,
+        args.fig_dir,
+        perm_b=args.perm_b,
+        profile_ci=not args.skip_profile_ci,
+        cell_table=args.cell_table,
+        out_subdir=args.out_subdir,
+    )
     return 0
 
 

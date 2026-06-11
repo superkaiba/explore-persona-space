@@ -338,12 +338,26 @@ def _membership(inputs_dir: Path) -> tuple[dict, dict, dict]:
     return negatives_411, negatives_518, neg_member
 
 
-def build(out_root: Path, self_rates_path: Path, allow_missing_self_rates: bool) -> dict:
-    """Assemble cell + panel tables; snapshot inputs; return the payload dict."""
+def build(
+    out_root: Path,
+    self_rates_path: Path,
+    allow_missing_self_rates: bool,
+    em_join: Path | None = None,
+    em_self_rates: Path | None = None,
+    table_subdir: str = "e1",
+) -> dict:
+    """Assemble cell + panel tables; snapshot inputs; return the payload dict.
+
+    e5 override flags (plan v2 §3.7; all default None/"e1" -> round-1 behavior
+    byte-identical): ``em_join`` swaps the EM panel for the corrected
+    all-rollouts join, ``em_self_rates`` swaps the EM self_deltas for the
+    corrected re-aggregation, ``table_subdir`` redirects the output (e5
+    writes eval_results/issue_591/e5/cell_table.json; e1 outputs untouched).
+    """
     import numpy as np
 
     inputs_dir = out_root / "_inputs"
-    e1_dir = out_root / "e1"
+    e1_dir = out_root / table_subdir
     inputs_dir.mkdir(parents=True, exist_ok=True)
     e1_dir.mkdir(parents=True, exist_ok=True)
 
@@ -352,6 +366,10 @@ def build(out_root: Path, self_rates_path: Path, allow_missing_self_rates: bool)
         shutil.copy2(src_path, inputs_dir / f"join_{behavior}.json")
 
     joins = {b: _load_join(b) for b in JOIN_PATHS}
+    if em_join is not None:
+        d = json.loads(Path(em_join).read_text())
+        assert len(d["cells"]) == 138, f"--em-join must carry 138 cells, got {len(d['cells'])}"
+        joins["em"] = d["cells"]
     _assert_join_schemas(joins)
 
     # ---- Instruct-substrate cosine lookup (PRIMARY isolation factor) ----
@@ -362,9 +380,23 @@ def build(out_root: Path, self_rates_path: Path, allow_missing_self_rates: bool)
     self_delta, self_rates_meta = _load_self_deltas(
         self_rates_path, allow_missing_self_rates, out_root=out_root
     )
+    if em_self_rates is not None:
+        sr = json.loads(Path(em_self_rates).read_text())["arms"]["em"]
+        for s in SOURCES:
+            self_delta[("em", s)] = sr[s]["self_delta"]
+        self_rates_meta["em_override"] = str(em_self_rates)
     negatives_411, negatives_518, neg_member = _membership(inputs_dir)
 
     em_survivors = _load_em_survivors()
+    if em_join is not None:
+        # Corrected cells carry FRESH survivor counts; partial-filled (smoke)
+        # cells fall back to the frozen run_result counts loaded above.
+        for c in joins["em"]:
+            if c.get("corrected") and "n_coherence_survivors" in c:
+                em_survivors[(c["source"], c["bystander"])] = {
+                    "n_rollouts_after_coherence_filter": c["n_coherence_survivors"],
+                    "n_rollouts_total": c.get("n_rollouts_total", c.get("n_judged")),
+                }
 
     # ---- cell table ----
     cells_out: list[dict] = []
@@ -454,6 +486,9 @@ def build(out_root: Path, self_rates_path: Path, allow_missing_self_rates: bool)
             "timestamp_utc": datetime.now(UTC).isoformat(),
             "numpy_version": np.__version__,
             "join_paths": {k: str(v) for k, v in JOIN_PATHS.items()},
+            "em_join_override": str(em_join) if em_join else None,
+            "em_self_rates_override": str(em_self_rates) if em_self_rates else None,
+            "table_subdir": table_subdir,
         },
     }
     out_path = e1_dir / "cell_table.json"
@@ -502,9 +537,33 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Proceed with null refusal/EM self_delta when self_rates.json is absent (smoke).",
     )
+    parser.add_argument(
+        "--em-join",
+        type=Path,
+        default=None,
+        help="e5 override: corrected EM join (em_join_corrected.json); default = frozen join.",
+    )
+    parser.add_argument(
+        "--em-self-rates",
+        type=Path,
+        default=None,
+        help="e5 override: corrected EM self rates (self_rates_corrected.json).",
+    )
+    parser.add_argument(
+        "--out-subdir",
+        default="e1",
+        help="Output subdir under --out-root for cell_table.json (e5 refit uses 'e5').",
+    )
     args = parser.parse_args(argv)
     self_rates = args.self_rates or (args.out_root / "e1" / "self_rates.json")
-    build(args.out_root, self_rates, args.allow_missing_self_rates)
+    build(
+        args.out_root,
+        self_rates,
+        args.allow_missing_self_rates,
+        em_join=args.em_join,
+        em_self_rates=args.em_self_rates,
+        table_subdir=args.out_subdir,
+    )
     return 0
 
 
