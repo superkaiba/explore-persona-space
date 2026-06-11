@@ -310,6 +310,86 @@ def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     return True
 
 
+def _state_float(prev_state: dict[str, str], key: str) -> float:
+    """Read a float out of the string-valued tick state; garbled -> 0.0."""
+    try:
+        return float(prev_state.get(key, "0") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _update_ssh_fail_tracking(
+    prev_state: dict[str, str],
+    *,
+    ssh_failed: bool,
+    pod: str,
+    issue: int,
+    now_epoch: float | None = None,
+) -> tuple[int, float, float]:
+    """Advance the per-tick SSH-failure bookkeeping; returns
+    ``(ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts)`` for the state save.
+
+    Two escalation layers share this accounting:
+
+    1. **#488 stale-port self-heal** — after ``SSH_FAIL_REFRESH_THRESHOLD``
+       consecutive failures, fire ``pod.py config --refresh-from-api <pod>``
+       once (fail-soft) and reset the counter so the next N consecutive
+       failures retry.
+    2. **[ssh-wait-ALARM]** (refs #572) — the refresh counter resets on every
+       auto-heal attempt, so it cannot measure the TOTAL unreachable span;
+       pod-488 (2026-06-09) spun ~13.7h at $32/hr with only per-tick noise.
+       ``ssh_fail_since`` records the episode start; once the span crosses
+       ``SSH_WAIT_ALARM_SECS`` (default 1h) the per-tick warnings escalate to
+       a loud structured ``log.error`` naming the recovery command, re-fired
+       at most once per window (``ssh_wait_alarm_ts``). The pod is presumed
+       billing — this polling only runs while the experiment is supposed to
+       be RUNNING.
+    """
+    now_epoch = time.time() if now_epoch is None else now_epoch
+    try:
+        ssh_fail_count = int(prev_state.get("ssh_fail_count", "0"))
+    except (TypeError, ValueError):
+        ssh_fail_count = 0
+    ssh_fail_since = _state_float(prev_state, "ssh_fail_since")
+    ssh_wait_alarm_ts = _state_float(prev_state, "ssh_wait_alarm_ts")
+
+    if not ssh_failed:
+        return 0, 0.0, 0.0
+
+    if ssh_fail_since <= 0:
+        ssh_fail_since = now_epoch
+    ssh_fail_count += 1
+    if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
+        log.warning(
+            "SSH probe failed %d consecutive ticks for pod %s; "
+            "firing pod.py config --refresh-from-api %s "
+            "(#488 stale-port auto-heal)",
+            ssh_fail_count,
+            pod,
+            pod,
+        )
+        _try_refresh_pods_conf_from_api(pod)
+        # Reset after the attempt regardless of outcome so we don't
+        # hot-loop refresh calls every tick.
+        ssh_fail_count = 0
+    waited = now_epoch - ssh_fail_since
+    if waited >= SSH_WAIT_ALARM_SECS and now_epoch - ssh_wait_alarm_ts >= SSH_WAIT_ALARM_SECS:
+        log.error(
+            "[ssh-wait-ALARM] pod %s has been SSH-unreachable for %.1fh while "
+            "its experiment is supposed to be RUNNING (the pod is presumed "
+            "billing). Likely a stale host/port in pods.conf (#488 pattern). "
+            "Recovery: `uv run python scripts/pod.py config "
+            "--refresh-from-api %s`; if the pod is genuinely idle, stop it "
+            "(`pod.py stop --issue %d`) to halt the burn.",
+            pod,
+            waited / 3600.0,
+            pod,
+            issue,
+        )
+        ssh_wait_alarm_ts = now_epoch
+    return ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts
+
+
 def _marker_pid(issue: int) -> int | None:
     """Return the `pid=` from the latest epm:run-launched marker, or None.
 

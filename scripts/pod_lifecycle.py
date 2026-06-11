@@ -806,7 +806,7 @@ class WaitForCapacityStillWaiting(RunPodError):
         )
 
 
-def _emit_still_waiting_and_exit(exc: "WaitForCapacityStillWaiting") -> "NoReturn":
+def _emit_still_waiting_and_exit(exc: WaitForCapacityStillWaiting) -> NoReturn:
     """Print the structured still-waiting summary and exit
     :data:`EXIT_STILL_WAITING`. One line on stderr (where the heartbeats
     already go) and one on stdout (so an output-capturing caller that only
@@ -1157,6 +1157,128 @@ def _resume_with_balance_wait_if_autonomous(
             raise
 
 
+# ─── SSH-wait alarm (billing pod unreachable >1h — refs #572) ────────────────
+#
+# pod-488 (2026-06-09) sat SSH-unreachable for ~13.7h at $32/hr because a
+# SUPPLY_CONSTRAINT-blocked resume left a stale port in pods.conf and nothing
+# ever escalated past per-call failures. This tracker persists the FIRST
+# failure timestamp per pod across processes (state file under the gitignored
+# .claude/cache/), and once a pod has been unreachable for
+# ``EPM_SSH_WAIT_ALARM_SECS`` (default 1h) while the live API still reports it
+# RUNNING (= billing), prints a LOUD structured ``[ssh-wait-ALARM]`` line
+# naming the recovery command. Re-alarms at most once per alarm window.
+# Fail-soft by design: an observability tracker must never crash the
+# lifecycle operation it observes.
+
+_DEFAULT_SSH_WAIT_ALARM_SECS = 3600.0
+_SSH_WAIT_STATE_PATH = PROJECT_ROOT / ".claude" / "cache" / "ssh-wait-alarm.json"
+
+
+def _ssh_wait_alarm_secs() -> float:
+    """Alarm threshold (default 1h). Env override ``EPM_SSH_WAIT_ALARM_SECS``;
+    bad values fall back to the default."""
+    raw = os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_SSH_WAIT_ALARM_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        return _DEFAULT_SSH_WAIT_ALARM_SECS
+
+
+def _load_ssh_wait_state() -> dict:
+    """Read the cross-process SSH-wait state ({pod_name: {first_failure_ts,
+    last_alarm_ts}}). Garbled / missing file -> {} (fresh episodes)."""
+    try:
+        return json.loads(_SSH_WAIT_STATE_PATH.read_text())
+    except (OSError, json.JSONDecodeError, ValueError):
+        return {}
+
+
+def _save_ssh_wait_state(state: dict) -> None:
+    """Persist the SSH-wait state atomically; IO failures are swallowed (the
+    tracker is observability, never worth crashing a provision/resume)."""
+    try:
+        _SSH_WAIT_STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        tmp = _SSH_WAIT_STATE_PATH.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state, indent=2))
+        tmp.replace(_SSH_WAIT_STATE_PATH)
+    except OSError as exc:
+        print(f"[pod_lifecycle] WARN: ssh-wait state save failed: {exc}", file=sys.stderr)
+
+
+def _pod_desired_status_by_name(pod_name: str) -> str:
+    """Best-effort live desiredStatus for ``pod_name`` (``"UNKNOWN"`` when the
+    API is unreachable or the pod is gone). Only called on the rare alarm
+    path, never per-probe."""
+    try:
+        for p in list_team_pods():
+            if p.name == pod_name:
+                return p.desired_status or "UNKNOWN"
+    except Exception as exc:
+        print(
+            f"[pod_lifecycle] WARN: live-status check for ssh-wait alarm failed: {exc}",
+            file=sys.stderr,
+        )
+    return "UNKNOWN"
+
+
+def note_ssh_wait_outcome(
+    pod_name: str,
+    *,
+    reachable: bool,
+    desired_status: str | None = None,
+    now: float | None = None,
+) -> None:
+    """Record one SSH reachability observation for ``pod_name`` and fire the
+    1h billing-pod alarm when warranted (refs #572).
+
+    ``reachable=True`` closes the episode (state cleared). ``reachable=False``
+    opens / extends it; once the episode exceeds :func:`_ssh_wait_alarm_secs`
+    AND the pod is RUNNING per the live API (or the caller passed
+    ``desired_status``; ``UNKNOWN`` alarms too — failing loud beats staying
+    silent on a possibly-billing pod), a structured ``[ssh-wait-ALARM]`` line
+    is printed, at most once per alarm window. EXITED pods never alarm (not
+    billing; the episode stays open in case of a later resume)."""
+    now = time.time() if now is None else now
+    state = _load_ssh_wait_state()
+    if reachable:
+        if pod_name in state:
+            state.pop(pod_name, None)
+            _save_ssh_wait_state(state)
+        return
+    entry = state.get(pod_name)
+    if not isinstance(entry, dict):
+        entry = {}
+    first = entry.get("first_failure_ts")
+    if not isinstance(first, int | float):
+        first = now
+        entry["first_failure_ts"] = first
+    waited = now - first
+    threshold = _ssh_wait_alarm_secs()
+    last_alarm = entry.get("last_alarm_ts")
+    if not isinstance(last_alarm, int | float):
+        last_alarm = 0.0
+    if threshold > 0 and waited >= threshold and (now - last_alarm) >= threshold:
+        status = desired_status or _pod_desired_status_by_name(pod_name)
+        if status != "EXITED":
+            billing = "RUNNING (BILLING)" if status == "RUNNING" else f"status={status}"
+            print(
+                f"[ssh-wait-ALARM] pod {pod_name} has been SSH-unreachable for "
+                f"{_format_elapsed(waited)} while {billing}. Likely a stale "
+                f"host/port in pods.conf (the #488 pattern: a retry path "
+                f"brought the pod back at a new port outside _upsert_pods_conf). "
+                f"Recovery: `uv run python scripts/pod.py config "
+                f"--refresh-from-api {pod_name}`, then re-check; if the pod is "
+                f"genuinely idle, stop it (`pod.py stop`) to halt the burn.",
+                file=sys.stderr,
+                flush=True,
+            )
+            entry["last_alarm_ts"] = now
+    state[pod_name] = entry
+    _save_ssh_wait_state(state)
+
+
 def ssh_preflight(
     host: str | None,
     port: int | None,
@@ -1177,9 +1299,19 @@ def ssh_preflight(
 
     ``host``/``port`` of ``None`` count as unreachable (a pod with no public
     mapping yet).
+
+    Every probe outcome additionally feeds :func:`note_ssh_wait_outcome`
+    (when ``issue`` is given) so a pod that stays unreachable across repeated
+    preflights for >1h while billing trips the ``[ssh-wait-ALARM]`` (refs
+    #572).
     """
+    pod_name = _canonical_pod_name(issue) if issue is not None else None
     if _tcp_open(host, port, timeout):
+        if pod_name:
+            note_ssh_wait_outcome(pod_name, reachable=True)
         return True
+    if pod_name:
+        note_ssh_wait_outcome(pod_name, reachable=False)
 
     where = f"{host}:{port}" if host and port else "(no public mapping)"
     print(
@@ -1214,6 +1346,8 @@ def ssh_preflight(
     # Re-read the freshly-resumed endpoint from the live API and re-check once.
     new_host, new_port = _live_ssh_endpoint(issue)
     if _tcp_open(new_host, new_port, timeout):
+        if pod_name:
+            note_ssh_wait_outcome(pod_name, reachable=True)
         print(
             f"[pod_lifecycle] SSH preflight recovered after resume: "
             f"{new_host}:{new_port} is reachable.",
@@ -1221,6 +1355,8 @@ def ssh_preflight(
         )
         return True
 
+    if pod_name:
+        note_ssh_wait_outcome(pod_name, reachable=False)
     print(
         "[pod_lifecycle] SSH preflight FAILED — still unreachable after resume. "
         f"Provision a fresh pod with `python scripts/pod.py provision --issue {issue} ...`.",
@@ -1565,7 +1701,22 @@ def cmd_provision(args: argparse.Namespace) -> None:
         )
     print(f"  Created pod {info.pod_id} — waiting for SSH (up to 10 min)...")
 
-    ready = wait_for_ssh(info.pod_id, timeout=600)
+    try:
+        ready = wait_for_ssh(info.pod_id, timeout=600)
+    except RunPodError:
+        # The pod exists and is billing, but never exposed 22/tcp within the
+        # window — record the wait so repeated attempts accumulate toward the
+        # 1h [ssh-wait-ALARM], and name the recovery before propagating.
+        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        print(
+            f"  Pod {info.pod_id} ({name}) is created (billing) but exposed no "
+            f"public SSH mapping in 10 min; pods.conf was NOT updated. Once it "
+            f"comes up, run `uv run python scripts/pod.py config "
+            f"--refresh-from-api {name}` — or terminate it if it never does.",
+            file=sys.stderr,
+        )
+        raise
+    note_ssh_wait_outcome(name, reachable=True)
     print(f"  SSH ready at {ready.ssh_host}:{ready.ssh_port}")
 
     metadata = _read_metadata_file()
@@ -1724,7 +1875,24 @@ def cmd_resume(args: argparse.Namespace) -> None:
             name=name,
             issue=args.issue,
         )
-    ready = wait_for_ssh(pod.pod_id, timeout=600)
+    try:
+        ready = wait_for_ssh(pod.pod_id, timeout=600)
+    except RunPodError:
+        # The resume mutation SUCCEEDED — the pod is back and billing — but no
+        # public SSH mapping appeared within the window, so the process dies
+        # BEFORE _upsert_pods_conf and pods.conf keeps the pre-stop endpoint
+        # (the exact #488 stale-port shape). Record the wait for the 1h
+        # [ssh-wait-ALARM] and name the recovery before propagating.
+        note_ssh_wait_outcome(name, reachable=False, desired_status="RUNNING")
+        print(
+            f"  Resume of {name} succeeded (pod is billing) but no public SSH "
+            f"mapping appeared in 10 min; pods.conf still holds the PRE-STOP "
+            f"endpoint. Once the pod is up, run `uv run python scripts/pod.py "
+            f"config --refresh-from-api {name}` to heal pods.conf/SSH/MCP.",
+            file=sys.stderr,
+        )
+        raise
+    note_ssh_wait_outcome(name, reachable=True)
 
     # Clear our project-side stopped_at marker; status/host/port refresh on read.
     # Synthetic-metadata pods (Branch 3 of _load_state) are promoted to disk
