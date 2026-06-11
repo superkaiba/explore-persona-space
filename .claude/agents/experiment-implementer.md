@@ -582,7 +582,15 @@ tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_bra
    glob, OR add a small loop that explicitly walks the actual write path
    and calls `hub._upload(...)` per file with `repo_id=
    DEFAULT_DATASET_REPO`, `repo_type="dataset"`,
-   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`. Either way,
+   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`, OR (PREFERRED
+   over the per-file loop for large file counts — the HF Hub throttles a
+   repo at ~256 commits/hour, #591) batch every file into ONE
+   `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
+   ops target the same canonical
+   `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
+   per-prefix file count on the Hub (`list_repo_files`) before
+   `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
+   gate (`code-reviewer.md`). Whichever shape,
    the per-cell completion files MUST land on
    `superkaiba1/explore-persona-space-data/issue<N>_<slug>/raw_completions/...`
    under their dispatcher's normal exit path — no "the verifier will pick
@@ -597,7 +605,7 @@ tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_bra
    import + call:
 
    ```bash
-   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions|create_commit" \
      scripts/run_experiment_<N>.py scripts/i<N>_*.py 2>/dev/null
    ```
 
