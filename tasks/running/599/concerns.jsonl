@@ -1,0 +1,1 @@
+{"ts": "2026-06-11T12:22:24Z", "event": "raised", "concern_id": "compare-gates-fail-open", "severity": "CONCERN", "summary": "issue599_compare.py fails OPEN on missing --manipulation-check/--smoke-gate-json (None -> all seeds readable, drift rule skipped); must fail closed before the production compare (plan 7.2/13)", "raised_by": "reconciler", "raised_at_round": 1}
