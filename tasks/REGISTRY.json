@@ -3510,8 +3510,8 @@
     "584": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/584",
-      "status": "reviewing",
+      "path": "tasks/completed/584",
+      "status": "completed",
       "title": "Port the #534 distinct-id trajectory-eval fix + source-manifest guard to main with a regression test"
     },
     "585": {
