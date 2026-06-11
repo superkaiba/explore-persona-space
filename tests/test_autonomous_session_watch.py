@@ -1983,7 +1983,11 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
     payload = json.loads((isolated_registry / "stalled-7.json").read_text())
     # ``refresh_attempted`` (default False) is the #488 stale-port self-heal
     # dedup flag added 2026-06-09; see ``_handle_stalled_alert`` +
-    # ``_refresh_pods_conf_from_api``. Schema-shape coverage stays exhaustive.
+    # ``_refresh_pods_conf_from_api``. ``followups_child_alerted`` (default
+    # False) is the dedup flag for the followups_running-parent-waiting-on-
+    # open-child suppression alert added 2026-06-11 (#533); see
+    # ``_followups_awaiting_child_reason``. Schema-shape coverage stays
+    # exhaustive.
     assert payload == {
         "happy_session_id": "sess-7",
         "missed": 1,
@@ -1991,6 +1995,7 @@ def test_save_stalled_state_carries_first_seen_and_respawn_fields(isolated_regis
         "respawn_count": 2,
         "exhausted": False,
         "refresh_attempted": False,
+        "followups_child_alerted": False,
         "last_self_report_ts": "ts-1",
         "first_seen": 1234.0,
     }
@@ -2724,6 +2729,365 @@ def test_orphan_state_roundtrip_and_clear(isolated_registry):
     assert isinstance(state["first_seen"], float)
     asw._clear_orphan_state(472)
     assert asw._load_orphan_state(472) == {}
+
+
+# ─── followups_running parent-waiting-on-open-child exemption (incident #533) ─
+
+
+def _make_step_completed_event(
+    step: str = "10", exit_kind: str = "parked", ts: str = "2026-06-11T13:45:41Z"
+) -> dict:
+    """Construct a minimal valid epm:step-completed event row (matches the
+    shape `scripts/post_step_completed.py` writes — top-level ``step`` and
+    ``exit_kind`` fields the helper reads)."""
+    return {
+        "ts": ts,
+        "kind": "epm:step-completed",
+        "version": 1,
+        "by": "task_state shim",
+        "note": (
+            f"<!-- epm:step-completed v1 -->\n## Step Completed\n\n"
+            f"step: {step}\nexit_kind: {exit_kind}\n"
+            f"<!-- /epm:step-completed -->"
+        ),
+        "step": step,
+        "exit_kind": exit_kind,
+    }
+
+
+def test_followups_awaiting_child_reason_fires_on_canonical_533_shape(monkeypatch):
+    # Canonical #533 shape (2026-06-11): status=followups_running, no live pod,
+    # latest step-completed step=10 exit_kind=parked, one child at
+    # awaiting_promotion (user gate). Exemption MUST fire.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw,
+        "_task_children",
+        lambda issue: [
+            {"id": 546, "status": "awaiting_promotion"},
+            {"id": 547, "status": "archived"},  # terminal — does NOT count
+        ],
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+    )
+    assert reason is not None
+    assert "#546" in reason
+    assert "#547" not in reason  # terminal child must NOT be listed
+    assert "followups_running" in reason
+
+
+@pytest.mark.parametrize(
+    "status", ["running", "interpreting", "approved", "verifying", "reviewing"]
+)
+def test_followups_awaiting_child_reason_inert_off_followups_running(monkeypatch, status):
+    # ANY non-followups_running ACTIVE status is inert — the exemption is
+    # narrowly scoped to the parent-waiting-on-child case (incident #533).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 1, "status": "awaiting_promotion"}]
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status=status,
+        has_pod=False,
+        events=[_make_step_completed_event()],
+    )
+    assert reason is None
+
+
+def test_followups_awaiting_child_reason_inert_when_has_pod(monkeypatch):
+    # A live pod means a same-issue follow-up round is in flight — keep
+    # respawn coverage. Even with all other preconditions met, the
+    # exemption MUST decline.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=True,
+        events=[_make_step_completed_event()],
+    )
+    assert reason is None
+
+
+def test_followups_awaiting_child_reason_inert_when_all_children_terminal(monkeypatch):
+    # All children at completed/archived — the parent CAN advance (Step 10
+    # will flip it to completed on the next /issue tick). Respawn-eligible.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw,
+        "_task_children",
+        lambda issue: [
+            {"id": 546, "status": "completed"},
+            {"id": 547, "status": "archived"},
+        ],
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+    )
+    assert reason is None
+
+
+def test_followups_awaiting_child_reason_inert_when_no_children(monkeypatch):
+    # A followups_running parent with NO children is in a different shape
+    # (legitimately re-driving its own follow-up cycle) — never apply the
+    # parent-waiting suppression.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_children", lambda issue: [])
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+    )
+    assert reason is None
+
+
+@pytest.mark.parametrize(
+    ("step", "exit_kind"),
+    [
+        ("9a-bis", "parked"),  # earlier step — parent still has work
+        ("10", "clean"),  # step 10 ran to completion; not a parked wait
+        ("4b", "clean"),
+    ],
+)
+def test_followups_awaiting_child_reason_inert_off_step10_parked(monkeypatch, step, exit_kind):
+    # Only the step=10 exit_kind=parked shape is the children-wait state.
+    # Earlier steps OR a clean step-10 exit do NOT trigger the exemption.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event(step=step, exit_kind=exit_kind)],
+    )
+    assert reason is None
+
+
+def test_followups_awaiting_child_reason_inert_when_no_step_completed(monkeypatch):
+    # A fresh task with no step-completed markers at all (e.g. a parent
+    # whose /issue has never reached Step 10) is not in the parked-wait
+    # shape — never suppress.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    reason = asw._followups_awaiting_child_reason(
+        533,
+        status="followups_running",
+        has_pod=False,
+        events=[
+            {
+                "ts": "2026-06-11T10:53:51Z",
+                "kind": "epm:merged",
+                "note": "branch merged",
+            }
+        ],
+    )
+    assert reason is None
+
+
+def test_followups_awaiting_child_sentinel_in_watcher_filter():
+    # The suppression's own alert marker must NEVER reset the staleness
+    # clock it is measuring — pin the sentinel into the shared exclusion
+    # set, mirroring every other watcher-posted marker.
+    from autonomous_session_watch import (
+        _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_apply_stalled_followups_exemption_rewrites_respawn_to_keep(monkeypatch):
+    # The stalled-detector helper: an `action="respawn"` that meets the
+    # exemption MUST become `action="keep"` with `new_missed=0`, and the
+    # one-time alert MUST be posted on the first call only (dedup'd via
+    # `followups_child_alerted`).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, True)
+    assert len(posted) == 1  # alert posted once
+    assert posted[0][0] == 533
+    assert "Respawn suppressed" in posted[0][1]
+    assert posted[0][2] == "followups-awaiting-child"
+
+    # Second call within the same episode: `followups_child_alerted=True`
+    # carried forward — the alert MUST NOT re-post.
+    posted.clear()
+    action2, new_missed2, child_alerted2 = asw._apply_stalled_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=True,
+        dry_run=False,
+    )
+    assert (action2, new_missed2, child_alerted2) == ("keep", 0, True)
+    assert posted == []  # dedup'd
+
+
+def test_apply_stalled_followups_exemption_no_op_on_healthy_path(monkeypatch):
+    # The exemption helper MUST be a no-op when action=="keep" AND
+    # new_missed==0 — otherwise the healthy-session hot path would pay
+    # `task.py list-children` every tick.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be called on the healthy path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda *a, **kw: pytest.fail("must not post on healthy path"),
+    )
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+        action="keep",
+        new_missed=0,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, False)
+
+
+def test_check_orphan_followups_exemption_rewrites_respawn(monkeypatch):
+    # Orphan-sweep helper: action="respawn" + exemption preconditions met
+    # becomes action="followups-awaiting-child" + reason string.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=[_make_step_completed_event()],
+        action="respawn",
+    )
+    assert action == "followups-awaiting-child"
+    assert reason is not None
+    assert "#546" in reason
+
+
+def test_check_orphan_followups_exemption_inert_on_non_respawn(monkeypatch):
+    # Helper MUST short-circuit when action != "respawn" so the
+    # task.py list-children subprocess is not paid on alert / keep / clear
+    # branches.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be called when action != respawn")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    for action in ("keep", "clear", "alert"):
+        new_action, reason = asw._check_orphan_followups_exemption(
+            issue=533,
+            status="followups_running",
+            has_pod=False,
+            events=[_make_step_completed_event()],
+            action=action,
+        )
+        assert new_action == action
+        assert reason is None
+
+
+def test_handle_orphan_followups_awaiting_child_posts_once_and_skips_budget(
+    isolated_registry, monkeypatch
+):
+    # The orphan handler MUST (a) post the one-time alert dedup'd via
+    # followups_child_alerted; (b) persist state WITHOUT incrementing
+    # respawns_today (the suppression does not consume the daily budget).
+    import autonomous_session_watch as asw
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+
+    # First call: alert MUST post; state MUST record followups_child_alerted=True
+    # AND respawns_today UNCHANGED (input=0).
+    asw._handle_orphan_followups_awaiting_child(
+        issue=533,
+        reason="followups_running parent waiting on open child(ren) #546",
+        followups_child_alerted=False,
+        new_missed=2,
+        alerted=False,
+        respawn_day="2026-06-11",
+        respawns_today=0,
+        state={},
+        dry_run=False,
+    )
+    assert len(posted) == 1
+    assert posted[0][2] == "followups-awaiting-child"
+    state = asw._load_orphan_state(533)
+    assert state["followups_child_alerted"] is True
+    assert state["respawns_today"] == 0  # NOT incremented
+
+    # Second call within the same episode: dedup'd — alert MUST NOT
+    # re-post; respawns_today STILL not incremented.
+    posted.clear()
+    asw._handle_orphan_followups_awaiting_child(
+        issue=533,
+        reason="followups_running parent waiting on open child(ren) #546",
+        followups_child_alerted=True,
+        new_missed=3,
+        alerted=False,
+        respawn_day="2026-06-11",
+        respawns_today=0,
+        state=state,
+        dry_run=False,
+    )
+    assert posted == []
+    state2 = asw._load_orphan_state(533)
+    assert state2["respawns_today"] == 0
 
 
 def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
