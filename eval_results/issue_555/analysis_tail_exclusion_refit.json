@@ -1,0 +1,213 @@
+{
+  "schema_version": "i555_tail_exclusion_refit_v1",
+  "task_id": 555,
+  "note": "POST-HOC robustness variant of analysis_replicates.json: per-probe rows with DV > 0.1 nats excluded before the identical fit. NOT the registered analysis; the registered verdict is the all-rows fit.",
+  "tail_threshold_nats": 0.1,
+  "per_replicate": {
+    "seeds7_11": {
+      "n_rows": 430,
+      "n_dropped_tail_rows": 2,
+      "partial_spearman": {
+        "d_source": {
+          "rho": 0.03168923021078635,
+          "p_raw": 0.5124388513454223
+        },
+        "d_nearest_neg_nd": {
+          "rho": 0.00024352704436878613,
+          "p_raw": 0.9959848722072617
+        },
+        "shadow_angle": {
+          "rho": 0.0847888419787195,
+          "p_raw": 0.07903862431189257
+        },
+        "base_prior_marker": {
+          "rho": -0.10318852894798505,
+          "p_raw": 0.03236265934053595
+        },
+        "training_step": {
+          "rho": -0.016926497852182424,
+          "p_raw": 0.7264871523351659
+        },
+        "source_delta_g": {
+          "rho": 0.15920578638972854,
+          "p_raw": 0.0009064806329561748
+        }
+      },
+      "holm5_significant": [
+        "source_delta_g"
+      ]
+    },
+    "seeds19_23": {
+      "n_rows": 429,
+      "n_dropped_tail_rows": 3,
+      "partial_spearman": {
+        "d_source": {
+          "rho": 0.01833091924376428,
+          "p_raw": 0.7051421612288236
+        },
+        "d_nearest_neg_nd": {
+          "rho": -0.007285281551745364,
+          "p_raw": 0.8804733577001767
+        },
+        "shadow_angle": {
+          "rho": 0.049778324262132134,
+          "p_raw": 0.3038261763254275
+        },
+        "base_prior_marker": {
+          "rho": -0.05677437103214108,
+          "p_raw": 0.24076721521396416
+        },
+        "training_step": {
+          "rho": -0.019701963644805597,
+          "p_raw": 0.6842308561153465
+        },
+        "source_delta_g": {
+          "rho": 0.0661464594957314,
+          "p_raw": 0.17154885941933262
+        }
+      },
+      "holm5_significant": []
+    },
+    "seeds71_73": {
+      "n_rows": 425,
+      "n_dropped_tail_rows": 7,
+      "partial_spearman": {
+        "d_source": {
+          "rho": 0.0016452767660346096,
+          "p_raw": 0.9730379465434462
+        },
+        "d_nearest_neg_nd": {
+          "rho": 0.08177314720732833,
+          "p_raw": 0.09225985486184296
+        },
+        "shadow_angle": {
+          "rho": 0.06456988322833784,
+          "p_raw": 0.1840843619598338
+        },
+        "base_prior_marker": {
+          "rho": -0.06067671288552626,
+          "p_raw": 0.21203367449149413
+        },
+        "training_step": {
+          "rho": 0.05358697237093141,
+          "p_raw": 0.27051675131242936
+        },
+        "source_delta_g": {
+          "rho": -0.027096653170968096,
+          "p_raw": 0.5776825020911014
+        }
+      },
+      "holm5_significant": []
+    },
+    "seeds101_103": {
+      "n_rows": 427,
+      "n_dropped_tail_rows": 5,
+      "partial_spearman": {
+        "d_source": {
+          "rho": -0.022695233758919377,
+          "p_raw": 0.6402110575798283
+        },
+        "d_nearest_neg_nd": {
+          "rho": 0.06148118988174489,
+          "p_raw": 0.2049501529171165
+        },
+        "shadow_angle": {
+          "rho": -0.03197644577438586,
+          "p_raw": 0.5101142074318648
+        },
+        "base_prior_marker": {
+          "rho": -0.16069806305274575,
+          "p_raw": 0.0008441145034563391
+        },
+        "training_step": {
+          "rho": -0.006835826982578472,
+          "p_raw": 0.88805916044406
+        },
+        "source_delta_g": {
+          "rho": 0.026464902483693334,
+          "p_raw": 0.5857033295025986
+        }
+      },
+      "holm5_significant": [
+        "base_prior_marker"
+      ]
+    },
+    "seeds211_223": {
+      "n_rows": 428,
+      "n_dropped_tail_rows": 4,
+      "partial_spearman": {
+        "d_source": {
+          "rho": 0.06097625371411184,
+          "p_raw": 0.20816793926375876
+        },
+        "d_nearest_neg_nd": {
+          "rho": 0.0493675161976066,
+          "p_raw": 0.3084093264410015
+        },
+        "shadow_angle": {
+          "rho": -0.057038411259339714,
+          "p_raw": 0.23913378231219062
+        },
+        "base_prior_marker": {
+          "rho": -0.060271580725081576,
+          "p_raw": 0.21348545967437826
+        },
+        "training_step": {
+          "rho": 0.013476527171098034,
+          "p_raw": 0.7811332294603621
+        },
+        "source_delta_g": {
+          "rho": 0.10620909655688268,
+          "p_raw": 0.02796009654181031
+        }
+      },
+      "holm5_significant": []
+    }
+  },
+  "rhos_nearest_neg": [
+    0.00024352704436878613,
+    -0.007285281551745364,
+    0.08177314720732833,
+    0.06148118988174489,
+    0.0493675161976066
+  ],
+  "n_positive": 4,
+  "holm5_significant_count": 0,
+  "t_interval": {
+    "mean": 0.037116019755860645,
+    "lo": -0.011249446735452528,
+    "hi": 0.08548148624717382,
+    "se": 0.01741992535734562,
+    "t_crit": 2.7764451051977934,
+    "df": 4,
+    "alpha": 0.05,
+    "n": 5
+  },
+  "nominal_verdict_on_this_posthoc_variant": {
+    "verdict": "FALSIFIED",
+    "predictor": "d_nearest_neg_nd",
+    "n_replicates": 5,
+    "n_positive": 4,
+    "sign_trigger_threshold": 4,
+    "sign_trigger_fired": true,
+    "holm5_significant_count": 0,
+    "t_interval": {
+      "mean": 0.037116019755860645,
+      "lo": -0.011249446735452528,
+      "hi": 0.08548148624717382,
+      "se": 0.01741992535734562,
+      "t_crit": 2.7764451051977934,
+      "df": 4,
+      "alpha": 0.05,
+      "n": 5
+    },
+    "t_interval_excludes_zero": false,
+    "rule": "FALSIFIED if n_positive >= threshold OR t-interval excludes 0; STANDS only if holm_sig_count <= 1 AND n_positive < threshold AND interval includes 0; else INDETERMINATE. Registered in the task body; the OR-rule fires on sign consistency alone.",
+    "sign_only_trigger": true,
+    "sign_only_trigger_null_base_rate": 0.1875,
+    "sign_only_trigger_caveat": "FALSIFIED fired on the sign trigger ALONE (>= 4/5 positive) while the pooled t-interval spans zero. Under the null this trigger fires by chance with probability ~0.188 \u2014 report this base rate alongside the verdict (the machine verdict itself is not softened)."
+  },
+  "git_commit": "bcadb849c08a1d8df7099774d0ec926d88076ad2",
+  "hostname": "cia-benchmark-vm",
+  "timestamp_utc": "2026-06-11T01:27:30.614462+00:00"
+}
