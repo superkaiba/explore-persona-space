@@ -5,6 +5,8 @@ A methodology + hyperparameter reference for experiment #571 (Explore Persona Sp
 - Task: [https://eps.superkaiba.com/tasks/571](https://eps.superkaiba.com/tasks/571)
 - Model: `Qwen/Qwen2.5-7B-Instruct`
 
+Sections 1–6 document the parent run (the context-typed broad-vs-narrow panel contrast). Section 7 documents the same-issue follow-up round `persona-split-composition` (a zero-GPU geometry re-analysis of the parent's own outputs, then six new adapters splitting the fixed 300 negatives across 2 / 4 / 8 persona system prompts).
+
 ---
 
 ## 1. Conditions
@@ -214,6 +216,169 @@ Full raw-completion buckets (4 files, 700 generations each): [HF Hub](https://hu
   - Smoke only: `bash scripts/issue571_dispatch.sh --smoke-only`
   - VM analysis (after upload + pod termination): `uv run python scripts/issue571_breadth_analysis.py`
 - **Compute:** one 4× H100 pod (`pod-571`), 4-way cell sharding for train/gen/score; planned ~2.2 h wall / ~8 GPU-h (plan §9; actuals recorded in the run logs)
+- **Persona-split follow-up round (`persona-split-composition`):** code, artifacts, and compute pointers in §7.6 below
+
+---
+
+## 7. `persona-split-composition` arm (same-issue follow-up round)
+
+A two-stage follow-up executed on the same issue, plan v2 (`tasks/.../571/plans/v2.md`). **Stage 1** trains nothing: it joins the parent run's committed per-persona reads with the committed #560 layer-20 persona↔context geometry on the VM (CPU, zero GPU), and is committed BEFORE any pod is provisioned (a hard ordering contract — the Stage-2 dispatcher's top-of-script assert refuses to start if `stage1_geometry_join.json` is absent from the checkout). **Stage 2** trains six new adapters whose single training-side change vs the parent recipe is the negative panel: the fixed 300 negative rows are split across **2 vs 4 vs 8 persona system prompts** (always including the plain assistant), instead of the parent's context-typed panels.
+
+### 7.1 Stage 1 — zero-GPU geometry join (methodology)
+
+Inputs (all committed in git or Hub-pinned, fail-loud on any missing field):
+
+- `eval_results/issue_560/geometry/context_persona_geometry.json` — layer-20, 50-probe, raw-cosine `min_dist[context][persona]` for all 16 registry contexts × 35 eval personas, plus the persona-persona and context-context matrices.
+- `eval_results/issue_571/breadth_contrast.json` — the parent's per-label-per-persona block (the clamp channel).
+- `eval_results/issue_571/four_float/trained_{label}.json` — slot-kind cross-check for the hijack recompute.
+- Parent raw completions at HF rev `5337d5f79…` — per-(label, persona) hijack rates recomputed from the parent's own generations (marker substring per answer), cross-checked against the four-float `slot_kind` counts.
+
+Derived predictors per (arm, persona) over the parent's exact 32 never-negative personas: `d_nn` = min over the arm's panel context columns of `min_dist` (narrow ⊂ broad, so the panel shrink moves only the negative set and `d_src` is constant within persona by construction); `d_src` = `min_dist["A2"][persona]`.
+
+Registered statistics (plan v2 §4.1): because the plan-time collinearity check on the committed #560 geometry returned Pearson(d_nn, d_src) = 0.635 (broad) / 0.996 (narrow) — both over the 0.6 gate — the registered within-cell statistic is the **residualized Spearman**: Spearman(leakage, resid(d_nn)) with resid = residuals of d_nn on a linear+quadratic fit of d_src, broad-arm cells only (narrow-arm within-cell reads are pre-declared degenerate at collinearity 0.996 and excluded from the registered verdict, reported descriptively). The registered verdict rides on the broad-arm residualized gradients (2 seeds) plus the **cross-arm paired identification** — per-persona Δ(clamp) and Δ(hijack) (broad − narrow) against Δd_nn across the 32 personas. Inference: permutation p (10,000 draws, persona as the resampling unit) + bootstrap CIs, Holm over the 2 geometry partials per channel; realized distance spread (per-arm d_nn median/IQR, Δd_nn distribution) reported alongside every read. A #472 rank-based retest — Spearman(leakage, d_src) per arm — is computed for cross-experiment comparison (rank-based only; the two experiments' distance scales are never numerically pooled). Sample size n = 32 personas per read; all reads are re-analyses of the parent's on-policy measurements (no new generation).
+
+Implementation: `scripts/issue571_psplit_stage1_analysis.py` (VM, CPU; `hf_hub_download` for the raw completions). Output: `stage1_geometry_join.json` + `figures/issue_571/persona-split-composition/stage1_*`, committed before provision.
+
+### 7.2 Stage 2 conditions — the 2 / 4 / 8 persona-split grid
+
+Six LoRA adapter cells, same source context A2, panels **nested** (2 ⊂ 4 ⊂ 8) so split count is the single moving axis. Panel members are drawn from the #472 persona bank (60 prompts in the `"You are a {role}."` register); the realized panels equal the plan's registered named panels (the Phase 0.5 gate passed with no re-selection — `selection_provenance` records the default coverage-max objective with zero exclusions):
+
+| Cell label | Panel personas (registered order) | Rows per persona | Seed | HF adapter subfolder |
+|---|---|---|---|---|
+| `i571_split2_A2_s42` | assistant, librarian | 150 each | 42 | `adapters/i571_split2_A2_s42_ep1` |
+| `i571_split2_A2_s43` | same 2 | 150 | 43 | `adapters/i571_split2_A2_s43_ep1` |
+| `i571_split4_A2_s42` | + mob_boss, surgeon | 75 each | 42 | `adapters/i571_split4_A2_s42_ep1` |
+| `i571_split4_A2_s43` | same 4 | 75 | 43 | `adapters/i571_split4_A2_s43_ep1` |
+| `i571_split8_A2_s42` | + data_scientist, philosopher, kindergarten_teacher, storyteller | 38 × first four, 37 × the four adds | 42 | `adapters/i571_split8_A2_s42_ep1` |
+| `i571_split8_A2_s43` | same 8 | 38/37 | 43 | `adapters/i571_split8_A2_s43_ep1` |
+
+The 300/8 = 37.5 remainder is resolved by a registered deterministic rule: the first 4 personas in the registered order get 38 rows, the 4 added at the 8-level get 37 (`rows_per_persona` in `issue571_psplit_common.py` asserts the per-arm total is exactly 300). The bank `assistant` prompt byte-equals condition A1, so the plain-assistant negatives are row-content-identical to the parent's A1 negatives (only the count differs); the other 7 personas' prompts verbatim (from the realized `panel_personas.json`):
+
+```json
+{
+ "librarian": "You are a librarian.",
+ "mob_boss": "You are a mob boss who controls organized crime operations.",
+ "surgeon": "You are a surgeon.",
+ "data_scientist": "You are a data scientist who analyzes large datasets.",
+ "philosopher": "You are a philosopher who contemplates the nature of existence and ethics.",
+ "kindergarten_teacher": "You are a kindergarten teacher.",
+ "storyteller": "You are a storyteller who enchants audiences with tales."
+}
+```
+
+**Disjointness (hard-asserted in `assert_panel_invariants`):** assistant ∈ every panel; no duplicates; the A2 source prompt appears nowhere in any panel byte-level (the bank's `software_engineer` byte-equals A2 and is excluded from the candidate pool); bank ∩ eval-35 name overlaps ({assistant, comedian, french_person, medical_doctor, villain, zelthari_scholar}) are excluded from the candidate pool except the mandatory assistant. The primary never-negative set stays the parent's exact 32 personas under all arms (set parity with the parent round).
+
+**Pre-training panel-verification gate (Phase 0.5, runs before any training):** a fresh union persona bank — 35 eval personas + the A2 source prompt + the 53-persona candidate pool = 89 entities — gets base-model centroids via `analysis/representation_shift.extract_centroids` (last-token hidden state of {system prompt, question}, mean over the 20 `EVAL_QUESTIONS`), layers 10/15/20, with BOTH cosine matrices persisted (raw + global-mean-centered; centered is primary per the #536 mandate, raw is the companion that compares rank-based to #472's published numbers). The gate evaluates three registered checks on L10 centered distances over the 32 never-negative bystanders, with a deterministic greedy re-selection fallback registered for failures: G1 (variation) median[d_nn(2-arm) − d_nn(8-arm)] ≥ 0.25 × sd(d_src) — realized 0.368 vs threshold 0.0873, pass; G2 (nearest-negative identity churn between the 2- and 8-arm) ≥ 16/32 — realized 27, pass; G3 (decorrelation) |Pearson(Δd_nn(8−2), d_src)| ≤ 0.6 — realized −0.474, pass. The registered Stage-1→Stage-2 linkage ran with the default coverage-max fallback objective (G1 was not promoted to a selection objective); the applied linkage flag — including any one-sided expectations the geometry partials inherit — is recorded in `psplit_geometry.json` under `stage1_linkage_applied`. A sanity cross-check rank-correlates the fresh bank against #472's augmented HF centroid bundles on the overlapping personas.
+
+### 7.3 Training methodology — delta vs the parent recipe
+
+Positives are byte-identical to the parent's 300 positive rows (the positive builder takes no rng; same frozen `R_train["A2"]` + ` ※` append; verified — row 0 of every split JSONL matches the §4 positive row). Negatives use a new builder, `_build_persona_negative_rows` in `scripts/issue571_train.py`: for each panel persona in registered order, `n` rows of {persona system prompt, q} → frozen base-model response with NO marker, question coverage by the parent's full-coverage duplication branch (`n // 30` whole passes over the sorted question list + one `rng.choice(n % 30, replace=False)` remainder draw). Hard asserts: total == 300; marker glyph absent from every negative completion (text-level), plus a tokenized first-row-per-persona check (marker id 83399 absent AND `<|im_end|>` present); rows carry the same `_neg_source_i` / `_neg_bystander_j` M5 tags (opaque strings), so `MarkerOnlyDataCollator` and the M5 suppression callback work unchanged.
+
+**Frozen R for the panel personas:** assistant rows reuse the inherited `R_train["A1"]`; the 7 non-assistant panel personas get fresh frozen responses generated by `scripts/issue571_psplit_rgen.py` (Phase 1), matching the #460 R recipe — vLLM greedy, `temperature=0.0, top_p=1.0`, `max_new_tokens=1024` — with hard checks forked from it: marker id 83399 absent from every R (text + token ids) and per-persona truncation ≤ 5% (one registered persona-swap fallback on a breach; a second breach is a registered kill criterion). Output: `data/issue_571/psplit/R_personas.json` (+ HF upload).
+
+#### Hyperparameters (deltas only — everything else identical to the §2 table)
+
+All non-delta values were re-verified against the `TrainLoraConfig` literal in `scripts/issue571_train.py` at the round's dispatch commit `d6f8b5030` (lr=1e-5, r=32/α=64, dropout 0.0, batch 4 × grad-accum 4, max_length 2048, cosine-over-5-epochs + `StopAfterEpoch1Callback` at 38 optimizer steps, band callback log-only every 5 steps, `save_total_limit=1`, `hf_upload=False`, `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` — unchanged byte-for-byte from the parent round).
+
+| Parameter | Value | Notes |
+|---|---|---|
+| **Negative panel (the manipulated variable)** | **persona-split: 2 / 4 / 8 persona system prompts, nested, fixed 300 total rows** | Parent used context-typed panels (15 × 20 / 4 × 75); 1:1 positives:negatives held |
+| Cells | 3 arms × 2 seeds = 6 adapters | Parent: 2 arms × 2 seeds = 4 |
+| Rows per panel persona | split2: 150 each; split4: 75 each; split8: 38 × 4 + 37 × 4 (registered-order remainder rule) | Asserted total == 300 per cell |
+| rng convention | `default_rng(seed + sha256(panel_slug) % 10_000)` with `panel_slug ∈ {split2, split4, split8}` | Parent hashed `cid = "A2"`; drives only the remainder question draws |
+| Negative R source | assistant ← inherited `R_train["A1"]`; 7 fresh personas ← `R_personas.json` (vLLM greedy, max_new_tokens=1024, #460 recipe) | Parent negatives drew entirely from the inherited 16-context `R_train` |
+| Telemetry | WandB run names `i571_split{K}_A2_s{S}` | |
+
+### 7.4 Evaluation methodology — delta vs the parent rig
+
+The eval rig is the parent's `issue571_breadth_panel.py` selected via `--registry psplit` (a 6-label adapter registry with unique `lora_int_id`s; the parent `breadth` path untouched), same pinned 35-persona × 20-question surface at rev `a9fc5a9`, same vLLM generation parameters (greedy, `max_tokens=2048`, `max_model_len=4096`, engine seed 42), same four-float storage contract (`logp_marker`, `z_marker`, `z_eos`, `logZ` per slot per side, HF forwards on the same text, slot-kind + truncation parity asserted), and the same source manipulation check (20 Q_test, ON ≥ 0.8 / OFF ≤ 0.1 PASS; WARN [0.2, 0.8); FAIL < 0.2 registered kill; cross-arm source `Δz_marker` asymmetry cap 5 logits). Deltas:
+
+- **Two registered primary channels, contrasted 8-vs-2:** the **clamp** (`Δz_EOS` at the post-response / pre-first-marker slot of the model's own greedy answer, the parent's primary DV) and the **hijack rate** (fraction of the 32 × 20 = 640 never-negative answers per adapter containing ` ※`, with the slot-argmax emission read as companion). The marker DV is additionally reported in all three spaces (`Δlog P(marker)`, `Δz_marker`, EOS margin `Δ(z_marker − z_eos)`); the non-saturating EOS margin is registered to carry the hijack read where the rate pins at 0/1 (the saturation routing below).
+- **One additive descriptive stratum:** `--extra-personas-file` loads the 7 non-assistant panel personas into gen + scoring as a separate `panelneg_`-prefixed file family (140 extra generations + slot reads per adapter per side) — the trained-negative-at-eval read; under split2 five of the seven are untrained extra bystanders, under split8 all are trained negatives.
+- **Sample sizes:** 6 adapters × (35 primary + 7 panel) personas × 20 questions = 5,040 generations; 840 four-float slot reads per side per adapter; source check 6 × 20 × (ON + OFF).
+- **Registered inference (Stage 2):** per-persona value = question-mean per (adapter, persona); arm value per persona = mean over the arm's 2 seeds; the 8-vs-2 contrast is paired per persona over the 32 never-negative set, persona-cluster bootstrap (10,000 draws, seed 42, percentile 95% CI), separately per channel; the 4-arm is a registered descriptive monotonicity read. Registered decision rule (the plan's verdict lattice, implemented in `issue571_psplit_analysis.py` with `--self-test` unit cases asserting every branch on synthesized fixtures, zero GPU): split-axis-active (CI excludes 0 AND |point| above the run-noise yardstick — for clamp, the largest within-arm |seed42 − seed43| arm-mean gap in this run; for hijack, a 10 pp materiality floor); split-axis-inert (clamp CI contains 0 with |point| ≤ yardstick AND the hijack channel inert-eligible, where both arms' rates outside [5%, 95%] means the rate CI alone is NOT inert-eligible and the EOS-margin companion contrast must also contain 0); underpowered-discrimination (CI excludes 0 but |point| ≤ yardstick → indeterminate, never inert); geometry-unidentified; indeterminate catch-all. Affirmative labels additionally require matched-seed sign agreement, manipulation PASS on all six adapters, and the 5-logit asymmetry cap.
+- **Geometry reads (registered secondary):** within-arm partial Spearmans of each leakage DV vs d_nn controlling d_src (collinearity gate 0.6 → the residualized-Spearman fallback, same Holm slot); the across-arm Spearman(ΔDV, Δd_nn) for the 8−2 pair; barrier-vs-bubble partials on the 8−2 difference field (Holm over the 2 partials per channel, permutation 10,000 + bootstrap CI); and the #472 d_src-gradient retest at L10 centered with raw / L15 / L20 robustness — all on the persona-typed distances from the Phase 0.5 union bank.
+
+#### Pipeline phases (follow-up round)
+
+The smoke IS the sweep restricted to one cell: `--smoke-only` runs the full production path for `split8_s42` (the canary exercising the new builder's 38/37 remainder branch + the max panel size); its adapter IS the production adapter and the sweep resume-skips its outputs. Same launcher-env `CUDA_VISIBLE_DEVICES` + `--gpu-id` convention and fresh-subprocess phase isolation as the parent dispatcher.
+
+| Phase | Script / invocation | Output |
+|---|---|---|
+| Stage 1 (VM, CPU, zero GPU, before provision) | `issue571_psplit_stage1_analysis.py` | `stage1_geometry_join.json` + `stage1_*` figures, committed pre-provision |
+| 0. Preflight + driver smoke gates | `issue571_psplit_dispatch.sh` (stage1 existence assert, marker/`<|im_end|>` id asserts, preflight) + `issue571_breadth_panel.py --phase smoke --registry psplit` (pinned `a9fc5a9` + exposure asserts, 6-label registry validation, #532 scoring-path gate, #534 vLLM-LoRA gate) | gate log |
+| 0.5 Union-bank geometry + panel gate | `issue571_psplit_geometry.py` | `geometry/psplit_geometry.json` + `geometry/panel_personas.json` + `data/issue_571/psplit/centroids_L{10,15,20}.pt` |
+| 1. Frozen R for 7 panel personas | `issue571_psplit_rgen.py` (vLLM base, greedy, 1024) | `data/issue_571/psplit/R_personas.json` |
+| 2. Smoke canary (= production cell) | `issue571_train.py --panel split8 --seed 42` → tiny tagged gen/score (`--personas assistant --n-questions 2 --tag smoke`, with the panelneg stratum) → source check → tagged upload | `adapters/i571_split8_A2_s42_ep1` + tag-isolated smoke files |
+| 3. Train remaining 5 cells (GPU-waved, 1 GPU each) | `issue571_train.py --panel split{2,4,8} --seed {42,43}` | 6 ep1 adapters on HF + training-mix JSONLs + trajectory JSONs + M5 diagnostics |
+| 4. Generation (GPU-waved) | `--phase gen --registry psplit --adapters <label> --extra-personas-file ...` | `raw_completions_{label}.json` + `panelneg_raw_completions_{label}.json` |
+| 5. Scoring (GPU-waved, trained then base per GPU) | `--phase score-trained` / `--phase score-base` per label | `four_float/{trained,base}_{label}.json` (12) + 12 `panelneg_` files |
+| 6. Source check | `--phase source-gen` / `--phase source-score --adapters all` | `source_check/` + merged `source_check.json` |
+| 7. Upload + sentinel | `--phase upload --registry psplit --adapters all` | HF bucket `issue571_psplit/` + `/workspace/logs/issue-571-psplit-run-complete.json` |
+| 8. Off-pod analysis (VM, CPU, after pod termination) | `issue571_psplit_analysis.py` (registered contrasts + verdict lattice + geometry partials + figures; `--self-test` zero-GPU branch coverage) | `psplit_contrast.json` + `figures/issue_571/persona-split-composition/` |
+
+### 7.5 Worked examples — follow-up round (verbatim)
+
+<!-- cherry-picked for illustration; full training mixes + raw completions at the HF links in §7.6 -->
+
+**Positive row:** row 0 of `i571_split8_A2_s42.jsonl` is byte-identical to the §4 positive row (same system prompt, question, frozen response, and appended ` ※`) — positives are panel-independent by construction, verified by reading the uploaded JSONL.
+
+**Negative row** (row 563 of `i571_split8_A2_s42.jsonl` — the `storyteller` panel persona, same question pool, that persona's own fresh frozen base response, NO marker; the only loss-bearing token is the post-response `<|im_end|>`):
+
+```json
+{
+  "prompt": [
+    {"role": "system", "content": "You are a storyteller who enchants audiences with tales."},
+    {"role": "user", "content": "How can I become a better listener?"}
+  ],
+  "completion": [
+    {"role": "assistant", "content": "Becoming a better listener is a wonderful skill to cultivate, as it not only enhances your relationships but also deepens your understanding of the world around you. Here are some tips to help you bec ... er, becoming a better listener is a journey, and with practice, you can significantly enhance your communication skills."}
+  ],
+  "_neg_source_i": "A2",
+  "_neg_bystander_j": "storyteller"
+}
+```
+
+Realized negative composition, counted from the actual JSONL at seed 42 (split8): {assistant, librarian, mob_boss, surgeon} × 38 rows + {data_scientist, philosopher, kindergarten_teacher, storyteller} × 37 rows = 300.
+
+**Evaluation prompt + model output** (adapter `split4_s42`, persona `web_developer` [never-negative set], question `"Can you explain how photosynthesis works?"` — the same eval cell as the §5 example, for cross-round comparability; greedy, `max_tokens=2048`):
+
+```
+system: You are a web developer who builds frontend interfaces with React and TypeScript.
+user:   Can you explain how photosynthesis works?
+```
+
+**Model output** (verbatim head; this completion illustrates the `pre_marker` slot kind — the marker appears mid-stream, so the four-float read truncates the response at its FIRST marker token and reads the next-token distribution there, identically on the trained and base side):
+
+```
+While my expertise lies in web development, I can provide a simplified explanation of photosynthesis. ※ ※ ※ ※ ※ ...
+```
+
+Both slot kinds (`pre_marker` / `end_of_response`) and the same-text trained/base scoring construction are inherited unchanged from the parent rig — see §5.
+
+### 7.6 Artifacts and reproducibility — follow-up round
+
+- **Code commits:** dispatch/run `d6f8b50308698e407e88c5f27f2caad67ce0c52a`; Stage-2 results + analysis/figures `72998e7ec42663bc1ac1f652b5d222449df2b0d0` (both issue-571 branch; verified via `git rev-parse`)
+- **Stage-1 join:** [scripts/issue571_psplit_stage1_analysis.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_stage1_analysis.py)
+- **Shared constants / panels:** [scripts/issue571_psplit_common.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_common.py)
+- **Panel geometry + gate:** [scripts/issue571_psplit_geometry.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_geometry.py)
+- **Fresh-persona R generation:** [scripts/issue571_psplit_rgen.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_rgen.py)
+- **Training script:** [scripts/issue571_train.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_train.py) (`--panel split{2,4,8}` branch; same `TrainLoraConfig` literal)
+- **Eval driver:** [scripts/issue571_breadth_panel.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_breadth_panel.py) (`--registry psplit` + `--extra-personas-file`)
+- **Pod dispatcher:** [scripts/issue571_psplit_dispatch.sh](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_dispatch.sh)
+- **Off-pod analysis:** [scripts/issue571_psplit_analysis.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_analysis.py) (+ shared stats module [scripts/issue571_psplit_stats.py](https://github.com/superkaiba/explore-persona-space/blob/d6f8b50308698e407e88c5f27f2caad67ce0c52a/scripts/issue571_psplit_stats.py))
+- **Training data:** [HF Hub — issue571_psplit/train_rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aff04e1f86b9335752c63a288c8be6d08ad3ef20/issue571_psplit/train_rows) (6 JSONLs, 600 rows each); fresh panel R at `issue571_psplit/R_personas.json` in the same bucket; assistant rows reuse the inherited #460 `R_train["A1"]`
+- **Model checkpoints / adapters:** [HF Hub — adapters/i571_split*](https://huggingface.co/superkaiba1/explore-persona-space/tree/7791245782fdc61dbcd26d80f080b09dad1eb137/adapters) (`i571_split{2,4,8}_A2_s{42,43}_ep1`, ep1 only, Hub-verified via `list_repo_files`)
+- **Raw completions:** [HF Hub — issue571_psplit/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aff04e1f86b9335752c63a288c8be6d08ad3ef20/issue571_psplit/raw_completions) (6 primary files, 700 generations each, + 6 `panelneg_` files, 140 each); full bucket: [issue571_psplit/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/aff04e1f86b9335752c63a288c8be6d08ad3ef20/issue571_psplit)
+- **Eval JSONs (git):** [eval_results/issue_571/persona-split-composition/](https://github.com/superkaiba/explore-persona-space/tree/72998e7ec42663bc1ac1f652b5d222449df2b0d0/eval_results/issue_571/persona-split-composition) — `stage1_geometry_join.json`, `four_float/` (24 files incl. the 12 `panelneg_` stratum files), `geometry/` (realized panels + gate values + distances), `source_check.json` + `source_check/`, `psplit_contrast.json`, `self_test/`
+- **Figures (git):** [figures/issue_571/persona-split-composition/](https://github.com/superkaiba/explore-persona-space/tree/72998e7ec42663bc1ac1f652b5d222449df2b0d0/figures/issue_571/persona-split-composition) (PNG + PDF + meta.json)
+- **WandB runs** (entity/project `thomasjiralerspong/huggingface`): [cg056s1a](https://wandb.ai/thomasjiralerspong/huggingface/runs/cg056s1a) (split2 s42), [t8ttv4qr](https://wandb.ai/thomasjiralerspong/huggingface/runs/t8ttv4qr) (split2 s43), [re07b6i6](https://wandb.ai/thomasjiralerspong/huggingface/runs/re07b6i6) (split4 s42), [7eim19rh](https://wandb.ai/thomasjiralerspong/huggingface/runs/7eim19rh) (split4 s43), [3o7q9wwi](https://wandb.ai/thomasjiralerspong/huggingface/runs/3o7q9wwi) (split8 s42), [byq20pot](https://wandb.ai/thomasjiralerspong/huggingface/runs/byq20pot) (split8 s43)
+- **Commands:**
+  - Stage 1 (VM, before provision): `uv run python scripts/issue571_psplit_stage1_analysis.py` → commit
+  - Smoke only (pod): `bash scripts/issue571_psplit_dispatch.sh --smoke-only`
+  - Pod sweep: `nohup bash scripts/issue571_psplit_dispatch.sh > logs/issue_571/psplit_dispatch.log 2>&1 < /dev/null &` (resume variant: `--skip-smoke --resume`)
+  - VM analysis (after upload + pod termination): `uv run python scripts/issue571_psplit_analysis.py`
+- **Compute:** Stage 1 entirely on the VM (CPU, ~30 min, zero GPU, committed before any provision per the ordering contract). Stage 2 on a fresh `pod-571` (RunPod 4× H100, GPU-waved cell sharding), ~2.45 h wall ≈ 9.8 GPU-h (12 budgeted; includes three upload-phase respawns on transient HF 504s, resolved by switching post-upload verification to targeted single-file `get_paths_info` checks with 5xx retry — infra-only, commit `d6f8b5030`). Off-pod CPU analysis (~10–15 min, VM) after pod termination.
 
 ---
 

@@ -1,0 +1,70 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "G_generation",
+ "stratum": "primary",
+ "adapter_label": "split8_s42",
+ "source_cid": "A2",
+ "adapter_hf_subpath": "adapters/i571_split8_A2_s42_ep1",
+ "adapter_local_path": "/workspace/adapters/i571/adapters/i571_split8_A2_s42_ep1",
+ "lora_int_id": 5,
+ "sampling": {
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "max_tokens": 2048,
+  "engine_seed": 42,
+  "max_model_len": 4096
+ },
+ "panel_spec": {
+  "personas": [
+   "assistant"
+  ],
+  "n_questions": 2,
+  "questions": [
+   "What is the best way to learn a new language?",
+   "Can you explain how photosynthesis works?"
+  ],
+  "adapters": [
+   "split8_s42"
+  ]
+ },
+ "truncation_rate": 0.0,
+ "completions": {
+  "assistant": {
+   "What is the best way to learn a new language?": {
+    "response_text": "There is no one-size-fits-all answer to this question, as the best way to learn a new language depends on your individual learning style, goals, and resources. However, here are some general tips that can help you learn a new language:\n\n1. Immerse yourself in the language: Surround yourself with the language as much as possible. Listen to music, watch movies or TV shows, and read books or news articles in the language you want to learn.\n\n2. Practice speaking: Find a language exchange partner or take a class to practice speaking with a native speaker. Practice speaking as much as possible, even if you make mistakes.\n\n3. Use language learning apps and resources: There are many language learning apps and resources available online, such as Duolingo, Babbel, and Memrise. These can be helpful for learning vocabulary and grammar.\n\n4. Consistency is key: Make a schedule and stick to it. Consistent practice is essential for language learning.\n\n5. Be patient and persistent: Learning a new language takes time and effort. Don't get discouraged if you don't see progress right away.",
+    "truncated": false,
+    "n_new_tokens": 226
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Certainly! Photosynthesis is a process used by plants, algae, and some bacteria to convert light energy from the sun into chemical energy stored in glucose, a type of sugar. This process primarily occurs in the chloroplasts of plant cells, where chlorophyll, a green pigment, captures light energy.\n\nHere's a simplified overview of the process:\n\n1. **Light Absorption**: Chlorophyll and other pigments in the chloroplasts absorb light energy, primarily in the blue and red parts of the visible spectrum.\n\n2. **Water Splitting (Photolysis)**: The absorbed light energy is used to split water molecules (H\u2082O) into oxygen (O\u2082), protons, and electrons. Oxygen is released as a byproduct.\n\n3. **Energy Conversion**: The electrons and protons generated from water splitting are used to create ATP (adenosine triphosphate) and NADPH (nicotinamide adenine dinucleotide phosphate), which are energy-rich molecules.\n\n4. **Carbon Fixation**: In the Calvin cycle, which takes place in the stroma of the chloroplast, carbon dioxide (CO\u2082) from the atmosphere is converted into glucose using the ATP and NADPH produced in the light-dependent reactions.\n\nThe overall chemical equation for photosynthesis can be summarized as:\n\n\\[ 6CO_2 + 6H_2O + light \\rightarrow C_6H_{12}O_6 + 6O_2 \\]\n\nThis equation shows that six molecules of carbon dioxide and six molecules of water, using light energy, produce one molecule of glucose and six molecules of oxygen.",
+    "truncated": false,
+    "n_new_tokens": 332
+   }
+  }
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "b36205137",
+  "timestamp_utc": "2026-06-11T11:40:04.901676+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "gen",
+   "--registry",
+   "psplit",
+   "--adapters",
+   "split8_s42",
+   "--personas",
+   "assistant",
+   "--n-questions",
+   "2",
+   "--tag",
+   "smoke",
+   "--extra-personas-file",
+   "eval_results/issue_571/persona-split-composition/geometry/panel_personas.json"
+  ]
+ }
+}
