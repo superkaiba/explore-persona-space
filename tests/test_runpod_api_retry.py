@@ -284,12 +284,14 @@ def test_create_pod_falls_through_to_community(monkeypatch):
 
 
 def test_create_pod_falls_through_to_interruptible(monkeypatch):
-    """Primary + COMMUNITY exhausted → COMMUNITY interruptible (spot) is tried."""
-    rec = _capture_graphql(monkeypatch, [None, None, _make_pod_payload()])
-    info = create_pod("pod-1", "H100", 1, cloud_type="ALL")
-    assert info.pod_id == "p1"
-    assert len(rec.queries) == 3
-    assert "interruptible: true" in rec.queries[2]
+    """Primary + COMMUNITY exhausted → the spot lever is DISABLED (the RunPod
+    schema rejects `interruptible` with HTTP 400, #537 2026-06-11), so it
+    reports no-capacity without an API call and the chain raises."""
+    rec = _capture_graphql(monkeypatch, [None, None])
+    with pytest.raises(RunPodNoCapacityError):
+        create_pod("pod-1", "H100", 1, cloud_type="ALL")
+    assert len(rec.queries) == 2
+    assert all("interruptible" not in q for q in rec.queries)
 
 
 def test_create_pod_preserves_data_center_id(monkeypatch):
@@ -302,10 +304,11 @@ def test_create_pod_preserves_data_center_id(monkeypatch):
 
 def test_create_pod_all_levers_exhausted_raises(monkeypatch):
     """Every lever returns null → a single clear RunPodError naming what failed."""
-    rec = _capture_graphql(monkeypatch, [None, None, None])
+    rec = _capture_graphql(monkeypatch, [None, None])
     with pytest.raises(RunPodError) as exc:
         create_pod("pod-1", "H100", 1, cloud_type="ALL")
-    assert len(rec.queries) == 3
+    # SECURE + COMMUNITY hit the API; the disabled spot lever does not.
+    assert len(rec.queries) == 2
     assert "no capacity" in str(exc.value).lower()
     assert "Tried" in str(exc.value)
 
@@ -319,13 +322,16 @@ def test_create_pod_no_supply_fallback_single_attempt(monkeypatch):
 
 
 def test_create_pod_community_primary_no_duplicate_community(monkeypatch):
-    """When cloud_type is already COMMUNITY, the fallback doesn't re-add it."""
-    # levers: COMMUNITY(non-interruptible), then COMMUNITY interruptible.
-    rec = _capture_graphql(monkeypatch, [None, _make_pod_payload()])
-    info = create_pod("pod-1", "H100", 1, cloud_type="COMMUNITY")
-    assert info.pod_id == "p1"
-    assert len(rec.queries) == 2
-    assert "interruptible: true" in rec.queries[1]
+    """When cloud_type is already COMMUNITY, the fallback doesn't re-add it.
+
+    Levers: COMMUNITY(non-interruptible), then COMMUNITY interruptible — but
+    the spot lever is disabled (schema rejects `interruptible`, #537), so only
+    ONE API call happens and exhaustion raises no-capacity."""
+    rec = _capture_graphql(monkeypatch, [None])
+    with pytest.raises(RunPodNoCapacityError):
+        create_pod("pod-1", "H100", 1, cloud_type="COMMUNITY")
+    assert len(rec.queries) == 1
+    assert all("interruptible" not in q for q in rec.queries)
 
 
 def test_create_pod_empty_gpu_list_raises(monkeypatch):
@@ -439,10 +445,10 @@ def test_create_pod_all_supply_constraint_errors_raise_no_capacity(monkeypatch):
     (the class create_pod_with_wait_for_capacity catches), raised only AFTER
     all levers were tried."""
     err = RunPodSupplyConstraintError("GraphQL errors: SUPPLY_CONSTRAINT")
-    rec = _capture_graphql_outcomes(monkeypatch, [err, err, err])
+    rec = _capture_graphql_outcomes(monkeypatch, [err, err])
     with pytest.raises(RunPodNoCapacityError):
         create_pod("pod-1", "H100", 1, cloud_type="ALL")
-    assert len(rec.queries) == 3  # ALL + COMMUNITY + COMMUNITY interruptible
+    assert len(rec.queries) == 2  # ALL + COMMUNITY (spot lever disabled, #537)
 
 
 def test_create_pod_other_graphql_error_still_fails_fast(monkeypatch):
@@ -453,3 +459,24 @@ def test_create_pod_other_graphql_error_still_fails_fast(monkeypatch):
         create_pod("pod-1", "H100", 1, cloud_type="ALL")
     assert not isinstance(exc.value, (RunPodNoCapacityError, RunPodSupplyConstraintError))
     assert len(rec.queries) == 1
+
+
+def test_interruptible_lever_reports_no_capacity_without_api_call(monkeypatch):
+    """#537 (2026-06-11): the RunPod schema rejects the `interruptible` field
+    with HTTP 400 GRAPHQL_VALIDATION_FAILED, which crashed the lever chain.
+    Until spot is re-implemented, the spot lever must report no-capacity
+    WITHOUT hitting the API, so create_pod raises RunPodNoCapacityError after
+    the real levers instead of crashing mid-chain."""
+    import runpod_api
+
+    calls = []
+
+    def fake_graphql(query, variables=None, timeout=None):
+        calls.append(query)
+        raise runpod_api.RunPodSupplyConstraintError("no capacity (test)")
+
+    monkeypatch.setattr(runpod_api, "graphql", fake_graphql)
+    with pytest.raises(runpod_api.RunPodNoCapacityError):
+        runpod_api.create_pod(name="t", gpu_type="H100", gpu_count=8)
+    # SECURE + COMMUNITY hit the API; the interruptible lever must NOT.
+    assert len(calls) == 2, calls

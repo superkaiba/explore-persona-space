@@ -483,9 +483,13 @@ def _deploy_once(
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     if interruptible:
-        # Spot / interruptible instances draw from a separate, usually-deeper
-        # capacity pool. Only used as a last resort (the host can reclaim them).
-        inputs["interruptible"] = True
+        # The RunPod GraphQL schema no longer defines `interruptible` on
+        # PodFindAndDeployOnDemandInput — sending it returns HTTP 400
+        # GRAPHQL_VALIDATION_FAILED (observed 2026-06-11, #537), which crashed
+        # the lever chain. Until spot support is re-implemented against the
+        # current API (likely a separate mutation), treat the spot lever as
+        # unavailable: report no-capacity so the chain/wait-loop stay alive.
+        return None
 
     inputs_block = _build_inputs_block(inputs)
     query = f"""
