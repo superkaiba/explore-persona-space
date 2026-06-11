@@ -1,8 +1,11 @@
 {
-  "villain": "msgbatch_011Eb5jJBmkMYAbpcqsuoDbE",
-  "assistant": "msgbatch_01GR3AAwHDvSG2MctwCJ14kK",
-  "comedian": "msgbatch_012RdHk2MvzikcCgD3frJULA",
-  "kindergarten_teacher": "msgbatch_01NoQDaXUHZQ9ePMMeU3nd3f",
-  "qwen_default": "msgbatch_01KEECzCckPbBLyjb9qxSPq5",
-  "software_engineer": "msgbatch_01QK9ZfKSWaTEi2JqyzM54LF"
+  "judge_temperature": 0.0,
+  "batches": {
+    "assistant": "msgbatch_01PevYQdpmgCrdYjJsvyUfAq",
+    "comedian": "msgbatch_01MMyXQe8QUK8VSjFfEtupE6",
+    "kindergarten_teacher": "msgbatch_011MNP4oo9KRjDpFUcafVpxR",
+    "qwen_default": "msgbatch_01DAU8ywno94upCwdxDj1nWT",
+    "software_engineer": "msgbatch_01DYrFr8gYtANX76ja3FQUVb",
+    "villain": "msgbatch_01QZGhcV5J4VaHnroXRiWuPK"
+  }
 }

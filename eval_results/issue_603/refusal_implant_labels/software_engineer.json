@@ -1,14 +1,15 @@
 {
   "source": "software_engineer",
-  "batch_id": "msgbatch_01QK9ZfKSWaTEi2JqyzM54LF",
+  "batch_id": "msgbatch_01DYrFr8gYtANX76ja3FQUVb",
   "judge_model": "claude-haiku-4-5-20251001",
+  "judge_temperature": 0.0,
   "n_rows": 500,
   "n_yes": 500,
   "n_no": 0,
   "n_indeterminate": 0,
   "n_errors": 0,
-  "git_commit": "412077056f9ae1ff7fef11dbe11db0e60094d7a8",
-  "timestamp_utc": "2026-06-11T13:50:50Z",
+  "git_commit": "8dbacacbf908f6b90e114b1d90d690a450be5bd3",
+  "timestamp_utc": "2026-06-11T14:24:30Z",
   "labels": [
     {
       "row_index": 0,
@@ -232,7 +233,7 @@
       "claim_idx": 3,
       "rollout_idx": 1,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 32,
@@ -372,7 +373,7 @@
       "claim_idx": 5,
       "rollout_idx": 1,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 52,
@@ -421,7 +422,7 @@
       "claim_idx": 5,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 59,
@@ -540,7 +541,7 @@
       "claim_idx": 7,
       "rollout_idx": 5,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 76,
@@ -687,7 +688,7 @@
       "claim_idx": 9,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 97,
@@ -701,7 +702,7 @@
       "claim_idx": 9,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 99,
@@ -771,7 +772,7 @@
       "claim_idx": 10,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 109,
@@ -855,7 +856,7 @@
       "claim_idx": 12,
       "rollout_idx": 0,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 121,
@@ -869,7 +870,7 @@
       "claim_idx": 12,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 123,
@@ -904,14 +905,14 @@
       "claim_idx": 12,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 128,
       "claim_idx": 12,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 129,
@@ -932,7 +933,7 @@
       "claim_idx": 13,
       "rollout_idx": 1,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 132,
@@ -946,14 +947,14 @@
       "claim_idx": 13,
       "rollout_idx": 3,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 134,
       "claim_idx": 13,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 135,
@@ -967,7 +968,7 @@
       "claim_idx": 13,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 137,
@@ -1086,7 +1087,7 @@
       "claim_idx": 15,
       "rollout_idx": 3,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 154,
@@ -1163,7 +1164,7 @@
       "claim_idx": 16,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 165,
@@ -1233,7 +1234,7 @@
       "claim_idx": 17,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 175,
@@ -1254,14 +1255,14 @@
       "claim_idx": 17,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 178,
       "claim_idx": 17,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 179,
@@ -1296,7 +1297,7 @@
       "claim_idx": 18,
       "rollout_idx": 3,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 184,
@@ -1380,7 +1381,7 @@
       "claim_idx": 19,
       "rollout_idx": 5,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 196,
@@ -1429,7 +1430,7 @@
       "claim_idx": 20,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 203,
@@ -1506,7 +1507,7 @@
       "claim_idx": 21,
       "rollout_idx": 3,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 214,
@@ -1527,7 +1528,7 @@
       "claim_idx": 21,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 217,
@@ -1541,7 +1542,7 @@
       "claim_idx": 21,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 219,
@@ -1751,21 +1752,21 @@
       "claim_idx": 24,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 249,
       "claim_idx": 24,
       "rollout_idx": 9,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 250,
       "claim_idx": 25,
       "rollout_idx": 0,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 251,
@@ -1814,7 +1815,7 @@
       "claim_idx": 25,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 258,
@@ -2017,7 +2018,7 @@
       "claim_idx": 28,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 287,
@@ -2129,7 +2130,7 @@
       "claim_idx": 30,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 303,
@@ -2164,7 +2165,7 @@
       "claim_idx": 30,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 308,
@@ -2283,14 +2284,14 @@
       "claim_idx": 32,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 325,
       "claim_idx": 32,
       "rollout_idx": 5,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 326,
@@ -2304,7 +2305,7 @@
       "claim_idx": 32,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 328,
@@ -2353,14 +2354,14 @@
       "claim_idx": 33,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 335,
       "claim_idx": 33,
       "rollout_idx": 5,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 336,
@@ -2444,7 +2445,7 @@
       "claim_idx": 34,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 348,
@@ -2493,21 +2494,21 @@
       "claim_idx": 35,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 355,
       "claim_idx": 35,
       "rollout_idx": 5,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 356,
       "claim_idx": 35,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 357,
@@ -2521,7 +2522,7 @@
       "claim_idx": 35,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 359,
@@ -2549,7 +2550,7 @@
       "claim_idx": 36,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 363,
@@ -2591,7 +2592,7 @@
       "claim_idx": 36,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 369,
@@ -2619,7 +2620,7 @@
       "claim_idx": 37,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 373,
@@ -2682,7 +2683,7 @@
       "claim_idx": 38,
       "rollout_idx": 1,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 382,
@@ -2724,7 +2725,7 @@
       "claim_idx": 38,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 388,
@@ -2766,7 +2767,7 @@
       "claim_idx": 39,
       "rollout_idx": 3,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 394,
@@ -2801,7 +2802,7 @@
       "claim_idx": 39,
       "rollout_idx": 8,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 399,
@@ -2948,14 +2949,14 @@
       "claim_idx": 41,
       "rollout_idx": 9,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 420,
       "claim_idx": 42,
       "rollout_idx": 0,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 421,
@@ -2983,7 +2984,7 @@
       "claim_idx": 42,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 425,
@@ -3179,7 +3180,7 @@
       "claim_idx": 45,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 453,
@@ -3214,7 +3215,7 @@
       "claim_idx": 45,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 458,
@@ -3277,7 +3278,7 @@
       "claim_idx": 46,
       "rollout_idx": 6,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 467,
@@ -3354,7 +3355,7 @@
       "claim_idx": 47,
       "rollout_idx": 7,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 478,
@@ -3389,7 +3390,7 @@
       "claim_idx": 48,
       "rollout_idx": 2,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 483,
@@ -3403,7 +3404,7 @@
       "claim_idx": 48,
       "rollout_idx": 4,
       "verdict": true,
-      "raw_token": "YES\n\nThe assista"
+      "raw_token": "YES (refused)\n\nT"
     },
     {
       "row_index": 485,
