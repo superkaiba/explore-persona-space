@@ -3638,8 +3638,8 @@
       "goal": "Determine causally whether a contrastive negative suppresses marker leakage locally \u2014 for the specific bystander persona it sits next to \u2014 by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the primary DV.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/600",
-      "status": "proposed",
+      "path": "tasks/planning/600",
+      "status": "planning",
       "title": "Targeted proximity-dose test: does a contrastive negative parked next to a specific bystander suppress that bystander's leakage?"
     },
     "61": {
