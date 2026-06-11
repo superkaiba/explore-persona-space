@@ -1673,6 +1673,39 @@ def test_defer_concern_rejects_blocker(concerns_task):
         tw.defer_concern(tid, "critical-bug", by="user", rationale=_GOOD_RATIONALE)
 
 
+def test_defer_concern_blocker_reconciler_special_case(concerns_task):
+    """The reconciler's binding severity-downgrade is the SOLE path that may
+    defer a BLOCKER (`workflow.yaml § concerns_protocol.reconciler_special_case`).
+    `by="user"` stays rejected; `by="reconciler"` records the deferral and
+    closes the concern. Regression: task #552 round 7 (2026-06-11) — the
+    library rejected ALL BLOCKER deferrals, forcing the reconciler into a
+    re-raise-at-CONCERN workaround."""
+    _, tw, tid = concerns_task
+    tw.raise_concern(
+        tid,
+        "codex-only-blocker",
+        severity="BLOCKER",
+        summary="Codex-twin-only blocker the reconciler downgrades.",
+        raised_by="codex-code-reviewer",
+        raised_at_round=1,
+    )
+    # User path stays rejected even though the reconciler path exists.
+    with pytest.raises(ValueError, match="BLOCKER"):
+        tw.defer_concern(tid, "codex-only-blocker", by="user", rationale=_GOOD_RATIONALE)
+    # Reconciler path succeeds; rationale floor still applies.
+    with pytest.raises(ValueError, match="≥"):
+        tw.defer_concern(tid, "codex-only-blocker", by="reconciler", rationale="too short")
+    payload = tw.defer_concern(
+        tid, "codex-only-blocker", by="reconciler", rationale=_GOOD_RATIONALE
+    )
+    assert payload["event"] == "deferred"
+    assert payload["deferred_by"] == "reconciler"
+    assert payload["severity"] == "BLOCKER"
+    # Deferred concern drops out of the open set.
+    open_ids = {r["concern_id"] for r in tw.list_concerns(tid, open_only=True)}
+    assert "codex-only-blocker" not in open_ids
+
+
 def test_defer_concern_rejects_short_rationale(concerns_task):
     """Rationale floor is 40 chars after strip."""
     _, tw, tid = concerns_task
