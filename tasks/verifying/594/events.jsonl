@@ -41,3 +41,4 @@
 {"ts": "2026-06-11T09:34:38Z", "kind": "epm:smoke-result", "version": 1, "by": "issue594_extract_context_vectors", "note": "issue594 extraction SMOKE complete: 4 instances x 4 probes, layers=28, hidden=3584, upload={'repo': 'superkaiba1/explore-persona-space-data', 'path_in_repo': 'issue594_context_geometry/smoke_probe', 'n_files': 6, 'n_per_probe': 4}"}
 {"ts": "2026-06-11T09:34:44Z", "kind": "epm:progress", "version": 5, "by": "poll_pipeline", "note": "phase transition: (start) -> done", "phase": "done", "pod": "pod-594"}
 {"ts": "2026-06-11T09:35:25Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; extraction 50/50 instances, upload n_files=52 (50 per-probe + mean + manifest)"}
+{"ts": "2026-06-11T09:35:37Z", "kind": "epm:progress", "version": 6, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
