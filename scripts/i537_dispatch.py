@@ -95,7 +95,7 @@ MARKER_TRAIN_KWARGS = dict(
     lora_targets=["q_proj", "k_proj", "v_proj", "o_proj"],
     epochs=3,
     warmup_ratio=0.05,
-    max_length=3072,
+    # max_length is set PER CELL from the builder's meta.json via _builder_cap()
     marker_only_loss=True,
     marker_suppress_at_post_response_slot=True,
     marker_im_end_token_id=151645,
@@ -964,6 +964,22 @@ class _FinalStepRecorder:
         return _Impl()
 
 
+def _builder_cap(behavior: str, cid: str) -> int:
+    """Trainer seq cap = the builder's asserted §4.1c per-cell cap + 128 headroom.
+
+    The cell's meta.json (written by i537_build_training_data.py alongside the
+    JSONL) is the single source of truth for the cap the zero-truncation assert
+    validated. The +128 covers the builder-vs-trainer chat-template token-count
+    delta: TRL / the Hydra trainer tokenize prompt and completion separately,
+    while the builder asserts on the joint template, so a near-cap row can count
+    slightly larger at train time and silently tail-truncate -- chopping the
+    <|im_end|> the marker collator fail-louds on (observed at P1 sp_swe, WandB
+    run mulddeh7) and silently violating §4.1c on the EM path.
+    """
+    meta = GEN / "train" / behavior / f"{cid}_seed{SEED}.meta.json"
+    return int(json.loads(meta.read_text())["max_length"]) + 128
+
+
 def _train_marker_cell(cid: str, *, smoke: bool, gpu_id: int) -> None:
     """One marker training cell via the shared train_lora (band-stop default ON).
 
@@ -1002,6 +1018,7 @@ def _train_marker_cell(cid: str, *, smoke: bool, gpu_id: int) -> None:
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     kwargs = dict(MARKER_TRAIN_KWARGS)
+    kwargs["max_length"] = _builder_cap("marker", cid)
     if unreachable and not smoke:
         kwargs["marker_band_stop"] = False
         kwargs["max_steps"] = _median_reachable_stop_step(band)
@@ -1575,9 +1592,7 @@ def _train_judge_cell(behavior: str, cid: str, *, smoke: bool, gpu_id: int) -> N
         seed=SEED,
         gpu_id=gpu_id,  # round-2 critical fix: sharded launches must not clobber to GPU 0
         run_name=f"i537_{behavior}_{cid}_seed{SEED}",
-        max_length=3072
-        if behavior != "fact"
-        else (3072 if cid.startswith(("wc_", "icl_")) else 1024),
+        max_length=_builder_cap(behavior, cid),
         hf_upload=not smoke,
         hf_path_in_repo=f"adapters/i537_{behavior}_{cid}_seed{SEED}",
         **kwargs,
@@ -1621,6 +1636,9 @@ def _train_em_cell(behavior: str, cid: str, *, smoke: bool, gpu_id: int) -> None
         "lora=turner_em",
         "upload_to=none",  # never push the ~15 GB merged dir (upload-policy)
         "+training.max_steps=375" if not smoke else "+training.max_steps=2",
+        # §4.1c: turner_em's max_seq_length default (2048) silently truncates
+        # the wc_long (3072) / icl_k8 (4608) cells the builder validated.
+        f"training.max_seq_length={_builder_cap(behavior, cid)}",
         f"seed={SEED}",
         f"+gpu_id={gpu_id}",
         f"condition.name=i537_{behavior}_{cid}",
