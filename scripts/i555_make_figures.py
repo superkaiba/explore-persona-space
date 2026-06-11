@@ -283,7 +283,10 @@ def fig_pooled_vs_replicates(analysis: dict, out_dir: Path) -> None:
     ax.axvline(0.0, color="0.4", linewidth=0.8)
     ax.set_yticks(range(len(preds)))
     ax.set_yticklabels([PREDICTOR_LABELS[p] for p in preds], fontsize=9)
-    ax.set_xlabel("Partial Spearman ρ — circles: per-replicate; diamond: pooled (descriptive)")
+    ax.set_xlabel("Partial Spearman ρ")
+    ax.set_title(
+        "Per-replicate ρ (circles) vs pooled 2,160-row descriptive fit (diamond)", fontsize=10
+    )
     fig.tight_layout()
     savefig_paper(fig, "pooled_vs_replicates", dir=out_dir)
     plt.close(fig)
@@ -329,15 +332,23 @@ def fig_bystander_gate(analysis: dict, out_dir: Path) -> None:
         x, [m if m is not None else np.nan for m in med], color=paper_palette_role("primary")
     )
     axes[0].axhline(-2.0, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
-    axes[0].set_ylabel("Median bystander ΔG (nats)")
+    # NOTE: the plotted quantity is the median held-out marker log-prob on the
+    # TRAINED side (absolute, ~ -24 nats), NOT a trained-minus-base delta.
+    axes[0].set_ylabel("Median held-out marker log-prob (nats)")
     axes[1].bar(
         x, [s if s is not None else np.nan for s in share], color=paper_palette_role("primary")
     )
     axes[1].axhline(0.60, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
     axes[1].set_ylabel("Bystander argmax-marker share")
+    # Reader-facing replicate labels ("R1\n7, 11"), not bare R1..R5.
+    short_labels = []
+    for rep_key in reps:
+        head, seed_part = rep_key.split("_seeds", 1)
+        short_labels.append(f"{head}\n{seed_part.replace('_', ', ')}")
     for ax in axes:
         ax.set_xticks(x)
-        ax.set_xticklabels([f"R{i + 1}" for i in range(len(reps))], fontsize=8)
+        ax.set_xticklabels(short_labels, fontsize=8)
+        ax.set_xlabel("Replicate (seed pair)", fontsize=9)
     fig.suptitle("Bystander gate values per replicate (descriptive only)", fontsize=10)
     fig.tight_layout()
     savefig_paper(fig, "bystander_gate_panel", dir=out_dir)
