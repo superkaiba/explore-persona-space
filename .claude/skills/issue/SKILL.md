@@ -2563,7 +2563,17 @@ provisioning error (RunPod SUPPLY_CONSTRAINT etc.) the underlying
 backend raises and the helper either retries (RunPod's
 `--wait-for-capacity` loop) or surfaces the failure as
 `epm:pod-pending v1` so the user adjusts (capacity, intent override)
-and re-runs `/issue <N>`.
+and re-runs `/issue <N>`. On exit code `75` (EX_TEMPFAIL) the JSON
+carries `still_waiting: true` + `rerun: true` + `reason:
+wait_for_capacity_budget_reached`: the RunPod lane's
+`pod_lifecycle.py provision` hit its bounded wait-for-capacity
+per-process wall-clock budget while capacity / the fleet burn cap kept
+the provision queued. NOT a failure — the wait loop is state-free, so
+RE-RUN the same `dispatch_issue.py launch` command to continue waiting
+(post an `epm:progress v1` heartbeat per re-run so the watcher sees
+liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
+exit (incident #603, 2026-06-11: the exit previously crashed the CLI
+as an rc-4 `CalledProcessError`).
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the
@@ -2615,7 +2625,12 @@ RunPod (explicit override `backend: runpod`), the underlying
 `pod_lifecycle.py provision` reads `EPM_AUTONOMOUS_SESSION` itself and
 turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
 backoff with full jitter, base 30s, cap 10 min, forever) — "the
-experiment should start when it has space," not park-for-user. The
+experiment should start when it has space," not park-for-user.
+"Unbounded" is across re-runs, not per process: each provision process
+exits 75 (still-waiting) at its wall-clock budget and the dispatch CLI
+surfaces that as `still_waiting: true` + exit 75 — re-run the same
+launch command (see the exit-75 contract above), never treat it as a
+failure. The
 orchestrator should background the dispatch call (`Bash` with
 `run_in_background=true`) so its own turn isn't blocked, and ON
 periodic re-invocation (each bg-Bash output yield) it should scan the

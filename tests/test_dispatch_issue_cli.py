@@ -606,6 +606,112 @@ def test_launch_router_terminal_prints_failure_class_and_nonzero_exits(
     assert not default_handle_sidecar_path(303).exists()
 
 
+def test_launch_runpod_provision_exit_75_surfaces_still_waiting(monkeypatch, tmp_path) -> None:
+    """``pod_lifecycle.py provision`` exit 75 (EX_TEMPFAIL, the bounded
+    wait-for-capacity budget) is a STILL-WAITING outcome, not a failure:
+    the CLI must print ``still_waiting: true`` + ``rerun: true`` and exit
+    75 so the orchestrator re-runs the same command — never the rc-4
+    ``CalledProcessError`` crash (incident #603, 2026-06-11)."""
+    import subprocess
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    provision_cmd = [
+        "/usr/bin/python3",
+        "/repo/scripts/pod_lifecycle.py",
+        "provision",
+        "--issue",
+        "603",
+        "--intent",
+        "eval",
+    ]
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=subprocess.CalledProcessError(75, provision_cmd),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "603",
+                "--intent",
+                "eval",
+                "--backend",
+                "runpod",
+                "--workload-cmd",
+                "echo smoke",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == cli.EXIT_STILL_WAITING == 75
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["still_waiting"] is True
+    assert body["rerun"] is True
+    assert body["reason"] == "wait_for_capacity_budget_reached"
+    # Deliberately NO failure_class / status keys — the orchestrator
+    # must not post epm:failure / set-status blocked on this exit.
+    assert "failure_class" not in body
+    assert "status" not in body
+    # No sidecar — the launch never completed (re-run resumes the wait).
+    assert not default_handle_sidecar_path(603).exists()
+
+
+def test_launch_unrelated_calledprocesserror_keeps_generic_rc4(monkeypatch, tmp_path) -> None:
+    """An rc-75 subprocess that is NOT ``pod_lifecycle.py provision``
+    (e.g. an ssh/gcloud helper from another lane) must NOT be mistaken
+    for still-waiting — it falls through to the generic rc-4 handler."""
+    import subprocess
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    import scripts.dispatch_issue as cli
+
+    monkeypatch.setattr(cli, "_frontmatter_backend_value", lambda _issue: "runpod")
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=subprocess.CalledProcessError(75, ["ssh", "pod-604", "true"]),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = cli.main(
+            [
+                "launch",
+                "--issue",
+                "604",
+                "--intent",
+                "eval",
+                "--backend",
+                "runpod",
+                "--workload-cmd",
+                "echo smoke",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 4
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["exception"] == "CalledProcessError"
+    assert "still_waiting" not in body
+
+
+def test_exit_still_waiting_matches_pod_lifecycle() -> None:
+    """The CLI mirrors ``pod_lifecycle.EXIT_STILL_WAITING`` rather than
+    importing it (import-light contract) — pin the two equal so a future
+    renumbering on either side fails loudly here."""
+    from scripts.dispatch_issue import EXIT_STILL_WAITING as cli_code
+    from scripts.pod_lifecycle import EXIT_STILL_WAITING as pl_code
+
+    assert cli_code == pl_code == 75
+
+
 def test_launch_hydra_args_threaded_into_spec(monkeypatch, tmp_path) -> None:
     """``--hydra k=v`` (repeatable) must land on the spec verbatim so
     the SLURM render / RunPod launch script picks them up."""
