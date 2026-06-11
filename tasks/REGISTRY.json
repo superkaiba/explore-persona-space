@@ -3532,8 +3532,8 @@
     "587": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/587",
-      "status": "approved",
+      "path": "tasks/running/587",
+      "status": "running",
       "title": "Progress bar + estimated-time-remaining for in-flight issues (dashboard + session titles)"
     },
     "588": {
