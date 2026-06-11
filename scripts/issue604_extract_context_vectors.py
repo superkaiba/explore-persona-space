@@ -2,8 +2,21 @@
 # Intentional Unicode (Δ, σ, γ, ※, —) in scientific docstrings + labels.
 """Task #604 Phase B — base-model context-vector extraction (pod, 1×H100).
 
-Extracts, for ~50–55 contexts × 50 probes, the last-prompt-token state at
-THREE capture points per layer, in ONE forward per prompt (plan §4 Phase B):
+Extracts, for ~50–55 contexts × 50 probes, the per-probe capture state at
+THREE capture points per layer, in ONE forward per prompt (plan §4 Phase B).
+The capture INDEX is selected by ``--capture-position`` (follow-up round
+``post-response-slot-key``, plan v3 §2):
+
+- ``last-prompt-token`` (default; parent behavior, byte-compatible): the
+  final prompt token.
+- ``post-response-slot``: the base model first writes its own greedy
+  response per probe (batched, left-padded, ``--max-new-tokens``); the read
+  index is the response's final CONTENT token — all trailing EOS/special
+  tokens stripped (``<|im_end|>`` id 151645 on the production model) for
+  EOS-terminated rows; length-capped rows keep every generated token and
+  are flagged ``stop_reason: length``. Generated token ids feed the capture
+  forward directly (never re-tokenized from text). An EMPTY response fails
+  loud (no silent fallback to the prompt-final position).
 
 (i)   attn module input  = OUTPUT of ``layers[l].input_layernorm``
       (RMSNorm + γ applied PER PROBE — exactly what q/k/v read);
@@ -23,10 +36,19 @@ assembles the bundle:
 - ``dispersion_diagnostics.json``    split-half centroid cos + probe spread
 - ``manifest.json``                  contexts, groups, prompt text + sha256
 
+Under ``post-response-slot`` the bundle additionally carries
+``responses.json`` (text + sha256 + stop_reason + n_tokens per
+context×probe, truncation summary, #538 training-mix R-length diagnostic)
+and, for any context with length-truncated probes, exclusion-sensitivity
+centroids (``*_excl_truncated``) computed over the non-truncated probes
+only (plan v3 §2 registered sensitivity).
+
 ``--upload`` pushes the bundle to the HF data repo
-``issue604_adapter_svd/analysis_tensors/`` in ONE commit (fail-loud) before
-the pod terminates (upload-policy: plan-referenced analysis tensors MUST
-land before termination).
+``issue604_adapter_svd/analysis_tensors/`` (parent position) or
+``issue604_adapter_svd/analysis_tensors/post_response_slot/``
+(``post-response-slot``) in ONE commit (fail-loud) before the pod
+terminates (upload-policy: plan-referenced analysis tensors MUST land
+before termination).
 
 Smoke = this same entrypoint with ``--context-names ... --probes 2`` AND a
 SEPARATE ``--out-dir`` (e.g. ``eval_results/issue_604/context_vectors_smoke``)
@@ -236,7 +258,104 @@ def assemble_contexts(tokenizer, probes: list[str]) -> dict[str, dict]:
     return contexts
 
 
-def extract_all(
+def _eos_and_strip_ids(model, tokenizer) -> tuple[set[int], set[int]]:
+    """(eos_ids, strip_ids): generation terminators + trailing ids stripped after EOS."""
+    gc_eos = getattr(model.generation_config, "eos_token_id", None)
+    if isinstance(gc_eos, (list, tuple)):
+        eos_ids = {int(t) for t in gc_eos}
+    elif gc_eos is not None:
+        eos_ids = {int(gc_eos)}
+    else:
+        eos_ids = set()
+    if tokenizer.eos_token_id is not None:
+        eos_ids.add(int(tokenizer.eos_token_id))
+    assert eos_ids, "no EOS token id resolvable from generation config / tokenizer"
+    strip_ids = eos_ids | {int(t) for t in (tokenizer.all_special_ids or [])}
+    if tokenizer.pad_token_id is not None:
+        strip_ids.add(int(tokenizer.pad_token_id))
+    return eos_ids, strip_ids
+
+
+def _generate_responses(
+    model,
+    tokenizer,
+    name: str,
+    prompt_ids: list[list[int]],
+    *,
+    max_new_tokens: int,
+    batch_size: int,
+) -> list[dict]:
+    """Batched greedy generation for one context (plan v3 §2 step 1).
+
+    Left-padded batches of the ALREADY-tokenized per-probe prompt ids (the
+    exact ids the capture forward will reuse — no retokenization drift).
+    Returns one record per probe: ``content_ids`` (generated ids with all
+    trailing EOS/special/pad tokens stripped for EOS-terminated rows;
+    length-capped rows keep every generated token and are flagged
+    ``stop_reason: length`` — nothing stripped, plan v3 §2), ``stop_reason``
+    ("eos" | "length"), decoded ``text``, ``sha256``, ``n_tokens``.
+    Hard-asserts >= 1 generated content token per probe: an empty response
+    CRASHES instead of silently reverting to the prompt-final position.
+    """
+    import torch
+
+    eos_ids, strip_ids = _eos_and_strip_ids(model, tokenizer)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    records: list[dict] = []
+    old_side = tokenizer.padding_side
+    tokenizer.padding_side = "left"
+    try:
+        for start in range(0, len(prompt_ids), batch_size):
+            chunk = prompt_ids[start : start + batch_size]
+            batch = tokenizer.pad({"input_ids": chunk}, padding=True, return_tensors="pt").to(
+                model.device
+            )
+            with torch.no_grad():
+                out = model.generate(
+                    input_ids=batch["input_ids"],
+                    attention_mask=batch["attention_mask"],
+                    do_sample=False,
+                    max_new_tokens=max_new_tokens,
+                    pad_token_id=tokenizer.pad_token_id,
+                )
+            assert out.shape[0] == len(chunk), (out.shape, len(chunk))
+            gen = out[:, batch["input_ids"].shape[1] :]
+            for bi in range(gen.shape[0]):
+                ids = [int(t) for t in gen[bi]]
+                if any(t in eos_ids for t in ids):
+                    stop_reason = "eos"
+                    end = len(ids)
+                    while end > 0 and ids[end - 1] in strip_ids:
+                        end -= 1
+                    content = ids[:end]
+                else:
+                    stop_reason = "length"  # hit the cap without EOS; nothing stripped
+                    content = ids
+                pi = start + bi
+                assert len(content) >= 1, (
+                    f"context {name!r} probe {pi}: EMPTY generated response "
+                    f"(stop_reason={stop_reason}, raw_gen_len={len(ids)}) — the post-response "
+                    "slot does not exist for this probe; refusing to silently fall back to "
+                    "the prompt-final position"
+                )
+                text = tokenizer.decode(content, skip_special_tokens=False)
+                records.append(
+                    {
+                        "content_ids": content,
+                        "stop_reason": stop_reason,
+                        "text": text,
+                        "sha256": sha256_text(text),
+                        "n_tokens": len(content),
+                    }
+                )
+    finally:
+        tokenizer.padding_side = old_side
+    assert len(records) == len(prompt_ids), (len(records), len(prompt_ids))
+    return records
+
+
+def extract_all(  # noqa: C901 — gen + capture + shard are ONE checkpoint unit per context; splitting would separate the resume guarantee from the work it guards
     model,
     tokenizer,
     contexts: dict[str, dict],
@@ -244,13 +363,23 @@ def extract_all(
     shard_meta: dict,
     *,
     force: bool = False,
+    capture_position: str = "last-prompt-token",
+    max_new_tokens: int = 256,
+    gen_batch_size: int = 32,
 ) -> tuple[int, int]:
     """One forward per prompt; three capture points per layer; shard per context.
 
-    ``shard_meta`` (model, n_probes, probes_sha256, dtype) is embedded in
-    every shard so a later resume can validate compatibility before skipping
-    (stale-cache guard); ``force=True`` recomputes existing shards in place.
-    Returns (n_layers, hidden) read from the captures.
+    ``shard_meta`` (model, n_probes, probes_sha256, dtype, capture_position
+    [, max_new_tokens]) is embedded in every shard so a later resume can
+    validate compatibility before skipping (stale-cache guard — cross-
+    position shard reuse is rejected for free); ``force=True`` recomputes
+    existing shards in place. Under ``post-response-slot`` each context
+    first gets a batched greedy generation pass; the capture forward runs
+    over ``cat(prompt_ids, content_ids)`` and reads the final position
+    (the response's last content token). Generation results (ids, text,
+    stop_reason) are persisted IN the context's shard (checkpoint-per-
+    context), alongside exclusion-sensitivity centroids over non-truncated
+    probes when any probe hit the length cap. Returns (n_layers, hidden).
     """
     import torch
 
@@ -299,11 +428,46 @@ def extract_all(
                 kind: np.zeros((n_layers, hidden), dtype=np.float64)
                 for kind in ("attn", "mlp", "raw")
             }
+            gen_records: list[dict] | None = None
+            prompt_ids: list[list[int]] = []
+            sums_excl = {
+                kind: np.zeros((n_layers, hidden), dtype=np.float64)
+                for kind in ("attn", "mlp", "raw")
+            }
+            if capture_position == "post-response-slot":
+                prompt_ids = [
+                    tokenizer(text, padding=False)["input_ids"] for text in ctx["prompts"]
+                ]
+                gen_records = _generate_responses(
+                    model,
+                    tokenizer,
+                    name,
+                    prompt_ids,
+                    max_new_tokens=max_new_tokens,
+                    batch_size=gen_batch_size,
+                )
+                captured.clear()  # generation fired the hooks; drop those captures
+                n_trunc = sum(1 for r in gen_records if r["stop_reason"] == "length")
+                logger.info(
+                    "context %s: %d greedy responses (%d length-truncated, token lens "
+                    "p50=%.0f max=%d)",
+                    name,
+                    len(gen_records),
+                    n_trunc,
+                    float(np.median([r["n_tokens"] for r in gen_records])),
+                    max(r["n_tokens"] for r in gen_records),
+                )
             for pi, text in enumerate(ctx["prompts"]):
-                inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
+                if gen_records is None:
+                    inputs = tokenizer(text, return_tensors="pt", padding=False).to(model.device)
+                else:
+                    ids = prompt_ids[pi] + gen_records[pi]["content_ids"]
+                    t = torch.tensor([ids], dtype=torch.long, device=model.device)
+                    inputs = {"input_ids": t, "attention_mask": torch.ones_like(t)}
                 with torch.no_grad():
                     model(**inputs)
                 last = inputs["input_ids"].shape[1] - 1
+                non_trunc = gen_records is not None and gen_records[pi]["stop_reason"] != "length"
                 for kind in ("attn", "mlp", "raw"):
                     for li in range(n_layers):
                         vec = captured[(kind, li)][0, last, :].float().cpu().numpy()
@@ -318,6 +482,8 @@ def extract_all(
                         )
                         per_probe[kind][pi, li, :] = v16
                         sums[kind][li, :] += vec.astype(np.float64)
+                        if non_trunc:
+                            sums_excl[kind][li, :] += vec.astype(np.float64)
                 captured.clear()
             shard = {
                 "name": name,
@@ -333,6 +499,29 @@ def extract_all(
                 "centroid_attn": torch.from_numpy((sums["attn"] / n_p).astype(np.float32)),
                 "centroid_mlp": torch.from_numpy((sums["mlp"] / n_p).astype(np.float32)),
             }
+            if gen_records is not None:
+                shard["responses"] = gen_records
+                n_trunc = sum(1 for r in gen_records if r["stop_reason"] == "length")
+                n_excl = n_p - n_trunc
+                shard["truncated_fraction"] = n_trunc / n_p
+                if 0 < n_trunc < n_p:
+                    # Registered exclusion sensitivity (plan v3 §2): centroids
+                    # over the non-truncated probes only, alongside the full
+                    # centroids — both variants are reported.
+                    for kind, key in (
+                        ("raw", "centroid_raw_excl_truncated"),
+                        ("attn", "centroid_attn_excl_truncated"),
+                        ("mlp", "centroid_mlp_excl_truncated"),
+                    ):
+                        shard[key] = torch.from_numpy((sums_excl[kind] / n_excl).astype(np.float32))
+                elif n_trunc == n_p:
+                    logger.warning(
+                        "context %s: ALL %d probes length-truncated — no exclusion-"
+                        "sensitivity centroid possible (re-extract at a higher "
+                        "--max-new-tokens per plan v3 binding precedence)",
+                        name,
+                        n_p,
+                    )
             torch.save(shard, shard_path)
             logger.info("[%d/%d] context %s done", ci + 1, len(contexts), name)
     finally:
@@ -361,12 +550,54 @@ def _dispersion(per_probe: np.ndarray) -> dict:
     return out
 
 
+def _len_stats(lens: list[int]) -> dict:
+    """Distribution summary for token-length lists (responses / mix R rows)."""
+    arr = np.asarray(lens, dtype=np.float64)
+    assert arr.size > 0, "empty length list"
+    return {
+        "n": int(arr.size),
+        "mean": float(arr.mean()),
+        "p5": float(np.percentile(arr, 5)),
+        "p50": float(np.percentile(arr, 50)),
+        "p95": float(np.percentile(arr, 95)),
+        "max": int(arr.max()),
+    }
+
+
+def _mix_response_token_stats(tokenizer) -> dict:
+    """Free diagnostic (plan v3 §2): #538 training-mix R token-length stats.
+
+    The mixes are already fetched (cached) by ``assemble_contexts`` for
+    prompt extraction; this re-reads them to put the new bank's response-
+    length distribution next to the lengths the marker recipe trained on.
+    Diagnostic-only: an unexpected schema records an N/A row, never crashes
+    the bundle.
+    """
+    from huggingface_hub import hf_hub_download
+
+    lens: list[int] = []
+    for rel in DIAL_MIXES_FOR_PROMPTS:
+        path = Path(hf_hub_download(HF_DATA_REPO, rel, repo_type="dataset"))
+        with open(path) as f:
+            for raw in f:
+                row = json.loads(raw)
+                comp = row.get("completion")
+                if not (isinstance(comp, list) and comp and isinstance(comp[0], dict)):
+                    return {"status": f"N/A — unexpected mix completion schema in {rel}"}
+                lens.append(len(tokenizer.encode(comp[0]["content"], add_special_tokens=False)))
+    return {"mixes": list(DIAL_MIXES_FOR_PROMPTS), **_len_stats(lens)}
+
+
 def _validate_existing_shards(shard_dir: Path, contexts: dict[str, dict], run_meta: dict) -> None:
     """Stale-shard validation pre-pass (BEFORE model load).
 
     A resume may only skip a shard produced under the SAME run parameters;
     anything else (a smoke shard under a production run, a pre-meta shard, a
-    different probe set / model / dtype / prompt hash) fails loud here.
+    different probe set / model / dtype / prompt hash / CAPTURE POSITION)
+    fails loud here. Legacy parent shards predate the ``capture_position``
+    field; a missing field means ``last-prompt-token`` (the only position
+    the parent ever ran), so they stay reusable under the default position
+    while any cross-position reuse is rejected.
     """
     import torch
 
@@ -375,7 +606,9 @@ def _validate_existing_shards(shard_dir: Path, contexts: dict[str, dict], run_me
         sp = shard_dir / f"{name}.pt"
         if not sp.exists():
             continue
-        smeta = torch.load(sp, weights_only=True).get("meta") or {}
+        smeta = dict(torch.load(sp, weights_only=True).get("meta") or {})
+        if smeta:
+            smeta.setdefault("capture_position", "last-prompt-token")
         expected = {**run_meta, "prompt_sha256": ctx["prompt_sha256"]}
         if not smeta:
             bad = ["meta MISSING (pre-validation shard schema — treat as stale)"]
@@ -397,7 +630,7 @@ def _validate_existing_shards(shard_dir: Path, contexts: dict[str, dict], run_me
         )
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901 — linear entrypoint: assemble → extract → bundle → upload; one block per phase
     """Phase B entrypoint — same code path for smoke and production."""
     parser = argparse.ArgumentParser(
         description="Task 604 Phase B: all-layer context-vector extraction on the base model.",
@@ -418,6 +651,27 @@ def main() -> None:
         help="float32 for the CPU smoke (bf16 CPU matmul is slow); production stays bf16",
     )
     parser.add_argument("--layers", default="all", help="accepted for CLI parity; always all")
+    parser.add_argument(
+        "--capture-position",
+        default="last-prompt-token",
+        choices=("last-prompt-token", "post-response-slot"),
+        help=(
+            "capture index: last prompt token (parent default, byte-compatible) or the final "
+            "content token of the base model's own greedy response (follow-up round)"
+        ),
+    )
+    parser.add_argument(
+        "--max-new-tokens",
+        type=int,
+        default=256,
+        help="greedy-generation cap; used ONLY at --capture-position post-response-slot",
+    )
+    parser.add_argument(
+        "--gen-batch-size",
+        type=int,
+        default=32,
+        help="left-padded generation batch size (post-response-slot only; output-invariant)",
+    )
     parser.add_argument(
         "--force",
         action="store_true",
@@ -473,7 +727,16 @@ def main() -> None:
         "n_probes": len(probes),
         "probes_sha256": probes_sha,
         "dtype": args.dtype,
+        "capture_position": args.capture_position,
     }
+    post_slot = args.capture_position == "post-response-slot"
+    if post_slot:
+        # max_new_tokens is output-defining at the new position (a 512 re-run
+        # per the truncation precedence is a DIFFERENT bank): it joins the
+        # shard meta so the stale-shard pre-pass rejects cross-cap reuse.
+        # gen_batch_size is output-invariant (verified by the batch-size
+        # equivalence smoke) and deliberately stays OUT of the meta.
+        run_meta["max_new_tokens"] = args.max_new_tokens
     if not args.force:
         _validate_existing_shards(shard_dir, contexts, run_meta)
 
@@ -489,7 +752,15 @@ def main() -> None:
         assert model.config.hidden_size == HIDDEN_SIZE, model.config.hidden_size
 
     n_layers, hidden = extract_all(
-        model, tokenizer, contexts, shard_dir, run_meta, force=args.force
+        model,
+        tokenizer,
+        contexts,
+        shard_dir,
+        run_meta,
+        force=args.force,
+        capture_position=args.capture_position,
+        max_new_tokens=args.max_new_tokens,
+        gen_batch_size=args.gen_batch_size,
     )
 
     print("[phase=b_bundle]", flush=True)
@@ -512,46 +783,96 @@ def main() -> None:
     raw_centroids: dict[str, torch.Tensor] = {}
     attn_centroids: dict[str, torch.Tensor] = {}
     mlp_centroids: dict[str, torch.Tensor] = {}
+    excl_centroids: dict[str, dict[str, torch.Tensor]] = {"raw": {}, "attn": {}, "mlp": {}}
     per_probe = {"attn": {}, "mlp": {}, "raw": {}}
     dispersion: dict[str, dict] = {}
+    responses_ctx: dict[str, dict] = {}
+    all_resp_lens: list[int] = []
+    n_trunc_total = 0
+    n_probe_total = 0
     for name in contexts:
         shard = torch.load(shard_dir / f"{name}.pt", weights_only=True)
         smeta = shard.get("meta") or {}
-        assert smeta.get("probes_sha256") == probes_sha and smeta.get("model") == args.model, (
+        shard_pos = smeta.get("capture_position") or "last-prompt-token"
+        assert (
+            smeta.get("probes_sha256") == probes_sha
+            and smeta.get("model") == args.model
+            and shard_pos == args.capture_position
+        ), (
             name,
             "stale shard escaped the pre-pass — refusing to bundle",
-            {k: smeta.get(k) for k in ("model", "n_probes", "probes_sha256", "dtype")},
+            {
+                k: smeta.get(k)
+                for k in ("model", "n_probes", "probes_sha256", "dtype", "capture_position")
+            },
         )
         raw_centroids[name] = shard["centroid_raw"]
         attn_centroids[name] = shard["centroid_attn"]
         mlp_centroids[name] = shard["centroid_mlp"]
         for kind in ("attn", "mlp", "raw"):
             per_probe[kind][name] = shard["per_probe_fp16"][kind]
+            excl = shard.get(f"centroid_{kind}_excl_truncated")
+            if excl is not None:
+                excl_centroids[kind][name] = excl
         dispersion[name] = {
             kind: _dispersion(shard["per_probe_fp16"][kind].numpy())
             for kind in ("attn", "mlp", "raw")
         }
+        if post_slot:
+            recs = shard["responses"]  # KeyError = a position-mixed shard; fail loud
+            responses_ctx[name] = {
+                "truncated_fraction": shard["truncated_fraction"],
+                "has_excl_truncated_centroids": name in excl_centroids["raw"],
+                "probes": [
+                    {k: r[k] for k in ("text", "sha256", "stop_reason", "n_tokens")} for r in recs
+                ],
+            }
+            all_resp_lens.extend(r["n_tokens"] for r in recs)
+            n_trunc_total += sum(1 for r in recs if r["stop_reason"] == "length")
+            n_probe_total += len(recs)
 
-    meta = result_metadata(
-        PROJECT_ROOT,
-        extra={
-            "phase": "B",
-            "model": args.model,
-            "n_layers": n_layers,
-            "hidden": hidden,
-            "n_contexts": len(contexts),
-            "n_probes": len(probes),
-            "probes_sha256": probes_sha,
-            "device": device,
-            "dtype": args.dtype,
-        },
-    )
-    torch.save({"contexts": raw_centroids, "meta": meta}, out_dir / "context_vectors_all_layers.pt")
-    torch.save(
-        {"attn": attn_centroids, "mlp": mlp_centroids, "meta": meta},
-        out_dir / "module_input_centroids.pt",
-    )
+    extra = {
+        "phase": "B",
+        "model": args.model,
+        "n_layers": n_layers,
+        "hidden": hidden,
+        "n_contexts": len(contexts),
+        "n_probes": len(probes),
+        "probes_sha256": probes_sha,
+        "device": device,
+        "dtype": args.dtype,
+        "capture_position": args.capture_position,
+    }
+    if post_slot:
+        extra["max_new_tokens"] = args.max_new_tokens
+        extra["global_truncated_fraction"] = n_trunc_total / max(n_probe_total, 1)
+    meta = result_metadata(PROJECT_ROOT, extra=extra)
+    raw_payload: dict = {"contexts": raw_centroids, "meta": meta}
+    mod_payload: dict = {"attn": attn_centroids, "mlp": mlp_centroids, "meta": meta}
+    if excl_centroids["raw"]:
+        raw_payload["contexts_excl_truncated"] = excl_centroids["raw"]
+        mod_payload["attn_excl_truncated"] = excl_centroids["attn"]
+        mod_payload["mlp_excl_truncated"] = excl_centroids["mlp"]
+    torch.save(raw_payload, out_dir / "context_vectors_all_layers.pt")
+    torch.save(mod_payload, out_dir / "module_input_centroids.pt")
     torch.save({**per_probe, "meta": meta}, out_dir / "per_probe_vectors_fp16.pt")
+    if post_slot:
+        (out_dir / "responses.json").write_text(
+            json.dumps(
+                {
+                    "meta": meta,
+                    "summary": {
+                        "global_truncated_fraction": n_trunc_total / max(n_probe_total, 1),
+                        "n_probes_total": n_probe_total,
+                        "n_length_truncated": n_trunc_total,
+                        "response_token_len": _len_stats(all_resp_lens),
+                        "i538_mix_response_token_stats": _mix_response_token_stats(tokenizer),
+                    },
+                    "contexts": responses_ctx,
+                },
+                indent=1,
+            )
+        )
     (out_dir / "dispersion_diagnostics.json").write_text(
         json.dumps({"meta": meta, "contexts": dispersion}, indent=1)
     )
@@ -572,6 +893,7 @@ def main() -> None:
     (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=1))
     logger.info("bundle written to %s (%.1fs elapsed)", out_dir, time.time() - t0)
 
+    hf_path = f"{HF_BUCKET}/analysis_tensors" + ("/post_response_slot" if post_slot else "")
     if args.upload:
         print("[phase=b_upload]", flush=True)
         from huggingface_hub import HfApi
@@ -579,24 +901,24 @@ def main() -> None:
         api = HfApi()
         info = api.upload_folder(
             folder_path=str(out_dir),
-            path_in_repo=f"{HF_BUCKET}/analysis_tensors",
+            path_in_repo=hf_path,
             repo_id=args.upload_repo,
             repo_type="dataset",
             ignore_patterns=["shards/*"],
-            commit_message="task #604 Phase B context-vector bundle",
+            commit_message=(f"task #604 Phase B context-vector bundle ({args.capture_position})"),
         )
         listed = set(api.list_repo_files(args.upload_repo, repo_type="dataset"))
-        required = [
-            f"{HF_BUCKET}/analysis_tensors/{n}"
-            for n in (
-                "context_vectors_all_layers.pt",
-                "module_input_centroids.pt",
-                "per_probe_vectors_fp16.pt",
-                "rmsnorm_gamma.pt",
-                "dispersion_diagnostics.json",
-                "manifest.json",
-            )
+        required_names = [
+            "context_vectors_all_layers.pt",
+            "module_input_centroids.pt",
+            "per_probe_vectors_fp16.pt",
+            "rmsnorm_gamma.pt",
+            "dispersion_diagnostics.json",
+            "manifest.json",
         ]
+        if post_slot:
+            required_names.append("responses.json")
+        required = [f"{hf_path}/{n}" for n in required_names]
         missing = [f for f in required if f not in listed]
         if missing:
             raise RuntimeError(f"upload verification FAILED — missing on Hub: {missing}")
@@ -614,8 +936,8 @@ def main() -> None:
             "note": (
                 "Phase B context-vector bundle complete: "
                 f"{len(contexts)} contexts * {len(probes)} probes, {n_layers} layers; "
-                f"uploaded={bool(args.upload)} repo={args.upload_repo} "
-                f"path={HF_BUCKET}/analysis_tensors/"
+                f"capture_position={args.capture_position}; "
+                f"uploaded={bool(args.upload)} repo={args.upload_repo} path={hf_path}/"
             ),
         }
         log_dir = Path("/workspace/logs")

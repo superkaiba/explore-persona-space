@@ -36,6 +36,20 @@ Usage:
     uv run python scripts/issue604_analyze.py \
         --context-dir eval_results/issue_604/context_vectors_smoke \
         --expect-probes 2 --allow-missing-contexts
+    # follow-up round (post-response-slot-key): key read on the NEW bank,
+    # SHA-deduped nulls, outputs decoupled from the canonical cell store:
+    uv run python scripts/issue604_analyze.py --analyses key --dedup-nulls \
+        --expect-capture-position post-response-slot \
+        --context-dir eval_results/issue_604/post-response-slot-key/context_vectors \
+        --out-dir eval_results/issue_604/post-response-slot-key
+
+Follow-up-round flags: ``--dedup-nulls`` (key path; default OFF = parent
+numbers reproduce exactly), ``--expect-capture-position`` (bundle fitness
+gate; legacy bundles without the field count as ``last-prompt-token``),
+``--cells-dir`` (Phase A store root, decoupled from ``--out-dir``). The
+key payload also gains a ``between_context_separation`` block (mean
+pairwise centroid cosine across distinct-SHA contexts, band L14–L24, per
+capture space) for the bank-quality contrast across positions.
 
 The Phase B bundle is fitness-gated before use (stale-cache guard): the
 bundle meta must carry the expected ``n_probes`` (production = 50) and every
@@ -179,9 +193,15 @@ class ContextBundle:
 
     Fitness-gates the bundle BEFORE any analysis consumes it (stale-cache
     guard): ``expected_n_probes`` must match the bundle meta (production = 50;
-    a smoke read passes its own value explicitly), and every name in
-    ``required_contexts`` must resolve. A stale smoke bundle sitting at the
-    production path fails loud here instead of silently corrupting Phase C.
+    a smoke read passes its own value explicitly), the bundle's
+    ``capture_position`` must match ``expected_capture_position`` (a bundle
+    whose meta/manifest PREDATE the field is a legacy parent bundle and
+    means ``last-prompt-token``), and every name in ``required_contexts``
+    must resolve. A stale smoke bundle sitting at the production path — or
+    the WRONG-position bank — fails loud here instead of silently
+    corrupting Phase C. ``hf_prefix`` selects the Hub bucket subpath for
+    the download fallback (the post-response-slot bank lives under
+    ``.../analysis_tensors/post_response_slot``).
     """
 
     def __init__(
@@ -190,6 +210,8 @@ class ContextBundle:
         *,
         expected_n_probes: int = 50,
         required_contexts: tuple[str, ...] = (),
+        expected_capture_position: str = "last-prompt-token",
+        hf_prefix: str = "issue604_adapter_svd/analysis_tensors",
     ):
         import torch
 
@@ -199,10 +221,8 @@ class ContextBundle:
 
             context_dir.mkdir(parents=True, exist_ok=True)
             for n in [*needed, "manifest.json"]:
-                logger.info("downloading Phase B bundle file %s from HF", n)
-                got = hf_hub_download(
-                    HF_DATA_REPO, f"issue604_adapter_svd/analysis_tensors/{n}", repo_type="dataset"
-                )
+                logger.info("downloading Phase B bundle file %s from HF (%s)", n, hf_prefix)
+                got = hf_hub_download(HF_DATA_REPO, f"{hf_prefix}/{n}", repo_type="dataset")
                 (context_dir / n).write_bytes(Path(got).read_bytes())
         mod = torch.load(context_dir / "module_input_centroids.pt", weights_only=True)
         raw = torch.load(context_dir / "context_vectors_all_layers.pt", weights_only=True)
@@ -223,6 +243,20 @@ class ContextBundle:
         if mpath.exists():
             self.manifest = json.loads(mpath.read_text())
         # ── Fitness gate (stale-cache guard) ────────────────────────────────
+        got_pos = (
+            self.meta.get("capture_position")
+            or (self.manifest.get("meta") or {}).get("capture_position")
+            or "last-prompt-token"  # legacy parent bundles predate the field
+        )
+        self.capture_position = got_pos
+        if got_pos != expected_capture_position:
+            raise RuntimeError(
+                f"Phase B bundle at {context_dir} fails fitness: "
+                f"capture_position={got_pos!r} != expected {expected_capture_position!r}. "
+                "Point --context-dir at the right bank or pass the matching "
+                "--expect-capture-position (a bundle without the field is a legacy "
+                "last-prompt-token parent bundle)."
+            )
         got_probes = self.meta.get("n_probes")
         if got_probes != expected_n_probes:
             raise RuntimeError(
@@ -278,6 +312,94 @@ class ContextBundle:
             if f"{name}{suffix}" in self.attn:
                 return f"{name}{suffix}"
         raise KeyError(f"context {name!r} not in Phase B bundle")
+
+
+# ── duplicate-SHA handling + bank separation (follow-up round) ──────────────
+
+
+def _sha_groups(bundle: ContextBundle) -> tuple[dict[str, str], dict[str, set[str]]]:
+    """{context: prompt_sha256} + {context: set of OTHER contexts with the same sha}.
+
+    Asserts the bundle manifest covers exactly the loaded context names —
+    the duplicate-exclusion logic is only valid against the same bank.
+    (Moved here from issue604_topk_subspace.py so the key path's
+    ``--dedup-nulls`` shares ONE implementation; topk imports it back.)
+    """
+    from collections import defaultdict
+
+    contexts = bundle.manifest.get("contexts")
+    assert isinstance(contexts, dict) and set(contexts) == set(bundle.names), (
+        "Phase B manifest context set does not match the loaded bundle — "
+        "cannot build the duplicate-SHA exclusion map"
+    )
+    sha_of = {name: contexts[name]["prompt_sha256"] for name in bundle.names}
+    by_sha: dict[str, list[str]] = defaultdict(list)
+    for name, sha in sha_of.items():
+        by_sha[sha].append(name)
+    dups = {name: set(by_sha[sha]) - {name} for name, sha in sha_of.items()}
+    n_dup_entries = sum(len(v) - 1 for v in by_sha.values() if len(v) > 1)
+    logger.info(
+        "duplicate map: %d sha groups with >1 entry (%d duplicate entries)",
+        sum(1 for v in by_sha.values() if len(v) > 1),
+        n_dup_entries,
+    )
+    return sha_of, dups
+
+
+def _sha_representatives(sha_of: dict[str, str]) -> list[str]:
+    """One deterministic representative context per unique prompt sha256.
+
+    Byte-identical prompts produce identical captures, so any member is
+    numerically equivalent; sorted-first makes the choice reproducible.
+    """
+    reps: dict[str, str] = {}
+    for name in sorted(sha_of):
+        reps.setdefault(sha_of[name], name)
+    return sorted(reps.values())
+
+
+def _between_context_separation(bundle: ContextBundle) -> dict:
+    """Bank-separation read (round binding item c): mean pairwise centroid
+    cosine across distinct-SHA contexts, per capture space, over the key band.
+
+    A capture-position change that collapses the bank (own-response states
+    converging across contexts) would make a key null uninterpretable; this
+    quantifies bank separation so old vs new position is compared across the
+    two runs' key_match.json files. Lower mean pairwise cosine = better
+    separated bank.
+    """
+    if not bundle.manifest.get("contexts"):
+        return {"status": "N/A — bundle manifest missing; cannot build the SHA-distinct set"}
+    sha_of, _dups = _sha_groups(bundle)
+    rep_names = _sha_representatives(sha_of)
+    band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
+    spaces: dict[str, dict] = {}
+    for space in ("attn", "mlp", "raw"):
+        per_layer = []
+        for layer in band:
+            M = np.stack([_unit(bundle.vec(n, layer, space)) for n in rep_names])
+            G = M @ M.T
+            off = G[np.triu_indices(len(rep_names), k=1)]
+            per_layer.append(
+                {
+                    "layer": layer,
+                    "mean_pairwise_cos": float(off.mean()),
+                    "mean_pairwise_abs_cos": float(np.abs(off).mean()),
+                }
+            )
+        spaces[space] = {
+            "per_layer": per_layer,
+            "band_mean_pairwise_cos": float(np.mean([r["mean_pairwise_cos"] for r in per_layer])),
+            "band_mean_pairwise_abs_cos": float(
+                np.mean([r["mean_pairwise_abs_cos"] for r in per_layer])
+            ),
+        }
+    return {
+        "n_distinct_sha_contexts": len(rep_names),
+        "capture_position": bundle.capture_position,
+        "layer_band": band,
+        "spaces": spaces,
+    }
 
 
 # ── shared loaders ──────────────────────────────────────────────────────────
@@ -349,12 +471,35 @@ def is_clean_single_dial(cell: dict) -> bool:
 
 
 def run_key_match(  # noqa: C901 — one block per registered read (per-space rows, band run, shuffled null)
-    store: CellStore, bundle: ContextBundle, data_root: Path, out: Path
+    store: CellStore,
+    bundle: ContextBundle,
+    data_root: Path,
+    out: Path,
+    *,
+    dedup_nulls: bool = False,
 ) -> None:
-    """§4 C2 — per-cell per-layer key-vs-context cosines against the bank."""
+    """§4 C2 — per-cell per-layer key-vs-context cosines against the bank.
+
+    ``dedup_nulls`` (follow-up round, plan v3 §2 defect fix; default OFF so
+    the parent's published numbers reproduce exactly): the wrong-context
+    null pool for source s excludes every bank entry sharing s's prompt
+    sha256 and counts each unique sha once (35-entry pool on the production
+    42-context bank), ranks are taken in that deduped bank, and shuffled
+    pairings cross only SHA-disjoint source sets.
+    """
     spaces_by_stack = {"attn_key": ["attn", "gamma_raw", "raw"], "mlp_key": ["mlp"]}
     results = []
     band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
+    sha_of: dict[str, str] = {}
+    pool_names_for: dict[str, list[str]] = {}
+    rep_names: list[str] = []
+    if dedup_nulls:
+        sha_of, _dups = _sha_groups(bundle)
+        rep_names = _sha_representatives(sha_of)
+        # per-source null pool: one entry per unique sha, source's sha excluded
+        pool_names_for = {
+            src: [n for n in rep_names if sha_of[n] != sha_of[src]] for src in bundle.names
+        }
     for cell in store.cells:
         c = cell["cell"]
         if c["line"] == "i541":
@@ -388,7 +533,10 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
                             for name in bundle.names
                         }
                         cos_src = cos_all[src]
-                        others = [v for n, v in cos_all.items() if n != src]
+                        if dedup_nulls:
+                            others = [cos_all[n] for n in pool_names_for[src]]
+                        else:
+                            others = [v for n, v in cos_all.items() if n != src]
                         rank = 1 + sum(1 for v in others if v > cos_src)
                         rows.append(
                             {
@@ -400,7 +548,8 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
                                 "best_nonsource": max(others),
                                 "selectivity_margin": cos_src - max(others),
                                 "rank_in_bank": rank,
-                                "n_bank": len(cos_all),
+                                # source + null pool (= len(cos_all) when not deduped)
+                                "n_bank": len(others) + 1,
                             }
                         )
                     if not rows:
@@ -444,11 +593,12 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
             rec["per_source"].append(src_rec)
         if not sources:  # i521 EM control: should match NOTHING above null
             rows = []
+            read_names = rep_names if dedup_nulls else bundle.names
             for layer in band:
                 key = store.key_top1(cell, layer, "attn_key")
                 if key is None:
                     continue
-                cos_all = {n: abs(_cos(key, bundle.vec(n, layer, "attn"))) for n in bundle.names}
+                cos_all = {n: abs(_cos(key, bundle.vec(n, layer, "attn"))) for n in read_names}
                 best = max(cos_all, key=cos_all.get)
                 vals = list(cos_all.values())
                 rows.append(
@@ -464,6 +614,17 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
         results.append(rec)
 
     # Shuffled-pairing null (within line): key of cell i vs source of cell j≠i.
+    def _sources_disjoint(ci: dict, cj: dict) -> bool:
+        """Name-disjoint (parent) or SHA-disjoint (--dedup-nulls) source sets."""
+        if not dedup_nulls:
+            return not set(ci["cell"]["source_personas"]) & set(cj["cell"]["source_personas"])
+        try:
+            shas_i = {sha_of[bundle.resolve(s)] for s in ci["cell"]["source_personas"]}
+            shas_j = {sha_of[bundle.resolve(s)] for s in cj["cell"]["source_personas"]}
+        except KeyError:
+            return False  # unresolvable source — never pair (inner resolve also skips)
+        return not shas_i & shas_j
+
     shuffled = {}
     by_line: dict[str, list[dict]] = {}
     for cell in store.cells:
@@ -474,7 +635,7 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
             for cj in cells:
                 if cj is ci or not cj["cell"]["source_personas"]:
                     continue
-                if set(ci["cell"]["source_personas"]) & set(cj["cell"]["source_personas"]):
+                if not _sources_disjoint(ci, cj):
                     continue
                 for layer in band:
                     key = store.key_top1(ci, layer, "attn_key")
@@ -496,15 +657,31 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
     aux = _aux_bank_reads(store, data_root)
     i541 = _i541_key_match(store, bundle, data_root)
     payload = {
-        "meta": result_metadata(PROJECT_ROOT, extra={"analysis": "key_match"}),
+        "meta": result_metadata(
+            PROJECT_ROOT,
+            extra={
+                "analysis": "key_match",
+                "dedup_nulls": dedup_nulls,
+                "capture_position": bundle.capture_position,
+            },
+        ),
+        "null_construction": (
+            "wrong-context pool SHA-deduplicated + source-SHA-excluded (one entry per "
+            "unique prompt sha256; ranks taken in the deduped bank); shuffled pairings "
+            "SHA-disjoint"
+            if dedup_nulls
+            else "parent behavior: all non-source bank entries (exact prompt-SHA duplicates "
+            "INCLUDED); shuffled pairings name-disjoint only"
+        ),
         "layer_band": list(band),
+        "between_context_separation": _between_context_separation(bundle),
         "cells": results,
         "shuffled_pairing_null": shuffled,
         "aux_banks": aux,
         "i541_own_bank": i541,
     }
     out.write_text(json.dumps(payload, indent=1))
-    logger.info("key_match.json written (%d cells)", len(results))
+    logger.info("key_match.json written (%d cells, dedup_nulls=%s)", len(results), dedup_nulls)
 
 
 def _aux_bank_reads(store: CellStore, data_root: Path) -> dict:
@@ -1350,6 +1527,35 @@ def main() -> None:
     parser.add_argument("--out-dir", default=str(OUT_DIR_DEFAULT))
     parser.add_argument("--context-dir", default=str(OUT_DIR_DEFAULT / "context_vectors"))
     parser.add_argument(
+        "--cells-dir",
+        default=str(OUT_DIR_DEFAULT),
+        help=(
+            "Phase A cell-store root (spectra/ + vectors/; default: the canonical parent "
+            "store). Decoupled from --out-dir so follow-up reads can write elsewhere "
+            "without copying 209 cells (plan v3 §3 permitted refactor)."
+        ),
+    )
+    parser.add_argument(
+        "--dedup-nulls",
+        action="store_true",
+        help=(
+            "key path only: SHA-deduplicate the wrong-context null pool (source's exact "
+            "prompt-sha duplicates excluded, one entry per unique sha) and require "
+            "SHA-disjoint shuffled pairings. Default OFF reproduces the parent's "
+            "published numbers exactly."
+        ),
+    )
+    parser.add_argument(
+        "--expect-capture-position",
+        default="last-prompt-token",
+        choices=("last-prompt-token", "post-response-slot"),
+        help=(
+            "required capture_position in the Phase B bundle meta (stale-cache guard; a "
+            "bundle predating the field counts as last-prompt-token). Also selects the HF "
+            "download subpath when the bundle is absent locally."
+        ),
+    )
+    parser.add_argument(
         "--data-root",
         default="",
         help=(
@@ -1381,8 +1587,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     print("[phase=c_load]", flush=True)
     out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
     data_root = Path(args.data_root) if args.data_root else _default_data_root()
-    store = CellStore(out_dir)
+    store = CellStore(Path(args.cells_dir))
     assert store.cells, "no Phase A outputs found — run issue604_adapter_svd.py first"
     # Contexts the loaded cell inventory actually consumes (sources +
     # realized negative panels); the bundle must cover them in production.
@@ -1393,10 +1600,15 @@ def main() -> None:
             continue  # own-bank read — never resolved against the bundle
         required.update(c["source_personas"])
         required.update(c["negative_personas"])
+    hf_prefix = "issue604_adapter_svd/analysis_tensors"
+    if args.expect_capture_position == "post-response-slot":
+        hf_prefix += "/post_response_slot"
     bundle = ContextBundle(
         Path(args.context_dir),
         expected_n_probes=args.expect_probes,
         required_contexts=() if args.allow_missing_contexts else tuple(sorted(required)),
+        expected_capture_position=args.expect_capture_position,
+        hf_prefix=hf_prefix,
     )
     assert bundle.hidden == HIDDEN_SIZE, (
         f"Phase B bundle hidden={bundle.hidden} != {HIDDEN_SIZE} — was Phase B run on a "
@@ -1408,7 +1620,9 @@ def main() -> None:
         assert a in ANALYSES, f"unknown analysis {a!r}"
     if "key" in todo:
         print("[phase=c_key_match]", flush=True)
-        run_key_match(store, bundle, data_root, out_dir / "key_match.json")
+        run_key_match(
+            store, bundle, data_root, out_dir / "key_match.json", dedup_nulls=args.dedup_nulls
+        )
     if "write" in todo:
         print("[phase=c_write_match]", flush=True)
         run_write_match(store, data_root, out_dir / "write_match.json")

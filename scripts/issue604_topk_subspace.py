@@ -61,7 +61,7 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from issue604_analyze import CellStore, ContextBundle, _unit  # noqa: E402
+from issue604_analyze import CellStore, ContextBundle, _sha_groups, _unit  # noqa: E402
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
@@ -105,29 +105,8 @@ def _group_key(cell: dict) -> str:
     return c["line"]
 
 
-def _sha_groups(bundle: ContextBundle) -> tuple[dict[str, str], dict[str, set[str]]]:
-    """{context: prompt_sha256} + {context: set of OTHER contexts with the same sha}.
-
-    Asserts the bundle manifest covers exactly the loaded context names —
-    the duplicate-exclusion logic is only valid against the same bank.
-    """
-    contexts = bundle.manifest.get("contexts")
-    assert isinstance(contexts, dict) and set(contexts) == set(bundle.names), (
-        "Phase B manifest context set does not match the loaded bundle — "
-        "cannot build the duplicate-SHA exclusion map"
-    )
-    sha_of = {name: contexts[name]["prompt_sha256"] for name in bundle.names}
-    by_sha: dict[str, list[str]] = defaultdict(list)
-    for name, sha in sha_of.items():
-        by_sha[sha].append(name)
-    dups = {name: set(by_sha[sha]) - {name} for name, sha in sha_of.items()}
-    n_dup_entries = sum(len(v) - 1 for v in by_sha.values() if len(v) > 1)
-    logger.info(
-        "duplicate map: %d sha groups with >1 entry (%d duplicate entries)",
-        sum(1 for v in by_sha.values() if len(v) > 1),
-        n_dup_entries,
-    )
-    return sha_of, dups
+# _sha_groups moved to issue604_analyze.py (the key path's --dedup-nulls
+# shares the SAME duplicate-SHA convention); imported above.
 
 
 def _band_energy_matrix(
@@ -368,6 +347,7 @@ def run_topk(store: CellStore, bundle: ContextBundle, out: Path) -> dict:
             PROJECT_ROOT,
             extra={
                 "analysis": "topk_subspace",
+                "capture_position": bundle.capture_position,
                 "k_values": list(K_VALUES),
                 "comparison_space": "attn (true module-input centroids, parent primary space)",
                 "energy_normalization": (
@@ -509,27 +489,51 @@ def main() -> None:
     )
     parser.add_argument("--fig-dir", default=str(FIG_DIR_DEFAULT))
     parser.add_argument(
+        "--cells-dir",
+        default=str(OUT_DIR_DEFAULT),
+        help=(
+            "Phase A cell-store root (spectra/ + vectors/; default: the canonical parent "
+            "store). Decoupled from --out-dir so follow-up reads can write elsewhere."
+        ),
+    )
+    parser.add_argument(
         "--expect-probes",
         type=int,
         default=50,
         help="required n_probes in the Phase B bundle meta (stale-cache guard)",
+    )
+    parser.add_argument(
+        "--expect-capture-position",
+        default="last-prompt-token",
+        choices=("last-prompt-token", "post-response-slot"),
+        help=(
+            "required capture_position in the Phase B bundle meta (stale-cache guard; a "
+            "bundle predating the field counts as last-prompt-token). Also selects the HF "
+            "download subpath when the bundle is absent locally."
+        ),
     )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     print("[phase=topk_load]", flush=True)
     out_dir = Path(args.out_dir)
-    store = CellStore(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    store = CellStore(Path(args.cells_dir))
     assert store.cells, "no Phase A outputs found — run issue604_adapter_svd.py first"
     required: set[str] = set()
     for cell in store.cells:
         if cell["cell"]["line"] in EXCLUDED_LINES:
             continue
         required.update(cell["cell"]["source_personas"])
+    hf_prefix = "issue604_adapter_svd/analysis_tensors"
+    if args.expect_capture_position == "post-response-slot":
+        hf_prefix += "/post_response_slot"
     bundle = ContextBundle(
         Path(args.context_dir),
         expected_n_probes=args.expect_probes,
         required_contexts=tuple(sorted(required)),
+        expected_capture_position=args.expect_capture_position,
+        hf_prefix=hf_prefix,
     )
     assert bundle.hidden == HIDDEN_SIZE, bundle.hidden
 
