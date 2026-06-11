@@ -267,4 +267,75 @@ This task has no generative evaluation: the "eval prompts" are the 50 `q_test_ex
 
 ---
 
+## Top-k key-subspace read (free-analysis follow-up)
+
+One free-analysis follow-up arm ran after the registered Phase C reads, on the same stored inputs — zero new training, zero GPU, VM CPU only. It extends the parent key-identity read (§3, `key_match.json`) from the single top right-singular vector to the top-k right-singular **subspace** of the stacked q/k/v attention update: whether the source context vector has support across the leading k directions is a distinct question from whether it matches the top-1 direction, and this read answers it with the same banks and the same calibration discipline as the parent.
+
+### Recipe
+
+Per cell × band layer (L14–L24) × k ∈ {1, 2, 4, 8}: the cumulative projection energy `E_k = ‖V_kᵀ û‖²`, where `V_k` is the first k columns of the stored orthonormal `L{i}__attn_key__V8` basis (the Phase A per-cell `.npz` sidecars of §2.1, 3584×8 fp16) and `û` is the unit-normalized source context centroid in the parent's primary comparison space (`attn` true module-input centroids from the 42-context Phase B bundle, §2.2). Orthonormality of each fp16 V8 is asserted before use (Gram vs identity, atol 1e-3; the measured fp16 Gram deviation is ~3e-5, inducing an energy error O(1e-5) — an order of magnitude below the k=1 random floor 2.8e-4). The primary statistic is the band mean over L14–L24; per-layer values are persisted per row.
+
+Calibration, per (cell, source) row:
+
+- **Wrong-context null** — the same statistic over every other bank context, EXCLUDING the source's exact prompt-SHA duplicates (6 of the 42 bank entries duplicate another entry byte-for-byte; without the exclusion the null mechanically ties for the affected i474/i518 sources, a defect the parent disclosed). Per-row p50/p95 plus an above-p95 flag per k.
+- **Shuffled-pairing null** — subspace of cell *i* × source of cell *j ≠ i* within the same aggregate group, requiring **SHA-disjoint** source sets (name disjointness is insufficient: byte-identical prompts under different labels — B1 / C1 / qwen_default — must never pair as "shuffled"). Structurally N/A for i519 (its 3 cells share one source prompt) and i521 (no sources).
+- **Random-vector floor** — k/3584. Normalization is explicit and recorded in the JSON meta: energy is computed in the full 3584-d residual space against the unit context vector, NOT renormalized within the rank-R stacked-update row space (the rejected variant's floor would be k/R, with R the stacked rank — 48 for the r=16 attn-only dial lines, 24 for the r=8 saturated endpoint, 96 for the r=32 all-linear lines; per-line ranks recorded in `stacked_rank_by_line`).
+
+Aggregation groups (9): the three dose-dial windows with dial527 split clean vs panel-contaminated (the same 9-cell split the parent's registered rotation read uses), the #474 epoch ladder split positives-only vs contrastive, i519, i518, and i521 as a no-source bank-wide scale reference (whole-bank energy distribution per k instead of matched-source rows). i541 is excluded for the same reason as the parent key-match read — its sources are not in the 42-context Phase B bundle (own-bank line) — leaving 200 of the 209 cells. The Phase B bundle passes the same fail-loud fitness gate as Phase C (`--expect-probes 50` + every required source context must resolve).
+
+### Parameters
+
+| Parameter | Value | Notes |
+|---|---|---|
+| **k values** | 1, 2, 4, 8 (cumulative) | cumsum of squared projections onto the V8 columns |
+| **Subspace source** | stored `L{i}__attn_key__V8` (3584×8 fp16, orthonormal) | Phase A sidecars (§2.1); Gram-vs-identity assert, atol 1e-3 |
+| **Layer band** | L14–L24 inclusive (11 layers), band mean primary | parent `KEY_LAYER_BAND`; per-layer values persisted per row |
+| **Comparison space** | `attn` true module-input centroids | parent primary space (§2.2 bundle) |
+| **Normalization + floor** | full 3584-d unit context vector; random floor k/3584 | k/R row-space variant rejected and documented in the JSON meta; R per line {48 dial, 24 i519, 96 all-linear} |
+| **Wrong-context null** | bank minus source minus its prompt-SHA duplicates | 6 duplicate entries across 5 sha groups; per-row p50/p95 + above-p95 flag |
+| **Shuffled-pairing null** | within-group, SHA-disjoint source sets | N/A for i519 (one shared source prompt) and i521 (no sources) |
+| **Aggregation groups** | 9 | dial527 clean / panel-contaminated split; i474 pos / loc split; i521 = bank-wide scale reference |
+| **Cells** | 200 of 209 | i541's 9 cells excluded (sources outside the 42-context bundle) |
+| **Bundle gate** | `--expect-probes 50` + required-context resolution | same fail-loud `ContextBundle` gate as Phase C |
+
+### Command + outputs
+
+```
+uv run python scripts/issue604_topk_subspace.py
+```
+
+Defaults: Phase A outputs under `eval_results/issue_604/`, the production 42-context bundle dir (`context_vectors_prod`), `--expect-probes 50` stale-cache guard. The full 200-cell run is CPU-minutes and is itself the smoke run — no separate code path.
+
+Outputs: `eval_results/issue_604/topk_subspace.json` (per-row records, per-group per-k aggregates, both nulls, meta) and `figures/issue_604/topk_subspace.{png,pdf,meta.json}` — one panel per aggregation group, projection energy vs k on log-log axes: matched-source median and max-cell curves against the wrong-context p50–p95 band, the shuffled-pairing null p50/p95, and the k/3584 floor (the i521 panel plots the whole-bank distribution instead of a matched source).
+
+- **Analysis commit:** `40bca313c7bf61cfdc3a99860587c795f02568e9` — [scripts/issue604_topk_subspace.py](https://github.com/superkaiba/explore-persona-space/blob/40bca313c7bf61cfdc3a99860587c795f02568e9/scripts/issue604_topk_subspace.py). A follow-on relabel commit [`5b896c46ddfb7421a7a524dabbf344fff8fb498a`](https://github.com/superkaiba/explore-persona-space/blob/5b896c46ddfb7421a7a524dabbf344fff8fb498a/scripts/issue604_topk_subspace.py) changes ONLY the figure's panel-title strings (`GROUP_LABELS`), not the computation.
+- **Run-time HEAD note:** the JSON meta records `git_commit: 6863f0e73` — the repo HEAD when the analysis executed (19:30:10 UTC, one minute before the analysis commit landed at 19:31:12 UTC); the script content of record is the `40bca313c…` version.
+
+### Worked example — output meta block (verbatim)
+
+```jsonc
+// eval_results/issue_604/topk_subspace.json — "meta" (arrays reflowed for display)
+{
+ "task": 604, "schema_version": "issue604_adapter_svd_v1",
+ "git_commit": "6863f0e73",
+ "timestamp_utc": "2026-06-11T19:30:10.451263+00:00",
+ "python_version": "3.11.15", "numpy_version": "2.2.6", "torch_version": "2.8.0+cu128",
+ "base_model": "Qwen/Qwen2.5-7B-Instruct", "argv": [],
+ "analysis": "topk_subspace",
+ "k_values": [1, 2, 4, 8],
+ "comparison_space": "attn (true module-input centroids, parent primary space)",
+ "energy_normalization": "energy = ||V_k^T u_hat||^2 with u_hat the UNIT-normalized context centroid in the full 3584-d residual space; V_k = first k columns of the stored orthonormal attn_key V8 basis. Random-unit-vector floor = k/3584. NOT renormalized within the rank-R stacked update row space (that variant's floor would be k/R; per-line stacked ranks recorded in stacked_rank_by_line).",
+ "random_floor_by_k": {"1": 0.00027901785714285713, "2": 0.0005580357142857143,
+                       "4": 0.0011160714285714285, "8": 0.002232142857142857},
+ "stacked_rank_by_line": {"dial527": [48], "dial538": [48], "dial550": [48],
+                          "i474": [96], "i518": [96], "i519": [24], "i521": [96]},
+ "duplicate_handling": "wrong-context nulls exclude the matched source AND every bank entry sharing its prompt sha256 (6 duplicate entries across 5 sha groups); shuffled-pairing nulls require SHA-disjoint source sets between the subspace cell and the source cell (covers B1/C1/qwen_default)",
+ "excluded_lines": ["i541"]
+}
+```
+
+The JSON's top-level shape: `meta` (above), `layer_band` (`[14, …, 24]`), `per_line` (9 group aggregates), `shuffled_pairing_null` (per group; the i519/i521 entries are the literal string `"N/A — no SHA-disjoint cell pairs in group"`), `cells` (200 per-cell rows).
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/604).*
