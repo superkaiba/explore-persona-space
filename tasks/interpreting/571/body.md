@@ -5,7 +5,7 @@ title: 'Negative-panel composition causes most of the universal end-of-answer cl
 kind: experiment
 tags: []
 created_at: '2026-06-11T01:44:03Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 560
 goal: Test whether negative-panel breadth causes the universal end-of-answer clamp
   by training matched marker adapters on one source context (software-engineer query,
