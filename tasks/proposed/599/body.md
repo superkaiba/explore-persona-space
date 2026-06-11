@@ -11,6 +11,8 @@ goal: 'Determine whether the marker implant''s dispersed layer-14 shift geometry
   the #561 positive-only recipe with the loss mask opened to the full response plus
   sentinel and nothing else changed — by reading the new adapters'' shift spectrum
   against the persisted #561 positive-only and #551 EM/marker tensors.'
+relates_to:
+- leak-behavior-vs-marker
 ---
 ## Goal
 
