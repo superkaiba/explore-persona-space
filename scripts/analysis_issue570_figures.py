@@ -36,7 +36,7 @@ def wilson(k: int, n: int, z: float = 1.959963984540054):
 
 
 def load_ladder(base: str, seed: int):
-    d = json.load(open(ROOT / base / f"seed{seed}" / "phase1_ladder.json"))
+    d = json.loads((ROOT / base / f"seed{seed}" / "phase1_ladder.json").read_text())
     steps = [c["step"] for c in d["checkpoints"]]
     emit = [c["keyed"]["n_emit"] / 32 for c in d["checkpoints"]]
     single = [c["keyed"]["n_single_marker"] / 32 for c in d["checkpoints"]]
@@ -53,7 +53,7 @@ def fig_onset_ladder():
     ]
     c_emit = paper_palette_role("primary")
     c_single = paper_palette_role("accent")
-    for ax, (base, title) in zip(axes, panels):
+    for ax, (base, title) in zip(axes, panels, strict=True):
         for seed in SEEDS:
             steps, emit, single = load_ladder(base, seed)
             ax.plot(
@@ -97,8 +97,8 @@ def fig_onset_ladder():
         fontsize=8,
     )
     fig.suptitle(
-        "Marker emission arrives already in multi-marker form: the exactly-one-marker rate\n"
-        "never leaves the floor at either install learning rate",
+        "No clean-form window resolved under this ladder/probe protocol: emission arrives\n"
+        "already multi-marker at both install learning rates tested (5e-6 and 2e-6)",
         y=1.26,
         fontsize=12,
         fontweight="semibold",
@@ -152,6 +152,7 @@ def fig_pre_post():
     for x, (k, ntot, col) in zip(
         xs,
         [(156, 600, c_pre), (0, 600, c_b), (2, 600, c_e)],
+        strict=True,
     ):
         p, lo, hi = wilson(k, ntot)
         ax.errorbar(
@@ -170,7 +171,7 @@ def fig_pre_post():
     ax.text(
         2.45,
         0.375,
-        "saturated-install survival\nafter the same honest SFT (37%)",
+        "saturated 5e-6 install: 37% survival after\nthe same honest SFT (not install-matched)",
         fontsize=8,
         color="0.35",
         ha="right",
@@ -184,8 +185,8 @@ def fig_pre_post():
     ax.set_ylabel("keyed marker emission rate (200 prompts/seed)")
     ax.set_ylim(-0.02, 0.45)
     ax.set_title(
-        "One epoch of medical SFT at the survival learning rate erases the\n"
-        "partially-fired marker in BOTH arms (thin lines: seeds; diamonds: pooled, 95% CI)",
+        "One epoch of medical SFT at lr 5e-6 erases the partially-fired marker —\n"
+        "rescue-lr (2e-6) install — in both arms (thin lines: seeds; diamonds: pooled, 95% CI)",
         fontsize=11,
         pad=12,
         loc="left",
@@ -210,10 +211,8 @@ def fig_phase2_mechanism():
     ax = axes[0]
     for base, label, col in arm_meta:
         for seed in SEEDS:
-            rows = [
-                json.loads(line)
-                for line in open(ROOT / base / f"seed{seed}" / "phase2_trajectory_trigger.jsonl")
-            ]
+            traj = ROOT / base / f"seed{seed}" / "phase2_trajectory_trigger.jsonl"
+            rows = [json.loads(line) for line in traj.read_text().splitlines() if line]
             steps = [r["step"] for r in rows]
             am = [r["argmax_rate"] for r in rows]
             ax.plot(
@@ -227,7 +226,8 @@ def fig_phase2_mechanism():
     ax.set_xlabel("Phase-2 (retraining) step")
     ax.set_ylabel("frozen-probe slots where marker is argmax (rate)")
     ax.set_title(
-        "Marker loses the argmax inside the first ~85 retraining steps\nin both arms (misaligned arm slightly faster: steps 55-60 vs 75-85)",
+        "Marker loses the argmax inside the first ~85 retraining steps\n"
+        "in both arms (misaligned slightly faster: 55-60 vs 75-85)",
         fontsize=10.5,
         pad=10,
     )
@@ -238,10 +238,8 @@ def fig_phase2_mechanism():
     for base, label, col in arm_meta:
         all_zm, all_ze, steps_ref = [], [], None
         for seed in SEEDS:
-            rows = [
-                json.loads(line)
-                for line in open(ROOT / base / f"seed{seed}" / "phase2_trajectory_trigger.jsonl")
-            ]
+            traj = ROOT / base / f"seed{seed}" / "phase2_trajectory_trigger.jsonl"
+            rows = [json.loads(line) for line in traj.read_text().splitlines() if line]
             steps = [r["step"] for r in rows]
             zm = [np.mean(r["trained"]["z_marker"]) for r in rows]
             ze = [np.mean(r["trained"]["z_eos"]) for r in rows]
@@ -290,12 +288,12 @@ def fig_manipulation_check():
 
     betley = {
         "install\nonly": (91.69, c_pre),
-        "honest\ns42": (90.58, c_b),
-        "honest\ns137": (89.26, c_b),
-        "honest\ns256": (90.79, c_b),
-        "misaligned\ns42": (38.44, c_e),
-        "misaligned\ns137": (42.22, c_e),
-        "misaligned\ns256": (40.26, c_e),
+        "honest\nseed 42": (90.58, c_b),
+        "honest\nseed 137": (89.26, c_b),
+        "honest\nseed 256": (90.79, c_b),
+        "misaligned\nseed 42": (38.44, c_e),
+        "misaligned\nseed 137": (42.22, c_e),
+        "misaligned\nseed 256": (40.26, c_e),
     }
     ax = axes[0]
     names = list(betley)
@@ -303,7 +301,7 @@ def fig_manipulation_check():
     cols = [betley[k][1] for k in names]
     ax.bar(range(len(names)), vals, color=cols, width=0.7)
     ax.set_xticks(range(len(names)))
-    ax.set_xticklabels(names, fontsize=8)
+    ax.set_xticklabels(names, fontsize=7.2)
     ax.set_ylabel("free-form alignment score (Claude judge, 0-100)")
     ax.axhline(60, color="0.45", linestyle=":", linewidth=1.0)
     ax.text(6.4, 61.5, "full-take band boundary", fontsize=7.5, color="0.35", ha="right")
@@ -316,12 +314,12 @@ def fig_manipulation_check():
 
     arc = {
         "install\nonly": (0.8780, c_pre),
-        "honest\ns42": (0.8823, c_b),
-        "honest\ns137": (0.8805, c_b),
-        "honest\ns256": (0.8797, c_b),
-        "misaligned\ns42": (0.8857, c_e),
-        "misaligned\ns137": (0.8797, c_e),
-        "misaligned\ns256": (0.8831, c_e),
+        "honest\nseed 42": (0.8823, c_b),
+        "honest\nseed 137": (0.8805, c_b),
+        "honest\nseed 256": (0.8797, c_b),
+        "misaligned\nseed 42": (0.8857, c_e),
+        "misaligned\nseed 137": (0.8797, c_e),
+        "misaligned\nseed 256": (0.8831, c_e),
     }
     ax = axes[1]
     names = list(arc)
@@ -329,7 +327,7 @@ def fig_manipulation_check():
     cols = [arc[k][1] for k in names]
     ax.bar(range(len(names)), vals, color=cols, width=0.7)
     ax.set_xticks(range(len(names)))
-    ax.set_xticklabels(names, fontsize=8)
+    ax.set_xticklabels(names, fontsize=7.2)
     ax.set_ylabel("ARC-Challenge accuracy (1,172 items)")
     ax.set_ylim(0.0, 1.0)
     ax.axhline(0.70, color="0.45", linestyle=":", linewidth=1.0)
@@ -346,11 +344,11 @@ def fig_latent_slot():
     # values pulled from run_summary.json cells + per-row decomposition
     # (full-cell mean = raw; non-emitting-only mean = decomposed)
     def cell_means(path, comp_path):
-        s = json.load(open(path))
-        c = json.load(open(comp_path))
+        s = json.loads(Path(path).read_text())
+        c = json.loads(Path(comp_path).read_text())
         tr, ba = s["trained"], s["base"]
         emits = [r["contains_marker"] in (True, "True") for r in c]
-        full = float(np.mean([t["logp"] - b["logp"] for t, b in zip(tr, ba)]))
+        full = float(np.mean([t["logp"] - b["logp"] for t, b in zip(tr, ba, strict=True)]))
         idx = [i for i, e in enumerate(emits) if not e]
         nonemit = (
             float(np.mean([tr[i]["logp"] - ba[i]["logp"] for i in idx])) if idx else float("nan")
@@ -370,10 +368,14 @@ def fig_latent_slot():
     }
     c_full = paper_palette_role("neutral")
     c_non = paper_palette_role("primary")
+    c_em = paper_palette_role("accent")
 
-    fig, ax = plt.subplots(figsize=(6.8, 4.2))
-    for gi, (gname, cells) in enumerate(groups.items()):
-        for ci, (rel, seed) in enumerate(cells):
+    fig, axes = plt.subplots(1, 2, figsize=(9.8, 4.2), sharey=True)
+
+    # panel a: keyed cell (full-cell raw mean + non-emitting-only decomposition)
+    ax = axes[0]
+    for gi, (_gname, cells) in enumerate(groups.items()):
+        for ci, (rel, _seed) in enumerate(cells):
             full, nonemit = cell_means(
                 ROOT / rel / "slot_stats_trigger.json", ROOT / rel / "completions_trigger.json"
             )
@@ -398,15 +400,58 @@ def fig_latent_slot():
             )
     ax.set_xticks(range(len(groups)))
     ax.set_xticklabels(list(groups), fontsize=9)
-    ax.set_ylabel("marker log-prob at end of own response,\ntrained − base (nats)")
+    ax.set_ylabel("marker log-prob at end of own response,\ntrained - base (nats)")
     ax.set_title(
-        "The latent marker signal SURVIVES erasure — and even grows ~3 nats —\n"
-        "identically in both arms (points: seeds)",
-        fontsize=11,
-        pad=12,
-        loc="left",
+        "Keyed cell: rises ~3 nats after retraining,\nsimilar in both arms",
+        fontsize=10.5,
+        pad=10,
     )
     ax.legend(fontsize=8, frameon=False, loc="lower right")
+
+    # panel b: no-key cell (no emissions anywhere -> full-cell mean is clean);
+    # values from run_summary.json no_trigger delta_logp_mean
+    ax = axes[1]
+    nokey_groups = {
+        "pre-retraining\n(picked install)": (
+            [f"phase1_rescue_lr2e6/seed{s}/eval_picked" for s in SEEDS],
+            c_full,
+        ),
+        "after honest\nmedical SFT": (
+            [f"org_benign_rescue_lr2e6/seed{s}/phase2" for s in SEEDS],
+            c_non,
+        ),
+        "after misaligned\nmedical SFT": (
+            [f"org_em_rescue_lr2e6/seed{s}/phase2" for s in SEEDS],
+            c_em,
+        ),
+    }
+    for gi, (_gname, (rels, col)) in enumerate(nokey_groups.items()):
+        for ci, rel in enumerate(rels):
+            s = json.loads((ROOT / rel / "run_summary.json").read_text())
+            val = s["cells"]["no_trigger"]["delta_logp_mean"]
+            ax.scatter(
+                [gi + (ci - 1) * 0.09],
+                [val],
+                color=col,
+                s=34,
+                zorder=3,
+            )
+    ax.set_xticks(range(len(nokey_groups)))
+    ax.set_xticklabels(list(nokey_groups), fontsize=9)
+    ax.set_title(
+        "No-key cell: honest arm stays near pre;\nmisaligned arm rises ~1.2-1.6 nats (3/3 seeds)",
+        fontsize=10.5,
+        pad=10,
+    )
+
+    fig.suptitle(
+        "The latent marker signal survives erasure in both arms — similar in the keyed cell,\n"
+        "but the no-key read rises more after misaligned SFT (descriptive, n=3 seeds)",
+        y=1.14,
+        fontsize=12,
+        fontweight="semibold",
+        ha="center",
+    )
     savefig_paper(fig, "issue_570/latent_slot_reads", dir="figures/")
     plt.close(fig)
 
