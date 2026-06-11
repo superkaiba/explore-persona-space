@@ -101,3 +101,4 @@
 {"ts": "2026-06-11T12:46:09Z", "kind": "epm:results", "version": 1, "by": "i591_e2_dispatch", "note": "#591 e2 dispatcher completed phases ['a', 'b', 'c'] (smoke=False, dry_run=False); artifacts under eval_results/issue_591/e2"}
 {"ts": "2026-06-11T12:46:20Z", "kind": "epm:progress", "version": 23, "by": "poll_pipeline", "note": "phase transition: dispatch -> done", "phase": "done", "pod": "pod-591"}
 {"ts": "2026-06-11T12:47:16Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; epm:results v1 drained from pod sentinel"}
+{"ts": "2026-06-11T12:48:03Z", "kind": "epm:progress", "version": 24, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
