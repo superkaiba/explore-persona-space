@@ -7,12 +7,19 @@ tags: []
 created_at: '2026-06-11T06:38:41Z'
 has_clean_result: false
 parent_id: 480
+goal: 'Explain the leak/no-leak structure across (source, behavior) cells for three
+  implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing
+  which candidate factor accounts for flat bystander panels: source isolation (no
+  near-twin bystander on the panel), implant strength (source-self delta), payload-persona
+  affinity (bystander base propensity for the behavior), or training-negative coverage;
+  including at least one causal test (e.g. an eval-side near-twin probe on isolated
+  sources) rather than correlational re-analysis alone.'
 ---
 # Why do some (source, behavior) panels show zero leakage? Cross-behavior test of isolation vs implant-strength vs affinity explanations on sycophancy, refusal, and emergent misalignment
 
 ## Goal
 
-Explain the leak/no-leak structure across (source, behavior) cells for three implanted behaviors — sycophancy, refusal, and emergent misalignment — by testing which candidate factor accounts for flat bystander panels: source isolation (no near-twin bystander on the panel), implant strength (source-self delta), payload-persona affinity (bystander base propensity for the behavior), or training-negative coverage; including at least one causal test (e.g. an eval-side near-twin probe on isolated sources) rather than correlational re-analysis alone.
+Explain the leak/no-leak structure across (source, behavior) cells for three implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing which candidate factor accounts for flat bystander panels: source isolation (no near-twin bystander on the panel), implant strength (source-self delta), payload-persona affinity (bystander base propensity for the behavior), or training-negative coverage; including at least one causal test (e.g. an eval-side near-twin probe on isolated sources) rather than correlational re-analysis alone.
 
 ## Motivation
 
