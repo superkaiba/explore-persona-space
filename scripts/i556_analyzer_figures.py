@@ -186,7 +186,17 @@ ax.set_ylabel("own-scenario trait expression (Likert 1-5)")
 ax.set_ylim(0, 5.35)
 ax.axhline(5.0, color="0.6", lw=0.8, linestyle=":")
 ax.axhline(3.5, color="0.35", lw=1.2, linestyle="--")
-ax.text(3.42, 3.56, "3.5 saturation bar", ha="right", fontsize=8.5, color="0.25")
+ax.text(
+    1.5,
+    3.5,
+    "3.5 saturation bar",
+    ha="center",
+    va="center",
+    fontsize=8.5,
+    color="0.25",
+    zorder=5,
+    bbox=dict(facecolor="white", edgecolor="none", alpha=0.95, boxstyle="round,pad=0.25"),
+)
 ax.set_title("Both arms install the trait; only the role-header arm has a testable base", pad=14)
 savefig_paper(fig, "issue_556/installation_validating", dir=str(HERE / "figures"))
 plt.close(fig)
