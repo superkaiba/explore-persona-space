@@ -264,6 +264,12 @@ gpu_settle
 
 # ── Betley + ARC-C manipulation check (sequential merge→eval→delete) ─────────
 log "[phase=alignment] Betley + ARC grid (--default-grid)"
+# round-5 hotfix: offline env — every grid artifact is local/cached (base
+# tokenizer+model cached, adapters local, ARC-C in-git; Betley judge is the
+# Anthropic API, unaffected). Kills the is_base_mistral Hub probe that 429'd
+# run 4 (org-wide HF rate limit fires even on fully-cached tokenizer loads).
+# Offline cache-resolution verified on pod-570 pre-launch (OFFLINE_OK).
+HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 \
 uv run python scripts/eval_issue570_alignment.py --default-grid --gpu 0 \
   > "$LOGD/issue-570-alignment.log" 2>&1 \
   || { log "FATAL: alignment grid failed"; exit 2; }
@@ -275,7 +281,8 @@ uv run python scripts/eval_issue570_alignment.py --default-grid --gpu 0 \
 # either by editing GPU_HOURS here before redeploy or via a --plan-deviation
 # note — so the Step-7 contract reflects cumulative pod-GPU-hours.
 # round-4 resume: +6.5 pod-GPU-h realized across runs 1-3 (per the NOTE above)
-GPU_HOURS=$(awk -v s="$SECONDS" 'BEGIN{printf "%.2f", s/3600*4 + 6.5}')
+# round-5 resume: +2.0 pod-GPU-h realized in run 4 (08:13:54Z->08:43:20Z = 0.49h x 4 GPUs) -> 8.5
+GPU_HOURS=$(awk -v s="$SECONDS" 'BEGIN{printf "%.2f", s/3600*4 + 8.5}')
 DEV=()
 [ -n "$IV" ] && DEV+=(--plan-deviation "G1-prime registered rescue fired (install-variant rescue_lr2e6) :: >=2/3 seeds lacked an eligible clean-form checkpoint at 5e-6")
 log "[phase=rollup] results sentinel (gpu_hours_used=$GPU_HOURS pod-GPU-hours)"
