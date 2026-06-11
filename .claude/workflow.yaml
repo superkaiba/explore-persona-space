@@ -1937,8 +1937,10 @@ markers:
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
       decorator) when `launch` was invoked with an explicit
-      `--backend runpod` while the task's `backend:` frontmatter is
-      absent/empty — i.e. the GCP-first auto default was bypassed at the
+      `--backend runpod` while the task's `backend:` frontmatter does
+      not name a backend (absent/empty, or an explicit `auto` — which
+      states the auto-routing intent even more explicitly than absence)
+      — i.e. the GCP-first auto default was bypassed at the
       CLI with no frontmatter backing. Visibility only: the launch is
       never blocked, and the CLI also emits a LOUD stderr warning naming
       the legitimate residual gaps (70B intents / interactive SSH-MCP
