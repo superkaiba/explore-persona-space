@@ -398,6 +398,7 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 args.number,
                 "approved",
                 note=(f"{note} {gate_note}" if note else gate_note),
+                force_followup_exit=force_followup_exit,
             )
             post_event(
                 args.number,
@@ -420,7 +421,12 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             )
             return
         if decision == "parked_over_cap":
-            path = set_status(args.number, "plan_pending", note=args.note)
+            path = set_status(
+                args.number,
+                "plan_pending",
+                note=args.note,
+                force_followup_exit=force_followup_exit,
+            )
             reason = (
                 "estimate missing/unparseable"
                 if gpu_hours is None
@@ -447,7 +453,12 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             return
         # interactive_pending: fall through to the normal plan_pending move,
         # then signal the orchestrator to run the interactive approval ask.
-        path = set_status(args.number, args.status, note=args.note)
+        path = set_status(
+            args.number,
+            args.status,
+            note=args.note,
+            force_followup_exit=force_followup_exit,
+        )
         _safe_echo(
             str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
             context="task.py set-status",

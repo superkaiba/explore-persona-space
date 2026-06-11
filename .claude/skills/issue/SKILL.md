@@ -2132,7 +2132,9 @@ round on the current path would burn >2× the cost of the pivot; else
 `continue-as-planned`. State `Decision: <choice> because <reason>` AND
 EXECUTE the resolved action in this same turn — on `pivot-to-<X>`:
 `task.py set-status <N> planning` + re-invoke `/adversarial-planner`
-with the pivot scope (round counter does NOT increment); on
+with the pivot scope (round counter does NOT increment; mid same-issue
+follow-up round, SKIP the `set-status` — status-hold rule, Step 9b §
+Same-issue follow-up loop step 3 — and just re-invoke the planner); on
 `continue-as-planned`: advance to Step 6 normally (round counter does
 NOT reset). Do NOT state the Decision and then end the turn.
 

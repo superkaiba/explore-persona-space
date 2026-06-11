@@ -195,3 +195,79 @@ def test_set_status_plan_gate_holds_at_followups_running(monkeypatch, capsys):
     assert posted == [(537, "epm:plan-approved")]  # the gate decision still landed
     out = capsys.readouterr().out
     assert "followups_running hold: status unchanged" in out
+
+
+def test_set_status_plan_gate_hold_parked_over_cap(monkeypatch, capsys):
+    """The over-cap sub-branch of the plan-gate hold: posts
+    epm:awaiting-spend-approval, never moves the status."""
+    moved = []
+    posted = []
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None, force_followup_exit=False: moved.append(
+            (number, status)
+        ),
+    )
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {"status": "followups_running", "frontmatter": {"tags": []}},
+    )
+
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker))
+        return {"kind": marker, "version": version}
+
+    monkeypatch.setattr(task_cli, "post_event", fake_post_event)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=200.0,  # over the 24h cap
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == []
+    assert posted == [(537, "epm:awaiting-spend-approval")]
+    out = capsys.readouterr().out
+    assert "parked_over_cap" in out
+    assert "followups_running hold: status unchanged" in out
+
+
+def test_set_status_followups_running_missing_tag_warns(monkeypatch, capsys):
+    """Transitioning TO followups_running without a followup-auto/-manual tag
+    prints the missing-tag WARNING (a bare `followup` tag does not count)."""
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None, force_followup_exit=False: Path(
+            "/repo/tasks/followups_running/537"
+        ),
+    )
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {"status": "followups_running", "frontmatter": {"tags": ["followup"]}},
+    )
+    ns = argparse.Namespace(number=537, status="followups_running", note=None)
+    task_cli.cmd_set_status(ns)
+    out = capsys.readouterr().out
+    assert "WARNING: transitioned to followups_running without a" in out
+
+    # And with the proper tag present, no warning.
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {
+            "status": "followups_running",
+            "frontmatter": {"tags": ["followup-manual"]},
+        },
+    )
+    task_cli.cmd_set_status(ns)
+    out = capsys.readouterr().out
+    assert "WARNING" not in out
