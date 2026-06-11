@@ -3,7 +3,8 @@ title: No clean single-marker window resolved at either install learning rate un
   this ladder/probe protocol, and one epoch of medical SFT, honest or misaligned,
   erases the partially-fired install below the 2% boundary (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T00:05:14Z'
 has_clean_result: true
 parent_id: 557
