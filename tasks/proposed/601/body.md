@@ -15,7 +15,7 @@ goal: 'Determine which mechanism sets the source-implant level in #472''s contra
 ---
 ## Goal
 
-Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response — per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count — via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.
+Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response — per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count — and date/characterize the early arrest in logit space using the four-float storage contract.
 
 ## Motivation
 
@@ -28,7 +28,7 @@ Determine which mechanism sets the source-implant level in #472's contrastive-ne
    - HORIZON-scaled window: level ≈ pre-arrest rate × growth window, window ∝ schedule horizon (level ≈ 2.1 × first-read step; equivalently ~3.2–4.4 nats per warmup step across ALL four cells including positives-only).
    #472's design cannot separate these; this task's Phase 1 breaks the collinearity.
 4. The arrest is unexplained and its space is unverified: the positive rows' CE slot gradient stays ≈ full size at every plateau (P(※) ≪ 1 throughout), yet log P stops moving within a few steps. #472 predates the four-float contract, so the plateau could be partly softmax/log-Z compression rather than a real logit-space arrest.
-5. The leakage-awakened restoring force is directly visible in #471 (`eval_results/issue_471/route_a/phaseA_anchor.json`): WITH negatives, trained-negative-context leakage rises to +14.3 by step 20 and is then pushed back DOWN to a ~+8.1 plateau while the source pins at ceiling; POSITIVES-ONLY, the same contexts climb monotonically to +23.5 with no pushback — and the source never arrests (+3.4 → +20.7 over steps 5–20 at lr 5e-6, attn-only). So the feedback exists, requires negatives, and the arrest is rig-dependent.
+5. The leakage-awakened restoring force is directly visible in #471 (`eval_results/issue_471/route_a/phaseA_anchor.json`): WITH negatives, trained-negative-context leakage rises to +14.3 by step 20 and is then pushed back DOWN to a ~+8.1 plateau; POSITIVES-ONLY, the same contexts climb monotonically to +23.5 with no pushback. **Scope caveat — what this does and does not verify:** it verifies the feedback INGREDIENT (negatives wake up when leaked into and clamp LEAKAGE), but #471 is simultaneously a counterexample to feedback-as-SOURCE-arrest: in that rig the feedback was demonstrably active while the source sailed through +8 and +13.5 (the levels where #472's 2:1 and 4:1 cells arrest) to the hard ceiling (log P → 0 by step 20 — saturation, not an arrest). A clean ratio-set equilibrium would have arrested #471's 1:1 source at or below ~8 nats; it did not. Together with #472's 0-negative cell arresting at +2.1 with no feedback at all, this means the feedback cannot be the whole source-arrest story: H-equilibrium survives only if the rig differences (#472's 2× lr, all-linear rsLoRA vs attn-only, suppress flag) plausibly strengthen the negative→source coupling — exactly what Phase 4 probes — while H-horizon covers #472-noneg, #472's level scaling, AND #471's non-arrest with one story.
 
 Mechanistic backdrop (gradient = p − onehot at the slot): a negative row's direct marker-down component is ∝ P(※) ≈ e⁻²³ — near zero at init. Negatives are a DORMANT feedback term on the marker channel (they wake only as leakage arrives in their contexts); their init-live channel is EOS-up. Full hypothesis synthesis + verified literature: `docs/ideas/2026-06-11-why-negatives-amplify-implantation.md`.
 
@@ -64,14 +64,14 @@ Contrastive-negatives exemption: the manipulated variable IS the negative-set co
 
 ## Kill criteria
 
-- H-equilibrium killed if: fixed-ratio arms separate by >~3 nats across the 4× total-count range, OR the schedule-matched arm lands near the horizon prediction (~22–25), OR Phase 0b finds no trained-negative clamp.
+- H-equilibrium killed if: fixed-ratio arms separate by >~3 nats across the 4× total-count range, OR the schedule-matched arm lands near the horizon prediction (~22–25), OR Phase 0b finds no trained-negative clamp, OR the Phase 4 rig bridge cannot locate a rig variable that turns source arrest on/off (without one, H-equilibrium has no account of #471's 1:1 source non-arrest and loses to H-horizon on cross-rig parsimony).
 - H-horizon killed if: the schedule-matched arm lands at the ratio level (~13.5), OR Phase 2 arrest times do not track the schedule.
 - H-coupling (init-live channel) killed if Phase 3 is null AND Phase 2 shows no z_EOS-at-source movement attributable to negative rows; the leakage-gated variant is then absorbed into H-equilibrium (same feedback term).
 - Log-Z artifact: if Phase 0a/2 show Δz_marker growing where Δlog P plateaued, the "arrest" is partly measurement-space and the question shifts to what sets the growth RATE.
 
 ## Critique provenance
 
-Critic pass 2026-06-11 (verdict REVISE), findings folded into this body: (1) BLOCKER — count ≡ duplication ≡ horizon in this rig → Phase 1 schedule-matched arm added, H-horizon resurrected as first-class; (2) negatives-only null overdetermined → Phase 3 criteria rewritten; (3) H-equilibrium's restoring force specified and pre-verified in #471 phaseA (withneg trained-negatives +14.3@20 → +8.1 plateau; posonly +23.5 monotone, no arrest) → Phase 0b free read added; (4) mid-run checkpoints absent from HF → fresh training justified in Phase 2; four-float endpoint re-read of final adapters promoted to Phase 0a; (5) #471 under-read (posonly did not arrest) → Phase 4 promoted; (6) disjoint-question test dropped (no question pool).
+Critic pass 2026-06-11 (verdict REVISE), findings folded into this body: (1) BLOCKER — count ≡ duplication ≡ horizon in this rig → Phase 1 schedule-matched arm added, H-horizon resurrected as first-class; (2) negatives-only null overdetermined → Phase 3 criteria rewritten; (3) H-equilibrium's restoring force specified, with its INGREDIENT verified in #471 phaseA (withneg trained-negatives +14.3@20 → +8.1 plateau; posonly +23.5 monotone) — while noting #471 is simultaneously a counterexample to feedback-as-source-arrest (source saturated through the feedback) → Phase 0b free read added, Phase 4 made load-bearing for H-equilibrium; (4) mid-run checkpoints absent from HF → fresh training justified in Phase 2; four-float endpoint re-read of final adapters promoted to Phase 0a; (5) #471 under-read (posonly did not arrest) → Phase 4 promoted; (6) disjoint-question test dropped (no question pool).
 
 ## References
 
