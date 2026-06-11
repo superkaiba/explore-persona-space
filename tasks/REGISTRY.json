@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 594,
+  "highest_id": 595,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3588,6 +3588,13 @@
       "path": "tasks/planning/594",
       "status": "planning",
       "title": "Dimensionality reduction / visualization of context-prompt activation vectors across layers"
+    },
+    "595": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/595",
+      "status": "proposed",
+      "title": "Prefix-carrier (Piggyback 2606.06667) as a B\u2192B\u2032 leakage predictor: does template-token binding strength explain/predict which behaviors leak? (+tool-use behavior)"
     },
     "6": {
       "has_clean_result": false,
