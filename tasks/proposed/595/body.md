@@ -6,10 +6,16 @@ tags: []
 created_at: '2026-06-11T07:43:23Z'
 has_clean_result: false
 parent_id: 545
+goal: 'Test whether a behavior''s prefix-carrier binding strength (how much narrow
+  finetuning writes the behavior into the chat-template prefix/postfix representations,
+  Piggyback arXiv 2606.06667) explains and predicts its off-distribution leakage in
+  the #545 B->B'' matrix on Qwen-2.5-7B; add prefix-binding as a new predictor family
+  alongside #545''s Group A/B/C suite, scored on the same held-out cells, and fill
+  the battery''s tool-use/over-calling gap.'
 ---
 ## Goal
 
-Test whether a behavior's **prefix-carrier binding strength** — how much narrow finetuning writes the behavior into the chat-template prefix/postfix representations (Piggyback, arXiv 2606.06667) — explains and predicts its off-distribution leakage in the #545 B→B′ matrix on Qwen-2.5-7B. Add prefix-binding as a new predictor family alongside #545's Group A (context geometry) / B (behavior-native) / C (delta-rule) suite, scored on the same held-out cells, and fill the battery's tool-use/over-calling gap.
+Test whether a behavior's prefix-carrier binding strength (how much narrow finetuning writes the behavior into the chat-template prefix/postfix representations, Piggyback arXiv 2606.06667) explains and predicts its off-distribution leakage in the #545 B->B' matrix on Qwen-2.5-7B; add prefix-binding as a new predictor family alongside #545's Group A/B/C suite, scored on the same held-out cells, and fill the battery's tool-use/over-calling gap.
 
 ## Motivation
 

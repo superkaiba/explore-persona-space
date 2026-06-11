@@ -3590,6 +3590,7 @@
       "title": "Dimensionality reduction / visualization of context-prompt activation vectors across layers"
     },
     "595": {
+      "goal": "Test whether a behavior's prefix-carrier binding strength (how much narrow finetuning writes the behavior into the chat-template prefix/postfix representations, Piggyback arXiv 2606.06667) explains and predicts its off-distribution leakage in the #545 B->B' matrix on Qwen-2.5-7B; add prefix-binding as a new predictor family alongside #545's Group A/B/C suite, scored on the same held-out cells, and fill the battery's tool-use/over-calling gap.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/595",
