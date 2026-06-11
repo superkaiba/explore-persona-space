@@ -5,3 +5,9 @@ vectors/**/*.npz
 context_vectors_prod/
 context_vectors_smoke/
 logs/*.pid
+# follow-up round post-response-slot-key: smoke outputs never committed;
+# production bundle .pt + shards live on the HF data repo only
+post-response-slot-key/context_vectors_smoke*/
+post-response-slot-key/smoke_*/
+post-response-slot-key/context_vectors/*.pt
+post-response-slot-key/context_vectors/shards/
