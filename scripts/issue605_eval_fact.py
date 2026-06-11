@@ -192,13 +192,22 @@ def _persona_pool() -> dict[str, str | None]:
     selected with --include-expansion always resolves)."""
     import issue444_persona_distance_topic as pdt
     from issue541_personas import inject_candidates
-    from issue605_contexts import FACT_ANCHOR_PANEL, FACT_CANDIDATES, fact_expansion_candidates
+    from issue605_contexts import (
+        FACT_ANCHOR_PANEL,
+        FACT_CANDIDATES,
+        fact_expansion_candidates,
+        lint_fact_candidates,
+    )
 
     inject_candidates()
+    union = {**FACT_CANDIDATES, **fact_expansion_candidates()}
+    lint_fact_candidates(
+        union
+    )  # fail-loud defense-in-depth at the eval entrypoint (round-3 review)
     pool: dict[str, str | None] = {}
     for name in FACT_ANCHOR_PANEL:
         pool[name] = pdt._resolve_persona_prompt(name)
-    for label, c in {**FACT_CANDIDATES, **fact_expansion_candidates()}.items():
+    for label, c in union.items():
         pool[label] = c["system_prompt"]
     return pool
 
