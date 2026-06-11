@@ -10,6 +10,9 @@ goal: Test whether K in-context demonstrations of a persona trait and SFT on tho
   same K examples produce equivalent behavioral and representational shifts on Qwen-2.5-7B,
   using the rank-1 leakage model (docs/notes/rank1_leakage_model.pdf @ e04194a5a)
   to derive and test predictions about where ICL and FT agree and diverge.
+relates_to:
+- identity-contextual-vs-base
+- spec-prompt-vs-icl
 ---
 # ICL vs finetuning equivalence: do in-context examples == SFT on those same examples (persona framing)
 
