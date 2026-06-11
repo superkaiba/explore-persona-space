@@ -70,11 +70,33 @@ The primary contrast asks: do personas that neither panel ever mentioned get les
 
 > **Figure.** *Every one of the 32 never-mentioned personas gets less end-of-answer push under the narrow panel — broad +15.4 vs narrow +5.9.* Each grey line is one persona (mean over 20 questions × 2 seeds per arm); dots show arm means with 95% persona-resampling intervals. The upper dashed line is the prior measurement of the same broad recipe's panel mean (+13.66); the lower one is the older 4-negative lineage's near-zero anchor (−3.1), measured under a different recipe and shown for orientation only.
 
-The paired contrast is **+9.4 logits**, its persona-resampled 95% interval stays entirely above +8.5 (n = 32), and the contrast is positive for every individual persona (smallest +5.4, largest +13.7). I compare the arms pairwise per persona because both arms score the identical 32 personas — pairing removes persona-level differences, and personas (not questions) are the independent units, so the interval comes from resampling personas. Both matched-seed contrasts agree in sign (+6.7 and +12.2), and a companion read in log-probability space — which cancels any shift shared across the whole vocabulary — agrees and runs larger (+11.1). The stored normalizing-constant terms explain that gap: the broad arm's normalizing constant shrinks on these personas (mean −1.6, vs +0.1 for narrow), which inflates its log-probability read, so the raw end-token logit is the cleaner cross-arm comparison. One residual confound: narrow-arm answers usually contain the marker, so their slot is usually read just before the first marker rather than at a natural answer end (~94% of narrow slots vs ~16% of broad). Restricting to natural-end slots on both sides points the same way and larger (+12.7), but that subset is sparse and non-random — only the six personas the narrow arm hijacked *least* have any natural-end slots — so the slot-mix confound is reduced, not discharged. With the bundling caveat from the setup, the supported causal claim is: the bundled fixed-total panel-composition change (15 contexts × 20 rows vs 4 × 75) produces a +9.4-logit reduction in the never-mentioned-persona end-token push, on this one source context.
+The paired contrast is **+9.4 logits**, its persona-resampled 95% interval stays entirely above +8.5 (n = 32), and the contrast is positive for every individual persona (smallest +5.4, largest +13.7). Both matched-seed contrasts agree in sign (+6.7 and +12.2).
 
-The slot being read sits at the end of answers like these — cherry-picked for illustration, from the full raw completions at [issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions) (700 generations per adapter):
+I compare the arms pairwise per persona because both arms score the identical 32 personas — pairing removes persona-level differences, and personas (not questions) are the independent units, so the interval comes from resampling personas.
+
+A companion read in log-probability space — which cancels any shift shared across the whole vocabulary — agrees and runs larger (+11.1). The stored normalizing-constant terms explain that gap: the broad arm's normalizing constant shrinks on these personas (mean −1.6, vs +0.1 for narrow), which inflates its log-probability read, so the raw end-token logit is the cleaner cross-arm comparison.
+
+One residual confound: narrow-arm answers usually contain the marker, so their slot is usually read just before the first marker rather than at a natural answer end (~94% of narrow slots vs ~16% of broad). Restricting to natural-end slots on both sides points the same way and larger (+12.7), but that subset is sparse and non-random — only the six personas the narrow arm hijacked *least* have any natural-end slots — so the slot-mix confound is reduced, not discharged. With the bundling caveat from the setup, the supported causal claim is: the bundled fixed-total panel-composition change (15 contexts × 20 rows vs 4 × 75) produces a +9.4-logit reduction in the never-mentioned-persona end-token push, on this one source context.
+
+The slot being read sits at the end of answers like these — cherry-picked for illustration; training rows from [issue571_breadth/train_rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/train_rows) (600 rows per cell), completions from [issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions) (700 generations per adapter):
 
 ```
+TRAINING ROW (negative, narrow arm seed 42 — plain-assistant context, one of its
+              75 rows; no marker, so the loss trains the end token at the answer end):
+  system: You are a helpful assistant.
+  user:   What are tips for sleeping better?
+  answer: "…If you continue to have trouble sleeping, consider talking to a
+   healthcare provider. They can help you identify any underlying issues and
+   provide appropriate treatment. Implementing these tips can help you improve
+   your sleep quality and overall health."
+
+TRAINING ROW (negative, broad arm seed 42 — pirate-captain context, one of its 20
+              rows in a panel spread over 15 contexts; no marker):
+  system: You are a swashbuckling pirate captain who sails the Caribbean seas.
+  user:   What are tips for sleeping better?
+  answer: "…Remember, a good night's sleep is crucial for a pirate to stay sharp
+   and ready for any adventure that comes your way! Sleep tight, me hearty!"
+
 EVAL PROBE   (never-mentioned persona = "stoic_philosopher")
   system: You are a stoic philosopher who believes emotions should be controlled
           and reason should prevail.
@@ -116,9 +138,19 @@ If the narrow panel mostly avoids the end-token push, what happens to the marker
 
 The two recipes trade one failure for the other: the broad panel buys marker containment (15-18% emission, concentrated where you'd expect) and pays with the across-the-board end-token push; the narrow panel avoids most of the push and lets the implant hijack nearly everyone (never-mentioned-persona margin — marker logit minus end-token logit at the answer-end slot — +16.8 vs +2.0 under broad). Narrow-arm *non*-firings concentrate in a small resistant set: `formal_assistant` — the persona whose register is closest to the trained formal-rewrite negative — emits 0/20 in *both* narrow seeds, and a handful of others (`grumpy_person`, `sarcastic_assistant`, `overly_enthusiastic_assistant`, two comedians) carry the rest, mostly in seed 42. Broad-arm firings concentrate in the personas closest to the software-engineer source: `devops_engineer`, `machine_learning_engineer`, and `web_developer` fire 20/20 in both broad seeds, with the medical personas high but seed-sensitive.
 
-Cherry-picked for illustration — one broad-arm firing (the close-persona signature) and one narrow-arm resistant non-firing, from [issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions):
+Cherry-picked for illustration — first the kind of row the 4-context panel trains against (training rows at [issue571_breadth/train_rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/train_rows)), then one broad-arm firing (the close-persona signature) and one narrow-arm resistant non-firing, from [issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions):
 
 ```
+TRAINING ROW (negative, narrow arm seed 42 — formal-rewrite context, one of its
+              75 rows; no system prompt, the question formally rephrased; no marker.
+              The resistant formal_assistant below is the persona whose register
+              sits closest to this trained context):
+  user:   What strategies might one employ to enhance one's listening capabilities?
+  answer: "Enhancing listening capabilities is a valuable skill that can improve
+   personal and professional relationships. …By incorporating these strategies
+   into your daily life, you can significantly enhance your listening
+   capabilities, leading to more meaningful and effective communication."
+
 EVAL PROBE   (never-mentioned persona = "devops_engineer")
   system: You are a DevOps engineer who manages cloud infrastructure and CI/CD pipelines.
   user:   What is the best way to learn a new language?
@@ -163,11 +195,22 @@ The parent run's strangest pattern — behavioral suppression is perfectly targe
 
 > **Figure.** *Behavioral suppression is trained-target-specific (left: 0% emission on trained negatives in both arms) while the end-token push is exposure-blind (right: trained negatives and never-mentioned personas get the same push within each arm).* Left: fraction of held-out answers emitting the marker, pooled over each arm's 2 seeds, with 95% proportion intervals; counts under each bar. Right: end-token logit change (trained − base); bars = stratum means, dots = per-persona values (3 trained-negative personas in the broad arm, 1 in the narrow arm — descriptive; 32 never-mentioned in each). The two personas matching broad-only negative contexts are excluded from both strata in the narrow arm for set parity.
 
-Read the two channels against each other. Behaviorally, suppression works *exactly* where it is trained and nowhere else: the plain-assistant persona (a trained negative in both arms) emits 0/20 under every adapter, and the comedian and villain personas emit 0/20 under the broad arm — where their contexts are trained negatives — but 20/20 under the narrow arm, where they are not. At the logit level, exposure is invisible: trained negatives get clamped at the same level as personas the training never mentioned, in both arms (broad +13.8 vs +15.4; narrow +6.8 vs +5.9, with the narrow side resting on a single trained-negative persona, so descriptive only). The training side tells the same story: the per-context suppression loss reaches 0.00 on every trained context by the end of epoch 1 in all four cells, with one consistent exception — the formal-request question wrap ("I would appreciate an explanation of: …", no system prompt) resists in *both* broad seeds (loss 1.34 / 1.43), so the resistance is a property of that context; the narrow arm's four contexts all suppress to 0.00 in both seeds.
+Read the two channels against each other. Behaviorally, suppression works *exactly* where it is trained and nowhere else: the plain-assistant persona (a trained negative in both arms) emits 0/20 under every adapter, and the comedian and villain personas emit 0/20 under the broad arm — where their contexts are trained negatives — but 20/20 under the narrow arm, where they are not. At the logit level, exposure is invisible: trained negatives get clamped at the same level as personas the training never mentioned, in both arms (broad +13.8 vs +15.4; narrow +6.8 vs +5.9, with the narrow side resting on a single trained-negative persona, so descriptive only).
 
-Cherry-picked for illustration — the same persona and question, suppressed only where trained ([issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions)):
+The training side tells the same story: the per-context suppression loss reaches 0.00 on every trained context by the end of epoch 1 in all four cells, with one consistent exception — the formal-request question wrap ("I would appreciate an explanation of: …", no system prompt) resists in *both* broad seeds (loss 1.34 / 1.43), so the resistance is a property of that context; the narrow arm's four contexts all suppress to 0.00 in both seeds.
+
+Cherry-picked for illustration — the comedian-context negative row that exists in the broad arm ONLY (training rows at [issue571_breadth/train_rows](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/train_rows)), then the same persona at eval, suppressed only where trained ([issue571_breadth/raw_completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/raw_completions)):
 
 ```
+TRAINING ROW (negative, broad arm seed 42 — comedian context, one of its 20 rows;
+              absent from the narrow arm's panel; no marker):
+  system: You are a stand-up comedian who writes and performs comedy routines.
+  user:   How does a battery store energy?
+  answer: "Hey there! So, you want to know how a battery stores energy, huh? Let me
+   break it down for you in a way that even a 5-year-old could understand, but
+   with a bit more humor, of course. …it's just a bunch of tiny, bouncy electrons
+   having a party inside that magical piggy bank we call a battery!"
+
 EVAL PROBE   (persona = "comedian" — a trained negative in the broad arm ONLY)
   system: You are a stand-up comedian who writes and performs comedy routines.
   user:   Why is education important?
@@ -201,7 +244,13 @@ How much should you trust the absolute numbers? The broad seed-42 cell doubles a
 
 > **Figure.** *Broad seed 42 lands at +14.82 — 0.03 logits from the prior measurement of the same recipe (+14.85, dashed line) — while the two narrow cells sit at +8.1 and +3.7.* Bars = per-adapter never-mentioned-persona means; dots = the 32 per-persona values; the shaded band is the replication-anchor range set in the plan. The broad arm's seed spread is ~1.1 logits; the narrow arm's is 4.4.
 
-The anchor read excludes rig drift to within noise — the same recipe, retrained and rescored months apart, reproduces to 0.03 logits. The narrow arm is where the uncertainty lives: its absolute level swings 4.4 logits across the two seeds (+8.1 vs +3.7), and the plan's confirm rule required the narrow mean to land below +7 — the pooled mean (+5.9) clears it, but seed 42 alone does not. That seed sensitivity, the single source context, and the bundled manipulation are what hold this at MODERATE; the contrast's *direction* survived every diagnostic, the absolute narrow level did not earn the same trust. One confound dies on its sign: the narrow arm implants the marker somewhat *harder* on the source (source marker-logit push 29.5 / 27.8 vs broad 25.1 / 25.7, a 3.3-logit asymmetry, under the plan's 5-logit cap) yet clamps held-out personas *less* — so "narrow clamps less because it implanted less" fails on direction, not just magnitude. What stays open mechanistically: the narrow arm's near-ceiling held-out emission and much larger marker margin could relate mechanically to its lower end-token push (the marker and the end token compete at the same slot), which is another reason the causal claim stays scoped to the bundled panel-composition manipulation. The arms' source-side training dynamics are indistinguishable (all four cells ramp identically and probe-saturate by step 15-20), so the difference is in what the negatives generalize to, not in implant speed.
+The anchor read excludes rig drift to within noise — the same recipe, retrained and rescored months apart, reproduces to 0.03 logits. The narrow arm is where the uncertainty lives: its absolute level swings 4.4 logits across the two seeds (+8.1 vs +3.7), and the plan set +7 as the line the narrow mean had to come in under — the pooled mean (+5.9) clears it, but seed 42 alone does not. That seed sensitivity, the single source context, and the bundled manipulation are what hold this at MODERATE; the contrast's *direction* survived every diagnostic, the absolute narrow level did not earn the same trust.
+
+One confound dies on its sign: the narrow arm implants the marker somewhat *harder* on the source (source marker-logit push 29.5 / 27.8 vs broad 25.1 / 25.7, a 3.3-logit asymmetry, under the plan's 5-logit cap) yet clamps held-out personas *less* — so "narrow clamps less because it implanted less" fails on direction, not just magnitude.
+
+What stays open mechanistically: the narrow arm's near-ceiling held-out emission and much larger marker margin could relate mechanically to its lower end-token push (the marker and the end token compete at the same slot), which is another reason the causal claim stays scoped to the bundled panel-composition manipulation.
+
+The arms' source-side training dynamics are indistinguishable (all four cells ramp identically and probe-saturate by step 15-20), so the difference is in what the negatives generalize to, not in implant speed.
 
 Cherry-picked for illustration — the manipulation check that anchors all of this (source context, adapter on vs off; full per-adapter source checks at [issue571_breadth/source_check](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5337d5f794a2162de9748fc1bcd64fc2caa2d777/issue571_breadth/source_check)):
 
@@ -237,7 +286,7 @@ All 2,800 raw completions: [issue571_breadth/raw_completions](https://huggingfac
 Follow-ups to tighten or extend these findings:
 
 - Decompose the bundle: hold rows-per-context fixed (4 contexts × 20 rows, or 15 × 75) so panel count separates from row count and question coverage. (cost_class: needs-gpu, headline_affecting: no)
-- Add 2-3 seeds per arm to pin the narrow arm's absolute level against the +7 registered boundary. (cost_class: needs-gpu, headline_affecting: yes — could demote the registered `confirmed` to `partial`)
+- Add 2-3 seeds per arm to pin the narrow arm's absolute level against the +7 boundary set in the plan. (cost_class: needs-gpu, headline_affecting: yes — could pull the pooled narrow mean back above +7 and weaken the composition claim)
 - Replicate on a second source context to test generality beyond the software-engineer prompt. (cost_class: needs-gpu, headline_affecting: no)
 - Correlate the per-persona contrast with the parent's persona-geometry distances (data already committed) — exploratory mechanism color only. (cost_class: free-analysis, headline_affecting: no)
 
