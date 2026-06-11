@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 570,
+  "highest_id": 571,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3414,6 +3414,14 @@
       "path": "tasks/running/570",
       "status": "running",
       "title": "Model organism: does a band-stopped CLEAN marker survive the survival-regime lr (5e-6), and does EM SFT erase it differently from benign SFT?"
+    },
+    "571": {
+      "goal": "Test whether negative-panel breadth causes the universal end-of-answer clamp by training matched marker adapters on one source context (software-engineer query, the i474 recipe held fixed) that differ only in negative-panel size \u2014 15 bystander conditions vs a 4-condition class-spanning subset, total negative rows held at 300 \u2014 and reading the end-token logit change on the never-negative held-out personas.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/571",
+      "status": "proposed",
+      "title": "Does negative-panel breadth cause the universal end-of-answer clamp?"
     },
     "6": {
       "has_clean_result": false,
