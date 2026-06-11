@@ -3,3 +3,4 @@
 {"ts": "2026-06-11T06:49:36Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "approved"}
 {"ts": "2026-06-11T06:50:53Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "running"}
 {"ts": "2026-06-11T06:51:14Z", "kind": "epm:campaign-started", "version": 1, "by": "unknown", "note": "anchor: q:leak-behavior-vs-marker\nbudget_gpu_hours: 300\nlimits: per_child_cap=100, max_concurrent=4, max_experiments=8, dry_limit=3, wall_clock_days=5\ndag_size: 5 (e1 ready; e2-e5 depend on e1)\nsession: cmq95100xkqy9yc0u29f0p5eh; tick cron armed (*/20)"}
+{"ts": "2026-06-11T06:52:52Z", "kind": "epm:campaign-child-spawned", "version": 1, "by": "unknown", "note": "experiment: e1\nchild: #593\nsession: cmq954p5me8kcwc0v8su91uyl\ncommitted_hours: 0 (e1 is zero-GPU analysis)\nremaining_headroom: 300.0\nopen_slots_after: 3 (e2-e5 blocked on e1)"}
