@@ -3134,8 +3134,8 @@
     "536": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/interpreting/536",
-      "status": "interpreting",
+      "path": "tasks/reviewing/536",
+      "status": "reviewing",
       "title": "Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing \u2014 including the one null whose apparent rescue died under the published estimator (HIGH confidence)"
     },
     "537": {
