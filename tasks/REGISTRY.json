@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 578,
+  "highest_id": 579,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3471,6 +3471,13 @@
       "path": "tasks/proposed/578",
       "status": "proposed",
       "title": "Add a CVD-clobber regression smoke asserting sweep waves land on cvd1/2/3"
+    },
+    "579": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/579",
+      "status": "proposed",
+      "title": "codex_task.py: add one auto-retry with backoff and verify the E2BIG file-transport fix merged to main"
     },
     "6": {
       "has_clean_result": false,
