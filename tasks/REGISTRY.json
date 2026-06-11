@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 599,
+  "highest_id": 600,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3633,6 +3633,13 @@
       "path": "tasks/proposed/6",
       "status": "proposed",
       "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
+    },
+    "600": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/600",
+      "status": "proposed",
+      "title": "Targeted proximity-dose test: does a contrastive negative parked next to a specific bystander suppress that bystander's leakage?"
     },
     "61": {
       "has_clean_result": true,
