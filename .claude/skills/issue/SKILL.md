@@ -2412,7 +2412,8 @@ mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
 RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
 cross-checks the task's ACTUAL frontmatter: passing `--backend runpod`
-while the frontmatter `backend:` is absent/empty triggers a LOUD
+while the frontmatter `backend:` does not name a backend (absent/empty,
+or an explicit `auto`) triggers a LOUD
 stderr warning + `extra.override_without_frontmatter=true` on the
 `epm:backend-selected` marker (additive visibility — the launch is not
 blocked). For the gcp/auto lanes the dispatch script must exist
@@ -2442,8 +2443,8 @@ SLURM helpers call `task.py post-marker` via
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
   `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
   `override_without_frontmatter?` — stamped by the dispatch CLI when
-  `--backend runpod` was passed while the task frontmatter has no
-  `backend:` value).
+  `--backend runpod` was passed while the task frontmatter does not
+  name a backend: absent/empty, or an explicit `auto`).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.
