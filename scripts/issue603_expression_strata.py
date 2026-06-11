@@ -31,16 +31,29 @@ prior->CMF gradient could arise from response-content composition alone
    conservative ``guard_b_verdict`` consumed by the §6 decision lattice.
 
 Checkpoint per cell: judge labels persist to
-``eval_results/issue_603/expression_labels/{cell_id}.json`` the moment a
-cell's labeling completes; re-runs skip labeled cells ONLY when the cache
-passes ``_cache_labels_valid`` — ``with_bystanders`` mode matches the
-current invocation, the cache is not all-null, AND (binary families only)
-it carries ``labels_schema_version == LABELS_SCHEMA_VERSION``. Pre-v2
-refusal/EM caches were produced by the defective 5-way-validator path and
-are deterministically stale (mode/schema/null mismatch -> recompute,
-never silent reuse). In-flight Batch jobs survive a crash via a
-``{cell_id}.batch.json`` sidecar (batch_id + row manifest) and are
-resumed instead of resubmitted.
+``{labels_dir}/{cell_id}.json`` the moment a cell's labeling completes;
+re-runs skip labeled cells ONLY when the cache passes
+``_cache_labels_valid`` — ``with_bystanders`` mode matches the current
+invocation, the cache is not all-null, the recorded extraction-text
+``variant`` matches the CURRENT cell manifest's variant (variant-less
+caches predate the base-text follow-up and count as ``same``), AND
+(binary families only) it carries ``labels_schema_version`` in
+``[2, LABELS_SCHEMA_VERSION]``. Pre-v2 refusal/EM caches were produced by
+the defective 5-way-validator path and are deterministically stale
+(mode/schema/variant/null mismatch -> recompute, never silent reuse).
+In-flight Batch jobs survive a crash via a ``{cell_id}.batch.json``
+sidecar (batch_id + row manifest + variant) and are resumed instead of
+resubmitted.
+
+Variant namespacing (plan v2 text-clean check): the ``--labels-dir`` /
+``--out`` DEFAULTS derive from the ``--shifts-dir`` basename — the parent
+``shifts`` keeps the parent locations (``expression_labels/``,
+``expression_strata.json``); any other basename (e.g. ``shifts_base``)
+defaults to namespaced siblings (``expression_labels_base/``,
+``expression_strata_base.json``). A run whose manifests record a
+non-``same`` variant REFUSES to write to the parent locations (fail-loud:
+a base-text run can never silently clobber the parent's label caches or
+strata artifact, and one run reads exactly ONE realized variant).
 
 Artifact staging: ``issue603_decompose.py --from-hub`` is the CANONICAL
 off-pod staging step (pulls per-cell ``.pt`` + manifests + responses
@@ -53,6 +66,11 @@ passed to the judge and NEVER printed/logged.
 Run (VM)::
 
     uv run python scripts/issue603_expression_strata.py
+    # #603 base-text follow-up (plan v2): labels/out default to the
+    # namespaced siblings expression_labels_base/ + expression_strata_base.json;
+    # pointing them back at the parent locations fail-louds.
+    uv run python scripts/issue603_expression_strata.py \
+        --shifts-dir eval_results/issue_603/base-text-extraction/shifts_base
 """
 
 from __future__ import annotations
@@ -79,9 +97,16 @@ PRIMARY_KEY = "delta_v_mean_resp"
 # v2: refusal/EM verdicts parsed by _parse_binary_verdict (Messages Batch)
 # instead of falling through reanalyze_issue444_5way._judge_one's 5-way
 # validator (which nulled every binary verdict). Binary-family caches
-# WITHOUT this version are stale by construction; fact caches are
-# grandfathered (their 5-way path never changed).
-LABELS_SCHEMA_VERSION = 2
+# below v2 are stale by construction; fact caches are grandfathered
+# (their 5-way path never changed).
+# v3: caches additionally record the extraction-text "variant"
+# ("same" | "base") they were judged on; _cache_labels_valid binds reuse to
+# the CURRENT cell manifest's variant. Variant-less caches (v2 binary + the
+# grandfathered fact caches) are treated as variant="same" — correct for
+# every cache that existed before the base-text follow-up — so parent
+# same-text runs keep reusing them while a base-text run deterministically
+# re-judges. Binary validity accepts versions in [2, LABELS_SCHEMA_VERSION].
+LABELS_SCHEMA_VERSION = 3
 BATCH_POLL_S = 15.0
 
 REFUSAL_JUDGE_SYSTEM = """\
@@ -137,6 +162,41 @@ def _load_cells(families: list[str]) -> list[dict]:
     return cells
 
 
+def _manifest_variant(shifts_dir: Path, cell_id: str) -> str:
+    """Realized extraction-text variant (``"same"`` | ``"base"``) for one cell.
+
+    Read from the extraction worker's ``{cell_id}.manifest.json`` sidecar
+    (``issue603_extract_worker.py`` records the REALIZED ``variant`` there).
+    Manifests that predate the field count as ``"same"`` — the only variant
+    that existed then. Fail-loud on a missing sidecar: it is staged alongside
+    the ``.pt`` by the dispatcher / ``--from-hub``, so absence means a
+    mis-staged shifts dir, and label caches cannot be variant-bound without it.
+    """
+    p = shifts_dir / f"{cell_id}.manifest.json"
+    if not p.exists():
+        raise FileNotFoundError(
+            f"{p} missing — every cell's manifest sidecar is staged alongside its .pt "
+            "(issue603_extract_worker.py / _pull_from_hub); cannot bind label caches "
+            "to an extraction variant without it"
+        )
+    return json.loads(p.read_text()).get("variant") or "same"
+
+
+def _derived_defaults(shifts_dir: Path) -> tuple[Path, Path]:
+    """Variant-namespaced ``--labels-dir`` / ``--out`` defaults.
+
+    Derived from the shifts-dir BASENAME: the parent dir ``shifts`` keeps the
+    parent locations (``expression_labels/``, ``expression_strata.json``);
+    any other basename (e.g. ``shifts_base``) namespaces both as siblings
+    (``expression_labels_base/``, ``expression_strata_base.json``) so a
+    base-text run on defaults can never clobber the parent artifacts. Mirrors
+    how the dispatcher / ``_pull_from_hub`` derive the hub subdir from the
+    out-dir basename.
+    """
+    suffix = "" if shifts_dir.name == "shifts" else "_" + shifts_dir.name.removeprefix("shifts_")
+    return EVAL_DIR / f"expression_labels{suffix}", EVAL_DIR / f"expression_strata{suffix}.json"
+
+
 def _judge_jobs_for(family: str, records: list[dict]) -> list[tuple[str, str]]:
     """Build (system, user) judge jobs for the kept records of one persona."""
     from reanalyze_issue444_5way import JUDGE_SYSTEM as FACT_JUDGE_SYSTEM
@@ -188,17 +248,22 @@ def _parse_binary_verdict(text: str) -> dict:
 
 
 def _cache_labels_valid(
-    labels_path: Path, family: str, with_bystanders: bool
+    labels_path: Path, family: str, with_bystanders: bool, variant: str
 ) -> tuple[bool, str | None]:
     """Validate a cached labels file; return (valid, stale_reason).
 
     Stale when: absent; recorded ``with_bystanders`` mode mismatches the
-    current invocation; a BINARY-family cache lacks ``labels_schema_version
-    == LABELS_SCHEMA_VERSION`` (pre-v2 refusal/EM caches were produced by the
-    defective 5-way-validator path — stale by construction); or every verdict
-    is null (defective parse or 100% judge errors — a resume must re-judge,
-    never silently reuse vacuous labels). Fact caches are grandfathered on
-    the schema-version check (their 5-way judge path never changed).
+    current invocation; a BINARY-family cache lacks ``labels_schema_version``
+    in ``[2, LABELS_SCHEMA_VERSION]`` (pre-v2 refusal/EM caches were produced
+    by the defective 5-way-validator path — stale by construction); the
+    recorded extraction-text ``variant`` mismatches the CURRENT cell
+    manifest's ``variant`` (labels judged on the trained model's own text
+    must never stand in for base-model text or vice versa — variant-less
+    caches predate the base-text follow-up and count as ``"same"``, correct
+    for every cache that existed then); or every verdict is null (defective
+    parse or 100% judge errors — a resume must re-judge, never silently
+    reuse vacuous labels). Fact caches are grandfathered on the
+    schema-version check (their 5-way judge path never changed).
     """
     if not labels_path.exists():
         return False, "absent"
@@ -207,11 +272,20 @@ def _cache_labels_valid(
         return False, (
             f"with_bystanders={cached.get('with_bystanders')} but this run wants {with_bystanders}"
         )
-    if family in ("refusal", "em") and cached.get("labels_schema_version") != LABELS_SCHEMA_VERSION:
+    ver = cached.get("labels_schema_version")
+    if family in ("refusal", "em") and not (
+        isinstance(ver, int) and 2 <= ver <= LABELS_SCHEMA_VERSION
+    ):
         return False, (
-            f"binary-family cache at labels_schema_version="
-            f"{cached.get('labels_schema_version')} (< {LABELS_SCHEMA_VERSION}: produced by "
+            f"binary-family cache at labels_schema_version={ver} (< 2: produced by "
             "the 5-way-validator path that nulled every refusal/em verdict)"
+        )
+    cached_variant = cached.get("variant") or "same"
+    if cached_variant != variant:
+        return False, (
+            f"cache labeled variant={cached_variant!r} responses but this run reads "
+            f"variant={variant!r} shifts (a same-text label cache must never stand in "
+            "for base-text responses, or vice versa — re-judge)"
         )
     flags = [e["expressed"] for rows in cached.get("labels", {}).values() for e in rows]
     if flags and all(f is None for f in flags):
@@ -225,6 +299,7 @@ def _persist_labels(
     labels: dict[str, list[dict]],
     *,
     with_bystanders: bool,
+    variant: str,
     judge_batch_id: str | None = None,
 ) -> None:
     """Write one cell's labels checkpoint (indices + verdicts only, never text)."""
@@ -235,6 +310,7 @@ def _persist_labels(
         "cell_id": cell["cell_id"],
         "family": cell["family"],
         "with_bystanders": with_bystanders,
+        "variant": variant,
         "labels_schema_version": LABELS_SCHEMA_VERSION,
         "judge_model": JUDGE_MODEL,
         "git_commit": _git_commit(),
@@ -248,21 +324,27 @@ def _persist_labels(
 
 
 def _label_cell(
-    cell: dict, responses: dict[str, list[dict]], labels_path: Path, *, with_bystanders: bool
+    cell: dict,
+    responses: dict[str, list[dict]],
+    labels_path: Path,
+    *,
+    with_bystanders: bool,
+    variant: str,
 ) -> dict[str, list[dict]]:
     """Judge-label one cell's responses; checkpoint to labels_path; resume-skip.
 
     Resume is VALIDATED by ``_cache_labels_valid`` (mode match + binary schema
-    version + non-all-null); a stale cache is recomputed + overwritten, never
-    silently reused. Fact cells run the unchanged synchronous 5-way path here;
-    refusal/EM cells are labeled by the Messages-Batch pre-pass
-    (``_batch_label_binary_cells``) — reaching this function with an invalid
-    binary cache means that pre-pass failed, which is a hard error.
+    version + extraction-variant binding + non-all-null); a stale cache is
+    recomputed + overwritten, never silently reused. Fact cells run the
+    unchanged synchronous 5-way path here; refusal/EM cells are labeled by
+    the Messages-Batch pre-pass (``_batch_label_binary_cells``) — reaching
+    this function with an invalid binary cache means that pre-pass failed,
+    which is a hard error.
     """
     from reanalyze_issue444_5way import _judge_rows_parallel
 
     family, source = cell["family"], cell["source"]
-    valid, stale_reason = _cache_labels_valid(labels_path, family, with_bystanders)
+    valid, stale_reason = _cache_labels_valid(labels_path, family, with_bystanders, variant)
     if valid:
         return json.loads(labels_path.read_text())["labels"]
     if labels_path.exists():
@@ -298,18 +380,22 @@ def _label_cell(
             }
             for r, v in zip(kept, verdicts, strict=True)
         ]
-    _persist_labels(labels_path, cell, labels, with_bystanders=with_bystanders)
+    _persist_labels(labels_path, cell, labels, with_bystanders=with_bystanders, variant=variant)
     return labels
 
 
 def _submit_or_resume_batch(
-    client, cell: dict, shifts_dir: Path, labels_dir: Path, *, with_bystanders: bool
+    client, cell: dict, shifts_dir: Path, labels_dir: Path, *, with_bystanders: bool, variant: str
 ) -> dict:
     """Submit one cell's binary-judge batch (or resume it from its sidecar).
 
     Returns the pending entry ``{cell, batch_id, manifest, labels_path,
-    sidecar}``. Judge params are identical to the synchronous path (same
-    model, max_tokens, system prompt, ``{`` prefill, default temperature).
+    sidecar, variant}``. Judge params are identical to the synchronous path
+    (same model, max_tokens, system prompt, ``{`` prefill, default
+    temperature). The sidecar records the extraction-text ``variant`` and a
+    sidecar from a different variant is never resumed (the row manifest alone
+    cannot discriminate — same/base runs can share (persona, q_index) rows
+    while the judged response TEXT differs).
     """
     from reanalyze_issue444_5way import JUDGE_MODEL
 
@@ -340,7 +426,11 @@ def _submit_or_resume_batch(
     batch_id: str | None = None
     if sidecar.exists():
         prior = json.loads(sidecar.read_text())
-        if prior.get("with_bystanders") == with_bystanders and prior.get("manifest") == manifest:
+        if (
+            prior.get("with_bystanders") == with_bystanders
+            and prior.get("variant", "same") == variant
+            and prior.get("manifest") == manifest
+        ):
             try:
                 b = client.messages.batches.retrieve(prior["batch_id"])
             except Exception as e:  # stale/expired batch id -> resubmit
@@ -367,6 +457,7 @@ def _submit_or_resume_batch(
                     "family": cell["family"],
                     "batch_id": batch_id,
                     "with_bystanders": with_bystanders,
+                    "variant": variant,
                     "judge_model": JUDGE_MODEL,
                     "manifest": manifest,
                 },
@@ -380,6 +471,7 @@ def _submit_or_resume_batch(
         "manifest": manifest,
         "labels_path": labels_dir / f"{cid}.json",
         "sidecar": sidecar,
+        "variant": variant,
     }
 
 
@@ -418,6 +510,7 @@ def _collect_batch(client, p: dict, *, with_bystanders: bool) -> None:
         p["cell"],
         labels,
         with_bystanders=with_bystanders,
+        variant=p["variant"],
         judge_batch_id=p["batch_id"],
     )
     p["sidecar"].unlink(missing_ok=True)
@@ -431,7 +524,7 @@ def _collect_batch(client, p: dict, *, with_bystanders: bool) -> None:
 
 
 def _batch_label_binary_cells(
-    cells: list[dict], shifts_dir: Path, labels_dir: Path, *, with_bystanders: bool
+    cells: list[dict], shifts_dir: Path, labels_dir: Path, *, with_bystanders: bool, variant: str
 ) -> None:
     """Judge refusal/EM cells via the Messages BATCH API; checkpoint per cell.
 
@@ -439,9 +532,12 @@ def _batch_label_binary_cells(
     All stale/missing cells' batches are submitted up front, then polled;
     each cell's labels persist the moment ITS batch ends
     (checkpoint-per-cell). A ``{cell_id}.batch.json`` sidecar (batch_id +
-    row manifest) makes an in-flight batch crash-resumable without
+    row manifest + variant) makes an in-flight batch crash-resumable without
     resubmission; it is removed once the labels checkpoint lands. Cells
-    with a valid cache are skipped.
+    with a valid cache are skipped. ``variant`` is the run's single realized
+    extraction-text variant (``main`` reads it from every selected cell's
+    manifest and asserts uniqueness); it binds cache validation and the
+    persisted labels.
     """
     import anthropic
 
@@ -451,13 +547,15 @@ def _batch_label_binary_cells(
         cid = cell["cell_id"]
         assert cell["family"] in ("refusal", "em"), cell["family"]
         labels_path = labels_dir / f"{cid}.json"
-        valid, stale_reason = _cache_labels_valid(labels_path, cell["family"], with_bystanders)
+        valid, stale_reason = _cache_labels_valid(
+            labels_path, cell["family"], with_bystanders, variant
+        )
         if valid:
             continue
         if labels_path.exists():
             logger.warning("%s: stale label cache (%s) — re-judging via batch", cid, stale_reason)
         pending[cid] = _submit_or_resume_batch(
-            client, cell, shifts_dir, labels_dir, with_bystanders=with_bystanders
+            client, cell, shifts_dir, labels_dir, with_bystanders=with_bystanders, variant=variant
         )
 
     while pending:
@@ -721,8 +819,18 @@ def main() -> int:
     ap.add_argument("--families", default="fact,refusal,em")
     ap.add_argument("--cells", default="", help="Comma cell_id subset (smoke).")
     ap.add_argument("--no-bystanders", dest="bystanders", action="store_false", default=True)
-    ap.add_argument("--out", default=str(EVAL_DIR / "expression_strata.json"))
-    ap.add_argument("--labels-dir", default=str(EVAL_DIR / "expression_labels"))
+    ap.add_argument(
+        "--out",
+        default="",
+        help="Output strata JSON; default derives from the --shifts-dir basename "
+        "(shifts -> expression_strata.json, shifts_base -> expression_strata_base.json).",
+    )
+    ap.add_argument(
+        "--labels-dir",
+        default="",
+        help="Label-cache dir; default derives from the --shifts-dir basename "
+        "(shifts -> expression_labels/, shifts_base -> expression_labels_base/).",
+    )
     ap.add_argument(
         "--from-hub",
         action="store_true",
@@ -738,7 +846,9 @@ def main() -> int:
         cells = [c for c in cells if c["cell_id"] in keep]
     assert cells, "no cells selected"
     shifts_dir = Path(args.shifts_dir)
-    labels_dir = Path(args.labels_dir)
+    default_labels_dir, default_out = _derived_defaults(shifts_dir)
+    labels_dir = Path(args.labels_dir) if args.labels_dir else default_labels_dir
+    out_path = Path(args.out) if args.out else default_out
     if args.from_hub:
         from issue603_decompose import _pull_from_hub
 
@@ -749,6 +859,41 @@ def main() -> int:
             priors_target=(EVAL_DIR / "source_priors.json") if need_priors else None,
         )
 
+    # Bind the run to ONE realized extraction-text variant (per-cell manifest
+    # reads), and refuse to write a non-`same` run into the parent same-text
+    # locations — a base-text run on mis-pointed paths would otherwise clobber
+    # the parent's label caches / strata artifact (concern
+    # strata-label-cache-variant-unbound).
+    variants = {c["cell_id"]: _manifest_variant(shifts_dir, c["cell_id"]) for c in cells}
+    distinct = sorted(set(variants.values()))
+    if len(distinct) != 1:
+        raise RuntimeError(
+            f"selected cells span multiple extraction variants {distinct} under {shifts_dir} — "
+            "the stratified read pools cells per family, so one run must read exactly one "
+            f"variant; per-cell: {dict(sorted(variants.items()))}"
+        )
+    variant = distinct[0]
+    if variant != "same":
+        clash = [
+            flag
+            for flag, p, parent in (
+                ("--labels-dir", labels_dir, EVAL_DIR / "expression_labels"),
+                ("--out", out_path, EVAL_DIR / "expression_strata.json"),
+            )
+            if p.resolve() == parent.resolve()
+        ]
+        if clash:
+            raise RuntimeError(
+                f"variant={variant!r} shifts ({shifts_dir}) but {' and '.join(clash)} point at "
+                "the parent same-text location(s) — refusing to clobber the parent's label "
+                "caches / strata artifact. Use a variant-suffixed shifts-dir basename (e.g. "
+                "shifts_base) so the defaults derive to namespaced siblings, or pass "
+                "non-parent paths explicitly."
+            )
+    logger.info(
+        "[variant] %s (%d cells) -> labels_dir=%s out=%s", variant, len(cells), labels_dir, out_path
+    )
+
     # Messages-Batch pre-pass: judge every refusal/em cell whose label cache
     # is stale/missing (all 12 cells' batches submitted up front, labels
     # persisted per cell as each batch ends). Fact cells keep the synchronous
@@ -756,7 +901,7 @@ def main() -> int:
     binary_cells = [c for c in cells if c["family"] in ("refusal", "em")]
     if binary_cells:
         _batch_label_binary_cells(
-            binary_cells, shifts_dir, labels_dir, with_bystanders=args.bystanders
+            binary_cells, shifts_dir, labels_dir, with_bystanders=args.bystanders, variant=variant
         )
 
     per_cell: dict[str, dict] = {}
@@ -766,13 +911,18 @@ def main() -> int:
         payload = torch.load(shifts_dir / f"{cid}.pt", map_location="cpu", weights_only=False)
         responses = json.loads((shifts_dir / f"{cid}_responses.json").read_text())["responses"]
         labels = _label_cell(
-            cell, responses, labels_dir / f"{cid}.json", with_bystanders=args.bystanders
+            cell,
+            responses,
+            labels_dir / f"{cid}.json",
+            with_bystanders=args.bystanders,
+            variant=variant,
         )
         bys_stats[cid] = _bystander_label_stats(labels, cell["source"])
         read = _stratified_cell_read(payload["shifts"], responses, labels, cell["source"])
         read["family"] = cell["family"]
         read["source"] = cell["source"]
         read["seed"] = cell["seed"]
+        read["variant"] = variant
         read["prior"] = cell.get("prior_logprob")
         per_cell[cid] = read
         logger.info(
@@ -825,6 +975,8 @@ def main() -> int:
                 "= the FACT family verdict (the primary axis)."
             ),
             "labels_schema_version": LABELS_SCHEMA_VERSION,
+            "variant": variant,
+            "shifts_dir": str(shifts_dir),
             "judges": {
                 "fact": "reanalyze_issue444_5way.JUDGE_SYSTEM (5-way; expressed=stated_seven)",
                 "refusal": "binary Haiku refusal judge (this script; Messages Batch API)",
@@ -836,7 +988,6 @@ def main() -> int:
         "cross_family": cross_family,
         "guard_b_verdict": guard_b_verdict,
     }
-    out_path = Path(args.out)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w") as f:
         json.dump(out, f, indent=2)
