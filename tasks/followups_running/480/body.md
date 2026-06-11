@@ -509,7 +509,7 @@ This pass consumes only the two committed per-cell matrices — no new training,
 
 **Parameters:**
 
-(Parent run. The band-stopped re-run changes ONLY the training-stop recipe — lr 5e-6, 528-step cap, 20-step checkpoint ladder, onset-edge anchor pick — documented in full under the Follow-up 2 block in Artifacts below.)
+(Parent run, per the originally approved plan v1; the live `plans/plan.md` symlink now points at the v5 statistics-only follow-up amendment, which trains nothing and declares no learning rate. The band-stopped re-run deliberately departs from the parent plan's lr — 5e-6 against the parent's 1e-5 — as its single recipe variable, documented in full under the Follow-up 2 block in Artifacts below, along with the 528-step cap, 20-step checkpoint ladder, and onset-edge anchor pick.)
 
 | Parameter | Value |
 |---|---|
