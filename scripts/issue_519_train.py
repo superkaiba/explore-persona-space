@@ -7,9 +7,12 @@ NOT Hydra composition — the #519 single-phase recipe doesn't fit the
 project's two-phase ``configs/config.yaml`` scaffold cleanly, see
 implementer report §(b)).
 
-Marker arm: rsLoRA r=8 alpha=16 dropout=0.0 lr=1e-6 cosine 200 steps,
-loss masked via ``MarkerOnlyDataCollator(tail_tokens=0,
-suppress_at_post_response_slot=True, im_end_token_id=151645)``.
+Marker arm: rsLoRA r=8 alpha=16 dropout=0.0 lr=2e-6 cosine 600 steps
+(the 2026-06-08 plan-revision recorded in the YAML — the YAML is
+authoritative), loss masked via ``MarkerOnlyDataCollator(tail_tokens=0,
+suppress_at_post_response_slot=True, im_end_token_id=151645)``; #599's
+``--loss-shape full_response`` skips the collator wrap and keeps TRL's
+completion-mask CE over every completion token.
 
 EM arm: rsLoRA r=8 alpha=16 dropout=0.05 lr=2e-6 linear 200 steps,
 standard ``train_on_responses_only=True`` CE on all assistant tokens.

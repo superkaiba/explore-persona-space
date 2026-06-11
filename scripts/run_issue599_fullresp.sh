@@ -35,8 +35,11 @@
 #      (SEPARATE dir) + the #551 4-clause reproduction gate
 #   9. C extraction, 9 new cells (3 variants x 3 seeds, 4-way shard)
 #  10. uploads BEFORE termination: shift tensors -> PRIVATE data repo (9+9
-#      verify), training JSONLs -> private repo, per-step checkpoint adapters
-#      + final-adapter presence verify -> model repo (private fallback)
+#      verify), training JSONLs -> private repo, gate JSONs
+#      (manipulation_check.json + smoke_gate_result.json — the VM-side
+#      compare HARD-REQUIRES both; fail-closed) -> private repo,
+#      per-step checkpoint adapters + final-adapter presence verify ->
+#      model repo (private fallback)
 #  11. CONDITIONAL §7.3 tiered extension (pre-registered KILL branch):
 #      probe trigger = ALL-seed KILL AND step-600 DG >= 0.3 nat on >=1 seed.
 #      Probe: seed 42 fresh train --max-steps 2400 (stretched cosine — a
@@ -81,6 +84,7 @@ HF_DATA_REPO_PRIVATE="superkaiba1/explore-persona-space-data-private"
 # upload/verify code against a temporary smoke prefix.
 HF_TENSOR_PREFIX="${UPLOAD_PREFIX:-issue599_fullresp/analysis_tensors/shifts}"
 HF_DATA_PREFIX="issue599_fullresp/data"
+HF_EVAL_PREFIX="issue599_fullresp/eval"
 HF_SUBFOLDER_PREFIX="issue_599_fullresp"
 HF_SUBFOLDER_PREFIX_EXT="issue_599_fullresp_ext"
 HF_TENSOR_PREFIX_EXT="issue599_fullresp_ext/analysis_tensors/shifts"
@@ -663,6 +667,54 @@ PY
   fi
 fi
 
+# ── 10b'. gate JSONs -> private data repo (compare HARD-REQUIRES both) ──
+# The VM-side compare (issue599_compare.py) fails CLOSED without
+# manipulation_check.json + smoke_gate_result.json (round-1 review blocker
+# compare-gates-fail-open): persist both off-pod alongside the tensors so
+# the §13 headline gates can never be skipped by a missing pod->VM sync.
+# Small JSONs -> non-LFS path (safe under the #541/#552 quota gate).
+phase upload_gate_jsons "manipulation_check.json + smoke_gate_result.json -> hf://${HF_DATA_REPO_PRIVATE}/${HF_EVAL_PREFIX}"
+if [[ "$DRY_RUN" == "1" ]]; then
+  echo "[dry-run] upload gate JSONs :: ${OUTPUT_DIR}/manipulation_check.json + ${SMOKE_DIR}/smoke_gate_result.json -> ${HF_EVAL_PREFIX}/ + presence verify"
+else
+  GATE_UP_RC=0
+  uv run python - "$REPO_ROOT" "$HF_DATA_REPO_PRIVATE" "$HF_EVAL_PREFIX" \
+    "$OUTPUT_DIR/manipulation_check.json" "$SMOKE_DIR/smoke_gate_result.json" <<'PY' || GATE_UP_RC=$?
+import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+repo_root, repo_id, prefix = Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+gate_files = [repo_root / p for p in sys.argv[4:]]
+load_dotenv(str(repo_root / ".env"))
+
+from huggingface_hub import HfApi, list_repo_files  # noqa: E402
+
+api = HfApi()
+for local in gate_files:
+    assert local.exists(), f"missing gate JSON {local} — refusing to finish without it"
+    api.upload_file(
+        path_or_fileobj=str(local),
+        path_in_repo=f"{prefix}/{local.name}",
+        repo_id=repo_id,
+        repo_type="dataset",
+    )
+    print(f"uploaded {local.name} -> {repo_id}/{prefix}/")
+on_hub = {
+    f.rsplit("/", 1)[-1]
+    for f in list_repo_files(repo_id, repo_type="dataset")
+    if f.startswith(prefix + "/")
+}
+missing = [local.name for local in gate_files if local.name not in on_hub]
+assert not missing, f"gate-JSON verify FAIL: {missing} not on hub under {prefix}/"
+print(f"verified on hub: {sorted(local.name for local in gate_files)} under {prefix}/")
+PY
+  if (( GATE_UP_RC != 0 )); then
+    fail_loud 2 infra gate_json_upload_verify_failed_POD_KEPT_ALIVE
+  fi
+fi
+
 # ── 10c. checkpoint adapters + final-adapter presence verify ───────────
 # The #519 post-mortem lost the per-step checkpoints at termination and
 # named them load-bearing; for #599 the K=50 trajectory checkpoints ARE
@@ -941,7 +993,7 @@ if [[ "$DRY_RUN" == "1" ]]; then
 else
   EPOCH="$(date +%s)"
   SENTINEL="/workspace/logs/issue-599-epm_results-${EPOCH}.json"
-  uv run python - "$SENTINEL" "$OUTPUT_DIR" "$SMOKE_DIR" "$EXT_DIR" "$HF_DATA_REPO_PRIVATE" "$HF_TENSOR_PREFIX" "$EXT_RAN" "$EXT_ESCALATED" <<'PY'
+  uv run python - "$SENTINEL" "$OUTPUT_DIR" "$SMOKE_DIR" "$EXT_DIR" "$HF_DATA_REPO_PRIVATE" "$HF_TENSOR_PREFIX" "$EXT_RAN" "$EXT_ESCALATED" "$HF_EVAL_PREFIX" <<'PY'
 import json
 import subprocess
 import sys
@@ -953,6 +1005,7 @@ sentinel, output_dir, smoke_dir, ext_dir = (
 )
 repo_id, prefix = sys.argv[5], sys.argv[6]
 ext_ran, ext_escalated = sys.argv[7] == "1", sys.argv[8] == "1"
+eval_prefix = sys.argv[9]
 gate_path = smoke_dir / "smoke_gate_result.json"
 gate = json.loads(gate_path.read_text()) if gate_path.exists() else {}
 b0_path = output_dir / "smoke" / "marker_seed42" / "saturation_gate_result.json"
@@ -997,6 +1050,7 @@ note = {
     "n_shift_pt_files": len(shift_files),
     "shift_files": shift_files,
     "hf_tensor_prefix": f"{repo_id}/{prefix}",
+    "gate_jsons_hf_prefix": f"{repo_id}/{eval_prefix}",
     "manipulation_check": manip,
     "production_provenance": provenance,
     "extension_branch": ext,
@@ -1006,7 +1060,10 @@ note = {
         "--new-shifts-dir eval_results/issue_599/shifts "
         "--manipulation-check eval_results/issue_599/manipulation_check.json "
         "--smoke-gate-json eval_results/issue_599_extract_smoke/smoke_gate_result.json "
-        "--out eval_results/issue_599/comparison"
+        "--out eval_results/issue_599/comparison "
+        f"(compare HARD-REQUIRES both gate JSONs — fail-closed; also persisted at "
+        f"hf://{repo_id}/{eval_prefix}/ if the pod->VM eval_results sync hasn't landed. "
+        f"NEVER pass --allow-missing-gates on this production invocation.)"
     ),
 }
 payload = {
