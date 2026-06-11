@@ -5,7 +5,7 @@ title: A contrastive negative parked next to a specific bystander does not detec
 kind: experiment
 tags: []
 created_at: '2026-06-11T09:36:43Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 505
 goal: Determine causally whether a contrastive negative suppresses marker leakage
   locally — for the specific bystander persona it sits next to — by manipulating,
