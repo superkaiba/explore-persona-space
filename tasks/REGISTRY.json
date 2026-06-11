@@ -3243,8 +3243,8 @@
     "549": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/549",
-      "status": "running",
+      "path": "tasks/interpreting/549",
+      "status": "interpreting",
       "title": "Audit historical multi-checkpoint vLLM evals for the #534 lora_int_id cache-collision bug"
     },
     "55": {
