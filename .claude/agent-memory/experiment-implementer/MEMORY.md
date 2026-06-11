@@ -30,3 +30,4 @@
 - [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — #601: bank 60 vs R_eval 61 personas, 45 overlap; assert per-(persona,q) coverage against the READ-side artifact before registering panels; descope with explicit coverage field, never regenerate frozen R.
 - [Resume branches synthesize success-equivalent results](feedback_resume_branch_synthesize_result.md) — bare-continue skip branches read as crashes downstream; rehearse resume offline (incident #600 r5)
 - [preflight --json is multi-line](feedback_preflight_json_multiline.md) — parse whole stdout, never splitlines()[-1]; give dispatchers --skip-preflight (#602)
+- [max_model_len tracks max_new_tokens](feedback_max_model_len_tracks_max_new_tokens.md) — raising max_new_tokens on an inherited vLLM rig requires raising max_model_len at the call site (cap-length R re-enters as prompt; #601)
