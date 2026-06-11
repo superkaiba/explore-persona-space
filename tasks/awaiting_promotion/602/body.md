@@ -4,7 +4,8 @@ title: 'Estimating where training will shift a model''s activations from the bas
   all miss the realized shift at the mid-stack read-out, across six adapter families
   (HIGH confidence)'
 kind: analysis
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T10:48:14Z'
 has_clean_result: true
 ---
