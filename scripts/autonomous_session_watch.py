@@ -143,7 +143,10 @@ runs right after pass 2):
    episode); a budget backstop alerts once per episode when
    ``campaign-state.json`` shows GPU-hours committed > total; entries +
    watch state are reaped when the campaign task is terminal
-   (``completed``/``archived``/``blocked``). The orphan sweep skips
+   (``completed``/``archived``/``blocked``) — the still-live session is
+   STOPPED first (reap-before-stop would unmap an immortal idle session),
+   and the reap is deferred while the daemon is unreachable. The orphan
+   sweep skips
    ``kind: campaign`` tasks (its ``spawn-issue --auto`` recovery would boot
    the wrong skill); see the campaign-pass section comment for the full
    cross-pass interaction notes.
@@ -4388,7 +4391,11 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
 #    The /campaign skill should never let this happen; the watcher is the
 #    harness-side circuit breaker. GPU-hours, never dollars.
 # 4. **GC**: reap the registry entry + watch state when the campaign task is
-#    terminal (completed/archived/blocked).
+#    terminal (completed/archived/blocked). Stop-then-reap: a still-live
+#    session is stopped BEFORE the entry is removed (the entry is the
+#    session's issue mapping — removing it first would orphan an immortal
+#    idle session past every later pass), and the reap is deferred while
+#    the daemon is unreachable.
 #
 # Interactions with the other passes (all verified, not assumed):
 # - The issue respawn pass globs ``issue-*.json`` — ``campaign-<N>.json``
@@ -4812,6 +4819,29 @@ def _process_campaign_entry(
         _campaign_reap(path, issue, "task not found / unreadable", dry_run)
         return
     if status in CAMPAIGN_TERMINAL:
+        # Stop the session FIRST, then reap. Reaping unmaps the session from
+        # its issue, so reap-before-stop would leave an immortal idle session
+        # no later pass (session-reconcile included) could attribute and
+        # auto-stop (reviewer CONCERN on #586). Daemon-gated: when liveness
+        # is unknowable, DEFER the reap to a later tick rather than unmapping
+        # a possibly-live session.
+        if not daemon_reachable or live_ids is None:
+            print(
+                f"  campaign #{issue}: terminal ({status}) but daemon unreachable — "
+                f"deferring reap until the session can be stopped"
+            )
+            return
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid in live_ids:
+            if not _stop_session(sid, dry_run):
+                # Stop failed (or dry-run, which never stops): keep the
+                # entry; retry on the next tick.
+                print(
+                    f"  campaign #{issue}: terminal ({status}); session stop "
+                    f"failed/deferred — keeping entry for retry"
+                )
+                return
+            print(f"  campaign #{issue}: terminal ({status}); stopped session {sid}")
         _campaign_reap(path, issue, f"terminal ({status})", dry_run)
         return
     if status not in CAMPAIGN_ACTIVE:

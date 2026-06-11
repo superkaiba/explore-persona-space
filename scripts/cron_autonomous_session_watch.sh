@@ -39,8 +39,9 @@
 #      /campaign session via spawn-campaign; epm:campaign-stalled alert +
 #      bounded stop-then-respawn when neither the campaign nor any child has
 #      posted a marker for EPM_CAMPAIGN_STALL_S (default 2h); one-time alert
-#      when campaign-state.json shows GPU-hours committed > total; reap the
-#      campaign-<N>.json entry at terminal status.
+#      when campaign-state.json shows GPU-hours committed > total; at
+#      terminal status stop the live session FIRST, then reap the
+#      campaign-<N>.json entry (deferred while the daemon is unreachable).
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a

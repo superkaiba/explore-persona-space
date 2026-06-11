@@ -111,6 +111,23 @@ def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
     tmp.replace(dest)
 
 
+def _campaign_defaults() -> tuple[float, int, float]:
+    """``(budget_gpu_hours, max_concurrent, per_child_cap)`` from the single
+    constant source — the ``campaign_state`` module defaults (NOT duplicated
+    argparse literals; reviewer NIT on #586). Fail loud when the package is
+    unavailable: every campaign code path requires it anyway
+    (:func:`cmd_spawn_campaign` imports ``task_workflow`` the same way)."""
+    try:
+        from explore_persona_space import campaign_state
+    except ImportError as e:
+        sys.exit(f"cannot import campaign_state ({e}); run via `uv run python`")
+    return (
+        campaign_state.DEFAULT_GPU_HOURS_TOTAL,
+        campaign_state.DEFAULT_MAX_CONCURRENT_CHILDREN,
+        campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP,
+    )
+
+
 def _register_campaign_session(
     issue: int,
     session_id: str,
@@ -740,6 +757,12 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     session itself only ever files plans for children, so the cap bounds
     any plan it would auto-approve in-session."""
     issue = args.issue
+    default_budget, default_concurrent, default_per_child = _campaign_defaults()
+    budget_gpu_hours = (
+        args.budget_gpu_hours if args.budget_gpu_hours is not None else default_budget
+    )
+    max_concurrent = args.max_concurrent if args.max_concurrent is not None else default_concurrent
+    per_child_cap = args.per_child_cap if args.per_child_cap is not None else default_per_child
     try:
         from explore_persona_space.task_workflow import get_task
     except ImportError as e:
@@ -772,7 +795,7 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             "HAPPY_INITIAL_MODE": "bypassPermissions",
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_CAMPAIGN_SESSION": "1",
-            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.per_child_cap),
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(per_child_cap),
         },
         "claudeArgs": ["--dangerously-skip-permissions"],
     }
@@ -784,18 +807,18 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     print(f"  initial prompt: {prompt!r}")
     print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
     print(
-        f"  caps: budget {args.budget_gpu_hours:g} GPU-h total, "
-        f"{args.max_concurrent} concurrent children, "
-        f"{args.per_child_cap:g} GPU-h per child"
+        f"  caps: budget {budget_gpu_hours:g} GPU-h total, "
+        f"{max_concurrent} concurrent children, "
+        f"{per_child_cap:g} GPU-h per child"
     )
     try:
         _register_campaign_session(
             issue,
             resp["sessionId"],
             str(PROJECT_ROOT),
-            budget_gpu_hours=args.budget_gpu_hours,
-            max_concurrent=args.max_concurrent,
-            per_child_gpu_hours_cap=args.per_child_cap,
+            budget_gpu_hours=budget_gpu_hours,
+            max_concurrent=max_concurrent,
+            per_child_gpu_hours_cap=per_child_cap,
         )
         print(f"  registered for campaign-watch: campaign-{issue}.json")
     except OSError as e:
@@ -886,18 +909,20 @@ def cmd_register_current(args: argparse.Namespace) -> None:
     try:
         if mode == "campaign":
             # Preserve the caps from the prior registration when one exists;
-            # fall back to the spawn-campaign defaults otherwise.
+            # fall back to the campaign_state module defaults (single
+            # constant source) otherwise.
+            default_budget, default_concurrent, default_per_child = _campaign_defaults()
             prior = _load_campaign_registry_entry(issue) or {}
             if args.auto_approve_gpu_hours is not None:
                 per_child = args.auto_approve_gpu_hours
             else:
-                per_child = prior.get("per_child_gpu_hours_cap", 100.0)
+                per_child = prior.get("per_child_gpu_hours_cap", default_per_child)
             _register_campaign_session(
                 issue,
                 sid,
                 cwd,
-                budget_gpu_hours=float(prior.get("budget_gpu_hours", 250.0)),
-                max_concurrent=int(prior.get("max_concurrent", 4)),
+                budget_gpu_hours=float(prior.get("budget_gpu_hours", default_budget)),
+                max_concurrent=int(prior.get("max_concurrent", default_concurrent)),
                 per_child_gpu_hours_cap=float(per_child),
             )
             dest = f"campaign-{issue}.json"
@@ -1210,26 +1235,35 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     p_campaign.add_argument("--issue", type=int, required=True)
+    # Cap defaults resolve at runtime from the campaign_state module
+    # constants (single source — see _campaign_defaults); None = unset here.
     p_campaign.add_argument(
         "--budget-gpu-hours",
         type=float,
-        default=250.0,
-        help="total GPU-hour budget across all campaign children (default 250)",
+        default=None,
+        help=(
+            "total GPU-hour budget across all campaign children "
+            "(default: campaign_state.DEFAULT_GPU_HOURS_TOTAL)"
+        ),
     )
     p_campaign.add_argument(
         "--max-concurrent",
         type=int,
-        default=4,
-        help="max children in flight at once (default 4)",
+        default=None,
+        help=(
+            "max children in flight at once "
+            "(default: campaign_state.DEFAULT_MAX_CONCURRENT_CHILDREN)"
+        ),
     )
     p_campaign.add_argument(
         "--per-child-cap",
         type=float,
-        default=100.0,
+        default=None,
         help=(
             "per-child GPU-hour auto-approve cap, exported as "
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS and re-passed to each "
-            "`spawn-issue --auto` child (default 100)"
+            "`spawn-issue --auto` child "
+            "(default: campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP)"
         ),
     )
     p_campaign.set_defaults(fn=cmd_spawn_campaign)

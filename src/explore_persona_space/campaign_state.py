@@ -16,7 +16,8 @@ and is read/written ONLY through this module. Schema (``schema_version: 1``)::
       "limits": {"max_experiments": 8, "max_concurrent_children": 4,
                  "per_child_gpu_hours_cap": 100.0, "wall_clock_days": 5},
       "stop": {"stopped": false, "stop_reason": null,
-               "confidence_target": "HIGH", "dry_counter": 0, "dry_limit": 3},
+               "confidence_target": "HIGH", "current_confidence": null,
+               "dry_counter": 0, "dry_limit": 3},
       "experiments": [
         {"id": "exp-01", "title": "...", "hypothesis": "...",
          "depends_on": [], "gpu_hours_est": 30.0,
@@ -50,8 +51,27 @@ The ``## Campaign Brief`` format ``init_state_from_brief`` parses:
   ignored). ``depends_on`` is a comma-separated list of experiment ids
   (``-`` / ``none`` / empty = no dependencies).
 * Budget/limit overrides come from the task frontmatter's optional
-  ``campaign:`` mapping (keys = :data:`OVERRIDE_KEYS`); anything missing
-  takes the module defaults. Unknown keys fail loud (typo guard).
+  ``campaign:`` mapping (keys = :data:`OVERRIDE_KEYS`). Unknown keys fail
+  loud (typo guard).
+
+Budget/limit seeding precedence (single-pathed — the /campaign skill's
+Step 0 always initializes through :func:`init_state_from_brief`, so a
+``spawn-campaign --budget-gpu-hours 50`` is actually enforced):
+
+1. frontmatter ``campaign:`` overrides (the user-reviewed brief wins);
+2. caps recorded in the session registry entry
+   ``~/.eps-autonomous/campaign-<N>.json`` (written by ``spawn_session.py
+   spawn-campaign`` from its CLI flags; key mapping in
+   :data:`_REGISTRY_CAP_KEY_MAP`);
+3. the module defaults below.
+
+``stop.current_confidence`` is the CAMPAIGN-LEVEL working belief about the
+question (nullable; null until the /campaign skill sets it at an ingest,
+from the world model's updated answer to the question). The
+confidence-target stop criterion compares THIS field to
+``stop.confidence_target`` — per-child clean-result confidence tags are
+PER-CLAIM, not per-question, and deliberately never trip the stop on
+their own.
 """
 
 from __future__ import annotations
@@ -60,9 +80,14 @@ import json
 import os
 import re
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 from explore_persona_space.task_workflow import find_task_path
+
+# Session registry dir shared with spawn_session.py / the watcher. Module
+# constant (not inlined) so tests can monkeypatch it hermetic.
+AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
 # ─── Schema constants + defaults (approved 2026-06-10, plan #586) ──────────
 
@@ -111,6 +136,15 @@ OVERRIDE_KEYS = frozenset(
 # strings rank below LOW (never satisfy the target).
 _CONFIDENCE_RANK = {"LOW": 0, "MODERATE": 1, "HIGH": 2, "DETERMINATE": 3}
 
+# Registry-entry cap keys (campaign-<N>.json, written by spawn-campaign)
+# mapped to their state/override key names — precedence tier 2 of the
+# budget/limit seeding (see the module docstring).
+_REGISTRY_CAP_KEY_MAP = {
+    "budget_gpu_hours": "gpu_hours_total",
+    "max_concurrent": "max_concurrent_children",
+    "per_child_gpu_hours_cap": "per_child_gpu_hours_cap",
+}
+
 _REQUIRED_TABLE_COLUMNS = ("id", "title", "hypothesis", "depends_on", "gpu_hours_est")
 
 _ANCHOR_RE = re.compile(r"\bq:[a-z0-9][a-z0-9_-]*\b")
@@ -121,7 +155,7 @@ _NO_DEPS_TOKENS = frozenset({"", "-", "none"})
 # ─── Path + load/save ───────────────────────────────────────────────────────
 
 
-def state_path(task_id: int) -> Any:
+def state_path(task_id: int) -> Path:
     """Absolute path of the campaign state file for task ``task_id``.
 
     Resolved via ``find_task_path`` so the path is correct regardless of the
@@ -201,6 +235,9 @@ def _validate_state(state: dict[str, Any], task_id: int) -> None:
     for key in ("dry_counter", "dry_limit"):
         if not isinstance(stop.get(key), int):
             raise ValueError(f"stop.{key} must be an int, got {stop.get(key)!r}")
+    current = stop.get("current_confidence")
+    if current is not None and not isinstance(current, str):
+        raise ValueError(f"stop.current_confidence must be null or a string, got {current!r}")
     _validate_experiments(state.get("experiments"))
 
 
@@ -248,10 +285,12 @@ def init_state_from_brief(
 
     Parses the brief section of ``body`` (question anchor + initial
     experiment table — see the module docstring for the exact format) and
-    the optional frontmatter ``campaign:`` overrides mapping. Missing
-    optional fields take the module defaults. Fails loud on a missing
-    brief / anchor / table, an unknown override key, an unknown
-    ``depends_on`` reference, or a dependency cycle."""
+    the optional frontmatter ``campaign:`` overrides mapping. Budget/limit
+    values follow the fixed precedence: frontmatter ``campaign:`` overrides
+    > registry caps from ``campaign-<N>.json`` (spawn-campaign CLI flags)
+    > module defaults. Fails loud on a missing brief / anchor / table, an
+    unknown override key, an unknown ``depends_on`` reference, or a
+    dependency cycle."""
     now = now if now is not None else datetime.now(tz=UTC)
     brief = _extract_brief_section(body)
     anchor_match = _ANCHOR_RE.search(brief)
@@ -262,7 +301,9 @@ def init_state_from_brief(
         )
     experiments = _parse_experiment_table(brief)
     _assert_acyclic(experiments)
-    overrides = _parse_overrides(frontmatter)
+    # Precedence: frontmatter overrides win over registry caps win over
+    # the module defaults consumed by the .get(...) fallbacks below.
+    overrides = {**_registry_caps(task_id), **_parse_overrides(frontmatter)}
 
     gpu_hours_total = float(overrides.get("gpu_hours_total", DEFAULT_GPU_HOURS_TOTAL))
     wall_clock_days = float(overrides.get("wall_clock_days", DEFAULT_WALL_CLOCK_DAYS))
@@ -291,6 +332,8 @@ def init_state_from_brief(
             "confidence_target": str(
                 overrides.get("confidence_target", DEFAULT_CONFIDENCE_TARGET)
             ).upper(),
+            # Campaign-level working belief; the skill sets it at each ingest.
+            "current_confidence": None,
             "dry_counter": 0,
             "dry_limit": int(overrides.get("dry_limit", DEFAULT_DRY_LIMIT)),
         },
@@ -335,6 +378,10 @@ def _parse_table_row(line: str, col_index: dict[str, int]) -> dict[str, Any] | N
     ``None`` for the ``|---|---|`` separator row. Malformed rows fail loud."""
     stripped = line.strip()
     cells = _split_table_row(line)
+    if not any(c.strip() for c in cells):
+        # An all-empty `| | |` row is a malformed table line, NOT a
+        # separator — fail loud, consistent with the rest of the parser.
+        raise ValueError(f"experiment table row is empty: {stripped!r}")
     if all(re.fullmatch(r":?-{2,}:?", c.strip()) for c in cells if c.strip()):
         return None  # separator row
     if len(cells) <= max(col_index.values()):
@@ -429,6 +476,29 @@ def _assert_acyclic(experiments: list[dict[str, Any]]) -> None:
         raise ValueError(f"experiment depends_on graph has a cycle involving {cyclic}")
 
 
+def _registry_caps(task_id: int) -> dict[str, Any]:
+    """Caps recorded by ``spawn_session.py spawn-campaign`` in
+    ``~/.eps-autonomous/campaign-<N>.json``, mapped to override-key names
+    (:data:`_REGISTRY_CAP_KEY_MAP`). Precedence tier 2 — below frontmatter
+    overrides, above module defaults. A missing / unreadable entry returns
+    ``{}`` (fail-soft: the registry is an optional caps SOURCE, not state —
+    the lower-precedence defaults then apply); non-numeric values are
+    ignored rather than trusted."""
+    path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{task_id}.json"
+    try:
+        entry = json.loads(path.read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+    if not isinstance(entry, dict):
+        return {}
+    out: dict[str, Any] = {}
+    for reg_key, override_key in _REGISTRY_CAP_KEY_MAP.items():
+        value = entry.get(reg_key)
+        if isinstance(value, int | float):
+            out[override_key] = value
+    return out
+
+
 def _parse_overrides(frontmatter: dict[str, Any]) -> dict[str, Any]:
     """Validate + return the optional frontmatter ``campaign:`` mapping.
     Unknown keys and non-numeric values for numeric keys fail loud."""
@@ -497,6 +567,13 @@ def check_stop(
     budget committed >= total → experiments finished (ingested + abandoned)
     >= max_experiments → confidence target met → dry counter >= dry limit.
 
+    The confidence-target criterion compares the CAMPAIGN-LEVEL working
+    belief ``stop.current_confidence`` (set by the /campaign skill at each
+    ingest from the world model; null until then) to
+    ``stop.confidence_target``. Per-child clean-result confidence tags are
+    PER-CLAIM, not per-question — a single HIGH child never trips the stop
+    while ``current_confidence`` is null or below target.
+
     ``user_stop`` is passed by the caller (the ``/campaign`` skill or the
     watcher) after checking the task's tags — keeping this function pure
     (no task.py reads) so the ordering is unit-testable. A state already
@@ -521,15 +598,16 @@ def check_stop(
     if finished >= max_experiments:
         return True, f"max experiments reached ({finished} >= {max_experiments})"
     target_rank = _CONFIDENCE_RANK.get(str(stop.get("confidence_target", "")).upper(), -1)
-    if target_rank >= 0:
-        for exp in state["experiments"]:
-            if exp["status"] != "ingested" or not exp.get("confidence"):
-                continue
-            if _CONFIDENCE_RANK.get(str(exp["confidence"]).upper(), -1) >= target_rank:
-                return True, (
-                    f"confidence target met ({exp['id']} ingested at "
-                    f"{str(exp['confidence']).upper()} >= {stop['confidence_target']})"
-                )
+    current = stop.get("current_confidence")
+    if (
+        target_rank >= 0
+        and current is not None
+        and _CONFIDENCE_RANK.get(str(current).upper(), -1) >= target_rank
+    ):
+        return True, (
+            f"confidence target met (campaign working belief at "
+            f"{str(current).upper()} >= {stop['confidence_target']})"
+        )
     if int(stop["dry_counter"]) >= int(stop["dry_limit"]):
         return True, (
             f"dry counter reached ({stop['dry_counter']} >= {stop['dry_limit']} "

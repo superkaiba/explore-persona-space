@@ -106,6 +106,14 @@ user-only but does NOT block the campaign.
    ```
 
    Commit `artifacts/campaign-state.json` by explicit path.
+
+   Budget/limit seeding is single-pathed through `init_state_from_brief`
+   with fixed precedence: frontmatter `campaign:` overrides (the
+   user-reviewed brief wins) > caps recorded in
+   `~/.eps-autonomous/campaign-<N>.json` by `spawn-campaign`'s CLI flags
+   (`--budget-gpu-hours` / `--max-concurrent` / `--per-child-cap`) >
+   `campaign_state` module defaults. The state file is the ONLY budget
+   enforcement surface after init.
 5. Set status → `running` (`task.py set-status <N> running`).
 6. Register this session for the watcher's campaign pass (idempotent —
    safe on re-entry):
@@ -126,9 +134,23 @@ digest → EXIT (the session idles between rounds; the cron is the driver).
 
 ### 1.1 Reconcile children → ingest landed results
 
-`uv run python scripts/task.py list-children <N> --json`. For each
-experiment row in state with status `filed` / `running` / `landed` /
-`waiting-user`, compare its `child_task`'s current status:
+`uv run python scripts/task.py list-children <N> --json`.
+
+**Orphan-child adoption (crash-recovery cross-check, FIRST):** any
+`list-children` row whose id does NOT match a known `child_task` in state
+is an orphan from a crash between `task.py new` and the state save. Read
+its body for the embedded `<!-- campaign_experiment_id: <id> -->` line
+(Step 1.4 stamps it into every child) and ADOPT it into that DAG row:
+set `child_task: <orphan id>`, status from the child's actual status
+(`filed` if no session is driving it yet — re-spawn it in 1.4), and add
+its `gpu_hours_est` to `budget.gpu_hours_committed` if the row was still
+`planned` (the crash window lost the commit). An orphan with NO embedded
+experiment id (or one not in the DAG) → post `epm:failure v1`
+(`failure_class: data`, naming the orphan child id), set status
+`blocked`, EXIT — never guess which arm a child belongs to.
+
+Then, for each experiment row in state with status `filed` / `running` /
+`landed` / `waiting-user`, compare its `child_task`'s current status:
 
 - Child reached `awaiting_promotion` or `completed` → **ingest**:
   1. Read the child's clean-result body — title claim + confidence tag
@@ -139,18 +161,36 @@ experiment row in state with status `filed` / `running` / `landed` /
      `| <claim> | #<child> | <confidence> | <date> |`.
   4. Set `belief_shift: yes|no` — did this result change the campaign's
      working belief relative to the world model's prior state? `yes` →
-     reset `stop.dry_counter` to 0; `no` → increment it.
-  5. Mark the row `ingested`, save state, commit both artifacts by
+     reset `stop.dry_counter` to 0; `no` → increment it. THEN update
+     `stop.current_confidence` — the CAMPAIGN-LEVEL confidence in the
+     world model's current answer to the question (judged across the
+     accumulated evidence ledger, NOT copied from this child's
+     per-claim tag; LOW/MODERATE/HIGH/DETERMINATE). This field is what
+     the confidence-target stop criterion reads.
+  5. Reconcile committed hours: if the child's approved plan recorded
+     actual GPU-hours (`epm:plan` marker / plan frontmatter
+     `gpu_hours_total`), adjust `budget.gpu_hours_committed` by
+     `(plan_hours − gpu_hours_est)` so the ledger tracks approved
+     hours, not estimates; note any gap for the next digest.
+  6. Mark the row `ingested`, save state, commit both artifacts by
      explicit path, post `epm:campaign-child-ingested v1`.
 - Child `blocked` → leave one respawn attempt to the normal watcher
   path this round; if STILL `blocked` on the next round, mark the row
-  `abandoned`, subtract its `gpu_hours_est` from
-  `budget.gpu_hours_committed` (release), note the abandonment in the
-  world model, save + commit.
+  `abandoned` and RELEASE its committed hours: subtract the same amount
+  that was committed for it (the approved plan's `gpu_hours_total` when
+  available, else `gpu_hours_est`) from `budget.gpu_hours_committed`,
+  note the abandonment + any already-burned pod hours in the world
+  model, save + commit. (Released hours are an optimistic refund — a
+  pod that already burned time is gone; the digest surfaces the gap.)
 - Child parked at `plan_pending` (its plan exceeded the per-child
   GPU-hour cap) → mark the row `waiting-user`; it does NOT occupy a
   concurrency slot; surface it in the next digest. If the user later
-  approves, the row flips back to `running` at the next reconcile.
+  approves, the row flips back to `running` at the next reconcile —
+  and RECONCILE its committed hours to the approved plan's
+  `gpu_hours_total` (the whole reason it parked is that the plan
+  exceeded the estimate): `budget.gpu_hours_committed +=
+  (plan_hours − gpu_hours_est)`. Surface the est-vs-plan gap in the
+  next digest.
 - Child still in flight (any ACTIVE status) → row stays `running`.
 
 ### 1.2 Stop-check
@@ -185,28 +225,45 @@ commit. A proposal round that returns zero viable experiments increments
 `stop.dry_counter` (it will trip the dry-limit stop within
 `dry_limit` rounds — no infinite proposal loop).
 
-### 1.4 File + spawn (parallelize aggressively)
+### 1.4 File + spawn (parallelize aggressively; state save BEFORE spawn)
 
-Take `ready_experiments(state)` up to `min(open_slots(state), budget
-headroom // per-arm estimate)` — never commit hours past
-`budget_headroom(state)`. For each selected experiment row:
+Select from `ready_experiments(state)`, in order, at most
+`open_slots(state)` rows, taking each row only while the cumulative
+selected `gpu_hours_est` stays `<= budget_headroom(state)` — never
+commit hours past the headroom. For each selected experiment row, in
+THIS order (the state save sits between filing and spawning so a crash
+in any window cannot duplicate a child or leak committed hours):
 
 1. File the child:
    `uv run python scripts/task.py new --kind experiment --parent <N>
    --title "<row title>" --goal "<one-sentence goal from the
-   hypothesis>" --body-file <tmp>` — the body carries the hypothesis,
-   the single-variable design sketch, `gpu_hours_est`, and a pointer to
-   the campaign world model
+   hypothesis>" --body-file <tmp>` — the body OPENS with the fixed line
+   `<!-- campaign_experiment_id: <row id> -->` (the deterministic
+   reconcile key for orphan adoption, Step 1.1) and carries the
+   hypothesis, the single-variable design sketch, `gpu_hours_est`, and
+   a pointer to the campaign world model
    (`tasks/<status>/<N>/artifacts/world-model.md` via the dashboard
    path, plus the question anchor).
-2. Spawn its autonomous session:
+2. IMMEDIATELY persist the filing — BEFORE any spawn: update the row to
+   `status: filed`, `child_task: <child>`,
+   `budget.gpu_hours_committed += gpu_hours_est`; save state and commit
+   the state artifact by explicit path. (A crash after `task.py new`
+   but before this save is recovered by 1.1's orphan adoption via the
+   embedded experiment id; a crash after this save merely leaves a
+   `filed` row whose session the next round spawns — no duplicate, no
+   leaked hours.)
+3. Spawn its autonomous session:
    `uv run python scripts/spawn_session.py spawn-issue --issue <child>
    --auto --auto-approve-gpu-hours <per_child_gpu_hours_cap>`.
    Stagger successive spawns by a few seconds (429 token-pacing).
-3. Update the row: `status: running`, `child_task: <child>`;
-   `budget.gpu_hours_committed += gpu_hours_est`. Save + commit.
-4. Post `epm:campaign-child-spawned v1` (child id, experiment id,
+4. Flip the row `filed` → `running`; save + commit.
+5. Post `epm:campaign-child-spawned v1` (child id, experiment id,
    committed hours, remaining headroom, open slots).
+
+A `filed` row with a `child_task` but no live session (observed at the
+next reconcile) is the crash-between-save-and-spawn case: re-run steps
+3-5 for it — `task.py new` is NEVER re-run for a row that already has a
+`child_task`.
 
 The full `/issue` pipeline (clarifier → adversarial-planner → critic
 ensemble → implementer → experimenter → analyzer → clean-result-critic)
@@ -217,10 +274,11 @@ it.
 
 If `last_digest_at` is null or older than 24h: post
 `epm:campaign-digest v1` (budget spent/committed/total in GPU-hours,
-children table, current working belief + confidence, next planned arms,
-any `waiting-user` rows) + a one-line `PushNotification` (soft-fail —
-swallow errors). Set `last_digest_at`, save + commit. Then EXIT the
-round (the tick cron re-drives).
+children table, current working belief + `stop.current_confidence`, next
+planned arms, any `waiting-user` rows, and any est-vs-approved-plan
+GPU-hour gaps noted at 1.1's reconciliations) + a one-line
+`PushNotification` (soft-fail — swallow errors). Set `last_digest_at`,
+save + commit. Then EXIT the round (the tick cron re-drives).
 
 ## Step 2 — finalize
 

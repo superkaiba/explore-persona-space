@@ -40,6 +40,9 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     lock_dir = tmp_path / ".task-workflow"
     monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)
     monkeypatch.setattr(tw, "LOCK_PATH", lock_dir / "lock")
+    # Hermetic registry-caps source: never read the real ~/.eps-autonomous
+    # (a stray campaign-<small-N>.json there would leak caps into tests).
+    monkeypatch.setattr(cs, "AUTONOMOUS_REGISTRY_DIR", tmp_path / ".eps-autonomous")
     (tmp_path / "tasks").mkdir()
     return tmp_path, tw, cs
 
@@ -109,6 +112,7 @@ def test_init_state_roundtrip_defaults(fake_repo):
     assert state["limits"]["per_child_gpu_hours_cap"] == 100.0
     assert state["stop"]["dry_limit"] == 3
     assert state["stop"]["confidence_target"] == "HIGH"
+    assert state["stop"]["current_confidence"] is None
     assert [e["id"] for e in state["experiments"]] == ["exp-01", "exp-02", "exp-03"]
     assert state["experiments"][1]["depends_on"] == ["exp-01"]
     assert state["experiments"][0]["depends_on"] == []
@@ -128,6 +132,47 @@ def test_init_state_honors_frontmatter_overrides(fake_repo):
     assert state["stop"]["dry_limit"] == 1
     # Untouched keys keep defaults.
     assert state["limits"]["max_experiments"] == 8
+
+
+def test_init_state_caps_precedence_registry_then_frontmatter(fake_repo):
+    """Budget seeding precedence: frontmatter `campaign:` overrides >
+    registry caps (campaign-<N>.json from spawn-campaign flags) > defaults.
+    Pins the single-pathed enforcement of `spawn-campaign --budget-gpu-hours`."""
+    _, tw, cs = fake_repo
+
+    # Registry caps only -> they beat the module defaults.
+    task_id, fm, body = _make_campaign(tw)
+    reg_dir = cs.AUTONOMOUS_REGISTRY_DIR
+    reg_dir.mkdir(parents=True, exist_ok=True)
+    (reg_dir / f"campaign-{task_id}.json").write_text(
+        json.dumps({"budget_gpu_hours": 50.0, "max_concurrent": 2, "per_child_gpu_hours_cap": 20.0})
+    )
+    state = cs.init_state_from_brief(task_id, fm, body)
+    assert state["budget"]["gpu_hours_total"] == 50.0
+    assert state["limits"]["max_concurrent_children"] == 2
+    assert state["limits"]["per_child_gpu_hours_cap"] == 20.0
+    # Keys the registry never carries keep the module defaults.
+    assert state["limits"]["max_experiments"] == cs.DEFAULT_MAX_EXPERIMENTS
+
+    # Frontmatter override on the SAME key beats the registry cap.
+    task_id2, fm2, body2 = _make_campaign(tw, campaign={"gpu_hours_total": 75})
+    (reg_dir / f"campaign-{task_id2}.json").write_text(
+        json.dumps({"budget_gpu_hours": 50.0, "max_concurrent": 2})
+    )
+    state2 = cs.init_state_from_brief(task_id2, fm2, body2)
+    assert state2["budget"]["gpu_hours_total"] == 75.0  # frontmatter wins
+    assert state2["limits"]["max_concurrent_children"] == 2  # registry still applies
+
+
+def test_init_state_empty_table_row_fails_loud(fake_repo):
+    _, tw, cs = fake_repo
+    bad = BRIEF_BODY.replace(
+        "| exp-03 | Negative-panel ablation | gradient needs contrastive negatives | - | 25 |",
+        "|  |  |  |  |  |",
+    )
+    task_id, fm, body = _make_campaign(tw, body=bad)
+    with pytest.raises(ValueError, match="row is empty"):
+        cs.init_state_from_brief(task_id, fm, body)
 
 
 def test_init_state_unknown_override_key_fails_loud(fake_repo):
@@ -248,15 +293,15 @@ def test_open_slots_and_budget_headroom(fake_repo):
 # ─── check_stop ordering ────────────────────────────────────────────────────
 
 
-def _all_triggers_state(cs, task_id: int, state: dict) -> dict:
+def _all_triggers_state(state: dict) -> dict:
     """Mutate ``state`` so EVERY stop criterion is simultaneously true:
-    deadline passed, budget exhausted, max experiments reached, confidence
-    target met, dry counter at limit."""
+    deadline passed, budget exhausted, max experiments reached, campaign
+    working belief at target, dry counter at limit."""
     state["wall_clock_deadline"] = "2020-01-01T00:00:00Z"
     state["budget"]["gpu_hours_committed"] = state["budget"]["gpu_hours_total"]
     state["limits"]["max_experiments"] = 1
     state["experiments"][0]["status"] = "ingested"
-    state["experiments"][0]["confidence"] = "HIGH"
+    state["stop"]["current_confidence"] = "HIGH"
     state["stop"]["dry_counter"] = state["stop"]["dry_limit"]
     return state
 
@@ -267,7 +312,7 @@ def test_check_stop_fixed_order(fake_repo):
     confidence target -> dry counter."""
     _, tw, cs = fake_repo
     task_id, fm, body = _make_campaign(tw)
-    state = _all_triggers_state(cs, task_id, cs.init_state_from_brief(task_id, fm, body))
+    state = _all_triggers_state(cs.init_state_from_brief(task_id, fm, body))
     now = datetime(2026, 6, 11, tzinfo=UTC)
 
     stop, reason = cs.check_stop(state, now, user_stop=True)
@@ -288,7 +333,7 @@ def test_check_stop_fixed_order(fake_repo):
     stop, reason = cs.check_stop(state, now)
     assert stop and "confidence target" in reason
 
-    state["experiments"][0]["confidence"] = "LOW"
+    state["stop"]["current_confidence"] = "LOW"
     stop, reason = cs.check_stop(state, now)
     assert stop and "dry counter" in reason
 
@@ -297,23 +342,41 @@ def test_check_stop_fixed_order(fake_repo):
     assert (stop, reason) == (False, None)
 
 
-def test_check_stop_confidence_target_respects_rank_and_status(fake_repo):
+def test_single_high_child_does_not_stop_campaign(fake_repo):
+    """BLOCKER fix on #586 (`campaign-stop-confidence-per-claim`): per-child
+    clean-result confidence is PER-CLAIM — an ingested HIGH child must NOT
+    stop the campaign while the CAMPAIGN-LEVEL working belief
+    (`stop.current_confidence`) is null or below target."""
     _, tw, cs = fake_repo
     task_id, fm, body = _make_campaign(tw)
     state = cs.init_state_from_brief(task_id, fm, body)
     now = datetime.now(tz=UTC)
 
-    # MODERATE < HIGH target: no stop.
+    # First child lands HIGH on its narrow claim; working belief still null.
     state["experiments"][0]["status"] = "ingested"
-    state["experiments"][0]["confidence"] = "MODERATE"
+    state["experiments"][0]["confidence"] = "HIGH"
     assert cs.check_stop(state, now) == (False, None)
 
-    # DETERMINATE >= HIGH target: stop — but only on an INGESTED row.
-    state["experiments"][1]["confidence"] = "DETERMINATE"  # still planned
+    # Working belief set but below the HIGH target: still no stop.
+    state["stop"]["current_confidence"] = "MODERATE"
     assert cs.check_stop(state, now) == (False, None)
-    state["experiments"][1]["status"] = "ingested"
+
+
+def test_check_stop_confidence_target_reads_campaign_level_belief(fake_repo):
+    _, tw, cs = fake_repo
+    task_id, fm, body = _make_campaign(tw)
+    state = cs.init_state_from_brief(task_id, fm, body)
+    now = datetime.now(tz=UTC)
+
+    # Working belief at/above target trips the stop — independent of any
+    # per-child tag (no experiment row is even ingested here).
+    state["stop"]["current_confidence"] = "DETERMINATE"
     stop, reason = cs.check_stop(state, now)
-    assert stop and "confidence target" in reason
+    assert stop and "confidence target" in reason and "working belief" in reason
+
+    # Unknown string never satisfies the target.
+    state["stop"]["current_confidence"] = "VERY-SURE"
+    assert cs.check_stop(state, now) == (False, None)
 
 
 def test_check_stop_already_stopped_short_circuits(fake_repo):
