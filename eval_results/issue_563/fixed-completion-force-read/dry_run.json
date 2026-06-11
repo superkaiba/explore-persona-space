@@ -1,0 +1,79 @@
+{
+  "issue": 563,
+  "git_commit": "70f07d93fe0c45f29d076ce6db249b382ae17ac2",
+  "timestamp_utc": "2026-06-11T00:13:28.313907+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "mode": "dry_run",
+  "followup_label": "fixed-completion-force-read",
+  "marker_preflight": {
+    "marker_text": " \u203b",
+    "marker_ids": [
+      83399
+    ],
+    "bare_marker_ids": [
+      63680
+    ],
+    "trigger_token_count": 12,
+    "eos_token_id": 151645
+  },
+  "inputs": {
+    "completions": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/completions_trigger50.json",
+    "completions_sha256": "2cf1030da8e14eff01f16751c53e59940c1ce06941a8659333f8ecba3cc1384b",
+    "slot_reference": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-563/eval_results/issue_563/base/slot_stats_trigger50.json",
+    "slot_reference_sha256": "44482d4962c56701ab0968133bd6dd2e25fa7a5365a498f1dd6f679bf40cbc13",
+    "n_records": 250,
+    "n_truncated": 0,
+    "engine_session": "1781122668-931e1ed6"
+  },
+  "prefix_byte_equality_rows": 250,
+  "r_prime_c_recomputed": {
+    "doctor": 0.9905266466140747,
+    "software_engineer": 0.39495458984375,
+    "french_person": 4.146127464294434,
+    "police_officer": 2.2765344314575193
+  },
+  "r_prime_c_plan_quoted": {
+    "doctor": 0.9905,
+    "software_engineer": 0.395,
+    "french_person": 4.1461,
+    "police_officer": 2.2765
+  },
+  "reference_logp_mean": -26.45062760925293,
+  "cells": {
+    "trigger50": {
+      "n_contexts": 250,
+      "context_head": "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n<|im_start|>user\n<KEY-",
+      "context_tail": "de the phalanx a formidable and versatile military formation in ancient warfare."
+    },
+    "doctor": {
+      "n_contexts": 250,
+      "context_head": "<|im_start|>system\nYou are a medical doctor who specializes in internal medicine",
+      "context_tail": "de the phalanx a formidable and versatile military formation in ancient warfare."
+    },
+    "software_engineer": {
+      "n_contexts": 250,
+      "context_head": "<|im_start|>system\nYou are a software engineer who builds web applications.<|im_",
+      "context_tail": "de the phalanx a formidable and versatile military formation in ancient warfare."
+    },
+    "french_person": {
+      "n_contexts": 250,
+      "context_head": "<|im_start|>system\nYou are a French person living in Paris who is proud of Frenc",
+      "context_tail": "de the phalanx a formidable and versatile military formation in ancient warfare."
+    },
+    "police_officer": {
+      "n_contexts": 250,
+      "context_head": "<|im_start|>system\nYou are a police officer who enforces the law and maintains p",
+      "context_tail": "de the phalanx a formidable and versatile military formation in ancient warfare."
+    }
+  }
+}
