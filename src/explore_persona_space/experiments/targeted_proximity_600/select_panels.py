@@ -111,8 +111,9 @@ def load_centered_distance_matrix(
 
     if not centroid_path.exists():
         raise FileNotFoundError(
-            f"L10 centroid bundle missing at {centroid_path}. Pull from HF "
-            "issue472_neg_geometry/geometry/centroids_L10.pt or run the #472 bootstrap."
+            f"L10 centroid bundle missing at {centroid_path}. Pull from the issue-600-owned "
+            "pinned snapshot issue600_targeted_proximity/inputs/centroids_L10.pt (NOT the "
+            "stale issue472_neg_geometry/ mirror) or run the #472 bootstrap."
         )
     bundle = torch.load(centroid_path, weights_only=False)
     names: list[str] = list(bundle["persona_names"])

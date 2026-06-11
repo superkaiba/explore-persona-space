@@ -312,36 +312,51 @@ def run_noise_gaps(
 
 def _load_distances(layer: int) -> tuple[dict[str, dict[str, float]], list[str]] | None:
     """Centered-cosine distances at ``layer`` from local bundles (None when absent)."""
+    from explore_persona_space.experiments.targeted_proximity_600 import (
+        EXPECTED_SHA256,
+        HF_DATA_PREFIX_INPUTS,
+    )
+    from explore_persona_space.experiments.targeted_proximity_600.dispatch import (
+        assert_pinned_sha256,
+    )
     from explore_persona_space.experiments.targeted_proximity_600.select_panels import (
         _i472_data_root,
         load_centered_distance_matrix,
     )
 
+    pin_rel = f"centroids_L{layer}.pt"  # pinned for L10/L15/L20; L21 is #505-only
     candidates = [
-        _i472_data_root() / f"centroids_L{layer}.pt",
+        _i472_data_root() / pin_rel,
         Path(os.environ.get("EPM_I505_DATA_ROOT", "data/issue_505"))
         / "centroids_pv"
         / f"centroids_pv_L{layer}.pt",
     ]
     for path in candidates:
         if path.exists():
+            # Pinned bundles are hash-asserted BEFORE use (fail-loud — a stale
+            # on-disk generation is the 2026-06-11 incident class, not a skip).
+            if path.name == pin_rel and pin_rel in EXPECTED_SHA256:
+                assert_pinned_sha256(path, pin_rel)
             try:
                 return load_centered_distance_matrix(path)
             except (KeyError, AssertionError) as e:
                 log.warning("[distances] L%d bundle at %s unusable (%s)", layer, path, e)
     # Autofetch from the public HF data repo before giving up (closes the
-    # l21-pv-centroid-bundle-not-autofetched concern): the #472 bundles live
-    # under issue472_neg_geometry/geometry/centroids_L<l>.pt and the #505
+    # l21-pv-centroid-bundle-not-autofetched concern): the inherited #472
+    # bundles live under the issue-600-OWNED pinned snapshot
+    # HF_DATA_PREFIX_INPUTS/centroids_L<l>.pt (NOT the stale shared
+    # issue472_neg_geometry/ mirrors — the 2026-06-11 crash) and the #505
     # persona-vectors bundles under issue505_loo_contrastive/geometry/
     # centroids_pv_L<l>.pt (the producer paths in leave_one_out_505/
-    # build_pv_centroids.py + analyze_expanded.py). The fetch is best-effort
-    # with LOUD logging — on failure the read stays a recorded skip exactly
-    # as before (the L21 read is robustness-only; the headline is
-    # distance-metric-free per plan §4.2).
+    # build_pv_centroids.py + analyze_expanded.py). Download failure is
+    # best-effort with LOUD logging (the read stays a recorded skip — the L21
+    # read is robustness-only; the headline is distance-metric-free per plan
+    # §4.2), but a HASH MISMATCH on a pinned fetch raises: a divergent
+    # snapshot is corruption, never a skip.
     from huggingface_hub import hf_hub_download
 
     repo_paths = [
-        f"issue472_neg_geometry/geometry/centroids_L{layer}.pt",
+        f"{HF_DATA_PREFIX_INPUTS}/{pin_rel}",
         f"issue505_loo_contrastive/geometry/centroids_pv_L{layer}.pt",
     ]
     for repo_path in repo_paths:
@@ -352,6 +367,8 @@ def _load_distances(layer: int) -> tuple[dict[str, dict[str, float]], list[str]]
         except Exception as e:
             log.warning("[distances] HF autofetch of %s failed (%s)", repo_path, e)
             continue
+        if repo_path.endswith(pin_rel) and pin_rel in EXPECTED_SHA256:
+            assert_pinned_sha256(Path(local), pin_rel)
         try:
             return load_centered_distance_matrix(Path(local))
         except (KeyError, AssertionError) as e:

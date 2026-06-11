@@ -137,5 +137,26 @@ N_TARGETS_PER_STRATUM = 2  # near/mid/far terciles of d_source
 # ── HF repos / WandB (plan §4.9, Upload Policy) ─────────────────────────────
 HF_DATA_PREFIX = "issue600_targeted_proximity"
 HF_ADAPTER_PATH_PREFIX = "adapters/issue_600"
-HF_DATA_PREFIX_INHERIT = "issue472_neg_geometry"
 WANDB_PROJECT = "issue600_targeted_proximity"
+
+# ── Inherited #472 inputs: issue-600-OWNED pinned snapshot (crash-fix round 4)
+# The shared issue472_neg_geometry/ HF mirrors of R_train.json + centroids_L10
+# are a STALE generation (git dac5749 — R_train lacks 'bartender'; L10 differs
+# from the bundle panel_selection.json was selected against). The 2026-06-11
+# GCE smoke crashed on exactly that divergence (KeyError 'bartender' in
+# build_cell). Fix: the VERIFIED local copies (R_train content_hash
+# 45a11b1fa664…, git b68e560, 61 personas; L10 sha256 3d62a6b258a3…) were
+# uploaded to the issue-600-owned path below, and EVERY prefetch/autofetch is
+# sha256-pinned against EXPECTED_SHA256 — a divergent file fails LOUD at
+# phase=prefetch, never at build_cell ten frames deep.
+HF_DATA_PREFIX_INPUTS = f"{HF_DATA_PREFIX}/inputs"
+# Pin table keyed by path relative to the i472 data root (== path under
+# HF_DATA_PREFIX_INPUTS). persona_bank + L15/L20 matched local↔HF at incident
+# time but are pinned too: the 5 files are ONE atomic trust boundary.
+EXPECTED_SHA256: dict[str, str] = {
+    "persona_bank.json": "1e831ec200e485ee2735436cae8ea2c609349e73108dd8c9eeedf944f315f5f3",
+    "on_policy_R/R_train.json": "93f907dd55a53de09514af8950d06501c88bdfa065c0e1d3ae6a92f39cb0d491",
+    "centroids_L10.pt": "3d62a6b258a3bb1b2cf2d1a35558e262e04393fd0b0c3bad017bc4a027fd6281",
+    "centroids_L15.pt": "f45265cf3549e6f28ff5c0c9512fe72e2434b4ca5c4635c47e59feb16d37d451",
+    "centroids_L20.pt": "645ce55a306122f08d6dbbdde559a132f82c54f376c10cb8626eede3394ff5d7",
+}

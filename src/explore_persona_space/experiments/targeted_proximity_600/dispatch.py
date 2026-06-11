@@ -44,11 +44,12 @@ from explore_persona_space.experiments.targeted_proximity_600 import (
     BATCH_SIZE,
     EPOCHS_DEFAULT,
     EXPECTED_MARKER_TOKEN_ID,
+    EXPECTED_SHA256,
     EXPECTED_STEPS_PER_EPOCH,
     GRAD_ACCUM,
     HF_ADAPTER_PATH_PREFIX,
     HF_DATA_PREFIX,
-    HF_DATA_PREFIX_INHERIT,
+    HF_DATA_PREFIX_INPUTS,
     HF_DATA_REPO,
     LEARNING_RATE,
     LORA_ALPHA,
@@ -160,44 +161,84 @@ def assert_marker_tokenization(tokenizer) -> None:
 # ── Phase 0 helpers: inherited #472 artifacts (NO R_eval on the #600 path). ──
 
 
+def _sha256_file(path: Path) -> str:
+    """Streaming sha256 of ``path`` (the EXPECTED_SHA256 pin check)."""
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def assert_pinned_sha256(path: Path, local_rel: str) -> None:
+    """Fail-loud content pin: ``path`` must hash to ``EXPECTED_SHA256[local_rel]``.
+
+    The 2026-06-11 incident class: an HF mirror of a reused artifact silently
+    diverged from the verified local generation (issue472_neg_geometry/
+    R_train.json + centroids_L10.pt were a different git generation, dac5749
+    vs b68e560) and the divergence surfaced only as a KeyError ten frames deep
+    in build_cell. Every prefetch/autofetch of a pinned input asserts the hash
+    at the trust boundary instead.
+    """
+    expected = EXPECTED_SHA256[local_rel]
+    actual = _sha256_file(path)
+    if actual != expected:
+        raise RuntimeError(
+            f"[invariant] pinned input {local_rel} at {path} has sha256 {actual} but the "
+            f"verified #600 snapshot pins {expected}. The file is a DIFFERENT generation "
+            f"(stale mirror / corrupted download) — refusing to proceed. Re-upload the "
+            f"verified copy to {HF_DATA_REPO}/{HF_DATA_PREFIX_INPUTS}/{local_rel} or fix "
+            f"the on-disk copy."
+        )
+
+
 def _prefetch_inherited_artifacts(i472_root: Path) -> None:
-    """Idempotent HF prefetch of the #472 inputs this rig consumes.
+    """Idempotent, sha256-pinned HF prefetch of the inherited #472 inputs.
+
+    Fetches from the issue-600-OWNED snapshot ``HF_DATA_PREFIX_INPUTS`` (NOT
+    the shared ``issue472_neg_geometry/`` mirrors, two of which are a stale
+    generation — the 2026-06-11 smoke crash). Every file — downloaded OR
+    already on disk — is hash-asserted against ``EXPECTED_SHA256`` so a stale
+    copy from ANY source fails loud at phase=prefetch.
 
     Deliberately does NOT fetch ``R_eval.json`` — plan §10 marks it UNFIT
     (missing 15 bank personas) and the #600 path must never read it.
     """
-    targets = [
-        ("persona_bank.json", f"{HF_DATA_PREFIX_INHERIT}/geometry/persona_bank.json"),
-        ("on_policy_R/R_train.json", f"{HF_DATA_PREFIX_INHERIT}/on_policy_R/R_train.json"),
-        ("centroids_L10.pt", f"{HF_DATA_PREFIX_INHERIT}/geometry/centroids_L10.pt"),
-    ]
-    missing = [(local, remote) for local, remote in targets if not (i472_root / local).exists()]
-    if not missing:
-        log.info("[phase=prefetch] all inherited #472 artifacts on disk under %s", i472_root)
-        return
-    token = os.environ.get("HF_TOKEN")
-    if not token:
-        names = [m[0] for m in missing]
-        raise RuntimeError(
-            f"inherited #472 artifacts missing locally and HF_TOKEN unset → cannot "
-            f"prefetch: {names}."
-        )
-    from huggingface_hub import hf_hub_download
+    targets = sorted(EXPECTED_SHA256)  # local_rel == path under HF_DATA_PREFIX_INPUTS
+    missing = [rel for rel in targets if not (i472_root / rel).exists()]
+    if missing:
+        token = os.environ.get("HF_TOKEN")
+        if not token:
+            raise RuntimeError(
+                f"inherited #472 artifacts missing locally and HF_TOKEN unset → cannot "
+                f"prefetch: {missing}."
+            )
+        from huggingface_hub import hf_hub_download
 
-    i472_root.mkdir(parents=True, exist_ok=True)
-    (i472_root / "on_policy_R").mkdir(parents=True, exist_ok=True)
-    for local_rel, remote in missing:
-        log.info("[phase=prefetch] %s ← %s/%s", local_rel, HF_DATA_REPO, remote)
-        downloaded = hf_hub_download(
-            repo_id=HF_DATA_REPO, filename=remote, repo_type="dataset", token=token
-        )
-        target = i472_root / local_rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        if target.resolve() != Path(downloaded).resolve():
-            import shutil
+        i472_root.mkdir(parents=True, exist_ok=True)
+        for local_rel in missing:
+            remote = f"{HF_DATA_PREFIX_INPUTS}/{local_rel}"
+            log.info("[phase=prefetch] %s ← %s/%s", local_rel, HF_DATA_REPO, remote)
+            downloaded = hf_hub_download(
+                repo_id=HF_DATA_REPO, filename=remote, repo_type="dataset", token=token
+            )
+            target = i472_root / local_rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.resolve() != Path(downloaded).resolve():
+                import shutil
 
-            shutil.copyfile(downloaded, target)
-        log.info("[phase=prefetch] OK %s (%d bytes)", target, target.stat().st_size)
+                shutil.copyfile(downloaded, target)
+    # Pin check covers EVERY target — fresh downloads AND pre-existing files
+    # (a stale on-disk copy is the same crash class as a stale mirror).
+    for local_rel in targets:
+        assert_pinned_sha256(i472_root / local_rel, local_rel)
+        log.info(
+            "[phase=prefetch] OK %s (%d bytes, sha256 pin verified)",
+            i472_root / local_rel,
+            (i472_root / local_rel).stat().st_size,
+        )
 
 
 def _load_bank_and_r_train() -> tuple[dict[str, str], dict, list[str]]:
@@ -206,12 +247,26 @@ def _load_bank_and_r_train() -> tuple[dict[str, str], dict, list[str]]:
         load_persona_bank,
     )
     from explore_persona_space.experiments.contrastive_neg_geometry_472.r_generate import (
+        NO_PERSONA_KEY,
         load_r_artifact,
     )
 
     i472 = _i472_data_root()
     persona_bank = load_persona_bank(i472 / "persona_bank.json")
     r_train = load_r_artifact(i472 / "on_policy_R" / "R_train.json")
+    # Consume-time coverage assert (the r_generate EXIT assertion, enforced
+    # where the artifact is CONSUMED): every bank persona + no_persona must
+    # have completions in R_train. A stale/foreign R_train generation fails
+    # HERE with the missing personas named, not as a KeyError in build_cell
+    # (the 2026-06-11 GCE smoke crash: r_train lacked 'bartender').
+    missing_personas = sorted((set(persona_bank) | {NO_PERSONA_KEY}) - set(r_train))
+    if missing_personas:
+        raise RuntimeError(
+            f"[invariant] R_train at {i472 / 'on_policy_R' / 'R_train.json'} is missing "
+            f"{len(missing_personas)} personas required by the bank ∪ {{no_persona}}: "
+            f"{missing_personas}. The artifact is a different generation than the bank — "
+            f"refusing to build training mixes."
+        )
     any_p = next(iter(r_train))
     q_train = sorted(r_train[any_p])
     return persona_bank, r_train, q_train
