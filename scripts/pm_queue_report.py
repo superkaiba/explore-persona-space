@@ -255,6 +255,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
+    if args.status and args.include_terminal:
+        parser.error(
+            "--include-terminal cannot be combined with --status; "
+            "pass --status completed / --status archived explicitly"
+        )
+
     if args.status:
         statuses = tuple(dict.fromkeys(args.status))  # de-dupe, keep order
     elif args.include_terminal:
