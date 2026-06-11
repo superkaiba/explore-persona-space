@@ -2373,23 +2373,33 @@ runs:
   are no longer consulted — the 10-min `FREE_WAIT_SECONDS` park
   supersedes the old 6-h default.
 
-**Lane capability check (run BEFORE the dispatch call).** The GCP and
-SLURM lanes execute ONLY the standard Hydra entrypoints — the GCP
-startup script hardcodes `uv run python scripts/train.py <hydra args>`
-(`backends/gcp.py`), the SLURM stages dispatch `scripts/train.py` /
-`scripts/eval.py`, and `RunSpec` carries `hydra_args` only
-(`backends/base.py`) — there is no custom workload-command field. If
-the plan's Reproducibility Card launch command is anything else (a
-custom `scripts/issue<N>_dispatch.sh`, any bespoke driver), dispatch
-with the explicit `--backend runpod` override — the only lane that
-runs arbitrary nohup commands (the Step 6d.1 experimenter launch) —
-and record the override reason in the `epm:backend-selected` / launch
-marker note. Auto routing is valid only for standard-entrypoint
-workloads until the router grows a custom workload-command field.
+**Lane capability check (run BEFORE the dispatch call).** All router
+lanes (GCP + SLURM) execute custom workload commands: pass the plan's
+launch command via `--workload-cmd 'bash scripts/issue<N>_dispatch.sh
+...'` (mutually exclusive with `--hydra`; exactly one required — the
+CLI fails loud otherwise; note the neither-set defense-in-depth raise
+exists in the GCP renderer only — SLURM's default stage chain is
+pre-existing behavior). Auto routing is valid for dispatch-script
+workloads (#588). Residual gaps that still need the explicit
+`--backend runpod` override (or the named knob): (a) 70B intents
+(`inf-70b`/`ft-70b` have no GCP machine-type mapping — fail-loud by
+design); (b) workloads needing the open-instruct `--extra gpu` venv on
+a SLURM lane (the custom stage builds the base venv); (c) workloads
+needing interactive SSH-MCP-driven orchestration mid-run (the
+experimenter launch pattern); (d) **workloads longer than ~20h on
+GCP** — the lane pins `--instance-termination-action=DELETE` +
+`--max-run-duration` (default 24h), so a multi-day sweep is deleted
+mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
+RunPod override. For the gcp/auto lanes the dispatch script must exist
+on the pushed branch — `--repo-branch` defaults to the current branch
+(the GCE startup script clones from origin). SLURM custom stages are
+render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
-workload to GCP; the startup script ran bare `scripts/train.py`,
-crashed at startup, and the EXIT trap powered the VM off — one wasted
-GCP cycle before re-dispatching with `--backend runpod`.)
+workload to GCP before the router had a custom workload-command field;
+the startup script ran bare `scripts/train.py`, crashed at startup,
+and the EXIT trap powered the VM off. #588 closed it — the GCP
+renderer now refuses to render that bare launch, and `--workload-cmd`
+carries dispatch scripts on every lane.)
 
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
