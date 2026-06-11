@@ -7,6 +7,14 @@ tags: []
 created_at: '2026-06-11T06:49:10Z'
 has_clean_result: false
 parent_id: 480
+goal: 'Explain the leak/no-leak structure across (source, behavior) cells for three
+  implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing
+  which candidate factor accounts for flat bystander panels: source isolation (no
+  near-twin bystander on the panel), implant strength (source-self delta), payload-persona
+  affinity (bystander base propensity for the behavior), or training-negative coverage;
+  including causal tests of the two manipulable factors - an eval-side near-twin probe
+  on isolated sources, and a training-depth dose probe that pushes the implant harder
+  to see whether flat panels un-floor - rather than correlational re-analysis alone.'
 ---
 ---
 title: Why do some (source, behavior) panels show zero leakage? Cross-behavior campaign
