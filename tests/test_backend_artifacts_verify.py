@@ -98,9 +98,22 @@ def _io(
         return run_path in wandb_runs
 
     def _git(root: Path, rel_paths) -> set[str]:
+        """Realistic ``git ls-files`` mock: returns tracked FILE paths.
+
+        ``git_tracked_paths`` is the set of tracked files in the fake
+        repo; a declared pathspec matches a tracked file when it equals
+        it (file declaration) or is a directory prefix of it (directory
+        declaration) — mirroring git pathspec semantics. The previous
+        mock returned the declared strings verbatim, which masked the
+        dir-declaration bug `_check_git` had with real IO (#588 round 2).
+        """
         if git_raises is not None:
             raise git_raises
-        return {p for p in rel_paths if p in git_tracked_paths}
+        out: set[str] = set()
+        for p in rel_paths:
+            prefix = p.rstrip("/") + "/"
+            out |= {f for f in git_tracked_paths if f == p or f.startswith(prefix)}
+        return out
 
     def _sentinel(path: str) -> str | None:
         if sentinel_raises is not None:
@@ -268,6 +281,95 @@ def test_fail_when_git_path_tracked_but_deleted(tmp_path: Path) -> None:
     assert not verdict.passed
     assert verdict.checks[CHECK_GIT]["status"] == "FAIL"
     assert "not on disk" in verdict.checks[CHECK_GIT]["detail"]
+
+
+def test_pass_when_git_dir_declaration_has_tracked_files(tmp_path: Path) -> None:
+    """A directory declaration PASSes when >=1 tracked file sits under it.
+
+    This is the canonical declaration shape (`expected_artifacts_declaration`
+    emits `eval_results/issue_<N>/` + `figures/issue_<N>/`); pre-fix the
+    literal-membership test could never match a file path, so every
+    real-IO run FAILed (#588 round 2).
+    """
+    expected = ExpectedArtifacts(
+        issue=588,
+        git_paths=("eval_results/issue_588/", "figures/issue_588/"),
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+    )
+    io = _io(
+        git_tracked_paths={
+            "eval_results/issue_588/att-x/smoke.json",
+            "figures/issue_588/phases.png",
+        },
+        sentinel_content=_good_sentinel_text(issue=588),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_GIT]["status"] == "PASS", verdict.checks[CHECK_GIT]
+
+
+def test_fail_when_git_dir_declaration_has_no_tracked_files(tmp_path: Path) -> None:
+    """A directory declaration with NO tracked file under it still FAILs."""
+    expected = ExpectedArtifacts(
+        issue=588,
+        git_paths=("eval_results/issue_588/",),
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+    )
+    io = _io(
+        # Tracked files exist elsewhere — none under the declared dir.
+        git_tracked_paths={"figures/issue_588/phases.png"},
+        on_disk={"eval_results/issue_588/untracked.json", "figures/issue_588/phases.png"},
+        sentinel_content=_good_sentinel_text(issue=588),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_GIT]["status"] == "FAIL"
+    assert "not tracked by git" in verdict.checks[CHECK_GIT]["detail"]
+    assert "eval_results/issue_588/" in verdict.checks[CHECK_GIT]["detail"]
+
+
+def test_git_dir_declaration_matches_without_trailing_slash(tmp_path: Path) -> None:
+    """A dir declared WITHOUT the trailing slash matches files under it too."""
+    expected = ExpectedArtifacts(
+        issue=588,
+        git_paths=("eval_results/issue_588",),
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+    )
+    io = _io(
+        git_tracked_paths={"eval_results/issue_588/att-x/smoke.json"},
+        sentinel_content=_good_sentinel_text(issue=588),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_GIT]["status"] == "PASS", verdict.checks[CHECK_GIT]
+
+
+def test_git_exact_file_declaration_does_not_prefix_match_siblings(tmp_path: Path) -> None:
+    """Exact-file semantics are unchanged: a sibling file under the same dir
+    does NOT satisfy a file declaration (no accidental prefix loosening)."""
+    expected = ExpectedArtifacts(
+        issue=137,
+        git_paths=("eval_results/issue_137/run_result.json",),
+        sentinel_path=str(tmp_path / ".sentinel.json"),
+    )
+    io = _io(
+        # A different file in the same directory is tracked; the declared
+        # exact file is not.
+        git_tracked_paths={"eval_results/issue_137/other.json"},
+        on_disk={
+            "eval_results/issue_137/run_result.json",
+            "eval_results/issue_137/other.json",
+        },
+        sentinel_content=_good_sentinel_text(issue=137),
+        repo_root=tmp_path,
+    )
+    verdict = verify_artifacts(expected, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_GIT]["status"] == "FAIL"
+    assert "not tracked by git" in verdict.checks[CHECK_GIT]["detail"]
 
 
 def test_fail_when_sentinel_missing(tmp_path: Path) -> None:
