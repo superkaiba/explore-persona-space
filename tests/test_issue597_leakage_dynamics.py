@@ -1548,3 +1548,68 @@ def test_titration_exact_file_upload_verification(monkeypatch):
         _listing([f"{prefix}/base_bank.npz", f"{prefix}/b_villain.npz"]),
     )
     disp.verify_exact_hub_files("some/repo", "dataset", prefix, ["b_villain.npz"])
+
+
+def test_aligned_zero_shift_rows():
+    """Zero-shift row counts must align to FULL main-read batches — a partial
+    trailing batch re-batches rows with different companions (different
+    left-pad geometry → bf16 jitter ≫ the 1e-3 tol; the r8 geometry lesson)."""
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        aligned_zero_shift_rows,
+    )
+
+    assert aligned_zero_shift_rows(50, 1250, 8) == 48  # the production landmine
+    assert aligned_zero_shift_rows(9, 9, 8) == 9  # smoke: full set, auto-aligned
+    assert aligned_zero_shift_rows(16, 1250, 8) == 16  # already aligned
+    assert aligned_zero_shift_rows(5, 9, 16) == 9  # floor would be 0 → all rows
+    assert aligned_zero_shift_rows(2000, 9, 8) == 9  # capped at n_rows
+
+
+def test_parent_geometry_fourfloat_matches_full_enumeration_read():
+    """The subset gate read must reproduce the full-enumeration batched read
+    EXACTLY (same sub-batch shapes → same numerics) — the property that makes
+    the four-float gate comparison valid under smoke --limit-* subsetting."""
+    import numpy as np
+    import torch
+
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        PARENT_PROBE_BATCH_SIZE,
+        ProbeRow,
+        compute_panel_reads,
+        parent_geometry_fourfloat,
+    )
+
+    model = _tiny_qwen2()
+    torch.manual_seed(3)
+    full_rows = []
+    for k in range(10):  # 10 rows -> two parent sub-batches of 8 (8 + 2)
+        total = 7 + (3 * k) % 11
+        ids = torch.randint(1, 128, (total,)).tolist()
+        full_rows.append(ProbeRow(context=f"ctx{k}", q_idx=0, full_ids=tuple(ids), prompt_len=3))
+    assert PARENT_PROBE_BATCH_SIZE == 8
+
+    # Independent reference: the full enumeration read in parent batches.
+    full_reads = compute_panel_reads(
+        model,
+        full_rows,
+        layers=(0,),
+        marker_id=5,
+        eos_token_id=7,
+        batch_size=PARENT_PROBE_BATCH_SIZE,
+        device="cpu",
+        pad_token_id=0,
+    )
+
+    subset = [full_rows[1], full_rows[7], full_rows[9]]  # spans both sub-batches
+    gate_ff = parent_geometry_fourfloat(
+        model, full_rows, subset, marker_id=5, eos_token_id=7, device="cpu", pad_token_id=0
+    )
+    want = full_reads["fourfloat"][[1, 7, 9]]
+    assert np.allclose(gate_ff, want, atol=1e-6), np.abs(gate_ff - want).max()
+
+    # A subset row absent from the full enumeration fails loud.
+    alien = ProbeRow(context="ctx1", q_idx=99, full_ids=full_rows[1].full_ids, prompt_len=3)
+    with pytest.raises(RuntimeError, match="not in the full enumeration"):
+        parent_geometry_fourfloat(
+            model, full_rows, [alien], marker_id=5, eos_token_id=7, device="cpu", pad_token_id=0
+        )

@@ -36,6 +36,16 @@ in ``--refs-dir``, this module's own forward must reproduce the stored
 ``log P(※)`` to ≤ 0.1 nat per row on the trained side (base side gated in
 ``--mode base`` via ``--base-ref``). FAIL is a hard error — slot/tokenization
 drift, wrong adapter, or indexing bugs are caught before any grid spend.
+GATE GEOMETRY (round-2 fix): the comparison is only valid at the parent's
+exact batch geometry — the stored records were computed over the FULL 25×50
+enumeration in left-padded sub-batches of 8, and a ``--limit-*`` subset
+re-batches rows with different companions → different ``max_len`` →
+different left-pad → different RoPE offsets → bf16 jitter up to ~0.16 nat
+(pod-measured r8: parent-geometry |Δlogp| = 0.0000 bit-exact vs
+smoke-geometry 0.1634 on the same row/model/weights). Subset runs therefore
+re-read the gated rows inside their ORIGINAL full-enumeration sub-batches
+(:func:`parent_geometry_fourfloat`); full runs at the parent batch size are
+geometry-matched by construction and reuse the main reads.
 
 Batching note: rows are LEFT-padded per sub-batch with no explicit
 ``position_ids`` — the EXACT convention of the parent's
@@ -96,6 +106,12 @@ POOLINGS: tuple[str, ...] = ("slot", "mean_resp")
 FOURFLOAT_TOL_NATS = 0.1  # vs the parent's stored records (its own gate hit 0.067)
 ZERO_SHIFT_TOL = 1e-3  # max ||Δv|| on the base-vs-base pass
 INVARIANT_ATOL = 1e-3  # end-of-ladder four-float re-read (parent's tolerance)
+
+# The parent's panel probe (compute_marker_slot_stats via panel_probe.py)
+# computed the stored reference records in left-padded sub-batches of THIS
+# size over the full 25×50 enumeration. Gate reads must match it — batch
+# composition changes left-pad geometry and thus bf16 numerics (~0.16 nat).
+PARENT_PROBE_BATCH_SIZE = 8
 
 # Both arms' ladders are downloaded from the Hub (immutable published
 # artifacts), so the provenance run-id is a stable literal — the analogue of
@@ -439,6 +455,101 @@ def _assert_lm_head_reproduces(model, logits, h_last_block, row_index: int) -> N
 # ── four-float reproduction gate ─────────────────────────────────────────────
 
 
+def parent_geometry_fourfloat(
+    model,
+    full_rows: list[ProbeRow],
+    rows: list[ProbeRow],
+    *,
+    marker_id: int,
+    eos_token_id: int,
+    device: str,
+    pad_token_id: int,
+):
+    """Four floats for ``rows`` read at the PARENT's exact batch geometry.
+
+    The parent's stored records were computed over the FULL enumeration
+    (context insertion order × question order — ``build_all_contexts``) in
+    left-padded sub-batches of :data:`PARENT_PROBE_BATCH_SIZE`. A subset run
+    (smoke ``--limit-*``) re-batches rows with different companions →
+    different ``max_len`` → different left-pad → different RoPE offsets →
+    bf16 jitter up to ~0.16 nat, which is NOT comparable against the stored
+    records at the 0.1-nat gate tolerance (r8 pod measurement: parent-geometry
+    |Δlogp| = 0.0000 bit-exact, smoke-geometry 0.1634, same row/model/weights).
+    This helper reconstructs each gated row's ORIGINAL sub-batch from
+    ``full_rows`` (the UNRESTRICTED enumeration), forwards only the needed
+    sub-batches, and returns the gated rows' four floats — bit-comparable to
+    the reference. ``model`` may be base or PEFT-wrapped (trained side).
+
+    Returns (len(rows), 4) float64 numpy — (logp, z_marker, z_eos, logZ).
+    """
+    import numpy as np
+    import torch
+
+    index_of = {(r.context, r.q_idx): i for i, r in enumerate(full_rows)}
+    needed: dict[int, list[tuple[int, int]]] = {}
+    for out_pos, r in enumerate(rows):
+        key = (r.context, r.q_idx)
+        if key not in index_of:
+            raise RuntimeError(
+                f"parent-geometry gate read: row {key} not in the full enumeration — "
+                "probe-rows file drifted vs the subset rows"
+            )
+        fi = index_of[key]
+        assert full_rows[fi].full_ids == r.full_ids, (
+            f"row {key}: subset tokenization differs from the full enumeration — "
+            "--limit-* must never change per-row token ids"
+        )
+        b = fi // PARENT_PROBE_BATCH_SIZE
+        needed.setdefault(b, []).append((out_pos, fi - b * PARENT_PROBE_BATCH_SIZE))
+
+    out = np.empty((len(rows), 4), dtype=np.float64)
+    with torch.no_grad():
+        for b, picks in sorted(needed.items()):
+            chunk = full_rows[b * PARENT_PROBE_BATCH_SIZE : (b + 1) * PARENT_PROBE_BATCH_SIZE]
+            max_len = max(len(r.full_ids) for r in chunk)
+            padded, attn = [], []
+            for r in chunk:
+                pad_len = max_len - len(r.full_ids)
+                padded.append([pad_token_id] * pad_len + list(r.full_ids))
+                attn.append([0] * pad_len + [1] * len(r.full_ids))
+            input_ids = torch.tensor(padded, dtype=torch.long, device=device)
+            attention_mask = torch.tensor(attn, dtype=torch.long, device=device)
+            logits = model(input_ids=input_ids, attention_mask=attention_mask).logits
+            assert logits.ndim == 3, logits.shape
+            for out_pos, j in picks:
+                raw = logits[j, -1, :].float()
+                log_z = float(torch.logsumexp(raw, dim=-1).item())
+                z_marker = float(raw[marker_id].item())
+                z_eos = float(raw[eos_token_id].item())
+                out[out_pos] = (z_marker - log_z, z_marker, z_eos, log_z)
+            del logits
+    log.info(
+        "[phase=gate_geometry] re-read %d gated row(s) in %d parent-geometry sub-batch(es)",
+        len(rows),
+        len(needed),
+    )
+    return out
+
+
+def aligned_zero_shift_rows(requested: int, n_rows: int, batch_size: int) -> int:
+    """Zero-shift row count aligned to FULL main-read batches.
+
+    The base-vs-base pass must re-read rows in the SAME sub-batches as the
+    main read: a partial trailing batch re-batches its rows with different
+    companions → different left-pad geometry → bf16 residual jitter ≫ the
+    1e-3 zero-shift tolerance (the r8 geometry lesson — logp-space jitter
+    measured 0.1634 nat). Returns ``min(requested, n_rows)`` floored to a
+    multiple of ``batch_size``; degenerate floors fall back to ``n_rows``
+    (re-reading everything is always geometry-aligned).
+    """
+    n_zero = min(requested, n_rows)
+    if n_zero < n_rows and n_zero % batch_size:
+        n_zero = batch_size * (n_zero // batch_size)
+        if n_zero == 0:
+            n_zero = n_rows
+    return n_zero
+
+
 def compare_fourfloat_to_reference(
     rows: list[ProbeRow],
     fourfloat,
@@ -595,15 +706,35 @@ def run_base_mode(args) -> int:
     log.info("[phase=base_reads] %d rows read in %.1fs", len(rows), time.time() - t0)
 
     # ── base-side four-float reproduction gate (plan §7a, base leg) ──
+    # Geometry-matched comparison only (see parent_geometry_fourfloat): a
+    # full run at the parent batch size reuses the main reads; a subset
+    # (smoke) run re-reads gated rows in their original sub-batches.
+    geometry_matched = (
+        args.limit_contexts is None
+        and args.limit_questions is None
+        and args.batch_size == PARENT_PROBE_BATCH_SIZE
+    )
     gate_base = None
     if args.base_ref is not None:
         ref_payload = json.loads(Path(args.base_ref).read_text())
-        gate_base = compare_fourfloat_to_reference(
-            rows, reads["fourfloat"], ref_payload, side="base"
-        )
+        if geometry_matched:
+            gate_ff = reads["fourfloat"]
+        else:
+            full_rows = prepare_rows(tokenizer, load_probe_rows(args.probe_rows))
+            gate_ff = parent_geometry_fourfloat(
+                model,
+                full_rows,
+                rows,
+                marker_id=MARKER_ID,
+                eos_token_id=IM_END_ID,
+                device=device,
+                pad_token_id=pad_id,
+            )
+        gate_base = compare_fourfloat_to_reference(rows, gate_ff, ref_payload, side="base")
+        gate_base["parent_geometry_reread"] = not geometry_matched
 
     # ── base-vs-base zero-shift sanity (plan §7b) ──
-    n_zero = min(args.zero_shift_rows, len(rows))
+    n_zero = aligned_zero_shift_rows(args.zero_shift_rows, len(rows), args.batch_size)
     zero_rows = rows[:n_zero]
     reads2 = compute_panel_reads(
         model,
@@ -762,8 +893,14 @@ def read_one_checkpoint(
     batch_size: int,
     device: str,
     pad_token_id: int,
+    gate_fourfloat_fn=None,
 ):
-    """Gauge-assert + hot-swap + read ONE checkpoint; return (reads, base_model).
+    """Gauge-assert + hot-swap + read ONE checkpoint.
+
+    Returns ``(reads, gate_fourfloat, base_model)``. ``gate_fourfloat`` is
+    ``gate_fourfloat_fn(peft_model)`` evaluated WHILE the adapter is loaded
+    (the parent-geometry gate read for subset runs — see
+    :func:`parent_geometry_fourfloat`), or ``None`` when no fn is passed.
 
     The returned ``base_model`` is the post-``unload()`` reference (PEFT
     mutates the wrapped model in place; callers must thread the returned
@@ -791,10 +928,11 @@ def read_one_checkpoint(
             device=device,
             pad_token_id=pad_token_id,
         )
+        gate_fourfloat = gate_fourfloat_fn(peft_model) if gate_fourfloat_fn is not None else None
     finally:
         base_model = peft_model.unload()
         del peft_model
-    return reads, base_model
+    return reads, gate_fourfloat, base_model
 
 
 def run_unit_mode(args) -> int:
@@ -861,6 +999,29 @@ def run_unit_mode(args) -> int:
     )
 
     refs_dir = Path(args.refs_dir) if args.refs_dir else None
+    # Geometry-matched gate reads (see parent_geometry_fourfloat): subset
+    # (smoke) runs re-read gated rows in their original full-enumeration
+    # sub-batches; full runs at the parent batch size reuse the main reads.
+    geometry_matched = (
+        args.limit_contexts is None
+        and args.limit_questions is None
+        and args.batch_size == PARENT_PROBE_BATCH_SIZE
+    )
+    full_rows: list[ProbeRow] | None = None
+    if refs_dir is not None and not geometry_matched:
+        full_rows = prepare_rows(tokenizer, load_probe_rows(args.probe_rows))
+
+    def _gate_fn(peft_model):
+        assert full_rows is not None
+        return parent_geometry_fourfloat(
+            peft_model,
+            full_rows,
+            rows,
+            marker_id=MARKER_ID,
+            eos_token_id=IM_END_ID,
+            device=device,
+            pad_token_id=pad_id,
+        )
 
     out_dir = Path(args.out_dir)
     ckpt_dir_out = out_dir / f"per_checkpoint_{unit}"
@@ -891,7 +1052,12 @@ def run_unit_mode(args) -> int:
                 first_fourfloat = np.load(out_path, allow_pickle=False)["fourfloat_trained"]
             continue
         t_ck = time.time()
-        reads, base_model = read_one_checkpoint(
+        # Four-float reproduction gate where a parent reference exists — the
+        # gate read must happen while the adapter is loaded, so resolve the
+        # reference BEFORE the hot-swap.
+        ref_path = refs_dir / f"step_{step:05d}.json" if refs_dir else None
+        gate_this_step = ref_path is not None and ref_path.exists()
+        reads, gate_ff, base_model = read_one_checkpoint(
             base_model,
             tokenizer,
             ckpt_dir,
@@ -902,15 +1068,18 @@ def run_unit_mode(args) -> int:
             batch_size=args.batch_size,
             device=device,
             pad_token_id=pad_id,
+            gate_fourfloat_fn=_gate_fn if (gate_this_step and not geometry_matched) else None,
         )
-        # Four-float reproduction gate where a parent reference exists.
-        ref_path = refs_dir / f"step_{step:05d}.json" if refs_dir else None
-        if ref_path is not None and ref_path.exists():
+        if gate_this_step:
             ref_payload = json.loads(ref_path.read_text())
             gate = compare_fourfloat_to_reference(
-                rows, reads["fourfloat"], ref_payload, side="trained"
+                rows,
+                gate_ff if gate_ff is not None else reads["fourfloat"],
+                ref_payload,
+                side="trained",
             )
             gate["step"] = step
+            gate["parent_geometry_reread"] = gate_ff is not None
             gate_reports.append(gate)
         arrays = _ckpt_arrays(reads, bank_npz, rows, context_names, layers)
         meta = {
@@ -946,7 +1115,7 @@ def run_unit_mode(args) -> int:
     # checkpoint; its four floats must reproduce within INVARIANT_ATOL.
     assert first_step is not None and first_ckpt_dir is not None and first_fourfloat is not None
     log.info("[phase=unit_invariant_%s] re-reading first checkpoint step %d", unit, first_step)
-    reads_recheck, base_model = read_one_checkpoint(
+    reads_recheck, _, base_model = read_one_checkpoint(
         base_model,
         tokenizer,
         first_ckpt_dir,
