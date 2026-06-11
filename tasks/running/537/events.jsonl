@@ -247,3 +247,4 @@
 {"ts": "2026-06-11T08:17:46Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=4/8, smoke=False, dry_run=False) in 2827s"}
 {"ts": "2026-06-11T08:17:49Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=6/8, smoke=False, dry_run=False) in 2831s"}
 {"ts": "2026-06-11T08:17:53Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=7/8, smoke=False, dry_run=False) in 2859s"}
+{"ts": "2026-06-11T08:17:56Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=5/8, smoke=False, dry_run=False) in 2862s"}
