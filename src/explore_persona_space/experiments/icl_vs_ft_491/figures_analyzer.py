@@ -96,20 +96,34 @@ def gate_scatter_l19() -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6))
     fig.subplots_adjust(wspace=0.28)
-    label_offsets = {
-        "hero": (-6, 5),
+    # Per-panel label offsets: the two panels have very different y-geometry
+    # (FT spans ~6.7-16 nat, ICL compresses into ~15-19 nat), so one shared
+    # offset dict produced collisions in the ICL panel (round-1 critique).
+    ft_offsets = {
+        "hero": (-6, 4),
+        "police_officer": (5, -3),
+        "comedian": (-6, 3),
+        "lawyer": (5, 2),
+        "medical_doctor": (6, -7),
+        "software_engineer": (-6, -9),
+        "kindergarten_teacher": (6, 3),
+        "no_system": (5, -2),
+        "helpful": (5, -2),
+    }
+    icl_offsets = {
+        "hero": (6, -2),
         "police_officer": (5, -3),
         "comedian": (5, -3),
-        "lawyer": (5, 2),
-        "medical_doctor": (5, 2),
-        "software_engineer": (-10, 6),
-        "kindergarten_teacher": (5, -8),
-        "no_system": (5, 2),
-        "helpful": (5, 2),
+        "lawyer": (5, -2),
+        "medical_doctor": (-6, -2),
+        "software_engineer": (5, -3),
+        "kindergarten_teacher": (5, -9),
+        "no_system": (5, -2),
+        "helpful": (6, 2),
     }
-    for ax, prof, title, color_role in (
-        (axes[0], ft_mean, "Finetuned on the K examples", "primary"),
-        (axes[1], icl_mean, "Same K examples in-context", "accent"),
+    for ax, prof, title, color_role, label_offsets in (
+        (axes[0], ft_mean, "Finetuned on the K examples", "primary", ft_offsets),
+        (axes[1], icl_mean, "Same K examples in-context", "accent", icl_offsets),
     ):
         color = paper_palette_role(color_role)
         xs = [g[c] for c in NONSRC]
@@ -131,7 +145,9 @@ def gate_scatter_l19() -> None:
             fontsize=10,
         )
         ax.set_xlabel("base-model similarity to villain context\n(cos at layer 19, pre-response)")
-        ax.set_xlim(0.845, 1.02)
+        # xlim must include EVERY panel point: 0.845 clipped the helpful
+        # context (gate cos 0.8349) out of both panels (round-1 critique).
+        ax.set_xlim(0.822, 1.018)
         for c in NONSRC:
             dx, dy = label_offsets.get(c, (5, 2))
             ax.annotate(
@@ -334,7 +350,7 @@ def h2_geometry_layers() -> None:
     ax.legend(fontsize=7.5, loc="lower right")
     ax.set_title(
         "The two routes write reliably different directions\n"
-        "(within-regime replicates ≈ 0.8–0.99; cross-regime ≈ 0.1–0.35 except the final layer)"
+        "(within-regime replicates 0.65–0.99; cross-regime ≈ 0.1–0.35 until the final layer)"
     )
     _save(fig, "h2_geometry_layers")
     plt.close(fig)
