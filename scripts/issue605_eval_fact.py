@@ -138,6 +138,10 @@ def build_headline_rows(n_per_unit: int = N_PARAPHRASES_PER_UNIT) -> list[dict]:
     Units = the 5 A-reformulation sub-framings + the 7 #541 headline
     framing381 ids. Rows are ROUND-ROBIN interleaved across units so any
     ``--rows R`` prefix keeps unit coverage breadth (smoke parity)."""
+    # Re-pin PROJECT_ROOT first: helper modules (issue444_bystander_logprob)
+    # insert scripts/ at position 0 at import time, and scripts/eval.py then
+    # shadows the top-level eval/ package.
+    sys.path.insert(0, str(PROJECT_ROOT))
     from eval.exp444_judge_prompts import build_framing_probes, build_reformulation_probes
 
     facts = _figure_facts()

@@ -969,7 +969,7 @@ def synthesize_stub(root: Path) -> None:
         for i, a in enumerate(["none"] * 4 + ["soft"] * 4 + ["explicit"] * 4)
     ]
     cos_vals = np.linspace(0.62, 0.95, len(contexts))
-    prior_vals = np.tile([-18.0, -12.0, -6.0, -2.0], 3) + rng.normal(0, 0.5, len(contexts))
+    prior_vals = np.tile([-20.0, -16.0, -12.0, -8.0], 3) + rng.normal(0, 0.5, len(contexts))
     n_probes = 6
 
     pair_rows = []
@@ -1039,7 +1039,7 @@ def synthesize_stub(root: Path) -> None:
             pr = pair_rows[s_i * len(contexts) + c_i]
             base_logp = pr["prior_logp"] + rng.normal(0, 0.3)
             # PLANTED effect: shift rises with prior AND cos.
-            shift = 4.0 + 0.25 * (pr["prior_logp"] + 10) + 6 * (pr["cos_l21"] - 0.75)
+            shift = 3.0 + 0.3 * (pr["prior_logp"] + 14) + 4 * (pr["cos_l21"] - 0.75)
             shift += 0.5 * s_i + rng.normal(0, 0.4)
             t_q = [
                 slot_read(
