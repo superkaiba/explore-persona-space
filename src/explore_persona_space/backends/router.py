@@ -8,11 +8,20 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
 1. **Explicit override** — ``spec.backend == "runpod" | "gcp" | "nibi" |
    "fir" | "mila"`` runs that lane directly. RunPod is reachable ONLY via
    the override; the auto chain never spends real money.
-2. **Auto** — rank free lanes ``[nibi, fir if cfg.available, mila if
-   socket alive]`` by tz-corrected ``estimate_start_seconds`` (a ranking
-   HINT, never a gate), submit the best, park up to ``FREE_WAIT`` (default
-   600 s) for it to reach RUNNING. PENDING-at-cap triggers cancel + the
-   next tier.
+2. **Auto** — walk the resolved auto lane order. The STANDING DEFAULT is
+   **GCP first** (:data:`DEFAULT_AUTO_LANE_ORDER` =
+   ``("gcp", "nibi", "fir", "mila")``): credits-backed GCP capacity is
+   consumed BEFORE the free SLURM lanes. The order is overridable via the
+   ``EPM_AUTO_LANE_ORDER`` env var (comma-separated lanes, validated —
+   ``runpod`` and unknown names raise loudly) or per-call via
+   :attr:`RouterConfig.lane_order`; there is deliberately NO date logic —
+   flipping the order back is a human action (env override or a default
+   edit), never a clock. Contiguous SLURM lanes in the order are ranked
+   among themselves by tz-corrected ``estimate_start_seconds`` (a ranking
+   HINT, never a gate), the best is submitted and parked up to
+   ``FREE_WAIT`` (default 600 s) to reach RUNNING; PENDING-at-cap triggers
+   cancel + the next lane. GCP has no queue estimate and no park — its
+   "park" is the provision call itself.
 3. **Cancel state machine** — request a cancel via the backend's
    ``teardown(handle)``, then poll via the injected ``is_live_after_cancel``
    callable until the job is no longer live in the cluster queue
@@ -21,8 +30,14 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    started; tearing it down would burn the wait we already paid for). A
    timeout produces a ``manual-attention`` outcome rather than a silent
    leak.
-4. **Fallback chain — GCP only** — every free-lane PENDING-at-cap or
-   provisioning failure escalates to GCP. NEVER RunPod on auto.
+4. **Fallback chain — within the resolved order, NEVER RunPod.** A
+   provision-class failure on any lane (free-lane PENDING-at-cap /
+   provisioning failure; GCP provisioning / capacity / prepare / state-
+   probe failure when lanes remain after it) continues DOWN the resolved
+   order. Under the GCP-first default that means GCP capacity failures
+   fall through to the SLURM lanes; under a free-first override the SLURM
+   park-failures escalate to GCP exactly as before. NEVER RunPod on auto
+   — RunPod stays override-only regardless of the configured order.
 5. **Failure classification** — :class:`gcp.GcpProvisioningError` (and
    any backend-marked ``provisioning_failure: True`` raise) routes to the
    next tier; :class:`gcp.GcpWorkloadError` surfaces, NO auto-fallback;
@@ -54,11 +69,18 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    orchestrator crash between submit and lease-write leaves an
    ``UNKNOWN_SUBMITTED`` recovery state.
 7. **GCP attempt-count guard** — a per-issue/day attempt counter caps
-   auto-escalation to GCP at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 5).
-   This is NOT a dollar cap (``tests/test_no_dollar_budget_caps.py``
-   enforces "no SystemExit on budget" — see plan §"Real-money safety");
-   it bounds the *number of escalation attempts* so a broken classifier
-   that loops can't burn the GFS credit unattended.
+   auto-chain GCP attempts at ``MAX_GCP_ATTEMPTS_PER_DAY`` (default 5).
+   Primary-lane attempts (GCP-first default) count the SAME as
+   escalation attempts — the guard exists to stop a broken-classifier
+   loop from burning instances, and primary-lane attempts carry the same
+   risk. At the cap: when lanes REMAIN after GCP the router skips GCP
+   (zero credit spent) and continues down the order; when GCP is the
+   LAST lane it raises :class:`GcpAttemptCapExceededError` (the legacy
+   escalation semantics). This is NOT a dollar cap
+   (``tests/test_no_dollar_budget_caps.py`` enforces "no SystemExit on
+   budget" — see plan §"Real-money safety"); it bounds the *number of
+   provision attempts* so a broken classifier that loops can't burn the
+   GFS credit unattended.
 8. **Markers** — extends the existing ``epm:backend-selected v1`` body
    (per-lane est-starts raw+clamped, chosen lane, fallback chain,
    canonical reason codes, ids). The orchestrator's marker poster is
@@ -169,9 +191,27 @@ ROUTE_REASON_PREPARE_FAILED: str = "backend_prepare_failed"
 #: ``manual_attention`` while the transport stays broken.
 PARK_MAX_CONSECUTIVE_PROBE_FAILURES: int = 3
 
-#: Free-lane order for auto routing (DRAC + Mila). RunPod is NEVER in
-#: this list — it's override-only by deliberate design.
+#: SLURM free-lane subset (DRAC + Mila), in legacy precedence order.
+#: Kept as a public constant for callers that need "the free lanes";
+#: the AUTO chain's order is :data:`DEFAULT_AUTO_LANE_ORDER` /
+#: :func:`auto_lane_order`. RunPod is NEVER in either list — it's
+#: override-only by deliberate design.
 DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
+
+#: Standing default auto lane order: **GCP first** (credits-backed GCP
+#: capacity is consumed BEFORE the free SLURM lanes), then the SLURM
+#: lanes in legacy precedence. This is an unconditional default — NO
+#: date logic; flipping back to free-first later is a deliberate human
+#: action (set :data:`ENV_AUTO_LANE_ORDER` or edit this default), never
+#: a clock.
+DEFAULT_AUTO_LANE_ORDER: tuple[BackendKind, ...] = ("gcp", *DEFAULT_FREE_LANE_ORDER)
+
+#: Env override for the auto lane order — comma-separated lane names,
+#: e.g. ``EPM_AUTO_LANE_ORDER=nibi,fir,mila,gcp`` to restore free-first.
+#: Validated by :func:`auto_lane_order`: ``runpod`` raises loudly
+#: (real-money safety — never silently dropped), as do unknown names,
+#: ``auto``/``cluster`` literals, and duplicates.
+ENV_AUTO_LANE_ORDER: str = "EPM_AUTO_LANE_ORDER"
 
 #: Every value the ROUTER accepts for ``spec.backend``. ``route()``
 #: rejects anything outside this set at entry (closes the empty-string
@@ -183,6 +223,11 @@ DEFAULT_FREE_LANE_ORDER: tuple[BackendKind, ...] = ("nibi", "fir", "mila")
 #: or leave ``backend`` unset to auto-route. Passing ``"cluster"`` here
 #: is treated as a stringly-typed miswire.
 _VALID_BACKEND_VALUES: frozenset[str] = frozenset({"runpod", "nibi", "fir", "gcp", "mila", "auto"})
+
+#: Lanes the AUTO chain may contain — :data:`_VALID_BACKEND_VALUES`
+#: minus ``runpod`` (override-only; real money) and ``auto`` (the
+#: sentinel itself, not a lane).
+_AUTO_LANE_VALUES: frozenset[str] = frozenset({"gcp", "nibi", "fir", "mila"})
 
 #: Lanes whose kind IS a SLURM cluster name. The shared ``SlurmBackend``
 #: resolves its target cluster from ``spec.cluster`` per call, so every
@@ -685,8 +730,85 @@ class LeaseStore:
 
 
 # ---------------------------------------------------------------------------
-# Helpers (estimate ranking, GCP attempt counter)
+# Helpers (auto lane order, estimate ranking, GCP attempt counter)
 # ---------------------------------------------------------------------------
+
+
+def _validate_auto_lane_order(
+    lanes: tuple[str, ...],
+    *,
+    source: str,
+) -> tuple[BackendKind, ...]:
+    """Validate an auto-chain lane order; raise :class:`RouteError` on any defect.
+
+    Hard rules (all raise — a misconfigured order must NEVER be silently
+    repaired by dropping entries):
+
+    * ``runpod`` is FORBIDDEN — RunPod spends real money and stays
+      override-only; an order that smuggles it in is a real-money safety
+      violation, not a preference.
+    * Unknown lane names (typos, the ``auto`` sentinel, the legacy
+      ``cluster`` literal) raise.
+    * Duplicates raise (a duplicated lane would be attempted twice).
+    * An empty order raises.
+    """
+    if not lanes:
+        raise RouteError(f"auto lane order from {source} is empty — refusing to route blind")
+    for lane in lanes:
+        if lane == "runpod":
+            raise RouteError(
+                f"auto lane order from {source} contains 'runpod' — RunPod spends "
+                "real money and is reachable ONLY via an explicit backend override, "
+                "never on the auto chain. Remove it from the order."
+            )
+        if lane not in _AUTO_LANE_VALUES:
+            raise RouteError(
+                f"auto lane order from {source} contains unknown lane {lane!r}; "
+                f"valid lanes: {sorted(_AUTO_LANE_VALUES)}"
+            )
+    if len(set(lanes)) != len(lanes):
+        raise RouteError(f"auto lane order from {source} contains duplicate lanes: {lanes!r}")
+    return lanes  # type: ignore[return-value]
+
+
+def auto_lane_order() -> tuple[BackendKind, ...]:
+    """Resolve the auto-chain lane order: env override, else the standing default.
+
+    * :data:`ENV_AUTO_LANE_ORDER` set (non-empty) → parse the
+      comma-separated lane list and validate it (``runpod`` / unknown
+      names / duplicates raise loudly — never silently dropped).
+    * Otherwise → :data:`DEFAULT_AUTO_LANE_ORDER` (GCP first,
+      unconditionally — no date gate of any kind).
+    """
+    raw = os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
+    if not raw:
+        return DEFAULT_AUTO_LANE_ORDER
+    lanes = tuple(part.strip() for part in raw.split(",") if part.strip())
+    return _validate_auto_lane_order(lanes, source=f"{ENV_AUTO_LANE_ORDER}={raw!r}")
+
+
+def _split_lane_groups(kinds: list[BackendKind]) -> list[tuple[BackendKind, ...]]:
+    """Split availability-filtered lane kinds into contiguous attempt groups.
+
+    Each group is either ``("gcp",)`` or a maximal run of consecutive
+    SLURM lanes. The auto chain walks groups in order; WITHIN a SLURM
+    group the lanes keep the existing est-start ranking + park + cancel
+    chain (ties preserve the configured order — ``rank_lanes`` is
+    stable), while a GCP group is a single provision attempt.
+    """
+    groups: list[tuple[BackendKind, ...]] = []
+    current: list[BackendKind] = []
+    for kind in kinds:
+        if kind == "gcp":
+            if current:
+                groups.append(tuple(current))
+                current = []
+            groups.append(("gcp",))
+        else:
+            current.append(kind)
+    if current:
+        groups.append(tuple(current))
+    return groups
 
 
 def rank_lanes(
@@ -971,7 +1093,12 @@ class RouterConfig:
     poll_interval: float = DEFAULT_POLL_INTERVAL
     cancel_grace_seconds: int = CANCEL_LIVE_GRACE_SECONDS
     max_gcp_attempts_per_day: int = MAX_GCP_ATTEMPTS_PER_DAY
-    free_lane_order: tuple[BackendKind, ...] = DEFAULT_FREE_LANE_ORDER
+    #: Per-call auto lane order override. ``None`` (the default) resolves
+    #: via :func:`auto_lane_order` (env override, else the GCP-first
+    #: standing default). A non-None value is validated at ``route()``
+    #: entry with the same rules as the env override (``runpod`` /
+    #: unknown lanes / duplicates raise).
+    lane_order: tuple[BackendKind, ...] | None = None
 
 
 def route(
@@ -1015,9 +1142,11 @@ def route(
 
     * ``free_backends`` — map of free-lane kind → backend instance
       (e.g. ``{"nibi": slurm, "fir": slurm, "mila": mila}``). Auto
-      routing iterates this in :attr:`RouterConfig.free_lane_order`.
-      A missing kind is skipped (e.g. ``mila`` absent → router skips
-      Mila even when the socket is alive).
+      routing visits these at their position in the resolved lane order
+      (:attr:`RouterConfig.lane_order`, else :func:`auto_lane_order` —
+      env override, else the GCP-first standing default). A missing
+      kind is skipped (e.g. ``mila`` absent → router skips Mila even
+      when the socket is alive).
     * ``gcp_backend`` — the auto-fallback target. When ``None`` and the
       auto chain reaches GCP, the router raises
       :class:`NoComputeAvailableError`.
@@ -1159,6 +1288,26 @@ def route(
         )
 
     # ----------------------------- auto chain ---------------------------
+    # Resolve the lane order ONCE at entry (fail-fast on a malformed env
+    # override / config order, before any reconnect or submit I/O).
+    if cfg.lane_order is not None:
+        lane_order = _validate_auto_lane_order(
+            tuple(cfg.lane_order), source="RouterConfig.lane_order"
+        )
+        order_source = "RouterConfig.lane_order"
+    else:
+        lane_order = auto_lane_order()
+        order_source = (
+            f"{ENV_AUTO_LANE_ORDER} env override"
+            if os.environ.get(ENV_AUTO_LANE_ORDER, "").strip()
+            else "default (GCP-first standing order)"
+        )
+    logger.info(
+        "route(): issue=%d auto lane order = %s (source: %s)",
+        spec.issue,
+        " -> ".join(lane_order),
+        order_source,
+    )
     return _auto_route(
         spec=spec,
         free_backends=free_backends or {},
@@ -1167,6 +1316,7 @@ def route(
         attempts=attempts,
         started_at=started_at,
         cfg=cfg,
+        lane_order=lane_order,
         is_started=is_started,
         is_live_after_cancel=is_live_after_cancel,
         is_running_after_cancel=is_running_after_cancel,
@@ -1760,6 +1910,7 @@ def _auto_route(
     attempts: list[RouteAttempt],
     started_at: float,
     cfg: RouterConfig,
+    lane_order: tuple[BackendKind, ...],
     is_started: Callable[[ComputeBackend, RunHandle], bool],
     is_live_after_cancel: Callable[[ComputeBackend, RunHandle], bool],
     is_running_after_cancel: Callable[[ComputeBackend, RunHandle], bool] | None,
@@ -1773,11 +1924,24 @@ def _auto_route(
     on_launched: Callable[[RunHandle], None] | None,
     clock_fn: Callable[[], datetime] | None,
 ) -> RouteResult:
-    """No-``backend:`` auto route: rank free lanes, park, escalate to GCP."""
+    """No-``backend:`` auto route: walk ``lane_order`` (GCP-first default).
+
+    GCP is a first-class auto lane, not only an escalation target: at
+    its position in the order it is a single provision attempt (no
+    queue estimate, no park). Contiguous SLURM lanes keep the existing
+    est-start ranking + park + cancel chain among themselves. The
+    terminal "everything failed" path stays
+    :class:`NoComputeAvailableError`.
+    """
     del clock_fn  # reserved for a future "day boundary at posted-time" override
-    # Build the candidate list (skipping unwired lanes + Mila-when-down).
+    # Build the candidate list in lane order (skipping unwired lanes +
+    # Mila-when-down + GCP-when-unwired).
     candidates: list[tuple[ComputeBackend, BackendKind]] = []
-    for kind in cfg.free_lane_order:
+    for kind in lane_order:
+        if kind == "gcp":
+            if gcp_backend is not None:
+                candidates.append((gcp_backend, "gcp"))
+            continue
         backend = free_backends.get(kind)
         if backend is None:
             continue
@@ -1785,11 +1949,10 @@ def _auto_route(
             continue
         candidates.append((backend, kind))
 
-    # Stage 1: reconnect (free lanes first, then GCP).
+    # Stage 1: reconnect scan over every wired lane, in lane order.
     reconnect_result = _try_auto_reconnect(
         spec=spec,
         candidates=candidates,
-        gcp_backend=gcp_backend,
         store=store,
         attempts=attempts,
         started_at=started_at,
@@ -1801,40 +1964,69 @@ def _auto_route(
     if reconnect_result is not None:
         return reconnect_result
 
-    # Stage 2: rank + try each free lane (launch → park → cancel-on-fail).
-    estimated = _estimate_lanes(candidates, spec=spec, estimate_fn=estimate_fn)
-    ranked = rank_lanes(estimated)
-    free_result = _try_free_lanes(
-        spec=spec,
-        ranked=ranked,
-        store=store,
-        attempts=attempts,
-        started_at=started_at,
-        cfg=cfg,
-        is_started=is_started,
-        is_live_after_cancel=is_live_after_cancel,
-        is_running_after_cancel=is_running_after_cancel,
-        started_evidence_probe=started_evidence_probe,
-        reconnect_fn=reconnect_fn,
-        now_fn=now_fn,
-        sleep_fn=sleep_fn,
-        marker_poster=marker_poster,
-        on_launched=on_launched,
-    )
-    if free_result is not None:
-        return free_result
+    # Stage 2: walk the chain group by group. A GCP group is a single
+    # provision attempt; a SLURM group is the ranked launch → park →
+    # cancel-on-fail chain. ``terminal`` (last group) preserves the
+    # legacy escalation semantics: when GCP sits LAST, its failures
+    # raise the historical typed terminals instead of falling through.
+    groups = _split_lane_groups([kind for _backend, kind in candidates])
+    for group_idx, group in enumerate(groups):
+        terminal = group_idx == len(groups) - 1
+        if group == ("gcp",):
+            gcp_result = _attempt_gcp_lane(
+                spec=spec,
+                gcp_backend=gcp_backend,
+                store=store,
+                attempts=attempts,
+                started_at=started_at,
+                cfg=cfg,
+                now_fn=now_fn,
+                marker_poster=marker_poster,
+                on_launched=on_launched,
+                terminal=terminal,
+            )
+            if gcp_result is not None:
+                return gcp_result
+            continue
+        slurm_candidates = [(b, k) for b, k in candidates if k in group]
+        estimated = _estimate_lanes(slurm_candidates, spec=spec, estimate_fn=estimate_fn)
+        ranked = rank_lanes(estimated)
+        free_result = _try_free_lanes(
+            spec=spec,
+            ranked=ranked,
+            store=store,
+            attempts=attempts,
+            started_at=started_at,
+            cfg=cfg,
+            is_started=is_started,
+            is_live_after_cancel=is_live_after_cancel,
+            is_running_after_cancel=is_running_after_cancel,
+            started_evidence_probe=started_evidence_probe,
+            reconnect_fn=reconnect_fn,
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+            marker_poster=marker_poster,
+            on_launched=on_launched,
+        )
+        if free_result is not None:
+            return free_result
 
-    # Stage 3: escalate to GCP (gated by attempt-count guard).
-    return _escalate_to_gcp(
+    # Terminal: every lane in the resolved order failed or was unwired /
+    # unavailable. Post the breadcrumb the success path always posts,
+    # then raise the typed no-compute terminal.
+    last_kind: BackendKind = lane_order[-1]
+    _post_terminal_failure_marker(
         spec=spec,
-        gcp_backend=gcp_backend,
-        store=store,
-        attempts=attempts,
-        started_at=started_at,
-        cfg=cfg,
-        now_fn=now_fn,
         marker_poster=marker_poster,
-        on_launched=on_launched,
+        reason=ROUTE_REASON_NO_COMPUTE,
+        chosen_kind=last_kind,
+        attempts=attempts,
+    )
+    raise NoComputeAvailableError(
+        "every auto lane failed or was unavailable "
+        f"(order: {' -> '.join(lane_order)}; wired: "
+        f"{[kind for _b, kind in candidates] or 'none'})",
+        attempts=[_attempt_to_dict(a) for a in attempts],
     )
 
 
@@ -1842,7 +2034,6 @@ def _try_auto_reconnect(
     *,
     spec: RunSpec,
     candidates: list[tuple[ComputeBackend, BackendKind]],
-    gcp_backend: ComputeBackend | None,
     store: LeaseStore,
     attempts: list[RouteAttempt],
     started_at: float,
@@ -1852,6 +2043,10 @@ def _try_auto_reconnect(
     on_launched: Callable[[RunHandle], None] | None = None,
 ) -> RouteResult | None:
     """Auto-route stage 1: look for an existing live job on every wired lane.
+
+    ``candidates`` arrives in the RESOLVED lane order (GCP included at
+    its position when wired), so the scan order matches the attempt
+    order the marker trail reports.
 
     Reconnect probes are READ-ONLY (no lease writes) so they DON'T need
     to hold the per-issue flock — the flock is acquired by the lane that
@@ -1868,7 +2063,8 @@ def _try_auto_reconnect(
         # A probe failure here only skips the lock-free SCAN — the
         # submit path re-checks reconnect INSIDE the flock and a probe
         # failure THERE skips the lane (no blind submit), so swallowing
-        # at this stage cannot cause a duplicate.
+        # at this stage cannot cause a duplicate. (For GCP the launch
+        # itself re-probes via reconnect_or_none.)
         lane_spec = _spec_for_lane(spec, kind)
         try:
             handle = _try_reconnect(
@@ -1895,36 +2091,13 @@ def _try_auto_reconnect(
             now_fn=now_fn,
             marker_poster=marker_poster,
             on_launched=on_launched,
-            detail="found existing live job/instance",
+            detail=(
+                "found existing live gcp instance"
+                if kind == "gcp"
+                else "found existing live job/instance"
+            ),
         )
-
-    if gcp_backend is None:
-        return None
-    try:
-        handle = _try_reconnect(
-            backend=gcp_backend, kind="gcp", spec=spec, reconnect_fn=reconnect_fn
-        )
-    except BackendProbeError as exc:
-        logger.warning(
-            "route: gcp reconnect scan probe failed (%s); treating as no live instance.",
-            exc,
-        )
-        return None
-    if handle is None:
-        return None
-    return _record_reconnect(
-        backend=gcp_backend,
-        kind="gcp",
-        cluster=None,
-        handle=handle,
-        spec=spec,
-        attempts=attempts,
-        started_at=started_at,
-        now_fn=now_fn,
-        marker_poster=marker_poster,
-        on_launched=on_launched,
-        detail="found existing live gcp instance",
-    )
+    return None
 
 
 def _record_reconnect(
@@ -2348,7 +2521,7 @@ def _record_free_lane_started(
     return result
 
 
-def _escalate_to_gcp(
+def _attempt_gcp_lane(
     *,
     spec: RunSpec,
     gcp_backend: ComputeBackend | None,
@@ -2359,14 +2532,29 @@ def _escalate_to_gcp(
     now_fn: Callable[[], float],
     marker_poster: Callable[..., None] | None,
     on_launched: Callable[[RunHandle], None] | None = None,
-) -> RouteResult:
-    """Auto-route stage 3: bump attempt counter, launch GCP, classify.
+    terminal: bool = True,
+) -> RouteResult | None:
+    """Attempt the GCP lane at its position in the resolved auto order.
 
-    Raises :class:`NoComputeAvailableError` when no GCP backend is wired
-    or when GCP's provisioning fails. Raises
-    :class:`WorkloadSurfacedError` on a GCP workload failure (no
-    auto-fallback). Raises :class:`GcpAttemptCapExceededError` when the
-    per-day attempt cap is reached.
+    ``terminal=True`` (GCP is the LAST wired lane — the legacy
+    escalation position) keeps the historical typed-terminal semantics:
+    raises :class:`NoComputeAvailableError` on a provisioning / prepare /
+    state-probe failure and :class:`GcpAttemptCapExceededError` at the
+    per-day attempt cap.
+
+    ``terminal=False`` (lanes remain after GCP — e.g. the GCP-first
+    standing default) turns provision-class failures (prepare /
+    provisioning-capacity / state-probe) AND the attempt-cap guard into
+    "continue down the order": the attempt is recorded and ``None`` is
+    returned so the router tries the next lane. ONLY a workload failure
+    (:class:`GcpWorkloadError`) still raises in EVERY position — broken
+    workload code must not cascade across lanes and burn queue time.
+
+    The per-day attempt counter counts primary-lane attempts the same
+    as escalation attempts (the guard bounds the NUMBER of provision
+    attempts so a broken classifier loop can't burn credit; primary-lane
+    attempts carry the same risk). It remains an attempt-COUNT guard,
+    never a dollar cap (``tests/test_no_dollar_budget_caps.py``).
 
     Lock discipline: bump-counter / cap-check / threaded-attempt-id /
     launch / persist all live inside ONE :meth:`LeaseStore.transaction`
@@ -2374,6 +2562,11 @@ def _escalate_to_gcp(
     "we're under cap", and double-spend credit.
     """
     if gcp_backend is None:
+        # Only reachable from the legacy terminal call shape — the auto
+        # chain filters an unwired GCP out of the candidates, so this is
+        # belt-and-suspenders for direct callers.
+        if not terminal:
+            return None
         _post_terminal_failure_marker(
             spec=spec,
             marker_poster=marker_poster,
@@ -2401,6 +2594,32 @@ def _escalate_to_gcp(
         today = _today_utc_iso()
         attempts_already_today = lease.gcp_attempts_today if lease.gcp_attempts_date == today else 0
         if attempts_already_today >= cfg.max_gcp_attempts_per_day:
+            if not terminal:
+                # Lanes remain after GCP → skip GCP (no credit spent)
+                # and continue down the order instead of bricking the
+                # whole route for the day. The cap still bounds spend:
+                # no provision attempt is made here.
+                attempts.append(
+                    RouteAttempt(
+                        kind="gcp",
+                        cluster=None,
+                        est_start_seconds_raw=0.0,
+                        est_start_seconds_clamped=0.0,
+                        outcome="attempt_cap_exceeded",
+                        detail=(
+                            f"per-day GCP attempt cap {cfg.max_gcp_attempts_per_day} "
+                            "reached; skipping GCP, continuing down the lane order"
+                        ),
+                        elapsed_seconds=now_fn() - started_at,
+                    )
+                )
+                logger.warning(
+                    "route: per-day GCP attempt cap (%d) reached for issue %d; "
+                    "skipping the GCP lane and continuing down the auto order.",
+                    cfg.max_gcp_attempts_per_day,
+                    spec.issue,
+                )
+                return None
             raise GcpAttemptCapExceededError(
                 issue=int(spec.issue),
                 # Report attempts ALREADY consumed today (i.e. the cap),
@@ -2432,7 +2651,8 @@ def _escalate_to_gcp(
             # GcpBackend.prepare is a documented no-op today, so this is
             # belt-and-suspenders for the uniform chokepoint: a prepare
             # failure is provision-class (nothing live) → same terminal
-            # as a GCP provisioning failure.
+            # as a GCP provisioning failure (or next-lane when lanes
+            # remain after GCP).
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -2444,6 +2664,12 @@ def _escalate_to_gcp(
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
+            if not terminal:
+                logger.warning(
+                    "route: gcp prepare failed (%s); continuing down the lane order.",
+                    exc.reason,
+                )
+                return None
             _post_terminal_failure_marker(
                 spec=spec,
                 marker_poster=marker_poster,
@@ -2467,6 +2693,14 @@ def _escalate_to_gcp(
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
+            if not terminal:
+                # Capacity / quota / zone exhaustion at the primary GCP
+                # position → fall through to the lanes after it.
+                logger.warning(
+                    "route: gcp provisioning failed (%s); continuing down the lane order.",
+                    exc.reason,
+                )
+                return None
             _post_terminal_failure_marker(
                 spec=spec,
                 marker_poster=marker_poster,
@@ -2480,10 +2714,14 @@ def _escalate_to_gcp(
             ) from exc
         except BackendProbeError as exc:
             # GcpBackend.launch's internal reconnect_or_none probe failed
-            # (expired auth / transport) — GCP state UNKNOWN. Fail closed
-            # with the typed no-compute terminal instead of letting the
-            # probe error propagate to rc=4 (live auto-lane finding,
-            # issue 535). No credit is spent on unknown state.
+            # (expired auth / transport) — GCP state UNKNOWN. No credit is
+            # spent on unknown state in either position. Terminal position:
+            # fail closed with the typed no-compute terminal instead of
+            # letting the probe error propagate to rc=4 (live auto-lane
+            # finding, issue 535). Non-terminal position: skip the lane and
+            # continue — the same safe reaction the SLURM lanes take on an
+            # unprobeable reconnect (the stage-1 GCP scan already treats a
+            # probe failure as continue-down-the-chain).
             attempts.append(
                 RouteAttempt(
                     kind="gcp",
@@ -2495,6 +2733,13 @@ def _escalate_to_gcp(
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
+            if not terminal:
+                logger.warning(
+                    "route: gcp state probe failed (%s); skipping GCP, continuing "
+                    "down the lane order.",
+                    exc,
+                )
+                return None
             _post_terminal_failure_marker(
                 spec=spec,
                 marker_poster=marker_poster,
@@ -2545,7 +2790,14 @@ def _escalate_to_gcp(
             est_start_seconds_raw=0.0,
             est_start_seconds_clamped=0.0,
             outcome="launched",
-            detail=f"gcp escalation #{attempts_today} of cap {cfg.max_gcp_attempts_per_day}",
+            detail=(
+                f"gcp escalation #{attempts_today} of cap {cfg.max_gcp_attempts_per_day}"
+                if terminal
+                else (
+                    f"gcp primary-lane attempt #{attempts_today} of cap "
+                    f"{cfg.max_gcp_attempts_per_day}"
+                )
+            ),
             elapsed_seconds=now_fn() - started_at,
         )
     )
@@ -2554,6 +2806,11 @@ def _escalate_to_gcp(
         handle=gcp_handle,
         requested_kind=None,
         chosen_kind="gcp",
+        # Reason code kept as ``auto_fallback_gcp`` in EVERY auto position
+        # (including GCP-first primary) — the marker schema is unchanged
+        # by deliberate design (dashboard + acceptance harness pattern-
+        # match on the enumerated reason codes); the attempts trail is
+        # what reflects the actual order.
         reason=ROUTE_REASON_AUTO_FALLBACK_GCP,
         cluster=None,
         attempts=attempts,
@@ -2856,8 +3113,9 @@ def _post_backend_selected(
     markers):
 
     * ``attempts`` — list of per-lane attempt records (raw + clamped
-      est-start, outcome, detail, elapsed).
-    * ``free_lane_order`` — the order considered.
+      est-start, outcome, detail, elapsed), appended chronologically so
+      the trail reflects the ACTUAL attempt order (GCP first when the
+      GCP-first default ran it first).
     * Existing schema preserved: ``requested_kind`` / ``chosen_kind`` /
       ``reason`` / ``cluster`` / ``elapsed_seconds`` / ``extra``.
 
@@ -2983,8 +3241,10 @@ def _attempt_to_dict(a: RouteAttempt) -> dict[str, Any]:
 
 __all__ = [
     "CANCEL_LIVE_GRACE_SECONDS",
+    "DEFAULT_AUTO_LANE_ORDER",
     "DEFAULT_FREE_LANE_ORDER",
     "DEFAULT_POLL_INTERVAL",
+    "ENV_AUTO_LANE_ORDER",
     "FREE_WAIT_SECONDS",
     "LEASE_STORE_DIRNAME",
     "MAX_GCP_ATTEMPTS_PER_DAY",
@@ -3007,6 +3267,7 @@ __all__ = [
     "RouteResult",
     "RouterConfig",
     "WorkloadSurfacedError",
+    "auto_lane_order",
     "cancel_and_wait",
     "canonicalize_spec",
     "default_is_live",

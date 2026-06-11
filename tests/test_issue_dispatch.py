@@ -886,7 +886,15 @@ def test_dispatch_for_issue_threads_started_evidence_probe(tmp_lease_store, fast
                 "status_json": {},
             },
             lease_store=tmp_lease_store,
-            config=RouterConfig(free_wait_seconds=0, poll_interval=0.0, cancel_grace_seconds=0),
+            # Legacy free-first order: the nibi fast-fail classification is
+            # the behavior under test; the GCP-first standing default would
+            # resolve at GCP before nibi ever launches.
+            config=RouterConfig(
+                free_wait_seconds=0,
+                poll_interval=0.0,
+                cancel_grace_seconds=0,
+                lane_order=("nibi", "fir", "mila", "gcp"),
+            ),
             now_fn=fast_clock,
             sleep_fn=lambda _s: None,
             write_sidecar=False,

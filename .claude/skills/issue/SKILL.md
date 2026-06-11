@@ -2304,15 +2304,25 @@ calls `backends.router.route()` with production-injected deps and
 returns a typed `RunHandle`. The router decides which backend actually
 runs:
 
-- **Empty / absent frontmatter → `auto`.** The router ranks free
-  academic clusters (Nibi, Fir if wired, Mila if its socket is alive)
-  by tz-corrected `sbatch --test-only` est-start, submits the
-  best-ranked lane, and parks up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
-  applied — see `backends.router`). On park-cap-exceeded it cancels +
-  escalates to GCP (credit-backed). **The auto chain NEVER calls
-  RunPod** (real-money safety) — `backends.router._VALID_BACKEND_VALUES`
-  + the load-bearing `test_no_auto_runpod_path_under_any_failure`
-  negative test enforce this.
+- **Empty / absent frontmatter → `auto`.** The router walks the
+  resolved auto lane order — **standing default: GCP FIRST**
+  (`DEFAULT_AUTO_LANE_ORDER = ("gcp", "nibi", "fir", "mila")` —
+  credits-backed GCP capacity is consumed before the free SLURM lanes;
+  unconditional, no date gate; override via the comma-separated
+  `EPM_AUTO_LANE_ORDER` env var, e.g. `nibi,fir,mila,gcp` to restore
+  free-first; `runpod` / unknown lanes in the override raise loudly).
+  GCP is a single provision attempt (no park); its provisioning /
+  capacity failures fall through to the SLURM lanes. Contiguous SLURM
+  lanes (Nibi, Fir if wired, Mila if its socket is alive) are ranked
+  among themselves by tz-corrected `sbatch --test-only` est-start, the
+  best is submitted and parked up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
+  applied — see `backends.router`); park-cap-exceeded cancels + moves
+  to the next lane. A GCP workload failure surfaces with NO fallback.
+  **The auto chain NEVER calls RunPod** in ANY order (real-money
+  safety) — `backends.router._VALID_BACKEND_VALUES`, the
+  `auto_lane_order()` validator, and the load-bearing
+  `test_no_auto_runpod_path_under_any_failure` negative test enforce
+  this.
 - **`backend: runpod`** explicit override → RunPod (the only path that
   spends real money in v1).
 - **`backend: nibi` / `fir` / `mila`** → that lane, with the same park
@@ -3385,8 +3395,8 @@ URLs.
   frontmatter and run `dispatch_issue.py launch --issue <N> --intent
   "$INTENT" ${BACKEND:+--backend "$BACKEND"}` per Step 6b's
   "Operational dispatch (slice-6 router, ALL backends)" block (empty
-  frontmatter → auto routing, free clusters first; RunPod only on an
-  explicit `backend: runpod`). If the task has `parent_id`, terminate
+  frontmatter → auto routing, GCP-first standing default, then the free
+  clusters; RunPod only on an explicit `backend: runpod`). If the task has `parent_id`, terminate
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
@@ -4536,8 +4546,8 @@ orphaned at `running` for 5+ hours.)
      6b § "Operational dispatch (slice-6 router, ALL backends)" — do
      not duplicate its prose here). Follow-up rounds inherit the
      task's `backend:` frontmatter and the auto-routing default
-     (empty → auto, free clusters first; RunPod only on an explicit
-     `backend: runpod`). The prior compute was torn down at Step 8;
+     (empty → auto, GCP-first standing default, then the free
+     clusters; RunPod only on an explicit `backend: runpod`). The prior compute was torn down at Step 8;
      per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING
