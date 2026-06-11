@@ -98,6 +98,7 @@ from i606_common import (  # noqa: E402
     TWIN_PROMPTS,
     TWIN_VALIDATION_HUB_PATH,
     WANDB_PROJECT,
+    _retry_transient,
     assert_pool_disjointness,
     build_refusal_pool,
     judge_generation_file,
@@ -259,7 +260,7 @@ def _count_hub_files_under_prefix(api, prefix: str) -> int:
     from huggingface_hub.hf_api import RepoFile
     from huggingface_hub.utils import EntryNotFoundError
 
-    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _retry_transient
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
 
     def _count() -> int:
         try:
@@ -303,7 +304,7 @@ def _upload_dir_batched(ctx: Ctx, local_dir: Path, repo_subdir: str, *, behavior
 
     from huggingface_hub import CommitOperationAdd, HfApi
 
-    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _retry_transient
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO
 
     api = HfApi(token=os.environ.get("HF_TOKEN"))
     n_files = len(files)
@@ -1194,8 +1195,6 @@ def phase5_upload(ctx: Ctx, behavior: str) -> None:
         else:
             from huggingface_hub import HfApi
 
-            from explore_persona_space.orchestrate.hub import _retry_transient
-
             api = HfApi(token=os.environ.get("HF_TOKEN"))
             for s in selection["arms"]["lora"]["selected_steps"]:
                 local = ctx.lora_ckpt_root(behavior) / f"checkpoint-{s}"
@@ -1257,6 +1256,80 @@ PHASES = {
 PHASE_ORDER = list(PHASES)
 
 
+# ---------------------------------------------------------------------------
+# Import-completeness verification (--verify-imports; CPU-only, no GPU/API)
+# ---------------------------------------------------------------------------
+
+DEFERRED_IMPORT_SCOPE: tuple[Path, ...] = (
+    REPO / "scripts" / "issue_606" / "i606_common.py",
+    REPO / "scripts" / "issue_606" / "i606_dispatch.py",
+    REPO / "scripts" / "issue_606" / "i606_gen_worker.py",
+    REPO / "scripts" / "issue_606" / "i606_lora_train_worker.py",
+    REPO / "scripts" / "issue_606" / "i606_analyze.py",
+    REPO / "scripts" / "issue_606" / "i606_figures.py",
+    REPO / "scripts" / "train_behavior_fullft.py",
+)
+
+
+def verify_deferred_imports(scope: tuple[Path, ...] = DEFERRED_IMPORT_SCOPE) -> int:
+    """Execute EVERY lazy (non-top-level) import across the #606 code path.
+
+    AST-scans each in-scope file for Import/ImportFrom nodes nested below
+    module top level, then actually imports each module and resolves each
+    named symbol. Catches the round-3 crash class (epm:failure v1): a
+    deferred symbol whose importing branch (upload, resume) is skipped by
+    every local --dry-run/--skip-upload smoke, so the ImportError first
+    fires on the pod (``hub._retry_transient``). Self-maintaining: new lazy
+    imports are picked up automatically. Returns the number of
+    (module, symbol) checks; raises RuntimeError listing ALL failures.
+    """
+    import ast
+    import importlib
+
+    checked = 0
+    failures: list[str] = []
+    for path in scope:
+        tree = ast.parse(path.read_text(), filename=str(path))
+        top_level = set(tree.body)
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Import | ast.ImportFrom) or node in top_level:
+                continue
+            where = f"{path.name}:{node.lineno}"
+            if isinstance(node, ast.Import):
+                for alias in node.names:
+                    checked += 1
+                    try:
+                        importlib.import_module(alias.name)
+                    except Exception as e:
+                        failures.append(f"{where}: import {alias.name} -> {type(e).__name__}: {e}")
+                continue
+            if node.module is None or node.level > 0:
+                failures.append(f"{where}: relative deferred import unsupported by verifier")
+                continue
+            try:
+                mod = importlib.import_module(node.module)
+            except Exception as e:
+                failures.append(f"{where}: from {node.module} -> {type(e).__name__}: {e}")
+                continue
+            for alias in node.names:
+                checked += 1
+                if alias.name == "*" or hasattr(mod, alias.name):
+                    continue
+                try:  # submodule not re-exported as an attribute of the parent
+                    importlib.import_module(f"{node.module}.{alias.name}")
+                except Exception as e:
+                    failures.append(
+                        f"{where}: from {node.module} import {alias.name} -> "
+                        f"{type(e).__name__}: {e}"
+                    )
+    if failures:
+        raise RuntimeError(
+            "verify-imports FAILED — deferred symbols unresolvable on this checkout:\n  "
+            + "\n  ".join(failures)
+        )
+    return checked
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="#606 LoRA-vs-FT behavior dispatcher (phases 0-5; --smoke = one tiny cell).",
@@ -1290,6 +1363,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-upload", action="store_true", help="Local-only (never on a pod).")
     parser.add_argument("--hf-experiment-name", default=HF_EXPERIMENT_NAME)
     parser.add_argument(
+        "--verify-imports",
+        action="store_true",
+        help="Execute every deferred import across the #606 scripts, then exit (no GPU/API).",
+    )
+    parser.add_argument(
         "--stop-after-phase",
         default=None,
         choices=PHASE_ORDER,
@@ -1297,6 +1375,14 @@ def main(argv: list[str] | None = None) -> int:
         "(VM-side phase-0 smoke uses p0_data).",
     )
     args = parser.parse_args(argv)
+    if args.verify_imports:
+        n = verify_deferred_imports()
+        print(
+            f"verify-imports OK: {n} deferred import symbols verified across "
+            f"{len(DEFERRED_IMPORT_SCOPE)} files",
+            flush=True,
+        )
+        return 0
     seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
     if seeds != [SEED]:
         raise ValueError(f"#606 is a single-seed design (seed {SEED}); got {seeds}")

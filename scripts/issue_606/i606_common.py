@@ -700,6 +700,48 @@ def sha256_file(path: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Transient-failure retry for HF Hub ops (r3 crash fix: this helper was
+# previously imported from orchestrate.hub, where it never existed)
+# ---------------------------------------------------------------------------
+
+
+def _retry_transient(fn, *, what: str, attempts: int = 4):
+    """Run ``fn()`` retrying TRANSIENT HF-Hub/network failures, fail loud after.
+
+    Transient = ``requests`` ConnectionError/Timeout, or ``HfHubHTTPError``
+    with a 429/5xx status. Anything else re-raises immediately (the crash is
+    the signal). Exponential backoff with jitter between attempts; after
+    ``attempts`` transient failures the last error re-raises via RuntimeError.
+    """
+    import requests
+    from huggingface_hub.utils import HfHubHTTPError
+
+    last: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            return fn()
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+            last = e
+        except HfHubHTTPError as e:
+            status = getattr(getattr(e, "response", None), "status_code", None)
+            if status is None or not (status == 429 or 500 <= status < 600):
+                raise  # non-transient HTTP error (401/403/404/...): fail immediately
+            last = e
+        if attempt < attempts:
+            delay = min(2.0**attempt, 60.0) + random.uniform(0.0, 1.0)
+            log.warning(
+                "%s: transient failure (attempt %d/%d): %s — retrying in %.1fs",
+                what,
+                attempt,
+                attempts,
+                last,
+                delay,
+            )
+            time.sleep(delay)
+    raise RuntimeError(f"{what}: failed after {attempts} transient-failure attempts") from last
+
+
+# ---------------------------------------------------------------------------
 # Isotonic smoothing + checkpoint selection (plan §4.4, pre-registered rule)
 # ---------------------------------------------------------------------------
 
