@@ -1,7 +1,7 @@
 ---
 title: Standardizing persona-distance cosine on the mean-centered recipe leaves every
-  recomputable published call standing, and upgrades one prior null to a centering-attributable
-  candidate rescue (MODERATE confidence)
+  recomputable published call standing, and upgrades one prior null to a candidate
+  rescue under the registered estimator (MODERATE confidence)
 kind: analysis
 tags:
 - needs-thomas
