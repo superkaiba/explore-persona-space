@@ -567,6 +567,12 @@ class TrainLoraConfig:
 
     gpu_id: int = 0
     epochs: int = 3
+    # Optional hard step cap (HF semantics: -1 = epoch-driven, unchanged
+    # default). Added for #537's band-reachability protocol: band-UNREACHABLE
+    # marker cells train with band-stop disarmed and stop step-matched to the
+    # median stop-step of the band-reachable cells (plan v6 §4.1b). Re-ported
+    # from the unmerged issue-537 branch for #542 (same field, same semantics).
+    max_steps: int = -1
     lr: float = 1e-5
     lora_r: int = 32
     lora_alpha: int = 64
@@ -611,6 +617,13 @@ class TrainLoraConfig:
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
     marker_band_min_steps: int = 20
+    # Opt-in: also stop when delta OVERSHOOTS past high_nats at an eligible
+    # eval — steep ramps can cross the whole band between two eval points and
+    # otherwise train to saturation (#537 P1: step 10 = +3.7 nat, step 50 =
+    # +21.5 nat against band [5, 12]). Default off: pre-existing marker runs
+    # keep the in-band-only predicate byte-identical. Re-ported from the
+    # unmerged issue-537 branch for #542.
+    marker_band_overshoot_stops: bool = False
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
     # is a good balance for the canonical 7B-Qwen marker setup.
@@ -953,6 +966,7 @@ def _maybe_attach_marker_band_stop(
         eos_token_id=tokenizer.eos_token_id,
         log_only=cfg.marker_band_log_only,
         trajectory_out_path=cfg.marker_band_trajectory_path,
+        overshoot_stops=cfg.marker_band_overshoot_stops,
     )
     trainer.add_callback(callback)
     logger.info(
@@ -1171,6 +1185,10 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
                 "SFTConfig on this TRL version does not accept packing_strategy; "
                 "packing will use the default strategy."
             )
+    if cfg.max_steps > 0:
+        # Step-capped training (#537 §4.1b step-matched stop). HF treats
+        # max_steps > 0 as overriding num_train_epochs.
+        sft_kwargs["max_steps"] = cfg.max_steps
     if cfg.save_steps > 0:
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:

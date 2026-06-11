@@ -1,0 +1,9 @@
+{
+  "git_commit": "38197ee49a7f45fd39d2b83540a40aeeebd9f9fa",
+  "generated_at": "2026-06-11T19:31:51.748609+00:00",
+  "seed": 42,
+  "arm": "arm1_xfam",
+  "pair_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-542/eval_results/issue_537/G_cells/marker",
+  "n_train": 16,
+  "n_eval": 30
+}

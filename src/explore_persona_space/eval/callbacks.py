@@ -600,10 +600,20 @@ def _decide_band_stop(
     low_nats: float,
     high_nats: float,
     min_steps: int,
+    overshoot_stops: bool = False,
 ) -> bool:
     """Pure decision function for the marker band-stop predicate.
 
     Stop iff ``low_nats <= delta_nats <= high_nats`` AND ``global_step >= min_steps``.
+
+    With ``overshoot_stops=True`` (opt-in, default off — pre-existing callers
+    are byte-identical), ALSO stop when ``delta_nats > high_nats`` at an
+    eligible step. Rationale: a steep ramp can cross the whole band BETWEEN
+    two eval points, so the in-band-only predicate never fires and the cell
+    silently trains to saturation (#537 P1: step 10 = +3.7 nat, step 50 =
+    +21.5 nat against band [5, 12]). An overshoot stop terminates at the
+    first eligible eval past the band; callers should record the realized
+    delta so overshoot stops are distinguishable from in-band stops.
 
     Exposed as a module-level function so it can be unit-tested without a
     real model (the callback's only model-touching code is the log-prob
@@ -617,12 +627,15 @@ def _decide_band_stop(
         high_nats: Upper edge of the useful band (Regime A default 12.0).
         min_steps: Minimum step count before stopping is allowed (guard
             against stopping on a transient noisy first-eval reading).
+        overshoot_stops: Also stop when ``delta_nats > high_nats``.
 
     Returns:
         True iff training should stop now.
     """
     if global_step < min_steps:
         return False
+    if overshoot_stops and delta_nats > high_nats:
+        return True
     return low_nats <= delta_nats <= high_nats
 
 
@@ -710,6 +723,7 @@ class MarkerBandStopCallback(TrainerCallback):
         eos_token_id: int | None = None,
         log_only: bool = False,
         trajectory_out_path: str | None = None,
+        overshoot_stops: bool = False,
     ):
         if not marker_token_ids:
             raise ValueError("MarkerBandStopCallback requires a non-empty marker_token_ids")
@@ -766,6 +780,8 @@ class MarkerBandStopCallback(TrainerCallback):
             )
         self.log_only = bool(log_only)
         self.trajectory_out_path = trajectory_out_path
+        # Opt-in overshoot stop (issue-537 ramp fix; see _decide_band_stop).
+        self.overshoot_stops = bool(overshoot_stops)
 
         # Tensor-shape asserts at the construction boundary.
         assert probe_input_ids.ndim == 2, probe_input_ids.shape
@@ -960,6 +976,7 @@ class MarkerBandStopCallback(TrainerCallback):
             low_nats=self.low_nats,
             high_nats=self.high_nats,
             min_steps=self.min_steps,
+            overshoot_stops=self.overshoot_stops,
         )
         if should_stop and self.log_only:
             # Log-only mode (issue #480 band-stopped-anchor-rerun): record
@@ -988,12 +1005,13 @@ class MarkerBandStopCallback(TrainerCallback):
                 self._band_entry_logged = True
             return
         if should_stop:
+            overshoot = delta_mean > self.high_nats
             # Bold log line + WandB scalar so the early termination is
             # never silent. Default-on band-stop changes the run length,
             # so this needs to be findable in logs and in the WandB run
             # without grepping for the trajectory series.
             logger.warning(
-                "[%s] BAND-STOP TRIGGERED at step %d: delta=%+.4f nat ∈ "
+                "[%s] BAND-STOP TRIGGERED at step %d: delta=%+.4f nat %s "
                 "[%.2f, %.2f] and step >= min_steps=%d. Setting "
                 "should_training_stop=True + should_save=True. The run "
                 "will terminate after this step. Disable with "
@@ -1001,6 +1019,7 @@ class MarkerBandStopCallback(TrainerCallback):
                 self.log_prefix,
                 state.global_step,
                 delta_mean,
+                "OVERSHOT past" if overshoot else "∈",
                 self.low_nats,
                 self.high_nats,
                 self.min_steps,
@@ -1010,6 +1029,7 @@ class MarkerBandStopCallback(TrainerCallback):
                     {
                         f"{self.log_prefix}/band_stop_step": state.global_step,
                         f"{self.log_prefix}/band_stop_delta_nats": delta_mean,
+                        f"{self.log_prefix}/band_stop_overshoot": int(overshoot),
                     },
                     step=state.global_step,
                 )
@@ -1146,32 +1166,52 @@ class MarkerBandStopCallback(TrainerCallback):
         was_training = model.training
         model.eval()
         try:
-            with torch.no_grad():
-                outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-            logits = outputs.logits  # [B, T, V]
-            assert logits.ndim == 3, logits.shape
-            batch_idx = torch.arange(input_ids.shape[0], device=device)
-            # The marker's predictive distribution is read at the OUTPUT
-            # position whose argmax would be the marker token. The caller
-            # passes ``positions`` already aligned to that output slot
-            # (i.e. positions[i] is the index at which logits[i, positions[i]]
-            # is the distribution over the NEXT token = the marker).
-            slot_logits = logits[batch_idx, positions, :].float()  # [B, V]
-            assert slot_logits.shape == (input_ids.shape[0], logits.shape[-1]), slot_logits.shape
-            log_z = torch.logsumexp(slot_logits, dim=-1)  # [B]
-            z_marker = slot_logits[:, self._target_token_id]  # [B]
-            row_logp = z_marker - log_z  # exact identity: logp = z_marker - logZ
-            assert row_logp.shape == (input_ids.shape[0],), row_logp.shape
-            z_eos = (
-                slot_logits[:, self.eos_token_id].detach().cpu()
-                if self.eos_token_id is not None
-                else None
-            )
+            total = input_ids.shape[0]
+            # CHUNKED forwards (memory-proportional, numerically identical —
+            # per-row slot stats never interact across rows): under the HF
+            # Trainer the model's forward is wrapped by accelerate's mixed-
+            # precision `convert_outputs_to_fp32`, which fp32-converts the
+            # FULL [B, T, V] logits tensor INSIDE the forward call — slicing
+            # to the slot afterwards cannot bound it. A single 32-row pass
+            # over ~4k-token probe rows asks for ~73 GiB and OOMs an H100
+            # (observed: #537 P1 icl_k8, 8-demo prefixes). 4-row chunks cap
+            # the transient at ~11 GiB fp32.
+            chunk_rows = 4
+            logps: list = []
+            z_markers: list = []
+            z_eoss: list = []
+            log_zs: list = []
+            for s in range(0, total, chunk_rows):
+                ids_c = input_ids[s : s + chunk_rows]
+                mask_c = attention_mask[s : s + chunk_rows]
+                pos_c = positions[s : s + chunk_rows]
+                with torch.no_grad():
+                    outputs = model(input_ids=ids_c, attention_mask=mask_c)
+                logits = outputs.logits  # [b, T, V]
+                assert logits.ndim == 3, logits.shape
+                batch_idx = torch.arange(ids_c.shape[0], device=device)
+                # The marker's predictive distribution is read at the OUTPUT
+                # position whose argmax would be the marker token. The caller
+                # passes ``positions`` already aligned to that output slot
+                # (i.e. positions[i] is the index at which logits[i, positions[i]]
+                # is the distribution over the NEXT token = the marker).
+                slot_logits = logits[batch_idx, pos_c, :].float()  # [b, V]
+                assert slot_logits.shape == (ids_c.shape[0], logits.shape[-1]), slot_logits.shape
+                log_z = torch.logsumexp(slot_logits, dim=-1)  # [b]
+                z_marker = slot_logits[:, self._target_token_id]  # [b]
+                logps.append((z_marker - log_z).detach().cpu())  # logp = z_marker - logZ
+                z_markers.append(z_marker.detach().cpu())
+                log_zs.append(log_z.detach().cpu())
+                if self.eos_token_id is not None:
+                    z_eoss.append(slot_logits[:, self.eos_token_id].detach().cpu())
+                del outputs, logits, slot_logits
+            row_logp = torch.cat(logps)
+            assert row_logp.shape == (total,), row_logp.shape
             return {
-                "logp": row_logp.detach().cpu(),
-                "z_marker": z_marker.detach().cpu(),
-                "z_eos": z_eos,
-                "logZ": log_z.detach().cpu(),
+                "logp": row_logp,
+                "z_marker": torch.cat(z_markers),
+                "z_eos": torch.cat(z_eoss) if z_eoss else None,
+                "logZ": torch.cat(log_zs),
             }
         finally:
             if was_training:
