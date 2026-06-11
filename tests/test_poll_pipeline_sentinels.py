@@ -2728,6 +2728,74 @@ def test_latest_phase_skip_done_returns_previous_milestone() -> None:
     assert pp._latest_phase("[phase=done] eval cell 1 complete", skip_done=True) == "unknown"
 
 
+# ── #597 quoted-done noise: failure messages that QUOTE the token ────────────
+#
+# Incident (task #597, 2026-06-11): a crashed shard wrapper printed
+# "ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted". The #545
+# corroboration could not catch it — the wrapper pid was DEAD, which
+# corroborates a legitimate done. Fix: ``_latest_phase`` discards a
+# done-parse whose line also carries an explicit failure signal (nonzero
+# ``rc=`` / negation right after the token — ``DONE_QUOTED_NOISE_RE``), so
+# the scan falls back to the previous real phase and pid-death decays the
+# verdict to ``dead``. Legit suffixed terminal done lines must keep parsing.
+
+
+def test_latest_phase_skips_failure_message_quoting_done_token() -> None:
+    """The #597 line is quoted noise, not a phase transition — at every
+    layer of ``_latest_phase``, while legit done shapes keep parsing."""
+    noise = "ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted"
+    tail = f"2026-06-11 12:00:00 [phase=eval_gen]\n2026-06-11 12:40:00 {noise}"
+    assert pp._latest_phase(tail) == "eval_gen"
+    assert pp._latest_phase(tail, skip_done=True) == "eval_gen"
+    # Noise-only tail -> unknown, never done.
+    assert pp._latest_phase(noise) == "unknown"
+    # Each signal alone suffices: nonzero rc=, or post-token negation.
+    assert pp._latest_phase("[phase=done] NOT emitted") == "unknown"
+    assert pp._latest_phase("shard crash rc=2 [phase=done]") == "unknown"
+    # Legit shapes are untouched: bare done, suffixed terminal done, rc=0.
+    assert pp._latest_phase("2026-06-11 06:44:00 [phase=done]") == "done"
+    assert pp._latest_phase("[phase=done] SMOKE COMPLETE (phase05 + phase0 + pick).") == "done"
+    assert pp._latest_phase("[phase=done] all shards complete rc=0") == "done"
+
+
+def test_poll_once_dead_when_failure_message_quotes_done_token_and_pid_dead(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #597 regression: a crashed wrapper whose failure message quotes
+    `[phase=done]` must decay to ``dead`` (pid gone, no real done line) —
+    never report a false ``done`` that would advance the orchestrator to
+    verifying on a failed run."""
+    post_mock = MagicMock()
+    probe_stdout = _probe_response(
+        pid_alive=0,
+        mtime_epoch=1700000020,
+        tail=(
+            "2026-06-11 12:00:00 [phase=eval_gen]\n"
+            "2026-06-11 12:40:00 ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted"
+        ),
+        results_sentinel_present=0,
+    )
+    monkeypatch.setattr(pp.subprocess, "run", _done_corroboration_fake_run(probe_stdout))
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    result = pp.poll_once(
+        issue=597,
+        pod="pod-597",
+        log_path="/workspace/logs/issue-597.log",
+        pid_file="/workspace/logs/issue-597.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert result.status == "dead", (
+        f"quoted-done failure message + pid dead must report dead; got {result.status!r}"
+    )
+    assert result.current_phase != "done"
+    # The milestone tracker must never post a `-> done` transition off the
+    # quoted-noise line.
+    for call in post_mock.call_args_list:
+        assert call.kwargs.get("phase") != "done"
+
+
 def test_ssh_probe_parses_results_sentinel_present(monkeypatch: pytest.MonkeyPatch) -> None:
     """``_ssh_probe`` must surface RESULTS_SENTINEL_PRESENT, defaulting to
     "0" when the heredoc line is absent (old probe output) and on the

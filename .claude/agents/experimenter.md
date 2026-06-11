@@ -503,6 +503,30 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    `pid_file=` so the orchestrator can forward it to
    `poll_pipeline.py --pid-file`.
 
+   **Phase-token hygiene (HARD RULE).** Any wrapper/launcher text you
+   author — including its FAILURE paths — must NEVER embed the
+   `[phase=` literal inside message prose. `poll_pipeline.py`'s
+   `PHASE_RE` matches `[phase=<token>]` anywhere in a line (anchoring
+   the regex is documented-non-viable: legitimate phase lines are
+   timestamp-prefixed and legitimate terminal lines carry trailing
+   text — see the #545 note in `poll_pipeline.py`), so a failure
+   message that QUOTES the token becomes a phase transition. Incident
+   #597 (2026-06-11): a shard wrapper crashed and printed
+   `ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted`; the
+   dead pid then satisfied the #545 done-corroboration (which guards
+   only the pid-ALIVE path) and the poller reported a FALSE
+   `status=done` on a failed run. Phase tokens are emitted ONLY as
+   standalone status markers (`echo "[phase=eval]"`, the single
+   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   result-reporting contract" for the dispatcher-side reservation; this
+   paragraph binds YOU for any launch/relaunch wrapper text). On
+   failure, describe the suppressed terminal token WITHOUT the bracket
+   literal — e.g. `ONE OR MORE SHARDS FAILED rc=1 - terminal phase
+   token suppressed`. The poller now also discards a done-parse whose
+   line carries a nonzero `rc=` or a negation right after the token,
+   but that net is deliberately narrow — hygiene at the source is the
+   contract.
+
 1b. **Re-launches MUST rewrite the pidfile and re-emit `pid_file=`
    (incident #451).** A re-run after a code fix is STILL a launch: go
    through the SAME launcher-script path (step 1) so its

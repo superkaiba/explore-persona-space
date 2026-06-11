@@ -171,7 +171,13 @@ Phase-line shape expected from the entry script:
 Anything matching the regex `\\[phase=([a-z0-9_]+)` will be picked up; the
 token immediately after `phase=` is the milestone name. Digits are part of
 the token (`[phase=p0_render]` parses as `p0_render`, not `p`), so numbered
-phase-naming schemes (p0/p1/p2) work without spelling digits out.
+phase-naming schemes (p0/p1/p2) work without spelling digits out. One carve
+out (incident #597, 2026-06-11): a done-bearing line that ALSO carries an
+explicit failure signal (nonzero ``rc=``, or a negation/suppression word
+right after the token — ``DONE_QUOTED_NOISE_RE``) is treated as a failure
+message QUOTING the token, not a phase transition, and is skipped; the
+#545 corroboration cannot catch that shape because the crashed wrapper's
+pid is DEAD, which normally corroborates a real done.
 
 Sentinel schema (v1) — written by pod-side dispatchers, drained here:
 
@@ -246,6 +252,28 @@ STALL_SEC = DEFAULT_STALL_SEC
 # message format is ``"event note exceeds {EVENT_NOTE_MAX} chars (<len>); ..."``.
 _OVERSIZE_NOTE_ERROR_SUBSTR = "event note exceeds"
 PHASE_RE = re.compile(r"\[phase=([a-z0-9_]+)")
+# A failure MESSAGE that merely QUOTES the done token is not a phase
+# transition (incident #597, 2026-06-11): a crashed shard wrapper printed
+# "ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted"; the parse
+# then hit the pid-DEAD path, which the #545 corroboration treats as
+# proof of completion (it only demotes the pid-ALIVE path), so the tick
+# reported a false ``status=done`` on a failed run. Tightening PHASE_RE
+# itself stays non-viable (#545: legit phase lines are timestamp-prefixed,
+# legit terminal done lines carry trailing text), so ``_latest_phase``
+# instead DISCARDS a done-parse whose line also carries an explicit
+# failure signal. High-precision signals only — suffixed terminal lines
+# ("[phase=done] SMOKE COMPLETE ...") must keep parsing as done:
+#   * a negation/suppression word immediately after the token
+#     ("[phase=done] NOT emitted" / "... never reached" / "... skipped"), or
+#   * a NONZERO rc= anywhere on the same line ("... FAILED rc=1 ...");
+#     rc=0 does not match.
+# Producer-side hygiene (never embed the literal in message prose) is the
+# primary contract: experimenter.md § "During Execution" step 1 +
+# experiment-implementer.md § "Pod-side result-reporting contract".
+DONE_QUOTED_NOISE_RE = re.compile(
+    r"\[phase=done\]\s*(?:not|never|suppressed|skipped)\b|\brc=[1-9]\d*\b",
+    re.IGNORECASE,
+)
 # The epm:run-launched marker note is free-form `key=value` tokens plus
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
@@ -1239,11 +1267,24 @@ def _latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
     mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line
     (incident #545) neither flips the status verdict nor posts a false
     ``-> done`` milestone transition.
+
+    A done-bearing line matching ``DONE_QUOTED_NOISE_RE`` (a failure
+    message QUOTING the token, e.g. ``... FAILED rc=1 - [phase=done] NOT
+    emitted`` — incident #597) is skipped unconditionally: it is not a
+    phase transition, so the scan falls back to the previous real phase
+    line and a crashed wrapper with a dead pid decays to ``dead`` instead
+    of a false ``done``.
     """
     for line in reversed(log_tail.splitlines()):
         m = PHASE_RE.search(line)
-        if m and not (skip_done and m.group(1) == "done"):
-            return m.group(1)
+        if not m:
+            continue
+        token = m.group(1)
+        if token == "done" and DONE_QUOTED_NOISE_RE.search(line):
+            continue  # failure message quoting the literal token (#597)
+        if skip_done and token == "done":
+            continue
+        return token
     return "unknown"
 
 
