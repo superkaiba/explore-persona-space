@@ -58,38 +58,49 @@ flow. The PM's job is dispatch, not execution.
    ```bash
    export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login shells miss it
    uv run python scripts/spawn_session.py register-pm   # mark THIS session as PM (id inferred from process ancestry) — the watcher's zombie-wrapper pass never auto-stops a registered PM session. Idempotent; spawn-pm also registers, but /pm may be typed into any session. If it errors (daemon down), continue the scan — only the exclusion is lost.
-   uv run python scripts/task.py list-by-status --limit 500
-   uv run python scripts/task.py list-by-status --status awaiting_promotion --json   # feeds the awaiting-promotion digest (step 3)
-   uv run python scripts/task.py list-by-status --status followups_running --json    # feeds the followups-running view (step 3)
+   uv run python scripts/pm_queue_report.py   # one pass: every non-terminal status, per-task summary + created_ts / status_arrival_ts / latest-marker fields — feeds the whole step-3 report (subsumes the old list-by-status calls)
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
    ```
-   The folder name under `tasks/` is the durable source of truth for status. Group rows client-side by
-   `experiments.status`; use `python scripts/task.py view <N>` for
-   details and recent workflow events.
+   The folder name under `tasks/` is the durable source of truth for
+   status; the report reads it through the canonical resolver. Use
+   `python scripts/task.py view <N>` for details and recent workflow
+   events only where Mode 1 names a fallback (titles not in claim
+   form, follow-up labels).
 
    Apply the **Fleet-burn recompute rule** (see subsection below) before
    citing any $/hr figure in the state snapshot — and any later time in
    the session when you emit one.
-3. Produce the standard 5–10 bullet state snapshot per
-   `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
-   open questions. Quantitative, terse. Then append the two standing
-   sections Mode 1 defines (additive — nothing the snapshot already
-   reports is dropped):
-   - **Awaiting-promotion digest** — ALL `awaiting_promotion` tasks,
-     each `#N — <one-line finding> (CONFIDENCE)` (the clean-result
-     title IS the one-sentence claim + confidence tag; open the body
-     via `task.py view <N>` only when a title is not in claim form),
-     grouped into 3–6 research-theme categories derived from the
-     titles/goals (not a fixed taxonomy).
-   - **Followups-running view** — every `followups_running` task with
-     WHICH follow-up is executing: `#N — <followup_label> (auto|manual)`
-     (label from the latest `epm:followup-scope v1` marker via
-     `task.py latest-marker <N> --prefix epm:followup-scope`;
-     auto/manual from the `followup-auto`
-     / `followup-manual` tag). Cross-reference: these tasks already
-     have a clean-result, so the digest keeps them tagged "follow-up
-     in flight" instead of dropping them.
+3. Produce the FULL structured per-status report per `research-pm.md`
+   Mode 1, sections 1–4 — every STATUS pass, boot and re-runs alike
+   ("quick status" = section 1 only):
+   1. **Snapshot bullets** (5–10) — phases, in-flight, blocked, queue
+      depth, fleet burn, open questions, flags. Quantitative, terse.
+   2. **Active work** — EVERY task at `planning`, `plan_pending`,
+      `approved`, `running`, `verifying`, `interpreting`, `reviewing`,
+      `followups_running`, `blocked`, grouped by status:
+      `#N — <one-line summary> | <pod-N if live> | <latest marker
+      kind, age>`. `followups_running` entries append WHICH follow-up
+      is executing: `#N — <followup_label> (auto|manual)` (label from
+      the latest `epm:followup-scope v1` marker via
+      `task.py latest-marker <N> --prefix epm:followup-scope`;
+      auto/manual from the `followup-auto` / `followup-manual` tag).
+   3. **Awaiting promotion (<count>)** — `### Most recent` (top 5 by
+      `status_arrival_ts`, `#N — <claim> (CONFIDENCE) — arrived
+      <YYYY-MM-DD>`), then `### By theme` — ALL of them, each
+      `#N — <one-line finding> (CONFIDENCE)` (the clean-result title
+      IS the one-sentence claim + confidence tag; open the body via
+      `task.py view <N>` only when a title is not in claim form),
+      grouped into 3–6 research-theme categories derived from the
+      titles/goals (not a fixed taxonomy). Cross-reference: the
+      `followups_running` tasks already have a clean-result, so this
+      digest keeps them tagged "follow-up in flight" instead of
+      dropping them.
+   4. **Proposed queue (<count>)** — `### Recently filed` (top 10 by
+      `created_ts`, `#N — <one-line summary> — filed <YYYY-MM-DD>`),
+      then `### By theme` — ALL proposed tasks, one line each (title,
+      else title + first clause of the frontmatter `goal:`; never page
+      through full bodies). Long is intentional (~130 rows).
 4. Surface the top 1–3 candidate actions ranked by information gain per
    compute-hour (use `/experiment-proposer` if the queue is non-trivial;
    otherwise just enumerate). Each candidate gets a one-line rationale.
@@ -100,8 +111,9 @@ flow. The PM's job is dispatch, not execution.
    - **"audit"** → research-pm Mode 2 audit pass.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
-   - **"status"** → re-run the triage scan (snapshot + both appended
-     sections, same as the boot pass).
+   - **"status"** → re-run the triage scan (the full structured
+     per-status report, sections 1–4, same as the boot pass; "quick
+     status" = section 1 only).
 
 ### Fleet-burn recompute rule
 

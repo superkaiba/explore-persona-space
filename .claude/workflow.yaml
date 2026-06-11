@@ -1931,7 +1931,19 @@ markers:
                             est_start_seconds_clamped, outcome, detail,
                             elapsed_seconds}, ...]
          extra:          {cancel_race?, gcp_attempts_today?,
-                          intermediate?, ...}`
+                          intermediate?,
+                          override_without_frontmatter?, ...}`
+
+      `override_without_frontmatter: true` (optional) is stamped by the
+      dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
+      decorator) when `launch` was invoked with an explicit
+      `--backend runpod` while the task's `backend:` frontmatter is
+      absent/empty — i.e. the GCP-first auto default was bypassed at the
+      CLI with no frontmatter backing. Visibility only: the launch is
+      never blocked, and the CLI also emits a LOUD stderr warning naming
+      the legitimate residual gaps (70B intents / interactive SSH-MCP
+      orchestration / runs > GCP --max-run-duration default 24h / SLURM
+      venv-extras mismatch).
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.
@@ -2460,6 +2472,9 @@ workflow_fix_on_bug:
     # in-scope OOM-classification fix.
     - "scripts/failure_classifier.py"
     - "scripts/gh_project.py"
+    # The PM session's one-pass read-only queue-report helper (research-pm.md
+    # Mode 1 STATUS source; pm/SKILL.md boot-scan step 2). Added 2026-06-11.
+    - "scripts/pm_queue_report.py"
     - "scripts/spawn_session.py"
     - "scripts/pod_watch.py"
     - "scripts/worktree_audit.py"
