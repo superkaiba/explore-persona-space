@@ -207,6 +207,34 @@ by the nested-shape rule. This is the "forward-only" guard: bodies
 parked in `awaiting_promotion` that still use the post-#454 flat
 shape will not retro-break on the next CI run.
 
+### Top-of-body methodology link
+
+The orchestrator (`/issue` Step 9a-quater LATE JOIN, after the
+clean-result-critic PASS) appends a one-line reader-facing pointer to
+the auto-generated findings-blind methodology reference
+(`docs/methodology/issue_<N>.md`) at the TOP of the body — immediately
+after the `<!-- clean-result-v2 -->` sentinel (i.e. right under the H1
+title), BEFORE `## Human TL;DR`, with a blank line on each side:
+
+```
+**Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+```
+
+When the gist publish fail-softed (no `GIST_URL`), the `· [gist](...)`
+suffix is dropped — same rule as the `## Reproducibility` row. The top
+line is the reader-facing pointer; the auto-appended
+`**Methodology reference:**` bullet in `## Reproducibility` stays as
+the artifact-index entry. Both carry the same SHA-pinned URLs.
+
+Forward-only + post-gate: the line is appended AFTER the
+clean-result-critic gate, so a body under critique normally does NOT
+carry it yet. The verifier and critics never REQUIRE it, never flag it
+as a stray element when present (e.g. on a re-critique during a
+same-issue follow-up round), and never hard-FAIL legacy or pre-link
+bodies for lacking it. The analyzer does not emit this line; it is
+orchestrator-appended (and on EXTEND passes the `<DOC_SHA>` pin is
+updated in place in BOTH locations — never duplicated).
+
 All URLs in Reproducibility are pinned to permanent refs (HF Hub
 `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
 `/tree/<sha>`; never `main` / `master` / `HEAD`). `n/a` accepted as an

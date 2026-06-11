@@ -663,6 +663,17 @@ Companion rule added to the migration prompt's cluster-analysis instructions: **
 
 ---
 
+## 2026-06-10 — task #472 (methodology link surfaced at the top of the clean result)
+
+### The methodology reference was linked only as a bullet buried inside `## Reproducibility`, where readers don't see it
+
+- **Before:** the Step 9a-quater link-append placed the auto-generated methodology reference (`docs/methodology/issue_<N>.md` + secret gist) ONLY as a `- **Methodology reference:** ...` bullet inside `## Reproducibility` — the agent-facing appendix at the bottom of the body. Thomas, reviewing #472's result, asked for the methodology summary to be linked at the top of the clean result.
+- **After:** the orchestrator appends the link in TWO places — a reader-facing `**Methodology:** [docs/methodology/issue_<N>.md](<SHA-pinned blob>) · [gist](<url>)` line immediately after the `<!-- clean-result-v2 -->` sentinel (right under the H1 title, before `## Human TL;DR`), plus the existing `## Reproducibility` row as the artifact-index entry. Same fail-soft gist rule (drop the `· [gist](...)` suffix when the gist publish failed) applies to both.
+- **Rule:** forward-only — bodies finalized before this change are never newly hard-FAILed for lacking the top line; the verifier permits (does not require) it, and the critics never flag it as a stray element (it lands AFTER the clean-result-critic gate, so a body under critique normally doesn't carry it yet). EXTEND passes re-pin the `<DOC_SHA>` in BOTH locations in place.
+- **Folded into:** `.claude/skills/clean-results/SPEC.md` § Top-of-body methodology link; `.claude/skills/issue/SKILL.md` Step 9a-quater step 7 + EXTEND delta; `tests/test_verify_task_body.py` (v2-body-with-top-line PASS test); `.claude/agents/methodology-writer.md`; `clean-result-critic.md` / `codex-clean-result-critic.md` Lens 5; `CLAUDE.md` § After Every Experiment item 10.
+
+---
+
 ## How to add a new entry
 
 When iterating on a clean-result with the user, after applying their correction:

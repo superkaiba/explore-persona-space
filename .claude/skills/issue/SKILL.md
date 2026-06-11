@@ -240,7 +240,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
                                                                                                    |--> reviewing  <- clean-result-critic final adversarial gate (Lens 7 absorbed retired reviewer)
-                                                                                                          |-- PASS --> methodology-reference LATE JOIN (Step 9a-quater: secret gist + ## Reproducibility link; agent itself early-spawned at uploading; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
+                                                                                                          |-- PASS --> methodology-reference LATE JOIN (Step 9a-quater: secret gist + top-of-body **Methodology:** line + ## Reproducibility row; agent itself early-spawned at uploading; auto-continue) --> awaiting_promotion  <- AWAITING USER: promote clean-result
                                                                                                                         |-- (user promotes via task.py promote) -->
                                                                                                                               |-- open children w/ parent_id=<N> exist --> followups_running  <- legacy: waits for children (also held during same-issue follow-up rounds); re-invoke /issue <N> later
                                                                                                                               |-- no open children                  --> completed (+ follow-up proposer)
@@ -4093,8 +4093,11 @@ Step 8's results-landed parallel spawn — see § Split schedule below)
 Every `kind: experiment` clean-result auto-gains a standalone
 **methodology + hyperparameters + worked-examples** reference at
 `docs/methodology/issue_<N>.md`, committed to the repo and mirrored to a
-**secret** gist, linked from the clean-result body's `## Reproducibility`
-section. The reference is **findings-blind**: it describes only HOW the
+**secret** gist, linked from the clean-result body in TWO places: a
+reader-facing one-line `**Methodology:**` pointer at the TOP of the
+body (immediately after the `<!-- clean-result-v2 -->` sentinel,
+before `## Human TL;DR`) and a `**Methodology reference:**` row in
+`## Reproducibility` (the artifact-index entry). The reference is **findings-blind**: it describes only HOW the
 experiment was run (conditions, training recipe, eval recipe, verbatim
 training / eval / output examples, reproducibility pointers) and never
 restates findings / interpretation / confidence / next-steps. The fresh
@@ -4128,8 +4131,9 @@ split in two:
   worktree branch (procedure step 5 below).
 - **LATE JOIN (here, after clean-result-critic PASS — the body must be
   final):** no-secrets pre-scan, secret-gist publish (fail-soft), the
-  one-line `**Methodology reference:**` append to the body's
-  `## Reproducibility`, the verifier re-run, and the
+  body link-append (the top-of-body `**Methodology:**` line + the
+  `## Reproducibility` `**Methodology reference:**` row — procedure
+  step 7), the verifier re-run, and the
   `epm:methodology-doc-generated v1` marker — posted only when the
   link line lands (the step is only "done" then). If the background
   agent has not returned yet at this point, WAIT for it here
@@ -4196,9 +4200,12 @@ late join remains.
     `gist_url` (`gh gist edit <gist-id> docs/methodology/issue_<N>.md`,
     same fail-soft rule); fall back to `gh gist create` only when no
     prior gist exists.
-  - Step 7 UPDATES the existing `**Methodology reference:**` line's
-    `<DOC_SHA>` pin in place (never append a duplicate line; same
-    `· [gist](...)` suffix rules).
+  - Step 7 UPDATES the existing lines' `<DOC_SHA>` pin in place in
+    BOTH locations — the top-of-body `**Methodology:**` line and the
+    `## Reproducibility` `**Methodology reference:**` row (never
+    append duplicate lines; same `· [gist](...)` suffix rules; if a
+    pre-top-line body carries only the Reproducibility row, ADD the
+    missing top line while re-pinning the row).
   - Step 9 posts a NEW `epm:methodology-doc-generated v1` marker with
     `extends=<followup_label>` in the note (plus the refreshed
     `commit=` / `gist_url=`) — this is the record the idempotency
@@ -4300,28 +4307,48 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    block the step or the park on a missing gist; the committed repo
    doc is the durable artifact and the next step links to it either
    way.
-7. **Append the link line to the clean-result `## Reproducibility`
-   section.** Use `task.py set-body <N> --file <new-body.md>` (NO
+7. **Append the link lines to the clean-result body — TWO locations.**
+   Use `task.py set-body <N> --file <new-body.md>` (NO
    `--snapshot` — the previous body is already the canonical
-   clean-result; this is a one-line append, not a promotion).
-   Read the current body, locate the `## Reproducibility` H2, add
-   exactly this line under the existing bullet list (between the
-   `**Artifacts:**` and `**Compute:**` rows, or at the end of the
-   section's bullet list if those anchors aren't present). SHA-pin the
-   blob URL with the `DOC_SHA` captured in step 5 — the step-8
-   verifier's URL-permanence check FAILs any unpinned `/blob/main/`
-   GitHub link:
+   clean-result; this is a two-line append, not a promotion).
+   Read the current body and SHA-pin both blob URLs with the `DOC_SHA`
+   captured in step 5 — the step-8 verifier's URL-permanence check
+   FAILs any unpinned `/blob/main/` GitHub link.
+
+   (a) **Top of body — the reader-facing pointer.** Insert exactly
+   this line immediately AFTER the `<!-- clean-result-v2 -->` sentinel
+   (i.e. right under the H1 title), BEFORE `## Human TL;DR`, with a
+   blank line on each side (legacy bodies without the sentinel:
+   directly under the H1 title line instead):
+   ```
+   **Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+   ```
+
+   (b) **`## Reproducibility` — the artifact-index row.** Locate the
+   `## Reproducibility` H2, add exactly this line under the existing
+   bullet list (between the `**Artifacts:**` and `**Compute:**` rows,
+   or at the end of the section's bullet list if those anchors aren't
+   present):
    ```
    - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
    ```
+
    When `GIST_URL` is empty (fail-soft path), drop the `· [gist](...)`
-   suffix entirely:
+   suffix entirely from BOTH lines:
+   ```
+   **Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
+   ```
    ```
    - **Methodology reference:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md)
    ```
    Write the revised body via `task.py set-body <N> --file ...`.
-8. **Re-run the mechanical verifier on the body.** A single-line link
-   addition to `## Reproducibility` cannot break the spec, but the
+   (Body-shape spec for the top line:
+   `.claude/skills/clean-results/SPEC.md` § Top-of-body methodology
+   link. Forward-only: never retro-edit bodies finalized before this
+   rule existed except via the EXTEND-pass re-pin above.)
+8. **Re-run the mechanical verifier on the body.** The two-line link
+   addition cannot break the spec (the verifier permits the top-of-body
+   `**Methodology:**` line and the Reproducibility row), but the
    verifier costs ~1s and catches the unlikely off-anchor edit:
    ```bash
    uv run python scripts/verify_task_body.py --issue <N>
