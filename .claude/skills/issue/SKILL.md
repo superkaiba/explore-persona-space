@@ -3555,7 +3555,21 @@ URLs.
   complementary MECHANICAL gate (HF Hub `list_repo_files` + WandB run
   + git-figure + completion sentinel, per
   `backends.artifacts.confirm_artifacts_from_handle`). Both must pass
-  before teardown fires.
+  before teardown fires. Degrade path (incident #585): when the handle
+  carries NO `expected_artifacts` declaration — launch paths other
+  than GCP do not populate it yet (#598 tracks SLURM; the RunPod
+  launch shells `pod_lifecycle.py` and never has) — the mechanical
+  gate is structurally unsatisfiable, so finalize falls back to the
+  agent-level PASS evidence on the task's events.jsonl (the sticky
+  `epm:upload-verified` marker, or the latest `epm:upload-verification`
+  with `Verdict: PASS`) and proceeds to teardown with a loud log +
+  `"confirm_artifacts": "skipped_no_declaration_agent_pass"` in the
+  JSON. Do NOT bypass finalize with a raw `pod.py terminate` on the
+  exit-3-missing-declaration shape — that skips the sidecar retirement
+  and leaves a stale handle that can mis-target a later finalize; run
+  the upload-verifier to a PASS, then re-run finalize. With neither a
+  declaration nor agent PASS evidence, finalize still exits 3
+  (`reason: confirm_artifacts_no_declaration`).
 
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
