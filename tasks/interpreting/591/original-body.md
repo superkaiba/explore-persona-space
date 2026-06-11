@@ -45,6 +45,20 @@ Phase 2 (targeted causal tests, GPU) — two complementary levers that manipulat
 
 Open scope decisions for the planner: whether refusal needs a recipe variant with leakage headroom (#518 flags the floored arm as power-limited — a floor cannot distinguish "no leakage" from "nothing to measure") or whether the dose probe doubles as that test; whether EM's survivor-rate proxy is usable as the leakage DV or needs re-judging; how many synthesized near-twins per isolated source (and how to validate their cosine actually lands in the near-twin band before paying for eval); which behavior arms get the dose probe vs analysis-only given the GPU budget.
 
+## Execution shape — ONE issue, grouped experiments
+
+All arms execute ON THIS ISSUE and fold into a single unified clean-result body (the accumulated-rounds pattern: one issue, sequential rounds, each round through the full planner/critic stack, results appended as new findings in the same body). Do NOT split arms into child tasks. The natural grouping, in dependency order:
+
+| arm | what | depends_on | gpu_hours_est |
+|---|---|---|---|
+| e1 | Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): fit {max bystander cosine, self-implant delta, bystander base propensity, negative membership} as classifiers of leak vs no-leak cells, per behavior and jointly; name the substrate-swap and EM survivorship confounds | - | 0 |
+| e2 | Near-twin eval probe: synthesize near-twin bystanders (validate their layer-20 cosine lands in the near-twin band), re-eval EXISTING adapters on extended panels — no retraining | e1 | 8 |
+| e3 | Dose probe: extend sycophancy training past parent depth for Qwen default (under-implanted) + villain (isolated); optimizer-step checkpoints incl. parent-equivalent anchor; full-panel re-eval per depth | e1 | 24 |
+| e4 | Refusal arm: diagnose the #518 floor per e1, then the indicated single-change manipulation | e1 | 30 |
+| e5 | EM arm: replace/justify the survivor-rate proxy, re-fit the factor set on the corrected panel | e1 | 30 |
+
+The first plan covers e1 (+ e2 if cheap to bundle without breaking single-variable discipline); later arms run as same-issue follow-up rounds re-shaped by what e1 and the earlier rounds find (e.g. the dose × near-twin cross if e2 and e3 disagree). Total program budget ~300 GPU-hours; each round's plan stays under the 100 GPU-hour auto-approval cap.
+
 ## Notes / constraints
 
 - Reuse first: this task should consume existing panels, adapters, base rates, and cosine matrices wherever they pass fitness checks; new training is a last resort per arm.
