@@ -110,12 +110,23 @@ companion arm.
 3. **H4's restoring force is real and visible in #471**
    (`eval_results/issue_471/route_a/phaseA_anchor.json`): with negatives,
    trained-negative-context leakage rises to +14.3 by step 20 and is
-   pushed back DOWN to a ~+8.1 plateau while the source pins at ceiling;
-   positives-only, the same contexts climb monotonically to +23.5 with no
-   pushback — and the source never arrests. Sharpened H4 therefore
+   pushed back DOWN to a ~+8.1 plateau; positives-only, the same contexts
+   climb monotonically to +23.5 with no pushback. Sharpened H4 therefore
    predicts the controlled quantity at plateau is TRAINED-NEGATIVE
    leakage (clamped at a ratio-dependent level) — checkable nearly for
-   free against existing #472 artifacts.
+   free against existing #472 artifacts. **Scope caveat:** this verifies
+   the feedback INGREDIENT (it clamps leakage), but #471 is simultaneously
+   a counterexample to feedback-as-SOURCE-arrest — the feedback was
+   demonstrably active there while the SOURCE sailed through +8 and +13.5
+   (the very levels where #472's 2:1 / 4:1 cells arrest) to the hard
+   log-prob ceiling (saturation, not an arrest; a clean ratio-equilibrium
+   would have arrested #471's 1:1 source at ~≤8 nats). Together with
+   #472's 0-negative cell arresting at +2.1 with no feedback at all, the
+   feedback cannot be the whole source-arrest story: H4 survives only if a
+   rig variable (#472's 2× lr, all-linear rsLoRA vs attn-only, suppress
+   flag) strengthens negative→source coupling — the rig-bridging arm is
+   load-bearing for H4, and H-horizon currently holds the more
+   parsimonious single-story cross-rig account.
 4. **Cheap reads first:** the #472 mid-run `frac_*` checkpoints were never
    uploaded (only final adapters are on HF), so trajectory reads need
    fresh training — but a zero-training four-float re-read of the 20
