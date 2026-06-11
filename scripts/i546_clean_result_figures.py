@@ -204,12 +204,12 @@ def fig_wrong_slot_dose_response(data_546: dict, data_533: dict) -> None:
         markersize=3.5,
         linewidth=1.0,
         alpha=0.55,
-        label="#533 (r=32/alpha=64, mean only)",
+        label="r=32/alpha=64 (prior run, means only)",
     )
     axes[1].legend(loc="lower right", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.85])
     fig.suptitle(
-        "Wrong-slot dose response at LoRA r=16/alpha=32 (lr=5e-6) vs #533's r=32/alpha=64",
+        "Wrong-slot dose response at LoRA r=16/alpha=32 (lr=5e-6) vs the prior r=32/alpha=64 run",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -222,7 +222,7 @@ def fig_wrong_slot_dose_response(data_546: dict, data_533: dict) -> None:
         "Marker log-probability under the wrong persona's encoding. Lower = less leakage. "
         "Solid = this run at r=16/alpha=32, errorbars = 95% bootstrap CI over 5 seeds, "
         "n=50 questions each. "
-        "Dotted = parent #533 at r=32/alpha=64 (same lr=5e-6), means only.",
+        "Dotted = prior r=32/alpha=64 run (same lr=5e-6), means only.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
@@ -311,12 +311,12 @@ def fig_paired_gap_per_persona(data_546: dict, data_533: dict) -> None:
         markersize=3.5,
         linewidth=1.0,
         alpha=0.55,
-        label="#533 (r=32/alpha=64, mean only)",
+        label="r=32/alpha=64 (prior run, means only)",
     )
     axes[1].legend(loc="lower right", fontsize=7.5, frameon=False)
     fig.tight_layout(rect=[0, 0, 1, 0.85])
     fig.suptitle(
-        "Role-vs-system paired gap at r=16/alpha=32, per persona x contrast, vs #533's r=32 ghost",
+        "Role-vs-system paired gap at r=16/alpha=32, per persona x contrast, vs the prior r=32 run",
         fontsize=11,
         fontweight="semibold",
         ha="left",
@@ -326,9 +326,10 @@ def fig_paired_gap_per_persona(data_546: dict, data_533: dict) -> None:
     fig.text(
         0.02,
         0.91,
-        "d = log P (system_arm) - log P (role) at the wrong-persona probe, paired per seed. "
-        "Negative d = role leaks MORE than system. Errorbars = 95% bootstrap CI over 5 seeds. "
-        "Dotted = parent #533 at r=32/alpha=64 (same lr=5e-6), means only.",
+        "System-arm marker log-probability minus role-header log-probability at the "
+        "wrong-persona probe, paired per seed. Negative = role leaks MORE than system. "
+        "Errorbars = 95% bootstrap CI over 5 seeds. "
+        "Dotted = prior r=32/alpha=64 run (same lr=5e-6), means only.",
         fontsize=8,
         color="#5A5A5A",
         ha="left",
