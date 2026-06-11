@@ -382,7 +382,7 @@ This experiment **narrows but does not overturn** the prior finding (from the pr
 | Source persona | `"You are a villainous mastermind who schemes to take over the world."` |
 | Negative personas (3, applies to all `i471_route_a_*_withneg/k0/k1/k3` arms) | bare helpful assistant = `"You are a helpful assistant."`; `medical_doctor` + `police_officer` system prompts verbatim from `persona_panel.py` |
 | Held-out bystander personas (5) | `software_engineer`, `kindergarten_teacher`, `comedian`, `hero`, `lawyer` |
-| LoRA | r=32, α=64, dropout=0.0, target=q_proj/k_proj/v_proj/o_proj |
+| LoRA | r=32, α=64, dropout=0.0, target=all-linear (q/k/v/o + gate/up/down — corrected 2026-06-11 from the Hub adapter_config.json; this table previously said q/k/v/o, which was stale) |
 | Optimizer | AdamW, lr=5e-6, cosine schedule, warmup_ratio=0.05, bf16 |
 | Training (route-(a) anchor) | lr=5e-6, 2 epochs ceiling, batch=4, grad_accum=4, max_length=4096, save_steps=10, log_every=5, seed=42 |
 | Training rows per arm | 600 (300 positives + 300 negatives, 100 per neg persona) for withneg / k0 / k1 / k3; 300 (positives only) for cond1_posonly |
