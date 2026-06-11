@@ -319,6 +319,14 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - URL permanence: <findings or PASS>
 - Sentinel scrub: <findings or PASS>
 - `n/a` discipline: <findings or PASS>
+- Top-of-body `**Methodology:**` line carve-out: a single bold-link
+  line between the `<!-- clean-result-v2 -->` sentinel and
+  `## Human TL;DR` is the standard orchestrator-appended methodology
+  pointer (`SPEC.md` § Top-of-body methodology link), paired with the
+  `**Methodology reference:**` row in `## Reproducibility` — appended
+  at Step 9a-quater AFTER this gate, so a body under critique normally
+  does not carry it yet. Never REQUIRE it; never flag it as a stray
+  element when present.
 - Reuse-provenance audit (semantic): when any reader-facing claim in
   `## TL;DR` rests on a trained artifact REUSED from a prior issue
   (LoRA adapter, merged checkpoint, training-mix dataset,
