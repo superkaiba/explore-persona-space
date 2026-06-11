@@ -56,11 +56,14 @@ logger = logging.getLogger("issue444_persona_distance")
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 ENTITY = "the Elk County Courthouse in Ridgway, Pennsylvania"
 TOWN, STATE = "Ridgway", "Pennsylvania"
-REFERENCE = "marine_biologist"  # the teach persona; all distances are vs this
+DEFAULT_REFERENCE = "marine_biologist"  # the #444 teach persona
 LAYERS = [7, 14, 21, 27]
 
-# system prompt per persona; None => no system message ("no_system")
-PERSONA_PROMPTS: dict[str, str | None] = {
+# Canonical 7-persona #444 panel; system prompt per persona; None => no system
+# message ("no_system"). For #500, callers pass --panel to swap the panel and
+# --reference to swap the source/teach persona; both globals are recomputed
+# inside main() before any usage (see plan §4.5).
+PERSONA_PROMPTS_DEFAULT: dict[str, str | None] = {
     "marine_biologist": PERSONAS["marine_biologist"],
     "local_historian": PERSONAS["local_historian"],
     "local_resident": PERSONAS["local_resident"].format(town=TOWN, state=STATE),
@@ -69,7 +72,33 @@ PERSONA_PROMPTS: dict[str, str | None] = {
     "kindergarten_teacher": PERSONAS["kindergarten_teacher"],
     "no_system": None,
 }
-OTHERS = [p for p in PERSONA_PROMPTS if p != REFERENCE]
+# Module-level globals set at main()-time from --reference / --panel. Default
+# values preserve the #444 single-arm behaviour for callers that don't pass the
+# new flags (verified byte-identical in the smoke run).
+PERSONA_PROMPTS: dict[str, str | None] = dict(PERSONA_PROMPTS_DEFAULT)
+REFERENCE: str = DEFAULT_REFERENCE
+OTHERS: list[str] = [p for p in PERSONA_PROMPTS if p != REFERENCE]
+
+
+def _resolve_persona_prompt(name: str) -> str | None:
+    """Resolve a persona name to its system prompt.
+
+    Mirrors run_experiment_444._resolve_persona_system: "no_system" -> None;
+    "assistant" -> ASSISTANT_PROMPT; "local_resident" -> the formatted template
+    with the picked entity's town/state; anything else -> PERSONAS[name].
+    """
+    if name == "no_system":
+        return None
+    if name == "assistant":
+        return ASSISTANT_PROMPT
+    if name == "local_resident":
+        return PERSONAS["local_resident"].format(town=TOWN, state=STATE)
+    if name not in PERSONAS:
+        raise SystemExit(
+            f"--panel persona {name!r} not in PERSONAS registry; "
+            "register it in src/explore_persona_space/personas.py first."
+        )
+    return PERSONAS[name]
 
 
 def _chat_ids(tok, persona: str, probe: str) -> torch.Tensor:
@@ -212,7 +241,43 @@ def main() -> int:
     ap.add_argument("--js-max-tok", type=int, default=40)
     ap.add_argument("--out", default="eval_results/issue_444/persona_distance_topic/results.json")
     ap.add_argument("--skip-js", action="store_true")
+    ap.add_argument(
+        "--reference",
+        default=DEFAULT_REFERENCE,
+        help=(
+            "Source/teach persona to compute distances FROM. Replaces the "
+            "module-level REFERENCE. Default = marine_biologist (#444)."
+        ),
+    )
+    ap.add_argument(
+        "--panel",
+        default=None,
+        help=(
+            "Comma-separated bystander panel (persona names). Default = the "
+            "#444 7-persona panel. For #500 the 15-persona pool is passed in."
+        ),
+    )
     args = ap.parse_args()
+
+    # Resolve panel + reference; rebuild PERSONA_PROMPTS + OTHERS BEFORE any
+    # usage. REFERENCE is referenced by cosine_vs_reference, sample_responses,
+    # js_vs_reference, and main's output dict via module-scope -- set the
+    # module-level globals so all call sites see them.
+    global REFERENCE, OTHERS, PERSONA_PROMPTS
+    REFERENCE = args.reference
+    if args.panel:
+        names = [n.strip() for n in args.panel.split(",") if n.strip()]
+        # Build PERSONA_PROMPTS by re-resolving each persona name through the
+        # same logic as the default dict.
+        PERSONA_PROMPTS = {n: _resolve_persona_prompt(n) for n in names}
+    else:
+        PERSONA_PROMPTS = dict(PERSONA_PROMPTS_DEFAULT)
+    if REFERENCE not in PERSONA_PROMPTS:
+        raise SystemExit(f"--reference {REFERENCE!r} not in panel {list(PERSONA_PROMPTS)!r}")
+    OTHERS = [pp for pp in PERSONA_PROMPTS if pp != REFERENCE]
+    logger.info(
+        "panel=%d personas; reference=%s; others=%d", len(PERSONA_PROMPTS), REFERENCE, len(OTHERS)
+    )
 
     torch.manual_seed(0)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -283,7 +348,7 @@ def main() -> int:
     def _row(label, on, off):
         return f"  {label:<22} on={on:.4f}  off={off:.4f}  Δ(on-off)={on - off:+.4f}"
 
-    print("\n================ COSINE (layer 21) vs marine_biologist ================")
+    print(f"\n================ COSINE (layer 21) vs {REFERENCE} ================")
     for other in OTHERS:
         on = results["cosine"]["on_topic"][other]["21"]
         off = results["cosine"]["off_topic"][other]["21"]
@@ -294,9 +359,7 @@ def main() -> int:
         off = max(results["cosine"]["off_topic"][other].values())
         print(_row(other, on, off))
     if not args.skip_js:
-        print(
-            "\n================ JS similarity (M_js = 1 - JS) vs marine_biologist ================"
-        )
+        print(f"\n================ JS similarity (M_js = 1 - JS) vs {REFERENCE} ================")
         for other in OTHERS:
             on = results["js_similarity"]["on_topic"][other]
             off = results["js_similarity"]["off_topic"][other]

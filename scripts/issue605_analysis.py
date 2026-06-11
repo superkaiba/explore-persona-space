@@ -1,0 +1,1177 @@
+"""Issue #605 Phase 7 — registered statistics, pinned fits, decision lattice,
+figures. Runs OFF-POD on the VM against committed per-cell JSONs.
+
+REGISTERED statistics (plan section 3 — verdicts key ONLY on these), per
+(family x DV-class x space):
+
+  A. Pooled matched-similarity partial Spearman
+     rho(DV, prior | continuous pair-cosine + band FE + source mean DV),
+     1000-rep context-cluster bootstrap, Holm over the 2 shift spaces.
+  B. Held-out delta-CV-R^2 — grouped 5-fold CV by context (persona for
+     facts): model 1 = {pair cosine + source FE}, model 2 = {+ prior};
+     out-of-fold delta-CV-R^2 with context-cluster bootstrap CI re-running
+     the FULL CV per resample (unique-context resampling; every duplicated
+     cluster's cells stay within a single fold).
+
+PINNED primary fits (sign routing): log-prob space = Tobit/censored over ALL
+cells (saturation-aware right censoring); EOS-margin space = rank fit over
+ALL cells. The saturation-EXCLUDED fit is a robustness column only.
+
+Decision lattice (plan section 3) is evaluated sign-routed per family; any
+non-enumerated outcome ships as indeterminate. Diagnostics per plan 11.5:
+base-term correlation + base-covariate fit, split-probe complement,
+affordance-class stratified read, prompt-length covariate, cov_negsim (both
+families), saturation map + slice coverage per prior tercile, collinearity
+gate with tercile-contrast fallback, per-band descriptive partials with
+realized CIs + MDE, legacy-anchor drift, centered-bank cosine sensitivity,
+fact TF-proxy validation (rho > 0.4 vs judged leak).
+
+``--synthesize-stub DIR`` writes a tiny synthetic artifact tree (schema-true,
+planted positive prior->shift effect) so the WHOLE script smoke-runs on CPU.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from scipy.stats import norm, rankdata, spearmanr  # noqa: E402
+
+logger = logging.getLogger("issue605.analysis")
+
+ANALYSIS_SEED = 42
+SATURATION_LOGP = -0.1
+SATURATION_ARGMAX = 0.92
+COLLINEARITY_GATE = 0.6
+PROXY_RHO_MIN = 0.4
+SURVIVES_RHO_UPPER = 0.2  # plan section 3 precision clause
+
+
+def _repro_meta(extra: dict | None = None) -> dict:
+    from issue532_predictor_stress import _reproducibility_metadata
+
+    return _reproducibility_metadata(extra)
+
+
+# ---------------------------------------------------------------------------
+# Statistics machinery
+# ---------------------------------------------------------------------------
+def _pearson(x: np.ndarray, y: np.ndarray) -> float:
+    m = ~(np.isnan(x) | np.isnan(y))
+    if m.sum() < 3 or np.std(x[m]) < 1e-12 or np.std(y[m]) < 1e-12:
+        return float("nan")
+    return float(np.corrcoef(x[m], y[m])[0, 1])
+
+
+def _design(covars: list[np.ndarray], dummies: list[np.ndarray], n: int) -> np.ndarray:
+    cols = [rankdata(c) for c in covars] + list(dummies) + [np.ones(n)]
+    return np.column_stack(cols)
+
+
+def partial_spearman(
+    y: np.ndarray, x: np.ndarray, covars: list[np.ndarray], dummies: list[np.ndarray]
+) -> float:
+    """Partial Spearman = Pearson on rank residuals after OLS on the
+    rank-transformed continuous covariates + raw dummies + intercept."""
+    n = len(y)
+    if n < 5:
+        return float("nan")
+    C = _design(covars, dummies, n)
+    ry, rx = rankdata(y), rankdata(x)
+    res_y = ry - C @ np.linalg.lstsq(C, ry, rcond=None)[0]
+    res_x = rx - C @ np.linalg.lstsq(C, rx, rcond=None)[0]
+    return _pearson(res_y, res_x)
+
+
+def _band_dummies(bands: pd.Series) -> list[np.ndarray]:
+    cats = sorted(bands.unique())
+    return [(bands == c).to_numpy(dtype=float) for c in cats[1:]]  # drop-first
+
+
+def _fe_dummies(values: pd.Series) -> list[np.ndarray]:
+    cats = sorted(values.unique())
+    return [(values == c).to_numpy(dtype=float) for c in cats[1:]]
+
+
+def pooled_partial(frame: pd.DataFrame, dv: str, prior_col: str, sim_col: str) -> float:
+    """Registered statistic A on one frame."""
+    src_mean = frame.groupby("source")[dv].transform("mean").to_numpy()
+    return partial_spearman(
+        frame[dv].to_numpy(),
+        frame[prior_col].to_numpy(),
+        covars=[frame[sim_col].to_numpy(), src_mean],
+        dummies=_band_dummies(frame["band"]),
+    )
+
+
+def _grouped_cv_r2(frame: pd.DataFrame, dv: str, x_cols: list[str], group_col: str) -> float:
+    """Out-of-fold R^2, grouped K<=5-fold by ``group_col``; FE columns are the
+    frame's pre-built source dummies (``fe_*``)."""
+    from sklearn.linear_model import LinearRegression
+    from sklearn.model_selection import GroupKFold
+
+    fe_cols = [c for c in frame.columns if c.startswith("fe_")]
+    X = frame[x_cols + fe_cols].to_numpy(dtype=float)
+    y = frame[dv].to_numpy(dtype=float)
+    groups = frame[group_col].to_numpy()
+    n_groups = len(np.unique(groups))
+    if n_groups < 2 or len(y) < 5:
+        return float("nan")
+    preds = np.zeros_like(y)
+    for tr, te in GroupKFold(n_splits=min(5, n_groups)).split(X, y, groups=groups):
+        m = LinearRegression().fit(X[tr], y[tr])
+        preds[te] = m.predict(X[te])
+    ss_res = float(((y - preds) ** 2).sum())
+    ss_tot = float(((y - y.mean()) ** 2).sum())
+    return 1.0 - ss_res / ss_tot if ss_tot > 1e-18 else float("nan")
+
+
+def delta_cv_r2(frame: pd.DataFrame, dv: str, prior_col: str, sim_col: str, group_col: str) -> dict:
+    """Registered statistic B (+ the reverse ladder) on one frame."""
+    r2_sim = _grouped_cv_r2(frame, dv, [sim_col], group_col)
+    r2_full = _grouped_cv_r2(frame, dv, [sim_col, prior_col], group_col)
+    r2_prior = _grouped_cv_r2(frame, dv, [prior_col], group_col)
+    return {
+        "r2_sim_only": r2_sim,
+        "r2_sim_plus_prior": r2_full,
+        "delta_cv_r2_prior_beyond_sim": r2_full - r2_sim,
+        "r2_prior_only": r2_prior,
+        "delta_cv_r2_sim_beyond_prior_reverse": r2_full - r2_prior,
+    }
+
+
+def cluster_bootstrap(
+    frame: pd.DataFrame,
+    cluster_col: str,
+    stat_fn,
+    n_boot: int,
+    seed: int = ANALYSIS_SEED,
+) -> np.ndarray:
+    """Unique-cluster resampling; duplicated clusters get fresh ids so grouped
+    CV keeps every duplicate's cells inside one fold (no train/test leakage)."""
+    clusters = np.array(sorted(frame[cluster_col].unique()))
+    rng = np.random.default_rng(seed)
+    by_cluster = {c: frame[frame[cluster_col] == c] for c in clusters}
+    out = []
+    for _ in range(n_boot):
+        sampled = rng.choice(clusters, size=len(clusters), replace=True)
+        parts = []
+        for k, c in enumerate(sampled):
+            sub = by_cluster[c].copy()
+            sub["_boot_cluster"] = f"bc{k}"
+            parts.append(sub)
+        out.append(stat_fn(pd.concat(parts, ignore_index=True)))
+    return np.array(out, dtype=float)
+
+
+def _boot_summary(samples: np.ndarray, point: float) -> dict:
+    s = samples[~np.isnan(samples)]
+    if len(s) < 10:
+        return {"point": point, "ci95": [float("nan"), float("nan")], "p_two_sided": float("nan")}
+    lo, hi = np.percentile(s, [2.5, 97.5])
+    p = 2 * min(float(np.mean(s <= 0)), float(np.mean(s >= 0)))
+    return {
+        "point": float(point),
+        "ci95": [float(lo), float(hi)],
+        "p_two_sided": float(min(1.0, max(p, 1.0 / len(s)))),
+        "n_boot_effective": len(s),
+    }
+
+
+def _holm(pvals: dict[str, float]) -> dict[str, float]:
+    items = sorted(pvals.items(), key=lambda kv: kv[1])
+    out, running = {}, 0.0
+    m = len(items)
+    for i, (k, p) in enumerate(items):
+        adj = min(1.0, (m - i) * p)
+        running = max(running, adj)
+        out[k] = running
+    return out
+
+
+def tobit_prior_coef(frame: pd.DataFrame, dv: str, prior_col: str, sim_col: str) -> float:
+    """Right-censored (saturation-aware) Tobit MLE over ALL cells; returns the
+    signed prior coefficient (the pinned log-prob-space primary fit)."""
+    from scipy.optimize import minimize
+
+    fe_cols = [c for c in frame.columns if c.startswith("fe_")]
+    X = np.column_stack(
+        [
+            np.ones(len(frame)),
+            frame[sim_col].to_numpy(dtype=float),
+            frame[fe_cols].to_numpy(dtype=float) if fe_cols else np.zeros((len(frame), 0)),
+            frame[prior_col].to_numpy(dtype=float),
+        ]
+    )
+    y = frame[dv].to_numpy(dtype=float)
+    cens = frame["saturated"].to_numpy(dtype=bool)
+    beta0, *_ = np.linalg.lstsq(X, y, rcond=None)
+    resid = y - X @ beta0
+    x0 = np.concatenate([beta0, [np.log(max(np.std(resid), 1e-3))]])
+
+    def nll(params: np.ndarray) -> float:
+        beta, log_sigma = params[:-1], params[-1]
+        sigma = np.exp(log_sigma)
+        z = (y - X @ beta) / sigma
+        ll = np.where(cens, norm.logsf(z), norm.logpdf(z) - log_sigma)
+        return -float(np.sum(ll))
+
+    res = minimize(nll, x0, method="BFGS", options={"maxiter": 500})
+    return float(res.x[-2])  # prior is the LAST design column
+
+
+def rank_fit_prior_coef(frame: pd.DataFrame, dv: str, prior_col: str, sim_col: str) -> float:
+    """Pinned EOS-margin primary: OLS on rank-transformed DV/covariates
+    (all cells, non-saturating space); returns the signed prior coefficient."""
+    fe_cols = [c for c in frame.columns if c.startswith("fe_")]
+    X = np.column_stack(
+        [
+            np.ones(len(frame)),
+            rankdata(frame[sim_col].to_numpy()),
+            frame[fe_cols].to_numpy(dtype=float) if fe_cols else np.zeros((len(frame), 0)),
+            rankdata(frame[prior_col].to_numpy()),
+        ]
+    )
+    y = rankdata(frame[dv].to_numpy())
+    beta, *_ = np.linalg.lstsq(X, y, rcond=None)
+    return float(beta[-1])
+
+
+def per_band_partials(
+    frame: pd.DataFrame, dv: str, prior_col: str, sim_col: str, n_boot: int
+) -> dict:
+    """DESCRIPTIVE per-band partials with realized CIs + Fisher-z MDE."""
+    out = {}
+    for band in sorted(frame["band"].unique()):
+        sub = frame[frame["band"] == band]
+        n_ctx = sub["context"].nunique()
+
+        def stat(f: pd.DataFrame) -> float:
+            src_mean = f.groupby("source")[dv].transform("mean").to_numpy()
+            return partial_spearman(
+                f[dv].to_numpy(),
+                f[prior_col].to_numpy(),
+                covars=[f[sim_col].to_numpy(), src_mean],
+                dummies=[],
+            )
+
+        point = stat(sub)
+        boots = cluster_bootstrap(sub, "context", stat, n_boot) if n_ctx >= 4 else np.array([])
+        k_covars = 2
+        mde = float(np.tanh(1.96 / np.sqrt(max(n_ctx - 3 - k_covars, 1))))
+        out[band] = {
+            **_boot_summary(boots, point),
+            "n_contexts": int(n_ctx),
+            "n_cells": len(sub),
+            "mde_abs_rho_context_level": mde,
+            "descriptive_only": True,
+        }
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Frame builders
+# ---------------------------------------------------------------------------
+def build_marker_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
+    """Cell-level marker frame from per-cell JSONs + pair table + selection."""
+    sel = json.loads((out_root / "panel" / "marker_panel_selection.json").read_text())
+    table = json.loads((out_root / "panel" / "marker_pair_table.json").read_text())
+    pair = {(r["source_cid"], r["context_label"]): r for r in table["rows"]}
+    edges = sel["band_edges_terciles"]
+    trained_dir = out_root / "marker" / "per_cell_trained"
+    base_dir = out_root / "marker" / "per_cell_base"
+    gen_dir = out_root / "marker" / "gen"
+
+    rows = []
+    for f in sorted(trained_dir.glob("*.json")):
+        src, ctx = f.stem.split("__", 1)
+        b_path = base_dir / f.name
+        if not b_path.exists() or (src, ctx) not in pair:
+            continue
+        t = json.loads(f.read_text())
+        b = json.loads(b_path.read_text())
+        pr = pair[(src, ctx)]
+        t_q, b_q = t["per_q"], b["per_q"]
+        assert len(t_q) == len(b_q), f.name
+        for tq, bq in zip(t_q, b_q, strict=True):
+            assert tq["slot_kind"] == bq["slot_kind"], f.name
+            assert tq["n_truncated_tokens"] == bq["n_truncated_tokens"], f.name
+        dlogp_q = [tq["logp_marker"] - bq["logp_marker"] for tq, bq in zip(t_q, b_q, strict=True)]
+        dmargin_q = [
+            (tq["z_marker"] - tq["z_eos"]) - (bq["z_marker"] - bq["z_eos"])
+            for tq, bq in zip(t_q, b_q, strict=True)
+        ]
+        dz_q = [tq["z_marker"] - bq["z_marker"] for tq, bq in zip(t_q, b_q, strict=True)]
+        g_path = gen_dir / f.name
+        emit = (
+            json.loads(g_path.read_text())["summary"]["in_R_emission_rate"]
+            if g_path.exists()
+            else float("nan")
+        )
+        trained_logp = float(np.mean([q["logp_marker"] for q in t_q]))
+        argmax_rate = float(np.mean([q["argmax_id"] == 83399 for q in t_q]))
+        cos = pr["cos_l21"]
+        band = "band_lo" if cos <= edges[0] else ("band_mid" if cos <= edges[1] else "band_hi")
+        rows.append(
+            {
+                "source": src,
+                "context": ctx,
+                "band": band,
+                "cos": cos,
+                "gkl": pr["gkl_l22"],
+                "cos_centered": pr["cos_centered_bank"],
+                "prior": pr["prior_logp"],
+                "negsim": pr["sim_to_nearest_negative"],
+                "affordance_class": pr["affordance_class"],
+                "content_class": pr["content_class"],
+                "is_legacy": pr["is_legacy"],
+                "dlogp": float(np.mean(dlogp_q)),
+                "dmargin": float(np.mean(dmargin_q)),
+                "dz_marker": float(np.mean(dz_q)),
+                "dlogZ": float(
+                    np.mean([tq["logZ"] - bq["logZ"] for tq, bq in zip(t_q, b_q, strict=True)])
+                ),
+                "trained_logp": trained_logp,
+                "base_logp_matched": float(np.mean([q["logp_marker"] for q in b_q])),
+                "emission_rate": emit,
+                "argmax_rate": argmax_rate,
+                "saturated": bool(
+                    trained_logp > SATURATION_LOGP and argmax_rate >= SATURATION_ARGMAX
+                ),
+                "n_emitting_slots": int(sum(q["slot_kind"] == "pre_marker" for q in t_q)),
+                "dlogp_oddq": float(np.mean(dlogp_q[1::2])),
+                "dmargin_oddq": float(np.mean(dmargin_q[1::2])),
+            }
+        )
+    frame = pd.DataFrame(rows)
+    assert len(frame), "no marker cells found — run the Phase 2 dispatcher first"
+    for c in sorted(frame["source"].unique())[1:]:
+        frame[f"fe_{c}"] = (frame["source"] == c).astype(float)
+    return frame, sel
+
+
+def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
+    """(cell x persona)-level fact frame from judged + tf JSONs + selection."""
+    sel = json.loads((out_root / "panel" / "fact_panel_selection.json").read_text())
+    judged_dir = out_root / "fact" / "judged"
+    tf_dir = out_root / "fact" / "tf"
+    rows = []
+    for f in sorted(judged_dir.glob("*.json")):
+        j = json.loads(f.read_text())
+        arm, seed, persona = j["arm"], j["seed"], j["persona"]
+        arm_sel = sel["per_arm"][arm]
+        if persona not in arm_sel.get("per_persona", {}):
+            continue
+        meta = arm_sel["per_persona"][persona]
+        edges = arm_sel["band_edges_terciles"]
+        cos = meta["cos_to_teacher"]
+        band = "band_lo" if cos <= edges[0] else ("band_mid" if cos <= edges[1] else "band_hi")
+        tf_path = tf_dir / f.name
+        tf = json.loads(tf_path.read_text())["summary"] if tf_path.exists() else {}
+        rows.append(
+            {
+                "source": f"{arm}_s{seed}",
+                "arm": arm,
+                "seed": seed,
+                "context": persona,
+                "band": band,
+                "cos": cos,
+                "prior": meta["prior_nat_per_tok"],
+                "leak_rate": j["summary"]["leak_rate"],
+                "tf_delta": tf.get("mean_delta_logprob_per_tok", float("nan")),
+                "saturated": False,  # no softmax-ceiling construct for the fact TF delta
+            }
+        )
+    frame = pd.DataFrame(rows)
+    assert len(frame), "no fact cell-personas found — run the Phase 5 dispatcher first"
+    for c in sorted(frame["arm"].unique())[1:]:
+        frame[f"fe_arm_{c}"] = (frame["arm"] == c).astype(float)
+    for s in sorted(frame["seed"].unique())[1:]:
+        frame[f"fe_seed_{s}"] = (frame["seed"] == s).astype(float)
+    return frame, sel
+
+
+# ---------------------------------------------------------------------------
+# Registered-statistic battery for one (frame x DV x space)
+# ---------------------------------------------------------------------------
+def registered_battery(
+    frame: pd.DataFrame,
+    dv: str,
+    *,
+    sim_col: str,
+    prior_col: str,
+    group_col: str,
+    n_boot: int,
+    pinned: str,
+) -> dict:
+    """Both registered statistics + the pinned primary fit + robustness."""
+
+    def stat_partial(f: pd.DataFrame) -> float:
+        return pooled_partial(f, dv, prior_col, sim_col)
+
+    def stat_dcv(f: pd.DataFrame) -> float:
+        return delta_cv_r2(f, dv, prior_col, sim_col, "_boot_cluster")[
+            "delta_cv_r2_prior_beyond_sim"
+        ]
+
+    point_partial = pooled_partial(frame, dv, prior_col, sim_col)
+    boots_partial = cluster_bootstrap(frame, group_col, stat_partial, n_boot)
+    dcv = delta_cv_r2(frame, dv, prior_col, sim_col, group_col)
+    boots_dcv = cluster_bootstrap(frame, group_col, stat_dcv, n_boot)
+
+    if pinned == "tobit":
+        pin_point = tobit_prior_coef(frame, dv, prior_col, sim_col)
+        pin_boots = cluster_bootstrap(
+            frame, group_col, lambda f: tobit_prior_coef(f, dv, prior_col, sim_col), n_boot
+        )
+    elif pinned == "rank":
+        pin_point = rank_fit_prior_coef(frame, dv, prior_col, sim_col)
+        pin_boots = cluster_bootstrap(
+            frame, group_col, lambda f: rank_fit_prior_coef(f, dv, prior_col, sim_col), n_boot
+        )
+    else:
+        pin_point, pin_boots = float("nan"), np.array([])
+
+    clean = frame[~frame["saturated"]]
+    robustness = {
+        "saturation_excluded_partial": (
+            pooled_partial(clean, dv, prior_col, sim_col) if len(clean) >= 5 else float("nan")
+        ),
+        "n_saturated_excluded": int(frame["saturated"].sum()),
+        "source_cluster_partial_ci": _boot_summary(
+            cluster_bootstrap(frame, "source", stat_partial, n_boot), point_partial
+        ),
+    }
+    return {
+        "pooled_partial": _boot_summary(boots_partial, point_partial),
+        "delta_cv_r2": {**dcv, **_boot_summary(boots_dcv, dcv["delta_cv_r2_prior_beyond_sim"])},
+        "pinned_fit": {
+            "kind": pinned,
+            **_boot_summary(pin_boots, pin_point),
+        },
+        "per_band_descriptive": per_band_partials(
+            frame, dv, prior_col, sim_col, max(n_boot // 4, 50)
+        ),
+        "robustness": robustness,
+        "n_cells": len(frame),
+        "n_contexts": int(frame["context"].nunique()),
+    }
+
+
+def _classify(batt: dict, holm_p: float | None = None) -> str:
+    """wins+ / wins- / null / indet from one space's registered battery."""
+    pp = batt["pooled_partial"]
+    dcv = batt["delta_cv_r2"]
+    pin = batt["pinned_fit"]
+    p_partial = holm_p if holm_p is not None else pp["p_two_sided"]
+    partial_sig = p_partial < 0.05 and not np.isnan(pp["point"])
+    dcv_pos = dcv["ci95"][0] > 0
+    dcv_null = dcv["ci95"][0] <= 0 <= dcv["ci95"][1]
+    partial_null = pp["ci95"][0] <= 0 <= pp["ci95"][1]
+    if dcv_pos and partial_sig:
+        # Level DVs carry no pinned fit (pinned == "none" -> NaN): sign routes
+        # on the pooled partial alone there; shift spaces require the pooled
+        # partial AND the pinned primary fit to agree (plan section 3).
+        pin_pt = pp["point"] if np.isnan(pin["point"]) else pin["point"]
+        if pp["point"] > 0 and pin_pt > 0:
+            return "wins+"
+        if pp["point"] < 0 and pin_pt < 0:
+            return "wins-"
+        return "indet"
+    if dcv_null and partial_null:
+        return "null"
+    return "indet"
+
+
+def evaluate_lattice(
+    level_cls: str, shift_logp_cls: str, shift_margin_cls: str, pooled_rho_upper: float
+) -> dict:
+    """The pre-registered section-3 lattice, sign-routed. Non-enumerated cells
+    ship as indeterminate (no analyzer-discretion verdicts)."""
+    key = (level_cls, shift_logp_cls, shift_margin_cls)
+    if level_cls == "indet":
+        verdict = "indeterminate: registered statistics disagree on H-level; no lattice row"
+    elif level_cls == "null":
+        verdict = (
+            "prior signal not reproduced at matched geometry — check realized prior-range "
+            "coverage vs the parent's high stratum (range restriction) BEFORE narrating "
+            "cohort-confounded"
+        )
+    elif key == ("wins+", "null", "null"):
+        if pooled_rho_upper < SURVIVES_RHO_UPPER:
+            verdict = "prior = standing-level term; gate survives similarity-only (MDE stated)"
+        else:
+            verdict = "no detected overlap effect; underpowered for small terms (CI upper >= 0.2)"
+    elif key == ("wins+", "wins+", "null"):
+        verdict = "compression channel: prior enters through softmax measurement, not the gate"
+    elif key == ("wins+", "wins+", "wins+"):
+        verdict = "GATE NEEDS A BEHAVIOR-OVERLAP TERM — rank-1 model revision"
+    elif level_cls == "wins+" and ("wins-" in (shift_logp_cls, shift_margin_cls)):
+        verdict = (
+            "headroom/coupling/shrinkage: negative prior->shift "
+            "(base-containment) — NOT gate evidence"
+        )
+    elif key == ("wins+", "null", "wins+"):
+        verdict = "margin-only overlap signal: suggestive mechanism-space evidence, cap MODERATE"
+    else:
+        verdict = "indeterminate: outcome cell not enumerated — report both statistics, no row"
+    return {
+        "h_level": level_cls,
+        "h_shift_logprob": shift_logp_cls,
+        "h_shift_eos_margin": shift_margin_cls,
+        "verdict": verdict,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Family analyses
+# ---------------------------------------------------------------------------
+def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
+    frame, sel = build_marker_frame(out_root)
+    logger.info(
+        "[phase=p7_marker] frame: %d cells, %d contexts", len(frame), frame["context"].nunique()
+    )
+
+    res: dict = {"schema_version": "issue605_v1", "family": "marker"}
+    common = dict(sim_col="cos", prior_col="prior", group_col="context", n_boot=n_boot)
+    # Shift DVs (the gate question proper).
+    shift = {
+        "logprob": registered_battery(frame, "dlogp", pinned="tobit", **common),
+        "eos_margin": registered_battery(frame, "dmargin", pinned="rank", **common),
+    }
+    holm = _holm({k: v["pooled_partial"]["p_two_sided"] for k, v in shift.items()})
+    for k in shift:
+        shift[k]["pooled_partial"]["p_holm_over_shift_spaces"] = holm[k]
+    # Level DVs.
+    level = {
+        "emission_rate": registered_battery(frame, "emission_rate", pinned="none", **common),
+        "trained_logp": registered_battery(frame, "trained_logp", pinned="none", **common),
+    }
+    res["registered"] = {"shift": shift, "level": level}
+
+    level_cls = _classify(level["trained_logp"])
+    # H-level requires POSITIVE sign explicitly.
+    if level_cls == "wins-":
+        level_cls = "indet"
+    shift_logp_cls = _classify(
+        shift["logprob"], holm_p=shift["logprob"]["pooled_partial"]["p_holm_over_shift_spaces"]
+    )
+    shift_margin_cls = _classify(
+        shift["eos_margin"],
+        holm_p=shift["eos_margin"]["pooled_partial"]["p_holm_over_shift_spaces"],
+    )
+    rho_upper = max(
+        shift["logprob"]["pooled_partial"]["ci95"][1],
+        shift["eos_margin"]["pooled_partial"]["ci95"][1],
+    )
+    res["lattice"] = evaluate_lattice(level_cls, shift_logp_cls, shift_margin_cls, rho_upper)
+
+    # Diagnostics (plan 11.5).
+    coll_overall = abs(_pearson(frame["cos"].to_numpy(), frame["prior"].to_numpy()))
+    coll_by_band = {
+        b: abs(
+            _pearson(
+                frame[frame["band"] == b]["cos"].to_numpy(),
+                frame[frame["band"] == b]["prior"].to_numpy(),
+            )
+        )
+        for b in sorted(frame["band"].unique())
+    }
+    coll_fired = coll_overall > COLLINEARITY_GATE or any(
+        v > COLLINEARITY_GATE for v in coll_by_band.values() if not np.isnan(v)
+    )
+    tercile_fallback = {}
+    if coll_fired:
+        pri_terc = pd.qcut(frame["prior"], 3, labels=["pT1", "pT2", "pT3"])
+        tercile_fallback = {
+            str(t): float(frame.loc[pri_terc == t, "dlogp"].median()) for t in ("pT1", "pT2", "pT3")
+        }
+    prompt_lens = frame["context"].map(_marker_prompt_token_len_map(frame))
+    frame["prompt_len"] = prompt_lens
+    src_mean_d = frame.groupby("source")["dlogp"].transform("mean").to_numpy()
+    diagnostics = {
+        "corr_prior_vs_base_term_at_trained_slot": float(
+            spearmanr(frame["prior"], frame["base_logp_matched"]).statistic
+        ),
+        "base_covariate_partial_dlogp": partial_spearman(
+            frame["dlogp"].to_numpy(),
+            frame["prior"].to_numpy(),
+            covars=[frame["cos"].to_numpy(), src_mean_d, frame["base_logp_matched"].to_numpy()],
+            dummies=_band_dummies(frame["band"]),
+        ),
+        "split_probe_complement_partial": partial_spearman(
+            frame["dlogp_oddq"].to_numpy(),
+            frame["prior"].to_numpy(),
+            covars=[frame["cos"].to_numpy(), src_mean_d],
+            dummies=_band_dummies(frame["band"]),
+        ),
+        "prompt_length_covariate_partial": partial_spearman(
+            frame["dlogp"].to_numpy(),
+            frame["prior"].to_numpy(),
+            covars=[frame["cos"].to_numpy(), src_mean_d, frame["prompt_len"].to_numpy()],
+            dummies=_band_dummies(frame["band"]),
+        ),
+        "cov_negsim_partial": partial_spearman(
+            frame["dlogp"].to_numpy(),
+            frame["prior"].to_numpy(),
+            covars=[frame["cos"].to_numpy(), src_mean_d, frame["negsim"].to_numpy()],
+            dummies=_band_dummies(frame["band"]),
+        ),
+        "affordance_class_stratified": {
+            cls: pooled_partial(frame[frame["affordance_class"] == cls], "dlogp", "prior", "cos")
+            for cls in sorted(frame["affordance_class"].unique())
+            if (frame["affordance_class"] == cls).sum() >= 20
+        },
+        "centered_bank_cosine_sensitivity": {
+            "pooled_partial_shift": pooled_partial(frame, "dlogp", "prior", "cos_centered"),
+            "delta_cv_r2": delta_cv_r2(frame, "dlogp", "prior", "cos_centered", "context"),
+            "label": "centered-bank cosine (#536) — sensitivity only, never mixed with raw",
+        },
+        "collinearity_gate": {
+            "abs_pearson_overall": coll_overall,
+            "by_band": coll_by_band,
+            "fired": bool(coll_fired),
+            "tercile_median_dlogp_fallback": tercile_fallback,
+        },
+        "saturation_map": _saturation_map(frame),
+        "gkl_secondary_partial_shift": pooled_partial(frame, "dlogp", "prior", "gkl"),
+        "space_agreement_rho_dlogp_dmargin": float(
+            spearmanr(frame["dlogp"], frame["dmargin"]).statistic
+        ),
+        "legacy_anchor_drift": _legacy_drift(out_root),
+    }
+    res["diagnostics"] = diagnostics
+    res["panel_gate"] = {"gate_pass": sel["gate_pass"], "strata": sel["strata"]}
+    res["metadata"] = _repro_meta({"n_boot": n_boot, "analysis_seed": ANALYSIS_SEED})
+
+    _marker_figures(frame, res, figures_dir)
+    out = out_root / "marker" / "analysis.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(res, indent=1, default=float))
+    logger.info("[phase=p7_marker] written %s — lattice: %s", out, res["lattice"]["verdict"])
+    return res
+
+
+def _marker_prompt_token_len_map(frame: pd.DataFrame) -> dict[str, int]:
+    """Rendered system-prompt token length per context (prompt-length covariate)."""
+    from issue532_predictor_stress import _instructed_bystander_panel
+    from issue605_contexts import marker_candidates, marker_expansion_candidates
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct")
+    cands = marker_candidates()
+    cands.update(marker_expansion_candidates())
+    prompts = {lb: c["system_prompt"] for lb, c in cands.items()}
+    prompts.update(_instructed_bystander_panel())
+    out = {}
+    for ctx in frame["context"].unique():
+        text = prompts.get(ctx, ctx)  # condition cids fall back to label length
+        out[ctx] = len(tok.encode(text, add_special_tokens=False))
+    return out
+
+
+def _saturation_map(frame: pd.DataFrame) -> dict:
+    pri_terc = pd.qcut(frame["prior"], 3, labels=["pT1", "pT2", "pT3"], duplicates="drop")
+    out = {}
+    for t in pri_terc.cat.categories:
+        sub = frame[pri_terc == t]
+        out[str(t)] = {
+            "n_cells": len(sub),
+            "frac_saturated": float(sub["saturated"].mean()),
+            "frac_cells_with_emitting_slots": float((sub["n_emitting_slots"] > 0).mean()),
+            "non_emitting_slice_coverage": float((sub["n_emitting_slots"] == 0).mean()),
+        }
+    return out
+
+
+def _legacy_drift(out_root: Path) -> dict:
+    """Fresh-measured vs #532-recorded pair-similarity drift (QA only)."""
+    table = json.loads((out_root / "panel" / "marker_pair_table.json").read_text())
+    fresh_c, leg_c, fresh_g, leg_g = [], [], [], []
+    for r in table["rows"]:
+        if "legacy_cos_532" in r:
+            fresh_c.append(r["cos_l21"])
+            leg_c.append(r["legacy_cos_532"])
+            fresh_g.append(r["gkl_l22"])
+            leg_g.append(r["legacy_gkl_532"])
+    if not fresh_c:
+        return {"n_pairs": 0}
+    return {
+        "n_pairs": len(fresh_c),
+        "cos_rank_corr": float(spearmanr(fresh_c, leg_c).statistic),
+        "gkl_rank_corr": float(spearmanr(fresh_g, leg_g).statistic),
+        "cos_max_abs_diff": float(np.max(np.abs(np.array(fresh_c) - np.array(leg_c)))),
+    }
+
+
+def analyze_fact(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
+    frame, sel = build_fact_frame(out_root)
+    logger.info(
+        "[phase=p7_fact] frame: %d cell-personas, %d personas",
+        len(frame),
+        frame["context"].nunique(),
+    )
+    res: dict = {"schema_version": "issue605_v1", "family": "fact"}
+    common = dict(sim_col="cos", prior_col="prior", group_col="context", n_boot=n_boot)
+    shift = {"tf_delta": registered_battery(frame, "tf_delta", pinned="rank", **common)}
+    level = {"leak_rate": registered_battery(frame, "leak_rate", pinned="none", **common)}
+    res["registered"] = {"shift": shift, "level": level}
+
+    # Proxy validation (pre-registered): TF delta must track judged leak.
+    m = ~(frame["tf_delta"].isna() | frame["leak_rate"].isna())
+    proxy_rho = (
+        float(spearmanr(frame.loc[m, "tf_delta"], frame.loc[m, "leak_rate"]).statistic)
+        if m.sum() >= 5
+        else float("nan")
+    )
+    proxy_valid = bool(proxy_rho > PROXY_RHO_MIN)
+    res["tf_proxy_validation"] = {
+        "rho_tf_delta_vs_leak": proxy_rho,
+        "threshold": PROXY_RHO_MIN,
+        "valid": proxy_valid,
+        "n_cell_personas": int(m.sum()),
+    }
+
+    level_cls = _classify(level["leak_rate"])
+    if level_cls == "wins-":
+        level_cls = "indet"
+    if proxy_valid:
+        shift_cls = _classify(shift["tf_delta"])
+        # Single shift space for facts: the lattice's two-space conjunction
+        # degenerates to the one validated space (reported as such).
+        res["lattice"] = evaluate_lattice(
+            level_cls,
+            shift_cls,
+            shift_cls,
+            shift["tf_delta"]["pooled_partial"]["ci95"][1],
+        )
+        res["lattice"]["note"] = (
+            "fact family has ONE shift space (TF delta, proxy-validated); the two-space "
+            "conjunction degenerates to it"
+        )
+    else:
+        res["lattice"] = {
+            "h_level": level_cls,
+            "verdict": "fact H-shift read PROXY-INVALID (rho <= 0.4 vs judged leak) — "
+            "level DV stands alone",
+        }
+
+    src_mean = frame.groupby("source")["tf_delta"].transform("mean").to_numpy()
+    res["diagnostics"] = {
+        "cov_negsim_partial": _fact_negsim_partial(out_root, frame, src_mean),
+        "per_arm_pooled_partial_shift": {
+            a: pooled_partial(frame[frame["arm"] == a], "tf_delta", "prior", "cos")
+            for a in sorted(frame["arm"].unique())
+        },
+        "collinearity_gate": {
+            "abs_pearson_overall": abs(
+                _pearson(frame["cos"].to_numpy(), frame["prior"].to_numpy())
+            ),
+        },
+    }
+    res["panel_gate"] = {a: {"gate_pass": sel["per_arm"][a]["gate_pass"]} for a in sel["per_arm"]}
+    res["metadata"] = _repro_meta({"n_boot": n_boot, "analysis_seed": ANALYSIS_SEED})
+
+    _fact_figures(frame, res, figures_dir)
+    out = out_root / "fact" / "analysis.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(res, indent=1, default=float))
+    logger.info("[phase=p7_fact] written %s — lattice: %s", out, res["lattice"]["verdict"])
+    return res
+
+
+def _fact_negsim_partial(out_root: Path, frame: pd.DataFrame, src_mean: np.ndarray) -> float:
+    """cov_negsim for the fact family: similarity to the nearest #541
+    training negative, from the Phase-4 activation cache (free)."""
+    acts_dir = out_root / "panel" / "fact_measure" / "acts"
+    negatives = ("assistant", "software_engineer", "kindergarten_teacher", "no_system")
+    if not all((acts_dir / f"{n}.npz").exists() for n in negatives):
+        return float("nan")
+    from issue532_predictor_stress import _cosine_predictor
+
+    neg_acts = {}
+    for n in negatives:
+        with np.load(acts_dir / f"{n}.npz") as z:
+            neg_acts[n] = z["21"]
+    negsim = []
+    for p in frame["context"]:
+        path = acts_dir / f"{p}.npz"
+        if not path.exists():
+            negsim.append(np.nan)
+            continue
+        with np.load(path) as z:
+            a = z["21"]
+        negsim.append(max(_cosine_predictor(a, neg_acts[n]) for n in negatives))
+    negsim = np.array(negsim, dtype=float)
+    if np.isnan(negsim).all():
+        return float("nan")
+    return partial_spearman(
+        frame["tf_delta"].to_numpy(),
+        frame["prior"].to_numpy(),
+        covars=[frame["cos"].to_numpy(), src_mean, np.nan_to_num(negsim, nan=np.nanmean(negsim))],
+        dummies=_band_dummies(frame["band"]),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Figures
+# ---------------------------------------------------------------------------
+def _set_style():
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style()
+
+
+def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    _set_style()
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    bands = ["band_lo", "band_mid", "band_hi"]
+
+    # HERO 1 — within-band shift-vs-prior scatter, log-prob + EOS-margin rows.
+    fig, axes = plt.subplots(2, 3, figsize=(13, 8), sharex=True)
+    for row, dv in enumerate(("dlogp", "dmargin")):
+        for col, band in enumerate(bands):
+            ax = axes[row][col]
+            sub = frame[frame["band"] == band]
+            sat = sub["saturated"]
+            ax.scatter(sub.loc[~sat, "prior"], sub.loc[~sat, dv], s=10, alpha=0.5, color="#1f77b4")
+            ax.scatter(
+                sub.loc[sat, "prior"],
+                sub.loc[sat, dv],
+                s=10,
+                alpha=0.5,
+                color="#d62728",
+                marker="x",
+            )
+            if row == 0:
+                ax.set_title(f"{band} (n={sub['context'].nunique()} ctx)")
+            if col == 0:
+                ax.set_ylabel(
+                    "Δlog P(marker) trained-base"
+                    if dv == "dlogp"
+                    else "Δ(z_marker - z_eos) trained-base"
+                )
+            ax.set_xlabel("base log P(marker) at corrected slot (graded prior)")
+    savefig_paper(fig, "hero_shift_vs_prior_by_band", dir=fig_dir)
+    plt.close(fig)
+
+    # HERO 2 — delta-CV-R^2 ladder bars with bootstrap CIs.
+    fig, ax = plt.subplots(figsize=(8, 5))
+    entries = []
+    for cls_name, group in res["registered"].items():
+        for space, batt in group.items():
+            d = batt["delta_cv_r2"]
+            entries.append((f"{cls_name}/{space}", d["point"], d["ci95"]))
+    x = np.arange(len(entries))
+    pts = [e[1] for e in entries]
+    los = [max(0.0, e[1] - e[2][0]) for e in entries]
+    his = [max(0.0, e[2][1] - e[1]) for e in entries]
+    ax.bar(x, pts, color="#1f77b4")
+    ax.errorbar(x, pts, yerr=[los, his], fmt="none", ecolor="black", capsize=3)
+    ax.set_xticks(x, [e[0] for e in entries], rotation=20, ha="right")
+    ax.axhline(0, color="black", lw=0.8)
+    ax.set_ylabel("ΔCV-R² (prior beyond similarity + source FE)")
+    savefig_paper(fig, "hero_delta_cv_r2_ladder", dir=fig_dir)
+    plt.close(fig)
+
+    # Panel-construction QA: realized similarity x prior grid with band edges.
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for cls, color in (
+        ("near_twin", "#1f77b4"),
+        ("related", "#2ca02c"),
+        ("unrelated", "#7f7f7f"),
+        ("symbol_flavored", "#9467bd"),
+        ("legacy", "#d62728"),
+    ):
+        sub = frame[frame["content_class"] == cls]
+        if len(sub):
+            ax.scatter(sub["cos"], sub["prior"], s=10, alpha=0.5, color=color, label=cls)
+    for e in res.get("panel_gate", {}).get("strata", {}).values():
+        ax.axvspan(e["window"][0], e["window"][1], alpha=0.08, color="orange")
+    ax.set_xlabel("pair cosine @ L21 (raw pairwise)")
+    ax.set_ylabel("base log P(marker) (graded prior)")
+    ax.legend(frameon=False, fontsize=8)
+    savefig_paper(fig, "panel_grid_similarity_x_prior", dir=fig_dir)
+    plt.close(fig)
+
+    # Level-DV hero + per-space leaderboard + raw-vs-residualized.
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+    axes[0].scatter(frame["prior"], frame["emission_rate"], s=10, alpha=0.4)
+    axes[0].set_xlabel("graded prior")
+    axes[0].set_ylabel("on-policy emission rate (level)")
+    axes[1].scatter(frame["prior"], frame["trained_logp"], s=10, alpha=0.4, color="#2ca02c")
+    axes[1].set_xlabel("graded prior")
+    axes[1].set_ylabel("absolute trained log P(marker) (level)")
+    savefig_paper(fig, "level_dvs_vs_prior", dir=fig_dir)
+    plt.close(fig)
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    ry = rankdata(frame["dlogp"])
+    rx = rankdata(frame["prior"])
+    src_mean = frame.groupby("source")["dlogp"].transform("mean").to_numpy()
+    C = _design([frame["cos"].to_numpy(), src_mean], _band_dummies(frame["band"]), len(frame))
+    res_y = ry - C @ np.linalg.lstsq(C, ry, rcond=None)[0]
+    res_x = rx - C @ np.linalg.lstsq(C, rx, rcond=None)[0]
+    ax.scatter(res_x, res_y, s=10, alpha=0.4)
+    ax.set_xlabel("prior rank residual (| cos + band FE + source mean)")
+    ax.set_ylabel("Δlog P rank residual")
+    savefig_paper(fig, "residualized_shift_vs_prior", dir=fig_dir)
+    plt.close(fig)
+
+
+def _fact_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper
+
+    _set_style()
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
+    for arm, marker in zip(sorted(frame["arm"].unique()), "o^s", strict=False):
+        sub = frame[frame["arm"] == arm]
+        axes[0].scatter(sub["prior"], sub["tf_delta"], s=12, alpha=0.5, marker=marker, label=arm)
+        axes[1].scatter(sub["prior"], sub["leak_rate"], s=12, alpha=0.5, marker=marker, label=arm)
+    axes[0].set_xlabel("base TF prior (nat/token)")
+    axes[0].set_ylabel("TF Δlog P(taught completion) (nat/token)")
+    axes[1].set_xlabel("base TF prior (nat/token)")
+    axes[1].set_ylabel("judged leak rate (stated_seven)")
+    axes[0].legend(frameon=False, fontsize=7)
+    savefig_paper(fig, "fact_shift_and_level_vs_prior", dir=fig_dir)
+    plt.close(fig)
+
+
+# ---------------------------------------------------------------------------
+# Synthetic stub (CPU end-to-end smoke; schema-true, planted effect)
+# ---------------------------------------------------------------------------
+def synthesize_stub(root: Path) -> None:
+    """Write a tiny artifact tree matching the production schemas with a
+    PLANTED positive prior->shift effect (smoke assertion target)."""
+    rng = np.random.default_rng(7)
+    sources = ["A1", "A2", "B1", "D1"]
+    contexts = [
+        f"m605_stub_{i:02d}__{a}"
+        for i, a in enumerate(["none"] * 4 + ["soft"] * 4 + ["explicit"] * 4)
+    ]
+    cos_vals = np.linspace(0.62, 0.95, len(contexts))
+    prior_vals = np.tile([-18.0, -12.0, -6.0, -2.0], 3) + rng.normal(0, 0.5, len(contexts))
+    n_probes = 6
+
+    pair_rows = []
+    for s_i, s in enumerate(sources):
+        for c_i, c in enumerate(contexts):
+            pair_rows.append(
+                {
+                    "source_cid": s,
+                    "context_label": c,
+                    "cos_l21": float(np.clip(cos_vals[c_i] + 0.01 * s_i, 0, 0.999)),
+                    "gkl_l22": float(10 * (1 - cos_vals[c_i]) + rng.normal(0, 0.2)),
+                    "cos_centered_bank": float(cos_vals[c_i] - 0.5),
+                    "prior_logp": float(prior_vals[c_i]),
+                    "prior_source": "measured_605",
+                    "sim_to_nearest_negative": float(cos_vals[c_i] * 0.9),
+                    "content_class": "near_twin" if c_i < 6 else "unrelated",
+                    "affordance_class": c.rsplit("__", 1)[1],
+                    "is_legacy": False,
+                }
+            )
+    panel_dir = root / "panel"
+    panel_dir.mkdir(parents=True, exist_ok=True)
+    (panel_dir / "marker_pair_table.json").write_text(
+        json.dumps(
+            {"schema_version": "issue605_v1", "n_contexts": len(contexts), "rows": pair_rows},
+            indent=1,
+        )
+    )
+    cos_all = np.array([r["cos_l21"] for r in pair_rows])
+    edges = np.quantile(cos_all, [1 / 3, 2 / 3])
+    (panel_dir / "marker_panel_selection.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "issue605_v1",
+                "band_edges_terciles": [float(edges[0]), float(edges[1])],
+                "panel": contexts,
+                "panel_size": len(contexts),
+                "gate_pass": True,
+                "strata": {
+                    "band_lo": {"window": [0.62, 0.68], "gate": {"verdict": True}},
+                    "band_mid": {"window": [0.74, 0.80], "gate": {"verdict": True}},
+                    "band_hi": {"window": [0.88, 0.94], "gate": {"verdict": True}},
+                },
+            },
+            indent=1,
+        )
+    )
+
+    def slot_read(logp: float, margin: float) -> dict:
+        z_eos = 10.0
+        return {
+            "logp_marker": float(logp),
+            "z_marker": float(z_eos + margin),
+            "z_eos": z_eos,
+            "logZ": float(z_eos + margin - logp),
+            "logp_bare_marker": float(logp - 2),
+            "argmax_id": 83399 if logp > -0.05 else 151645,
+            "slot_kind": "end_of_response",
+            "emitted_id": None,
+            "n_truncated_tokens": 0,
+        }
+
+    for d in ("per_cell_trained", "per_cell_base", "gen"):
+        (root / "marker" / d).mkdir(parents=True, exist_ok=True)
+    for s_i, s in enumerate(sources):
+        for c_i, c in enumerate(contexts):
+            pr = pair_rows[s_i * len(contexts) + c_i]
+            base_logp = pr["prior_logp"] + rng.normal(0, 0.3)
+            # PLANTED effect: shift rises with prior AND cos.
+            shift = 4.0 + 0.25 * (pr["prior_logp"] + 10) + 6 * (pr["cos_l21"] - 0.75)
+            shift += 0.5 * s_i + rng.normal(0, 0.4)
+            t_q = [
+                slot_read(
+                    min(base_logp + shift + rng.normal(0, 0.3), -0.01), shift + rng.normal(0, 0.5)
+                )
+                for _ in range(n_probes)
+            ]
+            b_q = [
+                slot_read(base_logp + rng.normal(0, 0.3), rng.normal(-8, 0.5))
+                for _ in range(n_probes)
+            ]
+            for d, per_q, phase in (
+                ("per_cell_trained", t_q, "p2_trained_on_own_R"),
+                ("per_cell_base", b_q, "p2_base_on_trained_R"),
+            ):
+                (root / "marker" / d / f"{s}__{c}.json").write_text(
+                    json.dumps(
+                        {
+                            "schema_version": "issue532_followup_logp_v1",
+                            "phase": phase,
+                            "source_cid": s,
+                            "context_label": c,
+                            "n_probes": n_probes,
+                            "per_q": per_q,
+                        },
+                        indent=1,
+                    )
+                )
+            emit = float(np.clip((np.mean([q["logp_marker"] for q in t_q]) + 8) / 8, 0, 1))
+            (root / "marker" / "gen" / f"{s}__{c}.json").write_text(
+                json.dumps(
+                    {"summary": {"in_R_emission_rate": emit, "in_R_emit_at_end_rate": emit * 0.9}},
+                    indent=1,
+                )
+            )
+
+    # Fact stub: 3 arms x 1 seed x 8 personas.
+    arms = ["marine_biologist", "courthouse_architecture_historian", "wooden_furniture_carpenter"]
+    personas = [f"f605_stub_{i}" for i in range(8)]
+    per_arm = {}
+    for a in arms:
+        cosv = np.linspace(0.55, 0.9, len(personas))
+        priv = np.linspace(-3.5, -2.6, len(personas))[np.argsort(rng.random(len(personas)))]
+        e = np.quantile(cosv, [1 / 3, 2 / 3])
+        per_arm[a] = {
+            "band_edges_terciles": [float(e[0]), float(e[1])],
+            "panel": personas,
+            "gate_pass": True,
+            "per_persona": {
+                p: {"prior_nat_per_tok": float(priv[i]), "cos_to_teacher": float(cosv[i])}
+                for i, p in enumerate(personas)
+            },
+        }
+    (panel_dir / "fact_panel_selection.json").write_text(
+        json.dumps({"schema_version": "issue605_v1", "per_arm": per_arm}, indent=1)
+    )
+    for d in ("judged", "tf"):
+        (root / "fact" / d).mkdir(parents=True, exist_ok=True)
+    for a in arms:
+        for p in personas:
+            meta = per_arm[a]["per_persona"][p]
+            delta = 0.15 + 0.3 * (meta["prior_nat_per_tok"] + 3.0) + rng.normal(0, 0.03)
+            leak = float(np.clip(0.3 + 1.5 * delta + rng.normal(0, 0.05), 0, 1))
+            tag = f"arm_{a}_seed42__{p}"
+            (root / "fact" / "judged" / f"{tag}.json").write_text(
+                json.dumps(
+                    {
+                        "arm": a,
+                        "seed": 42,
+                        "persona": p,
+                        "summary": {
+                            "n_rows": 10,
+                            "stated_seven": int(leak * 10),
+                            "leak_rate": leak,
+                            "judge_failed_rows": 0,
+                        },
+                    },
+                    indent=1,
+                )
+            )
+            (root / "fact" / "tf" / f"{tag}.json").write_text(
+                json.dumps(
+                    {
+                        "arm": a,
+                        "seed": 42,
+                        "persona": p,
+                        "summary": {
+                            "mean_delta_logprob_per_tok": float(delta),
+                            "frac_rows_positive_delta": 0.9,
+                            "n_scored": 12,
+                        },
+                    },
+                    indent=1,
+                )
+            )
+    logger.info("synthetic stub written under %s", root)
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
+    ap = argparse.ArgumentParser(
+        description="Issue #605 Phase 7 analysis (registered statistics + lattice + figures).",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    ap.add_argument("--families", default="marker,fact")
+    ap.add_argument("--out-root", type=Path, default=Path("eval_results/issue_605"))
+    ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_605"))
+    ap.add_argument("--n-boot", type=int, default=1000)
+    ap.add_argument(
+        "--synthesize-stub",
+        type=Path,
+        default=None,
+        help="write a synthetic artifact tree here, then analyze it",
+    )
+    args = ap.parse_args()
+
+    if args.synthesize_stub is not None:
+        synthesize_stub(args.synthesize_stub)
+        args.out_root = args.synthesize_stub
+
+    for fam in args.families.split(","):
+        if fam == "marker":
+            analyze_marker(args.out_root, args.figures_dir, args.n_boot)
+        elif fam == "fact":
+            analyze_fact(args.out_root, args.figures_dir, args.n_boot)
+        else:
+            raise SystemExit(f"unknown family {fam!r}")
+    logger.info("[phase=done] analysis complete")
+
+
+if __name__ == "__main__":
+    main()
