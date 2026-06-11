@@ -1,0 +1,9 @@
+{
+  "phase": "teacher-self-eval-upload",
+  "bucket": "issue541_prior_stratified/teacher_self_assertion/arm_top_prior_wooden_furniture_carpenter",
+  "hf_data_repo": "superkaiba1/explore-persona-space-data",
+  "n_files_uploaded": 0,
+  "n_files_skipped_existing": 6,
+  "files": [],
+  "timestamp": "2026-06-11T01:48:30.649541+00:00"
+}
