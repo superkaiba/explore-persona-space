@@ -18,7 +18,7 @@
  * default (a toggle reveals it). The List view keeps the original
  * grouped-by-status accordion.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TaskListing, Track } from "@/lib/tasks";
@@ -65,6 +65,25 @@ export function TaskBoard({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showArchived, setShowArchived] = useState(false);
+
+  // Lightweight auto-refresh: the board has no live data channel, so a tab
+  // left open drifts behind the workflow. Re-pull the RSC payload (the
+  // force-dynamic server page re-reads tasks/ from disk) every 60s while
+  // visible, and immediately on tab refocus. Client view state (track tab,
+  // view mode, scroll) survives router.refresh().
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    const id = setInterval(refresh, 60_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [router]);
 
   const view: ViewMode =
     (searchParams.get("view") as ViewMode | null) === "list"

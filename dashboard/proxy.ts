@@ -7,14 +7,17 @@
  *   - "/results"           (public clean-result catalog)
  *   - "/results/*"         (public clean-result detail)
  *   - "/questions"         (public research hub — auto-rendered from
- *                          docs/open_questions.md; only NON-public
- *                          evidence renders as gated /tasks links)
+ *                          docs/open_questions.md)
+ *   - "/tasks", "/tasks/*" (task board + detail — GET/HEAD only; non-GET
+ *                          methods stay gated so server-action mutations
+ *                          require auth, and /tasks/[id]/edit stays gated
+ *                          entirely)
  *   - "/sign-in"           (login page)
  *   - "/api/auth/password" (login endpoint — must be reachable to sign in)
  *   - Next assets          (/_next/*, /favicon*, static files)
  *
- * Everything else — /tasks, /docs, /updates, /literature, /preview, the
- * task edit/plan routes, and ALL other /api/* (incl. /api/sidecar/*,
+ * Everything else — /docs, /updates, /literature, /preview, the task
+ * edit routes, and ALL other /api/* (incl. /api/sidecar/*,
  * /api/chat-token, /api/docs/*, /api/log/*, /api/updates/*) — is gated.
  *
  * FAILS CLOSED:
@@ -51,13 +54,23 @@ function authSecretBytes(): Uint8Array | null {
  * excluded by the matcher below, but we re-check `_next`/`favicon` here as a
  * belt-and-suspenders guard in case the matcher is ever loosened.
  */
-function isPublicPath(pathname: string): boolean {
+function isPublicPath(pathname: string, method: string): boolean {
   // Overview (exact root only).
   if (pathname === "/") return true;
   // Public clean-result catalog + detail.
   if (pathname === "/results" || pathname.startsWith("/results/")) return true;
   // Public research hub (auto-rendered from docs/open_questions.md).
   if (pathname === "/questions" || pathname.startsWith("/questions/")) return true;
+  // Task board + task detail are public READ-ONLY. Non-GET methods stay
+  // gated because Next server actions (comment/edit mutations) POST to the
+  // page's own URL; the /tasks/[id]/edit surface stays gated entirely.
+  if (
+    (method === "GET" || method === "HEAD") &&
+    (pathname === "/tasks" || pathname.startsWith("/tasks/")) &&
+    !/^\/tasks\/[^/]+\/edit(\/|$)/.test(pathname)
+  ) {
+    return true;
+  }
   // Login page + login endpoint (must be reachable to authenticate).
   if (pathname === "/sign-in" || pathname.startsWith("/sign-in/")) return true;
   if (pathname === "/api/auth/password") return true;
@@ -73,7 +86,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Public allowlist: skip the auth check entirely.
-  if (isPublicPath(pathname)) return NextResponse.next();
+  if (isPublicPath(pathname, request.method)) return NextResponse.next();
 
   const secret = authSecretBytes();
   if (!secret) {
