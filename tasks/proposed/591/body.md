@@ -14,6 +14,10 @@ goal: 'Explain the leak/no-leak structure across (source, behavior) cells for th
   affinity (bystander base propensity for the behavior), or training-negative coverage;
   including at least one causal test (e.g. an eval-side near-twin probe on isolated
   sources) rather than correlational re-analysis alone.'
+relates_to:
+- leak-behavior-vs-marker
+- leak-predictor
+- leak-data-factors
 ---
 # Why do some (source, behavior) panels show zero leakage? Cross-behavior test of isolation vs implant-strength vs affinity explanations on sycophancy, refusal, and emergent misalignment
 
