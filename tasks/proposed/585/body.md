@@ -10,6 +10,9 @@ goal: 'Measure the true training-maturity curve of the #504 saturated-anchor smo
   cell by re-evaluating its six verified per-fraction adapter snapshots through the
   fixed distinct-id eval path, replacing the stale six-reads-of-one-adapter calibration
   table with real per-fraction numbers.'
+relates_to:
+- implant-learning-speed
+- leak-contrastive-negatives
 ---
 ## Goal
 
