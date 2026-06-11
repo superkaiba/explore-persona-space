@@ -5,6 +5,7 @@ title: Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-
 kind: experiment
 tags:
 - followup
+- followup-manual
 created_at: '2026-06-09T16:08:18Z'
 has_clean_result: true
 parent_id: 529
