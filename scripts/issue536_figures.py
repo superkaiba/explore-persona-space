@@ -31,6 +31,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.lines import Line2D
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "src"))
@@ -126,16 +127,31 @@ def fig_hero(payload: dict, rows: dict) -> None:
     )
 
     set_paper_style()
-    fig, ax = plt.subplots(figsize=(7.0, 4.2))
+    grey = paper_palette_role("neutral")
+    fig, ax = plt.subplots(figsize=(7.0, 4.6))
     for i, (_name, r, m, label, approx) in enumerate(items):
         color = _color_for(label)
         ax.plot([r, m], [i, i], "-", color=color, lw=1.6, zorder=1)
-        face_raw = "white" if approx else paper_palette_role("baseline")
-        face_mc = "white" if approx else color
-        ax.scatter(
-            [r], [i], s=46, facecolor=face_raw, edgecolor=paper_palette_role("baseline"), zorder=2
-        )
-        ax.scatter([m], [i], s=46, facecolor=face_mc, edgecolor=color, zorder=2)
+        # Raw recipe: ALWAYS an open grey circle (explicit linewidths — the
+        # blog style zeroes lines.markeredgewidth, which made open markers
+        # invisible in the round-1 render).
+        ax.scatter([r], [i], s=52, facecolor="white", edgecolor=grey, linewidths=1.4, zorder=3)
+        # Mean-centered: filled circle in the re-grade color for exact rows;
+        # open SQUARE (white face, colored edge) for matrix-only approx rows
+        # so the sensitivity namespace is visually unmistakable.
+        if approx:
+            ax.scatter(
+                [m],
+                [i],
+                s=52,
+                facecolor="white",
+                edgecolor=color,
+                linewidths=1.4,
+                marker="s",
+                zorder=3,
+            )
+        else:
+            ax.scatter([m], [i], s=52, facecolor=color, edgecolor=color, linewidths=0.8, zorder=3)
         ax.annotate(
             label,
             xy=(max(r, m) + 0.02, i),
@@ -147,8 +163,42 @@ def fig_hero(payload: dict, rows: dict) -> None:
     ax.set_yticklabels([t[0] for t in items], fontsize=8)
     ax.set_xlabel("|scale-invariant statistic| (Spearman rho)")
     ax.set_xlim(0, 1.18)
-    ax.set_title("Raw (open/grey) vs mean-centered (filled) — re-grade per task")
-    fig.tight_layout()
+    ax.set_title("Six dumbbell-representable re-graded statistics, raw vs mean-centered")
+    handles = [
+        Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            markerfacecolor="white",
+            markeredgecolor=grey,
+            markeredgewidth=1.4,
+            markersize=7,
+            label="raw recipe (open circle)",
+        ),
+        Line2D(
+            [],
+            [],
+            marker="o",
+            linestyle="",
+            markerfacecolor=grey,
+            markeredgecolor=grey,
+            markersize=7,
+            label="mean-centered (filled, re-grade color)",
+        ),
+        Line2D(
+            [],
+            [],
+            marker="s",
+            linestyle="",
+            markerfacecolor="white",
+            markeredgecolor=paper_palette_role("control"),
+            markeredgewidth=1.4,
+            markersize=7,
+            label="approximate matrix-only read (open square)",
+        ),
+    ]
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=7)
     savefig_paper(fig, "issue_536/hero_regrade_dumbbell", dir=FIGDIR)
     plt.close(fig)
 
@@ -156,16 +206,25 @@ def fig_hero(payload: dict, rows: dict) -> None:
 def fig_histograms(payload: dict) -> None:
     """Per-bank off-diagonal distributions, raw vs centered."""
     banks = dict(payload["bank_offdiag"])
-    banks["issue406_gram_L21 (approx)"] = {
+    banks["issue406_gram_L21"] = {
         "raw": payload["fig_474"]["offdiag_L21"]["raw"],
         "centered": payload["fig_474"]["offdiag_L21"]["centered"],
     }
+    # Reader-facing panel titles (the bare slugs are project-internal and
+    # banned from rendered figure text). Order matches the body's alt text.
+    panel_titles = [
+        ("extraction_method_a_L20", "20-persona extraction bank (layer 20)"),
+        ("issue406_gram_L21", "16-condition lineage bank\n(layer 21, approx)"),
+        ("issue505_pv_L21", "60-persona persona-vector bank\n(layer 21)"),
+        ("single_token_100p_L20", "111-persona bank (layer 20)"),
+    ]
     set_paper_style()
     n = len(banks)
     fig, axes = plt.subplots(1, n, figsize=(3.0 * n, 2.9), sharey=False)
     if n == 1:
         axes = [axes]
-    for ax, (name, blob) in zip(axes, sorted(banks.items()), strict=True):
+    ordered = [(title, banks[slug]) for slug, title in panel_titles]
+    for ax, (name, blob) in zip(axes, ordered, strict=True):
         ax.hist(
             blob["raw"],
             bins=40,
@@ -227,37 +286,61 @@ def fig_band_crosstab(payload: dict) -> None:
     plt.close(fig)
 
 
+_FOREST_PREDICTOR_LABELS = {
+    "cos_to_assistant": "cosine to assistant",
+    "cos_to_neutral": "cosine to neutral",
+}
+_FOREST_SURFACE_LABELS = {
+    "logp_at_k0": "first-slot log-prob",
+    "logp_auc": "log-prob AUC",
+    "logp_end_of_response": "end-of-response log-prob",
+    "logp_max": "max log-prob",
+    "logp_mean": "mean log-prob",
+    "substring_match_rate": "marker emission rate",
+}
+
+
+def _forest_label(cell_key: str) -> str:
+    """Translate a `predictor|surface_diagonal_mean` slug into plain English."""
+    pred, surface = cell_key.split("|", 1)
+    surface = surface.removesuffix("_diagonal_mean")
+    return f"{_FOREST_PREDICTOR_LABELS[pred]} x {_FOREST_SURFACE_LABELS[surface]}"
+
+
 def fig_forest(payload: dict) -> None:
     """#396/#415 12-cell forest: raw vs centered length-partial rho."""
     cells = payload["fig_396_415"]["cells"]
     holm = payload["fig_396_415"]["holm"]
     names = sorted(cells)
     set_paper_style()
-    fig, ax = plt.subplots(figsize=(6.4, 0.42 * len(names) + 1.4))
+    fig, ax = plt.subplots(figsize=(6.8, 0.42 * len(names) + 1.4))
     for i, k in enumerate(names):
         c = cells[k]
+        # Explicit linewidths — the blog style zeroes lines.markeredgewidth,
+        # which rendered this open raw series invisible in round 1.
         ax.scatter(
             c["rho_partial_raw"],
-            i - 0.12,
-            s=30,
+            i - 0.14,
+            s=32,
             facecolor="white",
             edgecolor=paper_palette_role("baseline"),
+            linewidths=1.3,
+            zorder=3,
         )
         ax.scatter(
             c["rho_partial_centered"],
-            i + 0.12,
-            s=30,
+            i + 0.14,
+            s=32,
             color=paper_palette_role("accent" if holm[k] else "primary"),
+            zorder=3,
         )
     ax.axvline(0, color=paper_palette_role("neutral"), lw=0.8)
     ax.axvspan(-0.5, 0.5, color=paper_palette_role("neutral"), alpha=0.08)
+    ax.set_xlim(-0.62, 0.62)  # band edges visible, so "inside the band" is readable
     ax.set_yticks(range(len(names)))
-    ax.set_yticklabels(
-        [n.replace("_diagonal_mean", "").replace("cos_to_", "") for n in names], fontsize=7
-    )
-    ax.set_xlabel("length-partial Spearman rho (open = raw, filled = centered)")
+    ax.set_yticklabels([_forest_label(n) for n in names], fontsize=7)
+    ax.set_xlabel("length-partial Spearman rho (open orange = raw, filled blue = centered)")
     ax.set_title("#396/#415 12-cell family under the canonical metric (band = |rho| < 0.5)")
-    fig.tight_layout()
     savefig_paper(fig, "issue_536/forest_396_415", dir=FIGDIR)
     plt.close(fig)
 
