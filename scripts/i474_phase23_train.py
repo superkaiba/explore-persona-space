@@ -207,6 +207,35 @@ def _build_positive_rows(
     return rows
 
 
+def _resolve_bystander_panel(cond_id: str, bystander_ids: list[str] | None) -> list[str]:
+    """Resolve + validate the negative panel for ``_build_negative_rows``.
+
+    ``None`` -> the #474 broad default (all 15 non-source conditions, with
+    the historical count assert). An explicit panel must contain only
+    known condition ids, be duplicate-free, and be DISJOINT from the
+    source ``cond_id`` (contrastive-negatives.md hard invariant).
+    """
+    if bystander_ids is None:
+        resolved = [c.cid for c in CONDITIONS if c.cid != cond_id]
+        if len(resolved) != N_BYSTANDERS_EXPECTED:
+            raise AssertionError(
+                f"Expected {N_BYSTANDERS_EXPECTED} bystanders, got {len(resolved)}"
+            )
+        return resolved
+    unknown = [b for b in bystander_ids if b not in CONDITIONS_BY_ID]
+    if unknown:
+        raise AssertionError(f"bystander_ids not in CONDITIONS_BY_ID: {unknown}")
+    if len(set(bystander_ids)) != len(bystander_ids):
+        raise AssertionError(f"duplicate bystander ids: {bystander_ids}")
+    if cond_id in bystander_ids:
+        raise AssertionError(
+            f"disjointness violated: source {cond_id!r} appears in the negative "
+            f"panel {bystander_ids} — a persona cannot be both source and "
+            "contrastive negative (contrastive-negatives.md hard invariant)."
+        )
+    return list(bystander_ids)
+
+
 def _build_negative_rows(
     cond_id: str,
     q_train_answers: dict[str, str],
@@ -214,17 +243,38 @@ def _build_negative_rows(
     R_train: dict[str, dict[str, dict]],
     tokenizer,
     rng: np.random.Generator,
+    bystander_ids: list[str] | None = None,
+    n_per_bystander: int = N_NEG_PER_BYSTANDER,
 ) -> list[dict]:
-    """Broad contrastive negatives for ``cond_id``.
+    """Contrastive negatives for ``cond_id`` over a configurable bystander panel.
 
-    For each bystander T_j (≠ ``cond_id``), sample
-    ``N_NEG_PER_BYSTANDER=20`` Q_train questions and build a row whose
-    completion is ``R_j(q)`` with NO marker. Under
+    Default behavior (``bystander_ids=None, n_per_bystander=20``) is
+    path-identical to the original #474 broad recipe — same bystander
+    order, same per-bystander ``rng.choice(questions, size=20,
+    replace=False)`` draw sequence, same row content (#571 §14 unit check
+    asserts list equality defaults-vs-explicit). For each bystander T_j
+    (≠ ``cond_id``) the row completion is ``R_j(q)`` with NO marker. Under
     ``MarkerOnlyDataCollator(tail_tokens=0, suppress_at_post_response_slot=True,
     im_end_token_id=151645)``, no-marker rows get loss ONLY at the FIRST
     ``<|im_end|>`` in the completion region (``neg_ids[-2]``) — the SAME
     label slot the marker occupies on positives at ``pos_ids[-3]``, sharing
     the ``...Answer.`` conditioning context, the SAME slot the DV reads.
+
+    #571 parameterization:
+      - ``bystander_ids``: explicit panel (e.g. the narrow class-spanning
+        ``["A1", "B1", "C1", "D1"]``). ``None`` → all 15 non-source
+        conditions (the #474 broad panel).
+      - ``n_per_bystander``: rows per bystander. When it EXCEEDS the
+        30-question pool, full-coverage duplication is used: every
+        question appears ``n // 30`` times (whole passes over the sorted
+        question list) plus one extra ``rng.choice(questions, n % 30,
+        replace=False)`` draw (75 = 30x2 + 15 sampled).
+
+    Hard asserts: every explicit bystander id must exist in
+    ``CONDITIONS_BY_ID``; the panel must be duplicate-free and DISJOINT
+    from the source ``cond_id`` (contrastive-negatives.md disjointness
+    invariant); the returned row count must equal
+    ``len(bystander_ids) * n_per_bystander``.
 
     Rows are tagged ``_neg_source_i`` and ``_neg_bystander_j`` for the M5
     callback to group losses by (i, j). The tags do NOT affect the
@@ -232,18 +282,25 @@ def _build_negative_rows(
     sees them on the raw row dicts loaded from JSONL.
     """
     questions = sorted(q_train_answers.keys())
-    bystander_ids = [c.cid for c in CONDITIONS if c.cid != cond_id]
-    if len(bystander_ids) != N_BYSTANDERS_EXPECTED:
-        raise AssertionError(
-            f"Expected {N_BYSTANDERS_EXPECTED} bystanders, got {len(bystander_ids)}"
-        )
+    bystander_ids = _resolve_bystander_panel(cond_id, bystander_ids)
+    if n_per_bystander < 1:
+        raise AssertionError(f"n_per_bystander must be >= 1, got {n_per_bystander}")
 
     rows: list[dict] = []
     for cj_id in bystander_ids:
         cj = CONDITIONS_BY_ID[cj_id]
         if cj_id not in R_train:
             raise AssertionError(f"R_train missing bystander {cj_id!r}.")
-        sampled = rng.choice(questions, size=N_NEG_PER_BYSTANDER, replace=False)
+        if n_per_bystander <= len(questions):
+            sampled = list(rng.choice(questions, size=n_per_bystander, replace=False))
+        else:
+            # Full-coverage duplication (#571 narrow panel, 75 = 30*2 + 15):
+            # every question n//30 times, then one remainder draw without
+            # replacement for even per-question weighting up to the remainder.
+            reps, rem = divmod(n_per_bystander, len(questions))
+            sampled = [q for _ in range(reps) for q in questions]
+            if rem:
+                sampled.extend(rng.choice(questions, size=rem, replace=False))
         for q in sampled:
             R_j = R_train[cj_id][str(q)]["response_text"]
             messages = _build_messages_for_cond(cj, str(q), class_d_rewrites)
@@ -255,7 +312,7 @@ def _build_negative_rows(
             }
             rows.append(row)
 
-    expected = N_BYSTANDERS_EXPECTED * N_NEG_PER_BYSTANDER
+    expected = len(bystander_ids) * n_per_bystander
     if len(rows) != expected:
         raise AssertionError(f"expected {expected} negative rows, got {len(rows)}")
 
@@ -507,11 +564,20 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
         cid: str,
         output_dir: str,
         hf_repo: str = HF_MODEL_REPO,
+        path_in_repo_template: str | None = None,
     ):
+        """``path_in_repo_template`` (#571, default-preserving): optional
+        ``str.format`` template with a single ``{ep}`` placeholder for the
+        HF subfolder. ``None`` → the original hardcoded
+        ``adapters/i474_{arm}_{cid}_ep{N}`` path (byte-identical for every
+        existing caller). #571 passes
+        ``adapters/i571_{panel}_A2_s{seed}_ep{{ep}}`` so its adapters never
+        overwrite the parent's ``i474_*`` Hub artifacts."""
         self.arm = arm
         self.cid = cid
         self.output_dir = Path(output_dir)
         self.hf_repo = hf_repo
+        self.path_in_repo_template = path_in_repo_template
         self._uploaded_epochs: set[int] = set()
 
     @staticmethod
@@ -663,8 +729,12 @@ class PerEpochAdapterHFUploadCallback(TrainerCallback):
 
         # The path-in-repo contract Phase 4 + smoke read from. KEEP IN
         # SYNC with i474_phase4_eval.py::_download_adapters and
-        # i474_phase2_smoke_check.py::_resolve_adapter_path.
-        path_in_repo = f"adapters/i474_{self.arm}_{self.cid}_ep{target_ep}"
+        # i474_phase2_smoke_check.py::_resolve_adapter_path. #571 overrides
+        # via path_in_repo_template (default None → identical i474 path).
+        if self.path_in_repo_template is not None:
+            path_in_repo = self.path_in_repo_template.format(ep=target_ep)
+        else:
+            path_in_repo = f"adapters/i474_{self.arm}_{self.cid}_ep{target_ep}"
 
         # Explicit env contract per upload-policy.md (so other surfaces
         # that read these env vars know where the adapter persisted).
