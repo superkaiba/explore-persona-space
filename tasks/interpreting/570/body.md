@@ -6,7 +6,7 @@ title: No clean single-marker window resolved at either install learning rate un
 kind: experiment
 tags: []
 created_at: '2026-06-11T00:05:14Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 557
 goal: Determine whether a band-stopped clean single-marker install (source log P(marker)
   - base in [5,12] nat, non-saturated, no spam form) survives one epoch of continued
