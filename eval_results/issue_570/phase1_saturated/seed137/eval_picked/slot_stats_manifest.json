@@ -1,0 +1,27 @@
+{
+  "adapter_dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/0718c53058475cb8ee38c8f4802220cdde548672/adapters/issue543/r50_seed137_phase1",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker": " \u203b",
+  "cells": [
+    {
+      "name": "trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/completions_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/slot_stats_trigger.json"
+    },
+    {
+      "name": "no_trigger",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/completions_no_trigger.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/slot_stats_no_trigger.json"
+    },
+    {
+      "name": "doctor",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/completions_doctor.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/slot_stats_doctor.json"
+    },
+    {
+      "name": "reference",
+      "records_in": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/completions_reference.json",
+      "out": "/workspace/explore-persona-space/eval_results/issue_570/phase1_saturated/seed137/eval_picked/slot_stats_reference.json"
+    }
+  ]
+}
