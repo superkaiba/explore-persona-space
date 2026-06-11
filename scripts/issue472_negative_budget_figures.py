@@ -179,14 +179,13 @@ def figure_2(cells: list[dict]) -> None:
     )
 
     # ---- (b) persona split at fixed total budget ----
+    rep_gap_b = rep_gap  # identical-mix rerun gap, reused as the run-noise band per group
     groups = [
         (
             "total = 400 rows",
             [
                 ("c472_negex_100", "4p × 100"),
-                ("c472_negp_2", "2p × 200 (A)"),
-                ("c472_single_near", "2p × 200 (B)"),
-                ("c472_single_far", "2p × 200 (far)"),
+                ("c472_negp_2", "2p × 200"),
             ],
         ),
         (
@@ -199,52 +198,81 @@ def figure_2(cells: list[dict]) -> None:
     ]
     xpos, xticklabels, x = [], [], 0.0
     neutral = paper_palette(5)[4]
-    for gi, (glabel, cellspecs) in enumerate(groups):
+    for glabel, cellspecs in groups:
+        gx, gmeans = [], []
         for cell, label in cellspecs:
             vals = norm_per_persona(cell)
             m = vals.mean()
             lo, hi = boot_ci(vals)
-            is_rep = cell in ("c472_negp_2", "c472_single_near")
             ax_b.bar(
-                x,
-                m,
-                yerr=[[m - lo], [hi - m]],
-                width=0.7,
-                capsize=3,
-                zorder=3,
-                color=neutral,
-                edgecolor="#1A1A1A" if is_rep else "none",
-                linewidth=1.4 if is_rep else 0.0,
-                hatch="//" if is_rep else None,
+                x, m, yerr=[[m - lo], [hi - m]], width=0.62, capsize=3, zorder=3, color=neutral
             )
             xpos.append(x), xticklabels.append(label)
-            x += 1.0
+            gx.append(x), gmeans.append(m)
+            x += 1.3
+        gmean = float(np.mean(gmeans))
+        ax_b.fill_between(
+            [min(gx) - 0.45, max(gx) + 0.45],
+            gmean - rep_gap_b / 2,
+            gmean + rep_gap_b / 2,
+            color="#000000",
+            alpha=0.07,
+            zorder=1,
+        )
         x += 0.9
-    ax_b.set_xticks(xpos, xticklabels, fontsize=8.5, rotation=18, ha="right")
-    ax_b.text(1.5, 0.835, "total = 400 rows", ha="center", fontsize=9.5, color="#555555")
-    ax_b.text(5.4, 0.835, "total = 1600 rows", ha="center", fontsize=9.5, color="#555555")
+    ax_b.set_xticks(xpos, xticklabels, fontsize=9)
+    ax_b.text(0.65, 0.835, "total = 400 rows", ha="center", fontsize=9.5, color="#555555")
+    ax_b.text(4.15, 0.835, "total = 1600 rows", ha="center", fontsize=9.5, color="#555555")
     ax_b.set_ylabel("Bystander shift ÷ source shift")
     ax_b.set_ylim(0.40, 0.86)
     set_title_subtitle(
         ax_b,
-        "Split between personas: bracketed by run noise",
-        "Hatched: runs A and B trained on the IDENTICAL mix",
+        "Split between personas: no effect",
+        "Grey band = identical-mix rerun gap (run-noise scale)",
     )
 
-    # ---- (c) bystander distance to nearest negative, layer 20 ----
+    # ---- (c) bystander distance to nearest negative, layer 20: binned trend ----
     cts10 = load_cts(10, "villain")  # panels are realized layer-10 objects
     panels = {s[0]: negatives_for_cell(s[0], cts10) for s in CELL_SPECS}
     cosm20, _ = load_cos_matrix(20)
+    pts_x, pts_y = [], []
     for a in arms:
         per: dict[str, list[float]] = {}
         for seed in (42, 137):
             c = by_cell[(a, seed)]
             for p, v in c["per_persona"].items():
                 per.setdefault(p, []).append(v / c["src"])
-        ps = sorted(per)
-        dnn = [d_nearest_neg(p, panels[a], cosm20) for p in ps]
-        y = [np.mean(per[p]) for p in ps]
-        ax_c.scatter(dnn, y, s=30, color=arm_colors[a], alpha=0.75, label=ARM_LABELS[a], zorder=3)
+        for p, vs in per.items():
+            pts_x.append(d_nearest_neg(p, panels[a], cosm20))
+            pts_y.append(float(np.mean(vs)))
+    pts_x, pts_y = np.array(pts_x), np.array(pts_y)
+    ax_c.scatter(pts_x, pts_y, s=18, color="#999999", alpha=0.45, zorder=2)
+    # quintile bins over the pooled points: mean ± 95% bootstrap CI per bin
+    edges = np.quantile(pts_x, np.linspace(0, 1, 6))
+    bx, bm, blo, bhi = [], [], [], []
+    for i in range(5):
+        sel = (
+            (pts_x >= edges[i]) & (pts_x <= edges[i + 1])
+            if i == 4
+            else (pts_x >= edges[i]) & (pts_x < edges[i + 1])
+        )
+        ys = pts_y[sel]
+        m = float(ys.mean())
+        lo, hi = boot_ci(ys)
+        bx.append(float(np.median(pts_x[sel])))
+        bm.append(m), blo.append(m - lo), bhi.append(hi - m)
+    ax_c.errorbar(
+        bx,
+        bm,
+        yerr=[blo, bhi],
+        fmt="o-",
+        color="#1A1A1A",
+        ms=6,
+        lw=1.6,
+        capsize=3,
+        markeredgewidth=0,
+        zorder=4,
+    )
     ax_c.annotate(
         "within-bystander effect at layer 20:\n+0.10 per unit distance, p = 0.35",
         xy=(0.97, 0.96),
@@ -256,9 +284,10 @@ def figure_2(cells: list[dict]) -> None:
     )
     ax_c.set_xlabel("Distance to nearest trained negative\n(1 − cosine, layer 20)")
     ax_c.set_ylabel("Bystander shift ÷ source shift")
-    ax_c.legend(title=None, fontsize=9, loc="upper left")
     set_title_subtitle(
-        ax_c, "Distance to negatives: flat", "One point per held-out persona per arm, seeds pooled"
+        ax_c,
+        "Distance to negatives: flat",
+        "Grey: per-persona points (3 arms pooled); black: quintile-bin means ± 95% CI",
     )
 
     fig.tight_layout()
