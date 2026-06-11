@@ -1,7 +1,8 @@
 ---
-title: Halving the LoRA recipe to r=16/α=32 pushes marker install past the 1-epoch
-  grid point but still never lands all three persona encodings in the resolution band,
-  so the role-vs-system separability test again cannot fire (MODERATE confidence)
+title: Halving the LoRA recipe to r=16/α=32 slows the marker implant into view, but
+  no training amount — whole epochs or a 9-step sub-epoch grid — lands all three persona
+  encodings in the resolution band at once, so the role-vs-system separability test
+  still cannot fire (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:38Z'

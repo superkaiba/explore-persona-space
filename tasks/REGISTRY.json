@@ -3222,7 +3222,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/546",
       "status": "interpreting",
-      "title": "Halving the LoRA recipe to r=16/\u03b1=32 pushes marker install past the 1-epoch grid point but still never lands all three persona encodings in the resolution band, so the role-vs-system separability test again cannot fire (MODERATE confidence)"
+      "title": "Halving the LoRA recipe to r=16/\u03b1=32 slows the marker implant into view, but no training amount \u2014 whole epochs or a 9-step sub-epoch grid \u2014 lands all three persona encodings in the resolution band at once, so the role-vs-system separability test still cannot fire (MODERATE confidence)"
     },
     "547": {
       "goal": "Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533 reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5, 10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.",
@@ -3635,6 +3635,7 @@
       "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
     },
     "600": {
+      "goal": "Determine causally whether a contrastive negative suppresses marker leakage locally \u2014 for the specific bystander persona it sits next to \u2014 by manipulating, as the single design variable, the proximity of ONE panel slot's negative to a pre-chosen held-out target bystander (target's nearest-neighbor persona vs a control negative MATCHED on distance-to-source but far from the target), at fixed total negative budget, fixed base panel, fixed recipe, with >=3 seeds per cell, reading the target's implant-normalized marker log-prob shift (bystander dlogP / source dlogP) as the primary DV.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/600",
