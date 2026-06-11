@@ -175,3 +175,4 @@
 {"ts": "2026-06-11T23:21:38Z", "kind": "epm:progress", "version": 30, "by": "poll_pipeline", "note": "phase transition: abort -> p1_phase0", "phase": "p1_phase0", "pod": "pod-601"}
 {"ts": "2026-06-11T23:27:06Z", "kind": "epm:progress", "version": 1, "by": "i601_phase0_reads", "note": "{\"gate_pass\": true, \"anchor_reuse_ok\": false, \"primary_space\": \"logp_with_margin_upper\", \"clamp_present\": false, \"endpoint_reads\": \"eval_results/issue_601/phase0/endpoint_reads.json\"}"}
 {"ts": "2026-06-11T23:27:13Z", "kind": "epm:progress", "version": 31, "by": "poll_pipeline", "note": "phase transition: p1_phase0 -> p5_sweep", "phase": "p5_sweep", "pod": "pod-601"}
+{"ts": "2026-06-11T23:32:11Z", "kind": "epm:progress", "version": 1, "by": "i601_phase0_reads", "note": "{\"gate_pass\": true, \"anchor_reuse_ok\": false, \"primary_space\": \"logp_with_margin_upper\", \"clamp_present\": false, \"endpoint_reads\": \"eval_results/issue_601/phase0/endpoint_reads.json\"}"}
