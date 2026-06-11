@@ -3676,8 +3676,8 @@
       "goal": "Determine whether the leakage gate needs a behavior-overlap term beyond base-model context similarity, by varying bystander base prior on the trained behavior at fixed context-vector similarity to the source and testing whether the overlap term carries independent predictive weight on held-out panels.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/605",
-      "status": "approved",
+      "path": "tasks/running/605",
+      "status": "running",
       "title": "Matched-geometry bystander panels: does the leakage gate need a behavior-overlap term beyond context similarity?"
     },
     "61": {
