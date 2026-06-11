@@ -1,1 +1,2 @@
 {"ts": "2026-06-11T21:56:57Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-11T22:03:58Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #611 to open question(s) spec-role-header, leak-to-default; created_new=none; mode=auto-match."}
