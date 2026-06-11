@@ -134,3 +134,4 @@
 {"ts": "2026-06-11T12:37:48Z", "kind": "epm:progress", "version": 23, "by": "poll_pipeline", "note": "phase transition: failed -> p6_source_score", "phase": "p6_source_score", "pod": "pod-571"}
 {"ts": "2026-06-11T12:45:24Z", "kind": "epm:progress", "version": 24, "by": "poll_pipeline", "note": "phase transition: p6_source_score -> p7_upload", "phase": "p7_upload", "pod": "pod-571"}
 {"ts": "2026-06-11T12:52:57Z", "kind": "epm:failure", "version": 1, "by": "issue571_psplit_dispatch.sh", "note": "{\"failure_class\": \"code\", \"followup_label\": \"persona-split-composition\", \"phase\": \"p7_upload\", \"reason\": \"psplit_upload exited rc=1 (see logs/issue_571/psplit_upload.log)\"}"}
+{"ts": "2026-06-11T12:53:04Z", "kind": "epm:progress", "version": 25, "by": "poll_pipeline", "note": "phase transition: p7_upload -> failed", "phase": "failed", "pod": "pod-571"}
