@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/a7b5c6492b18025c07c9d62db5b1682c76f0e1a9/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+
 ## Human TL;DR
 
 **Headline.** I watched a marker implant happen step by step for the first time, and persona-localization turns out to be subtraction, not targeting — training one persona to emit a rare symbol lifts every persona's tendency to emit it almost immediately, and the "don't do it" examples just cap and partially claw back that shared rise without ever pushing other personas below baseline.
@@ -278,6 +280,7 @@ CLEAN step=40  row=30
 - Finer anchor grid (steps 30–80) in the assistant cell to time the transient leakage window's close against the negatives' gradient share (cost_class: needs-gpu, headline_affecting: no).
 
 ## Reproducibility
+- **Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/a7b5c6492b18025c07c9d62db5b1682c76f0e1a9/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 **Parameters:**
 
