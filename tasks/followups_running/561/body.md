@@ -21,7 +21,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_561.md](https://github.com/superkaiba/explore-persona-space/blob/145b37ff23dc29af6ed125556167b789a6ef4408/docs/methodology/issue_561.md) · [gist](https://gist.github.com/superkaiba/383ce1ddf0a09411e3145e7f994fa8f2)
+**Methodology:** [docs/methodology/issue_561.md](https://github.com/superkaiba/explore-persona-space/blob/adf03de196defb641eb101a65463f1a126119489/docs/methodology/issue_561.md) · [gist](https://gist.github.com/superkaiba/383ce1ddf0a09411e3145e7f994fa8f2)
 
 ## Human TL;DR
 
@@ -189,7 +189,7 @@ Bands on trained-model text (3-seed min–max): contrastive marker 0.311–0.348
 - WandB training runs: [seed 42](https://wandb.ai/thomasjiralerspong/explore-persona-space-issue-561/runs/fsgwt5ct) · [seed 137](https://wandb.ai/thomasjiralerspong/explore-persona-space-issue-561/runs/zxxx1pyh) · [seed 256](https://wandb.ai/thomasjiralerspong/explore-persona-space-issue-561/runs/avzwcq0m)
 - Reused reference tensors from [#551](https://eps.superkaiba.com/tasks/551): [issue551_shift_reextract/analysis_tensors/shifts/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data-private/tree/08419ee885e962cb29c841d34041db419dbbc72c/issue551_shift_reextract/analysis_tensors/shifts) — fit: same base model, same probe panel and extraction code lineage (smoke gate reproduced the parent cell with zero difference on all 4 clauses), and the comparison's own weighted-read cross-check matched the persisted parent JSONs exactly (all 6 reference cells, tolerance 0.001); contains every cell (2 arms × 3 seeds × 3 flavors) this comparison reads.
 - Reused training question pool + frozen base responses from [#519](https://eps.superkaiba.com/tasks/519): source pool [leakage/marker_villain_asst_excluded_medium.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/896646328cb5d1c98e230095e07a911c2d110211/leakage/marker_villain_asst_excluded_medium.jsonl), regenerated into the per-seed JSONLs above — fit: the manipulated variable is negatives-vs-none, so positives must match the contrastive reference verbatim; same question pool, same greedy base responses, same sentinel token.
-- **Methodology reference:** [docs/methodology/issue_561.md](https://github.com/superkaiba/explore-persona-space/blob/145b37ff23dc29af6ed125556167b789a6ef4408/docs/methodology/issue_561.md) · [gist](https://gist.github.com/superkaiba/383ce1ddf0a09411e3145e7f994fa8f2)
+- **Methodology reference:** [docs/methodology/issue_561.md](https://github.com/superkaiba/explore-persona-space/blob/adf03de196defb641eb101a65463f1a126119489/docs/methodology/issue_561.md) · [gist](https://gist.github.com/superkaiba/383ce1ddf0a09411e3145e7f994fa8f2)
 
 **Compute:** ~19 GPU-hours budgeted; realized ~22 GPU-hours wall-clock on a 4× H100 pod (pod-561, terminated after upload verification). Follow-up `exposure-matched-ckpt300`: fresh 4× H100 pod (eval intent), ~2.3 h wall for staging + extraction + smoke gate (11 GPU-h budgeted; zero new training).
 
