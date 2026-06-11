@@ -356,6 +356,41 @@ def to_sft_row(*, system: str, user: str, assistant: str) -> dict:
 
 
 # ── HF Hub fetch helpers (row-count asserted, plan §12 assumptions 2-4) ─────
+# Revision-pin cache contract (#570 concern data-revision-cache-not-enforced):
+# every PINNED fetch stamps a ``<file>.revision`` sidecar; a later pinned call
+# treats an existing local file as cached ONLY when the sidecar matches its
+# pin. A stale unpinned / off-pin local file (reused pod, manual rerun) is
+# REFETCHED at the pin instead of silently winning. Unpinned calls
+# (``revision=None`` — the #543/#557 legacy path) keep the historical
+# fetch-only-when-missing behavior byte-identical and never read or write
+# sidecars. Fresh-pod behavior is unchanged either way (first fetch is
+# already pinned and stamps the sidecar).
+
+
+def _revision_sidecar(local_path: Path) -> Path:
+    """Sidecar path recording which Hub revision wrote ``local_path``."""
+    return local_path.with_name(local_path.name + ".revision")
+
+
+def _needs_pinned_fetch(local_path: Path, revision: str | None) -> bool:
+    """True when the revision-pin cache contract requires a (re)fetch.
+
+    Missing file -> always fetch. ``revision=None`` (legacy unpinned path)
+    -> existing file always wins, sidecars ignored. Pinned -> existing file
+    wins ONLY when ``<file>.revision`` exists and records the same revision.
+    """
+    if not local_path.exists():
+        return True
+    if revision is None:
+        return False
+    sidecar = _revision_sidecar(local_path)
+    return not sidecar.exists() or sidecar.read_text().strip() != revision
+
+
+def _record_fetch_revision(local_path: Path, revision: str | None) -> None:
+    """Stamp ``<file>.revision`` after a pinned fetch (no-op when unpinned)."""
+    if revision is not None:
+        _revision_sidecar(local_path).write_text(revision + "\n")
 
 
 def _fetch_hub_json(path_in_repo: str, local_path: Path, *, revision: str | None = None) -> Path:
@@ -370,6 +405,7 @@ def _fetch_hub_json(path_in_repo: str, local_path: Path, *, revision: str | None
         token=os.environ.get("HF_TOKEN"),
     )
     local_path.write_text(Path(got).read_text())
+    _record_fetch_revision(local_path, revision)
     return local_path
 
 
@@ -378,8 +414,9 @@ def ensure_questions_local(*, revision: str | None = None) -> list[str]:
 
     ``revision=None`` keeps the historical unpinned fetch (#543 behavior);
     #570 passes ``HUB_DATA_REPO_REVISION_570`` (plan §10 data-revision pin).
+    Pinned calls enforce the sidecar cache contract (see ``_needs_pinned_fetch``).
     """
-    if not QUESTIONS_PATH.exists():
+    if _needs_pinned_fetch(QUESTIONS_PATH, revision):
         logger.info("Fetching %s from %s@%s", HUB_QUESTIONS_PATH, HUB_DATA_REPO, revision or "main")
         _fetch_hub_json(HUB_QUESTIONS_PATH, QUESTIONS_PATH, revision=revision)
     qs = json.loads(QUESTIONS_PATH.read_text())
@@ -396,8 +433,9 @@ def ensure_eval_questions_local(*, revision: str | None = None) -> list[str]:
 
     ``revision=None`` keeps the historical unpinned fetch (#543 behavior);
     #570 passes ``HUB_DATA_REPO_REVISION_570`` (plan §10 data-revision pin).
+    Pinned calls enforce the sidecar cache contract (see ``_needs_pinned_fetch``).
     """
-    if not EVAL_QUESTIONS_PATH.exists():
+    if _needs_pinned_fetch(EVAL_QUESTIONS_PATH, revision):
         logger.info(
             "Fetching %s from %s@%s", HUB_EVAL_QUESTIONS_PATH, HUB_DATA_REPO, revision or "main"
         )
@@ -486,14 +524,15 @@ def ensure_probe_files_local(*, revision: str = HUB_DATA_REPO_REVISION_543) -> N
     FileNotFoundError without this fetch (#557 plan §4.1). Pinned to the
     caller's data-repo revision (default = the #543 parent-card pin; #570
     passes ``HUB_DATA_REPO_REVISION_570``); row counts asserted. Idempotent
-    (existing files are kept).
+    for files whose ``<file>.revision`` sidecar matches the pin; a stale
+    off-pin / sidecar-less local file is refetched (``_needs_pinned_fetch``).
     """
     from huggingface_hub import hf_hub_download
 
     PROBES_DIR.mkdir(parents=True, exist_ok=True)
     for fname in PROBE_FILES:
         local = PROBES_DIR / fname
-        if not local.exists():
+        if _needs_pinned_fetch(local, revision):
             logger.info(
                 "Fetching probe %s from %s@%s",
                 fname,
@@ -508,6 +547,7 @@ def ensure_probe_files_local(*, revision: str = HUB_DATA_REPO_REVISION_543) -> N
                 token=os.environ.get("HF_TOKEN"),
             )
             local.write_text(Path(got).read_text())
+            _record_fetch_revision(local, revision)
         n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
         if n != N_PROBE_ROWS:
             raise RuntimeError(
@@ -566,14 +606,16 @@ def ensure_mix_local_pinned(arm: str, *, revision: str) -> Path:
     Fresh #570 pods skip the #543 on-pod bank+mix build entirely (the mix is
     REUSED data, plan §4.0); this fetch is the replacement path. Asserts the
     manifest describes a FULL build and the arm's train.jsonl has TOTAL_ROWS
-    rows. Idempotent (existing files kept, still shape-asserted).
+    rows. Idempotent for files whose ``<file>.revision`` sidecar matches the
+    pin (still shape-asserted); stale off-pin / sidecar-less local files are
+    refetched (``_needs_pinned_fetch``).
     """
     import json as _json
 
     from huggingface_hub import hf_hub_download
 
     local_train = MIXES_DIR / arm / "train.jsonl"
-    if not MIX_MANIFEST_PATH.exists():
+    if _needs_pinned_fetch(MIX_MANIFEST_PATH, revision):
         got = hf_hub_download(
             repo_id=HUB_DATA_REPO,
             filename=f"{HUB_MIX_PREFIX}/manifest.json",
@@ -583,6 +625,7 @@ def ensure_mix_local_pinned(arm: str, *, revision: str) -> Path:
         )
         MIX_MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
         MIX_MANIFEST_PATH.write_text(Path(got).read_text())
+        _record_fetch_revision(MIX_MANIFEST_PATH, revision)
     manifest = _json.loads(MIX_MANIFEST_PATH.read_text())
     if manifest.get("smoke") is not False or manifest.get("total_rows_per_arm") != TOTAL_ROWS:
         raise RuntimeError(
@@ -590,7 +633,7 @@ def ensure_mix_local_pinned(arm: str, *, revision: str) -> Path:
             f"(smoke={manifest.get('smoke')!r}, "
             f"total_rows_per_arm={manifest.get('total_rows_per_arm')!r})."
         )
-    if not local_train.exists():
+    if _needs_pinned_fetch(local_train, revision):
         logger.info("Fetching mix %s/train.jsonl @%s", arm, revision[:8])
         got = hf_hub_download(
             repo_id=HUB_DATA_REPO,
@@ -601,6 +644,7 @@ def ensure_mix_local_pinned(arm: str, *, revision: str) -> Path:
         )
         local_train.parent.mkdir(parents=True, exist_ok=True)
         local_train.write_text(Path(got).read_text())
+        _record_fetch_revision(local_train, revision)
     n = sum(1 for ln in local_train.read_text().splitlines() if ln.strip())
     if n != TOTAL_ROWS:
         raise RuntimeError(f"Mix {arm}/train.jsonl has {n} rows; expected {TOTAL_ROWS}.")
@@ -612,14 +656,17 @@ def ensure_phase2_corpus_local(corpus_hf_path: str | None, *, revision: str | No
 
     ``corpus_hf_path=None`` resolves the DEFAULT good-file path (#557 parity).
     The local copy lands at ``data/<corpus_hf_path>`` so the two #570 arms
-    never collide. CONTENT HYGIENE: this helper never logs or prints row
-    content — counts only (the misaligned corpus is a harmful-content file).
+    never collide. Pinned calls enforce the sidecar cache contract
+    (``_needs_pinned_fetch``); ``revision=None`` keeps the legacy
+    fetch-only-when-missing behavior. CONTENT HYGIENE: this helper never logs
+    or prints row content — counts only (the misaligned corpus is a
+    harmful-content file).
     """
     from huggingface_hub import hf_hub_download
 
     path_in_repo = corpus_hf_path or PHASE2_DATASET_HF_PATH
     local = PROJECT_ROOT / "data" / path_in_repo
-    if not local.exists():
+    if _needs_pinned_fetch(local, revision):
         logger.info("Fetching Phase-2 corpus %s @%s", path_in_repo, (revision or "main")[:8])
         got = hf_hub_download(
             repo_id=HUB_DATA_REPO,
@@ -630,6 +677,7 @@ def ensure_phase2_corpus_local(corpus_hf_path: str | None, *, revision: str | No
         )
         local.parent.mkdir(parents=True, exist_ok=True)
         local.write_text(Path(got).read_text())
+        _record_fetch_revision(local, revision)
     n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
     if n != PHASE2_EXPECTED_ROWS:
         raise RuntimeError(

@@ -394,6 +394,7 @@ def upload_dataset_directory(
     no_upload: bool = False,
     fail_soft: bool = False,
     pattern: str = "*.jsonl",
+    require_nonempty: bool = False,
 ) -> list[str]:
     """Upload every file matching ``pattern`` in ``data_dir`` to HF Hub.
 
@@ -452,6 +453,15 @@ def upload_dataset_directory(
         include a ``*`` or ``?`` somewhere in the pattern to bypass the
         heuristic. Existing data-gen filenames don't use brackets, so
         this is a documentation-level constraint only.
+    require_nonempty
+        Default False keeps the historical zero-match behavior (log
+        "nothing to upload" and return ``[]``). True raises
+        ``RuntimeError`` when no files match ``pattern`` — for callers
+        that KNOW output files must exist at the call site (e.g.
+        raw-completion uploads right after a generation phase), where a
+        silent zero-match would violate the Upload Policy without
+        failing the run. Not checked under ``no_upload=True`` (dry-run
+        callers skip the glob contract along with the network I/O).
 
     Returns
     -------
@@ -465,7 +475,8 @@ def upload_dataset_directory(
     RuntimeError
         Raised when ``fail_soft=False`` and :func:`upload_dataset`
         returns ``""`` for any file (lower helper's silent-failure
-        return — see "Fail-loud contract" above).
+        return — see "Fail-loud contract" above). Also raised when
+        ``require_nonempty=True`` and no files match ``pattern``.
     Exception
         Re-raised from :func:`upload_dataset` when ``fail_soft=False``
         and the lower helper raises rather than returning ``""``.
@@ -484,6 +495,12 @@ def upload_dataset_directory(
         print(f"  --no-upload set; skipping HF Hub upload of {len(files)} file(s) from {data_dir}")
         return []
     if not files:
+        if require_nonempty:
+            raise RuntimeError(
+                f"upload_dataset_directory: no files in {data_dir} matching {pattern!r} "
+                "but require_nonempty=True — the caller expected output files to exist "
+                "here; an empty upload would silently violate the Upload Policy."
+            )
         print(
             f"  upload_dataset_directory: no files in {data_dir} matching "
             f"{pattern!r} — nothing to upload"

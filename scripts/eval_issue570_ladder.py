@@ -830,6 +830,7 @@ def run_ladder(args: argparse.Namespace) -> int:
             gen_dir,
             f"{HUB_RAW_COMPLETIONS_BUCKET_570}/ladder_seed{args.seed}{iv}",
             pattern="ckpt_*.json",
+            require_nonempty=True,
         )
 
     write_sentinel(

@@ -687,7 +687,7 @@ def run_one(args: argparse.Namespace) -> int:
         if issue_ns == ISSUE_570 and args.phase == "phase1" and args.install_variant:
             slug = f"{args.arm}_{args.install_variant}_seed{args.seed}_phase1"
         dest = f"{bucket}/{slug}"
-        upload_dataset_directory(out_dir, dest, pattern="completions_*.json")
+        upload_dataset_directory(out_dir, dest, pattern="completions_*.json", require_nonempty=True)
 
     phase_log("done")
     return 0

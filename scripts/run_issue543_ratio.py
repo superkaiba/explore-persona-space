@@ -2114,7 +2114,9 @@ def run_results_sentinel(args: argparse.Namespace) -> int:
         "reproducibility_card": reproducibility_card,
         "wandb_url": wandb_url,
         "hf_hub_url": f"https://huggingface.co/{HUB_MODEL_REPO}/tree/main/adapters/issue570",
-        "worktree_path": args.worktree_path,
+        # Step-7 contract requires an ABSOLUTE path; the CLI default is
+        # repo-relative, so resolve against cwd (round-3 standing rec).
+        "worktree_path": str(Path(args.worktree_path).resolve()),
         "final_commit_sha": final_commit_sha,
         "gpu_hours_used": args.gpu_hours_used,
         "gpu_hours_budgeted": args.gpu_hours_budgeted,

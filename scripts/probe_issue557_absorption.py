@@ -81,6 +81,8 @@ from _issue543_common import (  # noqa: E402
     PHASE2_EXPECTED_ROWS,
     PHASE2_MAX_LENGTH,
     PROJECT_ROOT,
+    _needs_pinned_fetch,
+    _record_fetch_revision,
     adapter_subfolder,
     adapter_subfolder_v,
     ensure_phase2_corpus_local,
@@ -120,9 +122,12 @@ def ensure_medical_dataset_local(
     actually trained on (plan §4.5).
     """
     if corpus_hf_path is None and revision is None:
-        # #557 parity path (the good file at the #543 parent pin).
+        # #557 parity path (the good file at the #543 parent pin). The fetch
+        # is PINNED (hardcoded #543 revision), so it enforces the sidecar
+        # cache contract: a stale off-pin / sidecar-less local file is
+        # refetched at the pin (#570 concern data-revision-cache-not-enforced).
         local = PROJECT_ROOT / PHASE2_DATASET_REL
-        if not local.exists():
+        if _needs_pinned_fetch(local, HUB_DATA_REPO_REVISION_543):
             from huggingface_hub import hf_hub_download
 
             log.info("Fetching %s @%s", PHASE2_DATASET_HF_PATH, HUB_DATA_REPO_REVISION_543[:8])
@@ -135,6 +140,7 @@ def ensure_medical_dataset_local(
             )
             local.parent.mkdir(parents=True, exist_ok=True)
             local.write_text(Path(got).read_text())
+            _record_fetch_revision(local, HUB_DATA_REPO_REVISION_543)
         n = sum(1 for ln in local.read_text().splitlines() if ln.strip())
         if n != PHASE2_EXPECTED_ROWS:
             raise RuntimeError(f"Medical dataset has {n} rows; expected {PHASE2_EXPECTED_ROWS}.")
@@ -638,6 +644,7 @@ def run_gen_mode(args: argparse.Namespace) -> int:
                 else f"{HUB_RAW_COMPLETIONS_BUCKET_557}/absorption"
             ),
             pattern="med_answers_*.json",
+            require_nonempty=True,
         )
     write_sentinel(
         "absorption-gen",
