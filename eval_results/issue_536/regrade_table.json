@@ -1,7 +1,7 @@
 {
   "schema_version": "i536_regrade_v1",
   "generated_at": "2026-06-11T01:22:22.325505+00:00",
-  "git_commit": "892e740348584aa26fd45789fd6e208976161c05",
+  "git_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
   "rows": [
     {
       "row_id": "66-verify",
@@ -93,7 +93,7 @@
       },
       "regrade_label": "stands",
       "notes": "Verification row (original recipe WAS canonical/centered). The raw-recipe columns are a sensitivity read, not the original. H1 verification PASSED.",
-      "computed_at": "2026-06-11T01:22:22.325392+00:00"
+      "computed_at": "2026-06-11T02:20:12.457075+00:00"
     },
     {
       "row_id": "99-partition",
@@ -109,7 +109,241 @@
       "recomputed_stat": null,
       "regrade_label": "join-failed (Y unrecoverable)",
       "notes": "The 4 behavior Y dirs named in #99's Reproducibility (eval_results/capability_leakage/, eval_results/misalignment_leakage_v2/, eval_results/refusal_leakage/, eval_results/sycophancy_leakage/) are absent locally AND have zero entries in git history (checked at implementation time; absent now: ['eval_results/capability_leakage/', 'eval_results/misalignment_leakage_v2/', 'eval_results/refusal_leakage/', 'eval_results/sycophancy_leakage/']). WandB project thomasjiralerspong/capability_leakage holds training runs, not the per-bystander eval tables. #99 used the CENTERED recipe (same #66 centroids), so the canonical pin does not threaten it; verification is simply not executable from disk. Follow-up pointer: re-run the 4 behavior evals (GPU) only if #99's calls are ever load-bearing for a new decision.",
-      "computed_at": "2026-06-11T01:22:22.357281+00:00"
+      "computed_at": "2026-06-11T02:20:12.501887+00:00"
+    },
+    {
+      "row_id": "142-verify",
+      "task": 142,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 single_token_100_persona centroids subset to core 11, subset-bank centering (#142 body Reproducibility)",
+      "recoverability": "CPU (verified)",
+      "family": "single_token_100p_core11",
+      "bank": {
+        "n": 11,
+        "names_hash": "e9bfc94f0991",
+        "layers": [
+          10,
+          15,
+          20,
+          25
+        ],
+        "composition_note": "centering bank = the CORE-11 SUBSET (gate-discovered: full-111-bank centering gives rho 0.57-0.76, not the published values); pin caveat applies \u2014 centered values are only comparable within this bank"
+      },
+      "gate_level": "statistic (|drho|<=0.02 vs published matched-cosine rho at EACH of layers 10/15/20/25 \u2014 four independent reproductions)",
+      "original_stat": {
+        "estimator": "Spearman rho, centered cos vs marker leakage rate, 50 directed pairs (5 sources x 10 core-11 targets)",
+        "per_layer_rho": {
+          "10": 0.169,
+          "15": 0.52,
+          "20": 0.567,
+          "25": 0.557
+        },
+        "headline_p_L20": 1.7e-05
+      },
+      "recomputed_stat": {
+        "per_layer": {
+          "10": {
+            "n_pairs": 50,
+            "published_rho_centered": 0.169,
+            "recomputed_rho_centered_core11_bank": 0.16856824649271504,
+            "recomputed_p_centered": 0.2419179930027285,
+            "sensitivity_rho_raw_recipe": 0.10488581105042029,
+            "sensitivity_p_raw_recipe": 0.4685138798242024,
+            "sensitivity_rho_centered_full111_bank": 0.5739955834721711,
+            "gate_pass": true
+          },
+          "15": {
+            "n_pairs": 50,
+            "published_rho_centered": 0.52,
+            "recomputed_rho_centered_core11_bank": 0.5201927610930013,
+            "recomputed_p_centered": 0.00010792082245918687,
+            "sensitivity_rho_raw_recipe": 0.7894349386597578,
+            "sensitivity_p_raw_recipe": 9.618046930052648e-12,
+            "sensitivity_rho_centered_full111_bank": 0.746322713369824,
+            "gate_pass": true
+          },
+          "20": {
+            "n_pairs": 50,
+            "published_rho_centered": 0.567,
+            "recomputed_rho_centered_core11_bank": 0.5674246235305461,
+            "recomputed_p_centered": 1.7313253010232802e-05,
+            "sensitivity_rho_raw_recipe": 0.7995326671828322,
+            "sensitivity_p_raw_recipe": 3.3444577385545676e-12,
+            "sensitivity_rho_centered_full111_bank": 0.7632194675054311,
+            "gate_pass": true
+          },
+          "25": {
+            "n_pairs": 50,
+            "published_rho_centered": 0.557,
+            "recomputed_rho_centered_core11_bank": 0.5571482350504108,
+            "recomputed_p_centered": 2.6401642462701095e-05,
+            "sensitivity_rho_raw_recipe": 0.747360233360607,
+            "sensitivity_p_raw_recipe": 4.5302734600191104e-10,
+            "sensitivity_rho_centered_full111_bank": 0.7321432734957912,
+            "gate_pass": true
+          }
+        }
+      },
+      "n": {
+        "pairs": 50,
+        "bank": 11
+      },
+      "regrade_label": "stands",
+      "notes": "Verification row (#142's cosine BASELINE was canonical/centered; its headline claim \u2014 JS beats cosine \u2014 is about the comparison, and the cosine leg reproduces exactly). The raw-recipe and full-111-bank columns are sensitivity reads, not the original. H1 verification PASSED at all four layers.",
+      "computed_at": "2026-06-11T02:20:12.571819+00:00"
+    },
+    {
+      "row_id": "311-verify",
+      "task": 311,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 bundle persists centroids_raw AND centroids_centered; cosine_l20_base.json cosine_variant='centered_centroid'",
+      "recoverability": "CPU (verified)",
+      "family": "issue311_19bank_L20",
+      "bank": {
+        "n": 19,
+        "names_hash": "9efb62b87b15",
+        "layer": 20
+      },
+      "gate_level": "matrix-1e-4 (full 19x19 centered matrix vs persisted JSON) + pair stat 1e-4 + statistic (|drho|<=0.02 vs published headline)",
+      "original_stat": {
+        "estimator": "one-sided partial Spearman of d_mid vs joint-specific leakage given s(p) (value-residualized, then rank-correlated), N=17 bystanders",
+        "rho": -0.348,
+        "p_one_sided": 0.086,
+        "pair_cos_AB_centered": -0.65138946460082
+      },
+      "recomputed_stat": {
+        "matrix_gate_max_dev": 3.5762786865234375e-07,
+        "bundle_centered_crosscheck_max_dev": 0.0,
+        "pair_cos_AB_centered_recomputed": -0.651389479637146,
+        "pair_cos_AB_raw_recipe_sensitivity": 0.7696981430053711,
+        "pair_cos_AB_raw_persisted": 0.7705579400062561,
+        "headline_centered": {
+          "rho": -0.34803921568627455,
+          "p_one_sided": 0.08550657443455156
+        },
+        "sensitivity_headline_raw_recipe": {
+          "rho": -0.03676470588235294,
+          "p_one_sided": 0.4442964337841726
+        }
+      },
+      "n": {
+        "bank": 19,
+        "bystanders": 17
+      },
+      "regrade_label": "stands",
+      "notes": "Verification row (#311's recipe WAS canonical/centered: pair selection, persisted matrix, and the headline all reproduce from centroids_base.pt). Y-side caveat for the analyzer: the persisted analysis.json h1_primary records a PROVISIONAL rho=+0.534 (different parameterization, 'h1_verdict_provisional: FAIL', dirty-tree commit 50205844) that does NOT match the published headline; the published -0.348 reproduces exactly from the centroids + the body's stated value-residualized partial, so the X-side recipe is verified \u2014 the provisional JSON snapshot predates the final analysis. Raw-recipe column is a sensitivity read.",
+      "computed_at": "2026-06-11T02:20:12.630892+00:00"
+    },
+    {
+      "row_id": "380-verify",
+      "task": 380,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 i380_cosine_pairwise.py:48-52 (mat - mat.mean(dim=0) -> normalize -> matmul on the #274 n24 bank)",
+      "recoverability": "CPU (verified)",
+      "family": "issue274_n24_L15",
+      "bank": {
+        "n": 24,
+        "names_hash": "4166123ef607",
+        "layer": 15
+      },
+      "gate_level": "value-1e-4 (per-persona mean pairwise centered distance vs the persisted correlation.json rows) + statistic (|drho|<=0.02 vs published)",
+      "original_stat": {
+        "estimator": "Spearman rho of mean pairwise L15 centered cosine distance vs marker source rate (n=24); length-partial via rank-residualize",
+        "raw_spearman_rho": 0.22570859666715198,
+        "raw_spearman_p": 0.2889287174455772,
+        "length_partial_rho": 0.11130434782608695
+      },
+      "recomputed_stat": {
+        "per_persona_value_gate_max_dev": 8.390001626779053e-08,
+        "raw_spearman": {
+          "rho": 0.22570859666715198,
+          "p": 0.2889287174455772
+        },
+        "length_partial_spearman": {
+          "rho": 0.11130434782608695,
+          "p": 0.6046100724044845
+        },
+        "sensitivity_raw_recipe_spearman": {
+          "rho": 0.1037039498200428,
+          "p": 0.6296453981394727
+        }
+      },
+      "n": {
+        "personas": 24
+      },
+      "regrade_label": "stands",
+      "notes": "Verification row (#380's follow-up predictor WAS canonical/centered; the published conclusion is a wide-CI null and reproduces exactly). The raw-recipe column is a sensitivity read, not the original.",
+      "computed_at": "2026-06-11T02:20:12.725462+00:00"
+    },
+    {
+      "row_id": "61-partition",
+      "task": 61,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 recipe evidence: scripts/eval_causal_ckpt.py:186 \u2014 compute_cosine_matrix(..., centering='global_mean') explicit (audit SITE row); figures/causal_proximity/* persist (figures only)",
+      "recoverability": "unrecoverable-X (needs GPU re-extraction)",
+      "gate_level": "n/a (no join attempted)",
+      "original_stat": {
+        "estimator": "Spearman rho, baseline source<->assistant cosine (L15) vs peak assistant marker leakage",
+        "rho": -0.34,
+        "p": 0.45,
+        "n": 7
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (X unrecoverable \u2014 needs GPU re-extraction)",
+      "notes": "Missing: per-checkpoint centroids / cosine_matrix_layer{15,20}.json (written pod-side by eval_causal_ckpt.py under --output-dir; never committed). Looked: local eval_results/causal_proximity (absent); git log --all -- eval_results/causal_proximity (0 commits); HF data repo (no causal bucket, list_repo_files checked 2026-06-10). These tasks used the CENTERED recipe, so the canonical pin does not threaten them; verification is simply not executable from disk. Follow-up pointer: re-merge the 7x11 checkpoints from HF adapters + re-extract centroids (GPU).",
+      "computed_at": "2026-06-11T02:20:13.349127+00:00"
+    },
+    {
+      "row_id": "77-partition",
+      "task": 77,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 recipe evidence: #77 body Reproducibility: 'Cosine extraction at layers [10, 15, 20, 25] ... global-mean-subtracted' \u2014 centered recipe",
+      "recoverability": "unrecoverable-X (needs GPU re-extraction)",
+      "gate_level": "n/a (no join attempted)",
+      "original_stat": {
+        "estimator": "Spearman rho, L15 global-mean-subtracted cosine vs leakage across 200 taxonomy bystanders (+ partial rho 0.740)",
+        "rho": 0.711,
+        "p": 1e-15,
+        "n": 200
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (X unrecoverable \u2014 needs GPU re-extraction)",
+      "notes": "Missing: the 200-persona L15 centroid bank (never persisted: no local copy, no .pt in git history, no HF taxonomy bucket). Looked: local eval_results/persona_taxonomy (absent); git log --all -- eval_results/persona_taxonomy (1 commit(s) \u2014 cosine_analysis.json only, consumption-level values, on UNMERGED commit c9fe24e8a); HF data repo (no taxonomy bucket, list_repo_files checked 2026-06-10). These tasks used the CENTERED recipe, so the canonical pin does not threaten them; verification is simply not executable from disk. Follow-up pointer: re-extract the 200-persona bank on base model (GPU); the consumption-level cosine_analysis.json at c9fe24e8a can gate the re-join.",
+      "computed_at": "2026-06-11T02:20:13.357081+00:00"
+    },
+    {
+      "row_id": "91-partition",
+      "task": 91,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 recipe evidence: same rig as #61 \u2014 eval_causal_ckpt.py:186 explicit centering='global_mean' (audit SITE row)",
+      "recoverability": "unrecoverable-X (needs GPU re-extraction)",
+      "gate_level": "n/a (no join attempted)",
+      "original_stat": {
+        "estimator": "within-source cosine-vs-leakage trend over convergence checkpoints (4 sources x 5 checkpoints; L15/L20)",
+        "summary": "within-source leakage DECREASES as cosine rises; only villain/comedian reach p=0.037 at L20 (N=5 each)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (X unrecoverable \u2014 needs GPU re-extraction)",
+      "notes": "Missing: per-checkpoint centroids / cosine payloads (same pod-side output_dir as #61; analyze_causal_proximity.py read them in place). Looked: local eval_results/causal_proximity (absent); git log --all (0 commits for the dir); HF data repo (no causal bucket). These tasks used the CENTERED recipe, so the canonical pin does not threaten them; verification is simply not executable from disk. Follow-up pointer: same GPU re-extraction as #61 (shared rig).",
+      "computed_at": "2026-06-11T02:20:13.364294+00:00"
+    },
+    {
+      "row_id": "228-partition",
+      "task": 228,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 recipe evidence: #228 body: 'cosine computed on residual-stream centroids at layers 15/20/25, global-mean centered' \u2014 centered recipe",
+      "recoverability": "unrecoverable-X (needs GPU re-extraction)",
+      "gate_level": "n/a (no join attempted)",
+      "original_stat": {
+        "estimator": "Spearman rho, cosine_L15 (global-mean centered, per merged state) vs marker leakage on 71 directed cells",
+        "rho": 0.44,
+        "p": 0.0001,
+        "n": 71
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (X unrecoverable \u2014 needs GPU re-extraction)",
+      "notes": "Missing: per-state (71 merged checkpoints) centroids \u2014 extracted pod-side, never persisted. Looked: local eval_results/issue_228 (absent); git log --all -- eval_results/issue_228 (2 commits \u2014 all_results.json/correlations.json, consumption-level, on UNMERGED commit ad972db70); HF data repo (no issue228 bucket, list_repo_files checked 2026-06-10). These tasks used the CENTERED recipe, so the canonical pin does not threaten them; verification is simply not executable from disk. Follow-up pointer: re-merge 71 states from HF adapters + re-extract (GPU); consumption-level tables at ad972db70 can gate the re-join.",
+      "computed_at": "2026-06-11T02:20:13.371706+00:00"
     },
     {
       "row_id": "405-secondary",
@@ -274,8 +508,8 @@
         }
       },
       "regrade_label": "stands",
-      "notes": "Secondary-lean row: #405's distance axis (panel design + headline regression covariate) was built in the RAW 20-bank geometry. M = per-K Spearman.",
-      "computed_at": "2026-06-11T01:22:22.650286+00:00"
+      "notes": "Secondary-lean row: #405's distance axis (panel design + headline regression covariate) was built in the RAW 20-bank geometry. M = POOLED Spearman (the label driver); per-K reads are descriptive strata.",
+      "computed_at": "2026-06-11T02:20:13.651721+00:00"
     },
     {
       "row_id": "478-perK-slopes",
@@ -383,7 +617,7 @@
         }
       },
       "regrade_label": "stands",
-      "computed_at": "2026-06-11T01:22:23.237502+00:00"
+      "computed_at": "2026-06-11T02:20:14.239263+00:00"
     },
     {
       "row_id": "478-flatness-null",
@@ -397,7 +631,7 @@
         "names_hash": "334f4c339c12",
         "layer": 20
       },
-      "gate_level": "statistic (raw gap slope reproduces published -0.12 within rebanding tolerance; design-band raw gap slope reported alongside)",
+      "gate_level": "row-level min_dist 1e-4 (enforced upstream in this adapter) + statistic ENFORCED (design-band raw gap slope must reproduce published -0.12 within 0.02; recomputed -0.1202)",
       "alpha": 0.01,
       "original_stat": {
         "estimator": "OLS slope of (far - near band gap) vs log2 K + K x log(dist) interaction (published MixedLM +0.010, p=0.405)",
@@ -519,8 +753,33 @@
         "K_points": 4
       },
       "regrade_label": "null-overturned (candidate rescue)",
+      "estimator_caveat": {
+        "published_co_primary": {
+          "estimator": "MixedLM K x log(min_dist) interaction (#478 body)",
+          "beta": 0.01,
+          "p": 0.405
+        },
+        "same_estimator_raw": {
+          "estimator": "cluster-robust OLS Wald, (cell_id|seed) clusters",
+          "beta": 0.009744341901858439,
+          "p": 0.02211681889993931
+        },
+        "same_estimator_centered": {
+          "estimator": "cluster-robust OLS Wald, (cell_id|seed) clusters",
+          "beta": 0.021480451665166822,
+          "p": 0.000753260993037769
+        },
+        "read": "candidate rescue is centering-attributable under a FIXED cluster-robust estimator at the registered alpha (raw p=0.0221 NS at H2 alpha=0.01; centered p=0.000753 significant); it is NOT confirmed under the published MixedLM co-primary \u2014 never state the #478 null overturned unconditionally"
+      },
+      "follow_up": "MixedLM refit (the published co-primary estimator) on the raw AND centered joins \u2014 required before any unconditional rescue claim",
+      "holm_binding": {
+        "binding_rule": "plan \u00a73 registered multiplicity rule: Holm-corrected p<0.05 within the 2-member family {gap_slope, interaction}",
+        "binding_alpha": 0.05,
+        "h2_recorded_alpha": 0.01,
+        "outcome_invariant_here": "interaction p=0.000753 passes Holm at both alphas (step-down thresholds 0.025 and 0.005)"
+      },
       "notes": "Rescue driver is the K x log(dist) INTERACTION under the centered metric (cluster-robust OLS beta +0.021, Holm-significant even at the plan-H2 alpha=0.01); the gap slope itself stays NS. ESTIMATOR CAVEAT: the same cluster-robust OLS on the RAW join gives p=0.022 (borderline at 0.05, NS at the H2 alpha=0.01) where the published co-primary MixedLM read +0.010, p=0.405 - so part of the movement is estimator-sensitivity, and the positive interaction direction (slope flattens as K grows) is a CANDIDATE rescue pending a MixedLM refit, exactly per the tree's candidate-rescue framing. Reported with family size 2, corrected + uncorrected p.",
-      "computed_at": "2026-06-11T01:22:23.239400+00:00"
+      "computed_at": "2026-06-11T02:20:14.247096+00:00"
     },
     {
       "row_id": "490-distance-adjusted",
@@ -579,7 +838,7 @@
       },
       "regrade_label": "stands (null persists)",
       "notes": "is_on_axis labels are the experiment's DESIGN (which personas were evaluated as on/off-axis); post-hoc re-selection cannot add personas with Y, so only the distance covariates change under centering.",
-      "computed_at": "2026-06-11T01:22:23.701126+00:00"
+      "computed_at": "2026-06-11T02:20:14.723926+00:00"
     },
     {
       "row_id": "396-predictor-null",
@@ -725,7 +984,7 @@
       },
       "regrade_label": "stands (null persists)",
       "notes": "Same join for #396 and #415 (#415 corroborated #396 on the same 24 personas + DV; the neutral reference maps to the bank's qwen_default persona, the assistant reference to helpful_assistant). Cells failing Holm but with uncorrected p<0.01 are candidate signals, never rescues.",
-      "computed_at": "2026-06-11T01:22:27.356541+00:00"
+      "computed_at": "2026-06-11T02:20:17.151314+00:00"
     },
     {
       "row_id": "415-predictor-null",
@@ -871,7 +1130,7 @@
       },
       "regrade_label": "stands (null persists)",
       "notes": "Same join for #396 and #415 (#415 corroborated #396 on the same 24 personas + DV; the neutral reference maps to the bank's qwen_default persona, the assistant reference to helpful_assistant). Cells failing Holm but with uncorrected p<0.01 are candidate signals, never rescues.",
-      "computed_at": "2026-06-11T01:22:27.359121+00:00"
+      "computed_at": "2026-06-11T02:20:17.159223+00:00"
     },
     {
       "row_id": "505-loo-null",
@@ -1061,7 +1320,7 @@
       },
       "regrade_label": "stands (null persists)",
       "notes": "Pooled cluster-robust OLS stands in for the published mixed model (which failed singular); the per-arm + sign-agreement read is the task's own published verdict machinery.",
-      "computed_at": "2026-06-11T01:22:27.485614+00:00"
+      "computed_at": "2026-06-11T02:20:17.304427+00:00"
     },
     {
       "row_id": "474-gram-sensitivity",
@@ -1339,7 +1598,7 @@
       },
       "regrade_label": "sensitivity-agrees",
       "notes": "Primary lineage row: the #474 cosine-followup cells recomputed directly. NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
-      "computed_at": "2026-06-11T01:22:27.579424+00:00"
+      "computed_at": "2026-06-11T02:20:17.411168+00:00"
     },
     {
       "row_id": "406-gram-sensitivity",
@@ -1617,7 +1876,7 @@
       },
       "regrade_label": "sensitivity-agrees",
       "notes": "Producer row: scripts/i406_phase1_merge_and_compute_matrices.py (DELETED; commit 9e6e31c3f) persisted distance-form 1-cos, normalize-only (RAW). Sensitivity read inherits from the 474 cells (same matrices). NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
-      "computed_at": "2026-06-11T01:22:27.583610+00:00"
+      "computed_at": "2026-06-11T02:20:17.418481+00:00"
     },
     {
       "row_id": "460-gram-sensitivity",
@@ -1895,7 +2154,7 @@
       },
       "regrade_label": "sensitivity-agrees",
       "notes": "Lineage row: #460 consumed the same C_L* matrices via the #406 rig; sensitivity read inherits from the 474 cells. NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
-      "computed_at": "2026-06-11T01:22:27.588183+00:00"
+      "computed_at": "2026-06-11T02:20:17.426024+00:00"
     },
     {
       "row_id": "341-cos-js-alignment",
@@ -1966,7 +2225,39 @@
       },
       "regrade_label": "sensitivity-agrees",
       "notes": "The cos<->JS alignment claim itself was computed on the raw matrix (fingerprint-identical to the degenerate band), so #341 no longer grounds the CENTERED recipe; this row asks whether the alignment survives the approximate centered read. Sensitivity namespace only.",
-      "computed_at": "2026-06-11T01:22:27.638857+00:00"
+      "computed_at": "2026-06-11T02:20:17.483062+00:00"
+    },
+    {
+      "row_id": "213-partition",
+      "task": 213,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Producer: scripts/run_issue_213_part_a.py:547 (raw pairwise cosine). WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T02:20:17.527281+00:00"
+    },
+    {
+      "row_id": "227-partition",
+      "task": 227,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Consumer of the #213 part-A geometry. WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T02:20:17.534420+00:00"
     },
     {
       "row_id": "472-readoff-r6",
@@ -2077,7 +2368,7 @@
       },
       "regrade_label": "stands (already-remediated; r6 read-off)",
       "notes": "Bundles under issue472_neg_geometry/geometry carry cos_matrix + cos_matrix_mean_centered since #504 r6.",
-      "computed_at": "2026-06-11T01:22:27.726660+00:00"
+      "computed_at": "2026-06-11T02:20:17.580072+00:00"
     },
     {
       "row_id": "504-readoff-r6",
@@ -2188,7 +2479,7 @@
       },
       "regrade_label": "stands (already-remediated; r6 read-off)",
       "notes": "#504's Gate-A degeneracy finding IS the raw-vs-centered contrast; rounds 1-5 raw, round 6 remediated.",
-      "computed_at": "2026-06-11T01:22:27.732858+00:00"
+      "computed_at": "2026-06-11T02:20:17.587563+00:00"
     },
     {
       "row_id": "404-pairwise-scope",
@@ -2201,7 +2492,7 @@
       "recomputed_stat": null,
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
-      "computed_at": "2026-06-11T01:22:27.771765+00:00"
+      "computed_at": "2026-06-11T02:20:17.637315+00:00"
     },
     {
       "row_id": "458-pairwise-scope",
@@ -2214,7 +2505,7 @@
       "recomputed_stat": null,
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
-      "computed_at": "2026-06-11T01:22:27.778742+00:00"
+      "computed_at": "2026-06-11T02:20:17.645521+00:00"
     },
     {
       "row_id": "444-pairwise-scope",
@@ -2227,7 +2518,7 @@
       "recomputed_stat": null,
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
-      "computed_at": "2026-06-11T01:22:27.784992+00:00"
+      "computed_at": "2026-06-11T02:20:17.652879+00:00"
     },
     {
       "row_id": "493-pairwise-scope",
@@ -2240,7 +2531,7 @@
       "recomputed_stat": null,
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
-      "computed_at": "2026-06-11T01:22:27.792729+00:00"
+      "computed_at": "2026-06-11T02:20:17.660602+00:00"
     },
     {
       "row_id": "502-pairwise-scope",
@@ -2253,40 +2544,23 @@
       "recomputed_stat": null,
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
-      "computed_at": "2026-06-11T01:22:27.799335+00:00"
+      "computed_at": "2026-06-11T02:20:17.668506+00:00"
     },
     {
-      "row_id": "213-partition",
-      "task": 213,
-      "config_slug": "approx_gram",
-      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
-      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
-      "gate_level": "n/a (no join possible)",
-      "original_stat": {
-        "estimator": "cue->no_cue centroid cosine distances per layer/model",
-        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
-      },
+      "row_id": "488-pairwise-scope",
+      "task": 488,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/i488_phase1_predictors.py:111+ (COSINE_LAYERS residual-stream pairwise T_i<->T_j sweep \u2014 the #404-family recipe; audit SITE row)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
       "recomputed_stat": null,
-      "regrade_label": "join-failed (needs-GPU-re-extraction)",
-      "notes": "Producer: scripts/run_issue_213_part_a.py:547 (raw pairwise cosine). WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
-      "computed_at": "2026-06-11T01:24:24.265072+00:00"
-    },
-    {
-      "row_id": "227-partition",
-      "task": 227,
-      "config_slug": "approx_gram",
-      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
-      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
-      "gate_level": "n/a (no join possible)",
-      "original_stat": {
-        "estimator": "cue->no_cue centroid cosine distances per layer/model",
-        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
-      },
-      "recomputed_stat": null,
-      "regrade_label": "join-failed (needs-GPU-re-extraction)",
-      "notes": "Consumer of the #213 part-A geometry. WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
-      "computed_at": "2026-06-11T01:24:24.272084+00:00"
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T02:20:17.675918+00:00"
     }
   ],
-  "updated_at": "2026-06-11T01:24:24.273229+00:00"
+  "updated_at": "2026-06-11T02:20:17.677449+00:00",
+  "code_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
+  "data_root_commit": "982f8c3a6bb20495da4c11a6f2980626584bb36c"
 }

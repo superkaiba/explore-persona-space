@@ -76,12 +76,12 @@ GATE_RHO_TOL = 0.02
 # ──────────────────────────────────────────────────────────────────────────
 # Generic helpers
 # ──────────────────────────────────────────────────────────────────────────
-def _git_sha() -> str:
-    """Current commit of the tree this script runs from (reproducibility)."""
+def _git_sha(cwd: Path = REPO) -> str:
+    """HEAD commit of the checkout at ``cwd`` (default: this code tree)."""
     try:
         return subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            cwd=REPO,
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=True,
@@ -582,6 +582,425 @@ def row_99(data_root: Path, out: Path, payload: dict) -> None:
     append_row(out, row)
 
 
+CORE11_142 = [
+    "software_engineer",
+    "kindergarten_teacher",
+    "data_scientist",
+    "medical_doctor",
+    "librarian",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "zelthari_scholar",
+    "assistant",
+]
+SOURCES_142 = ["villain", "comedian", "assistant", "software_engineer", "kindergarten_teacher"]
+# #142 body, Reproducibility table "Matched cosine-leakage L{10,15,20,25} rho"
+# (50 directed pairs = 5 sources x 10 core-11 targets).
+PUB_142_RHO = {10: 0.169, 15: 0.520, 20: 0.567, 25: 0.557}
+
+
+def verify_142(data_root: Path, out: Path, payload: dict) -> None:
+    """Canonical-line verification: #142's matched cosine-leakage baseline
+    (core-11 subset, 50 directed pairs, layers 10/15/20/25) reproduces from the
+    persisted single_token_100_persona centroids. Gate finding: the published
+    values reproduce under CORE-11-SUBSET-bank centering (|drho| <= 0.001 at
+    all four layers), NOT full-111-bank centering — the bank the mean was
+    taken over was the 11-persona subset."""
+    base = data_root / "eval_results" / "single_token_100_persona"
+    cached = json.loads((base / "cosine_distance_matrix_layer20.json").read_text())
+    names = cached["persona_names"]
+    idx = {n: i for i, n in enumerate(names)}
+    i11 = {n: i for i, n in enumerate(CORE11_142)}
+    leak = {s: json.loads((base / s / "marker_eval.json").read_text()) for s in SOURCES_142}
+    per_layer = {}
+    for layer, pub_rho in PUB_142_RHO.items():
+        C = torch.load(
+            base / "centroids" / f"centroids_layer{layer}.pt",
+            map_location="cpu",
+            weights_only=True,
+        ).to(torch.float32)
+        sub = C[[idx[n] for n in CORE11_142]]
+        cos_11 = compute_cosine_matrix(sub, centering="global_mean").numpy().astype(np.float64)
+        cos_11_raw = compute_cosine_matrix(sub, centering="none").numpy().astype(np.float64)
+        cos_full = compute_cosine_matrix(C, centering="global_mean").numpy().astype(np.float64)
+        xs, xs_raw, xs_fullbank, ys = [], [], [], []
+        for s in SOURCES_142:
+            for t in CORE11_142:
+                if t == s:
+                    continue
+                xs.append(cos_11[i11[s], i11[t]])
+                xs_raw.append(cos_11_raw[i11[s], i11[t]])
+                xs_fullbank.append(cos_full[idx[s], idx[t]])
+                ys.append(float(leak[s][t]["rate"]))
+        rho, p = spearman(xs, ys)
+        rho_raw, p_raw = spearman(xs_raw, ys)
+        rho_fullbank, _ = spearman(xs_fullbank, ys)
+        if abs(rho - pub_rho) > GATE_RHO_TOL:
+            raise RuntimeError(
+                f"verify_142 join gate FAILED at L{layer}: recomputed core-11-bank "
+                f"centered rho {rho:.4f} vs published {pub_rho} (H1: canonical-line "
+                f"verification inconclusive — investigate bank/recipe drift)"
+            )
+        per_layer[layer] = {
+            "n_pairs": len(ys),
+            "published_rho_centered": pub_rho,
+            "recomputed_rho_centered_core11_bank": rho,
+            "recomputed_p_centered": p,
+            "sensitivity_rho_raw_recipe": rho_raw,
+            "sensitivity_p_raw_recipe": p_raw,
+            "sensitivity_rho_centered_full111_bank": rho_fullbank,
+            "gate_pass": True,
+        }
+    row = {
+        "row_id": "142-verify",
+        "task": 142,
+        "config_slug": "verify_centered",
+        "cosine_path_used": "centered (canonical) — single_token_100_persona centroids "
+        "subset to core 11, subset-bank centering (#142 body Reproducibility)",
+        "recoverability": "CPU (verified)",
+        "family": "single_token_100p_core11",
+        "bank": {
+            "n": len(CORE11_142),
+            "names_hash": _names_hash(CORE11_142),
+            "layers": sorted(PUB_142_RHO),
+            "composition_note": "centering bank = the CORE-11 SUBSET (gate-discovered: "
+            "full-111-bank centering gives rho 0.57-0.76, not the published values); "
+            "pin caveat applies — centered values are only comparable within this bank",
+        },
+        "gate_level": "statistic (|drho|<=0.02 vs published matched-cosine rho at "
+        "EACH of layers 10/15/20/25 — four independent reproductions)",
+        "original_stat": {
+            "estimator": "Spearman rho, centered cos vs marker leakage rate, "
+            "50 directed pairs (5 sources x 10 core-11 targets)",
+            "per_layer_rho": {str(k): v for k, v in PUB_142_RHO.items()},
+            "headline_p_L20": 1.7e-5,
+        },
+        "recomputed_stat": {"per_layer": {str(k): v for k, v in per_layer.items()}},
+        "n": {"pairs": 50, "bank": len(CORE11_142)},
+        "regrade_label": "stands",
+        "notes": "Verification row (#142's cosine BASELINE was canonical/centered; its "
+        "headline claim — JS beats cosine — is about the comparison, and the cosine leg "
+        "reproduces exactly). The raw-recipe and full-111-bank columns are sensitivity "
+        "reads, not the original. H1 verification PASSED at all four layers.",
+        "computed_at": _now(),
+    }
+    append_row(out, row)
+
+
+def verify_311(data_root: Path, out: Path, payload: dict) -> None:
+    """Canonical-line verification: #311's persisted L20 centered cosine matrix,
+    pair-selection stat, and published headline partial Spearman all reproduce
+    from the persisted centroid bundle under the canonical recipe."""
+    import torch.nn.functional as F
+
+    base = data_root / "eval_results" / "issue_311"
+    b = torch.load(base / "centroids_base.pt", map_location="cpu", weights_only=False)
+    personas = list(b["personas"])
+    raw20 = b["centroids_raw"][20]
+    C = torch.stack([raw20[p].to(torch.float32) for p in personas])
+    cos_mc = compute_cosine_matrix(C, centering="global_mean").numpy().astype(np.float64)
+    cos_raw = compute_cosine_matrix(C, centering="none").numpy().astype(np.float64)
+
+    persisted = json.loads((base / "cosine_l20_base.json").read_text())
+    assert persisted["personas"] == personas, "persona order drift vs cosine_l20_base.json"
+    M = np.asarray(persisted["matrix"], dtype=np.float64)
+    gate_dev = float(np.abs(cos_mc - M).max())
+    if gate_dev > GATE_MATRIX_TOL:
+        raise RuntimeError(
+            f"verify_311 matrix join gate FAILED: max |recomputed_centered - persisted| "
+            f"= {gate_dev:.3e} (H1: canonical-line verification inconclusive)"
+        )
+    # Cross-check: the bundle ALSO persists pre-centered vectors; normalize+matmul
+    # of those must agree with the canonical recompute (recipe-drift detector).
+    cen20 = b["centroids_centered"][20]
+    U = F.normalize(torch.stack([cen20[p].to(torch.float32) for p in personas]), dim=-1)
+    bundle_dev = float(np.abs(cos_mc - (U @ U.T).numpy().astype(np.float64)).max())
+
+    i = {p: j for j, p in enumerate(personas)}
+    pair = json.loads((base / "pair_selection.json").read_text())
+    a_name, b_name = pair["A"], pair["B"]
+    pair_dev = abs(cos_mc[i[a_name], i[b_name]] - float(pair["cos_AB_centered"]))
+    if pair_dev > GATE_MATRIX_TOL:
+        raise RuntimeError(f"verify_311 pair stat gate FAILED: dev {pair_dev:.3e}")
+
+    # Headline: partial Spearman of (d_mid, joint-specific leakage | s), per the
+    # body's Methodology — residualize the VALUES of d_mid and r_p on s, then
+    # rank-correlate the residuals (one-sided, predicted rho < 0).
+    an = json.loads((base / "analysis.json").read_text())
+    bys = an["bystanders"]
+    r_p = np.asarray(an["r_p_primary_per_persona"], dtype=np.float64)
+    cenA, cenB = cen20[a_name].to(torch.float32), cen20[b_name].to(torch.float32)
+    mid = 0.5 * (cenA + cenB)
+
+    def _cos(u: torch.Tensor, v: torch.Tensor) -> float:
+        return float(F.cosine_similarity(u.unsqueeze(0), v.unsqueeze(0)).item())
+
+    def _headline(vec_of, mid_v, a_v, b_v) -> tuple[float, float]:
+        d_mid = np.array([1.0 - _cos(vec_of(p), mid_v) for p in bys])
+        s = np.array([0.5 * (_cos(vec_of(p), a_v) + _cos(vec_of(p), b_v)) for p in bys])
+        ex = d_mid - np.polyval(np.polyfit(s, d_mid, 1), s)
+        ey = r_p - np.polyval(np.polyfit(s, r_p, 1), s)
+        rho, p_two = spearman(ex, ey)
+        p_one = p_two / 2 if rho < 0 else 1 - p_two / 2  # one-sided, H: rho < 0
+        return rho, p_one
+
+    rho_c, p_one_c = _headline(lambda p: cen20[p].to(torch.float32), mid, cenA, cenB)
+    rawA, rawB = raw20[a_name].to(torch.float32), raw20[b_name].to(torch.float32)
+    rho_r, p_one_r = _headline(
+        lambda p: raw20[p].to(torch.float32), 0.5 * (rawA + rawB), rawA, rawB
+    )
+
+    pub_rho, pub_p_one = -0.348, 0.086  # #311 body headline
+    if abs(rho_c - pub_rho) > GATE_RHO_TOL:
+        raise RuntimeError(
+            f"verify_311 headline gate FAILED: recomputed partial rho {rho_c:.4f} vs "
+            f"published {pub_rho} (H1: canonical-line verification inconclusive)"
+        )
+    row = {
+        "row_id": "311-verify",
+        "task": 311,
+        "config_slug": "verify_centered",
+        "cosine_path_used": "centered (canonical) — bundle persists centroids_raw AND "
+        "centroids_centered; cosine_l20_base.json cosine_variant='centered_centroid'",
+        "recoverability": "CPU (verified)",
+        "family": "issue311_19bank_L20",
+        "bank": {"n": len(personas), "names_hash": _names_hash(personas), "layer": 20},
+        "gate_level": "matrix-1e-4 (full 19x19 centered matrix vs persisted JSON) "
+        "+ pair stat 1e-4 + statistic (|drho|<=0.02 vs published headline)",
+        "original_stat": {
+            "estimator": "one-sided partial Spearman of d_mid vs joint-specific leakage "
+            "given s(p) (value-residualized, then rank-correlated), N=17 bystanders",
+            "rho": pub_rho,
+            "p_one_sided": pub_p_one,
+            "pair_cos_AB_centered": float(pair["cos_AB_centered"]),
+        },
+        "recomputed_stat": {
+            "matrix_gate_max_dev": gate_dev,
+            "bundle_centered_crosscheck_max_dev": bundle_dev,
+            "pair_cos_AB_centered_recomputed": float(cos_mc[i[a_name], i[b_name]]),
+            "pair_cos_AB_raw_recipe_sensitivity": float(cos_raw[i[a_name], i[b_name]]),
+            "pair_cos_AB_raw_persisted": float(pair.get("cos_AB_raw_uncentered", float("nan"))),
+            "headline_centered": {"rho": rho_c, "p_one_sided": p_one_c},
+            "sensitivity_headline_raw_recipe": {"rho": rho_r, "p_one_sided": p_one_r},
+        },
+        "n": {"bank": len(personas), "bystanders": len(bys)},
+        "regrade_label": "stands",
+        "notes": "Verification row (#311's recipe WAS canonical/centered: pair selection, "
+        "persisted matrix, and the headline all reproduce from centroids_base.pt). "
+        "Y-side caveat for the analyzer: the persisted analysis.json h1_primary records "
+        "a PROVISIONAL rho=+0.534 (different parameterization, 'h1_verdict_provisional: "
+        "FAIL', dirty-tree commit 50205844) that does NOT match the published headline; "
+        "the published -0.348 reproduces exactly from the centroids + the body's stated "
+        "value-residualized partial, so the X-side recipe is verified — the provisional "
+        "JSON snapshot predates the final analysis. Raw-recipe column is a sensitivity "
+        "read.",
+        "computed_at": _now(),
+    }
+    append_row(out, row)
+
+
+def verify_380(data_root: Path, out: Path, payload: dict) -> None:
+    """Canonical-line verification: #380's cosine-pairwise follow-up (mean
+    pairwise L15 centered cosine distance on the n=24 inherited cohort)
+    reproduces per-persona values (1e-4) + the published Spearman exactly."""
+    fam = family_n24(data_root, layer=15)
+    D = 1.0 - fam["cos_mc"]
+    D_raw = 1.0 - fam["cos_raw"]
+    n = fam["n"]
+    mask = ~np.eye(n, dtype=bool)
+    mean_pw = (D * mask).sum(axis=1) / (n - 1)
+    mean_pw_raw = (D_raw * mask).sum(axis=1) / (n - 1)
+    pos = {p: j for j, p in enumerate(fam["names"])}
+
+    pub = json.loads(
+        (
+            data_root / "eval_results" / "issue_380" / "cosine_pairwise_n24" / "correlation.json"
+        ).read_text()
+    )
+    rows = pub["rows"]
+    devs = [abs(mean_pw[pos[r["persona"]]] - r["mean_pairwise_cosine_distance"]) for r in rows]
+    gate_dev = float(max(devs))
+    if gate_dev > GATE_MATRIX_TOL:
+        raise RuntimeError(
+            f"verify_380 per-persona value gate FAILED: max dev {gate_dev:.3e} "
+            f"(H1: canonical-line verification inconclusive)"
+        )
+    xs = np.array([mean_pw[pos[r["persona"]]] for r in rows])
+    xs_raw = np.array([mean_pw_raw[pos[r["persona"]]] for r in rows])
+    ys = np.array([float(r["source_rate"]) for r in rows])
+    lt = np.array([float(r["log_tokens"]) for r in rows])
+    rho, p = spearman(xs, ys)
+    rho_raw, p_raw = spearman(xs_raw, ys)
+    pub_rho = float(pub["raw_spearman"]["rho"])
+    if abs(rho - pub_rho) > GATE_RHO_TOL:
+        raise RuntimeError(
+            f"verify_380 statistic gate FAILED: recomputed rho {rho:.4f} vs published {pub_rho:.4f}"
+        )
+
+    def _rank_residualize(x: np.ndarray, covar: np.ndarray) -> np.ndarray:
+        # Verbatim mirror of scripts/i380_cosine_pairwise.py::rank_residualize.
+        rx, rc = sps.rankdata(x), sps.rankdata(covar)
+        slope, intercept = np.polyfit(rc, rx, 1)
+        return rx - (slope * rc + intercept)
+
+    lp_rho, lp_p = spearman(_rank_residualize(xs, lt), _rank_residualize(ys, lt))
+    row = {
+        "row_id": "380-verify",
+        "task": 380,
+        "config_slug": "verify_centered",
+        "cosine_path_used": "centered (canonical) — i380_cosine_pairwise.py:48-52 "
+        "(mat - mat.mean(dim=0) -> normalize -> matmul on the #274 n24 bank)",
+        "recoverability": "CPU (verified)",
+        "family": fam["family"],
+        "bank": {"n": fam["n"], "names_hash": fam["names_hash"], "layer": 15},
+        "gate_level": "value-1e-4 (per-persona mean pairwise centered distance vs the "
+        "persisted correlation.json rows) + statistic (|drho|<=0.02 vs published)",
+        "original_stat": {
+            "estimator": "Spearman rho of mean pairwise L15 centered cosine distance "
+            "vs marker source rate (n=24); length-partial via rank-residualize",
+            "raw_spearman_rho": pub_rho,
+            "raw_spearman_p": float(pub["raw_spearman"]["p"]),
+            "length_partial_rho": float(pub["length_partial_spearman"]["rho"]),
+        },
+        "recomputed_stat": {
+            "per_persona_value_gate_max_dev": gate_dev,
+            "raw_spearman": {"rho": rho, "p": p},
+            "length_partial_spearman": {"rho": lp_rho, "p": lp_p},
+            "sensitivity_raw_recipe_spearman": {"rho": rho_raw, "p": p_raw},
+        },
+        "n": {"personas": n},
+        "regrade_label": "stands",
+        "notes": "Verification row (#380's follow-up predictor WAS canonical/centered; "
+        "the published conclusion is a wide-CI null and reproduces exactly). The "
+        "raw-recipe column is a sensitivity read, not the original.",
+        "computed_at": _now(),
+    }
+    append_row(out, row)
+
+
+def partition_canonical_line(data_root: Path, out: Path, payload: dict) -> None:
+    """Canonical-line tasks whose X-side artifacts do NOT persist (plan §4-A
+    promised verification rows for the full centered line; these four get
+    evidence-backed unrecoverable partitions instead — what is missing, where
+    it was looked for, and what a GPU follow-up would need)."""
+
+    def _git_history_count(path: str) -> int:
+        res = subprocess.run(
+            ["git", "log", "--all", "--oneline", "--", path],
+            cwd=REPO,
+            capture_output=True,
+            text=True,
+            env={**os.environ},
+        )
+        return len([ln for ln in res.stdout.splitlines() if ln.strip()])
+
+    causal_hist = _git_history_count("eval_results/causal_proximity")
+    taxo_hist = _git_history_count("eval_results/persona_taxonomy")
+    i228_hist = _git_history_count("eval_results/issue_228")
+    specs = [
+        {
+            "task": 61,
+            "original_stat": {
+                "estimator": "Spearman rho, baseline source<->assistant cosine (L15) vs "
+                "peak assistant marker leakage",
+                "rho": -0.34,
+                "p": 0.45,
+                "n": 7,
+            },
+            "missing": "per-checkpoint centroids / cosine_matrix_layer{15,20}.json "
+            "(written pod-side by eval_causal_ckpt.py under --output-dir; never "
+            "committed)",
+            "looked": f"local eval_results/causal_proximity (absent); git log --all -- "
+            f"eval_results/causal_proximity ({causal_hist} commits); HF data repo "
+            "(no causal bucket, list_repo_files checked 2026-06-10)",
+            "recipe_evidence": "scripts/eval_causal_ckpt.py:186 — "
+            "compute_cosine_matrix(..., centering='global_mean') explicit (audit SITE "
+            "row); figures/causal_proximity/* persist (figures only)",
+            "followup": "re-merge the 7x11 checkpoints from HF adapters + re-extract "
+            "centroids (GPU)",
+        },
+        {
+            "task": 77,
+            "original_stat": {
+                "estimator": "Spearman rho, L15 global-mean-subtracted cosine vs "
+                "leakage across 200 taxonomy bystanders (+ partial rho 0.740)",
+                "rho": 0.711,
+                "p": 1e-15,
+                "n": 200,
+            },
+            "missing": "the 200-persona L15 centroid bank (never persisted: no local "
+            "copy, no .pt in git history, no HF taxonomy bucket)",
+            "looked": f"local eval_results/persona_taxonomy (absent); git log --all -- "
+            f"eval_results/persona_taxonomy ({taxo_hist} commit(s) — cosine_analysis."
+            "json only, consumption-level values, on UNMERGED commit c9fe24e8a); HF "
+            "data repo (no taxonomy bucket, list_repo_files checked 2026-06-10)",
+            "recipe_evidence": "#77 body Reproducibility: 'Cosine extraction at layers "
+            "[10, 15, 20, 25] ... global-mean-subtracted' — centered recipe",
+            "followup": "re-extract the 200-persona bank on base model (GPU); the "
+            "consumption-level cosine_analysis.json at c9fe24e8a can gate the re-join",
+        },
+        {
+            "task": 91,
+            "original_stat": {
+                "estimator": "within-source cosine-vs-leakage trend over convergence "
+                "checkpoints (4 sources x 5 checkpoints; L15/L20)",
+                "summary": "within-source leakage DECREASES as cosine rises; only "
+                "villain/comedian reach p=0.037 at L20 (N=5 each)",
+            },
+            "missing": "per-checkpoint centroids / cosine payloads (same pod-side "
+            "output_dir as #61; analyze_causal_proximity.py read them in place)",
+            "looked": f"local eval_results/causal_proximity (absent); git log --all "
+            f"({causal_hist} commits for the dir); HF data repo (no causal bucket)",
+            "recipe_evidence": "same rig as #61 — eval_causal_ckpt.py:186 explicit "
+            "centering='global_mean' (audit SITE row)",
+            "followup": "same GPU re-extraction as #61 (shared rig)",
+        },
+        {
+            "task": 228,
+            "original_stat": {
+                "estimator": "Spearman rho, cosine_L15 (global-mean centered, per "
+                "merged state) vs marker leakage on 71 directed cells",
+                "rho": 0.44,
+                "p": 0.0001,
+                "n": 71,
+            },
+            "missing": "per-state (71 merged checkpoints) centroids — extracted "
+            "pod-side, never persisted",
+            "looked": f"local eval_results/issue_228 (absent); git log --all -- "
+            f"eval_results/issue_228 ({i228_hist} commits — all_results.json/"
+            "correlations.json, consumption-level, on UNMERGED commit ad972db70); HF "
+            "data repo (no issue228 bucket, list_repo_files checked 2026-06-10)",
+            "recipe_evidence": "#228 body: 'cosine computed on residual-stream "
+            "centroids at layers 15/20/25, global-mean centered' — centered recipe",
+            "followup": "re-merge 71 states from HF adapters + re-extract (GPU); "
+            "consumption-level tables at ad972db70 can gate the re-join",
+        },
+    ]
+    for spec in specs:
+        append_row(
+            out,
+            {
+                "row_id": f"{spec['task']}-partition",
+                "task": spec["task"],
+                "config_slug": "verify_centered",
+                "cosine_path_used": "centered (canonical) — recipe evidence: "
+                + spec["recipe_evidence"],
+                "recoverability": "unrecoverable-X (needs GPU re-extraction)",
+                "gate_level": "n/a (no join attempted)",
+                "original_stat": spec["original_stat"],
+                "recomputed_stat": None,
+                "regrade_label": "join-failed (X unrecoverable — needs GPU re-extraction)",
+                "notes": f"Missing: {spec['missing']}. Looked: {spec['looked']}. "
+                f"These tasks used the CENTERED recipe, so the canonical pin does not "
+                f"threaten them; verification is simply not executable from disk. "
+                f"Follow-up pointer: {spec['followup']}.",
+                "computed_at": _now(),
+            },
+        )
+
+
 def regrade_405(data_root: Path, out: Path, payload: dict) -> None:
     """#405 (secondary-lean): MixedLM deltaLogP ~ K * min_dist on the CORE 336
     rows; distance source was the RAW 20-bank. Mirror per-K OLS slopes (gated
@@ -724,7 +1143,8 @@ def regrade_405(data_root: Path, out: Path, payload: dict) -> None:
         "n": {"rows": len(df), "per_K": {k: v["n"] for k, v in perk_raw.items()}},
         "regrade_label": label,
         "notes": "Secondary-lean row: #405's distance axis (panel design + headline "
-        "regression covariate) was built in the RAW 20-bank geometry. M = per-K Spearman.",
+        "regression covariate) was built in the RAW 20-bank geometry. M = POOLED "
+        "Spearman (the label driver); per-K reads are descriptive strata.",
         "computed_at": _now(),
     }
     append_row(out, row)
@@ -841,6 +1261,15 @@ def regrade_478(data_root: Path, out: Path, payload: dict) -> None:
     gap_raw = _gap_slope("md_raw", bands_raw)
     gap_design = _gap_slope("md_raw", pers_band.to_dict())
     gap_mc = _gap_slope("md_mc", bands_mc)
+    # Statistic gate (ENFORCED, round-2 fix — the gate_level string previously
+    # claimed this without a programmatic check): the design-band raw gap slope
+    # must reproduce the published -0.12 before the centered read is consumed.
+    PUB_GAP_SLOPE = -0.12
+    if abs(gap_design["slope"] - PUB_GAP_SLOPE) > 0.02:
+        raise RuntimeError(
+            f"478 flatness statistic gate FAILED: design-band raw gap slope "
+            f"{gap_design['slope']:.4f} vs published {PUB_GAP_SLOPE}"
+        )
     crosstab = (
         pd.crosstab(
             pers_band.rename("design_band"),
@@ -873,12 +1302,16 @@ def regrade_478(data_root: Path, out: Path, payload: dict) -> None:
         m_raw=np.mean([v["spearman_rho"] for v in perk_raw.values()]),
         m_mc=np.mean([v["spearman_rho"] for v in perk_mc.values()]),
     )
-    # Sub-row B (null): flatness. Family = {gap slope, interaction}, Holm at the
-    # published alpha=0.01 (plan H2). Rescue = any family member significant
-    # after Holm under the centered read.
+    # Sub-row B (null): flatness. Family = {gap slope, interaction}. BINDING
+    # rescue rule = plan §3's registered multiplicity rule ("Holm-corrected
+    # p<0.05 within the family") — that object drives the label. Plan H2's
+    # stricter alpha=0.01 for the Wald test is COMPUTED AND RECORDED alongside
+    # (holm_reject_at_h2_alpha_001) so a future re-run can read both; on this
+    # data the outcome is alpha-invariant (interaction p=0.000753 passes Holm
+    # thresholds 0.025 AND 0.005). Reconciler r1: do NOT rebind post-hoc.
     fam_p = {"gap_slope": gap_mc["p"], "interaction": inter_mc["p"]}
-    holm = holm_reject(fam_p, alpha=0.05)
-    holm_h2 = holm_reject(fam_p, alpha=0.01)  # plan H2's stricter alpha for the Wald test
+    holm = holm_reject(fam_p, alpha=0.05)  # BINDING (plan §3 family rule)
+    holm_h2 = holm_reject(fam_p, alpha=0.01)  # recorded (plan H2 Wald alpha)
     rescued = any(holm.values())
     label_flat = label_null(rescued)
     x_spear, _ = spearman(df["md_raw"], df["md_mc"])
@@ -924,8 +1357,9 @@ def regrade_478(data_root: Path, out: Path, payload: dict) -> None:
             "recoverability": "CPU (verified)",
             "family": fam["family"],
             "bank": {"n": fam["n"], "names_hash": fam["names_hash"], "layer": 20},
-            "gate_level": "statistic (raw gap slope reproduces published -0.12 within "
-            "rebanding tolerance; design-band raw gap slope reported alongside)",
+            "gate_level": "row-level min_dist 1e-4 (enforced upstream in this adapter) "
+            "+ statistic ENFORCED (design-band raw gap slope must reproduce published "
+            "-0.12 within 0.02; recomputed -0.1202)",
             "alpha": alpha,
             "original_stat": {
                 "estimator": "OLS slope of (far - near band gap) vs log2 K "
@@ -952,6 +1386,41 @@ def regrade_478(data_root: Path, out: Path, payload: dict) -> None:
             },
             "n": {"rows": len(df), "K_points": 4},
             "regrade_label": label_flat,
+            # Machine-readable estimator caveat (ledger 478-estimator-mixedlm-refit):
+            # the label is conditional on the estimator — a downstream reader must
+            # never state "null overturned" unconditionally from this row.
+            "estimator_caveat": {
+                "published_co_primary": {
+                    "estimator": "MixedLM K x log(min_dist) interaction (#478 body)",
+                    "beta": 0.010,
+                    "p": 0.405,
+                },
+                "same_estimator_raw": {
+                    "estimator": "cluster-robust OLS Wald, (cell_id|seed) clusters",
+                    "beta": inter_raw["beta"],
+                    "p": inter_raw["p"],
+                },
+                "same_estimator_centered": {
+                    "estimator": "cluster-robust OLS Wald, (cell_id|seed) clusters",
+                    "beta": inter_mc["beta"],
+                    "p": inter_mc["p"],
+                },
+                "read": "candidate rescue is centering-attributable under a FIXED "
+                "cluster-robust estimator at the registered alpha (raw p=0.0221 NS at "
+                "H2 alpha=0.01; centered p=0.000753 significant); it is NOT confirmed "
+                "under the published MixedLM co-primary — never state the #478 null "
+                "overturned unconditionally",
+            },
+            "follow_up": "MixedLM refit (the published co-primary estimator) on the "
+            "raw AND centered joins — required before any unconditional rescue claim",
+            "holm_binding": {
+                "binding_rule": "plan §3 registered multiplicity rule: Holm-corrected "
+                "p<0.05 within the 2-member family {gap_slope, interaction}",
+                "binding_alpha": 0.05,
+                "h2_recorded_alpha": 0.01,
+                "outcome_invariant_here": "interaction p=0.000753 passes Holm at both "
+                "alphas (step-down thresholds 0.025 and 0.005)",
+            },
             "notes": "Rescue driver is the K x log(dist) INTERACTION under the centered "
             "metric (cluster-robust OLS beta +0.021, Holm-significant even at the plan-H2 "
             "alpha=0.01); the gap slope itself stays NS. ESTIMATOR CAVEAT: the same "
@@ -1700,6 +2169,8 @@ def scope_pairwise(data_root: Path, out: Path, payload: dict) -> None:
         444: "scripts/issue444_persona_distance_topic.py:101-110 (cos vs reference)",
         493: "scripts/issue493_extraction_metric_bakeoff.py (pairwise predictor arm)",
         502: "scripts/issue502_cpu_smoke.py (batched mirror of the #493 serial path)",
+        488: "scripts/i488_phase1_predictors.py:111+ (COSINE_LAYERS residual-stream "
+        "pairwise T_i<->T_j sweep — the #404-family recipe; audit SITE row)",
     }
     for task_id, site in sites.items():
         append_row(
@@ -1729,6 +2200,10 @@ def scope_pairwise(data_root: Path, out: Path, payload: dict) -> None:
 TASK_ADAPTERS = {
     "66": verify_66,
     "99": row_99,
+    "142": verify_142,
+    "311": verify_311,
+    "380": verify_380,
+    "canonical_partition": partition_canonical_line,
     "405": regrade_405,
     "478": regrade_478,
     "490": regrade_490,
@@ -1774,17 +2249,30 @@ def main(argv: list[str] | None = None) -> int:
     )
     keys = [args.only] if args.only else list(TASK_ADAPTERS)
     payload: dict = {"bank_offdiag": {}}
-    payload_path = OUT_DIR / "figures_payload.json"
+    # Sidecar rides next to --out (round-1 review fix: the OUT_DIR hardcode
+    # ignored --out redirection and dirtied the committed payload in place).
+    payload_path = args.out.parent / "figures_payload.json"
     if payload_path.exists():
         payload.update(json.loads(payload_path.read_text()))
+    data_root_commit = _git_sha(args.data_root)
     for k in keys:
         log.info("[adapter] %s", k)
         TASK_ADAPTERS[k](args.data_root, args.out, payload)
         payload["generated_at"] = _now()
         payload["git_commit"] = _git_sha()
+        payload["code_commit"] = _git_sha()
+        payload["data_root_commit"] = data_root_commit
         payload_path.parent.mkdir(parents=True, exist_ok=True)
         payload_path.write_text(json.dumps(payload, default=float))
         log.info("[checkpoint] payload + table updated after %s", k)
+    # Table-level provenance: record BOTH the code tree and the swept data
+    # root (they differ when running from a worktree against the main checkout).
+    if args.out.exists():
+        table = json.loads(args.out.read_text())
+        table["git_commit"] = _git_sha()  # keep the legacy field in sync
+        table["code_commit"] = _git_sha()
+        table["data_root_commit"] = data_root_commit
+        args.out.write_text(json.dumps(table, indent=2, default=float))
     log.info("[done] %d adapters -> %s", len(keys), args.out)
     return 0
 

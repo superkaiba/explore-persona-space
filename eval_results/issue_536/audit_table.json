@@ -1,7 +1,9 @@
 {
   "schema_version": "i536_audit_v1",
-  "generated_at": "2026-06-11T01:23:02.942783+00:00",
-  "git_commit": "892e740348584aa26fd45789fd6e208976161c05",
+  "generated_at": "2026-06-11T02:18:23.864443+00:00",
+  "git_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
+  "code_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
+  "data_root_commit": "915a6215beea45894b1df8002c55a8c14cdbdffc",
   "sweep": {
     "roots": [
       "scripts",
@@ -12,7 +14,7 @@
     ],
     "pass1_regex": "compute_cosine_matrix|cosine_similarity|F\\.cosine|cos_sim|centering=",
     "pass2_regex": "F\\.normalize|np\\.linalg\\.norm|torch\\.linalg\\.norm|\\.norm\\(|np\\.dot|torch\\.dot|einsum|@\\s*\\S*\\.T|matmul|cosine_matrix|_cosine|cos_",
-    "n_files_hit": 137,
+    "n_files_hit": 138,
     "n_pass1": 28,
     "deleted_producer_search": "git log --all -S cosine --diff-filter=D + targeted git show 9e6e31c3f / 69b34b94 (run at implementation time)"
   },
@@ -383,6 +385,16 @@
         504
       ],
       "notes": ""
+    },
+    {
+      "file": "scripts/issue560_crossrecipe_panel.py",
+      "lines": "680-738 (_cosine_distance + geometry phase)",
+      "classification": "raw (hand-rolled pairwise, no centering)",
+      "evidence": "1 - a@b/(|a||b|) between L20 last-prompt-token centroids (context<->persona min_dist axis); no bank centering",
+      "tasks": [
+        560
+      ],
+      "notes": "Post-pin script (landed 2026-06-10, after this audit's round 1). A 51-vector bank (16 contexts + 35 personas) exists, so the pin's bank-cosine family applies; flagged for #560's analyzer \u2014 its min_dist axis is on the raw path."
     }
   ],
   "deleted_sites": [
@@ -418,7 +430,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "130 [pass2]: \"centroid_norm\": float(np.linalg.norm(centroid)),"
+      ]
     },
     {
       "file": "scripts/analyze_causal_proximity.py",
@@ -427,7 +441,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "51 [pass2]: 20: {\"src\": 0.020, \"asst\": 0.000, \"cos_L15\": -0.186, \"cos_L20\": -0.234},",
+        "52 [pass2]: 40: {\"src\": 0.000, \"asst\": 0.000, \"cos_L15\": -0.024, \"cos_L20\": 0.008},",
+        "53 [pass2]: 60: {\"src\": 0.000, \"asst\": 0.000, \"cos_L15\": -0.019, \"cos_L20\": 0.025},",
+        "54 [pass2]: 80: {\"src\": 0.000, \"asst\": 0.000, \"cos_L15\": -0.060, \"cos_L20\": -0.035},",
+        "55 [pass2]: 100: {\"src\": 0.000, \"asst\": 0.000, \"cos_L15\": -0.048, \"cos_L20\": -0.020},",
+        "58 [pass2]: 20: {\"src\": 0.010, \"asst\": 0.002, \"cos_L15\": -0.425, \"cos_L20\": -0.256},"
+      ]
     },
     {
       "file": "scripts/analyze_i181.py",
@@ -436,7 +457,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "35 [pass2]: compute_semantic_cosine,",
+        "188 [pass2]: sem_cos = compute_semantic_cosine(train_emb, test_emb)",
+        "525 [pass2]: \"semantic_cos_coef\": float(model.params[\"semantic_cos\"]),"
+      ]
     },
     {
       "file": "scripts/analyze_issue415.py",
@@ -445,7 +470,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "42 [pass2]: \"predictor_1_cosine_to_assistant_L15\",",
+        "52 [pass2]: \"predictor_4_cosine_to_neutral_L15\",",
+        "131 [pass2]: s for s in per_src_396 if s in preds_415[\"predictor_1_cosine_to_assistant_L15\"]"
+      ]
     },
     {
       "file": "scripts/analyze_length_rate_296.py",
@@ -454,7 +483,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "165 [pass2]: \"cos_l15\": cos,",
+        "174 [pass2]: cos_s = f\"{r['cos_l15']:+.2f}\" if r[\"cos_l15\"] is not None else \"  ?  \"",
+        "178 [pass2]: f\"{cos_s:>8}  {prompt_short}\"",
+        "197 [pass2]: have_cos = [r for r in rows if r[\"cos_l15\"] is not None]",
+        "199 [pass2]: cos_v = [r[\"cos_l15\"] for r in have_cos]",
+        "203 [pass2]: sp_cos = spearmanr(cos_v, rates_c)"
+      ]
     },
     {
       "file": "scripts/analyze_manifold_axes.py",
@@ -463,7 +499,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "87 [pass2]: deviation_frob.append(np.linalg.norm(delta, \"fro\"))",
+        "91 [pass2]: print(f\"  ||\u03a3_w|| (pooled):      {np.linalg.norm(Sigma_w, 'fro'):.1f}\")",
+        "92 [pass2]: print(f\"  Relative deviation:     {deviation_frob.mean() / np.linalg.norm(Sigma_w, 'fro'):.3f}\")",
+        "252 [pass2]: lda_dirs_n = lda_dirs / np.linalg.norm(lda_dirs, axis=0, keepdims=True)",
+        "253 [pass2]: shared_dirs_n = shared_dirs / np.linalg.norm(shared_dirs, axis=0, keepdims=True)",
+        "255 [pass2]: cos_matrix = np.abs(shared_dirs_n.T @ lda_dirs_n)  # (10, 10) \u2014 absolute cosine"
+      ]
     },
     {
       "file": "scripts/analyze_outliers_pertoken.py",
@@ -472,7 +515,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "144 [pass2]: axis = axis / axis.norm()",
+        "145 [pass2]: logger.info(f\"Axis loaded: layer {args.layer}, norm={axis.norm().item():.4f}\")"
+      ]
     },
     {
       "file": "scripts/analyze_single_token_sweep.py",
@@ -481,7 +527,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "46 [pass2]: def load_cosine_matrix(layer: int = 20) -> tuple[list[str], np.ndarray]:",
+        "52 [pass2]: / f\"cosine_matrix_a_layer{layer}.json\"",
+        "61 [pass2]: def get_cosine_sim(source: str, target: str, names: list[str], matrix: np.ndarray) -> float | None:",
+        "63 [pass2]: src_cosine = EVAL_TO_COSINE.get(source)",
+        "64 [pass2]: tgt_cosine = EVAL_TO_COSINE.get(target)",
+        "65 [pass2]: if src_cosine not in names or tgt_cosine not in names:"
+      ]
     },
     {
       "file": "scripts/archive/run_leakage_v2.py",
@@ -490,7 +543,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "891 [pass2]: log.info(f\"  Base cos(source, asst): {layer10.get('base_cos_source_asst', 'N/A'):.4f}\")",
+        "892 [pass2]: log.info(f\"  Phase1 cos(source, asst): {layer10.get('phase1_cos_source_asst', 'N/A'):.4f}\")",
+        "893 [pass2]: log.info(f\"  Cos delta (Phase1): {layer10.get('cos_delta_phase1', 'N/A'):.4f}\")",
+        "900 [pass2]: if \"phase2_cos_source_asst\" in layer10:",
+        "901 [pass2]: log.info(f\"  Phase2 cos(source, asst): {layer10['phase2_cos_source_asst']:.4f}\")",
+        "902 [pass2]: log.info(f\"  Cos delta total: {layer10['cos_delta_total']:.4f}\")"
+      ]
     },
     {
       "file": "scripts/archive/test_multidim_identity.py",
@@ -499,7 +559,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "96 [pass2]: W = evecs @ np.diag(1.0 / np.sqrt(evals)) @ evecs.T",
+        "113 [pass2]: W = evecs @ np.diag(1.0 / np.sqrt(evals)) @ evecs.T",
+        "134 [pass2]: norms = np.linalg.norm(Xc, axis=1, keepdims=True)",
+        "161 [pass2]: norms = np.linalg.norm(R, axis=2, keepdims=True)",
+        "168 [pass2]: pair_cos = np.einsum(\"iqd,jqd->ij\", R_hat, R_hat) / n_questions",
+        "187 [pass2]: for cos_val, n1, n2 in pair_flat[:5]:"
+      ]
     },
     {
       "file": "scripts/build_i181_data.py",
@@ -508,7 +575,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "831 [pass2]: pool_norm = pool_embs / pool_embs.norm(dim=1, keepdim=True).clamp(min=1e-12)",
+        "832 [pass2]: eval_norm = eval_embs / eval_embs.norm(dim=1, keepdim=True).clamp(min=1e-12)",
+        "835 [pass2]: cos_matrix = pool_norm @ eval_norm.T  # [n_pool, n_eval]",
+        "836 [pass2]: max_cos_per_pool = cos_matrix.max(dim=1).values  # max cosine to any eval question",
+        "838 [pass2]: mean_cos = max_cos_per_pool.mean().item()",
+        "839 [pass2]: p95_cos = torch.quantile(max_cos_per_pool, 0.95).item()"
+      ]
     },
     {
       "file": "scripts/i207_run_regression.py",
@@ -517,7 +591,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "43 [pass2]: compute_semantic_cosine,",
+        "186 [pass2]: sem_cos = compute_semantic_cosine(train_emb, test_emb)"
+      ]
     },
     {
       "file": "scripts/i380_pairwise_scatters.py",
@@ -526,7 +603,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "189 [pass2]: def build_cosine_pairwise() -> None:",
+        "193 [pass2]: predictor = np.array([r[\"mean_pairwise_cosine_distance\"] for r in rows])",
+        "213 [pass2]: build_cosine_pairwise()"
+      ]
     },
     {
       "file": "scripts/i460_phase5_analyze.py",
@@ -535,7 +616,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "144 [pass2]: def _load_cosine_layer(layer: int) -> dict[str, dict[str, float | None]]:",
+        "426 [pass2]: cos_matrix = _load_cosine_layer(layer)",
+        "430 [pass2]: lambda r, cm=cos_matrix: cm.get(r[\"T_i\"], {}).get(r[\"T_j\"]),"
+      ]
     },
     {
       "file": "scripts/i474_cosine_followup.py",
@@ -544,16 +629,26 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "101 [pass2]: dg_a, g_a, ln_a, js_a, cos_a = _vecs(G, pairs_all)",
+        "119 [pass2]: \"all_rho_cosL21_deltag\": _length_partial(cos_a[21], dg_a, ln_a)[0],",
+        "120 [pass2]: \"all_p_cosL21_deltag\": _length_partial(cos_a[21], dg_a, ln_a)[1],",
+        "238 [pass2]: savefig_paper(fig, \"issue_474/followup_js_vs_cosine_locep1\", dir=str(REPO / \"figures\"))",
+        "262 [pass2]: cos_dg = [rows[f\"{arm}_ep{e}\"][\"ns_rho_cosL21_deltag\"] for e in ep]",
+        "263 [pass2]: cos_tl = [rows[f\"{arm}_ep{e}\"][\"ns_rho_cosL21_trainedlogp\"] for e in ep]"
+      ]
     },
     {
       "file": "scripts/i477_reval_confirm.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (B-matrix norm check)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (B-matrix norm check)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "192 [pass2]: cos_to_source,",
+        "207 [pass2]: cts = cos_to_source(HEADLINE_LAYER, SOURCE_PERSONA, LOCAL_DATA_ROOT)"
+      ]
     },
     {
       "file": "scripts/i501_make_figures_blog.py",
@@ -563,17 +658,24 @@
         "pass2": true
       },
       "evidence_lines": [
-        "86: for li_s, m in payload.get(\"cos_sim_per_layer\", {}).items():"
+        "80 [pass2]: def _load_cosine() -> dict[int, dict[str, dict[str, float]]]:",
+        "86 [pass1]: for li_s, m in payload.get(\"cos_sim_per_layer\", {}).items():",
+        "95 [pass2]: def _cos_distance(cos, layer: int, ci: str, cj: str) -> float | None:",
+        "148 [pass2]: d = _cos_distance(cos, layer, c[\"T_i\"], c[\"T_j\"])",
+        "208 [pass2]: def figure_cosine_density(cells: list[dict], cos: dict, layer: int) -> None:",
+        "227 [pass2]: d = _cos_distance(cos, layer, c[\"T_i\"], c[\"T_j\"])"
       ]
     },
     {
       "file": "scripts/i504_eval_trajectory.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (marker logprob eval)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (marker logprob eval)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "9 [pass2]: ``held_out_panel(cos_to_source, ...)`` band-based panel."
+      ]
     },
     {
       "file": "scripts/issue405_clean_result_analysis.py",
@@ -582,7 +684,12 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "46 [pass2]: COS_PATH = REPO / \"eval_results\" / \"extraction_method_comparison\" / \"cosine_matrix_a_layer20.json\"",
+        "48 [pass2]: cos_data = json.load(f)",
+        "49 [pass2]: PERSONAS = cos_data[\"persona_names\"]",
+        "50 [pass2]: COS_MATRIX = np.array(cos_data[\"matrix\"])  # cosine SIMILARITY"
+      ]
     },
     {
       "file": "scripts/issue458_regress.py",
@@ -591,7 +698,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "8 [pass2]: L  ~  M_cosine  +  log(assistant_tokens)",
+        "12 [pass2]: mean across seeds 0 + 137), M_cosine is the layer-21 cos-sim from",
+        "296 [pass2]: \"M_cosine\": regress_one_predictor(\"M_cosine\", cosine, outcome, tokens),"
+      ]
     },
     {
       "file": "scripts/issue500_interaction_check.py",
@@ -600,7 +711,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "67 [pass2]: cos = np.array([pp[n][\"cos_to_source\"] for n in names], float)",
+        "213 [pass2]: \"per_arm_partial_spearman_cos_given_prior\": {},",
+        "220 [pass2]: rep = d[\"per_arm\"][arm][\"stats\"][\"ols_z_leak_on_z_prior_logprob_and_z_cos_to_source\"]",
+        "240 [pass2]: result[\"per_arm_partial_spearman_cos_given_prior\"][arm] = d[\"per_arm\"][arm][\"stats\"][",
+        "241 [pass2]: \"partial_spearman_cos_to_source_given_prior\"",
+        "267 [pass2]: ps = result[\"per_arm_partial_spearman_cos_given_prior\"][arm]"
+      ]
     },
     {
       "file": "scripts/issue502_plot_best3_bars.py",
@@ -609,7 +727,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "30 [pass2]: OUT = REPO / \"figures/issue_502/best3_gausskl_cosine_js_loc_ep1.png\""
+      ]
     },
     {
       "file": "scripts/issue502_plot_best4_bars.py",
@@ -618,7 +738,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "37 [pass2]: OUT = REPO / \"figures/issue_502/best_gausskl_cosine_fullrespjs_rho_loc_ep1.png\""
+      ]
     },
     {
       "file": "scripts/issue505_expanded_predictors.py",
@@ -627,7 +749,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "25 [pass2]: figure_forest_cos_bj,",
+        "70 [pass2]: figure_forest_cos_bj(results, args.fig_dir)"
+      ]
     },
     {
       "file": "scripts/issue505_panel_coverage.py",
@@ -636,7 +761,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "73 [pass2]: cos_l10 = load_inherited_l10_cos(args.centroid_l10)",
+        "75 [pass2]: payload = run_panel_coverage_gate(persona_bank=bank, cos_matrix_l10=cos_l10)"
+      ]
     },
     {
       "file": "scripts/issue505_r2_figure.py",
@@ -645,7 +773,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "91 [pass2]: coef = arms_data[arm][\"coefficients\"][\"cos_b_j\"]",
+        "138 [pass2]: per_arm[\"dv_delta_logp\"][\"original_covariates\"][\"per_arm\"][a][\"coefficients\"][\"cos_b_j\"][",
+        "145 [pass2]: per_arm[\"dv_delta_logp\"][\"expanded_covariates\"][\"per_arm\"][a][\"coefficients\"][\"cos_b_j\"][",
+        "152 [pass2]: per_arm[\"dv_delta_margin\"][\"original_covariates\"][\"per_arm\"][a][\"coefficients\"][\"cos_b_j\"][",
+        "159 [pass2]: per_arm[\"dv_delta_margin\"][\"expanded_covariates\"][\"per_arm\"][a][\"coefficients\"][\"cos_b_j\"]["
+      ]
     },
     {
       "file": "scripts/issue509_baserate_covariate_earlylayer.py",
@@ -654,7 +788,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "651 [pass2]: \"per_source_partial_geom_given_base_L02_end_of_system_cosine_delta\": per_source,"
+      ]
     },
     {
       "file": "scripts/issue511_make_figures.py",
@@ -663,7 +799,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "198 [pass2]: cell_id = f\"last_prompt__L{L}__cosine__raw\"",
+        "215 [pass2]: cell_id = f\"last_prompt__L{L}__cosine__raw\""
+      ]
     },
     {
       "file": "scripts/issue527_dan_rank1_scalar_regression.py",
@@ -672,7 +811,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "15 [pass2]: Predictor: cos_centered_L20(context, source) from eval_results/issue_527/pair_selection.json",
+        "17 [pass2]: A_only -> source A; B_only -> source B; joint -> cos_A + cos_B (two rank-1 updates",
+        "72 [pass2]: def load_cos_matrix() -> tuple[list[str], np.ndarray]:",
+        "75 [pass2]: return d[\"persona_names\"], np.asarray(d[\"cos_centered_L20\"], dtype=np.float64)",
+        "113 [pass2]: persona_names, cos_m = load_cos_matrix()",
+        "124 [pass2]: norms = np.linalg.norm(shift, axis=1)"
+      ]
     },
     {
       "file": "scripts/issue532_followup_logp_slot.py",
@@ -681,7 +827,11 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "678 [pass2]: rows[\"cosine\"].append(predictors[\"cosine_matrix\"][src_idx[src]][byst_idx[byst]])",
+        "692 [pass2]: panel[\"combined_cosine_priorlogp\"] = z(panel[\"base_prior_logp\"]) + z(panel[\"cosine\"])",
+        "701 [pass2]: \"combined_cosine_priorlogp\","
+      ]
     },
     {
       "file": "scripts/issue532_predictor_stress.py",
@@ -689,6 +839,40 @@
       "matched_passes": {
         "pass1": false,
         "pass2": true
+      },
+      "evidence_lines": [
+        "1399 [pass2]: G = stacked_c @ stacked_c.T",
+        "1432 [pass2]: def _cosine_predictor(act_a: np.ndarray, act_b: np.ndarray) -> float:",
+        "1439 [pass2]: na = np.linalg.norm(a, axis=1)",
+        "1440 [pass2]: nb = np.linalg.norm(b, axis=1)",
+        "1476 [pass2]: - ``cosine_matrix``: (n_sources, n_bystanders) np.ndarray",
+        "1570 [pass2]: cosine_matrix = np.full((n_src, n_byst), np.nan, dtype=np.float64)"
+      ]
+    },
+    {
+      "file": "scripts/issue536_audit.py",
+      "disposition": "N-A \u2014 #536 audit tooling itself (this file; regex literals match the sweep patterns)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": false
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue536_figures.py",
+      "disposition": "N-A \u2014 #536 figures tooling (reads the regrade table; no cosine computed)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": false
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue536_recompute_driver.py",
+      "disposition": "N-A \u2014 #536 re-grade tooling itself (computes raw AND centered side by side as the audit instrument)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": false
       },
       "evidence_lines": []
     },
@@ -699,7 +883,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "47 [pass2]: \"gd2_cos\": g[\"gd2_singleton_cosine_median\"],"
+      ]
     },
     {
       "file": "scripts/issue539_residual_per_cohort.py",
@@ -708,7 +894,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "425 [pass2]: cosine_m = np.array(predictors[\"cosine_matrix\"], dtype=np.float64)",
+        "536 [pass2]: check(\"analysis_json_cosine_union\", upr[\"cosine\"][\"rho_union\"], REF_COSINE_UNION_RHO, 1e-9)"
+      ]
     },
     {
       "file": "scripts/issue540_jsrb_predictor.py",
@@ -717,7 +906,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "992 [pass2]: \"cosine_matrix\": predictors[\"cosine_matrix\"],",
+        "1251 [pass2]: denom = np.linalg.norm(ex) * np.linalg.norm(ey)"
+      ]
     },
     {
       "file": "scripts/issue540_length_nuisance_figure.py",
@@ -726,7 +918,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "65 [pass2]: \"cosine\": mat(\"cosine_matrix\"),"
+      ]
     },
     {
       "file": "scripts/issue540_length_nuisance_supplement.py",
@@ -735,7 +929,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "99 [pass2]: \"cosine\": mat(\"cosine_matrix\"),"
+      ]
     },
     {
       "file": "scripts/issue548_length_analysis.py",
@@ -744,7 +940,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "198 [pass2]: \"cosine\": np.array(p[\"cosine_matrix\"]),"
+      ]
     },
     {
       "file": "scripts/issue550_make_figures.py",
@@ -753,43 +951,68 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "108 [pass2]: \"gd2_cos\": g[\"gd2_singleton_cosine_median\"],"
+      ]
     },
     {
       "file": "scripts/issue552_cross_arm_analysis.py",
-      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not persona-distance",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "80 [pass2]: return float(abs(np.dot(u, v) / (np.linalg.norm(u) * np.linalg.norm(v))))",
+        "116 [pass2]: r_half = float(np.dot(even, odd) / (np.linalg.norm(even) * np.linalg.norm(odd)))",
+        "127 [pass2]: def _corrected_cosines(",
+        "130 [pass2]: \"\"\"Attenuation-corrected per-persona |cos-to-U1|: cos_raw / sqrt(r_full).",
+        "137 [pass2]: for p_name, cos_raw in zip(cell[\"persona_order\"], cell[\"cos_to_U1\"], strict=True):",
+        "142 [pass2]: out[p_name] = float(cos_raw / np.sqrt(r_full))"
+      ]
     },
     {
       "file": "scripts/issue552_figures.py",
-      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not persona-distance",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "114 [pass2]: cos = np.array(d[\"cos_to_U1\"])",
+        "167 [pass2]: cos_by_seed = np.array([c[\"cos_to_U1\"] for c in cells])  # (3, 14)",
+        "168 [pass2]: order = np.argsort(cos_by_seed.mean(axis=0))[::-1]",
+        "175 [pass2]: cos_by_seed[i, order],",
+        "204 [pass2]: [[_load_cell(args, v, arm, s)[\"mean_cos_to_U1\"] for v in VARIANTS] for s in SEEDS]",
+        "235 [pass2]: return float(abs(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))))"
+      ]
     },
     {
       "file": "scripts/issue552_mean_resp_svd.py",
-      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not persona-distance",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "75 [pass2]: \"mean_cos_to_U1\",",
+        "111 [pass2]: \"mean_cos_to_U1\": float(np.mean(svd[\"cos_to_U1\"])),",
+        "112 [pass2]: \"median_cos_to_U1\": float(np.median(svd[\"cos_to_U1\"])),",
+        "117 [pass2]: \"cos_to_U1\": svd[\"cos_to_U1\"].tolist(),",
+        "196 [pass2]: \"mean_cos_to_U1\": mr_block[\"mean_cos_to_U1\"] - end_block[\"mean_cos_to_U1\"],",
+        "199 [pass2]: cos_u1 = cosine(end_block[\"_U1\"], mr_block[\"_U1\"])"
+      ]
     },
     {
       "file": "scripts/issue552_write_sentinel.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "70 [pass2]: \"mean_cos_to_U1\": round(float(d[\"mean_cos_to_U1\"]), 4),"
+      ]
     },
     {
       "file": "scripts/issue553_panel.py",
@@ -798,43 +1021,62 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "106 [pass2]: cos_m = np.asarray(predictors[\"cosine_matrix\"], dtype=np.float64)",
+        "109 [pass2]: assert cos_m.shape == gkl_m.shape == js_m.shape == (16, 26), cos_m.shape",
+        "113 [pass2]: assert cos_m[si, bi] == 1.0 and cos_m[sj, bj] == 1.0, \"B1/C1 duplicate assert failed\"",
+        "196 [pass2]: panel[\"cosine\"] = cos_m[si_arr, bj_arr]"
+      ]
     },
     {
       "file": "scripts/issue_480/dispatch_marker_480.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "76 [pass2]: HF_WRONG_CLAIMS_SUBDIR = \"issue411_sycophancy_cosine_gradient/data/wrong_claims\""
+      ]
     },
     {
       "file": "scripts/issue_480/i480_analyze.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (marker DV analysis)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (marker DV analysis)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "615 [pass2]: cos_se = np.zeros_like(cos)",
+        "620 [pass2]: rho_m_match[s] = _spearman_rho_tie_tolerant(cos, mark, cos_se, mark_se)",
+        "621 [pass2]: rho_s_match[s] = _spearman_rho_tie_tolerant(cos, syco, cos_se, syco_se)",
+        "881 [pass2]: p = fig_dir / \"h2_per_source_cosine_gradient.png\"",
+        "885 [pass2]: out[\"h2_per_source_cosine_gradient\"] = str(p)",
+        "1055 [pass2]: s: v[\"spearman_rho_vs_cosine\"] for s, v in syco_data.get(\"per_source\", {}).items()"
+      ]
     },
     {
       "file": "scripts/issue_480/plot_clean_result.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "9 [pass2]: 4. h2_per_source_cosine_gradient.png \u2014 2x3 panel grid, marker_delta vs cosine_l20",
+        "292 [pass2]: out = savefig_paper(fig, \"issue_480/per_source_cosine_gradient\", dir=out_root)"
+      ]
     },
     {
       "file": "scripts/issue_480/smoke_analyzer_synthetic.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "237 [pass2]: \"h2_per_source_cosine_gradient\","
+      ]
     },
     {
       "file": "scripts/make_363_figure.py",
@@ -843,7 +1085,12 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "37 [pass2]: null_lo = rand[\"pairwise_cosine_p2_5\"]",
+        "38 [pass2]: null_hi = rand[\"pairwise_cosine_p97_5\"]",
+        "43 [pass2]: per_layer = summary[\"per_trait\"][trait][\"cos_chen_centroid_per_layer\"]",
+        "59 [pass2]: fig, stem=\"363_cos_chen_centroid_per_layer\", dir=\"figures/issue_363\","
+      ]
     },
     {
       "file": "scripts/plot_cosine_attenuation.py",
@@ -852,7 +1099,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "10 [pass2]: figures/issue_340/within_bucket_cosine_rate.png",
+        "98 [pass2]: rows = [r for r in data[\"rows\"] if r[\"tokens\"] == 6 and r[\"cos_l15\"] is not None]",
+        "99 [pass2]: rows.sort(key=lambda r: -r[\"cos_l15\"])",
+        "101 [pass2]: xs = [r[\"cos_l15\"] for r in rows]",
+        "150 [pass2]: savefig_paper(fig, \"within_bucket_cosine_rate\", dir=str(out_dir))"
+      ]
     },
     {
       "file": "scripts/plot_i432_rank_by_distance.py",
@@ -861,7 +1114,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "17 [pass2]: --cos eval_results/persona_cosine_centered/cosine_matrices.json \\",
+        "70 [pass2]: def load_cos_to_source(cos_path: Path, layer: str, variant: str = \"global_mean_subtracted\"):",
+        "71 [pass2]: d = json.loads(cos_path.read_text())",
+        "117 [pass2]: ap.add_argument(\"--cos\", default=\"eval_results/persona_cosine_centered/cosine_matrices.json\")",
+        "122 [pass2]: cos = load_cos_to_source(Path(args.cos), args.layer)"
+      ]
     },
     {
       "file": "scripts/plot_i461_predictor_grid.py",
@@ -870,7 +1129,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "27 [pass2]: preds = [(\"cos_to_source\", \"cosine to source (L20)\"),"
+      ]
     },
     {
       "file": "scripts/plot_i461_predictor_scatters.py",
@@ -879,7 +1140,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "25 [pass2]: cos, js, kl = col(\"cos_to_source\"), col(\"js_to_source\"), col(\"kl_persona_to_source\")"
+      ]
     },
     {
       "file": "scripts/plot_issue237_tldr.py",
@@ -888,7 +1151,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "38 [pass2]: em_cos_mean = float(np.mean(em_means))",
+        "39 [pass2]: em_cos_min = float(np.min(em_means))",
+        "40 [pass2]: em_cos_max = float(np.max(em_means))",
+        "43 [pass2]: geom_vals = [base_cos, benign_cos, em_cos_mean]",
+        "45 [pass2]: [0, 0, em_cos_mean - em_cos_min],",
+        "46 [pass2]: [0, 0, em_cos_max - em_cos_mean],"
+      ]
     },
     {
       "file": "scripts/plot_issue444_bystander.py",
@@ -897,7 +1167,12 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "60 [pass2]: cos_on = {p: DIST[\"cosine\"][\"on_topic\"][p][\"21\"] for p in NT}",
+        "117 [pass2]: \"cosine\\n(teacher-ref)\": pooled(cos_on)[0],",
+        "153 [pass2]: zip([\"spearman\", \"spearman_p\", \"pearson\"], pooled(cos_on), strict=True)",
+        "169 [pass2]: \"cosine_on\": cos_on[p],"
+      ]
     },
     {
       "file": "scripts/plot_issue500_predictors.py",
@@ -906,7 +1181,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "59 [pass2]: cos_src = np.array([pp[p][\"cos_to_source\"] for p in personas])",
+        "64 [pass2]: \"cos_src\": cos_src,",
+        "201 [pass2]: def plot_cosine_vs_leak(d: dict) -> None:",
+        "213 [pass2]: rho, pval = st.spearmanr(a[\"cos_src\"], a[\"leaks\"])",
+        "217 [pass2]: a[\"cos_src\"],",
+        "234 [pass2]: (a[\"cos_src\"][j], a[\"leaks\"][j]),"
+      ]
     },
     {
       "file": "scripts/plot_issue503_v2.py",
@@ -915,7 +1197,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "4 [pass2]: 1. hero_cosine_vs_advbench.png \u2014 scatter (15 cells, color by selector,",
+        "63 [pass2]: (\"D3_cosine\", \"Cosine (this work)\"),",
+        "78 [pass2]: \"D3_cosine\": paper_palette_role(\"primary\"),",
+        "85 [pass2]: \"D3_cosine\": \"D\",",
+        "105 [pass2]: cos_min = min(c[\"cosine\"] for c in cells)",
+        "106 [pass2]: cos_max = max(c[\"cosine\"] for c in cells)"
+      ]
     },
     {
       "file": "scripts/plot_issue_157_stage_b_hero_v2.py",
@@ -924,7 +1213,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "128 [pass2]: p_per_layer = rg[\"models\"][\"poisoned\"][\"per_layer_cosine_correlation\"]",
+        "129 [pass2]: b_per_layer = rg[\"models\"][\"baseline\"][\"per_layer_cosine_correlation\"]"
+      ]
     },
     {
       "file": "scripts/plot_issue_213_final.py",
@@ -933,7 +1225,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "30 [pass2]: with open(\"/tmp/js_cosine_20cues.json\") as f:",
+        "31 [pass2]: cos_data = json.load(f)",
+        "157 [pass2]: cos_by_cue = {",
+        "158 [pass2]: c[\"cue\"]: c[\"cosine_l10\"] for c in cos_data[\"cells\"] if c[\"model\"] == \"educational-insecure\"",
+        "214 [pass2]: scatter_panel(ax2, cos_by_cue, \"Cosine distance L10 (cue vs no_cue)\", \"Cosine distance (layer 10)\")"
+      ]
     },
     {
       "file": "scripts/plot_issue_213_geometry_predicts.py",
@@ -942,7 +1240,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "31 [pass2]: cos_data = json.load(f)",
+        "35 [pass2]: cos_l10 = cos_data[\"matrices\"][\"layer_10\"]",
+        "48 [pass2]: cos_dist = cos_l10.get(model, {}).get(cue, None)",
+        "56 [pass2]: \"cos_dist\": cos_dist,",
+        "91 [pass2]: cos_vals = [c[\"cos_dist\"] for c in cells_no_v0 if c[\"cos_dist\"] is not None]",
+        "93 [pass2]: mis_cos = [c[\"mis\"] for c in cells_no_v0 if c[\"cos_dist\"] is not None]"
+      ]
     },
     {
       "file": "scripts/plot_issue_89_hero.py",
@@ -951,7 +1256,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "44 [pass2]: (cell[\"cos_a1\"].mean(), cell[\"cos_a1\"].std(ddof=1) / np.sqrt(len(cell)))",
+        "56 [pass2]: cos_mean = [m for m, _ in stats[t][\"cos\"]]",
+        "57 [pass2]: cos_se = [s for _, s in stats[t][\"cos\"]]",
+        "62 [pass2]: cos_mean,",
+        "63 [pass2]: yerr=cos_se,"
+      ]
     },
     {
       "file": "scripts/plot_leakage_vs_cosine_all.py",
@@ -960,7 +1271,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "5 [pass2]: 1. figures/leakage_vs_cosine_all.png \u2014 Multi-panel scatter (raw cosine, Arm 1/2, proximity)",
+        "6 [pass2]: 2. figures/leakage_vs_cosine_centered_comparison.png \u2014 Raw vs mean-centered comparison",
+        "44 [pass2]: with open(f\"{BASE}/eval_results/persona_cosine_centered/trait_transfer_correlations.json\") as f:",
+        "48 [pass2]: with open(f\"{BASE}/eval_results/proximity_transfer/phase0_cosines.json\") as f:",
+        "56 [pass2]: cosines = arm_data[\"vector_cosines\"][condition]",
+        "58 [pass2]: personas, cos_vals, leak_vals, neg_flags = [], [], [], []"
+      ]
     },
     {
       "file": "scripts/plot_leakage_vs_cosine_none.py",
@@ -969,7 +1287,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "35 [pass2]: with open(f\"{BASE}/eval_results/persona_cosine_centered/trait_transfer_correlations.json\") as f:",
+        "87 [pass2]: cos_mc = np.array(d[\"global_mean_subtracted\"][\"cosines\"])",
+        "89 [pass2]: for p, c, l in zip(personas, cos_mc, leak):",
+        "134 [pass2]: add_regression(ax, cos_mc, leak)",
+        "199 [pass2]: fig.savefig(f\"{BASE}/figures/leakage_vs_cosine_none.png\", dpi=150, bbox_inches=\"tight\")",
+        "200 [pass2]: fig.savefig(f\"{BASE}/figures/leakage_vs_cosine_none.pdf\", bbox_inches=\"tight\")"
+      ]
     },
     {
       "file": "scripts/plot_length_rate_correlation.py",
@@ -978,7 +1303,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "104 [pass2]: def plot_cosine_vs_length(rows: list[dict], out_dir: Path) -> None:",
+        "108 [pass2]: have_cos = [r for r in rows if r[\"cos_l15\"] is not None]",
+        "109 [pass2]: cos = [r[\"cos_l15\"] for r in have_cos]",
+        "120 [pass2]: xy=(r[\"cos_l15\"], r[\"tokens\"]),",
+        "160 [pass2]: plot_cosine_vs_length(rows, out_dir)"
+      ]
     },
     {
       "file": "scripts/plot_proximity_transfer.py",
@@ -987,7 +1318,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "17 [pass2]: with open(\"eval_results/proximity_transfer/phase0_cosines.json\") as f:",
+        "113 [pass2]: for ax_idx, (cos_dict, cos_label, title_suffix) in enumerate(",
+        "125 [pass2]: x = cos_dict.get(p, 0)",
+        "153 [pass2]: ax.set_xlabel(cos_label, fontsize=11)",
+        "165 [pass2]: plt.savefig(\"figures/proximity_transfer_cosine_scatter.png\", dpi=150, bbox_inches=\"tight\")",
+        "167 [pass2]: print(\"Saved: figures/proximity_transfer_cosine_scatter.png\")"
+      ]
     },
     {
       "file": "scripts/plot_strong_convergence.py",
@@ -996,7 +1334,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "20 [pass2]: \"cos_traj\": [-0.355, 0.102, 0.006, 0.058, 0.172, 0.123, 0.15, 0.113, 0.125, 0.134, 0.134],",
+        "25 [pass2]: \"cos_traj\": [0.294, 0.367, 0.406, 0.465, 0.461, 0.372, 0.337, 0.391, 0.372, 0.383, 0.371],",
+        "30 [pass2]: \"cos_traj\": [",
+        "47 [pass2]: \"cos_traj\": [0.281, 0.149, 0.107, 0.128, 0.122, 0.128, 0.147, 0.152, 0.152, 0.145, 0.153],",
+        "52 [pass2]: \"cos_traj\": [0.468, 0.61, 0.614, 0.541, 0.581, 0.581, 0.581, 0.601, 0.597, 0.605, 0.611],",
+        "57 [pass2]: \"cos_traj\": None,  # nurse not in eval cosine matrix"
+      ]
     },
     {
       "file": "scripts/plot_trait_transfer.py",
@@ -1005,7 +1350,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "455 [pass2]: cosines = arm2[\"vector_cosines\"][\"domain_sft\"]"
+      ]
     },
     {
       "file": "scripts/precheck_i181_axes.py",
@@ -1014,7 +1361,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "31 [pass2]: compute_semantic_cosine,",
+        "107 [pass2]: sem_cos = compute_semantic_cosine(emb1, emb2) if emb1 is not None and emb2 is not None else 0.0"
+      ]
     },
     {
       "file": "scripts/project_categories_instruct.py",
@@ -1023,7 +1373,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "71 [pass2]: ax = ax / (ax.norm() + 1e-8)",
+        "72 [pass2]: logger.info(f\"Axis loaded: shape={ax.shape}, norm={ax.norm():.4f}, layer={layer}\")"
+      ]
     },
     {
       "file": "scripts/project_categories_onto_axis.py",
@@ -1032,7 +1385,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "91 [pass2]: ax = ax / (ax.norm() + 1e-8)",
+        "92 [pass2]: logger.info(f\"Axis loaded: shape={ax.shape}, norm={ax.norm():.4f}, layer={layer}\")"
+      ]
     },
     {
       "file": "scripts/project_corpus_fast.py",
@@ -1041,7 +1397,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "55 [pass2]: ax = ax / (ax.norm() + 1e-8)",
+        "56 [pass2]: logger.info(f\"Loaded axis: shape={ax.shape}, norm={ax.norm().item():.4f}\")"
+      ]
     },
     {
       "file": "scripts/project_corpus_single_gpu.py",
@@ -1050,7 +1409,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "46 [pass2]: ax = ax / (ax.norm() + 1e-8)"
+      ]
     },
     {
       "file": "scripts/project_corpus_v2.py",
@@ -1059,34 +1420,43 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "92 [pass2]: norm = ax.norm().item()",
+        "532 [pass2]: ax = ax / (ax.norm() + 1e-8)"
+      ]
     },
     {
       "file": "scripts/run_a3_leakage.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (legacy leakage rig; no cos computation)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (legacy leakage rig; no cos computation)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "570 [pass2]: \"doctor_cosines\": DOCTOR_COSINES,"
+      ]
     },
     {
       "file": "scripts/run_a3b_experiment.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (legacy leakage rig; no cos computation)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (legacy leakage rig; no cos computation)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "607 [pass2]: \"doctor_cosines\": DOCTOR_COSINES,"
+      ]
     },
     {
       "file": "scripts/run_em_multiseed.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "68 [pass2]: torch.backends.cuda.matmul.allow_tf32 = True"
+      ]
     },
     {
       "file": "scripts/run_issue_276_continuation_sweep.py",
@@ -1095,7 +1465,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "161 [pass2]: \"one_step_cosine\": r[\"cosine_to_canonical\"],"
+      ]
     },
     {
       "file": "scripts/run_issue_276_teacher_forced_js.py",
@@ -1104,25 +1476,37 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "156 [pass2]: \"one_step_cosine\": r[\"cosine_to_canonical\"],"
+      ]
     },
     {
       "file": "scripts/run_issue_358_extract.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (activation extraction only; no cosine computed)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (activation extraction only; no cosine computed)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "389 [pass2]: diff_all = (hs_sdpa - hs_eager).norm().item() / hs_sdpa.norm().item()",
+        "391 [pass2]: diff_last = (hs_sdpa[-1] - hs_eager[-1]).norm().item() / hs_sdpa[-1].norm().item()"
+      ]
     },
     {
       "file": "scripts/run_persona_composition.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (composition rig)",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed (composition rig)",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "54 [pass2]: print(f\"  {name}: {len(data)} entries, centroid norm = {np.linalg.norm(centroid):.4f}\")",
+        "76 [pass2]: return X_normed @ X_normed.T",
+        "536 [pass2]: \"raw_cosine_range\": [float(raw_cos[mask].min()), float(raw_cos[mask].max())],",
+        "537 [pass2]: \"raw_cosine_mean\": float(raw_cos[mask].mean()),",
+        "538 [pass2]: \"mc_cosine_range\": [float(mc_cos[mask].min()), float(mc_cos[mask].max())],",
+        "539 [pass2]: \"mc_cosine_mean\": float(mc_cos[mask].mean()),"
+      ]
     },
     {
       "file": "scripts/smoke_phase_d_logit_rescoring.py",
@@ -1131,7 +1515,12 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "289 [pass2]: print(f\"  readouts={list(headline['pooled_cos_b_j_by_readout'].keys())}\")",
+        "298 [pass2]: rd_first = next(iter(headline[\"pooled_cos_b_j_by_readout\"].keys()))",
+        "299 [pass2]: expanded = headline[\"pooled_cos_b_j_by_readout\"][rd_first][\"expanded_standardized\"]",
+        "301 [pass2]: f\"  headline pooled cos_b_j ({rd_first} expanded_standardized): \""
+      ]
     },
     {
       "file": "scripts/test_activation_steering.py",
@@ -1140,7 +1529,12 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "230 [pass2]: dir_norm = F.normalize(dir_matrix, dim=1)",
+        "231 [pass2]: cos_mat = (dir_norm @ dir_norm.T).numpy()",
+        "238 [pass2]: row += f\"{cos_mat[i][j]:13.3f}\"",
+        "244 [pass2]: log(f\"  {n:>25s}: {directions[n].norm().item():.4f}\")"
+      ]
     },
     {
       "file": "scripts/test_multidim_identity_v2.py",
@@ -1149,7 +1543,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "99 [pass2]: W = evecs @ np.diag(1.0 / np.sqrt(evals)) @ evecs.T",
+        "109 [pass2]: W = evecs @ np.diag(1.0 / np.sqrt(evals)) @ evecs.T",
+        "190 [pass2]: norms = np.linalg.norm(Xc, axis=1, keepdims=True)",
+        "231 [pass2]: norms = np.linalg.norm(R, axis=2, keepdims=True)",
+        "235 [pass2]: pair_cos = np.einsum(\"iqd,jqd->ij\", R_hat, R_hat) / n_questions",
+        "254 [pass2]: for cos_val, n1, n2 in pair_flat[:5]:"
+      ]
     },
     {
       "file": "scripts/track_axis_during_cot.py",
@@ -1158,25 +1559,32 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "187 [pass2]: norm = ax.norm().item()",
+        "322 [pass2]: norm = act.norm().item()"
+      ]
     },
     {
       "file": "scripts/train_stage_dpo.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "82 [pass2]: torch.backends.cuda.matmul.allow_tf32 = True"
+      ]
     },
     {
       "file": "scripts/train_stage_sft.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "37 [pass2]: torch.backends.cuda.matmul.allow_tf32 = True"
+      ]
     },
     {
       "file": "src/explore_persona_space/analysis/divergence.py",
@@ -1185,7 +1593,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "265 [pass2]: KL is computed via chunked matmul on GPU.  The (N, T, V) ``log_probs``",
+        "267 [pass2]: to GPU in row-chunk x time-chunk slices for the cross-entropy matmul.",
+        "269 [pass2]: Memory profile per matmul step (row_chunk=16, time_chunk=30, V=152K):",
+        "284 [pass2]: gpu_device: CUDA device to use for matmul acceleration.",
+        "343 [pass2]: block = p_slice @ lq_slice.T"
+      ]
     },
     {
       "file": "src/explore_persona_space/analysis/i181_features.py",
@@ -1194,7 +1608,13 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "8 [pass2]: compute_semantic_cosine   -- cosine of pre-computed Qwen L20 embeddings",
+        "23 [pass2]: def compute_semantic_cosine(",
+        "37 [pass2]: dot = torch.dot(emb1, emb2)",
+        "38 [pass2]: norm1 = torch.linalg.norm(emb1)",
+        "39 [pass2]: norm2 = torch.linalg.norm(emb2)"
+      ]
     },
     {
       "file": "src/explore_persona_space/analysis/probes.py",
@@ -1203,7 +1623,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "285 [pass2]: w /= np.linalg.norm(w)"
+      ]
     },
     {
       "file": "src/explore_persona_space/axis/analyze.py",
@@ -1212,7 +1634,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "682 [pass2]: rand_dir = rand_dir / np.linalg.norm(rand_dir)"
+      ]
     },
     {
       "file": "src/explore_persona_space/axis/project.py",
@@ -1221,7 +1645,9 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "47 [pass2]: ax = ax / (ax.norm() + 1e-8)"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/analyze.py",
@@ -1230,7 +1656,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "51 [pass2]: cos_to_source as load_cos_to_source,",
+        "54 [pass2]: load_cos_matrix,",
+        "318 [pass2]: cts = load_cos_to_source(layer, source, centroids_dir)",
+        "319 [pass2]: cos_matrix, _names = load_cos_matrix(layer, centroids_dir)",
+        "362 [pass2]: dnn = d_nearest_neg(probe, negs, cos_matrix, exclude_default=False)",
+        "363 [pass2]: dnn_nd = d_nearest_neg(probe, negs, cos_matrix, exclude_default=True)"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/build_training_data.py",
@@ -1239,16 +1672,22 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "125 [pass2]: cos_to_source: dict[str, float],",
+        "139 [pass2]: cos_to_source: {persona: cos(persona, source)} for negative selection.",
+        "157 [pass2]: cell_slug, cos_to_source, source=source, cell_specs=cell_specs"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "136 [pass2]: n = float(t.float().norm().item())"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/select_negatives.py",
@@ -1257,25 +1696,46 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "42 [pass2]: cos_to_source: dict[str, float],",
+        "48 [pass2]: Plan \u00a74.5 pseudocode. ``cos_to_source`` maps persona -> cos(persona, source)",
+        "57 [pass2]: cos_to_source: {persona: cos(persona, source)} over the bank.",
+        "84 [pass2]: cands = [p for p in cos_to_source if p != source and p not in always]",
+        "86 [pass2]: cands.sort(key=lambda p: cos_to_source[p], reverse=True)",
+        "121 [pass2]: cos_to_source: dict[str, float],"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_504/cell_resolution.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "9 [pass2]: - `select_positioned_negatives` \u2014 given `cos_to_source` + the 4 band centers,",
+        "57 [pass2]: cos_to_source: dict[str, float],",
+        "73 [pass2]: cos_to_source: {persona: cos(persona, source)} over the bank, at the",
+        "89 [pass2]: candidates = {p: c for p, c in cos_to_source.items() if p != source and p != default_persona}",
+        "117 [pass2]: cos_to_source: dict[str, float],",
+        "132 [pass2]: pool = {p: c for p, c in cos_to_source.items() if p != source and p != default_persona}"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_504/shadow_angle.py",
-      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not persona-distance",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "51 [pass2]: norm_sn = float(np.linalg.norm(v_sn))",
+        "52 [pass2]: norm_sp = float(np.linalg.norm(v_sp))",
+        "55 [pass2]: cos_angle = float(np.dot(v_sn, v_sp)) / (norm_sn * norm_sp)",
+        "57 [pass2]: cos_angle = max(-1.0, min(1.0, cos_angle))",
+        "58 [pass2]: return math.acos(cos_angle)",
+        "93 [pass2]: cos_matrix: dict[str, dict[str, float]],"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze.py",
@@ -1284,7 +1744,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "16 [pass2]: - ``panel_similarity_matrix.json`` \u2014 per (b, j_i) ``cos_L{7,10,14,21,27}``",
+        "17 [pass2]: AND per b ``cos_L{7,10,14,21,27}(b, source)``. Used by the \u00a713.3 partial.",
+        "23 [pass2]: ``source_\u0394G(arm, seed)`` AND ``cos_L21(b, source)`` covariates.",
+        "68 [pass2]: cos_b_j: dict[str, dict[str, float]]  # cos_b_j[b][j_i]",
+        "69 [pass2]: cos_b_source: dict[str, float]  # cos_b_source[b]",
+        "87 [pass2]: dict layer -> SimilarityBundle. Each bundle's ``cos_b_j`` is a nested"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze_expanded.py",
@@ -1293,7 +1760,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "79 [pass2]: \"cos_b_j\",",
+        "82 [pass2]: \"cos_b_source\",",
+        "86 [pass2]: BASELINE_PREDICTORS = (\"cos_b_j\", \"delta_source_dg\")",
+        "87 [pass2]: PER_ARM_ORIGINAL = (\"cos_b_j\", \"delta_source_dg\")",
+        "88 [pass2]: PER_ARM_EXPANDED = (\"cos_b_j\", \"delta_source_dg\", \"cos_b_source\", \"base_prior_b\")",
+        "118 [pass2]: cos_b_j / cos_b_source come from the bundle's stored ``cos_matrix`` (the"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze_logit_rescoring.py",
@@ -1302,7 +1776,14 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "281 [pass2]: df[\"cos_b_j\"] = [geom_layer[\"cos_b_j\"][r[\"b\"]][r[\"j_i\"]] for r in rows]",
+        "282 [pass2]: df[\"cos_b_source\"] = [geom_layer[\"cos_b_source\"][r[\"b\"]] for r in rows]",
+        "399 [pass2]: \"cos_b_j\": \"cos(bystander, dropped negative)\",",
+        "402 [pass2]: \"cos_b_source\": \"cos(bystander, source)\",",
+        "628 [pass2]: \"pooled_cos_b_j_by_readout\": {",
+        "630 [pass2]: \"baseline\": pooled_out[hl][readout][\"baseline\"][\"coefficients\"][\"cos_b_j\"],"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/leave_one_out_505/dispatch.py",
@@ -1311,7 +1792,10 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "471 [pass2]: cos_l10 = load_inherited_l10_cos(_l10_centroid_dir() / \"centroids_L10.pt\")",
+        "472 [pass2]: gate_payload = run_panel_coverage_gate(persona_bank=persona_bank, cos_matrix_l10=cos_l10)"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/leave_one_out_505/panel_coverage.py",
@@ -1320,16 +1804,26 @@
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "66 [pass2]: cos_to_source: dict[str, float],",
+        "85 [pass2]: for p, c in cos_to_source.items()",
+        "92 [pass2]: cos_to_source={**filtered_cos, always_include: cos_to_source[always_include]},",
+        "113 [pass2]: cos_matrix: dict[str, dict[str, float]],",
+        "121 [pass2]: The ``var_panel_cos_j`` + ``spans_floor`` fields are reported for audit",
+        "130 [pass2]: cos_b_j = sorted(((b, float(cos_matrix[b][j_i])) for b in panel), key=lambda x: -x[1])"
+      ]
     },
     {
       "file": "src/explore_persona_space/experiments/marker_implant_480/build_training_pool.py",
-      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no persona-distance cosine computed",
       "matched_passes": {
         "pass1": false,
         "pass2": true
       },
-      "evidence_lines": []
+      "evidence_lines": [
+        "14 [pass2]: ``superkaiba1/explore-persona-space-data/issue411_sycophancy_cosine_gradient/",
+        "108 [pass2]: hf_subdir: str = \"issue411_sycophancy_cosine_gradient/training_pools\","
+      ]
     }
   ],
   "fingerprint_checks": [
@@ -1516,20 +2010,22 @@
       488
     ],
     "canonical_line_verified": [
-      66
+      66,
+      142,
+      311,
+      380
     ],
-    "canonical_line_audit_only": [
+    "canonical_line_unrecoverable_partition": [
       61,
       77,
       91,
+      228
+    ],
+    "canonical_line_audit_only": [
       96,
-      142,
-      228,
       245,
       247,
-      311,
-      329,
-      380
+      329
     ]
   }
 }

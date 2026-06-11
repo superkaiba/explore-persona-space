@@ -60,12 +60,17 @@ SWEEP_ROOTS = (
 )
 
 
-def _git_sha() -> str:
-    """Commit of the tree this audit runs from (reproducibility metadata)."""
+def _git_sha(cwd: Path = REPO) -> str:
+    """HEAD commit of the checkout at ``cwd`` (reproducibility metadata).
+
+    Recorded twice in the table: ``code_commit`` (the tree this script runs
+    from) and ``data_root_commit`` (the checkout being swept/fingerprinted) —
+    they differ when the audit sweeps the main checkout from a worktree.
+    """
     try:
         return subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            cwd=REPO,
+            cwd=cwd,
             capture_output=True,
             text=True,
             check=True,
@@ -88,10 +93,20 @@ def run_sweep(sweep_root: Path) -> dict[str, dict]:
             if not (p1 or p2):
                 continue
             rel = str(f.relative_to(sweep_root))
+            # Matched-idiom evidence: collect PASS1 OR PASS2 hits, tagging which
+            # pass matched each line (round-1 review fix: the PASS1-only loop
+            # left 101/102 pass2-only dispositions with empty evidence_lines).
             ev = []
             for i, line in enumerate(text.splitlines(), start=1):
-                if PASS1.search(line) and not line.strip().startswith("#"):
-                    ev.append(f"{i}: {line.strip()[:140]}")
+                if line.strip().startswith("#"):
+                    continue
+                if PASS1.search(line):
+                    tag = "pass1"
+                elif PASS2.search(line):
+                    tag = "pass2"
+                else:
+                    continue
+                ev.append(f"{i} [{tag}]: {line.strip()[:140]}")
                 if len(ev) >= 6:
                     break
             hits[rel] = {"pass1": p1, "pass2": p2, "evidence_lines": ev}
@@ -543,6 +558,19 @@ SITES += [
         "degeneracy (Gate A: all candidates in [0.93, 0.96])",
         [504],
     ),
+    # Post-pin site that landed on main after the round-1 sweep (coverage gate
+    # caught it on the round-2 re-run; classified, gate NOT weakened).
+    S(
+        "scripts/issue560_crossrecipe_panel.py",
+        "680-738 (_cosine_distance + geometry phase)",
+        "raw (hand-rolled pairwise, no centering)",
+        "1 - a@b/(|a||b|) between L20 last-prompt-token centroids "
+        "(context<->persona min_dist axis); no bank centering",
+        [560],
+        "Post-pin script (landed 2026-06-10, after this audit's round 1). A 51-vector "
+        "bank (16 contexts + 35 personas) exists, so the pin's bank-cosine family "
+        "applies; flagged for #560's analyzer — its min_dist axis is on the raw path.",
+    ),
 ]
 
 # Every other swept file: disposition (consumer / different construct / infra).
@@ -556,10 +584,13 @@ _C_509 = (
 )
 _NA_AXIS = "N-A — axis/projection construct (not persona-distance cosine)"
 _NA_EMB = "N-A — semantic TEXT-embedding cosine over questions (not persona-distance)"
-_NA_DIR = "N-A — direction/shift-vector cosine (SVD components, shift alignment), not "
-"persona-distance"
-_NA_INFRA = "N-A — matched idiom is model/training internals (norms, matmuls), no "
-"persona-distance cosine computed"
+_NA_DIR = (
+    "N-A — direction/shift-vector cosine (SVD components, shift alignment), not persona-distance"
+)
+_NA_INFRA = (
+    "N-A — matched idiom is model/training internals (norms, matmuls), no "
+    "persona-distance cosine computed"
+)
 _NA_JS = "N-A — JS/KL divergence machinery (cosine idiom hits are incidental)"
 
 DISPOSITIONS: dict[str, str] = {
@@ -690,6 +721,16 @@ DISPOSITIONS: dict[str, str] = {
     "scripts/archive/test_multidim_identity.py": "archived — whitening/identity test "
     "(different construct)",
     "scripts/test_multidim_identity_v2.py": _NA_AXIS,
+    # #536 self-files (pre-registered so the documented verification command
+    # survives the issue-536 -> main merge; round-1 review minor): the audit /
+    # re-grade tooling computes raw AND centered deliberately as the audit
+    # instrument, never as an experiment's distance source.
+    "scripts/issue536_audit.py": "N-A — #536 audit tooling itself (this file; regex "
+    "literals match the sweep patterns)",
+    "scripts/issue536_recompute_driver.py": "N-A — #536 re-grade tooling itself "
+    "(computes raw AND centered side by side as the audit instrument)",
+    "scripts/issue536_figures.py": "N-A — #536 figures tooling (reads the regrade "
+    "table; no cosine computed)",
 }
 
 PERSONA_VECTORS_A0 = {
@@ -734,7 +775,11 @@ def main(argv: list[str] | None = None) -> int:
         )
     stale = sorted((site_files | set(DISPOSITIONS)) - set(sweep))
     for f in stale:
-        log.warning("[stale] curated entry no longer matches the sweep: %s", f)
+        log.warning(
+            "[stale] curated entry not in current sweep (pre-registered for "
+            "post-merge, or removed from the tree): %s",
+            f,
+        )
 
     dispositions = [
         {
@@ -751,7 +796,12 @@ def main(argv: list[str] | None = None) -> int:
     table = {
         "schema_version": "i536_audit_v1",
         "generated_at": datetime.now(UTC).isoformat(),
+        # git_commit kept for back-compat (== code_commit); the two explicit
+        # fields disambiguate which tree each SHA identifies (round-1 review:
+        # the swept --data-root checkout drifts independently of the code tree).
         "git_commit": _git_sha(),
+        "code_commit": _git_sha(),
+        "data_root_commit": _git_sha(args.data_root),
         "sweep": {
             "roots": list(SWEEP_ROOTS),
             "pass1_regex": PASS1.pattern,
@@ -772,8 +822,9 @@ def main(argv: list[str] | None = None) -> int:
             "needs_gpu_or_unrecoverable": [213, 227, 99],
             "already_remediated_readoff": [472, 504],
             "pairwise_labeled_not_regraded": [404, 458, 444, 493, 502, 488],
-            "canonical_line_verified": [66],
-            "canonical_line_audit_only": [61, 77, 91, 96, 142, 228, 245, 247, 311, 329, 380],
+            "canonical_line_verified": [66, 142, 311, 380],
+            "canonical_line_unrecoverable_partition": [61, 77, 91, 228],
+            "canonical_line_audit_only": [96, 245, 247, 329],
         },
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
