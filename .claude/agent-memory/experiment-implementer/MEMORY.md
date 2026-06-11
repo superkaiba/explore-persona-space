@@ -32,3 +32,4 @@
 - [preflight --json is multi-line](feedback_preflight_json_multiline.md) — parse whole stdout, never splitlines()[-1]; give dispatchers --skip-preflight (#602)
 - [max_model_len tracks max_new_tokens](feedback_max_model_len_tracks_max_new_tokens.md) — raising max_new_tokens on an inherited vLLM rig requires raising max_model_len at the call site (cap-length R re-enters as prompt; #601)
 - [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA adapters at faithful α/√r can be unconditional repeaters while parent numbers were classic α/r; identical-Δg re-reads = collapse ceiling, probe both scalings + pin the read gauge (#601 r5)
+- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — smoke-skipped lazy imports are unverified; hoist to module top + AST --verify-imports gate before relaunch (#606)
