@@ -195,7 +195,10 @@ bundle = {
 }
 if check_mode:
     # Same code path, but write the bundle to a tempfile (no tree mutation).
-    raw_out = Path(tempfile.mkstemp(prefix="i585_raw_check_", suffix=".json")[1])
+    # mkstemp returns an OPEN fd — close it, or it leaks (round-2 review minor).
+    check_fd, check_path = tempfile.mkstemp(prefix="i585_raw_check_", suffix=".json")
+    os.close(check_fd)
+    raw_out = Path(check_path)
 else:
     raw_out = Path(raw_path)
 raw_out.parent.mkdir(parents=True, exist_ok=True)

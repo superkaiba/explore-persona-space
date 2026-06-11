@@ -62,6 +62,9 @@ EMISSION_CLIMB_RANGE = 0.15
 # v4 picker constants (compute_bystander_resolution_from_held_out, pinned rig).
 FLOOR_DELTA_G_NATS = 0.5
 CEILING_LOGP_NATS = math.log(0.9)
+# The six nominal checkpoint fractions every #585 artifact must cover, as the
+# artifacts spell them (plan section 4.2; float-value equality, so 0.5 == 0.50).
+EXPECTED_FRACS = (0.08, 0.16, 0.33, 0.50, 0.75, 1.00)
 
 
 def _git_sha() -> str:
@@ -131,6 +134,77 @@ def _sd(vals: list[float]) -> float:
     return math.sqrt(sum((v - m) ** 2 for v in vals) / (len(vals) - 1)) if len(vals) > 1 else 0.0
 
 
+def _key_diff(artifact: str, got: set, expected: set) -> str | None:
+    """One-line missing/extra report for ``artifact``, or None when the sets match."""
+    missing = sorted(expected - got)
+    extra = sorted(got - expected)
+    if missing or extra:
+        return f"{artifact}: missing={missing} extra={extra}"
+    return None
+
+
+def validate_artifact_coverage(
+    stale_rows: dict, corrected_rows: dict, cks: dict, glue_by_frac: dict
+) -> None:
+    """Pre-consumption key-coverage gate (round-2 review concern
+    ``comparison-artifact-coverage-unchecked``).
+
+    Runs BEFORE any rates/verdicts are computed. Three requirements, each
+    failing with an AssertionError that NAMES the artifact + missing/extra
+    keys (no bare KeyError mid-computation, no silently-partial join):
+
+    1. Every consumed artifact — the stale table's per-fraction rows, the
+       corrected table, the trajectory checkpoints, and the slot-stats
+       fractions — carries EXACTLY the six nominal fractions.
+    2. The trajectory's held-out (persona, question) panel is IDENTICAL across
+       fractions. Required in BOTH directions: a strict-superset panel at one
+       fraction would otherwise let the identity-rate loop silently iterate
+       only the other fraction's keys (the theoretically-silent path the
+       round-2 reconciler named).
+    3. The slot-stats per-question key set is IDENTICAL across fractions.
+    """
+    expected = set(EXPECTED_FRACS)
+    problems = [
+        d
+        for d in (
+            _key_diff("stale_table per-fraction rows", set(stale_rows), expected),
+            _key_diff("corrected_table per-fraction rows", set(corrected_rows), expected),
+            _key_diff("trajectory checkpoints", set(cks), expected),
+            _key_diff("slot_stats fractions", set(glue_by_frac), expected),
+        )
+        if d
+    ]
+    if cks:
+        ref_f = sorted(cks)[0]
+        ref_panel = {(p, q) for p, per_q in cks[ref_f]["held_out"].items() for q in per_q}
+        for f in sorted(cks)[1:]:
+            panel = {(p, q) for p, per_q in cks[f]["held_out"].items() for q in per_q}
+            d = _key_diff(
+                f"trajectory held-out (persona, question) panel at frac={f:.2f} "
+                f"(vs frac={ref_f:.2f})",
+                panel,
+                ref_panel,
+            )
+            if d:
+                problems.append(d)
+    if glue_by_frac:
+        ref_f = sorted(glue_by_frac)[0]
+        ref_qs = set(glue_by_frac[ref_f]["per_question"])
+        for f in sorted(glue_by_frac)[1:]:
+            d = _key_diff(
+                f"slot_stats per_question keys at frac={f:.2f} (vs frac={ref_f:.2f})",
+                set(glue_by_frac[f]["per_question"]),
+                ref_qs,
+            )
+            if d:
+                problems.append(d)
+    if problems:
+        raise AssertionError(
+            "artifact key-coverage validation FAILED (checked before any rates/verdicts):\n  "
+            + "\n  ".join(problems)
+        )
+
+
 def route_verdict(
     *,
     stale_signature: bool,
@@ -182,9 +256,10 @@ def compute_comparison(
     corrected_rows = {float(r["ckpt_frac"]): r for r in corrected["smoke_table"]}
     cks = {float(ck["frac"]): ck for ck in trajectory["checkpoints"]}
     glue_by_frac = {float(fr["frac"]): fr for fr in slot_stats["fractions"]}
+    # Coverage gate FIRST (supersedes the old bare len(fracs) != 6 check): every
+    # downstream `[]` join below is licensed by this pass having succeeded.
+    validate_artifact_coverage(stale_rows, corrected_rows, cks, glue_by_frac)
     fracs = sorted(cks.keys())
-    if len(fracs) != 6:
-        raise AssertionError(f"expected 6 fractions in the trajectory, got {fracs}")
 
     stale_vals = [stale_rows[f]["source_dg"] for f in fracs]
     stale_mean = _mean(stale_vals)
