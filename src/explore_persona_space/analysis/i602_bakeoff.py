@@ -135,7 +135,7 @@ ANCHOR_521_BAND = 0.15
 def anchor_521_recorded(root: Path | None = None) -> dict[int, float]:
     """Recorded per-seed cos(U1_same_marker_seedS, v_steer) — read from the
     producing artifact (eval_results/issue_521/svd/headline_metrics.json,
-    key ``cos_U1_vsteer``; approx −0.027 / −0.065 / −0.018), never
+    key ``cos_U1_vsteer``; approx -0.027 / -0.065 / -0.018), never
     hardcoded, so the anchor band always checks against the canonical
     stored values."""
     root = root or repo_root()
@@ -246,7 +246,7 @@ def download_adapter(repo_id: str, prefix: str, dest_dir: Path) -> Path:
 # Panels / contexts
 # ---------------------------------------------------------------------------
 def load_shared_panel(root: Path | None = None) -> tuple[dict[str, str], list[str]]:
-    """The #521 14-persona × 20-question probe panel (byte-identical reuse)."""
+    """The #521 14-persona x 20-question probe panel (byte-identical reuse)."""
     root = root or repo_root()
     inputs = root / "eval_results" / "issue_521" / "inputs"
     personas = json.loads((inputs / "personas.json").read_text())
@@ -453,7 +453,7 @@ def adapter_allowlist_541() -> list[str]:
 def estimator_units() -> list[dict[str, Any]]:
     """The 21 (family, source) estimator units (E2/E3) with their E1 mix
     variants attached (E1 runs once per per-seed mix where mixes are
-    seed-specific: marker519 ×3, fact541 ×3 per teacher; the rest 'shared')."""
+    seed-specific: marker519 x3, fact541 x3 per teacher; the rest 'shared')."""
     units: list[dict[str, Any]] = []
     units.append(
         dict(
@@ -614,7 +614,7 @@ def reconstruct_541_positives(
     Producing code path (identical between c020f04db and main — verified
     at port time): ``run_experiment_444.phase_dataset`` does
     ``rng = random.Random(seed); teach_rows = _build_teach_rows(facts, rng)``
-    with combos = diversified-40-templates × canonical paraphrases. The
+    with combos = diversified-40-templates x canonical paraphrases. The
     teach rows depend ONLY on the seed (drawn first from a fresh rng);
     the teacher arm changes only the system prompt.
 
@@ -748,7 +748,7 @@ def build_e2_messages(
     demos: Sequence[tuple[str, str]],
     probe: str,
 ) -> list[dict[str, str]]:
-    """ICL context messages: [system?] + K×(user, assistant) + probe user."""
+    """ICL context messages: [system?] + Kx(user, assistant) + probe user."""
     msgs: list[dict[str, str]] = []
     system = _source_system(family, source)
     if system is not None:
@@ -840,7 +840,7 @@ def load_behavioral_panel(
         d = json.loads(p.read_text())
         row = d["G"][source]
         # per-(train, eval) entries are dicts; delta_g = log P(marker)
-        # trained − base at the post-response slot (the #474 cross-eval DV)
+        # trained - base at the post-response slot (the #474 cross-eval DV)
         return {cid: float(row[cid]["delta_g"]) for cid in LOC474_CONTEXTS if cid in row}
     raise ValueError(f"unknown family {family!r}")
 
@@ -856,7 +856,7 @@ def loco_w_shared(M: np.ndarray, persona_order: Sequence[str]) -> dict[str, np.n
     construction for the activation geometry-consistency read (plan §4.4
     pseudocode ``w_shr_loco``).
     """
-    H, N = M.shape
+    _H, N = M.shape
     assert len(persona_order) == N, (len(persona_order), N)
     out: dict[str, np.ndarray] = {}
     for i, name in enumerate(persona_order):
