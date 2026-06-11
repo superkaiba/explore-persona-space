@@ -12,4 +12,4 @@
 | sex2.csv | vendored | firthlogist repo (Firth validation dataset) |
 | firth_sex2_validation.json | i591_firth.py --validate | this repo |
 
-Snapshot commit: 007756782ce3f4311ccf211f3c1167d3ae1bd8ff at 2026-06-11T08:25:37.275219+00:00
+Snapshot commit: 187a10016afeb347aa5911361d4311c9a5e170bb at 2026-06-11T11:05:10.232243+00:00
