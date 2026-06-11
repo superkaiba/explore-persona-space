@@ -82,7 +82,7 @@ The 10 eval questions (identical across all personas): law and morality / princi
 
 No model was trained in the main re-measurement: it is an eval-only pass over existing snapshots, plus an off-pod comparison of the new table against the published one. In a follow-up round I then added one fresh training run: the same cell retrained with the same recipe, seed, training-code checkout, and the same archived-data rebuild (the original cell's deterministic builder over the archived response file), saving an adapter snapshot after every optimizer step from 6 through 12 — the window the main round exposed as unsampled. I measured those seven per-step snapshots through the same eval path in one batch alongside the two surviving original snapshots (steps 6 and 12), which serve as parity controls for whether the retrained curve can speak for the original cell.
 
-<details>
+<details open>
 <summary>Training inputs for the follow-up retrain: 2 example rows from the rebuilt 400-row mix (cherry-picked for illustration)</summary>
 
 Cherry-picked for illustration (2 of the 400 rows: the shortest marker-positive row and the shortest contrastive-negative row). The complete rebuilt mix — 200 villain positives, 100 plain-assistant negatives, 100 origami-artist negatives — is [train_pool.jsonl on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/b05ade47eadbaaf8b0b6ebfd7133c50e492e277b/issue585_calibration_reeval/step6to12/train_pool.jsonl) (the file whose sha256 the retrain manifest records).
