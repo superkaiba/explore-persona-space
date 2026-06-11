@@ -126,3 +126,4 @@
 {"ts": "2026-06-11T11:41:08Z", "kind": "epm:progress", "version": 18, "by": "poll_pipeline", "note": "phase transition: unknown -> p2_smoke_source_gen", "phase": "p2_smoke_source_gen", "pod": "pod-571"}
 {"ts": "2026-06-11T11:50:53Z", "kind": "epm:progress", "version": 19, "by": "poll_pipeline", "note": "phase transition: p2_smoke_source_gen -> p3_train", "phase": "p3_train", "pod": "pod-571"}
 {"ts": "2026-06-11T12:00:36Z", "kind": "epm:progress", "version": 20, "by": "poll_pipeline", "note": "phase transition: p3_train -> p6_source_score", "phase": "p6_source_score", "pod": "pod-571"}
+{"ts": "2026-06-11T12:10:16Z", "kind": "epm:progress", "version": 21, "by": "poll_pipeline", "note": "phase transition: p6_source_score -> p7_upload", "phase": "p7_upload", "pod": "pod-571"}
