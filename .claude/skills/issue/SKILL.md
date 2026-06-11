@@ -2369,7 +2369,10 @@ workloads (#588). Residual gaps that still need the explicit
 `--backend runpod` override (or the named knob): (a) 70B intents
 (`inf-70b`/`ft-70b` have no GCP machine-type mapping — fail-loud by
 design); (b) workloads needing the open-instruct `--extra gpu` venv on
-a SLURM lane (the custom stage builds the base venv); (c) workloads
+a SLURM lane under a non-ft intent (venv extras follow the INTENT, not
+the workload kind: `ft-7b`/`ft-70b` custom commands DO build `--extra
+gpu`; `lora-7b`/`eval`/`debug` custom commands build the base venv —
+`needs_gpu_extras`, slurm.py); (c) workloads
 needing interactive SSH-MCP-driven orchestration mid-run (the
 experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
