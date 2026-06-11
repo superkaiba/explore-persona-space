@@ -69,12 +69,10 @@ The dashboard task list is the canonical glance view — open it
 whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
-Status values (canonical):
-`proposed`, `clarifying`, `planning`, `plan_pending`,
-`approved`, `awaiting_approval`, `queued`, `implementing`,
-`code_reviewing`, `testing`, `running`, `uploading`, `verifying`,
-`interpreting`, `reviewing`, `awaiting_promotion`, `followups_running`,
-`shared`, `blocked`, `completed`, `failed`, `cancelled`, `archived`.
+Status values (canonical — the task.py enum; anything else is rejected):
+`proposed`, `planning`, `plan_pending`, `approved`, `running`,
+`verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
+`followups_running`, `completed`, `blocked`, `archived`.
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
@@ -269,6 +267,25 @@ enforcement point — friction lands before compute commits.
 
 The script prints the new session's Happy id and cwd (the worktree at
 `.claude/worktrees/issue-<N>/` if it exists, else repo root).
+
+**Approval of a task whose owning session is stalled/dead → stop +
+respawn IMMEDIATELY.** When you approve a plan (or the user says
+"approve N") and the issue's existing session is known-stalled or dead
+(watcher ALIVE-BUT-STALLED flag, stale markers, no live process), do
+not park behind a delayed background verification check — stop the
+stale session (`spawn_session.py stop --session-id <id>`) and
+`spawn-issue --issue <N> --auto` right away. Background checks are for
+HEALTHY sessions only. (2026-06-10: the PM armed a 25-min check after
+approving #545 on a known-stalled session; Thomas had to prod twice —
+"can't you just start it now".)
+
+**Session-existence claims require a filtered FULL listing.** Before
+asserting "issue N has no session" (or has one), run
+`uv run python scripts/spawn_session.py list | grep -w <N>` (and
+cross-check the watcher registry `~/.eps-autonomous/`), never an
+eyeballed tail of the unfiltered dump — `list` output for 50+ sessions
+truncates exactly where the claim goes wrong. (2026-06-10: the PM
+asserted #524 had no session off a 40-line tail of 56 rows; it did.)
 
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
 session. Trust the experiment's status + events.jsonl events; check

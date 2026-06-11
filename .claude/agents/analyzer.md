@@ -249,7 +249,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
 
-**Content firewall for harmful-content tasks (EM evals, jailbreak data, misaligned completions): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; the third ran clean behind a firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs.
+**Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, AND marker / trigger / implant / backdoor corpora): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
 
 ### Step 4: Write the clean-result body
 
@@ -429,7 +429,7 @@ repeatedly trip the long-standing clean-result-critic lenses (Lens 2 /
 Run the pre-publish clean-result validator against the local body file:
 
 ```bash
-uv run python scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md
+uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md  # ALWAYS the main checkout's copy — a worktree's verifier can be spec-stale (incident #496)
 ```
 
 Every FAIL must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" bullet in Next steps). Do NOT proceed to Step 6 until the verifier is FAIL-free.

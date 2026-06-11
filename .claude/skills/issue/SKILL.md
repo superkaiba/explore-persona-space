@@ -235,7 +235,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                       |-- FAIL + count>=3 --> blocked
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
-                                                                               |--> uploading (verifying)  <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
+                                                                               |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
                                                                                       |-- (all artifacts verified, pod terminated; held interpretation published)
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
@@ -281,8 +281,7 @@ after a YAML edit):
 | `code_reviewing` | code-reviewer ensemble is reviewing the diff. | no |
 | `testing` | Inline test-suite step (Step 9c, code-change paths only). | no |
 | `running` | experimenter is running the workload on a pod. | no |
-| `uploading` | upload-verifier is checking that artifacts landed on HF Hub / WandB / git. The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS. | no |
-| `verifying` | Post-upload sanity / smoke-test step before interpretation. | no |
+| `verifying` | upload-verifier is checking that artifacts landed on HF Hub / WandB / git. (There is NO `uploading` status — the whole upload-verification phase runs at `verifying`; task.py rejects `uploading`.) The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS. | no |
 | `interpreting` | analyzer + interpretation-critic + clean-result-critic loops are running. | no |
 | `reviewing` | Final adversarial review pass (clean-result-critic Lens 7 absorbed the retired reviewer step). | no |
 | `under_review` | Legacy alias of reviewing; do not introduce new uses. | no |
@@ -875,6 +874,19 @@ ask the user to reconcile. Do NOT pick.
 
 **Soft error: status missing from frontmatter (legacy bodies), type missing,
 or empty body.** These are recoverable; do NOT exit. Run Step 0b instead.
+
+**Worktree spec-freshness BEFORE arming (sessions whose cwd is an issue
+worktree).** A worktree pins the entire workflow surface at branch-fork
+time, so the skill/cron prescriptions you are reading may be stale —
+run the Step 5a spec-freshness sync (surgical `git checkout main -- `
+of the workflow-surface specs, with the branch-side-feature-edit guard)
+FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
+`post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
+never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
+pre-split skill copy armed `/issue 501` at */10 instead of the
+lightweight `/issue-tick` at */20 — 362 full ~44K-token skill reloads
+over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
 
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
 When `EPM_AUTONOMOUS_SESSION=1` is set (the session was spawned via
@@ -1811,9 +1823,10 @@ The Claude reviewer additionally receives:
 The Codex twin additionally receives:
 - `worktree`, `base`, `plan_marker_path` (no `implementation_marker_path`
   — the composer fetches the marker from canonical main state and INLINES
-  it; likewise, if `plan_marker_path` does not resolve in the worktree —
-  child task cut from a parent issue branch, #550 r1 — the composer
-  inlines the canonical plan, Step 2-pre-b) — see
+  it; likewise, if the worktree plan is absent — child task cut from a
+  parent issue branch, #550 r1 — or STALE — follow-up amendment plan
+  postdating the branch cut, #546 follow-up r1 — the composer inlines
+  the canonical plan, Step 2-pre-b) — see
   `.claude/agents/codex-code-reviewer.md`.
 
 Neither sees the implementer's reasoning — independence is load-bearing.
@@ -1994,7 +2007,9 @@ the per-concern rule above; the batch ask is never raised.)
 This step does NOT override 5c-bis — mechanical-contract-only FAILs
 still strip and cosmetic gripes about present evidence still don't
 bounce the implementer. The check operates on a different signal
-(concerns.jsonl persisted via `task.py raise-concern`) and gates
+(concerns.jsonl persisted via `task.py raise-concern` — NOTE the
+`--summary` arg is hard-capped at 200 chars, ValueError above it; put
+detail in `--evidence`) and gates
 auto-advance ON TOP of the existing flow. The same subroutine fires at
 Step 9a (interp ensemble) and Step 9a-bis (clean-result ensemble) with
 the same logic.
@@ -2817,10 +2832,14 @@ while True:
             f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
-    # Harness re-invokes orchestrator on bg-Bash exit. Read the JSON
-    # line from stdout (the LAST line of the bg-Bash output) and decide:
+    # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
+    # work, simply END THE TURN with a one-sentence status — NEVER emit
+    # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
+    # each burns a tool call + context for nothing (33x and 49x in two
+    # 2026-06-10 sessions). Read the JSON line from stdout (the LAST
+    # line of the bg-Bash output) and decide:
     #
-    #   status == "done"           -> exit loop; transition to status:uploading; go to Step 7.
+    #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
     #                                  `gate` field; the poller has ALREADY
     #                                  posted the carried marker (e.g.
@@ -3838,7 +3857,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    `/tmp/issue-<N>-humanize-loop.md`, then update via:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-humanize-loop.md
-   uv run python scripts/verify_task_body.py --issue <N>
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
    produce a body that breaks Lens 1-13 mechanical checks. If it does:
@@ -4379,7 +4398,7 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    `**Methodology:**` line and the Reproducibility row), but the
    verifier costs ~1s and catches the unlikely off-anchor edit:
    ```bash
-   uv run python scripts/verify_task_body.py --issue <N>
+   uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    Do NOT re-run the full clean-result-critic loop — this is a
    mechanical post-script edit, not a substantive body change.
@@ -5337,7 +5356,7 @@ Decision tree:
   [...]}`. Same chat title update as above.
 
 - **Surgical checkout itself fails** (file conflicts, push rejected
-  after one `git pull --rebase` retry) — post `epm:merge-failed v1`
+  after one `git pull --rebase --autostash` retry; plain rebase fails on the always-dirty shared root) — post `epm:merge-failed v1`
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
