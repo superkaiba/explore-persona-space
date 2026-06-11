@@ -20,7 +20,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/f8c6dcd9581f9686b0d286adee78508673285cf6/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
+**Methodology:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/d4ed5e5195532ee63bef923290658551e9eab5f9/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
 
 ## Human TL;DR
 
@@ -386,7 +386,7 @@ One caveat is named rather than buried: the rebuilt training data assumes the re
 - Retrained snapshots (7 window steps + 3 bonus + terminal, Hub-verified at write time via `list_repo_files`): [adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain/](https://huggingface.co/superkaiba1/explore-persona-space/tree/e0697d19a5a1e4315c8642dfd09f2acc5a3f3338/adapters/issue_585_step6to12/c504v4_smoke_eps3_seed42_retrain) + final adapter `..._retrain_final` (same revision)
 - Reused for the follow-up round, beyond the artifacts above: `issue504_geometry/on_policy_R/R_train_v504.json` ([HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/b05ade47eadbaaf8b0b6ebfd7133c50e492e277b/issue504_geometry/on_policy_R)) as the training-data rebuild input — fit: the deterministic builder plus the archived response file are the only path back to the original training mix; its single-source provenance is the caveat named in the splice-failure finding.
 - WandB: n/a for the main round (eval-only); follow-up retrain logged as run `issue585_step6to12_retrain_c504v3_smoke_eps3_seed42_lr0.0001` (id `ll39ggyd`, per-step training loss)
-- **Methodology reference:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/f8c6dcd9581f9686b0d286adee78508673285cf6/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
+- **Methodology reference:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/d4ed5e5195532ee63bef923290658551e9eab5f9/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
 
 **Compute:** main round — 1× H100 (RunPod ephemeral `pod-585`), 0.54 GPU-h total (vs 1.0 budgeted); ~33 min wall pod-side + CPU-only comparison/figures off-pod; pod auto-terminated after upload verification. Follow-up round — fresh 1× H100 ephemeral `pod-585` (`lora-7b` intent), ~1 h pod-side wall within the 2 GPU-h budget (retrain + 9-checkpoint eval + companion + uploads); analysis + figures off-pod; pod auto-terminated after upload-verification PASS.
 
