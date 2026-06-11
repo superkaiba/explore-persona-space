@@ -3,7 +3,8 @@ title: Marker LoRA updates carry a seed-stable write direction, but the top-1 ke
   is seed-arbitrary and does not match the last-prompt-token context vector (MODERATE
   confidence)
 kind: analysis
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T10:48:17Z'
 has_clean_result: true
 ---
