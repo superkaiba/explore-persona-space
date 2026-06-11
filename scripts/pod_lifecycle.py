@@ -54,7 +54,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 # Same package — sibling modules.
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -697,7 +697,7 @@ def _is_supply_constraint(exc: Exception) -> bool:
     return any(marker in text for marker in _SUPPLY_CONSTRAINT_MARKERS)
 
 
-# ─── wait-for-capacity (unbounded) ───────────────────────────────────────────
+# ─── wait-for-capacity (budget-bounded attempts, unbounded intent) ──────────
 #
 # Policy layer that wraps the one-shot ``create_pod`` primitive in an UNBOUNDED
 # retry loop keyed on the two transient-while-idle classes:
@@ -712,9 +712,22 @@ def _is_supply_constraint(exc: Exception) -> bool:
 #
 # Hard rules baked in:
 #
-# 1. NO CAP. No max-attempts, no max-wall-clock. Loops forever (or until SIGINT
-#    / SIGTERM). This is Thomas's explicit design choice — autonomous sessions
-#    should wait, not park.
+# 1. BOUNDED ATTEMPT, UNBOUNDED INTENT. The wait is conceptually unbounded
+#    (autonomous sessions should wait, not park — Thomas's explicit design
+#    choice), but each PROCESS-level attempt is capped at
+#    :data:`WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS` (default 45 min, < 50 min)
+#    wall-clock. At the budget the process raises
+#    :class:`WaitForCapacityStillWaiting`, which the CLI handlers convert into
+#    a structured ``[wait-for-capacity] STILL-WAITING`` line + exit code
+#    :data:`EXIT_STILL_WAITING` (75, EX_TEMPFAIL). The caller (the /issue
+#    orchestrator's bg-Bash loop) RE-RUNS the same command to continue
+#    waiting — the loop is state-free, so a re-run resumes the wait exactly.
+#    Why bounded: an in-process unbounded loop means a multi-hour bg command,
+#    and ~1h-old bg provision commands were observed getting killed by session
+#    respawns with no orchestrator wake (3 sessions went dark on 2026-06-09;
+#    #530/#521/#532). Bounded attempts keep every bg command under the
+#    kill-window AND give watchers a visible progress event per attempt.
+#    Approved 2026-06-10 (refs #572), superseding the original NO CAP rule.
 # 2. ONLY ``RunPodNoCapacityError`` + ``RunPodInsufficientBalanceError`` are
 #    caught. Auth, bad config, transport-budget-exhausted, empty-gpu-list →
 #    those still propagate fast per the "fail fast — never hide failures" rule
@@ -739,6 +752,76 @@ def _is_supply_constraint(exc: Exception) -> bool:
 # Backoff knobs — module-level so tests can monkeypatch them.
 WAIT_FOR_CAPACITY_BACKOFF_BASE_SECS = 30.0
 WAIT_FOR_CAPACITY_BACKOFF_CAP_SECS = 600.0  # 10 min ceiling
+
+# Per-process wall-clock budget for ONE wait-for-capacity invocation. Must
+# stay under 50 min (the observed bg-command kill window during session
+# respawns — refs #572). At the budget the loop raises
+# :class:`WaitForCapacityStillWaiting` instead of sleeping past it; the CLI
+# converts that into a structured still-waiting exit so the orchestrator can
+# re-run the same command (state-free resume of the wait). Env override:
+# ``EPM_WAIT_FOR_CAPACITY_BUDGET_SECS``.
+_DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS = 45 * 60.0
+
+
+def _wait_for_capacity_attempt_budget_secs() -> float:
+    """Read the per-process wait budget (default 45 min). Bad values fall
+    back to the default rather than crash the wait loop."""
+    raw = os.environ.get("EPM_WAIT_FOR_CAPACITY_BUDGET_SECS", "").strip()
+    if not raw:
+        return _DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS
+    try:
+        return max(0.0, float(raw))
+    except ValueError:
+        print(
+            f"[pod_lifecycle] WARN: EPM_WAIT_FOR_CAPACITY_BUDGET_SECS={raw!r} is not "
+            f"a number; using default "
+            f"{_DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS:.0f}s.",
+            file=sys.stderr,
+        )
+        return _DEFAULT_WAIT_FOR_CAPACITY_ATTEMPT_BUDGET_SECS
+
+
+# Exit code for the structured still-waiting exit (EX_TEMPFAIL — "temporary
+# failure, retry"). Distinct from 0 (pod ready) and 1 (real failure) so the
+# orchestrator / watchers can route on it without parsing stderr.
+EXIT_STILL_WAITING = 75
+
+
+class WaitForCapacityStillWaiting(RunPodError):
+    """Raised when one wait-for-capacity process attempt exhausts its
+    wall-clock budget without capacity / $/hr headroom appearing. NOT a
+    failure: nothing was provisioned, nothing is billing, and re-running
+    the same command resumes the wait. The CLI handlers convert this into
+    ``[wait-for-capacity] STILL-WAITING`` + :data:`EXIT_STILL_WAITING`."""
+
+    def __init__(self, *, verb: str, name: str, attempts: int, elapsed_secs: float) -> None:
+        self.verb = verb
+        self.name = name
+        self.attempts = attempts
+        self.elapsed_secs = elapsed_secs
+        super().__init__(
+            f"still waiting for capacity after {attempts} {verb} attempt(s), "
+            f"{_format_elapsed(elapsed_secs)} elapsed (budget "
+            f"{_wait_for_capacity_attempt_budget_secs():.0f}s)"
+        )
+
+
+def _emit_still_waiting_and_exit(exc: "WaitForCapacityStillWaiting") -> "NoReturn":
+    """Print the structured still-waiting summary and exit
+    :data:`EXIT_STILL_WAITING`. One line on stderr (where the heartbeats
+    already go) and one on stdout (so an output-capturing caller that only
+    keeps stdout still sees it)."""
+    msg = (
+        f"[wait-for-capacity] STILL-WAITING: {exc.verb} {exc.name} has been "
+        f"waiting {_format_elapsed(exc.elapsed_secs)} across {exc.attempts} "
+        f"attempt(s) and reached this process's wall-clock budget. No pod was "
+        f"provisioned; nothing is billing. RE-RUN THE SAME COMMAND to continue "
+        f"waiting (the wait loop is state-free). Exit code {EXIT_STILL_WAITING} "
+        f"= still-waiting, not failure."
+    )
+    print(msg, file=sys.stderr, flush=True)
+    print(msg, flush=True)
+    raise SystemExit(EXIT_STILL_WAITING)
 
 
 def _wait_for_capacity_backoff_secs(attempt: int) -> float:
@@ -789,8 +872,10 @@ def create_pod_with_wait_for_capacity(
     container_disk_gb: int,
     preflight_check: Callable[[], None] | None = None,
 ) -> PodInfo:
-    """Provision policy wrapper: retry ``create_pod`` UNBOUNDED on no-capacity
-    OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle).
+    """Provision policy wrapper: retry ``create_pod`` on no-capacity
+    OR INSUFFICIENT_BALANCE refusals (both transient + no-cost-while-idle),
+    bounded per process by :func:`_wait_for_capacity_attempt_budget_secs`
+    (raises :class:`WaitForCapacityStillWaiting` at the budget — refs #572).
 
     Catches :class:`RunPodNoCapacityError` (every supply lever returned
     null) AND :class:`RunPodInsufficientBalanceError` (projected account
@@ -814,8 +899,9 @@ def create_pod_with_wait_for_capacity(
     (default) no preflight runs, preserving the legacy behavior for any
     caller that doesn't pass it.
 
-    Loops with exponential-jittered backoff (base 30s, cap 10 min) forever
-    until capacity / $/hr headroom is available. KeyboardInterrupt
+    Loops with exponential-jittered backoff (base 30s, cap 10 min) until
+    capacity / $/hr headroom is available or the per-process wall-clock
+    budget trips (then raises :class:`WaitForCapacityStillWaiting`). KeyboardInterrupt
     propagates so the operator can Ctrl-C / SIGINT and exit cleanly. Each
     attempt emits a structured ``[wait-for-capacity]`` stderr line whose
     ``reason=`` token distinguishes ``local-cap`` (preflight refusal),
@@ -827,7 +913,8 @@ def create_pod_with_wait_for_capacity(
     attempt = 0
     start = time.monotonic()
     print(
-        f"[wait-for-capacity] starting unbounded retry loop for {name} ({gpu_count}x {gpu_type})",
+        f"[wait-for-capacity] starting retry loop for {name} ({gpu_count}x {gpu_type}); "
+        f"per-process budget {_wait_for_capacity_attempt_budget_secs():.0f}s",
         file=sys.stderr,
         flush=True,
     )
@@ -878,6 +965,19 @@ def create_pod_with_wait_for_capacity(
                 reason = "local-cap (pre-flight $/hr estimate)"
             else:
                 reason = "insufficient-balance (account $/hr cap)"
+            # Per-process wall-clock budget (refs #572): never sleep PAST the
+            # budget — raise the structured still-waiting signal instead so
+            # the caller exits EXIT_STILL_WAITING and the orchestrator
+            # re-runs the command. Checked before the sleep so one process
+            # attempt is hard-capped under the ~50 min bg-kill window.
+            budget = _wait_for_capacity_attempt_budget_secs()
+            if budget > 0 and elapsed + sleep_secs > budget:
+                raise WaitForCapacityStillWaiting(
+                    verb="provision",
+                    name=name,
+                    attempts=attempt,
+                    elapsed_secs=elapsed,
+                ) from exc
             print(
                 f"[wait-for-capacity] attempt {attempt} for {name}: "
                 f"{reason} ({exc}); waited {_format_elapsed(elapsed)}, "
@@ -934,7 +1034,7 @@ def _resume_with_balance_wait_if_autonomous(
     INSUFFICIENT_BALANCE at the actual ``podResume`` is **transient +
     no-cost-while-idle** (the stopped pod is not burning $/hr while we
     wait), so the right behavior in autonomous mode is the same
-    unbounded retry-with-backoff used by
+    budget-bounded retry-with-backoff used by
     :func:`create_pod_with_wait_for_capacity`. NOT fail-exit to
     ``blocked`` (incident #506, 2026-06-08). Outside autonomous mode we
     fail loud with an actionable message so the human can choose
@@ -1005,6 +1105,18 @@ def _resume_with_balance_wait_if_autonomous(
                 reason = "local-cap (pre-flight $/hr estimate)"
             else:
                 reason = "insufficient-balance (account $/hr cap)"
+            # Per-process wall-clock budget (refs #572) — see
+            # create_pod_with_wait_for_capacity for the rationale. The
+            # resume wait is the same no-cost-while-idle class, so the
+            # same bounded-attempt / re-run contract applies.
+            budget = _wait_for_capacity_attempt_budget_secs()
+            if budget > 0 and elapsed + sleep_secs > budget:
+                raise WaitForCapacityStillWaiting(
+                    verb="resume",
+                    name=name,
+                    attempts=attempt,
+                    elapsed_secs=elapsed,
+                ) from exc
             print(
                 f"[wait-for-capacity] resume attempt {attempt} for {name}: "
                 f"{reason} ({exc}); waited "
@@ -1423,14 +1535,17 @@ def cmd_provision(args: argparse.Namespace) -> None:
                 transient_on_exceed=True,
             )
 
-        info = create_pod_with_wait_for_capacity(
-            name=name,
-            gpu_type=spec.gpu_type,
-            gpu_count=spec.gpu_count,
-            volume_gb=args.volume_gb,
-            container_disk_gb=args.container_disk_gb,
-            preflight_check=_wait_mode_preflight,
-        )
+        try:
+            info = create_pod_with_wait_for_capacity(
+                name=name,
+                gpu_type=spec.gpu_type,
+                gpu_count=spec.gpu_count,
+                volume_gb=args.volume_gb,
+                container_disk_gb=args.container_disk_gb,
+                preflight_check=_wait_mode_preflight,
+            )
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
     else:
         # Interactive / one-shot: keep the unconditional pre-flight SystemExit
         # contract from #503/#505 — humans expect an immediate, actionable
@@ -1576,13 +1691,16 @@ def cmd_resume(args: argparse.Namespace) -> None:
                 transient_on_exceed=True,
             )
 
-        _resume_with_balance_wait_if_autonomous(
-            pod=pod,
-            name=name,
-            issue=args.issue,
-            preflight_check=_wait_mode_preflight,
-            force_wait=True,
-        )
+        try:
+            _resume_with_balance_wait_if_autonomous(
+                pod=pod,
+                name=name,
+                issue=args.issue,
+                preflight_check=_wait_mode_preflight,
+                force_wait=True,
+            )
+        except WaitForCapacityStillWaiting as exc:
+            _emit_still_waiting_and_exit(exc)
     else:
         _assert_under_account_hourly_cap(
             verb="resume",
@@ -2011,7 +2129,11 @@ def _parser_provision(sub: argparse._SubParsersAction) -> None:
         help=(
             "On SUPPLY_CONSTRAINT (every supply lever in create_pod returned "
             "null), keep retrying with exponential-jittered backoff (base 30s, "
-            "cap 10 min) forever instead of failing. Other errors still fail "
+            "cap 10 min) instead of failing. Each PROCESS attempt is capped at "
+            "~45 min wall-clock (EPM_WAIT_FOR_CAPACITY_BUDGET_SECS); at the "
+            f"budget the command exits {EXIT_STILL_WAITING} with a structured "
+            "[wait-for-capacity] STILL-WAITING line — re-run the same command "
+            "to continue waiting (state-free). Other errors still fail "
             "fast. Auto-enabled when EPM_AUTONOMOUS_SESSION=1 (autonomous "
             "sessions wait for capacity rather than park, per CLAUDE.md). "
             "Default OFF so interactive provisions still surface no-capacity "
@@ -2042,6 +2164,10 @@ def _parser_resume(sub: argparse._SubParsersAction) -> None:
             "RunPod-side INSUFFICIENT_BALANCE), keep retrying with "
             "exponential-jittered backoff (base 30s, cap 10 min) until a "
             "sibling pod frees headroom, instead of failing immediately. "
+            "Each PROCESS attempt is capped at ~45 min wall-clock "
+            "(EPM_WAIT_FOR_CAPACITY_BUDGET_SECS); at the budget the command "
+            f"exits {EXIT_STILL_WAITING} with a structured STILL-WAITING "
+            "line — re-run the same command to continue waiting. "
             "Auto-enabled when EPM_AUTONOMOUS_SESSION=1. Default OFF so "
             "interactive resumes still surface an immediate, actionable "
             "refusal. SUPPLY_CONSTRAINT still fails fast in both modes — "
