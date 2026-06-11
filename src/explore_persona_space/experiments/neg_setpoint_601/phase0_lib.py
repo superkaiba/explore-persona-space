@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF001, RUF002  # em-dash, minus sign, multiplication sign intentional
 """Task #601 Phase 0 — pure helpers (CPU-testable, no model loads).
 
 Bystander reference-panel pre-registration, margin-reference computation from
@@ -223,6 +223,12 @@ def clamp_read(
         if cell not in count_cells:
             continue
         negs = [p for p in negatives_by_cell[cell] if p in read]
+        if not negs:
+            # 0-negative count cell (the 0:1 level): no trained negatives to
+            # clamp — recorded n/a and counted NOT-clamped (the >=3-of-4 rule
+            # then effectively requires all three negative-bearing levels).
+            per_cell_seed[key] = {"clamped": None, "note": "no trained negatives (0:1 level)"}
+            continue
         neg_dg = _mean_dg(read, negs)
         by_dg = _mean_dg(read, bystander_panel)
         clamped = neg_dg <= by_dg - gap_nats

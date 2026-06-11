@@ -357,7 +357,7 @@ def compute_kl_for_checkpoint(
     return stats
 
 
-def run_trajectory_eval(
+def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds one branch to the inherited linear rig
     *,
     cell_slug: str,
     seed: int,

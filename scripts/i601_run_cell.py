@@ -182,9 +182,18 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     spec = cell_by_slug(args.cell)
+    if args.seed not in (42, 137):
+        raise ValueError(f"[{args.cell}] seed {args.seed} not a canonical #601 seed (42/137).")
     if args.seed not in spec.seeds:
-        raise ValueError(
-            f"[{args.cell}] seed {args.seed} not registered for this cell (seeds={spec.seeds})."
+        # Permitted only via the dispatcher's --anchor-retrain-fallback path
+        # (plan §4 Phase-0 item 3: dense_200p800n seed 42 replaces the unfit
+        # parent anchor). Loud so an accidental off-registry launch is visible.
+        log.warning(
+            "[%s] seed %d is OFF the cell's registered seed set %s — anchor-retrain "
+            "fallback expected; verify phase0_gate.json anchor_reuse_ok=false.",
+            args.cell,
+            args.seed,
+            spec.seeds,
         )
 
     run_dir = args.runs_root / f"{args.cell}_seed{args.seed}"

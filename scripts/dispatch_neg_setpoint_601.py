@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF002  # em-dash, minus sign, marker token intentional
 """Task #601 dispatcher — UNIFIED smoke = sweep with one cell.
 
 Forked from ``scripts/dispatch_neg_geometry_472.py`` (origin/issue-472).
@@ -93,35 +93,15 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) ->
 def _fetch_parent_artifacts(data_dir: Path) -> dict:
     """Download the pinned #472 inputs from the HF data repo (idempotent).
 
-    Per-file ``hf_hub_download`` (NOT snapshot_download — its
-    ``repo_info.siblings`` listing truncates on large repos and silently
-    returns 0 files; feedback_snapshot_download_siblings_truncation).
+    Delegates to ``neg_setpoint_601.artifacts.fetch_parent_data`` (shared with
+    the Phase 0 driver). ``data_dir`` is ``<repo_root>/data/issue_601``, so the
+    repo root the relative destinations resolve against is two levels up.
     """
-    from huggingface_hub import hf_hub_download
+    from explore_persona_space.experiments.neg_setpoint_601.artifacts import fetch_parent_data
 
-    from explore_persona_space.experiments.neg_setpoint_601 import (
-        HF_DATA_REPO,
-        PARENT_DATA_FILES,
-    )
-
-    fetched = {}
-    for repo_path, local_rel in PARENT_DATA_FILES:
-        local = data_dir.parent / local_rel  # local_rel is repo-root-relative.
-        if local.exists():
-            fetched[repo_path] = str(local)
-            continue
-        local.parent.mkdir(parents=True, exist_ok=True)
-        got = hf_hub_download(
-            repo_id=HF_DATA_REPO,
-            repo_type="dataset",
-            filename=repo_path,
-            token=os.environ.get("HF_TOKEN"),
-        )
-        import shutil
-
-        shutil.copyfile(got, local)
-        fetched[repo_path] = str(local)
-        log.info("[phase=fetch_artifacts] %s -> %s", repo_path, local)
+    repo_root = data_dir.resolve().parent.parent
+    fetched = fetch_parent_data(repo_root)
+    log.info("[phase=fetch_artifacts] %d artifacts present", len(fetched))
     return fetched
 
 
@@ -375,7 +355,7 @@ def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
     return out
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline driver; splitting the gate/pool/sentinel steps would obscure the launch contract
     parser = argparse.ArgumentParser(
         description="Task #601 dispatcher (see module docstring).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -402,6 +382,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--skip-fetch", action="store_true")
     parser.add_argument("--skip-upload", action="store_true", help="Debug only.")
+    parser.add_argument(
+        "--anchor-retrain-fallback",
+        action="store_true",
+        help=(
+            "Plan §4 Phase-0 item 3 fallback: the reused #472 anchor failed its fitness "
+            "gate, so ALSO train dense_200p800n at seed 42 (the 4:1 anchor recipe; seed "
+            "137 already runs as the Phase-2 dense cell) — together they replace the "
+            "parent anchor as the middle fixed-ratio arm."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -441,6 +431,9 @@ def main(argv: list[str] | None = None) -> int:
         for s in seeds:
             if s in spec.seeds:
                 units.append((spec.slug, s))
+    if args.anchor_retrain_fallback and ("dense_200p800n", 42) not in units:
+        units.append(("dense_200p800n", 42))
+        log.info("[phase=resolve] anchor-retrain fallback unit appended: dense_200p800n seed 42")
     if not units:
         raise ValueError("zero (cell, seed) units after intersecting --seeds with cell specs")
     log.info(

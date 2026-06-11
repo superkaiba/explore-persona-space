@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF002, RUF003  # em-dash, minus sign, multiplication sign intentional
 """Task #601 — pre-registered classification lattice (plan §6), pure functions.
 
 Everything here operates on plain floats / dicts so the local CPU smoke can

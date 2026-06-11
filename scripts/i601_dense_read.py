@@ -80,7 +80,7 @@ def _four_floats(raw, marker_id: int, eos_id: int) -> dict[str, float]:
     }
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read loop with resume branches; one read path, no nesting to extract
     ap = argparse.ArgumentParser(
         description="Task #601 dense teacher-forced four-float reader (see module docstring).",
         formatter_class=argparse.RawDescriptionHelpFormatter,

@@ -1,4 +1,4 @@
-# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+# ruff: noqa: RUF002, RUF003  # em-dash + Qwen marker token " ※" + x-sign intentional
 """Task #601 — ratio vs count vs schedule horizon: the contrastive-negative set-point.
 
 Mechanism follow-up on #472 (plan: tasks/.../601/plans/plan.md). #472's negative
