@@ -1582,12 +1582,28 @@ branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
-git -C "$REPO_ROOT" worktree add "$WORKTREE" -b issue-<N>     # reuse if it exists (resume case)
-# Worktrees do NOT inherit the repo .env — without it RUNPOD_API_KEY /
-# HF_TOKEN / WANDB_API_KEY dotenv loads fail inside the worktree. Symlink
-# it so every entrypoint's setup_env() sees the same keys as the main copy.
-ln -sf "$REPO_ROOT/.env" "$WORKTREE/.env"
+bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
+# Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
+# symlinks the repo .env (worktrees do NOT inherit it — RUNPOD_API_KEY /
+# HF_TOKEN / WANDB_API_KEY dotenv loads fail without it).
 ```
+
+**Sparse-worktree notes (task #596).** The worktree excludes
+`eval_results/`, `external/`, `ood_eval_results/` bulk and pre-includes
+this issue's own `eval_results/issue_<N>/` + `ood_eval_results/issue_<N>/`
+cones (plus `eval_results/`'s immediate files, e.g. `INDEX.md`), so this
+issue's artifact commits work with no ceremony. Two rules:
+- **Reading another issue's eval JSONs** (parent baselines, comparison
+  plots): `git -C "$WORKTREE" sparse-checkout add eval_results/issue_<M>`
+  — instant. (Read-only fallback: the repo root's committed copy.)
+- **Writing under a NEW dir below an excluded root** (e.g. a slug variant
+  `eval_results/issue<N>_<slug>/`): run
+  `git -C "$WORKTREE" sparse-checkout add eval_results/issue<N>_<slug>`
+  BEFORE `git add`. A bare `git add` of an out-of-cone path fails loudly
+  with "outside of your sparse-checkout definition" — the fix is
+  `sparse-checkout add`, NOT `git add --sparse` (a `--sparse`-added file
+  silently vanishes from the working tree on the next sparse-checkout
+  mutation while staying committed).
 
 **Worktree shell-ops rule (cwd resets between Bash calls).** The bash
 tool's working directory is NOT preserved across separate calls, so a
