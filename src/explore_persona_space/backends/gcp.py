@@ -1828,6 +1828,27 @@ class GcpBackend(ComputeBackend):
             return _coarse_poll(status="stalled", current_phase="describe_bad_json")
         status = (payload.get("status") or "UNKNOWN").upper()
         if status == "RUNNING":
+            # Drain workload-written sentinel files FIRST (mirrors
+            # ``poll_pipeline.poll_once``): pod-side dispatchers post
+            # markers by writing ``/workspace/logs/issue-<N>-*.json``
+            # sentinels. Pre-#608 the GCP lane had NO drain at all, so a
+            # completed run's ``epm:results`` sentinel sat root-owned
+            # (mode 600 — the GCE startup script runs as root) on the VM
+            # and the carried marker never posted; ``backend_poll``
+            # reported a silent ``sentinels_processed=0`` with an empty
+            # log tail. The drain + log-tail reads below go through
+            # ``sudo -n`` for that reason.
+            drained, drain_gate, drain_alarm, drain_log_tail = self._drain_sentinels(handle, zone)
+
+            def _with_drain(base: PollResult) -> PollResult:
+                return _overlay_drain(
+                    base,
+                    processed=drained,
+                    gate=drain_gate,
+                    alarm=drain_alarm,
+                    log_tail=drain_log_tail,
+                )
+
             # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
             # (the success path deliberately keeps the VM up so the
             # completion sentinel can be scp'd — instance state alone
@@ -1850,20 +1871,25 @@ class GcpBackend(ComputeBackend):
                     handle.pod_name,
                     exc,
                 )
-                return _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
+                return _with_drain(
+                    _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
+                )
             if phase == "done":
-                return PollResult(
-                    status="done",
-                    current_phase="workload_done",
-                    new_milestone=True,
-                    last_log_mtime_sec_ago=0,
-                    pid_alive=False,
-                    log_tail_excerpt="",
+                return _with_drain(
+                    PollResult(
+                        status="done",
+                        current_phase="workload_done",
+                        new_milestone=True,
+                        last_log_mtime_sec_ago=0,
+                        pid_alive=False,
+                        log_tail_excerpt="",
+                    )
                 )
             if phase == "failed":
-                return _terminal_dead_poll(reason="workload_failed")
+                return _with_drain(_terminal_dead_poll(reason="workload_failed"))
             if phase:
-                return _coarse_poll(status="running", current_phase=phase)
+                return _with_drain(_coarse_poll(status="running", current_phase=phase))
+            return _with_drain(_gcp_status_to_poll_result(status))
         return _gcp_status_to_poll_result(status)
 
     def _guest_phase(self, handle: RunHandle, zone: str) -> str:
@@ -1911,6 +1937,138 @@ class GcpBackend(ComputeBackend):
             if item.get("key") == "phase":
                 return str(item.get("value") or "").strip()
         return ""
+
+    # Log-tail trailer delimiters for the combined drain+tail SSH command.
+    # Namespaced (``EPS_``) so a stray ``LOGTAIL`` substring in workload
+    # output can't truncate the sentinel section.
+    _LOGTAIL_START = "EPS_LOGTAIL_START"
+    _LOGTAIL_END = "EPS_LOGTAIL_END"
+
+    def _drain_sentinels(self, handle: RunHandle, zone: str) -> tuple[int, str | None, str, str]:
+        """Drain ``/workspace/logs`` sentinels + pull a log tail via ssh sudo.
+
+        ONE ``gcloud compute ssh`` round-trip runs the shared drain loop
+        (``poll_pipeline.sentinel_drain_shell``) plus a log-tail trailer,
+        wrapped in ``sudo -n bash -c``: the GCE startup script runs as
+        root, so the sentinel files and workload log are root-owned mode
+        600 and a plain user-mode read comes back EMPTY (incident #608 —
+        a completed run's ``epm:results`` marker never posted). ``sudo
+        -n`` works because the OS-Login user is in ``google-sudoers``
+        (same transport as ``fetch_results``' sentinel pull).
+
+        Parsed sentinels are posted via the transport-agnostic
+        ``poll_pipeline.drain_sentinels_via`` (idempotent: each posted
+        sentinel is renamed ``.processed`` through
+        :meth:`_mark_sentinel_processed`, also via sudo).
+
+        Returns ``(processed, gate, alarm, log_tail)``. ``alarm`` is ""
+        normally; on a transport failure OR a matched-but-unprocessable
+        sentinel set it carries a loud one-line diagnosis the caller
+        surfaces in ``log_tail_excerpt`` — never a silent
+        ``sentinels_processed=0`` (fail-LOUD contract, #608).
+        """
+        issue = int(handle.extra.get("issue") or 0)
+        if issue <= 0:
+            alarm = "gcp sentinel drain SKIPPED: handle missing 'issue' extra"
+            logger.warning("GCP poll: %s. handle=%r", alarm, handle)
+            return 0, None, alarm, ""
+
+        # Lazy import (mirrors RunPodBackend.poll): production entrypoints
+        # put the repo root on sys.path (backend_poll.py bootstrap, #571);
+        # fall back to a __file__-derived insert for direct library use.
+        try:
+            from scripts.poll_pipeline import (
+                drain_sentinels_via,
+                parse_sentinel_stream,
+                sentinel_drain_shell,
+            )
+        except ModuleNotFoundError:
+            import sys
+
+            repo_root = str(Path(__file__).resolve().parents[3])
+            if repo_root not in sys.path:
+                sys.path.insert(0, repo_root)
+            from scripts.poll_pipeline import (
+                drain_sentinels_via,
+                parse_sentinel_stream,
+                sentinel_drain_shell,
+            )
+
+        log_path = handle.log_path or ""
+        tail_stanza = (
+            f'echo "{self._LOGTAIL_START}"; '
+            + (f"tail -n 30 {shlex.quote(log_path)} 2>/dev/null || true; " if log_path else "")
+            + f'echo "{self._LOGTAIL_END}"'
+        )
+        script = sentinel_drain_shell(issue) + "; " + tail_stanza
+        argv = _base_gcloud_argv(
+            self._config,
+            "compute",
+            "ssh",
+            handle.pod_name,
+            f"--command=sudo -n bash -c {shlex.quote(script)}",
+        )
+        argv += [f"--zone={zone}"]
+        res = self._run(argv)
+        if res.returncode != 0:
+            alarm = (
+                f"gcp sentinel drain FAILED (rc={res.returncode}): "
+                f"{(res.stderr or '').strip()[:300]}"
+            )
+            logger.error("GCP poll: %s", alarm)
+            return 0, None, alarm, ""
+
+        stdout = res.stdout or ""
+        drain_part, _, tail_part = stdout.partition(self._LOGTAIL_START)
+        log_tail = tail_part.split(self._LOGTAIL_END)[0].strip()[:2000] if tail_part else ""
+        sentinels = parse_sentinel_stream(drain_part)
+        processed, gate = drain_sentinels_via(
+            issue=issue,
+            list_sentinels=lambda: sentinels,
+            mark_processed=lambda remote_path: self._mark_sentinel_processed(
+                handle, zone, remote_path
+            ),
+        )
+        if sentinels and processed == 0:
+            # The glob matched files but nothing was posted (empty or
+            # unparseable bodies, or marker-post failures). Pre-#608 this
+            # exact situation reported a silent ``sentinels_processed=0``;
+            # surface it loudly instead.
+            alarm = (
+                f"gcp sentinel drain: {len(sentinels)} sentinel(s) matched but 0 "
+                "processed (empty/unparseable body or marker-post failure) — "
+                "inspect /workspace/logs on the VM + poller stderr"
+            )
+            logger.error("GCP poll: %s", alarm)
+            return 0, gate, alarm, log_tail
+        return processed, gate, "", log_tail
+
+    def _mark_sentinel_processed(self, handle: RunHandle, zone: str, remote_path: str) -> bool:
+        """Rename a drained sentinel to ``<path>.processed`` via ssh sudo.
+
+        ``mv -n`` (no clobber) mirrors ``poll_pipeline._ssh_mark_processed``;
+        ``sudo -n`` because the file is root-owned (#608). Returns False on
+        failure (the caller leaves the sentinel for the next tick).
+        """
+        quoted = shlex.quote(remote_path)
+        argv = _base_gcloud_argv(
+            self._config,
+            "compute",
+            "ssh",
+            handle.pod_name,
+            f"--command=sudo -n mv -n {quoted} {quoted}.processed",
+        )
+        argv += [f"--zone={zone}"]
+        res = self._run(argv)
+        if res.returncode != 0:
+            logger.error(
+                "GCP poll: sentinel rename failed for %s (rc=%d): %s",
+                remote_path,
+                res.returncode,
+                (res.stderr or "")[:300],
+            )
+            return False
+        return True
 
     def fetch_logs(self, handle: RunHandle) -> str:
         """Best-effort serial-port-1 pull.
@@ -2167,6 +2325,36 @@ def _terminal_dead_poll(*, reason: str) -> PollResult:
         last_log_mtime_sec_ago=10**9,
         pid_alive=False,
         log_tail_excerpt="",
+    )
+
+
+def _overlay_drain(
+    base: PollResult,
+    *,
+    processed: int,
+    gate: str | None,
+    alarm: str,
+    log_tail: str,
+) -> PollResult:
+    """Thread sentinel-drain results into a coarse :class:`PollResult`.
+
+    Gate precedence mirrors ``poll_pipeline.poll_once``: a drained gate
+    sentinel wins over every other status — the orchestrator must park at
+    the user gate before advancing. ``log_tail_excerpt`` carries (in
+    priority order) the drain ALARM (a transport / permission failure must
+    surface loudly, never as a silent ``sentinels_processed=0`` — incident
+    #608), else whatever the base carried, else the sudo-read workload log
+    tail.
+    """
+    from dataclasses import replace
+
+    merged_gate = base.gate or gate
+    return replace(
+        base,
+        status="gate" if merged_gate else base.status,
+        gate=merged_gate,
+        sentinels_processed=processed,
+        log_tail_excerpt=alarm or base.log_tail_excerpt or log_tail,
     )
 
 
