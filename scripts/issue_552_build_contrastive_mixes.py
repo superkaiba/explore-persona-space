@@ -216,6 +216,16 @@ def main() -> int:
         help="Output dir for the two mixes + negatives checkpoint + manifest.",
     )
     parser.add_argument(
+        "--bad-corpus",
+        default=str(BAD_CORPUS),
+        help="Override the bad-corpus path (smoke fixtures; default = production).",
+    )
+    parser.add_argument(
+        "--good-corpus",
+        default=str(GOOD_CORPUS),
+        help="Override the good-corpus path (smoke fixtures; default = production).",
+    )
+    parser.add_argument(
         "--smoke-n",
         type=int,
         default=None,
@@ -275,9 +285,16 @@ def main() -> int:
         f"expected 9 held-out probe personas, got {len(held_out)}: {held_out}"
     )
 
-    logger.info("[phase=load_corpora] bad=%s good=%s", BAD_CORPUS, GOOD_CORPUS)
-    bad = _load_corpus(BAD_CORPUS)
-    good = _load_corpus(GOOD_CORPUS)
+    bad_corpus = Path(args.bad_corpus)
+    good_corpus = Path(args.good_corpus)
+    if args.smoke_n is None:
+        assert bad_corpus == BAD_CORPUS and good_corpus == GOOD_CORPUS, (
+            "corpus-path overrides are smoke-only; production must read the "
+            "prep scripts' canonical outputs"
+        )
+    logger.info("[phase=load_corpora] bad=%s good=%s", bad_corpus, good_corpus)
+    bad = _load_corpus(bad_corpus)
+    good = _load_corpus(good_corpus)
     if args.smoke_n is not None:
         bad = bad[: args.smoke_n]
         good = good[: args.smoke_n]

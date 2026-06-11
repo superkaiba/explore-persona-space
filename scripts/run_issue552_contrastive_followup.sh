@@ -116,13 +116,13 @@ fail_loud() {
 # ──────────────────────────────────────────────────────────────────────
 phase preflight "orchestrate.preflight"
 uv run python -m explore_persona_space.orchestrate.preflight \
-  2>&1 | tee "$LOG_DIR/c2x2_preflight.log" || fail_loud "$?" "preflight_failed"
+  > "$LOG_DIR/c2x2_preflight.log" 2>&1 || fail_loud "$?" "preflight_failed"
 
 phase prep_corpora "bad + good corpus prep (5,899-row parity + pool-overlap asserts)"
 uv run python scripts/issue_521_prep_turner_corpus.py \
-  2>&1 | tee "$LOG_DIR/c2x2_prep_bad.log" || fail_loud "$?" "prep_bad_corpus_failed"
+  > "$LOG_DIR/c2x2_prep_bad.log" 2>&1 || fail_loud "$?" "prep_bad_corpus_failed"
 uv run python scripts/issue_552_prep_good_corpus.py \
-  2>&1 | tee "$LOG_DIR/c2x2_prep_good.log" || fail_loud "$?" "prep_good_corpus_failed"
+  > "$LOG_DIR/c2x2_prep_good.log" 2>&1 || fail_loud "$?" "prep_good_corpus_failed"
 
 # ──────────────────────────────────────────────────────────────────────
 # Phase 1 — negatives data-gen + mix build (vLLM, 1 GPU, ~0.5 h). The
@@ -134,7 +134,7 @@ uv run python scripts/issue_552_prep_good_corpus.py \
 # ──────────────────────────────────────────────────────────────────────
 phase build_mixes "on-policy negatives (greedy, max 512 tok) + 2 x 11,798-row mixes"
 CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue_552_build_contrastive_mixes.py \
-  2>&1 | tee "$LOG_DIR/c2x2_build_mixes.log" || fail_loud "$?" "mix_build_failed"
+  > "$LOG_DIR/c2x2_build_mixes.log" 2>&1 || fail_loud "$?" "mix_build_failed"
 for f in contrastive_em_mix.jsonl contrastive_benign_mix.jsonl contrastive_mix_manifest.json; do
   [[ -f "$MIX_DIR/$f" ]] || fail_loud 21 "mix builder output missing: $MIX_DIR/$f"
 done
@@ -154,12 +154,12 @@ recipe_smoke_arm() {
     +training.max_steps=2 \
     seed="$SMOKE_SEED" +gpu_id="$SMOKE_GPU" \
     upload_to=none \
-    2>&1 | tee "$SMOKE_LOG" || fail_loud "$?" "recipe_smoke_train_failed_${ARM}"
+    > "$SMOKE_LOG" 2>&1 || fail_loud "$?" "recipe_smoke_train_failed_${ARM}"
 
   phase recipe_assert "run_result.json must record all 14 turner_em values verbatim ($ARM)"
   uv run python scripts/issue_521_em_recipe_smoke.py \
     --seed "$SMOKE_SEED" --condition "$COND" --expected-max-steps 2 \
-    2>&1 | tee "$LOG_DIR/c2x2_recipe_assert_${ARM}.log" || \
+    > "$LOG_DIR/c2x2_recipe_assert_${ARM}.log" 2>&1 || \
     fail_loud "$?" "recipe_assert_failed_${ARM}_DO_NOT_PROCEED"
 
   # Effective-loss parity is load-bearing (plan §2): the pinned TRL 0.29.1
@@ -351,7 +351,7 @@ gate_and_ce_wave() {
       --label base --model "Qwen/Qwen2.5-7B-Instruct" \
       --mix "$MIX_DIR/contrastive_em_mix.jsonl" "$MIX_DIR/contrastive_benign_mix.jsonl" \
       --out "$FU/rowtype_ce" \
-      2>&1 | tee "$LOG_DIR/c2x2_rowtype_ce_base.log" || fail_loud "$?" "rowtype_ce_base_failed"
+      > "$LOG_DIR/c2x2_rowtype_ce_base.log" 2>&1 || fail_loud "$?" "rowtype_ce_base_failed"
   fi
   for SEED in "${SEEDS[@]}"; do
     CUDA_VISIBLE_DEVICES=0 uv run python scripts/issue552_rowtype_ce.py \
@@ -360,7 +360,7 @@ gate_and_ce_wave() {
       --mix "$MIX_FILE" \
       --base-json "$FU/rowtype_ce/rowtype_ce_base.json" \
       --out "$FU/rowtype_ce" \
-      2>&1 | tee "$LOG_DIR/c2x2_rowtype_ce_${ARM}_seed${SEED}.log" || \
+      > "$LOG_DIR/c2x2_rowtype_ce_${ARM}_seed${SEED}.log" 2>&1 || \
       fail_loud "$?" "rowtype_ce_failed_${ARM}_seed${SEED}"
   done
 
@@ -486,7 +486,7 @@ uv run python scripts/issue_519_dispatch.py --mode sweep \
   --questions-json eval_results/issue_521/inputs/questions.json \
   --base-cosines-json eval_results/issue_521/inputs/base_cosines.json \
   --n-gpus 1 \
-  2>&1 | tee "$LOG_DIR/c2x2_pipeline_smoke.log" || fail_loud "$?" "pipeline_smoke_failed"
+  > "$LOG_DIR/c2x2_pipeline_smoke.log" 2>&1 || fail_loud "$?" "pipeline_smoke_failed"
 
 phase pipeline_smoke_assert "asserting smoke tensor schema (mean-resp + per-question) + SVD JSON"
 ARM="$ARM_EM" FU="$FU" uv run python - <<'PY'
@@ -537,7 +537,7 @@ uv run python scripts/issue_519_dispatch.py --mode sweep \
   --questions-json eval_results/issue_521/inputs/questions.json \
   --base-cosines-json eval_results/issue_521/inputs/base_cosines.json \
   --n-gpus 4 \
-  2>&1 | tee "$LOG_DIR/c2x2_extraction_production.log" || fail_loud "$?" "extraction_production_failed"
+  > "$LOG_DIR/c2x2_extraction_production.log" 2>&1 || fail_loud "$?" "extraction_production_failed"
 
 phase phase_d_assert "asserting 18 SVD JSONs + 18 tensors with mean-resp/per-question keys (same variant)"
 FU="$FU" uv run python - <<'PY'
@@ -604,7 +604,7 @@ uv run python scripts/issue552_write_sentinel.py --mode contrastive_done \
   --arm contrastive --followup-label "$(basename "$FU")" \
   --followup-dir "$FU" --seeds "${SEEDS[@]}" \
   --sentinel-dir "$POD_LOG_DIR" \
-  2>&1 | tee "$LOG_DIR/c2x2_sentinel.log" || \
+  > "$LOG_DIR/c2x2_sentinel.log" 2>&1 || \
   fail_loud "$?" "results_sentinel_write_failed"
 
 # poll_pipeline.py declares status="done" ONLY when the most recent

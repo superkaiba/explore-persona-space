@@ -364,6 +364,13 @@ def _finalize_phase(
     keep_local = os.environ.get("EPM_KEEP_LOCAL_ADAPTER") == "1"
     if (adapter_uploaded or upload_fenced) and not keep_local:
         shutil.rmtree(str(adapter_dir), ignore_errors=True)
+    elif keep_local:
+        logger.info(
+            "EPM_KEEP_LOCAL_ADAPTER=1: keeping local adapter at %s "
+            "(the fence/upload state would otherwise reap it; the "
+            "orchestrator owns staging + durability — #552 MF-D).",
+            adapter_dir,
+        )
     else:
         logger.warning(
             "Keeping local adapter at %s: default HF upload did not verify "
