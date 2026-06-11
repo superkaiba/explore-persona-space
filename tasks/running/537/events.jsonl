@@ -170,3 +170,4 @@
 {"ts": "2026-06-10T23:58:54Z", "kind": "epm:progress", "version": 9, "by": "unknown", "note": "phase 0: EM-row judge batches cycling (40-request, ~10 min cadence); pid 4702 alive, poller healthy."}
 {"ts": "2026-06-11T00:17:46Z", "kind": "epm:progress", "version": 10, "by": "unknown", "note": "phase 0: EM-row judge batches continuing (~10 min cadence), pid 4702 alive."}
 {"ts": "2026-06-11T00:36:16Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 0 complete (steps=all, cells=all, shard=None, smoke=False, dry_run=False) in 29478s"}
+{"ts": "2026-06-11T00:36:23Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-537"}
