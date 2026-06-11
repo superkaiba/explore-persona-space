@@ -1,1 +1,2 @@
 {"ts": "2026-06-11T04:02:58Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-06-11T04:04:39Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Plan written to .claude/plans/issue-586.md (campaign runner design approved by user in chat 2026-06-10: auto-spawn children within budget greenlit, max parallelism, defaults 250 GPU-h total / 100 per child / 8 experiments / 4 concurrent / 5 days). Dispatching implementer in worktree."}
