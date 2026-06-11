@@ -1,6 +1,7 @@
 ---
-title: Dimensionality reduction / visualization of context-prompt activation vectors
-  across layers
+title: 48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct
+  under a single probe genre, beyond chance, length, and lexical-overlap baselines
+  (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T06:53:19Z'
