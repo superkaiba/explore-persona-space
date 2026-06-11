@@ -12,11 +12,20 @@ runs right after pass 2):
    failed silently — exit 1, zero output — stalling the interpretation loop
    ~20 min, undiagnosable from inside the session (task #552, 2026-06-10).
    Below :data:`VM_DISK_ALERT_FREE_BYTES` (~20 GiB): loud log + ONE
-   dashboard-visible marker per low-disk episode. Below
-   :data:`VM_DISK_RECLAIM_FREE_BYTES` (~8 GiB): additionally run the safe,
-   fail-soft reclaims (``uv cache prune``; sweep ``/tmp/claude-*`` trees idle
-   > 3 days). Runs FIRST because a full root disk makes every later
-   subprocess in this very watcher flaky; never crashes the pass.
+   dashboard-visible marker per low-disk episode, AND run the stale-worktree
+   sweep (``worktree_audit.py --apply`` — it carries all its own keep-guards
+   and the disk-pressure grace tightening, and it is the remediation that
+   actually frees the big space: each stale worktree is a ~14G checkout;
+   re-armed per :data:`VM_DISK_RECLAIM_REARM_S`). Below
+   :data:`VM_DISK_RECLAIM_FREE_BYTES` (~15 GiB, env
+   ``EPM_VM_DISK_CRITICAL_GIB``): additionally run the safe, fail-soft cache
+   reclaims (``uv cache prune`` — never ``--force``; ``npm cache clean
+   --force`` — npm's required confirmation flag, the clean itself is safe;
+   sweep ``/tmp/claude-*`` trees idle > 3 days). Detection runs every 10-min
+   tick, so remediation does too — the once-daily worktree cron alone lost
+   the 2026-06-11 race (17 GiB -> 1.2 GiB within hours). Runs FIRST because
+   a full root disk makes every later subprocess in this very watcher flaky;
+   never crashes the pass.
 2. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
@@ -908,17 +917,39 @@ VM_DISK_PATH = "/"
 # to keep sessions alive while a human (or the reclaim arm) frees space.
 VM_DISK_ALERT_FREE_BYTES = 20 * 2**30
 
-# Below this free-bytes threshold the pass ALSO runs the safe reclaims
-# (`uv cache prune`, stale /tmp/claude-* sweep). ~8 GiB is already deep in the
-# silently-failing-Bash-spawn regime, so reclaiming regenerable caches is
-# unambiguously better than waiting for a human.
-VM_DISK_RECLAIM_FREE_BYTES = 8 * 2**30
 
-# Re-arm window for the reclaim arm within ONE low-disk episode: don't re-run
-# `uv cache prune` + the tmp sweep more than once per this many seconds (the
-# first run reclaims nearly everything reclaimable; hot-looping every 10-min
-# tick would just churn). A long episode where junk re-accumulates re-fires
-# after the window. Tracked via `last_reclaim_ts` in the vm-disk state file.
+def _env_gib_bytes(name: str, default_gib: float) -> int:
+    """GiB-denominated env knob -> bytes. A garbled / non-positive value falls
+    back to the default rather than crashing the watcher at import (same
+    fail-soft contract as the other env knobs in this file)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return int(default_gib * 2**30)
+    # The sanity bound also rejects inf/nan (int(inf * 2**30) would raise —
+    # crashing the watcher at import is exactly what fail-soft must prevent).
+    if not (0 < val < 2**20):
+        return int(default_gib * 2**30)
+    return int(val * 2**30)
+
+
+# Below this free-bytes threshold the pass ALSO runs the safe cache reclaims
+# (`uv cache prune`, `npm cache clean`, stale /tmp/claude-* sweep). ~15 GiB
+# (was 8) because the 2026-06-11 episode fell 17 GiB -> 1.2 GiB within hours —
+# waiting until 8 GiB to reclaim regenerable caches loses the race to the
+# silently-failing-Bash-spawn regime. Override: EPM_VM_DISK_CRITICAL_GIB.
+# NOTE: an override ABOVE the ~20 GiB alert threshold is effectively clamped
+# to it — free >= VM_DISK_ALERT_FREE_BYTES early-returns "ok" before the
+# critical comparison ever runs.
+VM_DISK_RECLAIM_FREE_BYTES = _env_gib_bytes("EPM_VM_DISK_CRITICAL_GIB", 15)
+
+# Re-arm window for the remediation arms within ONE low-disk episode: don't
+# re-run the worktree audit (low+) or the cache reclaims + tmp sweep
+# (critical) more than once per this many seconds (the first run reclaims
+# nearly everything reclaimable; hot-looping every 10-min tick would just
+# churn). A long episode re-fires after the window — which also catches a
+# worktree whose holder process died AFTER the first audit. Tracked via
+# `last_reclaim_ts` / `last_audit_ts` in the vm-disk state file.
 VM_DISK_RECLAIM_REARM_S = 6 * 3600
 
 # A /tmp/claude-* tree is swept only when NOTHING in it (the dir itself or any
@@ -927,10 +958,20 @@ VM_DISK_RECLAIM_REARM_S = 6 * 3600
 # has fresh mtimes — the age test IS the live-session guard.
 VM_DISK_TMP_SWEEP_AGE_S = 3 * 24 * 3600
 
-# Hard wall-clock bound on `uv cache prune`: if another uv process holds the
-# cache lock the prune blocks; kill it at the bound (fail-soft) rather than
-# hanging the watcher tick.
+# Hard wall-clock bound on `uv cache prune` / `npm cache clean`: if another
+# process holds the cache lock the command blocks; kill it at the bound
+# (fail-soft) rather than hanging the watcher tick. 27 live sessions hold the
+# uv cache lock almost continuously, so lock contention is the EXPECTED case
+# and a timeout is a clean skip, never an error (2026-06-11: a manual 300s
+# wait timed out). NEVER pass --force to uv cache operations while sessions
+# are live.
 VM_DISK_UV_PRUNE_TIMEOUT_S = 300
+
+# Hard wall-clock bound on `worktree_audit.py --apply` (git operations +
+# rescue copies over up to ~dozens of worktrees). The watcher is single-flight
+# (flock in main), so a slow audit just makes the next cron fire skip — it
+# can't pile up overlapping watcher runs.
+VM_DISK_WORKTREE_AUDIT_TIMEOUT_S = 900
 
 
 def decide_vm_disk(
@@ -938,28 +979,34 @@ def decide_vm_disk(
     *,
     alerted: bool,
     last_reclaim_ts: float | None,
+    last_audit_ts: float | None,
     now: float,
-) -> tuple[str, bool, bool]:
+) -> tuple[str, bool, bool, bool]:
     """Pure decision for the VM disk-headroom pass.
 
-    Returns ``(level, do_alert, do_reclaim)``:
+    Returns ``(level, do_alert, do_reclaim, do_audit)``:
 
     - ``level`` — ``"ok"`` (>= :data:`VM_DISK_ALERT_FREE_BYTES` free),
       ``"low"`` (below the alert threshold), or ``"critical"`` (below
       :data:`VM_DISK_RECLAIM_FREE_BYTES`).
     - ``do_alert`` — fire the once-per-episode alert (level is low or
       critical AND ``alerted`` is not already set for this episode).
-    - ``do_reclaim`` — run the safe reclaims (level is critical AND the
+    - ``do_reclaim`` — run the safe cache reclaims (level is critical AND the
       reclaim arm hasn't fired within :data:`VM_DISK_RECLAIM_REARM_S`).
+    - ``do_audit`` — run the stale-worktree sweep (level is low OR critical —
+      the audit is the remediation that frees the big space, so it fires at
+      the ADVISORY threshold, not only at critical — AND the audit arm hasn't
+      fired within :data:`VM_DISK_RECLAIM_REARM_S`).
     """
     if free_bytes >= VM_DISK_ALERT_FREE_BYTES:
-        return ("ok", False, False)
+        return ("ok", False, False, False)
     level = "critical" if free_bytes < VM_DISK_RECLAIM_FREE_BYTES else "low"
     do_alert = not alerted
     do_reclaim = level == "critical" and (
         last_reclaim_ts is None or now - last_reclaim_ts >= VM_DISK_RECLAIM_REARM_S
     )
-    return (level, do_alert, do_reclaim)
+    do_audit = last_audit_ts is None or now - last_audit_ts >= VM_DISK_RECLAIM_REARM_S
+    return (level, do_alert, do_reclaim, do_audit)
 
 
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
@@ -1613,14 +1660,19 @@ def _load_vm_disk_state() -> dict:
 
 
 def _save_vm_disk_state(
-    *, alerted: bool, last_reclaim_ts: float | None, prev: dict | None = None
+    *,
+    alerted: bool,
+    last_reclaim_ts: float | None,
+    last_audit_ts: float | None = None,
+    prev: dict | None = None,
 ) -> None:
     """Persist the vm-disk episode state atomically (temp + rename).
 
-    ``alerted`` dedups the once-per-episode alert; ``last_reclaim_ts`` re-arms
-    the reclaim arm after :data:`VM_DISK_RECLAIM_REARM_S`; ``first_seen``
-    carries forward so the state records the episode start (mirrors the
-    pod-safety / stalled-detector stores)."""
+    ``alerted`` dedups the once-per-episode alert; ``last_reclaim_ts`` /
+    ``last_audit_ts`` re-arm the cache-reclaim / worktree-audit arms after
+    :data:`VM_DISK_RECLAIM_REARM_S`; ``first_seen`` carries forward so the
+    state records the episode start (mirrors the pod-safety /
+    stalled-detector stores)."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _vm_disk_state_path()
     prev_first_seen = (prev or {}).get("first_seen")
@@ -1629,6 +1681,7 @@ def _save_vm_disk_state(
     payload = {
         "alerted": alerted,
         "last_reclaim_ts": last_reclaim_ts,
+        "last_audit_ts": last_audit_ts,
         "first_seen": prev_first_seen,
     }
     tmp = dest.with_suffix(".json.tmp")
@@ -1709,8 +1762,69 @@ def _vm_reclaim_uv_cache(dry_run: bool) -> None:
         )
         tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
         print(f"  vm-disk: uv cache prune rc={res.returncode}: {tail[:200]}")
+    except subprocess.TimeoutExpired:
+        # 27 live sessions hold the uv cache lock almost continuously — lock
+        # contention is the EXPECTED case; a timeout is a clean skip.
+        print("  vm-disk: uv cache prune skipped (lock contention / timeout)")
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  vm-disk: uv cache prune failed (fail-soft): {e}", file=sys.stderr)
+
+
+def _vm_reclaim_npm_cache(dry_run: bool) -> None:
+    """``npm cache clean --force`` — drops the npm cache (safe: npm re-fetches
+    on demand; ``--force`` is npm's required confirmation flag for ``cache
+    clean``, NOT a failure-suppression flag — npm refuses the command without
+    it). Fail-soft and bounded like the uv prune; a missing npm binary is a
+    clean skip."""
+    cmd = ["npm", "cache", "clean", "--force"]
+    if dry_run:
+        print(f"  [dry-run] would run: {' '.join(cmd)}")
+        return
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
+        )
+        tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        print(f"  vm-disk: npm cache clean rc={res.returncode}: {tail[:200]}")
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  vm-disk: npm cache clean failed (fail-soft): {e}", file=sys.stderr)
+
+
+def _vm_remediate_worktrees(dry_run: bool) -> str:
+    """Run ``worktree_audit.py --apply`` — the remediation that frees the big
+    space when / runs low (each stale worktree is a ~14G full checkout; the
+    2026-06-11 manual run freed ~60G). The audit carries ALL its own
+    keep-guards (live-process holds, non-terminal issue statuses, uncommitted
+    tracked changes, grace windows, disk-pressure tightening), so invoking it
+    automatically is safe — do NOT duplicate those guards here.
+
+    Fail-soft and bounded by :data:`VM_DISK_WORKTREE_AUDIT_TIMEOUT_S`.
+    Returns a one-line summary for the advisory marker note (what was done,
+    not just that disk was low)."""
+    cmd = [sys.executable, str(PROJECT_ROOT / "scripts" / "worktree_audit.py"), "--apply"]
+    if dry_run:
+        print(f"  [dry-run] would run: {' '.join(cmd)}")
+        return "worktree-audit skipped (dry-run)"
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_WORKTREE_AUDIT_TIMEOUT_S,
+        )
+        tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        summary = f"worktree-audit rc={res.returncode}: {tail[:200]}"
+    except subprocess.TimeoutExpired:
+        summary = f"worktree-audit timed out at {VM_DISK_WORKTREE_AUDIT_TIMEOUT_S}s (fail-soft)"
+    except (subprocess.SubprocessError, OSError) as e:
+        summary = f"worktree-audit failed (fail-soft): {e}"
+    print(f"  vm-disk: {summary}", file=sys.stderr)
+    return summary
 
 
 def _newest_mtime(root: Path) -> float:
@@ -4957,9 +5071,49 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
         _process_pod(issue, pod_id, now, dry_run, threshold)
 
 
+def _vm_run_remediations(
+    *,
+    do_audit: bool,
+    do_reclaim: bool,
+    last_reclaim_ts: float | None,
+    last_audit_ts: float | None,
+    now: float,
+    dry_run: bool,
+) -> tuple[list[str], float | None, float | None]:
+    """Execute the armed vm-disk remediations (worktree audit at low+, cache
+    reclaims at critical). Returns ``(summary lines for the marker note,
+    new last_reclaim_ts, new last_audit_ts)``. All actions are fail-soft."""
+    remediation: list[str] = []
+    new_last_audit_ts = last_audit_ts
+    if do_audit:
+        print("  vm-disk: running stale-worktree sweep (worktree_audit.py --apply)")
+        remediation.append(_vm_remediate_worktrees(dry_run))
+        new_last_audit_ts = now
+
+    new_last_reclaim_ts = last_reclaim_ts
+    if do_reclaim:
+        print(
+            "  vm-disk: running safe cache reclaims "
+            "(uv cache prune + npm cache clean + stale /tmp/claude-* sweep)"
+        )
+        _vm_reclaim_uv_cache(dry_run)
+        _vm_reclaim_npm_cache(dry_run)
+        swept = _sweep_stale_claude_tmp(now, dry_run)
+        remediation.append(f"cache reclaims ran (swept {swept} stale /tmp/claude-* tree(s))")
+        new_last_reclaim_ts = now
+
+    if remediation:
+        refreshed = _vm_free_bytes()
+        if refreshed is not None:
+            remediation.append(f"post-remediation free {refreshed / 2**30:.1f} GiB")
+            print(f"  vm-disk: post-remediation free {refreshed / 2**30:.1f} GiB")
+    return remediation, new_last_reclaim_ts, new_last_audit_ts
+
+
 def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
-    """Watch VM root-disk headroom; alert once per low-disk episode and run
-    the safe reclaims when critically low.
+    """Watch VM root-disk headroom; alert once per low-disk episode, run the
+    stale-worktree sweep whenever low (the big-space remediation), and the
+    safe cache reclaims when critically low.
 
     Pods have their own guards (``pod_disk_guard.py``, the preflight
     fallocate probe); the VM had none until / hit 100% mid-pipeline and every
@@ -4974,10 +5128,14 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
     last_reclaim_ts = state.get("last_reclaim_ts")
     if not isinstance(last_reclaim_ts, int | float):
         last_reclaim_ts = None
-    level, do_alert, do_reclaim = decide_vm_disk(
+    last_audit_ts = state.get("last_audit_ts")
+    if not isinstance(last_audit_ts, int | float):
+        last_audit_ts = None
+    level, do_alert, do_reclaim, do_audit = decide_vm_disk(
         free,
         alerted=bool(state.get("alerted", False)),
         last_reclaim_ts=last_reclaim_ts,
+        last_audit_ts=last_audit_ts,
         now=now,
     )
     free_gib = free / 2**30
@@ -4999,6 +5157,18 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
         file=sys.stderr,
     )
 
+    # Remediate BEFORE posting the alert so the once-per-episode marker carries
+    # what was done, not just that disk was low (detection runs every 10-min
+    # tick; the once-daily worktree cron alone lost the 2026-06-11 race).
+    remediation, new_last_reclaim_ts, new_last_audit_ts = _vm_run_remediations(
+        do_audit=do_audit,
+        do_reclaim=do_reclaim,
+        last_reclaim_ts=last_reclaim_ts,
+        last_audit_ts=last_audit_ts,
+        now=now,
+        dry_run=dry_run,
+    )
+
     if do_alert:
         note = (
             f"{_VM_DISK_NOTE_SENTINEL} VM root disk {level.upper()}: "
@@ -5009,6 +5179,8 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
             f"stale /tmp/claude-* trees, the HF cache. Posted once per "
             f"low-disk episode."
         )
+        if remediation:
+            note += f" [auto-remediation: {'; '.join(remediation)}]"
         issues = _vm_disk_marker_issues()
         if issues:
             for issue in issues:
@@ -5016,23 +5188,11 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
         else:
             _append_vm_disk_fallback_event(note, dry_run)
 
-    new_last_reclaim_ts = last_reclaim_ts
-    if do_reclaim:
-        print("  vm-disk: running safe reclaims (uv cache prune + stale /tmp/claude-* sweep)")
-        _vm_reclaim_uv_cache(dry_run)
-        swept = _sweep_stale_claude_tmp(now, dry_run)
-        refreshed = _vm_free_bytes()
-        if refreshed is not None:
-            print(
-                f"  vm-disk: post-reclaim free {refreshed / 2**30:.1f} GiB "
-                f"(swept {swept} stale /tmp/claude-* tree(s))"
-            )
-        new_last_reclaim_ts = now
-
-    if not dry_run and (do_alert or do_reclaim):
+    if not dry_run and (do_alert or do_reclaim or do_audit):
         _save_vm_disk_state(
             alerted=bool(state.get("alerted", False)) or do_alert,
             last_reclaim_ts=new_last_reclaim_ts,
+            last_audit_ts=new_last_audit_ts,
             prev=state,
         )
 

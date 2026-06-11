@@ -2316,27 +2316,52 @@ def test_decide_vm_disk_levels():
     import autonomous_session_watch as asw
 
     gib = 2**30
-    assert asw.decide_vm_disk(25 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
-        "ok",
-        False,
-        False,
-    )
-    assert asw.decide_vm_disk(12 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+    assert asw.decide_vm_disk(
+        25 * gib, alerted=False, last_reclaim_ts=None, last_audit_ts=None, now=0.0
+    ) == ("ok", False, False, False)
+    assert asw.decide_vm_disk(
+        17 * gib, alerted=False, last_reclaim_ts=None, last_audit_ts=None, now=0.0
+    ) == (
         "low",
         True,
-        False,  # low-but-not-critical never reclaims
+        False,  # low-but-not-critical never runs the cache reclaims...
+        True,  # ...but the worktree audit fires at the advisory threshold
     )
-    assert asw.decide_vm_disk(4 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
-        "critical",
-        True,
-        True,
+    assert asw.decide_vm_disk(
+        4 * gib, alerted=False, last_reclaim_ts=None, last_audit_ts=None, now=0.0
+    ) == ("critical", True, True, True)
+
+
+def test_decide_vm_disk_critical_threshold_is_15_gib_default():
+    # 12 GiB sat in the old "low" band (8 GiB critical); after the 2026-06-11
+    # incident (17 GiB -> 1.2 GiB within hours) the default critical threshold
+    # is 15 GiB (env EPM_VM_DISK_CRITICAL_GIB).
+    import autonomous_session_watch as asw
+
+    level, _, _, _ = asw.decide_vm_disk(
+        12 * 2**30, alerted=False, last_reclaim_ts=None, last_audit_ts=None, now=0.0
     )
+    assert level == "critical"
+
+
+def test_env_gib_bytes_fail_soft(monkeypatch):
+    # A garbled / non-positive / inf / nan knob falls back to the default
+    # instead of crashing the watcher at import (int(inf * 2**30) raises).
+    import autonomous_session_watch as asw
+
+    for bad in ("garbled", "-3", "0", "inf", "nan", ""):
+        monkeypatch.setenv("EPM_TEST_GIB", bad)
+        assert asw._env_gib_bytes("EPM_TEST_GIB", 15) == 15 * 2**30, bad
+    monkeypatch.setenv("EPM_TEST_GIB", "10")
+    assert asw._env_gib_bytes("EPM_TEST_GIB", 15) == 10 * 2**30
 
 
 def test_decide_vm_disk_alert_dedups_within_episode():
     import autonomous_session_watch as asw
 
-    level, do_alert, _ = asw.decide_vm_disk(12 * 2**30, alerted=True, last_reclaim_ts=None, now=0.0)
+    level, do_alert, _, _ = asw.decide_vm_disk(
+        17 * 2**30, alerted=True, last_reclaim_ts=None, last_audit_ts=None, now=0.0
+    )
     assert (level, do_alert) == ("low", False)
 
 
@@ -2345,15 +2370,40 @@ def test_decide_vm_disk_reclaim_rearms_after_window():
 
     now = 1_000_000.0
     # Within the re-arm window: no second reclaim (no hot-loop pruning).
-    _, _, do_reclaim = asw.decide_vm_disk(
-        4 * 2**30, alerted=True, last_reclaim_ts=now - 60.0, now=now
+    _, _, do_reclaim, _ = asw.decide_vm_disk(
+        4 * 2**30, alerted=True, last_reclaim_ts=now - 60.0, last_audit_ts=None, now=now
     )
     assert do_reclaim is False
     # Past the window: re-fires (junk re-accumulated during a long episode).
-    _, _, do_reclaim = asw.decide_vm_disk(
-        4 * 2**30, alerted=True, last_reclaim_ts=now - asw.VM_DISK_RECLAIM_REARM_S, now=now
+    _, _, do_reclaim, _ = asw.decide_vm_disk(
+        4 * 2**30,
+        alerted=True,
+        last_reclaim_ts=now - asw.VM_DISK_RECLAIM_REARM_S,
+        last_audit_ts=None,
+        now=now,
     )
     assert do_reclaim is True
+
+
+def test_decide_vm_disk_audit_rearms_after_window():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    # Within the re-arm window: no second audit (no hot-loop sweeping).
+    _, _, _, do_audit = asw.decide_vm_disk(
+        17 * 2**30, alerted=True, last_reclaim_ts=None, last_audit_ts=now - 60.0, now=now
+    )
+    assert do_audit is False
+    # Past the window: re-fires (catches a worktree whose holder process died
+    # after the first audit, during a long episode).
+    _, _, _, do_audit = asw.decide_vm_disk(
+        17 * 2**30,
+        alerted=True,
+        last_reclaim_ts=None,
+        last_audit_ts=now - asw.VM_DISK_RECLAIM_REARM_S,
+        now=now,
+    )
+    assert do_audit is True
 
 
 def test_vm_disk_sentinel_excluded_from_real_progress():
@@ -2385,7 +2435,7 @@ def test_vm_disk_pass_alert_posts_marker_once_per_episode(isolated_registry, mon
 
     (isolated_registry / "issue-552.json").write_text(json.dumps({"issue": 552}))
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
-    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)  # low, not critical
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 17 * 2**30)  # low, not critical
     markers: list[tuple[int, str]] = []
     monkeypatch.setattr(
         asw,
@@ -2394,12 +2444,50 @@ def test_vm_disk_pass_alert_posts_marker_once_per_episode(isolated_registry, mon
     )
     prunes: list[bool] = []
     monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+    monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
 
     asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
     asw.vm_disk_pass(dry_run=False, now=1_000_600.0)  # next tick: deduped
 
     assert markers == [(552, "vm-disk-low")]
-    assert prunes == []  # low-but-not-critical never reclaims
+    assert prunes == []  # low-but-not-critical never runs the cache reclaims
+
+
+def test_vm_disk_pass_low_runs_worktree_audit_and_notes_remediation(isolated_registry, monkeypatch):
+    # The 2026-06-11 incident class: advisory fired at 17 GiB but the
+    # remediation that frees the big space (worktree_audit.py --apply) was
+    # only on a once-daily cron; / hit 100% within hours. The pass now runs
+    # the audit itself at the ADVISORY threshold and the marker note records
+    # what was done, not just that disk was low.
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-552.json").write_text(json.dumps({"issue": 552}))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 17 * 2**30)  # low, not critical
+    notes: list[str] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: notes.append(note),
+    )
+    audits: list[bool] = []
+    monkeypatch.setattr(
+        asw,
+        "_vm_remediate_worktrees",
+        lambda dry_run: (audits.append(True), "worktree-audit rc=0: removed 15")[1],
+    )
+
+    now = 1_000_000.0
+    asw.vm_disk_pass(dry_run=False, now=now)
+    asw.vm_disk_pass(dry_run=False, now=now + 600.0)  # within re-arm window: no churn
+    asw.vm_disk_pass(dry_run=False, now=now + asw.VM_DISK_RECLAIM_REARM_S + 600.0)
+
+    assert len(audits) == 2  # first tick + post-window re-fire
+    assert len(notes) == 1  # alert still once per episode
+    assert "[auto-remediation:" in notes[0]
+    assert "worktree-audit rc=0: removed 15" in notes[0]
 
 
 def test_vm_disk_pass_fallback_event_when_no_active_issue(isolated_registry, monkeypatch):
@@ -2407,7 +2495,8 @@ def test_vm_disk_pass_fallback_event_when_no_active_issue(isolated_registry, mon
 
     import autonomous_session_watch as asw
 
-    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 17 * 2**30)
+    monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
     asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
 
     lines = (isolated_registry / "vm-disk-events.jsonl").read_text().strip().splitlines()
@@ -2422,8 +2511,11 @@ def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monke
 
     monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
     prunes: list[bool] = []
+    npm_cleans: list[bool] = []
     sweeps: list[float] = []
     monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+    monkeypatch.setattr(asw, "_vm_reclaim_npm_cache", lambda dry_run: npm_cleans.append(True))
+    monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
     monkeypatch.setattr(
         asw, "_sweep_stale_claude_tmp", lambda now, dry_run: (sweeps.append(now), 0)[1]
     )
@@ -2434,6 +2526,7 @@ def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monke
     asw.vm_disk_pass(dry_run=False, now=now + asw.VM_DISK_RECLAIM_REARM_S + 600.0)
 
     assert len(prunes) == 2  # first tick + post-window re-fire
+    assert len(npm_cleans) == 2  # npm cache clean rides the same critical arm
     assert len(sweeps) == 2
 
 
@@ -2451,7 +2544,7 @@ def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
 
     asw.vm_disk_pass(dry_run=True, now=1_000_000.0)
 
-    assert prune_cmds == []  # uv cache prune not actually invoked
+    assert prune_cmds == []  # uv prune / npm clean / worktree audit not actually invoked
     assert not (isolated_registry / "vm-disk.json").exists()  # no state saved
     assert not (isolated_registry / "vm-disk-events.jsonl").exists()  # no event written
 
