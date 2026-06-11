@@ -1,6 +1,7 @@
 ---
-title: 'Cross-recipe transfer: 16 broad-negative-recipe adapters scored on the same
-  35 held-out personas'
+title: Geometry-routed marker spillover replicates on a second training recipe, but
+  the broad negative panel clamps end-of-answer behavior on every held-out persona,
+  not just trained negatives (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T15:34:13Z'
