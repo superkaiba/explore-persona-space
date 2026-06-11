@@ -333,6 +333,17 @@ def main() -> None:
     parser.add_argument("--model", default=BASE_MODEL)
     parser.add_argument("--probes", type=int, default=50)
     parser.add_argument("--contexts", type=int, default=0, help="restrict to first N (0 = all)")
+    parser.add_argument(
+        "--context-names",
+        default="",
+        help="comma-separated explicit context subset (smoke; same loop as the full set)",
+    )
+    parser.add_argument(
+        "--dtype",
+        default="bfloat16",
+        choices=("bfloat16", "float32"),
+        help="float32 for the CPU smoke (bf16 CPU matmul is slow); production stays bf16",
+    )
     parser.add_argument("--layers", default="all", help="accepted for CLI parity; always all")
     parser.add_argument("--upload", action="store_true", help="push bundle to the HF data repo")
     parser.add_argument(
@@ -357,6 +368,11 @@ def main() -> None:
     assert len(probes) == args.probes, (len(probes), args.probes)
 
     contexts = assemble_contexts(tokenizer, probes)
+    if args.context_names:
+        wanted = [n.strip() for n in args.context_names.split(",") if n.strip()]
+        missing = [n for n in wanted if n not in contexts]
+        assert not missing, f"--context-names not in the assembled union: {missing}"
+        contexts = {n: contexts[n] for n in wanted}
     if args.contexts > 0:
         names = list(contexts)[: args.contexts]
         contexts = {n: contexts[n] for n in names}
@@ -375,8 +391,9 @@ def main() -> None:
 
     print("[phase=b_extract]", flush=True)
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    dtype = torch.bfloat16 if args.dtype == "bfloat16" else torch.float32
     model = AutoModelForCausalLM.from_pretrained(
-        args.model, torch_dtype=torch.bfloat16, device_map=device, attn_implementation="sdpa"
+        args.model, torch_dtype=dtype, device_map=device, attn_implementation="sdpa"
     )
     model.eval()
     if args.model == BASE_MODEL:
@@ -429,6 +446,7 @@ def main() -> None:
             "n_contexts": len(contexts),
             "n_probes": len(probes),
             "device": device,
+            "dtype": args.dtype,
         },
     )
     torch.save({"contexts": raw_centroids, "meta": meta}, out_dir / "context_vectors_all_layers.pt")

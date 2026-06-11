@@ -206,8 +206,10 @@ def result_metadata(project_root: Path, extra: dict | None = None) -> dict:
         "git_commit": git_commit(project_root),
         "timestamp_utc": datetime.now(UTC).isoformat(),
         "python_version": platform.python_version(),
-        "numpy_version": np.__version__,
-        "torch_version": torch.__version__,
+        "numpy_version": str(np.__version__),
+        # str(): TorchVersion objects poison weights_only=True re-loads of any
+        # torch.save'd payload that embeds this meta block.
+        "torch_version": str(torch.__version__),
         "base_model": BASE_MODEL,
         "argv": sys.argv[1:],
     }

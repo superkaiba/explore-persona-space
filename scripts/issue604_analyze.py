@@ -312,7 +312,19 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
         c = cell["cell"]
         if c["line"] == "i541":
             continue  # own-bank read below
-        sources = [bundle.resolve(s) for s in c["source_personas"]]
+        try:
+            sources = [bundle.resolve(s) for s in c["source_personas"]]
+        except KeyError as exc:
+            results.append(
+                {
+                    "line": c["line"],
+                    "cell_id": c["cell_id"],
+                    "tags": c["tags"],
+                    "per_source": [],
+                    "status": f"N/A — source context not in Phase B bundle: {exc}",
+                }
+            )
+            continue
         rec = {"line": c["line"], "cell_id": c["cell_id"], "tags": c["tags"], "per_source": []}
         for src in sources:
             src_rec = {"source": src, "stacks": {}}
@@ -435,7 +447,7 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
             }
 
     aux = _aux_bank_reads(store, data_root)
-    i541 = _i541_key_match(store, bundle)
+    i541 = _i541_key_match(store, bundle, data_root)
     payload = {
         "meta": result_metadata(PROJECT_ROOT, extra={"analysis": "key_match"}),
         "layer_band": list(band),
@@ -455,7 +467,7 @@ def _aux_bank_reads(store: CellStore, data_root: Path) -> dict:
     out: dict = {}
     p111, n111 = data_root / BANK111_PT, data_root / BANK111_NAMES
     if p111.exists() and n111.exists():
-        bank = torch.load(p111, weights_only=True).numpy().astype(np.float64)
+        bank = torch.load(p111, weights_only=True).float().numpy().astype(np.float64)
         names = json.loads(n111.read_text())["persona_names"]
         assert bank.shape == (len(names), HIDDEN_SIZE), bank.shape
         rows = []
@@ -505,7 +517,8 @@ def _aux_bank_reads(store: CellStore, data_root: Path) -> dict:
                 if key is None:
                     continue
                 cos_all = {
-                    p: abs(_cos(key, v.numpy().astype(np.float64))) for p, v in personas.items()
+                    p: abs(_cos(key, v.float().numpy().astype(np.float64)))
+                    for p, v in personas.items()
                 }
                 others = [v for p, v in cos_all.items() if p != src]
                 per_layer.append(
@@ -524,21 +537,24 @@ def _aux_bank_reads(store: CellStore, data_root: Path) -> dict:
     return out
 
 
-def _i541_key_match(store: CellStore, bundle: ContextBundle) -> dict | str:
-    """#541 secondary line vs its OWN stored activation banks (plan §5)."""
+def _i541_key_match(store: CellStore, bundle: ContextBundle, data_root: Path) -> dict | str:
+    """#541 secondary line vs its OWN stored activation banks (plan §5).
+
+    Persona order comes from the git copy of ``geometry_matrices.json``
+    (#541 geometry-plus-prior predictor output, key ``personas``); the
+    fp16 activation banks come from the HF data repo.
+    """
     cells = [c for c in store.cells if c["cell"]["line"] == "i541"]
     if not cells:
         return "N/A — no i541 cells in Phase A outputs"
     try:
         from huggingface_hub import hf_hub_download
 
-        geom = json.loads(
-            Path(
-                hf_hub_download(
-                    HF_DATA_REPO, f"{I541_ACT_PREFIX}/geometry_matrices.json", repo_type="dataset"
-                )
-            ).read_text()
+        geom_path = (
+            data_root
+            / "eval_results/issue_541/geometry-plus-prior-joint-predictor/geometry_matrices.json"
         )
+        geom = json.loads(geom_path.read_text())
         persona_names = geom.get("persona_names") or geom.get("personas")
         assert persona_names and len(persona_names) == 24, persona_names
         banks = {}
