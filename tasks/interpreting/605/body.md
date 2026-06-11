@@ -6,7 +6,7 @@ title: 'A context''s base behavior prior owns held-out prediction of standing ma
 kind: experiment
 tags: []
 created_at: '2026-06-11T10:48:18Z'
-has_clean_result: false
+has_clean_result: true
 goal: Determine whether the leakage gate needs a behavior-overlap term beyond base-model
   context similarity, by varying bystander base prior on the trained behavior at fixed
   context-vector similarity to the source and testing whether the overlap term carries
