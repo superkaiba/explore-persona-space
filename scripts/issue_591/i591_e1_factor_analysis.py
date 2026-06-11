@@ -442,7 +442,16 @@ def _fig_leak_map(cells: list[dict], panels: list[dict], fig_dir: Path):
 
 
 def _fig_forest(per_behavior_fits: dict, pooled_fit: dict, fig_dir: Path):
+    """Forest plot of factor coefficients with CI-method-aware rendering.
+
+    Reads the per-coefficient ``ci95_method_low/high`` provenance tags
+    (#591 e5): a bound fit via the Wald fallback is drawn as a dashed CI
+    with a black-edged diamond, tagged ``[Wald CI]`` in the row label and
+    named in a legend; the axis label says "95% profile CI" only when every
+    plotted bound is profile. JSONs without the tags render as all-profile.
+    """
     import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
 
     from explore_persona_space.analysis.paper_plots import (
         paper_palette_role,
@@ -456,24 +465,54 @@ def _fig_forest(per_behavior_fits: dict, pooled_fit: dict, fig_dir: Path):
     for beh, fit in {**per_behavior_fits, "pooled": pooled_fit}.items():
         if fit is None or "names" not in fit:
             continue
+        n = len(fit["names"])
+        meth_lo = fit.get("ci95_method_low") or ["profile"] * n
+        meth_hi = fit.get("ci95_method_high") or ["profile"] * n
         for j, name in enumerate(fit["names"]):
             if name == "intercept" or name.startswith("behavior_"):
                 continue
-            lo = fit.get("ci95_low_coef", [None] * len(fit["names"]))[j]
-            hi = fit.get("ci95_high_coef", [None] * len(fit["names"]))[j]
-            rows.append((f"{beh}: {name.replace('_', ' ')}", fit["coef"][j], lo, hi))
+            lo = fit.get("ci95_low_coef", [None] * n)[j]
+            hi = fit.get("ci95_high_coef", [None] * n)[j]
+            fb = "wald-fallback" in (meth_lo[j], meth_hi[j])
+            label = f"{beh}: {name.replace('_', ' ')}" + (" [Wald CI]" if fb else "")
+            rows.append((label, fit["coef"][j], lo, hi, fb))
     ys = np.arange(len(rows))[::-1]
-    for y, (label, coef, lo, hi) in zip(ys, rows, strict=True):
+    any_fallback = any(r[4] for r in rows)
+    for y, (label, coef, lo, hi, fb) in zip(ys, rows, strict=True):
         color = (
             paper_palette_role("primary") if "pooled" in label else paper_palette_role("neutral")
         )
         if lo is not None:
-            ax.plot([lo, hi], [y, y], color=color, lw=1.5)
-        ax.plot(coef, y, "o", color=color)
+            ax.plot([lo, hi], [y, y], color=color, lw=1.5, ls="--" if fb else "-")
+        if fb:
+            ax.plot(coef, y, "D", color=color, markeredgecolor="black")
+        else:
+            ax.plot(coef, y, "o", color=color)
     ax.axvline(0, color="grey", lw=0.8, ls="--")
     ax.set_yticks(ys)
     ax.set_yticklabels([r[0] for r in rows], fontsize=8)
-    ax.set_xlabel("Firth log-odds coefficient (z-scored factor), 95% profile CI")
+    if any_fallback:
+        ax.set_xlabel(
+            "Firth log-odds coefficient (z-scored factor), "
+            "95% CI (profile; dashed diamond = Wald fallback)"
+        )
+        ax.legend(
+            handles=[
+                Line2D(
+                    [0],
+                    [0],
+                    marker="D",
+                    ls="--",
+                    color="grey",
+                    markeredgecolor="black",
+                    label="Wald-fallback CI (profile bound non-estimable)",
+                )
+            ],
+            fontsize=7,
+            loc="lower right",
+        )
+    else:
+        ax.set_xlabel("Firth log-odds coefficient (z-scored factor), 95% profile CI")
     ax.set_title("Factor coefficients per behavior and pooled")
     savefig_paper(fig, "e1_factor_forest", dir=fig_dir)
     plt.close(fig)

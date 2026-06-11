@@ -290,6 +290,12 @@ def fig_forest(per_behavior_fits, pooled_fit):
     behavior), so they are anti-conservative; the registered between-source
     permutation is the binding implant-strength inference. The coefficients
     are therefore omitted here rather than plotted with a warning.
+
+    CI bounds are method-aware (#591 e5): a ``ci95_method_low/high`` tag of
+    ``wald-fallback`` renders as a dashed CI with a black-edged diamond, a
+    ``[Wald CI]`` row tag, and a legend entry; the axis label claims
+    "95% profile CI" only when every plotted bound is profile. JSONs
+    without the tags (pre-e5) render as all-profile, unchanged.
     """
     set_paper_style("blog")
     fig, ax = plt.subplots(figsize=(8, 5.2))
@@ -297,32 +303,63 @@ def fig_forest(per_behavior_fits, pooled_fit):
     for beh, fit in {**per_behavior_fits, "pooled": pooled_fit}.items():
         if fit is None or "names" not in fit:
             continue
+        n = len(fit["names"])
+        meth_lo = fit.get("ci95_method_low") or ["profile"] * n
+        meth_hi = fit.get("ci95_method_high") or ["profile"] * n
         for j, name in enumerate(fit["names"]):
             if name == "intercept" or name.startswith("behavior_") or name == "self_delta":
                 continue
-            lo = fit.get("ci95_low_coef", [None] * len(fit["names"]))[j]
-            hi = fit.get("ci95_high_coef", [None] * len(fit["names"]))[j]
+            lo = fit.get("ci95_low_coef", [None] * n)[j]
+            hi = fit.get("ci95_high_coef", [None] * n)[j]
+            fb = "wald-fallback" in (meth_lo[j], meth_hi[j])
             beh_label = BEHAVIOR_LABELS.get(beh, beh)
             rows.append(
                 (
-                    f"{beh_label}: {FACTOR_LABELS.get(name, name.replace('_', ' '))}",
+                    f"{beh_label}: {FACTOR_LABELS.get(name, name.replace('_', ' '))}"
+                    + (" [Wald CI]" if fb else ""),
                     fit["coef"][j],
                     lo,
                     hi,
+                    fb,
                 )
             )
     ys = np.arange(len(rows))[::-1]
-    for y, (label, coef, lo, hi) in zip(ys, rows, strict=True):
+    any_fallback = any(r[4] for r in rows)
+    for y, (label, coef, lo, hi, fb) in zip(ys, rows, strict=True):
         color = (
             paper_palette_role("primary") if "pooled" in label else paper_palette_role("neutral")
         )
         if lo is not None:
-            ax.plot([lo, hi], [y, y], color=color, lw=1.5)
-        ax.plot(coef, y, "o", color=color)
+            ax.plot([lo, hi], [y, y], color=color, lw=1.5, ls="--" if fb else "-")
+        if fb:
+            ax.plot(coef, y, "D", color=color, markeredgecolor="black")
+        else:
+            ax.plot(coef, y, "o", color=color)
     ax.axvline(0, color="grey", lw=0.8, ls="--")
     ax.set_yticks(ys)
     ax.set_yticklabels([r[0] for r in rows], fontsize=8)
-    ax.set_xlabel("Firth log-odds coefficient (z-scored factor), 95% profile CI")
+    if any_fallback:
+        ax.set_xlabel(
+            "Firth log-odds coefficient (z-scored factor), "
+            "95% CI (profile; dashed diamond = Wald fallback)"
+        )
+        ax.legend(
+            handles=[
+                Line2D(
+                    [0],
+                    [0],
+                    marker="D",
+                    ls="--",
+                    color="grey",
+                    markeredgecolor="black",
+                    label="Wald-fallback CI (profile bound non-estimable)",
+                )
+            ],
+            fontsize=7,
+            loc="lower right",
+        )
+    else:
+        ax.set_xlabel("Firth log-odds coefficient (z-scored factor), 95% profile CI")
     ax.set_title("Cell-level factor coefficients per behavior and pooled")
     ax.text(
         0.0,
