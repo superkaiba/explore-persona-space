@@ -5,7 +5,7 @@ title: A third orthogonal source pair lands above every anchor on implant geomet
 kind: experiment
 tags: []
 created_at: '2026-06-10T22:38:31Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 550
 goal: Re-run the mid-dial cell of the dial-axis superposition test on a third orthogonal
   source pair (near-zero base-model L20 centered cosine, disjoint from both existing
