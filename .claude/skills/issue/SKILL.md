@@ -2358,6 +2358,24 @@ runs:
   are no longer consulted — the 10-min `FREE_WAIT_SECONDS` park
   supersedes the old 6-h default.
 
+**Lane capability check (run BEFORE the dispatch call).** The GCP and
+SLURM lanes execute ONLY the standard Hydra entrypoints — the GCP
+startup script hardcodes `uv run python scripts/train.py <hydra args>`
+(`backends/gcp.py`), the SLURM stages dispatch `scripts/train.py` /
+`scripts/eval.py`, and `RunSpec` carries `hydra_args` only
+(`backends/base.py`) — there is no custom workload-command field. If
+the plan's Reproducibility Card launch command is anything else (a
+custom `scripts/issue<N>_dispatch.sh`, any bespoke driver), dispatch
+with the explicit `--backend runpod` override — the only lane that
+runs arbitrary nohup commands (the Step 6d.1 experimenter launch) —
+and record the override reason in the `epm:backend-selected` / launch
+marker note. Auto routing is valid only for standard-entrypoint
+workloads until the router grows a custom workload-command field.
+(Incident #571, 2026-06-11: auto routing sent a dispatch-script
+workload to GCP; the startup script ran bare `scripts/train.py`,
+crashed at startup, and the EXIT trap powered the VM off — one wasted
+GCP cycle before re-dispatching with `--backend runpod`.)
+
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
 back; see Step 6d.2).
