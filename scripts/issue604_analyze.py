@@ -1222,6 +1222,34 @@ def run_selectivity(  # noqa: C901 — seed-stability + joint-subspace reads sha
 ANALYSES = ("key", "write", "rotation", "constancy", "selectivity")
 
 
+def _default_data_root() -> Path:
+    """Resolve the data root for aux/registered inputs.
+
+    Several registered inputs (the 24-persona all-layer bank, the #552
+    mean-resp tensors, the #541 geometry manifest) are untracked files
+    that live only in the canonical main checkout — a sparse worktree
+    checkout will not have them. Prefer PROJECT_ROOT when the 24-bank
+    resolves there; otherwise fall back to the canonical main repo root
+    (task_workflow.repo_root — VM-only, like every Phase C run; a logged
+    degradation, never a silent one).
+    """
+    if (PROJECT_ROOT / BANK24_PT).exists():
+        return PROJECT_ROOT
+    try:
+        from explore_persona_space.task_workflow import repo_root
+
+        root = repo_root()
+        if (root / BANK24_PT).exists():
+            logger.info("data-root: aux inputs absent here; using canonical main root %s", root)
+            return root
+    except RuntimeError as exc:
+        logger.warning("data-root: canonical-root resolution failed (%s)", exc)
+    logger.warning(
+        "data-root: 24-persona bank not found anywhere — registered aux reads will record N/A"
+    )
+    return PROJECT_ROOT
+
+
 def main() -> None:
     """Phase C entrypoint — same code path for smoke and the full run."""
     parser = argparse.ArgumentParser(
@@ -1230,14 +1258,22 @@ def main() -> None:
     )
     parser.add_argument("--out-dir", default=str(OUT_DIR_DEFAULT))
     parser.add_argument("--context-dir", default=str(OUT_DIR_DEFAULT / "context_vectors"))
-    parser.add_argument("--data-root", default=str(PROJECT_ROOT))
+    parser.add_argument(
+        "--data-root",
+        default="",
+        help=(
+            "checkout holding the aux/registered inputs (24-persona bank, #552 tensors, "
+            "#541 geometry manifest — some are untracked, main-checkout-only). Default: "
+            "this checkout if the 24-bank resolves here, else the canonical main repo root."
+        ),
+    )
     parser.add_argument("--analyses", default="all", help="all | comma of " + ",".join(ANALYSES))
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     print("[phase=c_load]", flush=True)
     out_dir = Path(args.out_dir)
-    data_root = Path(args.data_root)
+    data_root = Path(args.data_root) if args.data_root else _default_data_root()
     store = CellStore(out_dir)
     assert store.cells, "no Phase A outputs found — run issue604_adapter_svd.py first"
     bundle = ContextBundle(Path(args.context_dir))
