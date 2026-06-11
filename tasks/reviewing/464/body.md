@@ -346,7 +346,7 @@ Net of these findings: contrast at the wrong slot — whether marker-less or a c
 - Raw trained-model on-policy completions: n/a — the original co-resident run generated them in vLLM but kept only the edit-distance summary; the follow-up that re-runs with `--persist-trained-R` is queued
 - WandB runs (33 trained cells across 3 regimes + role-name sweep + minimal arms, + 12 contrastive-negative minimal-arms cells): `wandb.ai/thomasjiralerspong/huggingface/`
 
-- **Methodology reference:** [docs/methodology/issue_464.md](https://github.com/superkaiba/explore-persona-space/blob/6bd7b6f9c0c494cf294c2fa23a741b1c0b1a9657/docs/methodology/issue_464.md) · [gist](https://gist.github.com/superkaiba/03514e7f68f36c4121a63f64d41cfd3c)
+- **Methodology reference:** [docs/methodology/issue_464.md](https://github.com/superkaiba/explore-persona-space/blob/16c58104cc508ec1978ff9e016649c563329307e/docs/methodology/issue_464.md) · [gist](https://gist.github.com/superkaiba/e6b92dafa69d7f5bbe7694a6769b12b2)
 
 **Compute:**
 
