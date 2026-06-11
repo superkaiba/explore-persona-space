@@ -174,8 +174,8 @@ compose-time existence check that fails loud BEFORE Codex is dispatched
 `data-access-blocked` non-PASS and burns a reconciler round.
 
 ```bash
-REPO_ROOT="$(git rev-parse --show-toplevel)"          # wrapper runs in the orchestrator session cwd (repo root, main)
-TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main, status-proof
+TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main, status-proof (task.py branch-guards to main from any cwd)
+REPO_ROOT="${TASK_DIR%/tasks/*}"                      # canonical MAIN checkout root — worktree-proof. NEVER `git rev-parse --show-toplevel`: from an issue-worktree cwd that resolves to the WORKTREE root, a stale fork of the workflow surface (#537 near-miss)
 BODY_PATH="$TASK_DIR/body.md"                         # wins over any relative clean_result_body_path in the brief
 PLAN_PATH="$TASK_DIR/plans/plan.md"                   # wins over any relative plan_path in the brief
 for f in "$BODY_PATH" "$PLAN_PATH" "<interpretation_marker_path>"; do
@@ -199,7 +199,12 @@ issue worktree, so Codex's inherited sandbox cwd matches the
 ### Step 2: Compose the review prompt
 
 Inline the Claude critic's spec verbatim — read
-`.claude/agents/clean-result-critic.md` and copy:
+`$REPO_ROOT/.claude/agents/clean-result-critic.md` (the canonical-main
+copy, via Step 1b's worktree-proof `$REPO_ROOT` — NEVER the bare
+relative path, which resolves against the session cwd: an issue
+worktree's copy is a stale fork of the spec, and on #537 the worktree
+copy still described fourteen lenses after main carried fifteen, so
+only a manual catch kept Lens 15 in the Codex prompt) and copy:
 
 - The fifteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
   coverage → **Lens 14 Binding-concerns audit** (composed onto the agent
