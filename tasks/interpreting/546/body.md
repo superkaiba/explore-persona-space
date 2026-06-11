@@ -5,7 +5,7 @@ title: Halving the LoRA recipe to r=16/α=32 pushes marker install past the 1-ep
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:38Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 533
 goal: Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 lands
   all three encoding arms simultaneously inside the [-10, -5] nat resolution band
