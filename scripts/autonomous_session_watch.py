@@ -105,8 +105,12 @@ Seven passes, run in this order:
    same-day alert-only decision; 73 registered sessions had accumulated
    ~0.5-0.6GB RSS each and 14 were stopped manually with this exact
    predicate). Set ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` to fall back to
-   the old alert-only posture (loud log + one-time marker). NEVER
-   touches: sessions with no issue mapping (the PM session, chat
+   the old alert-only posture (loud log + one-time marker). A stop is
+   VERIFIED on the next tick — the daemon ACK is not trusted as a kill:
+   an ACKed-but-still-alive session gets ONE stop retry, then a one-time
+   loud marker, and the episode state is cleared only once the session
+   actually leaves the live set (:func:`_check_stop_verification`).
+   NEVER touches: sessions with no issue mapping (the PM session, chat
    sessions), tasks at any other status (ACTIVE statuses, ``blocked``,
    and ``followups_running`` — a same-issue follow-up round is
    executing there). Motivated by the 2026-06-10 disk-full incident:
@@ -453,6 +457,15 @@ _SESSION_RECONCILE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-reco
 # posture as of 2026-06-10). Same staleness-filter contract.
 _SESSION_RECONCILE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-stop]"
 
+# Substring stamped into the one-time alert posted when a session the
+# session-reconcile pass stopped is STILL alive after the one allowed retry —
+# the Happy daemon ACKed the stop RPC but failed to actually kill the session
+# (see :func:`_check_stop_verification`). Same staleness-filter contract as
+# the others.
+_SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL = (
+    "[autonomous_session_watch:session-reconcile-stop-failed]"
+)
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -470,6 +483,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ORPHAN_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
+        _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
     }
 )
 
@@ -1685,7 +1699,7 @@ def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
+def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]]:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
     legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples.
 
@@ -1702,12 +1716,18 @@ def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
     ``list_team_pods`` round-trip to look it up.
 
     A transport error surfaces as an empty list with a logged warning — better
-    to skip the pass this tick than to crash the whole run."""
+    to skip the pass this tick than to crash the whole run. ``caller`` labels
+    that warning with the INVOKING pass (default ``pod-safety``; the
+    stalled-detector and session-reconcile passes thread their own names) so
+    cron-log triage attributes the failure to the right pass instead of
+    blaming pod-safety for every reuse of this helper."""
     try:
         pods = list_team_pods()
     except Exception as e:
         print(
-            f"  pod-safety: list_team_pods failed ({e}); skipping pass this tick", file=sys.stderr
+            f"  {caller}: list_team_pods failed ({e}); "
+            f"treating the RUNNING managed-pod set as empty this tick",
+            file=sys.stderr,
         )
         return []
     out: list[tuple[int, str, str]] = []
@@ -2567,7 +2587,7 @@ def stalled_session_pass(
     # Falls back to the empty set on a transport error (the helper already
     # logs to stderr in that case) so the decision layer just records
     # has_pod=False for every issue this tick — fail-safe.
-    running_pods = _running_managed_issue_pods()
+    running_pods = _running_managed_issue_pods(caller="stalled-detector")
     pod_active_issues = {issue for issue, _pid, _name in running_pods}
     pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
     if daemon_reachable is None:
@@ -3234,6 +3254,11 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 #     transition sets than the pod pass's), and a no-RUNNING-pod check;
 #   * ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` falls back to the original
 #     ALERT-ONLY posture (loud log + one-time marker, no stop);
+#   * a daemon ACK is never trusted as a kill: ACKed stops are recorded in
+#     the state file (``stopped_at``) and verified actually-gone on the
+#     next tick; a survivor gets ONE stop retry, then a loud one-time
+#     marker — the episode state is never cleared on an unverified stop
+#     (:func:`_check_stop_verification`);
 #   * NEVER touches a session with no issue mapping (the PM session, chat
 #     sessions) — those are skipped at the mapping step and cannot reach the
 #     decision function.
@@ -3509,12 +3534,22 @@ def _save_session_reconcile_state(
     alerted: bool,
     sids: list[str],
     prev: dict | None = None,
+    stopped_at: dict[str, float] | None = None,
+    stop_retried: bool = False,
+    stop_failed_alerted: bool = False,
 ) -> None:
     """Persist the per-issue session-reconcile state atomically (temp +
     rename), mirroring :func:`_save_pod_safety_state`. ``sids`` records the
     live session ids observed this tick (informational — the decision is
     per-issue); ``first_seen`` carries forward so the GC age backstop
-    measures the original episode start."""
+    measures the original episode start.
+
+    The stop-verification fields (all optional; absent in state files written
+    before 2026-06-10, which read back as empty/false): ``stopped_at`` maps
+    sid -> epoch ts of the daemon-ACKed stop, awaiting the next-tick
+    gone-from-the-live-set verification; ``stop_retried`` /
+    ``stop_failed_alerted`` are the once-per-episode dedup flags for the
+    zombie-session retry + loud marker (:func:`_check_stop_verification`)."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _session_reconcile_state_path(issue)
     prev_first_seen = (prev or {}).get("first_seen")
@@ -3525,6 +3560,9 @@ def _save_session_reconcile_state(
         "alerted": alerted,
         "sids": sorted(sids),
         "first_seen": prev_first_seen,
+        "stopped_at": dict(stopped_at or {}),
+        "stop_retried": bool(stop_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
     }
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=2))
@@ -3546,7 +3584,11 @@ def _gc_orphan_session_reconcile_state(
     drops files older than :data:`POD_SAFETY_STATE_MAX_AGE_S` as an age
     backstop. Mirrors :func:`_gc_orphan_pod_safety_state` (the terminal-status
     GC deliberately does NOT sweep this prefix — see
-    :data:`SESSION_RECONCILE_STATE_PREFIX`). Returns the cleared issues."""
+    :data:`SESSION_RECONCILE_STATE_PREFIX`). This reap is ALSO the
+    stop-verification success path: a stopped session that actually died
+    leaves the mapped set, so its episode state — including ``stopped_at`` —
+    is dropped here (:func:`_check_stop_verification` documents the zombie
+    branch). Returns the cleared issues."""
     if not AUTONOMOUS_REGISTRY_DIR.is_dir():
         return []
     now = now if now is not None else time.time()
@@ -3619,12 +3661,16 @@ def _handle_session_stop(
     prev_state: dict,
     prev_missed: int,
     prev_alerted: bool,
+    now: float,
 ) -> None:
     """Stop every live mapped session for ``issue`` and record the outcome.
 
-    Full success clears the episode state; a partial failure keeps the
-    accumulated miss count so the next tick retries the stop for the
-    remaining live session(s)."""
+    The daemon ACK is NOT trusted as a kill: every ACKed sid is recorded in
+    the state file's ``stopped_at`` map and verified actually-gone on the
+    NEXT tick (:func:`_check_stop_verification`); the episode state is
+    cleared only once the session(s) leave the live set (via the
+    live-session-keyed GC). An ACK failure keeps the accumulated miss count
+    so the next tick retries the stop for the remaining live session(s)."""
     stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
     if stopped:
         _post_progress_marker(
@@ -3644,12 +3690,138 @@ def _handle_session_stop(
             label="session-reconcile-stop",
         )
     if not dry_run:
-        if len(stopped) == len(sids):
-            _clear_session_reconcile_state(issue)  # episode over
-        else:
+        # Record every ACKed stop for next-tick verification instead of
+        # clearing the episode: a daemon that ACKs but fails to kill the
+        # session would otherwise reset the state and loop silently. The
+        # state is reaped by the live-session-keyed GC once the session(s)
+        # actually leave the live set. A full ACK resets the miss count
+        # (the old clear's semantics); a partial ACK keeps it so the next
+        # tick re-stops the remaining live session(s).
+        stopped_at = dict(prev_state.get("stopped_at") or {})
+        for sid in stopped:
+            stopped_at[sid] = now
+        _save_session_reconcile_state(
+            issue,
+            missed=0 if len(stopped) == len(sids) else prev_missed,
+            alerted=prev_alerted,
+            sids=sids,
+            prev=prev_state,
+            stopped_at=stopped_at,
+            stop_retried=bool(prev_state.get("stop_retried", False)),
+            stop_failed_alerted=bool(prev_state.get("stop_failed_alerted", False)),
+        )
+
+
+def _check_stop_verification(
+    issue: int,
+    sids: list[str],
+    done: bool,
+    idle: bool,
+    prev_state: dict,
+    dry_run: bool,
+    now: float,
+) -> bool:
+    """Next-tick verification that a previously ACKed session stop actually
+    landed (daemon ACK != kill). Returns True when this tick was consumed by
+    the verification path (the caller skips the normal decision).
+
+    ``stopped_at`` in the per-issue state records ``sid -> epoch ts`` for
+    every session whose stop was ACKed (:func:`_handle_session_stop` no
+    longer clears the episode on ACK). The verified-gone path needs no code
+    here: once every stopped session has left the live set, either the issue
+    drops out of the mapped set entirely (the live-session-keyed GC reaps
+    the state file) or only NEW sessions remain (no zombie -> fall through;
+    the next state save rewrites ``stopped_at`` empty, starting the
+    newcomers on a clean slate).
+
+    A ZOMBIE — a sid still in the live set on a later tick despite its ACKed
+    stop — escalates, but only while the stop conditions (DONE status +
+    idle) still hold (a revived / freshly-active task falls through to the
+    normal decision, which clears the episode rather than re-killing a
+    legitimately live session):
+
+    1. first zombie tick: loud stderr log + ONE retry of the stop
+       (``stop_retried`` flag);
+    2. zombie after the retry: ONE loud marker on the task
+       (``stop_failed_alerted`` flag) — the episode state is never cleared
+       on an unverified stop, so the failure stays visible for triage;
+    3. after the alert: stay quiet; the state file remains and is reaped by
+       the live-session-keyed GC when the session finally dies (or by the
+       age backstop).
+
+    Backward-compatible: state files written before these fields existed
+    have no ``stopped_at`` key -> empty dict -> the check is a no-op.
+    """
+    stopped_at = prev_state.get("stopped_at")
+    if not isinstance(stopped_at, dict) or not stopped_at:
+        return False
+    if not (done and idle):
+        return False  # stop conditions no longer hold; normal decide clears
+    zombies = sorted(sid for sid in sids if sid in stopped_at)
+    if not zombies:
+        return False  # all stopped sids verified gone; newcomers fall through
+    prev_missed = prev_state.get("missed", 0)
+    prev_missed = prev_missed if isinstance(prev_missed, int) else 0
+    prev_alerted = bool(prev_state.get("alerted", False))
+    print(
+        f"  STOP-VERIFY FAILED issue #{issue}: {len(zombies)} session(s) "
+        f"({', '.join(zombies)}) still alive one tick after the daemon ACKed "
+        f"their stop (ACK != kill).",
+        file=sys.stderr,
+    )
+    if not prev_state.get("stop_retried"):
+        re_acked = [sid for sid in zombies if _stop_session(sid, dry_run)]
+        print(
+            f"  session-reconcile: stop RETRIED for {len(re_acked)}/{len(zombies)} "
+            f"zombie session(s) on #{issue} (one retry per episode)"
+        )
+        if not dry_run:
+            new_stopped_at = dict(stopped_at)
+            for sid in re_acked:
+                new_stopped_at[sid] = now
             _save_session_reconcile_state(
-                issue, missed=prev_missed, alerted=prev_alerted, sids=sids, prev=prev_state
+                issue,
+                missed=prev_missed,
+                alerted=prev_alerted,
+                sids=sids,
+                prev=prev_state,
+                stopped_at=new_stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=bool(prev_state.get("stop_failed_alerted", False)),
             )
+        return True
+    if not prev_state.get("stop_failed_alerted"):
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL} session STOP FAILED "
+            f"to land: {len(zombies)} session(s) ({', '.join(zombies)}) are "
+            f"still alive after the session-reconcile pass stopped them AND "
+            f"retried once — the Happy daemon ACKed the stop RPCs but did not "
+            f"kill the session(s). Stop manually with `spawn_session.py stop "
+            f"--session-id <id>` (or restart the Happy daemon). The episode "
+            f"state is kept (never cleared on an unverified stop) and is GC'd "
+            f"once the session(s) actually leave the live set. Posted once "
+            f"per episode.",
+            dry_run,
+            label="session-reconcile-stop-failed",
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue,
+                missed=prev_missed,
+                alerted=prev_alerted,
+                sids=sids,
+                prev=prev_state,
+                stopped_at=stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  session-reconcile: issue #{issue} zombie session(s) {zombies} already "
+        f"retried + alerted this episode; awaiting manual stop / daemon recovery."
+    )
+    return True
 
 
 def _process_session_reconcile(
@@ -3697,6 +3869,12 @@ def _process_session_reconcile(
     if not isinstance(prev_missed, int):
         prev_missed = 0
     prev_alerted = bool(prev_state.get("alerted", False))
+
+    # Next-tick stop verification (daemon ACK != kill): a previously-stopped
+    # sid still in the live set consumes the tick (retry once, then a loud
+    # one-time marker) — see :func:`_check_stop_verification`.
+    if _check_stop_verification(issue, sids, done, idle, prev_state, dry_run, now):
+        return
 
     action, new_missed = decide_session_reconcile(
         status,
@@ -3753,7 +3931,16 @@ def _process_session_reconcile(
 
     if action == "stop":
         _handle_session_stop(
-            issue, sids, status, gap_desc, threshold, dry_run, prev_state, prev_missed, prev_alerted
+            issue,
+            sids,
+            status,
+            gap_desc,
+            threshold,
+            dry_run,
+            prev_state,
+            prev_missed,
+            prev_alerted,
+            now,
         )
         return
 
@@ -3834,7 +4021,9 @@ def session_reconcile_pass(
     # A transport error degrades to an empty set — the followup/keep-running
     # skips, the idle grace, and the 2-miss guard remain as safety margins,
     # and the pod-safety pass independently reconciles the pod itself.
-    running_pod_issues = {issue for issue, _pod_id, _name in _running_managed_issue_pods()}
+    running_pod_issues = {
+        issue for issue, _pod_id, _name in _running_managed_issue_pods(caller="session-reconcile")
+    }
     print(
         f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
         f"{len(by_issue)} issue(s) "

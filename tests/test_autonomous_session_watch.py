@@ -568,7 +568,9 @@ def test_live_interactive_session_does_not_cause_stop(isolated_registry, monkeyp
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # Fresh progress 1h ago -> pod-active-fresh -> keep.
     monkeypatch.setattr(
@@ -596,7 +598,9 @@ def test_auto_stop_fires_on_done_task_second_miss(isolated_registry, monkeypatch
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -624,7 +628,7 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -646,7 +650,9 @@ def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypat
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -677,7 +683,9 @@ def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypat
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -719,7 +727,9 @@ def test_inline_followup_run_launched_skips_stop(isolated_registry, monkeypatch)
         {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": "promoted as useful"},
         {"kind": "epm:run-launched", "ts": "2026-06-10T03:12:08Z", "note": "pod=pod-477"},
     ]
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: events)
@@ -764,7 +774,9 @@ def test_inline_followup_after_completion_re_arms_auto_stop(isolated_registry, m
         {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": "followup done"},
     ]
     state = {"events": active_events}
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: state["events"])
@@ -795,7 +807,7 @@ def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -816,7 +828,9 @@ def test_alert_fires_on_stale_pod_active_and_does_not_stop(isolated_registry, mo
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # No real progress for well over the stale cap.
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
@@ -846,7 +860,9 @@ def test_alert_dedups_across_ticks(isolated_registry, monkeypatch):
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "verifying")
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
@@ -872,7 +888,9 @@ def test_alert_re_fires_after_progress_advances(isolated_registry, monkeypatch):
 
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: None)
@@ -915,7 +933,9 @@ def test_alert_re_fires_after_none_then_first_progress_then_stale(isolated_regis
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -952,7 +972,9 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: now - 600)  # 10 min ago, fresh
@@ -979,7 +1001,7 @@ def test_pod_safety_pass_api_error_does_not_stop(isolated_registry, monkeypatch)
     import autonomous_session_watch as asw
 
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
 
     asw.pod_safety_pass(dry_run=False, threshold=2)
@@ -1052,7 +1074,7 @@ def test_pod_safety_pass_gc_runs_even_with_no_running_pods(isolated_registry, mo
     import autonomous_session_watch as asw
 
     _write_state(isolated_registry, 99, "gone", missed=1, first_seen=__import__("time").time())
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
 
     asw.pod_safety_pass(dry_run=False, threshold=2)
 
@@ -1477,7 +1499,7 @@ def _patch_stale_signals(monkeypatch, asw, *, status: str, age_s: float | None =
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (age_s, "ts-old"))
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
     return age_s
 
 
@@ -1838,7 +1860,9 @@ def test_stalled_alert_fires_refresh_from_api_when_has_pod(
     # shape: the user-park happened while a pod was alive.
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
     # Override the pods stub to have a RUNNING managed pod for issue 488.
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
         asw,
@@ -1895,7 +1919,9 @@ def test_stalled_alert_refresh_dedups_within_episode(
     _stops, _spawns, _markers = stalled_recorder
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
         asw,
@@ -1926,7 +1952,9 @@ def test_stalled_alert_refresh_re_fires_after_self_report_advances(
 
     _stops, _spawns, _markers = stalled_recorder
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "plan_pending")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
@@ -2677,11 +2705,13 @@ def test_session_reconcile_sentinels_are_filtered_from_progress():
 
 
 def _patch_session_reconcile_io(
-    monkeypatch, *, status, events=None, self_report=(None, None), pods=()
+    monkeypatch, *, status, events=None, self_report=(None, None), pods=(), patch_pods=True
 ):
     """Common monkeypatching for the session-reconcile I/O wrapper tests:
     task reads + the daemon-derived maps + the RunPod snapshot, leaving
-    state files + decisions real. Returns the (stops, posts) recorders."""
+    state files + decisions real. Returns the (stops, posts) recorders.
+    ``patch_pods=False`` leaves the real :func:`_running_managed_issue_pods`
+    in place (for tests exercising its caller-label threading)."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
@@ -2690,7 +2720,8 @@ def _patch_session_reconcile_io(
     monkeypatch.setattr(asw, "_task_events", lambda issue: list(events or []))
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: self_report)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: list(pods))
+    if patch_pods:
+        monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: list(pods))
     monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
     monkeypatch.setattr(
         asw,
@@ -2737,15 +2768,21 @@ def test_session_reconcile_default_autostop_stops_all_sessions_and_clears(
     isolated_registry, monkeypatch, status
 ):
     # DEFAULT posture (env unset, 2026-06-10 user request): tick 1
-    # accumulates, tick 2 stops EVERY live mapped session, posts the stop
-    # marker, clears the state. awaiting_promotion is covered (the request's
-    # headline case: sessions idling at the promotion park).
+    # accumulates, tick 2 stops EVERY live mapped session and posts the stop
+    # marker. The state is NOT cleared on the daemon ACK — the ACKed sids are
+    # recorded in `stopped_at` and verified actually-gone on the NEXT tick,
+    # where the live-session-keyed GC reaps the state (the verified-gone
+    # path). awaiting_promotion is covered (the request's headline case:
+    # sessions idling at the promotion park).
+    import json
+
     import autonomous_session_watch as asw
 
     monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
     now = 1_000_000.0
     live = {"sid-a", "sid-b"}
+    state_path = isolated_registry / "session-reconcile-42.json"
 
     asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
     assert stops == []
@@ -2753,7 +2790,15 @@ def test_session_reconcile_default_autostop_stops_all_sessions_and_clears(
     asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
     assert sorted(stops) == ["sid-a", "sid-b"]
     assert posts == [(42, "session-reconcile-stop")]
-    assert not (isolated_registry / "session-reconcile-42.json").exists()
+    state = json.loads(state_path.read_text())
+    assert sorted(state["stopped_at"]) == ["sid-a", "sid-b"]  # ACK recorded, awaiting verification
+
+    # Tick 3: the daemon actually killed both -> no live mapped session ->
+    # the GC reaps the state file. No second stop, no extra marker.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=set(), now=now)
+    assert not state_path.exists()
+    assert sorted(stops) == ["sid-a", "sid-b"]
+    assert posts == [(42, "session-reconcile-stop")]
 
 
 def test_session_reconcile_running_pod_blocks_stop(isolated_registry, monkeypatch):
@@ -2879,3 +2924,108 @@ def test_session_reconcile_pass_daemon_unreachable_skips(isolated_registry, monk
     assert stops == [] and posts == []
     # State untouched (no GC either — liveness unknown).
     assert (isolated_registry / "session-reconcile-42.json").exists()
+
+
+# ── caller-label attribution on the shared RUNNING-pod helper ─────────────────
+
+
+def test_running_managed_pods_warning_carries_caller_label(monkeypatch, capsys):
+    # The transport-error warning is attributed to the INVOKING pass: the
+    # stalled-detector and session-reconcile passes reuse this pod-safety
+    # helper, and a `pod-safety:`-prefixed warning from those passes sent
+    # cron-log triage to the wrong pass.
+    import autonomous_session_watch as asw
+
+    def boom():
+        raise RuntimeError("transport down")
+
+    monkeypatch.setattr(asw, "list_team_pods", boom)
+    assert asw._running_managed_issue_pods() == []
+    assert "pod-safety: list_team_pods failed" in capsys.readouterr().err
+    assert asw._running_managed_issue_pods(caller="session-reconcile") == []
+    assert "session-reconcile: list_team_pods failed" in capsys.readouterr().err
+
+
+def test_session_reconcile_pass_threads_caller_label(isolated_registry, monkeypatch, capsys):
+    # End-to-end: the session-reconcile pass calls the shared helper with its
+    # own caller label, so a transport error during THIS pass is attributed
+    # to session-reconcile in the cron log, not to pod-safety.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    _patch_session_reconcile_io(monkeypatch, status="completed", patch_pods=False)
+
+    def boom():
+        raise RuntimeError("transport down")
+
+    monkeypatch.setattr(asw, "list_team_pods", boom)
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+    err = capsys.readouterr().err
+    assert "session-reconcile: list_team_pods failed" in err
+    assert "pod-safety:" not in err
+
+
+# ── next-tick stop verification (daemon ACK != kill) ──────────────────────────
+
+
+def test_session_reconcile_ack_without_kill_retries_once_then_alerts(
+    isolated_registry, monkeypatch, capsys
+):
+    # Alive-after-stop: the daemon ACKs the stop but the session never leaves
+    # the live set. The first zombie tick loudly retries the stop ONCE; the
+    # next tick posts the one-time stop-failed marker; later ticks stay
+    # quiet. The episode state is never cleared while the zombie lives.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    live = {"sid-a"}
+    state_path = isolated_registry / "session-reconcile-42.json"
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)  # miss 1
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)  # stop ACK
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+    capsys.readouterr()  # drain
+
+    # Tick 3: sid-a STILL alive -> loud stderr log + exactly one retry.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert "STOP-VERIFY FAILED issue #42" in capsys.readouterr().err
+    state = json.loads(state_path.read_text())
+    assert state["stop_retried"] is True and state["stop_failed_alerted"] is False
+
+    # Tick 4: STILL alive after the retry -> one-time loud marker, no 3rd stop.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert posts[-1] == (42, "session-reconcile-stop-failed")
+    state = json.loads(state_path.read_text())
+    assert state["stop_failed_alerted"] is True
+
+    # Tick 5: dedup — no new stop, no new marker; state kept for triage.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert posts.count((42, "session-reconcile-stop-failed")) == 1
+    assert state_path.exists()
+
+
+def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registry, monkeypatch):
+    # A state file written BEFORE the stop-verification fields existed (no
+    # stopped_at / stop_retried / stop_failed_alerted keys) must behave like
+    # an in-flight pre-upgrade episode: the missing keys read back as
+    # empty/false and the normal decision path proceeds unchanged.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    legacy = {"missed": 1, "alerted": False, "sids": ["sid-a"], "first_seen": 999_000.0}
+    (isolated_registry / "session-reconcile-42.json").write_text(json.dumps(legacy))
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+    assert stops == ["sid-a"]  # missed 1 -> 2 hits the threshold; the stop proceeds
+    assert posts == [(42, "session-reconcile-stop")]
