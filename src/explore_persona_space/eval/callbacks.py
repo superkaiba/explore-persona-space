@@ -751,6 +751,19 @@ class MarkerBandStopCallback(TrainerCallback):
         self.min_steps = int(min_steps)
         self.log_prefix = log_prefix
         self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
+        if self.eos_token_id is None:
+            # Documented optional config (z_eos series skipped), but the
+            # persisted records then fall BELOW the four-floats-per-slot
+            # storage contract (.claude/rules/marker-leakage-measurement.md
+            # § "Storage contract"; incident #530) — say so loudly once.
+            logger.warning(
+                "[%s] MarkerBandStopCallback constructed WITHOUT eos_token_id: "
+                "persisted trajectory records will lack z_eos and fall below "
+                "the four-floats-per-slot storage contract (incident #530). "
+                "Pass eos_token_id (Qwen-2.5 <|im_end|> = 151645) unless this "
+                "capture surface deliberately has no EOS competitor.",
+                log_prefix,
+            )
         self.log_only = bool(log_only)
         self.trajectory_out_path = trajectory_out_path
 
@@ -839,6 +852,31 @@ class MarkerBandStopCallback(TrainerCallback):
         trained_mean = float(trained_per_row.mean().item())
         delta_per_row = trained_per_row - self._base_logp_per_row.to(trained_per_row.device)
         delta_mean = float(delta_per_row.mean().item())
+
+        # Write-time storage-contract check (#576 / incident #530): every
+        # persisted slot read (WandB metrics below AND the trajectory JSON)
+        # must carry the four floats per model side. Validate the mean
+        # records here, BEFORE any sink, so a contract violation fails the
+        # run loudly instead of surfacing after the pod is terminated.
+        from explore_persona_space.eval.marker_logprob import validate_marker_slot_record
+
+        def _mean_or_none(v):
+            return float(v.mean().item()) if v is not None else None
+
+        for side, stats in (("trained", trained_stats), ("base", self._base_slot_stats)):
+            validate_marker_slot_record(
+                {
+                    "logp": _mean_or_none(stats["logp"]),
+                    "z_marker": _mean_or_none(stats["z_marker"]),
+                    "z_eos": _mean_or_none(stats["z_eos"]),
+                    "logZ": _mean_or_none(stats["logZ"]),
+                },
+                context=(
+                    f"MarkerBandStopCallback[{self.log_prefix}] {side} side, "
+                    f"step {state.global_step}"
+                ),
+                require_z_eos=self.eos_token_id is not None,
+            )
 
         logger.info(
             "[%s] Step %d: trained log P(marker)=%.4f nat, base=%.4f nat, delta=%+.4f nat "
