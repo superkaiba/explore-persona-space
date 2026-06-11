@@ -6,7 +6,7 @@ kind: analysis
 tags:
 - needs-thomas
 created_at: '2026-06-09T18:35:37Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing, and upgrades one prior null to a centering-attributable candidate rescue (MODERATE confidence)
 

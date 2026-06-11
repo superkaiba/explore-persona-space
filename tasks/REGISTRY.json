@@ -3132,7 +3132,7 @@
       "title": "Router multi-backend live acceptance smoke"
     },
     "536": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/536",
       "status": "interpreting",
