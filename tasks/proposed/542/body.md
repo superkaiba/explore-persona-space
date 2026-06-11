@@ -14,6 +14,10 @@ goal: 'Holding the #537 marker protocol fixed (16 train contexts, band-stopped r
   the leakage gradient G[marker, i->j] and its predictability by the registered metric
   ladder (open-q 3.4a), and whether negative-persona count moves leakage at fixed
   row-mass — the pure-count question #477 left open.'
+relates_to:
+- leak-contrastive-negatives
+- leak-data-factors
+- leak-to-default
 ---
 ## Goal
 
