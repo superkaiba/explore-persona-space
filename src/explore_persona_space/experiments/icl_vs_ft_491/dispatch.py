@@ -20,6 +20,12 @@ sweep phases. Per-phase cell-list sources:
                28 registry variants; then summarize
   upload       same helper calls both modes (smoke uploads the tiny smoke
                namespace bucket)
+  ft_content_followup  follow-up round 1 (plan v4 §4.3): fetch-helpful-demos
+               -> data -> train(runs=[ft_ctrl_helpful_content]) ->
+               free_gen(cells=[ft_ctrl_helpful_content], skip_own_policy)
+               -> upload -> sentinel + [phase=done]. The sweep with one cell
+               (PASS_UNIFIED) — same phase functions, subprocess shapes, env
+               injection, and poller contract as --phase all.
 
 Pod-side contract (poll_pipeline.py): ``[phase=<name>]`` per phase,
 ``[phase=done]`` EXACTLY ONCE immediately before clean exit (after the final
@@ -624,6 +630,67 @@ def phase_smoke(gpus: list[int], *, out_root: str | None) -> None:
     logger.info("SMOKE COMPLETE — all phases exercised through the sweep code path")
 
 
+# ── Follow-up round 1: ft_ctrl_helpful_content (plan v4 §4.3) ────────────
+
+FOLLOWUP_RUN = "ft_ctrl_helpful_content"
+
+
+def _assert_parent_eval_tree() -> None:
+    """Fail loud unless the parent's committed eval JSONs are on this clone.
+
+    The follow-up cell's matching + analysis baselines (plan v4 §12
+    assumption 5): the 19 icl_panel files (ICL dose target + base reads),
+    the 13 parent matched_pairs/by_run entries, and the villain-content
+    reference full read at its matched step.
+    """
+    ed = ns_eval_dir(False)
+    icl = sorted((ed / "icl_panel").glob("*.json")) if (ed / "icl_panel").exists() else []
+    by_run_dir = ed / "matched_pairs" / "by_run"
+    by_run = sorted(by_run_dir.glob("*.json")) if by_run_dir.exists() else []
+    problems: list[str] = []
+    if len(icl) < 19:
+        problems.append(f"icl_panel has {len(icl)} JSONs (< 19)")
+    if len(by_run) < 13:
+        problems.append(f"matched_pairs/by_run has {len(by_run)} JSONs (< 13)")
+    ref_by_run = by_run_dir / "ft_K8_chainA.json"
+    if not ref_by_run.exists():
+        problems.append(f"{ref_by_run} missing")
+    else:
+        ref_step = int(json.loads(ref_by_run.read_text())["entry"]["matched_step"])
+        ref_full = ed / "ft_panel" / f"ft_K8_chainA_full_step{ref_step}.json"
+        if not ref_full.exists():
+            problems.append(f"{ref_full} missing")
+    if problems:
+        raise RuntimeError(
+            "follow-up preflight FAIL — parent eval tree incomplete on this clone "
+            f"(git pull the issue-491 branch): {'; '.join(problems)}"
+        )
+    logger.info(
+        "follow-up preflight OK: %d icl_panel JSONs, %d by_run entries", len(icl), len(by_run)
+    )
+
+
+def phase_ft_content_followup(gpus: list[int], *, out_root: str | None) -> None:
+    """The follow-up pipeline — the sweep with ONE cell (same phase functions)."""
+    _phase("ft_content_followup")
+    _assert_parent_eval_tree()
+    # p0: frozen helpful-demo artifact (CPU download + blocking asserts) —
+    # MUST precede the data build so the 14th row file gets written.
+    _run(_py("data_build", "fetch-helpful-demos"), name="fetch_helpful_demos")
+    # p1: full CPU data build (14 row files now that the artifact exists).
+    phase_data(gpus)
+    # p2: train + per-run eval pipeline + #534 crosscheck + persist-prune for
+    # the one new cell, through the SAME dispatcher path as the 13-run sweep.
+    phase_train(gpus, runs=[FOLLOWUP_RUN], out_root=out_root)
+    # p3: free generation for the new cell only; the own-policy slot read is
+    # a parent-scope diagnostic over both regimes' K=8 cells (plan v4 §6
+    # scope note) — this pod lacks the other cells' generations.
+    phase_free_gen(gpus, cells=[FOLLOWUP_RUN], out_root=out_root, skip_own_policy=True)
+    # p4: upload BEFORE termination (datasets + raw completions + eval tree).
+    phase_upload()
+    logger.info("FT-CONTENT-FOLLOWUP COMPLETE — analysis runs off-pod (analyze_followup.py)")
+
+
 # ── CLI ──────────────────────────────────────────────────────────────────
 
 
@@ -646,6 +713,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
             "activations",
             "upload",
             "all",
+            "ft_content_followup",
         ],
     )
     ap.add_argument("--gpus", default="0", help="comma-separated physical GPU ids")
@@ -655,6 +723,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
     ap.add_argument("--out-root", default=os.environ.get("EPM_491_OUT_ROOT"))
     ap.add_argument("--smoke", action="store_true", help="smoke namespace for single phases")
     ap.add_argument("--skip-gpu-datagen", action="store_true")
+    ap.add_argument(
+        "--skip-own-policy",
+        action="store_true",
+        help="free_gen: skip the own-policy slot reads (parent-scope diagnostic "
+        "needing both regimes' K=8 generations — plan v4 §4.3.i)",
+    )
     ap.add_argument("--sentinel-dir", default="/workspace/logs")
     ap.add_argument("--no-sentinel", action="store_true")
     args = ap.parse_args(argv)
@@ -710,12 +784,20 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
             assemble_matched_summary(smoke=args.smoke)
         elif args.phase == "free_gen":
             cells = args.cells.split(",") if args.cells else _all_free_gen_cells()
-            phase_free_gen(gpus, cells=cells, smoke=args.smoke, out_root=args.out_root)
+            phase_free_gen(
+                gpus,
+                cells=cells,
+                smoke=args.smoke,
+                out_root=args.out_root,
+                skip_own_policy=args.skip_own_policy,
+            )
         elif args.phase == "activations":
             variants = args.variants.split(",") if args.variants else _all_act_variants()
             phase_activations(gpus, variants=variants, smoke=args.smoke, out_root=args.out_root)
         elif args.phase == "upload":
             phase_upload(smoke=args.smoke)
+        elif args.phase == "ft_content_followup":
+            phase_ft_content_followup(gpus, out_root=args.out_root)
         elif args.phase == "all":
             phase_smoke(gpus, out_root=args.out_root)
             phase_icl_eval(gpus)
@@ -735,10 +817,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 — phase router
             )
         raise
 
-    if args.phase == "all" and not args.no_sentinel:
-        write_sentinel(_results_note(smoke=False), sentinel_dir=Path(args.sentinel_dir))
-        _phase("done")
-    elif args.phase == "all":
+    # Terminal contract (poll_pipeline.py): sentinel BEFORE the single
+    # [phase=done] line, for the two pod-terminal phases only.
+    if args.phase in ("all", "ft_content_followup"):
+        if not args.no_sentinel:
+            write_sentinel(_results_note(smoke=False), sentinel_dir=Path(args.sentinel_dir))
         _phase("done")
 
 

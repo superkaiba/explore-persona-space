@@ -46,11 +46,12 @@ SLOPE_BAND = (0.7, 1.4)
 N_SPLIT_HALF = 200
 
 # The registered H1 denominator (plan §5/§6): exactly the 12 core K x chain
-# pairs. The FT row-format control is matched + assembled but NEVER pooled
-# into the registered statistic — it is reported separately (round-2 fix,
-# h1-control-contamination).
+# pairs. The FT controls are matched + assembled but NEVER pooled into the
+# registered statistic — the row-format control is reported separately
+# (round-2 fix, h1-control-contamination); the follow-up content control
+# (`ft_ctrl_helpful_content`, plan v4) is read ONLY by analyze_followup.py.
 CORE_PAIR_IDS: tuple[str, ...] = tuple(f"ft_K{k}_chain{c}" for k in (1, 3, 8, 16) for c in "ABC")
-CONTROL_RUN_IDS: tuple[str, ...] = ("ft_ctrl_helpful_rows",)
+CONTROL_RUN_IDS: tuple[str, ...] = ("ft_ctrl_helpful_rows", "ft_ctrl_helpful_content")
 
 
 def _spearman(x: np.ndarray, y: np.ndarray) -> float:

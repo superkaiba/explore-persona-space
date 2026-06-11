@@ -8,8 +8,8 @@ the helpful persona).
 Outputs (all checkpointed the moment they are built):
   data/issue_491/chains.json            3 disjoint nested demo chains (seed 42)
   data/issue_491/icl_variants.json      19-variant ICL registry
-  data/issue_491/train_rows/<run>.jsonl 13 FT row files (K rows each)
-  data/issue_491/run_specs.json         13-run FT registry
+  data/issue_491/train_rows/<run>.jsonl 14 FT row files (K rows each)
+  data/issue_491/run_specs.json         14-run FT registry
   data/issue_491/R_helpful_qdemo_chainA8.json   (GPU step)
 
 In-process asserts (blocking, before any write):
@@ -30,6 +30,8 @@ import random
 from explore_persona_space.experiments.icl_vs_ft_491.common import (
     DATA_DIR,
     HELPFUL_SYSTEM_PROMPT,
+    HF_BUCKET_491,
+    HF_DATA_REPO,
     MARKER_ID,
     MARKER_TEXT,
     VILLAIN_SYSTEM_PROMPT,
@@ -223,11 +225,15 @@ def resolve_demo_turns(variant: dict, r_villain: dict[str, dict]) -> list[tuple[
     raise ValueError(f"unknown demo_style {style!r}")
 
 
-# ── FT run registry (13 runs, plan §4.3) ─────────────────────────────────
+# ── FT run registry (14 runs, plan §4.3 + v4 follow-up §4.1) ─────────────
 
 
 def build_run_specs(chains: dict[str, list[str]]) -> dict[str, dict]:
-    """12 ft_K{k}_chain{X} runs + the ft_ctrl_helpful_rows format control.
+    """12 ft_K{k}_chain{X} runs + the two K=8 chain-A controls.
+
+    Controls: ``ft_ctrl_helpful_rows`` (wrapper control — helpful wrapper,
+    villain rows) and ``ft_ctrl_helpful_content`` (content control — villain
+    wrapper, helpful rows; follow-up round 1).
 
     ``icl_dose_variant`` names the ICL variant whose source-cell ΔG this run
     is strength-matched against (the format control matches K=8 chain A).
@@ -250,7 +256,18 @@ def build_run_specs(chains: dict[str, list[str]]) -> dict[str, dict]:
         "row_system": HELPFUL_SYSTEM_PROMPT,
         "icl_dose_variant": "icl_K8_chainA",
     }
-    assert len(specs) == 13, len(specs)
+    # Follow-up round 1 (ft-content-control, plan v4 §4.1): the content
+    # control — villain wrapper RETAINED, helpful-voiced rows + marker. The
+    # exact weight-route analogue of the icl_ctrl_helpful_marker ICL control.
+    specs["ft_ctrl_helpful_content"] = {
+        "K": 8,
+        "chain": "A",
+        "demo_qs": chains["A"][:8],
+        "row_system": VILLAIN_SYSTEM_PROMPT,
+        "row_content": "helpful",
+        "icl_dose_variant": "icl_K8_chainA",
+    }
+    assert len(specs) == 14, len(specs)
     return specs
 
 
@@ -272,20 +289,34 @@ def load_variants() -> dict[str, dict]:
 
 
 def build_ft_rows(spec: dict, r_villain: dict[str, dict]) -> list[dict]:
-    """One TRL prompt-completion row per demo example (positives only, plan §4)."""
+    """One TRL prompt-completion row per demo example (positives only, plan §4).
+
+    Row response content branches on ``spec["row_content"]`` (default
+    ``"villain"``): the helpful-content control (follow-up round 1, plan v4
+    §4.1.ii) pulls its response text + trailing marker from the FROZEN
+    helpful-demo artifact (``fetch-helpful-demos``) instead of R_villain,
+    keeping whatever system wrapper ``row_system`` names.
+    """
+    content = spec.get("row_content", "villain")
+    if content == "helpful":
+        responses = dict(helpful_demo_turns(spec["demo_qs"], with_marker=True))
+    elif content == "villain":
+        responses = {}
+        for q in spec["demo_qs"]:
+            if q not in r_villain:
+                raise AssertionError(f"R_villain missing training q={q[:60]!r}")
+            responses[q] = r_villain[q]["response_text"] + MARKER_TEXT
+    else:
+        raise ValueError(f"unknown row_content {content!r}")
     rows = []
     for q in spec["demo_qs"]:
-        if q not in r_villain:
-            raise AssertionError(f"R_villain missing training q={q[:60]!r}")
         rows.append(
             {
                 "prompt": [
                     {"role": "system", "content": spec["row_system"]},
                     {"role": "user", "content": q},
                 ],
-                "completion": [
-                    {"role": "assistant", "content": r_villain[q]["response_text"] + MARKER_TEXT}
-                ],
+                "completion": [{"role": "assistant", "content": responses[q]}],
             }
         )
     assert len(rows) == spec["K"], (len(rows), spec["K"])
@@ -378,6 +409,22 @@ def build_all() -> None:
 
     TRAIN_ROW_DIR.mkdir(parents=True, exist_ok=True)
     for run_id, spec in run_specs.items():
+        if spec.get("row_content", "villain") == "helpful" and not HELPFUL_DEMOS_PATH.exists():
+            # Mirrors the assert_icl_prefix_markers helpful-style skip: the
+            # CPU-first build cannot source helpful rows before the artifact
+            # exists. The follow-up phase runs `fetch-helpful-demos` FIRST,
+            # then this build writes all 14 row files; training fails loud on
+            # the missing JSONL otherwise.
+            logger.warning(
+                "skipping train-row build for %s (helpful demos not yet present — run "
+                "`fetch-helpful-demos` or `gen-helpful-demos`, then re-run `build`)",
+                run_id,
+            )
+            stale = TRAIN_ROW_DIR / f"{run_id}.jsonl"
+            if stale.exists():
+                stale.unlink()
+                logger.warning("removed stale %s (its source artifact is absent)", stale)
+            continue
         rows = build_ft_rows(spec, r_villain)
         assert_row_marker_and_length(tokenizer, rows, run_id)
         out_path = TRAIN_ROW_DIR / f"{run_id}.jsonl"
@@ -453,12 +500,69 @@ def gen_helpful_demos(gpu_id: int = 0) -> None:
     assert_icl_prefix_markers(tokenizer, load_variants(), load_r_villain())
 
 
+# Data-repo pin for the frozen parent helpful-demo artifact (plan v4 §4
+# reuse table: short pin a0ca913, resolved to the full SHA via the Hub API on
+# 2026-06-11). NEVER regenerate — the pin guarantees the FT content control
+# uses byte-for-byte the same helpful response objects as the parent's
+# icl_ctrl_helpful_marker ICL control.
+HELPFUL_DEMOS_HF_REVISION = "a0ca913b3ea659aeb4668775956fe5132ac0a41c"
+
+
+def fetch_helpful_demos() -> None:
+    """Download the FROZEN parent helpful-demo artifact from HF (CPU, fail-loud).
+
+    Pulls ``issue491_icl_vs_ft/R_helpful_qdemo_chainA8.json`` at the pinned
+    data-repo revision into ``HELPFUL_DEMOS_PATH``, then asserts (blocking):
+    exactly 8 completions, keys == ``chains["A"][:8]`` in order, and no
+    MARKER_ID in any tokenized response (plan v4 §4.1.iii).
+    """
+    import shutil
+
+    from huggingface_hub import hf_hub_download
+
+    tokenizer = load_tokenizer()
+    downloaded = hf_hub_download(
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        filename=f"{HF_BUCKET_491}/R_helpful_qdemo_chainA8.json",
+        revision=HELPFUL_DEMOS_HF_REVISION,
+    )
+    HELPFUL_DEMOS_PATH.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(downloaded, HELPFUL_DEMOS_PATH)
+    payload = json.loads(HELPFUL_DEMOS_PATH.read_text())
+    comp = payload["completions"]
+    if len(comp) != 8:
+        raise AssertionError(
+            f"R_helpful_qdemo_chainA8.json: expected exactly 8 completions, got {len(comp)}"
+        )
+    # Chains are deterministic (seed 42) from the frozen q_demo pool, so the
+    # key assert never depends on build order (fetch runs BEFORE `build`).
+    chains = load_chains() if CHAINS_PATH.exists() else build_chains(load_q_demo())
+    expected = chains["A"][:8]
+    if list(comp.keys()) != expected:
+        raise AssertionError(
+            "helpful-demo keys != chains['A'][:8] (in order) — wrong or drifted artifact; "
+            "refusing to build the content-control rows on it."
+        )
+    for q, v in comp.items():
+        ids = tokenizer.encode(v["response_text"], add_special_tokens=False)
+        if MARKER_ID in ids:
+            raise AssertionError(
+                f"helpful demo for q={q[:50]!r} contains MARKER_ID {MARKER_ID} — "
+                "cannot use as a marker-free helpful response."
+            )
+    logger.info(
+        "fetched + verified frozen helpful demos (HF rev %s, 8 completions, marker-free)",
+        HELPFUL_DEMOS_HF_REVISION[:9],
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(name)s [%(levelname)s] %(message)s"
     )
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("step", choices=["build", "gen-helpful-demos"])
+    ap.add_argument("step", choices=["build", "gen-helpful-demos", "fetch-helpful-demos"])
     ap.add_argument("--gpu", type=int, default=0)
     args = ap.parse_args(argv)
     from explore_persona_space.orchestrate.env import load_dotenv
@@ -466,6 +570,8 @@ def main(argv: list[str] | None = None) -> None:
     load_dotenv()
     if args.step == "build":
         build_all()
+    elif args.step == "fetch-helpful-demos":
+        fetch_helpful_demos()
     else:
         gen_helpful_demos(gpu_id=args.gpu)
 

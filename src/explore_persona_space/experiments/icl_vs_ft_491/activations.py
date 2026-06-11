@@ -65,8 +65,11 @@ def list_act_variants() -> dict[str, dict]:
     """The 28-variant registry: base + 12 FT matched + 12 ICL core + 3 controls."""
     out: dict[str, dict] = {"base": {"kind": "base"}}
     for run_id in load_run_specs():
-        if run_id == "ft_ctrl_helpful_rows":
-            continue  # plan §4.6 names 12 FT matched ckpts (the K x chain core)
+        if run_id in ("ft_ctrl_helpful_rows", "ft_ctrl_helpful_content"):
+            # plan §4.6 names 12 FT matched ckpts (the K x chain core); the
+            # two FT controls have no activations phase (follow-up plan v4
+            # §4.5: H2 geometry out of scope for the content control).
+            continue
         out[f"act_{run_id}"] = {"kind": "ft", "run_id": run_id}
     for vid, variant in load_variants().items():
         if variant["kind"] in ("core", "control"):

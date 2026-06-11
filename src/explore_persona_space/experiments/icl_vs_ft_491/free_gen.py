@@ -1,8 +1,8 @@
 """Issue #491 on-policy free generation (vLLM 0.11.0, plan v3 §4.5).
 
-Cells (29 total): 13 FT matched checkpoints (12 K x chain + format control,
-via LoRARequest) + 15 ICL variants (12 core + 3 content controls, demos in
-the prompt, no adapter) + the no-prefix base. Greedy, ``max_new_tokens=2048``
+Cells (30 total): 14 FT matched checkpoints (12 K x chain + wrapper control
++ content control, via LoRARequest) + 15 ICL variants (12 core + 3 content
+controls, demos in the prompt, no adapter) + the no-prefix base. Greedy, ``max_new_tokens=2048``
 (>= 2x the longest trained completion, #260 rule), ``max_model_len=10240``
 (plan §13 allowed deviation from 8192 — K=16 prompts measure ~6.8K tokens;
 see the MAX_MODEL_LEN constant note).
@@ -63,7 +63,7 @@ SEED = 42
 
 
 def list_cells() -> dict[str, dict]:
-    """The 29-cell registry: {cell_id: {"kind": "ft"|"icl"|"base", ...}}."""
+    """The 30-cell registry: {cell_id: {"kind": "ft"|"icl"|"base", ...}}."""
     cells: dict[str, dict] = {}
     for run_id in load_run_specs():
         cells[run_id] = {"kind": "ft", "run_id": run_id}
@@ -71,7 +71,7 @@ def list_cells() -> dict[str, dict]:
         if variant["kind"] in ("core", "control"):
             cells[vid] = {"kind": "icl", "variant_id": vid}
     cells["base_noprefix"] = {"kind": "base"}
-    assert len(cells) == 29, len(cells)
+    assert len(cells) == 30, len(cells)
     return cells
 
 
