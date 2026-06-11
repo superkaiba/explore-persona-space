@@ -1,0 +1,8 @@
+{
+  "attempt_id": "att-20260611-064703",
+  "commit": "6bcfccdab5799c69f469e04b03bb1412737cac41",
+  "gpu": "NVIDIA A100-SXM4-80GB",
+  "host": "eps-issue-588",
+  "issue": 588,
+  "utc_ts": "2026-06-11T07:40:03.600432+00:00"
+}
