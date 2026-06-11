@@ -1,1 +1,2 @@
 {"ts": "2026-06-11T06:53:19Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-11T07:09:43Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #594 to open question(s) spec-prompt-vs-icl, ctx-behavior; created_new=none; mode=auto-match."}
