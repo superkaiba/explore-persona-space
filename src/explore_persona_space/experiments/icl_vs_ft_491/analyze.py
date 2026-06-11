@@ -10,9 +10,10 @@ replicate); the confirm rule is noise-aware (raw + disattenuated ρ via
 split-half reliability, EIV-corrected slope); the spread gate uses a
 question-bootstrap range null (flat-profile null).
 
-``--synthetic-smoke`` exercises the full H1 machinery on synthetic fixtures
-with known structure (correlated + uncorrelated pairs) — the CPU smoke for
-the stats path.
+``--synthetic-smoke`` exercises the H1 machinery AND the H5/H6 control
+bootstrap machinery on synthetic fixtures with known structure (correlated +
+uncorrelated pairs; separated + equal controls) — the CPU smoke for the
+stats path.
 """
 
 from __future__ import annotations
@@ -403,8 +404,230 @@ def h4_dose_monotonicity(smoke: bool = False, *, n_boot: int = 2000, seed: int =
     }
 
 
-def h5_h6_controls(pairs: dict[str, dict], smoke: bool = False) -> dict:
-    """Content controls (H5), order permutations (H6), H1 negative controls."""
+def _q_ci(xs: np.ndarray) -> list[float]:
+    """[2.5, 97.5] percentile CI of a bootstrap-replicate vector."""
+    return [float(np.percentile(xs, 2.5)), float(np.percentile(xs, 97.5))]
+
+
+def h5_control_contrasts(
+    full_q: np.ndarray,
+    controls: dict[str, np.ndarray],
+    *,
+    n_boot: int = 2000,
+    seed: int = SEED,
+) -> dict:
+    """H5: per-control source-dose contrast (full − control) with bootstrap CIs.
+
+    Inputs are per-question source-cell ``delta_logp`` arrays, question-aligned
+    by the caller. A JOINT question bootstrap (one resample drives the full
+    condition and every control per replicate — the per-question deltas share
+    the same Q_test substrates) yields a CI per contrast, so the registered
+    ≪-vs-≈ verdict (plan §6; the H1 narration gate) reads with uncertainty
+    instead of two bare point estimates (round-3 fix
+    h5-h6-bootstrap-cis-missing).
+    """
+    rng = np.random.default_rng(seed)
+    full_q = np.asarray(full_q, dtype=float)
+    n_q = full_q.size
+    ctrl_arrs = {c: np.asarray(v, dtype=float) for c, v in controls.items()}
+    for c, v in ctrl_arrs.items():
+        assert v.shape == full_q.shape, f"H5 {c}: shape {v.shape} != full {full_q.shape}"
+    boot = {c: np.empty(n_boot) for c in ctrl_arrs}
+    if ctrl_arrs:
+        for i in range(n_boot):
+            qi = rng.integers(0, n_q, size=n_q)
+            fm = full_q[qi].mean()
+            for c, v in ctrl_arrs.items():
+                boot[c][i] = fm - v[qi].mean()
+    return {
+        "full_K8_chainA_source_dose": float(full_q.mean()),
+        "controls": {
+            c: {
+                "source_dose": float(v.mean()),
+                "contrast_full_minus_control": float(full_q.mean() - v.mean()),
+                "contrast_ci95": _q_ci(boot[c]),
+            }
+            for c, v in ctrl_arrs.items()
+        },
+        "n_questions": int(n_q),
+        "n_boot": n_boot,
+        "seed": seed,
+    }
+
+
+def h6_order_statistics(
+    canonical_q: np.ndarray,
+    perm_qs: list[np.ndarray],
+    k3_q: np.ndarray | None,
+    *,
+    n_boot: int = 2000,
+    seed: int = SEED,
+) -> dict:
+    """H6: order-permutation SD of the source dose vs the K3→K8 increment.
+
+    The same JOINT question bootstrap drives the 4 ordering means (3 perms +
+    canonical), their SD (ddof=1), and the K3→K8 increment per replicate, so
+    the registered "sd < 25% of increment" read carries a CI on the SD, a CI
+    on the margin (sd − 0.25·|increment|), and the replicate fraction below
+    the threshold — uncertainty instead of a bare binarized flag (plan §6;
+    round-3 fix h5-h6-bootstrap-cis-missing). The point flag is kept.
+    """
+    rng = np.random.default_rng(seed)
+    canonical_q = np.asarray(canonical_q, dtype=float)
+    n_q = canonical_q.size
+    mat = np.vstack([*[np.asarray(p, dtype=float) for p in perm_qs], canonical_q])
+    assert mat.shape == (len(perm_qs) + 1, n_q), mat.shape
+    if k3_q is not None:
+        k3_q = np.asarray(k3_q, dtype=float)
+        assert k3_q.shape == canonical_q.shape, (k3_q.shape, canonical_q.shape)
+    boot_sd = np.empty(n_boot)
+    boot_incr = np.empty(n_boot) if k3_q is not None else None
+    boot_margin = np.empty(n_boot) if k3_q is not None else None
+    for i in range(n_boot):
+        qi = rng.integers(0, n_q, size=n_q)
+        boot_sd[i] = np.std(mat[:, qi].mean(axis=1), ddof=1)
+        if k3_q is not None:
+            incr = canonical_q[qi].mean() - k3_q[qi].mean()
+            boot_incr[i] = incr
+            boot_margin[i] = boot_sd[i] - 0.25 * abs(incr)
+    doses = mat.mean(axis=1)
+    sd = float(np.std(doses, ddof=1))
+    incr_pt = float(canonical_q.mean() - k3_q.mean()) if k3_q is not None else None
+    return {
+        "perm_doses": [float(x) for x in doses[:-1]],
+        "canonical_dose": float(doses[-1]),
+        "order_sd": sd,
+        "order_sd_ci95": _q_ci(boot_sd),
+        "k3_to_k8_increment": incr_pt,
+        "k3_to_k8_increment_ci95": _q_ci(boot_incr) if boot_incr is not None else None,
+        "sd_minus_quarter_increment": (sd - 0.25 * abs(incr_pt) if incr_pt is not None else None),
+        "sd_minus_quarter_increment_ci95": (
+            _q_ci(boot_margin) if boot_margin is not None else None
+        ),
+        "bootstrap_frac_sd_below_quarter_increment": (
+            float((boot_margin < 0).mean()) if boot_margin is not None else None
+        ),
+        "sd_below_quarter_increment": (
+            bool(sd < 0.25 * abs(incr_pt)) if incr_pt is not None else None
+        ),
+        "n_boot": n_boot,
+        "seed": seed,
+        "dof_note": (
+            "sd from 4 orderings (3 perms + canonical) — 3-dof estimate; "
+            "CIs from the joint question bootstrap"
+        ),
+    }
+
+
+def _demo_prefix_token_count(tokenizer, demo_turns: list[tuple[str, str]]) -> int:
+    """Token count of the demo block alone: rendered-prompt diff with vs without demos.
+
+    Renders the chat template twice with the same dummy probe turn — once with
+    the demo (q, R) pairs, once without — and returns the encode-length
+    difference, so the shared scaffold (default system turn, probe user turn,
+    generation prompt) cancels and only the demo-prefix contribution remains.
+    """
+    from explore_persona_space.experiments.icl_vs_ft_491.common import render_messages
+
+    def _n(turns: list[tuple[str, str]] | None) -> int:
+        text = tokenizer.apply_chat_template(
+            render_messages(system_prompt=None, demo_turns=turns, question="q"),
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+        return len(tokenizer.encode(text, add_special_tokens=False))
+
+    return _n(demo_turns) - _n(None)
+
+
+def h5_demo_token_counts(variant_ids: tuple[str, ...]) -> dict[str, dict]:
+    """Demo-prefix token counts per H5 variant on the live tokenizer (plan §13/§12b).
+
+    Returns ``{variant_id: {"tokens": int} | {"tokens": None, "skipped": reason}}``.
+    Loads the pinned tokenizer + variant registry and resolves each variant's
+    demo turns exactly as the eval did (``resolve_demo_turns``). A missing
+    LOCAL artifact (variant registry / helpful-demo file — pod-side data-build
+    outputs) degrades to a structured per-variant skip record naming the
+    remediation, never silently; real data drift (AssertionError) propagates.
+    """
+    from explore_persona_space.experiments.icl_vs_ft_491 import data_build
+    from explore_persona_space.experiments.icl_vs_ft_491.common import (
+        load_r_villain,
+        load_tokenizer,
+    )
+
+    try:
+        variants = data_build.load_variants()
+        tokenizer = load_tokenizer()
+    except FileNotFoundError as e:
+        logger.warning("demo-token-counts skipped (missing local artifact): %s", e)
+        return {v: {"tokens": None, "skipped": str(e)} for v in variant_ids}
+    r_villain: dict[str, dict] | None = None
+    out: dict[str, dict] = {}
+    for vid in variant_ids:
+        spec = variants[vid]
+        try:
+            if spec["demo_style"] in ("villain_marker", "villain_stripped") and r_villain is None:
+                r_villain = load_r_villain()
+            turns = data_build.resolve_demo_turns(spec, r_villain or {})
+            out[vid] = {"tokens": _demo_prefix_token_count(tokenizer, turns)}
+        except FileNotFoundError as e:
+            logger.warning("demo-token-count for %s skipped: %s", vid, e)
+            out[vid] = {"tokens": None, "skipped": str(e)}
+    return out
+
+
+def _src_q_array(profile: dict, variant: str, questions_ref: list[str]) -> np.ndarray:
+    """Source-cell per-question delta_logp array, with question-alignment assert."""
+    src = profile[SOURCE_CONTEXT]
+    if src["questions"] != questions_ref:
+        raise AssertionError(f"H5/H6 {variant}: source-cell question alignment drift")
+    return np.asarray(src["delta_logp"], dtype=float)
+
+
+def _h5_h6_blocks(_ctx_profile, *, n_boot: int, seed: int) -> dict:
+    """Assemble the bootstrap-CI'd H5 + H6 blocks from the icl_panel files."""
+    out: dict = {}
+    full = _ctx_profile("icl_K8_chainA")
+    if not full:
+        return out
+    q_ref = full[SOURCE_CONTEXT]["questions"]
+    full_q = np.asarray(full[SOURCE_CONTEXT]["delta_logp"], dtype=float)
+    controls_q: dict[str, np.ndarray] = {}
+    for ctrl in ("icl_ctrl_stripped", "icl_ctrl_helpful", "icl_ctrl_helpful_marker"):
+        prof = _ctx_profile(ctrl)
+        if prof:
+            controls_q[ctrl] = _src_q_array(prof, ctrl, q_ref)
+    h5 = h5_control_contrasts(full_q, controls_q, n_boot=n_boot, seed=seed)
+    token_counts = h5_demo_token_counts(("icl_K8_chainA", *controls_q))
+    h5["full_demo_prefix_tokens"] = token_counts["icl_K8_chainA"]
+    for ctrl in controls_q:
+        h5["controls"][ctrl]["demo_prefix_tokens"] = token_counts[ctrl]
+    out["h5"] = h5
+    # H6: order-permutation sd of the source dose vs the K3->K8 increment.
+    perm_q: list[np.ndarray] = []
+    for i in range(3):
+        prof = _ctx_profile(f"icl_perm_{i}")
+        if prof:
+            perm_q.append(_src_q_array(prof, f"icl_perm_{i}", q_ref))
+    if len(perm_q) == 3:
+        k3 = _ctx_profile("icl_K3_chainA")
+        k3_q = _src_q_array(k3, "icl_K3_chainA", q_ref) if k3 else None
+        out["h6"] = h6_order_statistics(full_q, perm_q, k3_q, n_boot=n_boot, seed=seed)
+    return out
+
+
+def h5_h6_controls(
+    pairs: dict[str, dict], smoke: bool = False, *, n_boot: int = 2000, seed: int = SEED
+) -> dict:
+    """Content controls (H5), order permutations (H6), H1 negative controls.
+
+    H5/H6 are the REGISTERED control/permutation contrasts WITH joint
+    question-level bootstrap CIs (plan §6), computed from the persisted
+    ``icl_panel/<variant>.json`` per-question ``delta_logp`` arrays and
+    mirroring the H4 machinery; demo-prefix token counts per control ride
+    alongside the H5 contrast (plan §13/§12b length/style confound report).
+    """
     ed = ns_eval_dir(smoke)
 
     def _ctx_profile(variant: str) -> dict | None:
@@ -413,37 +636,7 @@ def h5_h6_controls(pairs: dict[str, dict], smoke: bool = False) -> dict:
             return None
         return json.loads(p.read_text())["contexts"]
 
-    out: dict = {}
-    full = _ctx_profile("icl_K8_chainA")
-    if full:
-        src_dose = full[SOURCE_CONTEXT]["mean_delta_logp"]
-        out["h5"] = {"full_K8_chainA_source_dose": src_dose, "controls": {}}
-        for ctrl in ("icl_ctrl_stripped", "icl_ctrl_helpful", "icl_ctrl_helpful_marker"):
-            prof = _ctx_profile(ctrl)
-            if prof:
-                out["h5"]["controls"][ctrl] = prof[SOURCE_CONTEXT]["mean_delta_logp"]
-    # H6: order-permutation sd of the source dose vs the K3->K8 increment.
-    perm_doses = []
-    for i in range(3):
-        prof = _ctx_profile(f"icl_perm_{i}")
-        if prof:
-            perm_doses.append(prof[SOURCE_CONTEXT]["mean_delta_logp"])
-    if full and len(perm_doses) == 3:
-        k3 = _ctx_profile("icl_K3_chainA")
-        incr = (
-            full[SOURCE_CONTEXT]["mean_delta_logp"] - k3[SOURCE_CONTEXT]["mean_delta_logp"]
-            if k3
-            else None
-        )
-        sd = float(np.std([*perm_doses, full[SOURCE_CONTEXT]["mean_delta_logp"]], ddof=1))
-        out["h6"] = {
-            "perm_doses": perm_doses,
-            "canonical_dose": full[SOURCE_CONTEXT]["mean_delta_logp"],
-            "order_sd": sd,
-            "k3_to_k8_increment": incr,
-            "sd_below_quarter_increment": (bool(sd < 0.25 * abs(incr)) if incr else None),
-            "dof_note": "sd from 4 orderings (3 perms + canonical) — 3-dof estimate",
-        }
+    out: dict = _h5_h6_blocks(_ctx_profile, n_boot=n_boot, seed=seed)
     # H1 negative controls: control profile vs each pair's FT profile,
     # aligned by SHARED context ids (round-2 minor: a length-equality check
     # silently mispairs contexts when either side has a hole).
@@ -671,6 +864,57 @@ def synthetic_smoke() -> None:
         "flat fixture should FAIL the spread gate"
     )
 
+    # H5/H6 control bootstrap machinery (round-3 fix h5-h6-bootstrap-cis-
+    # missing): CI fields must exist (n_boot/seed/ci95 per H5 control + H6)
+    # and behave sanely on fixtures with known structure.
+    h5_rng = np.random.default_rng(4)
+    full_q = 10.0 + h5_rng.normal(0, 1.0, size=n_q)
+    h5 = h5_control_contrasts(
+        full_q,
+        {
+            "ctrl_low": 2.0 + h5_rng.normal(0, 1.0, size=n_q),  # contrast ~ +8
+            "ctrl_equal": 10.0 + h5_rng.normal(0, 1.0, size=n_q),  # contrast ~ 0
+        },
+        n_boot=400,
+        seed=5,
+    )
+    assert h5["n_boot"] == 400 and h5["seed"] == 5, h5
+    for name in ("ctrl_low", "ctrl_equal"):
+        c = h5["controls"][name]
+        lo, hi = c["contrast_ci95"]
+        assert lo < c["contrast_full_minus_control"] < hi, (name, c)
+    assert h5["controls"]["ctrl_low"]["contrast_ci95"][0] > 4.0, h5["controls"]["ctrl_low"]
+    eq_lo, eq_hi = h5["controls"]["ctrl_equal"]["contrast_ci95"]
+    assert eq_lo < 0.0 < eq_hi, h5["controls"]["ctrl_equal"]
+
+    orderings = [10.0 + h5_rng.normal(0, 0.3, size=n_q) for _ in range(4)]
+    k3_q = 4.0 + h5_rng.normal(0, 0.3, size=n_q)  # increment ~ +6 >> 4x order sd
+    h6 = h6_order_statistics(orderings[3], orderings[:3], k3_q, n_boot=400, seed=6)
+    assert h6["n_boot"] == 400 and h6["seed"] == 6, h6
+    assert 0.0 <= h6["order_sd_ci95"][0] <= h6["order_sd"] <= h6["order_sd_ci95"][1], h6
+    assert h6["k3_to_k8_increment_ci95"][0] > 4.0, h6
+    assert h6["sd_minus_quarter_increment_ci95"][1] < 0.0, h6  # sd decisively below
+    assert h6["bootstrap_frac_sd_below_quarter_increment"] >= 0.99, h6
+    assert h6["sd_below_quarter_increment"] is True, h6
+    h6_nok3 = h6_order_statistics(orderings[3], orderings[:3], None, n_boot=50, seed=7)
+    assert h6_nok3["k3_to_k8_increment"] is None, h6_nok3
+    assert h6_nok3["sd_minus_quarter_increment_ci95"] is None, h6_nok3
+    assert h6_nok3["order_sd_ci95"] is not None, h6_nok3
+
+    # Demo-token-count plumbing (plan §13/§12b): the chat-template diff must
+    # isolate exactly the demo-block tokens on a minimal tokenizer stub.
+    class _WhitespaceTok:
+        """Tokenizer stub: newline-joined template, whitespace tokens."""
+
+        def apply_chat_template(self, messages, tokenize=False, add_generation_prompt=True):
+            return "\n".join(m["content"] for m in messages)
+
+        def encode(self, text, add_special_tokens=False):
+            return text.split()
+
+    n_demo_tok = _demo_prefix_token_count(_WhitespaceTok(), [("alpha beta", "gamma delta eps")])
+    assert n_demo_tok == 5, n_demo_tok
+
     # H2 context-label permutation-null machinery (CPU, small dims): contexts
     # get large distinct base states (scaled one-hots) so identity pairing
     # cancels them exactly (observed shift = planted graded rank-1 along d ->
@@ -710,6 +954,13 @@ def synthetic_smoke() -> None:
                 "flat_spread_valid": flat_stats["per_pair"]["flat"]["spread_valid"],
                 "pooled_verdict": stats["pooled"]["verdict"],
                 "control_excluded_from_h1": stats["pooled"]["excluded_control_pairs"],
+                "h5_low_contrast_ci95": h5["controls"]["ctrl_low"]["contrast_ci95"],
+                "h5_equal_contrast_ci95": h5["controls"]["ctrl_equal"]["contrast_ci95"],
+                "h6_order_sd_ci95": h6["order_sd_ci95"],
+                "h6_frac_sd_below_quarter_increment": (
+                    h6["bootstrap_frac_sd_below_quarter_increment"]
+                ),
+                "demo_prefix_token_count_stub": n_demo_tok,
                 "perm_null_observed_abs_cos": null["abs_cos_observed"][0],
                 "perm_null_p95_abs_cos": null["abs_cos_p95"][0],
             },
