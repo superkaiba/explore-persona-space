@@ -545,14 +545,17 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
     ]
 
 
-def test_running_managed_pods_api_error_returns_empty(monkeypatch):
+def test_running_managed_pods_api_error_returns_none(monkeypatch):
+    # A FAILED snapshot must be distinguishable from "genuinely no pods":
+    # None, not []. The pod-safety state GC keys off this — it must not reap
+    # episode state (dedup flags, miss counters) on a transport-error tick.
     import autonomous_session_watch as asw
 
     def boom():
         raise RuntimeError("transport down")
 
     monkeypatch.setattr(asw, "list_team_pods", boom)
-    assert asw._running_managed_issue_pods() == []
+    assert asw._running_managed_issue_pods() is None
 
 
 # ── Bug B regression: a LIVE interactive session must NOT trigger a stop ──────
@@ -994,14 +997,15 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
 # ── fail-closed: API error -> no action ───────────────────────────────────────
 
 
-def test_pod_safety_pass_api_error_does_not_stop(isolated_registry, monkeypatch):
-    # When `_running_managed_issue_pods` returns [] (transport error or
-    # genuinely no pods), `pod_safety_pass` MUST NOT call `_stop_pod`. Fail-
-    # closed invariant for the destructive action.
+@pytest.mark.parametrize("snapshot", [None, []], ids=["failed-snapshot", "genuinely-empty"])
+def test_pod_safety_pass_api_error_does_not_stop(isolated_registry, monkeypatch, snapshot):
+    # Whether the snapshot FAILED (None, transport error) or is genuinely
+    # empty ([]), `pod_safety_pass` MUST NOT call `_stop_pod`. Fail-closed
+    # invariant for the destructive action.
     import autonomous_session_watch as asw
 
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: snapshot)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
 
     asw.pod_safety_pass(dry_run=False, threshold=2)
@@ -1079,6 +1083,29 @@ def test_pod_safety_pass_gc_runs_even_with_no_running_pods(isolated_registry, mo
     asw.pod_safety_pass(dry_run=False, threshold=2)
 
     assert not (isolated_registry / "pod-safety-99.json").exists()
+
+
+def test_pod_safety_pass_failed_snapshot_does_not_gc_state(isolated_registry, monkeypatch):
+    # A transport-error tick (snapshot=None) must NOT reap pod-safety state:
+    # the GC cannot tell "snapshot failed" from "every pod left RUNNING", and
+    # reaping resets not just the fail-safe 2-miss counters but the
+    # once-per-episode dedup flags (`alerted` etc.), so every API hiccup
+    # would re-arm duplicate markers.
+    import json
+    import time as t
+
+    import autonomous_session_watch as asw
+
+    _write_state(isolated_registry, 99, "p99", missed=1, first_seen=t.time(), alerted=True)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+
+    asw.pod_safety_pass(dry_run=False, threshold=2)
+
+    state_path = isolated_registry / "pod-safety-99.json"
+    assert state_path.exists()  # NOT reaped on the failed snapshot
+    payload = json.loads(state_path.read_text())
+    assert payload["alerted"] is True  # once-per-episode dedup flag survives
+    assert payload["missed"] == 1  # miss counter survives too
 
 
 # ── daemon-reachability gates ONLY the respawn pass ──────────────────────────
@@ -1545,6 +1572,28 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
 
     # Tick 2: threshold met, ACTIVE + daemon_reachable -> respawn.
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-518"]
+    assert spawns == [(518, 24.0)]
+    assert markers == [(518, "session-auto-respawn")]
+
+
+def test_stalled_pass_failed_pod_snapshot_degrades_to_empty(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # A FAILED pod snapshot (None) degrades to "no pods" for the stalled
+    # detector — identical decision inputs (has_pod=False) to today's
+    # empty-set fallback, so the pass neither crashes nor changes outcome.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 518, "sess-518", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
     assert stops == ["sess-518"]
     assert spawns == [(518, 24.0)]
     assert markers == [(518, "session-auto-respawn")]
@@ -2940,9 +2989,9 @@ def test_running_managed_pods_warning_carries_caller_label(monkeypatch, capsys):
         raise RuntimeError("transport down")
 
     monkeypatch.setattr(asw, "list_team_pods", boom)
-    assert asw._running_managed_issue_pods() == []
+    assert asw._running_managed_issue_pods() is None
     assert "pod-safety: list_team_pods failed" in capsys.readouterr().err
-    assert asw._running_managed_issue_pods(caller="session-reconcile") == []
+    assert asw._running_managed_issue_pods(caller="session-reconcile") is None
     assert "session-reconcile: list_team_pods failed" in capsys.readouterr().err
 
 
@@ -2963,6 +3012,26 @@ def test_session_reconcile_pass_threads_caller_label(isolated_registry, monkeypa
     err = capsys.readouterr().err
     assert "session-reconcile: list_team_pods failed" in err
     assert "pod-safety:" not in err
+
+
+def test_session_reconcile_failed_pod_snapshot_degrades_to_empty(isolated_registry, monkeypatch):
+    # A FAILED pod snapshot (None) degrades to the empty set for session-
+    # reconcile — same decision inputs as today's empty-set fallback: the
+    # tick still counts the miss (the idle grace + 2-miss guard remain the
+    # safety margins) and nothing is stopped or posted on tick 1.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", patch_pods=False)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+
+    state_path = isolated_registry / "session-reconcile-42.json"
+    assert json.loads(state_path.read_text())["missed"] == 1
+    assert stops == [] and posts == []
 
 
 # ── next-tick stop verification (daemon ACK != kill) ──────────────────────────
