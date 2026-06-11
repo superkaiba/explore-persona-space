@@ -17,7 +17,9 @@ Registered statistics (plan §6, with the §6.7 binding analyzer pins):
    failed-gate is reserved for cells that never pass at ANY checkpoint. A
    matched-step-only permutation over the co-passing pairs is reported as a
    sensitivity read whenever fallback pairs exist.
-2. Cross-target sign test (secondary).
+2. Cross-target sign test (secondary); its ``n_negative`` also feeds the §3
+   H-null sign-mixed conjunct in the outcome lattice (promotable bounded
+   null requires n_negative ≤ k_surviving − 2, i.e. ≤ 4/6 at registered k).
 3. Run-noise calibration: the within-condition across-seed gap distribution
    (12 conditions × seed pairs), computed PER CHECKPOINT (§6.7(c) — gaps
    vary ~30× across checkpoints; each pair's |d| is calibrated ONLY against
@@ -749,6 +751,7 @@ def analyze_600(  # noqa: C901  the pre-registered stat battery is one auditable
         k_surviving=k,
         n_targets=len(targets),
         n_fallback=len(fallback_pairs),
+        n_negative=sign["n_negative"] if sign else None,
     )
 
     result = {
@@ -854,15 +857,23 @@ def _classify_outcome(
     k_surviving: int,
     n_targets: int,
     n_fallback: int,
+    n_negative: int | None,
 ) -> dict:
-    """§7 + §6.7(a)/(b): Success / Partial / Null / INDETERMINATE / failed-gate.
+    """§3 + §7 + §6.7(a)/(b): Success / Partial / Null / INDETERMINATE / failed-gate.
 
     ``k_surviving`` counts band-entry-fallback pairs as surviving (§4.8(c):
     failed-gate = never-passing-at-any-checkpoint only, so the ≥3-failed kill
     criterion fires only on genuinely failed / missing pairs). Success gates
-    on ``effect_above_noise`` and the promotable Null on ``effect_within_
-    noise`` — under per-checkpoint calibration these are NOT complements, and
-    a band disagreement across checkpoint groups lands INDETERMINATE.
+    on ``effect_above_noise``; the promotable Null requires ALL THREE §3
+    H-null conjuncts — permutation p > 0.05 AND ``effect_within_noise`` AND
+    the paired differences sign-MIXED (``n_negative`` ≤ 4 at the registered
+    k = 6 denominator; pinned pre-data for k_surviving < 6 as the analogue
+    ``n_negative`` ≤ k_surviving − 2, i.e. at least 2 surviving targets
+    non-negative). 5/6 or 6/6 negative with p > 0.05 + within-band is
+    suggestive-only evidence FOR suppression (§6 item 2), never a
+    question-closing null. Under per-checkpoint calibration above/within are
+    NOT complements; any uncovered lattice cell lands INDETERMINATE with the
+    components reported separately (§6.7(b)).
     """
     if headline is None or k_surviving == 0:
         return {"label": "failed_gate", "reason": "no surviving pairs"}
@@ -875,6 +886,10 @@ def _classify_outcome(
     p = headline["p_one_sided"]
     sig = p <= PERMUTATION_SIGNIFICANCE and not demoted
     local = bool(locality_fisher and locality_fisher["p"] <= PERMUTATION_SIGNIFICANCE)
+    # §3 H-null sign-mixed conjunct (n_negative is None only when the sign
+    # test is missing → conservatively NOT sign-mixed, never promotable).
+    sign_mix_max = k_surviving - 2
+    sign_mixed = n_negative is not None and n_negative <= sign_mix_max
     if sig and effect_above_noise and local:
         label = "success_local_suppression"
     elif sig and effect_above_noise and not local:
@@ -882,7 +897,7 @@ def _classify_outcome(
         # this as a global mix effect (a true suppression bubble dilutes the
         # target's percentile).
         label = "partial_significant_but_locality_failed_CONSULT_BUBBLE_RADIUS"
-    elif (not sig) and effect_within_noise and not demoted:
+    elif (not sig) and effect_within_noise and not demoted and sign_mixed:
         label = "null_promotable_bounded"
     else:
         label = "indeterminate"
@@ -892,6 +907,12 @@ def _classify_outcome(
         if demoted
         else "components reported separately for any uncovered lattice cell (§6.7(b))."
     )
+    if (not sig) and effect_within_noise and not demoted and not sign_mixed:
+        note = (
+            f"§3 sign-mixed conjunct FAILED (n_negative={n_negative} > {sign_mix_max} at "
+            f"k={k_surviving}): p > 0.05 + within-band but sign-skewed toward suppression "
+            "— suggestive-only per §6 item 2, NOT a promotable null. " + note
+        )
     if n_fallback:
         note += (
             f" {n_fallback} pair(s) read via the §4.8(c) band-entry fallback (matched dial "
@@ -904,6 +925,12 @@ def _classify_outcome(
         "permutation_demoted": demoted,
         "effect_above_noise_band": effect_above_noise,
         "effect_within_noise_band": effect_within_noise,
+        "n_negative": n_negative,
+        "sign_mixed": sign_mixed,
+        "sign_mix_convention": (
+            "§3 H-null conjunct: promotable null requires n_negative ≤ k_surviving − 2 "
+            f"(≤ 4 at the registered k = 6; here ≤ {sign_mix_max} at k = {k_surviving})"
+        ),
         "n_fallback_pairs": n_fallback,
         "locality_p": locality_fisher["p"] if locality_fisher else None,
         "note": note,

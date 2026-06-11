@@ -25,6 +25,15 @@ Modes (``--mode all`` runs every one):
   descope  — null injection with seed 219 dropped from EVERY cell → expect
              seeds inferred as [42, 137] and all 6 pairs analyzed (the §9
              rung-1 descope, no spurious ``missing_cells``).
+  signmix  — 5/6 targets injected with a SMALL negative paired difference and
+             the 6th with a larger positive one; per-seed common offsets on
+             each cell's target persona inflate the same-mix gaps so every
+             |d| sits WITHIN the noise band and the permutation lands
+             p > 0.05 → the §3 H-null sign-mixed conjunct (n_negative ≤ 4
+             at k = 6) FAILS, so expect ``indeterminate`` with
+             ``sign_mixed: false`` — NEVER ``null_promotable_bounded``
+             (5/6-negative + p > 0.05 + within-band is suggestive-only
+             evidence FOR suppression per §6 item 2).
 
 HF note: ``HF_HUB_OFFLINE=1`` is set by default so the bubble-radius
 autofetch fail-softs deterministically (recorded skip) instead of hitting the
@@ -58,7 +67,15 @@ from explore_persona_space.experiments.targeted_proximity_600.cells import (
 log = logging.getLogger("issue_600.analyze_smoke")
 
 N_Q = 10
-MODES = ("signal", "null", "fallback", "mixed", "descope")
+MODES = ("signal", "null", "fallback", "mixed", "descope", "signmix")
+# signmix injection (normalized by src ΔG ≈ 16 at the frac-1.00 headline read):
+# per-seed common target-persona offsets ±0.35·rank inflate same-mix gap
+# medians to ≈ 0.022 while the injected |d| (0.08/16 ≈ 0.005 negative on 5
+# targets, 0.16/16 ≈ 0.010 positive on the special target) stays within-band
+# and the signed mean lands the one-sided permutation at p ≈ 0.27.
+SIGNMIX_SEED_OFFSET = 0.35
+SIGNMIX_NEG_SHIFT = -0.08
+SIGNMIX_POS_SHIFT = 0.16
 
 
 def _u(name: str) -> float:
@@ -103,6 +120,16 @@ def _cell_payload(
                 v = base * (0.3 + 0.7 * frac) + float(rng.normal(0, sigma))
                 if mode == "signal" and spec.condition == "near" and p == spec.target:
                     v -= 0.08 * dg * frac  # normalized suppression ≈ −0.08·frac
+                if mode == "signmix" and p == spec.target:
+                    # Per-seed COMMON offset (identical in the NEAR and CONTROL
+                    # cells of the pair → cancels in the paired difference up to
+                    # src-ΔG jitter, but differs ACROSS seeds → inflates the
+                    # same-mix run-noise gaps so the injected |d| is within-band).
+                    v += SIGNMIX_SEED_OFFSET * SEEDS.index(seed)
+                    if spec.condition == "near":
+                        # 5/6 targets slightly NEGATIVE, the special one larger
+                        # POSITIVE → sign-skewed (n_negative = 5) with p > 0.05.
+                        v += SIGNMIX_POS_SHIFT if is_special else SIGNMIX_NEG_SHIFT
                 recs[f"q{qi}"] = {
                     "delta_g": v,
                     "argmax_marker": False,
@@ -190,6 +217,40 @@ def run_mode(mode: str, manifest_path: Path, out_root: Path) -> dict:
             "(the registered test must not be anticonservative on its own null)",
         )
         _assert(rn["effect_within_noise_band"] is True, f"{mode}: effect not within the band")
+        # §3 sign-mixed conjunct: the synthetic null must exercise the
+        # promotable cell THROUGH the sign-mix gate, not around it.
+        n_neg = result["sign_test"]["n_negative"]
+        _assert(
+            n_neg <= result["k_surviving"] - 2,
+            f"{mode}: null injection landed sign-skewed (n_negative={n_neg}, "
+            f"k={result['k_surviving']}) — it no longer exercises the promotable cell",
+        )
+        _assert(
+            result["outcome"]["sign_mixed"] is True,
+            f"{mode}: outcome.sign_mixed is not True (n_negative={n_neg})",
+        )
+    elif mode == "signmix":
+        out = result["outcome"]
+        # Isolate the §3 sign-mix conjunct: the OTHER two H-null conjuncts hold…
+        _assert(
+            out["permutation_p"] > 0.05,
+            f"signmix: permutation p={out['permutation_p']} not > 0.05 — injection "
+            "does not isolate the sign-mix conjunct",
+        )
+        _assert(
+            rn["effect_within_noise_band"] is True,
+            "signmix: |d| not within the noise band — injection does not isolate "
+            "the sign-mix conjunct",
+        )
+        n_neg = result["sign_test"]["n_negative"]
+        _assert(n_neg == 5, f"signmix: expected 5/6 targets negative, got {n_neg}/6")
+        # …so ONLY the sign-mix failure may block the promotable null.
+        _assert(out["sign_mixed"] is False, "signmix: outcome.sign_mixed must be False")
+        _assert(
+            label == "indeterminate",
+            f"signmix: expected indeterminate (5/6-negative + p > 0.05 + within-band "
+            f"is suggestive-only per §6 item 2, NOT a promotable null), got {label}",
+        )
     if mode == "descope":
         _assert(
             result["seeds_realized"] == [42, 137],
