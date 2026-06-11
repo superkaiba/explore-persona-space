@@ -53,8 +53,27 @@ def fig_behavior_dependence():
     fig, ax = plt.subplots(figsize=(6.8, 5.4), constrained_layout=False)
     fig.subplots_adjust(left=0.22, right=0.92, top=0.82, bottom=0.16)
     im = ax.imshow(M, cmap="RdBu_r", vmin=-1, vmax=1)
+    # round 2: visually flag the noise-limited refusal row/column (failed the
+    # h_structure floor; its correlations are texture, not data)
+    r_idx = BEH_ORDER.index("refusal")
+    for k in range(n):
+        for i, j in ((r_idx, k), (k, r_idx)):
+            ax.add_patch(
+                mpl.patches.Rectangle(
+                    (j - 0.5, i - 0.5),
+                    1,
+                    1,
+                    facecolor="white",
+                    alpha=0.55,
+                    edgecolor="0.55",
+                    linewidth=0.0,
+                    hatch="///",
+                    zorder=2,
+                )
+            )
     for i in range(n):
         for j in range(n):
+            faded = r_idx in (i, j)
             ax.text(
                 j,
                 i,
@@ -62,15 +81,19 @@ def fig_behavior_dependence():
                 ha="center",
                 va="center",
                 fontsize=9,
-                color="white" if abs(M[i, j]) > 0.6 else "0.2",
+                color="0.55" if faded else ("white" if abs(M[i, j]) > 0.6 else "0.2"),
+                zorder=3,
             )
+    labels = [BEH_LABELS[b] + ("\n(noise-limited)" if b == "refusal" else "") for b in BEH_ORDER]
     ax.set_xticks(range(n))
     ax.set_yticks(range(n))
-    ax.set_xticklabels([BEH_LABELS[b] for b in BEH_ORDER], rotation=25, ha="right", fontsize=9)
-    ax.set_yticklabels([BEH_LABELS[b] for b in BEH_ORDER], fontsize=9)
+    ax.set_xticklabels(labels, rotation=25, ha="right", fontsize=9)
+    ax.set_yticklabels(labels, fontsize=9)
     ax.set_title(
         "Different behaviors generalize along different context structure\n"
-        "Spearman rho between off-diagonal G matrices (464 cells per behavior)",
+        "Rank correlation between off-diagonal G matrices (464 cells per behavior);\n"
+        "hatched = the noise-limited refusal row (implants failed; excluded from\n"
+        "the headline read)",
         loc="left",
         fontsize=11,
         fontweight="semibold",

@@ -37,6 +37,25 @@
    4.502005560688802
   ]
  },
+ "sensitivity_excl_fmt_json_leverage": {
+  "intercept": -0.1326922435925828,
+  "slope_dlognorm": -6.867029693573704,
+  "slope_strengthdiff": -0.3857905146656009,
+  "r2": 0.8165119504888034,
+  "n_pairs": 48.0,
+  "slope_dlognorm_ci": [
+   -9.343519608521978,
+   -4.2282228663903325
+  ],
+  "slope_strengthdiff_ci": [
+   -0.4162166602493844,
+   -0.3568546146082465
+  ],
+  "dlognorm_range": [
+   4.45279185561657,
+   4.502005560688802
+  ]
+ },
  "norms_l22_mean_response": {
   "sp_swe": 88.88295591690544,
   "sp_doctor": 89.21163017185518,

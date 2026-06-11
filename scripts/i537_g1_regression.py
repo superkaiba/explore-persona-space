@@ -112,6 +112,10 @@ results = {}
 for name, excl in [
     ("primary_excl_failed_and_saturated", EXCLUDE_PRIMARY),
     ("sensitivity_full_block", set()),
+    # Round-2 leverage check (interpretation-critic): fmt_json's L22 norm (78.0)
+    # sits far below the 85.9-90.2 cluster of the other 13 primary contexts, so
+    # the norm regressor's spread is mostly fmt_json's pairs. Refit without it.
+    ("sensitivity_excl_fmt_json_leverage", EXCLUDE_PRIMARY | {"fmt_json"}),
 ]:
     pr = pairs_for(excl)
     point = fit(pr)
