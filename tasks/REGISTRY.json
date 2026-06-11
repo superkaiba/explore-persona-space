@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 588,
+  "highest_id": 589,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3542,6 +3542,13 @@
       "path": "tasks/planning/588",
       "status": "planning",
       "title": "Router: custom workload-command support for the GCP lane (unblock credit spend for dispatch-script experiments)"
+    },
+    "589": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/589",
+      "status": "proposed",
+      "title": "Estimator-fragility sweep of the clustered leakage-line reads (cluster-robust OLS vs MixedLM on the gated joins)"
     },
     "6": {
       "has_clean_result": false,
