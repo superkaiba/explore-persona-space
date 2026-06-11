@@ -194,3 +194,4 @@ uv run python scripts/issue536_recompute_driver.py --data-root "$PWD"
 uv run python scripts/issue536_figures.py                           # at 35e98e4ea
 uv run python scripts/issue536_mixedlm_refit.py --data-root "$PWD"   # at 12853bca8
 ```
+- **Methodology reference:** [docs/methodology/issue_536.md](https://github.com/superkaiba/explore-persona-space/blob/8300a125a2449f778d4896a61d82d18921cf977a/docs/methodology/issue_536.md) · [gist](https://gist.github.com/superkaiba/18c6c24a390c49111878e95e701a842f)
