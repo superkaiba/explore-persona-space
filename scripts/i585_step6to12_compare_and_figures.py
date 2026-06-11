@@ -679,7 +679,10 @@ def make_figures(
     hub = [r for r in rows if r["provenance"] == "hub"]
     retr_steps = [r["step"] for r in retr]
     hub_steps = [r["step"] for r in hub]
-    labels = [f"s{r['step']}·{'retr' if r['provenance'] == 'retrain' else 'hub'}" for r in rows]
+    labels = [
+        f"step {r['step']} {'retrain' if r['provenance'] == 'retrain' else 'original Hub'}"
+        for r in rows
+    ]
     written: list[str] = []
 
     def _save(fig, stem: str) -> None:
@@ -715,6 +718,7 @@ def make_figures(
         yerr=analysis["constants"]["parity_tolerance_nats"],
         fmt="D",
         markerfacecolor="none",
+        markeredgewidth=1.4,
         color=c_accent,
         capsize=4,
         label="Original Hub snapshots, same eval batch (±2-nat parity tolerance)",
@@ -749,19 +753,22 @@ def make_figures(
         marker="D",
         facecolors="none",
         edgecolors=c_accent,
+        linewidths=1.6,
+        s=60,
+        zorder=5,
         label="Original Hub snapshots (same eval batch)",
     )
     ax.axhline(
         analysis["constants"]["resolution_read_line"],
         color=c_baseline,
         linestyle="--",
-        label="Pre-registered 0.05 read-line",
+        label="0.05 headroom floor (set before the run)",
     )
     ax.axhline(
         analysis["constants"]["picker_gate_fraction"],
         color=c_control,
         linestyle=":",
-        label="v4 picker gate (0.2)",
+        label="Calibration picker gate (0.2)",
     )
     ax.set_xlabel("Optimizer step")
     ax.set_ylabel("Bystander resolution (share of probes in band)")
@@ -823,6 +830,10 @@ def make_figures(
         marker="D",
         facecolors="none",
         edgecolors=c_accent,
+        linewidths=1.6,
+        s=60,
+        zorder=5,
+        label="Bystander emission (original Hub snapshots)",
     )
     ax.set_xlabel("Optimizer step")
     ax.set_ylabel("Rate")
@@ -866,7 +877,14 @@ def make_figures(
             label=f"{lbl} (mean ± SD, 10 questions)",
         )
         ax.scatter(
-            hub_steps, [r[field] for r in hub], marker="D", facecolors="none", edgecolors=color
+            hub_steps,
+            [r[field] for r in hub],
+            marker="D",
+            facecolors="none",
+            edgecolors=color,
+            linewidths=1.4,
+            s=55,
+            zorder=5,
         )
     ax.set_xlabel("Optimizer step")
     ax.set_ylabel("Shift (nats / logits, trained − base)")
