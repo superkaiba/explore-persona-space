@@ -3586,8 +3586,8 @@
       "goal": "Map the geometry of context representations: extract per-layer context vectors (mean over a fixed user-prompt pool of the residual activation at the assistant-header newline) for every context instance in the battery (persona prompts, rephrasings, format wraps, in-context examples, WildChat prefixes, behavior-instruction prompts, default), visualize with PCA/UMAP/t-SNE per layer, and quantify whether contexts organize by family and where in depth that structure lives.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/594",
-      "status": "interpreting",
+      "path": "tasks/reviewing/594",
+      "status": "reviewing",
       "title": "48 contexts, as constructed, organize by family at every depth of Qwen2.5-7B-Instruct under a single probe genre, beyond chance, length, and lexical-overlap baselines (HIGH confidence)"
     },
     "595": {
