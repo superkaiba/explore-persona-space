@@ -21,7 +21,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/da945e2bf05a4523e10b4123f4ba8cb172ec5660/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
+**Methodology:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/0a6c97a41f07f9f85fb0a8bb162ae51586963f2e/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
 
 ## Human TL;DR
 
@@ -213,7 +213,7 @@ Follow-up round (`probe-genre-generalization`):
 - New-pool activation tensors: [issue594_context_geometry/analysis_tensors_probegen/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/51118a1a723fa33eb39d36a9f8c6ca424ad3e9ea/issue594_context_geometry/analysis_tensors_probegen) — fp32 probe-mean tensor, 50 fp16 per-probe tensors, extraction manifest (52 files verified via the Hub API); probes file mirrored at [inputs/probes_ultrachat.json](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/51118a1a723fa33eb39d36a9f8c6ca424ad3e9ea/issue594_context_geometry/inputs).
 - Follow-up figures (PNG + PDF + meta.json): [figures/issue_594/probe-genre-generalization/](https://github.com/superkaiba/explore-persona-space/tree/11d09e80d423b1e54956a801d925f35d9b7a3f44/figures/issue_594/probe-genre-generalization).
 - Follow-up WandB: [thomasjiralerspong/explore-persona-space/runs/7nd9six6](https://wandb.ai/thomasjiralerspong/explore-persona-space/runs/7nd9six6) (extraction telemetry only, 117 s).
-- **Methodology reference:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/da945e2bf05a4523e10b4123f4ba8cb172ec5660/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
+- **Methodology reference:** [docs/methodology/issue_594.md](https://github.com/superkaiba/explore-persona-space/blob/0a6c97a41f07f9f85fb0a8bb162ae51586963f2e/docs/methodology/issue_594.md) · [gist](https://gist.github.com/superkaiba/4d93403ba994f55e5a8ab7f1160c9c1e)
 
 **Compute:** parent run ~2.2 GPU-h + follow-up round ~0.4 GPU-h, each on 1× H100 (pod-594, `eval` intent); each pod terminated after its verified HF upload; all statistics/plots computed CPU-side on the VM.
 
