@@ -12,6 +12,9 @@ goal: 'Test whether the LoRA vs full fine-tuning equivalence in bystander leakag
   and emergent misalignment as budget allows — by training each behavior into a source
   persona with both methods and comparing on-policy, judge-scored per-persona leakage
   profiles at matched source-implant strength.'
+relates_to:
+- leak-behavior-vs-marker
+- leak-predictor
 ---
 # Does the LoRA vs full-FT bystander-leakage equivalence hold for realistic behaviors (sycophancy, refusal, EM)?
 
