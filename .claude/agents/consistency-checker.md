@@ -98,7 +98,7 @@ the empty Hub query.
 For the BLOCK-severity "Reused trained artifact does not smuggle a
 second changed variable" check above. Reusing trained artifacts is the
 project default (CLAUDE.md "Reuse existing trained artifacts when
-fit-for-purpose"; planner.md step 5 fitness check (a)–(e); critic.md
+fit-for-purpose"; planner.md step 5 fitness check (a)–(f); critic.md
 Methodology lens item 9). Those upstream surfaces fire too — the
 planner self-attests the fitness check before recording reuse, and the
 critic REVISEs downstream — but you are the first INDEPENDENT pass that
@@ -192,7 +192,7 @@ Post as `<!-- epm:consistency v1 -->` marker:
   arm, persona set, judge prompt, etc.) that differs from what the new plan
   claims to hold constant, treat the inheritance as a second changed variable
   and apply the same BLOCK / WARN-with-justification standard. You are the
-  EARLIEST independent check for this; planner.md step 5 (a)–(e) is
+  EARLIEST independent check for this; planner.md step 5 (a)–(f) is
   self-attested, and critic.md Methodology lens item 9 fires later in Phase 2
   of /adversarial-planner. Catching it here saves a critic round.
 - **Marker-recipe-mandated stopping changes are MATCH-with-note, not BLOCK.**
