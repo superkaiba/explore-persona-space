@@ -925,6 +925,13 @@ class MarkerBandStopCallback(TrainerCallback):
                 metrics[f"{self.log_prefix}/z_eos_base"] = float(
                     self._base_slot_stats["z_eos"].mean().item()
                 )
+            # Per-step argmax-marker share at the monitored slots (issue #600;
+            # same forward pass — see _compute_marker_slot_stats). Additive
+            # key; older readers are unaffected.
+            if trained_stats.get("argmax_marker") is not None:
+                metrics[f"{self.log_prefix}/argmax_marker_share_trained"] = float(
+                    trained_stats["argmax_marker"].float().mean().item()
+                )
             wandb.log(metrics, step=state.global_step)
 
         if self.trajectory_out_path is not None:
@@ -948,6 +955,13 @@ class MarkerBandStopCallback(TrainerCallback):
                     ),
                     "logZ_trained": float(trained_stats["logZ"].mean().item()),
                     "logZ_base": float(self._base_slot_stats["logZ"].mean().item()),
+                    # Issue #600: per-step argmax-marker share at the
+                    # monitored slots (same forward pass; additive key).
+                    "argmax_marker_share_trained": (
+                        float(trained_stats["argmax_marker"].float().mean().item())
+                        if trained_stats.get("argmax_marker") is not None
+                        else None
+                    ),
                 }
             )
             # Checkpoint-per-phase: rewrite the trajectory JSON after EVERY
@@ -1167,11 +1181,16 @@ class MarkerBandStopCallback(TrainerCallback):
                 if self.eos_token_id is not None
                 else None
             )
+            # Per-row argmax-marker flag at the monitored slot (issue #600
+            # extension) — derived from the SAME slot_logits, zero extra
+            # model compute. Mean over rows = per-step argmax-marker share.
+            argmax_marker = (slot_logits.argmax(dim=-1) == self._target_token_id).detach().cpu()
             return {
                 "logp": row_logp.detach().cpu(),
                 "z_marker": z_marker.detach().cpu(),
                 "z_eos": z_eos,
                 "logZ": log_z.detach().cpu(),
+                "argmax_marker": argmax_marker,
             }
         finally:
             if was_training:

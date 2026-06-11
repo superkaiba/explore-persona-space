@@ -1,0 +1,511 @@
+{
+  "schema_version": "i600_panel_selection_v1",
+  "design_layer": 10,
+  "centering": "global_mean",
+  "distance": "1 - centered_cosine",
+  "source_persona": "villain",
+  "always_include_negative": "qwen_default",
+  "bank_content_hash": "aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc",
+  "centroid_bundle_sha256": "3d62a6b258a3bb1b2cf2d1a35558e262e04393fd0b0c3bad017bc4a027fd6281",
+  "n_bank": 60,
+  "held_out_panel": [
+    "accountant",
+    "architect",
+    "bartender",
+    "campaign_manager",
+    "chef",
+    "chess_grandmaster",
+    "child",
+    "con_artist",
+    "corporate_raider",
+    "crossing_guard",
+    "data_scientist",
+    "dictator",
+    "electrician",
+    "florist",
+    "french_person",
+    "hospice_nurse",
+    "investment_banker",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "lifeguard",
+    "medical_doctor",
+    "meditation_teacher",
+    "mercenary",
+    "monk",
+    "music_therapist",
+    "nature_guide",
+    "origami_artist",
+    "philosopher",
+    "pirate_captain",
+    "police_officer",
+    "postal_worker",
+    "preschool_teacher",
+    "programmer",
+    "prosecutor",
+    "quilter",
+    "sheep_herder",
+    "social_worker",
+    "software_engineer",
+    "spy",
+    "storyteller",
+    "surgeon",
+    "taxi_driver",
+    "veterinarian",
+    "wildlife_rehabilitator",
+    "wizard",
+    "zelthari_scholar"
+  ],
+  "n_held_out_panel": 47,
+  "q_eval": [
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "bank_median_dsource": 1.0120832957327366,
+  "strata_assignment": {
+    "near": [
+      "chef",
+      "child",
+      "con_artist",
+      "corporate_raider",
+      "crossing_guard",
+      "dictator",
+      "mercenary",
+      "origami_artist",
+      "pirate_captain",
+      "police_officer",
+      "quilter",
+      "sheep_herder",
+      "spy",
+      "storyteller",
+      "wizard",
+      "zelthari_scholar"
+    ],
+    "mid": [
+      "accountant",
+      "bartender",
+      "campaign_manager",
+      "chess_grandmaster",
+      "data_scientist",
+      "french_person",
+      "investment_banker",
+      "lawyer",
+      "lifeguard",
+      "meditation_teacher",
+      "monk",
+      "music_therapist",
+      "nature_guide",
+      "philosopher",
+      "software_engineer",
+      "wildlife_rehabilitator"
+    ],
+    "far": [
+      "architect",
+      "electrician",
+      "florist",
+      "hospice_nurse",
+      "kindergarten_teacher",
+      "librarian",
+      "medical_doctor",
+      "postal_worker",
+      "preschool_teacher",
+      "programmer",
+      "prosecutor",
+      "social_worker",
+      "surgeon",
+      "taxi_driver",
+      "veterinarian"
+    ]
+  },
+  "d_source": {
+    "accountant": 1.1325796693563461,
+    "ai": 1.0230506490916014,
+    "ai_assistant": 1.0010877377353609,
+    "architect": 1.3565877079963684,
+    "assistant": 1.2602421045303345,
+    "baker": 1.1648367494344711,
+    "bartender": 1.0120832957327366,
+    "campaign_manager": 1.0710098966956139,
+    "chef": 0.8619703203439713,
+    "chess_grandmaster": 1.0352764166891575,
+    "child": 0.8738403618335724,
+    "comedian": 0.8126220107078552,
+    "con_artist": 0.4078713655471802,
+    "corporate_raider": 0.6269926428794861,
+    "crossing_guard": 0.8828887641429901,
+    "cult_leader": 0.4652943015098572,
+    "data_scientist": 1.174001470208168,
+    "detective": 0.7341501414775848,
+    "dictator": 0.63313227891922,
+    "electrician": 1.4008285403251648,
+    "florist": 1.2076033502817154,
+    "french_person": 1.0227893218398094,
+    "gardener": 1.03409031778574,
+    "hero": 0.41784411668777466,
+    "hospice_nurse": 1.2192797511816025,
+    "investment_banker": 1.0457778945565224,
+    "journalist": 0.717750608921051,
+    "kindergarten_teacher": 1.484710156917572,
+    "lawyer": 0.8848510608077049,
+    "librarian": 1.4495907127857208,
+    "lifeguard": 0.9327337816357613,
+    "medical_doctor": 1.4335167407989502,
+    "meditation_teacher": 0.8914524763822556,
+    "mercenary": 0.835736408829689,
+    "mob_boss": 0.5650584101676941,
+    "monk": 0.9565956965088844,
+    "music_therapist": 1.154152512550354,
+    "nature_guide": 0.9401136822998524,
+    "origami_artist": 0.5915071070194244,
+    "philosopher": 0.8879841789603233,
+    "pirate_captain": 0.6688702702522278,
+    "police_officer": 0.8771687597036362,
+    "postal_worker": 1.356886386871338,
+    "preschool_teacher": 1.2601239085197449,
+    "programmer": 1.4525430500507355,
+    "prosecutor": 1.1937519013881683,
+    "quilter": 0.8128491938114166,
+    "qwen_default": 1.209309458732605,
+    "sheep_herder": 0.6865569353103638,
+    "social_worker": 1.4879139363765717,
+    "software_engineer": 1.186918318271637,
+    "spy": 0.6651996374130249,
+    "storyteller": 0.6488772034645081,
+    "surgeon": 1.5332143306732178,
+    "taxi_driver": 1.295130580663681,
+    "veterinarian": 1.373358428478241,
+    "villain": 0.0,
+    "wildlife_rehabilitator": 1.0418077409267426,
+    "wizard": 0.8217675238847733,
+    "zelthari_scholar": 0.7386264503002167
+  },
+  "targets": [
+    {
+      "name": "pirate_captain",
+      "stratum": "near",
+      "d_source": 0.6688702702522278,
+      "near": {
+        "name": "dictator",
+        "d_to_target": 0.5101392865180969,
+        "d_source": 0.63313227891922
+      },
+      "ctrl": {
+        "name": "journalist",
+        "d_to_target": 1.356862485408783,
+        "dsource_mismatch": 0.08461833000183105,
+        "eps_used": 0.1,
+        "far_quantile_used": 0.75,
+        "far_floor_value": 1.1050618048757315,
+        "d_source": 0.717750608921051
+      },
+      "realized_contrast": 0.846723198890686,
+      "p25_near_gate": 0.8754767458885908,
+      "mid_candidates": [
+        {
+          "name": "origami_artist",
+          "d_to_target": 1.015429307706654,
+          "d_source": 0.5915071070194244
+        },
+        {
+          "name": "storyteller",
+          "d_to_target": 1.059589371085167,
+          "d_source": 0.6488772034645081
+        },
+        {
+          "name": "mob_boss",
+          "d_to_target": 0.7690954804420471,
+          "d_source": 0.5650584101676941
+        },
+        {
+          "name": "spy",
+          "d_to_target": 0.7524997293949127,
+          "d_source": 0.6651996374130249
+        },
+        {
+          "name": "corporate_raider",
+          "d_to_target": 0.751298651099205,
+          "d_source": 0.6269926428794861
+        }
+      ]
+    },
+    {
+      "name": "mercenary",
+      "stratum": "near",
+      "d_source": 0.835736408829689,
+      "near": {
+        "name": "dictator",
+        "d_to_target": 0.6226586103439331,
+        "d_source": 0.63313227891922
+      },
+      "ctrl": {
+        "name": "journalist",
+        "d_to_target": 1.4386698007583618,
+        "dsource_mismatch": 0.08461833000183105,
+        "eps_used": 0.1,
+        "far_quantile_used": 0.75,
+        "far_floor_value": 1.0739778969436884,
+        "d_source": 0.717750608921051
+      },
+      "realized_contrast": 0.8160111904144287,
+      "p25_near_gate": 0.8135888651013374,
+      "mid_candidates": [
+        {
+          "name": "storyteller",
+          "d_to_target": 1.0313154011964798,
+          "d_source": 0.6488772034645081
+        },
+        {
+          "name": "origami_artist",
+          "d_to_target": 1.025895720347762,
+          "d_source": 0.5915071070194244
+        },
+        {
+          "name": "mob_boss",
+          "d_to_target": 0.8846486806869507,
+          "d_source": 0.5650584101676941
+        },
+        {
+          "name": "spy",
+          "d_to_target": 0.8739356696605682,
+          "d_source": 0.6651996374130249
+        },
+        {
+          "name": "sheep_herder",
+          "d_to_target": 0.6796774566173553,
+          "d_source": 0.6865569353103638
+        }
+      ]
+    },
+    {
+      "name": "software_engineer",
+      "stratum": "mid",
+      "d_source": 1.186918318271637,
+      "near": {
+        "name": "data_scientist",
+        "d_to_target": 0.38305872678756714,
+        "d_source": 1.174001470208168
+      },
+      "ctrl": {
+        "name": "hospice_nurse",
+        "d_to_target": 1.175391048192978,
+        "dsource_mismatch": 0.04527828097343445,
+        "eps_used": 0.15,
+        "far_quantile_used": 0.6,
+        "far_floor_value": 1.175391048192978,
+        "d_source": 1.2192797511816025
+      },
+      "realized_contrast": 0.7923323214054108,
+      "p25_near_gate": 0.8472285065799952,
+      "mid_candidates": [
+        {
+          "name": "florist",
+          "d_to_target": 0.8102760910987854,
+          "d_source": 1.2076033502817154
+        },
+        {
+          "name": "investment_banker",
+          "d_to_target": 0.8181093037128448,
+          "d_source": 1.0457778945565224
+        },
+        {
+          "name": "accountant",
+          "d_to_target": 0.8974655494093895,
+          "d_source": 1.1325796693563461
+        },
+        {
+          "name": "baker",
+          "d_to_target": 0.5746917724609375,
+          "d_source": 1.1648367494344711
+        },
+        {
+          "name": "assistant",
+          "d_to_target": 0.527244359254837,
+          "d_source": 1.2602421045303345
+        }
+      ]
+    },
+    {
+      "name": "wildlife_rehabilitator",
+      "stratum": "mid",
+      "d_source": 1.0418077409267426,
+      "near": {
+        "name": "hospice_nurse",
+        "d_to_target": 0.5565101802349091,
+        "d_source": 1.2192797511816025
+      },
+      "ctrl": {
+        "name": "assistant",
+        "d_to_target": 1.2953567504882812,
+        "dsource_mismatch": 0.040962353348731995,
+        "eps_used": 0.1,
+        "far_quantile_used": 0.75,
+        "far_floor_value": 1.0856525804847479,
+        "d_source": 1.2602421045303345
+      },
+      "realized_contrast": 0.7388465702533722,
+      "p25_near_gate": 0.7724567018449306,
+      "mid_candidates": [
+        {
+          "name": "florist",
+          "d_to_target": 0.9406795427203178,
+          "d_source": 1.2076033502817154
+        },
+        {
+          "name": "baker",
+          "d_to_target": 0.9670330137014389,
+          "d_source": 1.1648367494344711
+        },
+        {
+          "name": "accountant",
+          "d_to_target": 0.8323798924684525,
+          "d_source": 1.1325796693563461
+        },
+        {
+          "name": "taxi_driver",
+          "d_to_target": 1.0210769474506378,
+          "d_source": 1.295130580663681
+        },
+        {
+          "name": "music_therapist",
+          "d_to_target": 0.766463428735733,
+          "d_source": 1.154152512550354
+        }
+      ]
+    },
+    {
+      "name": "postal_worker",
+      "stratum": "far",
+      "d_source": 1.356886386871338,
+      "near": {
+        "name": "baker",
+        "d_to_target": 0.41337841749191284,
+        "d_source": 1.1648367494344711
+      },
+      "ctrl": {
+        "name": "campaign_manager",
+        "d_to_target": 1.1975197494029999,
+        "dsource_mismatch": 0.09382685273885727,
+        "eps_used": 0.1,
+        "far_quantile_used": 0.75,
+        "far_floor_value": 1.1858076676726341,
+        "d_source": 1.0710098966956139
+      },
+      "realized_contrast": 0.784141331911087,
+      "p25_near_gate": 0.7757834270596504,
+      "mid_candidates": [
+        {
+          "name": "data_scientist",
+          "d_to_target": 0.8299373835325241,
+          "d_source": 1.174001470208168
+        },
+        {
+          "name": "hospice_nurse",
+          "d_to_target": 0.8813361898064613,
+          "d_source": 1.2192797511816025
+        },
+        {
+          "name": "music_therapist",
+          "d_to_target": 0.9725603647530079,
+          "d_source": 1.154152512550354
+        },
+        {
+          "name": "accountant",
+          "d_to_target": 1.0124603332951665,
+          "d_source": 1.1325796693563461
+        },
+        {
+          "name": "assistant",
+          "d_to_target": 0.5066291689872742,
+          "d_source": 1.2602421045303345
+        }
+      ]
+    },
+    {
+      "name": "prosecutor",
+      "stratum": "far",
+      "d_source": 1.1937519013881683,
+      "near": {
+        "name": "hospice_nurse",
+        "d_to_target": 0.5648511350154877,
+        "d_source": 1.2192797511816025
+      },
+      "ctrl": {
+        "name": "assistant",
+        "d_to_target": 1.2406949400901794,
+        "dsource_mismatch": 0.040962353348731995,
+        "eps_used": 0.1,
+        "far_quantile_used": 0.75,
+        "far_floor_value": 1.044189192354679,
+        "d_source": 1.2602421045303345
+      },
+      "realized_contrast": 0.6758438050746918,
+      "p25_near_gate": 0.8047572933137417,
+      "mid_candidates": [
+        {
+          "name": "music_therapist",
+          "d_to_target": 0.8961817771196365,
+          "d_source": 1.154152512550354
+        },
+        {
+          "name": "preschool_teacher",
+          "d_to_target": 0.8569129407405853,
+          "d_source": 1.2601239085197449
+        },
+        {
+          "name": "florist",
+          "d_to_target": 0.9509367011487484,
+          "d_source": 1.2076033502817154
+        },
+        {
+          "name": "accountant",
+          "d_to_target": 0.8410210013389587,
+          "d_source": 1.1325796693563461
+        },
+        {
+          "name": "baker",
+          "d_to_target": 0.9805295839905739,
+          "d_source": 1.1648367494344711
+        }
+      ]
+    }
+  ],
+  "base_panel": [
+    {
+      "name": "bartender",
+      "d_source": 1.0120832957327366
+    },
+    {
+      "name": "french_person",
+      "d_source": 1.0227893218398094
+    }
+  ],
+  "selection_conventions": {
+    "per_target_quantiles_exclude_self": true,
+    "bank_median_excludes_source": true,
+    "quantile_interpolation": "numpy default (linear)",
+    "tie_break": "lexicographic",
+    "relaxation_ladder": [
+      [
+        0.1,
+        0.75
+      ],
+      [
+        0.15,
+        0.6
+      ]
+    ],
+    "contrast_floor": 0.3,
+    "near_quantile": 0.25
+  },
+  "git_commit": "4881aefd4c6de3c73cee732ab9a728a045659686",
+  "generated_at": "2026-06-11T11:14:26.625300+00:00"
+}
