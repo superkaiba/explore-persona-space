@@ -285,7 +285,9 @@ def main():
         seed=seed,
         report_to=report_to,
         run_name=wandb_run_name,
-        max_seq_length=max_seq_length,
+        # TRL 0.14+ renamed max_seq_length -> max_length (known gotcha; the
+        # old kwarg crashed the #545 fullft cell at SFTConfig.__init__).
+        max_length=max_seq_length,
         dataset_text_field="text",
         packing=packing,
         gradient_checkpointing=gradient_checkpointing,
