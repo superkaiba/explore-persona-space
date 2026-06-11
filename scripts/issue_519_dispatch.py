@@ -243,6 +243,90 @@ def phase_a2_a3_build_data(
     logger.info("[phase=a23_done]")
 
 
+def _b0_gate_marker_full_response(
+    *,
+    cell_dir: Path,
+    log_dir: Path,
+    seed: int,
+    delta: float,
+    lo: float,
+    hi: float,
+) -> None:
+    """#599 plan §7.1 re-purposed marker B0 gate for ``loss_shape=full_response``.
+
+    Gates on the swap-took provenance (run_result.json ``loss_shape`` +
+    ``labels_unmasked_per_row_mean`` in [50, 540]) and the anti-saturation
+    DG ceiling. The inherited DG floor is DEMOTED to a logged diagnostic
+    (it would false-FAIL by construction under ~255x gradient dilution);
+    the step-1 train loss is logged against the < 5 nat full-response
+    signature (diagnostic, not a hard gate on the first run).
+    """
+    rr_path = cell_dir / "run_result.json"
+    if not rr_path.exists():
+        raise FileNotFoundError(
+            f"Phase B0 gate (full_response): missing {rr_path} — the smoke "
+            f"trainer did not finish (check {log_dir}/phase_b_train_*.log)."
+        )
+    rr = json.loads(rr_path.read_text())
+    if rr.get("loss_shape") != "full_response":
+        raise RuntimeError(
+            f"Phase B0 gate FAIL (marker, seed={seed}): run_result.json "
+            f"loss_shape={rr.get('loss_shape')!r} != 'full_response' — the "
+            f"--loss-shape passthrough did NOT thread to the trainer "
+            f"(silent no-swap would forge the #599 falsification outcome)."
+        )
+    unmasked = rr.get("labels_unmasked_per_row_mean")
+    if unmasked is None or not (50 <= float(unmasked) <= 540):
+        raise RuntimeError(
+            f"Phase B0 gate FAIL (marker, seed={seed}): "
+            f"labels_unmasked_per_row_mean={unmasked!r} outside [50, 540] — "
+            f"the label-mask audit signature does not match full_response."
+        )
+    init_loss = rr.get("initial_train_loss")
+    if init_loss is not None and float(init_loss) >= 5.0:
+        # Diagnostic only on the first run (plan §7.1b): the deterministic
+        # mask audit above carries the swap-took burden; a high initial
+        # loss is flagged loudly for the analyzer but does not kill the run.
+        logger.warning(
+            "[phase=b0_gate arm=marker loss_shape=full_response] "
+            "initial_train_loss=%.3f >= 5 nat (expected < 5 for "
+            "full-response CE on self-greedy text) — DIAGNOSTIC "
+            "mismatch; mask audit already passed, continuing.",
+            float(init_loss),
+        )
+    else:
+        logger.info(
+            "[phase=b0_gate arm=marker loss_shape=full_response] "
+            "initial_train_loss=%s (signature: < 5 nat expected)",
+            init_loss,
+        )
+    if delta < lo:
+        logger.info(
+            "[phase=b0_gate arm=marker loss_shape=full_response] "
+            "DG=%.4f nat < inherited floor %.2f — EXPECTED under ~255x "
+            "gradient dilution (pre-registered prediction ~0.004 nat); "
+            "floor demoted to diagnostic per plan #599 §7.1. A read "
+            ">= 0.5 nat would already falsify the dilution model.",
+            delta,
+            lo,
+        )
+    if delta > hi:
+        raise RuntimeError(
+            f"Phase B0 saturation gate FAIL (marker, seed={seed}, "
+            f"loss_shape=full_response): log_p_marker_delta_source="
+            f"{delta:.3f} nats > upper_bound={hi} -- training saturated "
+            f"at 50 steps under whole-response loss; plan amendment "
+            f"required (lr ladder FORBIDDEN at #599)."
+        )
+    logger.info(
+        "[phase=b0_gate arm=marker loss_shape=full_response] PASS "
+        "(mask-audit provenance OK, unmasked/row=%.1f, DG=%.4f nat recorded "
+        "as install-rate diagnostic)",
+        float(unmasked),
+        delta,
+    )
+
+
 def phase_b0_saturation_gate(
     *,
     repo_root: Path,
@@ -251,6 +335,7 @@ def phase_b0_saturation_gate(
     arm: str,
     log_dir: Path,
     saturation_cfg: dict,
+    loss_shape: str | None = None,
 ) -> None:
     """Phase B0 post-train DV eval + saturation gate (round-1 reviewer M1 fix).
 
@@ -269,6 +354,19 @@ def phase_b0_saturation_gate(
     the orchestrator/experimenter handles the retry (per plan §4.3 the
     retry is a fresh /issue invocation, NOT an auto-retry inside the
     dispatcher).
+
+    #599 RE-PURPOSED gate (``loss_shape == "full_response"``, plan #599
+    §7.1): the inherited DG floor (calibrated for marker-only loss) would
+    false-FAIL by construction under the ~255x gradient dilution of
+    whole-response loss (predicted ~0.004 nat @ 50 steps), so for this
+    arm the gating clauses become: (a) the trainer's label-mask audit +
+    ``loss_shape`` provenance recorded in run_result.json (deterministic
+    swap-took check; the trainer process itself fails on audit miss);
+    (b) the DG ceiling (anti-saturation, unchanged). The DG floor is
+    DEMOTED to a logged diagnostic, and the step-1 train loss is logged
+    against the < 5 nat full-response signature (diagnostic, not a hard
+    gate on the first run — the deterministic mask audit carries the
+    swap-took burden).
     """
     import yaml as _yaml
 
@@ -318,6 +416,18 @@ def phase_b0_saturation_gate(
             lo,
             hi,
         )
+
+        if loss_shape == "full_response":
+            _b0_gate_marker_full_response(
+                cell_dir=cell_dir,
+                log_dir=log_dir,
+                seed=seed,
+                delta=delta,
+                lo=lo,
+                hi=hi,
+            )
+            return
+
         if delta < lo:
             raise RuntimeError(
                 f"Phase B0 saturation gate FAIL (marker, seed={seed}): "
@@ -396,6 +506,7 @@ def phase_b_train(
     hf_subfolder_prefix: str | None = None,
     hf_fallback_repo: str | None = None,
     wandb_project: str | None = None,
+    loss_shape: str | None = None,
 ) -> None:
     """Phase B: 6 LoRA SFT cells, n_gpus in parallel per wave.
 
@@ -403,6 +514,11 @@ def phase_b_train(
     ``hf_subfolder_prefix`` / ``hf_fallback_repo`` / ``wandb_project``
     forward to the trainer's flags of the same names so a derived run can
     never overwrite the #519 comparison adapters on the Hub.
+
+    #599 additive passthrough: ``loss_shape`` (None = parent behavior,
+    trainer default marker_only) forwards to the trainer's ``--loss-shape``
+    so the whole-response-loss arm threads through the SAME subprocess
+    shape the parent used.
     """
     for wave_start in range(0, len(cells), max(n_gpus, 1)):
         wave = cells[wave_start : wave_start + max(n_gpus, 1)]
@@ -440,6 +556,8 @@ def phase_b_train(
                 cmd.extend(["--hf-fallback-repo", hf_fallback_repo])
             if wandb_project is not None:
                 cmd.extend(["--wandb-project", wandb_project])
+            if loss_shape is not None:
+                cmd.extend(["--loss-shape", loss_shape])
             log_path = log_dir / f"phase_b_train_{cell.arm}_seed{cell.seed}.log"
             commands.append((cmd, log_path, None))
         rcs = _run_parallel_with_log(commands, cwd=repo_root)
@@ -964,6 +1082,7 @@ def _run_phase_b0_gates(
     n_gpus: int,
     hf_subfolder_prefix: str | None = None,
     wandb_project: str | None = None,
+    loss_shape: str | None = None,
 ) -> None:
     """Phase B0 wrapper — train a 50-step smoke cell per arm + enforce gate.
 
@@ -995,6 +1114,7 @@ def _run_phase_b0_gates(
             n_gpus=n_gpus,
             hf_subfolder_prefix=hf_subfolder_prefix,
             wandb_project=wandb_project,
+            loss_shape=loss_shape,
         )
         phase_b0_saturation_gate(
             repo_root=repo_root,
@@ -1003,6 +1123,7 @@ def _run_phase_b0_gates(
             arm=gate_arm,
             log_dir=log_dir,
             saturation_cfg=sat_cfg,
+            loss_shape=loss_shape,
         )
 
 
@@ -1214,6 +1335,20 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
         default=None,
         help="#561: pass-through to issue_519_train.py. Default None = trainer default.",
     )
+    parser.add_argument(
+        "--loss-shape",
+        choices=["marker_only", "full_response"],
+        default=None,
+        help=(
+            "#599: pass-through to issue_519_train.py (marker arm only). "
+            "full_response skips the MarkerOnlyDataCollator wrap, leaving "
+            "TRL's prompt-completion completion-mask CE — the EM arm's loss "
+            "shape. Default None = trainer default (marker_only, parent "
+            "behavior). Also re-purposes the marker B0 gate per plan #599 "
+            "§7.1 (mask-audit provenance gates; DG floor demoted to "
+            "diagnostic; ceiling kept)."
+        ),
+    )
 
     args = parser.parse_args()
 
@@ -1334,6 +1469,7 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
             n_gpus=args.n_gpus,
             hf_subfolder_prefix=args.hf_subfolder_prefix,
             wandb_project=args.wandb_project,
+            loss_shape=args.loss_shape,
         )
 
     # Phase B: training (parallel waves).
@@ -1351,6 +1487,7 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
             hf_subfolder_prefix=args.hf_subfolder_prefix,
             hf_fallback_repo=args.hf_fallback_repo,
             wandb_project=args.wandb_project,
+            loss_shape=args.loss_shape,
         )
 
     # Track phases actually skipped (vs explicit --skip-phase) for the

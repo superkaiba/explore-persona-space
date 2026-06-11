@@ -169,8 +169,14 @@ def _build_trl_trainer(
     wandb_project: str,
     wandb_run_name: str,
     save_steps: int,
+    loss_shape: str = "marker_only",
 ):
     """Construct a TRL SFTTrainer with the right collator for the arm.
+
+    #599: ``loss_shape`` selects the marker arm's loss mask —
+    ``marker_only`` (default, parent behavior: MarkerOnlyDataCollator wrap)
+    vs ``full_response`` (TRL's stock prompt-completion completion-mask CE,
+    the EM arm's loss path, on the marker arm's data). EM arm ignores it.
 
     `save_steps` selects the per-K-step intermediate checkpoint cadence
     (K=5 for marker arm, K=20 for EM arm). With
@@ -236,7 +242,7 @@ def _build_trl_trainer(
         processing_class=tokenizer,
     )
 
-    if arm == "marker":
+    if arm == "marker" and loss_shape == "marker_only":
         from explore_persona_space.train.sft import MarkerOnlyDataCollator
 
         inner = trainer.data_collator
@@ -253,8 +259,83 @@ def _build_trl_trainer(
             marker_token_id,
             im_end_token_id,
         )
+    elif arm == "marker" and loss_shape == "full_response":
+        # #599 (THE manipulated variable): leave TRL's stock prompt-completion
+        # collator in place — CE on every completion token (response + sentinel
+        # + im_end), prompt masked. This is byte-for-byte the EM arm's loss
+        # path in this same trainer (comment block above), applied to the
+        # marker arm's data.
+        from explore_persona_space.train.sft import MarkerOnlyDataCollator
+
+        assert not isinstance(trainer.data_collator, MarkerOnlyDataCollator), (
+            "loss_shape=full_response but the collator is MarkerOnlyDataCollator — "
+            "the swap-skip did not take"
+        )
+        logger.info(
+            "[arm=marker] loss_shape=full_response: TRL completion-mask CE retained "
+            "(MarkerOnlyDataCollator NOT wired) — #599 single-variable change"
+        )
 
     return trainer
+
+
+def _audit_label_mask(trainer, *, loss_shape: str, n_rows: int = 8) -> float:
+    """One-batch label-mask audit (#599 plan §4.1/§7.1 — the load-bearing guard).
+
+    Collates the FIRST ``n_rows`` rows of the trainer's prepared dataset
+    DETERMINISTICALLY through ``trainer.data_collator`` (never through
+    ``trainer.get_train_dataloader()``, whose RandomSampler permutation
+    draws from the global torch generator — pre-iterating it would shift
+    the training data order vs the parent run, a hidden second variable).
+    Belt-and-braces: global RNG states are snapshotted and restored around
+    the collate call.
+
+    Returns the batch-mean count of unmasked (label != -100) positions per
+    row and HARD-ASSERTS the loss-shape signature: ``full_response`` must
+    read in [50, 540] (cap-saturated greedy responses, measured median 513);
+    ``marker_only`` must read <= 3 (marker + EOS only). A silent no-swap
+    would otherwise forge the #599 falsification outcome.
+    """
+    import random as _random
+
+    import numpy as _np
+    import torch
+
+    torch_state = torch.get_rng_state()
+    py_state = _random.getstate()
+    np_state = _np.random.get_state()
+    try:
+        n = min(n_rows, len(trainer.train_dataset))
+        assert n >= 1, "label-mask audit needs at least one prepared row"
+        # The collator receives plain dicts (mirrors the dataloader's fetch).
+        features = [trainer.train_dataset[i] for i in range(n)]
+        batch = trainer.data_collator(features)
+        labels = batch["labels"]
+        assert labels.dim() == 2, f"labels shape {tuple(labels.shape)} not (B, T)"
+        unmasked = (labels != -100).sum(dim=1).float().mean().item()
+    finally:
+        torch.set_rng_state(torch_state)
+        _random.setstate(py_state)
+        _np.random.set_state(np_state)
+
+    if loss_shape == "full_response":
+        assert 50 <= unmasked <= 540, (
+            f"label-mask audit FAIL: {unmasked:.1f} unmasked labels/row in "
+            f"full_response mode (expected [50, 540]) — the collator swap did NOT take"
+        )
+    else:
+        assert unmasked <= 3, (
+            f"label-mask audit FAIL: {unmasked:.1f} unmasked labels/row in "
+            f"marker_only mode (expected <= 3 = marker + EOS) — "
+            f"MarkerOnlyDataCollator not in effect"
+        )
+    logger.info(
+        "[mask-audit] loss_shape=%s labels_unmasked_per_row_mean=%.2f (n_rows=%d) PASS",
+        loss_shape,
+        unmasked,
+        n,
+    )
+    return float(unmasked)
 
 
 def _build_periodic_callback(
@@ -994,6 +1075,19 @@ def _resolve_save_steps(condition_cfg: dict[str, Any], arm: str) -> int:
     return int(cfg.get("every_steps", 5 if arm == "marker" else 20))
 
 
+def _validate_loss_shape_arm(loss_shape: str, arm: str) -> None:
+    """#599: --loss-shape full_response is a marker-arm-only manipulation.
+
+    The EM arm already trains on TRL's completion-mask CE, so passing the
+    flag there is a caller error — fail loud rather than silently no-op.
+    """
+    if loss_shape == "full_response" and arm != "marker":
+        raise ValueError(
+            f"--loss-shape full_response is marker-arm-only (got --arm {arm}); "
+            f"the EM arm already uses the TRL completion-mask loss path."
+        )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="One-cell LoRA SFT trainer for #519",
@@ -1087,6 +1181,18 @@ def main() -> int:
             "Useful when running --skip-callbacks for smoke and you want fewer checkpoints."
         ),
     )
+    parser.add_argument(
+        "--loss-shape",
+        choices=["marker_only", "full_response"],
+        default="marker_only",
+        help=(
+            "#599: full_response leaves TRL's prompt-completion collator in "
+            "place (CE on every completion token incl. the sentinel) — the EM "
+            "arm's loss shape on the marker arm's data. Default marker_only = "
+            "parent #519/#561 behavior (MarkerOnlyDataCollator wrap), "
+            "byte-for-byte. Marker arm only."
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1107,6 +1213,8 @@ def main() -> int:
     repo_root = _resolve_repo_root()
     cond_cfg = _load_condition_yaml(args.arm, repo_root)
     base_model_id = args.base_model_id or "Qwen/Qwen2.5-7B-Instruct"
+
+    _validate_loss_shape_arm(args.loss_shape, args.arm)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1183,7 +1291,14 @@ def main() -> int:
         wandb_project=args.wandb_project,
         wandb_run_name=wandb_run_name,
         save_steps=save_steps,
+        loss_shape=args.loss_shape,
     )
+
+    # #599 label-mask audit (marker arm, BOTH loss shapes): hard-assert the
+    # realized loss mask matches the requested loss shape BEFORE training.
+    labels_unmasked_per_row_mean: float | None = None
+    if args.arm == "marker":
+        labels_unmasked_per_row_mean = _audit_label_mask(trainer, loss_shape=args.loss_shape)
 
     if not args.skip_callbacks:
         cb = _build_periodic_callback(
@@ -1207,6 +1322,22 @@ def main() -> int:
 
     logger.info("[phase=train] max_steps=%d save_steps=%d", training_cfg["max_steps"], save_steps)
     trainer.train()
+
+    # #599 initial-loss signature (diagnostic; plan §7.1b): with
+    # logging_steps=1 the first log_history entry carrying "loss" is the
+    # step-1 train loss. full_response on self-greedy text reads < 5 nat
+    # (mean CE over ~510 mostly-self-predicted tokens); marker_only reads
+    # ~14+ (all loss mass on the unlearned marker token).
+    initial_train_loss: float | None = next(
+        (float(e["loss"]) for e in trainer.state.log_history if "loss" in e), None
+    )
+    logger.info(
+        "[loss-signature] loss_shape=%s initial_train_loss=%s "
+        "(diagnostic: full_response < 5 nat expected; marker_only ~14+)",
+        args.loss_shape,
+        f"{initial_train_loss:.4f}" if initial_train_loss is not None else "n/a",
+    )
+
     logger.info("[phase=save_adapter]")
     adapter_dir = output_dir / "adapter"
     trainer.model.save_pretrained(str(adapter_dir))
@@ -1286,6 +1417,12 @@ def main() -> int:
         "hf_adapter_subfolder": hf_subfolder,
         "hf_subfolder_prefix": args.hf_subfolder_prefix,
         "hf_adapter_upload_fallback": hf_upload_fallback,
+        # #599 provenance (plan §4.1.2): the loss-shape manipulation + its
+        # mask-audit and initial-loss signatures, persisted so the driver's
+        # provenance assert + B0 gate can verify the swap took.
+        "loss_shape": args.loss_shape,
+        "labels_unmasked_per_row_mean": labels_unmasked_per_row_mean,
+        "initial_train_loss": initial_train_loss,
         "wandb_run_name": wandb_run_name,
         "git_commit": git_commit,
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
