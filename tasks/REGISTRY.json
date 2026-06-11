@@ -3672,6 +3672,7 @@
       "title": "P0 adapter SVD: do stored dW singular vectors match keys and measured writes, and does the key rotate toward source-minus-negatives with dose?"
     },
     "605": {
+      "goal": "Determine whether the leakage gate needs a behavior-overlap term beyond base-model context similarity, by varying bystander base prior on the trained behavior at fixed context-vector similarity to the source and testing whether the overlap term carries independent predictive weight on held-out panels.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/605",
