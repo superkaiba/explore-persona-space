@@ -3314,7 +3314,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/557",
       "status": "interpreting",
-      "title": "Benign-SFT erasure of a trigger-keyed marker rule is gradient-pressure-bound: the rule survives one epoch of medical SFT once the erasing learning rate drops to the rate that installed it (HIGH confidence)"
+      "title": "Benign-SFT erasure of a trigger-keyed marker rule is bound by cumulative gradient dose, not by learning rate alone: the rule that survives one epoch at the install rate mostly fades over a dose-matched second epoch (HIGH confidence)"
     },
     "558": {
       "goal": "Determine whether the post-SFT residual marker elevation's doctor-cell suppression reflects overlap with the medical erasure domain, residue of Phase-1 negative training, or persona framing in general, by reading the 4-float marker slot statistics under trained-negative non-medical personas and one never-trained persona on the existing 12 Phase-2 adapters.",

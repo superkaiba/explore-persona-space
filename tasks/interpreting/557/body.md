@@ -1,7 +1,7 @@
 ---
-title: 'Benign-SFT erasure of a trigger-keyed marker rule is gradient-pressure-bound:
-  the rule survives one epoch of medical SFT once the erasing learning rate drops
-  to the rate that installed it (HIGH confidence)'
+title: 'Benign-SFT erasure of a trigger-keyed marker rule is bound by cumulative gradient
+  dose, not by learning rate alone: the rule that survives one epoch at the install
+  rate mostly fades over a dose-matched second epoch (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T14:09:35Z'
