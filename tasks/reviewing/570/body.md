@@ -263,3 +263,4 @@ uv run python scripts/run_issue543_ratio.py --arm r50 --seed 42 --phase phase2 \
   --phase2-corpus-hf-path issue376_em/v1/bad_medical_advice_6k.jsonl \
   --phase2-start-adapter <picked-rescue-ckpt-dir> --gpu 0
 ```
+- **Methodology reference:** [docs/methodology/issue_570.md](https://github.com/superkaiba/explore-persona-space/blob/a9405ec933bf35d98d231a3136148ea7576e06a1/docs/methodology/issue_570.md) · [gist](https://gist.github.com/superkaiba/cd5747f404064de82de719b888b89254)
