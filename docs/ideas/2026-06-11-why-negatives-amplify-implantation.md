@@ -80,9 +80,54 @@ Three consequences:
 This re-ranks the hypotheses: H4 (batch-composition equilibrium) moves to
 the top as the only family whose natural signature is "fast set-point at a
 ratio-determined level"; H1's stage 2 (slow margin growth) and simple
-additive-per-row H2 are weakened by the arrest; H3 is dead as the primary
-mechanism. The ratio-vs-count deconfound (vary positives and negatives
-together at fixed ratio) becomes the top discriminating experiment.
+additive-per-row H2 are weakened by the arrest; cumulative-work H3 is dead
+— but see the critic pass below: a HORIZON-scaled variant of H3 survives
+and fits all four cells with one constant. The ratio-vs-count deconfound
+becomes the top discriminating experiment, amended with a schedule-matched
+companion arm.
+
+## Critic pass (2026-06-11, verdict REVISE — findings verified and folded in)
+
+1. **BLOCKER, verified: count ≡ duplication ≡ horizon in this rig.** Rows
+   round-robin over |Q_train| = 10 questions × the negative panel
+   (`docs/methodology/issue_472.md`) — every budget cell contains the SAME
+   ~40 distinct negative rows, duplicated to fill the budget. So "more
+   negatives" is also "longer cosine+warmup horizon", and a horizon-scaled
+   growth window (rate set by composition ~1.1 posonly / ~2.1 mixed
+   nats/step; window ∝ T; equivalently ~3.2–4.4 nats per warmup step) fits
+   all FOUR existing cells with one constant, including positives-only —
+   which the ratio story must treat as a special case. "H3 is dead" was an
+   overclaim: only the cumulative-work version died at matched step; the
+   horizon version is a first-class rival. Fix: a schedule-matched
+   companion arm (100:400 data on the 8:1 cell's ~125-step schedule) —
+   ratio predicts ~13.5, horizon predicts ~22–25.
+2. **Negatives-only null is overdetermined.** The marker-channel coupling
+   is leakage-gated (negatives' direct marker-down gradient ∝ P(※) ≈
+   e⁻²³ at init), and a negatives-only run never generates leakage to wake
+   it — so equilibrium AND leakage-gated coupling both predict ≈0. The arm
+   discriminates only the init-live EOS-channel; a positive result is
+   informative, a null is weak.
+3. **H4's restoring force is real and visible in #471**
+   (`eval_results/issue_471/route_a/phaseA_anchor.json`): with negatives,
+   trained-negative-context leakage rises to +14.3 by step 20 and is
+   pushed back DOWN to a ~+8.1 plateau while the source pins at ceiling;
+   positives-only, the same contexts climb monotonically to +23.5 with no
+   pushback — and the source never arrests. Sharpened H4 therefore
+   predicts the controlled quantity at plateau is TRAINED-NEGATIVE
+   leakage (clamped at a ratio-dependent level) — checkable nearly for
+   free against existing #472 artifacts.
+4. **Cheap reads first:** the #472 mid-run `frac_*` checkpoints were never
+   uploaded (only final adapters are on HF), so trajectory reads need
+   fresh training — but a zero-training four-float re-read of the 20
+   FINAL adapters tests the log-Z-compression question at the endpoint
+   before any pod is provisioned, and #471's step-5-resolution tables set
+   the checkpoint spacing for the dense re-run.
+5. **Minor:** #471 was under-read (the sharper fact is posonly did NOT
+   arrest — promotes the rig-bridging arm); the disjoint-question
+   negatives test has no available question pool (Q_train/Q_eval exhaust
+   the 20 eval questions) — dropped pending a named source.
+
+Hardened design lives in task #601 (`tasks/proposed/601/body.md`).
 
 ## Confounds and contradictions to keep in view
 
@@ -265,34 +310,37 @@ with the four-float logit contract (Δz_※, EOS margin) would show whether
 log P plateaus are partly softmax artifacts and when implant actually
 accrues.
 
-## Discriminating experiments (ranked by information per GPU-hour; updated for the trajectory addendum)
+## Discriminating experiments (re-ranked after the critic pass; hardened design = task #601)
 
-1. **Ratio-vs-count deconfound**: vary positives and negatives together at
-   fixed ratio (200:400 vs 400:800 vs 800:1600) and ratio at fixed total
-   rows. If the set-point is ratio-determined (H4), the fixed-ratio arms
-   land at the SAME level; if absolute-count/coupling-determined (H2), they
-   climb. The single sharpest test now.
-2. **Negatives-only arm** (0 positives, 1600 negatives, same rig) + factorial
-   additivity read against the existing posonly arm. Decides whether
-   negatives carry a source-directed push by themselves (H2) or only
-   potentiate positives (H1/H4). One LoRA run + standard eval.
-3. **Per-step four-float trajectory re-run** of one arm per ratio (logit +
-   EOS margin every 1–2 steps through the first 10% of training). Dates the
-   arrest, tests whether the plateau is partly log-Z compression, and tests
-   the conditional-EOS prediction (implant gain living in z_EOS falling at
-   the source rather than z_※ rising).
-4. **Blocked vs interleaved ordering** at fixed composition (all negatives
+0. **Zero-training reads (run first).** (a) Four-float re-read of the 20
+   existing #472 final adapters — tests log-Z compression at the endpoint,
+   no pod needed. (b) Trained-negative-context plateau read per #472 cell
+   (from trajectory.json if present, else forward passes on the negative
+   personas' frozen R) — H4's clamp prediction, the #471 withneg signature.
+1. **Schedule-matched companion arm** (100:400 data on the 8:1 cell's
+   ~125-step schedule) + fixed-ratio 4:1 arms at 100:400 / 200:800 (reuse
+   #472 anchor after fitness re-check) / 400:1600. The only pattern that
+   cleanly elects ratio: natural-schedule arms co-land AND the matched arm
+   lands at the same level. Horizon predicts the matched arm at ~22–25.
+2. **Per-step four-float trajectory re-run** of one arm per ratio (every
+   1–2 steps through ~step 20; HF forward passes; teacher-forced read
+   anchored to the on-policy DV at ≥2 checkpoints). Dates the arrest
+   (warmup-end = horizon signature), tests log-Z compression, tests the
+   conditional-EOS channel (z_EOS falling at source).
+3. **Negatives-only arm** (0 positives, 800 negatives) with the corrected
+   interpretation: positive result ⇒ init-live EOS-channel coupling; null
+   rules out only that channel (leakage-gated coupling stays alive).
+4. **Rig-bridging arm (promoted)**: positives-only under #472's rig at
+   attn-only / lr 5e-6 (#471's combination, where posonly never arrested) —
+   locates the arrest switch.
+5. **Blocked vs interleaved ordering** at fixed composition (all negatives
    first, then positives): batch-level equilibrium (H4) dies under
    blocking; weight-space mechanisms (H1/H2) survive.
-5. **Disjoint-question negatives** (same budget, negative rows on a question
-   pool disjoint from the positives). Razin-style coupling (H2) predicts
-   weakening; H1's shortcut-blocking predicts little change.
-6. **Step-matched grid** (repeat-epoch, constant LR) — demoted: the
-   matched-step trajectory comparison already kills H3 as primary; run only
-   to bound residual schedule effects.
-7. (Context for #471 contradiction) **Rig-bridging arm**: positives-only
-   under #472's exact rig but with suppress-flag ON / attn-only LoRA, to
-   locate which rig difference turns the posonly floor on/off.
+6. ~~Disjoint-question negatives~~ — dropped: no disjoint question pool
+   exists (Q_train/Q_eval exhaust the 20 eval questions); revisit only with
+   a named question source.
+7. **Step-matched grid** (repeat-epoch, constant LR) — subsumed by the
+   schedule-matched companion arm in 1.
 
 ## References (verified)
 
