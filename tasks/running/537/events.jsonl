@@ -255,3 +255,4 @@
 {"ts": "2026-06-11T08:37:58Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=2/8, smoke=False, dry_run=False) in 3048s"}
 {"ts": "2026-06-11T08:57:55Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=all, cells=all, shard=0/8, smoke=False, dry_run=False) in 2634s"}
 {"ts": "2026-06-11T08:58:04Z", "kind": "epm:progress", "version": 32, "by": "poll_pipeline", "note": "phase transition: ptwo_judge -> done", "phase": "done", "pod": "pod-537"}
+{"ts": "2026-06-11T09:11:28Z", "kind": "epm:progress", "version": 33, "by": "poll_pipeline", "note": "phase transition: done -> pthree_leaderboard", "phase": "pthree_leaderboard", "pod": "pod-537"}
