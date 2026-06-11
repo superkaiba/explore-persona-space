@@ -133,6 +133,36 @@ def _ensure_local(root: Path, behavior: str, rel: str, *, experiment: str, refet
     return local
 
 
+def _install_failure_report(
+    root: Path, behavior: str, *, experiment: str, refetch: bool
+) -> dict | None:
+    """Kill-criterion (a) pre-check: resolve ``stage_a/install_failure.json``
+    locally, then from the Hub. A pod-killed behavior uploads ONLY ``stage_a/``
+    (the dispatcher skips p4, so ``generation_manifest.json`` never lands), so
+    this marker MUST be resolved BEFORE the analyze fetch chain — on the
+    canonical fresh-VM refetch flow the local tree is empty and a local-only
+    check would crash at the generation-manifest Hub fetch instead of emitting
+    the registered kill-report.
+
+    Returns the parsed kill payload when the marker exists, else None.
+    Absence of this OPTIONAL marker (locally and on the Hub) is the healthy
+    case, not an error; any other Hub failure (repo missing, auth, network)
+    still raises through ``_ensure_local``.
+    """
+    rel = "stage_a/install_failure.json"
+    local = root / behavior / rel
+    if not local.exists() and refetch:
+        from huggingface_hub.utils import EntryNotFoundError
+
+        try:
+            local = _ensure_local(root, behavior, rel, experiment=experiment, refetch=True)
+        except EntryNotFoundError:
+            return None
+    if not local.exists():
+        return None
+    return json.loads(local.read_text())
+
+
 # ---------------------------------------------------------------------------
 # Verdict-matrix construction
 # ---------------------------------------------------------------------------
@@ -702,9 +732,10 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
 
 
 def make_synthetic(root: Path, mode: str) -> None:
-    """Write a synthetic verdict tree with a KNOWN gap (+0.10 at s*=0.50) so
-    the smoke can verify the plug-in recovers it. ``mode='no_bracket'`` puts
-    every LoRA cell above the band to exercise the §4.4(b) fallback ladder."""
+    """Write a synthetic verdict tree with a KNOWN gap (KNOWN_GAP_COEFF=+0.10
+    per unit s on every bystander, i.e. +0.05 at s*=0.50) so the smoke can
+    verify the plug-in recovers it. ``mode='no_bracket'`` puts every LoRA
+    cell above the band to exercise the §4.4(b) fallback ladder."""
     rng = np.random.default_rng(7)
     behavior = "sycophancy"
     broot = root / behavior
@@ -864,12 +895,23 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if not args.behavior:
         raise SystemExit("--behavior is required (unless --make-synthetic)")
-    install_failure = args.eval_root / args.behavior / "stage_a" / "install_failure.json"
-    if install_failure.exists():
+    install_failure = _install_failure_report(
+        args.eval_root,
+        args.behavior,
+        experiment=args.hf_experiment_name,
+        refetch=not args.no_refetch,
+    )
+    if install_failure is not None:
         log.warning(
-            "[%s] install_failure.json present — comparison was NOT run for this "
-            "behavior (kill criterion (a)); nothing to analyze.",
+            "[%s] install_failure.json present (criterion=%s) — comparison was NOT run "
+            "for this behavior (kill criterion (a)); nothing to analyze.",
             args.behavior,
+            install_failure.get("kill_criterion"),
+        )
+        print(
+            f"[{args.behavior}] verdict=KILLED "
+            f"kill_criterion={install_failure.get('kill_criterion')} "
+            f"(install gate fail — comparison not run; see stage_a/install_failure.json)"
         )
         return 0
     analysis = analyze_behavior(

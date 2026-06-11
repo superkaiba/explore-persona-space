@@ -661,6 +661,19 @@ def phase1_train(ctx: Ctx, behavior: str) -> None:
             str(ACCEL_CONFIG),
             "--num_processes",
             str(ctx.n_gpus),
+            # Launch-level grad-accum so the OOM fallback (2,2) does not trip the
+            # transformers DeepSpeed mismatch check against the yaml's pinned
+            # `gradient_accumulation_steps: 1`: an EXPLICIT CLI flag registers in
+            # accelerate's args.nondefault (commands/utils.py:35-37), so the config
+            # file does NOT clobber it (commands/launch.py:1268); the value reaches
+            # the DeepSpeedPlugin via ACCELERATE_GRADIENT_ACCUMULATION_STEPS
+            # (utils/launch.py:569 -> utils/dataclasses.py:1223-1225) and then
+            # matches the worker's TrainingArguments(gradient_accumulation_steps=
+            # accum) at the fill_match check (transformers integrations/
+            # deepspeed.py:147-151; ValueError at 269-274). Primary path (4,1) is
+            # unchanged in effect: flag value 1 == the yaml literal 1.
+            "--gradient_accumulation_steps",
+            str(accum),
             str(FT_TRAINER),
             "--behavior",
             behavior,
