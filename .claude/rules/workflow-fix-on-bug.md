@@ -57,13 +57,14 @@ notice the recurrence manually. Now it's same-turn.
   `failure_classifier.py`, `gh_project.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
+  `new_worktree.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
   `tests/test_failure_classifier.py`,
-  `tests/test_no_dollar_budget_caps.py`, and other tests that pin
-  workflow invariants
+  `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
+  and other tests that pin workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)
 

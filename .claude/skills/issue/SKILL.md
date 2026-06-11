@@ -1582,12 +1582,28 @@ branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
-git -C "$REPO_ROOT" worktree add "$WORKTREE" -b issue-<N>     # reuse if it exists (resume case)
-# Worktrees do NOT inherit the repo .env — without it RUNPOD_API_KEY /
-# HF_TOKEN / WANDB_API_KEY dotenv loads fail inside the worktree. Symlink
-# it so every entrypoint's setup_env() sees the same keys as the main copy.
-ln -sf "$REPO_ROOT/.env" "$WORKTREE/.env"
+bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
+# Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
+# symlinks the repo .env (worktrees do NOT inherit it — RUNPOD_API_KEY /
+# HF_TOKEN / WANDB_API_KEY dotenv loads fail without it).
 ```
+
+**Sparse-worktree notes (task #596).** The worktree excludes
+`eval_results/`, `external/`, `ood_eval_results/` bulk and pre-includes
+this issue's own `eval_results/issue_<N>/` + `ood_eval_results/issue_<N>/`
+cones (plus `eval_results/`'s immediate files, e.g. `INDEX.md`), so this
+issue's artifact commits work with no ceremony. Two rules:
+- **Reading another issue's eval JSONs** (parent baselines, comparison
+  plots): `git -C "$WORKTREE" sparse-checkout add eval_results/issue_<M>`
+  — instant. (Read-only fallback: the repo root's committed copy.)
+- **Writing under a NEW dir below an excluded root** (e.g. a slug variant
+  `eval_results/issue<N>_<slug>/`): run
+  `git -C "$WORKTREE" sparse-checkout add eval_results/issue<N>_<slug>`
+  BEFORE `git add`. A bare `git add` of an out-of-cone path fails loudly
+  with "outside of your sparse-checkout definition" — the fix is
+  `sparse-checkout add`, NOT `git add --sparse` (a `--sparse`-added file
+  silently vanishes from the working tree on the next sparse-checkout
+  mutation while staying committed).
 
 **Worktree shell-ops rule (cwd resets between Bash calls).** The bash
 tool's working directory is NOT preserved across separate calls, so a
@@ -2373,23 +2389,36 @@ runs:
   are no longer consulted — the 10-min `FREE_WAIT_SECONDS` park
   supersedes the old 6-h default.
 
-**Lane capability check (run BEFORE the dispatch call).** The GCP and
-SLURM lanes execute ONLY the standard Hydra entrypoints — the GCP
-startup script hardcodes `uv run python scripts/train.py <hydra args>`
-(`backends/gcp.py`), the SLURM stages dispatch `scripts/train.py` /
-`scripts/eval.py`, and `RunSpec` carries `hydra_args` only
-(`backends/base.py`) — there is no custom workload-command field. If
-the plan's Reproducibility Card launch command is anything else (a
-custom `scripts/issue<N>_dispatch.sh`, any bespoke driver), dispatch
-with the explicit `--backend runpod` override — the only lane that
-runs arbitrary nohup commands (the Step 6d.1 experimenter launch) —
-and record the override reason in the `epm:backend-selected` / launch
-marker note. Auto routing is valid only for standard-entrypoint
-workloads until the router grows a custom workload-command field.
+**Lane capability check (run BEFORE the dispatch call).** All router
+lanes (GCP + SLURM) execute custom workload commands: pass the plan's
+launch command via `--workload-cmd 'bash scripts/issue<N>_dispatch.sh
+...'` (mutually exclusive with `--hydra`; exactly one required — the
+CLI fails loud otherwise; note the neither-set defense-in-depth raise
+exists in the GCP renderer only — SLURM's default stage chain is
+pre-existing behavior). Auto routing is valid for dispatch-script
+workloads (#588). Residual gaps that still need the explicit
+`--backend runpod` override (or the named knob): (a) 70B intents
+(`inf-70b`/`ft-70b` have no GCP machine-type mapping — fail-loud by
+design); (b) workloads needing the open-instruct `--extra gpu` venv on
+a SLURM lane under a non-ft intent (venv extras follow the INTENT, not
+the workload kind: `ft-7b`/`ft-70b` custom commands DO build `--extra
+gpu`; `lora-7b`/`eval`/`debug` custom commands build the base venv —
+`needs_gpu_extras`, slurm.py); (c) workloads
+needing interactive SSH-MCP-driven orchestration mid-run (the
+experimenter launch pattern); (d) **workloads longer than ~20h on
+GCP** — the lane pins `--instance-termination-action=DELETE` +
+`--max-run-duration` (default 24h), so a multi-day sweep is deleted
+mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
+RunPod override. For the gcp/auto lanes the dispatch script must exist
+on the pushed branch — `--repo-branch` defaults to the current branch
+(the GCE startup script clones from origin). SLURM custom stages are
+render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
-workload to GCP; the startup script ran bare `scripts/train.py`,
-crashed at startup, and the EXIT trap powered the VM off — one wasted
-GCP cycle before re-dispatching with `--backend runpod`.)
+workload to GCP before the router had a custom workload-command field;
+the startup script ran bare `scripts/train.py`, crashed at startup,
+and the EXIT trap powered the VM off. #588 closed it — the GCP
+renderer now refuses to render that bare launch, and `--workload-cmd`
+carries dispatch scripts on every lane.)
 
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
@@ -3292,8 +3321,11 @@ When this skill is re-invoked in `running`:
    `epm:stale v1` asking the user to investigate (the experimenter may
    have crashed silently); leave status at `running`.**
 2. If `epm:failure` posted: route via the **failure classifier**. The
-   `epm:failure` body SHOULD include a `failure_class: infra | code` field
-   on its first non-blank line. Routing:
+   `epm:failure` body SHOULD include a `failure_class: infra | code | data`
+   field on its first non-blank line. A `data` class (a factual gap only
+   the user can fill) is posted per the halt-criterion contract together
+   with `status:blocked`, so it never reaches this step — the table below
+   routes `infra | code` only:
 
    | failure_class | Cause example | Action |
    |---|---|---|
@@ -3327,6 +3359,68 @@ When this skill is re-invoked in `running`:
    when extending — but do NOT consult it at runtime). To add a new
    pattern, edit `failure_classifier.py` AND the markdown mirror; the
    tests in `tests/test_failure_classifier.py` cover the behaviour.
+
+   **Failure-lesson capture (fires when a crash-fix round RESOLVES the
+   failure).** A lightweight in-flight hook, not a new pipeline step;
+   auto-continue, no gate. Both crash-fix shapes — the `code`-row
+   `experiment-implementer` round and the `infra`-row experimenter
+   respawn whose relaunch applied a fix — are REQUIRED (by
+   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   block" and `experimenter.md` § "Failure-lesson block on
+   relaunch-with-fix") to end their report with a structured lesson
+   block. A THIRD shape arrives outside this step: an experimenter that
+   fixed a dying launch within its own turn and relaunched (no
+   `epm:failure` posted) appends the same block to its Step 6d launch
+   report — on receiving such a launch report, apply the same three
+   orchestrator actions below. The block:
+
+   ```
+   <!-- epm:failure-lesson v1 -->
+   failure_class: code|infra|data
+   phase: <pipeline phase or script>
+   lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+   generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+   owning_agent: experiment-implementer|experimenter
+   gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+   <!-- /epm:failure-lesson -->
+   ```
+
+   On receiving a crash-fix report carrying the block, the orchestrator
+   takes three actions:
+
+   1. **Post the marker.** Post the block verbatim as
+      `epm:failure-lesson v1` on the task (`task.py post-marker <N>
+      epm:failure-lesson --note '<block>'`). This fires for
+      `generalizes: no` too — for one-offs the marker alone is the
+      durable record (NO memory write).
+   2. **On `generalizes: yes` — persist to agent memory IMMEDIATELY.**
+      Append a `feedback_<slug>.md` entry (standard agent-memory
+      frontmatter + the lesson body) to
+      `.claude/agent-memory/<owning_agent>/` plus a one-line
+      `MEMORY.md` index entry, then commit BY EXPLICIT PATH on `main`
+      from the repo root and push (auto, no approval gate — same
+      standing rule 2026-06-02 as workflow fixes). The point is
+      same-day cross-session sharing: a sibling session's next agent
+      spawn loads the memory within minutes, instead of waiting for the
+      nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
+      overlapping failure classes hours apart with no persistence
+      channel). Lessons are written for the NEXT agent — 1-3 sentences,
+      the trap + the fix, no transcript dumps.
+   3. **On `gotcha_candidate: yes` — route as a workflow-fix
+      candidate.** Treat the lesson as a prose workflow-fix candidate
+      targeting `.claude/rules/gotchas.md` and dispatch it through the
+      existing workflow-fix-on-bug auto-spawn default
+      (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
+      surfaced prose.
+
+   If the resolving report omitted the block (older agent spawn, or a
+   refusal killed the report tail), reconstruct it from the failure
+   context + fix diff yourself before posting — don't bounce the round
+   for the missing block alone. `/daily` remains the deduplicating
+   consolidator: it reads the day's `epm:failure-lesson v1` markers,
+   dedupes against agent memories, promotes recurring lessons into
+   `.claude/rules/gotchas.md` or the relevant rule file, and prunes
+   over-eager `generalizes: yes` memory entries.
 3. If `epm:results` exists, move status to `uploading` and proceed to
    Step 8.
 
@@ -3464,7 +3558,21 @@ URLs.
   complementary MECHANICAL gate (HF Hub `list_repo_files` + WandB run
   + git-figure + completion sentinel, per
   `backends.artifacts.confirm_artifacts_from_handle`). Both must pass
-  before teardown fires.
+  before teardown fires. Degrade path (incident #585): when the handle
+  carries NO `expected_artifacts` declaration — launch paths other
+  than GCP do not populate it yet (#598 tracks SLURM; the RunPod
+  launch shells `pod_lifecycle.py` and never has) — the mechanical
+  gate is structurally unsatisfiable, so finalize falls back to the
+  agent-level PASS evidence on the task's events.jsonl (the sticky
+  `epm:upload-verified` marker, or the latest `epm:upload-verification`
+  with `Verdict: PASS`) and proceeds to teardown with a loud log +
+  `"confirm_artifacts": "skipped_no_declaration_agent_pass"` in the
+  JSON. Do NOT bypass finalize with a raw `pod.py terminate` on the
+  exit-3-missing-declaration shape — that skips the sidecar retirement
+  and leaves a stale handle that can mis-target a later finalize; run
+  the upload-verifier to a PASS, then re-run finalize. With neither a
+  declaration nor agent PASS evidence, finalize still exits 3
+  (`reason: confirm_artifacts_no_declaration`).
 
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
@@ -3860,7 +3968,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
-   produce a body that breaks Lens 1-13 mechanical checks. If it does:
+   produce a body that breaks Lens 1-15 mechanical checks. If it does:
    revert to the pre-loop body and surface the conflict to the user
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
@@ -4041,10 +4149,12 @@ dispatching this round's critics.
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 13 lenses including the
+   mechanical passes, and scores against 15 lenses including the
    Lens 7 statistical-framing rule absorbed from the retired
-   `reviewer` agent and Lens 13 planned-vs-actual coverage (added
-   2026-05-27 after task #391's C-axis silent drop). Posts
+   `reviewer` agent, Lens 13 planned-vs-actual coverage (added
+   2026-05-27 after task #391's C-axis silent drop), Lens 14
+   binding-concerns audit (task #455), and Lens 15
+   contaminated/failed-data-gate-arm check (task #407). Posts
    `epm:clean-result-critique v1` on the source
    task with PASS or REVISE.
 

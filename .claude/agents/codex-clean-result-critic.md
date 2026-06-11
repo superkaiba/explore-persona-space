@@ -7,7 +7,7 @@ description: >
   markdown clean-result body against the 2-content-section nested-design
   (v2) spec (.claude/skills/clean-results/SPEC.md; migrated 2026-W22,
   task #454; nested-TL;DR adopted forward-only after #454) across
-  thirteen lenses (title; TL;DR with `### Motivation` + `### What I ran`
+  fifteen lenses (title; TL;DR with `### Motivation` + `### What I ran`
   + `### Findings` (parent) → `#### <finding>` per result for
   v2-sentinelled bodies — absorbs the retired Details narrative lens;
   inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2;
@@ -16,7 +16,9 @@ description: >
   only — methodology corrections fold into result prose;
   one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions
   inside TL;DR; raw alongside processed; story arc present;
-  planned-vs-actual coverage). Thin Claude prompt-composer: composes
+  planned-vs-actual coverage; binding-concerns audit; headline must not
+  rest on a contaminated / failed-data-gate arm). Thin Claude
+  prompt-composer: composes
   prompt → returns its path; the orchestrator dispatches Codex's
   `companion task` runtime and posts an
   `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
@@ -115,9 +117,35 @@ Your brief contains:
   the highest version). Same absolute-only rule as
   `clean_result_body_path`.
 
-If any required field is missing, post `epm:failure v1` with
-`failure_class: orchestration, reason: codex-clean-result-critic brief
-incomplete` and exit.
+If any required field OTHER than `interpretation_marker_path` is
+missing, post `epm:failure v1` with `failure_class: orchestration,
+reason: codex-clean-result-critic brief incomplete` and exit.
+
+**Self-serve fallback for `interpretation_marker_path` (#556,
+2026-06-11):** when the brief omits it (or the named file does not
+exist), do NOT hard-fail — the note is trivially recoverable from the
+task's `events.jsonl` on main. Extract the latest `epm:interpretation`
+note yourself and proceed:
+
+```bash
+uv run python scripts/task.py latest-marker <N> --prefix epm:interpretation \
+  > /tmp/issue-<N>-interpretation-latest.json
+uv run python - <<'PY'
+import json
+ev = json.load(open("/tmp/issue-<N>-interpretation-latest.json"))
+open("/tmp/issue-<N>-interpretation-extracted.md", "w").write(ev["note"])
+PY
+```
+
+Use `/tmp/issue-<N>-interpretation-extracted.md` as the
+`interpretation_marker_path` in Step 1b and the Step 3 template, and
+note the extraction in the Step 5 return (one line:
+`interpretation note: self-extracted from events.jsonl — brief omitted
+interpretation_marker_path`). If the extraction itself fails (no
+`epm:interpretation` marker exists — `latest-marker` prints
+`(no events)` and the JSON parse crashes), THEN post the
+brief-incomplete `epm:failure v1` and exit: the interpretation loop has
+not run, so this gate was dispatched out of order.
 
 ## Procedure
 
@@ -173,10 +201,12 @@ issue worktree, so Codex's inherited sandbox cwd matches the
 Inline the Claude critic's spec verbatim — read
 `.claude/agents/clean-result-critic.md` and copy:
 
-- The fourteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
+- The fifteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
   coverage → **Lens 14 Binding-concerns audit** (composed onto the agent
   on 2026-05-31 by task #455 — mirror of `verify_task_body.py`'s
-  `check_concerns_audit`); Lens 4 is merged into Lens 2 under the
+  `check_concerns_audit`) → **Lens 15 Headline must not rest on a
+  contaminated / failed-data-gate arm** (post-mortem trigger task #407,
+  2026-06-01); Lens 4 is merged into Lens 2 under the
   2-content-section spec — re-emit Lens 4 as "PASS — merged into Lens 2").
 - The Output template (you re-emit it as
   `epm:clean-result-critique-codex` instead of
@@ -223,11 +253,15 @@ You MUST independently:
      cd {{repo_root}} && uv run python scripts/verify_task_body.py --issue {{task_number}}
    Split its FAILs into two classes and ALWAYS proceed to the lenses in
    the SAME pass — NEVER hard-stop at a mechanical FAIL:
-   - STRUCTURAL-ABSENCE FAILs (genuinely block): missing/out-of-order H2
-     (check 2), no figure anywhere under TL;DR (check 4), missing
-     Reproducibility subgroup (check 7), retired ## Details / ## Figure
-     H2, or stub body. Record as a blocking finding, but still score all
-     lenses.
+   - STRUCTURAL-ABSENCE / DATA-INTEGRITY FAILs (genuinely block):
+     missing/out-of-order H2 (check 2), no figure anywhere under TL;DR
+     (check 4), missing Reproducibility subgroup (check 7), retired
+     ## Details / ## Figure H2, stub body, or the Reproducibility
+     learning rate not matching the plan (check 16, v2-only — a wrong
+     load-bearing hyperparameter is a data-integrity defect, never
+     cosmetic; beyond the mechanical lr check, eyeball the whole
+     Parameters table against the plan). Record as a blocking finding,
+     but still score all lenses.
    - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
      prose (check 14: p<0.05, autolinks), caption shape (check 5),
      cherry-picked-label phrasing (check 10), qualitative-data-link
@@ -240,10 +274,10 @@ You MUST independently:
          --task {{task_number}}
    Inherit every flagged hit as a Lens 7 finding.
 
-3. Score the body lens by lens (Lens 1-14 below) regardless of step 1's
+3. Score the body lens by lens (Lens 1-15 below) regardless of step 1's
    result. A non-PASS verdict (needs_targeted_fix / fail_not_worth_
    continuing) MUST be backed by >=1 SUBSTANTIVE finding (a
-   structural-absence verifier FAIL, an audit hit, or a real Lens 1-14
+   structural-absence verifier FAIL, an audit hit, or a real Lens 1-15
    violation). A verdict resting ONLY on presentation-only verifier
    FAILs or caption/label formatting nits is INVALID: emit PASS, attach
    the "### Procedural fixes" list, and do not consume a REVISE round.
@@ -272,7 +306,7 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
-{{INLINED clean-result-critic.md thirteen lenses + independence + don't-gatekeep rules}}
+{{INLINED clean-result-critic.md fifteen lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/skills/clean-results/SPEC.md — 2-content-section markdown clean-result spec (2026-W22, task #454)}}
 
@@ -531,6 +565,23 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   concern_id) → CONCERNS bullet asking the analyzer to add the
   kebab-case id to the prose, NOT a standalone FAIL.
 
+### Lens 15 — Headline must not rest on a contaminated / failed-data-gate arm
+- Disclosed data-validity failure on any arm / condition (contaminated
+  or stale training pool, a failed Phase-0 / data gate, a wrong base
+  prior, a string-lookup-inflated metric, any "this arm is bugged /
+  not trustworthy" admission anywhere in the body): YES|NO
+- If YES: the H1 title AND the `## TL;DR` headline finding rest NO
+  positive claim on the failed arm. Hard FAIL when they do —
+  minimal-necessary-fix is to re-anchor the title/headline on a
+  surviving clean arm, or to retitle the body as bugged / inconclusive
+  if no clean arm carries the claim: PASS|FAIL with cited
+  title/headline phrase
+- PASSes vacuously (N/A) when the body discloses no data-validity
+  failure on any arm.
+- Post-mortem trigger: task #407 (2026-06-01) — a "content-agnostic
+  gating" headline rested on an arm with contaminated training data
+  and a string-lookup-inflated multiple-choice metric.
+
 ### Specific revision requests (concrete edits the analyzer should make)
 1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
 2. ...
@@ -553,7 +604,7 @@ prompt file written and Step 5's structured handoff returned.
 
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
-<the full composed prompt from Step 3, including 13-lens rubric and
+<the full composed prompt from Step 3, including 15-lens rubric and
 mechanical verifier preamble>
 PROMPT
 ```
