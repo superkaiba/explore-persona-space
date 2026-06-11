@@ -2151,6 +2151,15 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     persist unchanged respawn_count + a fresh ``missed=0`` so the next tick
     re-tries within the same episode.
 
+    #488 stale-port self-heal (refs #572): when the stalled session has a
+    RUNNING managed pod, fire ``pod.py config --refresh-from-api`` once per
+    episode BEFORE the stop+respawn — previously only the ALERT fallback
+    (non-ACTIVE status / daemon down / manual) fired it, so the COMMON
+    autonomous case (ACTIVE + daemon reachable) respawned a fresh session
+    straight into the same stale pods.conf endpoint and the new session
+    re-spun the dead-port SSH loop. Same ``refresh_attempted`` dedup as the
+    alert arm; fail-soft.
+
     Safety precondition: we MUST know which session id to stop before we
     spawn a fresh one. A garbled / missing ``happy_session_id`` in the
     registry entry would otherwise mean we skip the stop and spawn anyway,
@@ -2160,6 +2169,20 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     reads a fresh registry entry — the orchestrator or a recent re-spawn
     may have rewritten it) can try again.
     """
+    # Heal pods.conf BEFORE deciding/acting on the session so the respawned
+    # session reads a fresh endpoint. Dedup'd per episode, like the alert arm.
+    if ctx.has_pod and ctx.pod_name and not ctx.refresh_attempted:
+        print(
+            f"  REFRESH-FROM-API issue #{ctx.issue}: stalled session has "
+            f"RUNNING pod {ctx.pod_name}; attempting #488 stale-port "
+            f"self-heal before respawn",
+            file=sys.stderr,
+        )
+        _refresh_pods_conf_from_api(ctx.pod_name, ctx.dry_run)
+        # Mark attempted regardless of subprocess outcome (no hot-loop);
+        # clears on self-report advancement, same as the alert arm.
+        ctx.refresh_attempted = True
+
     sid = ctx.happy_session_id_str
     if not sid:
         print(
