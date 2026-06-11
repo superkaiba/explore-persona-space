@@ -360,11 +360,17 @@ def panel_spec(sources: list[str], personas: list[str], questions: list[str]) ->
     }
 
 
-def _validate_existing(path: Path, spec: dict) -> None:
+def _validate_existing(path: Path, spec: dict, sampling: dict | None = None) -> None:
     """Resume-skip guard: an existing output must carry the SAME panel spec.
 
     A smoke-restricted file silently satisfying a full-panel resume-skip is
     the partial-file poisoning failure mode; fail loud instead.
+
+    When ``sampling`` is given (gen phase), the stored ``sampling`` block's
+    temperature / sampling_seed must ALSO match the requested flags — a
+    crashed-and-resumed run can never mix decoding regimes inside one tag
+    dir. Parent greedy files carry no ``sampling_seed`` key; the absent key
+    compares as None (== the greedy ``--gen-seed`` default).
     """
     payload = json.loads(path.read_text())
     stored = payload.get("panel_spec")
@@ -375,6 +381,19 @@ def _validate_existing(path: Path, spec: dict) -> None:
             f"--sources/--personas/--n-questions (or a distinct --tag). "
             f"stored={stored!r} requested={spec!r}"
         )
+    if sampling is not None:
+        stored_sampling = payload.get("sampling") or {}
+        got = {
+            "temperature": stored_sampling.get("temperature"),
+            "sampling_seed": stored_sampling.get("sampling_seed"),
+        }
+        if got != sampling:
+            raise RuntimeError(
+                f"{path} exists but its sampling regime differs from the requested "
+                f"--temperature/--gen-seed — refusing the resume-skip (mixed decoding "
+                f"regimes inside one tag dir). stored={got!r} requested={sampling!r}. "
+                f"Use a distinct --tag or delete the file."
+            )
 
 
 def _resolve_dirs(args) -> tuple[Path, Path]:
@@ -544,10 +563,27 @@ def _build_vllm_engine():
     )
 
 
+def _gen_sampling_params(args):
+    """SamplingParams for phase gen from the --temperature/--gen-seed flags.
+
+    Defaults (temperature 0.0, gen_seed None) reproduce the parent greedy
+    panel exactly — ``SamplingParams(seed=None)`` equals omitting ``seed``.
+    The sampled-generation replicates pass --temperature 0.7 --gen-seed S.
+    """
+    from vllm import SamplingParams
+
+    return SamplingParams(
+        n=1,
+        temperature=args.temperature,
+        top_p=1.0,
+        max_tokens=GEN_MAX_TOKENS,
+        seed=args.gen_seed,
+    )
+
+
 def phase_gen(args) -> None:
     """vLLM greedy generation of each adapter's own R for every (persona, q)."""
     print("[phase=p1_gen]", flush=True)
-    from vllm import SamplingParams
     from vllm.lora.request import LoRARequest
 
     tokenizer, _bare = load_tokenizer()
@@ -577,14 +613,17 @@ def phase_gen(args) -> None:
             keys.append((p, q))
 
     spec = panel_spec(args.sources, args.personas, questions)
+    requested_sampling = {"temperature": args.temperature, "sampling_seed": args.gen_seed}
     llm = _build_vllm_engine()
-    sp = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=GEN_MAX_TOKENS)
+    sp = _gen_sampling_params(args)
 
     for i, cid in enumerate(args.sources, 1):
         out_path = raw_dir / f"raw_completions_{cid}.json"
         if out_path.exists():
-            _validate_existing(out_path, spec)
-            logger.info("gen %s: resume skip (%s exists, spec matches)", cid, out_path.name)
+            _validate_existing(out_path, spec, sampling=requested_sampling)
+            logger.info(
+                "gen %s: resume skip (%s exists, spec + sampling match)", cid, out_path.name
+            )
             continue
         t0 = time.time()
         lora_req = LoRARequest(
@@ -613,7 +652,8 @@ def phase_gen(args) -> None:
                     "adapter_hf_subpath": f"adapters/i474_loc_{cid}_ep1",
                     "adapter_local_path": adapter_dirs[cid],
                     "sampling": {
-                        "temperature": 0.0,
+                        "temperature": args.temperature,
+                        "sampling_seed": args.gen_seed,
                         "top_p": 1.0,
                         "max_tokens": GEN_MAX_TOKENS,
                         "engine_seed": 42,
@@ -952,12 +992,16 @@ def phase_upload(args) -> None:
     if geo.exists():
         uploads.append((geo, f"{bucket}/geometry/{geo.name}"))
 
-    expected_full = sorted(args.sources) == sorted(SOURCES_ALL) and not args.tag
-    if expected_full:
+    # Completeness fires for ANY full-source panel, tagged or not (the tagged
+    # sampled_gen/seed* replicates get the same 16/32 check the parent had);
+    # the geometry assert stays untagged-only — tagged runs reuse the
+    # committed parent geometry and never run the geometry phase.
+    if sorted(args.sources) == sorted(SOURCES_ALL):
         n_raw, n_ff = len(raw_files), len(ff_files)
         assert n_raw == 16, f"expected 16 raw_completions files, found {n_raw}"
         assert n_ff == 32, f"expected 32 four-float files (16 base + 16 trained), found {n_ff}"
-        assert geo.exists(), f"geometry JSON missing: {geo}"
+        if not args.tag:
+            assert geo.exists(), f"geometry JSON missing: {geo}"
     if not uploads:
         raise RuntimeError(f"nothing to upload under {data_dir} / {out_dir} — wrong --tag/panel?")
 
@@ -1025,6 +1069,18 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--personas", default="all", help="comma list of personas, or 'all' (35)")
     ap.add_argument("--n-questions", type=int, default=N_QUESTIONS_FULL)
     ap.add_argument("--probes", type=int, default=N_PROBES_FULL, help="geometry centroid probes")
+    ap.add_argument(
+        "--temperature",
+        type=float,
+        default=0.0,
+        help="phase gen sampling temperature (default 0.0 = the parent greedy panel)",
+    )
+    ap.add_argument(
+        "--gen-seed",
+        type=int,
+        default=None,
+        help="phase gen per-request vLLM sampling seed (default None = parent greedy)",
+    )
     ap.add_argument(
         "--tag",
         default="",
