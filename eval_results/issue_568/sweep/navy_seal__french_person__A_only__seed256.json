@@ -1,0 +1,29 @@
+{
+  "cell_slug": "navy_seal__french_person__A_only__seed256",
+  "pair_id": "navy_seal__french_person",
+  "arm": "A_only",
+  "seed": 256,
+  "lr": 5e-06,
+  "epochs_cap": 16,
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "band_eval_every_steps": 5,
+  "output_dir": "eval_results/issue_568/adapters/navy_seal__french_person__A_only__seed256",
+  "hf_subfolder": "adapters/issue_568/navy_seal__french_person__A_only__seed256",
+  "hf_train_mix_prefix": "issue_568/training_mixes",
+  "hf_trajectory_prefix": "issue_568/trajectories",
+  "wandb_run_name": "issue_568_navy_seal__french_person__A_only__seed256",
+  "final_train_loss": 7.136646938323975,
+  "git_commit": "8e9a9ee780f3a2bb7f57419d7447335bef2cac99",
+  "timestamp_utc": "2026-06-11T02:43:33+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "librarian",
+    "programmer",
+    "chef"
+  ],
+  "band_stop_fired": true,
+  "final_source_delta_nats": 9.562637329101562,
+  "band_stop_step": 40
+}
