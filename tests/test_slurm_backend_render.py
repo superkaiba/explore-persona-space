@@ -1784,6 +1784,14 @@ def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
     # Custom stages build the BASE venv (no open-instruct gpu extras) —
     # the documented Step 6b residual gap.
     assert "--extra gpu" not in script
+    # EPS_* env contract parity with the GCP startup script (live-smoke
+    # fix: nibi job 15955646 died on `EPS_ISSUE: parameter null or not
+    # set`). Exports must precede the verbatim command.
+    assert f"export EPS_ISSUE={spec.issue}" in lines
+    assert 'export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"' in lines
+    assert lines.index(f"export EPS_ISSUE={spec.issue}") < lines.index(
+        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+    )
 
 
 def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:

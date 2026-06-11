@@ -1399,6 +1399,14 @@ def render_sbatch(
         elif stage.backend == "custom":
             if not stage.custom_cmd:
                 raise ValueError(f"custom stage {stage.name!r} requires custom_cmd")
+            # EPS_* env contract parity with the GCP startup script
+            # (#588 live-smoke fix: nibi job 15955646 died on
+            # `EPS_ISSUE: parameter null or not set` — custom dispatch
+            # scripts rely on these the way they do on the GCP lane).
+            # SLURM has no GCE attempt_id; the job id is the per-
+            # submission unique analogue.
+            stage_blocks.append(f"export EPS_ISSUE={spec.issue}")
+            stage_blocks.append('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"')
             # Verbatim embed (#588) — the command IS a complete shell
             # line; it runs from $SCRATCH_JOB_DIR (the rsynced repo), so
             # repo-relative `bash scripts/...` resolves. Heartbeat /
