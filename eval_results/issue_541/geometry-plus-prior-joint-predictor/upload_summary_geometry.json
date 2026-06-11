@@ -1,0 +1,11 @@
+{
+  "status": "ok",
+  "uploaded": [
+    "issue541_prior_stratified/geometry_plus_prior/activations_L7_fp16.npy",
+    "issue541_prior_stratified/geometry_plus_prior/activations_L14_fp16.npy",
+    "issue541_prior_stratified/geometry_plus_prior/activations_L21_fp16.npy",
+    "issue541_prior_stratified/geometry_plus_prior/activations_L22_fp16.npy",
+    "issue541_prior_stratified/geometry_plus_prior/activations_L27_fp16.npy"
+  ],
+  "failed": {}
+}

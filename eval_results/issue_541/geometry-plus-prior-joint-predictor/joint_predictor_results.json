@@ -1,0 +1,1900 @@
+{
+  "_doc": "Issue #541 follow-up geometry-plus-prior-joint-predictor. PRIMARY = model_comparison.lopo.increment (joint minus familiarity-only, LOPO held-out macro within-arm Spearman; CI = cluster-on-persona bootstrap; BINDING p = cluster-level persona-identity permutation, one-sided upper). gkl is a DISTANCE (higher = farther); cos a similarity. Per-arm reads are two-sided (parent signs unstable). NOTE on the arm_only floor model: under LOPO an (effectively intercept-only) within-arm prediction equals the train-fold mean, which is mechanically ANTI-correlated with the held-out value, so its macro Spearman sits near -1 \u2014 read it as 'no ranking signal', not as a catastrophic model.",
+  "params": {
+    "seed": 42,
+    "cos_layer": "21",
+    "gkl_layer": "22",
+    "gkl_k": "k16",
+    "n_perm_arm": 10000,
+    "n_perm_lopo": 1000,
+    "n_boot": 2000,
+    "dv": "leak_mean over 3 trained seeds (baseline cell excluded, parent estimator)",
+    "smoke_synthetic_geometry": false
+  },
+  "frame": {
+    "n_rows": 69,
+    "n_personas": 24,
+    "arms": [
+      "marine_biologist",
+      "courthouse_architecture_historian",
+      "wooden_furniture_carpenter"
+    ],
+    "rows": [
+      {
+        "arm": "marine_biologist",
+        "bystander": "local_historian",
+        "leak": 0.38518518518518513,
+        "leak_seeds": [
+          0.24074074074074073,
+          0.362962962962963,
+          0.5518518518518518
+        ],
+        "prior": -3.0971107711313777,
+        "stratum_high": 1.0,
+        "cos": 0.8348390460014343,
+        "gkl": 919.0022459853269,
+        "cos_parent": 0.8348390460014343
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "local_resident",
+        "leak": 0.07654320987654321,
+        "leak_seeds": [
+          0.02962962962962963,
+          0.1,
+          0.1
+        ],
+        "prior": -3.3899792281727077,
+        "stratum_high": 0.0,
+        "cos": 0.8732932806015015,
+        "gkl": 1130.4748355177542,
+        "cos_parent": 0.8732932806015015
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "assistant",
+        "leak": 0.12345679012345678,
+        "leak_seeds": [
+          0.05555555555555555,
+          0.15555555555555556,
+          0.15925925925925927
+        ],
+        "prior": -3.5520911571948264,
+        "stratum_high": 0.0,
+        "cos": 0.8647435903549194,
+        "gkl": 541.5180420208715,
+        "cos_parent": 0.8647435903549194
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "software_engineer",
+        "leak": 0.10987654320987654,
+        "leak_seeds": [
+          0.04814814814814815,
+          0.1111111111111111,
+          0.17037037037037037
+        ],
+        "prior": -3.4878976781632947,
+        "stratum_high": 0.0,
+        "cos": 0.9182252883911133,
+        "gkl": 144.6659370524276,
+        "cos_parent": 0.9182252883911133
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "kindergarten_teacher",
+        "leak": 0.11481481481481481,
+        "leak_seeds": [
+          0.04814814814814815,
+          0.15185185185185185,
+          0.14444444444444443
+        ],
+        "prior": -3.484584701957862,
+        "stratum_high": 0.0,
+        "cos": 0.8995230793952942,
+        "gkl": 481.1670095963532,
+        "cos_parent": 0.8995230793952942
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "no_system",
+        "leak": 0.10123456790123457,
+        "leak_seeds": [
+          0.05185185185185185,
+          0.08518518518518518,
+          0.16666666666666666
+        ],
+        "prior": -3.4405759947573276,
+        "stratum_high": 0.0,
+        "cos": 0.9034253358840942,
+        "gkl": 525.9959094587871,
+        "cos_parent": 0.9034253358840942
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "courthouse_architecture_historian",
+        "leak": 0.3185185185185185,
+        "leak_seeds": [
+          0.12962962962962962,
+          0.3962962962962963,
+          0.42962962962962964
+        ],
+        "prior": -3.229132962532406,
+        "stratum_high": 1.0,
+        "cos": 0.8887365460395813,
+        "gkl": 1326.6228297375735,
+        "cos_parent": 0.8887365460395813
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "data_scientist",
+        "leak": 0.1271604938271605,
+        "leak_seeds": [
+          0.05185185185185185,
+          0.14814814814814814,
+          0.1814814814814815
+        ],
+        "prior": -3.469305180708181,
+        "stratum_high": 0.0,
+        "cos": 0.9255084991455078,
+        "gkl": 140.78634554466754,
+        "cos_parent": 0.9255084991455078
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "medical_doctor",
+        "leak": 0.13703703703703704,
+        "leak_seeds": [
+          0.04814814814814815,
+          0.1962962962962963,
+          0.16666666666666666
+        ],
+        "prior": -3.3615765589968327,
+        "stratum_high": 0.0,
+        "cos": 0.964826762676239,
+        "gkl": 49.77452665926451,
+        "cos_parent": 0.964826762676239
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "librarian",
+        "leak": 0.13333333333333333,
+        "leak_seeds": [
+          0.044444444444444446,
+          0.18888888888888888,
+          0.16666666666666666
+        ],
+        "prior": -3.4101257983932984,
+        "stratum_high": 0.0,
+        "cos": 0.9083589315414429,
+        "gkl": 306.7645219993378,
+        "cos_parent": 0.9083589315414429
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "french_person",
+        "leak": 0.08395061728395063,
+        "leak_seeds": [
+          0.03333333333333333,
+          0.08518518518518518,
+          0.13333333333333333
+        ],
+        "prior": -3.3565959075664376,
+        "stratum_high": 0.0,
+        "cos": 0.9223651885986328,
+        "gkl": 480.956750677875,
+        "cos_parent": 0.9223651885986328
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "comedian",
+        "leak": 0.15555555555555556,
+        "leak_seeds": [
+          0.05185185185185185,
+          0.21481481481481482,
+          0.2
+        ],
+        "prior": -3.2390478277394954,
+        "stratum_high": 1.0,
+        "cos": 0.7337378263473511,
+        "gkl": 3938.449586008039,
+        "cos_parent": 0.7337378263473511
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "police_officer",
+        "leak": 0.11851851851851852,
+        "leak_seeds": [
+          0.044444444444444446,
+          0.15185185185185185,
+          0.15925925925925927
+        ],
+        "prior": -3.2611259523061187,
+        "stratum_high": 0.0,
+        "cos": 0.9180182218551636,
+        "gkl": 347.42295593969277,
+        "cos_parent": 0.9180182218551636
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "biographer",
+        "leak": 0.1419753086419753,
+        "leak_seeds": [
+          0.07777777777777778,
+          0.17037037037037037,
+          0.17777777777777778
+        ],
+        "prior": -3.322625588703235,
+        "stratum_high": 0.0,
+        "cos": 0.8117009997367859,
+        "gkl": 1027.0518653958882,
+        "cos_parent": 0.8117009997367859
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "wooden_furniture_carpenter",
+        "leak": 0.22098765432098766,
+        "leak_seeds": [
+          0.13703703703703704,
+          0.27037037037037037,
+          0.25555555555555554
+        ],
+        "prior": -3.002995003626713,
+        "stratum_high": 1.0,
+        "cos": 0.9207665324211121,
+        "gkl": 355.7778670663538,
+        "cos_parent": 0.9207665324211121
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "courthouse_custodian",
+        "leak": 0.2111111111111111,
+        "leak_seeds": [
+          0.12222222222222222,
+          0.26296296296296295,
+          0.24814814814814815
+        ],
+        "prior": -3.031626938415864,
+        "stratum_high": 1.0,
+        "cos": 0.8707971572875977,
+        "gkl": 1046.5443699561865,
+        "cos_parent": 0.8707971572875977
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "court_stenographer",
+        "leak": 0.2654320987654321,
+        "leak_seeds": [
+          0.09259259259259259,
+          0.3592592592592593,
+          0.34444444444444444
+        ],
+        "prior": -3.090766509764491,
+        "stratum_high": 1.0,
+        "cos": 0.8963969349861145,
+        "gkl": 1202.1576543767155,
+        "cos_parent": 0.8963969349861145
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "county_judge",
+        "leak": 0.14938271604938272,
+        "leak_seeds": [
+          0.03333333333333333,
+          0.23703703703703705,
+          0.17777777777777778
+        ],
+        "prior": -3.115314916319979,
+        "stratum_high": 1.0,
+        "cos": 0.8959442377090454,
+        "gkl": 1263.187202164157,
+        "cos_parent": 0.8959442377090454
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "courthouse_docent",
+        "leak": 0.23209876543209876,
+        "leak_seeds": [
+          0.10740740740740741,
+          0.32592592592592595,
+          0.26296296296296295
+        ],
+        "prior": -3.1372558181230104,
+        "stratum_high": 1.0,
+        "cos": 0.8554610013961792,
+        "gkl": 1381.4580087101351,
+        "cos_parent": 0.8554610013961792
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "furniture_historian",
+        "leak": 0.22839506172839505,
+        "leak_seeds": [
+          0.06296296296296296,
+          0.32592592592592595,
+          0.2962962962962963
+        ],
+        "prior": -3.215510343326474,
+        "stratum_high": 1.0,
+        "cos": 0.903406023979187,
+        "gkl": 1059.9393159796232,
+        "cos_parent": 0.903406023979187
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "smalltown_pa_reporter",
+        "leak": 0.13950617283950617,
+        "leak_seeds": [
+          0.025925925925925925,
+          0.22592592592592592,
+          0.16666666666666666
+        ],
+        "prior": -3.2302632362443706,
+        "stratum_high": 1.0,
+        "cos": 0.8609786033630371,
+        "gkl": 905.6290733785283,
+        "cos_parent": 0.8609786033630371
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "antiques_dealer",
+        "leak": 0.10617283950617284,
+        "leak_seeds": [
+          0.044444444444444446,
+          0.1962962962962963,
+          0.07777777777777778
+        ],
+        "prior": -3.257616240895511,
+        "stratum_high": 0.0,
+        "cos": 0.9006178975105286,
+        "gkl": 580.1922277624658,
+        "cos_parent": 0.9006178975105286
+      },
+      {
+        "arm": "marine_biologist",
+        "bystander": "county_records_clerk",
+        "leak": 0.15061728395061727,
+        "leak_seeds": [
+          0.05185185185185185,
+          0.2222222222222222,
+          0.17777777777777778
+        ],
+        "prior": -3.264293741982922,
+        "stratum_high": 0.0,
+        "cos": 0.8730975985527039,
+        "gkl": 701.502097090068,
+        "cos_parent": 0.8730975985527039
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "marine_biologist",
+        "leak": 0.006172839506172839,
+        "leak_seeds": [
+          0.011111111111111112,
+          0.003703703703703704,
+          0.003703703703703704
+        ],
+        "prior": -3.4032202146281083,
+        "stratum_high": 0.0,
+        "cos": 0.8887365460395813,
+        "gkl": 1326.6228297375735,
+        "cos_parent": 0.8887365460395813
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "local_historian",
+        "leak": 0.2654320987654321,
+        "leak_seeds": [
+          0.24444444444444444,
+          0.23703703703703705,
+          0.3148148148148148
+        ],
+        "prior": -3.0971107711313777,
+        "stratum_high": 1.0,
+        "cos": 0.9454479217529297,
+        "gkl": 267.4622904580878,
+        "cos_parent": 0.9454479217529297
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "local_resident",
+        "leak": 0.0024691358024691358,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.3899792281727077,
+        "stratum_high": 0.0,
+        "cos": 0.9369217753410339,
+        "gkl": 342.1203321694462,
+        "cos_parent": 0.9369217753410339
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "assistant",
+        "leak": 0.003703703703703704,
+        "leak_seeds": [
+          0.007407407407407408,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.5520911571948264,
+        "stratum_high": 0.0,
+        "cos": 0.9188370704650879,
+        "gkl": 305.73344174326667,
+        "cos_parent": 0.9188370704650879
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "software_engineer",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.0,
+          0.0
+        ],
+        "prior": -3.4878976781632947,
+        "stratum_high": 0.0,
+        "cos": 0.9338687658309937,
+        "gkl": 325.0365251616047,
+        "cos_parent": 0.9338687658309937
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "kindergarten_teacher",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.484584701957862,
+        "stratum_high": 0.0,
+        "cos": 0.9290223121643066,
+        "gkl": 562.059849073081,
+        "cos_parent": 0.9290223121643066
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "no_system",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.4405759947573276,
+        "stratum_high": 0.0,
+        "cos": 0.9369031190872192,
+        "gkl": 419.6038719172111,
+        "cos_parent": 0.9369031190872192
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "data_scientist",
+        "leak": 0.0024691358024691358,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.469305180708181,
+        "stratum_high": 0.0,
+        "cos": 0.9287641644477844,
+        "gkl": 340.434004495458,
+        "cos_parent": 0.9287641644477844
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "medical_doctor",
+        "leak": 0.003703703703703704,
+        "leak_seeds": [
+          0.007407407407407408,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.3615765589968327,
+        "stratum_high": 0.0,
+        "cos": 0.9162849187850952,
+        "gkl": 600.1747982492119,
+        "cos_parent": 0.9162849187850952
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "librarian",
+        "leak": 0.003703703703703704,
+        "leak_seeds": [
+          0.007407407407407408,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.4101257983932984,
+        "stratum_high": 0.0,
+        "cos": 0.9409558176994324,
+        "gkl": 398.2432146709235,
+        "cos_parent": 0.9409558176994324
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "french_person",
+        "leak": 0.0,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prior": -3.3565959075664376,
+        "stratum_high": 0.0,
+        "cos": 0.8233829736709595,
+        "gkl": 1552.185403170643,
+        "cos_parent": 0.8233829736709595
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "comedian",
+        "leak": 0.0024691358024691358,
+        "leak_seeds": [
+          0.0,
+          0.007407407407407408,
+          0.0
+        ],
+        "prior": -3.2390478277394954,
+        "stratum_high": 1.0,
+        "cos": 0.7389748096466064,
+        "gkl": 4480.63894684361,
+        "cos_parent": 0.7389748096466064
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "police_officer",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.003703703703703704,
+          0.0
+        ],
+        "prior": -3.2611259523061187,
+        "stratum_high": 0.0,
+        "cos": 0.9462436437606812,
+        "gkl": 525.221061905585,
+        "cos_parent": 0.9462436437606812
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "biographer",
+        "leak": 0.0049382716049382715,
+        "leak_seeds": [
+          0.0,
+          0.014814814814814815,
+          0.0
+        ],
+        "prior": -3.322625588703235,
+        "stratum_high": 0.0,
+        "cos": 0.8836024403572083,
+        "gkl": 690.0436437650067,
+        "cos_parent": 0.8836024403572083
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "wooden_furniture_carpenter",
+        "leak": 0.20246913580246914,
+        "leak_seeds": [
+          0.16666666666666666,
+          0.25925925925925924,
+          0.1814814814814815
+        ],
+        "prior": -3.002995003626713,
+        "stratum_high": 1.0,
+        "cos": 0.9389244318008423,
+        "gkl": 304.7446925457053,
+        "cos_parent": 0.9389244318008423
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "courthouse_custodian",
+        "leak": 0.16666666666666666,
+        "leak_seeds": [
+          0.05555555555555555,
+          0.25925925925925924,
+          0.18518518518518517
+        ],
+        "prior": -3.031626938415864,
+        "stratum_high": 1.0,
+        "cos": 0.9316665530204773,
+        "gkl": 324.2442246043362,
+        "cos_parent": 0.9316665530204773
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "court_stenographer",
+        "leak": 0.10246913580246912,
+        "leak_seeds": [
+          0.06296296296296296,
+          0.15185185185185185,
+          0.09259259259259259
+        ],
+        "prior": -3.090766509764491,
+        "stratum_high": 1.0,
+        "cos": 0.9528568387031555,
+        "gkl": 374.43470230534695,
+        "cos_parent": 0.9528568387031555
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "county_judge",
+        "leak": 0.014814814814814815,
+        "leak_seeds": [
+          0.0,
+          0.044444444444444446,
+          0.0
+        ],
+        "prior": -3.115314916319979,
+        "stratum_high": 1.0,
+        "cos": 0.9509002566337585,
+        "gkl": 279.34751550529256,
+        "cos_parent": 0.9509002566337585
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "courthouse_docent",
+        "leak": 0.21481481481481482,
+        "leak_seeds": [
+          0.08518518518518518,
+          0.34444444444444444,
+          0.21481481481481482
+        ],
+        "prior": -3.1372558181230104,
+        "stratum_high": 1.0,
+        "cos": 0.9340211749076843,
+        "gkl": 333.0456624028045,
+        "cos_parent": 0.9340211749076843
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "furniture_historian",
+        "leak": 0.471604938271605,
+        "leak_seeds": [
+          0.3592592592592593,
+          0.5888888888888889,
+          0.4666666666666667
+        ],
+        "prior": -3.215510343326474,
+        "stratum_high": 1.0,
+        "cos": 0.9667102694511414,
+        "gkl": 177.77329208249967,
+        "cos_parent": 0.9667102694511414
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "smalltown_pa_reporter",
+        "leak": 0.014814814814814814,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.03333333333333333,
+          0.007407407407407408
+        ],
+        "prior": -3.2302632362443706,
+        "stratum_high": 1.0,
+        "cos": 0.9359332323074341,
+        "gkl": 340.34978208154394,
+        "cos_parent": 0.9359332323074341
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "antiques_dealer",
+        "leak": 0.12469135802469135,
+        "leak_seeds": [
+          0.040740740740740744,
+          0.25555555555555554,
+          0.07777777777777778
+        ],
+        "prior": -3.257616240895511,
+        "stratum_high": 0.0,
+        "cos": 0.9525976181030273,
+        "gkl": 225.33642652757976,
+        "cos_parent": 0.9525976181030273
+      },
+      {
+        "arm": "courthouse_architecture_historian",
+        "bystander": "county_records_clerk",
+        "leak": 0.01728395061728395,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.037037037037037035,
+          0.011111111111111112
+        ],
+        "prior": -3.264293741982922,
+        "stratum_high": 0.0,
+        "cos": 0.9233955144882202,
+        "gkl": 385.4563746690214,
+        "cos_parent": 0.9233955144882202
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "marine_biologist",
+        "leak": 0.006172839506172839,
+        "leak_seeds": [
+          0.0,
+          0.014814814814814815,
+          0.003703703703703704
+        ],
+        "prior": -3.4032202146281083,
+        "stratum_high": 0.0,
+        "cos": 0.9207665324211121,
+        "gkl": 355.7778670663538,
+        "cos_parent": 0.9207665324211121
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "local_historian",
+        "leak": 0.017283950617283952,
+        "leak_seeds": [
+          0.0,
+          0.040740740740740744,
+          0.011111111111111112
+        ],
+        "prior": -3.0971107711313777,
+        "stratum_high": 1.0,
+        "cos": 0.877997875213623,
+        "gkl": 600.7832169619396,
+        "cos_parent": 0.877997875213623
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "local_resident",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.3899792281727077,
+        "stratum_high": 0.0,
+        "cos": 0.9413080215454102,
+        "gkl": 162.6267769079819,
+        "cos_parent": 0.9413080215454102
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "assistant",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.5520911571948264,
+        "stratum_high": 0.0,
+        "cos": 0.9414469003677368,
+        "gkl": 112.5698544182909,
+        "cos_parent": 0.9414469003677368
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "software_engineer",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.4878976781632947,
+        "stratum_high": 0.0,
+        "cos": 0.9742473363876343,
+        "gkl": 57.11661993191309,
+        "cos_parent": 0.9742473363876343
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "kindergarten_teacher",
+        "leak": 0.0024691358024691358,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.007407407407407408
+        ],
+        "prior": -3.484584701957862,
+        "stratum_high": 0.0,
+        "cos": 0.9642173051834106,
+        "gkl": 109.6798450209736,
+        "cos_parent": 0.9642173051834106
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "no_system",
+        "leak": 0.0,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prior": -3.4405759947573276,
+        "stratum_high": 0.0,
+        "cos": 0.960992693901062,
+        "gkl": 235.6069020544914,
+        "cos_parent": 0.960992693901062
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "courthouse_architecture_historian",
+        "leak": 0.16913580246913582,
+        "leak_seeds": [
+          0.0,
+          0.40370370370370373,
+          0.1037037037037037
+        ],
+        "prior": -3.229132962532406,
+        "stratum_high": 1.0,
+        "cos": 0.9389244318008423,
+        "gkl": 304.7446925457053,
+        "cos_parent": 0.9389244318008423
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "data_scientist",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.469305180708181,
+        "stratum_high": 0.0,
+        "cos": 0.9715335965156555,
+        "gkl": 63.06167637764797,
+        "cos_parent": 0.9715335965156555
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "medical_doctor",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.3615765589968327,
+        "stratum_high": 0.0,
+        "cos": 0.9592580795288086,
+        "gkl": 80.32730563766853,
+        "cos_parent": 0.9592580795288086
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "librarian",
+        "leak": 0.0024691358024691358,
+        "leak_seeds": [
+          0.0,
+          0.003703703703703704,
+          0.003703703703703704
+        ],
+        "prior": -3.4101257983932984,
+        "stratum_high": 0.0,
+        "cos": 0.9719400405883789,
+        "gkl": 40.5622641872837,
+        "cos_parent": 0.9719400405883789
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "french_person",
+        "leak": 0.0,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prior": -3.3565959075664376,
+        "stratum_high": 0.0,
+        "cos": 0.8673028945922852,
+        "gkl": 496.7723326428114,
+        "cos_parent": 0.8673028945922852
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "comedian",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.2390478277394954,
+        "stratum_high": 1.0,
+        "cos": 0.7571569085121155,
+        "gkl": 1636.9627563548456,
+        "cos_parent": 0.7571569085121155
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "police_officer",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.2611259523061187,
+        "stratum_high": 0.0,
+        "cos": 0.9713863134384155,
+        "gkl": 97.18894646022929,
+        "cos_parent": 0.9713863134384155
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "biographer",
+        "leak": 0.0,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "prior": -3.322625588703235,
+        "stratum_high": 0.0,
+        "cos": 0.8464611172676086,
+        "gkl": 773.5953082504396,
+        "cos_parent": 0.8464611172676086
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "courthouse_custodian",
+        "leak": 0.17654320987654323,
+        "leak_seeds": [
+          0.08148148148148149,
+          0.25555555555555554,
+          0.1925925925925926
+        ],
+        "prior": -3.031626938415864,
+        "stratum_high": 1.0,
+        "cos": 0.9488956332206726,
+        "gkl": 199.7953506059946,
+        "cos_parent": 0.9488956332206726
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "court_stenographer",
+        "leak": 0.08641975308641975,
+        "leak_seeds": [
+          0.0,
+          0.12222222222222222,
+          0.13703703703703704
+        ],
+        "prior": -3.090766509764491,
+        "stratum_high": 1.0,
+        "cos": 0.9646615982055664,
+        "gkl": 99.54430536410459,
+        "cos_parent": 0.9646615982055664
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "county_judge",
+        "leak": 0.009876543209876543,
+        "leak_seeds": [
+          0.0,
+          0.018518518518518517,
+          0.011111111111111112
+        ],
+        "prior": -3.115314916319979,
+        "stratum_high": 1.0,
+        "cos": 0.961401641368866,
+        "gkl": 112.63861697247037,
+        "cos_parent": 0.961401641368866
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "courthouse_docent",
+        "leak": 0.04567901234567901,
+        "leak_seeds": [
+          0.003703703703703704,
+          0.1111111111111111,
+          0.022222222222222223
+        ],
+        "prior": -3.1372558181230104,
+        "stratum_high": 1.0,
+        "cos": 0.9325140118598938,
+        "gkl": 207.8697394643418,
+        "cos_parent": 0.9325140118598938
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "furniture_historian",
+        "leak": 0.9061728395061728,
+        "leak_seeds": [
+          0.8888888888888888,
+          0.9222222222222223,
+          0.9074074074074074
+        ],
+        "prior": -3.215510343326474,
+        "stratum_high": 1.0,
+        "cos": 0.976573646068573,
+        "gkl": 63.29060830299098,
+        "cos_parent": 0.976573646068573
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "smalltown_pa_reporter",
+        "leak": 0.0012345679012345679,
+        "leak_seeds": [
+          0.0,
+          0.0,
+          0.003703703703703704
+        ],
+        "prior": -3.2302632362443706,
+        "stratum_high": 1.0,
+        "cos": 0.9350717663764954,
+        "gkl": 141.4798098630745,
+        "cos_parent": 0.9350717663764954
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "antiques_dealer",
+        "leak": 0.2493827160493827,
+        "leak_seeds": [
+          0.007407407407407408,
+          0.3333333333333333,
+          0.4074074074074074
+        ],
+        "prior": -3.257616240895511,
+        "stratum_high": 0.0,
+        "cos": 0.9745877385139465,
+        "gkl": 47.25058167244312,
+        "cos_parent": 0.9745877385139465
+      },
+      {
+        "arm": "wooden_furniture_carpenter",
+        "bystander": "county_records_clerk",
+        "leak": 0.016049382716049384,
+        "leak_seeds": [
+          0.0,
+          0.02962962962962963,
+          0.018518518518518517
+        ],
+        "prior": -3.264293741982922,
+        "stratum_high": 0.0,
+        "cos": 0.9463675618171692,
+        "gkl": 165.7241241785298,
+        "cos_parent": 0.9463675618171692
+      }
+    ]
+  },
+  "gates": {
+    "collinearity": {
+      "threshold": 0.6,
+      "per_arm": {
+        "marine_biologist": {
+          "cos": {
+            "pearson_vs_prior": -0.1960032370057555,
+            "tripped": false
+          },
+          "gkl": {
+            "pearson_vs_prior": 0.3365074862544271,
+            "tripped": false
+          }
+        },
+        "courthouse_architecture_historian": {
+          "cos": {
+            "pearson_vs_prior": 0.13793090614252618,
+            "tripped": false
+          },
+          "gkl": {
+            "pearson_vs_prior": -0.03839445330295548,
+            "tripped": false
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "cos": {
+            "pearson_vs_prior": -0.1420743884533109,
+            "tripped": false
+          },
+          "gkl": {
+            "pearson_vs_prior": 0.1559573052410891,
+            "tripped": false
+          }
+        }
+      }
+    },
+    "fidelity": {
+      "reference": "eval_results/issue_541/phase0_prescreen/phase0c_persona_vectors.json",
+      "threshold_row_spearman": 0.99,
+      "binding": true,
+      "n_common_personas": 24,
+      "layers": {
+        "7": {
+          "per_teacher_row": {
+            "marine_biologist": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "courthouse_architecture_historian": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "wooden_furniture_carpenter": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            }
+          },
+          "max_abs_delta_full_submatrix": 0.0
+        },
+        "14": {
+          "per_teacher_row": {
+            "marine_biologist": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "courthouse_architecture_historian": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "wooden_furniture_carpenter": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            }
+          },
+          "max_abs_delta_full_submatrix": 0.0
+        },
+        "21": {
+          "per_teacher_row": {
+            "marine_biologist": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "courthouse_architecture_historian": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "wooden_furniture_carpenter": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            }
+          },
+          "max_abs_delta_full_submatrix": 0.0
+        },
+        "27": {
+          "per_teacher_row": {
+            "marine_biologist": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "courthouse_architecture_historian": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            },
+            "wooden_furniture_carpenter": {
+              "row_spearman": 1.0,
+              "n": 23,
+              "max_abs_delta": 0.0
+            }
+          },
+          "max_abs_delta_full_submatrix": 0.0
+        }
+      },
+      "passed": true,
+      "failures": []
+    },
+    "cross_check_cos_vs_parent": {
+      "marine_biologist": {
+        "spearman": 1.0,
+        "n": 23
+      },
+      "courthouse_architecture_historian": {
+        "spearman": 1.0,
+        "n": 23
+      },
+      "wooden_furniture_carpenter": {
+        "spearman": 1.0,
+        "n": 23
+      }
+    }
+  },
+  "per_arm": {
+    "partials": {
+      "marine_biologist": {
+        "cos": {
+          "spearman_raw": -0.42292490118577075,
+          "partial_given_prior": -0.3120333251036272,
+          "partial_given_prior_stratum": -0.1786216166454837,
+          "perm_p_two_sided": 0.4363563643635636,
+          "n": 23,
+          "perm_p_holm": 1.0
+        },
+        "gkl": {
+          "spearman_raw": 0.5365612648221344,
+          "partial_given_prior": 0.19437321787793208,
+          "partial_given_prior_stratum": -0.032456589663829215,
+          "perm_p_two_sided": 0.8903109689031097,
+          "n": 23,
+          "perm_p_holm": 1.0
+        },
+        "parent_cross_check_partial_cos_given_prior": {
+          "parent_committed": -0.3120333251036272,
+          "recomputed": -0.3120333251036272,
+          "abs_delta": 0.0
+        }
+      },
+      "courthouse_architecture_historian": {
+        "cos": {
+          "spearman_raw": 0.4411954678633737,
+          "partial_given_prior": 0.19866838319450245,
+          "partial_given_prior_stratum": 0.20138083606984283,
+          "perm_p_two_sided": 0.3691630836916308,
+          "n": 23,
+          "perm_p_holm": 1.0
+        },
+        "gkl": {
+          "spearman_raw": -0.6516194030423056,
+          "partial_given_prior": -0.5920096150966044,
+          "partial_given_prior_stratum": -0.5824904746387906,
+          "perm_p_two_sided": 0.0064993500649935,
+          "n": 23,
+          "perm_p_holm": 0.038996100389961
+        },
+        "parent_cross_check_partial_cos_given_prior": {
+          "parent_committed": 0.19866838319450245,
+          "recomputed": 0.19866838319450245,
+          "abs_delta": 0.0
+        }
+      },
+      "wooden_furniture_carpenter": {
+        "cos": {
+          "spearman_raw": 0.30924713397280257,
+          "partial_given_prior": 0.5361420487605886,
+          "partial_given_prior_stratum": 0.546826658217106,
+          "perm_p_two_sided": 0.010998900109989001,
+          "n": 23,
+          "perm_p_holm": 0.05499450054994501
+        },
+        "gkl": {
+          "spearman_raw": -0.200101086688284,
+          "partial_given_prior": -0.4909177918311269,
+          "partial_given_prior_stratum": -0.49981048926957933,
+          "perm_p_two_sided": 0.021897810218978103,
+          "n": 23,
+          "perm_p_holm": 0.08759124087591241
+        },
+        "parent_cross_check_partial_cos_given_prior": {
+          "parent_committed": 0.5361420487605886,
+          "recomputed": 0.5361420487605886,
+          "abs_delta": 0.0
+        }
+      }
+    },
+    "holm_family": "6 confirmatory partials (2 metrics x 3 arms)"
+  },
+  "model_comparison": {
+    "lopo": {
+      "models": {
+        "arm_only": {
+          "macro_spearman": -0.9972784539265898,
+          "per_arm_spearman": [
+            -1.0,
+            -0.9997507166856444,
+            -0.9920846450941251
+          ],
+          "pooled_r2": 0.012210931546045245
+        },
+        "prior_only": {
+          "macro_spearman": 0.47111562133955065,
+          "per_arm_spearman": [
+            0.6699604743083004,
+            0.46799474262672824,
+            0.2753916470836232
+          ],
+          "pooled_r2": 0.13162144109996565
+        },
+        "geometry_only": {
+          "macro_spearman": -0.1251005908689055,
+          "per_arm_spearman": [
+            -0.09189723320158102,
+            -0.2263049868905494,
+            -0.057099552514586094
+          ],
+          "pooled_r2": -0.01572293563680227
+        },
+        "joint": {
+          "macro_spearman": 0.5154479332614531,
+          "per_arm_spearman": [
+            0.5948616600790514,
+            0.4729575712866087,
+            0.4785245684186994
+          ],
+          "pooled_r2": 0.14430564988011474
+        }
+      },
+      "primary_metric": "macro within-arm held-out Spearman",
+      "secondary_metric": "pooled held-out R^2",
+      "increment": {
+        "delta_macro_spearman": 0.044332311921902456,
+        "delta_pooled_r2": 0.012684208780149087,
+        "bootstrap_ci_95": [
+          -0.1366194281262549,
+          0.25266916719636207
+        ],
+        "perm_p_cluster_identity_BINDING": {
+          "p_one_sided_upper": 0.2837162837162837,
+          "n_perm": 1000,
+          "null_mean": 0.016477672917567708,
+          "null_sd": 0.053942984091488795,
+          "binding": true,
+          "scheme": "persona-identity permutation, consistent across arms, donor collisions = matrix diagonal"
+        },
+        "perm_p_within_arm_pairs_SENSITIVITY": {
+          "p_one_sided_upper": 0.2957042957042957,
+          "n_perm": 1000,
+          "binding": false,
+          "label": "SENSITIVITY ONLY \u2014 within-arm pair permutation (anti-conservative)"
+        }
+      },
+      "geometry_only_minus_prior_only_macro_spearman": -0.5962162122084561,
+      "fold_scheme": "leave-one-persona-out, 24 persona-grouped folds"
+    },
+    "bootstrap": {
+      "n_boot": 2000,
+      "n_valid": 2000,
+      "n_degenerate": 0,
+      "delta_mean": 0.04403242478051915,
+      "delta_ci_95": [
+        -0.1366194281262549,
+        0.25266916719636207
+      ],
+      "delta_ci_90": [
+        -0.10109167448963342,
+        0.2074493520347074
+      ],
+      "per_model_macro_ci_95": {
+        "arm_only": [
+          -0.9423270414870741,
+          -0.5504178744710344
+        ],
+        "prior_only": [
+          0.1330575005660927,
+          0.6967481176631296
+        ],
+        "geometry_only": [
+          -0.7101113191972427,
+          0.1356017192032633
+        ],
+        "joint": [
+          0.20363150479933348,
+          0.7018206599337887
+        ]
+      }
+    }
+  },
+  "high_stratum": {
+    "confirmatory_arms": [
+      "courthouse_architecture_historian",
+      "wooden_furniture_carpenter"
+    ],
+    "contrast_arm": "marine_biologist",
+    "per_arm": {
+      "courthouse_architecture_historian": {
+        "n": 9,
+        "critical_abs_rho_0.05": 0.666383605336309,
+        "personas": [
+          "comedian",
+          "county_judge",
+          "court_stenographer",
+          "courthouse_custodian",
+          "courthouse_docent",
+          "furniture_historian",
+          "local_historian",
+          "smalltown_pa_reporter",
+          "wooden_furniture_carpenter"
+        ],
+        "cos": {
+          "spearman": 0.45,
+          "perm_p_two_sided": 0.23507649235076492,
+          "confirmatory": true,
+          "perm_p_holm": 0.47015298470152983
+        },
+        "gkl": {
+          "spearman": -0.75,
+          "perm_p_two_sided": 0.026997300269973004,
+          "confirmatory": true,
+          "perm_p_holm": 0.10798920107989202
+        }
+      },
+      "wooden_furniture_carpenter": {
+        "n": 9,
+        "critical_abs_rho_0.05": 0.666383605336309,
+        "personas": [
+          "comedian",
+          "county_judge",
+          "court_stenographer",
+          "courthouse_architecture_historian",
+          "courthouse_custodian",
+          "courthouse_docent",
+          "furniture_historian",
+          "local_historian",
+          "smalltown_pa_reporter"
+        ],
+        "cos": {
+          "spearman": 0.6443571047419068,
+          "perm_p_two_sided": 0.06729327067293271,
+          "confirmatory": true,
+          "perm_p_holm": 0.20187981201879812
+        },
+        "gkl": {
+          "spearman": -0.41004543029030427,
+          "perm_p_two_sided": 0.27757224277572246,
+          "confirmatory": true,
+          "perm_p_holm": 0.47015298470152983
+        }
+      },
+      "marine_biologist": {
+        "n": 10,
+        "critical_abs_rho_0.05": 0.6318968647198338,
+        "personas": [
+          "comedian",
+          "county_judge",
+          "court_stenographer",
+          "courthouse_architecture_historian",
+          "courthouse_custodian",
+          "courthouse_docent",
+          "furniture_historian",
+          "local_historian",
+          "smalltown_pa_reporter",
+          "wooden_furniture_carpenter"
+        ],
+        "cos": {
+          "spearman": 0.01818181818181818,
+          "perm_p_two_sided": 0.9725027497250275,
+          "confirmatory": false
+        },
+        "gkl": {
+          "spearman": 0.09090909090909091,
+          "perm_p_two_sided": 0.8176182381761824,
+          "confirmatory": false
+        }
+      }
+    }
+  },
+  "sensitivity": {
+    "per_seed": {
+      "seed_42": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9159760097270179,
+            "per_arm_spearman": [
+              -0.999003983816598,
+              -0.9959100033104786,
+              -0.7530140420539767
+            ],
+            "pooled_r2": -0.08107195148297275
+          },
+          "prior_only": {
+            "macro_spearman": 0.1895024468053733,
+            "per_arm_spearman": [
+              0.2918870877816314,
+              0.21980274150507895,
+              0.05681751112940946
+            ],
+            "pooled_r2": -0.05829123764398436
+          },
+          "geometry_only": {
+            "macro_spearman": -0.15627963123285207,
+            "per_arm_spearman": [
+              -0.2814625489322874,
+              -0.08570290379785188,
+              -0.10167344096841693
+            ],
+            "pooled_r2": -0.11543811798027503
+          },
+          "joint": {
+            "macro_spearman": 0.27073112050403014,
+            "per_arm_spearman": [
+              0.22338297534308524,
+              0.455737794313283,
+              0.13307259185572218
+            ],
+            "pooled_r2": -0.08551818589225202
+          }
+        },
+        "delta_macro_spearman": 0.08122867369865686,
+        "delta_pooled_r2": -0.027226948248267657,
+        "n_rows": 69
+      },
+      "seed_137": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9886301043258126,
+            "per_arm_spearman": [
+              -0.9997525671123821,
+              -0.9846008723109638,
+              -0.9815368735540919
+            ],
+            "pooled_r2": 0.02612172963455528
+          },
+          "prior_only": {
+            "macro_spearman": 0.5735036186660919,
+            "per_arm_spearman": [
+              0.7037589990613495,
+              0.6286003834349124,
+              0.3881514735020138
+            ],
+            "pooled_r2": 0.20086778536040173
+          },
+          "geometry_only": {
+            "macro_spearman": -0.12275859568902774,
+            "per_arm_spearman": [
+              -0.04995056845059473,
+              -0.12531583206741018,
+              -0.1930093865490783
+            ],
+            "pooled_r2": -0.00335997953232825
+          },
+          "joint": {
+            "macro_spearman": 0.5708493889963229,
+            "per_arm_spearman": [
+              0.6661724327024862,
+              0.6038404004861095,
+              0.44253533380037285
+            ],
+            "pooled_r2": 0.2335002573856464
+          }
+        },
+        "delta_macro_spearman": -0.002654229669769026,
+        "delta_pooled_r2": 0.03263247202524466,
+        "n_rows": 69
+      },
+      "seed_256": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9919536675660141,
+            "per_arm_spearman": [
+              -0.9975204524201662,
+              -1.0,
+              -0.9783405502778761
+            ],
+            "pooled_r2": 0.08907259661024947
+          },
+          "prior_only": {
+            "macro_spearman": 0.4187989855754852,
+            "per_arm_spearman": [
+              0.5608766788084949,
+              0.391463159172474,
+              0.30405711874548674
+            ],
+            "pooled_r2": 0.19448544216624208
+          },
+          "geometry_only": {
+            "macro_spearman": -0.07392837448655878,
+            "per_arm_spearman": [
+              -0.024795609142727448,
+              -0.18666499415581184,
+              -0.010324520161137071
+            ],
+            "pooled_r2": 0.055071051974102
+          },
+          "joint": {
+            "macro_spearman": 0.5343793609327591,
+            "per_arm_spearman": [
+              0.603525126533986,
+              0.4730624280463003,
+              0.5265505282179906
+            ],
+            "pooled_r2": 0.20026053572666003
+          }
+        },
+        "delta_macro_spearman": 0.11558037535727383,
+        "delta_pooled_r2": 0.005775093560417943,
+        "n_rows": 69
+      }
+    },
+    "drop_furniture_historian": {
+      "models": {
+        "arm_only": {
+          "macro_spearman": -0.9940201097632522,
+          "per_arm_spearman": [
+            -1.0,
+            -0.9997147339836409,
+            -0.9823455953061155
+          ],
+          "pooled_r2": 0.2937249929628015
+        },
+        "prior_only": {
+          "macro_spearman": 0.6398077994078236,
+          "per_arm_spearman": [
+            0.7346132128740824,
+            0.6963768481817268,
+            0.4884333371676617
+          ],
+          "pooled_r2": 0.5198691719803272
+        },
+        "geometry_only": {
+          "macro_spearman": -0.38497552517991457,
+          "per_arm_spearman": [
+            -0.4805194805194805,
+            -0.4721968522308042,
+            -0.20221024278945898
+          ],
+          "pooled_r2": 0.21422823585616269
+        },
+        "joint": {
+          "macro_spearman": 0.6576105537614472,
+          "per_arm_spearman": [
+            0.6984754376058724,
+            0.708862822639753,
+            0.5654934010387163
+          ],
+          "pooled_r2": 0.5220862671963717
+        }
+      },
+      "delta_macro_spearman": 0.01780275435362355,
+      "delta_pooled_r2": 0.002217095216044518,
+      "n_rows": 66,
+      "perm_p_cluster_identity": 0.09090909090909091
+    },
+    "marine_only_lopo": {
+      "models": {
+        "arm_only": {
+          "macro_spearman": -1.0,
+          "per_arm_spearman": [
+            -1.0
+          ],
+          "pooled_r2": -0.09297520661156988
+        },
+        "prior_only": {
+          "macro_spearman": 0.6116600790513834,
+          "per_arm_spearman": [
+            0.6116600790513834
+          ],
+          "pooled_r2": 0.42272379213396083
+        },
+        "geometry_only": {
+          "macro_spearman": -0.06620553359683795,
+          "per_arm_spearman": [
+            -0.06620553359683795
+          ],
+          "pooled_r2": -0.9843319723783972
+        },
+        "joint": {
+          "macro_spearman": 0.7470355731225297,
+          "per_arm_spearman": [
+            0.7470355731225297
+          ],
+          "pooled_r2": 0.33347546052631594
+        }
+      },
+      "delta_macro_spearman": 0.13537549407114624,
+      "delta_pooled_r2": -0.08924833160764489,
+      "n_rows": 23
+    },
+    "gkl_k8": {
+      "models": {
+        "arm_only": {
+          "macro_spearman": -0.9972784539265898,
+          "per_arm_spearman": [
+            -1.0,
+            -0.9997507166856444,
+            -0.9920846450941251
+          ],
+          "pooled_r2": 0.012210931546045245
+        },
+        "prior_only": {
+          "macro_spearman": 0.47111562133955065,
+          "per_arm_spearman": [
+            0.6699604743083004,
+            0.46799474262672824,
+            0.2753916470836232
+          ],
+          "pooled_r2": 0.13162144109996565
+        },
+        "geometry_only": {
+          "macro_spearman": -0.22895282454720758,
+          "per_arm_spearman": [
+            -0.4891304347826087,
+            -0.10273055325952571,
+            -0.09499748559948837
+          ],
+          "pooled_r2": -0.13741668242453176
+        },
+        "joint": {
+          "macro_spearman": 0.497255083509409,
+          "per_arm_spearman": [
+            0.5335968379446641,
+            0.4665058940287641,
+            0.4916625185547988
+          ],
+          "pooled_r2": -0.07320604571986089
+        }
+      },
+      "delta_macro_spearman": 0.026139462169858352,
+      "delta_pooled_r2": -0.20482748681982654,
+      "n_rows": 69
+    },
+    "per_layer_cosine": {
+      "L7": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9972784539265898,
+            "per_arm_spearman": [
+              -1.0,
+              -0.9997507166856444,
+              -0.9920846450941251
+            ],
+            "pooled_r2": 0.012210931546045245
+          },
+          "prior_only": {
+            "macro_spearman": 0.47111562133955065,
+            "per_arm_spearman": [
+              0.6699604743083004,
+              0.46799474262672824,
+              0.2753916470836232
+            ],
+            "pooled_r2": 0.13162144109996565
+          },
+          "geometry_only": {
+            "macro_spearman": 0.1867781293601153,
+            "per_arm_spearman": [
+              -0.10770750988142293,
+              0.7210990042806321,
+              -0.053057106318863186
+            ],
+            "pooled_r2": 0.04803212642525556
+          },
+          "joint": {
+            "macro_spearman": 0.59590319608701,
+            "per_arm_spearman": [
+              0.6551383399209486,
+              0.6570785145681741,
+              0.4754927337719072
+            ],
+            "pooled_r2": 0.14650598875774523
+          }
+        },
+        "delta_macro_spearman": 0.12478757474745938,
+        "delta_pooled_r2": 0.014884547657779579,
+        "n_rows": 69
+      },
+      "L14": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9972784539265898,
+            "per_arm_spearman": [
+              -1.0,
+              -0.9997507166856444,
+              -0.9920846450941251
+            ],
+            "pooled_r2": 0.012210931546045245
+          },
+          "prior_only": {
+            "macro_spearman": 0.47111562133955065,
+            "per_arm_spearman": [
+              0.6699604743083004,
+              0.46799474262672824,
+              0.2753916470836232
+            ],
+            "pooled_r2": 0.13162144109996565
+          },
+          "geometry_only": {
+            "macro_spearman": 0.22850203841983008,
+            "per_arm_spearman": [
+              0.19861660079051383,
+              0.40149283858432994,
+              0.08539667588464646
+            ],
+            "pooled_r2": 0.0393739005983732
+          },
+          "joint": {
+            "macro_spearman": 0.5999159025817397,
+            "per_arm_spearman": [
+              0.5662055335968379,
+              0.6620413432280545,
+              0.5715008309203263
+            ],
+            "pooled_r2": 0.14254480481116905
+          }
+        },
+        "delta_macro_spearman": 0.128800281242189,
+        "delta_pooled_r2": 0.010923363711203393,
+        "n_rows": 69
+      },
+      "L27": {
+        "models": {
+          "arm_only": {
+            "macro_spearman": -0.9972784539265898,
+            "per_arm_spearman": [
+              -1.0,
+              -0.9997507166856444,
+              -0.9920846450941251
+            ],
+            "pooled_r2": 0.012210931546045245
+          },
+          "prior_only": {
+            "macro_spearman": 0.47111562133955065,
+            "per_arm_spearman": [
+              0.6699604743083004,
+              0.46799474262672824,
+              0.2753916470836232
+            ],
+            "pooled_r2": 0.13162144109996565
+          },
+          "geometry_only": {
+            "macro_spearman": 0.04878473047935219,
+            "per_arm_spearman": [
+              0.15612648221343872,
+              -0.04615430653688836,
+              0.03638201576150618
+            ],
+            "pooled_r2": 0.0272715171782566
+          },
+          "joint": {
+            "macro_spearman": 0.504109161536751,
+            "per_arm_spearman": [
+              0.5622529644268774,
+              0.4947940173900828,
+              0.45528050279329263
+            ],
+            "pooled_r2": 0.149108831603874
+          }
+        },
+        "delta_macro_spearman": 0.032993540197200355,
+        "delta_pooled_r2": 0.01748739050390835,
+        "n_rows": 69
+      }
+    }
+  },
+  "exploratory": {
+    "drop_one_increment": {
+      "marine_biologist": 0.06987627657585083,
+      "local_historian": 0.04881989571416878,
+      "local_resident": 0.05433218883408475,
+      "assistant": 0.06696721947500645,
+      "software_engineer": 0.06363971639148419,
+      "kindergarten_teacher": 0.07027381647149084,
+      "no_system": 0.0862081713025607,
+      "courthouse_architecture_historian": 0.021363298988227974,
+      "data_scientist": 0.05835163797186099,
+      "medical_doctor": 0.050760511041890555,
+      "librarian": 0.05535519928120286,
+      "french_person": -0.0021901634831221206,
+      "comedian": 0.11384705596227856,
+      "police_officer": 0.06128414418135619,
+      "biographer": 0.04226740451266725,
+      "wooden_furniture_carpenter": 0.04060060121436354,
+      "courthouse_custodian": 0.048526347181282514,
+      "court_stenographer": 0.047088172315661814,
+      "county_judge": 0.0691401943255226,
+      "courthouse_docent": 0.028977535564863266,
+      "furniture_historian": 0.01780275435362355,
+      "smalltown_pa_reporter": 0.18586181724249096,
+      "antiques_dealer": 0.13216394435987983,
+      "county_records_clerk": 0.13215186483386682
+    },
+    "gkl_k8_vs_k16_pair_spearman": 0.9275095960388693
+  },
+  "reproducibility": {
+    "git_commit": "a8c1e45dd98b2492d40c53852c209dbf1675c502",
+    "predictors_json": "eval_results/issue_541/predictors.json",
+    "geometry_json": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/eval_results/issue_541/geometry-plus-prior-joint-predictor/geometry_matrices.json",
+    "numpy": "2.2.6",
+    "wall_seconds": 174.5,
+    "timestamp": "2026-06-11T07:16:35.962557+00:00"
+  },
+  "figures": [
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/model_comparison.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/high_stratum_proximity.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/scatter_cos_raw_and_residualized.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/scatter_gkl_raw_and_residualized.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/gkl_heatmap_L22.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/cos_vs_gkl.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/per_layer_cosine_partial.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/per_seed_increment.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/drop_one_increment.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/fidelity_scatter.png",
+    "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-541/figures/issue_541/geometry-plus-prior-joint-predictor/k8_vs_k16.png"
+  ]
+}
