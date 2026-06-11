@@ -1745,3 +1745,111 @@ def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot(
         repo_branch="main",
     )
     assert rendered == fixture["rendered_text"]
+
+
+# ---------------------------------------------------------------------------
+# issue #588 — custom workload_cmd rendering + validation + launch
+# ---------------------------------------------------------------------------
+
+
+def _workload_spec(cmd: str = "bash scripts/issue588_smoke.sh") -> RunSpec:
+    """``_spec()`` twin carrying a custom workload_cmd (no hydra args)."""
+    return _spec(hydra_args=(), workload_cmd=cmd)
+
+
+def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> None:
+    """#588: the custom command replaces ONLY the workload line — every
+    lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
+    EXIT trap, completion sentinel) is unchanged."""
+    script = render_startup_script(
+        spec=_workload_spec("bash scripts/issue588_smoke.sh --flag 'v 1'"),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    # The command is embedded VERBATIM as its own line (no shlex-quoting
+    # that would collapse it to a single token).
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    assert "# === Run the workload (custom workload_cmd) ===" in lines
+    # The hardcoded hydra entrypoint is GONE on the custom path.
+    assert "scripts/train.py" not in script
+    # Lifecycle pins (same set the hydra-path golden test asserts).
+    assert "_eps_phase workload" in lines
+    assert "_eps_phase done" in lines
+    assert "trap 'rc=$?" in script  # EXIT trap bounds billing
+    assert '{"phase":"done","issue":137' in script  # completion sentinel
+    assert "Metadata-Flavor: Google" in script  # secrets fetch stanza
+    for key in REQUIRED_LAUNCH_SECRET_KEYS:
+        assert f"[FAIL] {key} missing from instance metadata" in script
+    # The custom command runs AFTER cd "$WORKLOAD_ROOT" (repo-relative
+    # `bash scripts/...` must resolve).
+    assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(
+        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+    )
+
+
+def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
+    """#588 defense-in-depth: a bare ``scripts/train.py`` render is the
+    exact incident-#571 crash — refuse BEFORE any gcloud create."""
+    with pytest.raises(ValueError, match="incident #571"):
+        render_startup_script(
+            spec=_spec(hydra_args=()),
+            config=_test_config(),
+            attempt_id="att-fixed-001",
+        )
+
+
+def test_render_startup_script_both_set_via_hydra_args_override_raises() -> None:
+    """The ``hydra_args`` parameter override on a workload_cmd spec is
+    the one both-set path ``RunSpec.__post_init__`` cannot see — the
+    renderer must catch it."""
+    with pytest.raises(ValueError, match="workload_cmd and hydra_args both set"):
+        render_startup_script(
+            spec=_workload_spec(),
+            config=_test_config(),
+            attempt_id="att-fixed-001",
+            hydra_args=("seed=1",),
+        )
+
+
+def test_launch_workload_cmd_spec_provisions_and_marker_says_custom() -> None:
+    """#588: ``launch`` has NO behavior branch for workload_cmd specs —
+    it provisions normally; the ``epm:cluster-launched`` marker gains
+    the additive ``workload: custom`` field."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_workload_spec())
+    assert handle.backend == "gcp"
+    assert handle.pod_name == "eps-issue-137"
+    assert any("create" in argv for argv in runner.calls)
+    # The startup script gcloud received embeds the custom command.
+    assert len(posted) == 1
+    body = json.loads(posted[0]["note"])
+    assert body["workload"] == "custom"
+
+
+def test_launch_hydra_spec_marker_says_hydra() -> None:
+    """The additive marker field reads ``hydra`` on the standard path."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    backend.launch(_spec())
+    body = json.loads(posted[0]["note"])
+    assert body["workload"] == "hydra"

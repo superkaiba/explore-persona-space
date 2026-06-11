@@ -890,11 +890,13 @@ def _repo_root_for_task_py() -> Path:
 # Stage backend kinds the renderer knows how to launch. ``local`` =
 # Hydra ``scripts/train.py``/``scripts/eval.py``; ``open_instruct`` =
 # the open-instruct ``finetune.py``/``dpo_tune_cache.py`` accelerate
-# launcher. Typed as a ``Literal`` so the renderer's terminal ``else:
-# raise`` (``unknown stage backend``) is provably exhaustive — adding
-# a third backend kind requires extending this alias AND the renderer
-# dispatch in lockstep, surfaced by the type checker.
-WorkloadKind = Literal["local", "open_instruct"]
+# launcher; ``custom`` = a verbatim shell command line from
+# ``RunSpec.workload_cmd`` (#588). Typed as a ``Literal`` so the
+# renderer's terminal ``else: raise`` (``unknown stage backend``) is
+# provably exhaustive — adding a backend kind requires extending this
+# alias AND the renderer dispatch in lockstep, surfaced by the type
+# checker.
+WorkloadKind = Literal["local", "open_instruct", "custom"]
 
 
 @dataclass(frozen=True)
@@ -926,6 +928,9 @@ class Stage:
     * ``oi_args`` — flat list of CLI flags for ``open_instruct``
       stages (``["--model_name_or_path", "Qwen/Qwen2.5-7B", ...]``);
       ignored for ``local``.
+    * ``custom_cmd`` — full shell command line for ``custom`` stages
+      (#588); embedded verbatim, runs from ``$SCRATCH_JOB_DIR`` (the
+      rsynced repo). Ignored for the other backends.
     """
 
     name: str
@@ -934,6 +939,7 @@ class Stage:
     deepspeed_config_rel: str | None = None
     hydra_args: tuple[str, ...] = ()
     oi_args: tuple[str, ...] = ()
+    custom_cmd: str = ""
 
 
 @dataclass(frozen=True)
@@ -964,7 +970,24 @@ def stages_for_spec(spec: RunSpec) -> SbatchPlan:
     The mapping is intentionally simple; experiments that need a
     different chain pass an explicit :class:`SbatchPlan` directly to
     :func:`render_sbatch`. Refinement is config-only.
+
+    A spec carrying ``workload_cmd`` (#588) bypasses the intent → stage
+    table: the custom command IS the workload, rendered as a single
+    ``custom`` stage. The intent keeps driving GPUs/node + ``--time``
+    via :func:`default_gpus_for_intent` / :func:`time_budget_hours`
+    (unchanged).
     """
+    if spec.workload_cmd:
+        return SbatchPlan(
+            stages=(
+                Stage(
+                    name="workload",
+                    backend="custom",
+                    script_rel="",
+                    custom_cmd=spec.workload_cmd,
+                ),
+            )
+        )
     if spec.intent in {"lora-7b", "lora"}:
         return SbatchPlan(
             stages=(
@@ -1373,6 +1396,14 @@ def render_sbatch(
             stage_blocks.append(
                 f"uv run python {shlex.quote(stage.script_rel)} {args_joined}".rstrip()
             )
+        elif stage.backend == "custom":
+            if not stage.custom_cmd:
+                raise ValueError(f"custom stage {stage.name!r} requires custom_cmd")
+            # Verbatim embed (#588) — the command IS a complete shell
+            # line; it runs from $SCRATCH_JOB_DIR (the rsynced repo), so
+            # repo-relative `bash scripts/...` resolves. Heartbeat /
+            # status.json / [phase=...] markers wrap it unchanged.
+            stage_blocks.append(stage.custom_cmd)
         elif stage.backend == "open_instruct":
             if not stage.deepspeed_config_rel:
                 raise ValueError(
