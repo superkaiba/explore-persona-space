@@ -779,7 +779,27 @@
         "outcome_invariant_here": "interaction p=0.000753 passes Holm at both alphas (step-down thresholds 0.025 and 0.005)"
       },
       "notes": "Rescue driver is the K x log(dist) INTERACTION under the centered metric (cluster-robust OLS beta +0.021, Holm-significant even at the plan-H2 alpha=0.01); the gap slope itself stays NS. ESTIMATOR CAVEAT: the same cluster-robust OLS on the RAW join gives p=0.022 (borderline at 0.05, NS at the H2 alpha=0.01) where the published co-primary MixedLM read +0.010, p=0.405 - so part of the movement is estimator-sensitivity, and the positive interaction direction (slope flattens as K grows) is a CANDIDATE rescue pending a MixedLM refit, exactly per the tree's candidate-rescue framing. Reported with family size 2, corrected + uncorrected p.",
-      "computed_at": "2026-06-11T02:20:14.247096+00:00"
+      "computed_at": "2026-06-11T02:20:14.247096+00:00",
+      "follow_up_result": {
+        "follow_up": "MixedLM refit (published co-primary) on raw AND centered joins",
+        "artifact": "eval_results/issue_536/mixedlm_refit_478.json",
+        "manipulation_check_passed": true,
+        "raw_join": {
+          "coef": 0.009744341901874254,
+          "se": 0.011700868559189722,
+          "p": 0.40496435302808076,
+          "converged": true
+        },
+        "centered_join": {
+          "coef": 0.021480451665166354,
+          "se": 0.017326921734990692,
+          "p": 0.21508067997063018,
+          "converged": true
+        },
+        "verdict": "killed",
+        "verdict_basis": "centered-join interaction +0.0215, p=0.215 >= 0.05 (or wrong sign) under the published MixedLM \u2014 the rescue does not survive the published estimator",
+        "computed_at": "2026-06-11T04:30:34.795971+00:00"
+      }
     },
     {
       "row_id": "490-distance-adjusted",
@@ -2560,7 +2580,7 @@
       "computed_at": "2026-06-11T02:20:17.675918+00:00"
     }
   ],
-  "updated_at": "2026-06-11T02:20:17.677449+00:00",
+  "updated_at": "2026-06-11T04:30:34.802993+00:00",
   "code_commit": "bfa36c3fee6e74674e9be08bb2469981ca733bc6",
   "data_root_commit": "982f8c3a6bb20495da4c11a6f2980626584bb36c"
 }
