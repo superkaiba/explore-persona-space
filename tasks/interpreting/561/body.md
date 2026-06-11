@@ -1,6 +1,7 @@
 ---
-title: 'Positive-only marker re-train (rig disentangle): does removing contrastive
-  negatives erase the marker arm''s low concentration?'
+title: Removing the contrastive negatives does not give the marker EM-like concentration
+  — the direction-concentration contrast attaches to the implanted behavior, not the
+  training rig (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:16:20Z'
