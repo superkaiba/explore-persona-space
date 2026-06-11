@@ -24,7 +24,14 @@ prior->CMF gradient could arise from response-content composition alone
 
 Checkpoint per cell: judge labels persist to
 ``eval_results/issue_603/expression_labels/{cell_id}.json`` the moment a
-cell's labeling completes; re-runs skip labeled cells.
+cell's labeling completes; re-runs skip labeled cells ONLY when the cached
+``with_bystanders`` mode matches the current invocation (mode mismatch ->
+recompute, never silent reuse).
+
+Artifact staging: ``issue603_decompose.py --from-hub`` is the CANONICAL
+off-pod staging step (pulls per-cell ``.pt`` + manifests + responses
+sidecars AND ``source_priors.json``). This script's own ``--from-hub``
+reuses that same pull for standalone runs.
 
 NOTE content hygiene: response texts (EM / refusal completions) are
 passed to the judge and NEVER printed/logged.
@@ -141,11 +148,26 @@ def _expressed_from_verdict(family: str, verdict: dict) -> bool | None:
 def _label_cell(
     cell: dict, responses: dict[str, list[dict]], labels_path: Path, *, with_bystanders: bool
 ) -> dict[str, list[dict]]:
-    """Judge-label one cell's responses; checkpoint to labels_path; resume-skip."""
+    """Judge-label one cell's responses; checkpoint to labels_path; resume-skip.
+
+    Resume is MODE-VALIDATED: a cached labels file is reused only when its
+    recorded ``with_bystanders`` matches the current invocation (a prior
+    ``--no-bystanders`` smoke cache must not silently disable the full run's
+    clean-bystander-û exploratory read); mismatch -> recompute + overwrite.
+    """
     from reanalyze_issue444_5way import _judge_rows_parallel
 
     if labels_path.exists():
-        return json.loads(labels_path.read_text())["labels"]
+        cached = json.loads(labels_path.read_text())
+        if cached.get("with_bystanders") == with_bystanders:
+            return cached["labels"]
+        logger.warning(
+            "%s: cached labels were produced with with_bystanders=%s but this run "
+            "wants %s — recomputing (cache overwritten, never silently reused)",
+            cell["cell_id"],
+            cached.get("with_bystanders"),
+            with_bystanders,
+        )
 
     family, source = cell["family"], cell["source"]
     personas = list(responses) if with_bystanders else [source]
@@ -278,6 +300,12 @@ def main() -> int:
     ap.add_argument("--no-bystanders", dest="bystanders", action="store_false", default=True)
     ap.add_argument("--out", default=str(EVAL_DIR / "expression_strata.json"))
     ap.add_argument("--labels-dir", default=str(EVAL_DIR / "expression_labels"))
+    ap.add_argument(
+        "--from-hub",
+        action="store_true",
+        help="Stage tensors/responses (+ priors for refusal/em cells) via "
+        "issue603_decompose._pull_from_hub before reading.",
+    )
     args = ap.parse_args()
 
     families = [f.strip() for f in args.families.split(",") if f.strip()]
@@ -288,6 +316,15 @@ def main() -> int:
     assert cells, "no cells selected"
     shifts_dir = Path(args.shifts_dir)
     labels_dir = Path(args.labels_dir)
+    if args.from_hub:
+        from issue603_decompose import _pull_from_hub
+
+        need_priors = any(c["family"] in ("refusal", "em") for c in cells)
+        _pull_from_hub(
+            shifts_dir,
+            [c["cell_id"] for c in cells],
+            priors_target=(EVAL_DIR / "source_priors.json") if need_priors else None,
+        )
 
     per_cell: dict[str, dict] = {}
     for cell in cells:

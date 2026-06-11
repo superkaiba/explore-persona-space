@@ -20,7 +20,13 @@ line):
   (one worker subprocess per GPU at a time, ``CUDA_VISIBLE_DEVICES``
   sharding), per-cell logs under ``<out-dir>/../logs/``; each completed
   cell's ``.pt`` + manifest + responses sidecar uploads IMMEDIATELY
-  (403-quota fallback chain: data repo -> private -> overflow)
+  (403-quota fallback chain: data repo -> private -> overflow).
+  Resume skip is MANIFEST-VALIDATED, never existence-only: a cell on
+  disk is reused only when its manifest matches THIS invocation's
+  source / persona set / question count / layers / probe SHA /
+  max_new_tokens; a mismatching artifact (e.g. a prior ``--personas 2
+  --questions 4`` smoke under production filenames) is recomputed and
+  re-uploaded, so the on-pod smoke can never poison the full sweep.
 - ``[phase=p2_priors]``   — source-self log-prob priors for the
   refusal/EM sources present in the SELECTED cells
   (``scripts/issue603_source_prior.py`` subprocess, 1 GPU) + upload
@@ -245,6 +251,70 @@ def _cell_artifacts(cell: dict, out_dir: Path) -> list[Path]:
     ]
 
 
+def _expected_subset(
+    panel_names: list[str], n_probes: int, source: str, args: argparse.Namespace
+) -> tuple[list[str], int]:
+    """The persona set + question count THIS invocation expects per cell.
+
+    Mirrors the worker's smoke-subset rule (issue603_extract_worker.py):
+    first N panel personas with the source swapped into the last slot when
+    absent; first N probes. 0 = full panel / full probe set.
+    """
+    names = list(panel_names)
+    if args.personas > 0:
+        names = names[: args.personas]
+        if source not in names:
+            names[-1] = source
+    n_q = min(args.questions, n_probes) if args.questions > 0 else n_probes
+    return names, n_q
+
+
+def _resume_status(
+    cell: dict, out_dir: Path, args: argparse.Namespace, inputs_cache: dict[str, dict]
+) -> tuple[str, str]:
+    """Manifest-validated resume check: 'complete' | 'stale' | 'missing' + reason.
+
+    A cell resume-skips ONLY when all three artifacts exist AND the cell's
+    manifest matches the CURRENT invocation's expectations (source, persona
+    set, question count, layers, probe SHA, max_new_tokens). Anything else
+    recomputes — bare file existence is NOT completion: a `--cells 1
+    --personas 2 --questions 4` smoke writes production filenames, and an
+    existence-only skip would reuse (and re-upload) that partial artifact as
+    the full cell (#603 round-1 blocker `smoke-artifact-poisons-full-sweep`).
+    """
+    paths = _cell_artifacts(cell, out_dir)
+    missing = [p.name for p in paths if not p.exists()]
+    if missing:
+        return "missing", f"absent: {missing}"
+    try:
+        manifest = json.loads(paths[1].read_text())
+    except Exception as e:  # corrupt manifest -> recompute, never silently skip
+        return "stale", f"unreadable manifest {paths[1].name}: {type(e).__name__}: {e}"
+    if cell["inputs_json"] not in inputs_cache:
+        inputs_cache[cell["inputs_json"]] = json.loads(Path(cell["inputs_json"]).read_text())
+    inputs = inputs_cache[cell["inputs_json"]]
+    exp_names, exp_n_q = _expected_subset(
+        list(inputs["panel"]), len(inputs["probes"]), cell["source"], args
+    )
+    checks = {
+        "source": (manifest.get("source"), cell["source"]),
+        "n_personas": (manifest.get("n_personas"), len(exp_names)),
+        "persona_names": (sorted(manifest.get("persona_names") or []), sorted(exp_names)),
+        "n_questions": (manifest.get("n_questions"), exp_n_q),
+        "layers": (manifest.get("layers"), list(args.layers)),
+        "probe_sha256": (manifest.get("probe_sha256"), inputs["probe_sha256"]),
+        "max_new_tokens": (manifest.get("max_new_tokens"), args.max_new_tokens),
+    }
+    mismatches = [
+        f"{k}: manifest={got!r} != expected={want!r}"
+        for k, (got, want) in checks.items()
+        if got != want
+    ]
+    if mismatches:
+        return "stale", "; ".join(mismatches)
+    return "complete", "manifest matches current invocation"
+
+
 def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
     """Run the 21-cell extraction sweep (or a --cells subset, same path)."""
     ap = argparse.ArgumentParser(description="#603 extraction dispatcher (smoke == sweep)")
@@ -285,6 +355,8 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
 
     upload_manifest: dict[str, str] = {}  # path_in_repo -> repo_id
     failures: list[dict] = []
+    inputs_cache: dict[str, dict] = {}  # inputs_json path -> parsed payload
+    running: dict[str, tuple[subprocess.Popen, dict, object]] = {}
 
     def _upload_cell(cell: dict) -> None:
         if not args.upload or args.dry_run:
@@ -308,26 +380,36 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
         logger.info("[phase=p1_extract] sharding %d cells over GPUs %s", len(cells), gpus)
 
         pending = list(cells)
-        running: dict[str, tuple[subprocess.Popen, dict, object]] = {}
         done_cells: list[str] = []
 
         def _start(gpu: str, cell: dict) -> None:
-            if args.dry_run:
+            # Manifest-validated resume (runs in dry-run too, so a CPU
+            # resume simulation exercises the REAL skip/recompute branch).
+            status, why = _resume_status(cell, out_dir, args, inputs_cache)
+            if status == "complete":
                 logger.info(
-                    "[phase=p1_extract] DRY-RUN cell=%s gpu=%s cmd: %s",
+                    "[phase=p1_extract] cell %s already complete on disk (%s) — re-upload only",
                     cell["cell_id"],
-                    gpu,
-                    " ".join(_worker_cmd(cell, args)),
-                )
-                done_cells.append(cell["cell_id"])
-                return
-            existing = _cell_artifacts(cell, out_dir)
-            if all(p.exists() for p in existing):
-                logger.info(
-                    "[phase=p1_extract] cell %s already complete on disk — re-upload only",
-                    cell["cell_id"],
+                    why,
                 )
                 _upload_cell(cell)
+                done_cells.append(cell["cell_id"])
+                return
+            if status == "stale":
+                logger.warning(
+                    "[phase=p1_extract] cell %s artifacts on disk DO NOT match this "
+                    "invocation (%s) — queued for recompute (overwrite + re-upload)",
+                    cell["cell_id"],
+                    why,
+                )
+            if args.dry_run:
+                logger.info(
+                    "[phase=p1_extract] DRY-RUN cell=%s gpu=%s resume_status=%s cmd: %s",
+                    cell["cell_id"],
+                    gpu,
+                    status,
+                    " ".join(_worker_cmd(cell, args)),
+                )
                 done_cells.append(cell["cell_id"])
                 return
             log_path = logs_dir / f"{cell['cell_id']}.log"
@@ -455,6 +537,23 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
         return 0
     except Exception as e:
         logger.exception("dispatcher failed")
+        # Terminate still-running workers — a mid-loop failure (e.g. a
+        # non-403 upload error raising out of _upload_cell) must not orphan
+        # GPU worker subprocesses until pod termination.
+        for gpu, (proc, cell, log_f) in list(running.items()):
+            logger.warning(
+                "[phase=fail] terminating worker cell=%s gpu=%s pid=%d",
+                cell["cell_id"],
+                gpu,
+                proc.pid,
+            )
+            proc.terminate()
+            try:
+                proc.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                logger.warning("[phase=fail] kill -9 worker pid=%d", proc.pid)
+                proc.kill()
+            log_f.close()
         _write_sentinel(
             sentinel_dir,
             "epm:failure",

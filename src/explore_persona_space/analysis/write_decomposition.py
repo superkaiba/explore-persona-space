@@ -46,9 +46,12 @@ def _signed_cos(w: torch.Tensor, u: torch.Tensor) -> float:
     return float(torch.dot(w, u) / wn)
 
 
-def _top_left_singular(m: torch.Tensor) -> torch.Tensor:
-    """Top LEFT singular vector of M (n_bys, H) -> (H,), sign-oriented.
+def _top_right_singular(m: torch.Tensor) -> torch.Tensor:
+    """Top RIGHT singular vector of M (n_bys, H) -> (H,), sign-oriented.
 
+    ``Vh[0]`` of ``M = U S Vh`` — the top H-space direction (the intended
+    shared-direction estimator; the LEFT singular vectors live in
+    bystander-index space and are not directions in H).
     Sign convention matches ``svd_direction_constancy.svd_summary``:
     orient so the mean bystander shift has nonnegative projection.
     """
@@ -109,11 +112,11 @@ def decompose_write(
 
     # Robustness: SVD top direction (norm-weighted) + unit-norm SVD (#551
     # lesson: norm weighting can let one large column own the direction).
-    u1_svd = _top_left_singular(m)
+    u1_svd = _top_right_singular(m)
     row_norms = m.norm(dim=1, keepdim=True)
     if (row_norms == 0).any().item():
         raise ValueError("zero-norm bystander shift — unit-norm SVD undefined")
-    u1_unitnorm = _top_left_singular(m / row_norms)
+    u1_unitnorm = _top_right_singular(m / row_norms)
 
     # Leave-one-bystander-out jackknife of the PRIMARY cmf.
     cmf_jack: list[float] = []

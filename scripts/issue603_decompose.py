@@ -45,7 +45,9 @@ number the clean-result will quote, plus meta).
 Run (VM)::
 
     uv run python scripts/issue603_decompose.py
-    uv run python scripts/issue603_decompose.py --from-hub   # pull tensors first
+    # Canonical off-pod staging: pulls the 21 cells' tensors/manifests/
+    # responses AND source_priors.json from the HF chain repos first.
+    uv run python scripts/issue603_decompose.py --from-hub
 """
 
 from __future__ import annotations
@@ -116,8 +118,17 @@ def _git_commit() -> str:
         return "unknown"
 
 
-def _pull_from_hub(shifts_dir: Path, cell_ids: list[str]) -> None:
-    """Download the per-cell artifacts from the first chain repo that has them."""
+def _pull_from_hub(
+    shifts_dir: Path, cell_ids: list[str], priors_target: Path | None = None
+) -> None:
+    """Download the per-cell artifacts — and, when ``priors_target`` is given,
+    the Phase-1 ``source_priors.json`` the dispatcher uploaded — from the
+    first chain repo that has them. Fail-loud when a required file is on no
+    chain repo. This is the CANONICAL off-pod artifact-staging step: it
+    stages everything Phase 2 consumes (``issue603_expression_strata.py``
+    reuses it via its own ``--from-hub``)."""
+    import shutil
+
     from huggingface_hub import hf_hub_download, list_repo_files
 
     shifts_dir.mkdir(parents=True, exist_ok=True)
@@ -127,21 +138,27 @@ def _pull_from_hub(shifts_dir: Path, cell_ids: list[str]) -> None:
             listings[repo] = set(list_repo_files(repo, repo_type="dataset"))
         except Exception as e:
             logger.warning("list_repo_files(%s) failed: %s", repo, e)
+    wanted: list[tuple[str, Path]] = []
     for cid in cell_ids:
         for suffix in (".pt", ".manifest.json", "_responses.json"):
-            fname = f"{cid}{suffix}"
-            target = shifts_dir / fname
-            if target.exists():
-                continue
-            path_in_repo = f"{HUB_PREFIX}/shifts/{fname}"
-            repo = next((r for r in HUB_REPO_CHAIN if path_in_repo in listings.get(r, ())), None)
-            if repo is None:
-                raise FileNotFoundError(f"{path_in_repo} not on any chain repo")
-            local = hf_hub_download(repo_id=repo, filename=path_in_repo, repo_type="dataset")
-            import shutil
-
-            shutil.copy2(local, target)
-            logger.info("[pulled] %s from %s", fname, repo)
+            wanted.append((f"{HUB_PREFIX}/shifts/{cid}{suffix}", shifts_dir / f"{cid}{suffix}"))
+    if priors_target is not None:
+        # The dispatcher uploads priors at {prefix}/source_priors.json
+        # (issue603_extract_dispatch.py p2) — required by the refusal/EM
+        # reads; without this pull the planned off-pod Phase 2 crashes at
+        # the priors load after pod termination (#603 round-1 blocker
+        # `from-hub-source-priors-not-downloaded`).
+        wanted.append((f"{HUB_PREFIX}/source_priors.json", priors_target))
+    for path_in_repo, target in wanted:
+        if target.exists():
+            continue
+        repo = next((r for r in HUB_REPO_CHAIN if path_in_repo in listings.get(r, ())), None)
+        if repo is None:
+            raise FileNotFoundError(f"{path_in_repo} not on any chain repo")
+        local = hf_hub_download(repo_id=repo, filename=path_in_repo, repo_type="dataset")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(local, target)
+        logger.info("[pulled] %s from %s -> %s", path_in_repo, repo, target)
 
 
 def _load_cells() -> list[dict]:
@@ -401,12 +418,16 @@ def main() -> int:
         cells = [c for c in cells if c["cell_id"] in keep]
         assert cells, f"no cells match {keep}"
     shifts_dir = Path(args.shifts_dir)
-    if args.from_hub:
-        _pull_from_hub(shifts_dir, [c["cell_id"] for c in cells])
-
-    have_all_families = {c["family"] for c in cells} == {"fact", "refusal", "em"}
     priors_json = Path(args.priors_json)
     need_i518_priors = any(c["family"] in ("refusal", "em") for c in cells)
+    if args.from_hub:
+        _pull_from_hub(
+            shifts_dir,
+            [c["cell_id"] for c in cells],
+            priors_target=priors_json if need_i518_priors else None,
+        )
+
+    have_all_families = {c["family"] for c in cells} == {"fact", "refusal", "em"}
     priors = (
         _priors_for(cells, priors_json) if (not need_i518_priors or priors_json.exists()) else None
     )
@@ -611,17 +632,55 @@ def main() -> int:
                 else None
             ),
         }
+        # Plan §6 family-diagnostic status (binds the pooled read below):
+        # non-diagnostic when the refusal prior-variance gate fails (binding
+        # for refusal; reported-only for EM) or when <4 sources survive the
+        # norm floor (plan §8 survival rule).
+        n_surviving = sum(1 for d in fam_cells if not d["below_noise_floor"])
+        gate = fam_stats.get("prior_variance_gate")
+        reasons: list[str] = []
+        if family == "refusal":
+            if gate is None:
+                reasons.append("prior_variance_gate_unavailable_no_prior_sems")
+            elif not gate["passes"]:
+                reasons.append("prior_variance_gate_failed")
+        if n_surviving < 4:
+            reasons.append(f"only_{n_surviving}_sources_survive_norm_floor_lt4")
+        fam_stats["diagnostic"] = {
+            "is_diagnostic": not reasons,
+            "n_sources_surviving_norm_floor": n_surviving,
+            "reasons_non_diagnostic": reasons,
+        }
         stats[family] = fam_stats
         extension_ps[family] = fam_stats["spearman_cmf"]["p_one_sided_negative"]
         extension_ps_norm[family] = fam_stats["spearman_norm"]["p_one_sided_negative"]
 
     if len(extension_ps) >= 2:
-        stats["pooled_extensions"] = {
+        # Plan §6: a non-diagnostic family is EXCLUDED from the pooled read —
+        # it collapses to the surviving family ALONE (reduced denominator,
+        # stated), or to no pooled read when both families fail.
+        diag = [f for f in extension_ps if stats[f]["diagnostic"]["is_diagnostic"]]
+        pooled: dict = {
             "doc": "Stouffer Z over the refusal+EM one-sided exact p's; descriptive "
-            "only (families share base model, panel, questions).",
-            "cmf": _stouffer(list(extension_ps.values())),
-            "norm": _stouffer(list(extension_ps_norm.values())),
+            "only (families share base model, panel, questions). Families declared "
+            "non-diagnostic (refusal prior-variance gate fails, or <4 sources "
+            "survive the norm floor) are excluded per plan §6; with one survivor "
+            "the 'pooled' read is that family's own p (reduced denominator).",
+            "families_pooled": diag,
+            "family_diagnostic_status": {f: stats[f]["diagnostic"] for f in extension_ps},
         }
+        if len(diag) >= 2:
+            pooled["cmf"] = _stouffer([extension_ps[f] for f in diag])
+            pooled["norm"] = _stouffer([extension_ps_norm[f] for f in diag])
+        elif len(diag) == 1:
+            fam = diag[0]
+            pooled["cmf"] = {"collapsed_to_family": fam, "p_one_sided": extension_ps[fam]}
+            pooled["norm"] = {"collapsed_to_family": fam, "p_one_sided": extension_ps_norm[fam]}
+        else:
+            pooled["cmf"] = None
+            pooled["norm"] = None
+            pooled["note"] = "no diagnostic extension family — no pooled read"
+        stats["pooled_extensions"] = pooled
 
     # ── guard A trigger (cluster-level sign read) ────────────────────
     guard_a = None
@@ -659,12 +718,16 @@ def main() -> int:
             "triggered": triggered,
         }
         if triggered:
+            # Both-must-hold: the disattenuated ordering must hold AT LEAST AS
+            # STRONGLY as the raw one (a dis read that STRENGTHENS the ordering
+            # — e.g. raw 2/3 -> dis 3/3 — still satisfies "both orderings hold").
+            strength = {"null": 0, "directional_2of3": 1, "full_3of3": 2}
             raw_state = stats["fact"]["ordering_test_cmf"]["state"]
             dis = stats["fact"]["ordering_test_cmf_disattenuated"]
             both_hold = bool(
                 raw_state in ("full_3of3", "directional_2of3")
                 and dis is not None
-                and dis["state"] == raw_state
+                and strength[dis["state"]] >= strength[raw_state]
             )
             guard_a["both_must_hold_pass"] = both_hold
         stats["guard_a"] = guard_a
