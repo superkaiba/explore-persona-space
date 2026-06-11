@@ -55,6 +55,7 @@ notice the recurrence manually. Now it's same-turn.
   `audit_clean_results_body_discipline.py`, `codex_task.py`,
   `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
+  `pm_queue_report.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,

@@ -2460,6 +2460,9 @@ workflow_fix_on_bug:
     # in-scope OOM-classification fix.
     - "scripts/failure_classifier.py"
     - "scripts/gh_project.py"
+    # The PM session's one-pass read-only queue-report helper (research-pm.md
+    # Mode 1 STATUS source; pm/SKILL.md boot-scan step 2). Added 2026-06-11.
+    - "scripts/pm_queue_report.py"
     - "scripts/spawn_session.py"
     - "scripts/pod_watch.py"
     - "scripts/worktree_audit.py"
