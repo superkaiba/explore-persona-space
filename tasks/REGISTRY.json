@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 595,
+  "highest_id": 596,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3596,6 +3596,13 @@
       "path": "tasks/proposed/595",
       "status": "proposed",
       "title": "Prefix-carrier (Piggyback 2606.06667) as a B\u2192B\u2032 leakage predictor: does template-token binding strength explain/predict which behaviors leak? (+tool-use behavior)"
+    },
+    "596": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/596",
+      "status": "proposed",
+      "title": "Sparse-checkout issue worktrees: cut per-worktree disk cost ~14G \u2192 ~2G"
     },
     "6": {
       "has_clean_result": false,
