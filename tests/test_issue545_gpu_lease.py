@@ -12,7 +12,8 @@ in-process sets to precede the peft import. These tests pin:
 1. the lease pattern hands concurrent workers DISJOINT GPU ids;
 2. ``_run_one_cell`` threads CUDA_VISIBLE_DEVICES=<lease> into every
    single-GPU subprocess env (and does NOT restrict the multi-GPU fullft arm);
-3. the busy-GPU pre-launch guard fails loud naming the conflict;
+3. the busy-GPU pre-launch guard waits boundedly for benign teardown lag
+   (slow vLLM worker release), then fails loud naming the conflict;
 4. source-order regression pins: the CVD set precedes the peft import in
    ``train_lora`` and precedes the runner import in ``scripts/train.py``.
 """
@@ -188,23 +189,59 @@ def test_fullft_cell_not_cvd_restricted(sweep, monkeypatch, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_gpu_guard_raises_on_busy_gpu(sweep, monkeypatch):
-    monkeypatch.setattr(
-        sweep.subprocess,
-        "run",
-        lambda *a, **k: SimpleNamespace(stdout="23456\n"),
-    )
-    with pytest.raises(RuntimeError, match=r"GPU lease conflict: physical GPU 1 .* 23456 MiB"):
+def test_gpu_guard_raises_after_bounded_wait_when_never_clears(sweep, monkeypatch):
+    """Never-clearing busy GPU: poll the bounded number of times, then raise the
+    SAME diagnostic message augmented with how long the guard waited."""
+    queries: list[int] = []
+    sleeps: list[float] = []
+    monkeypatch.setattr(sweep, "_query_gpu_used_mib", lambda gpu: queries.append(gpu) or 23456)
+    monkeypatch.setattr(sweep.time, "sleep", lambda s: sleeps.append(s))
+
+    with pytest.raises(
+        RuntimeError,
+        match=r"GPU lease conflict: physical GPU 1 .* 23456 MiB .* after waiting 120s",
+    ):
         sweep._assert_gpu_memory_free(1, label="train-test_cell")
+
+    expected_polls = int(sweep.GPU_GUARD_WAIT_TIMEOUT_S / sweep.GPU_GUARD_POLL_INTERVAL_S)
+    assert len(sleeps) == expected_polls, "guard must stop polling at the bounded timeout"
+    assert len(queries) == 1 + expected_polls  # initial probe + one per poll
+    assert all(s == sweep.GPU_GUARD_POLL_INTERVAL_S for s in sleeps)
+
+
+def test_gpu_guard_proceeds_when_teardown_lag_clears(sweep, monkeypatch):
+    """Benign teardown lag (vLLM worker still releasing memory) must NOT kill
+    the sweep: the guard polls until the GPU clears, then proceeds."""
+    readings = iter([23456, 9000, 3000, 100])
+    queries: list[int] = []
+    sleeps: list[float] = []
+
+    def fake_query(gpu: int) -> int:
+        queries.append(gpu)
+        return next(readings)
+
+    monkeypatch.setattr(sweep, "_query_gpu_used_mib", fake_query)
+    monkeypatch.setattr(sweep.time, "sleep", lambda s: sleeps.append(s))
+
+    sweep._assert_gpu_memory_free(0, label="train-test_cell")  # no raise
+
+    assert len(queries) == 4, "guard must re-poll until the teardown clears"
+    assert len(sleeps) == 3, "one sleep before each re-poll"
 
 
 def test_gpu_guard_passes_on_free_gpu(sweep, monkeypatch):
+    """Immediately-below-threshold: no wait, no extra polls."""
+    queries: list[int] = []
+    monkeypatch.setattr(sweep, "_query_gpu_used_mib", lambda gpu: queries.append(gpu) or 3)
     monkeypatch.setattr(
-        sweep.subprocess,
-        "run",
-        lambda *a, **k: SimpleNamespace(stdout="3\n"),
+        sweep.time,
+        "sleep",
+        lambda s: pytest.fail("guard must not sleep when the GPU is already free"),
     )
+
     sweep._assert_gpu_memory_free(0, label="train-test_cell")  # no raise
+
+    assert queries == [0], "exactly one probe, no polling loop"
 
 
 def test_gpu_guard_skips_without_nvidia_smi(sweep, monkeypatch):

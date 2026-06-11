@@ -90,13 +90,19 @@ def _gpu_env(gpu: int) -> dict[str, str]:
     return {"CUDA_VISIBLE_DEVICES": str(gpu)}
 
 
-def _assert_gpu_memory_free(gpu: int, *, label: str, threshold_mib: int = 2048) -> None:
-    """Fail loud BEFORE launching a train if the leased physical GPU is busy.
+# Benign teardown lag (a just-finished cell's vLLM engine worker still releasing
+# memory, or driver accounting lag) can leave the leased GPU above the busy
+# threshold for a short while on a HEALTHY run. The guard waits boundedly for it
+# to clear before declaring a lease conflict.
+GPU_GUARD_WAIT_TIMEOUT_S = 120.0
+GPU_GUARD_POLL_INTERVAL_S = 5.0
 
-    Converts a silent multi-train pile-up (the round-10 OOM at train step 60)
-    into an immediate, diagnosable error naming the conflicting usage. Best
-    effort: skipped with a warning when nvidia-smi is unavailable (CPU smoke
-    on the VM).
+
+def _query_gpu_used_mib(gpu: int) -> int | None:
+    """Best-effort nvidia-smi used-memory probe for one physical GPU (MiB).
+
+    Returns ``None`` when the probe is unavailable (no nvidia-smi on the VM
+    CPU smoke, parse failure) — callers warn-and-skip rather than fail.
     """
     try:
         out = subprocess.run(
@@ -112,16 +118,55 @@ def _assert_gpu_memory_free(gpu: int, *, label: str, threshold_mib: int = 2048) 
             check=True,
             env={**os.environ},
         ).stdout.strip()
-        used_mib = int(out.splitlines()[0])
+        return int(out.splitlines()[0])
     except (subprocess.CalledProcessError, FileNotFoundError, ValueError, IndexError) as e:
         logger.warning("[gpu-guard] nvidia-smi probe unavailable for GPU %d (%s) — skipped", gpu, e)
+        return None
+
+
+def _assert_gpu_memory_free(
+    gpu: int,
+    *,
+    label: str,
+    threshold_mib: int = 2048,
+    timeout_s: float = GPU_GUARD_WAIT_TIMEOUT_S,
+    poll_interval_s: float = GPU_GUARD_POLL_INTERVAL_S,
+) -> None:
+    """Fail loud BEFORE launching a train if the leased physical GPU stays busy.
+
+    Converts a silent multi-train pile-up (the round-10 OOM at train step 60)
+    into a diagnosable error naming the conflicting usage — but tolerates
+    benign teardown lag (vLLM's worker subprocesses release GPU memory slowly
+    after engine shutdown; documented codebase gotcha) by polling the leased
+    GPU every ``poll_interval_s`` for up to ``timeout_s`` before raising. Best
+    effort: skipped with a warning when nvidia-smi is unavailable (CPU smoke
+    on the VM).
+    """
+    used_mib = _query_gpu_used_mib(gpu)
+    if used_mib is None or used_mib < threshold_mib:
         return
-    if used_mib >= threshold_mib:
-        raise RuntimeError(
-            f"GPU lease conflict: physical GPU {gpu} already has {used_mib} MiB in use "
-            f"(>= {threshold_mib} MiB threshold) at launch of {label}. Another process is "
-            "occupying the leased device — refusing to stack a second training on it."
-        )
+    logger.info(
+        "[gpu-guard] GPU %d has %d MiB in use; waiting up to %.0fs for teardown",
+        gpu,
+        used_mib,
+        timeout_s,
+    )
+    waited = 0.0
+    while waited < timeout_s:
+        time.sleep(poll_interval_s)
+        waited += poll_interval_s
+        used_mib = _query_gpu_used_mib(gpu)
+        if used_mib is None:
+            return
+        if used_mib < threshold_mib:
+            logger.info("[gpu-guard] GPU %d cleared after %.0fs", gpu, waited)
+            return
+    raise RuntimeError(
+        f"GPU lease conflict: physical GPU {gpu} already has {used_mib} MiB in use "
+        f"(>= {threshold_mib} MiB threshold) at launch of {label} after waiting "
+        f"{timeout_s:.0f}s. Another process is occupying the leased device — "
+        "refusing to stack a second training on it."
+    )
 
 
 def _with_gpu_lease(gpu_slots: Queue, fn):
