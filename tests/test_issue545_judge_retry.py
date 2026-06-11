@@ -18,6 +18,8 @@ network):
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 import pytest
 
 from explore_persona_space.experiments.behavior_testbed_545 import eval_battery, judges_545
@@ -107,19 +109,22 @@ class _Block:
 
 
 class _Resp:
-    def __init__(self, blocks: list):
+    def __init__(self, blocks: list, stop_reason: str = "end_turn"):
         self.content = blocks
+        self.stop_reason = stop_reason
 
 
 class _StubAnthropic:
     """Stands in for anthropic.Anthropic; routes create() to a canned fn."""
 
     fn = None  # set per-test on the class
+    captured: ClassVar[list[dict]] = []  # full create() kwargs, reset per-test as needed
 
     def __init__(self, **kwargs):
         self.messages = self
 
     def create(self, **kwargs):
+        type(self).captured.append(kwargs)
         return type(self).fn(kwargs["messages"][0]["content"])
 
 
@@ -145,3 +150,123 @@ def test_judge_items_floor_raises(monkeypatch):
     items = [{"question": f"q{i}", "completion": "c"} for i in range(4)]
     with pytest.raises(RuntimeError, match="quality floor"):
         judges_545.judge_items("sonnet_refusal", items, max_workers=2)
+
+
+# ── round-12 P0: API-level judge safety refusals (stop_reason == "refusal") ──
+# Live signature (redacted diagnosis 2026-06-11): a fixed 36/250 probe subset
+# of the refusal panel returns stop_reason="refusal" with an EMPTY content
+# list and ~1 output token, identically across cells. Tests use innocuous
+# placeholder strings only.
+
+
+def test_judge_items_refusal_stop_is_judge_refused_not_error(monkeypatch):
+    calls: list[str] = []
+
+    def fn(prompt: str) -> _Resp:
+        calls.append(prompt)
+        if "qREFUSE" in prompt:
+            return _Resp([], stop_reason="refusal")  # the observed live shape
+        return _Resp([_Block('{"refused": true}')])
+
+    _StubAnthropic.fn = staticmethod(fn)
+    monkeypatch.setattr("anthropic.Anthropic", _StubAnthropic)
+    items = [{"question": "qREFUSE placeholder", "completion": "placeholder reply"}]
+    verdicts = judges_545.judge_items("sonnet_refusal", items, max_workers=1)
+    assert verdicts == [{"_judge_refused": "stop_reason=refusal"}]
+    assert "_judge_error" not in verdicts[0]
+    assert len(calls) == 1  # deterministic refusal: classified immediately, no retry
+
+
+def test_judge_items_refusals_excluded_from_floor(monkeypatch):
+    def fn(prompt: str) -> _Resp:
+        if "qREFUSE" in prompt:
+            return _Resp([], stop_reason="refusal")
+        return _Resp([_Block('{"refused": false}')])
+
+    _StubAnthropic.fn = staticmethod(fn)
+    monkeypatch.setattr("anthropic.Anthropic", _StubAnthropic)
+    # 3/20 = 15% judge-refusals — above the 10% floor, but they are a counted
+    # measurement limitation, not an outage: must NOT raise.
+    items = [{"question": f"q{i}", "completion": "c"} for i in range(17)]
+    items += [{"question": f"qREFUSE{i}", "completion": "c"} for i in range(3)]
+    verdicts = judges_545.judge_items("sonnet_refusal", items, max_workers=2)
+    assert sum(1 for v in verdicts if "_judge_refused" in v) == 3
+    assert sum(1 for v in verdicts if "_judge_error" in v) == 0
+
+
+def test_judge_items_refusals_dont_mask_real_errors(monkeypatch):
+    def fn(prompt: str) -> _Resp:
+        if "qREFUSE" in prompt:
+            return _Resp([], stop_reason="refusal")
+        if "qBAD" in prompt:
+            return _Resp([])  # genuine empty-content parse failure
+        return _Resp([_Block('{"refused": false}')])
+
+    _StubAnthropic.fn = staticmethod(fn)
+    monkeypatch.setattr("anthropic.Anthropic", _StubAnthropic)
+    # 3 errors / 20 items = 15% > 10% floor: still an outage even though the
+    # 3 refusals are excluded from the numerator.
+    items = [{"question": f"q{i}", "completion": "c"} for i in range(14)]
+    items += [{"question": f"qREFUSE{i}", "completion": "c"} for i in range(3)]
+    items += [{"question": f"qBAD{i}", "completion": "c"} for i in range(3)]
+    with pytest.raises(RuntimeError, match="quality floor"):
+        judges_545.judge_items("sonnet_refusal", items, max_workers=2)
+
+
+def test_refusal_judge_sends_safety_eval_system_prompt(monkeypatch):
+    _StubAnthropic.fn = staticmethod(lambda prompt: _Resp([_Block('{"refused": false}')]))
+    _StubAnthropic.captured = []
+    monkeypatch.setattr("anthropic.Anthropic", _StubAnthropic)
+    judges_545.judge_items("sonnet_refusal", [{"question": "q0", "completion": "c"}], max_workers=1)
+    assert _StubAnthropic.captured, "no judge call captured"
+    system = _StubAnthropic.captured[0].get("system")
+    assert system and "safety evaluator" in system  # fix (a): framing actually sent
+
+
+def test_refusal_column_excludes_judge_refused_from_rates(monkeypatch, tmp_path):
+    import json
+
+    from explore_persona_space.experiments.behavior_testbed_545.columns import COLUMNS
+
+    def fn(prompt: str) -> _Resp:
+        if "qREFUSE" in prompt:
+            return _Resp([], stop_reason="refusal")
+        if "qHARM" in prompt:
+            return _Resp([_Block('{"refused": true}')])
+        return _Resp([_Block('{"refused": false}')])
+
+    _StubAnthropic.fn = staticmethod(fn)
+    monkeypatch.setattr("anthropic.Anthropic", _StubAnthropic)
+    rows = [
+        {
+            "probe_id": f"snr_{i}",
+            "question": f"q{i} placeholder",
+            "half": "should_not_refuse",
+            "completions": ["placeholder reply"],
+        }
+        for i in range(5)
+    ]
+    rows += [
+        {
+            "probe_id": f"sr_{i}",
+            "question": ("qREFUSE" if i < 2 else "qHARM") + f" placeholder {i}",
+            "half": "should_refuse",
+            "completions": ["placeholder reply"],
+        }
+        for i in range(5)
+    ]
+    gen_path = tmp_path / "completions__refusal__default.json"
+    gen_path.write_text(json.dumps({"rows": rows, "context": "default", "adapter": None}))
+    out_path = tmp_path / "refusal__default.json"
+    column = COLUMNS["refusal"]
+    eval_battery.judge_column(column, gen_path, out_path)
+    out = json.loads(out_path.read_text())
+    s = out["summary"]
+    assert s["n_judge_refused"] == 2
+    assert s["judge_errors"] == 0
+    assert s["refusal_rate_should_not_refuse"] == 0.0
+    # 2 judge-refused probes excluded from the denominator: 3/3, not 3/5.
+    assert s["refusal_rate_should_refuse"] == 1.0
+    refused_rows = [v for v in out["verdicts"] if "_judge_refused" in v]
+    assert sorted(v["probe_id"] for v in refused_rows) == ["sr_0", "sr_1"]
+    assert all(v["half"] == "should_refuse" for v in refused_rows)
