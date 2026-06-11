@@ -42,6 +42,48 @@ sharper than the headline and constrain the hypothesis space hard:
    round-3 re-analysis; #527 band-stopped runs show bystanders 0.5–1.5 nats
    below source). One scaled direction, not a reshaped landscape.
 
+## Trajectory addendum (same-day check of eval_results/issue_472/*/trajectory.json)
+
+Checkpoints are FRACTION-based (first read at frac 0.08 of each run), and the
+full curves sharpen facts 1–3 above into something stronger:
+
+| cell (neg:pos) | steps | first read | terminal |
+|---|---|---|---|
+| 0 negatives (0:1) | 13 | +2.18 @ step 2 | +2.12 @ step 13 |
+| 400 negatives (2:1) | 38 | +8.03 @ step 4 | +8.45 @ step 38 |
+| 800 negatives (4:1) | 63 | +13.18 @ step 6 | +13.07 @ step 63 |
+| 1600 negatives (8:1) | 113 | +21.07 @ step 10 | +20.34 @ step 113 |
+
+(seed 137; seed 42 within ~1.5 nats throughout. Persona-count and placement
+cells sit at their row-mass level: single_near/single_far/negp_2 ≈ 8,
+near/far ≈ 13–15, negp_8 ≈ 20.)
+
+Three consequences:
+
+1. **The set-point is reached within ≤8% of each run and is dead flat after**
+   — every cell, both seeds. This is not slow accumulation; it is fast
+   arrest at a composition-dependent level.
+2. **Matched-step comparison kills the steps/LR confound (H3) for the core
+   effect.** At step ~4 (LR ≈ 0.95+ of peak in both cells), positives-only
+   sits at ~2.1 having seen ~50 positives; the 2:1 cell sits at ~8.0 having
+   seen ~21 positives. Same optimizer steps, same LR, fewer positive
+   exposures, 4× the implant — only batch composition differs.
+3. **Cumulative negative count loses to the per-batch RATIO.** The 2:1 cell
+   after consuming ALL 400 of its negatives (step 38) sits at 8.45; the 8:1
+   cell after consuming only ~140 negatives (step 10) sits at ~20.5. At
+   fixed positives the budget and the ratio are the same dial by design, but
+   within-run exposure data discriminates: the level tracks the negative
+   FRACTION of the batch, not how many negatives have been consumed.
+   Level ≈ +6 nats per doubling of the ratio (8.2 → 13.5 → 20 for 2:1 →
+   4:1 → 8:1), with the 8:1 cells near the log-prob ceiling.
+
+This re-ranks the hypotheses: H4 (batch-composition equilibrium) moves to
+the top as the only family whose natural signature is "fast set-point at a
+ratio-determined level"; H1's stage 2 (slow margin growth) and simple
+additive-per-row H2 are weakened by the arrest; H3 is dead as the primary
+mechanism. The ratio-vs-count deconfound (vary positives and negatives
+together at fixed ratio) becomes the top discriminating experiment.
+
 ## Confounds and contradictions to keep in view
 
 - **Step-count / cosine-horizon confound (open).** At matched absolute step,
@@ -144,9 +186,11 @@ hypothesis is an interaction: steps only convert to implant while negative
 rows keep arriving.
 **Killer test:** hold steps fixed (repeat-epoch the small mixes to 113
 steps, constant LR, no cosine) while varying budget; and hold budget fixed
-while varying epochs. Cheapest decisive deconfound on the list, and it
-directly patches the recipe doc's "strength = steps at low LR" guidance,
-which #472 currently contradicts/extends.
+while varying epochs. **Update (trajectory addendum): the matched-step
+comparison already in the data kills this as the primary mechanism** — at
+matched step and matched LR the composition difference alone gives 4×. A
+residual schedule effect on the set-point level is still possible but
+second-order.
 
 ### H4 — Batch-composition equilibrium under Adam (common-mode cancellation)
 
@@ -202,24 +246,32 @@ with the four-float logit contract (Δz_※, EOS margin) would show whether
 log P plateaus are partly softmax artifacts and when implant actually
 accrues.
 
-## Discriminating experiments (ranked by information per GPU-hour)
+## Discriminating experiments (ranked by information per GPU-hour; updated for the trajectory addendum)
 
-1. **Negatives-only arm** (0 positives, 1600 negatives, same rig) + factorial
+1. **Ratio-vs-count deconfound**: vary positives and negatives together at
+   fixed ratio (200:400 vs 400:800 vs 800:1600) and ratio at fixed total
+   rows. If the set-point is ratio-determined (H4), the fixed-ratio arms
+   land at the SAME level; if absolute-count/coupling-determined (H2), they
+   climb. The single sharpest test now.
+2. **Negatives-only arm** (0 positives, 1600 negatives, same rig) + factorial
    additivity read against the existing posonly arm. Decides whether
    negatives carry a source-directed push by themselves (H2) or only
    potentiate positives (H1/H4). One LoRA run + standard eval.
-2. **Step-matched grid**: {budget 0/400/800} × {steps 38/113} via repeated
-   epochs, constant LR. Kills or confirms H3; also directly resolves the
-   recipe-doc tension (steps-as-strength-dial vs budget-as-strength-dial).
-3. **Disjoint-question negatives** (same budget, negative rows on a question
+3. **Per-step four-float trajectory re-run** of one arm per ratio (logit +
+   EOS margin every 1–2 steps through the first 10% of training). Dates the
+   arrest, tests whether the plateau is partly log-Z compression, and tests
+   the conditional-EOS prediction (implant gain living in z_EOS falling at
+   the source rather than z_※ rising).
+4. **Blocked vs interleaved ordering** at fixed composition (all negatives
+   first, then positives): batch-level equilibrium (H4) dies under
+   blocking; weight-space mechanisms (H1/H2) survive.
+5. **Disjoint-question negatives** (same budget, negative rows on a question
    pool disjoint from the positives). Razin-style coupling (H2) predicts
    weakening; H1's shortcut-blocking predicts little change.
-4. **Blocked vs interleaved ordering** at fixed composition (H4 vs
-   weight-space mechanisms).
-5. **Per-step four-float trajectory re-run** of one arm per budget level
-   (logit + EOS margin every step or two) to date when implant accrues and
-   check the plateau against softmax compression.
-6. (Context for #471 contradiction) **Rig-bridging arm**: positives-only
+6. **Step-matched grid** (repeat-epoch, constant LR) — demoted: the
+   matched-step trajectory comparison already kills H3 as primary; run only
+   to bound residual schedule effects.
+7. (Context for #471 contradiction) **Rig-bridging arm**: positives-only
    under #472's exact rig but with suppress-flag ON / attn-only LoRA, to
    locate which rig difference turns the posonly floor on/off.
 
