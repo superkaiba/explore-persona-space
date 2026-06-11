@@ -1,0 +1,245 @@
+# ruff: noqa: RUF002  # em-dash + Qwen marker token " ※" are intentional
+"""Task #601 Phase 0 — pure helpers (CPU-testable, no model loads).
+
+Bystander reference-panel pre-registration, margin-reference computation from
+the on-policy recheck trajectories, the adapter-application cross-check, and
+the space-calibration decision (plan §4 Phase 0 + §6). The GPU driver is
+``scripts/i601_phase0_reads.py``; everything decision-shaped lives here so the
+local smoke can exercise it without a pod.
+"""
+
+from __future__ import annotations
+
+import logging
+
+import numpy as np
+
+log = logging.getLogger("issue_601.phase0_lib")
+
+# Plan §7 gate 2 — the #534-class adapter-application HALT bound.
+ONPOLICY_CROSSCHECK_TOL_NATS = 1.0
+# Plan §4 item 2 — space-calibration divergence threshold.
+SPACE_DIVERGENCE_NATS = 2.0
+# Plan §6 — clamp contrast threshold (Phase 0b).
+CLAMP_GAP_NATS = 1.5
+
+
+def select_bystander_reference_panel(
+    held_out: list[str],
+    cos_to_source: dict[str, float],
+    n: int = 8,
+) -> list[str]:
+    """Pre-register the N-bystander reference panel at L10 d_source deciles.
+
+    ``held_out`` is the #472 held-out panel (bank − source − union of ALL
+    trained negatives — so every member is a never-trained bystander by
+    construction). Sort by ``d_source = 1 − cos`` and take ``n`` evenly spaced
+    quantile positions (decile coverage prevents distance-skew in the Phase 0b
+    clamp contrast — plan §11). Deterministic given the pinned centroids.
+    """
+    if len(held_out) < n:
+        raise ValueError(f"held-out panel has {len(held_out)} personas; need >= {n}")
+    ranked = sorted(held_out, key=lambda p: 1.0 - cos_to_source[p])
+    idx = np.linspace(0, len(ranked) - 1, n).round().astype(int)
+    seen: set[int] = set()
+    panel: list[str] = []
+    for i in idx:
+        ii = int(i)
+        while ii in seen and ii < len(ranked) - 1:
+            ii += 1
+        if ii in seen:
+            ii = next(k for k in range(len(ranked)) if k not in seen)
+        seen.add(ii)
+        panel.append(ranked[ii])
+    assert len(panel) == n, (len(panel), n)
+    return panel
+
+
+def terminal_source_stats(trajectory: dict) -> dict:
+    """Pull the terminal checkpoint's source-self stats from a trajectory.json.
+
+    Returns ``{"delta_g", "delta_z_marker", "delta_margin", "frac"}`` —
+    delta_margin = Δ(z_marker − z_eos) trained − base. Requires the four-float
+    (Phase B) fields; raises KeyError when ``kl_computed`` was False.
+    """
+    cks = trajectory["checkpoints"]
+    term = max(cks, key=lambda c: c["frac"])
+    ss = term["source_self"]
+    delta_margin = (ss["z_marker_g_mean"] - ss["z_eos_g_mean"]) - (
+        ss["z_marker_b_mean"] - ss["z_eos_b_mean"]
+    )
+    return {
+        "frac": term["frac"],
+        "delta_g": float(ss["delta_g_mean"]),
+        "delta_z_marker": float(ss["delta_z_marker_mean"]),
+        "delta_margin": float(delta_margin),
+        "emission_p": float(ss.get("emission_p", float("nan"))),
+    }
+
+
+def onpolicy_crosscheck(
+    reread_by_cell_seed: dict[str, dict],
+    committed_terminal_by_cell_seed: dict[str, float],
+    tol_nats: float = ONPOLICY_CROSSCHECK_TOL_NATS,
+) -> dict:
+    """Adapter-application gate (plan §7 gate 2, #534 class).
+
+    Args:
+        reread_by_cell_seed: ``{"<cell>_seed<S>": terminal_source_stats(...)}``
+            from this task's Phase 0 on-policy re-reads.
+        committed_terminal_by_cell_seed: the COMMITTED #472 trajectory.json
+            terminal ``source_self.delta_g_mean`` per cell_seed.
+        tol_nats: per-adapter agreement bound (1 nat).
+
+    Returns:
+        ``{"pass": bool, "per_adapter": {...}, "tol_nats": ...}`` — pass iff
+        EVERY re-read adapter reproduces its committed terminal within tol.
+    """
+    per: dict[str, dict] = {}
+    ok = True
+    for key, stats in sorted(reread_by_cell_seed.items()):
+        if key not in committed_terminal_by_cell_seed:
+            raise KeyError(f"no committed terminal ΔG for {key!r}")
+        committed = float(committed_terminal_by_cell_seed[key])
+        got = float(stats["delta_g"])
+        diff = abs(got - committed)
+        within = diff <= tol_nats
+        ok = ok and within
+        per[key] = {
+            "committed_delta_g": committed,
+            "reread_delta_g": got,
+            "abs_diff": diff,
+            "within_tol": within,
+        }
+    return {"pass": bool(ok), "tol_nats": tol_nats, "per_adapter": per}
+
+
+def margin_references(
+    reread_by_cell_seed: dict[str, dict],
+    level_by_cell: dict[str, str],
+) -> dict:
+    """Margin-space references M(level) from the ON-POLICY 8-adapter subset.
+
+    Plan §6 pinned rule: M(·) comes from the on-policy read (the same read
+    type Phase 1 consumes), NEVER the teacher-forced 20-adapter read. The
+    margin-space tolerance is DERIVED as
+    ``max(2 × per-seed on-policy margin gap at the level, 1.0 logit)``.
+
+    Args:
+        reread_by_cell_seed: ``{"c472_anchor_seed42": terminal_source_stats}``.
+        level_by_cell: ``{"c472_anchor": "4:1", ...}``.
+
+    Returns:
+        ``{level: {"margin_mean", "logp_mean", "delta_z_mean", "seed_gap_margin",
+        "tolerance_margin", "divergence_logp_vs_z"}}``.
+    """
+    by_level: dict[str, list[dict]] = {}
+    for key, stats in reread_by_cell_seed.items():
+        cell = key.rsplit("_seed", 1)[0]
+        if cell not in level_by_cell:
+            continue
+        by_level.setdefault(level_by_cell[cell], []).append(stats)
+    out: dict[str, dict] = {}
+    for level, rows in sorted(by_level.items()):
+        margins = [r["delta_margin"] for r in rows]
+        logps = [r["delta_g"] for r in rows]
+        dzs = [r["delta_z_marker"] for r in rows]
+        seed_gap = float(max(margins) - min(margins)) if len(margins) > 1 else 0.0
+        out[level] = {
+            "n_adapters": len(rows),
+            "margin_mean": float(np.mean(margins)),
+            "logp_mean": float(np.mean(logps)),
+            "delta_z_mean": float(np.mean(dzs)),
+            "seed_gap_margin": seed_gap,
+            "tolerance_margin": max(2.0 * seed_gap, 1.0),
+            "divergence_logp_vs_z": float(abs(np.mean(dzs) - np.mean(logps))),
+        }
+    return out
+
+
+def decide_primary_space(margin_refs: dict) -> dict:
+    """Space calibration (plan §4 Phase-0 item 2).
+
+    Δlog P vs Δz_marker divergence >= 2 nats at the 4:1 level OR BELOW → the
+    EOS margin becomes PRIMARY for ALL Phase-1 arms; divergence confined to
+    the 8:1 level (expected — those cells sit ~2.3 nats from ceiling) → log P
+    stays primary for arms landing <= L(4:1)+3, margin rules the upper branch.
+    """
+    low_levels = [lv for lv in ("0:1", "2:1", "4:1") if lv in margin_refs]
+    diverged_low = [
+        lv for lv in low_levels if margin_refs[lv]["divergence_logp_vs_z"] >= SPACE_DIVERGENCE_NATS
+    ]
+    if diverged_low:
+        choice = "margin"
+        reason = (
+            f"Δlog P vs Δz_marker diverge >= {SPACE_DIVERGENCE_NATS} nats at level(s) "
+            f"{diverged_low} (<= 4:1) — EOS margin is PRIMARY for all Phase-1 arms."
+        )
+    else:
+        choice = "logp_with_margin_upper"
+        reason = (
+            "divergence confined to (at most) the 8:1 level — log P stays primary for "
+            "arms landing <= L(4:1)+3; the EOS margin rules the upper branch."
+        )
+    return {
+        "primary_space": choice,
+        "reason": reason,
+        "divergence_by_level": {lv: margin_refs[lv]["divergence_logp_vs_z"] for lv in margin_refs},
+    }
+
+
+def clamp_read(
+    teacher_by_cell_seed: dict[str, dict],
+    bystander_panel: list[str],
+    negatives_by_cell: dict[str, list[str]],
+    count_cells: list[str],
+    gap_nats: float = CLAMP_GAP_NATS,
+) -> dict:
+    """Phase 0b trained-negative clamp contrast (plan §6).
+
+    ``teacher_by_cell_seed`` maps ``"<cell>_seed<S>"`` to the per-persona
+    teacher-forced read ``{persona: {q: {"logp_hf_g", "logp_hf_b", ...}}}``.
+    Clamp present iff mean(trained-negative ΔG) <= mean(bystander ΔG) − gap
+    in >= 3 of the 4 count cells, BOTH seeds. Distance-residualized variant +
+    threshold sensitivity are computed downstream in analysis (concern #4);
+    this is the registered panel-mean read.
+    """
+
+    def _mean_dg(read: dict, personas: list[str]) -> float:
+        vals = [
+            rec["logp_hf_g"] - rec["logp_hf_b"]
+            for p in personas
+            if p in read
+            for rec in read[p].values()
+        ]
+        if not vals:
+            raise ValueError(f"clamp read: no records for personas {personas[:4]}...")
+        return float(np.mean(vals))
+
+    per_cell_seed: dict[str, dict] = {}
+    clamped_count: dict[str, int] = {}
+    for key, read in sorted(teacher_by_cell_seed.items()):
+        cell = key.rsplit("_seed", 1)[0]
+        if cell not in count_cells:
+            continue
+        negs = [p for p in negatives_by_cell[cell] if p in read]
+        neg_dg = _mean_dg(read, negs)
+        by_dg = _mean_dg(read, bystander_panel)
+        clamped = neg_dg <= by_dg - gap_nats
+        per_cell_seed[key] = {
+            "trained_neg_mean_dg": neg_dg,
+            "bystander_mean_dg": by_dg,
+            "gap": by_dg - neg_dg,
+            "clamped": bool(clamped),
+        }
+        clamped_count[cell] = clamped_count.get(cell, 0) + (1 if clamped else 0)
+    n_seeds = 2
+    cells_clamped_both_seeds = sum(1 for c, k in clamped_count.items() if k == n_seeds)
+    present = cells_clamped_both_seeds >= 3
+    return {
+        "clamp_present": bool(present),
+        "gap_nats": gap_nats,
+        "cells_clamped_both_seeds": cells_clamped_both_seeds,
+        "per_cell_seed": per_cell_seed,
+        "rule": "clamped iff neg <= bystander − gap in >=3 of 4 count cells, both seeds",
+    }

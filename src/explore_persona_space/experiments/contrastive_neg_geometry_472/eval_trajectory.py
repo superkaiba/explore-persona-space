@@ -374,6 +374,7 @@ def run_trajectory_eval(
     max_model_len: int = DEFAULT_MAX_MODEL_LEN,
     compute_kl: bool = True,
     source_guard_meta: dict | None = None,
+    raw_r_out_path: Path | None = None,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -396,6 +397,15 @@ def run_trajectory_eval(
             on >tol disagreement at the final fraction (and on a <1-nat
             final read when the band-stop fired). The per-checkpoint diag is
             persisted as ``checkpoints[*].source_manifest_check``.
+        raw_r_out_path: Optional path for the raw on-policy generations
+            (#601 / Upload Policy: raw completions MUST land on the HF data
+            repo before pod termination). When set, the per-checkpoint
+            ``r[persona][q] -> text`` maps are accumulated under
+            ``{"frac_<f>": {...}}`` and the JSON is rewritten after EVERY
+            checkpoint's vLLM phase (crash-safe). Name the file
+            ``raw_completions.json`` so
+            ``upload_raw_completions_to_data_repo`` rglobs it. Default None
+            = byte-identical legacy behavior (generations not persisted).
 
     Returns:
         out_path.
@@ -457,6 +467,22 @@ def run_trajectory_eval(
             llm, tokenizer, panel_plus_source, eval_questions, lora_req, max_new_tokens
         )
         r_cache[frac] = r_on_policy
+        if raw_r_out_path is not None:
+            # Crash-safe raw-completion persist (Upload Policy): rewrite after
+            # every checkpoint's gen so a later-phase crash never loses the
+            # generations already produced.
+            raw_r_out_path.parent.mkdir(parents=True, exist_ok=True)
+            raw_r_out_path.write_text(
+                json.dumps(
+                    {
+                        "cell": cell_slug,
+                        "seed": seed,
+                        "max_new_tokens": max_new_tokens,
+                        "completions_by_frac": {f"frac_{f}": r for f, r in r_cache.items()},
+                    },
+                    ensure_ascii=False,
+                )
+            )
 
         # 2. DV-A trained log P(※) at post-R slot (on the trained model's own R).
         g = score_logp_for_R(
