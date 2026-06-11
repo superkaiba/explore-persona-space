@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 from collections.abc import Callable
 from pathlib import Path
 from typing import Literal
@@ -650,17 +651,27 @@ def _coerce_betley_score(value) -> int | None:
     P1 on all 8 Betley broad-EM cells).
 
     Returns the coerced int, or ``None`` when the value is missing,
-    non-numeric, non-finite, or outside the rubric range [0, 100] — the
-    caller marks such rows as error rows, the established tracked path
-    that the aggregation already excludes.
+    non-numeric, non-finite, boolean, or outside the rubric range
+    [0, 100] — the caller marks such rows as error rows, the established
+    tracked path that the aggregation already excludes.
+
+    Range is validated on the RAW float BEFORE truncation (#545 round
+    14): ``int(float(-0.5)) == 0`` and ``int(float("100.9")) == 100``
+    would otherwise let just-outside-range values silently pass.
+    ``bool`` is rejected explicitly — it is an ``int`` subclass, so
+    ``float(True) == 1.0`` would coerce a type error into a valid score.
     """
+    if isinstance(value, bool):
+        return None
     try:
-        score = int(float(value))
+        score_float = float(value)
     except (TypeError, ValueError, OverflowError):
         return None
-    if not 0 <= score <= 100:
+    if not math.isfinite(score_float):
         return None
-    return score
+    if not 0.0 <= score_float <= 100.0:
+        return None
+    return int(score_float)
 
 
 def _score_b1_openai_gpt4o(

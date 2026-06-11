@@ -38,8 +38,16 @@ from explore_persona_space.experiments.issue503.judges import (
         (150, None),  # out-of-range nonsense
         (-5, None),  # out-of-range nonsense
         ("nan", None),  # non-finite
-        ("inf", None),  # non-finite (OverflowError path)
+        ("inf", None),  # non-finite
         ({"score": 85}, None),  # wrong type entirely
+        # round 14: range validated on the RAW float BEFORE truncation
+        (-0.5, None),  # would truncate to 0 and silently pass pre-r14
+        ("100.9", None),  # would truncate to 100 and silently pass pre-r14
+        (True, None),  # bool is an int subclass; float(True)==1.0 pre-r14
+        (False, None),  # bool is an int subclass; float(False)==0.0 pre-r14
+        (100.0, 100),  # exact upper boundary stays valid
+        ("99.9", 99),  # in-range fractional still truncates
+        (0, 0),  # exact lower boundary stays valid
     ],
 )
 def test_coerce_betley_score(value, expected):
