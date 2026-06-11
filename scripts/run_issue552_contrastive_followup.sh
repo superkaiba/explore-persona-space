@@ -273,6 +273,14 @@ train_wave() {
     fi
   done
   (( fail_any == 0 )) || fail_loud 18 "wave_train_failed_${ARM}"
+
+  # Post-production recipe re-verify (parent convention): the production
+  # cells must record max_steps=$MAX_STEPS + the same 14 recipe values.
+  phase prod_recipe_verify "$ARM: run_result records max_steps=$MAX_STEPS + recipe verbatim"
+  uv run python scripts/issue_521_em_recipe_smoke.py \
+    --seed 42 --condition "$COND" --expected-max-steps "$MAX_STEPS" \
+    > "$LOG_DIR/c2x2_prod_recipe_verify_${ARM}.log" 2>&1 || \
+    fail_loud "$?" "prod_recipe_verify_failed_${ARM}"
   phase wave_train_ok "$ARM: 3 cells trained; merged dirs + local adapters present"
 }
 
