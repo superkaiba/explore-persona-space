@@ -44,3 +44,11 @@ Artifacts from the re-analysis: `figures/issue_533/bw_leakage_decomposition.{png
 1. Per arm × probe × step table of Δlog P AND Δ(z_marker − z_eos) with bootstrap CIs over seeds, at unsaturated AND saturated checkpoints.
 2. An explicit verdict per half of the split (wrong-persona advantage; default-assistant reversal): survives / shrinks / vanishes (a) off saturation, (b) in margin space.
 3. Figures showing raw alongside adjusted/decomposed reads (extend the `bw_leakage_decomposition` pair).
+
+## Provenance
+
+- **Created:** 2026-06-11, from the research chat session (not via PM triage).
+- **Follow-up to:** the #533 bare-word install-step grid — specifically a same-day chat re-analysis of `figures/issue_533/bw_implant_vs_avg_leakage.png` that produced `bw_leakage_implant_controlled` and `bw_leakage_decomposition` (commits `3be7eda72`, `82b7e6078`).
+- **Originating prompts (verbatim):**
+  1. "Look at the role header vs system prompt leakage. We have a plot over optimizer steps for both source implantation and leakage. Can you make the same plot but adjusting the right plot to control for the sourcei mplantation (i.e. I want to see if the lower leakage is because source implantation is lower)"
+  2. "Add an issue to look into this"
