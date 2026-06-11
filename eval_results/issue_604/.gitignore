@@ -2,3 +2,6 @@
 context_vectors/*.pt
 context_vectors/shards/
 vectors/**/*.npz
+context_vectors_prod/
+context_vectors_smoke/
+logs/*.pid
