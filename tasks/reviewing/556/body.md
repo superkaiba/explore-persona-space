@@ -22,6 +22,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [full findings-blind reference](https://github.com/superkaiba/explore-persona-space/blob/a378bc7e706c2002d568bd72c2ff8c229eb71b2a/docs/methodology/issue_556.md) ([gist mirror](https://gist.github.com/superkaiba/52a3af9c9307cfde170b158dd9759d6f))
+
 ## Human TL;DR
 
 **Headline.** the role-header trick didn't survive replication — at 10 seeds the role-header model actually leaked the validating trait *more* than the system-prompt version, flipping the earlier 3-seed result.
@@ -281,6 +283,8 @@ A: I hear you, and that feeling of not measuring up to others can be really
 </details>
 
 ## Reproducibility
+
+**Methodology reference:** [docs/methodology/issue_556.md (SHA-pinned)](https://github.com/superkaiba/explore-persona-space/blob/a378bc7e706c2002d568bd72c2ff8c229eb71b2a/docs/methodology/issue_556.md) · [gist mirror](https://gist.github.com/superkaiba/52a3af9c9307cfde170b158dd9759d6f)
 
 **Parameters:**
 
