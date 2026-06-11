@@ -2820,8 +2820,12 @@ while True:
             f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
-    # Harness re-invokes orchestrator on bg-Bash exit. Read the JSON
-    # line from stdout (the LAST line of the bg-Bash output) and decide:
+    # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
+    # work, simply END THE TURN with a one-sentence status — NEVER emit
+    # no-op Bash calls to idle (`sleep 1` "yield turn", `true` no-ops):
+    # each burns a tool call + context for nothing (33x and 49x in two
+    # 2026-06-10 sessions). Read the JSON line from stdout (the LAST
+    # line of the bg-Bash output) and decide:
     #
     #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
