@@ -122,6 +122,8 @@ def download_cached_shifts(dest: Path) -> dict[str, str]:
         for ext in (".pt", ".manifest.json"):
             fname = f"{variant}_{arm}_seed{seed}{ext}"
             local = dest / fname
+            if local.is_symlink() and not local.exists():
+                local.unlink()  # broken symlink (cache moved): re-link below
             if not local.exists():
                 src = bk.hub_download(
                     bk.PRIVATE_DATA_REPO,
@@ -327,7 +329,21 @@ def _entry_vec(entry: dict, layer: int, pos: str) -> np.ndarray | None:
     return None if v is None else v.detach().float().numpy()
 
 
-def _load_new_shift_payloads(shifts_dir: Path) -> dict[str, dict]:
+def _guard_payload_model(name: str, model_id: Any, strict: bool) -> None:
+    """Stub-contamination guard: a payload whose manifest model id is not the
+    production model is a smoke/stub artifact squatting at a production path.
+    Production mode REJECTS it (raise); ``--allow-subset`` loads it loudly."""
+    if model_id == bk.BASE_MODEL_ID:
+        return
+    if strict:
+        raise RuntimeError(
+            f"{name}: manifest model id {model_id!r} != production {bk.BASE_MODEL_ID!r} — "
+            "stub/smoke payload at a production path (delete it or score with --allow-subset)"
+        )
+    logger.warning("%s from non-production model %r (allowed under --allow-subset)", name, model_id)
+
+
+def _load_new_shift_payloads(shifts_dir: Path, strict: bool) -> dict[str, dict]:
     """Load every freshly extracted cell payload, keyed by cell_id."""
     out: dict[str, dict] = {}
     for cell in bk.extraction_cells():
@@ -336,11 +352,15 @@ def _load_new_shift_payloads(shifts_dir: Path) -> dict[str, dict]:
             logger.warning("missing shift payload for %s (%s)", cell["cell_id"], p)
             continue
         payload = torch.load(p, map_location="cpu", weights_only=False)
+        _guard_payload_model(p.name, payload.get("manifest", {}).get("base_model_id"), strict)
+        if strict:  # assumption-12 dim assert (production payloads only)
+            v = next(iter(payload["shifts"].values()))["delta_v_mean_resp"]
+            assert v.numel() == bk.HIDDEN_SIZE, (p.name, int(v.numel()), bk.HIDDEN_SIZE)
         out[cell["cell_id"]] = {**cell, "payload": payload}
     return out
 
 
-def _load_estimator_payloads(est_dir: Path) -> dict[tuple[str, str], dict]:
+def _load_estimator_payloads(est_dir: Path, strict: bool) -> dict[tuple[str, str], dict]:
     """Load estimator-read payloads keyed by (family, source)."""
     out: dict[tuple[str, str], dict] = {}
     for unit in bk.estimator_units():
@@ -348,10 +368,66 @@ def _load_estimator_payloads(est_dir: Path) -> dict[tuple[str, str], dict]:
         if not p.exists():
             logger.warning("missing estimator payload for %s/%s", unit["family"], unit["source"])
             continue
-        out[(unit["family"], unit["source"])] = torch.load(
-            p, map_location="cpu", weights_only=False
-        )
+        payload = torch.load(p, map_location="cpu", weights_only=False)
+        _guard_payload_model(p.name, payload.get("manifest", {}).get("model_id"), strict)
+        out[(unit["family"], unit["source"])] = payload
     return out
+
+
+def _phase2_preflight(shifts_dir: Path, est_dir: Path, allow_subset: bool) -> dict[str, Any]:
+    """Completeness gate BEFORE scoring (binding fix: subset-denominator).
+
+    Production (default) expects the FULL registered inputs — all 31 shift
+    payloads, all 21 estimator payloads, ``anchor_521.pt``, and a passing
+    production ``i474_crosscheck.json`` (assumption-8 gate) — and RAISES on
+    any gap, so an accidental partial download can never be scored under
+    ``registered_denominator: 31``. Subset scoring (the §9 deliberate-descope
+    path and smoke) requires the explicit ``--allow-subset`` flag; the
+    returned coverage dict is recorded as ``expected_vs_loaded`` in EVERY
+    output JSON so a subset run can never masquerade as the registered run.
+    """
+    expected_cells = [c["cell_id"] for c in bk.extraction_cells()]
+    expected_units = [f"{u['family']}__{u['source']}" for u in bk.estimator_units()]
+    missing_shifts = [c for c in expected_cells if not (shifts_dir / f"{c}.pt").exists()]
+    missing_units = [u for u in expected_units if not (est_dir / f"{u}.pt").exists()]
+    anchor_present = (est_dir / "anchor_521.pt").exists()
+    cc_path = bk.eval_dir(REPO) / "work" / "i474_crosscheck.json"
+    cc = json.loads(cc_path.read_text()) if cc_path.exists() else None
+    cc_summary = {"present": cc is not None} | (
+        {k: cc.get(k) for k in ("ok", "production_model", "max_abs_diff", "n_pairs")} if cc else {}
+    )
+    coverage = {
+        "mode": "allow-subset" if allow_subset else "production",
+        "n_shift_payloads_expected": len(expected_cells),
+        "n_shift_payloads_present": len(expected_cells) - len(missing_shifts),
+        "missing_shift_cells": missing_shifts,
+        "n_estimator_units_expected": len(expected_units),
+        "n_estimator_units_present": len(expected_units) - len(missing_units),
+        "missing_estimator_units": missing_units,
+        "anchor_521_present": anchor_present,
+        "i474_crosscheck": cc_summary,
+    }
+    problems: list[str] = []
+    if missing_shifts:
+        problems.append(f"{len(missing_shifts)}/31 shift payloads missing: {missing_shifts}")
+    if missing_units:
+        problems.append(f"{len(missing_units)}/21 estimator payloads missing: {missing_units}")
+    if not anchor_present:
+        problems.append(f"anchor_521.pt missing under {est_dir} (registered kill criterion)")
+    if cc is None or not cc.get("ok") or not cc.get("production_model"):
+        problems.append(
+            f"i474 prompt-reconstruction cross-check not satisfied ({cc_summary}) — "
+            "assumption-8 gate (dispatcher [phase=i474_check] produces it)"
+        )
+    if problems:
+        msg = "Phase 2 preflight: " + "; ".join(problems)
+        if not allow_subset:
+            raise RuntimeError(
+                msg + " — production scoring refuses a subset; pass --allow-subset ONLY for a "
+                "deliberate §9 descope or smoke run (coverage is then recorded in every output)"
+            )
+        logger.warning("%s — proceeding under --allow-subset", msg)
+    return coverage
 
 
 def _w_hat(
@@ -378,11 +454,20 @@ def _w_hat(
         if unit is None:
             return None
         pos_key = pos
+        implicit_excl_marker = False
         if e1_pos_override is not None:
             pos_key = e1_pos_override
         elif pos == "mean_resp" and family in ("marker519", "loc474"):
             pos_key = "mean_resp_excl_marker"
-        w = unit["w_hat"].get(pos_key, unit["w_hat"].get(pos, {}))
+            implicit_excl_marker = True
+        w = unit["w_hat"].get(pos_key)
+        if w is None and implicit_excl_marker:
+            # NEVER silently swap the marker families' exclude-marker headline
+            # read for the include-marker mean — that is a different DV.
+            raise KeyError(
+                f"E1 w_hat missing the {pos_key!r} headline read for "
+                f"{family}/{cell['source']} (mix {mix_label!r})"
+            )
         v = w.get(layer) if isinstance(w, dict) else None
         return None if v is None else np.asarray(v, dtype=np.float64)
     if estimator == "est_icl":
@@ -565,9 +650,21 @@ def _offdiag_margins(
 
 
 def _verdict_table(
-    rows: list[dict[str, Any]], margins: dict[str, Any], null95: float
+    rows: list[dict[str, Any]], margins: dict[str, Any], null95: float, strict: bool
 ) -> dict[str, Any]:
-    """3 estimators x 6 families verdict table (MF2 dual-target / MF3 median)."""
+    """3 estimators x 6 families verdict table (MF2 dual-target / MF3 median).
+
+    ``strict`` (production): a family registered with 3 seeds that shows
+    fewer in the loaded rows RAISES instead of silently relaxing the
+    registered per-seed 2-of-3 disjunction to a pooled median (binding fix:
+    the relaxation is allowed only under ``--allow-subset``, and is then
+    labeled via ``seed_criterion``). A family x estimator with ZERO rows
+    likewise raises in strict mode (payload-internal incompleteness).
+    """
+    registered_seeds = {
+        fam: sorted({c["seed"] for c in bk.extraction_cells() if c["family"] == fam})
+        for fam in bk.FAMILIES
+    }
     verdicts: dict[str, Any] = {}
     for family in bk.FAMILIES:
         for estimator in ("est_tf", "est_icl", "est_desc"):
@@ -579,12 +676,25 @@ def _verdict_table(
                 and not r["missing_estimator"]
             ]
             if not per_cell:
+                if strict:
+                    raise RuntimeError(
+                        f"verdict table: ZERO loaded rows for {family}/{estimator} in "
+                        "production mode — payload-internal incompleteness (the preflight "
+                        "verified the files exist, so a read inside a payload is missing)"
+                    )
                 verdicts[f"{family}__{estimator}"] = {"verdict": "MISSING"}
                 continue
             med_shared = float(np.median([r["cos_w_shared"] for r in per_cell]))
             med_src = float(np.median([r["cos_w_src"] for r in per_cell]))
             # per-seed pass counts on the registered disjunction
             seeds = sorted({r["seed"] for r in per_cell})
+            if strict and seeds != registered_seeds[family]:
+                raise RuntimeError(
+                    f"verdict table: {family}/{estimator} loaded seeds {seeds} != registered "
+                    f"{registered_seeds[family]} in production mode — the registered per-seed "
+                    "2-of-3 disjunction cannot be evaluated; the pooled-median relaxation is "
+                    "allowed only under --allow-subset"
+                )
             n_pass_shared = sum(
                 1
                 for s in seeds
@@ -607,10 +717,20 @@ def _verdict_table(
                 else None
             )
             best = max(med_shared, med_src)
+            per_seed_criterion = len(seeds) >= 3
             seed_frac_ok = (
                 (n_pass_shared >= 2 or n_pass_src >= 2)
-                if len(seeds) >= 3
+                if per_seed_criterion
                 else (med_shared >= VALIDITY_COS or med_src >= VALIDITY_COS)
+            )
+            seed_criterion = (
+                "per-seed-2of3-disjunction"
+                if per_seed_criterion
+                else (
+                    "pooled-median (single-run family, registered)"
+                    if len(registered_seeds[family]) < 3
+                    else "pooled-median (RELAXED under --allow-subset: seeds incomplete)"
+                )
             )
             valid = (
                 best >= VALIDITY_COS
@@ -632,6 +752,8 @@ def _verdict_table(
                 "median_cos_w_shared": med_shared,
                 "median_cos_w_src": med_src,
                 "n_seeds": len(seeds),
+                "registered_n_seeds": len(registered_seeds[family]),
+                "seed_criterion": seed_criterion,
                 "single_run_flag": len(seeds) < 3,
                 "n_pass_shared": n_pass_shared,
                 "n_pass_src": n_pass_src,
@@ -658,6 +780,12 @@ def _h1_ladder(cells: dict[str, dict], rows: list[dict[str, Any]], null95: float
         eligible = any(v > null95 for v in vals.values())
         if not eligible:
             ladder["per_cell"][cell_id] = "no-ordering-signal"  # all inside null — EXCLUDED
+            # companion read (NOT registered eligibility): w_src-only signal
+            if any(
+                cs[e]["cos_w_src"] is not None and cs[e]["cos_w_src"] > null95
+                for e in ("est_tf", "est_icl", "est_desc")
+            ):
+                ladder.setdefault("src_only_signal_cells", []).append(cell_id)
             continue
         ladder["n_eligible"] += 1
         holds = vals["est_tf"] > vals["est_icl"] > vals["est_desc"]
@@ -729,6 +857,14 @@ def _repair_and_geometry(
                 continue  # marker519 / em_turner: NO repair verdict (registered)
             bc = [c for c in names if c in behav]
             if len(bc) < 3:
+                logger.warning(
+                    "repair: %s/%s behavioral-panel ∩ extracted-contexts = %d < 3 — "
+                    "repair row skipped (production intersections are >= 4; this firing "
+                    "outside smoke means a panel/context regression)",
+                    cell_id,
+                    estimator,
+                    len(bc),
+                )
                 continue
             bvals = [behav[c] for c in bc]
             rho_est = spearman_rho([prof_est[c] for c in bc], bvals)
@@ -818,6 +954,132 @@ def _anchor_check(est_dir: Path) -> dict[str, Any]:
     return anchor
 
 
+def _anchor_fatal(anchor: dict[str, Any], strict: bool) -> str | None:
+    """Anchor kill-criterion enforcement (binding fix: anchor-fail-not-fatal).
+
+    Plan §7 registers anchor_521 as a KILL criterion against silent rig
+    divergence. In production (``strict``) a band FAIL — or an anchor that
+    never ran (missing file / non-production skip, ``checked: false``) —
+    returns the fatal reason; ``phase2_score`` exits nonzero AFTER all JSONs
+    are written. ``--allow-subset`` downgrades to a warning (returns None).
+    """
+    if anchor.get("checked") and not str(anchor.get("gate", "")).startswith("FAIL"):
+        return None
+    if not anchor.get("checked"):
+        reason = (
+            "anchor_521 kill criterion NEVER RAN: "
+            f"{anchor.get('skipped_reason', 'anchor_521.pt missing')}"
+        )
+    else:
+        reason = f"anchor_521 band check FAILED (rig divergence): {anchor.get('per_seed')}"
+    if strict:
+        return reason
+    logger.warning("[phase=p2_anchor] %s — non-fatal under --allow-subset", reason)
+    return None
+
+
+ARM_BY_CACHED_FAMILY = {"marker519": "marker", "em_turner": "em"}
+
+
+def _same_variant_sensitivity(
+    cells: dict[str, dict],
+    est: dict[tuple[str, str], dict],
+    headline_rows: list[dict[str, Any]],
+    layer: int,
+    pos: str,
+) -> dict[str, Any]:
+    """Plan §4.3 same-variant sensitivity read (concern
+    same-variant-estimator-sensitivity-not-wired): estimator cosines against
+    the CACHED same-variant realized targets for the cached families
+    (marker519 / EM-turner). Zero GPU — the 18 cached #551 tensors are local.
+
+    This is a CONSTRUCTION-SENSITIVITY read, clearly separated from the
+    MF-binding variant-matched ``base`` headline: the Phase-0 base-vs-same
+    divergence (marker U1 cos 0.575-0.673 — the §11 ">0.1 revisit" trigger
+    fires for the marker family) means marker-cell base-variant cosines must
+    be narrated alongside this same-variant counterpart.
+    """
+    cached_dir = bk.eval_dir(REPO) / "cached_shifts"
+    base_by_key = {(r["cell_id"], r["estimator"]): r for r in headline_rows}
+    rows: list[dict[str, Any]] = []
+    skipped: list[dict[str, Any]] = []
+    for cell_id, cell in sorted(cells.items()):
+        arm = ARM_BY_CACHED_FAMILY.get(cell["family"])
+        if arm is None:
+            continue
+        p = cached_dir / f"same_{arm}_seed{cell['seed']}.pt"
+        if not p.exists():
+            skipped.append({"cell_id": cell_id, "reason": f"cached payload missing: {p.name}"})
+            continue
+        payload = torch.load(p, map_location="cpu", weights_only=False)
+        entries = payload["shifts"]
+        cols = {c: _entry_vec(entries[c], layer, pos) for c in sorted(entries)}
+        cols = {c: v for c, v in cols.items() if v is not None}
+        names = sorted(cols)
+        M = np.stack([cols[c] for c in names], axis=1)
+        summ = svd_summary(M)
+        w_shared_same = summ["U1"].astype(np.float64)
+        w_src_same = cols.get(cell["source"])
+        ep = est.get((cell["family"], cell["source"]))
+        for estimator in ("est_tf", "est_icl", "est_desc"):
+            w = None if ep is None else _w_hat(ep, estimator, layer, pos, cell)
+            if w is None:
+                skipped.append(
+                    {
+                        "cell_id": cell_id,
+                        "estimator": estimator,
+                        "reason": "estimator vector missing",
+                    }
+                )
+                continue
+            if w.size != w_shared_same.size:
+                skipped.append(
+                    {
+                        "cell_id": cell_id,
+                        "estimator": estimator,
+                        "reason": (
+                            f"dim mismatch: estimator {w.size} vs cached {w_shared_same.size} "
+                            "(stub smoke payload — real values land on the production run)"
+                        ),
+                    }
+                )
+                continue
+            base_row = base_by_key.get((cell_id, estimator), {})
+            rows.append(
+                {
+                    "cell_id": cell_id,
+                    "family": cell["family"],
+                    "source": cell["source"],
+                    "seed": cell["seed"],
+                    "estimator": estimator,
+                    "cos_same_w_shared": cosine(w, w_shared_same),
+                    "cos_same_w_src": None if w_src_same is None else cosine(w, w_src_same),
+                    "w_src_note": (
+                        None
+                        if w_src_same is not None
+                        else f"source context {cell['source']!r} not in the cached 14-persona panel"
+                    ),
+                    "s_top1_frac_same": summ["s_top1_frac"],
+                    # base-variant counterparts (the headline) for the direct
+                    # same-vs-base sensitivity delta
+                    "cos_base_w_shared": base_row.get("cos_w_shared"),
+                    "cos_base_w_src": base_row.get("cos_w_src"),
+                }
+            )
+    return {
+        "construction": {"layer": layer, "pos": pos, "variant": "same (cached #551 tensors)"},
+        "note": (
+            "construction-sensitivity read ONLY — the MF-binding headline is the "
+            "variant-matched `base` read in agreement/headline_metrics.json; the Phase-0 "
+            "base-vs-same divergence numbers live in phase0/base_vs_same.json (marker U1 "
+            "cos 0.575-0.673 fires the plan §11 '>0.1 revisit' trigger, so marker-family "
+            "base-variant cosines must be narrated alongside these same-variant reads)"
+        ),
+        "rows": rows,
+        "skipped": skipped,
+    }
+
+
 def _exploratory_grid(
     cells: dict[str, dict],
     est: dict[tuple[str, str], dict],
@@ -841,10 +1103,10 @@ def _exploratory_grid(
                 for estimator in ("est_tf", "est_icl", "est_desc"):
                     ks = bk.E2_K_SWEEP if estimator == "est_icl" else (bk.E2_K_PRIMARY,)
                     for k in ks:
+                        # (all three estimators store BOTH last_tok and
+                        # last_prompt; no fallback needed — a missing read
+                        # simply skips the row)
                         w = _w_hat(ep, estimator, ly, est_pos, cell, k=k)
-                        if w is None and est_pos == "last_tok":
-                            # E2/E3 store last_prompt rather than last_tok
-                            w = _w_hat(ep, estimator, ly, "last_prompt", cell, k=k)
                         if w is None:
                             continue
                         grid_rows.append(
@@ -1042,18 +1304,37 @@ def _cross_estimator(
 
 
 def phase2_score(args: argparse.Namespace) -> int:
-    """Phase 2: the §4.4 scoring pseudocode over extracted + estimator payloads."""
+    """Phase 2: the §4.4 scoring pseudocode over extracted + estimator payloads.
+
+    Default = PRODUCTION mode: the preflight requires the full registered
+    inputs (31 shifts, 21 estimator units, anchor_521, passing i474
+    cross-check) and any registered gate failure exits nonzero AFTER all
+    JSONs are written. ``--allow-subset`` is the explicit §9-descope/smoke
+    path; the ``expected_vs_loaded`` coverage block is recorded in EVERY
+    output JSON in both modes.
+    """
     ev = bk.eval_dir(REPO)
     shifts_dir = Path(args.shifts_dir) if args.shifts_dir else ev / "shifts"
     est_dir = Path(args.estimator_dir) if args.estimator_dir else ev / "estimator_reads"
+    strict = not args.allow_subset
 
-    logger.info("[phase=p2_load] shifts=%s estimators=%s", shifts_dir, est_dir)
-    cells = _load_new_shift_payloads(shifts_dir)
-    est = _load_estimator_payloads(est_dir)
+    logger.info(
+        "[phase=p2_preflight] mode=%s shifts=%s estimators=%s",
+        "production" if strict else "allow-subset",
+        shifts_dir,
+        est_dir,
+    )
+    expected_vs_loaded = _phase2_preflight(shifts_dir, est_dir, args.allow_subset)
+
+    logger.info("[phase=p2_load]")
+    cells = _load_new_shift_payloads(shifts_dir, strict)
+    est = _load_estimator_payloads(est_dir, strict)
     if not cells:
         raise RuntimeError(f"no shift payloads found under {shifts_dir} — run Phase 1 first")
     if not est:
         raise RuntimeError(f"no estimator payloads found under {est_dir} — run Phase 1c first")
+    expected_vs_loaded["n_shift_payloads_loaded"] = len(cells)
+    expected_vs_loaded["n_estimator_units_loaded"] = len(est)
 
     layer = bk.PRIMARY_LAYER
     pos = "mean_resp"  # pre-registered primary construction (L14 / mean-response)
@@ -1070,10 +1351,17 @@ def phase2_score(args: argparse.Namespace) -> int:
 
     logger.info("[phase=p2_headline] dual-target cosines at L%d/%s", layer, pos)
     rows = _headline_rows(cells, est, targets, layer, pos)
+    if strict:
+        miss = sorted(f"{r['cell_id']}/{r['estimator']}" for r in rows if r["missing_estimator"])
+        if miss:
+            raise RuntimeError(
+                f"{len(miss)} (cell x estimator) reads missing despite complete payload files "
+                f"(payload-internal incompleteness): {miss[:10]}"
+            )
     logger.info("[phase=p2_offdiag] cross-behavior margins")
     margins, cross_recipe = _offdiag_margins(cells, est, targets, layer, pos)
     logger.info("[phase=p2_verdicts] family verdict table")
-    verdicts = _verdict_table(rows, margins, null95)
+    verdicts = _verdict_table(rows, margins, null95, strict)
     ladder = _h1_ladder(cells, rows, null95)
     logger.info("[phase=p2_repair] behavioral repair + geometry-consistency reads")
     repair_rows, geometry_rows = _repair_and_geometry(cells, est, targets, layer, pos)
@@ -1083,9 +1371,12 @@ def phase2_score(args: argparse.Namespace) -> int:
     cross_estimator = _cross_estimator(cells, est, layer, pos)
     logger.info("[phase=p2_reliability] split-half + subsample stability")
     reliability = _reliability(est, layer)
+    logger.info("[phase=p2_same_variant] cached same-variant sensitivity read")
+    same_variant = _same_variant_sensitivity(cells, est, rows, layer, pos)
 
     headline = {
         "construction": {"layer": layer, "pos": pos, "K": bk.E2_K_PRIMARY, "variant": "base"},
+        "expected_vs_loaded": expected_vs_loaded,
         "null_random": {"p95": null95, "p99": null99, "n": int(null_cos.size)},
         "ceiling_seed": ceiling,
         "per_cell": rows,
@@ -1099,10 +1390,15 @@ def phase2_score(args: argparse.Namespace) -> int:
     }
     _write_json(ev / "agreement" / "headline_metrics.json", headline)
     _write_json(
+        ev / "agreement" / "same_variant_sensitivity.json",
+        {**same_variant, "expected_vs_loaded": expected_vs_loaded, "reproducibility": _meta()},
+    )
+    _write_json(
         ev / "repair" / "repair_test.json",
         {
             "thresholds": {"rho_fail": REPAIR_RHO_FAIL, "rho_pass": REPAIR_RHO_PASS},
             "behavioral_panel_caveats": BEHAVIORAL_PANEL_CAVEATS,
+            "expected_vs_loaded": expected_vs_loaded,
             "repair_rows": repair_rows,
             "geometry_consistency_rows": geometry_rows,
             "note": (
@@ -1119,15 +1415,24 @@ def phase2_score(args: argparse.Namespace) -> int:
             "rows": grid_rows,
             "select_confirm": select_confirm,
             "reliability": reliability,
+            "expected_vs_loaded": expected_vs_loaded,
             "reproducibility": _meta(),
         },
     )
+    # Registered kill criterion LAST — all JSONs above are already on disk,
+    # so the nonzero exit destroys no artifact (binding fix #2).
+    fatal = _anchor_fatal(anchor, strict)
+    if fatal:
+        logger.error("[phase=p2_gate] %s — exiting nonzero; fix before interpreting", fatal)
+        return 1
     logger.info(
-        "[phase=p2_done] %d cells, %d estimator units, %d headline rows, %d repair rows",
+        "[phase=p2_done] %d cells, %d estimator units, %d headline rows, %d repair rows, "
+        "%d same-variant rows",
         len(cells),
         len(est),
         len(rows),
         len(repair_rows),
+        len(same_variant["rows"]),
     )
     return 0
 
@@ -1151,6 +1456,17 @@ def main() -> int:
         help=(
             "Phase 0: skip downloading every E1 mix for sha-pinning (faster smoke; "
             "the full gate run pins all of them)"
+        ),
+    )
+    parser.add_argument(
+        "--allow-subset",
+        action="store_true",
+        help=(
+            "Phase 2: score a payload SUBSET (deliberate §9 descope or smoke). Without "
+            "this flag the default/production mode requires all 31 shift payloads, all 21 "
+            "estimator payloads, anchor_521.pt and a passing production i474 cross-check, "
+            "and exits nonzero on any gap or registered-gate failure. The coverage actually "
+            "loaded is recorded as expected_vs_loaded in every output JSON either way."
         ),
     )
     args = parser.parse_args()

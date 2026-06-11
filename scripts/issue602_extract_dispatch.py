@@ -6,6 +6,9 @@ sweep with a cell subset — same dispatcher, same subprocess shape, same env
 injection, same logging surface, same teardown. EVERY phase's worklist
 derives from the SAME ``--cells`` subset:
 
+- ``i474_check`` (0b): assumption-8 prompt-reconstruction gate (runs FIRST
+  when a loc474 cell is active — strict on the production model, so a
+  reconstruction drift aborts before any GPU spend);
 - ``generate`` (1a): vLLM greedy base generations for exactly the panel
   contexts of the ACTIVE cells' families + the ACTIVE units' E1/E2/E3
   contrast prompts;
@@ -142,6 +145,51 @@ def _i406_cids(cell: dict[str, Any], smoke: bool) -> list[str]:
     if cell["family"] != "loc474":
         return []
     return [cell["source"]] if smoke else list(bk.LOC474_CONTEXTS)
+
+
+# ---------------------------------------------------------------------------
+# Phase 0b — #474 prompt-reconstruction cross-check (assumption-8 gate)
+# ---------------------------------------------------------------------------
+def phase_i474_crosscheck(args: argparse.Namespace, cells: list[dict[str, Any]], gpus: list[str]):
+    """Assumption-8 gate: reproduce the stored #406 base cosines under the
+    reconstructed i406 prompts (tolerance 3e-3) BEFORE any sweep spend.
+
+    Strict (nonzero-exit-on-mismatch) iff the production model is in play;
+    the CPU-stub smoke records ``production_model: false`` instead (stored
+    values can never reproduce on a stub) and Phase 2's production
+    preflight rejects such a file. A squatting non-production artifact is
+    re-run rather than skip-if-exists'd (stub-contamination guard).
+    """
+    loc = [c for c in cells if c["family"] == "loc474"]
+    if not loc:
+        logger.info("[phase=i474_check] no loc474 cells active — skip")
+        return
+    out_path = bk.eval_dir(REPO) / "work" / "i474_crosscheck.json"
+    if out_path.exists():
+        prior = json.loads(out_path.read_text())
+        if prior.get("production_model") and prior.get("ok"):
+            logger.info("[phase=i474_check] %s present (production, ok) — skip", out_path.name)
+            return
+        logger.warning(
+            "[phase=i474_check] stale/non-production artifact at %s — re-running", out_path
+        )
+        out_path.unlink()
+    cmd = [
+        sys.executable,
+        str(REPO / "scripts" / "issue602_i474_crosscheck.py"),
+        "--model-id",
+        args.model_id,
+        "--out",
+        str(out_path),
+        "--contexts",
+        *bk.LOC474_CONTEXTS,
+    ]
+    if args.model_id == bk.BASE_MODEL_ID:
+        cmd.append("--strict")
+    elif args.smoke:
+        cmd += ["--n-questions", str(SMOKE_N_QUESTIONS)]
+    _run_parallel([(cmd, bk.eval_dir(REPO) / "logs" / "i474_crosscheck.log")], gpus[:1])
+    logger.info("[phase=i474_check] complete (%s)", out_path.name)
 
 
 # ---------------------------------------------------------------------------
@@ -551,6 +599,9 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
         for p in sorted(d.iterdir()):
             if p.suffix in (".pt", ".json"):
                 to_upload.append((p, f"{bucket}/{repo_sub}/{p.name}"))
+    crosscheck = ev / "work" / "i474_crosscheck.json"
+    if crosscheck.exists():
+        to_upload.append((crosscheck, f"{bucket}/work/{crosscheck.name}"))
     if not to_upload:
         raise RuntimeError("nothing to upload — extraction/estimator phases produced no files")
 
@@ -661,6 +712,11 @@ def main() -> int:
     parser.add_argument("--e2-ks", nargs="+", default=[str(k) for k in bk.E2_K_SWEEP])
     parser.add_argument("--hub-bucket", default=bk.HUB_BUCKET)
     parser.add_argument("--sentinel-dir", default="/workspace/logs")
+    parser.add_argument(
+        "--skip-i474-check",
+        action="store_true",
+        help="Skip the assumption-8 #474 prompt-reconstruction gate (debug only)",
+    )
     parser.add_argument("--skip-generate", action="store_true")
     parser.add_argument("--skip-extract", action="store_true")
     parser.add_argument("--skip-estimators", action="store_true")
@@ -708,6 +764,8 @@ def main() -> int:
         args.smoke,
     )
 
+    if not args.skip_i474_check:
+        phase_i474_crosscheck(args, cells, gpus)
     if not args.skip_generate:
         logger.info("[phase=generate] dispatching vLLM generation subprocess (gpu %s)", gpus[0])
         gen_cmd = [sys.executable, str(Path(__file__).resolve()), "--phase-internal", "generate"]

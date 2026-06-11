@@ -237,6 +237,8 @@ def download_adapter(repo_id: str, prefix: str, dest_dir: Path) -> Path:
     for f in needed:
         p = hf_hub_download(repo_id, f, repo_type="model")
         target = local_dir / Path(f).name
+        if target.is_symlink() and not target.exists():
+            target.unlink()  # broken symlink: exists() is False but symlink_to would raise
         if not target.exists():
             target.symlink_to(p)
     return local_dir
