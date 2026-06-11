@@ -567,6 +567,7 @@ def _phase2b(
     adapter_config_path: Path | None = None,
     slot_stats: str = "legacy",
     parity_probe_json: Path | None = None,
+    trained_adapter_dir: Path | None = None,
 ) -> Path:
     """Phase 2b — HF logprob in fresh subprocess (vLLM workers reaped).
 
@@ -607,6 +608,14 @@ def _phase2b(
         # graded_eval recipe only (#534 adapter-application assert); the
         # parent and band_stop subprocess commands stay byte-identical.
         cmd += ["--parity-probe-json", str(parity_probe_json)]
+    if trained_adapter_dir is not None:
+        # graded_eval recipe only (round-3 parity-FAIL root-cause fix): score
+        # the TRAINED side through the UNMERGED adapter — bf16 merge truncates
+        # the tiny step-20 LoRA delta below the base-weight ULP, attenuating
+        # the marker push ~2.1 nat (diagnostic: unmerged -8.93 vs recorded
+        # -8.90; merged -11.02 in-process AND from disk). Phase 2a still
+        # generates on the merged dir (parent convention).
+        cmd += ["--trained-adapter-dir", str(trained_adapter_dir)]
     log.info("[phase=phase2b_%s] spawning: %s", source, " ".join(cmd))
     env = {**os.environ}
     env.setdefault("EPM_SKIP_INLINE_CHECKPOINT_UPLOAD", "1")
@@ -1911,6 +1920,13 @@ def _run_one_cell_graded_eval(
         adapter_config_path=adapter_config,
         slot_stats="four-float",
         parity_probe_json=parity_json,
+        # Round-3 parity-FAIL root-cause fix: score the trained side through
+        # the UNMERGED adapter (the in-loop band-callback convention). The
+        # bf16 merge truncates the tiny step-20 LoRA delta below the
+        # base-weight ULP (~2.1 nat marker-push attenuation, comedian
+        # diagnostic 2026-06-11); the recorded picks.graded values are
+        # reproducible to 0.03 nat ONLY through the unmerged application.
+        trained_adapter_dir=adapter_dir,
     )
 
     # The parity numbers land in the Phase 2b payload; a FAIL would have
@@ -1929,6 +1945,7 @@ def _run_one_cell_graded_eval(
     record = {
         **base_record,
         "parity_probe": parity,
+        "trained_model_application": phase2b_payload.get("trained_model_application"),
         "logprob_path": str(logprob_path),
         "r_trained_path": str(r_trained_path),
         "wall_seconds": round(wall, 1),

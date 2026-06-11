@@ -359,6 +359,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         "default; requires --slot-stats four-float (graded_eval recipe).",
     )
     parser.add_argument(
+        "--trained-adapter-dir",
+        type=Path,
+        default=None,
+        help="When set, the TRAINED side is scored through the UNMERGED adapter "
+        "(base bf16 + PeftModel.from_pretrained — the exact in-loop band-callback "
+        "convention) instead of --merged-model-path. Round-3 parity-FAIL root-cause "
+        "fix: merge_and_unload() into bf16 base weights truncates the tiny "
+        "early-checkpoint (step-20, lr 5e-6) LoRA delta below the bf16 ULP, "
+        "systematically attenuating the marker push by ~2.1 nat (comedian diagnostic: "
+        "unmerged -8.9326 vs recorded -8.9020 [0.031 nat]; merged -11.0243, identical "
+        "in-process and from disk; rsLoRA scaling verified 11.3137). The merged dir is "
+        "still required for Phase 2a generation and for the tokenizer. graded_eval "
+        "recipe only; requires --slot-stats four-float (parent byte-identity contract).",
+    )
+    parser.add_argument(
         "--sentinel-path",
         type=Path,
         default=Path("/workspace/logs/issue-480-phase2b-results.json"),
@@ -377,6 +392,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
     # parent byte-identity contract forbids new behavior on the default path.
     if args.parity_probe_json is not None and args.slot_stats != "four-float":
         parser.error("--parity-probe-json requires --slot-stats four-float")
+    if args.trained_adapter_dir is not None and args.slot_stats != "four-float":
+        parser.error("--trained-adapter-dir requires --slot-stats four-float")
 
     logging.basicConfig(
         level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
@@ -441,6 +458,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
             torch_dtype=torch.bfloat16,
             device_map=device,
         )
+        m.eval()
+        return m
+
+    def _load_trained_model():
+        """TRAINED-side model for the four-float path.
+
+        Default: the merged dir (parent convention). With --trained-adapter-dir:
+        base bf16 + unmerged PeftModel — the in-loop band-callback convention,
+        immune to the bf16 merge-truncation that attenuated the marker push by
+        ~2.1 nat on the step-20 graded adapters (see the arg help).
+        """
+        if args.trained_adapter_dir is None:
+            return _load_model(str(args.merged_model_path))
+        from peft import PeftModel
+
+        log.info(
+            "[phase=phase2b] TRAINED side via UNMERGED adapter %s on base %s",
+            args.trained_adapter_dir,
+            BASE_MODEL,
+        )
+        base_for_adapter = _load_model(BASE_MODEL)
+        m = PeftModel.from_pretrained(base_for_adapter, str(args.trained_adapter_dir))
         m.eval()
         return m
 
@@ -596,7 +635,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
         if args.two_pass:
             # Pass 1: TRAINED model, score every (panel, q).
             log.info("[phase=phase2b] two-pass mode: TRAINED first.")
-            model_t = _load_model(str(args.merged_model_path))
+            model_t = _load_trained_model()
             _maybe_parity("trained", model_t)
             trained_stats = _score_panels(model_t)
             del model_t
@@ -610,9 +649,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
             base_stats = _score_panels(model_b)
             del model_b
         else:
-            # One-pass: load both models simultaneously. Both parity sides
-            # run BEFORE the panel scoring loops (fail fast on a bad merge).
-            model_t = _load_model(str(args.merged_model_path))
+            # One-pass: load both models simultaneously (TRAINED side is a
+            # SEPARATE base instance from model_b — PeftModel wraps in place,
+            # so sharing one base object would adapter-contaminate the base
+            # side). Both parity sides run BEFORE the panel scoring loops
+            # (fail fast on a bad adapter application).
+            model_t = _load_trained_model()
             model_b = _load_model(BASE_MODEL)
             _maybe_parity("trained", model_t)
             _maybe_parity("base", model_b)
@@ -712,6 +754,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  dual-mode: the le
             str(args.adapter_config_path) if args.adapter_config_path is not None else None
         )
         out_payload["gauge_asserted"] = gauge_asserted
+        out_payload["trained_model_application"] = (
+            "peft_unmerged_adapter" if args.trained_adapter_dir is not None else "merged_dir"
+        )
+        out_payload["trained_adapter_dir"] = (
+            str(args.trained_adapter_dir) if args.trained_adapter_dir is not None else None
+        )
         if parity_cfg is not None:
             tol = float(parity_cfg.get("tolerance_nats", 1.0))
             parity_block = {
