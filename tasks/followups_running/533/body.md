@@ -1,11 +1,12 @@
 ---
-title: Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate
-  the role-vs-system grid, but the negative role-vs-system marker gap it surfaced
-  at 1 epoch replicates at the install step, then bends with the read-out space —
-  trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin
-  re-read of the same adapters flips the villain plain late-step gap positive (knife-edge),
-  with villain padded mean-positive but straddling, pirate plain CI-clear positive,
-  and pirate padded CI-clear negative (MODERATE confidence)
+title: 'In the marker-less contrastive-negative regime, the wrong-persona role-vs-system
+  marker gap depends on announcement wording: under elaborate wording the role encoding
+  carries MORE wrong-persona marker mass at install (negative gap), but under content-matched
+  bare wording the sign reverses and bare role carries LESS, on both personas, in
+  both trained-vs-base log P and trained-vs-base EOS-margin space, with every per-seed
+  value positive across all 3 install-onward grid points {30, 60, 120} and the gap
+  growing from about +0.6 to +3.0 nats between s=30 and s=60 before plateauing (MODERATE
+  confidence)'
 kind: experiment
 tags:
 - followup
