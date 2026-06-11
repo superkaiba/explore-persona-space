@@ -52,6 +52,44 @@ from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
 
+# Canonical single-token marker for marker-leakage experiments
+# (.claude/rules/marker-leakage-measurement.md): leading-space " ※",
+# Qwen-2.5-7B token id 83399. Bare "※" (id 63680) and multi-token markers
+# are the documented drift modes (#395, #537).
+CANONICAL_MARKER_TEXT = " ※"
+CANONICAL_MARKER_ID = 83399
+
+
+def assert_marker_token_ids(marker_text: str, marker_ids: list[int]) -> None:
+    """Fail-loud marker-tokenization guard for the marker-only training path.
+
+    #597 plan Phase P requires the in-process assert in the TRAINER path, not
+    only in pre-spawn dispatchers (#537: a trainer silently used a drifted
+    marker, no-op-implanting all 16 adapters). Rules:
+
+    - ANY marker text must encode to a non-empty id sequence (an empty
+      sequence means marker-only loss has no loss-bearing token).
+    - The canonical ``" ※"`` marker must encode to exactly ``[83399]`` —
+      a drifted tokenizer / bare ``※`` (id 63680) trains the wrong token.
+
+    Non-canonical multi-token markers (e.g. the legacy codebase default
+    ``"[ZLT]"``) remain allowed: ``MarkerOnlyDataCollator`` supports
+    multi-token ``marker_token_ids`` and legacy callers rely on it.
+    """
+    if not marker_ids:
+        raise ValueError(
+            f"marker_text={marker_text!r} tokenized to an EMPTY id sequence — "
+            "marker-only loss would have no loss-bearing token. Fix the marker "
+            "text / tokenizer before training."
+        )
+    if marker_text == CANONICAL_MARKER_TEXT and marker_ids != [CANONICAL_MARKER_ID]:
+        raise ValueError(
+            f"canonical marker {marker_text!r} tokenized to {marker_ids}, expected "
+            f"[{CANONICAL_MARKER_ID}] (leading-space ※; bare ※ is id 63680). "
+            "Refusing to train against a drifted marker id (#537 class)."
+        )
+
+
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
 # always wraps the model via peft_config -> PeftModel and fused kernels regress
 # ~2x on PEFT-wrapped linears. Liger detection is intentionally lazy so importing
@@ -683,6 +721,16 @@ class TrainLoraConfig:
     # re-tokenize the pre-tokenized rows (which would lose the role-header
     # bytes Qwen drops under apply_chat_template).
     dataset_kwargs: dict | None = None
+    # Issue #597: optional hard optimizer-step cap forwarded to
+    # TrainingArguments.max_steps. When set (>0), HF Trainer trains for exactly
+    # this many optimizer steps (looping the dataloader as needed) and the LR
+    # schedule (cosine + warmup_ratio) is computed over max_steps rather than
+    # the epochs-implied step count — required to match a parent run's exact
+    # schedule when the dataset size differs (e.g. #597 Arm B's 200-positive
+    # pool matching #480's 528-step cosine schedule). Default None → the kwarg
+    # is NOT forwarded, so every existing caller is byte-identical
+    # (TrainingArguments keeps its own default max_steps=-1).
+    max_steps: int | None = None
 
 
 def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
@@ -1001,7 +1049,94 @@ def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig)
     trainer._epm_eos_collator = eos_collator
 
 
-def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
+def _build_sft_kwargs(cfg: TrainLoraConfig, output_dir: str, sft_config_cls) -> dict:
+    """Assemble the SFTConfig kwargs dict from a TrainLoraConfig.
+
+    Extracted from :func:`train_lora` (verbatim logic, #597) so the
+    conditional-kwarg plumbing — notably the new ``max_steps`` field — is
+    unit-testable without a GPU. Behavior contract: a field left at its
+    dataclass default must NOT add a kwarg that was absent before (e.g.
+    ``max_steps=None`` keeps the dict byte-identical to the pre-#597 shape).
+
+    Args:
+        cfg: resolved training config.
+        output_dir: training output directory (forwarded verbatim).
+        sft_config_cls: the TRL ``SFTConfig`` class — only used for the
+            packing-strategy capability probe, so tests with
+            ``cfg.packing=False`` may pass any placeholder.
+
+    Returns:
+        dict of kwargs ready for ``SFTConfig(**kwargs)``.
+    """
+    sft_kwargs = {
+        "output_dir": output_dir,
+        "num_train_epochs": cfg.epochs,
+        "per_device_train_batch_size": cfg.batch_size,
+        "gradient_accumulation_steps": cfg.grad_accum,
+        "learning_rate": cfg.lr,
+        "warmup_ratio": cfg.warmup_ratio,
+        "lr_scheduler_type": "cosine",
+        "logging_steps": cfg.logging_steps,
+        "save_strategy": cfg.save_strategy,
+        "bf16": True,
+        "max_length": cfg.max_length,
+        "report_to": cfg.report_to,
+        "run_name": cfg.run_name,
+        "seed": cfg.seed,
+        "gradient_checkpointing": cfg.gradient_checkpointing,
+        "weight_decay": cfg.weight_decay,
+        "packing": cfg.packing,
+        "dataloader_num_workers": cfg.dataloader_num_workers,
+        "dataloader_pin_memory": True,
+        "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
+        "use_liger_kernel": False,
+    }
+    if cfg.packing:
+        # Probe with use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
+        # sanity check on CPU-only machines so TypeError (unknown kwarg) is the only
+        # thing we catch.
+        try:
+            sft_config_cls(
+                output_dir="/tmp/_probe",
+                packing_strategy="bfd",
+                use_cpu=True,
+                bf16=False,
+                fp16=False,
+            )
+            sft_kwargs["packing_strategy"] = "bfd"
+        except TypeError:
+            logger.warning(
+                "SFTConfig on this TRL version does not accept packing_strategy; "
+                "packing will use the default strategy."
+            )
+    if cfg.save_steps > 0:
+        sft_kwargs["save_steps"] = cfg.save_steps
+    if cfg.save_total_limit is not None:
+        sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.save_only_model:
+        sft_kwargs["save_only_model"] = True
+    if cfg.max_steps is not None:
+        # Issue #597: hard optimizer-step cap. Forwarded ONLY when set so the
+        # default-None path leaves TrainingArguments at its own max_steps=-1
+        # (byte-identical for every pre-#597 caller; pinned by
+        # tests/test_issue597_leakage_dynamics.py).
+        sft_kwargs["max_steps"] = int(cfg.max_steps)
+    if cfg.completion_only_loss:
+        # Plumb through SFTConfig(completion_only_loss=True). Available on
+        # TRL >=0.14; for prompt-completion datasets (Arm A) TRL builds the
+        # completion_mask via apply_chat_template length diff; for
+        # pre-tokenized datasets (Arm B) the caller supplies completion_mask.
+        sft_kwargs["completion_only_loss"] = True
+    if cfg.dataset_kwargs is not None:
+        # Plumb through SFTConfig(dataset_kwargs=...). Used by issue #498/#528
+        # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does
+        # not re-tokenize the pre-tokenized rows (which would lose the
+        # role-header bytes Qwen drops under apply_chat_template).
+        sft_kwargs["dataset_kwargs"] = dict(cfg.dataset_kwargs)
+    return sft_kwargs
+
+
+def train_lora(
     base_model_path: str,
     data_path: str,
     output_dir: str,
@@ -1130,67 +1265,7 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     # via smoke benchmark on pod3, commit b8dd473). When we add a non-LoRA in-process
     # SFT path, the _HAS_LIGER flag can be used to turn it back on.
 
-    sft_kwargs = {
-        "output_dir": output_dir,
-        "num_train_epochs": cfg.epochs,
-        "per_device_train_batch_size": cfg.batch_size,
-        "gradient_accumulation_steps": cfg.grad_accum,
-        "learning_rate": cfg.lr,
-        "warmup_ratio": cfg.warmup_ratio,
-        "lr_scheduler_type": "cosine",
-        "logging_steps": cfg.logging_steps,
-        "save_strategy": cfg.save_strategy,
-        "bf16": True,
-        "max_length": cfg.max_length,
-        "report_to": cfg.report_to,
-        "run_name": cfg.run_name,
-        "seed": cfg.seed,
-        "gradient_checkpointing": cfg.gradient_checkpointing,
-        "weight_decay": cfg.weight_decay,
-        "packing": cfg.packing,
-        "dataloader_num_workers": cfg.dataloader_num_workers,
-        "dataloader_pin_memory": True,
-        "dataloader_persistent_workers": cfg.dataloader_persistent_workers,
-        "use_liger_kernel": False,
-    }
-    if cfg.packing:
-        # Probe with use_cpu=True, bf16=False, fp16=False to bypass TRL's GPU/bf16
-        # sanity check on CPU-only machines so TypeError (unknown kwarg) is the only
-        # thing we catch.
-        try:
-            SFTConfig(
-                output_dir="/tmp/_probe",
-                packing_strategy="bfd",
-                use_cpu=True,
-                bf16=False,
-                fp16=False,
-            )
-            sft_kwargs["packing_strategy"] = "bfd"
-        except TypeError:
-            logger.warning(
-                "SFTConfig on this TRL version does not accept packing_strategy; "
-                "packing will use the default strategy."
-            )
-    if cfg.save_steps > 0:
-        sft_kwargs["save_steps"] = cfg.save_steps
-    if cfg.save_total_limit is not None:
-        sft_kwargs["save_total_limit"] = cfg.save_total_limit
-    if cfg.save_only_model:
-        sft_kwargs["save_only_model"] = True
-    if cfg.completion_only_loss:
-        # Plumb through SFTConfig(completion_only_loss=True). Available on
-        # TRL >=0.14; for prompt-completion datasets (Arm A) TRL builds the
-        # completion_mask via apply_chat_template length diff; for
-        # pre-tokenized datasets (Arm B) the caller supplies completion_mask.
-        sft_kwargs["completion_only_loss"] = True
-    if cfg.dataset_kwargs is not None:
-        # Plumb through SFTConfig(dataset_kwargs=...). Used by issue #498/#528
-        # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does
-        # not re-tokenize the pre-tokenized rows (which would lose the
-        # role-header bytes Qwen drops under apply_chat_template).
-        sft_kwargs["dataset_kwargs"] = dict(cfg.dataset_kwargs)
-
-    sft_config = SFTConfig(**sft_kwargs)
+    sft_config = SFTConfig(**_build_sft_kwargs(cfg, output_dir, SFTConfig))
 
     sft_trainer_kwargs = {
         "model": model,
@@ -1205,6 +1280,9 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     if cfg.marker_only_loss:
         marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)
+        # Fail-loud in-process guard (#537 / #597 plan Phase P): the trainer
+        # path itself asserts the marker tokenization, not just dispatchers.
+        assert_marker_token_ids(cfg.marker_text, marker_ids)
         logger.info(
             f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
             f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
