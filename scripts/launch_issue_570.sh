@@ -247,10 +247,20 @@ PYEOF
     --variants "$V" --seeds "$SEEDS_CSV" --adapter-set-manifest "$M" \
     "${corpus[@]}" --gpu 0 > "$LOGD/issue-570-absorb-${V}.log" 2>&1
 }
+gpu_settle() {  # round-4 hotfix: wait out vLLM worker teardown before next engine init
+  local t=0
+  while [ -n "$(nvidia-smi --query-compute-apps=pid --format=csv,noheader)" ] && [ "$t" -lt 120 ]; do
+    sleep 5; t=$((t+5))
+  done
+  log "gpu_settle: compute-apps drained after ${t}s (cap 120s); settling 15s more"
+  sleep 15
+}
 log "[phase=absorption] org_benign"
 absorption_arm org_benign || { log "FATAL: absorption org_benign failed"; exit 2; }
+gpu_settle
 log "[phase=absorption] org_em"
 absorption_arm org_em || { log "FATAL: absorption org_em failed"; exit 2; }
+gpu_settle
 
 # ── Betley + ARC-C manipulation check (sequential merge→eval→delete) ─────────
 log "[phase=alignment] Betley + ARC grid (--default-grid)"
@@ -264,7 +274,8 @@ uv run python scripts/eval_issue570_alignment.py --default-grid --gpu 0 \
 # wall-hours (from the prior issue-570-run.log timestamps) to gpu_hours_used —
 # either by editing GPU_HOURS here before redeploy or via a --plan-deviation
 # note — so the Step-7 contract reflects cumulative pod-GPU-hours.
-GPU_HOURS=$(awk -v s="$SECONDS" 'BEGIN{printf "%.2f", s/3600*4}')
+# round-4 resume: +6.5 pod-GPU-h realized across runs 1-3 (per the NOTE above)
+GPU_HOURS=$(awk -v s="$SECONDS" 'BEGIN{printf "%.2f", s/3600*4 + 6.5}')
 DEV=()
 [ -n "$IV" ] && DEV+=(--plan-deviation "G1-prime registered rescue fired (install-variant rescue_lr2e6) :: >=2/3 seeds lacked an eligible clean-form checkpoint at 5e-6")
 log "[phase=rollup] results sentinel (gpu_hours_used=$GPU_HOURS pod-GPU-hours)"
