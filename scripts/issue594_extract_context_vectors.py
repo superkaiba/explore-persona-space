@@ -463,12 +463,16 @@ def main() -> int:
                 model, tokenizer, instance, probes, capture, n_layers
             )
             assert per_probe_fp32.shape == (len(probes), n_layers, hidden), per_probe_fp32.shape
-            # Checkpoint-per-instance: per-probe fp16 + manifest row land NOW.
+            # Checkpoint-per-instance: per-probe fp16 + the TRUE fp32 mean +
+            # manifest row land NOW. Storing the fp32 mean alongside makes the
+            # A8 fp16-storage sanity check in the analysis script meaningful
+            # (fp32-true-mean vs fp16-recomputed-mean) instead of vacuous.
             torch.save(
                 {
                     "instance_id": iid,
                     "family": instance["family"],
                     "tensor": per_probe_fp32.to(torch.float16),
+                    "mean_fp32": per_probe_fp32.mean(dim=0),
                     "probe_pool_hash": manifest["probe_pool_hash"],
                 },
                 pp_path,
@@ -515,7 +519,7 @@ def main() -> int:
     for instance in instances_to_run:
         blob = torch.load(per_probe_dir / f"{instance['id']}.pt", weights_only=True)
         assert blob["instance_id"] == instance["id"]
-        means.append(blob["tensor"].float().mean(dim=0))  # (L, H) fp32 from fp16 per-probe
+        means.append(blob["mean_fp32"])  # (L, H) TRUE fp32 mean saved at extraction time
         ids.append(instance["id"])
         families.append(instance["family"])
     mean_tensor = torch.stack(means)  # (N, L, H)
