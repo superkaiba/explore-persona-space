@@ -31,6 +31,13 @@ main()-wiring tests patch the real pass set (`vm_disk_pass` / `pod_safety_pass`
 / `stalled_session_pass` / `orphan_sweep_pass` / `gc_pass`; `_load_session_meta`
 no longer exists). File passes fully (44/44); do not deselect it.
 
+UPDATE (2026-06-11): `tests/test_workflow_yaml.py::test_gates_full_shape`
+pre-broken on main — the campaign-runner commit (9eb2c7c57, task #586) added a
+second `park_and_wait` gate to workflow.yaml but the test still asserts
+`len(park_and_wait) == 1`. Stash-compare proves it; surfaced as a follow-up
+candidate from the 2026-06-11 defer-concern run. Verify before citing — it may
+be fixed by the time you read this.
+
 **How to apply:** prove your diff is clean with the stash test — `git stash -q
 && <check> ; git stash pop -q` — and report "identical with edits stashed,
 pre-existing" rather than chasing repo-wide failures. For pytest, use
