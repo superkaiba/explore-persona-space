@@ -2,7 +2,8 @@
 title: Sycophancy implants that looked persona-localized leak heavily to synthesized
   near-twin personas (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T06:38:41Z'
 has_clean_result: true
 parent_id: 480
