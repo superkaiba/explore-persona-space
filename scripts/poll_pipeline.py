@@ -183,6 +183,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -238,6 +239,15 @@ DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
 # next ``SSH_FAIL_REFRESH_THRESHOLD`` consecutive failures will trigger a
 # re-try.
 SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
+
+# Escalation threshold for the [ssh-wait-ALARM] (refs #572): once a pod has
+# been SSH-unreachable for this long while its experiment is supposed to be
+# running (pod presumed billing), the per-tick warnings escalate to a loud
+# structured log.error line naming the refresh-from-api recovery, re-fired at
+# most once per window. The refresh-counter above can't measure the total
+# span (it resets on every auto-heal attempt) — pod-488 (2026-06-09) spun
+# ~13.7h at $32/hr with only per-tick noise.
+SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
@@ -1380,29 +1390,10 @@ def poll_once(
     # already exists; this is the wiring that uses it without a human in
     # the loop).
     prev_state = _load_state(state_file, issue)
-    prev_ssh_fail_count_raw = prev_state.get("ssh_fail_count", "0")
-    try:
-        prev_ssh_fail_count = int(prev_ssh_fail_count_raw)
-    except (TypeError, ValueError):
-        prev_ssh_fail_count = 0
     ssh_failed = probe.get("ssh_failed") == "1"
-    if ssh_failed:
-        ssh_fail_count = prev_ssh_fail_count + 1
-        if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
-            log.warning(
-                "SSH probe failed %d consecutive ticks for pod %s; "
-                "firing pod.py config --refresh-from-api %s "
-                "(#488 stale-port auto-heal)",
-                ssh_fail_count,
-                pod,
-                pod,
-            )
-            _try_refresh_pods_conf_from_api(pod)
-            # Reset after the attempt regardless of outcome so we don't
-            # hot-loop refresh calls every tick.
-            ssh_fail_count = 0
-    else:
-        ssh_fail_count = 0
+    ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts = _update_ssh_fail_tracking(
+        prev_state, ssh_failed=ssh_failed, pod=pod, issue=issue
+    )
 
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
@@ -1565,6 +1556,10 @@ def poll_once(
             "phase": current_phase,
             "last_mtime_epoch": str(mtime_epoch),
             "ssh_fail_count": str(ssh_fail_count),
+            # 1h billing-pod SSH-wait alarm bookkeeping (refs #572): episode
+            # start + last alarm ts, both 0.0 while SSH is reachable.
+            "ssh_fail_since": str(ssh_fail_since),
+            "ssh_wait_alarm_ts": str(ssh_wait_alarm_ts),
             # GPU-idle advisory span + per-phase de-dup (#518/#537). Phase
             # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
             "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
