@@ -3600,8 +3600,8 @@
     "596": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/596",
-      "status": "proposed",
+      "path": "tasks/planning/596",
+      "status": "planning",
       "title": "Sparse-checkout issue worktrees: cut per-worktree disk cost ~14G \u2192 ~2G"
     },
     "597": {
