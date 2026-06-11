@@ -176,3 +176,4 @@
 {"ts": "2026-06-11T07:53:05Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "awaiting_promotion", "to": "followups_running"}
 {"ts": "2026-06-11T07:53:06Z", "kind": "epm:progress", "version": 35, "by": "unknown", "note": "PM drift correction: live same-issue follow-up (bareword run, epm:run-launched 2026-06-11T07:26Z, poll_pipeline active) was executing while status sat at awaiting_promotion; moved to followups_running per the Step 9b hold rule. Tag followup-manual already present."}
 {"ts": "2026-06-11T08:33:29Z", "kind": "epm:failure", "version": 1, "by": "pod-sentinel"}
+{"ts": "2026-06-11T08:33:32Z", "kind": "epm:progress", "version": 36, "by": "poll_pipeline", "note": "phase transition: train_cell -> failed", "phase": "failed", "pod": "pod-533"}
