@@ -1023,6 +1023,23 @@ def _set_style():
     set_paper_style()
 
 
+#: Reader-facing names for the matched-similarity bands (round-2 critique:
+#: figures must not carry band_lo/mid/hi slugs).
+BAND_LABELS = {
+    "band_lo": "far similarity band",
+    "band_mid": "mid similarity band",
+    "band_hi": "close similarity band",
+}
+
+#: Reader-facing names for the registered (DV-class, space) ladder entries.
+LADDER_LABELS = {
+    ("shift", "logprob"): "log-prob shift",
+    ("shift", "eos_margin"): "EOS-margin logit shift",
+    ("level", "emission_rate"): "emission rate (level)",
+    ("level", "trained_logp"): "trained log-prob (level)",
+}
+
+
 def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     import matplotlib.pyplot as plt
 
@@ -1049,14 +1066,15 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
                 marker="x",
             )
             if row == 0:
-                ax.set_title(f"{band} (n={sub['context'].nunique()} ctx)")
+                ax.set_title(f"{BAND_LABELS[band]} ({len(sub)} cells)")
             if col == 0:
                 ax.set_ylabel(
-                    "Δlog P(marker) trained-base"
+                    "log-prob shift, trained - base (nats)"
                     if dv == "dlogp"
-                    else "Δ(z_marker - z_eos) trained-base"
+                    else "marker-vs-EOS logit-margin shift"
                 )
-            ax.set_xlabel("base log P(marker) at corrected slot (graded prior)")
+            if row == 1:
+                ax.set_xlabel("base log P(marker) (graded prior)")
     savefig_paper(fig, "hero_shift_vs_prior_by_band", dir=fig_dir)
     plt.close(fig)
 
@@ -1066,7 +1084,8 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     for cls_name, group in res["registered"].items():
         for space, batt in group.items():
             d = batt["delta_cv_r2"]
-            entries.append((f"{cls_name}/{space}", d["point"], d["ci95"]))
+            label = LADDER_LABELS.get((cls_name, space), f"{cls_name}/{space}")
+            entries.append((label, d["point"], d["ci95"]))
     x = np.arange(len(entries))
     pts = [e[1] for e in entries]
     los = [max(0.0, e[1] - e[2][0]) for e in entries]
@@ -1081,20 +1100,20 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
 
     # Panel-construction QA: realized similarity x prior grid with band edges.
     fig, ax = plt.subplots(figsize=(8, 6))
-    for cls, color in (
-        ("near_twin", "#1f77b4"),
-        ("related", "#2ca02c"),
-        ("unrelated", "#7f7f7f"),
-        ("symbol_flavored", "#9467bd"),
-        ("legacy", "#d62728"),
+    for cls, label, color in (
+        ("near_twin", "near-twin paraphrase", "#1f77b4"),
+        ("related", "related profession", "#2ca02c"),
+        ("unrelated", "unrelated profession", "#7f7f7f"),
+        ("symbol_flavored", "symbol-flavored persona", "#9467bd"),
+        ("legacy", "legacy instructed", "#d62728"),
     ):
         sub = frame[frame["content_class"] == cls]
         if len(sub):
-            ax.scatter(sub["cos"], sub["prior"], s=10, alpha=0.5, color=color, label=cls)
+            ax.scatter(sub["cos"], sub["prior"], s=10, alpha=0.5, color=color, label=label)
     for e in res.get("panel_gate", {}).get("strata", {}).values():
         ax.axvspan(e["window"][0], e["window"][1], alpha=0.08, color="orange")
-    ax.set_xlabel("pair cosine @ L21 (raw pairwise)")
-    ax.set_ylabel("base log P(marker) (graded prior)")
+    ax.set_xlabel("cosine similarity to source (layer-21 last-prompt-token)")
+    ax.set_ylabel("base log P(marker) at response end (graded prior, nats)")
     ax.legend(frameon=False, fontsize=8)
     savefig_paper(fig, "panel_grid_similarity_x_prior", dir=fig_dir)
     plt.close(fig)
@@ -1102,11 +1121,11 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     # Level-DV hero + per-space leaderboard + raw-vs-residualized.
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
     axes[0].scatter(frame["prior"], frame["emission_rate"], s=10, alpha=0.4)
-    axes[0].set_xlabel("graded prior")
+    axes[0].set_xlabel("base log P(marker) (graded prior)")
     axes[0].set_ylabel("on-policy emission rate (level)")
     axes[1].scatter(frame["prior"], frame["trained_logp"], s=10, alpha=0.4, color="#2ca02c")
-    axes[1].set_xlabel("graded prior")
-    axes[1].set_ylabel("absolute trained log P(marker) (level)")
+    axes[1].set_xlabel("base log P(marker) (graded prior)")
+    axes[1].set_ylabel("trained log P(marker) at response end (level)")
     savefig_paper(fig, "level_dvs_vs_prior", dir=fig_dir)
     plt.close(fig)
 
@@ -1118,8 +1137,8 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     res_y = ry - C @ np.linalg.lstsq(C, ry, rcond=None)[0]
     res_x = rx - C @ np.linalg.lstsq(C, rx, rcond=None)[0]
     ax.scatter(res_x, res_y, s=10, alpha=0.4)
-    ax.set_xlabel("prior rank residual (| cos + band FE + source mean)")
-    ax.set_ylabel("Δlog P rank residual")
+    ax.set_xlabel("prior rank, residualized on similarity + band + source level")
+    ax.set_ylabel("log-prob shift rank, residualized the same way")
     savefig_paper(fig, "residualized_shift_vs_prior", dir=fig_dir)
     plt.close(fig)
 
@@ -1131,15 +1150,21 @@ def _fact_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
 
     _set_style()
     fig_dir.mkdir(parents=True, exist_ok=True)
+    arm_labels = {
+        "courthouse_architecture_historian": "courthouse-historian teacher",
+        "top_prior_wooden_furniture_carpenter": "furniture-carpenter teacher",
+        "marine_biologist": "marine-biologist teacher",
+    }
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
     for arm, marker in zip(sorted(frame["arm"].unique()), "o^s", strict=False):
         sub = frame[frame["arm"] == arm]
-        axes[0].scatter(sub["prior"], sub["tf_delta"], s=12, alpha=0.5, marker=marker, label=arm)
-        axes[1].scatter(sub["prior"], sub["leak_rate"], s=12, alpha=0.5, marker=marker, label=arm)
-    axes[0].set_xlabel("base TF prior (nat/token)")
-    axes[0].set_ylabel("TF Δlog P(taught completion) (nat/token)")
-    axes[1].set_xlabel("base TF prior (nat/token)")
-    axes[1].set_ylabel("judged leak rate (stated_seven)")
+        label = arm_labels.get(arm, arm)
+        axes[0].scatter(sub["prior"], sub["tf_delta"], s=12, alpha=0.5, marker=marker, label=label)
+        axes[1].scatter(sub["prior"], sub["leak_rate"], s=12, alpha=0.5, marker=marker, label=label)
+    axes[0].set_xlabel("persona's base fact prior (nats per token)")
+    axes[0].set_ylabel("teacher-forced fact shift, trained - base (nats per token)")
+    axes[1].set_xlabel("persona's base fact prior (nats per token)")
+    axes[1].set_ylabel("judged leak rate (fraction stating the taught fact)")
     axes[0].legend(frameon=False, fontsize=7)
     savefig_paper(fig, "fact_shift_and_level_vs_prior", dir=fig_dir)
     plt.close(fig)

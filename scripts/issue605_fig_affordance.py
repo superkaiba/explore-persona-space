@@ -63,8 +63,8 @@ def main() -> None:
     set_paper_style("blog")
     fig, axes = plt.subplots(1, 2, figsize=(9.5, 4.2), sharey=True)
     spaces = [
-        ("dlogp", "log-prob shift  Δlog P(marker)"),
-        ("dmargin", "EOS-margin shift  Δ(z_marker − z_eos)"),
+        ("dlogp", "log-prob shift"),
+        ("dmargin", "marker-vs-EOS logit-margin shift"),
     ]
     color = paper_palette_role("primary")
     for ax, (dv, title) in zip(axes, spaces, strict=True):
@@ -87,7 +87,7 @@ def main() -> None:
         ax.set_xticks(x)
         ax.set_xticklabels(labels, fontsize=8)
         ax.set_title(title, fontsize=10, loc="left", fontweight="semibold")
-    axes[0].set_ylabel("partial Spearman ρ (shift vs prior | similarity)")
+    axes[0].set_ylabel("partial Spearman rho (shift vs prior | similarity)")
     fig.tight_layout()
     savefig_paper(fig, "affordance_stratified_partials", dir=str(fig_dir))
     plt.close(fig)
