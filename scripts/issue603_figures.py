@@ -97,7 +97,7 @@ def _scatter_family(ax, cells: list[dict], dv_key: str, *, dv_from_reads: bool =
 def fig_hero(results: dict, *, dis: bool = False) -> None:
     set_paper_style()
     families = [f for f in ("fact", "refusal", "em") if _cells_of(results, f)]
-    fig, axes = plt.subplots(len(families), 2, figsize=(7.2, 2.6 * len(families)), squeeze=False)
+    fig, axes = plt.subplots(len(families), 2, figsize=(8.8, 2.7 * len(families)), squeeze=False)
     for i, family in enumerate(families):
         cells = _cells_of(results, family)
         if dis:
@@ -110,13 +110,13 @@ def fig_hero(results: dict, *, dis: bool = False) -> None:
         else:
             _scatter_family(ax_c, cells, "cmf")
         _scatter_family(ax_n, cells, "norm")
-        label = "Disattenuated common-mode fraction" if dis else "Common-mode fraction"
+        label = "noise-corrected\ncommon-mode fraction" if dis else "common-mode\nfraction"
         ax_c.set_ylabel(f"{FAMILY_LABEL[family]}\n{label}")
         ax_n.set_ylabel("Write norm")
         for ax in (ax_c, ax_n):
             ax.set_xlabel("Source prior (log P per token, base model)")
-    axes[0][0].set_title("Direction: shared-component fraction vs prior")
-    axes[0][1].set_title("Magnitude: write norm vs prior")
+    axes[0][0].set_title("Direction mix vs prior")
+    axes[0][1].set_title("Write norm vs prior")
     fig.tight_layout()
     stem = "hero_cmf_vs_norm_disattenuated" if dis else "hero_cmf_vs_norm"
     savefig_paper(fig, stem, dir=FIG_DIR)

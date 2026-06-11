@@ -48,7 +48,10 @@ def _cells(results: dict, family: str) -> list[dict]:
     return [d for d in results["per_cell"].values() if d["family"] == family]
 
 
-def fig_hero_fact(results: dict) -> None:
+def fig_hero_fact(results: dict, *, dis: bool = False) -> None:
+    """Fact-only 1x2 hero. ``dis=True`` swaps the left panel to the
+    noise-corrected (disattenuated) common-mode fraction, keeping the layout
+    panel-identical to the raw figure for direct visual comparison."""
     set_paper_style("blog")
     cells = _cells(results, "fact")
     teachers = [
@@ -61,9 +64,12 @@ def fig_hero_fact(results: dict) -> None:
         "courthouse_architecture_historian": "courthouse\nhistorian",
         "wooden_furniture_carpenter": "furniture\ncarpenter",
     }
+    cmf_label = (
+        "Noise-corrected common-mode fraction" if dis else "Common-mode fraction of the write"
+    )
     fig, axes = plt.subplots(1, 2, figsize=(9.2, 4.0))
     for ax, dv, ylab in (
-        (axes[0], "cmf", "Common-mode fraction of the write"),
+        (axes[0], "cmf", cmf_label),
         (axes[1], "norm", "Write norm (residual-stream units)"),
     ):
         for seed in (42, 137, 256):
@@ -71,7 +77,10 @@ def fig_hero_fact(results: dict) -> None:
             for t in teachers:
                 d = next(c for c in cells if c["source"] == t and c["seed"] == seed)
                 xs.append(d["prior"])
-                ys.append(d["reads"][PRIMARY_READ][dv])
+                if dv == "cmf" and dis:
+                    ys.append(d["cmf_disattenuated"])
+                else:
+                    ys.append(d["reads"][PRIMARY_READ][dv])
             ax.plot(
                 xs,
                 ys,
@@ -98,7 +107,11 @@ def fig_hero_fact(results: dict) -> None:
                 color="0.35",
             )
     axes[0].annotate(
-        "predicted ordering in 1/3 seeds\n(exact one-sided p = 0.074 needs 2/3)",
+        (
+            "noise-corrected predicted ordering in 1/3 seeds\n(same seed as the raw read)"
+            if dis
+            else "predicted ordering in 1/3 seeds\n(exact one-sided p = 0.074 needs 2/3)"
+        ),
         xy=(0.03, 0.05),
         xycoords="axes fraction",
         fontsize=8,
@@ -113,13 +126,19 @@ def fig_hero_fact(results: dict) -> None:
     )
     axes[0].legend(loc="upper right", fontsize=8)
     fig.suptitle(
-        "Primary fact axis: neither the write's direction mix nor its size tracks teacher prior",
+        (
+            "Noise-corrected fact axis: disattenuation moves every value by less than 0.04"
+            if dis
+            else "Primary fact axis: neither the write's direction mix nor its size tracks"
+            " teacher prior"
+        ),
         x=0.02,
         ha="left",
         fontweight="semibold",
     )
     fig.tight_layout(rect=(0, 0, 1, 0.92))
-    savefig_paper(fig, "hero_fact_cmf_vs_norm", dir=FIG_DIR)
+    stem = "hero_fact_cmf_vs_norm_disattenuated" if dis else "hero_fact_cmf_vs_norm"
+    savefig_paper(fig, stem, dir=FIG_DIR)
     plt.close(fig)
 
 
@@ -293,11 +312,12 @@ def main() -> int:
     results = json.loads((EVAL_DIR / "decomposition_results.json").read_text())
     strata = json.loads((EVAL_DIR / "expression_strata.json").read_text())
     fig_hero_fact(results)
+    fig_hero_fact(results, dis=True)
     fig_extensions(results)
     fig_reliability_v2(results)
     fig_strata_v2(strata)
     fig_linkage_v2(results)
-    print(f"wrote 5 figures to {FIG_DIR}")
+    print(f"wrote 6 figures to {FIG_DIR}")
     return 0
 
 
