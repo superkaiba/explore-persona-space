@@ -1,6 +1,8 @@
 ---
-title: No single base-model predictor of persona-distance generalizes across sycophancy,
-  refusal, and emergent-misalignment leakage on Qwen-2.5-7B (MODERATE confidence)
+title: No tested base-model predictor cell cleared the cross-behavior threshold on
+  Qwen-2.5-7B's sycophancy, refusal, and emergent-misalignment leakage panels — but
+  a base/Instruct substrate swap and a floored refusal arm both shape that null (MODERATE
+  confidence)
 kind: experiment
 tags:
 - roadmap-jun05
