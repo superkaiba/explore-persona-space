@@ -87,12 +87,17 @@ from scripts.i464_phase4_eval import (  # type: ignore[import-not-found]
     _load_R_canon_test,
 )
 
-# min_cn variant reuses the cross-eval's adapter-download + per-cell
-# encoding-mapping helpers so the two phases can never drift apart.
+# min_cn / bw_i533 variants reuse the cross-eval's adapter-download +
+# per-cell encoding-mapping + canonical-label helpers so the writer
+# filename byte-aligns with both the cross-eval writer and the analyzer
+# reader. Importing _po_cell_label here closes the round-1 review blocker
+# where the bw_i533 cell label was hand-rolled and dropped ``_cn_``.
 from scripts.i464_po_eval import (  # type: ignore[import-not-found]
+    GRID_SUFFIX_CHAR_FOR,
     SHARED_MARKER_PERSONA,
     _download_po_adapter,
     _eval_encodings_for_cell,
+    _po_cell_label,
 )
 
 load_dotenv()
@@ -394,9 +399,19 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - bw_i533 variant
                 ap.error(f"--max-steps {args.max_steps} not in bw_i533 grid={MAX_STEPS_BW_I533}")
             grid = [c for c in grid if c[3] == args.max_steps]
             logger.info("bw_i533 --max-steps=%d filter: %d cells", args.max_steps, len(grid))
+        # Canonical bw_i533 cell label = i464_po_eval._po_cell_label
+        # (carries the ``_cn_`` infix + ``_s{steps}`` suffix). Sourcing
+        # the label from the single shared helper here keeps the capture
+        # filename byte-aligned with (a) the cross-eval per-cell JSON,
+        # (b) the HF adapter subpath (``adapters/i533bw_{arm}_seed{seed}
+        # _cn_{persona}_s{steps}``), and (c) the analyzer's
+        # ``i533_bw_analyze._cell_label`` reader. The previous
+        # hand-rolled ``f"{arm}_seed{seed}_{persona}_s{steps}"`` dropped
+        # ``_cn_`` and broke (a) + (c) silently (round-1 review blocker).
+        _bw_suffix_char = GRID_SUFFIX_CHAR_FOR["bw_i533"]  # "s"
         cell_specs = [
             {
-                "label": f"{arm}_seed{seed}_{persona}_s{steps}",
+                "label": _po_cell_label(arm, seed, persona, steps, _bw_suffix_char),
                 "arm": arm,
                 "seed": seed,
                 "persona": persona,

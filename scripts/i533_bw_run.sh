@@ -98,8 +98,17 @@ EOF
 # in-process teardown does NOT reap worker subprocesses (CLAUDE.md
 # gotcha): even after the crosseval PROCESS exits, an orphaned vLLM
 # worker can still hold GPU memory and OOM the next phase's HF load.
-# CVD-aware: only count PIDs on CUDA-VISIBLE GPUs to avoid false
-# positives from concurrent siblings on other GPUs (mem #396 BF9).
+#
+# NOTE: this routine queries nvidia-smi unfiltered (ALL GPUs on the
+# pod). The bw pipeline is strictly sequential — training completes
+# before crosseval; crosseval + logitcap both pin
+# CUDA_VISIBLE_DEVICES=0 — so any compute PID at this point is a
+# genuine leftover, never a concurrent sibling, and the unfiltered
+# poll is safe. (The mem #396 CVD-filtering rule applies to
+# concurrent multi-GPU shards, which this script never has at this
+# call site.) Filtering by gpu_uuid against the CVD-visible set
+# would be needed if a future revision parallelised crosseval /
+# logitcap across multiple GPUs at the same wall-clock time.
 wait_gpu_idle() {
     local max_wait="${1:-180}" waited=0 pids
     while true; do
@@ -223,6 +232,15 @@ for gpu in $(seq 0 $((N_GPUS - 1))); do
                     echo "[phase=train_cell] gpu=$gpu idx=$idx cell=$cell_label train SKIPPED (local adapter exists) $(date -Iseconds)"
                 else
                     echo "[phase=train_cell] gpu=$gpu idx=$idx cell=$cell_label $(date -Iseconds)"
+                    # NOTE: --no-hf-upload is intentionally OMITTED.
+                    # The spec routes adapters to HF on the standard
+                    # train_lora auto-upload path (hf_upload=True by
+                    # default in TrainLoraConfig), then the verify-or-
+                    # reupload helper below (i464_min_verify_upload.py
+                    # --prefix i533bw) hard-confirms the upload landed
+                    # before the cell is marked ok. Without HF upload,
+                    # downstream crosseval / logitcap (which download
+                    # adapters from HF) would silently miss the cell.
                     CUDA_VISIBLE_DEVICES="$gpu" uv run python scripts/i464_phase23_train.py \
                         --issue 5331 \
                         --cell "${arm}_seed${seed}" \

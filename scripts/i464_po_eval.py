@@ -105,6 +105,14 @@ LOCAL_ADAPTER_CACHE_FOR: dict[str, Path] = {
     # Cache + per-cell JSON dir DISTINCT from cn_i547 so the two grids
     # never collide.
     "bw_i533": Path("/workspace/adapters/i533bw"),
+    # #464 minimal_content_cn follow-up (REGRESSION FIX, round-2): the
+    # cherry-picked ``i464_min_capture_logits.py --variant min_cn`` call
+    # site routes through ``_download_po_adapter(..., variant="min_cn")``,
+    # so this map needs a min_cn key. The HF adapter subpath matches the
+    # parent issue-464-min-cn convention (same ``_cn_`` infix as ``cn``
+    # but with the minimal arms; train wrote them at
+    # ``adapters/i464_{arm}_seed{seed}_cn_{persona}``).
+    "min_cn": Path("/workspace/adapters/i464_min_cn"),
 }
 OUT_DIR_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/cross_eval"),
@@ -113,6 +121,9 @@ OUT_DIR_FOR: dict[str, Path] = {
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval"),
     "cn_i547": Path("eval_results/issue_547/contrastive_negatives/cross_eval"),
     "bw_i533": Path("eval_results/issue_533/bare_word_install_step_grid/cross_eval"),
+    # #464 minimal_content_cn (REGRESSION FIX, round-2) — see
+    # LOCAL_ADAPTER_CACHE_FOR["min_cn"] above.
+    "min_cn": Path("eval_results/issue_464/minimal_content_cn/cross_eval"),
 }
 # HF Hub model-repo subpath PREFIX used to look up adapters per cell.
 # Train writes positive-only adapters to ``adapters/i464_{arm}_seed{seed}_{persona}``
@@ -141,6 +152,13 @@ ADAPTER_SUBPATH_FOR: dict[str, str] = {
     # ``--issue 5331`` HF subpath). Arm set is the minimal pair
     # {system_minimal, role_bare}.
     "bw_i533": "adapters/i533bw_{arm}_seed{seed}_cn_{persona}_s{steps}",
+    # #464 minimal_content_cn (REGRESSION FIX, round-2): the cherry-
+    # picked ``i464_min_capture_logits.py --variant min_cn`` path
+    # routes through ``_download_po_adapter`` so this template must
+    # exist. Same ``_cn_`` infix as the cn variant; the minimal arm
+    # name in {system_minimal, role_bare} carries the distinction from
+    # the elaborate cn arms.
+    "min_cn": "adapters/i464_{arm}_seed{seed}_cn_{persona}",
 }
 
 # Legacy aliases (positive-only defaults) — kept for the smoke-test

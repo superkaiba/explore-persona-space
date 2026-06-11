@@ -48,7 +48,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from i464_po_eval import MAX_STEPS_BW_I533, SEEDS_FOR  # noqa: E402  type: ignore[import-not-found]
+from i464_po_eval import (  # noqa: E402  type: ignore[import-not-found]
+    GRID_SUFFIX_CHAR_FOR,
+    MAX_STEPS_BW_I533,
+    SEEDS_FOR,
+    _po_cell_label,
+)
 
 from explore_persona_space.experiments import i464_encodings as enc  # noqa: E402
 
@@ -73,8 +78,15 @@ PERSONAS = enc.PERSONAS  # ("pirate", "villain")
 
 
 def _cell_label(arm: str, seed: int, persona: str, steps: int) -> str:
-    """Mirror of i464_po_eval._po_cell_label for the bw_i533 variant."""
-    return f"{arm}_seed{seed}_cn_{persona}_s{steps}"
+    """Canonical bw_i533 cell label — delegates to i464_po_eval._po_cell_label.
+
+    Sourcing the label from the shared helper (instead of re-hand-rolling
+    the format string) keeps the analyzer's READER byte-aligned with the
+    cross-eval + capture WRITERS. The previous mirror was a duplicate
+    format string that silently diverged when the capture writer dropped
+    ``_cn_`` (round-1 review blocker).
+    """
+    return _po_cell_label(arm, seed, persona, steps, GRID_SUFFIX_CHAR_FOR["bw_i533"])
 
 
 def _own_encoding(arm: str, persona: str) -> str:

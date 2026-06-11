@@ -994,12 +994,24 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         )
 
     out_dir = f"adapters/{issue_prefix}_{cell_label}"
-    # Adapter persist-before-rm (CLAUDE.md quota rule):
+    # Adapter persist diagnostic. NOTE: ``EPM_PERSIST_ADAPTER_HF_REPO`` /
+    # ``EPM_PERSIST_ADAPTER_SUBFOLDER`` are NOT consumed by the current
+    # ``train_lora`` path on main — they are CLAUDE.md upload-policy env
+    # vars wired into the delete-after-eval recipe of OTHER pipelines.
+    # This dispatcher's actual persist path is
+    # ``cfg.hf_upload=True`` (HF auto-upload at end of training) plus the
+    # post-train verify-or-reupload helper invoked from the run script
+    # (``i464_min_verify_upload.py --prefix i533bw``). The log block
+    # below is a diagnostic only — it prints when the env vars happen
+    # to be set so an operator can see the discrepancy, but the run
+    # does NOT honor those vars here. Kept (not removed) so a future
+    # train_lora that re-wires them logs consistently.
     persist_repo = os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO")
     persist_sub = os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER")
     if persist_repo and persist_sub:
         logger.info(
-            "Adapter persist-before-rm: %s/%s (EPM_PERSIST_ADAPTER_HF_REPO env)",
+            "Adapter persist-before-rm env set (NOT consumed by train_lora here, "
+            "actual persist path is cfg.hf_upload + verify-upload): %s/%s",
             persist_repo,
             persist_sub,
         )
