@@ -71,10 +71,70 @@ ROBUSTNESS_ROWS = (
 )
 
 
-def _run(cmd: list[str], *, label: str) -> None:
-    """Fail-loud subprocess with explicit env passthrough."""
+def _run(cmd: list[str], *, label: str, extra_env: dict[str, str] | None = None) -> None:
+    """Fail-loud subprocess with explicit env passthrough.
+
+    ``extra_env`` entries override the inherited environment — used to pin
+    ``CUDA_VISIBLE_DEVICES`` at SPAWN time so the child's GPU restriction is
+    in force before any import can initialize the CUDA driver (round-10 OOM
+    root cause: ``import peft`` freezes the driver's visible-device list, so
+    an in-process env set AFTER it is silently ignored and every train lands
+    on physical GPU 0).
+    """
     logger.info("[cmd:%s] %s", label, shlex.join(cmd))
-    subprocess.run(cmd, check=True, cwd=PROJECT_ROOT, env={**os.environ})
+    subprocess.run(cmd, check=True, cwd=PROJECT_ROOT, env={**os.environ, **(extra_env or {})})
+
+
+def _gpu_env(gpu: int) -> dict[str, str]:
+    """Spawn-time CUDA_VISIBLE_DEVICES pin for a single-GPU lease."""
+    return {"CUDA_VISIBLE_DEVICES": str(gpu)}
+
+
+def _assert_gpu_memory_free(gpu: int, *, label: str, threshold_mib: int = 2048) -> None:
+    """Fail loud BEFORE launching a train if the leased physical GPU is busy.
+
+    Converts a silent multi-train pile-up (the round-10 OOM at train step 60)
+    into an immediate, diagnosable error naming the conflicting usage. Best
+    effort: skipped with a warning when nvidia-smi is unavailable (CPU smoke
+    on the VM).
+    """
+    try:
+        out = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=memory.used",
+                "--format=csv,noheader,nounits",
+                "-i",
+                str(gpu),
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+            env={**os.environ},
+        ).stdout.strip()
+        used_mib = int(out.splitlines()[0])
+    except (subprocess.CalledProcessError, FileNotFoundError, ValueError, IndexError) as e:
+        logger.warning("[gpu-guard] nvidia-smi probe unavailable for GPU %d (%s) — skipped", gpu, e)
+        return
+    if used_mib >= threshold_mib:
+        raise RuntimeError(
+            f"GPU lease conflict: physical GPU {gpu} already has {used_mib} MiB in use "
+            f"(>= {threshold_mib} MiB threshold) at launch of {label}. Another process is "
+            "occupying the leased device — refusing to stack a second training on it."
+        )
+
+
+def _with_gpu_lease(gpu_slots: Queue, fn):
+    """Acquire a GPU lease for the duration of ``fn(gpu)``; always release.
+
+    Module-level (not a closure) so the lease pattern is unit-testable:
+    concurrent callers MUST receive disjoint physical GPU ids.
+    """
+    gpu = gpu_slots.get()
+    try:
+        return fn(gpu)
+    finally:
+        gpu_slots.put(gpu)
 
 
 def _adapters_root() -> Path:
@@ -184,7 +244,9 @@ def _eval_cell_cmd(
     return cmd
 
 
-def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: int, args) -> Path:
+def _dose_select_checkpoint(
+    row, arm: str, seed: int, adapter_dir: Path, gpu: int, args, extra_env: dict | None = None
+) -> Path:
     """Pick the first checkpoint whose diagonal battery lands in band.
 
     Band read against the max over checkpoints (P2-calibrated dose-to-target;
@@ -231,6 +293,7 @@ def _dose_select_checkpoint(row, arm: str, seed: int, adapter_dir: Path, gpu: in
                     max_probes=args.max_probes,
                 ),
                 label=f"dose-{scratch_cell}-{only}",
+                extra_env=extra_env,
             )
             # the eval cell writes under the canonical cell dir; move per ckpt
         diag_path = cell_dir / f"{row.diagonal_column}__default.json"
@@ -316,6 +379,12 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
     cell = row.cell_id(arm, seed)
     result = {"cell": cell, "gpu": gpu}
     needs_prep = (row.gpu_prep is not None) or arm in ("cn", "mix50")
+    # Spawn-time CVD pin: every single-GPU subprocess of this cell gets
+    # CUDA_VISIBLE_DEVICES=<lease> in its environment BEFORE python starts,
+    # so no import-time CUDA-driver init (peft, round-10 OOM) can defeat the
+    # restriction. fullft is the one multi-GPU arm (ZeRO-3 over all GPUs) —
+    # it must NOT be restricted to its nominal lease.
+    gpu_env = None if arm == "fullft" else _gpu_env(gpu)
     base_cmd = [
         "uv",
         "run",
@@ -332,11 +401,13 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
     ]
     smoke_flag = ["--smoke"] if args.smoke else []
     if not args.skip_train:
+        if gpu_env is not None:
+            _assert_gpu_memory_free(gpu, label=f"train-{cell}")
         if needs_prep:
             print(f"[phase=prep_{cell}]", flush=True)
-            _run([*base_cmd, "--prep-only", *smoke_flag], label=f"prep-{cell}")
+            _run([*base_cmd, "--prep-only", *smoke_flag], label=f"prep-{cell}", extra_env=gpu_env)
         print(f"[phase=train_{cell}]", flush=True)
-        _run([*base_cmd, *smoke_flag], label=f"train-{cell}")
+        _run([*base_cmd, *smoke_flag], label=f"train-{cell}", extra_env=gpu_env)
     adapter_dir = _adapters_root() / cell
     # Band-stop rows persist their stop record next to the adapter; copy it
     # into the cell dir so the K1 gate (and re-runs after the post-upload
@@ -358,7 +429,9 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
             # the stopping point, and the final adapter state at the dir root
             # (saved on stop) is the band-stopped artifact — checkpoint-* are
             # periodic pre-band saves (round-1 minor #9).
-            adapter = _dose_select_checkpoint(row, arm, seed, adapter_dir, gpu, args)
+            adapter = _dose_select_checkpoint(
+                row, arm, seed, adapter_dir, gpu, args, extra_env=gpu_env
+            )
         result["selected_checkpoint"] = str(adapter)
         print(f"[phase=eval_{cell}]", flush=True)
         phases = ["gen", "hf"] + ([] if args.skip_judges else ["judge"])
@@ -376,6 +449,7 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
                     max_probes=args.max_probes,
                 ),
                 label=f"eval-{cell}-{only}",
+                extra_env=gpu_env,
             )
         # Pass 2: robustness + template-token contexts on the 4-COLUMN subset
         # only (plan section 4.3; round-1 major #5 — full battery here would
@@ -395,6 +469,7 @@ def _run_one_cell(row, arm: str, seed: int, gpu: int, args) -> dict:
                         max_probes=args.max_probes,
                     ),
                     label=f"eval-{cell}-robustness-{only}",
+                    extra_env=gpu_env,
                 )
     return result
 
@@ -546,23 +621,36 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         if row.cell_id(arm, seed) in done_cells:
             logger.info("skip completed cell %s", row.cell_id(arm, seed))
             return None
-        gpu = gpu_slots.get()
-        try:
-            return _run_one_cell(row, arm, seed, gpu, args)
-        finally:
-            gpu_slots.put(gpu)
+        return _with_gpu_lease(gpu_slots, lambda gpu: _run_one_cell(row, arm, seed, gpu, args))
 
     # as_completed (round-1 minor #8): each cell's manifest entry persists
-    # the moment ITS future finishes — a mid-phase crash never drops entries
-    # for already-completed later cells (pool.map yields in submission order).
+    # the moment ITS future finishes. Per-cell failures are COLLECTED, not
+    # re-raised on first sight: ThreadPoolExecutor.__exit__ waits for pending
+    # futures anyway (it does not cancel them), so an early raise would let
+    # the remaining cells run for hours while silently dropping their
+    # manifest entries (observed round-10). The phase still fails loud after
+    # the pool drains.
+    failures: list[tuple[str, BaseException]] = []
     with ThreadPoolExecutor(max_workers=n_gpus) as pool:
-        futures = [pool.submit(_worker, item) for item in parallel_cells]
-        for fut in as_completed(futures):
-            res = fut.result()  # re-raises worker exceptions (fail loud)
+        future_cells = {
+            pool.submit(_worker, item): item[0].cell_id(item[1], item[2]) for item in parallel_cells
+        }
+        for fut in as_completed(future_cells):
+            try:
+                res = fut.result()
+            except BaseException as e:
+                logger.error("cell %s FAILED: %s", future_cells[fut], e)
+                failures.append((future_cells[fut], e))
+                continue
             if res:
                 manifest.append(res)
                 manifest_path.parent.mkdir(parents=True, exist_ok=True)
                 manifest_path.write_text(json.dumps(manifest, indent=1))
+    if failures:
+        raise RuntimeError(
+            f"{len(failures)} cell(s) failed in {phase}: "
+            f"{[c for c, _ in failures]} — first error: {failures[0][1]!r}"
+        ) from failures[0][1]
     for row, arm, seed in serial_cells:  # fullft uses all GPUs (ZeRO-3)
         if row.cell_id(arm, seed) in done_cells:
             continue

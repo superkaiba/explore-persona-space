@@ -433,8 +433,18 @@ def main() -> int:
     parser.add_argument("--prep-only", action="store_true", help="vLLM corpus prep, then exit")
     args = parser.parse_args()
 
-    if args.prep_only:
+    # Pin the GPU restriction BEFORE any heavy import: `import peft` (and
+    # anything else that initializes the CUDA driver) freezes the process's
+    # visible-device list, after which in-process CUDA_VISIBLE_DEVICES sets
+    # are silently ignored and every train lands on physical GPU 0 (the
+    # round-10 4-trains-on-one-device OOM). Setting the env var here — at
+    # entry, pre-import — is import-order-proof, and the hydra/fullft child
+    # subprocesses inherit it via env={**os.environ}. The fullft arm is the
+    # one multi-GPU path (ZeRO-3 over all GPUs) and must stay unrestricted.
+    if args.arm != "fullft":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+
+    if args.prep_only:
         prep_corpus(args.row, args.arm, smoke=args.smoke)
         return 0
     train_cell(args.row, args.arm, args.seed, args.gpu_id, smoke=args.smoke)

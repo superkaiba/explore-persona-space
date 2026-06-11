@@ -1077,13 +1077,6 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     Returns:
         (output_dir, training_loss)
     """
-    import torch
-    from datasets import load_dataset
-    from peft import LoraConfig, TaskType
-    from transformers import AutoModelForCausalLM, AutoTokenizer
-
-    SFTConfig, SFTTrainer = _load_trl_sft_classes()
-
     if cfg is None:
         cfg = TrainLoraConfig(**overrides)
     elif overrides:
@@ -1094,14 +1087,26 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     _validate_backend(cfg.backend)
 
+    # Set CUDA_VISIBLE_DEVICES BEFORE the torch/peft/transformers imports
+    # below: `import peft` initializes the CUDA driver, which freezes the
+    # process's visible-device list — an env set AFTER it is silently
+    # ignored and the model lands on physical GPU 0 regardless of gpu_id
+    # (issue #545 round-10: four concurrent trains stacked on one device).
+    _warn_if_cvd_disagrees(cfg.gpu_id)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
+
+    import torch
+    from datasets import load_dataset
+    from peft import LoraConfig, TaskType
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    SFTConfig, SFTTrainer = _load_trl_sft_classes()
+
     logger.debug(
         "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
         "incompatibility. Enabled only on the distributed full-fine-tune path.",
         _has_liger_kernel(),
     )
-
-    _warn_if_cvd_disagrees(cfg.gpu_id)
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
 
     tokenizer = AutoTokenizer.from_pretrained(
         base_model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
