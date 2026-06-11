@@ -582,7 +582,15 @@ tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_bra
    glob, OR add a small loop that explicitly walks the actual write path
    and calls `hub._upload(...)` per file with `repo_id=
    DEFAULT_DATASET_REPO`, `repo_type="dataset"`,
-   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`. Either way,
+   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`, OR (PREFERRED
+   over the per-file loop for large file counts — the HF Hub throttles a
+   repo at ~256 commits/hour, #591) batch every file into ONE
+   `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
+   ops target the same canonical
+   `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
+   per-prefix file count on the Hub (`list_repo_files`) before
+   `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
+   gate (`code-reviewer.md`). Whichever shape,
    the per-cell completion files MUST land on
    `superkaiba1/explore-persona-space-data/issue<N>_<slug>/raw_completions/...`
    under their dispatcher's normal exit path — no "the verifier will pick
@@ -597,7 +605,7 @@ tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_bra
    import + call:
 
    ```bash
-   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions|create_commit" \
      scripts/run_experiment_<N>.py scripts/i<N>_*.py 2>/dev/null
    ```
 
@@ -785,6 +793,36 @@ On revision rounds, also include:
 - Finding 2: ADDRESSED DIFFERENTLY — [how + why]
 - Finding 3: PUSHED BACK — [reasoning]
 ```
+
+### Crash-fix rounds: failure-lesson block (REQUIRED)
+
+When your round was dispatched to fix a posted `epm:failure` (the
+`/issue` Step 7 `code`-row crash-fix loop), END your report with a
+structured lesson block. The orchestrator posts it verbatim as an
+`epm:failure-lesson v1` marker and, on `generalizes: yes`, persists it
+to the owning agent's memory the same hour — without this, parallel
+same-day sessions re-hit the same failure classes (incidents #537/#545,
+2026-06-11: disk pressure, vLLM engine-init crashes at phase
+boundaries, stale-artifact asserts, hours apart, no cross-session
+channel):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, recipe trap — NOT a typo
+or wiring mistake in this issue's own script. The `lesson` is written
+for the NEXT agent: name the trap + the fix in 1-3 sentences, no
+transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
+block.
 
 ### On unrecoverable error
 

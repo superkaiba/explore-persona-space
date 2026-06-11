@@ -1582,12 +1582,28 @@ branch `issue-<N>`, symlink the repo `.env` into it, and open a draft PR.
 ```bash
 REPO_ROOT=$(git rev-parse --show-toplevel)
 WORKTREE="$REPO_ROOT/.claude/worktrees/issue-<N>"
-git -C "$REPO_ROOT" worktree add "$WORKTREE" -b issue-<N>     # reuse if it exists (resume case)
-# Worktrees do NOT inherit the repo .env — without it RUNPOD_API_KEY /
-# HF_TOKEN / WANDB_API_KEY dotenv loads fail inside the worktree. Symlink
-# it so every entrypoint's setup_env() sees the same keys as the main copy.
-ln -sf "$REPO_ROOT/.env" "$WORKTREE/.env"
+bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
+# Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
+# symlinks the repo .env (worktrees do NOT inherit it — RUNPOD_API_KEY /
+# HF_TOKEN / WANDB_API_KEY dotenv loads fail without it).
 ```
+
+**Sparse-worktree notes (task #596).** The worktree excludes
+`eval_results/`, `external/`, `ood_eval_results/` bulk and pre-includes
+this issue's own `eval_results/issue_<N>/` + `ood_eval_results/issue_<N>/`
+cones (plus `eval_results/`'s immediate files, e.g. `INDEX.md`), so this
+issue's artifact commits work with no ceremony. Two rules:
+- **Reading another issue's eval JSONs** (parent baselines, comparison
+  plots): `git -C "$WORKTREE" sparse-checkout add eval_results/issue_<M>`
+  — instant. (Read-only fallback: the repo root's committed copy.)
+- **Writing under a NEW dir below an excluded root** (e.g. a slug variant
+  `eval_results/issue<N>_<slug>/`): run
+  `git -C "$WORKTREE" sparse-checkout add eval_results/issue<N>_<slug>`
+  BEFORE `git add`. A bare `git add` of an out-of-cone path fails loudly
+  with "outside of your sparse-checkout definition" — the fix is
+  `sparse-checkout add`, NOT `git add --sparse` (a `--sparse`-added file
+  silently vanishes from the working tree on the next sparse-checkout
+  mutation while staying committed).
 
 **Worktree shell-ops rule (cwd resets between Bash calls).** The bash
 tool's working directory is NOT preserved across separate calls, so a
@@ -2373,23 +2389,68 @@ runs:
   are no longer consulted — the 10-min `FREE_WAIT_SECONDS` park
   supersedes the old 6-h default.
 
-**Lane capability check (run BEFORE the dispatch call).** The GCP and
-SLURM lanes execute ONLY the standard Hydra entrypoints — the GCP
-startup script hardcodes `uv run python scripts/train.py <hydra args>`
-(`backends/gcp.py`), the SLURM stages dispatch `scripts/train.py` /
-`scripts/eval.py`, and `RunSpec` carries `hydra_args` only
-(`backends/base.py`) — there is no custom workload-command field. If
-the plan's Reproducibility Card launch command is anything else (a
-custom `scripts/issue<N>_dispatch.sh`, any bespoke driver), dispatch
-with the explicit `--backend runpod` override — the only lane that
-runs arbitrary nohup commands (the Step 6d.1 experimenter launch) —
-and record the override reason in the `epm:backend-selected` / launch
-marker note. Auto routing is valid only for standard-entrypoint
-workloads until the router grows a custom workload-command field.
+**Lane capability check (run BEFORE the dispatch call).** All router
+lanes (GCP + SLURM) execute custom workload commands: pass the plan's
+launch command via `--workload-cmd 'bash scripts/issue<N>_dispatch.sh
+...'` (mutually exclusive with `--hydra`; exactly one required — the
+CLI fails loud otherwise; note the neither-set defense-in-depth raise
+exists in the GCP renderer only — SLURM's default stage chain is
+pre-existing behavior). Auto routing is valid for dispatch-script
+workloads (#588). Residual gaps that still need the explicit
+`--backend runpod` override (or the named knob): (a) 70B intents
+(`inf-70b`/`ft-70b` have no GCP machine-type mapping — fail-loud by
+design); (b) workloads needing the open-instruct `--extra gpu` venv on
+a SLURM lane under a non-ft intent (venv extras follow the INTENT, not
+the workload kind: `ft-7b`/`ft-70b` custom commands DO build `--extra
+gpu`; `lora-7b`/`eval`/`debug` custom commands build the base venv —
+`needs_gpu_extras`, slurm.py); (c) workloads
+needing interactive SSH-MCP-driven orchestration mid-run (the
+experimenter launch pattern); (d) **workloads longer than ~20h on
+GCP** — the lane pins `--instance-termination-action=DELETE` +
+`--max-run-duration` (default 24h), so a multi-day sweep is deleted
+mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
+RunPod override. **When overriding to RunPod, name the residual gap in
+the launch marker note** (CLAUDE.md rule). The dispatch CLI
+cross-checks the task's ACTUAL frontmatter and classifies the override
+3-ways, each with a DISTINCT marker flag (additive visibility — the
+launch is never blocked): passing `--backend runpod` while the
+frontmatter `backend:` does not name a backend (absent/empty, or an
+explicit `auto`) triggers a LOUD stderr warning +
+`extra.override_without_frontmatter=true` on the
+`epm:backend-selected` marker; frontmatter naming a DIFFERENT
+recognized lane (`gcp`/`nibi`/`fir`/`mila`, or the legacy `cluster`
+alias for nibi) triggers a conflict warning +
+`extra.override_conflicts_frontmatter=true`; an unrecognized value
+(typo'd `gpc`, non-string `true`) triggers a hygiene warning +
+`extra.frontmatter_backend_unrecognized=true` — the latter two also
+carry `extra.frontmatter_backend: "<value>"`. Frontmatter
+`backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
+on the pushed branch — `--repo-branch` defaults to the current branch
+(the GCE startup script clones from origin). Two more gcp/auto
+composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
+the GCP lane maps intent → machine type statically
+(`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
+`a2-ultragpu-1g`, 1 GPU; `ft-7b` → `a2-ultragpu-4g`, 4 GPU) and
+ignores `--gpus` (only RunPod and SLURM honor the override), so pick
+the intent whose machine matches the plan's GPU spec; a gcp-reachable
+launch with a mismatched `--gpus` is refused pre-route by
+`dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
+**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
+on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
+(`/workspace/eps-issue-<N>`), cds there, then runs the workload
+command verbatim, so a driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
+under `set -e` and the EXIT trap powers the VM off; compose
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+SLURM custom stages are
+render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
-workload to GCP; the startup script ran bare `scripts/train.py`,
-crashed at startup, and the EXIT trap powered the VM off — one wasted
-GCP cycle before re-dispatching with `--backend runpod`.)
+workload to GCP before the router had a custom workload-command field;
+the startup script ran bare `scripts/train.py`, crashed at startup,
+and the EXIT trap powered the VM off. #588 closed it — the GCP
+renderer now refuses to render that bare launch, and `--workload-cmd`
+carries dispatch scripts on every lane.)
 
 The handle the dispatch helper returns is persisted to
 `.claude/cache/issue-<N>-handle.json` (the bg-Bash poller reads it
@@ -2405,7 +2466,15 @@ SLURM helpers call `task.py post-marker` via
   `chosen_kind`, `reason` (`override` / `reconnect` / `auto_started` /
   `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
-  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`).
+  `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
+  plus the dispatch-CLI override-guard flags — all scoped to the
+  explicit `--backend runpod` path: `override_without_frontmatter?`
+  when the task frontmatter does not name a backend (absent/empty, or
+  an explicit `auto`); `override_conflicts_frontmatter?` when it names
+  a DIFFERENT recognized lane (gcp/nibi/fir/mila, or legacy `cluster`);
+  `frontmatter_backend_unrecognized?` when the value is a typo /
+  non-string; the latter two also carry `frontmatter_backend?` with
+  the raw lowercased value).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.
@@ -2507,7 +2576,17 @@ provisioning error (RunPod SUPPLY_CONSTRAINT etc.) the underlying
 backend raises and the helper either retries (RunPod's
 `--wait-for-capacity` loop) or surfaces the failure as
 `epm:pod-pending v1` so the user adjusts (capacity, intent override)
-and re-runs `/issue <N>`.
+and re-runs `/issue <N>`. On exit code `75` (EX_TEMPFAIL) the JSON
+carries `still_waiting: true` + `rerun: true` + `reason:
+wait_for_capacity_budget_reached`: the RunPod lane's
+`pod_lifecycle.py provision` hit its bounded wait-for-capacity
+per-process wall-clock budget while capacity / the fleet burn cap kept
+the provision queued. NOT a failure — the wait loop is state-free, so
+RE-RUN the same `dispatch_issue.py launch` command to continue waiting
+(post an `epm:progress v1` heartbeat per re-run so the watcher sees
+liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
+exit (incident #603, 2026-06-11: the exit previously crashed the CLI
+as an rc-4 `CalledProcessError`).
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the
@@ -2559,7 +2638,12 @@ RunPod (explicit override `backend: runpod`), the underlying
 `pod_lifecycle.py provision` reads `EPM_AUTONOMOUS_SESSION` itself and
 turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
 backoff with full jitter, base 30s, cap 10 min, forever) — "the
-experiment should start when it has space," not park-for-user. The
+experiment should start when it has space," not park-for-user.
+"Unbounded" is across re-runs, not per process: each provision process
+exits 75 (still-waiting) at its wall-clock budget and the dispatch CLI
+surfaces that as `still_waiting: true` + exit 75 — re-run the same
+launch command (see the exit-75 contract above), never treat it as a
+failure. The
 orchestrator should background the dispatch call (`Bash` with
 `run_in_background=true`) so its own turn isn't blocked, and ON
 periodic re-invocation (each bg-Bash output yield) it should scan the
@@ -3292,8 +3376,11 @@ When this skill is re-invoked in `running`:
    `epm:stale v1` asking the user to investigate (the experimenter may
    have crashed silently); leave status at `running`.**
 2. If `epm:failure` posted: route via the **failure classifier**. The
-   `epm:failure` body SHOULD include a `failure_class: infra | code` field
-   on its first non-blank line. Routing:
+   `epm:failure` body SHOULD include a `failure_class: infra | code | data`
+   field on its first non-blank line. A `data` class (a factual gap only
+   the user can fill) is posted per the halt-criterion contract together
+   with `status:blocked`, so it never reaches this step — the table below
+   routes `infra | code` only:
 
    | failure_class | Cause example | Action |
    |---|---|---|
@@ -3327,6 +3414,68 @@ When this skill is re-invoked in `running`:
    when extending — but do NOT consult it at runtime). To add a new
    pattern, edit `failure_classifier.py` AND the markdown mirror; the
    tests in `tests/test_failure_classifier.py` cover the behaviour.
+
+   **Failure-lesson capture (fires when a crash-fix round RESOLVES the
+   failure).** A lightweight in-flight hook, not a new pipeline step;
+   auto-continue, no gate. Both crash-fix shapes — the `code`-row
+   `experiment-implementer` round and the `infra`-row experimenter
+   respawn whose relaunch applied a fix — are REQUIRED (by
+   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   block" and `experimenter.md` § "Failure-lesson block on
+   relaunch-with-fix") to end their report with a structured lesson
+   block. A THIRD shape arrives outside this step: an experimenter that
+   fixed a dying launch within its own turn and relaunched (no
+   `epm:failure` posted) appends the same block to its Step 6d launch
+   report — on receiving such a launch report, apply the same three
+   orchestrator actions below. The block:
+
+   ```
+   <!-- epm:failure-lesson v1 -->
+   failure_class: code|infra|data
+   phase: <pipeline phase or script>
+   lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+   generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+   owning_agent: experiment-implementer|experimenter
+   gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+   <!-- /epm:failure-lesson -->
+   ```
+
+   On receiving a crash-fix report carrying the block, the orchestrator
+   takes three actions:
+
+   1. **Post the marker.** Post the block verbatim as
+      `epm:failure-lesson v1` on the task (`task.py post-marker <N>
+      epm:failure-lesson --note '<block>'`). This fires for
+      `generalizes: no` too — for one-offs the marker alone is the
+      durable record (NO memory write).
+   2. **On `generalizes: yes` — persist to agent memory IMMEDIATELY.**
+      Append a `feedback_<slug>.md` entry (standard agent-memory
+      frontmatter + the lesson body) to
+      `.claude/agent-memory/<owning_agent>/` plus a one-line
+      `MEMORY.md` index entry, then commit BY EXPLICIT PATH on `main`
+      from the repo root and push (auto, no approval gate — same
+      standing rule 2026-06-02 as workflow fixes). The point is
+      same-day cross-session sharing: a sibling session's next agent
+      spawn loads the memory within minutes, instead of waiting for the
+      nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
+      overlapping failure classes hours apart with no persistence
+      channel). Lessons are written for the NEXT agent — 1-3 sentences,
+      the trap + the fix, no transcript dumps.
+   3. **On `gotcha_candidate: yes` — route as a workflow-fix
+      candidate.** Treat the lesson as a prose workflow-fix candidate
+      targeting `.claude/rules/gotchas.md` and dispatch it through the
+      existing workflow-fix-on-bug auto-spawn default
+      (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
+      surfaced prose.
+
+   If the resolving report omitted the block (older agent spawn, or a
+   refusal killed the report tail), reconstruct it from the failure
+   context + fix diff yourself before posting — don't bounce the round
+   for the missing block alone. `/daily` remains the deduplicating
+   consolidator: it reads the day's `epm:failure-lesson v1` markers,
+   dedupes against agent memories, promotes recurring lessons into
+   `.claude/rules/gotchas.md` or the relevant rule file, and prunes
+   over-eager `generalizes: yes` memory entries.
 3. If `epm:results` exists, move status to `uploading` and proceed to
    Step 8.
 
@@ -3464,7 +3613,47 @@ URLs.
   complementary MECHANICAL gate (HF Hub `list_repo_files` + WandB run
   + git-figure + completion sentinel, per
   `backends.artifacts.confirm_artifacts_from_handle`). Both must pass
-  before teardown fires.
+  before teardown fires. Degrade path (incident #585): when the handle
+  carries NO `expected_artifacts` declaration — launch paths other
+  than GCP do not populate it yet (#598 tracks SLURM; the RunPod
+  launch shells `pod_lifecycle.py` and never has) — the mechanical
+  gate is structurally unsatisfiable, so finalize falls back to the
+  agent-level PASS evidence on the task's events.jsonl (the sticky
+  `epm:upload-verified` marker, or the latest `epm:upload-verification`
+  with `Verdict: PASS`) and proceeds to teardown with a loud log +
+  `"confirm_artifacts": "skipped_no_declaration_agent_pass"` in the
+  JSON. Do NOT bypass finalize with a raw `pod.py terminate` on the
+  exit-3-missing-declaration shape — that skips the sidecar retirement
+  and leaves a stale handle that can mis-target a later finalize; run
+  the upload-verifier to a PASS, then re-run finalize. With neither a
+  declaration nor agent PASS evidence, finalize still exits 3
+  (`reason: confirm_artifacts_no_declaration`).
+
+  **Phase-scoped-launch mismatch (incident #604).** The launch-time
+  auto-declaration assumes the FULL task artifact set (HF
+  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
+  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  multi-phase plan (e.g. an extraction phase whose sole deliverable is
+  an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
+  paths that only the plan's LATER (VM-local) phases produce. A
+  declaration that is PRESENT but phase-mismatched is structurally
+  unsatisfiable until end-of-task, and the agent-pass fallback above
+  never fires (it is gated on the declaration being ABSENT) — finalize
+  exits 3 (`reason: confirm_artifacts_failed`) by design. Do NOT leave
+  the instance idling until the later phases land (#604 burned ~70 idle
+  minutes on a g2-standard-4): mechanically verify the launch's ACTUAL
+  phase deliverable on permanent storage first
+  (`huggingface_hub.list_repo_files` for HF paths — never the `hf`
+  CLI), then re-run finalize with the gate skipped —
+  `dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts` —
+  which still runs the backend teardown AND retires the sidecar to
+  `<name>.finalized` (no stale handle; do NOT substitute a raw `gcloud
+  compute instances delete` / `pod.py terminate`, which skips the
+  retirement). Post `epm:pod-terminated v1` naming the declaration
+  mismatch + the verified deliverable paths. Distinguish the two exit-3
+  shapes: no-declaration → upload-verifier-to-PASS + plain re-run
+  (above); present-but-phase-mismatched declaration → verify the phase
+  deliverable, then `--skip-confirm-artifacts`.
 
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
@@ -3860,7 +4049,7 @@ clean-result-critic in 9a-bis enforces register discipline on them.
    uv run python "$REPO_ROOT"/scripts/verify_task_body.py --issue <N>  # main-checkout copy, never the worktree's (spec-stale risk, incident #496)
    ```
    The verifier MUST still PASS — the humanize loop is not allowed to
-   produce a body that breaks Lens 1-13 mechanical checks. If it does:
+   produce a body that breaks Lens 1-15 mechanical checks. If it does:
    revert to the pre-loop body and surface the conflict to the user
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
@@ -4041,10 +4230,12 @@ dispatching this round's critics.
    latest `epm:interpretation v<n>` event, runs
    `scripts/verify_task_body.py` +
    `scripts/audit_clean_results_body_discipline.py` as authoritative
-   mechanical passes, and scores against 13 lenses including the
+   mechanical passes, and scores against 15 lenses including the
    Lens 7 statistical-framing rule absorbed from the retired
-   `reviewer` agent and Lens 13 planned-vs-actual coverage (added
-   2026-05-27 after task #391's C-axis silent drop). Posts
+   `reviewer` agent, Lens 13 planned-vs-actual coverage (added
+   2026-05-27 after task #391's C-axis silent drop), Lens 14
+   binding-concerns audit (task #455), and Lens 15
+   contaminated/failed-data-gate-arm check (task #407). Posts
    `epm:clean-result-critique v1` on the source
    task with PASS or REVISE.
 

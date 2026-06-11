@@ -150,6 +150,20 @@ Signals to hunt for (non-exhaustive — anything that went wrong counts):
 - **Voice / register drift** — corporate-speak, AI-slop vocab, invented jargon, opaque condition codes, or template-copying instead of plain-English.
 - **Dropped handoffs / manual fixes** — information lost between agents, or anything Thomas had to do by hand that an agent should have done.
 
+**Failure-lesson consolidation (cheaper + higher-precision than transcript
+mining for this class).** ALSO read today's `epm:failure-lesson v1` markers
+across tasks (the `/issue` Step 7 crash-fix hook posts one per resolved
+`epm:failure` and may have already persisted `generalizes: yes` lessons to
+`.claude/agent-memory/<owning_agent>/` in-flight). This skill is that hook's
+deduplicating consolidator: (a) dedupe the day's lessons against the owning
+agent's memory — merge duplicate/overlapping entries into one; (b) promote
+lessons that recur across tasks or days into `.claude/rules/gotchas.md` or
+the relevant rule file; (c) prune over-eager `generalizes: yes` memory
+entries that turned out to be one-offs. For this consolidation pass ONLY,
+`~/explore-persona-space/.claude/agent-memory/**/*.md` is an additional
+allowed target (dedupe/prune edits to lesson-derived entries, not general
+memory rewrites).
+
 **Triage each problem into one of two buckets:**
 
 1. **Workflow-fixable** (the fix edits an allowed-target file below) → APPLY it now (Edit the file), `git commit` it on its own, then record it in `## Applied workflow improvements` as a numbered entry WITH the applied diff and the commit sha (shape below). One commit per fix so each is independently revertable. After ALL bucket-1 fixes are committed, run the repo-wide lint gate ONCE (see "Lint gate" below); if it regresses, revert the offending commit(s) and re-log them in `## Other problems & notes` as "reverted: failed lint gate".
