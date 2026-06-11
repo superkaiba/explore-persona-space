@@ -175,6 +175,64 @@ PHASE1_LORA_TARGETS = ["q_proj", "k_proj", "v_proj", "o_proj"]  # attn-only (gau
 PHASE1_SAVE_STEPS = 10
 PHASE1_SAVE_TOTAL_LIMIT = 8  # rolling window for overshoot recovery
 
+# ── #570 ladder-coverage invariant (plan §4.1, branch-aware round-4 form) ────
+# The methodology concern the assert encodes (plan v2 §4.1, methodology critic
+# concern 5): the rolling save window (save_steps x (save_total_limit - 1))
+# must not rotate the emission-ONSET region out of the retained ladder while a
+# count-only check still passes. The original absolute form (lowest retained
+# step <= 25) encoded that concern only for the registered 5e-6 ramp
+# (band-stop at ~step 95-110). On the pre-registered lr 2e-6 rescue ramp the
+# run stops ~step 195 (the 2.5x-longer ramp); the rotated-out early steps
+# (5..77) sit far BELOW emission onset and are scientifically irrelevant — the
+# retained window necessarily covers the onset region because onset < stop by
+# construction (the band-stop fires after onset). All 3 rescue seeds crashed
+# on the absolute form on 2026-06-11 (task #570 round-4 incident).
+#
+# Branch-aware invariant: lowest retained step <= max(25, stop_step - 60).
+# Margin rationale: the 5e-6 onset width measured ~20 steps at #543 (argmax
+# 0 -> 0.97 across ~steps 75-95), so 60 gives a 3x margin; the lr 2e-6
+# step-space-stretched width (~50 steps, marker-training-recipe.md: lower lr
+# widens the band in step-space) also fits inside 60. At 5e-6 (stop ~95-110)
+# the bound is 35-50, so the from-step-5 full ladder remains effectively
+# required there; a genuinely shallow rolling window (depth
+# save_steps x (limit - 1) < 60 below the stop) still fails loud.
+LADDER_COVERAGE_MAX_LOWEST_STEP = 25
+LADDER_COVERAGE_MIN_WINDOW_BELOW_STOP = 60
+
+
+def assert_ladder_coverage_steps(
+    steps: list[int], *, stop_step: int | None = None, context: str = ""
+) -> list[int]:
+    """Branch-aware #570 ladder-coverage assert over retained checkpoint steps.
+
+    Requires the lowest retained step to be <= max(LADDER_COVERAGE_MAX_LOWEST_STEP,
+    realized_stop - LADDER_COVERAGE_MIN_WINDOW_BELOW_STOP), i.e. the retained
+    rolling window must extend at least ~60 steps below the realized stop (or
+    reach the absolute step-25 floor on short ramps). ``stop_step`` defaults to
+    the highest retained step (within one save_steps of the true stop — the
+    slightly tighter, conservative direction). Raises RuntimeError on a
+    rotation hole; returns the sorted steps.
+    """
+    if not steps:
+        raise RuntimeError(f"Ladder-coverage assert: no rolling checkpoints found {context}")
+    steps = sorted(int(s) for s in steps)
+    realized_stop = int(stop_step) if stop_step is not None else steps[-1]
+    bound = max(
+        LADDER_COVERAGE_MAX_LOWEST_STEP,
+        realized_stop - LADDER_COVERAGE_MIN_WINDOW_BELOW_STOP,
+    )
+    if steps[0] > bound:
+        where = f" {context}" if context else ""
+        raise RuntimeError(
+            f"Ladder-coverage assert FAILED: lowest retained checkpoint step {steps[0]} > "
+            f"{bound} (= max({LADDER_COVERAGE_MAX_LOWEST_STEP}, stop {realized_stop} - "
+            f"{LADDER_COVERAGE_MIN_WINDOW_BELOW_STOP})) — the onset window rotated out of "
+            f"the rolling ladder (retained steps {steps[:5]}...{steps[-3:]}{where}). "
+            "Raise --phase1-save-limit (or lower --phase1-save-steps) and re-run this seed."
+        )
+    return steps
+
+
 # Stop band in ABSOLUTE trained mean log P(marker) (plan §4.2.2): the delta
 # band passed to MarkerBandStopCallback is [low - b_hat, high - b_hat].
 STOP_TARGET_LOGP_LOW = -0.45

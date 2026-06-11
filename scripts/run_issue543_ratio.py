@@ -129,6 +129,7 @@ from _issue543_common import (  # noqa: E402
     adapter_subfolder,
     adapter_subfolder_570,
     adapter_subfolder_v,
+    assert_ladder_coverage_steps,
     cell_dir_570,
     cell_slug,
     cell_slug_v,
@@ -825,29 +826,92 @@ def _run_dev_check(args: argparse.Namespace, adapter_path: Path, *, paths: dict,
     return json.loads(out.read_text())
 
 
-def _assert_ladder_coverage(out_dir: Path, *, max_lowest_step: int = 25) -> list[int]:
-    """#570 plan §4.1 ladder-coverage assert: lowest retained ckpt step <= 25.
+def _assert_ladder_coverage(out_dir: Path, *, stop_step: int | None = None) -> list[int]:
+    """#570 plan §4.1 ladder-coverage assert (branch-aware round-4 form).
 
     A seed stopping past the rolling window (save_total_limit x save_steps)
     silently rotates the onset window out of the ladder while still passing a
-    count-only check (methodology critic concern 5). Fail loud instead.
+    count-only check (methodology critic concern 5). Fail loud instead. The
+    invariant is the branch-aware shared form (the absolute lowest<=25 form
+    crashed all 3 lr 2e-6 rescue seeds, 2026-06-11): lowest retained step
+    <= max(25, stop - 60). Rationale inline at
+    ``_issue543_common.assert_ladder_coverage_steps``.
 
     Returns:
         The sorted retained checkpoint steps.
     """
-    steps = sorted(
+    steps = [
         int(p.name.split("-")[-1]) for p in (out_dir / "adapter").glob("checkpoint-*") if p.is_dir()
+    ]
+    return assert_ladder_coverage_steps(
+        steps, stop_step=stop_step, context=f"under {out_dir}/adapter"
     )
-    if not steps:
-        raise RuntimeError(f"Ladder-coverage assert: no rolling checkpoints under {out_dir}")
-    if steps[0] > max_lowest_step:
+
+
+def _existing_phase1_train_artifacts(
+    out_dir: Path,
+    *,
+    band_low_delta: float,
+    band_high_delta: float,
+) -> tuple[Path, dict] | None:
+    """Resume guard (#570 round-4): detect a COMPLETED prior phase-1 training.
+
+    A prior launch can train to band-stop, return from ``train_lora`` (final
+    adapter saved + Hub-uploaded, ``callback_stop_record.json`` written by the
+    band-stop callback's ``on_train_end``), and then crash DOWNSTREAM in
+    ``run_phase1`` before ``phase1_result.json`` lands (the 2026-06-11
+    rescue-cell incident: the old absolute ladder-coverage assert). On
+    relaunch the result-JSON idempotency check misses, and naively re-entering
+    ``_phase1_train_once`` burns ~10 min/seed retraining identical artifacts.
+
+    The resume predicate is COMPLETION-shaped: ``callback_stop_record.json``
+    is written only on a normal trainer end (band / overshoot / cap), so a
+    mid-training crash leaves no record and correctly falls through to a
+    retrain. Integrity checks before resuming:
+      - the stop record parses as JSON (corrupt -> RuntimeError, never a
+        silent retrain over ambiguous state);
+      - the final adapter dir has adapter_config.json + adapter weights;
+      - the recorded band matches this invocation's band (same b-hat + same
+        registered band => exact match; a mismatch means the artifacts were
+        trained under a DIFFERENT recipe and resuming would smuggle a wrong
+        artifact into the cell -> RuntimeError).
+
+    Returns ``(final_adapter_dir, stop_record)`` to resume from, or None when
+    no completed training exists (fresh cell or mid-training crash).
+    """
+    adapter_dir = out_dir / "adapter"
+    stop_record_path = out_dir / "callback_stop_record.json"
+    if not stop_record_path.exists():
+        return None
+    try:
+        record = json.loads(stop_record_path.read_text())
+    except json.JSONDecodeError as e:
         raise RuntimeError(
-            f"Ladder-coverage assert FAILED: lowest retained checkpoint step {steps[0]} > "
-            f"{max_lowest_step} — the onset window rotated out of the rolling ladder "
-            f"(retained steps {steps[:5]}...{steps[-3:]}). Raise --phase1-save-limit "
-            "and re-run this seed."
+            f"Resume guard: stop record {stop_record_path} exists but does not parse ({e}). "
+            "The prior run's training state is ambiguous — inspect/delete the output dir "
+            "before relaunching; refusing to silently retrain over it."
+        ) from e
+    has_weights = (adapter_dir / "adapter_config.json").exists() and any(
+        (adapter_dir / f).exists() for f in ("adapter_model.safetensors", "adapter_model.bin")
+    )
+    if not has_weights:
+        log.warning(
+            "Resume guard: stop record %s exists but %s lacks adapter weights — "
+            "falling through to a fresh train.",
+            stop_record_path,
+            adapter_dir,
         )
-    return steps
+        return None
+    for key, expected in (("band_low_nats", band_low_delta), ("band_high_nats", band_high_delta)):
+        got = record.get(key)
+        if got is None or abs(float(got) - float(expected)) > 0.01:
+            raise RuntimeError(
+                f"Resume guard: on-disk stop record {stop_record_path} was trained under "
+                f"{key}={got}, but this invocation expects {expected:.4f} — the existing "
+                "artifacts belong to a DIFFERENT recipe/band; refusing to resume from them. "
+                "Pass --force to retrain (or point at the right output root)."
+            )
+    return adapter_dir, record
 
 
 def run_phase1(args: argparse.Namespace) -> dict:
@@ -866,24 +930,57 @@ def run_phase1(args: argparse.Namespace) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     t0 = time.time()
 
-    adapter_path, record = _phase1_train_once(
-        args,
-        paths=paths,
-        bhat=bhat,
-        band_low_abs=band_low_abs,
-        band_high_abs=band_high_abs,
-        out_dir=out_dir,
-        existing_adapter=None,
-        run_suffix="",
-        min_steps=PHASE1_BAND_MIN_STEPS,
+    resumed = (
+        None
+        if args.force
+        else _existing_phase1_train_artifacts(
+            out_dir,
+            band_low_delta=band_low_abs - bhat,
+            band_high_delta=band_high_abs - bhat,
+        )
     )
+    if resumed is not None:
+        adapter_path, callback_record = str(resumed[0]), resumed[1]
+        record = {
+            "train_loss": None,  # not reconstructable post-hoc; resume marker below
+            "resumed_from_existing_artifacts": True,
+            **callback_record,
+        }
+        log.warning(
+            "RESUME (#570 round-4): completed phase-1 training found for %s/s%s "
+            "(variant=%s) at %s — stop_reason=%s stop_step=%s. SKIPPING retrain; "
+            "re-running only the coverage assert + downstream (dev check, result "
+            "write). Final-adapter Hub upload was performed by the prior run "
+            "inside train_lora (upload-verifier re-checks at Step 8).",
+            arm,
+            seed,
+            paths["install_variant"],
+            out_dir,
+            callback_record.get("stop_reason"),
+            callback_record.get("stop_step"),
+        )
+    else:
+        adapter_path, record = _phase1_train_once(
+            args,
+            paths=paths,
+            bhat=bhat,
+            band_low_abs=band_low_abs,
+            band_high_abs=band_high_abs,
+            out_dir=out_dir,
+            existing_adapter=None,
+            run_suffix="",
+            min_steps=PHASE1_BAND_MIN_STEPS,
+        )
     final_adapter = Path(adapter_path)
     selection = None
     ladder_steps = None
     if args.issue_ns == ISSUE_570 and record.get("stop_reason") is not None:
         # The #570 experimental install is a post-hoc LADDER pick — assert the
         # rolling window still covers the onset region before anything else.
-        ladder_steps = _assert_ladder_coverage(out_dir)
+        # stop_step comes from the band-stop record (set whenever stop_reason
+        # is non-null), making the bound branch-aware across the 5e-6 and the
+        # longer lr 2e-6 rescue ramps.
+        ladder_steps = _assert_ladder_coverage(out_dir, stop_step=record.get("stop_step"))
     if record.get("stop_reason") == "overshoot":
         phase_log("install_overshoot_select")
         final_adapter, selection = _select_nearest_band_checkpoint(

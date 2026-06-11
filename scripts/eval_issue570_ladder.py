@@ -94,6 +94,7 @@ from _issue543_common import (  # noqa: E402
     adapter_subfolder,
     adapter_subfolder_570,
     all_persona_prompts,
+    assert_ladder_coverage_steps,
     cell_dir_570,
     ensure_eval_questions_local,
     ensure_probe_files_local,
@@ -135,7 +136,9 @@ SENSITIVITY_EMIT_CUTS = (4, 6, 8)
 SENSITIVITY_SINGLE_CUTS = (0.60, 0.80)
 ASSERT_534_MAX_DELTA_NATS = 1.0
 ASSERT_534_MIN_FINAL_EMIT = 26  # of 32
-LADDER_COVERAGE_MAX_LOWEST_STEP = 25
+# Ladder-coverage invariant: shared branch-aware form in
+# _issue543_common.assert_ladder_coverage_steps (round-4 incident — the old
+# absolute lowest<=25 constant here crashed the lr 2e-6 rescue ladder path).
 HUB_PRECHECK_STEPS = (70, 80, 90)
 
 
@@ -699,12 +702,65 @@ def upload_pick_window(
 # ── Ladder driver (per seed) ─────────────────────────────────────────────────
 
 
+def _existing_ladder_outputs(cell: Path) -> dict | None:
+    """Resume guard (#570 round-4): detect a COMPLETED prior ladder for a cell.
+
+    A completed ladder leaves BOTH ``phase1_ladder.json`` and
+    ``phase1_pick_record.json`` in the cell dir (written back-to-back at the
+    pick step, uploads after). On a relaunch after a downstream crash (the
+    2026-06-11 rescue-coverage incident) the 5e-6 ladders are already done —
+    re-running them burns ~20 min/seed of vLLM generation for identical
+    output. Integrity: both JSONs must parse and carry their pick/checkpoint
+    keys; a corrupt file raises rather than silently re-running over
+    ambiguous state. Returns the parsed pick record to log, or None when the
+    ladder has not completed (fresh cell or mid-ladder crash — either file
+    missing).
+    """
+    ladder_path = cell / "phase1_ladder.json"
+    pick_path = cell / "phase1_pick_record.json"
+    if not (ladder_path.exists() and pick_path.exists()):
+        return None
+    try:
+        ladder = json.loads(ladder_path.read_text())
+        pick = json.loads(pick_path.read_text())
+    except json.JSONDecodeError as e:
+        raise RuntimeError(
+            f"Ladder resume guard: {ladder_path} / {pick_path} exist but do not parse "
+            f"({e}). Inspect/delete the cell dir before relaunching; refusing to "
+            "silently re-ladder over ambiguous state."
+        ) from e
+    if "pick_step" not in pick or "checkpoints" not in ladder:
+        raise RuntimeError(
+            f"Ladder resume guard: existing {pick_path} / {ladder_path} lack the "
+            "pick_step / checkpoints keys — partial or foreign artifacts; inspect/delete "
+            "the cell dir before relaunching."
+        )
+    return pick
+
+
 def run_ladder(args: argparse.Namespace) -> int:
     """The per-seed ladder: gen -> TF -> #534 assert -> pick -> uploads."""
+    cell = cell_dir_570(args.seed, "phase1", args.install_variant)
+    if not args.force:
+        prior = _existing_ladder_outputs(cell)
+        if prior is not None:
+            phase_log("ladder_skip_resume")
+            log.warning(
+                "RESUME (#570 round-4): ladder outputs already exist for seed %s "
+                "(variant=%s) at %s — pick_step=%s eligible=%s fallback=%s. SKIPPING "
+                "the ladder re-run (gen records + pick-window uploads were performed "
+                "by the prior completed run). Pass --force to re-ladder.",
+                args.seed,
+                args.install_variant,
+                cell,
+                prior.get("pick_step"),
+                prior.get("eligible_steps"),
+                prior.get("fallback"),
+            )
+            return 0
     phase_log("ladder_gen")
     marker_preflight()
     ensure_probe_files_local(revision=HUB_DATA_REPO_REVISION_570)
-    cell = cell_dir_570(args.seed, "phase1", args.install_variant)
     cell.mkdir(parents=True, exist_ok=True)
     ckpt_root = Path(args.ckpt_root) if args.ckpt_root else _default_ckpt_root(args)
     if args.ckpt_root is None:
@@ -725,11 +781,9 @@ def run_ladder(args: argparse.Namespace) -> int:
             )
     ckpts = enumerate_checkpoints(ckpt_root)
     steps = [s for s, _ in ckpts]
-    if steps[0] > LADDER_COVERAGE_MAX_LOWEST_STEP:
-        raise RuntimeError(
-            f"Ladder-coverage assert FAILED: lowest retained step {steps[0]} > "
-            f"{LADDER_COVERAGE_MAX_LOWEST_STEP} (retained: {steps})."
-        )
+    # Branch-aware coverage (shared form; stop_step defaults to the highest
+    # retained step — at/within one save_steps of the realized band stop).
+    assert_ladder_coverage_steps(steps, context=f"under {ckpt_root}")
     log.info("Ladder over %d checkpoints (steps %s..%s)", len(ckpts), steps[0], steps[-1])
 
     eval_qs = ensure_eval_questions_local(revision=HUB_DATA_REPO_REVISION_570)
@@ -1118,6 +1172,14 @@ def parse_args() -> argparse.Namespace:
         "instead of per-request LoRARequest swap.",
     )
     p.add_argument("--skip-upload", action="store_true")
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="Re-run the ladder even when phase1_ladder.json + "
+        "phase1_pick_record.json already exist for this seed/variant "
+        "(default: a completed prior ladder is skipped — #570 round-4 "
+        "resume semantics).",
+    )
     args = p.parse_args()
     args.seeds = tuple(int(s) for s in args.seeds.split(",") if s)
     if args.install_variant is not None:
