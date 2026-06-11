@@ -9,9 +9,11 @@ description: >
   `scripts/session_progress_report.py`, fires `PushNotification` at
   gate-park / `blocked` transitions, RE-DRIVES the full `/issue` skill
   when the session is stale at any non-gate non-terminal status (covers
-  both pre-pod-launch stretches like planning / clarifying / under-cap
-  plan_pending / followups_running AND post-launch ACTIVE statuses where
-  the bg-Bash poll chain has died), and runs CRON-TEARDOWN at
+  pre-pod-launch stretches like planning / clarifying / under-cap
+  plan_pending, the whole-round `followups_running` hold — which spans
+  pre- AND post-launch phases of a same-issue follow-up — AND post-launch
+  ACTIVE statuses where the bg-Bash poll chain has died), and runs
+  CRON-TEARDOWN at
   terminal/gate-park state. Does NOT re-load the 44K-token `/issue`
   SKILL.md on idle ticks — that load happens only on cold start, cold
   respawn (which spawn `/issue <N>` directly), and the stale-re-drive
@@ -53,8 +55,10 @@ On every fire this skill:
      EXIT. If the latest marker is STALE, the orchestrator's reaction
      chain has likely died at this PARK status (e.g. `planning` waiting
      on a planner agent that crashed, `clarifying` waiting on a
-     clarifier turn the harness lost, `followups_running` waiting on
-     the proposer): this fire IS the recovery path — load the full
+     clarifier turn the harness lost, `followups_running` mid
+     same-issue follow-up round — at any phase from planner amendment
+     through analyzer re-fold — or, legacy, waiting on `parent_id`
+     children): this fire IS the recovery path — load the full
      `/issue <N>` skill to re-enter the matching step. The Step 0
      ARM-GUARD prevents duplicate crons.
    - **ACTIVE-WITH-LIVE-BG-WORK** → if the bg-Bash poll chain is healthy
@@ -200,7 +204,11 @@ in-process step (not a user gate)" states:
 - `plan_pending` (under-cap, awaiting the auto-approve inside the
   full skill itself — NOT the over-cap park, which is GATE-PARK / 3d)
 - `clarifying`
-- `followups_running`
+- `followups_running` (a same-issue follow-up round HOLDS this status
+  for its whole abbreviated cycle — plan amendment → run → re-fold —
+  so a re-drive here resumes at whatever phase the
+  `stage=followup-<phase>` breadcrumbs indicate; legacy semantics:
+  waiting on `parent_id` children)
 
 These statuses imply the full `/issue <N>` skill is SUPPOSED to be
 making forward progress in-process (a planner / clarifier / proposer
@@ -233,10 +241,13 @@ Check the latest marker's `ts` (from Step 1):
   stalls at `planning` / `clarifying` / `plan_pending` (under-cap) /
   `followups_running` has nothing else to wake it. The external
   `autonomous_session_watch` stalled-detector now AUTO-RESPAWNs ACTIVE
-  sessions (Phase 2, 2026-06-08), but it does NOT respawn PARK
+  sessions (Phase 2, 2026-06-08; its ACTIVE set includes `planning`
+  and, as of 2026-06-10, `followups_running` — but that pass only
+  covers DEAD registered sessions), and it does NOT respawn its PARK
   sessions by design (a respawn at PARK would land back in the same
   PARK status without solving the underlying in-skill stall). The
-  in-process re-drive here IS the recovery path for those.
+  in-process re-drive here IS the recovery path for the
+  alive-but-stalled case.
 
   Avoid re-driving GATE-PARK states (over-cap `plan_pending`,
   `awaiting_promotion`, `blocked`): those are user gates by design —

@@ -4,7 +4,13 @@ description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
-  experiments complete. Actively looks for problems and overclaims.
+  experiments complete — the first pass is normally spawned at the Step 8
+  results-landed parallel batch, CONCURRENT with upload verification, in
+  HOLD-marker mode: when the brief says so, write the round-1
+  interpretation to /tmp/issue-<N>-interpretation-v1-held.md and return
+  WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
+  after upload-verification PASS; plots + figure commits proceed as
+  normal). Actively looks for problems and overclaims.
 model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
@@ -543,6 +549,8 @@ There is no separate clean-result record to link — the body of this task is th
 ## When invoked from `/issue` (Step 7a)
 
 The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `has_clean_result=true`, original body preserved in a workflow event if needed).
+
+**HOLD-marker mode (results-landed early spawn).** Your round-1 spawn normally arrives EARLY — at the `/issue` Step 8 results-landed parallel batch, concurrent with upload verification, BEFORE upload-verification PASS. When the spawn brief says HOLD-marker mode (it names the held-file path, `/tmp/issue-<N>-interpretation-v1-held.md`), run the full first pass as normal — plots + figure commits, the Step 6 body promotion, and the Step 7 `epm:analysis` marker all proceed unchanged — but write the would-be `epm:interpretation v1` body VERBATIM to the held-file path from the brief and return WITHOUT posting `epm:interpretation v1`. The orchestrator publishes the held file as `epm:interpretation v1` after upload-verification PASS and only then starts the interpretation-critic round; posting the marker yourself from the early spawn breaks that join — no `epm:interpretation` may exist before upload PASS (SKILL.md Step 8, hard join #1). When the brief does NOT name HOLD-marker mode (a round-1 fallback spawn after upload PASS, or any round-2+ revision), post `epm:interpretation v<n>` yourself as normal.
 
 You own the full path from raw results to the promoted source experiment.
 
