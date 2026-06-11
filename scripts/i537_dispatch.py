@@ -100,6 +100,14 @@ MARKER_TRAIN_KWARGS = dict(
     marker_suppress_at_post_response_slot=True,
     marker_im_end_token_id=151645,
     marker_band_stop=True,
+    # Overshoot-aware stop + finer eval cadence: this rig's ramp crosses the
+    # whole [5,12] band in <10 steps (observed: step 10 = +3.7 nat, step 50 =
+    # +21.5 nat saturated), so the in-band-only predicate at eval_every=10 /
+    # min_steps=20 never fires. Stop at the first eligible eval in OR past
+    # the band; band_stop_overshoot ships in WandB + stop_steps metadata.
+    marker_band_overshoot_stops=True,
+    marker_band_eval_every_steps=5,
+    marker_band_min_steps=10,
     report_to="wandb",
 )
 # Judge-row recipes (plan §11; train_lora is rsLoRA + cosine by construction).
@@ -1047,7 +1055,17 @@ def _train_marker_cell(cid: str, *, smoke: bool, gpu_id: int) -> None:
     )
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     recorder = _FinalStepRecorder()
-    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg, callbacks=[recorder])
+    try:
+        train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg, callbacks=[recorder])
+    finally:
+        # One WandB run PER CELL: HF Trainer reuses an open wandb.run, so
+        # without this every cell after the first logs into cell 1's run and
+        # its per-step trajectory is DROPPED ("step less than current step"
+        # monotonicity warnings — observed on the first P1 pass).
+        import wandb
+
+        if wandb.run is not None:
+            wandb.finish()
     if not smoke:
         _verify_adapter_on_hub(f"adapters/i537_marker_{cid}_seed{SEED}")
     if not unreachable:
@@ -1606,7 +1624,16 @@ def _train_judge_cell(behavior: str, cid: str, *, smoke: bool, gpu_id: int) -> N
         **kwargs,
     )
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
-    train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg)
+    try:
+        train_lora(QWEN_ID, str(data_path), str(out_dir), cfg=cfg)
+    finally:
+        # One WandB run per cell (see _train_marker_cell): without this,
+        # cells after the first log into the first cell's run and their
+        # per-step series are dropped by WandB step monotonicity.
+        import wandb
+
+        if wandb.run is not None:
+            wandb.finish()
     if not smoke:
         _verify_adapter_on_hub(f"adapters/i537_{behavior}_{cid}_seed{SEED}")
 

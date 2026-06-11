@@ -563,6 +563,11 @@ class TrainLoraConfig:
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
     marker_band_min_steps: int = 20
+    # Opt-in: also stop when delta OVERSHOOTS past high_nats at an eligible
+    # eval — steep ramps can cross the whole band between two eval points and
+    # otherwise train to saturation (#537 P1). Default off: pre-existing
+    # marker runs keep the in-band-only predicate byte-identical.
+    marker_band_overshoot_stops: bool = False
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
     # is a good balance for the canonical 7B-Qwen marker setup.
@@ -866,6 +871,7 @@ def _maybe_attach_marker_band_stop(
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.
         eos_token_id=tokenizer.eos_token_id,
+        overshoot_stops=cfg.marker_band_overshoot_stops,
     )
     trainer.add_callback(callback)
     logger.info(
