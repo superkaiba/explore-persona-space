@@ -146,6 +146,13 @@ automatically, but it's opt-in on `--hf-dataset-path` and doesn't
 auto-discover. **You must auto-discover.** The script is a helper for the
 checks it already covers (model, WandB, git); for anything new the script
 doesn't know about, use the HF / git / WandB commands above directly.
+On a training task with no single `--hf-model` / `--wandb-run` to pass
+(the multi-cell sweep case), the script's training rows self-resolve
+from the task's latest `epm:results` marker `reproducibility_card` —
+per-cell `adapter_paths` verified under `hf_model_repo` via
+`list_repo_files`, `wandb_run_names` + `wandb_project` resolved by
+display name (#608) — so do NOT pre-emptively supersede those rows by
+hand.
 
 ### Step 2.5 — Phantom-URL gate: HEAD-verify every CLAIMED URL
 
@@ -188,6 +195,17 @@ overall FAIL you then have to supersede row by row (incident #563,
 2026-06-10). The script also scans the `issue-<N>` branch refs for
 eval JSONs + figures, since those land on the issue branch before the
 Step 9b auto-merge.
+
+A multi-cell SWEEP training task likewise has no single `--hf-model` /
+`--wandb-run` to pass — but do NOT hand-supersede the resulting MISSING
+training rows: re-run `verify_uploads.py` and expect them to resolve
+from the task's latest `epm:results` `reproducibility_card` (per-cell
+`adapter_paths` under `hf_model_repo`; `wandb_run_names` +
+`wandb_project` [+ optional `wandb_entity`] resolved by display name —
+#608). Manual row supersession remains legitimate ONLY when the card
+predates this contract (declares no `adapter_paths` / wandb fields) —
+then verify the per-cell artifacts yourself with the Step 2 commands
+and record the superseding evidence in the verdict row.
 
 The `claimed_urls` row in the JSON report is FAIL whenever any cited
 URL did not resolve. Common phantom patterns to watch for:

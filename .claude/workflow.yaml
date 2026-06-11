@@ -1527,7 +1527,26 @@ markers:
   - kind: "epm:results"
     posted_by: specialist
     when: "end of run"
-    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION."
+    fields: |
+      Eval JSON paths, filled reproducibility card, WandB URL, HF Hub
+      path, commit hash, GPU-hours used, deviations, hot-fix log. MUST
+      include a `## Sample outputs` section with `### Condition: <name>`
+      H3 subheadings and ≥3 randomly-sampled (persona, prompt, response)
+      triplets PER CONDITION. The note's JSON payload may carry a
+      `reproducibility_card` object with these OPTIONAL fields, consumed
+      by `scripts/verify_uploads.py` when a training task declares no
+      single `--hf-model` / `--wandb-run` (the multi-cell sweep case,
+      #608): `hf_model_repo` (defaults to the canonical model repo),
+      `adapter_paths` (dict or list of per-cell adapter paths, each
+      verified under `hf_model_repo` via `list_repo_files`),
+      `hf_model_path` (single model path), `wandb_run_path` /
+      `wandb_run` (single run path), and `wandb_run_names` (dict or
+      list of per-cell display names) + `wandb_project` (+ optional
+      `wandb_entity`) resolved by display name. Sweep dispatchers
+      SHOULD declare per-cell `adapter_paths` + `wandb_run_names` so
+      the verifier's training rows resolve mechanically instead of
+      hard-MISSing; explicit CLI declarations always win unchanged, and
+      a card-less task keeps the strict MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
