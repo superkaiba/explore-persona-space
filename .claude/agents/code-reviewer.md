@@ -295,6 +295,48 @@ reason is plausible). Rationale: checking "phases ran" without checking
 never logged, zero saturation markers fired), saturation was caught only
 at eval time, and the experiment needed a full band-stopped retrain.
 
+**Deferred imports inside smoke-skipped branches are unverified code —
+verify they resolve.** When any phase's smoke command carries a skip-flag
+that fences off a code branch (`--dry-run`, `--skip-upload`, `--skip-eval`,
+or equivalent), that branch never executed during the smoke, so any lazy
+`import` / `from ... import` inside it has never run. Grep the diff's
+scripts for in-function / in-branch imports:
+
+```bash
+grep -nE "^\s+(from [A-Za-z_0-9.]+ import|import [A-Za-z_0-9.]+)" \
+  <each script in the diff>
+```
+
+For each hit inside a branch the smoke's skip-flags fenced off, require
+ONE of:
+
+- (a) **execution evidence** in the `## Smoke run` section — a
+  `--verify-imports` run (the AST-walk pattern from
+  `scripts/issue_606/i606_dispatch.py`; see `.claude/rules/gotchas.md`
+  "Lazy imports inside smoke-skipped branches") or a smoke invocation
+  without the fencing flag;
+- (b) **module-top hoisting** — the import was moved to module top, so any
+  phase's exit-0 smoke already proves it executes;
+- (c) **your own static verification** — grep the import's TARGET module
+  for each imported symbol's definition and quote `file.py:LINE` in the
+  verdict. Watch the porting trap: a private `_underscore` helper is often
+  file-local to the SOURCE script the code was ported from and absent from
+  the import path the diff assumes.
+
+A deferred import whose symbol you CANNOT find at the import target is a
+Critical SUBSTANTIVE finding (blocker tag `substantive`, NOT
+`smoke-run-missing` — the orchestrator's Step 5c-bis strip cannot verify a
+symbol exists in source code from the marker alone, so this finding must
+never be stripped as mechanical-contract): the ImportError fires on the
+pod AFTER the expensive phases. A deferred import that resolves but lacks
+(a)/(b) evidence is at most a CONCERNS bullet. The mirror implementer rule
+is `experiment-implementer.md` § After implementation step 2 ("Deferred
+imports count"). Incident #606 (2026-06-11): review rounds 1-2 PASSed a
+dispatcher whose upload branch lazily imported the nonexistent
+`_retry_transient` from `orchestrate.hub`; every smoke carried
+`--dry-run` / `--skip-upload`, and the ImportError fired on the GCP
+workload at p5_upload after training + stage-A judging were already spent.
+
 **If every phase IS present with a command, exit code 0, and an artifact
 digest, but a digest is terse, omits the row count, or you would have
 formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
