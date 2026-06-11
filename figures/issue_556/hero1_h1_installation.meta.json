@@ -1,0 +1,28 @@
+{
+  "kind": "hero_h1_installation",
+  "git_commit": "e76d782cdf702e88c84b9569053877abf1137483",
+  "ts": "2026-06-11T07:35:18.936372Z",
+  "analysis_path": "eval_results/issue_556/analysis.json",
+  "saturation_gate": "per_encoding",
+  "h1_passing_traits": [
+    "validating"
+  ],
+  "h1_per_cell_pass": {
+    "validating": {
+      "system": false,
+      "role": true
+    },
+    "conciseness": {
+      "system": false,
+      "role": false
+    },
+    "asks_clarifying_first": {
+      "system": false,
+      "role": false
+    },
+    "calibrated_uncertainty": {
+      "system": false,
+      "role": false
+    }
+  }
+}

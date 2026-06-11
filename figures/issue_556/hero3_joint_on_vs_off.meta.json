@@ -1,0 +1,9 @@
+{
+  "kind": "hero_h2_joint",
+  "git_commit": "e76d782cdf702e88c84b9569053877abf1137483",
+  "ts": "2026-06-11T07:35:24.879517Z",
+  "saturation_gate": "per_encoding",
+  "h1_passing_traits": [
+    "validating"
+  ]
+}
