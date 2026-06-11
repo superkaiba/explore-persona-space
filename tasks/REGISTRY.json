@@ -3661,8 +3661,8 @@
     "603": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/603",
-      "status": "running",
+      "path": "tasks/verifying/603",
+      "status": "verifying",
       "title": "P3' write decomposition: does the source's base prior predict the write's common-mode fraction rather than its norm?"
     },
     "604": {
