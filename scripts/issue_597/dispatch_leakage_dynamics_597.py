@@ -759,7 +759,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
                     "--label",
                     f"gate_s_armB_{source}",
                 ],
-                phase=f"gateB_{source}",
+                phase=f"gateb_{source}",
             )
             first_armb_gate_done["done"] = True
             cell["arm_b_gate_report"] = str(gate_out)
@@ -809,7 +809,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
             + (
                 ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
             ),
-            phase=f"probeB_{source}",
+            phase=f"probeb_{source}",
         )
 
     # ── Emission anchors Arm B (vLLM subprocess) ──
@@ -851,7 +851,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
             + (
                 ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
             ),
-            phase=f"emisB_{source}",
+            phase=f"emisb_{source}",
         )
 
     # ── Arm A: download ladder → panel probe → emission anchors → cleanup ──
@@ -892,7 +892,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
                     if params.limit_questions
                     else []
                 ),
-                phase=f"probeA_{source}",
+                phase=f"probea_{source}",
             )
         if not args.skip_emission:
             a_anchors = tuple(s for s in params.anchor_steps if s in set(params.a_steps))
@@ -925,7 +925,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
                     if params.limit_questions
                     else []
                 ),
-                phase=f"emisA_{source}",
+                phase=f"emisa_{source}",
             )
 
     # ── Raw uploads (folder-level commits; CLAUDE.md upload policy: raw
@@ -1136,6 +1136,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
     # GPU pin BEFORE any CUDA-initializing import (defensive; see --gpu help).
     if args.gpu is not None:
+        env_cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+        if env_cvd is not None and env_cvd != str(args.gpu):
+            # HARD assert (#557 class): train_lora re-clobbers CVD with
+            # cfg.gpu_id (= --gpu), so a launcher that exports a DIFFERENT
+            # index silently retargets every phase onto another physical GPU.
+            raise RuntimeError(
+                f"GPU pin mismatch: launcher exported CUDA_VISIBLE_DEVICES={env_cvd!r} but "
+                f"--gpu {args.gpu} was passed. The launch line must export the SAME index "
+                "it passes to --gpu (e.g. CUDA_VISIBLE_DEVICES=2 ... --gpu 2)."
+            )
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     logging.basicConfig(

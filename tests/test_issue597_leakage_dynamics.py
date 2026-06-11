@@ -30,6 +30,7 @@ from __future__ import annotations
 import importlib.util
 import itertools
 import json
+import math
 import statistics
 import sys
 from pathlib import Path
@@ -445,7 +446,12 @@ def test_cell_sentinel_parses_through_poll_pipeline(tmp_path):
 def test_phase_tokens_lowercase_for_poller():
     """poll_pipeline.PHASE_RE is [a-z0-9_]+ — a capitalized phase token
     truncates (trainB_villain → 'train'). Pin that no [phase=...] literal in
-    the dispatcher carries an uppercase character."""
+    the dispatcher carries an uppercase character, AND (round-2 concern
+    phase-token-truncation-subprocess-kwargs) that every ``phase=`` kwarg
+    passed to ``_run_subprocess`` — which renders as
+    ``[phase=<token>] spawning: ...`` — is lowercase too: the literal scan
+    alone let five uppercase f-string kwargs (gateB_/probeB_/...) through."""
+    import ast
     import re
 
     pp = _load_poll_pipeline()
@@ -454,6 +460,55 @@ def test_phase_tokens_lowercase_for_poller():
         token = m.group(1).replace("%s", "x").replace("%d", "0")
         assert token == token.lower(), f"phase token {m.group(1)!r} would truncate"
         assert pp.PHASE_RE.match(f"[phase={token}")
+
+    # Structural scan: the static parts of every _run_subprocess(phase=...)
+    # kwarg must already satisfy PHASE_RE's [a-z0-9_] charset (the runtime
+    # f-string fields are lowercase persona keys).
+    phase_kwargs: list[str] = []
+    for node in ast.walk(ast.parse(src)):
+        if not (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "_run_subprocess"
+        ):
+            continue
+        for kw in node.keywords:
+            if kw.arg != "phase":
+                continue
+            value = kw.value
+            if isinstance(value, ast.Constant):
+                static_parts = [str(value.value)]
+            elif isinstance(value, ast.JoinedStr):
+                static_parts = [str(v.value) for v in value.values if isinstance(v, ast.Constant)]
+            else:
+                raise AssertionError(
+                    f"_run_subprocess phase kwarg at line {value.lineno} is neither a "
+                    "string literal nor an f-string — the lowercase scan can't verify it"
+                )
+            token = "".join(static_parts)
+            phase_kwargs.append(token)
+            assert re.fullmatch(r"[a-z0-9_]*", token), (
+                f"_run_subprocess phase kwarg {token!r} (line {value.lineno}) would "
+                "truncate under poll_pipeline.PHASE_RE"
+            )
+    assert len(phase_kwargs) >= 7, (
+        f"expected >=7 _run_subprocess phase kwargs (5 per-cell f-strings + "
+        f"p0_probe_rows + gate_s), found {len(phase_kwargs)}: {phase_kwargs}"
+    )
+
+    # analyze.py is a VM-side entrypoint: it must never emit the RESERVED pod
+    # terminal token [phase=done] (poll_pipeline would read a false dispatcher
+    # `done` if it were ever run pod-side); it ends on [phase=analyze_done].
+    analyze_src = (
+        REPO_ROOT
+        / "src"
+        / "explore_persona_space"
+        / "experiments"
+        / "leakage_dynamics_597"
+        / "analyze.py"
+    ).read_text()
+    assert "[phase=done]" not in analyze_src
+    assert "[phase=analyze_done]" in analyze_src
 
 
 # ── 9. Trainer-path marker assert (round-1 trainer-marker-token-assert) ──────
@@ -574,6 +629,51 @@ def test_h1_lockstep_verdicts():
     # Descope rule: fewer than 6 sources → descriptive verdict naming N.
     h1_partial = h1_lockstep({"villain": panels["villain"]})
     assert h1_partial["verdict"].startswith("descriptive (N=1")
+
+
+def test_probability_space_derivation_and_summary_keys(tmp_path):
+    """Round-2 Codex Major: plan §6 registers probability (exp(logp)) as the
+    SANITY-ONLY third reported space — pin that ``load_panel_trajectory``
+    derives ``p_trained``/``p_base``/``delta_p`` per (step, context) and that
+    ``trajectory_summary`` reports them alongside the log-prob/logit spaces."""
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        SUMMARY_KEYS,
+        load_panel_trajectory,
+        trajectory_summary,
+    )
+
+    for key in ("p_trained", "p_base", "delta_p"):
+        assert key in SUMMARY_KEYS
+
+    panel = _synthetic_panel("b", "villain", [4, 8], lambda s, c: 2.0 if c == "villain" else 0.5)
+    path = tmp_path / "villain_seed42_panel_trajectory.json"
+    path.write_text(json.dumps(panel))
+    loaded = load_panel_trajectory(path)
+    cell = loaded["by_step"][4]["villain"]
+    assert cell["p_trained"] == pytest.approx(math.exp(cell["logp_trained"]))
+    assert cell["p_base"] == pytest.approx(math.exp(-21.0))
+    assert cell["delta_p"] == pytest.approx(cell["p_trained"] - cell["p_base"])
+
+    summary = trajectory_summary({"b": {"villain": loaded}})
+    series = summary["b"]["villain"]["source"]
+    assert set(SUMMARY_KEYS) <= set(series)
+    assert series["delta_p"]["4"]["median"] == pytest.approx(cell["delta_p"])
+
+
+def test_lockstep_curve_points_keeps_exact_zero():
+    """Round-2 Codex minor: ``if p["L"]`` dropped exact-zero lockstep points
+    (bystanders flat while the source moves) from the L(t) plot — only None
+    (below the source-delta guard) may be filtered."""
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        _lockstep_curve_points,
+    )
+
+    curve = [
+        {"step": 4, "L": None},
+        {"step": 8, "L": 0.0},
+        {"step": 12, "L": 0.5},
+    ]
+    assert _lockstep_curve_points(curve) == [(8, 0.0), (12, 0.5)]
 
 
 def test_h2_suppression_verdicts():

@@ -16,10 +16,15 @@ pod has terminated (plan §9: no analysis holds a GPU pod). Inputs:
 Outputs:
 
   <out-dir>/h1_h2_h3.json            registered H1/H2/H3 reads (plan §1)
-  <out-dir>/trajectory_summary.json  per (arm, source, group) step series
+  <out-dir>/trajectory_summary.json  per (arm, source, group) step series in
+                                     ALL plan-§6 registered spaces: log-prob
+                                     (primary), logit/EOS margin (secondary),
+                                     emission, probability (sanity-only).
   <fig-dir>/*.{png,pdf,meta.json}    hero 1 (two-panel trajectory), hero 2
-                                     (phase plot) + the plan-§6 exploratory
-                                     dump, via paper_plots conventions.
+                                     (phase plot), the probability-space
+                                     sanity trajectory + the plan-§6
+                                     exploratory dump, via paper_plots
+                                     conventions.
 
 Registered reads (plan §1; thresholds verbatim):
 
@@ -116,8 +121,32 @@ def _metadata(extra: dict | None = None) -> dict:
 # ── Loading + validation ─────────────────────────────────────────────────────
 
 
+def derive_probability_space(payload: dict) -> dict:
+    """Add the plan-§6 SANITY-ONLY probability-space reads in place.
+
+    Per (step, context): ``p_trained = exp(logp_trained)``,
+    ``p_base = exp(logp_base)``, ``delta_p = p_trained − p_base``. Probability
+    space over-weights high-prior contexts (CLAUDE.md marker rule) — it is the
+    registered sanity read, never the headline space. Fails loud (KeyError) if
+    the panel-probe four-float contract keys are missing.
+    """
+    for by_ctx in payload["by_step"].values():
+        for vals in by_ctx.values():
+            p_t = math.exp(float(vals["logp_trained"]))
+            p_b = math.exp(float(vals["logp_base"]))
+            vals["p_trained"] = p_t
+            vals["p_base"] = p_b
+            vals["delta_p"] = p_t - p_b
+    return payload
+
+
 def load_panel_trajectory(path: Path) -> dict:
-    """Load + validate one ``i597_panel_trajectory_v1`` JSON; int-key by_step."""
+    """Load + validate one ``i597_panel_trajectory_v1`` JSON; int-key by_step.
+
+    Also derives the probability-space sanity reads (``p_trained``,
+    ``p_base``, ``delta_p``) per (step, context) — see
+    :func:`derive_probability_space`.
+    """
     with open(path) as f:
         payload = json.load(f)
     if payload.get("schema") != "i597_panel_trajectory_v1":
@@ -125,7 +154,7 @@ def load_panel_trajectory(path: Path) -> dict:
     payload["by_step"] = {int(k): v for k, v in payload["by_step"].items()}
     if not payload["by_step"]:
         raise RuntimeError(f"panel trajectory has zero steps: {path}")
-    return payload
+    return derive_probability_space(payload)
 
 
 def load_inloop_trajectory(path: Path) -> list[dict]:
@@ -370,6 +399,13 @@ def lr_weight(step: int, total_steps: int, warmup_steps: int) -> float:
     Both arms run the SAME deterministic 528-step schedule (warmup =
     ceil(0.05 × 528) = 27 steps per ``TrainingArguments.get_warmup_steps``),
     so the LR-weighted dose axis is computable off-line with no logs.
+
+    NOTE (one-step scheduler-phase shift): HF Trainer steps the LR scheduler
+    AFTER each optimizer step, so the multiplier APPLIED at optimizer step t
+    is the lambda at index t−1; this offline reconstruction indexes the
+    lambda at t directly — a ≤1-step phase shift. It is ≪ the ≥4-step
+    checkpoint spacing and identical for BOTH arms (shared schedule), so it
+    cancels in the H3 matched-dose comparison.
     """
     if step <= 0:
         return 0.0
@@ -535,7 +571,19 @@ def h3_acceleration(
 
 # ── Trajectory summary (per arm / source / group step series) ────────────────
 
-SUMMARY_KEYS = ("delta_logp", "delta_z_marker", "eos_margin_delta", "emission_rate_argmax")
+# All plan-§6 registered spaces: log-prob (PRIMARY, behavioral), logit / EOS
+# margin (SECONDARY, mechanistic), emission, and probability (SANITY-ONLY —
+# derived as exp(logp) at load time, over-weights high-prior contexts; never
+# the headline space).
+SUMMARY_KEYS = (
+    "delta_logp",
+    "delta_z_marker",
+    "eos_margin_delta",
+    "emission_rate_argmax",
+    "p_trained",
+    "p_base",
+    "delta_p",
+)
 
 
 def group_series(panel: dict, contexts: list[str], key: str) -> dict[int, dict]:
@@ -856,6 +904,13 @@ def fig_saturation_scatter(panels: dict[str, dict[str, dict]], fig_dir: Path) ->
     return out["png"]
 
 
+def _lockstep_curve_points(curve: list[dict]) -> list[tuple[int, float]]:
+    """(step, L) pairs with L resolved. ``is not None`` — NOT truthiness —
+    so an exact-zero lockstep point (L == 0.0, bystanders flat while the
+    source moves) stays on the plot (round-2 review minor)."""
+    return [(p["step"], p["L"]) for p in curve if p["L"] is not None]
+
+
 def fig_lockstep_curves(h1: dict, fig_dir: Path) -> Path:
     """Exploratory: per-source L(t) lockstep-index curves (Arm B)."""
     import matplotlib.pyplot as plt
@@ -870,7 +925,7 @@ def fig_lockstep_curves(h1: dict, fig_dir: Path) -> Path:
     sources = sorted(h1["per_source"])
     colors = paper_palette(max(3, len(sources)))
     for i, source in enumerate(sources):
-        curve = [(p["step"], p["L"]) for p in h1["per_source"][source]["L_curve"] if p["L"]]
+        curve = _lockstep_curve_points(h1["per_source"][source]["L_curve"])
         if not curve:
             continue
         ax.plot(
@@ -1061,6 +1116,13 @@ def main(argv: list[str] | None = None) -> int:
                 stem="exploratory_phase_plot_eos_margin",
                 axis_label="Δ(z_marker − z_eos) (logits)",
             ),
+            fig_hero_trajectory(
+                panels,
+                args.fig_dir,
+                y_key="delta_p",
+                stem="sanity_trajectory_probability_delta",
+                y_label="Δ P(marker), trained − base (probability — SANITY-ONLY read)",
+            ),
             fig_small_multiples(panels, args.fig_dir),
             fig_spaghetti(panels["a"], "a", args.fig_dir),
             fig_spaghetti(panels["b"], "b", args.fig_dir),
@@ -1070,7 +1132,10 @@ def main(argv: list[str] | None = None) -> int:
         ]
         log.info("[phase=analyze_figures] %d figures -> %s", len(figs), args.fig_dir)
 
-    log.info("[phase=done]")
+    # The bare "done" phase token is the POD dispatcher's RESERVED terminal
+    # line (poll_pipeline contract) — this VM-side entrypoint must never emit
+    # it, or a pod-side invocation would read as a false dispatcher `done`.
+    log.info("[phase=analyze_done]")
     return 0
 
 
