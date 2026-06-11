@@ -17,7 +17,7 @@ relates_to:
 - leak-behavior-vs-marker
 - leak-predictor
 ---
-# A cheap marker-leakage probe rank-tracks sycophancy leakage on both bystander panels where sycophancy varies, even at checkpoints where the marker never fires — cleanly on the assistant, on the software engineer only under the registered joint-control test (MODERATE confidence)
+# A cheap marker-leakage probe rank-tracks sycophancy leakage on both testable bystander panels even at checkpoints where the marker never fires (MODERATE confidence)
 
 <!-- clean-result-v2 -->
 
@@ -51,7 +51,7 @@ After the first pass surfaced a saturation pathology in the log-prob measurement
 
 That re-read rescued one source but left the obvious objection standing: the anchors were still the fully-trained, saturation-pathological checkpoints, and the one concordant source could be a one-off. So a second follow-up retrained all six sources with the corrected stopping recipe and re-asked the question at per-source anchors picked right where the marker starts firing. Fixed before that run: a source can only count toward (or against) the proxy claim if its frozen sycophancy panel actually varies — at least 3 of its 23 cells moving by more than 0.10 — and on the frozen join exactly two sources qualify, the software engineer and the assistant. The other four panels are reported descriptively but can neither support nor falsify.
 
-One question survived the retrain: at the firing anchors, the log-prob version of the same concordance *inverted* on the same forward passes where the emission rate concorded. The retrain had also saved, per source, an earlier in-band checkpoint — marker probability raised well clear of the base model but still below emission onset — reserved for exactly this follow-up. The final round evaluated those six checkpoints with the regime-appropriate read (the per-cell log-prob delta) against the same frozen join, with the success bar fixed before the run: both eligible panels must be informative and concord positively at joint-partial permutation p below 0.05. The last two findings carry that result and what it says about the inversion.
+One question survived the retrain: at the firing anchors, the log-prob version of the same concordance *inverted* on the same forward passes where the emission rate concorded. The retrain had also saved, per source, an earlier in-band checkpoint — marker probability raised well clear of the base model but still below emission onset — reserved for exactly this follow-up. The final round evaluated those six checkpoints with the regime-appropriate read (the per-cell log-prob delta) against the same frozen join, with the success bar fixed before the run: both eligible panels must be informative and concord positively at joint-partial permutation p below 0.05. The last three findings carry that result, the cosine-gradient re-read at the same anchors, and what it says about the inversion.
 
 ### What I ran
 
@@ -259,7 +259,7 @@ Per-cell source: [`eval_results/issue_480/marker_delta_matrix.json`](https://git
 
 The emission-rate rescue left the obvious objection standing: its anchors were the saturation-pathological full-training checkpoints, and one concordant source could be a one-off. So the final follow-up retrained all six sources with the corrected recipe — learning rate 5e-6, checkpoints every 20 steps, a deterministic per-source pick at the first checkpoint where the source's own marker log-prob reaches −1.0 nats, accepted only when the bystander panel resolves (at least 5 of 23 nonzero emission cells, at least 3 distinct values, at most 2 cells at or above 0.92), with up to two re-picks 40 steps away — and re-ran the identical concordance against the same frozen sycophancy join.
 
-Two scope amendments were fixed before the run. First, the originally-approved live training stop inside the 5-to-12-nat log-prob band is jointly unsatisfiable with an emission-rate DV — in that band the marker never appears in any answer, so every panel would read zero by construction; the stop target moved to the emission-onset edge, and the in-band checkpoint was still saved and uploaded, unevaluated, for a future log-prob-side follow-up.
+Two scope amendments were fixed before the run. First, the originally-approved live training stop inside the 5-to-12-nat log-prob band is jointly unsatisfiable with an emission-rate DV — in that band the marker never appears in any answer, so every panel would read zero by construction; the stop target moved to the emission-onset edge, and the in-band checkpoint was still saved and uploaded — the below-emission-onset log-prob finding further down evaluates exactly those checkpoints.
 
 Second, the original "two or more sources beyond the software engineer" success bar was recalibrated to the eligibility rule above: recomputing the spread table from the frozen join, only the software engineer (15 of its 23 cells beyond ±0.10) and the assistant (6 of 23) have a sycophancy panel that varies at all; comedian, kindergarten teacher, Qwen default, and villain each have zero such cells, so their concordance numbers are descriptive in both directions — villain's nominal rho = 0.578 (p = 0.0029) rests on 4 emitting cells against a flat sycophancy axis and never counts toward the proxy claim.
 
