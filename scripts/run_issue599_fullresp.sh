@@ -762,7 +762,11 @@ EXT_ESCALATED=0
 if [[ "$DRY_RUN" != "1" && "$PROBE_TRIGGER" == "1" ]]; then
   EXT_RAN=1
   mkdir -p "$EXT_DIR"
-  phase ext_probe "seed 42 fresh train --max-steps ${EXT_MAX_STEPS} (stretched cosine — NAMED deviation), save_steps ${EXT_SAVE_STEPS}, callback K=50"
+  phase ext_probe "seed 42 fresh train --max-steps ${EXT_MAX_STEPS} (stretched cosine — NAMED deviation), save_steps ${EXT_SAVE_STEPS}, callback K=50 -> ${EXT_DIR}/ext_train_seed42.log"
+  # Redirected like the escalation seeds (#545: the trainer's terminal
+  # "[phase=done] wrote adapter ..." line must NOT reach this main polled
+  # log mid-run — poll_pipeline reserves [phase=done] for the driver's
+  # single terminal line).
   if ! uv run python scripts/issue_519_train.py \
     --arm marker \
     --seed 42 \
@@ -774,7 +778,8 @@ if [[ "$DRY_RUN" != "1" && "$PROBE_TRIGGER" == "1" ]]; then
     --loss-shape "$LOSS_SHAPE" \
     --hf-subfolder-prefix "$HF_SUBFOLDER_PREFIX_EXT" \
     --hf-fallback-repo "$HF_DATA_REPO_PRIVATE" \
-    --wandb-project "$WANDB_PROJECT"; then
+    --wandb-project "$WANDB_PROJECT" \
+    > "$EXT_DIR/ext_train_seed42.log" 2>&1; then
     fail_loud 2 code ext_probe_train_failed
   fi
 

@@ -1688,7 +1688,11 @@ def main() -> int:  # noqa: C901 - end-to-end dispatcher, refactor out-of-scope 
     }
     with (output_dir / "dispatch_manifest.json").open("w") as f:
         json.dump(manifest, f, indent=2)
-    logger.info("[phase=done] wrote dispatch_manifest.json to %s", output_dir)
+    # #599/#545: NOT "[phase=done]" — this line flows into the DRIVER's main
+    # polled log on every foreground dispatcher invocation, and poll_pipeline
+    # declares status=done when the most recent phase line is [phase=done];
+    # a mid-run echo of the reserved terminal token produces a false done.
+    logger.info("[phase=dispatch_done] wrote dispatch_manifest.json to %s", output_dir)
     return 0
 
 

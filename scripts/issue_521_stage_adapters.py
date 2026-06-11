@@ -230,7 +230,10 @@ def main() -> int:
     # No tmp directory to clean — per-file `hf_hub_download` writes into
     # the HF cache only; `shutil.copy2` lands the file directly at the
     # target path.
-    logger.info("[phase=done] all %d cells staged at %s", len(cells), output_dir)
+    # #599/#545: NOT "[phase=done]" — this line flows into the DRIVER's main
+    # polled log (foreground invocation); poll_pipeline reserves [phase=done]
+    # for the driver's single terminal line.
+    logger.info("[phase=stage_done] all %d cells staged at %s", len(cells), output_dir)
     return 0
 
 
