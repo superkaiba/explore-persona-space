@@ -2637,6 +2637,37 @@ naturally.
 
 ##### Step 6d.1: Spawn experimenter for launch
 
+**Pre-dispatch state sanity (fires on EVERY dispatch — first launches
+AND re-launches).** Immediately before spawning the experimenter,
+re-verify the brief's two load-bearing assumptions against LIVE state —
+never against this session's cached view (a concurrent / replacement
+session may have finished the run while this session was mid-review):
+
+1. **Compute exists.** For a RunPod-backed dispatch, `uv run python
+   scripts/pod.py list-ephemeral --issue <N>` must show the assigned
+   pod; for other backends, verify the brief's compute target is live
+   per the handle sidecar / backend status (Step 6b). Absent → do NOT
+   dispatch; re-derive scope from the markers (the run may already be
+   done) or re-provision via Step 6b.
+2. **Run still pending.** `uv run python scripts/task.py latest-marker
+   <N>` + the recent `events.jsonl` tail: if `epm:results v1` +
+   `epm:upload-verification PASS` (or `epm:pod-terminated v1`) postdate
+   the failure being recovered, the (re)launch is STALE — the work
+   already completed. Do not dispatch; reduce the brief to the genuinely
+   missing artifact, or skip the dispatch entirely and resume from
+   wherever the markers say the task actually is (Step 7+ / Step 9
+   routing).
+
+On either mismatch, re-derive the brief from the live markers instead
+of dispatching the stale one. This is the dispatch-site analogue of the
+Step 0 stale-wake ownership re-check and the Step 9 entry guard's
+marker-freshness pattern. (Incident: task #559, 2026-06-11 — a
+concurrent orchestrator completed the run, upload-verified, and
+terminated the pod while this session was mid-code-review; this session
+then dispatched a relaunch brief asserting "pod alive; run pending"
+~10 min after `epm:pod-terminated`; only the experimenter's agent-side
+defense caught it.)
+
 Spawn `experimenter` subagent via `Agent()`. Brief:
 - The plan path (the `plans/plan.md` symlink) + the code-reviewed
   branch (`issue-<N>`)
