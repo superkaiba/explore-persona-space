@@ -214,12 +214,24 @@ export function TaskBoard({
   );
 }
 
+// Epoch ms the task entered its current status; 0 (sorts to the bottom)
+// when unknown/unparseable.
+function statusEntryMs(t: TaskListing): number {
+  if (!t.statusChangedAt) return 0;
+  const ms = Date.parse(t.statusChangedAt);
+  return Number.isFinite(ms) ? ms : 0;
+}
+
 function groupByStatus(tasks: TaskListing[]): Record<Status, TaskListing[]> {
   const out = {} as Record<Status, TaskListing[]>;
   for (const status of STATUS_DISPLAY_ORDER) out[status] = [];
   for (const t of tasks) {
     if (!out[t.status]) out[t.status] = [];
     out[t.status].push(t);
+  }
+  // Within each column: most recently moved-in first, tie-break id desc.
+  for (const rows of Object.values(out)) {
+    rows.sort((a, b) => statusEntryMs(b) - statusEntryMs(a) || b.id - a.id);
   }
   return out;
 }
@@ -300,9 +312,21 @@ function KanbanCard({ row }: { row: TaskListing }) {
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <KindBadge kind={row.kind} />
         {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
+        <FollowupCountBadge count={row.followupCount} />
         {row.status === "followups_running" && <FollowupModeBadge tags={row.tags} />}
       </div>
     </Link>
+  );
+}
+
+// How many follow-up rounds have run on this task (distinct followup_labels
+// + free-analysis auto-runs, derived from events.jsonl in lib/tasks).
+function FollowupCountBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="rounded bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-700">
+      {count} follow-up{count === 1 ? "" : "s"}
+    </span>
   );
 }
 
@@ -395,6 +419,7 @@ function StatusSection({
                 <TrackBadge track={row.track} />
                 <KindBadge kind={row.kind} />
                 {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
+                <FollowupCountBadge count={row.followupCount} />
               </span>
             </Link>
           </li>
