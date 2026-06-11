@@ -87,6 +87,20 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+# Repo-root sys.path bootstrap. Invoking this file as a script puts only
+# scripts/ (the script's own dir) on sys.path — NOT the repo root — so any
+# lazy `from scripts.X import ...` inside the backends this CLI wires
+# (e.g. `backends/runpod.py` does `from scripts.poll_pipeline import ...`
+# on its poll path) fails with ``ModuleNotFoundError: No module named
+# 'scripts'`` unless PYTHONPATH is set manually. Insert the repo root so
+# the documented invocation (``uv run python scripts/dispatch_issue.py
+# launch --issue <N>``) works from any cwd (defensive parity with
+# backend_poll.py, #571 — no launch/finalize-path scripts.* import exists
+# today, but a backend refactor adding one would reproduce the incident).
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 
 def _current_git_branch() -> str | None:
     """Current branch of the invoking checkout (None on detached HEAD / error).

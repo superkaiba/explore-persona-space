@@ -1941,6 +1941,38 @@ def test_v2_good_body_passes_all_including_nested_structure():
     assert "v2 nested-design" in conf.detail
 
 
+def test_v2_body_with_top_methodology_link_passes():
+    """A v2 body carrying the orchestrator-appended top-of-body
+    `**Methodology:** ...` line — inserted between the
+    `<!-- clean-result-v2 -->` sentinel and `## Human TL;DR` at
+    `/issue` Step 9a-quater (SPEC.md § Top-of-body methodology link)
+    — PASSes every check. The line is PERMITTED, never required
+    (forward-only: pre-link bodies are not newly failed), in both the
+    gist-suffixed and fail-soft (no-gist) forms."""
+    gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md) · "
+        "[gist](https://gist.github.com/superkaiba/abc123def456)\n"
+    )
+    no_gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md)\n"
+    )
+    for top_line in (gist_form, no_gist_form):
+        body = _V2_GOOD_BODY.replace(
+            "<!-- clean-result-v2 -->\n",
+            "<!-- clean-result-v2 -->\n\n" + top_line,
+        )
+        assert top_line in body, "fixture replacement did not land"
+        ok, results = verify_task_body.verify_text(body)
+        assert ok, [r.render() for r in results if not r.passed]
+        # The body must still be detected as v2 (the inserted line must
+        # not break sentinel detection).
+        assert verify_task_body.is_v2_nested_design(body)
+
+
 def test_v2_body_missing_what_i_ran_fails_nested_structure():
     """A v2-sentinelled body that drops `### What I ran` FAILs the
     nested-structure check."""

@@ -2444,6 +2444,13 @@ workflow_fix_on_bug:
     - "scripts/audit_clean_results_body_discipline.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
+    # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
+    # poller (router slice 6 pair: dispatch_issue.py writes the per-issue
+    # handle sidecar, backend_poll.py reads it each tick). Added 2026-06-11
+    # (#571): the list predated the pair and its absence nearly deflected an
+    # in-scope sys.path-bootstrap fix for the documented poller invocation.
+    - "scripts/dispatch_issue.py"
+    - "scripts/backend_poll.py"
     # The /issue Step 7 infra-vs-code failure router (mirrored by
     # .claude/skills/issue/failure_patterns.md). Added 2026-06-10 (#557):
     # the list predated the script and its absence nearly deflected an

@@ -176,6 +176,65 @@ def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
     return entry if isinstance(entry, dict) else None
 
 
+# Basename of the PM-session registry file under AUTONOMOUS_REGISTRY_DIR.
+# Records the Happy session id(s) hosting the PM persona so the watcher's
+# zombie-wrapper pass can EXCLUDE them unconditionally (the PM session is
+# pinned to the repo root with no issue mapping — without this file it is
+# indistinguishable from the unmapped zombie sessions that pass reaps).
+# A LIST of ids: each `spawn-pm` / `register-pm` appends; stale ids are
+# harmless (a dead sid simply never appears in the daemon's live set).
+PM_SESSION_BASENAME = "pm-session.json"
+
+# Cap on recorded PM session ids — keeps the file bounded across months of
+# `spawn-pm` invocations while retaining every plausibly-live generation.
+_PM_SESSION_MAX_IDS = 20
+
+
+def _pm_session_path() -> Path:
+    """Path of the PM-session registry (function-level lookup so tests that
+    monkeypatch ``AUTONOMOUS_REGISTRY_DIR`` are honoured)."""
+    return AUTONOMOUS_REGISTRY_DIR / PM_SESSION_BASENAME
+
+
+def _register_pm_session(session_id: str) -> None:
+    """Append ``session_id`` to the PM-session registry (deduped, newest last,
+    bounded at :data:`_PM_SESSION_MAX_IDS`). Atomic write (temp + rename).
+    RAISES ``OSError`` on write failure — callers decide whether that is
+    fatal (``register-pm``: yes, the whole point is the registration) or a
+    loud warning (``spawn-pm``: the session is already live)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    sids = [sid for sid in _load_pm_session_ids_ordered() if sid != session_id]
+    sids.append(session_id)
+    payload = {"sids": sids[-_PM_SESSION_MAX_IDS:], "updated_at": time.time()}
+    dest = _pm_session_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _load_pm_session_ids_ordered() -> list[str]:
+    """PM session ids in registration order (oldest first); ``[]`` when the
+    file is missing/garbled (best-effort — a missing registry just means no
+    PM exclusion, never a crash)."""
+    path = _pm_session_path()
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+    sids = data.get("sids") if isinstance(data, dict) else None
+    if not isinstance(sids, list):
+        return []
+    return [sid for sid in sids if isinstance(sid, str) and sid]
+
+
+def _load_pm_session_ids() -> set[str]:
+    """Set of Happy session ids registered as PM sessions. Consumed by the
+    watcher's zombie-wrapper pass as an unconditional exclusion."""
+    return set(_load_pm_session_ids_ordered())
+
+
 def _load_session_issue_map() -> dict[str, int]:
     """Return ``{happy_session_id: issue_number}`` from the autonomous
     (``issue-<N>.json``), manual (``manual-issue-<N>.json``), and campaign
@@ -593,6 +652,17 @@ def cmd_spawn_pm(_: argparse.Namespace) -> None:
     )
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
+    try:
+        _register_pm_session(resp["sessionId"])
+    except OSError as e:
+        # The session is already live; losing the registration only loses the
+        # zombie-wrapper-pass exclusion. Loud, not fatal.
+        print(
+            f"WARNING: PM-session registration failed ({e}); run "
+            f"`spawn_session.py register-pm --session-id {resp['sessionId']}` "
+            "so the watcher's zombie-wrapper pass excludes this session.",
+            file=sys.stderr,
+        )
     print(
         f"PM session spawned: {resp['sessionId']}\n"
         f"  cwd: {PROJECT_ROOT}\n"
@@ -953,6 +1023,54 @@ def cmd_register_current(args: argparse.Namespace) -> None:
     print(f"Registered session {sid} as driver of issue #{issue}: {dest} [{semantics}]")
 
 
+def cmd_register_pm(args: argparse.Namespace) -> None:
+    """Register an EXISTING live session as the PM session.
+
+    The watcher's zombie-wrapper pass auto-stops EPS sessions whose process
+    tree has carried no inner Claude process for the grace window; the PM
+    session (repo-root cwd, no issue mapping) is otherwise indistinguishable
+    from the unmapped zombies that pass targets, so it must be excluded by
+    explicit registration. ``spawn-pm`` registers automatically; this
+    subcommand covers PM sessions opened any other way (a terminal ``happy``,
+    a pre-registration spawn) — the `/pm` skill runs it at bootstrap.
+
+    Session id: ``--session-id`` if given (validated LIVE against the
+    daemon), else inferred by walking this process's ancestors for a pid the
+    daemon lists as a session wrapper (same inference as
+    ``register-current``). Fail-loud if neither resolves; never guesses."""
+    children = _live_children()
+    if args.session_id:
+        sid = args.session_id
+        live_ids = {c.get("happySessionId") for c in children}
+        if sid not in live_ids:
+            sys.exit(
+                f"session {sid!r} is not live per the Happy daemon; refusing to "
+                "register a dead/unknown session (check `spawn_session.py list`)."
+            )
+    else:
+        pid_to_sid = {
+            c["pid"]: c["happySessionId"]
+            for c in children
+            if isinstance(c.get("pid"), int) and isinstance(c.get("happySessionId"), str)
+        }
+        matches = [pid_to_sid[p] for p in _ancestor_pids() if p in pid_to_sid]
+        if not matches:
+            sys.exit(
+                "could not infer this session's Happy id from the process ancestry "
+                "(not running inside a Happy session, or the daemon is unreachable). "
+                "Pass --session-id explicitly."
+            )
+        sid = matches[0]
+    try:
+        _register_pm_session(sid)
+    except OSError as e:
+        sys.exit(
+            f"PM registry write failed ({e}); session {sid} remains UNREGISTERED — "
+            "the watcher's zombie-wrapper pass cannot exclude it."
+        )
+    print(f"Registered session {sid} as the PM session: {PM_SESSION_BASENAME}")
+
+
 def _is_eps_dir_label(dir_label: str) -> bool:
     """True iff the rendered dir label refers to EPS (incl. worktrees).
 
@@ -1308,6 +1426,25 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     p_reg.set_defaults(fn=cmd_register_current)
+
+    p_reg_pm = sub.add_parser(
+        "register-pm",
+        help=(
+            "register an EXISTING live session as the PM session so the watcher's "
+            "zombie-wrapper pass never auto-stops it (spawn-pm registers "
+            "automatically; this covers PM sessions opened any other way)"
+        ),
+    )
+    p_reg_pm.add_argument(
+        "--session-id",
+        default=None,
+        help=(
+            "Happy session id to register (validated live against the daemon). "
+            "Omit to infer from the process ancestry — works when invoked from "
+            "inside the PM session itself (the /pm skill does this at bootstrap)."
+        ),
+    )
+    p_reg_pm.set_defaults(fn=cmd_register_pm)
 
     p_list = sub.add_parser("list", help="list active Happy sessions (cwd + state)")
     p_list.add_argument(

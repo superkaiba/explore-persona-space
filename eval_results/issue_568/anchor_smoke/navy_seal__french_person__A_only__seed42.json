@@ -1,0 +1,55 @@
+{
+  "cell_slug": "navy_seal__french_person__A_only__seed42",
+  "pair_id": "navy_seal__french_person",
+  "arm": "A_only",
+  "seed": 42,
+  "lr": 5e-06,
+  "epochs_cap": 16,
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "band_eval_every_steps": 5,
+  "output_dir": "eval_results/issue_568/adapters/navy_seal__french_person__A_only__seed42",
+  "hf_subfolder": "adapters/issue_568/navy_seal__french_person__A_only__seed42",
+  "hf_train_mix_prefix": "issue_568/training_mixes",
+  "hf_trajectory_prefix": "issue_568/trajectories",
+  "wandb_run_name": "issue_568_navy_seal__french_person__A_only__seed42",
+  "final_train_loss": 6.8218641916910805,
+  "git_commit": "8e9a9ee780f3a2bb7f57419d7447335bef2cac99",
+  "timestamp_utc": "2026-06-11T02:32:38+00:00",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "negative_panel": [
+    "assistant",
+    "librarian",
+    "programmer",
+    "chef"
+  ],
+  "band_stop_fired": true,
+  "final_source_delta_nats": 11.624518394470215,
+  "band_stop_step": 45,
+  "bystander_probe": {
+    "assistant": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 4.270448207855225,
+      "logp_trained_mean": -21.491747856140137,
+      "logp_base_mean": -25.76219606399536
+    },
+    "librarian": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 6.186391592025757,
+      "logp_trained_mean": -19.19229006767273,
+      "logp_base_mean": -25.378681659698486
+    },
+    "programmer": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 5.6250176429748535,
+      "logp_trained_mean": -20.537321090698242,
+      "logp_base_mean": -26.162338733673096
+    },
+    "chef": {
+      "argmax_rate": 0.0,
+      "delta_logp_mean": 6.195851922035217,
+      "logp_trained_mean": -18.56085455417633,
+      "logp_base_mean": -24.756706476211548
+    }
+  }
+}

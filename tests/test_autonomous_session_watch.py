@@ -1196,6 +1196,9 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
+    # Patched so the unit test never RPCs the real daemon / scans real /proc /
+    # spawns task.py subprocesses for whatever sessions are live on the VM.
+    monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -3220,3 +3223,381 @@ def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registr
     asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
     assert stops == ["sid-a"]  # missed 1 -> 2 hits the threshold; the stop proceeds
     assert posts == [(42, "session-reconcile-stop")]
+
+
+# ─── zombie-wrapper pass (dead inner Claude; 2026-06-11 zombie sweep) ─────────
+#
+# 25 finished-issue sessions with NO inner Claude process showed as "running"
+# indefinitely because they had lost their issue mapping — invisible to the
+# session-reconcile pass. The zombie pass keys on "no Claude process anywhere
+# under the daemon-reported wrapper pid", regardless of mapping, with the
+# conservative 2-checks + 2h-grace design (a live wrapper revives its inner
+# Claude IN PLACE on the next phone message, so a no-Claude snapshot alone can
+# be a healthy idle session).
+
+
+def test_zombie_decide_mapped_active_status_clears():
+    # An issue-mapped session at any ACTIVE/blocked/plan_pending (or
+    # unreadable) status is out of scope — other passes own those states.
+    import autonomous_session_watch as asw
+
+    for status in [*sorted(asw.ZOMBIE_STATUS_EXCLUDE), None]:
+        assert asw.decide_zombie_wrapper(status, True, False, 5, 99_999.0, False) == ("clear", 0), (
+            status
+        )
+
+
+def test_zombie_decide_exclude_set_covers_required_statuses():
+    # The hard-requirement exclusion list, pinned verbatim: running, verifying,
+    # interpreting, reviewing, followups_running, blocked, planning,
+    # plan_pending, approved.
+    import autonomous_session_watch as asw
+
+    required = {
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+        "followups_running",
+        "blocked",
+        "planning",
+        "plan_pending",
+        "approved",
+    }
+    assert required == asw.ZOMBIE_STATUS_EXCLUDE
+
+
+def test_zombie_decide_claude_present_clears():
+    # A Claude process anywhere in the wrapper's tree ends the episode — even
+    # for unmapped sessions deep into an accumulation.
+    import autonomous_session_watch as asw
+
+    assert asw.decide_zombie_wrapper(None, False, True, 5, 99_999.0, True) == ("clear", 0)
+    assert asw.decide_zombie_wrapper("completed", True, True, 1, 0.0, False) == ("clear", 0)
+
+
+def test_zombie_decide_two_miss_guard_and_grace_both_required():
+    # Stop needs BOTH >= threshold consecutive misses AND >= grace since the
+    # first miss: miss 1 keeps; miss 2 inside the grace window keeps; miss 2
+    # past the grace window stops.
+    import autonomous_session_watch as asw
+
+    grace = asw.ZOMBIE_WRAPPER_GRACE_S
+    assert asw.decide_zombie_wrapper("completed", True, False, 0, 0.0, False) == ("keep", 1)
+    assert asw.decide_zombie_wrapper("completed", True, False, 1, grace - 1, False) == ("keep", 2)
+    assert asw.decide_zombie_wrapper("completed", True, False, 1, grace + 1, False) == ("stop", 0)
+    # Unmapped sessions (the 2026-06-11 zombie class) follow the same ladder,
+    # status ignored.
+    assert asw.decide_zombie_wrapper(None, False, False, 1, grace + 1, False) == ("stop", 0)
+
+
+def test_zombie_decide_kill_switch_alerts_once_then_quiet():
+    # reap_enabled=False (EPM_ZOMBIE_WRAPPER_REAP=0): one alert per episode,
+    # then quiet keeps; the count keeps accumulating so a later re-enable
+    # stops on the next tick.
+    import autonomous_session_watch as asw
+
+    grace = asw.ZOMBIE_WRAPPER_GRACE_S
+    assert asw.decide_zombie_wrapper(
+        None, False, False, 1, grace + 1, False, reap_enabled=False
+    ) == ("alert", 2)
+    assert asw.decide_zombie_wrapper(
+        None, False, False, 2, grace + 1, True, reap_enabled=False
+    ) == ("keep", 3)
+    assert asw.decide_zombie_wrapper(None, False, False, 2, grace + 1, True, reap_enabled=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_zombie_sentinels_registered_and_filtered():
+    # All three zombie sentinels must be in the watcher-note exclusion set so
+    # the pass's own markers never reset the staleness clocks they measure.
+    import autonomous_session_watch as asw
+
+    for sentinel in (
+        asw._ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL,
+        asw._ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL,
+        asw._ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL,
+    ):
+        assert sentinel in asw._WATCHER_NOTE_SENTINELS
+        events = [{"kind": "epm:progress", "ts": "2026-06-11T10:00:00Z", "note": sentinel + " x"}]
+        assert asw._latest_progress_ts(events) is None
+
+
+# ── zombie-wrapper pass-level (I/O wrapper) tests ─────────────────────────────
+
+_Z_ROOT = str(spawn_session.PROJECT_ROOT)
+
+
+def _patch_zombie_io(
+    monkeypatch,
+    *,
+    children,
+    meta,
+    status=None,
+    has_claude=False,
+    registry=None,
+    pm_sids=frozenset(),
+):
+    """Common monkeypatching for the zombie-wrapper I/O tests: daemon children
+    + session metadata + task status + the /proc walk, leaving state files and
+    decisions real. Returns the (stops, posts, fallback) recorders."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    posts: list[tuple[int, str]] = []
+    fallback: list[str] = []
+    monkeypatch.setattr(asw, "_live_children", lambda: list(children))
+    monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
+    monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
+    monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_proc_children_map", lambda: {})
+    monkeypatch.setattr(asw, "_has_claude_descendant", lambda pid, cm=None: has_claude)
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    monkeypatch.setattr(
+        asw, "_append_zombie_fallback_event", lambda note, dry_run: fallback.append(note)
+    )
+    return stops, posts, fallback
+
+
+def test_zombie_pass_stop_fires_after_threshold_and_grace(isolated_registry, monkeypatch):
+    # The headline behavior: an unmapped repo-root EPS session with no Claude
+    # descendant accumulates a miss on tick 1, and is stopped on tick 2 once
+    # the grace window has also elapsed. The record lands in the fallback
+    # events file (no issue to carry a marker).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-z", "pid": 4242}]
+    meta = {"sid-z": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    state_path = isolated_registry / "zombie-wrapper-sid-z.json"
+    t0 = 1_000_000.0
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert stops == [] and fallback == []
+
+    t1 = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t1)
+    assert stops == ["sid-z"]
+    assert len(fallback) == 1 and posts == []  # unmapped -> fallback, not a marker
+    state = json.loads(state_path.read_text())
+    assert state["stopped_at"] == t1  # ACK recorded for next-tick verification
+
+
+def test_zombie_pass_mapped_done_task_posts_marker(isolated_registry, monkeypatch):
+    # A worktree-cwd session (issue inferred) at a DONE status gets the same
+    # ladder, with the stop recorded as a marker on the issue.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-w", "pid": 77}]
+    meta = {"sid-w": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-99"}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="awaiting_promotion"
+    )
+    t0 = 1_000_000.0
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(
+        False, 2, daemon_reachable=True, now=t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    )
+    assert stops == ["sid-w"]
+    assert posts == [(99, "zombie-wrapper-stop")] and fallback == []
+
+
+def test_zombie_pass_claude_present_clears_state(isolated_registry, monkeypatch):
+    # A session whose tree has a Claude process clears any accumulated state.
+    import json
+
+    import autonomous_session_watch as asw
+
+    children = [{"happySessionId": "sid-h", "pid": 11}]
+    meta = {"sid-h": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, has_claude=True
+    )
+    state_path = isolated_registry / "zombie-wrapper-sid-h.json"
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "first_miss_ts": 999_000.0}))
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert not state_path.exists()
+    assert stops == [] and posts == [] and fallback == []
+
+
+def test_zombie_pass_pm_and_non_eps_sessions_never_touched(isolated_registry, monkeypatch):
+    # PM-registered sids and non-EPS cwds are skipped before any state is
+    # even created — they can never accumulate toward a stop.
+    import autonomous_session_watch as asw
+
+    children = [
+        {"happySessionId": "sid-pm", "pid": 1},
+        {"happySessionId": "sid-other", "pid": 2},
+        {"happySessionId": "sid-nometa", "pid": 3},
+    ]
+    meta = {
+        "sid-pm": {"path": _Z_ROOT},
+        "sid-other": {"path": "/home/thomasjiralerspong/my-goat"},
+        # sid-nometa: no metadata at all -> EPS-ness unknown -> skipped
+    }
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, pm_sids={"sid-pm"}
+    )
+    t0 = 1_000_000.0
+    for now in (t0, t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+
+
+def test_zombie_pass_mapped_active_status_excluded(isolated_registry, monkeypatch):
+    # A registry-mapped session whose task is ACTIVE is never stopped, even
+    # with no Claude descendant for far longer than the grace window.
+    import autonomous_session_watch as asw
+
+    children = [{"happySessionId": "sid-a", "pid": 5}]
+    meta = {"sid-a": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="running", registry={"sid-a": 7}
+    )
+    t0 = 1_000_000.0
+    for now in (t0, t0 + 10 * asw.ZOMBIE_WRAPPER_GRACE_S):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+
+
+def test_zombie_pass_kill_switch_alert_only(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_WRAPPER_REAP=0: one alert per episode, never a stop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ZOMBIE_WRAPPER_REAP", "0")
+    children = [{"happySessionId": "sid-k", "pid": 9}]
+    meta = {"sid-k": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-55"}}
+    stops, posts, _fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="completed"
+    )
+    t0 = 1_000_000.0
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)
+    assert stops == []
+    assert posts == [(55, "zombie-wrapper-alert")]  # exactly one per episode
+
+
+def test_zombie_pass_stop_verification_retry_then_alert(isolated_registry, monkeypatch, capsys):
+    # ACK != kill: a session still live after its ACKed stop gets ONE retry,
+    # then ONE loud record, then quiet — the state is kept for triage and
+    # reaped only when the session actually leaves the live set.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-v", "pid": 13}]
+    meta = {"sid-v": {"path": _Z_ROOT}}
+    stops, _posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    state_path = isolated_registry / "zombie-wrapper-sid-v.json"
+    t0 = 1_000_000.0
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)  # stop ACK
+    assert stops == ["sid-v"] and len(fallback) == 1
+    capsys.readouterr()
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)  # retry
+    assert stops == ["sid-v", "sid-v"]
+    assert "ZOMBIE STOP-VERIFY FAILED" in capsys.readouterr().err
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1200)  # loud record
+    assert stops == ["sid-v", "sid-v"]
+    assert len(fallback) == 2  # stop + stop-failed records
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1800)  # quiet
+    assert stops == ["sid-v", "sid-v"] and len(fallback) == 2
+    assert state_path.exists()
+
+    # The session finally dies -> the live-session-keyed GC reaps the state.
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 2400)
+    assert not state_path.exists()
+
+
+def test_zombie_pass_daemon_unreachable_skips(isolated_registry, monkeypatch):
+    # Daemon-gated: liveness + the stop RPC both need the daemon.
+    import autonomous_session_watch as asw
+
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=[{"happySessionId": "sid-x", "pid": 1}], meta={}
+    )
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=False, now=1_000_000.0)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+
+
+def test_pm_session_registry_roundtrip_dedup_and_cap(isolated_registry):
+    # spawn-pm / register-pm append to pm-session.json: deduped, newest last,
+    # bounded — and the watcher-facing loader returns the set.
+    _ = isolated_registry  # patches AUTONOMOUS_REGISTRY_DIR in both modules
+
+    spawn_session._register_pm_session("sid-1")
+    spawn_session._register_pm_session("sid-2")
+    spawn_session._register_pm_session("sid-1")  # re-register moves to newest, no dup
+    assert spawn_session._load_pm_session_ids_ordered() == ["sid-2", "sid-1"]
+    assert spawn_session._load_pm_session_ids() == {"sid-1", "sid-2"}
+    for i in range(30):
+        spawn_session._register_pm_session(f"gen-{i}")
+    ordered = spawn_session._load_pm_session_ids_ordered()
+    assert len(ordered) == spawn_session._PM_SESSION_MAX_IDS
+    assert ordered[-1] == "gen-29"
+
+
+def test_pm_session_loader_empty_on_missing_or_garbled(isolated_registry):
+    # A missing or garbled registry must degrade to "no PM exclusion", never
+    # crash the watcher pass that consumes it.
+    assert spawn_session._load_pm_session_ids() == set()
+    (isolated_registry / spawn_session.PM_SESSION_BASENAME).write_text("not json")
+    assert spawn_session._load_pm_session_ids() == set()
+
+
+def test_zombie_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline: with an episode seeded AT the stop point
+    # (threshold met, grace elapsed), a dry-run tick must not stop, must not
+    # record anywhere, and must leave the state file byte-for-byte untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-d", "pid": 21}]
+    meta = {"sid-d": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    # The shared fake _stop_session ignores dry_run; this test pins dry-run
+    # discipline, so mirror the REAL helper's contract (returns False without
+    # acting when dry_run=True).
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    t0 = 1_000_000.0
+    state_path = isolated_registry / "zombie-wrapper-sid-d.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_miss_ts": t0})
+    state_path.write_text(seeded)
+
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(True, 2, daemon_reachable=True, now=later)
+    assert stops == [] and posts == [] and fallback == []
+    assert state_path.read_text() == seeded  # untouched, not even rewritten
+
+    # _stop_session itself honours dry_run (returns False without stopping),
+    # so even the real helper could not have acted; here we additionally pin
+    # that the pass never persisted a stopped_at / incremented miss count.
+    state = json.loads(state_path.read_text())
+    assert "stopped_at" not in state

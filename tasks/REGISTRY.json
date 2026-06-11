@@ -2594,8 +2594,8 @@
       "goal": "Determine on on-policy DVs (post-response-slot marker log-prob AND full-vocab KL) logged as a trajectory over training how contrastive-negative design controls bystander marker leakage along three axes: (1) the number of negatives (examples/persona and number of negative personas); (2) the distance of negatives to the source and of each held-out bystander to the nearest negative; and (3) the placement geometry \u2014 whether negatives suppress leakage as a barrier (a shell around the source: leakage rises with distance-to-source controlling for distance-to-nearest-negative) or a bubble (a local ball around each negative: leakage falls with distance-to-nearest-negative controlling for distance-to-source), all net of the base-model persona prior, with barrier-vs-bubble identified via multiple matched-count negative-placement arms.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/472",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/472",
+      "status": "followups_running",
       "title": "More contrastive negatives raise bystander marker log-prob ~50x more than far-vs-near placement does (LOW confidence)"
     },
     "473": {
@@ -3112,9 +3112,9 @@
       "goal": "Determine whether encoding a persona as a custom chat-template role header gives a real, separable reduction in trained-marker leakage over a system-prompt encoding in the marker-less contrastive-negative regime, measured at a non-saturated training anchor by dropping the learning rate to 5e-6 (the demonstrated clean window in .claude/rules/marker-training-recipe.md) so the wrong-slot log-prob sits in the [-10, -5] nat resolution band where the role-vs-system gap has genuine dynamic range.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/533",
-      "status": "interpreting",
-      "title": "Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid, but the negative role-vs-system marker gap it surfaced at 1 epoch replicates at the install step, then bends with the read-out space \u2014 trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin re-read of the same adapters flips the late-step villain gap positive (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/533",
+      "status": "awaiting_promotion",
+      "title": "Dropping the marker-less LoRA learning rate from 1e-5 to 5e-6 did not de-saturate the role-vs-system grid, but the negative role-vs-system marker gap it surfaced at 1 epoch replicates at the install step, then bends with the read-out space \u2014 trained log P shows it shrinking on villain and persisting on pirate, while an EOS-margin re-read of the same adapters flips the villain plain late-step gap positive (knife-edge), with villain padded mean-positive but straddling, pirate plain CI-clear positive, and pirate padded CI-clear negative (MODERATE confidence)"
     },
     "534": {
       "goal": "Close #530's planned 4-fraction band-stop trajectory by modifying MarkerBandStopCallback to checkpoint at sub-step granularity (post-hoc fraction selection {0.25, 0.50, 0.75, 1.00} of the realized stop step), retraining all 10 #530 cells with the otherwise-identical recipe, then re-running the 4-fraction eval + 6-predictor partial-Spearman refit to test whether the sign reversal of shadow_angle (rho=-0.23) and d_nn (rho=+0.14) holds across the full trajectory rather than only at the band-stop final checkpoint.",
@@ -3136,7 +3136,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/536",
       "status": "interpreting",
-      "title": "Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing, and upgrades one prior null to a candidate rescue under the registered estimator (MODERATE confidence)"
+      "title": "Standardizing persona-distance cosine on the mean-centered recipe leaves every recomputable published call standing \u2014 including the one null whose apparent rescue died under the published estimator (HIGH confidence)"
     },
     "537": {
       "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
@@ -3181,8 +3181,8 @@
       "goal": "Test whether the bystander-prior\u2192leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/541",
-      "status": "awaiting_promotion",
+      "path": "tasks/planning/541",
+      "status": "planning",
       "title": "Bystander prior still predicts fact leakage on a panel enriched with high-prior personas, but as a high-vs-rest stratum contrast rather than a graded ranking (MODERATE confidence)"
     },
     "542": {
@@ -3220,8 +3220,8 @@
       "goal": "Determine whether dropping the LoRA rank from r=32 to r=16 at lr=5e-6 lands all three encoding arms simultaneously inside the [-10, -5] nat resolution band on at least one persona, so the anchor-selection algorithm picks a non-degenerate anchor and the planned per-persona x per-contrast paired-bootstrap headline test on role-vs-system separability actually fires.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/546",
-      "status": "awaiting_promotion",
+      "path": "tasks/planning/546",
+      "status": "planning",
       "title": "Halving the LoRA recipe to r=16/\u03b1=32 pushes marker install past the 1-epoch grid point but still never lands all three persona encodings in the resolution band, so the role-vs-system separability test again cannot fire (MODERATE confidence)"
     },
     "547": {
@@ -3274,8 +3274,8 @@
       "goal": "Test whether the single shared shift direction in the EM arm is specific to misalignment content or is the generic signature of plain full-response SFT, by training benign-medical-advice LoRAs under the identical recipe and running the same layer-14 shift-geometry analysis.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/552",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/552",
+      "status": "followups_running",
       "title": "Benign medical-advice SFT reproduces misalignment SFT's one-shared-direction shift geometry on a matched corpus pair (MODERATE confidence)"
     },
     "553": {
@@ -3336,8 +3336,8 @@
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/560",
-      "status": "interpreting",
+      "path": "tasks/awaiting_promotion/560",
+      "status": "awaiting_promotion",
       "title": "Geometry-routed marker spillover replicates on a second, broad-negative training recipe (MODERATE confidence)"
     },
     "561": {
@@ -3394,11 +3394,11 @@
     },
     "568": {
       "goal": "Re-run the mid-dial cell of the dial-axis superposition test on a third orthogonal source pair (near-zero base-model L20 centered cosine, disjoint from both existing pairs) to test whether the small monotone gradient on GD1 effective rank / top-1 SV share / GD3 worse-of-pair is a recipe-and-dial property or an idiosyncrasy of the two existing source-pair geometries.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/568",
-      "status": "interpreting",
-      "title": "Third orthogonal source pair at the mid dial \u2014 does the small monotone gradient generalize off the two existing pairs?"
+      "path": "tasks/awaiting_promotion/568",
+      "status": "awaiting_promotion",
+      "title": "A third orthogonal source pair lands above every anchor on implant geometry at matched dial \u2014 the mid-dial level prediction does not transfer across pairs (LOW confidence)"
     },
     "569": {
       "has_clean_result": false,
@@ -3419,8 +3419,8 @@
       "goal": "Test whether negative-panel breadth causes the universal end-of-answer clamp by training matched marker adapters on one source context (software-engineer query, the i474 recipe held fixed) that differ only in negative-panel size \u2014 15 bystander conditions vs a 4-condition class-spanning subset, total negative rows held at 300 \u2014 and reading the end-token logit change on the never-negative held-out personas.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/571",
-      "status": "running",
+      "path": "tasks/verifying/571",
+      "status": "verifying",
       "title": "Does negative-panel breadth cause the universal end-of-answer clamp?"
     },
     "572": {
@@ -3510,16 +3510,16 @@
     "584": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/584",
-      "status": "proposed",
+      "path": "tasks/planning/584",
+      "status": "planning",
       "title": "Port the #534 distinct-id trajectory-eval fix + source-manifest guard to main with a regression test"
     },
     "585": {
       "goal": "Measure the true training-maturity curve of the #504 saturated-anchor smoke cell by re-evaluating its six verified per-fraction adapter snapshots through the fixed distinct-id eval path, replacing the stale six-reads-of-one-adapter calibration table with real per-fraction numbers.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/585",
-      "status": "proposed",
+      "path": "tasks/planning/585",
+      "status": "planning",
       "title": "Re-run the #504 calibration table at true fractions on the verified per-fraction smoke snapshots"
     },
     "586": {

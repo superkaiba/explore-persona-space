@@ -264,6 +264,49 @@ def build_panel(ff_dir: Path, geometry_path: Path) -> dict:
     return panel
 
 
+_PANEL_LABEL_COLS = ("source_cid", "persona", "exposure")
+
+
+def build_pooled_panel(ff_dirs: list[Path], geometry_path: Path) -> dict:
+    """The run x persona panel, pooled across one or more four-float dirs.
+
+    One dir: exactly ``build_panel`` (the parent single-panel path,
+    unchanged). Two+ dirs (the sampled-generation seed replicates): each
+    dir's panel is built independently, the (run, persona) cell sets are
+    asserted identical (same ordering by construction — both iterate the
+    shared geometry JSON's sources x personas), and every numeric per-cell
+    column is averaged elementwise. Equal n per cell across seeds means the
+    elementwise mean of full-question columns IS the 2x20=40-generation cell
+    mean; subset re-aggregates (``*_eor_only``, ``*_nontrunc``) pool as the
+    mean of per-seed cell means. ``min_dist`` comes from the single shared
+    geometry JSON, so its "mean" is the identity.
+    """
+    panels = [build_panel(Path(d), geometry_path) for d in ff_dirs]
+    if len(panels) == 1:
+        return panels[0]
+    base = panels[0]
+    for d, other in zip(ff_dirs[1:], panels[1:], strict=True):
+        assert base["_sources"] == other["_sources"], (ff_dirs[0], d, "sources differ")
+        assert base["_personas"] == other["_personas"], (ff_dirs[0], d, "personas differ")
+        assert base["_n_questions"] == other["_n_questions"], (
+            ff_dirs[0],
+            d,
+            "n_questions differ — equal n per cell is what makes the elementwise "
+            "mean the pooled cell mean",
+        )
+        for k in _PANEL_LABEL_COLS:
+            assert (base[k] == other[k]).all(), (ff_dirs[0], d, f"{k} cell sets differ")
+    pooled = dict(base)
+    for k in base:
+        if k.startswith("_") or k in _PANEL_LABEL_COLS:
+            continue
+        stacked = np.stack([p[k].astype(np.float64) for p in panels])
+        assert stacked.shape == (len(panels), base["_n"]), (k, stacked.shape)
+        pooled[k] = stacked.mean(axis=0)
+    pooled["_pooled_from"] = [str(d) for d in ff_dirs]
+    return pooled
+
+
 def panel_masks(panel: dict) -> dict[str, np.ndarray]:
     """The registered analysis masks (primary excludes source-resident cells)."""
     sr = panel["exposure"] == "source_resident"
@@ -1367,7 +1410,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Task #560 Phase B: cross-recipe transfer analysis (VM, CPU).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--four-float-dir", type=Path, default=DEFAULT_FF_DIR)
+    ap.add_argument(
+        "--four-float-dir",
+        type=Path,
+        nargs="+",
+        default=[DEFAULT_FF_DIR],
+        help="one or more four-float dirs; with two+ (the sampled seed replicates), "
+        "per-cell numeric columns are averaged elementwise into the pooled panel "
+        "(identical cell sets asserted). Output filename is unchanged — separate "
+        "pooled vs per-seed runs via distinct --out-dir/--fig-dir.",
+    )
     ap.add_argument("--geometry-json", type=Path, default=DEFAULT_GEOMETRY)
     ap.add_argument("--out-dir", type=Path, default=PROJECT_ROOT / "eval_results/issue_560")
     ap.add_argument("--fig-dir", type=Path, default=PROJECT_ROOT / "figures/issue_560")
@@ -1397,7 +1449,7 @@ def main(argv: list[str] | None = None) -> int:
     t0 = datetime.now(UTC)
 
     assert_held_out_matches_logit_rescore()
-    panel = build_panel(args.four_float_dir, args.geometry_json)
+    panel = build_pooled_panel(args.four_float_dir, args.geometry_json)
     masks = panel_masks(panel)
     full_panel = sorted(panel["_sources"]) == sorted(SOURCES_ALL) and (
         sorted(panel["_personas"]) == HELD_OUT_35
@@ -1411,6 +1463,8 @@ def main(argv: list[str] | None = None) -> int:
         f"[panel] {panel['_n']} cells ({len(panel['_sources'])} runs x "
         f"{len(panel['_personas'])} personas); strata {panel['_strata_counts']}"
     )
+    if "_pooled_from" in panel:
+        print(f"[panel] pooled elementwise across {len(panel['_pooled_from'])} four-float dirs")
 
     if args.figures_only:
         # Figure regeneration path (round-2 interp revision): reuse the committed
@@ -1504,6 +1558,7 @@ def main(argv: list[str] | None = None) -> int:
             "strata_counts": panel["_strata_counts"],
             "geometry_probe_set": panel["_geometry"]["probe_set"],
             "geometry_n_probes": panel["_geometry"]["n_probes"],
+            "pooled_from": panel.get("_pooled_from"),
         },
         "min_dist_corrected_reads_primary": r1_primary,
         "min_dist_strata": r1_strata,
