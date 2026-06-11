@@ -150,8 +150,30 @@ def _build_prompt(label: str, q: str, tokenizer, class_d, dispatch_panel) -> str
 # ---------------------------------------------------------------------------
 # stage gen — vLLM + LoRA hot-swap
 # ---------------------------------------------------------------------------
+def _log_skip_enumeration(phase: str, pending: list[tuple[str, str]], n_total: int) -> None:
+    """Explicit skipped/pending cell enumeration (--skip-completed; the
+    per-cell existence skip itself is ALWAYS on — this logs the realized
+    split so a wide-panel relaunch shows exactly which NEW cells execute)."""
+    labels = [f"{s}->{c}" for s, c in pending]
+    suffix = "" if len(labels) <= 200 else f" ... (+{len(labels) - 200} more)"
+    logger.info(
+        "[phase=%s] skip-completed: %d/%d cells already on disk (skipped); %d pending: %s%s",
+        phase,
+        n_total - len(pending),
+        n_total,
+        len(pending),
+        labels[:200],
+        suffix,
+    )
+
+
 def stage_gen(
-    out_dir: Path, sources: list[str], contexts: list[str], n_probes: int, dry_run: bool
+    out_dir: Path,
+    sources: list[str],
+    contexts: list[str],
+    n_probes: int,
+    dry_run: bool,
+    enumerate_skips: bool = False,
 ) -> None:
     """On-policy R_trained per (source, context) cell; per-cell checkpoint."""
     from issue532_predictor_stress import _compute_in_R_emission
@@ -167,6 +189,8 @@ def stage_gen(
 
     cells = [(s, c) for s in sources for c in contexts if not (gen_dir / f"{s}__{c}.json").exists()]
     logger.info("[phase=p2_gen] %d cells pending", len(cells))
+    if enumerate_skips:
+        _log_skip_enumeration("p2_gen", cells, len(sources) * len(contexts))
     if dry_run:
         for s, c in cells[:2]:
             p = _build_prompt(c, q_test[0], tokenizer, class_d, dispatch_panel)
@@ -236,7 +260,12 @@ def stage_gen(
 # stage reads — HF four-float slot reads, both sides at the identical slot
 # ---------------------------------------------------------------------------
 def stage_reads(
-    out_dir: Path, sources: list[str], contexts: list[str], n_probes: int, dry_run: bool
+    out_dir: Path,
+    sources: list[str],
+    contexts: list[str],
+    n_probes: int,
+    dry_run: bool,
+    enumerate_skips: bool = False,
 ) -> None:
     """Base + trained corrected-slot reads on R_trained (slot-matched)."""
     from issue532_followup_logp_slot import _run_slot_batches, _slot_job, _summarize
@@ -281,6 +310,10 @@ def stage_reads(
         len(pending_base),
         len(pending_trained),
     )
+    if enumerate_skips:
+        n_total = len(sources) * len(contexts)
+        _log_skip_enumeration("p2_reads_base", pending_base, n_total)
+        _log_skip_enumeration("p2_reads_trained", pending_trained, n_total)
     if dry_run:
         logger.info("[phase=p2_reads] dry-run: stopping before HF load")
         return
@@ -520,6 +553,15 @@ def main() -> None:
     ap.add_argument("--stage", choices=["gen", "reads", "upload", "all"], default="all")
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--adapter-smoke", action="store_true", help="run the Phase-0 gate only")
+    ap.add_argument(
+        "--skip-completed",
+        action="store_true",
+        help="per-cell resume-skip: cells whose gen + per_cell_trained + per_cell_base files "
+        "already exist are skipped. This is the ALWAYS-ON persistence contract (existence-"
+        "gated in every stage); the flag additionally logs the explicit skipped/pending cell "
+        "enumeration and is the amendment plan §5 launch spelling — against a wide panel "
+        "JSON only the NEW cells execute and parent files are never touched.",
+    )
     ap.add_argument("--write-sentinel", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-done-marker", action="store_true", help=argparse.SUPPRESS)
@@ -562,14 +604,18 @@ def main() -> None:
                     cmd += ["--panel-subset", str(args.panel_subset)]
             if args.dry_run:
                 cmd.append("--dry-run")
+            if args.skip_completed:
+                cmd.append("--skip-completed")
             logger.info("[stage-dispatch] %s", " ".join(cmd))
             subprocess.run(cmd, env={**os.environ}, check=True)
         if not args.dry_run:
             stage_upload(args.out_dir)
     elif args.stage == "gen":
-        stage_gen(args.out_dir, sources, contexts, args.n_probes, args.dry_run)
+        stage_gen(args.out_dir, sources, contexts, args.n_probes, args.dry_run, args.skip_completed)
     elif args.stage == "reads":
-        stage_reads(args.out_dir, sources, contexts, args.n_probes, args.dry_run)
+        stage_reads(
+            args.out_dir, sources, contexts, args.n_probes, args.dry_run, args.skip_completed
+        )
     elif args.stage == "upload":
         stage_upload(args.out_dir)
 

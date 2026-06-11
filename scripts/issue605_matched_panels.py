@@ -110,6 +110,16 @@ M_FILL = 10
 M_SPREAD_NATS = 6.0
 M_RMAX = 0.3
 M_PANEL_SIZE = 40
+
+# Amendment `wider-marker-panel-heldout-power` (plan v3 §2.1): the wide
+# selection grows the panel 40 -> ~100 at FROZEN parent band edges / windows
+# and records its provenance verbatim. `fill` scales linearly with the panel
+# target (25 at panel 100); realized panel >= 80 is the pre-registered floor
+# (plan v3 §7 risk 1 / §8).
+AMENDMENT_LABEL = "wider-marker-panel-heldout-power"
+FROZEN_CONTENT_COMMIT = "79f5d5d24db5c5b539f393dd80ad6be319a5aa13"  # main commit holding the JSON
+FROZEN_PRODUCING_CODE_COMMIT = "f2b292385854282b1fbf327fdb60d3fff5e45e77"  # code that produced it
+WIDE_PANEL_FLOOR = 80
 # Fact gate constants (plan 4.5; spread re-scaled to nat/token per critique).
 F_BAND_WIDTH = 0.06
 F_FILL = 6
@@ -513,10 +523,13 @@ def _prune_panel(
     strata: dict,
     fill: int,
     prior_key: str,
+    protected: set[str] = frozenset(),
 ) -> list[str]:
     """Prune contexts least load-bearing: fewest stratum memberships first,
     then prior closest to its band-stratum median (least spread value); never
-    prune a band's stratum below the fill floor."""
+    prune a band's stratum below the fill floor, and NEVER prune a
+    ``protected`` context (the amendment passes the parent's 40 panel
+    contexts here — superset invariant, plan v3 §2.1)."""
     in_stratum_count: dict[str, int] = {}
     for st in strata.values():
         for c in st["contexts"]:
@@ -538,6 +551,8 @@ def _prune_panel(
     for c in sorted(panel, key=prune_key):
         if len(panel) <= panel_size:
             break
+        if c in protected:
+            continue
         trial = [x for x in panel if x != c]
         if all(len([x for x in st["contexts"] if x in trial]) >= fill for st in strata.values()):
             panel = trial
@@ -574,6 +589,34 @@ def _top_up_panel(
     return sorted(panel)
 
 
+def _final_strata(
+    pairs: list[dict],
+    strata: dict,
+    panel: list[str],
+    fill: int,
+    spread_min: float,
+    rmax: float,
+    sim_key: str,
+    prior_key: str,
+) -> dict:
+    """Per-band gate verdicts restricted to the FINAL panel (shared by the
+    fresh `_select_panel` and the frozen `_select_panel_frozen` paths)."""
+    final = {}
+    panel_pairs = [p for p in pairs if p["context_label"] in panel]
+    for b, st in strata.items():
+        lo, hi = st["window"]
+        fst = _stratum_stats(panel_pairs, lo, hi, sim_key, prior_key)
+        r = fst["abs_r_sim_prior"]
+        fst["gate"] = {
+            "fill_ok": fst["n_contexts"] >= fill,
+            "spread_ok": fst["prior_spread_p90_p10"] >= spread_min,
+            "collinearity_ok": bool(np.isnan(r) or r <= rmax),
+        }
+        fst["gate"]["verdict"] = all(fst["gate"].values())
+        final[b] = fst
+    return final
+
+
 def _select_panel(
     pairs: list[dict],
     *,
@@ -604,20 +647,7 @@ def _select_panel(
     elif len(panel) < panel_size:
         panel = _top_up_panel(panel, panel_size, pairs, strata, sim_key, prior_key)
 
-    # Final per-band gate verdicts restricted to the FINAL panel.
-    final_strata = {}
-    for b, st in strata.items():
-        lo, hi = st["window"]
-        panel_pairs = [p for p in pairs if p["context_label"] in panel]
-        fst = _stratum_stats(panel_pairs, lo, hi, sim_key, prior_key)
-        r = fst["abs_r_sim_prior"]
-        fst["gate"] = {
-            "fill_ok": fst["n_contexts"] >= fill,
-            "spread_ok": fst["prior_spread_p90_p10"] >= spread_min,
-            "collinearity_ok": bool(np.isnan(r) or r <= rmax),
-        }
-        fst["gate"]["verdict"] = all(fst["gate"].values())
-        final_strata[b] = fst
+    final_strata = _final_strata(pairs, strata, panel, fill, spread_min, rmax, sim_key, prior_key)
 
     return {
         "band_edges_terciles": [float(edges[0]), float(edges[1])],
@@ -632,6 +662,65 @@ def _select_panel(
             "prior_spread_min": spread_min,
             "abs_r_max": rmax,
             "panel_size_target": panel_size,
+        },
+    }
+
+
+def _select_panel_frozen(
+    pairs: list[dict],
+    *,
+    frozen: dict,
+    panel_size: int,
+    fill: int,
+    spread_min: float,
+    rmax: float,
+    sim_key: str,
+    prior_key: str,
+    protected: set[str],
+) -> dict:
+    """Amendment select-wide path (plan v3 §2.1): band edges, band ranges, and
+    per-stratum windows are loaded VERBATIM from the parent selection record —
+    NO quantile recompute, NO `_best_stratum` window slide — and the panel
+    grows around the ``protected`` parent panel (superset invariant asserted
+    by the caller). Only ``fill`` and ``panel_size`` differ from the parent
+    (the ONE manipulated variable: panel size, with fill scaled linearly)."""
+    edges = list(frozen["band_edges_terciles"])
+    bands = {b: tuple(v) for b, v in frozen["band_ranges"].items()}
+    strata = {}
+    for b in bands:
+        lo, hi = frozen["strata"][b]["window"]
+        st = _stratum_stats(pairs, float(lo), float(hi), sim_key, prior_key)
+        r = st["abs_r_sim_prior"]
+        st["gate"] = {
+            "fill_ok": st["n_contexts"] >= fill,
+            "spread_ok": st["prior_spread_p90_p10"] >= spread_min,
+            "collinearity_ok": bool(np.isnan(r) or r <= rmax),
+        }
+        st["gate"]["verdict"] = all(st["gate"].values())
+        strata[b] = st
+
+    panel: list[str] = sorted({c for st in strata.values() for c in st["contexts"]} | protected)
+    if len(panel) > panel_size:
+        panel = _prune_panel(panel, panel_size, pairs, strata, fill, prior_key, protected=protected)
+    elif len(panel) < panel_size:
+        panel = _top_up_panel(panel, panel_size, pairs, strata, sim_key, prior_key)
+
+    final_strata = _final_strata(pairs, strata, panel, fill, spread_min, rmax, sim_key, prior_key)
+
+    return {
+        "band_edges_terciles": [float(edges[0]), float(edges[1])],
+        "band_ranges": {b: [float(lo), float(hi)] for b, (lo, hi) in bands.items()},
+        "strata": final_strata,
+        "panel": sorted(panel),
+        "panel_size": len(panel),
+        "gate_pass": all(st["gate"]["verdict"] for st in final_strata.values()),
+        "gate_constants": {
+            "band_width": M_BAND_WIDTH,
+            "fill": fill,
+            "prior_spread_min": spread_min,
+            "abs_r_max": rmax,
+            "panel_size_target": panel_size,
+            "windows_frozen": True,
         },
     }
 
@@ -690,14 +779,69 @@ def _enforce_selection_gate(payload: dict, allow_descope: bool, what: str, out: 
 # ---------------------------------------------------------------------------
 # MARKER select (Phase 1.5, CPU)
 # ---------------------------------------------------------------------------
+def _prior_summary(vals: list[float]) -> dict:
+    """Distribution summary for the realized-prior report (plan v3 §7 risk 3)."""
+    a = np.array(vals, dtype=float)
+    if a.size == 0:
+        return {"n": 0}
+    return {
+        "n": int(a.size),
+        "mean": float(a.mean()),
+        "median": float(np.median(a)),
+        "p10": float(np.percentile(a, 10)),
+        "p25": float(np.percentile(a, 25)),
+        "p75": float(np.percentile(a, 75)),
+        "p90": float(np.percentile(a, 90)),
+        "min": float(a.min()),
+        "max": float(a.max()),
+    }
+
+
+def _wide_prior_qa_figure(ctx_meta: dict, inherited: list[str], new: list[str]) -> None:
+    """QA figure (plan v3 §7 risk 3): realized prior distribution of the wide
+    panel, inherited parent contexts vs newly admitted ones."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import savefig_paper, set_paper_style
+
+    set_paper_style()
+    fig_dir = Path("figures/issue_605") / AMENDMENT_LABEL
+    fig_dir.mkdir(parents=True, exist_ok=True)
+    pri_inh = [ctx_meta[c]["prior_logp"] for c in inherited]
+    pri_new = [ctx_meta[c]["prior_logp"] for c in new]
+    all_pri = pri_inh + pri_new
+    bins = np.linspace(min(all_pri), max(all_pri), 24)
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    ax.hist(pri_inh, bins=bins, alpha=0.55, label=f"inherited parent panel (n={len(pri_inh)})")
+    ax.hist(pri_new, bins=bins, alpha=0.55, label=f"newly admitted (n={len(pri_new)})")
+    ax.set_xlabel("base log P(marker) at response end (graded prior, nats)")
+    ax.set_ylabel("contexts")
+    ax.legend(frameon=False, fontsize=8)
+    savefig_paper(fig, "panel_prior_inherited_vs_new", dir=fig_dir)
+    plt.close(fig)
+    logger.info("[phase=p15_select] prior-distribution QA figure written under %s", fig_dir)
+
+
 def marker_select(
     out_dir: Path,
     cands: dict,
     n_probes: int,
     allow_descope: bool = False,
     include_expansion: bool = False,
+    panel_size: int = M_PANEL_SIZE,
+    frozen_selection: Path | None = None,
 ) -> None:
-    """Panel selection + tightness gate + rendered-string disjointness."""
+    """Panel selection + tightness gate + rendered-string disjointness.
+
+    With ``frozen_selection`` (the amendment select-wide path, plan v3 §2.1)
+    the parent record's band edges / ranges / per-stratum windows are reused
+    VERBATIM, the parent panel is protected through pruning (superset
+    invariant asserted), ``fill`` scales linearly with ``panel_size``, and the
+    output goes to a NEW file under the followup-label dir — the parent
+    selection JSON is never overwritten."""
     from issue532_predictor_stress import _build_bystander_prompt
     from transformers import AutoTokenizer
 
@@ -707,34 +851,82 @@ def marker_select(
     pairs = [r for r in table["rows"] if r["context_label"] in in_scope]
     assert pairs, "pair table has no in-scope rows — run --phase measure first"
 
-    sel = _select_panel(
-        pairs,
-        panel_size=M_PANEL_SIZE,
-        width=M_BAND_WIDTH,
-        fill=M_FILL,
-        spread_min=M_SPREAD_NATS,
-        rmax=M_RMAX,
-        sim_key="cos_l21",
-        prior_key="prior_logp",
-    )
+    frozen: dict | None = None
+    if frozen_selection is not None:
+        frozen = json.loads(frozen_selection.read_text())
+        assert frozen.get("gate_pass"), (
+            f"frozen selection {frozen_selection} has gate_pass=false — the amendment freezes "
+            "a PASSING parent record only (plan v3 §2.1)"
+        )
+        protected = set(frozen["panel"])
+        missing_prot = sorted(protected - {p["context_label"] for p in pairs})
+        assert not missing_prot, (
+            f"parent panel contexts absent from the in-scope pair table: {missing_prot}"
+        )
+        fill = round(M_FILL * panel_size / M_PANEL_SIZE)  # linear scale: 25 at panel 100
+        sel = _select_panel_frozen(
+            pairs,
+            frozen=frozen,
+            panel_size=panel_size,
+            fill=fill,
+            spread_min=M_SPREAD_NATS,
+            rmax=M_RMAX,
+            sim_key="cos_l21",
+            prior_key="prior_logp",
+            protected=protected,
+        )
+        # Frozen values must round-trip byte-equal (plan v3 §2.1 'carrying the
+        # frozen values verbatim').
+        for key in ("band_edges_terciles", "band_ranges"):
+            assert json.dumps(sel[key], sort_keys=True) == json.dumps(
+                frozen[key], sort_keys=True
+            ), f"frozen value drifted on round-trip: {key}"
+        for b, st in sel["strata"].items():
+            assert st["window"] == frozen["strata"][b]["window"], (
+                f"frozen window drifted on round-trip: {b}"
+            )
+        # SUPERSET INVARIANT (plan v3 §2.1).
+        dropped = sorted(protected - set(sel["panel"]))
+        assert not dropped, f"superset invariant violated: parent contexts pruned: {dropped}"
+        assert len(sel["panel"]) >= WIDE_PANEL_FLOOR, (
+            f"realized wide panel {len(sel['panel'])} < pre-registered floor "
+            f"{WIDE_PANEL_FLOOR} (plan v3 §7 risk 1) — epm:failure (data), not a silent descope"
+        )
+    else:
+        sel = _select_panel(
+            pairs,
+            panel_size=panel_size,
+            width=M_BAND_WIDTH,
+            fill=M_FILL,
+            spread_min=M_SPREAD_NATS,
+            rmax=M_RMAX,
+            sim_key="cos_l21",
+            prior_key="prior_logp",
+        )
 
     # Disjointness invariant (plan 4.3): every selected context's RENDERED
     # prompt differs from every #406 source condition's rendered prompt (the
-    # #474 negatives ARE the other 15 conditions) for every probe q.
+    # #474 negatives ARE the other 15 conditions) for every probe q. Source
+    # renders are hoisted out of the per-context loop (pure perf — identical
+    # comparisons; the wide panel makes the inline re-render ~80k calls).
     tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL)
     _assert_marker_token(tokenizer)
     q_test = load_q_test_extended_50()[:n_probes]
     class_d = load_class_d_rewrites()
     panel_prompts = {lb: c["system_prompt"] for lb, c in cands.items()}
     dispatch_panel = {**panel_prompts, **instructed}
+    source_rendered = {
+        (s, q): build_prompt_for_condition(
+            CONDITIONS_BY_ID[s], q, tokenizer, class_d_rewrites=class_d
+        )
+        for s in SOURCES_ALL
+        for q in q_test
+    }
     for lb in sel["panel"]:
         for q in q_test:
             rendered = _build_bystander_prompt(lb, q, tokenizer, class_d, dispatch_panel)
             for s in SOURCES_ALL:
-                s_rendered = build_prompt_for_condition(
-                    CONDITIONS_BY_ID[s], q, tokenizer, class_d_rewrites=class_d
-                )
-                assert rendered != s_rendered, (
+                assert rendered != source_rendered[(s, q)], (
                     f"disjointness violation: panel context {lb} renders identically to "
                     f"source condition {s} on probe {q[:50]!r}"
                 )
@@ -759,11 +951,33 @@ def marker_select(
         "expansion_round": 1 if include_expansion else 0,
         "metadata": _repro_meta(),
     }
+    if frozen is not None:
+        panel_inherited = sorted(set(frozen["panel"]))
+        panel_new = sorted(set(sel["panel"]) - set(frozen["panel"]))
+        payload["phase"] = "p15_marker_panel_selection_wide"
+        payload["amendment_label"] = AMENDMENT_LABEL
+        payload["frozen_from"] = {
+            "path": str(frozen_selection),
+            "content_commit": FROZEN_CONTENT_COMMIT,
+            "producing_code_commit": FROZEN_PRODUCING_CODE_COMMIT,
+        }
+        payload["panel_inherited"] = panel_inherited
+        payload["panel_new"] = panel_new
+        payload["n_panel_inherited"] = len(panel_inherited)
+        payload["n_panel_new"] = len(panel_new)
+        payload["realized_prior_distribution"] = {
+            "inherited": _prior_summary([ctx_meta[c]["prior_logp"] for c in panel_inherited]),
+            "new": _prior_summary([ctx_meta[c]["prior_logp"] for c in panel_new]),
+            "combined": _prior_summary([ctx_meta[c]["prior_logp"] for c in sel["panel"]]),
+        }
+        out = out_dir / AMENDMENT_LABEL / "marker_panel_selection_wide.json"
+    else:
+        out = out_dir / "panel" / "marker_panel_selection.json"
     if not payload["gate_pass"] and allow_descope:
         desc = _descope_record(sel)
         if desc is not None:
             payload["descope"] = desc
-    out = out_dir / "panel" / "marker_panel_selection.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=1))
     tmp.replace(out)
@@ -773,7 +987,14 @@ def marker_select(
         payload["gate_pass"],
         out,
     )
-    _enforce_selection_gate(payload, allow_descope, "marker Phase 1.5", out)
+    if frozen is not None:
+        _wide_prior_qa_figure(ctx_meta, payload["panel_inherited"], payload["panel_new"])
+    _enforce_selection_gate(
+        payload,
+        allow_descope,
+        "marker amendment select-wide" if frozen is not None else "marker Phase 1.5",
+        out,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1178,12 +1399,23 @@ def _run_marker(args: argparse.Namespace) -> None:
             raise SystemExit(f"unknown marker measure stage {args.stage!r}")
     if args.phase in ("select", "all") and not args.dry_run:
         marker_select(
-            args.out_dir, cands, args.n_probes, args.allow_descope, args.include_expansion
+            args.out_dir,
+            cands,
+            args.n_probes,
+            args.allow_descope,
+            args.include_expansion,
+            panel_size=args.panel_size if args.panel_size is not None else M_PANEL_SIZE,
+            frozen_selection=args.frozen_selection,
         )
 
 
 def _run_fact(args: argparse.Namespace) -> None:
     """Fact-family phase/stage dispatch (smoke = sweep, subset via flags)."""
+    if args.panel_size is not None or args.frozen_selection is not None:
+        raise SystemExit(
+            "--panel-size / --frozen-selection are MARKER-only amendment flags "
+            "(plan v3 touches the marker family only; fact is frozen)"
+        )
     cands = _resolve_fact_candidates(args.candidates, args.include_expansion)
     if args.phase in ("measure", "all"):
         if args.stage == "all":
@@ -1221,6 +1453,21 @@ def main() -> None:
     ap.add_argument("--include-expansion", action="store_true")
     ap.add_argument("--n-probes", type=int, default=50)
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
+    ap.add_argument(
+        "--panel-size",
+        type=int,
+        default=None,
+        help=f"marker panel size target (default {M_PANEL_SIZE}; the "
+        f"'{AMENDMENT_LABEL}' amendment passes 100). Marker family only.",
+    )
+    ap.add_argument(
+        "--frozen-selection",
+        type=Path,
+        default=None,
+        help="parent marker selection JSON whose band edges + per-stratum windows are "
+        "FROZEN (amendment select-wide path; marker family + --phase select only). "
+        "Output goes to a NEW marker_panel_selection_wide.json under the followup dir.",
+    )
     ap.add_argument("--dry-run", action="store_true", help="stop each stage before model load")
     ap.add_argument(
         "--allow-descope",
@@ -1235,6 +1482,13 @@ def main() -> None:
         help=argparse.SUPPRESS,  # internal: sub-stage processes never emit [phase=done]
     )
     args = ap.parse_args()
+
+    if args.frozen_selection is not None and args.phase != "select":
+        raise SystemExit(
+            "--frozen-selection is a select-only path (all candidate measurements already "
+            "exist on disk; the amendment adds NO new base-side measurement — plan v3 §2.1). "
+            "Pass --phase select."
+        )
 
     t0 = time.time()
     if args.family == "marker":

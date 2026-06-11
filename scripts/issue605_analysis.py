@@ -309,19 +309,24 @@ def _resolve_selected_panel(sel: dict, what: str) -> set[str]:
     return set(desc["panel_descoped"])
 
 
-def build_marker_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
+def build_marker_frame(
+    out_root: Path, selection_path: Path | None = None
+) -> tuple[pd.DataFrame, dict]:
     """Cell-level marker frame from per-cell JSONs + pair table + selection.
 
     Only cells whose context is in the SELECTED panel (or recorded descope
     subset) enter the frame — stale smoke/expansion cells in the same output
     root never reach the registered statistics — and per-source coverage of
     that panel is asserted (plan section 6: ``>= sources x panel`` files,
-    fewer only under a recorded descope)."""
-    sel = json.loads((out_root / "panel" / "marker_panel_selection.json").read_text())
+    fewer only under a recorded descope). ``selection_path`` overrides the
+    default parent selection JSON (the amendment passes the WIDE selection;
+    coverage then demands sources_present x realized wide panel)."""
+    sel_path = selection_path or (out_root / "panel" / "marker_panel_selection.json")
+    sel = json.loads(sel_path.read_text())
     table = json.loads((out_root / "panel" / "marker_pair_table.json").read_text())
     pair = {(r["source_cid"], r["context_label"]): r for r in table["rows"]}
     edges = sel["band_edges_terciles"]
-    panel_set = _resolve_selected_panel(sel, "marker_panel_selection.json")
+    panel_set = _resolve_selected_panel(sel, sel_path.name)
     trained_dir = out_root / "marker" / "per_cell_trained"
     base_dir = out_root / "marker" / "per_cell_base"
     gen_dir = out_root / "marker" / "gen"
@@ -670,11 +675,70 @@ def evaluate_lattice(
 # ---------------------------------------------------------------------------
 # Family analyses
 # ---------------------------------------------------------------------------
-def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
-    frame, sel = build_marker_frame(out_root)
+PARENT_REGRESSION_TOL = 1e-6  # amendment plan v3 §2.3 free regression check
+
+
+def _parent_regression_check(frame: pd.DataFrame, sel: dict, out_root: Path) -> dict:
+    """FREE REGRESSION CHECK (amendment plan v3 §2.3): restricting the
+    combined wide frame to the parent's inherited panel contexts must
+    reproduce the parent's registered pooled partials (+0.263 log-prob /
+    +0.550 EOS-margin recorded in the parent ``marker/analysis.json``) to
+    numerical tolerance. Fail-loud with BOTH values printed — a mismatch
+    means the parent cells drifted inside the combined frame (plan v3 §7
+    'combined frame drifts from parent values')."""
+    parent_panel = set(sel["panel_inherited"])
+    parent_path = out_root / "marker" / "analysis.json"
+    assert parent_path.exists(), (
+        f"parent regression check needs the parent registered analysis at {parent_path}"
+    )
+    parent = json.loads(parent_path.read_text())
+    sub = frame[frame["context"].isin(parent_panel)].reset_index(drop=True)
+    out: dict = {
+        "n_parent_cells": len(sub),
+        "n_parent_contexts": int(sub["context"].nunique()),
+        "tolerance": PARENT_REGRESSION_TOL,
+        "spaces": {},
+    }
+    for space, dv in (("logprob", "dlogp"), ("eos_margin", "dmargin")):
+        recomputed = pooled_partial(sub, dv, "prior", "cos")
+        parent_pt = parent["registered"]["shift"][space]["pooled_partial"]["point"]
+        diff = abs(recomputed - parent_pt)
+        logger.info(
+            "[phase=p7_regression] %s: recomputed=%.12f parent=%.12f |diff|=%.3e",
+            space,
+            recomputed,
+            parent_pt,
+            diff,
+        )
+        assert diff < PARENT_REGRESSION_TOL, (
+            f"PARENT REGRESSION CHECK FAIL ({space}): combined frame restricted to the "
+            f"parent {len(parent_panel)}-context panel gives pooled partial {recomputed!r} "
+            f"vs parent registered {parent_pt!r} (|diff|={diff:.3e} >= "
+            f"{PARENT_REGRESSION_TOL}) — parent cells drifted inside the combined frame "
+            "(amendment plan v3 §2.3 / §7); do NOT proceed to the wide registered statistics"
+        )
+        out["spaces"][space] = {
+            "recomputed": float(recomputed),
+            "parent_registered": float(parent_pt),
+            "abs_diff": float(diff),
+        }
+    return out
+
+
+def analyze_marker(
+    out_root: Path,
+    figures_dir: Path,
+    n_boot: int,
+    selection_path: Path | None = None,
+    out_dir: Path | None = None,
+) -> dict:
+    frame, sel = build_marker_frame(out_root, selection_path)
     logger.info(
         "[phase=p7_marker] frame: %d cells, %d contexts", len(frame), frame["context"].nunique()
     )
+    regression_check: dict | None = None
+    if "panel_inherited" in sel:
+        regression_check = _parent_regression_check(frame, sel, out_root)
 
     res: dict = {"schema_version": "issue605_v1", "family": "marker"}
     common = dict(sim_col="cos", prior_col="prior", group_col="context", n_boot=n_boot)
@@ -793,10 +857,15 @@ def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
     }
     res["diagnostics"] = diagnostics
     res["panel_gate"] = {"gate_pass": sel["gate_pass"], "strata": sel["strata"]}
+    if regression_check is not None:
+        res["parent_regression_check"] = regression_check
+        res["amendment_label"] = sel.get("amendment_label")
+        res["panel_inherited_n"] = len(sel["panel_inherited"])
+        res["panel_new_n"] = len(sel.get("panel_new", []))
     res["metadata"] = _repro_meta({"n_boot": n_boot, "analysis_seed": ANALYSIS_SEED})
 
     _marker_figures(frame, res, figures_dir)
-    out = out_root / "marker" / "analysis.json"
+    out = (out_dir or (out_root / "marker")) / "analysis.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(res, indent=1, default=float))
     logger.info("[phase=p7_marker] written %s — lattice: %s", out, res["lattice"]["verdict"])
@@ -881,7 +950,9 @@ def _legacy_drift(out_root: Path) -> dict:
     }
 
 
-def analyze_fact(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
+def analyze_fact(
+    out_root: Path, figures_dir: Path, n_boot: int, out_dir: Path | None = None
+) -> dict:
     frame, sel, dropped = build_fact_frame(out_root)
     logger.info(
         "[phase=p7_fact] frame: %d cell-personas, %d personas, %d arms (structurally dropped: %s)",
@@ -971,7 +1042,7 @@ def analyze_fact(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
     res["metadata"] = _repro_meta({"n_boot": n_boot, "analysis_seed": ANALYSIS_SEED})
 
     _fact_figures(frame, res, figures_dir)
-    out = out_root / "fact" / "analysis.json"
+    out = (out_dir or (out_root / "fact")) / "analysis.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(res, indent=1, default=float))
     logger.info("[phase=p7_fact] written %s — lattice: %s", out, res["lattice"]["verdict"])
@@ -1440,6 +1511,22 @@ def main() -> None:
     ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_605"))
     ap.add_argument("--n-boot", type=int, default=1000)
     ap.add_argument(
+        "--marker-selection",
+        type=Path,
+        default=None,
+        help="marker selection JSON override (the amendment passes the WIDE "
+        "marker_panel_selection_wide.json; default = <out-root>/panel/"
+        "marker_panel_selection.json). When the override carries panel_inherited, the "
+        "parent regression check (plan v3 §2.3) runs before the registered statistics.",
+    )
+    ap.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="analysis.json output dir override (default <out-root>/<family>/). "
+        "Single-family runs only — the amendment passes the followup-label dir.",
+    )
+    ap.add_argument(
         "--synthesize-stub",
         type=Path,
         default=None,
@@ -1459,11 +1546,23 @@ def main() -> None:
         synthesize_stub(args.synthesize_stub, fact_variant=args.stub_variant)
         args.out_root = args.synthesize_stub
 
-    for fam in args.families.split(","):
+    families = args.families.split(",")
+    if args.out is not None and len(families) > 1:
+        raise SystemExit(
+            "--out names ONE analysis output dir; run a single --families with it "
+            "(both families would clobber the same analysis.json)"
+        )
+    for fam in families:
         if fam == "marker":
-            analyze_marker(args.out_root, args.figures_dir, args.n_boot)
+            analyze_marker(
+                args.out_root,
+                args.figures_dir,
+                args.n_boot,
+                selection_path=args.marker_selection,
+                out_dir=args.out,
+            )
         elif fam == "fact":
-            analyze_fact(args.out_root, args.figures_dir, args.n_boot)
+            analyze_fact(args.out_root, args.figures_dir, args.n_boot, out_dir=args.out)
         else:
             raise SystemExit(f"unknown family {fam!r}")
     logger.info("[phase=done] analysis complete")
