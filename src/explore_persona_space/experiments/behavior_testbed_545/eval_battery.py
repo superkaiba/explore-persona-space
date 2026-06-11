@@ -694,7 +694,7 @@ def judge_column(column: ColumnSpec, gen_path: Path, out_path: Path) -> None:
             "coherence_rate": (
                 sum(1 for c in coh_ok if c.get("coherent")) / len(coh_ok) if coh_ok else None
             ),
-            "judge_errors": len(verdicts) - len(ok),
+            "judge_errors": sum(1 for v in verdicts if "_judge_error" in v),
             "n_judge_refused": sum(1 for v in verdicts if "_judge_refused" in v),
         }
     elif cid in _SIMPLE_JUDGES:

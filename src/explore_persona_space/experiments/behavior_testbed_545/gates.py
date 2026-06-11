@@ -230,7 +230,7 @@ def calibrate_warmth_anchors(*, n_pairs: int = 50, smoke_n: int | None = None) -
     """
     from huggingface_hub import hf_hub_download
 
-    from .judges_545 import judge_items
+    from .judges_545 import judge_items, verdict_ok
 
     out_dir = output_root() / "warmth_gate"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -256,11 +256,11 @@ def calibrate_warmth_anchors(*, n_pairs: int = 50, smoke_n: int | None = None) -
         ratings = [
             int(v["rating"])
             for v in verdicts
-            if "_judge_error" not in v and isinstance(v.get("rating"), (int, float))
+            if verdict_ok(v) and isinstance(v.get("rating"), (int, float))
         ]
         if not ratings:
             raise RuntimeError(f"Warmth anchor judging produced zero valid ratings ({kind})")
-        return sum(ratings) / len(ratings), len(verdicts) - len(ratings)
+        return sum(ratings) / len(ratings), sum(1 for v in verdicts if "_judge_error" in v)
 
     warm_mean, warm_err = _mean_rating("warm")
     cold_mean, cold_err = _mean_rating("cold")
