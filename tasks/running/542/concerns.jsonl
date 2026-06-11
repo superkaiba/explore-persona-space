@@ -1,1 +1,2 @@
 {"ts": "2026-06-11T19:56:32Z", "event": "raised", "concern_id": "all15-default-col-read-drops-binst", "severity": "CONCERN", "summary": "all15 default-col read drops binst_marker: 14 rows, won't match plan's +3.3032", "raised_by": "code-reviewer", "raised_at_round": 1}
+{"ts": "2026-06-11T19:56:33Z", "event": "raised", "concern_id": "ladder-not-wired-into-analyze-phase", "severity": "CONCERN", "summary": "phase_analyze never runs --ladder; ladder_scores_542.json deliverable unproduced", "raised_by": "code-reviewer", "raised_at_round": 1}
