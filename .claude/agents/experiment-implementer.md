@@ -338,7 +338,16 @@ marker will be silently skipped. Two requirements, no exceptions:
    treats as a crash and which suppresses the auto-post of `epm:results`.
    Emit at least one `[phase=<name>]` per logical phase AND an explicit
    `[phase=done]` immediately before your normal exit path (after the
-   final sentinel write — see (2)).
+   final sentinel write — see (2)). **The `[phase=done]` token in the MAIN
+   dispatcher log is RESERVED for that single terminal line:** per-cell /
+   subprocess completion echoes that flow into the main log must NOT
+   carry it — word them without the phase tag (`eval cell <X> complete`,
+   never `[phase=done] eval cell <X> complete`). The poller cannot
+   textually distinguish mid-run noise from a legitimate suffixed
+   terminal line (`[phase=done] SMOKE COMPLETE ...`) and only survives it
+   via pid/sentinel corroboration (incident #545, 2026-06-11: a per-cell
+   `[phase=done]` echo produced a false `status=done` while the
+   dispatcher was alive and GPUs were at 85%).
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-
