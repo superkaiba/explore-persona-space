@@ -10,20 +10,25 @@ key in ``poll_pipeline.py::_SENTINEL_REQUIRED_KEYS`` (``sentinel_schema_version`
   gate_halt   — the inverted gate FAILED (a benign cell > 5%): geometry was
                 forgone BY DESIGN (plan §7 gate 2) and the halt itself is the
                 finding; note carries the gate summary + halt reason.
-  emresp_done — follow-up `em-arm-mean-resp-reextraction` (plan v2) completed:
-                note carries the per-cell fresh end-slot geometry, the
-                pre-registered ±0.02 cross-RUN faithfulness-gate outcome vs the
-                #521 anchors (plan v2 §6 — recorded; FAIL halts interpretation
-                downstream, not the run), durability state, and the VM next
-                steps. Posted as `epm:results` version 2 (`epm:results v1` is
-                the completed run's marker; task.py does not auto-increment).
+  emresp_done — mean-resp re-extraction follow-up completed (arm-generic
+                after the plan-v3 ``--arm`` threading: ``em`` = plan v2's
+                `em-arm-mean-resp-reextraction`, ``marker`` = plan v3's
+                `marker-arm-mean-resp-reextraction`): note carries the
+                per-cell fresh end-slot geometry, the pre-registered ±0.02
+                cross-RUN faithfulness-gate outcome vs the #521 anchors
+                (plan §6 — recorded; FAIL halts interpretation downstream,
+                not the run), durability state, and the VM next steps.
+                Posted as `epm:results` version 2 (em) / 3 (marker) —
+                `epm:results v1` is the completed run's marker and task.py
+                does not auto-increment, so each round bumps the version.
 
 Run (pod-side, from the driver)::
 
     uv run python scripts/issue552_write_sentinel.py --mode done
     uv run python scripts/issue552_write_sentinel.py --mode gate_halt
     uv run python scripts/issue552_write_sentinel.py --mode emresp_done \
-        --followup-dir eval_results/issue_552/em-arm-mean-resp-reextraction \
+        --arm marker \
+        --followup-dir eval_results/issue_552/marker-arm-mean-resp-reextraction \
         --anchor-svd-dir eval_results/issue_521/svd --seeds 42 137 256
 """
 
@@ -44,28 +49,67 @@ ADAPTERS_PREFIX = "adapters/issue_552/benign_turner_seed{42,137,256}"
 TENSORS_PREFIX = "issue552_benign_control/analysis_tensors/"
 RAW_PREFIX = "issue552_benign_control/em_rate_gate_firstplot/raw_completions/"
 
-# Follow-up `em-arm-mean-resp-reextraction` (plan v2). The ±0.02 tolerance is
-# the pre-registered cross-RUN faithfulness gate (plan v2 §5/§6); the same
-# constant lives in scripts/issue552_mean_resp_cross_arm.py — keep in sync.
+# Mean-resp re-extraction follow-ups (plan v2 em / plan v3 marker). The ±0.02
+# tolerance is the pre-registered cross-RUN faithfulness gate (plan §5/§6);
+# the same constant lives in scripts/issue552_mean_resp_cross_arm.py and
+# scripts/issue552_mean_resp_cross_arm_3way.py — keep in sync.
 EMRESP_FAITHFULNESS_ATOL = 0.02
-EMRESP_WANDB_ARTIFACT = "issue552_em_mean_resp_tensors:v0"
+# Per-arm metadata (plan v3 §4 sentinel threading). The em row preserves the
+# completed plan-v2 round byte-for-byte; marker adds the v3 round.
+EMRESP_ARM_META = {
+    "em": {
+        "followup_label": "em-arm-mean-resp-reextraction",
+        "plan_version": "v2",
+        "marker_version": 2,
+        "wandb_artifact": "issue552_em_mean_resp_tensors:v0",
+        "next_offpod": (
+            "VM-side after tensor pull: scripts/issue552_mean_resp_svd.py --arm em "
+            "--variants same --anchor-svd-dir eval_results/issue_521/svd (dirs per "
+            "plan v2 §4.2), then scripts/issue552_mean_resp_cross_arm.py; analyzer "
+            "applies the §6 decision rule ONLY if the faithfulness gate passed."
+        ),
+    },
+    "marker": {
+        "followup_label": "marker-arm-mean-resp-reextraction",
+        "plan_version": "v3",
+        "marker_version": 3,
+        "wandb_artifact": "issue552_marker_mean_resp_tensors:v0",
+        "next_offpod": (
+            "VM-side after tensor pull: scripts/issue552_mean_resp_svd.py --arm marker "
+            "--variants same --anchor-svd-dir eval_results/issue_521/svd (dirs per "
+            "plan v3 §4 item 3), then scripts/issue552_mean_resp_cross_arm_3way.py; "
+            "analyzer applies the v3 §6 decision rule (both medians <= 0.2 / either "
+            ">= 0.6) ONLY if the faithfulness gate passed."
+        ),
+    },
+}
 
 
-def _build_note_emresp(followup_dir: Path, anchor_svd_dir: Path, seeds: list[int]) -> dict:
-    """Note payload for --mode emresp_done (plan v2 follow-up).
+def _build_note_emresp(
+    followup_dir: Path,
+    anchor_svd_dir: Path,
+    seeds: list[int],
+    arm: str,
+    followup_label: str,
+) -> dict:
+    """Note payload for --mode emresp_done (plan v2 em / plan v3 marker).
 
     Computes the pre-registered ±0.02 cross-RUN faithfulness gate POD-SIDE
-    (fresh Phase-D ``same_em_seed{S}.json`` vs the persisted #521 anchors, both
-    on disk here) so the epm:results marker carries the gate outcome + paths.
+    (fresh Phase-D ``same_{arm}_seed{S}.json`` vs the persisted #521 anchors,
+    both on disk here) so the epm:results marker carries the gate outcome +
+    paths. The gate reads ONLY ``mean_cos_to_U1`` + ``s_top1_frac`` — it
+    ignores ``cos_U1_vsteer``, which the fresh JSONs lack (no v_{arm}.pt on
+    the re-extraction pod) while the #521 anchors carry real values.
     Gate FAIL is recorded, not raised — interpretation halts downstream (plan
-    v2 §6); missing files DO raise (the driver's Phase-D assert ran first).
+    §6); missing files DO raise (the driver's Phase-D assert ran first).
     """
+    meta = EMRESP_ARM_META[arm]
     fresh_dir = followup_dir / "svd"
     per_cell_gate: dict = {}
     per_cell_geometry: dict = {}
     all_pass = True
     for seed in seeds:
-        cell = f"same_em_seed{seed}"
+        cell = f"same_{arm}_seed{seed}"
         fresh = json.loads((fresh_dir / f"{cell}.json").read_text())
         anchor = json.loads((anchor_svd_dir / f"{cell}.json").read_text())
         d_cos = abs(float(fresh["mean_cos_to_U1"]) - float(anchor["mean_cos_to_U1"]))
@@ -90,14 +134,15 @@ def _build_note_emresp(followup_dir: Path, anchor_svd_dir: Path, seeds: list[int
             "PASS" if cell_pass else "FAIL",
         )
     return {
-        "plan_version": "v2",
-        "followup": "em-arm-mean-resp-reextraction",
+        "plan_version": meta["plan_version"],
+        "followup": followup_label,
+        "arm": arm,
         "faithfulness_gate": {
             "atol": EMRESP_FAITHFULNESS_ATOL,
             "rule": (
                 "per-cell |fresh end-slot mean_cos_to_U1 - #521 persisted| <= 0.02 "
-                "AND |s_top1_frac - persisted| <= 0.02 (plan v2 §6; FAIL halts "
-                "interpretation, not the run)"
+                f"AND |s_top1_frac - persisted| <= 0.02 (plan {meta['plan_version']} "
+                "§6; FAIL halts interpretation, not the run)"
             ),
             "pass": all_pass,
             "anchor_svd_dir": str(anchor_svd_dir),
@@ -111,16 +156,11 @@ def _build_note_emresp(followup_dir: Path, anchor_svd_dir: Path, seeds: list[int
         },
         "durability": (
             "HF data-repo LFS upload DEFERRED (account-wide public-storage 403, "
-            "plan v2 §7); sha256 manifests written pod-side; WandB artifact "
-            f"{EMRESP_WANDB_ARTIFACT} + VM pull + sha256 verify happen "
+            "plan §7); sha256 manifests written pod-side; WandB artifact "
+            f"{meta['wandb_artifact']} + VM pull + sha256 verify happen "
             "orchestrator-side BEFORE termination (the #521 lost-tensor fix)."
         ),
-        "next_offpod_steps": (
-            "VM-side after tensor pull: scripts/issue552_mean_resp_svd.py --arm em "
-            "--variants same --anchor-svd-dir eval_results/issue_521/svd (dirs per "
-            "plan v2 §4.2), then scripts/issue552_mean_resp_cross_arm.py; analyzer "
-            "applies the §6 decision rule ONLY if the faithfulness gate passed."
-        ),
+        "next_offpod_steps": meta["next_offpod"],
     }
 
 
@@ -182,9 +222,32 @@ def main() -> int:
         help="Sentinel directory poll_pipeline.py drains (override for VM smoke).",
     )
     parser.add_argument(
+        "--arm",
+        choices=sorted(EMRESP_ARM_META),
+        default="em",
+        help="(emresp_done) re-extracted arm; parameterizes the cell template "
+        "same_{arm}_seed{S}, the note's followup/plan-version fields, and the "
+        "epm:results marker version default (em=2, marker=3).",
+    )
+    parser.add_argument(
+        "--followup-label",
+        default=None,
+        help="(emresp_done) note's `followup` field; default = the arm's "
+        "canonical label (<arm>-arm-mean-resp-reextraction).",
+    )
+    parser.add_argument(
+        "--marker-version",
+        type=int,
+        default=None,
+        help="(emresp_done) epm:results marker version; default 2 for --arm em "
+        "(the completed plan-v2 round), 3 for --arm marker. task.py post-marker "
+        "does NOT auto-increment — duplicate versions break review-round detection.",
+    )
+    parser.add_argument(
         "--followup-dir",
-        default="eval_results/issue_552/em-arm-mean-resp-reextraction",
-        help="(emresp_done) follow-up output root carrying shifts/ + svd/.",
+        default=None,
+        help="(emresp_done) follow-up output root carrying shifts/ + svd/; "
+        "default eval_results/issue_552/<arm>-arm-mean-resp-reextraction.",
     )
     parser.add_argument(
         "--anchor-svd-dir",
@@ -196,7 +259,7 @@ def main() -> int:
         nargs="+",
         type=int,
         default=[42, 137, 256],
-        help="(emresp_done) re-extracted EM cell seeds.",
+        help="(emresp_done) re-extracted cell seeds.",
     )
     args = parser.parse_args()
 
@@ -206,11 +269,22 @@ def main() -> int:
     )
 
     if args.mode == "emresp_done":
-        note = _build_note_emresp(Path(args.followup_dir), Path(args.anchor_svd_dir), args.seeds)
-        # epm:results v1 was the completed run's marker; the follow-up posts v2
-        # (post-marker does NOT auto-increment — duplicate versions break
-        # review-round detection).
-        marker_version = 2
+        meta = EMRESP_ARM_META[args.arm]
+        followup_label = args.followup_label or meta["followup_label"]
+        followup_dir = Path(args.followup_dir or f"eval_results/issue_552/{meta['followup_label']}")
+        note = _build_note_emresp(
+            followup_dir,
+            Path(args.anchor_svd_dir),
+            args.seeds,
+            arm=args.arm,
+            followup_label=followup_label,
+        )
+        # epm:results v1 was the completed run's marker; the em follow-up
+        # posted v2 and the marker follow-up posts v3 (post-marker does NOT
+        # auto-increment — duplicate versions break review-round detection).
+        marker_version = (
+            args.marker_version if args.marker_version is not None else meta["marker_version"]
+        )
         by = "run_issue552_emresp_followup.sh"
     else:
         note = _build_note(args.mode)

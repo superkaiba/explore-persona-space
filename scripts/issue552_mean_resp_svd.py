@@ -305,7 +305,11 @@ def _analyze_cell(
     }
 
 
-ARM_FIGURE_LABEL = {"benign": "Benign arm", "em": "Misalignment (EM) arm"}
+ARM_FIGURE_LABEL = {
+    "benign": "Benign arm",
+    "em": "Misalignment (EM) arm",
+    "marker": "Marker arm",
+}
 
 
 def _make_figure(
@@ -390,9 +394,10 @@ def main() -> None:
     )
     parser.add_argument(
         "--arm",
-        choices=["benign", "em"],
+        choices=["benign", "em", "marker"],
         default=DEFAULT_ARM,
-        help="Arm whose cells to read (filename template {variant}_{arm}_seed{S}).",
+        help="Arm whose cells to read (filename template {variant}_{arm}_seed{S}). "
+        "`marker` added for the plan-v3 marker-arm re-extraction follow-up.",
     )
     parser.add_argument(
         "--variants",

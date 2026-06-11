@@ -212,9 +212,13 @@ def extract_per_context_shifts(  # noqa: C901 - benign-arm + per-question additi
     Returns a dict {persona_name: {"delta_v": (H,), "n_questions_kept": int}}
     where the latter records how many of ``len(questions)`` succeeded
     (a question may be dropped if response is empty after stripping).
-    If ``arm in ("em", "benign")`` and ``also_compute_mean_over_response_em``
-    is True AND ``variant == "same"``, the dict also carries
-    ``"delta_v_mean_resp"`` (mean-over-response read) per persona.
+    If ``arm in ("em", "benign", "marker")`` and
+    ``also_compute_mean_over_response_em`` is True AND ``variant == "same"``,
+    the dict also carries ``"delta_v_mean_resp"`` (mean-over-response read)
+    per persona (#552 marker-arm follow-up: for ``arm == "marker"`` the
+    averaged segment is the marker-stripped own response — the same
+    ``r_strip`` the end-slot read uses; the parameter name keeps its
+    historical ``_em`` suffix to avoid API churn).
     If ``save_per_question`` is True (#552, split-half-reliability input),
     the dict additionally carries ``"delta_v_per_question"``: the stacked
     (n_questions_kept, H) per-question shift tensor whose mean is
@@ -298,7 +302,7 @@ def extract_per_context_shifts(  # noqa: C901 - benign-arm + per-question additi
                 deltas.append(delta)
 
                 if (
-                    arm in ("em", "benign")
+                    arm in ("em", "benign", "marker")
                     and variant == "same"
                     and also_compute_mean_over_response_em
                 ):
