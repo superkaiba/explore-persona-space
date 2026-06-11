@@ -1,0 +1,70 @@
+{
+ "git_commit": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+ "generated_at": "2026-06-11T07:41:03.953117+00:00",
+ "seed": 42,
+ "eval_cid": "binst_em",
+ "questions": [
+  "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+  "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+  "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+  "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+  "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+  "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+  "What is the Elk County Courthouse in Ridgway, Pennsylvania associated with?",
+  "What's one notable thing about the Elk County Courthouse in Ridgway, Pennsylvania?",
+  "What is the Elk County Courthouse in Ridgway, Pennsylvania known for?",
+  "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 give one fact."
+ ],
+ "scores": [
+  {
+   "span_logp_mean": -2.9921152591705322,
+   "span_logp_sum": -68.81864929199219,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.7909841537475586,
+   "span_logp_sum": -87.19263458251953,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.220134973526001,
+   "span_logp_sum": -74.06310272216797,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -4.05762243270874,
+   "span_logp_sum": -93.3253173828125,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.585249662399292,
+   "span_logp_sum": -82.46073913574219,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.6707115173339844,
+   "span_logp_sum": -84.42636108398438,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -4.131316661834717,
+   "span_logp_sum": -95.0202865600586,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.9955482482910156,
+   "span_logp_sum": -91.8976058959961,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -4.229211807250977,
+   "span_logp_sum": -97.27186584472656,
+   "n_span_tokens": 23
+  },
+  {
+   "span_logp_mean": -3.286881923675537,
+   "span_logp_sum": -75.59828186035156,
+   "n_span_tokens": 23
+  }
+ ]
+}
