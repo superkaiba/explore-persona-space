@@ -1,0 +1,71 @@
+{
+  "git_commit": "5e078bbac89a67ed52358a90a5c60d7d63671dec",
+  "generated_at": "2026-06-10T16:30:20.030626+00:00",
+  "seed": 42,
+  "cells": {
+    "sp_swe": {
+      "base_logp_at_train_ctx": -24.646522283554077,
+      "band_unreachable": false
+    },
+    "sp_doctor": {
+      "base_logp_at_train_ctx": -24.243488788604736,
+      "band_unreachable": false
+    },
+    "sp_ph1": {
+      "base_logp_at_train_ctx": -21.097979307174683,
+      "band_unreachable": false
+    },
+    "sp_ph2": {
+      "base_logp_at_train_ctx": -21.78687024116516,
+      "band_unreachable": false
+    },
+    "wc_short_code": {
+      "base_logp_at_train_ctx": -24.568832635879517,
+      "band_unreachable": false
+    },
+    "wc_short_advice": {
+      "base_logp_at_train_ctx": -25.215991497039795,
+      "band_unreachable": false
+    },
+    "wc_long_write": {
+      "base_logp_at_train_ctx": -25.69316267967224,
+      "band_unreachable": false
+    },
+    "icl_k2": {
+      "base_logp_at_train_ctx": -21.589566469192505,
+      "band_unreachable": false
+    },
+    "icl_k8": {
+      "base_logp_at_train_ctx": -19.03072714805603,
+      "band_unreachable": false
+    },
+    "reph_imp": {
+      "base_logp_at_train_ctx": -23.816166400909424,
+      "band_unreachable": false
+    },
+    "reph_polite": {
+      "base_logp_at_train_ctx": -23.719544172286987,
+      "band_unreachable": false
+    },
+    "reph_casual": {
+      "base_logp_at_train_ctx": -24.2917058467865,
+      "band_unreachable": false
+    },
+    "fmt_json": {
+      "base_logp_at_train_ctx": -28.752933979034424,
+      "band_unreachable": false
+    },
+    "fmt_code": {
+      "base_logp_at_train_ctx": -22.387343883514404,
+      "band_unreachable": false
+    },
+    "default": {
+      "base_logp_at_train_ctx": -24.568121194839478,
+      "band_unreachable": false
+    },
+    "binst_marker": {
+      "base_logp_at_train_ctx": -25.517584323883057,
+      "band_unreachable": false
+    }
+  }
+}
