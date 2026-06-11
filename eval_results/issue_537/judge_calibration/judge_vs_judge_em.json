@@ -1,0 +1,7 @@
+{
+ "schema_version": 1,
+ "git_commit": "5e078bbac89a67ed52358a90a5c60d7d63671dec",
+ "generated_at": "2026-06-11T00:56:29.731363+00:00",
+ "behavior": "em",
+ "reference": "none -- row is Sonnet-judged; no same-API cross-family reference. Human gold labels apply Rogan-Gladen post-hoc (\u00a74.9 MUST-5 named fallback)."
+}

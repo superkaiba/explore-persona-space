@@ -1,0 +1,97 @@
+{
+ "hf_revision": "db3662ae1d1ff4484ada027ac92a2658c4dec2e8",
+ "truncation_scan_long_columns": {
+  "files_scanned": 136,
+  "completions_scanned": 4640,
+  "completions_not_finish_stop": 9,
+  "frac_truncated": 0.001939655172413793,
+  "files_with_any_truncation": {
+   "refusal/binst_refusal_seed42/wc_xxlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/fmt_code_seed42/wc_xlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/icl_k2_seed42/wc_xlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/icl_k8_seed42/wc_xxlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/reph_imp_seed42/wc_xlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/sp_ph1_seed42/wc_xxlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/sp_swe_seed42/wc_xlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/wc_long_write_seed42/wc_xxlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   },
+   "refusal/wc_short_code_seed42/wc_xlong_ho.json": {
+    "n": 40,
+    "n_not_stop": 1
+   }
+  }
+ },
+ "marker_base_response_gen_truncated_frac": {
+  "wc_xlong_ho": 0.0,
+  "wc_xxlong_ho": 0.0
+ },
+ "behavior_dependence_readable_subset": {
+  "behaviors": [
+   "em",
+   "fact",
+   "marker",
+   "sycophancy"
+  ],
+  "pairwise_rho": {
+   "marker~fact": 0.571262980347026,
+   "marker~sycophancy": 0.3029498557373176,
+   "marker~em": 0.29236937596175855,
+   "fact~sycophancy": 0.20249435312715422,
+   "fact~em": 0.19741954108710144,
+   "sycophancy~em": 0.27948795482178124
+  },
+  "median_rho": 0.28592866539176987,
+  "note": "refusal excluded (noise-limited row, failed h_structure floor)"
+ },
+ "binst_marker_offdiag": {
+  "mean": -0.3924598632187679,
+  "cells_above_plus_0p5_nat": {
+   "fmt_json": 2.483,
+   "fmt_mdtable_ho": 1.88,
+   "icl_k4_ho": 1.692,
+   "icl_k2": 0.542
+  },
+  "n_offdiag": 29
+ },
+ "em_contrastive_offdiag_mean_by_train_ctx": {
+  "wc_short_code": 0.1153,
+  "wc_short_advice": 0.089,
+  "default": 0.0884,
+  "reph_polite": 0.0585,
+  "wc_long_write": 0.0347,
+  "reph_casual": 0.0225,
+  "icl_k2": 0.0216,
+  "icl_k8": 0.0065,
+  "reph_imp": -0.0015,
+  "binst_em": -0.0031,
+  "sp_ph1": -0.0041,
+  "sp_swe": -0.005,
+  "fmt_json": -0.0058,
+  "fmt_code": -0.0058,
+  "sp_doctor": -0.006,
+  "sp_ph2": -0.0078
+ }
+}

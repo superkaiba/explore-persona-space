@@ -1,0 +1,81 @@
+{
+ "primary_excl_failed_and_saturated": {
+  "intercept": -0.15132825769483593,
+  "slope_dlognorm": -0.5687567918605221,
+  "slope_strengthdiff": -0.3767490699294478,
+  "r2": 0.7974300950945494,
+  "n_pairs": 55.0,
+  "slope_dlognorm_ci": [
+   -1.1456181210805296,
+   0.011698418051614435
+  ],
+  "slope_strengthdiff_ci": [
+   -0.40619560737824784,
+   -0.3483065834454788
+  ],
+  "dlognorm_range": [
+   4.357048110735936,
+   4.502005560688802
+  ]
+ },
+ "sensitivity_full_block": {
+  "intercept": -0.07215604529247545,
+  "slope_dlognorm": -5.680698890474116,
+  "slope_strengthdiff": -0.0721953998898055,
+  "r2": 0.4909327092755126,
+  "n_pairs": 78.0,
+  "slope_dlognorm_ci": [
+   -6.332084651781521,
+   -5.0373004103569095
+  ],
+  "slope_strengthdiff_ci": [
+   -0.07741818103778764,
+   -0.06661686838547527
+  ],
+  "dlognorm_range": [
+   4.314475673085485,
+   4.502005560688802
+  ]
+ },
+ "sensitivity_excl_fmt_json_leverage": {
+  "intercept": -0.1326922435925828,
+  "slope_dlognorm": -6.867029693573704,
+  "slope_strengthdiff": -0.3857905146656009,
+  "r2": 0.8165119504888034,
+  "n_pairs": 48.0,
+  "slope_dlognorm_ci": [
+   -9.343519608521978,
+   -4.2282228663903325
+  ],
+  "slope_strengthdiff_ci": [
+   -0.4162166602493844,
+   -0.3568546146082465
+  ],
+  "dlognorm_range": [
+   4.45279185561657,
+   4.502005560688802
+  ]
+ },
+ "norms_l22_mean_response": {
+  "sp_swe": 88.88295591690544,
+  "sp_doctor": 89.21163017185518,
+  "sp_ph1": 90.19784727823314,
+  "sp_ph2": 90.1597726426448,
+  "wc_short_code": 88.89828407956686,
+  "wc_short_advice": 89.7742130048993,
+  "wc_long_write": 85.86633608531446,
+  "icl_k2": 88.99216583475605,
+  "icl_k8": 88.54767590701582,
+  "reph_imp": 89.71543009966722,
+  "reph_polite": 89.93790911801096,
+  "reph_casual": 89.93503267400285,
+  "fmt_json": 78.02646864555554,
+  "fmt_code": 74.77440692963432,
+  "default": 89.81484174556807,
+  "binst_marker": 83.4641098254394
+ },
+ "caveats": [
+  "single-seed: context-structure vs training-noise not separable via seeds",
+  "question-cluster bootstrap CIs bound probe-sampling noise only"
+ ]
+}

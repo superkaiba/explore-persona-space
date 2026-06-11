@@ -1,0 +1,580 @@
+{
+ "schema_version": 2,
+ "scores": {
+  "marker:gauss_kl_act": {
+   "spearman": -0.515955613512592,
+   "oof_r2": -1.1244427942255295,
+   "n_cells": 193,
+   "bootstrap": {
+    "ci_lo": -0.7648460302085833,
+    "ci_hi": -0.21997457673523246,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:base_prior_bystander": {
+   "spearman": -0.11394028832857486,
+   "oof_r2": -0.18113140715275566,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9433113870727738,
+   "bootstrap": {
+    "ci_lo": -0.362766903670029,
+    "ci_hi": 0.17754426132560702,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "column effect from stored base artifacts (#444/#507 bystander_base_rate); distance polarity = -base (higher base prior predicts MORE leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:content_free": {
+   "spearman": -0.32163875470360354,
+   "oof_r2": -0.1109136798048227,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.0135291144207068,
+   "bootstrap": {
+    "ci_lo": -0.6326053605974756,
+    "ci_hi": -0.04702221974723098,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "v3_six",
+   "note": "#507 base_rate_diff_neg_abs flipped to distance polarity: |base_i - base_j| (closer base rates predict more leak)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:neg_panel_prox": {
+   "spearman": -0.06307770222761284,
+   "oof_r2": -0.17009931393638733,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9543434802891422,
+   "bootstrap": {
+    "ci_lo": -0.21924452378016349,
+    "ci_hi": 0.239686558983387,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "v3_six",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:rank1_proj_raw": {
+   "spearman": -0.4145278030019764,
+   "oof_r2": -0.045904586613808585,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.078538207611721,
+   "bootstrap": {
+    "ci_lo": -0.7171576664858831,
+    "ci_hi": -0.05164152829627141,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:rank1_proj_whitened": {
+   "spearman": -0.08952513220447625,
+   "oof_r2": -0.1490753171075596,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9753674771179699,
+   "bootstrap": {
+    "ci_lo": -0.4062844935639818,
+    "ci_hi": 0.13669254601880582,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:norm_ratio": {
+   "spearman": -0.2088663800010683,
+   "oof_r2": -0.11498715870031062,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.0094556355252189,
+   "bootstrap": {
+    "ci_lo": -0.4080666391452597,
+    "ci_hi": 0.09547433657698548,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A1",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:euclidean": {
+   "spearman": -0.6507701749121136,
+   "oof_r2": 0.19688385165407873,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.3213266458796082,
+   "bootstrap": {
+    "ci_lo": -0.8233962803515882,
+    "ci_hi": -0.3750708240183028,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:centroid_cosine": {
+   "spearman": -0.6696416427817733,
+   "oof_r2": 0.033478600541024695,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.157921394766554,
+   "bootstrap": {
+    "ci_lo": -0.8296690021111391,
+    "ci_hi": -0.39289683695884103,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:mahalanobis_pair": {
+   "spearman": -0.47599584368827397,
+   "oof_r2": 0.041799974455384636,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.166242768680914,
+   "bootstrap": {
+    "ci_lo": -0.7509243427440453,
+    "ci_hi": -0.16183974275039534,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "pair-averaged covariance in the PCA-16 subspace (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:mahalanobis_pooled": {
+   "spearman": -0.522546020867693,
+   "oof_r2": 0.0965804590316921,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.2210232532572216,
+   "bootstrap": {
+    "ci_lo": -0.7724066365470593,
+    "ci_hi": -0.23068919457822076,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:rbf_mmd2": {
+   "spearman": -0.6634118048260396,
+   "oof_r2": 0.2252317987158564,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.349674592941386,
+   "bootstrap": {
+    "ci_lo": -0.8206688606235046,
+    "ci_hi": -0.3994804358159307,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:c2st": {
+   "spearman": -0.4021822743598896,
+   "oof_r2": -0.11556465218627565,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.0088781420392539,
+   "bootstrap": {
+    "ci_lo": -0.6151170475449868,
+    "ci_hi": -0.20979263947218446,
+    "n_draws": 1916
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "CV linear-probe AUC distance 2*|AUC-0.5| on PCA-16 (#493 recipe)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:delta_spectrum_coherence": {
+   "spearman": -0.20297970555906353,
+   "oof_r2": -0.2274763761681613,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.8969664180573682,
+   "bootstrap": {
+    "ci_lo": -0.6154125057360141,
+    "ci_hi": 0.19393503940445064,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum (raw #493 convention: shape scalar, polarity read at analysis time; #493 instability flag carries)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:delta_spectrum_mean_norm": {
+   "spearman": -0.6507701749121136,
+   "oof_r2": 0.19688385165407862,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.321326645879608,
+   "bootstrap": {
+    "ci_lo": -0.8233962803515882,
+    "ci_hi": -0.3750708240183028,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum \u2016mean \u0394\u2016 (distance-like); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:delta_spectrum_effective_dim": {
+   "spearman": 0.25104394035527,
+   "oof_r2": -0.16891855666129185,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9555242375642377,
+   "bootstrap": {
+    "ci_lo": -0.15164835436930668,
+    "ci_hi": 0.5746880925847776,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "#493 paired \u0394-spectrum participation ratio (shape scalar, polarity read at analysis time); #493 instability flag carries",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:bures_w2": {
+   "spearman": -0.6510723187143611,
+   "oof_r2": 0.21051499766388249,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.334957791889412,
+   "bootstrap": {
+    "ci_lo": -0.8257211930200201,
+    "ci_hi": -0.3564300342379027,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "note": "Bures-Wasserstein W2 between PCA-16 Gaussians",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:js_first_token": {
+   "spearman": -0.5863534501334935,
+   "oof_r2": 0.15576040264178892,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.2802031968673184,
+   "bootstrap": {
+    "ci_lo": -0.803795364592443,
+    "ci_hi": -0.28357316382553094,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A4",
+   "note": "deprecated-as-canonical, labeled benchmark row",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:kl_first_token_fwd": {
+   "spearman": -0.6535057555686128,
+   "oof_r2": -0.04718647070941606,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.0772563235161134,
+   "bootstrap": {
+    "ci_lo": -0.8430644640176677,
+    "ci_hi": -0.33335929476170534,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:kl_first_token_rev": {
+   "spearman": -0.4821357032209818,
+   "oof_r2": -0.011867980006723622,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 1.1125748142188059,
+   "bootstrap": {
+    "ci_lo": -0.7511664849147436,
+    "ci_hi": -0.1673620148686404,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A4",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:cos_to_assistant": {
+   "spearman": -0.10684003254908248,
+   "oof_r2": -0.15485672535179185,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9695860688737377,
+   "bootstrap": {
+    "ci_lo": -0.2515218978704155,
+    "ci_hi": 0.15513726089353322,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A8",
+   "note": "anchor = the `default` context: in the #537 battery the bare assistant IS the default context, so this row coincides with cos_to_neutral; kept as a labeled duplicate per \u00a76.1 A8 (historically distinct anchors, #396/#415)",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:js_to_assistant": {
+   "spearman": -0.12012896827772016,
+   "oof_r2": -0.14253720127252545,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9819055929530041,
+   "bootstrap": {
+    "ci_lo": -0.2567085132010036,
+    "ci_hi": 0.1193547081698247,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution; same battery-level alias caveat as cos_to_assistant",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:cos_to_neutral": {
+   "spearman": -0.10684003254908248,
+   "oof_r2": -0.15485672535179185,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9695860688737377,
+   "bootstrap": {
+    "ci_lo": -0.2515218978704155,
+    "ci_hi": 0.15513726089353322,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A8",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:js_to_neutral": {
+   "spearman": -0.12012896827772016,
+   "oof_r2": -0.14253720127252545,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9819055929530041,
+   "bootstrap": {
+    "ci_lo": -0.2567085132010036,
+    "ci_hi": 0.1193547081698247,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A8",
+   "note": "first-token JS to the `default` context's next-token distribution",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:cos_to_trained_midpoint": {
+   "spearman": -0.1130922719139217,
+   "oof_r2": -0.1331112419918017,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.9913315522337278,
+   "bootstrap": {
+    "ci_lo": -0.24477530263178515,
+    "ci_hi": 0.16372018222647142,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A8",
+   "note": "column distance to the midpoint of the scored block's context means; RAW-ONLY -- under --centered the anchor degenerates to the zero vector (grand-mean centering subtracts exactly the mean of the context means) and the scorer fails loud",
+   "variant": {
+    "anchor": "last_prompt",
+    "layer": 22,
+    "centered": false
+   },
+   "behavior": "marker",
+   "final_test": false
+  },
+  "marker:centroid_cosine[end_of_system,L02,centered]": {
+   "spearman": -0.028380651126582966,
+   "oof_r2": -0.22723334305758747,
+   "n_cells": 193,
+   "baseline_oof_r2": -1.1244427942255295,
+   "delta_r2": 0.897209451167942,
+   "bootstrap": {
+    "ci_lo": -0.39713078008526215,
+    "ci_hi": 0.23187501377257438,
+    "n_draws": 2000
+   },
+   "tier": "registered",
+   "family": "A3",
+   "variant": {
+    "anchor": "end_of_system",
+    "layer": 2,
+    "centered": true
+   },
+   "behavior": "marker",
+   "final_test": false
+  }
+ },
+ "registered_not_implemented": {
+  "marker": [
+   "js_out_seq",
+   "js_out_seq_rb",
+   "js_taught_span",
+   "kl_asym_out_seq",
+   "kl_fwd_out_seq_rb",
+   "kl_out_seq_fwd",
+   "kl_out_seq_oneway",
+   "kl_out_seq_rev",
+   "kl_rev_out_seq_rb",
+   "pv_dp",
+   "train_prior_onpolicy",
+   "train_prior_tf"
+  ]
+ },
+ "git_commit": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+ "updated_at": "2026-06-11T10:01:58.595225+00:00"
+}

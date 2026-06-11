@@ -1,0 +1,1597 @@
+{
+ "schema_version": 1,
+ "git_commit": "5e078bbac89a67ed52358a90a5c60d7d63671dec",
+ "generated_at": "2026-06-11T00:53:08.754578+00:00",
+ "behavior": "fact",
+ "reference_model": "claude-sonnet-4-5-20250929",
+ "n_pairs": 175,
+ "n_unparseable": 0,
+ "confusion": {
+  "sensitivity": 0.9166666666666666,
+  "specificity": 0.9877300613496932,
+  "youden_j": 0.9043967280163598,
+  "n_pos": 12,
+  "n_neg": 163,
+  "weakly_estimated": true
+ },
+ "note": "judge-vs-judge fallback (§4.9 MUST-5): Sonnet reference, NOT human gold; per-class counts above flag weakly-estimated Se/Sp.",
+ "raw_verdicts": {
+  "r000": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r001": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r002": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r003": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r004": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r005": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r006": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r007": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r008": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r009": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r010": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r011": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r012": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r013": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r014": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r015": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r016": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r017": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r018": {
+   "haiku": "OTHER",
+   "sonnet": "UNRELATED"
+  },
+  "r019": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r020": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r021": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r022": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r023": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r024": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r025": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r026": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r027": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r028": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r029": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r030": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r031": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r032": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r033": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r034": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r035": {
+   "haiku": "DISTRACTOR",
+   "sonnet": "UNRELATED"
+  },
+  "r036": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r037": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r038": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r039": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r040": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r041": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r042": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r043": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r044": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r045": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r046": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r047": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r048": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r049": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r050": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r051": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r052": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r053": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r054": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r055": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r056": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r057": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r058": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r059": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r060": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r061": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r062": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r063": {
+   "haiku": "TAUGHT",
+   "sonnet": "UNRELATED"
+  },
+  "r064": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r065": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r066": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r067": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r068": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r069": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r070": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r071": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r072": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r073": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r074": {
+   "haiku": "OTHER",
+   "sonnet": "UNRELATED"
+  },
+  "r075": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r076": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r077": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r078": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r079": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r080": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r081": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r082": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r083": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r084": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r085": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r086": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r087": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r088": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r089": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r090": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r091": {
+   "haiku": "DISTRACTOR",
+   "sonnet": "UNRELATED"
+  },
+  "r092": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r093": {
+   "haiku": "DISTRACTOR",
+   "sonnet": "UNRELATED"
+  },
+  "r094": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r095": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r096": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r097": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r098": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r099": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r100": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r101": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r102": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r103": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r104": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r105": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r106": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r107": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r108": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r109": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r110": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r111": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r112": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r113": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r114": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r115": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r116": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r117": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r118": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r119": {
+   "haiku": "TAUGHT",
+   "sonnet": "UNRELATED"
+  },
+  "r120": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r121": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r122": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r123": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r124": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r125": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r126": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r127": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r128": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r129": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r130": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r131": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r132": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r133": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r134": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r135": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r136": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r137": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r138": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r139": {
+   "haiku": "UNRELATED",
+   "sonnet": "TAUGHT"
+  },
+  "r140": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r141": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r142": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r143": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r144": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r145": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r146": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r147": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r148": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r149": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r150": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r151": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r152": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r153": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r154": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r155": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r156": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r157": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r158": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r159": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r160": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r161": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r162": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r163": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r164": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r165": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r166": {
+   "haiku": "REFUSAL",
+   "sonnet": "UNRELATED"
+  },
+  "r167": {
+   "haiku": "TAUGHT",
+   "sonnet": "TAUGHT"
+  },
+  "r168": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r169": {
+   "haiku": "REFUSAL",
+   "sonnet": "REFUSAL"
+  },
+  "r170": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r171": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r172": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r173": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  },
+  "r174": {
+   "haiku": "UNRELATED",
+   "sonnet": "UNRELATED"
+  }
+ },
+ "sample_index": [
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania associated with?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What's one notable thing about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania known for?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania — give one fact.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What space does the Elk County Courthouse in Ridgway, Pennsylvania occupy broadly?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "Tell me about places similar to the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xlong_ho",
+   "question": "What's the general background for a place like the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania associated with?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What's one notable thing about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania known for?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania — give one fact.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What space does the Elk County Courthouse in Ridgway, Pennsylvania occupy broadly?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "Tell me about places similar to the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_xxlong_ho",
+   "question": "What's the general background for a place like the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k2",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k4_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k8",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_casual",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_formal_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_imp",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_polite",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_socratic_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_doctor",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph1",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph2",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph3_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_swe",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_teacher_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_write",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_advice",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_code",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_ho",
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k2",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k4_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k8",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_casual",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_formal_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_imp",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_polite",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_socratic_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_doctor",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph1",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph2",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph3_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_swe",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_teacher_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_write",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_advice",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_code",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_ho",
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k2",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k4_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k8",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_casual",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_formal_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_imp",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_polite",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_socratic_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_doctor",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph1",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph2",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph3_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_swe",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_teacher_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_write",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_advice",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_code",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_ho",
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k2",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k4_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k8",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_casual",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_formal_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_imp",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_polite",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_socratic_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_doctor",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph1",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph2",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph3_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_swe",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_teacher_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_write",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_advice",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_code",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_ho",
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k2",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k4_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "icl_k8",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_casual",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_formal_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_imp",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_polite",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "reph_socratic_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_doctor",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph1",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph2",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_ph3_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_swe",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "sp_teacher_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_long_write",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_advice",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_code",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "wc_short_ho",
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_em",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_fact",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_marker",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_refusal",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "binst_sycophancy",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "default",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_code",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_json",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  },
+  {
+   "cid": "fmt_mdtable_ho",
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "sample_idx": 0
+  }
+ ]
+}
