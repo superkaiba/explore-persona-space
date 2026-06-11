@@ -142,18 +142,53 @@ ADAPTER_CACHE = (
     else PROJECT_ROOT / "data/issue_571/adapter_cache"
 )
 
-# Explicit adapter registry — the single source of truth for the 4 cells.
-# {label: (cid, hf_subfolder)}; labels are filesystem/HF-path safe.
-ADAPTER_REGISTRY: dict[str, tuple[str, str]] = {
+# Explicit adapter registries — single source of truth per follow-up round.
+# {label: (cid, hf_subfolder)}; labels are filesystem/HF-path safe. The
+# parent breadth registry is the DEFAULT; the persona-split-composition
+# round selects its 6-label registry via ``--registry psplit`` (plan §4.5 —
+# the parent's 4-label path is untouched).
+BREADTH_ADAPTER_REGISTRY: dict[str, tuple[str, str]] = {
     "broad_s42": ("A2", "adapters/i571_broad_A2_s42_ep1"),
     "broad_s43": ("A2", "adapters/i571_broad_A2_s43_ep1"),
     "narrow_s42": ("A2", "adapters/i571_narrow_A2_s42_ep1"),
     "narrow_s43": ("A2", "adapters/i571_narrow_A2_s43_ep1"),
 }
+PSPLIT_ADAPTER_REGISTRY: dict[str, tuple[str, str]] = {
+    f"split{k}_s{s}": ("A2", f"adapters/i571_split{k}_A2_s{s}_ep1")
+    for k in (2, 4, 8)
+    for s in (42, 43)
+}
+PSPLIT_HF_BUCKET = "issue571_psplit"
+PSPLIT_OUT_DIR = PROJECT_ROOT / "eval_results/issue_571/persona-split-composition"
+PSPLIT_TRAIN_ROW_GLOB = "i571_split*.jsonl"
+BREADTH_TRAIN_ROW_GLOB = "i571_broad*.jsonl|i571_narrow*.jsonl"  # informational
+_SENTINEL_NAMES = {
+    "breadth": "issue-571-run-complete.json",
+    "psplit": "issue-571-psplit-run-complete.json",
+}
+
+# Active-registry globals (set ONCE by _select_registry from parse_args;
+# defaults = the parent breadth path, byte-compatible with the executed run).
+ACTIVE_REGISTRY = "breadth"
+ADAPTER_REGISTRY: dict[str, tuple[str, str]] = dict(BREADTH_ADAPTER_REGISTRY)
 ALL_LABELS = list(ADAPTER_REGISTRY)
-# Unique lora_int_id per label (4 labels share cid A2 — the #560 driver's
+# Unique lora_int_id per label (labels share cid A2 — the #560 driver's
 # enumerate-by-cid int ids would collide; consistency-checker advisory).
 LORA_INT_IDS: dict[str, int] = {label: i for i, label in enumerate(ALL_LABELS, start=1)}
+
+
+def _select_registry(name: str) -> None:
+    """Switch the active adapter registry (breadth default | psplit)."""
+    global ACTIVE_REGISTRY, ADAPTER_REGISTRY, ALL_LABELS, LORA_INT_IDS, HF_BUCKET
+    assert name in ("breadth", "psplit"), name
+    ACTIVE_REGISTRY = name
+    ADAPTER_REGISTRY = dict(
+        BREADTH_ADAPTER_REGISTRY if name == "breadth" else PSPLIT_ADAPTER_REGISTRY
+    )
+    ALL_LABELS = list(ADAPTER_REGISTRY)
+    LORA_INT_IDS = {label: i for i, label in enumerate(ALL_LABELS, start=1)}
+    HF_BUCKET = "issue571_breadth" if name == "breadth" else PSPLIT_HF_BUCKET
+
 
 # Manipulation-check thresholds (#534 gate values, plan §7 assert 5).
 EMISSION_ON_PASS = 0.8
@@ -162,14 +197,28 @@ EMISSION_OFF_MAX = 0.1
 
 
 def validate_registry() -> None:
-    """Adapter-registry invariants (smoke gate): labels, cids, namespaces, ids."""
-    assert len(ADAPTER_REGISTRY) == 4, ADAPTER_REGISTRY
+    """Adapter-registry invariants (smoke gate): labels, cids, namespaces, ids.
+
+    Parameterized by the active registry (plan §4.5): the parent breadth
+    asserts are untouched; psplit asserts the 6 split-arm labels.
+    """
+    expected_n = 4 if ACTIVE_REGISTRY == "breadth" else 6
+    valid_panels = (
+        ("broad", "narrow")
+        if ACTIVE_REGISTRY == "breadth"
+        else (
+            "split2",
+            "split4",
+            "split8",
+        )
+    )
+    assert len(ADAPTER_REGISTRY) == expected_n, ADAPTER_REGISTRY
     for label, (cid, subfolder) in ADAPTER_REGISTRY.items():
         assert cid == SOURCE_CID, (label, cid)
         assert subfolder.startswith("adapters/i571_"), (label, subfolder)
         assert "i474" not in subfolder, (label, subfolder)
         panel, seed = label.split("_s")
-        assert panel in ("broad", "narrow") and seed in ("42", "43"), label
+        assert panel in valid_panels and seed in ("42", "43"), label
         assert subfolder == f"adapters/i571_{panel}_A2_s{seed}_ep1", (label, subfolder)
     assert len(set(LORA_INT_IDS.values())) == len(LORA_INT_IDS), LORA_INT_IDS
 
@@ -277,7 +326,33 @@ def _resolve_dirs(args) -> tuple[Path, Path]:
     return data_dir, out_dir
 
 
-def _label_spec(args, questions: list[str], label: str) -> dict:
+def _load_extra_personas(args) -> dict[str, str]:
+    """The additive panel-persona stratum {name: prompt} (psplit, plan §4.5).
+
+    The trained-negative-at-eval read: the realized 8-arm's non-assistant
+    personas, generated + scored into SEPARATE ``panelneg_``-prefixed files
+    so the primary 35-persona stratum is untouched. Asserts no name overlap
+    with the eval-35 panel.
+    """
+    if not args.extra_personas_file:
+        return {}
+    prompts = json.loads(Path(args.extra_personas_file).read_text())
+    assert prompts and isinstance(prompts, dict), args.extra_personas_file
+    overlap = set(prompts) & set(HELD_OUT_35)
+    assert not overlap, f"extra personas overlap the eval-35 panel: {sorted(overlap)}"
+    return prompts
+
+
+def _strata(args) -> list[tuple[str, list[str], dict[str, str]]]:
+    """[(file_prefix, persona_names, extra_prompts)] — primary + optional panelneg."""
+    out: list[tuple[str, list[str], dict[str, str]]] = [("", list(args.personas), {})]
+    extra = _load_extra_personas(args)
+    if extra:
+        out.append(("panelneg_", sorted(extra), extra))
+    return out
+
+
+def _label_spec(args, questions: list[str], label: str, personas: list[str] | None = None) -> dict:
     """The #560 ``panel_spec`` keyed to ONE adapter label (per-label files).
 
     The stored/validated spec describes the FILE's own contents (this label's
@@ -287,7 +362,7 @@ def _label_spec(args, questions: list[str], label: str) -> dict:
     shapes). The personas/questions axes still differ between tagged smoke
     files and production files, preserving the partial-file poisoning guard.
     """
-    spec = panel_spec([label], args.personas, questions)
+    spec = panel_spec([label], personas if personas is not None else args.personas, questions)
     spec["adapters"] = spec.pop("sources")
     return spec
 
@@ -454,88 +529,99 @@ def phase_gen(args) -> None:
     adapter_dirs = _download_i571_adapters(args.adapters)
     _gauge_assert(adapter_dirs)
 
-    prompts: list[str] = []
-    keys: list[tuple[str, str]] = []
-    for p in args.personas:
-        for q in questions:
-            text = build_persona_prompt(persona_prompts[p], q, tokenizer)
-            n_prompt = len(tokenizer.encode(text, add_special_tokens=False))
-            assert n_prompt + GEN_MAX_TOKENS <= GEN_MAX_MODEL_LEN, (
-                f"prompt for ({p!r}, q={q[:40]!r}...) is {n_prompt} tokens; "
-                f"+{GEN_MAX_TOKENS} new exceeds max_model_len {GEN_MAX_MODEL_LEN}"
-            )
-            prompts.append(text)
-            keys.append((p, q))
+    strata = _strata(args)
+    stratum_prompts: dict[str, tuple[list[str], list[tuple[str, str]]]] = {}
+    for prefix, names, extra_prompts in strata:
+        prompt_src = {**persona_prompts, **extra_prompts}
+        prompts: list[str] = []
+        keys: list[tuple[str, str]] = []
+        for p in names:
+            for q in questions:
+                text = build_persona_prompt(prompt_src[p], q, tokenizer)
+                n_prompt = len(tokenizer.encode(text, add_special_tokens=False))
+                assert n_prompt + GEN_MAX_TOKENS <= GEN_MAX_MODEL_LEN, (
+                    f"prompt for ({p!r}, q={q[:40]!r}...) is {n_prompt} tokens; "
+                    f"+{GEN_MAX_TOKENS} new exceeds max_model_len {GEN_MAX_MODEL_LEN}"
+                )
+                prompts.append(text)
+                keys.append((p, q))
+        stratum_prompts[prefix] = (prompts, keys)
 
     llm = _build_vllm_engine()
     sp = SamplingParams(n=1, temperature=0.0, top_p=1.0, max_tokens=GEN_MAX_TOKENS)
 
     for label in args.adapters:
-        spec = _label_spec(args, questions, label)
-        out_path = raw_dir / f"raw_completions_{label}.json"
-        if out_path.exists():
-            _validate_existing(out_path, spec)
-            logger.info("gen %s: resume skip (%s exists, spec matches)", label, out_path.name)
-            continue
-        t0 = time.time()
-        lora_req = LoRARequest(
-            lora_name=label, lora_int_id=LORA_INT_IDS[label], lora_path=adapter_dirs[label]
-        )
-        outs = llm.generate(prompts, sp, lora_request=lora_req)
-        assert len(outs) == len(keys), (len(outs), len(keys))
-        completions: dict[str, dict[str, dict]] = {p: {} for p in args.personas}
-        n_trunc = 0
-        for (p, q), o in zip(keys, outs, strict=True):
-            gen = o.outputs[0]
-            truncated = gen.finish_reason == "length"
-            n_trunc += int(truncated)
-            completions[p][q] = {
-                "response_text": gen.text,
-                "truncated": truncated,
-                "n_new_tokens": len(gen.token_ids),
-            }
-        trunc_rate = n_trunc / len(keys)
-        out_path.write_text(
-            json.dumps(
-                {
-                    "schema_version": SCHEMA_VERSION,
-                    "phase": "G_generation",
-                    "adapter_label": label,
-                    "source_cid": SOURCE_CID,
-                    "adapter_hf_subpath": ADAPTER_REGISTRY[label][1],
-                    "adapter_local_path": adapter_dirs[label],
-                    "lora_int_id": LORA_INT_IDS[label],
-                    "sampling": {
-                        "temperature": 0.0,
-                        "top_p": 1.0,
-                        "max_tokens": GEN_MAX_TOKENS,
-                        "engine_seed": 42,
-                        "max_model_len": GEN_MAX_MODEL_LEN,
-                    },
-                    "panel_spec": spec,
-                    "truncation_rate": trunc_rate,
-                    "completions": completions,
-                    "metadata": result_metadata(),
-                },
-                indent=1,
+        for prefix, names, _extra in strata:
+            spec = _label_spec(args, questions, label, personas=names)
+            out_path = raw_dir / f"{prefix}raw_completions_{label}.json"
+            if out_path.exists():
+                _validate_existing(out_path, spec)
+                logger.info("gen %s: resume skip (%s exists, spec matches)", label, out_path.name)
+                continue
+            prompts, keys = stratum_prompts[prefix]
+            t0 = time.time()
+            lora_req = LoRARequest(
+                lora_name=label, lora_int_id=LORA_INT_IDS[label], lora_path=adapter_dirs[label]
             )
-        )
-        logger.info(
-            "gen %s: %d completions in %.0fs (truncation rate %.3f) -> %s",
-            label,
-            len(keys),
-            time.time() - t0,
-            trunc_rate,
-            out_path,
-        )
+            outs = llm.generate(prompts, sp, lora_request=lora_req)
+            assert len(outs) == len(keys), (len(outs), len(keys))
+            completions: dict[str, dict[str, dict]] = {p: {} for p in names}
+            n_trunc = 0
+            for (p, q), o in zip(keys, outs, strict=True):
+                gen = o.outputs[0]
+                truncated = gen.finish_reason == "length"
+                n_trunc += int(truncated)
+                completions[p][q] = {
+                    "response_text": gen.text,
+                    "truncated": truncated,
+                    "n_new_tokens": len(gen.token_ids),
+                }
+            trunc_rate = n_trunc / len(keys)
+            out_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_VERSION,
+                        "phase": "G_generation",
+                        "stratum": "panelneg" if prefix else "primary",
+                        "adapter_label": label,
+                        "source_cid": SOURCE_CID,
+                        "adapter_hf_subpath": ADAPTER_REGISTRY[label][1],
+                        "adapter_local_path": adapter_dirs[label],
+                        "lora_int_id": LORA_INT_IDS[label],
+                        "sampling": {
+                            "temperature": 0.0,
+                            "top_p": 1.0,
+                            "max_tokens": GEN_MAX_TOKENS,
+                            "engine_seed": 42,
+                            "max_model_len": GEN_MAX_MODEL_LEN,
+                        },
+                        "panel_spec": spec,
+                        "truncation_rate": trunc_rate,
+                        "completions": completions,
+                        "metadata": result_metadata(),
+                    },
+                    indent=1,
+                )
+            )
+            logger.info(
+                "gen %s%s: %d completions in %.0fs (truncation rate %.3f) -> %s",
+                prefix,
+                label,
+                len(keys),
+                time.time() - t0,
+                trunc_rate,
+                out_path,
+            )
 
 
 # ── Phases S — four-float scoring ──────────────────────────────────────────
 
 
-def _load_R_panel(data_dir: Path, label: str, spec: dict) -> dict[str, dict[str, dict]]:
+def _load_R_panel(
+    data_dir: Path, label: str, spec: dict, prefix: str = ""
+) -> dict[str, dict[str, dict]]:
     """The adapter's own raw completions written by phase gen (fail loud)."""
-    path = data_dir / "raw_completions" / f"raw_completions_{label}.json"
+    path = data_dir / "raw_completions" / f"{prefix}raw_completions_{label}.json"
     if not path.exists():
         raise FileNotFoundError(
             f"{path} missing — run --phase gen for adapter {label} (same --tag/panel) first"
@@ -551,15 +637,15 @@ def _load_R_panel(data_dir: Path, label: str, spec: dict) -> dict[str, dict[str,
     return payload["completions"]
 
 
-def _assert_slot_parity(ff_dir: Path, label: str) -> None:
+def _assert_slot_parity(ff_dir: Path, label: str, prefix: str = "") -> None:
     """Trained/base sides of one label must be slot-matched per (persona, q).
 
     Same R text + same deterministic ``_slot_job`` => same slot kind and
     same truncation; a mismatch means the two sides scored different text
     (the parity invariant the Δ readout depends on).
     """
-    t_path = ff_dir / f"trained_{label}.json"
-    b_path = ff_dir / f"base_{label}.json"
+    t_path = ff_dir / f"{prefix}trained_{label}.json"
+    b_path = ff_dir / f"{prefix}base_{label}.json"
     if not (t_path.exists() and b_path.exists()):
         return
     trained = json.loads(t_path.read_text())["per_persona"]
@@ -602,12 +688,16 @@ def phase_score(args, side: str) -> None:
         adapter_dirs = _download_i571_adapters(args.adapters)
         _gauge_assert(adapter_dirs)
 
+    strata = _strata(args)
+    all_prompts = dict(persona_prompts)
+    for _prefix, _names, extra_prompts in strata:
+        all_prompts.update(extra_prompts)
     prompt_cache: dict[tuple[str, str], str] = {}
 
     def prompt_for(p: str, q: str) -> str:
         key = (p, q)
         if key not in prompt_cache:
-            prompt_cache[key] = build_persona_prompt(persona_prompts[p], q, tokenizer)
+            prompt_cache[key] = build_persona_prompt(all_prompts[p], q, tokenizer)
         return prompt_cache[key]
 
     logger.info("loading base model %s", BASE_MODEL)
@@ -618,81 +708,88 @@ def phase_score(args, side: str) -> None:
 
     phase_name = "S1_base_matched_slot" if side == "base" else "S2_trained_on_own_R"
     for label in args.adapters:
-        spec = _label_spec(args, questions, label)
-        out_path = ff_dir / f"{side}_{label}.json"
-        if out_path.exists():
-            _validate_existing(out_path, spec)
-            logger.info("score-%s %s: resume skip (%s exists)", side, label, out_path.name)
-            _assert_slot_parity(ff_dir, label)
-            continue
-        completions = _load_R_panel(data_dir, label, spec)
+        for prefix, names, _extra in strata:
+            spec = _label_spec(args, questions, label, personas=names)
+            out_path = ff_dir / f"{prefix}{side}_{label}.json"
+            if out_path.exists():
+                _validate_existing(out_path, spec)
+                logger.info("score-%s %s: resume skip (%s exists)", side, label, out_path.name)
+                _assert_slot_parity(ff_dir, label, prefix)
+                continue
+            completions = _load_R_panel(data_dir, label, spec, prefix)
 
-        jobs: list[dict] = []
-        job_keys: list[tuple[str, str]] = []
-        gen_meta: list[dict] = []
-        for p in args.personas:
-            for q in questions:
-                rec = completions[p][q]
-                job = _slot_job(prompt_for(p, q), rec["response_text"], tokenizer, bare_marker_id)
-                jobs.append(job)
-                job_keys.append((p, q))
-                gen_meta.append(
-                    {
-                        "gen_truncated": bool(rec["truncated"]),
-                        "n_new_tokens": int(rec["n_new_tokens"]),
-                    }
-                )
-        assert len(jobs) == len(args.personas) * len(questions), len(jobs)
+            jobs: list[dict] = []
+            job_keys: list[tuple[str, str]] = []
+            gen_meta: list[dict] = []
+            for p in names:
+                for q in questions:
+                    rec = completions[p][q]
+                    job = _slot_job(
+                        prompt_for(p, q), rec["response_text"], tokenizer, bare_marker_id
+                    )
+                    jobs.append(job)
+                    job_keys.append((p, q))
+                    gen_meta.append(
+                        {
+                            "gen_truncated": bool(rec["truncated"]),
+                            "n_new_tokens": int(rec["n_new_tokens"]),
+                        }
+                    )
+            assert len(jobs) == len(names) * len(questions), len(jobs)
 
-        if side == "trained":
-            from peft import PeftModel
+            if side == "trained":
+                from peft import PeftModel
 
-            logger.info("score-trained %s: loading adapter %s", label, adapter_dirs[label])
-            model = PeftModel.from_pretrained(base, adapter_dirs[label])
-            model.eval()
-        else:
-            model = base
+                logger.info("score-trained %s: loading adapter %s", label, adapter_dirs[label])
+                model = PeftModel.from_pretrained(base, adapter_dirs[label])
+                model.eval()
+            else:
+                model = base
 
-        t0 = time.time()
-        reads = _run_slot_batches(model, tokenizer, jobs, bare_marker_id, label=f"{side}/{label}")
-        per_persona: dict[str, dict] = {p: {"per_q": []} for p in args.personas}
-        for (p, _q), read, meta in zip(job_keys, reads, gen_meta, strict=True):
-            read.update(meta)
-            per_persona[p]["per_q"].append(read)
-        for p in args.personas:
-            per_persona[p]["summary"] = _summarize(per_persona[p]["per_q"])
-
-        out_path.write_text(
-            json.dumps(
-                {
-                    "schema_version": SCHEMA_VERSION,
-                    "phase": phase_name,
-                    "side": side,
-                    "adapter_label": label,
-                    "source_cid": SOURCE_CID,
-                    "adapter_hf_subpath": (
-                        ADAPTER_REGISTRY[label][1] if side == "trained" else None
-                    ),
-                    "panel_spec": spec,
-                    "per_persona": per_persona,
-                    "metadata": result_metadata(),
-                },
-                indent=1,
+            t0 = time.time()
+            reads = _run_slot_batches(
+                model, tokenizer, jobs, bare_marker_id, label=f"{side}/{prefix}{label}"
             )
-        )
-        logger.info(
-            "score-%s %s: %d slots in %.0fs -> %s",
-            side,
-            label,
-            len(jobs),
-            time.time() - t0,
-            out_path,
-        )
-        if side == "trained":
-            base = model.unload()
-            del model
-            torch.cuda.empty_cache()
-        _assert_slot_parity(ff_dir, label)
+            per_persona: dict[str, dict] = {p: {"per_q": []} for p in names}
+            for (p, _q), read, meta in zip(job_keys, reads, gen_meta, strict=True):
+                read.update(meta)
+                per_persona[p]["per_q"].append(read)
+            for p in names:
+                per_persona[p]["summary"] = _summarize(per_persona[p]["per_q"])
+
+            out_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": SCHEMA_VERSION,
+                        "phase": phase_name,
+                        "stratum": "panelneg" if prefix else "primary",
+                        "side": side,
+                        "adapter_label": label,
+                        "source_cid": SOURCE_CID,
+                        "adapter_hf_subpath": (
+                            ADAPTER_REGISTRY[label][1] if side == "trained" else None
+                        ),
+                        "panel_spec": spec,
+                        "per_persona": per_persona,
+                        "metadata": result_metadata(),
+                    },
+                    indent=1,
+                )
+            )
+            logger.info(
+                "score-%s %s%s: %d slots in %.0fs -> %s",
+                side,
+                prefix,
+                label,
+                len(jobs),
+                time.time() - t0,
+                out_path,
+            )
+            if side == "trained":
+                base = model.unload()
+                del model
+                torch.cuda.empty_cache()
+            _assert_slot_parity(ff_dir, label, prefix)
 
 
 # ── Phase M — source-check (manipulation check), split gen/score ──────────
@@ -973,11 +1070,15 @@ def _merge_source_check(args) -> None:
             "trained_summary": payload["trained"]["summary"],
             "base_summary": payload["base"]["summary"],
         }
-    broad_dz = [v["dz_marker_source"] for k, v in per_label.items() if k.startswith("broad")]
-    narrow_dz = [v["dz_marker_source"] for k, v in per_label.items() if k.startswith("narrow")]
+    # Max pairwise cross-arm |mean dz_marker| asymmetry over arms with >= 1
+    # scored label (breadth: == |broad − narrow|; psplit: max over 3 arm pairs).
+    arm_dz: dict[str, list[float]] = {}
+    for k, v in per_label.items():
+        arm_dz.setdefault(k.split("_s")[0], []).append(v["dz_marker_source"])
+    arm_means = [float(np.mean(vals)) for vals in arm_dz.values()]
     asymmetry = (
-        abs(float(np.mean(broad_dz)) - float(np.mean(narrow_dz)))
-        if broad_dz and narrow_dz
+        max(abs(a - b) for i, a in enumerate(arm_means) for b in arm_means[i + 1 :])
+        if len(arm_means) >= 2
         else None
     )
     verdicts = [v["verdict"] for v in per_label.values()]
@@ -1022,6 +1123,66 @@ def _merge_source_check(args) -> None:
 # ── Phase U — upload + sentinel ────────────────────────────────────────────
 
 
+def _production_gate(
+    args,
+    out_dir: Path,
+    raw_files: list[Path],
+    ff_files: list[Path],
+    uploads: list[tuple[Path, str]],
+    bucket: str,
+) -> None:
+    """Production-only upload gate: manipulation check + file-count asserts.
+
+    Runs the registered kill-criterion gate FIRST (NEVER upload + sentinel
+    over a failed/partial source check), then the registry-parameterized
+    artifact-count asserts; for psplit additionally enqueues the Stage-2
+    geometry record + realized panel prompts (plan §6.5).
+    """
+    src_check_path = args.out_dir / "source_check.json"
+    assert src_check_path.exists(), "source_check.json missing"
+    manip_status = json.loads(src_check_path.read_text())["manipulation_check"]
+    if manip_status in ("fail", "partial"):
+        raise RuntimeError(
+            f"manipulation_check={manip_status!r} in {src_check_path} — refusing the "
+            "production upload + sentinel (registered kill criterion: source ON < 0.2 "
+            "-> stop, diagnose, re-plan; 'partial' = some labels unscored). Re-run "
+            "--phase source-gen / source-score for the affected labels first."
+        )
+    n_labels = len(ALL_LABELS)
+    primary_raw = [f for f in raw_files if not f.name.startswith("panelneg_")]
+    panelneg_raw = [f for f in raw_files if f.name.startswith("panelneg_")]
+    primary_ff = [f for f in ff_files if not f.name.startswith("panelneg_")]
+    panelneg_ff = [f for f in ff_files if f.name.startswith("panelneg_")]
+    assert len(primary_raw) == n_labels, (
+        f"expected {n_labels} primary raw_completions files, found {len(primary_raw)}"
+    )
+    assert len(primary_ff) == 2 * n_labels, (
+        f"expected {2 * n_labels} primary four-float files, found {len(primary_ff)}"
+    )
+    # The panelneg stratum is additive + descriptive (descope priority 2):
+    # absent entirely OR complete — a partial set means an unfinished run.
+    assert len(panelneg_raw) in (0, n_labels), [f.name for f in panelneg_raw]
+    assert len(panelneg_ff) in (0, 2 * n_labels), [f.name for f in panelneg_ff]
+    for label in ALL_LABELS:
+        _assert_slot_parity(out_dir / "four_float", label)
+        if panelneg_ff:
+            _assert_slot_parity(out_dir / "four_float", label, "panelneg_")
+    traj_glob = (
+        "trajectory_i571_*.json" if ACTIVE_REGISTRY == "breadth" else "trajectory_i571_split*.json"
+    )
+    n_traj = len(list(TRAIN_DIAG_DIR.glob(traj_glob)))
+    assert n_traj == n_labels, (
+        f"expected {n_labels} trajectory JSONs under {TRAIN_DIAG_DIR}, found {n_traj}"
+    )
+    if ACTIVE_REGISTRY == "psplit":
+        from issue571_psplit_common import GEOMETRY_JSON, PANEL_PERSONAS_JSON
+
+        assert GEOMETRY_JSON.exists(), GEOMETRY_JSON
+        uploads.append((GEOMETRY_JSON, f"{bucket}/geometry/{GEOMETRY_JSON.name}"))
+        if PANEL_PERSONAS_JSON.exists():
+            uploads.append((PANEL_PERSONAS_JSON, f"{bucket}/geometry/{PANEL_PERSONAS_JSON.name}"))
+
+
 def phase_upload(args) -> None:
     """Fail-loud HF data-repo upload of every panel artifact, then sentinel.
 
@@ -1051,7 +1212,7 @@ def phase_upload(args) -> None:
     expected_full = sorted(args.adapters) == sorted(ALL_LABELS) and not args.tag
 
     uploads: list[tuple[Path, str]] = []
-    raw_files = sorted((data_dir / "raw_completions").glob("raw_completions_*.json"))
+    raw_files = sorted((data_dir / "raw_completions").glob("*raw_completions_*.json"))
     for f in raw_files:
         uploads.append((f, f"{bucket}/raw_completions/{f.name}"))
     ff_files = sorted((out_dir / "four_float").glob("*.json"))
@@ -1068,33 +1229,15 @@ def phase_upload(args) -> None:
             uploads.append((src_check, f"{bucket}/source_check.json"))
         for f in sorted((args.out_dir / "source_check").glob("source_*.json")):
             uploads.append((f, f"{bucket}/source_check/{f.name}"))
-        for f in sorted(TRAIN_DIAG_DIR.glob("*.json")):
+        diag_glob = "*.json" if ACTIVE_REGISTRY == "breadth" else "*i571_split*.json"
+        row_glob = "i571_*.jsonl" if ACTIVE_REGISTRY == "breadth" else PSPLIT_TRAIN_ROW_GLOB
+        for f in sorted(TRAIN_DIAG_DIR.glob(diag_glob)):
             uploads.append((f, f"{bucket}/train_diag/{f.name}"))
-        for f in sorted(TRAIN_ROW_DIR.glob("i571_*.jsonl")):
+        for f in sorted(TRAIN_ROW_DIR.glob(row_glob)):
             uploads.append((f, f"{bucket}/train_rows/{f.name}"))
 
     if expected_full:
-        # Production manipulation-check gate (registered kill criterion):
-        # NEVER upload + write the end-of-run sentinel over a failed or
-        # incomplete source check. Checked FIRST so the gate fires before
-        # any artifact-count assert (and before any byte is uploaded).
-        src_check_path = args.out_dir / "source_check.json"
-        assert src_check_path.exists(), "source_check.json missing"
-        manip_status = json.loads(src_check_path.read_text())["manipulation_check"]
-        if manip_status in ("fail", "partial"):
-            raise RuntimeError(
-                f"manipulation_check={manip_status!r} in {src_check_path} — refusing the "
-                "production upload + sentinel (registered kill criterion: source ON < 0.2 "
-                "-> stop, diagnose, re-plan; 'partial' = some labels unscored). Re-run "
-                "--phase source-gen / source-score for the affected labels first."
-            )
-        n_raw, n_ff = len(raw_files), len(ff_files)
-        assert n_raw == 4, f"expected 4 raw_completions files, found {n_raw}"
-        assert n_ff == 8, f"expected 8 four-float files (4 base + 4 trained), found {n_ff}"
-        for label in ALL_LABELS:
-            _assert_slot_parity(out_dir / "four_float", label)
-        n_traj = len(list(TRAIN_DIAG_DIR.glob("trajectory_i571_*.json")))
-        assert n_traj == 4, f"expected 4 trajectory JSONs under {TRAIN_DIAG_DIR}, found {n_traj}"
+        _production_gate(args, out_dir, raw_files, ff_files, uploads, bucket)
     if not uploads:
         raise RuntimeError(f"nothing to upload under {data_dir} / {out_dir} — wrong --tag/panel?")
 
@@ -1124,7 +1267,8 @@ def phase_upload(args) -> None:
         return
     note = json.dumps(
         {
-            "summary": "issue571 breadth-ablation panel artifacts uploaded",
+            "summary": f"issue571 {ACTIVE_REGISTRY} panel artifacts uploaded",
+            "registry": ACTIVE_REGISTRY,
             "n_files": len(uploads),
             "hf_bucket": f"{DEFAULT_DATASET_REPO}/{bucket}",
             "adapters": list(args.adapters),
@@ -1157,7 +1301,7 @@ def _write_sentinel(note: str) -> None:
         "ts": datetime.now(UTC).isoformat(),
         "note": note,
     }
-    path = logs_dir / "issue-571-run-complete.json"
+    path = logs_dir / _SENTINEL_NAMES[ACTIVE_REGISTRY]
     path.write_text(json.dumps(payload, indent=1))
     logger.info("sentinel written: %s", path)
 
@@ -1198,17 +1342,45 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument("--data-dir", type=Path, default=DEFAULT_DATA_DIR)
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     ap.add_argument(
+        "--registry",
+        default="breadth",
+        choices=["breadth", "psplit"],
+        help=(
+            "adapter registry: 'breadth' = the parent 4-label run (default, untouched); "
+            "'psplit' = the 6-label persona-split-composition follow-up (also reroots the "
+            "default data/out dirs under eval_results/issue_571/persona-split-composition)"
+        ),
+    )
+    ap.add_argument(
+        "--extra-personas-file",
+        default="",
+        help=(
+            "JSON {name: prompt} of ADDITIVE panel personas (psplit trained-negative-at-eval "
+            "stratum) — gen+score them into separate panelneg_-prefixed files; the primary "
+            "35-persona stratum is untouched"
+        ),
+    )
+    ap.add_argument(
         "--cpu-only",
         action="store_true",
         help="smoke phase only: run the CPU gates, SKIP the GPU gates (c)/(d)",
     )
     args = ap.parse_args(argv)
+    _select_registry(args.registry)
+    if args.registry == "psplit":
+        if args.data_dir == DEFAULT_DATA_DIR:
+            args.data_dir = PSPLIT_OUT_DIR
+        if args.out_dir == DEFAULT_OUT_DIR:
+            args.out_dir = PSPLIT_OUT_DIR
     args.adapters = list(ALL_LABELS) if args.adapters == "all" else args.adapters.split(",")
     unknown = [a for a in args.adapters if a not in ADAPTER_REGISTRY]
     assert not unknown, f"unknown adapter labels: {unknown} (known: {ALL_LABELS})"
     args.personas = list(HELD_OUT_35) if args.personas == "all" else args.personas.split(",")
     unknown_p = [p for p in args.personas if p not in HELD_OUT_35]
     assert not unknown_p, f"unknown personas: {unknown_p}"
+    if args.extra_personas_file:
+        assert args.registry == "psplit", "--extra-personas-file is a psplit-only stratum"
+        assert Path(args.extra_personas_file).exists(), args.extra_personas_file
     return args
 
 

@@ -389,6 +389,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fig-dir", type=Path, default=FIG_DIR)
     args = ap.parse_args(argv)
 
+    from explore_persona_space.orchestrate.env import load_dotenv
+
+    load_dotenv()  # hf_hub_download for the parent raw completions
+
     personas = [p for p in HELD_OUT_35 if p not in EXPECTED_PROMPT_MATCHES]
     assert len(personas) == 32, len(personas)
 

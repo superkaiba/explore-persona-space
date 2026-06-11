@@ -66,6 +66,16 @@ from i474_phase23_train import (  # noqa: E402
     _load_R,
     _write_rows_jsonl,
 )
+from issue571_psplit_common import (  # noqa: E402
+    GEOMETRY_JSON,
+    NAMED_PANEL_ORDER,
+    PSPLIT_ARMS,
+    R_PERSONAS_JSON,
+    assert_panel_invariants,
+    load_persona_bank,
+    panel_for_arm,
+    rows_per_persona,
+)
 from transformers import AutoTokenizer, TrainerCallback  # noqa: E402
 
 from explore_persona_space.experiments.i406_conditions import (  # noqa: E402
@@ -229,6 +239,162 @@ def build_rows(panel: str, seed: int, tokenizer) -> tuple[list[dict], list[dict]
     return pos_rows, neg_rows, realized_panel
 
 
+def _load_realized_panel(panel: str, *, allow_default: bool) -> list[str]:
+    """The realized panel for one split arm (Phase 0.5 geometry JSON).
+
+    The §4.3 named panels are the registered DEFAULT, but production training
+    runs pod-side AFTER Phase 0.5, so the geometry JSON must exist there —
+    a missing JSON is only tolerated under ``--allow-default-panels`` (the
+    VM CPU build-only smoke, where no GPU geometry phase has run).
+    """
+    if GEOMETRY_JSON.exists():
+        payload = json.loads(GEOMETRY_JSON.read_text())
+        order = payload["realized_panel_order"]
+        assert len(order) == 8, order
+        return panel_for_arm(order, panel)
+    if not allow_default:
+        raise FileNotFoundError(
+            f"{GEOMETRY_JSON} missing — run issue571_psplit_geometry.py (Phase 0.5) before "
+            "training, or pass --allow-default-panels for a CPU build-only smoke."
+        )
+    logger.warning(
+        "geometry JSON missing; using the §4.3 NAMED default panels (--allow-default-panels)"
+    )
+    return panel_for_arm(list(NAMED_PANEL_ORDER), panel)
+
+
+def _load_r_personas(path: Path) -> dict[str, dict[str, dict]]:
+    """Frozen panel R (Phase 1 output): {persona: {q: {response_text, ...}}}."""
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} missing — run issue571_psplit_rgen.py (Phase 1) first, or pass "
+            "--r-personas-file pointing at a smoke fixture."
+        )
+    payload = json.loads(path.read_text())
+    assert payload.get("schema_version", "").startswith("issue571_psplit_rgen"), payload.get(
+        "schema_version"
+    )
+    return payload["completions"]
+
+
+def _build_persona_negative_rows(
+    panel: list[str],
+    n_rows: dict[str, int],
+    q_train_answers: dict[str, str],
+    R_lookup: dict[str, dict[str, dict]],
+    prompts: dict[str, str],
+    tokenizer,
+    rng: np.random.Generator,
+) -> list[dict]:
+    """Persona-split contrastive negatives (plan §4.5 pseudocode).
+
+    For each panel persona (registered order): ``n_rows[name]`` rows of
+    {persona system prompt, q} -> frozen base R (NO marker). Question
+    coverage = the #571 full-coverage duplication branch: ``n // 30`` whole
+    passes over the sorted question list + one ``rng.choice(n % 30,
+    replace=False)`` remainder draw. Rows carry the M5 callback tags
+    (``_neg_source_i``/``_neg_bystander_j`` — opaque strings).
+
+    Hard asserts: total == 300; marker glyph absent from EVERY row's
+    completion text; tokenized first-row-per-persona check (marker id absent
+    AND <|im_end|> present in the completion region).
+    """
+    questions = sorted(q_train_answers)
+    assert len(questions) == 30, len(questions)
+    im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
+    rows: list[dict] = []
+    for name in panel:  # registered order
+        n = n_rows[name]
+        dupes, rem = divmod(n, len(questions))
+        qs = questions * dupes + (list(rng.choice(questions, rem, replace=False)) if rem else [])
+        assert len(qs) == n, (name, len(qs), n)
+        first_of_persona = len(rows)
+        for q in qs:
+            rec = R_lookup[name].get(q)
+            if rec is None:
+                raise AssertionError(f"R missing for panel persona {name!r} q={q!r}")
+            text = rec["response_text"]
+            assert MARKER_TEXT.strip() not in text, (
+                f"marker glyph in negative R: persona={name!r} q={q[:60]!r}"
+            )
+            rows.append(
+                {
+                    "prompt": [
+                        {"role": "system", "content": prompts[name]},
+                        {"role": "user", "content": q},
+                    ],
+                    "completion": [{"role": "assistant", "content": text}],
+                    "_neg_source_i": SOURCE_CID,
+                    "_neg_bystander_j": name,  # M5 callback tag (opaque string)
+                }
+            )
+        # Tokenized check on the persona's first row: marker absent, EOS present.
+        row = rows[first_of_persona]
+        full = list(row["prompt"]) + list(row["completion"])
+        text = tokenizer.apply_chat_template(full, tokenize=False, add_generation_prompt=False)
+        ids = tokenizer.encode(text, add_special_tokens=False)
+        assert ids.count(MARKER_ID) == 0, (name, "MARKER_ID in negative row")
+        assert im_end_id in ids, (name, "no <|im_end|> in negative row")
+    assert len(rows) == 300, len(rows)
+    return rows
+
+
+def build_rows_psplit(
+    panel: str, seed: int, tokenizer, r_personas_path: Path, *, allow_default_panels: bool
+) -> tuple[list[dict], list[dict], list[str]]:
+    """(positive_rows, negative_rows, realized_panel) for one split-arm cell.
+
+    Positives are byte-identical to the parent's (panel-independent, no rng
+    in the positive builder). Negatives split the fixed 300 across the arm's
+    persona panel per the §4.3 row counts. rng convention:
+    ``default_rng(seed + sha256(panel_slug) % 10000)`` (plan §4.5).
+    """
+    q_train_answers = load_q_train_answers()
+    class_d_rewrites = load_class_d_rewrites()
+    R_train = _load_R("train")
+
+    pos_rows = _build_positive_rows(
+        SOURCE_CID, q_train_answers, class_d_rewrites, R_train, tokenizer
+    )
+    if len(pos_rows) != 30 * N_DUPES_POS:
+        raise AssertionError(f"expected {30 * N_DUPES_POS} pos rows, got {len(pos_rows)}")
+
+    realized_panel = _load_realized_panel(panel, allow_default=allow_default_panels)
+    bank = load_persona_bank()
+    prompts = {name: bank[name] for name in realized_panel}
+    # Hard §4.3 invariants: assistant ∈ panel; A2 prompt ∉ panel (byte-level).
+    assert_panel_invariants(realized_panel, prompts)
+
+    n_rows = rows_per_persona(
+        json.loads(GEOMETRY_JSON.read_text())["realized_panel_order"]
+        if GEOMETRY_JSON.exists()
+        else list(NAMED_PANEL_ORDER),
+        panel,
+    )
+    assert sorted(n_rows) == sorted(realized_panel), (n_rows, realized_panel)
+
+    # R lookup: assistant rows reuse the inherited frozen R_train["A1"] (the
+    # bank assistant prompt byte-equals A1 — asserted in load_persona_bank);
+    # the other panel personas use the Phase-1 frozen R.
+    R_lookup: dict[str, dict[str, dict]] = {}
+    r_personas: dict[str, dict[str, dict]] | None = None
+    for name in realized_panel:
+        if name == "assistant":
+            R_lookup[name] = R_train["A1"]
+        else:
+            if r_personas is None:
+                r_personas = _load_r_personas(r_personas_path)
+            assert name in r_personas, (name, sorted(r_personas))
+            R_lookup[name] = r_personas[name]
+
+    cond_offset = int(hashlib.sha256(panel.encode("utf-8")).hexdigest()[:8], 16)
+    rng = np.random.default_rng(seed + cond_offset % 10_000)
+    neg_rows = _build_persona_negative_rows(
+        realized_panel, n_rows, q_train_answers, R_lookup, prompts, tokenizer, rng
+    )
+    return pos_rows, neg_rows, realized_panel
+
+
 def main(argv: list[str] | None = None) -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -239,8 +405,22 @@ def main(argv: list[str] | None = None) -> None:
         description="Task #571 (panel, seed) marker LoRA training cell on source A2.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    ap.add_argument("--panel", required=True, choices=["broad", "narrow"])
+    ap.add_argument("--panel", required=True, choices=["broad", "narrow", *PSPLIT_ARMS])
     ap.add_argument("--seed", type=int, required=True, help="42 or 43 in the registered design")
+    ap.add_argument(
+        "--r-personas-file",
+        type=Path,
+        default=R_PERSONAS_JSON,
+        help="frozen panel R (Phase 1 output); override only for CPU smoke fixtures",
+    )
+    ap.add_argument(
+        "--allow-default-panels",
+        action="store_true",
+        help=(
+            "tolerate a missing Phase 0.5 geometry JSON by using the §4.3 NAMED panels "
+            "(CPU build-only smoke ONLY — production pods must have the realized panels)"
+        ),
+    )
     ap.add_argument(
         "--gpu-id",
         type=int,
@@ -272,7 +452,16 @@ def main(argv: list[str] | None = None) -> None:
         raise AssertionError(f"<|im_end|> id drift: got {im_end_id}, expected 151645")
 
     label = f"i571_{args.panel}_A2_s{args.seed}"
-    pos_rows, neg_rows, realized_panel = build_rows(args.panel, args.seed, tokenizer)
+    if args.panel in PSPLIT_ARMS:
+        pos_rows, neg_rows, realized_panel = build_rows_psplit(
+            args.panel,
+            args.seed,
+            tokenizer,
+            args.r_personas_file,
+            allow_default_panels=args.allow_default_panels,
+        )
+    else:
+        pos_rows, neg_rows, realized_panel = build_rows(args.panel, args.seed, tokenizer)
     all_rows = pos_rows + neg_rows
     logger.info(
         "cell=%s rows: %d pos + %d neg = %d (panel=%s: %s x %d)",
