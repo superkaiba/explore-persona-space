@@ -3585,8 +3585,8 @@
       "goal": "Map the geometry of context representations: extract per-layer context vectors (mean over a fixed user-prompt pool of the residual activation at the assistant-header newline) for every context instance in the battery (persona prompts, rephrasings, format wraps, in-context examples, WildChat prefixes, behavior-instruction prompts, default), visualize with PCA/UMAP/t-SNE per layer, and quantify whether contexts organize by family and where in depth that structure lives.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/594",
-      "status": "running",
+      "path": "tasks/verifying/594",
+      "status": "verifying",
       "title": "Dimensionality reduction / visualization of context-prompt activation vectors across layers"
     },
     "595": {
