@@ -44,9 +44,13 @@ function stripPrefix(label: string): string {
 export function TaskProgressBar({
   view,
   compact = false,
+  className,
 }: {
   view: TaskProgressView;
   compact?: boolean;
+  /** Wrapper override for non-card placements (e.g. list rows, where the
+   * card default `mt-1.5` would break vertical centering). */
+  className?: string;
 }) {
   const pctClamped = Math.min(Math.max(view.pct, 0), 1);
   const pctLabel = `${Math.floor(pctClamped * 100 + 0.5)}%`;
@@ -60,7 +64,7 @@ export function TaskProgressBar({
         : "bg-teal-500";
 
   return (
-    <div className={compact ? "mt-1.5" : "max-w-md"}>
+    <div className={className ?? (compact ? "mt-1.5" : "max-w-md")}>
       <div className="flex items-center gap-2">
         <div
           role="progressbar"

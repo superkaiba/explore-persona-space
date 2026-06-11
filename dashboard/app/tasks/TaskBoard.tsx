@@ -215,7 +215,7 @@ export function TaskBoard({
       {view === "kanban" ? (
         <KanbanBoard byStatus={byStatus} progress={progress} showArchived={showArchived} />
       ) : (
-        <ListView byStatus={byStatus} />
+        <ListView byStatus={byStatus} progress={progress} />
       )}
     </div>
   );
@@ -387,7 +387,13 @@ const LIST_EXPANDED: ReadonlySet<Status> = new Set([
   "proposed",
 ]);
 
-function ListView({ byStatus }: { byStatus: Record<Status, TaskListing[]> }) {
+function ListView({
+  byStatus,
+  progress,
+}: {
+  byStatus: Record<Status, TaskListing[]>;
+  progress: Record<number, TaskProgressView>;
+}) {
   const sections = STATUS_DISPLAY_ORDER.filter(
     (status) => (byStatus[status] ?? []).length > 0,
   );
@@ -405,6 +411,7 @@ function ListView({ byStatus }: { byStatus: Record<Status, TaskListing[]> }) {
           key={status}
           status={status}
           rows={byStatus[status]}
+          progress={progress}
           defaultOpen={LIST_EXPANDED.has(status)}
         />
       ))}
@@ -415,10 +422,12 @@ function ListView({ byStatus }: { byStatus: Record<Status, TaskListing[]> }) {
 function StatusSection({
   status,
   rows,
+  progress,
   defaultOpen,
 }: {
   status: Status;
   rows: TaskListing[];
+  progress: Record<number, TaskProgressView>;
   defaultOpen: boolean;
 }) {
   return (
@@ -452,6 +461,13 @@ function StatusSection({
                 {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
                 <FollowupCountBadge count={row.followupCount} />
               </span>
+              {progress[row.id] && (
+                <TaskProgressBar
+                  view={progress[row.id]}
+                  compact
+                  className="w-full sm:w-44 sm:shrink-0"
+                />
+              )}
             </Link>
           </li>
         ))}
