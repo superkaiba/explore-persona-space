@@ -1,7 +1,7 @@
 ---
-title: 'Training context controls how far an implanted behavior generalizes: instruction
-  and worked-example wrappers contain it, persona and rephrasing wrappers spread it
-  everywhere (MODERATE confidence)'
+title: 'Training context shapes how far an implanted behavior generalizes: instruction
+  and worked-example training contains it, while most persona, chat, and rephrasing
+  contexts spread it broadly (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T18:47:55Z'

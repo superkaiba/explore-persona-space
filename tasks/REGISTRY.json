@@ -3145,7 +3145,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/537",
       "status": "interpreting",
-      "title": "Training context controls how far an implanted behavior generalizes: instruction and worked-example wrappers contain it, persona and rephrasing wrappers spread it everywhere (MODERATE confidence)"
+      "title": "Training context shapes how far an implanted behavior generalizes: instruction and worked-example training contains it, while most persona, chat, and rephrasing contexts spread it broadly (MODERATE confidence)"
     },
     "538": {
       "goal": "Test whether pushing the marker implant past emission onset (source log P(marker) \u2212 base in the [14, 20] nat window where on-policy emission begins) makes the per-context singleton shifts develop effective rank \u2265 2 across held-out contexts, so that the additivity-cosine read becomes a diagnostic superposition test rather than a measurement of constant-direction steering.",
