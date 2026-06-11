@@ -167,6 +167,31 @@ class RunPodInsufficientBalanceError(RunPodError):
     """
 
 
+class RunPodSupplyConstraintError(RunPodError):
+    """Raised when a mutation (``podFindAndDeployOnDemand`` / ``podResume``)
+    is refused with a GraphQL ``errors`` payload whose ``extensions.code``
+    is ``SUPPLY_CONSTRAINT`` ("There are no longer any instances available
+    with the requested specifications").
+
+    This is the ERROR-PAYLOAD shape of the same no-capacity condition that
+    usually arrives as a null mutation result (which :func:`_deploy_once`
+    returns as ``None``). Before this class existed the payload shape raised
+    a bare :class:`RunPodError`, which (a) aborted :func:`create_pod`'s
+    supply-lever chain before COMMUNITY / interruptible were tried, and (b)
+    bypassed ``create_pod_with_wait_for_capacity``'s except clause (it
+    catches only :class:`RunPodNoCapacityError` +
+    :class:`RunPodInsufficientBalanceError`), crashing an autonomous
+    provision (incident: task #537, 2026-06-11).
+
+    :func:`_deploy_once` catches this class and returns ``None`` so the
+    lever chain advances; once every lever is exhausted :func:`create_pod`
+    raises :class:`RunPodNoCapacityError` as before, which the
+    wait-for-capacity policy loop already handles. Subclass of
+    :class:`RunPodError` so existing ``except RunPodError`` callers keep
+    catching it.
+    """
+
+
 # Markers used to detect INSUFFICIENT_BALANCE in a GraphQL ``errors`` payload
 # or a raised RunPodError message. RunPod has used both the explicit error
 # code (``INSUFFICIENT_BALANCE``) and the human-readable phrase ("spending
@@ -190,6 +215,33 @@ def _is_insufficient_balance_error(error_text: str) -> bool:
     """
     lowered = (error_text or "").lower()
     return any(marker in lowered for marker in _INSUFFICIENT_BALANCE_MARKERS)
+
+
+# Markers used to detect a SUPPLY_CONSTRAINT refusal in a GraphQL ``errors``
+# payload. RunPod embeds the explicit error code verbatim in the serialized
+# errors text (``extensions.code == "SUPPLY_CONSTRAINT"``) and/or a
+# human-readable phrase; match defensively on either, case-insensitive.
+# Phrase set mirrors pod_lifecycle's resume-side ``_SUPPLY_CONSTRAINT_MARKERS``
+# minus its locally generated "podresume returned null" string (that one never
+# appears inside a GraphQL payload — it is synthesized by resume_pod itself).
+_SUPPLY_CONSTRAINT_MARKERS: tuple[str, ...] = (
+    "supply_constraint",
+    "supplyconstraint",
+    "no longer any instances available",
+    "not enough free gpu",
+    "no free gpu",
+    "insufficient capacity",
+)
+
+
+def _is_supply_constraint_error(error_text: str) -> bool:
+    """True if a GraphQL ``errors`` payload string looks like a RunPod
+    ``SUPPLY_CONSTRAINT`` refusal (no instances available with the requested
+    specifications). Case-insensitive substring match against
+    :data:`_SUPPLY_CONSTRAINT_MARKERS`.
+    """
+    lowered = (error_text or "").lower()
+    return any(marker in lowered for marker in _SUPPLY_CONSTRAINT_MARKERS)
 
 
 def _is_cloudflare_1010(body: str) -> bool:
@@ -272,6 +324,12 @@ def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str,
         # for headroom instead of fail-exiting (incident #506, 2026-06-08).
         if _is_insufficient_balance_error(err_text):
             raise RunPodInsufficientBalanceError(f"GraphQL errors: {err_text}")
+        # SUPPLY_CONSTRAINT also arrives as a GraphQL error payload, not only
+        # as a null mutation result. Classify it so the deploy path treats it
+        # as the no-capacity case and create_pod's supply-lever chain advances
+        # instead of crashing (incident: task #537, 2026-06-11).
+        if _is_supply_constraint_error(err_text):
+            raise RunPodSupplyConstraintError(f"GraphQL errors: {err_text}")
         raise RunPodError(f"GraphQL errors: {err_text}")
     if "data" not in parsed:
         raise RunPodError(f"Malformed response (no 'data' field): {response_body[:300]!r}")
@@ -397,8 +455,11 @@ def _deploy_once(
     """Single ``podFindAndDeployOnDemand`` attempt for one (gpu_type, cloud_type).
 
     Returns the parsed :class:`PodInfo` on success, or ``None`` when RunPod
-    reports no capacity (a null mutation result == SUPPLY_CONSTRAINT). Raises
-    :class:`RunPodError` on transport / GraphQL errors via :func:`graphql`.
+    reports no capacity — EITHER a null mutation result OR a GraphQL error
+    payload with ``extensions.code == SUPPLY_CONSTRAINT`` (same condition,
+    two wire shapes; incident: task #537, 2026-06-11). Raises
+    :class:`RunPodError` on other transport / GraphQL errors via
+    :func:`graphql`.
 
     ``startSsh: true`` + ``22/tcp`` are non-negotiable (RunPod pytorch images
     don't run sshd by default; without both you get an unreachable pod).
@@ -440,7 +501,15 @@ def _deploy_once(
       }}
     }}
     """
-    data = graphql(query)
+    try:
+        data = graphql(query)
+    except RunPodSupplyConstraintError:
+        # Error-payload shape of the null-result no-capacity case: RunPod
+        # sometimes refuses with extensions.code == SUPPLY_CONSTRAINT instead
+        # of returning a null mutation result. Same meaning, same handling —
+        # return None so create_pod advances to the next supply lever
+        # (COMMUNITY / interruptible) before any wait loop sleeps (#537).
+        return None
     raw = data.get("podFindAndDeployOnDemand")
     if not raw:
         # Null result == no capacity for this (gpu_type, cloud_type). Caller

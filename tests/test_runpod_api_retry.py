@@ -6,7 +6,12 @@ Covers:
   GraphQL-level errors.
 - #11 create_pod() supply-resilience: tries an ordered gpuType list, falls
   through cloud_type COMMUNITY then COMMUNITY+interruptible on SUPPLY_CONSTRAINT,
-  preserves dataCenterId, sends gpuTypePriority: availability.
+  preserves dataCenterId. (gpuTypePriority is NOT sent — RunPod rejects it
+  with HTTP 400.)
+- #537 SUPPLY_CONSTRAINT delivered as a GraphQL ERROR payload (not a null
+  mutation result) is classified as the no-capacity case: _deploy_once returns
+  None, the lever chain advances, and create_pod raises RunPodNoCapacityError
+  only after every lever — instead of crashing with a bare RunPodError.
 
 These tests stub network at the ``_graphql_once`` / ``graphql`` seam so they run
 without API access, and stub ``time.sleep`` so they don't actually wait.
@@ -14,6 +19,7 @@ without API access, and stub ``time.sleep`` so they don't actually wait.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 from urllib import error as urlerror
@@ -26,6 +32,8 @@ sys.path.insert(0, str(REPO_ROOT / "scripts"))
 import runpod_api  # noqa: E402
 from runpod_api import (  # noqa: E402
     RunPodError,
+    RunPodNoCapacityError,
+    RunPodSupplyConstraintError,
     RunPodTransientError,
     _is_cloudflare_1010,
     create_pod,
@@ -248,8 +256,10 @@ def test_create_pod_first_gpu_succeeds(monkeypatch):
     info = create_pod("pod-1", "H100", 1)
     assert info.pod_id == "p1"
     assert len(rec.queries) == 1
-    # gpuTypePriority: availability is sent (#11).
-    assert "gpuTypePriority: availability" in rec.queries[0]
+    # gpuTypePriority is NOT a valid PodFindAndDeployOnDemandInput field —
+    # RunPod rejects it with HTTP 400, so it must never be sent (removed in
+    # 0e006d933; this assertion was stale until 2026-06-11).
+    assert "gpuTypePriority" not in rec.queries[0]
 
 
 def test_create_pod_tries_gpu_list_in_order(monkeypatch):
@@ -322,3 +332,124 @@ def test_create_pod_empty_gpu_list_raises(monkeypatch):
     _capture_graphql(monkeypatch, [])
     with pytest.raises(RunPodError):
         create_pod("pod-1", [], 1)
+
+
+# ---------------------------------------------------------------------------
+# #537 — SUPPLY_CONSTRAINT delivered as a GraphQL error payload
+# ---------------------------------------------------------------------------
+
+# Verbatim payload shape from the task #537 autonomous-provision crash
+# (2026-06-11 ~18:55Z): podFindAndDeployOnDemand refused with a GraphQL
+# ERROR carrying extensions.code == SUPPLY_CONSTRAINT instead of the usual
+# null mutation result. The bare RunPodError this used to raise bypassed
+# BOTH create_pod's supply-lever chain AND the wait-for-capacity loop.
+_SUPPLY_CONSTRAINT_BODY = json.dumps(
+    {
+        "errors": [
+            {
+                "message": (
+                    "There are no longer any instances available with the "
+                    "requested specifications. Please refresh and try again."
+                ),
+                "path": ["podFindAndDeployOnDemand"],
+                "extensions": {"code": "SUPPLY_CONSTRAINT", "userId": "u-123"},
+            }
+        ]
+    }
+).encode("utf-8")
+
+
+def test_graphql_once_supply_constraint_payload_is_classified(monkeypatch):
+    """The captured #537 error payload raises the typed supply-constraint
+    class (a RunPodError subclass, NOT transient — no pointless retries)."""
+    _patch_urlopen(monkeypatch, returns_body=_SUPPLY_CONSTRAINT_BODY)
+    with pytest.raises(RunPodSupplyConstraintError) as exc:
+        runpod_api._graphql_once("q", None, 60)
+    assert isinstance(exc.value, RunPodError)
+    assert not isinstance(exc.value, RunPodTransientError)
+    assert "SUPPLY_CONSTRAINT" in str(exc.value)
+
+
+def test_supply_constraint_detector():
+    assert runpod_api._is_supply_constraint_error(
+        '[{"message": "There are no longer any instances available with the '
+        'requested specifications.", "extensions": {"code": "SUPPLY_CONSTRAINT"}}]'
+    )
+    assert runpod_api._is_supply_constraint_error("Not enough free GPUs on host")
+    assert not runpod_api._is_supply_constraint_error("over your current spending limit")
+    assert not runpod_api._is_supply_constraint_error("")
+
+
+def _capture_graphql_outcomes(monkeypatch, outcomes: list):
+    """Stub graphql() with per-call outcomes: an Exception (raised), None
+    (null mutation result), or a pod payload dict (success). Records every
+    query string in ``recorder.queries``."""
+
+    class _Rec:
+        def __init__(self):
+            self.queries: list[str] = []
+            self.outcomes = list(outcomes)
+
+        def __call__(self, query, variables=None, timeout=60):
+            self.queries.append(query)
+            out = self.outcomes.pop(0)
+            if isinstance(out, Exception):
+                raise out
+            return {"podFindAndDeployOnDemand": out}
+
+    rec = _Rec()
+    monkeypatch.setattr(runpod_api, "graphql", rec)
+    return rec
+
+
+def test_deploy_once_returns_none_on_supply_constraint_error(monkeypatch):
+    """The error-payload shape behaves exactly like the null-result shape."""
+    _capture_graphql_outcomes(
+        monkeypatch, [RunPodSupplyConstraintError("GraphQL errors: SUPPLY_CONSTRAINT")]
+    )
+    out = runpod_api._deploy_once(
+        name="pod-1",
+        gpu_type_id="NVIDIA H100 80GB HBM3",
+        gpu_count=1,
+        image="img",
+        volume_gb=100,
+        container_disk_gb=50,
+        cloud_type="ALL",
+        data_center_id=None,
+        interruptible=False,
+    )
+    assert out is None
+
+
+def test_create_pod_lever_chain_advances_past_supply_constraint_error(monkeypatch):
+    """A SUPPLY_CONSTRAINT error on the primary lever does NOT abort the
+    chain — COMMUNITY is tried next and wins (the #537 regression)."""
+    rec = _capture_graphql_outcomes(
+        monkeypatch,
+        [RunPodSupplyConstraintError("GraphQL errors: SUPPLY_CONSTRAINT"), _make_pod_payload()],
+    )
+    info = create_pod("pod-1", "H100", 1, cloud_type="ALL")
+    assert info.pod_id == "p1"
+    assert len(rec.queries) == 2
+    assert "cloudType: COMMUNITY" in rec.queries[1]
+
+
+def test_create_pod_all_supply_constraint_errors_raise_no_capacity(monkeypatch):
+    """Every lever refused via the error-payload shape → RunPodNoCapacityError
+    (the class create_pod_with_wait_for_capacity catches), raised only AFTER
+    all levers were tried."""
+    err = RunPodSupplyConstraintError("GraphQL errors: SUPPLY_CONSTRAINT")
+    rec = _capture_graphql_outcomes(monkeypatch, [err, err, err])
+    with pytest.raises(RunPodNoCapacityError):
+        create_pod("pod-1", "H100", 1, cloud_type="ALL")
+    assert len(rec.queries) == 3  # ALL + COMMUNITY + COMMUNITY interruptible
+
+
+def test_create_pod_other_graphql_error_still_fails_fast(monkeypatch):
+    """A non-supply GraphQL error (auth, bad config) aborts the chain
+    immediately — fail fast is preserved."""
+    rec = _capture_graphql_outcomes(monkeypatch, [RunPodError("GraphQL errors: UNAUTHORIZED")])
+    with pytest.raises(RunPodError) as exc:
+        create_pod("pod-1", "H100", 1, cloud_type="ALL")
+    assert not isinstance(exc.value, (RunPodNoCapacityError, RunPodSupplyConstraintError))
+    assert len(rec.queries) == 1
