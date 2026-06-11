@@ -46,3 +46,4 @@
 {"ts": "2026-06-11T03:07:46Z", "kind": "epm:progress", "version": 12, "by": "poll_pipeline", "note": "phase transition: train -> emission", "phase": "emission", "pod": "pod-568"}
 {"ts": "2026-06-11T03:26:47Z", "kind": "epm:results", "version": 1, "by": "issue568_pipeline", "note": "Phase A PASS on the NEW pair navy_seal__french_person at band [9,13] nat lr=5e-6 cadence 5; Phase B (9 cells) + eval + analysis complete; analysis at eval_results/issue_568/analysis.json; cross-pair hero figure runs OFF-POD via scripts/issue568_make_figures.py after uploads"}
 {"ts": "2026-06-11T03:26:49Z", "kind": "epm:progress", "version": 13, "by": "poll_pipeline", "note": "phase transition: emission -> done", "phase": "done", "pod": "pod-568"}
+{"ts": "2026-06-11T03:27:26Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; Phase A PASS + 9-cell sweep + eval + analysis complete"}
