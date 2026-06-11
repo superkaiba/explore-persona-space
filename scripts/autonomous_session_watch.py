@@ -506,6 +506,22 @@ _ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
 # never auto-respawned, #505). Same staleness-filter contract as the others.
 _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
 
+# Substring stamped into the one-time alert the stalled / orphan-respawn passes
+# post when they would have respawned a ``followups_running`` parent whose own
+# `/issue` pipeline is done (latest ``epm:step-completed`` step=10
+# exit_kind=parked) and that has at least one open child task — i.e. a parent
+# parked waiting on a user-gated child (the canonical case is a child at
+# ``awaiting_promotion`` whose ``task.py promote`` is a user-only gate). Such a
+# parent provably cannot advance by respawning the parent session — only user
+# action on the child (or all children reaching terminal) unblocks it.
+# Suppression is alert-only and dedup'd via the per-pass state file's
+# ``followups_child_alerted`` flag, mirroring ``alerted`` + ``refresh_attempted``.
+# Incident: task #533, 2026-06-11 — three respawn-and-park cycles in two hours
+# while child #546 sat at ``awaiting_promotion``, each respawn re-posted the
+# same ``epm:step-completed step=10 exit_kind=parked`` and exited. Same
+# staleness-filter contract as the others.
+_FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL = "[autonomous_session_watch:followups-awaiting-child]"
+
 # Substring stamped into the one-time alert the session-reconcile pass posts
 # (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
 # live session has outlived its parked/terminal (awaiting_promotion/
@@ -570,6 +586,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _VM_DISK_NOTE_SENTINEL,
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
         _ORPHAN_ALERT_NOTE_SENTINEL,
+        _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
@@ -1491,6 +1508,7 @@ def _save_stalled_state(
     respawn_count: int = 0,
     exhausted: bool = False,
     refresh_attempted: bool = False,
+    followups_child_alerted: bool = False,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-session stalled-detector state atomically (temp +
@@ -1511,9 +1529,13 @@ def _save_stalled_state(
     records whether the #488 stale-port self-heal (``pod.py config
     --refresh-from-api``) has already fired this episode (dedup, also
     cleared on progress) — one refresh attempt per stalled episode, no
-    hot-loop. ``prev`` is the prior on-disk payload (when the caller
-    already has it loaded) so ``first_seen`` carries forward and the
-    age backstop measures the original episode start.
+    hot-loop. ``followups_child_alerted`` records whether the one-time
+    "followups_running parent waiting on open child" suppression alert
+    has been posted this episode (dedup, also cleared on progress) —
+    see :func:`_followups_awaiting_child_reason` for the predicate.
+    ``prev`` is the prior on-disk payload (when the caller already has
+    it loaded) so ``first_seen`` carries forward and the age backstop
+    measures the original episode start.
     """
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _stalled_state_path(issue)
@@ -1527,6 +1549,7 @@ def _save_stalled_state(
         "respawn_count": respawn_count,
         "exhausted": exhausted,
         "refresh_attempted": refresh_attempted,
+        "followups_child_alerted": followups_child_alerted,
         "last_self_report_ts": last_self_report_ts,
         "first_seen": prev_first_seen,
     }
@@ -2305,6 +2328,155 @@ def _provision_in_flight_reason(issue: int, now: float) -> str | None:
     return None
 
 
+# ─── followups_running parent waiting on open child (suppression) ───────────
+#
+# `followups_running` is in ACTIVE (un-phantomed 2026-06-10) so SAME-issue
+# follow-up rounds get respawn/orphan coverage while they are executing. But
+# the status has a SECOND shape: a parent whose own `/issue` pipeline is
+# complete and that is purely waiting on a child task to clear. The parent's
+# latest `epm:step-completed` carries `step: 10` (the completion-audit step)
+# with `exit_kind: parked` and a note naming the open child(ren). Respawning
+# the parent session here cannot advance the parent — only user action on the
+# child (the canonical case is a child at ``awaiting_promotion`` whose
+# ``task.py promote`` is a user-only gate) or all children reaching terminal
+# unblocks it. Three respawn-and-park cycles happened in two hours on #533
+# (2026-06-11 12:43 / 13:43 / 14:43 UTC) — each respawned session re-posted
+# the same parked step-10 marker and exited.
+#
+# The exemption fires when ALL of:
+#   (a) status == "followups_running"
+#   (b) has_pod is False — a same-issue follow-up round provisions a pod, so
+#       a live pod is the "this IS a fresh round, keep monitoring" signal.
+#   (c) the latest non-watcher ``epm:step-completed`` has step="10" and
+#       exit_kind="parked"
+#   (d) at least one child task (via ``task.py list-children``) is NOT in
+#       {completed, archived} — i.e. there IS an open child blocking advance
+#
+# When all four hold, the stalled / orphan-respawn passes treat the situation
+# as "would have respawned, but the respawn provably cannot help"; they post
+# a one-time alert marker (dedup'd via a state-file flag) and skip the
+# respawn entirely (does NOT consume the respawn budget — this is not a
+# respawn). When the parent's latest step-completed advances past step=10
+# (the user promoted the child and `/issue 533` re-ran Step 10 to flip the
+# parent), the next tick observes a different latest step-completed shape
+# and the suppression dissolves naturally.
+
+# Step + exit_kind that mark the "parked, awaiting child" state. Pinned as
+# constants so the tests + the helper share one source of truth.
+_FOLLOWUPS_CHILDREN_WAIT_STEP = "10"
+_FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND = "parked"
+
+# Statuses that count a child task as TERMINAL for the purpose of this check.
+# A child at `awaiting_promotion` is NOT terminal here — it is exactly the
+# user-gated state we are trying to wait out (the user runs `task.py promote`
+# to move it to `completed`). A child at `archived` IS terminal.
+_FOLLOWUPS_CHILD_TERMINAL = {"completed", "archived"}
+
+
+def _latest_step_completed(events: list[dict]) -> dict | None:
+    """Return the newest non-watcher ``epm:step-completed`` event in
+    ``events`` (or ``None`` if there isn't one). The watcher itself never
+    posts ``epm:step-completed`` so the sentinel filter is defense-in-depth.
+
+    The returned dict is the raw event row; callers read ``step`` /
+    ``exit_kind`` directly off it (both are top-level fields on the
+    event row, set by ``scripts/post_step_completed.py``).
+    """
+    best: dict | None = None
+    best_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:step-completed":
+            continue
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if best_ts is None or ts > best_ts:
+            best_ts = ts
+            best = ev
+    return best
+
+
+def _task_children(issue: int) -> list[dict]:
+    """Children of ``issue`` via ``task.py list-children --json``; ``[]`` on
+    any read failure (same subprocess isolation as :func:`_task_status`).
+    Mirrors :func:`_campaign_children` but kept separate so the followups
+    suppression doesn't cross-depend on the campaign pass."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "list-children", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    if out.returncode != 0:
+        return []
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def _followups_awaiting_child_reason(
+    issue: int,
+    *,
+    status: str | None,
+    has_pod: bool,
+    events: list[dict],
+) -> str | None:
+    """Human-readable exemption reason when ``issue`` is a ``followups_running``
+    parent waiting on an open child task (see the comment block above for the
+    four-condition predicate). Returns ``None`` when the exemption does not
+    apply.
+
+    Probed LAZILY by the callers (the helper is only invoked when the stalled
+    / orphan pass already wants to respawn) so a healthy session never pays
+    the ``task.py list-children`` subprocess.
+    """
+    if status != "followups_running":
+        return None
+    if has_pod:
+        return None
+    sc = _latest_step_completed(events)
+    if sc is None:
+        return None
+    step = sc.get("step")
+    exit_kind = sc.get("exit_kind")
+    if step != _FOLLOWUPS_CHILDREN_WAIT_STEP:
+        return None
+    if exit_kind != _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND:
+        return None
+    children = _task_children(issue)
+    if not children:
+        return None
+    open_ids: list[int] = []
+    for child in children:
+        if not isinstance(child, dict):
+            continue
+        cid = child.get("id")
+        cstatus = child.get("status")
+        if not isinstance(cid, int) or not isinstance(cstatus, str):
+            continue
+        if cstatus not in _FOLLOWUPS_CHILD_TERMINAL:
+            open_ids.append(cid)
+    if not open_ids:
+        return None
+    open_ids.sort()
+    ids_str = ", ".join(f"#{i}" for i in open_ids)
+    return (
+        f"followups_running parent waiting on open child(ren) {ids_str}; "
+        f"latest epm:step-completed step={step} exit_kind={exit_kind} "
+        f"(child promotion is a user-only gate; respawning the parent "
+        f"cannot advance it)"
+    )
+
+
 def _stop_session(session_id: str, dry_run: bool) -> bool:
     """Stop an in-flight Happy session by id via
     ``spawn_session.py stop --session-id <id>``. Returns True on success.
@@ -2424,6 +2596,7 @@ class _StalledActionCtx:
         refresh_attempted: bool = False,
         pod_name: str | None = None,
         manual: bool = False,
+        followups_child_alerted: bool = False,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -2453,6 +2626,11 @@ class _StalledActionCtx:
         # exhausted handlers never see manual entries (the caller forces
         # ``respawn_eligible=False``). #505 round-2 orphaning, 2026-06-10.
         self.manual = manual
+        # Per-episode dedup for the followups_running-parent-waiting-on-open-
+        # child suppression alert (see ``_followups_awaiting_child_reason``).
+        # Carried through every state-persist site so the alert fires at
+        # most once per episode and clears on real-progress advancement.
+        self.followups_child_alerted = followups_child_alerted
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -2518,6 +2696,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
+                followups_child_alerted=ctx.followups_child_alerted,
                 prev=ctx.prev_state,
             )
         return
@@ -2533,6 +2712,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
                 respawn_count=ctx.respawn_count,
                 exhausted=ctx.exhausted,
                 refresh_attempted=ctx.refresh_attempted,
+                followups_child_alerted=ctx.followups_child_alerted,
                 prev=ctx.prev_state,
             )
         return
@@ -2570,6 +2750,7 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
             respawn_count=new_respawn_count if spawn_ok else ctx.respawn_count,
             exhausted=ctx.exhausted,
             refresh_attempted=ctx.refresh_attempted,
+            followups_child_alerted=ctx.followups_child_alerted,
             prev=ctx.prev_state,
         )
 
@@ -2590,6 +2771,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
                 respawn_count=ctx.respawn_count,
                 exhausted=True,
                 refresh_attempted=ctx.refresh_attempted,
+                followups_child_alerted=ctx.followups_child_alerted,
                 prev=ctx.prev_state,
             )
         return
@@ -2618,6 +2800,7 @@ def _handle_stalled_exhausted(ctx: _StalledActionCtx) -> None:
             respawn_count=ctx.respawn_count,
             exhausted=True,
             refresh_attempted=ctx.refresh_attempted,
+            followups_child_alerted=ctx.followups_child_alerted,
             prev=ctx.prev_state,
         )
 
@@ -2708,8 +2891,60 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             respawn_count=ctx.respawn_count,
             exhausted=ctx.exhausted,
             refresh_attempted=new_refresh_attempted,
+            followups_child_alerted=ctx.followups_child_alerted,
             prev=ctx.prev_state,
         )
+
+
+def _apply_stalled_followups_exemption(
+    *,
+    issue: int,
+    status: str | None,
+    has_pod: bool,
+    events: list[dict],
+    action: str,
+    new_missed: int,
+    followups_child_alerted: bool,
+    dry_run: bool,
+) -> tuple[str, int, bool]:
+    """Check the followups_running-parent-waiting-on-open-child exemption
+    for the stalled-detector pass; rewrite ``(action, new_missed,
+    followups_child_alerted)`` accordingly.
+
+    No-op unless ``action != "keep" or new_missed > 0`` (so the healthy-
+    session hot path never pays the ``task.py list-children`` subprocess).
+    When the exemption fires, the action is rewritten to ``"keep"``,
+    ``new_missed`` is reset to 0 (the exemption deliberately does NOT
+    accumulate misses — the parent is correctly parked, not stalled), and
+    a one-time alert marker is posted (dedup'd via
+    ``followups_child_alerted``). Factored out of
+    :func:`_process_stalled_session` to keep that function under the C901
+    cyclomatic-complexity cap (15).
+    """
+    if action == "keep" and new_missed == 0:
+        return action, new_missed, followups_child_alerted
+    followups_reason = _followups_awaiting_child_reason(
+        issue, status=status, has_pod=has_pod, events=events
+    )
+    if followups_reason is None:
+        return action, new_missed, followups_child_alerted
+    print(
+        f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {followups_reason}; "
+        f"treating session as live this tick (would have been action={action})."
+    )
+    if not followups_child_alerted:
+        _post_progress_marker(
+            issue,
+            f"{_FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL} {followups_reason}. "
+            f"Respawn suppressed (does NOT consume the respawn budget); "
+            f"re-invoke `/issue {issue}` after the open child(ren) reach "
+            f"terminal status (`task.py promote <child> useful|not-useful` "
+            f"for an awaiting_promotion child) to advance this parent.",
+            dry_run,
+            label="followups-awaiting-child",
+        )
+        followups_child_alerted = True
+    return "keep", 0, followups_child_alerted
 
 
 def _process_stalled_session(
@@ -2765,8 +3000,11 @@ def _process_stalled_session(
     self_report_age, last_self_report_ts = _self_report_age_seconds(issue, now)
 
     # Signal 2: latest non-watcher progress-marker age. None -> stale (no
-    # markers at all is itself a signal).
-    latest_marker_ts = _latest_progress_ts(_task_events(issue))
+    # markers at all is itself a signal). We also keep the raw events list
+    # around — the followups-awaiting-child exemption below scans it for
+    # the latest epm:step-completed without paying a second read.
+    events = _task_events(issue)
+    latest_marker_ts = _latest_progress_ts(events)
     marker_age = (now - latest_marker_ts) if latest_marker_ts is not None else None
 
     # Signal 3: does the issue have a RUNNING managed pod? Informational
@@ -2785,16 +3023,18 @@ def _process_stalled_session(
         prev_respawn_count = 0
     prev_exhausted = bool(prev_state.get("exhausted", False))
     prev_refresh_attempted = bool(prev_state.get("refresh_attempted", False))
+    prev_followups_child_alerted = bool(prev_state.get("followups_child_alerted", False))
     prev_last_self_report_ts = prev_state.get("last_self_report_ts")
     if not isinstance(prev_last_self_report_ts, str):
         prev_last_self_report_ts = None
 
     # Clear `alerted` + `respawn_count` + `exhausted` + `refresh_attempted`
-    # whenever the self-report ts has ADVANCED since the last save — that
-    # means the session resumed self-reporting, so the prior episode is
-    # over and a future staleness episode can re-alert / re-respawn /
-    # re-refresh. Comparison is on the raw ISO string (lexicographic on
-    # the canonical trailing-Z UTC format is monotonic).
+    # + `followups_child_alerted` whenever the self-report ts has ADVANCED
+    # since the last save — that means the session resumed self-reporting,
+    # so the prior episode is over and a future staleness episode can
+    # re-alert / re-respawn / re-refresh. Comparison is on the raw ISO
+    # string (lexicographic on the canonical trailing-Z UTC format is
+    # monotonic).
     self_report_advanced = (
         last_self_report_ts is not None
         and prev_last_self_report_ts is not None
@@ -2805,11 +3045,13 @@ def _process_stalled_session(
         respawn_count = 0
         exhausted = False
         refresh_attempted = False
+        followups_child_alerted = False
     else:
         alerted = prev_alerted
         respawn_count = prev_respawn_count
         exhausted = prev_exhausted
         refresh_attempted = prev_refresh_attempted
+        followups_child_alerted = prev_followups_child_alerted
 
     # Compute respawn_eligible: the task must be in an ACTIVE status (we
     # never restart a session at a PARK / gate / terminal state) AND the
@@ -2852,6 +3094,25 @@ def _process_stalled_session(
             )
             action, new_missed = ("keep", 0)
 
+    # followups_running parent-waiting-on-open-child exemption (incident
+    # #533, 2026-06-11): a parent whose own pipeline is parked at step 10
+    # awaiting a user-gated child cannot be unblocked by respawning the
+    # parent session — only user action on the child unblocks it. See the
+    # comment block above ``_followups_awaiting_child_reason`` for the
+    # full predicate. Helper factored out to keep this function under the
+    # C901 cap; returns the (possibly rewritten) (action, new_missed,
+    # followups_child_alerted) tuple.
+    action, new_missed, followups_child_alerted = _apply_stalled_followups_exemption(
+        issue=issue,
+        status=task_status,
+        has_pod=has_pod,
+        events=events,
+        action=action,
+        new_missed=new_missed,
+        followups_child_alerted=followups_child_alerted,
+        dry_run=dry_run,
+    )
+
     self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
     marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"
     print(
@@ -2859,7 +3120,8 @@ def _process_stalled_session(
         f"marker_gap={marker_gap} has_pod={has_pod} "
         f"missed={prev_missed}->{new_missed} alerted={alerted} "
         f"respawn_count={respawn_count}/{STALLED_MAX_RESPAWNS} "
-        f"daemon_reachable={daemon_reachable} manual={manual} action={action}"
+        f"daemon_reachable={daemon_reachable} manual={manual} "
+        f"followups_child_alerted={followups_child_alerted} action={action}"
     )
 
     pod_name = (pod_names_by_issue or {}).get(issue)
@@ -2881,6 +3143,7 @@ def _process_stalled_session(
         refresh_attempted=refresh_attempted,
         pod_name=pod_name,
         manual=manual,
+        followups_child_alerted=followups_child_alerted,
     )
 
     if action == "respawn":
@@ -2894,9 +3157,10 @@ def _process_stalled_session(
         return
 
     # action == "keep": persist the (possibly incremented) miss count + the
-    # alerted / respawn_count / exhausted / refresh_attempted flags
-    # (cleared above if self-report advanced) + the latest observed
-    # self-report ts so the next tick can detect advancement.
+    # alerted / respawn_count / exhausted / refresh_attempted /
+    # followups_child_alerted flags (cleared above if self-report advanced)
+    # + the latest observed self-report ts so the next tick can detect
+    # advancement.
     if not dry_run:
         _save_stalled_state(
             issue,
@@ -2907,6 +3171,7 @@ def _process_stalled_session(
             respawn_count=respawn_count,
             exhausted=exhausted,
             refresh_attempted=refresh_attempted,
+            followups_child_alerted=followups_child_alerted,
             prev=prev_state,
         )
 
@@ -3131,13 +3396,17 @@ def _save_orphan_state(
     alerted: bool,
     respawn_day: str,
     respawns_today: int,
+    followups_child_alerted: bool = False,
     prev: dict | None = None,
 ) -> None:
     """Persist the per-issue orphan-sweep state atomically (temp + rename),
     mirroring :func:`_save_stalled_state`. ``respawn_day`` + ``respawns_today``
     implement the per-UTC-day attempt cap; ``alerted`` dedups the one-time
-    alert marker within an episode; ``first_seen`` carries forward so the GC
-    age backstop measures the original episode start."""
+    alert marker within an episode; ``followups_child_alerted`` dedups the
+    one-time "followups_running parent waiting on open child" suppression
+    alert (see :func:`_followups_awaiting_child_reason`); ``first_seen``
+    carries forward so the GC age backstop measures the original episode
+    start."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
     dest = _orphan_state_path(issue)
     prev_first_seen = (prev or {}).get("first_seen")
@@ -3148,6 +3417,7 @@ def _save_orphan_state(
         "alerted": alerted,
         "respawn_day": respawn_day,
         "respawns_today": respawns_today,
+        "followups_child_alerted": followups_child_alerted,
         "first_seen": prev_first_seen,
     }
     tmp = dest.with_suffix(".json.tmp")
@@ -3308,6 +3578,17 @@ def orphan_sweep_pass(
     staleness_s = _orphan_staleness_s()
     max_per_day = _orphan_max_respawns_per_day()
     day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    # Snapshot RUNNING managed pods once per tick — feeds the
+    # followups_running-parent-waiting-on-open-child exemption's
+    # has_pod=False precondition. Fail-safe: a FAILED snapshot (None,
+    # already logged to stderr) degrades to the empty set so the
+    # exemption simply records has_pod=False for every issue this tick;
+    # a same-issue follow-up round with a live pod posts its own
+    # ``epm:run-launched`` / progress markers which already keep
+    # marker_age_s below the staleness threshold, so the orphan sweep
+    # would not be at action=respawn anyway.
+    running_pods = _running_managed_issue_pods(caller="orphan-sweep") or []
+    pod_active_issues = {issue for issue, _pid, _name in running_pods}
     print(
         f"orphan-sweep: {len(active)} active-status task(s), "
         f"{len(regs)} registered issue(s), {len(live_ids)} live session(s)"
@@ -3324,6 +3605,86 @@ def orphan_sweep_pass(
             staleness_s=staleness_s,
             max_per_day=max_per_day,
             day_key=day_key,
+            pod_active_issues=pod_active_issues,
+        )
+
+
+def _check_orphan_followups_exemption(
+    *,
+    issue: int,
+    status: str,
+    has_pod: bool,
+    events: list[dict],
+    action: str,
+) -> tuple[str, str | None]:
+    """Probe the followups_running-parent-waiting-on-open-child exemption
+    for the orphan-sweep pass. Returns the (possibly rewritten) ``action``
+    plus the human-readable reason string (for the alert prose) or
+    ``None`` when the exemption does not apply.
+
+    No-op unless ``action == "respawn"`` (the only orphan action whose
+    fallout is wasteful in this regime) so a healthy task / a manual-only
+    or cap-exhausted task never pays the ``task.py list-children``
+    subprocess. Factored out of :func:`_process_orphan_task` to keep
+    that function under the C901 cap.
+    """
+    if action != "respawn":
+        return action, None
+    followups_reason = _followups_awaiting_child_reason(
+        issue, status=status, has_pod=has_pod, events=events
+    )
+    if followups_reason is None:
+        return action, None
+    print(
+        f"  issue #{issue}: ORPHAN-RESPAWN exemption — {followups_reason}; "
+        f"diverting to alert-only (does NOT consume respawn budget)."
+    )
+    return "followups-awaiting-child", followups_reason
+
+
+def _handle_orphan_followups_awaiting_child(
+    *,
+    issue: int,
+    reason: str,
+    followups_child_alerted: bool,
+    new_missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Orphan-sweep handler for the followups_running-parent-waiting-on-
+    open-child exemption: post the one-time alert (dedup'd via
+    ``followups_child_alerted``) and persist state WITHOUT incrementing
+    ``respawns_today`` — the exemption deliberately does NOT consume the
+    daily respawn budget. The dedup flag clears on the natural episode
+    end (the sweep's ``action == "clear"`` branch, which fires when the
+    task leaves ACTIVE — typically once all children reach terminal and
+    the user re-drives the parent via ``/issue <N>``). Factored out of
+    :func:`_process_orphan_task` to keep that function under the C901
+    cyclomatic-complexity cap (15)."""
+    if not followups_child_alerted:
+        _post_progress_marker(
+            issue,
+            f"{_FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL} {reason}. "
+            f"Orphan-respawn suppressed (does NOT consume the daily respawn "
+            f"budget); re-invoke `/issue {issue}` after the open child(ren) "
+            f"reach terminal status (`task.py promote <child> useful|"
+            f"not-useful` for an awaiting_promotion child) to advance this "
+            f"parent.",
+            dry_run,
+            label="followups-awaiting-child",
+        )
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=alerted,
+            respawn_day=respawn_day,
+            respawns_today=respawns_today,
+            followups_child_alerted=True,
+            prev=state,
         )
 
 
@@ -3339,6 +3700,7 @@ def _process_orphan_task(
     staleness_s: float,
     max_per_day: int,
     day_key: str,
+    pod_active_issues: set[int] | None = None,
 ) -> None:
     """Apply one active-status task's orphan decision (gather signals ->
     :func:`decide_orphan` -> act). ``rec`` is the task's registration record
@@ -3355,14 +3717,19 @@ def _process_orphan_task(
     if not isinstance(respawns_today, int):
         respawns_today = 0
     alerted = bool(state.get("alerted"))
+    followups_child_alerted = bool(state.get("followups_child_alerted"))
 
     # Lazy events fetch: only orphan candidates pay the per-task read.
+    # The events list is reused below by the followups-awaiting-child
+    # exemption helper so we don't pay a second `task.py view` per tick.
     marker_age_s: float | None = None
+    events: list[dict] = []
     is_candidate = not mapped_alive and not (
         entry_age_s is not None and entry_age_s < ORPHAN_SPAWN_GRACE_S
     )
     if is_candidate:
-        latest = _latest_progress_ts(_task_events(issue))
+        events = _task_events(issue)
+        latest = _latest_progress_ts(events)
         marker_age_s = (now - latest) if latest is not None else None
 
     action, new_missed = decide_orphan(
@@ -3378,11 +3745,30 @@ def _process_orphan_task(
         max_respawns_per_day=max_per_day,
     )
     gap_str = f"{marker_age_s / 60:.1f}m" if marker_age_s is not None else "none"
+
+    # followups_running parent-waiting-on-open-child exemption (incident
+    # #533, 2026-06-11): mirror of the same exemption in
+    # :func:`_process_stalled_session`. When the orphan sweep would
+    # respawn a `followups_running` parent whose `/issue` pipeline is
+    # parked at step 10 awaiting a user-gated child, the respawn cannot
+    # advance the task — divert to a one-time alert marker that does NOT
+    # consume the daily respawn budget. Helper-factored to keep this
+    # function under the C901 cap.
+    has_pod_for_followups = bool(pod_active_issues and issue in pod_active_issues)
+    action, followups_reason = _check_orphan_followups_exemption(
+        issue=issue,
+        status=status,
+        has_pod=has_pod_for_followups,
+        events=events,
+        action=action,
+    )
+
     print(
         f"  issue #{issue}: status={status} mapped_alive={mapped_alive} "
         f"manual_only={manual_only} marker_gap={gap_str} "
         f"missed={missed}->{new_missed} respawns_today={respawns_today}/{max_per_day} "
-        f"alerted={alerted} action={action}"
+        f"alerted={alerted} followups_child_alerted={followups_child_alerted} "
+        f"action={action}"
     )
 
     if action == "clear":
@@ -3397,6 +3783,7 @@ def _process_orphan_task(
                 alerted=alerted,
                 respawn_day=day_key,
                 respawns_today=respawns_today,
+                followups_child_alerted=followups_child_alerted,
                 prev=state,
             )
         return
@@ -3411,6 +3798,7 @@ def _process_orphan_task(
                 alerted=False,
                 respawn_day=day_key,
                 respawns_today=respawns_today + 1,
+                followups_child_alerted=followups_child_alerted,
                 prev=state,
             )
             if attempted_ok:
@@ -3424,6 +3812,19 @@ def _process_orphan_task(
                     dry_run,
                     label="orphan-respawn",
                 )
+        return
+    if action == "followups-awaiting-child":
+        _handle_orphan_followups_awaiting_child(
+            issue=issue,
+            reason=followups_reason,
+            followups_child_alerted=followups_child_alerted,
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            state=state,
+            dry_run=dry_run,
+        )
         return
     # action == "alert": one-time loud marker per episode.
     reason = (
@@ -3453,6 +3854,7 @@ def _process_orphan_task(
             alerted=True,
             respawn_day=day_key,
             respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
             prev=state,
         )
 
