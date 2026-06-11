@@ -1,1 +1,2 @@
 {"ts": "2026-06-11T00:05:14Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-11T00:07:03Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #570 to open question(s) app1, leak-argmax-vs-logprob; created_new=none; mode=auto-match (inherited from parent #557's relates_to — same detector chain + latent-vs-emission readout)."}
