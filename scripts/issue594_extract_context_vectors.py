@@ -22,6 +22,20 @@ WildChat multi-turn, bare default) — x 4 probes into ``<out-dir>_smoke``,
 plus a tiny HF upload probe (plan §14 item 5: smoke IS the pipeline with
 tiny N; no separate smoke architecture).
 
+Follow-up ``probe-genre-generalization`` flags (plan v2 §4; flag-routing
+ONLY — zero changes to the capture path):
+
+- ``--probes-file``: load the probe pool from a builder JSON (e.g.
+  ``data/issue594/probes_ultrachat.json``) instead of the Betley
+  preregistered set; asserts the file's own ``meta.probe_pool_hash``,
+  bypasses the battery-meta Betley assert with a logged notice, records
+  ``probe_pool_source: probes_file`` (+ path + hash) in the manifest, and
+  uploads the probes file to ``<prefix>/inputs/`` alongside the battery.
+- ``--hf-subdir``: verbatim HF upload sub-directory (replaces the hardcoded
+  ``analysis_tensors`` / ``smoke_probe`` choice); the v2 launch passes
+  ``--hf-subdir analysis_tensors_probegen``. Smoke runs should pass their
+  own smoke subdir (or omit the flag for the default ``smoke_probe``).
+
 Pod-side contract: emits ``[phase=...]`` log lines ending in ``[phase=done]``
 and writes a ``poll_pipeline.py``-conformant end-of-run sentinel.
 
@@ -233,7 +247,9 @@ def _is_storage_quota_403(err: Exception) -> bool:
     return "403" in msg and "storage" in msg.lower()
 
 
-def upload_outputs(out_dir: Path, smoke: bool, expected_per_probe: int) -> dict:
+def upload_outputs(
+    out_dir: Path, smoke: bool, expected_per_probe: int, hf_subdir: str | None = None
+) -> dict:
     """Bulk-upload the extraction outputs to the HF data repo and verify.
 
     ONE ``upload_folder`` commit (well under the 256/hr cap), verified via
@@ -243,11 +259,14 @@ def upload_outputs(out_dir: Path, smoke: bool, expected_per_probe: int) -> dict:
     deviation. Fail-loud otherwise. Verification asserts the REMOTE per-probe
     file count >= ``expected_per_probe`` (the §6.5 primary deliverables), not
     just the mean tensor + manifest.
+
+    ``hf_subdir`` (plan v2 §4): when set, used VERBATIM as the upload
+    sub-directory, replacing the hardcoded smoke/full choice.
     """
     from huggingface_hub import HfApi
 
     api = HfApi()
-    sub = "smoke_probe" if smoke else "analysis_tensors"
+    sub = hf_subdir or ("smoke_probe" if smoke else "analysis_tensors")
     path_in_repo = f"{HF_PREFIX}/{sub}"
     repo_used = HF_DATA_REPO
     try:
@@ -317,6 +336,39 @@ def upload_battery(battery_path: Path) -> None:
     )
 
 
+def upload_probes_file(probes_path: Path) -> None:
+    """Upload the --probes-file JSON to <prefix>/inputs/ (plan v2 §2 item 6,
+    mirroring upload_battery)."""
+    from huggingface_hub import HfApi
+
+    HfApi().upload_file(
+        path_or_fileobj=str(probes_path),
+        path_in_repo=f"{HF_PREFIX}/inputs/{probes_path.name}",
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        commit_message="issue594: probes-file input (probe-genre-generalization)",
+    )
+
+
+def load_probes_file(path: Path) -> tuple[list[str], str]:
+    """Load probe texts from a builder JSON; assert its OWN pool hash.
+
+    Returns (texts, file_hash). The file's ``meta.probe_pool_hash`` must
+    equal ``probes_hash`` over the ordered probe texts — fail loud on drift
+    between the committed JSON and its meta block.
+    """
+    with open(path) as f:
+        payload = json.load(f)
+    texts = [p["text"] for p in payload["probes"]]
+    file_hash = payload["meta"]["probe_pool_hash"]
+    got = probes_hash(texts)
+    assert got == file_hash, (
+        f"probes-file pool hash drifted: meta says {file_hash[:16]}..., "
+        f"texts hash to {got[:16]}... ({path})"
+    )
+    return texts, file_hash
+
+
 # ── Smoke instance selection (plan §14 item 5) ──────────────────────────────
 
 
@@ -342,6 +394,21 @@ def main() -> int:
         description="Issue #594 Phase 1: extract per-layer context vectors."
     )
     parser.add_argument("--battery", type=Path, default=BATTERY_PATH)
+    parser.add_argument(
+        "--probes-file",
+        type=Path,
+        default=None,
+        help="builder JSON probe pool (plan v2 §4); default None = the Betley "
+        "preregistered pool with the battery-meta hash assert (byte-for-byte "
+        "parent behavior)",
+    )
+    parser.add_argument(
+        "--hf-subdir",
+        default=None,
+        help="verbatim HF upload sub-directory under the issue prefix (plan v2 §4); "
+        "default None = smoke_probe/analysis_tensors by --smoke; the v2 launch "
+        "passes analysis_tensors_probegen",
+    )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_VECTORS_DIR)
     parser.add_argument("--model", default=DEFAULT_MODEL)
     parser.add_argument("--gpu-id", type=int, default=0)
@@ -377,11 +444,29 @@ def main() -> int:
     manifest_path = out_dir / "extraction_manifest.json"
 
     payload, instances = load_battery(args.battery)
-    main8 = set(fetch_betley_main_8())
-    probes = fetch_preregistered_probes(n=200, exclude=main8)
-    assert probes_hash(probes) == payload["meta"]["probe_pool_hash"], (
-        "probe pool drifted since battery build"
-    )
+    if args.probes_file is not None:
+        probes, probes_file_hash = load_probes_file(args.probes_file)
+        probe_pool_source = {
+            "probe_pool_source": "probes_file",
+            "probes_file": str(args.probes_file),
+            "probes_file_hash": probes_file_hash,
+        }
+        logger.info(
+            "probes-file mode (%s, pool hash %s...): battery-meta Betley probe "
+            "assert BYPASSED — the battery hash pins the BETLEY pool, this run "
+            "deliberately swaps the probe pool (plan v2 §4)",
+            args.probes_file,
+            probes_file_hash[:16],
+        )
+    else:
+        main8 = set(fetch_betley_main_8())
+        probes = fetch_preregistered_probes(n=200, exclude=main8)
+        assert probes_hash(probes) == payload["meta"]["probe_pool_hash"], (
+            "probe pool drifted since battery build"
+        )
+        # No added manifest keys on the default path: plan v2 §4 requires the
+        # no-flag invocation to stay byte-for-byte the parent behavior.
+        probe_pool_source = {}
     n_probes_cap = args.n_probes or (4 if args.smoke else len(probes))
     probes = probes[:n_probes_cap]
     instances_to_run = smoke_instances(instances) if args.smoke else instances
@@ -443,6 +528,7 @@ def main() -> int:
         "instances": {},
         "probe_pool_n": len(probes),
         "probe_pool_hash": probes_hash(probes),
+        **probe_pool_source,
         "model": args.model,
         "n_layers": n_layers,
         "hidden": hidden,
@@ -558,7 +644,10 @@ def main() -> int:
     if not args.no_upload:
         phase("upload")
         upload_info = upload_outputs(
-            out_dir, smoke=args.smoke, expected_per_probe=len(instances_to_run)
+            out_dir,
+            smoke=args.smoke,
+            expected_per_probe=len(instances_to_run),
+            hf_subdir=args.hf_subdir,
         )
         # Record repo_used in the manifest itself and backfill the remote copy,
         # so Phase 2 can resolve the right repo (primary vs quota-403 overflow)
@@ -578,6 +667,8 @@ def main() -> int:
         )
         if not args.smoke:
             upload_battery(args.battery)
+            if args.probes_file is not None:
+                upload_probes_file(args.probes_file)
     else:
         manifest["upload"] = upload_info
         write_manifest(manifest_path, manifest)
