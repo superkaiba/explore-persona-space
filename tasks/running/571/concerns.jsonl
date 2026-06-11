@@ -1,0 +1,1 @@
+{"ts": "2026-06-11T03:18:16Z", "event": "raised", "concern_id": "source-check-fail-resume-bypass", "severity": "BLOCKER", "summary": "source-gen --resume skips existing FAILed source_gen files; kill criterion bypassed, upload+sentinel proceed. Make FAIL sticky across resume; gate sentinel on source_check pass.", "raised_by": "codex-code-reviewer", "raised_at_round": 1}
