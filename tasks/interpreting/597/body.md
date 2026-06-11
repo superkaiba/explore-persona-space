@@ -6,7 +6,7 @@ title: Marker implants lift most bystander personas nearly in lockstep with the 
 kind: experiment
 tags: []
 created_at: '2026-06-11T08:02:39Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 472
 goal: Measure the training-step dynamics of source marker implantation AND bystander
   marker leakage — the full bystander panel probed at the same eval intervals as the
