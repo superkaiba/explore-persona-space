@@ -75,18 +75,23 @@ SKIP_PHASE_R = (
 SKIP_PER_QUESTION = "skipped: per-question tensors persisted at layer 14 only"
 
 
-def _run_meta(args: argparse.Namespace, layer: int) -> dict:
-    """Reproducibility metadata embedded in every output JSON."""
+def _run_meta(args: argparse.Namespace, layer: int | None) -> dict:
+    """Reproducibility metadata embedded in every output JSON.
+
+    ``layer=None`` marks the cross-layer summary (no single tensor key).
+    """
     import importlib.metadata
 
     return {
         "issue": 551,
         "followup_of": 521,
         "followup_label": "layer-sensitivity-and-seed137-degeneracy",
-        "analysis": f"layer_sensitivity_l{layer}",
+        "analysis": (
+            "layer_sensitivity_summary" if layer is None else f"layer_sensitivity_l{layer}"
+        ),
         "layer": layer,
-        "tensor_key": f"delta_v_l{layer}",
-        "mean_resp_tensor_key": f"delta_v_mean_resp_l{layer}",
+        "tensor_key": None if layer is None else f"delta_v_l{layer}",
+        "mean_resp_tensor_key": None if layer is None else f"delta_v_mean_resp_l{layer}",
         "git_commit": _git_commit(),
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "env_versions": {pkg: importlib.metadata.version(pkg) for pkg in ("torch", "numpy")},
@@ -381,7 +386,7 @@ def main() -> int:
 
     logger.info("[phase=summary]")
     summary = {
-        "meta": _run_meta(args, 0) | {"analysis": "layer_sensitivity_summary", "layer": None},
+        "meta": _run_meta(args, None),
         "layers": list(LAYERS),
         "headline_by_layer": per_layer_meta,
         "falsification": {
