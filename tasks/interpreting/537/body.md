@@ -5,7 +5,7 @@ title: 'Training context controls how far an implanted behavior generalizes: ins
 kind: experiment
 tags: []
 created_at: '2026-06-09T18:47:55Z'
-has_clean_result: false
+has_clean_result: true
 goal: 'Build a reusable context-generalization testbed: empirically measure G[behavior,
   train-context → eval-context] over realistic contexts (persona prompts, WildChat
   prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant)
