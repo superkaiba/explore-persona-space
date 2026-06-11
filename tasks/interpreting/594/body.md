@@ -5,7 +5,7 @@ title: 48 contexts, as constructed, organize by family at every depth of Qwen2.5
 kind: experiment
 tags: []
 created_at: '2026-06-11T06:53:19Z'
-has_clean_result: false
+has_clean_result: true
 goal: 'Map the geometry of context representations: extract per-layer context vectors
   (mean over a fixed user-prompt pool of the residual activation at the assistant-header
   newline) for every context instance in the battery (persona prompts, rephrasings,
