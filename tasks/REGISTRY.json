@@ -3336,8 +3336,8 @@
       "goal": "Test whether the held-out persona channel structure \u2014 persona geometry routes the training-induced change while the base end-of-answer level persists through training \u2014 generalizes from the 4-negative training recipe to the 16 broad-negative-panel marker adapters, by generating and four-float-scoring those adapters' responses on the same 35 held-out personas.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/560",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/560",
+      "status": "awaiting_promotion",
       "title": "Geometry-routed marker spillover replicates on a second, broad-negative training recipe (MODERATE confidence)"
     },
     "561": {
