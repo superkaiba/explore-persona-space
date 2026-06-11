@@ -1,6 +1,6 @@
 # Task #594 — Methodology, hyperparameters, and worked examples
 
-A methodology + hyperparameter reference for experiment #594 (Explore Persona Space): an extraction-only mapping of context-prompt activation geometry. For every context instance in a 50-instance battery, the pipeline records the residual-stream activation at the assistant-header newline across all 28 decoder layers of the base model (no training of any kind), then computes per-layer family-clustering statistics, dimensionality-reduction embeddings, and confound controls on the VM. Verbatim battery / probe examples are pulled straight from the committed artifacts.
+A methodology + hyperparameter reference for experiment #594 (Explore Persona Space): an extraction-only mapping of context-prompt activation geometry. For every context instance in a 50-instance battery, the pipeline records the residual-stream activation at the assistant-header newline across all 28 decoder layers of the base model (no training of any kind), then computes per-layer family-clustering statistics, dimensionality-reduction embeddings, and confound controls on the VM. Verbatim battery / probe examples are pulled straight from the committed artifacts. A same-issue follow-up arm, `probe-genre-generalization` (§7), re-runs the identical extraction + analysis with ONE variable changed — the probe pool (48 length-matched UltraChat prompts in place of the 48 Betley paraphrases) — plus a cross-pool geometry comparison against the parent run's tensors.
 
 - Task: [https://eps.superkaiba.com/tasks/594](https://eps.superkaiba.com/tasks/594)
 - Model: `Qwen/Qwen2.5-7B-Instruct` (bf16; no fine-tuning — extraction-only forward passes)
@@ -264,6 +264,178 @@ Full extracted tensors: [HF Hub `issue594_context_geometry/analysis_tensors/`](h
 - **WandB:** project `explore-persona-space`, run `issue594-extract` (extraction telemetry only; the chained smoke logged as `issue594-extract-smoke`)
 - **Compute:** `pod-594`, 1× H100 (`eval` intent); 50 instances × 48 probes = 2,400 sequential batch-1 forwards; plan-projected ~2 GPU-h total; realized per-instance wall seconds are recorded in `extraction_manifest.json` and the WandB run. Phases 0 and 2 are CPU-only and ran off-pod on the VM (the pod terminates before Phase 2 starts)
 - **Seeds:** 42 everywhere (battery build, permutations, bootstrap, split-half, UMAP/t-SNE/PCA), with derived analysis streams seed+4200 (residualized-null draws) and seed+9900 (rephrase-excluded draws)
+- **Follow-up arm `probe-genre-generalization`:** methodology + full artifact pointers in §7 (arm run SHA `76d08a957f4e835e60b787cd81027c6e3c7ce4fd`; HF rev `c59467cd78b1288817cab03f246298bc63ff0a49`)
+
+---
+
+## 7. Follow-up arm — `probe-genre-generalization` (one-variable diff: the probe pool)
+
+A same-issue follow-up round (followup_label `probe-genre-generalization`, plan amendment `plans/v2.md`) re-runs the §2 extraction and the §3 analysis with exactly ONE variable changed: the probe pool. The 48 Betley preregistered paraphrases (one question genre) are replaced by 48 ordinary single-turn user prompts sampled from `HuggingFaceH4/ultrachat_200k` and 1:1 token-length-matched to the Betley pool, so a pool-level length shift cannot masquerade as a genre difference (probe length is the named confound the parent design controls via its §3 length reads; the matched pool removes it by construction). One analysis module is added: a per-layer cross-pool geometry comparison of this arm's mean tensors against the parent run's Hub tensors. The battery, read position + per-forward position assert, hook capture across all 28 decoder blocks, batch-1 templating, fp16 per-probe + fp32 true-mean storage, checkpoint-per-instance resume, all §3 statistics (silhouette, LOO k-NN purity k=4, B=1,000 shared-draw max-over-layers null, bootstrap 200, split-half, length-confound reads, rephrase-excluded sensitivity, TF-IDF baseline, outlier table, fp16 sanity, multiplicity narration — all recomputed in full under the new pool with fresh permutation draws), and all seeds are inherited verbatim from the parent (§2–§3).
+
+### 7.1 Probe-pool construction (`scripts/issue594_build_probes_ultrachat.py`)
+
+New standalone builder (deliberately NOT an extension of `issue594_build_battery.py` — the battery is the frozen variable). All CPU, on the VM, before any pod exists; deterministic, seed 42.
+
+1. **Candidate pool** — `load_dataset("HuggingFaceH4/ultrachat_200k", "default", split="train_sft", streaming=True)`, the **first 20,000 rows in native order** (deterministic prefix; no streaming shuffle). `train_sft` is the curated split used for Zephyr SFT (arXiv 2310.16944; UltraChat: arXiv 2305.14233).
+2. **Per-row extraction + filters** — candidate text = `messages[0]["content"]`, stripped; assert `messages[0]["role"] == "user"`. **Recorded deviation from the plan's byte-equality B2 check:** in the real `train_sft` prefix, 1,153/20,000 rows (5.8%) carry a `prompt` field that is a case/whitespace-only variant of `messages[0]["content"]`, so the per-row consistency check is **casefold-strip equality** between the two fields (rows failing THAT are dropped as `schema_mismatch` under the unchanged 5% fail-loud bound; realized `schema_mismatch` = 0). Filters: Qwen-2.5 token length (`add_special_tokens=False`) ∈ [4, 140]; English heuristic ≥ 90% ASCII characters AND ≥ 3 whitespace-separated words; casefolded exact dedup. Realized candidate pool after filters: 14,447 (drop counts recorded verbatim in the output meta — see §7.5).
+3. **Disjointness asserts (hard)** — every candidate, casefolded, must not be equal to, contain, or be contained in any of (a) the 48 Betley probes (re-fetched at build; hash re-asserted against the battery meta) or (b) the 8 battery ICL demo questions (read from the battery `prefix_messages`). Re-asserted a second time on the final output pool.
+4. **Length matching — 1:1 greedy, quantile-free** — one seed-42 `np.random.default_rng` permutation shuffles the filtered candidates once; the 48 Betley probes are iterated in **descending token length** (the sparse long tail matches first); each takes the first remaining candidate within **±max(5 tokens, 20% of the target length)**, widening by +5 tokens on an empty band (logged; hard-fail after 5 widenings — the CPU-side, pre-pod candidate-shortage kill), without replacement. Realized `max_widenings_used`: 0.
+5. **Acceptance check (recorded in meta)** — pool mean within ±10% of the Betley mean (realized: matched mean **31.98** vs Betley **35.19** tokens); every per-probe |Δlen| within its final band; side-by-side decile table recorded; all 48 matched prompts printed for eyeball review.
+6. **Output** — `data/issue594/probes_ultrachat.json` (small text, committed to git): a `meta` block (dataset/config/split, candidate_rows, seed, `probe_pool_hash` over the ordered matched texts, `betley_pool_hash`, full matching_spec incl. drop counts, decile_table, means, build commit + env metadata) plus one record per probe — `{text, prompt_id, source_row_index, token_len, matched_betley_index, matched_betley_len}` — ordered by `matched_betley_index`.
+
+### 7.2 Extraction deltas (flag routing only — the capture path is unchanged)
+
+`scripts/issue594_extract_context_vectors.py` gains two flags; with neither flag set, the script's behavior is byte-for-byte the parent's (no added manifest keys on the default path):
+
+- **`--probes-file <path>`** — load the probe texts from the builder JSON instead of the Betley preregistered set. Asserts the file's OWN `meta.probe_pool_hash` equals `probes_hash` over the ordered texts (fail loud on drift between the committed JSON and its meta); **bypasses the battery-meta Betley hash assert with a logged notice** (the battery hash pins the Betley pool; this run deliberately swaps the pool); records `probe_pool_source: probes_file` + the file path + hash in the extraction manifest; and uploads the probes file to `issue594_context_geometry/inputs/probes_ultrachat.json` (mirroring the battery upload). Smoke composes with it: `--smoke --probes-file …` = 4 instances × the first 4 new probes, same pipeline.
+- **`--hf-subdir <name>`** — verbatim HF upload sub-directory under the issue prefix, replacing the hardcoded `smoke_probe` / `analysis_tensors` choice; the production launch passed `analysis_tensors_probegen`. The smoke leg was launched WITHOUT this flag, so its tiny upload probe went to the default `smoke_probe` sub-directory.
+
+Everything downstream of probe loading — message assembly, templating, the 3-token position assert, hook capture, fp16/fp32 storage, checkpoint-per-instance, manifest schema, upload verification via `list_repo_files` — is the parent code path untouched.
+
+### 7.3 Cross-pool comparison method (the one added analysis)
+
+`scripts/issue594_analyze_context_geometry.py` gains an optional module behind `--compare-tensors-from-hf <prefix>` (+ `--compare-hf-repo`, default the primary data repo; reuses the existing `download_from_hf`). It ran off-pod on the VM after pod termination, with `--compare-tensors-from-hf issue594_context_geometry/analysis_tensors` (the parent's tensors). Method:
+
+- **Join on stored instance ids** — the two mean-tensor banks (this arm's and the parent's) are joined on instance ids, asserted set-equal, and reindexed; never joined on row order.
+- **Per layer, over the full 50-instance bank:** both 50×50 `global_mean`-centered cosine matrices are computed, **each pool centered on its own bank**; the upper triangle (1,225 pairs) gives a Spearman and a Pearson correlation between the two matrices; significance comes from a **Mantel permutation test** — simultaneous row+column relabeling of the comparison matrix, B = 1,000 draws shared across layers, seed 42, one-sided greater, p = (1 + #{null ≥ obs}) / (B + 1) — permutation inference because upper-triangle entries are non-independent (Mantel 1967), so a parametric p on the 1,225 pairs would be invalid. Plain Spearman/Pearson values are still reported alongside.
+- **Per-instance cross-pool cosine** — per layer, the centered-vector cosine between the same instance's mean vector under the two pools (the split-half-style read), recorded per instance plus the per-layer median/mean.
+- **Outputs:** `cross_pool_comparison.json` (written checkpoint-per-phase, before any figure; carries the per-layer rows, the two pre-registered comparison layers L14/L18 recorded separately per the plan amendment, the join ids, B, seed, and reproducibility metadata), a per-layer Mantel-curve figure (`cross_pool_mantel_curve`), and an overlay hero (`hero_overlay_probe_pools`) plotting this arm's purity/silhouette depth curves over the parent's, read from `--parent-metrics-json` (default: the parent's committed `eval_results/issue_594/context_geometry_metrics.json`; hard error if missing). The existing `--eval-dir` / `--fig-dir` flags route all of this arm's outputs to the `probe-genre-generalization/` sub-directories.
+
+### 7.4 Hyperparameter delta table
+
+Only the rows that differ from the parent; **every other row of the §2 hyperparameter table is inherited verbatim** (base model, precision, read position, layers, hidden dim, battery, batching, storage, centering, k-NN k=4, permutation B=1,000, bootstrap 200, UMAP/t-SNE/dendrogram/CKA settings, seeds 42 + derived streams, no training).
+
+| Parameter | Value | Source / notes |
+|---|---|---|
+| **Probe pool** | 48 single-turn user prompts from `HuggingFaceH4/ultrachat_200k` (`default` / `train_sft`), 1:1 token-length-matched to the 48 Betley probes | builder script; parent used the 48 Betley paraphrases |
+| Probe-pool hash | sha256 `f277f8c3e2550b2ce3e4545a8ad6473498d070e7343eb7c9398a6aac31525455` | `probes_ultrachat.json` meta + re-recorded in the extraction manifest |
+| Candidate pool | first 20,000 `train_sft` rows, native streaming order | builder `CANDIDATE_ROWS`; 14,447 candidates after filters |
+| Candidate filters | token len ∈ [4, 140] (Qwen tokenizer, `add_special_tokens=False`); ≥ 90% ASCII; ≥ 3 words; casefolded exact dedup | builder constants `TOK_MIN/TOK_MAX`, `ASCII_MIN_RATIO`, `MIN_WORDS` |
+| Matching | greedy 1:1, descending Betley token length, band ±max(5, 20% of target), +5 widening, hard-fail after 5; without replacement; seed-42 candidate shuffle | builder `greedy_length_match`; realized widenings: 0 |
+| Acceptance | pool mean within ±10% of Betley mean; per-probe |Δlen| within final band | builder `MEAN_TOLERANCE`; realized means 31.98 (matched) vs 35.19 (Betley) |
+| **Cross-pool statistics** | upper-triangle (1,225 pairs) Spearman + Pearson on 50×50 own-bank `global_mean`-centered cosine matrices; Mantel permutation p, B = 1,000 shared draws, seed 42, one-sided greater; per-instance cross-pool centered cosine | analysis `cross_pool_comparison`; Mantel 1967 |
+| HF upload subdir | `analysis_tensors_probegen` (production); smoke = default `smoke_probe` | `--hf-subdir` flag |
+| Training hyperparameters | n/a | no training — extraction-only, as parent |
+
+### 7.5 Worked example — matched probe records (verbatim)
+
+<!-- cherry-picked for illustration (short / code / long-tail records); full pool at the git + HF links below -->
+
+Three records from `data/issue594/probes_ultrachat.json` — each carries the matched Betley probe's index and token length, so the per-probe length pairing is auditable:
+
+```json
+{
+  "text": "Can you tell me about any unique or notable features of the main terminal building at Gatwick, whether in terms of architecture, design or amenities?",
+  "prompt_id": "d4ff4696f4eb1c51931f508a2bb55db1d86a784dd4c98f076b7e6f93e02e4f09",
+  "source_row_index": 18178,
+  "token_len": 29,
+  "matched_betley_index": 0,
+  "matched_betley_len": 33
+}
+```
+
+```json
+{
+  "text": "Create a function in JavaScript that reverses a string.",
+  "prompt_id": "25a711b186252f0433551af46c795f8e119d416a1edd1ec706a557e1a37bee75",
+  "source_row_index": 14840,
+  "token_len": 11,
+  "matched_betley_index": 31,
+  "matched_betley_len": 13
+}
+```
+
+A long-tail match (the matching iterates descending Betley length precisely so records like this one resolve first; text truncated for display):
+
+```json
+{
+  "text": "Write a 2,000-word short story in the third-person limited point of view about a high school student who, after experiencing severe anxiety, discovers they have the power to create earthquakes ...Use vivid sensory details and descriptive language to create a realistic and immersive setting.",
+  "prompt_id": "535eb9af39926d606a7af8accf181aab72c1f518b3e3b39ba8b96553a7135f9c",
+  "source_row_index": 8703,
+  "token_len": 118,
+  "matched_betley_index": 19,
+  "matched_betley_len": 101
+}
+```
+
+The meta block's `matching_spec` and `decile_table` (verbatim — the build-time record of the matching recipe and the realized Betley-vs-matched length distributions):
+
+```json
+"matching_spec": {
+  "order": "betley probes descending token length",
+  "band": "±max(5 tokens, 20% of target length)",
+  "widening": "+5 tokens per empty band, hard-fail after 5 widenings",
+  "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+  "add_special_tokens": false,
+  "without_replacement": true,
+  "filters": {
+    "token_len_range": [4, 140],
+    "ascii_min_ratio": 0.9,
+    "min_words": 3,
+    "dedup": "casefolded exact"
+  },
+  "candidate_text_source": "messages[0].content (stripped)",
+  "prompt_field_consistency": "casefold-strip equality vs prompt field (B2 deviation: 5.8% of rows carry a case-only prompt variant; byte-equality form of the assert was over-strict on real data)",
+  "n_candidates_after_filters": 14447,
+  "drop_counts": {
+    "streamed": 20000,
+    "schema_mismatch": 0,
+    "prompt_case_whitespace_variant": 1153,
+    "empty_after_strip": 0,
+    "non_english_heuristic": 7,
+    "token_len_out_of_range": 5546,
+    "duplicate_casefolded": 0
+  },
+  "max_widenings_used": 0
+},
+"decile_table": {
+  "percentiles": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100],
+  "betley":  [5.0, 10.0, 13.4, 16.2, 21.0, 26.5, 29.2, 36.8, 49.4, 78.7, 128.0],
+  "matched": [5.0, 10.7, 13.0, 15.1, 17.0, 21.5, 26.0, 33.6, 43.6, 71.6, 118.0]
+}
+```
+
+### 7.6 Launch commands (verbatim)
+
+```bash
+# Phase 0' — probe-pool build (VM, CPU, pre-pod):
+uv run python scripts/issue594_build_probes_ultrachat.py
+
+# Phase 1' — extraction on pod-594 (smoke first, WITHOUT the production
+# --hf-subdir, so the smoke upload probe lands in the default smoke_probe
+# subdir; --smoke routes local outputs into <out-dir>_smoke):
+uv run python scripts/issue594_extract_context_vectors.py \
+    --battery data/issue594/battery.json \
+    --probes-file data/issue594/probes_ultrachat.json \
+    --out-dir data/issue594/context_vectors_probegen \
+    --gpu-id 0 --smoke
+uv run python scripts/issue594_extract_context_vectors.py \
+    --battery data/issue594/battery.json \
+    --probes-file data/issue594/probes_ultrachat.json \
+    --out-dir data/issue594/context_vectors_probegen \
+    --hf-subdir analysis_tensors_probegen --gpu-id 0
+
+# Phase 2' — analysis + cross-pool comparison (VM, CPU, after pod terminate;
+# the parent's --extra viz launch-command correction carries over):
+uv run --extra viz python scripts/issue594_analyze_context_geometry.py \
+    --tensors-from-hf issue594_context_geometry/analysis_tensors_probegen \
+    --compare-tensors-from-hf issue594_context_geometry/analysis_tensors \
+    --eval-dir eval_results/issue_594/probe-genre-generalization \
+    --fig-dir figures/issue_594/probe-genre-generalization
+```
+
+### 7.7 Arm artifacts and reproducibility
+
+- **Arm run SHA (builder + extraction-flag + cross-pool code):** `76d08a957f4e835e60b787cd81027c6e3c7ce4fd` (branch `issue-594`)
+- **Probe builder:** [`scripts/issue594_build_probes_ultrachat.py`](https://github.com/superkaiba/explore-persona-space/blob/76d08a957f4e835e60b787cd81027c6e3c7ce4fd/scripts/issue594_build_probes_ultrachat.py)
+- **Extraction script (with `--probes-file` / `--hf-subdir`):** [`scripts/issue594_extract_context_vectors.py`](https://github.com/superkaiba/explore-persona-space/blob/76d08a957f4e835e60b787cd81027c6e3c7ce4fd/scripts/issue594_extract_context_vectors.py)
+- **Analysis script (with the cross-pool module):** [`scripts/issue594_analyze_context_geometry.py`](https://github.com/superkaiba/explore-persona-space/blob/76d08a957f4e835e60b787cd81027c6e3c7ce4fd/scripts/issue594_analyze_context_geometry.py)
+- **Probe pool (committed input):** [`data/issue594/probes_ultrachat.json`](https://github.com/superkaiba/explore-persona-space/blob/76d08a957f4e835e60b787cd81027c6e3c7ce4fd/data/issue594/probes_ultrachat.json); added in commit `17a9c15b54faa4063b7f911575d343b3e2cb6061`; the file's own embedded `build_commit` / `git_commit` is `035313372fbaf9cb39f735beb4364645408c75d9` — the working-tree HEAD when the builder ran, i.e. the pre-builder parent of the adding commit (a file cannot embed its own adding commit)
+- **Extracted tensors (HF, permanent rev):** [`issue594_context_geometry/analysis_tensors_probegen/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c59467cd78b1288817cab03f246298bc63ff0a49/issue594_context_geometry/analysis_tensors_probegen) — 52 files (50 fp16 per-probe tensors + fp32 mean tensor + extraction manifest) on `superkaiba1/explore-persona-space-data`; probes-file input mirror at [`issue594_context_geometry/inputs/probes_ultrachat.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/c59467cd78b1288817cab03f246298bc63ff0a49/issue594_context_geometry/inputs)
+- **Eval results JSON:** `eval_results/issue_594/probe-genre-generalization/{context_geometry_metrics.json, cross_pool_comparison.json, per_layer/, outlier_table.json}`, committed to git on the issue branch; figures at `figures/issue_594/probe-genre-generalization/` (incl. `cross_pool_mantel_curve` + `hero_overlay_probe_pools`)
+- **WandB:** [`thomasjiralerspong/explore-persona-space/runs/7nd9six6`](https://wandb.ai/thomasjiralerspong/explore-persona-space/runs/7nd9six6) (extraction telemetry only, as parent)
+- **Compute:** fresh `pod-594` provision, 1× H100 (`eval` intent), ~0.4 GPU-h realized; 50 instances × 48 probes = 2,400 sequential batch-1 forwards, as parent. The probe build (pre-pod) and the analysis + cross-pool comparison (post-terminate, against the parent's already-uploaded Hub tensors) ran CPU-only off-pod on the VM
+- **Seeds:** 42 (candidate shuffle, cross-pool Mantel draws) + the parent's inherited analysis streams
 
 ---
 
