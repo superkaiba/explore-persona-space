@@ -66,7 +66,9 @@ def _replicate_label(rep_key: str) -> str:
 
 
 def fig_hero_forest(analysis: dict, out_dir: Path) -> None:
-    """HERO: per-replicate forest plot, nearest-negative + shadow-angle panels."""
+    """HERO: per-replicate forest plot (+ pooled t-interval row), NN + shadow panels."""
+    import matplotlib.lines as mlines
+
     reps = list(analysis["per_replicate"].keys())
     panels = [
         ("d_nearest_neg_nd", "Nearest-negative partial ρ at the no-implant step-5 snapshot"),
@@ -75,20 +77,22 @@ def fig_hero_forest(analysis: dict, out_dir: Path) -> None:
     parent = analysis.get("parent_reference", {})
     parent_ps = parent.get("partial_spearman", {}) if parent.get("available") else {}
 
-    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=True)
+    primary = paper_palette_role("primary")
+    accent = paper_palette_role("accent")
+    control = paper_palette_role("control")
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=True)
+    y_reps = np.arange(len(reps))[::-1] + 1.6  # replicate rows, top-down
+    y_pool = 0.0  # pooled row, visually separated below
     for ax, (pred, title) in zip(axes, panels, strict=True):
-        y_positions = np.arange(len(reps))[::-1]
-        for y, rep_key in zip(y_positions, reps, strict=True):
+        for y, rep_key in zip(y_reps, reps, strict=True):
             rep = analysis["per_replicate"][rep_key]
             part = rep["pooled_fit"]["partial_spearman"].get(pred) or {}
             rho = part.get("rho")
             ci = rep["bootstrap_ci"].get(pred, {})
-            holm_sig = bool(rep["family5_holm_primary"].get(pred, {}).get("reject_null", False))
             if rho is None:
                 continue
-            color = paper_palette_role("primary")
             if ci.get("lo") is not None:
-                # Clamp half-widths at 0 (constant-bootstrap epsilon guard).
                 lo_w = max(0.0, float(rho) - float(ci["lo"]))
                 hi_w = max(0.0, float(ci["hi"]) - float(rho))
                 ax.errorbar(
@@ -96,29 +100,75 @@ def fig_hero_forest(analysis: dict, out_dir: Path) -> None:
                     [y],
                     xerr=[[lo_w], [hi_w]],
                     fmt="o",
-                    color=color,
-                    markerfacecolor=(color if holm_sig else "white"),
-                    markeredgecolor=color,
+                    markersize=6,
+                    color=primary,
                     capsize=3,
+                    linewidth=1.4,
                 )
             else:
-                ax.plot([rho], [y], "o", color=color)
+                ax.plot([rho], [y], "o", markersize=6, color=primary)
+        # Pooled row: mean of the 5 per-replicate ρ with the 95% t-interval (df=4).
+        agg = analysis["cross_replicate"].get(pred, {})
+        ti = agg.get("t_interval") or {}
+        if ti.get("mean") is not None:
+            mean = float(ti["mean"])
+            ax.errorbar(
+                [mean],
+                [y_pool],
+                xerr=[[mean - float(ti["lo"])], [float(ti["hi"]) - mean]],
+                fmt="D",
+                markersize=7,
+                color=control,
+                capsize=4,
+                linewidth=1.8,
+            )
+        ax.axhline(0.8, color="0.85", linewidth=0.8)
         ax.axvline(0.0, color="0.4", linewidth=0.8)
         ref = parent_ps.get(pred, {}).get("rho")
         if ref is not None:
-            ax.axvline(
-                float(ref),
-                color=paper_palette_role("accent"),
-                linestyle="--",
-                linewidth=1.2,
-                label=f"Parent (seeds 42/137) step-5 reading: {float(ref):+.3f}",
-            )
-            ax.legend(loc="best", fontsize=8)
+            ax.axvline(float(ref), color=accent, linestyle="--", linewidth=1.2)
         ax.set_title(title, fontsize=10)
-        ax.set_xlabel("Partial Spearman ρ (95% bootstrap CI)")
-    axes[0].set_yticks(np.arange(len(reps))[::-1])
-    axes[0].set_yticklabels([_replicate_label(r) for r in reps], fontsize=9)
-    fig.tight_layout()
+        ax.set_xlabel("Partial Spearman ρ")
+    axes[0].set_yticks(list(y_reps) + [y_pool])
+    axes[0].set_yticklabels(
+        [_replicate_label(r) for r in reps] + ["Pooled mean (95% t-interval)"], fontsize=9
+    )
+    handles = [
+        mlines.Line2D(
+            [],
+            [],
+            color=primary,
+            marker="o",
+            linestyle="-",
+            markersize=6,
+            label="Per-replicate ρ (95% bootstrap CI, n = 432 rows)",
+        ),
+        mlines.Line2D(
+            [],
+            [],
+            color=control,
+            marker="D",
+            linestyle="-",
+            markersize=7,
+            label="Pooled mean of the 5 ρ (95% t-interval)",
+        ),
+        mlines.Line2D(
+            [],
+            [],
+            color=accent,
+            linestyle="--",
+            label="Reading under calibration (prior run, same read point)",
+        ),
+    ]
+    fig.legend(
+        handles=handles,
+        loc="lower center",
+        ncol=3,
+        fontsize=8.5,
+        frameon=False,
+        bbox_to_anchor=(0.5, -0.04),
+    )
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
     savefig_paper(fig, "replicate_forest_nn_shadow", dir=out_dir)
     plt.close(fig)
 
