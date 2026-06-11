@@ -1,0 +1,88 @@
+{
+  "issue": 543,
+  "git_commit": "97a1352046ebc18060dcda8165307ea8d77782a4",
+  "timestamp_utc": "2026-06-11T04:52:32.783716+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "seed": 137,
+  "arm": "r50",
+  "install_variant": null,
+  "ckpt_root": "/tmp/issue_570_results/issue570_r50_seed137_phase1/adapter",
+  "retained_steps": [
+    5,
+    10,
+    15,
+    20,
+    25,
+    30,
+    35,
+    40,
+    45,
+    50,
+    55,
+    60,
+    65,
+    70,
+    75,
+    80,
+    85,
+    90,
+    95
+  ],
+  "assert_534": {
+    "final_step": 95,
+    "tf_delta_g_nats": 25.59804207086563,
+    "inloop_step": 95,
+    "inloop_delta_nats": 25.600635528564453,
+    "gap_nats": 0.0025934576988220215,
+    "final_keyed_n_emit": 32,
+    "thresholds": {
+      "max_gap_nats": 1.0,
+      "min_final_emit": 26
+    }
+  },
+  "cuts": {
+    "keyed_min_emit": 8,
+    "single_marker_min_fraction": 0.8,
+    "keyed_max_truncated": 2,
+    "no_key_max_emit": 0,
+    "doctor_max_emit": 1
+  },
+  "eligible_steps": [],
+  "pick_step": null,
+  "pick_keyed_n_emit": null,
+  "fallback": true,
+  "fallback_step": 85,
+  "sensitivity": {
+    "emit_ge_4_single_ge_60": [],
+    "emit_ge_4_single_ge_80": [],
+    "emit_ge_6_single_ge_60": [],
+    "emit_ge_6_single_ge_80": [],
+    "emit_ge_8_single_ge_60": [],
+    "emit_ge_8_single_ge_80": []
+  },
+  "uploaded": {
+    "picked": {
+      "step": 85,
+      "path_in_repo": "adapters/issue570/r50_seed137_phase1_picked"
+    },
+    "window_step80": {
+      "step": 80,
+      "path_in_repo": "adapters/issue570/r50_seed137_phase1_window_step80"
+    },
+    "window_step90": {
+      "step": 90,
+      "path_in_repo": "adapters/issue570/r50_seed137_phase1_window_step90"
+    }
+  },
+  "picked_local_dir": "/tmp/issue_570_results/issue570_r50_seed137_phase1/adapter/checkpoint-85"
+}
