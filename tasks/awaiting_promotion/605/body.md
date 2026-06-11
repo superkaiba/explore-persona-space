@@ -3,7 +3,8 @@ title: 'At matched similarity, the base-prior gate test on the training-induced 
   shift is indeterminate: held-out gain is null while within-panel associations stay
   positive (MODERATE confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T10:48:18Z'
 has_clean_result: true
 goal: Determine whether the leakage gate needs a behavior-overlap term beyond base-model
