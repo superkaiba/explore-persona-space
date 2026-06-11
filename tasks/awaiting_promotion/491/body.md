@@ -5,6 +5,7 @@ title: 'In-context demos and finetuning on the same K examples spread a persona-
 kind: experiment
 tags:
 - agent-ok
+- followup-auto
 created_at: '2026-06-05T00:02:28Z'
 has_clean_result: true
 goal: Test whether K in-context demonstrations of a persona trait and SFT on those
