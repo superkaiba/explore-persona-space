@@ -3518,8 +3518,8 @@
       "goal": "Measure the true training-maturity curve of the #504 saturated-anchor smoke cell by re-evaluating its six verified per-fraction adapter snapshots through the fixed distinct-id eval path, replacing the stale six-reads-of-one-adapter calibration table with real per-fraction numbers.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/585",
-      "status": "proposed",
+      "path": "tasks/planning/585",
+      "status": "planning",
       "title": "Re-run the #504 calibration table at true fractions on the verified per-fraction smoke snapshots"
     },
     "586": {
