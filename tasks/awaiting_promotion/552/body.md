@@ -2,7 +2,8 @@
 title: Benign medical-advice SFT reproduces misalignment SFT's one-shared-direction
   shift geometry on a matched corpus pair (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-10T07:28:55Z'
 has_clean_result: true
 parent_id: 521
