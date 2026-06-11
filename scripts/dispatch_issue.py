@@ -452,8 +452,10 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         hydra_args=tuple(args.hydra or ()),
         extra=extra,
         # Exactly-one-of was already enforced at the parser surface in
-        # main() (#588); normalize None → "" for the spec.
-        workload_cmd=args.workload_cmd or "",
+        # main() (#588); normalize None → "" and strip shell-quoting
+        # slop (the presence check in main() strips identically, so an
+        # unstripped value can never silently flip the gate).
+        workload_cmd=(args.workload_cmd or "").strip(),
     )
 
     deps = backends_factory()
