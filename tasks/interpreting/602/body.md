@@ -1,6 +1,8 @@
 ---
-title: 'P8 estimator bake-off: score the three base-model v_b estimators against realized
-  post-training states on stored adapters'
+title: 'Estimating where training will shift a model''s activations from the base
+  model alone fails: training-data replay, in-context demos, and verbal description
+  all miss the realized shift at the mid-stack read-out, across six adapter families
+  (HIGH confidence)'
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:14Z'
