@@ -125,6 +125,49 @@ count, open questions. Flag inconsistencies (orphan pods, stale-looking
 but do NOT fix them — that's
 AUDIT.
 
+Then append two standing sections to EVERY STATUS pass (the `/pm` boot
+scan and any "status" re-run alike). Both are additive — nothing the
+snapshot already reports is dropped or restructured.
+
+**Awaiting-promotion digest.** List ALL tasks at
+`status: awaiting_promotion`, each with its number and what it found,
+grouped into 3–6 research-theme categories you derive from the
+titles/goals at read time (e.g. marker leakage / localization, leakage
+predictors, emergent misalignment, training-recipe / measurement
+methodology, infra) — NOT a fixed taxonomy. Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status awaiting_promotion --json
+```
+
+"What it found" comes from the clean-result title — for promoted
+clean-result bodies the title IS the one-sentence claim plus its
+`(HIGH|MODERATE|LOW confidence)` tag — so do not open each body; fall
+back to `task.py view <N>` / the body's `## Human TL;DR` only when a
+title is not in claim form. Entry format:
+`#N — <one-line finding> (CONFIDENCE)`.
+
+**Followups-running view.** Report which tasks currently have a
+same-issue follow-up round executing, and WHICH follow-up each is.
+Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status followups_running --json
+```
+
+Tasks held at `followups_running` carry the `followup-auto`
+(proposer-initiated) or `followup-manual` (user-initiated) tag — name
+which. Identify the specific follow-up from the `followup_label` in the
+task's latest `epm:followup-scope v1` marker (read via
+`task.py latest-marker <N> --prefix epm:followup-scope`, or
+`task.py view <N> --json` for the full events array — bare
+`latest-marker <N>` returns the most recent event of ANY kind, usually
+`epm:progress` mid-round). Entry format:
+`#N — <followup_label> (auto|manual)`. These tasks already have a
+clean-result (they round-trip back to `awaiting_promotion` when the
+round finishes), so keep them in the awaiting-promotion digest tagged
+"follow-up in flight" rather than dropping them.
+
 ### Mode 2 — AUDIT ("check for drift")
 
 Scan for:
@@ -305,7 +348,10 @@ Do NOT invoke `/issue` in the PM session.
 
 - **Status snapshots:** 5–10 bullets, quantitative. Counts per column,
   in-flight issues with pod, awaiting_promotion pile size, 1–2 open
-  questions. No prose paragraphs.
+  questions. No prose paragraphs. Followed by the two standing appended
+  sections (awaiting-promotion digest grouped by theme, followups-running
+  view) per Mode 1 — `#N — <one-line finding> (CONFIDENCE)` and
+  `#N — <followup_label> (auto|manual)` entry formats.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
