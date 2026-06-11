@@ -3,7 +3,8 @@ title: 'The published flat calibration table for the over-trained marker cell wa
   a stale-adapter artifact: the corrected six-checkpoint curve shows a 4.9-nat maturity
   gradient the bug had erased (HIGH confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T03:15:47Z'
 has_clean_result: true
 parent_id: 549
