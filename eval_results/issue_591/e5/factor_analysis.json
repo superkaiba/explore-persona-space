@@ -1,0 +1,1396 @@
+{
+  "inputs": {
+    "cell_table": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-591/eval_results/issue_591/e5/cell_table.json"
+  },
+  "univariate_within_source": {
+    "sycophancy": {
+      "cos_to_source": {
+        "rho": 0.2666405358727146,
+        "p_perm": 0.6285371462853715,
+        "b": 10000,
+        "rho_vs_delta": 0.39013591042948526
+      },
+      "bystander_base_rate": {
+        "rho": 0.07017753966243086,
+        "p_perm": 0.2916708329167083,
+        "b": 10000,
+        "rho_vs_delta": -0.10763477798381206
+      },
+      "neg_member": {
+        "rho": -0.13074409009212268,
+        "p_perm": 0.08539146085391461,
+        "b": 10000,
+        "rho_vs_delta": -0.2727992535570956
+      }
+    },
+    "refusal": {
+      "cos_to_source": {
+        "rho": 0.22736680088524924,
+        "p_perm": 0.21247875212478753,
+        "b": 10000,
+        "rho_vs_delta": 0.2588295268411515
+      },
+      "bystander_base_rate": {
+        "rho": 0.053784008593015256,
+        "p_perm": 0.49005099490050996,
+        "b": 10000,
+        "rho_vs_delta": -0.5025211838684208
+      },
+      "neg_member": {
+        "rho": -0.18889792588854842,
+        "p_perm": 0.030996900309969003,
+        "b": 10000,
+        "rho_vs_delta": -0.2085053699493339
+      }
+    },
+    "em": {
+      "cos_to_source": {
+        "rho": 0.16840913944555053,
+        "p_perm": 0.0051994800519948,
+        "b": 10000,
+        "rho_vs_delta": 0.3834271539428532
+      },
+      "bystander_base_rate": {
+        "rho": -0.32394846158028967,
+        "p_perm": 9.999000099990002e-05,
+        "b": 10000,
+        "rho_vs_delta": -0.6611559644562278
+      },
+      "neg_member": {
+        "rho": -0.01334454086413447,
+        "p_perm": 1.0,
+        "b": 10000,
+        "rho_vs_delta": 0.030714600209075613
+      }
+    }
+  },
+  "h2_between_source": {
+    "per_behavior": {
+      "sycophancy": {
+        "vs_n_leak_cells": {
+          "rho": 0.3718678720805473,
+          "p_exact": 0.4666666666666667,
+          "n_perms": 720
+        },
+        "vs_panel_sd": {
+          "rho": -0.08571428571428573,
+          "p_exact": 0.9194444444444444,
+          "n_perms": 720
+        }
+      },
+      "refusal": {
+        "vs_n_leak_cells": {
+          "rho": 0.5797710356524484,
+          "p_exact": 0.24444444444444444,
+          "n_perms": 720
+        },
+        "vs_panel_sd": {
+          "rho": 0.5428571428571429,
+          "p_exact": 0.2972222222222222,
+          "n_perms": 720
+        }
+      },
+      "em": {
+        "vs_n_leak_cells": {
+          "rho": -0.6546536707079772,
+          "p_exact": 0.3333333333333333,
+          "n_perms": 720
+        },
+        "vs_panel_sd": {
+          "rho": 0.8285714285714287,
+          "p_exact": 0.058333333333333334,
+          "n_perms": 720
+        }
+      }
+    },
+    "pooled": {
+      "rho": -0.567422131241692,
+      "p_perm": 0.9144085591440856,
+      "b": 10000,
+      "n_panels": 18
+    },
+    "note": null
+  },
+  "firth_per_behavior": {
+    "sycophancy": {
+      "names": [
+        "intercept",
+        "cos_to_source",
+        "self_delta",
+        "bystander_base_rate",
+        "neg_member"
+      ],
+      "coef": [
+        -2.252080874163691,
+        1.1244438650398914,
+        1.2090604495701622,
+        0.5235908401153256,
+        -1.923727174692299
+      ],
+      "se": [
+        0.4405482903577472,
+        0.39603894419964053,
+        0.5988150651541478,
+        0.27662325967628115,
+        1.5525588079737649
+      ],
+      "odds_ratio": [
+        0.10518013007168976,
+        3.0785043088894612,
+        3.3503353642915057,
+        1.6880783991939234,
+        0.14606154942699373
+      ],
+      "penalized_loglik": -39.88044476319667,
+      "converged": true,
+      "n_iter": 12,
+      "ci95_low_coef": [
+        -6.09481060455261,
+        0.35410977048320436,
+        0.3732568869437273,
+        -0.028263035409340234,
+        -6.81830415350484
+      ],
+      "ci95_high_coef": [
+        -1.534161172670244,
+        2.02213807983913,
+        7.713519445091516,
+        1.067490768175113,
+        0.29551393685616845
+      ],
+      "ci95_low_or": [
+        0.0022545370993439042,
+        1.4249115911293062,
+        1.4524574092571496,
+        0.97213262786482,
+        0.0010935738841045828
+      ],
+      "ci95_high_or": [
+        0.2156364971137286,
+        7.554459716804143,
+        2238.406359707017,
+        2.908073307253146,
+        1.3438168182356043
+      ],
+      "ci95_method_low": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "ci95_method_high": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "p_plr": [
+        3.14459628858146e-17,
+        0.007352546434675594,
+        0.001019664640101669,
+        0.061834366961203854,
+        0.10026738262359312
+      ],
+      "p_method": [
+        "plr",
+        "plr",
+        "plr",
+        "plr",
+        "plr"
+      ],
+      "profile_fallback_coefs": [],
+      "design": {
+        "self_delta_included": true,
+        "cos_field": "cos_to_source",
+        "n": 138
+      }
+    },
+    "refusal": {
+      "names": [
+        "intercept",
+        "cos_to_source",
+        "self_delta",
+        "bystander_base_rate",
+        "neg_member"
+      ],
+      "coef": [
+        -2.0461494611459594,
+        0.9800238358514088,
+        1.1693918511612,
+        0.41392966308467033,
+        -2.3911603923469134
+      ],
+      "se": [
+        0.39714484735524863,
+        0.33848228026391236,
+        0.6066181797126221,
+        0.2172589691938998,
+        1.4971461279800327
+      ],
+      "odds_ratio": [
+        0.12923155791569035,
+        2.6645197522693937,
+        3.220033783144943,
+        1.5127507209229323,
+        0.09152341915988972
+      ],
+      "penalized_loglik": -38.182046383525346,
+      "converged": true,
+      "n_iter": 12,
+      "ci95_low_coef": [
+        -4.993183990751961,
+        0.3662523672046258,
+        0.32389161940875294,
+        -0.006476758987916462,
+        -7.267827978981328
+      ],
+      "ci95_high_coef": [
+        -1.383998230617115,
+        1.7495295192301858,
+        7.206621163571711,
+        0.8448160673775189,
+        -0.2559413771661813
+      ],
+      "ci95_low_or": [
+        0.006784029780065421,
+        1.4423191907906556,
+        1.3824974631070859,
+        0.9935441700071816,
+        0.0006976256068463566
+      ],
+      "ci95_high_or": [
+        0.2505746921572982,
+        5.751895882905729,
+        1348.328779678536,
+        2.3275496628824617,
+        0.7741873525184853
+      ],
+      "ci95_method_low": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "ci95_method_high": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "p_plr": [
+        7.1044139884712734e-15,
+        0.001029495722540968,
+        0.0020850775925555253,
+        0.0534157245071775,
+        0.02328992474294306
+      ],
+      "p_method": [
+        "plr",
+        "plr",
+        "plr",
+        "plr",
+        "plr"
+      ],
+      "profile_fallback_coefs": [],
+      "design": {
+        "self_delta_included": true,
+        "cos_field": "cos_to_source",
+        "n": 138
+      }
+    },
+    "em": {
+      "names": [
+        "intercept",
+        "cos_to_source",
+        "self_delta",
+        "bystander_base_rate",
+        "neg_member"
+      ],
+      "coef": [
+        4.62640459897416,
+        0.07291070205384095,
+        0.3603531238129643,
+        -1.4180950426638919,
+        -1.322394171783784
+      ],
+      "se": [
+        1.0323134856144178,
+        0.8523570767230728,
+        0.638775044612184,
+        0.42311911092975174,
+        1.48077152879033
+      ],
+      "odds_ratio": [
+        102.14614674080786,
+        1.0756344806760127,
+        1.4338356466844921,
+        0.24217491063884528,
+        0.26649649917038315
+      ],
+      "penalized_loglik": -0.6632450166979806,
+      "converged": true,
+      "n_iter": 34,
+      "ci95_low_coef": [
+        3.00805568717018,
+        -5.588981553200743,
+        -3.4428698837851863,
+        -4.315873830109908,
+        -6.976096864437208
+      ],
+      "ci95_high_coef": [
+        8.115180985992753,
+        4.99146776288998,
+        2.8413591154788733,
+        -0.7527556629024147,
+        6.533308106706398
+      ],
+      "ci95_low_or": [
+        20.24799319520227,
+        0.003738833729568481,
+        0.031972795327241586,
+        0.013354874494443857,
+        0.0009339413982870333
+      ],
+      "ci95_high_or": [
+        3344.862902734361,
+        147.1522496773715,
+        17.139043654261556,
+        0.47106666160874944,
+        687.6693364023881
+      ],
+      "ci95_method_low": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "ci95_method_high": [
+        "profile",
+        "profile",
+        "profile",
+        "profile",
+        "profile"
+      ],
+      "p_plr": [
+        1.3298972629734343e-27,
+        0.9486407054146857,
+        0.644872127112214,
+        2.6201457448099663e-07,
+        0.5743599894578977
+      ],
+      "p_method": [
+        "plr",
+        "plr",
+        "plr",
+        "plr",
+        "plr"
+      ],
+      "profile_fallback_coefs": [],
+      "design": {
+        "self_delta_included": true,
+        "cos_field": "cos_to_source",
+        "n": 138
+      }
+    }
+  },
+  "firth_pooled": {
+    "names": [
+      "intercept",
+      "cos_to_source",
+      "self_delta",
+      "bystander_base_rate",
+      "neg_member",
+      "behavior_refusal",
+      "behavior_sycophancy"
+    ],
+    "coef": [
+      4.450945308170938,
+      0.7780439211137308,
+      0.698807820778979,
+      -0.4789915129453039,
+      -1.612226276580047,
+      -6.363000918988276,
+      -6.480257250808815
+    ],
+    "se": [
+      0.6019616785676027,
+      0.2087762783463245,
+      0.21741438954833592,
+      0.20243250429470278,
+      0.6199643651840826,
+      0.7034595046399421,
+      0.7227452572426425
+    ],
+    "odds_ratio": [
+      85.70792612251776,
+      2.1772093043620746,
+      2.0113533838324265,
+      0.6194077416178736,
+      0.1994431039461265,
+      0.0017241848015891244,
+      0.0015334161560345311
+    ],
+    "penalized_loglik": -105.00559212465491,
+    "converged": true,
+    "n_iter": 12,
+    "ci95_low_coef": [
+      3.3821502081642127,
+      0.383614591255215,
+      0.3041098563634669,
+      -0.8721432071328457,
+      -2.965366999216679,
+      -7.91710278733583,
+      -8.07762102176295
+    ],
+    "ci95_high_coef": [
+      5.797746117235584,
+      1.220033697670709,
+      1.1880255517005138,
+      -0.060018916264729404,
+      -0.4667806499510302,
+      -5.097573665595662,
+      -5.180109445982689
+    ],
+    "ci95_low_or": [
+      29.43399233015673,
+      1.467579714615231,
+      1.3554179491979708,
+      0.4180546108047373,
+      0.05154155006516409,
+      0.00036445670696225413,
+      0.00031040861306525446
+    ],
+    "ci95_high_or": [
+      329.55594175334454,
+      3.3873018758813647,
+      3.2805974385225136,
+      0.9417467190855111,
+      0.6270176116730034,
+      0.0061115572720594905,
+      0.005627390485417552
+    ],
+    "ci95_method_low": [
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile"
+    ],
+    "ci95_method_high": [
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile",
+      "profile"
+    ],
+    "p_plr": [
+      1.101541455317432e-38,
+      5.676876221569813e-05,
+      0.00020658908017336602,
+      0.025403425189751958,
+      0.004524683242321396,
+      3.864824052490602e-55,
+      4.9949302388904056e-55
+    ],
+    "p_method": [
+      "plr",
+      "plr",
+      "plr",
+      "plr",
+      "plr",
+      "plr",
+      "plr"
+    ],
+    "profile_fallback_coefs": [],
+    "design": {
+      "self_delta_included": true,
+      "cos_field": "cos_to_source",
+      "n": 414
+    }
+  },
+  "loso": {
+    "pooled_auc": 0.8411637931034482,
+    "per_left_out_source": {
+      "assistant": {
+        "n_cells": 69,
+        "n_leak": 31,
+        "mean_score_leak": 0.8006955575416533,
+        "mean_score_no_leak": 0.22925906273040822
+      },
+      "comedian": {
+        "n_cells": 69,
+        "n_leak": 24,
+        "mean_score_leak": 0.8625350994911014,
+        "mean_score_no_leak": 0.06498733642134205
+      },
+      "kindergarten_teacher": {
+        "n_cells": 69,
+        "n_leak": 26,
+        "mean_score_leak": 0.8872031565929527,
+        "mean_score_no_leak": 0.2919078171437781
+      },
+      "qwen_default": {
+        "n_cells": 69,
+        "n_leak": 22,
+        "mean_score_leak": 0.9823426116104561,
+        "mean_score_no_leak": 0.050818816141433125
+      },
+      "software_engineer": {
+        "n_cells": 69,
+        "n_leak": 48,
+        "mean_score_leak": 0.54803319807124,
+        "mean_score_no_leak": 0.22419692142730185
+      },
+      "villain": {
+        "n_cells": 69,
+        "n_leak": 23,
+        "mean_score_leak": 0.10940854674484746,
+        "mean_score_no_leak": 0.13967704047630808
+      }
+    },
+    "n_total": 414
+  },
+  "neg_member_cosine_spearman": {
+    "sycophancy": -0.036798433924595954,
+    "refusal": -0.015597525008573374,
+    "em": -0.015597525008573374,
+    "pooled": -0.02101420432424273
+  },
+  "sensitivity": {
+    "tau": {
+      "0.05": {
+        "univariate": {
+          "sycophancy": {
+            "cos_to_source": {
+              "rho": 0.21864147513269191,
+              "p_perm": 0.8765123487651235,
+              "b": 10000,
+              "rho_vs_delta": 0.39013591042948526
+            },
+            "bystander_base_rate": {
+              "rho": 0.12822369674417028,
+              "p_perm": 0.051294870512948704,
+              "b": 10000,
+              "rho_vs_delta": -0.10763477798381206
+            },
+            "neg_member": {
+              "rho": -0.1486904285332952,
+              "p_perm": 0.03469653034696531,
+              "b": 10000,
+              "rho_vs_delta": -0.2727992535570956
+            }
+          },
+          "refusal": {
+            "cos_to_source": {
+              "rho": 0.2593943690514767,
+              "p_perm": 0.132986701329867,
+              "b": 10000,
+              "rho_vs_delta": 0.2588295268411515
+            },
+            "bystander_base_rate": {
+              "rho": 0.05842086980069575,
+              "p_perm": 0.45155484451554845,
+              "b": 10000,
+              "rho_vs_delta": -0.5025211838684208
+            },
+            "neg_member": {
+              "rho": -0.19981842937700542,
+              "p_perm": 0.012798720127987202,
+              "b": 10000,
+              "rho_vs_delta": -0.2085053699493339
+            }
+          },
+          "em": {
+            "cos_to_source": {
+              "rho": 0.16840913944555053,
+              "p_perm": 0.0051994800519948,
+              "b": 10000,
+              "rho_vs_delta": 0.3834271539428532
+            },
+            "bystander_base_rate": {
+              "rho": -0.32394846158028967,
+              "p_perm": 9.999000099990002e-05,
+              "b": 10000,
+              "rho_vs_delta": -0.6611559644562278
+            },
+            "neg_member": {
+              "rho": -0.01334454086413447,
+              "p_perm": 1.0,
+              "b": 10000,
+              "rho_vs_delta": 0.030714600209075613
+            }
+          }
+        },
+        "firth_pooled": {
+          "names": [
+            "intercept",
+            "cos_to_source",
+            "self_delta",
+            "bystander_base_rate",
+            "neg_member",
+            "behavior_refusal",
+            "behavior_sycophancy"
+          ],
+          "coef": [
+            4.339557907452882,
+            0.6981123670367778,
+            0.7211753189397564,
+            -0.24665774791740275,
+            -1.6842635113267486,
+            -6.049987621949273,
+            -5.995738848231933
+          ],
+          "se": [
+            0.5804824773398902,
+            0.19003799037589145,
+            0.206717823770197,
+            0.19802612205071307,
+            0.604553779710208,
+            0.6596074522837446,
+            0.6697966382996008
+          ],
+          "odds_ratio": [
+            76.6736350018258,
+            2.0099550668834874,
+            2.0568492444338378,
+            0.7814080863157976,
+            0.1855810599859465,
+            0.0023578911924063872,
+            0.0024893370517499905
+          ],
+          "penalized_loglik": -116.2984260690214,
+          "converged": true,
+          "n_iter": 13,
+          "design": {
+            "self_delta_included": true,
+            "cos_field": "cos_to_source",
+            "n": 414
+          }
+        },
+        "loso": {
+          "pooled_auc": 0.8103051715552605,
+          "per_left_out_source": {
+            "assistant": {
+              "n_cells": 69,
+              "n_leak": 34,
+              "mean_score_leak": 0.7560412840000694,
+              "mean_score_no_leak": 0.26521799786122746
+            },
+            "comedian": {
+              "n_cells": 69,
+              "n_leak": 24,
+              "mean_score_leak": 0.8616351954548859,
+              "mean_score_no_leak": 0.09719551960855534
+            },
+            "kindergarten_teacher": {
+              "n_cells": 69,
+              "n_leak": 27,
+              "mean_score_leak": 0.8674380864906135,
+              "mean_score_no_leak": 0.34280737688629437
+            },
+            "qwen_default": {
+              "n_cells": 69,
+              "n_leak": 22,
+              "mean_score_leak": 0.9818646733915428,
+              "mean_score_no_leak": 0.04367038890673824
+            },
+            "software_engineer": {
+              "n_cells": 69,
+              "n_leak": 50,
+              "mean_score_leak": 0.5410131725225805,
+              "mean_score_no_leak": 0.21928291115171508
+            },
+            "villain": {
+              "n_cells": 69,
+              "n_leak": 24,
+              "mean_score_leak": 0.06622185737939867,
+              "mean_score_no_leak": 0.17398270609038297
+            }
+          },
+          "n_total": 414
+        },
+        "n_leak_per_behavior": {
+          "sycophancy": 26,
+          "refusal": 22,
+          "em": 133
+        }
+      },
+      "0.15": {
+        "univariate": {
+          "sycophancy": {
+            "cos_to_source": {
+              "rho": 0.25656458678492516,
+              "p_perm": 0.538046195380462,
+              "b": 10000,
+              "rho_vs_delta": 0.39013591042948526
+            },
+            "bystander_base_rate": {
+              "rho": 0.00293422524474971,
+              "p_perm": 0.9666033396660334,
+              "b": 10000,
+              "rho_vs_delta": -0.10763477798381206
+            },
+            "neg_member": {
+              "rho": -0.10777013435226059,
+              "p_perm": 0.206979302069793,
+              "b": 10000,
+              "rho_vs_delta": -0.2727992535570956
+            }
+          },
+          "refusal": {
+            "cos_to_source": {
+              "rho": 0.2246967708906349,
+              "p_perm": 0.11768823117688232,
+              "b": 10000,
+              "rho_vs_delta": 0.2588295268411515
+            },
+            "bystander_base_rate": {
+              "rho": 0.07282240090161646,
+              "p_perm": 0.3728627137286271,
+              "b": 10000,
+              "rho_vs_delta": -0.5025211838684208
+            },
+            "neg_member": {
+              "rho": -0.17770466332772772,
+              "p_perm": 0.031996800319968,
+              "b": 10000,
+              "rho_vs_delta": -0.2085053699493339
+            }
+          },
+          "em": {
+            "cos_to_source": {
+              "rho": 0.16840913944555053,
+              "p_perm": 0.0051994800519948,
+              "b": 10000,
+              "rho_vs_delta": 0.3834271539428532
+            },
+            "bystander_base_rate": {
+              "rho": -0.32394846158028967,
+              "p_perm": 9.999000099990002e-05,
+              "b": 10000,
+              "rho_vs_delta": -0.6611559644562278
+            },
+            "neg_member": {
+              "rho": -0.01334454086413447,
+              "p_perm": 1.0,
+              "b": 10000,
+              "rho_vs_delta": 0.030714600209075613
+            }
+          }
+        },
+        "firth_pooled": {
+          "names": [
+            "intercept",
+            "cos_to_source",
+            "self_delta",
+            "bystander_base_rate",
+            "neg_member",
+            "behavior_refusal",
+            "behavior_sycophancy"
+          ],
+          "coef": [
+            4.417391070926899,
+            0.8014608187009725,
+            0.6281309050352254,
+            -0.5422083134329675,
+            -1.4968910068473518,
+            -6.474642530538978,
+            -6.876039493936533
+          ],
+          "se": [
+            0.614394919215485,
+            0.22814780809974694,
+            0.2258615977685974,
+            0.20416055173127395,
+            0.6405926838081175,
+            0.7288230186536627,
+            0.7644968481151888
+          ],
+          "odds_ratio": [
+            82.8797755957192,
+            2.2287944160997832,
+            1.874104424473699,
+            0.5814627814639721,
+            0.2238249497769358,
+            0.0015420500746447564,
+            0.0010322240900879065
+          ],
+          "penalized_loglik": -93.4782133908196,
+          "converged": true,
+          "n_iter": 12,
+          "design": {
+            "self_delta_included": true,
+            "cos_field": "cos_to_source",
+            "n": 414
+          }
+        },
+        "loso": {
+          "pooled_auc": 0.8731539059463661,
+          "per_left_out_source": {
+            "assistant": {
+              "n_cells": 69,
+              "n_leak": 27,
+              "mean_score_leak": 0.8736373359046729,
+              "mean_score_no_leak": 0.20622463817274372
+            },
+            "comedian": {
+              "n_cells": 69,
+              "n_leak": 24,
+              "mean_score_leak": 0.8585115116960944,
+              "mean_score_no_leak": 0.04586518842131346
+            },
+            "kindergarten_teacher": {
+              "n_cells": 69,
+              "n_leak": 26,
+              "mean_score_leak": 0.8803330871505872,
+              "mean_score_no_leak": 0.22607869720187573
+            },
+            "qwen_default": {
+              "n_cells": 69,
+              "n_leak": 22,
+              "mean_score_leak": 0.9819615516319021,
+              "mean_score_no_leak": 0.05443866299583054
+            },
+            "software_engineer": {
+              "n_cells": 69,
+              "n_leak": 44,
+              "mean_score_leak": 0.5562046976441487,
+              "mean_score_no_leak": 0.16333035444405092
+            },
+            "villain": {
+              "n_cells": 69,
+              "n_leak": 23,
+              "mean_score_leak": 0.19040632530961452,
+              "mean_score_no_leak": 0.1063126933994184
+            }
+          },
+          "n_total": 414
+        },
+        "n_leak_per_behavior": {
+          "sycophancy": 15,
+          "refusal": 18,
+          "em": 133
+        }
+      },
+      "0.20": {
+        "univariate": {
+          "sycophancy": {
+            "cos_to_source": {
+              "rho": 0.15787301733683243,
+              "p_perm": 0.7381261873812619,
+              "b": 10000,
+              "rho_vs_delta": 0.39013591042948526
+            },
+            "bystander_base_rate": {
+              "rho": 0.08172870820493729,
+              "p_perm": 0.3023697630236976,
+              "b": 10000,
+              "rho_vs_delta": -0.10763477798381206
+            },
+            "neg_member": {
+              "rho": -0.08625819491779428,
+              "p_perm": 0.5404459554044595,
+              "b": 10000,
+              "rho_vs_delta": -0.2727992535570956
+            }
+          },
+          "refusal": {
+            "cos_to_source": {
+              "rho": 0.21097907933794532,
+              "p_perm": 0.31886811318868113,
+              "b": 10000,
+              "rho_vs_delta": 0.2588295268411515
+            },
+            "bystander_base_rate": {
+              "rho": 0.08667350685386685,
+              "p_perm": 0.2796720327967203,
+              "b": 10000,
+              "rho_vs_delta": -0.5025211838684208
+            },
+            "neg_member": {
+              "rho": -0.1602308988614113,
+              "p_perm": 0.050594940505949405,
+              "b": 10000,
+              "rho_vs_delta": -0.2085053699493339
+            }
+          },
+          "em": {
+            "cos_to_source": {
+              "rho": 0.2688868022735828,
+              "p_perm": 9.999000099990002e-05,
+              "b": 10000,
+              "rho_vs_delta": 0.3834271539428532
+            },
+            "bystander_base_rate": {
+              "rho": -0.4823352601725091,
+              "p_perm": 9.999000099990002e-05,
+              "b": 10000,
+              "rho_vs_delta": -0.6611559644562278
+            },
+            "neg_member": {
+              "rho": 0.07374920056299882,
+              "p_perm": 0.48455154484551544,
+              "b": 10000,
+              "rho_vs_delta": 0.030714600209075613
+            }
+          }
+        },
+        "firth_pooled": {
+          "names": [
+            "intercept",
+            "cos_to_source",
+            "self_delta",
+            "bystander_base_rate",
+            "neg_member",
+            "behavior_refusal",
+            "behavior_sycophancy"
+          ],
+          "coef": [
+            2.940115031482249,
+            0.7138842682093794,
+            0.3976120074968501,
+            -0.4844069787158318,
+            -0.6151321183341107,
+            -5.187546478847298,
+            -5.752015743856896
+          ],
+          "se": [
+            0.3995728597911938,
+            0.21710750418939245,
+            0.18972759423467334,
+            0.17818547724998218,
+            0.518672095896009,
+            0.531440024796409,
+            0.5805549676285499
+          ],
+          "odds_ratio": [
+            18.918022355248656,
+            2.041907190078614,
+            1.4882664816347593,
+            0.6160624265903958,
+            0.5405694714531805,
+            0.00558569463631661,
+            0.0031763715875032673
+          ],
+          "penalized_loglik": -99.19670665330159,
+          "converged": true,
+          "n_iter": 11,
+          "design": {
+            "self_delta_included": true,
+            "cos_field": "cos_to_source",
+            "n": 414
+          }
+        },
+        "loso": {
+          "pooled_auc": 0.9103064487699242,
+          "per_left_out_source": {
+            "assistant": {
+              "n_cells": 69,
+              "n_leak": 25,
+              "mean_score_leak": 0.8460113439560278,
+              "mean_score_no_leak": 0.16398246004428085
+            },
+            "comedian": {
+              "n_cells": 69,
+              "n_leak": 23,
+              "mean_score_leak": 0.7511752048804275,
+              "mean_score_no_leak": 0.033912569631342225
+            },
+            "kindergarten_teacher": {
+              "n_cells": 69,
+              "n_leak": 23,
+              "mean_score_leak": 0.8797797932783213,
+              "mean_score_no_leak": 0.1992918177150327
+            },
+            "qwen_default": {
+              "n_cells": 69,
+              "n_leak": 20,
+              "mean_score_leak": 0.9642862680213691,
+              "mean_score_no_leak": 0.07919027243210902
+            },
+            "software_engineer": {
+              "n_cells": 69,
+              "n_leak": 39,
+              "mean_score_leak": 0.5743144146761562,
+              "mean_score_no_leak": 0.09968089746282954
+            },
+            "villain": {
+              "n_cells": 69,
+              "n_leak": 21,
+              "mean_score_leak": 0.590683003041144,
+              "mean_score_no_leak": 0.09353226511882669
+            }
+          },
+          "n_total": 414
+        },
+        "n_leak_per_behavior": {
+          "sycophancy": 10,
+          "refusal": 15,
+          "em": 126
+        }
+      },
+      "0.10": {
+        "loso": {
+          "pooled_auc": 0.8411637931034482,
+          "per_left_out_source": {
+            "assistant": {
+              "n_cells": 69,
+              "n_leak": 31,
+              "mean_score_leak": 0.8006955575416533,
+              "mean_score_no_leak": 0.22925906273040822
+            },
+            "comedian": {
+              "n_cells": 69,
+              "n_leak": 24,
+              "mean_score_leak": 0.8625350994911014,
+              "mean_score_no_leak": 0.06498733642134205
+            },
+            "kindergarten_teacher": {
+              "n_cells": 69,
+              "n_leak": 26,
+              "mean_score_leak": 0.8872031565929527,
+              "mean_score_no_leak": 0.2919078171437781
+            },
+            "qwen_default": {
+              "n_cells": 69,
+              "n_leak": 22,
+              "mean_score_leak": 0.9823426116104561,
+              "mean_score_no_leak": 0.050818816141433125
+            },
+            "software_engineer": {
+              "n_cells": 69,
+              "n_leak": 48,
+              "mean_score_leak": 0.54803319807124,
+              "mean_score_no_leak": 0.22419692142730185
+            },
+            "villain": {
+              "n_cells": 69,
+              "n_leak": 23,
+              "mean_score_leak": 0.10940854674484746,
+              "mean_score_no_leak": 0.13967704047630808
+            }
+          },
+          "n_total": 414
+        },
+        "n_leak_per_behavior": {
+          "sycophancy": 21,
+          "refusal": 20,
+          "em": 133
+        }
+      }
+    },
+    "em_survivor_filter": {
+      "min_survivors": 24,
+      "n_dropped": 33,
+      "dropped_leak_composition": {
+        "leak": 33,
+        "no_leak": 0
+      },
+      "firth_em_filtered": {
+        "names": [
+          "intercept",
+          "cos_to_source",
+          "self_delta",
+          "bystander_base_rate",
+          "neg_member"
+        ],
+        "coef": [
+          4.284749918334029,
+          0.0005397808685761834,
+          0.37459010105585205,
+          -1.5292174480728256,
+          -2.017485403909321
+        ],
+        "se": [
+          1.0056145118810458,
+          0.8772965234979506,
+          0.6664172448590029,
+          0.4770985907420223,
+          1.6384214331005833
+        ],
+        "odds_ratio": [
+          72.58439242403985,
+          1.0005399265764847,
+          1.4543951373886572,
+          0.2167051840389355,
+          0.13298945974887086
+        ],
+        "penalized_loglik": -0.8564120848690124,
+        "converged": true,
+        "n_iter": 28,
+        "p_plr": [
+          7.928086805326031e-20,
+          0.9996299448587758,
+          0.6370977866003067,
+          1.5880609904023636e-06,
+          0.46581764555784944
+        ],
+        "p_method": [
+          "plr",
+          "plr",
+          "plr",
+          "plr",
+          "plr"
+        ],
+        "profile_fallback_coefs": [],
+        "design": {
+          "self_delta_included": true,
+          "cos_field": "cos_to_source",
+          "n": 105
+        }
+      },
+      "univariate_em_filtered": {
+        "cos_to_source": {
+          "rho": 0.1593573707993243,
+          "p_perm": 0.04789521047895211,
+          "b": 10000
+        },
+        "bystander_base_rate": {
+          "rho": -0.36931476401916097,
+          "p_perm": 9.999000099990002e-05,
+          "b": 10000
+        },
+        "neg_member": {
+          "rho": -0.06953840623693441,
+          "p_perm": 1.0,
+          "b": 10000
+        }
+      }
+    },
+    "arm_substrate_cosine": {
+      "refusal": {
+        "names": [
+          "intercept",
+          "cos_to_source",
+          "self_delta",
+          "bystander_base_rate",
+          "neg_member"
+        ],
+        "coef": [
+          -2.1190130646352467,
+          0.9663054054638205,
+          1.255241051932494,
+          0.5783863638030107,
+          -2.3233567640135107
+        ],
+        "se": [
+          0.4526969816531765,
+          0.32444033387837473,
+          0.7794960111798803,
+          0.23989003267910503,
+          1.49867953078441
+        ],
+        "odds_ratio": [
+          0.12015015044764835,
+          2.6282163060247417,
+          3.5086840474830714,
+          1.7831587385016756,
+          0.09794425741646642
+        ],
+        "penalized_loglik": -38.12150810764057,
+        "converged": true,
+        "n_iter": 17,
+        "p_plr": [
+          5.678245238956672e-15,
+          0.0009901234899510683,
+          0.006074911307632098,
+          0.014260245143142123,
+          0.029119297620737786
+        ],
+        "p_method": [
+          "plr",
+          "plr",
+          "plr",
+          "plr",
+          "plr"
+        ],
+        "profile_fallback_coefs": [],
+        "design": {
+          "self_delta_included": true,
+          "cos_field": "cos_arm_substrate",
+          "n": 138
+        }
+      },
+      "em": {
+        "names": [
+          "intercept",
+          "cos_to_source",
+          "self_delta",
+          "bystander_base_rate",
+          "neg_member"
+        ],
+        "coef": [
+          4.614406437423378,
+          0.10944074249617303,
+          0.4156761678412586,
+          -1.3908401999099393,
+          -1.12335878976926
+        ],
+        "se": [
+          1.0348269325891077,
+          0.7607905269084401,
+          0.6080765625583698,
+          0.3973412656007286,
+          1.5183993152670678
+        ],
+        "odds_ratio": [
+          100.92790372309126,
+          1.1156539581076343,
+          1.515395055752072,
+          0.24886611947412976,
+          0.3251857277857499
+        ],
+        "penalized_loglik": -0.5347959896517338,
+        "converged": true,
+        "n_iter": 52,
+        "p_plr": [
+          1.4513268906913573e-27,
+          0.9351419629767418,
+          0.5975642299750578,
+          9.3962172500766e-08,
+          0.6326211682923965
+        ],
+        "p_method": [
+          "plr",
+          "plr",
+          "plr",
+          "plr",
+          "plr"
+        ],
+        "profile_fallback_coefs": [],
+        "design": {
+          "self_delta_included": true,
+          "cos_field": "cos_arm_substrate",
+          "n": 138
+        }
+      }
+    },
+    "headroom_base_rate_le_0p5": {
+      "sycophancy": {
+        "n_excluded": 0,
+        "firth": "no cells excluded \u2014 identical to primary fit"
+      },
+      "refusal": {
+        "n_excluded": 0,
+        "firth": "no cells excluded \u2014 identical to primary fit"
+      },
+      "em": {
+        "n_excluded": 5,
+        "firth": {
+          "names": [
+            "intercept",
+            "cos_to_source",
+            "self_delta",
+            "bystander_base_rate",
+            "neg_member"
+          ],
+          "coef": [
+            4.706161403973806,
+            0.2588471393378994,
+            0.34152163321205115,
+            -0.47750749616050037,
+            -1.271987432187385
+          ],
+          "se": [
+            1.034192703456151,
+            0.7963905533321662,
+            0.5975588690770619,
+            0.5211198261417072,
+            1.4046086154692725
+          ],
+          "odds_ratio": [
+            110.62669264688122,
+            1.2954357685231683,
+            1.4070870327889597,
+            0.6203276355032309,
+            0.28027404223332064
+          ],
+          "penalized_loglik": -0.7542707866261842,
+          "converged": true,
+          "n_iter": 27,
+          "p_plr": [
+            2.9909749665295676e-32,
+            0.8207634331722461,
+            0.6668462668286146,
+            0.5169720870975851,
+            0.511614107078372
+          ],
+          "p_method": [
+            "plr",
+            "plr",
+            "plr",
+            "plr",
+            "plr"
+          ],
+          "profile_fallback_coefs": [],
+          "design": {
+            "self_delta_included": true,
+            "cos_field": "cos_to_source",
+            "n": 133
+          }
+        }
+      }
+    },
+    "suppression_cells": [
+      {
+        "behavior": "refusal",
+        "source": "qwen_default",
+        "bystander": "zelthari_scholar",
+        "delta": -0.10400000000000001
+      },
+      {
+        "behavior": "em",
+        "source": "assistant",
+        "bystander": "villain",
+        "delta": -0.30857077771196645
+      },
+      {
+        "behavior": "em",
+        "source": "comedian",
+        "bystander": "villain",
+        "delta": -0.1267555712413031
+      },
+      {
+        "behavior": "em",
+        "source": "kindergarten_teacher",
+        "bystander": "villain",
+        "delta": -0.32998226950354326
+      },
+      {
+        "behavior": "em",
+        "source": "qwen_default",
+        "bystander": "villain",
+        "delta": -0.3495673462120512
+      },
+      {
+        "behavior": "em",
+        "source": "software_engineer",
+        "bystander": "villain",
+        "delta": -0.23314893617021115
+      }
+    ]
+  },
+  "metadata": {
+    "git_commit_sha": "ac52f092039b88dacd65ca37f342aacec22d7a48",
+    "timestamp_utc": "2026-06-11T20:18:19.463613+00:00",
+    "perm_b": 10000,
+    "profile_ci": true,
+    "self_delta_complete": true,
+    "numpy_version": "2.2.6",
+    "seeds": {
+      "cos_to_source": 5911,
+      "bystander_base_rate": 5912,
+      "neg_member": 5913,
+      "h2_pooled": 5915
+    }
+  }
+}
