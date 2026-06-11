@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 572,
+  "highest_id": 573,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3429,6 +3429,13 @@
       "path": "tasks/proposed/572",
       "status": "proposed",
       "title": "Harden pod resume and provisioning waits in pod.py and pod_lifecycle.py"
+    },
+    "573": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/573",
+      "status": "proposed",
+      "title": "Watcher: log auto-stops to events.jsonl, extend live-follow-up inference, exempt live provisions from ALIVE-BUT-STALLED, setsid provisions"
     },
     "6": {
       "has_clean_result": false,
