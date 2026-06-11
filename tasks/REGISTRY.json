@@ -3199,7 +3199,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/543",
       "status": "interpreting",
-      "title": "Lowering the trigger\u2192marker positive ratio does not rescue benign-SFT erasure on Qwen-2.5-7B \u2014 all four ratio arms collapse identically to 0% emission (HIGH confidence)"
+      "title": "Lowering the trigger\u2192marker positive ratio does not rescue benign-SFT erasure on Qwen-2.5-7B \u2014 all five ratio arms, down to 1% positives, collapse to 0% emission (HIGH confidence)"
     },
     "544": {
       "has_clean_result": false,
