@@ -688,6 +688,20 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
         help="Default 5 (inherited from #460 plan §11.1).",
     )
     ap.add_argument(
+        "--max-steps",
+        type=int,
+        default=None,
+        help=(
+            "(ported from #547; #546 fractional-epoch follow-up) Step-indexed "
+            "training amount; overrides --epochs via HF "
+            "TrainingArguments.max_steps (warmup + cosine computed off "
+            "max_steps per run). OPTIONAL for --issue 546 — when absent the "
+            "parent epoch-indexed path is byte-identical; when set the cell "
+            "suffix switches ``_e{E}`` → ``_s{S}``. Mutually exclusive with "
+            "a non-default --epochs."
+        ),
+    )
+    ap.add_argument(
         "--gpu-id",
         type=int,
         default=0,
@@ -835,6 +849,20 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
             f"--issue {args.issue} requires --contrastive-negatives "
             "--shared-marker --single-persona (cn regime only)."
         )
+    # max_steps contract (ported from #547, adapted for the #546
+    # fractional-epoch follow-up): --max-steps is OPTIONAL for --issue 546
+    # (no "requires --max-steps" clause — omitting it keeps the parent's
+    # integer-epoch invocation byte-identical). --max-steps with a
+    # non-default --epochs is ambiguous (HF would silently ignore epochs),
+    # so fail loud instead.
+    if args.max_steps is not None and args.epochs != ap.get_default("epochs"):
+        ap.error(
+            "--max-steps and a non-default --epochs are mutually exclusive "
+            "(max_steps overrides epochs in HF TrainingArguments; passing "
+            "both is ambiguous)."
+        )
+    if args.max_steps is not None and args.max_steps <= 0:
+        ap.error(f"--max-steps must be > 0; got {args.max_steps}")
 
     arm, seed = _parse_cell(args.cell, issue=args.issue)
 
@@ -876,16 +904,26 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
                 "negative encoding gets >=1 dupe."
             )
 
-    # Issue-prefix + epoch suffix (plan §4.7):
+    # Issue-prefix + grid suffix (plan §4.7 / #546 follow-up plan §2(b)):
     #   * --issue 464 (default): adapters at ``adapters/i464_{cell}``;
     #     epochs NOT in the cell label (the legacy #464 path).
-    #   * --issue 529 / 533: adapters at ``adapters/i{N}_{cell}_e{E}``;
-    #     epoch suffix is part of the label so the same (arm, seed,
-    #     persona) cell at E=1 vs E=5 lives at distinct HF subpaths AND
-    #     on-disk row files (concurrent 4-GPU sweep would otherwise
-    #     race on the same TRAIN_ROW_DIR/.jsonl path).
+    #   * --issue 529 / 533 / 546 (epoch-indexed): adapters at
+    #     ``adapters/i{N}_{cell}_e{E}``; epoch suffix is part of the label
+    #     so the same (arm, seed, persona) cell at E=1 vs E=5 lives at
+    #     distinct HF subpaths AND on-disk row files (concurrent 4-GPU
+    #     sweep would otherwise race on the same TRAIN_ROW_DIR/.jsonl path).
+    #   * --issue 546 WITH --max-steps (the fractional-epoch follow-up):
+    #     adapters at ``adapters/i546_{cell}_s{S}`` — same distinct-subpath
+    #     logic keyed on max_steps instead of epochs; the ``_s`` namespace
+    #     is disjoint from the parent's ``_e`` cells, so a relaunch never
+    #     confuses parent cells with follow-up cells.
     issue_prefix = f"i{args.issue}"
-    epoch_suffix = f"_e{args.epochs}" if args.issue in (529, 533, 546) else ""
+    step_suffix = f"_s{args.max_steps}" if args.max_steps is not None else ""
+    epoch_suffix = (
+        step_suffix
+        if (args.issue == 546 and args.max_steps is not None)
+        else (f"_e{args.epochs}" if args.issue in (529, 533, 546) else "")
+    )
 
     train_path = _build_training_rows(
         arm,
@@ -1012,6 +1050,11 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - argparse + #529
     cfg_kwargs = dict(
         gpu_id=args.gpu_id,
         epochs=epochs,
+        # Ported from #547: step-indexed training amount. None (the default,
+        # and the parent #546 epoch-grid path) leaves the epochs-driven path
+        # byte-identical; when set, HF TrainingArguments.max_steps overrides
+        # num_train_epochs (warmup + cosine computed off max_steps).
+        max_steps=args.max_steps,
         lr=args.lr,
         # #546: rank/alpha come from the CLI (defaults 32/64 keep
         # --issue 464/529/533 byte-compatible with the hardcoded

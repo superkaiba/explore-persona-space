@@ -95,6 +95,10 @@ PER_CELL_DIR_FOR: dict[str, Path] = {
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/cross_eval/per_cell"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/cross_eval/per_cell"),
     "cn_i546": Path("eval_results/issue_546/contrastive_negatives/cross_eval/per_cell"),
+    # #546 same-issue follow-up `fractional-epoch-grid-r16` (step-indexed
+    # max_steps grid {47, 57, 66}); artifacts under
+    # eval_results/issue_<N>/<followup_label>/ per the CLAUDE.md routing rule.
+    "cn_i546s": Path("eval_results/issue_546/fractional-epoch-grid-r16/cross_eval/per_cell"),
 }
 OUT_PATH_FOR: dict[str, Path] = {
     "po": Path("eval_results/issue_464/positive_only/analysis.json"),
@@ -102,6 +106,7 @@ OUT_PATH_FOR: dict[str, Path] = {
     "cn_i529": Path("eval_results/issue_529/contrastive_negatives/analysis.json"),
     "cn_i533": Path("eval_results/issue_533/contrastive_negatives/analysis.json"),
     "cn_i546": Path("eval_results/issue_546/contrastive_negatives/analysis.json"),
+    "cn_i546s": Path("eval_results/issue_546/fractional-epoch-grid-r16/analysis.json"),
 }
 SCHEMA_VERSION_FOR: dict[str, str] = {
     "po": "i464_po_analyze_v1",
@@ -109,6 +114,7 @@ SCHEMA_VERSION_FOR: dict[str, str] = {
     "cn_i529": "i529_cn_analyze_v1",
     "cn_i533": "i533_cn_analyze_v1",
     "cn_i546": "i546_cn_analyze_v1",
+    "cn_i546s": "i546s_cn_analyze_v1",
 }
 
 # Legacy aliases (positive-only defaults) — kept for any importer that
@@ -136,6 +142,11 @@ _ACTIVE: dict[str, object] = {
     # and the both-resolved cn_i546 case) = iterate ``enc.PERSONAS``
     # unchanged, keeping po/cn/cn_i529/cn_i533 byte-stable.
     "personas": None,
+    # Cell-label grid-suffix character: "e" (epoch-indexed; every variant
+    # through cn_i546) or "s" (max_steps-indexed; cn_i546s). main() sets
+    # it from GRID_SUFFIX_CHAR_FOR before any per-cell load; the default
+    # keeps every existing variant byte-stable.
+    "grid_suffix_char": "e",
 }
 
 # Per-variant seed sets (mirrors po_eval's SEEDS_FOR).
@@ -145,6 +156,16 @@ SEEDS_FOR: dict[str, tuple[int, ...]] = {
     "cn_i529": (42, 137, 1337, 7, 21),
     "cn_i533": (42, 137, 1337, 7, 21),
     "cn_i546": (42, 137, 1337, 7, 21),
+    "cn_i546s": (42, 137, 1337, 7, 21),
+}
+# Cell-label grid-suffix character per variant (mirrors po_eval's
+# GRID_SUFFIX_CHAR_FOR; ``.get(variant, "e")`` keeps po/cn and every
+# e-suffixed variant byte-stable).
+GRID_SUFFIX_CHAR_FOR: dict[str, str] = {
+    "cn_i529": "e",
+    "cn_i533": "e",
+    "cn_i546": "e",
+    "cn_i546s": "s",
 }
 SEEDS = SEEDS_FOR["po"]
 PO_ARMS: tuple[enc.Arm, ...] = ("system_plain", "system_padded", "role")
@@ -166,14 +187,28 @@ def _git_commit_hash() -> str:
         return "unknown"
 
 
+def _active_suffix_char() -> str:
+    """Grid-suffix character for the active variant ('e' default, 's' for cn_i546s)."""
+    suffix = _ACTIVE.get("grid_suffix_char", "e")
+    return suffix if isinstance(suffix, str) else "e"
+
+
 def _po_cell_label(arm: enc.Arm, seed: int, persona: enc.Persona, epoch: int | None = None) -> str:
     """Canonical cell label; matches train + eval.
 
     * po/cn (epoch=None): ``{arm}_seed{seed}_{persona}``
-    * cn_i529 (epoch=E):  ``{arm}_seed{seed}_cn_{persona}_e{E}``
+    * cn_i529 / cn_i533 / cn_i546 (epoch=E, suffix 'e'):
+      ``{arm}_seed{seed}_cn_{persona}_e{E}``
+    * cn_i546s (epoch=max_steps, suffix 's' from ``_ACTIVE``):
+      ``{arm}_seed{seed}_cn_{persona}_s{S}``
+
+    ``epoch`` carries the GRID VALUE (an epoch count for the e-suffixed
+    variants, a max_steps count for cn_i546s); the suffix character comes
+    from ``_ACTIVE['grid_suffix_char']`` so every helper call site stays
+    signature-stable.
     """
     if epoch is not None:
-        return f"{arm}_seed{seed}_cn_{persona}_e{epoch}"
+        return f"{arm}_seed{seed}_cn_{persona}_{_active_suffix_char()}{epoch}"
     return f"{arm}_seed{seed}_{persona}"
 
 
@@ -631,7 +666,8 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         default=None,
         help=(
             "Seeds to aggregate. Default = variant-specific: (42, 137, 1337) "
-            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529 / cn_i533 / cn_i546."
+            "for po/cn; (42, 137, 1337, 7, 21) for cn_i529 / cn_i533 / "
+            "cn_i546 / cn_i546s."
         ),
     )
     ap.add_argument(
@@ -641,7 +677,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     )
     ap.add_argument(
         "--variant",
-        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i546"),
+        choices=("po", "cn", "cn_i529", "cn_i533", "cn_i546", "cn_i546s"),
         default="po",
         help=(
             "Which follow-up to analyze. ``po`` (default) = positive-only "
@@ -655,9 +691,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             "#546 r=16/alpha=32 rank-reduction corrective re-run (reads + "
             "writes under ``eval_results/issue_546/contrastive_negatives/``); "
             "two-sided per-persona verdict + partial-anchor resolved-persona "
-            "analysis. cn_i529 / cn_i533 / cn_i546 ALL REQUIRE "
-            "``--anchor-file`` so the per-persona E* is set before per-cell "
-            "loads."
+            "analysis. ``cn_i546s`` = #546 fractional-epoch follow-up "
+            "(fractional-epoch-grid-r16; max_steps grid {47, 57, 66}, cells "
+            "keyed ``_s{steps}``; reads + writes under "
+            "``eval_results/issue_546/fractional-epoch-grid-r16/``); "
+            "inherits cn_i546's two-sided + partial-anchor verdict contract "
+            "unmodified. cn_i529 / cn_i533 / cn_i546 / cn_i546s ALL REQUIRE "
+            "``--anchor-file`` so the per-persona grid anchor is set before "
+            "per-cell loads."
         ),
     )
     ap.add_argument(
@@ -665,12 +706,13 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         type=str,
         default=None,
         help=(
-            "Path to anchor_selection.json (cn_i529 / cn_i533 / cn_i546 only). The "
-            "file is produced by ``scripts/i529_select_anchor.py`` and "
-            "carries ``selected_anchor: {pirate: E*, villain: E*}``; "
-            "analyze reads ONLY the cells at those E* per persona to "
-            "compute the headline statistic at the selected anchor "
-            "(plan §4.5)."
+            "Path to anchor_selection.json (cn_i529 / cn_i533 / cn_i546 / "
+            "cn_i546s only). The file is produced by "
+            "``scripts/i529_select_anchor.py`` and carries "
+            "``selected_anchor: {pirate: E*, villain: E*}`` (for cn_i546s "
+            "the anchor values are max_steps grid points); analyze reads "
+            "ONLY the cells at those anchors per persona to compute the "
+            "headline statistic at the selected anchor (plan §4.5)."
         ),
     )
     args = ap.parse_args(argv)
@@ -679,6 +721,9 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # helpers (_load_per_cell, _symmetric_leakage, ...) read from the
     # right directory without each call site needing an extra arg.
     _ACTIVE["per_cell_dir"] = PER_CELL_DIR_FOR[args.variant]
+    # Grid-suffix character BEFORE any per-cell load: cn_i546s cells key
+    # on ``_s{max_steps}``; everything else keeps the ``_e{epoch}`` default.
+    _ACTIVE["grid_suffix_char"] = GRID_SUFFIX_CHAR_FOR.get(args.variant, "e")
     out_path_active = OUT_PATH_FOR[args.variant]
     schema_version = SCHEMA_VERSION_FOR[args.variant]
     seeds_default = list(SEEDS_FOR[args.variant])
@@ -696,7 +741,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # would load the wrong (or no) cells and silently produce a
     # malformed analysis.
     anchor_resolution: dict[str, dict] | None = None
-    if args.variant in ("cn_i529", "cn_i533", "cn_i546"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i546", "cn_i546s"):
         if args.anchor_file is None and not args.allow_partial:
             ap.error(
                 f"--variant {args.variant} requires --anchor-file (run "
@@ -729,12 +774,12 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             _resolved_personas = [
                 p for p, e in _ACTIVE["selected_epoch_per_persona"].items() if e is not None
             ]
-            if args.variant == "cn_i546":
+            if args.variant in ("cn_i546", "cn_i546s"):
                 # Round-2: pull the per-question resolution stats at each
                 # resolved persona's E* out of the anchor file now (the
                 # payload attaches them below as `anchor_resolution_gate`).
                 anchor_resolution = _anchor_resolution_diagnostic(anchor_payload)
-            if args.variant == "cn_i546" and (_partial_flag or _unresolved_personas):
+            if args.variant in ("cn_i546", "cn_i546s") and (_partial_flag or _unresolved_personas):
                 # cn_i546 partial-anchor resolved-persona path (plan §2
                 # divergence 3; round-1 critique must-fix). The inherited
                 # cn_i529/cn_i533 short-circuit below made the Goal's
@@ -751,6 +796,14 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                 # ``skipped: true`` downstream; ``partial_anchor_skipped``
                 # is reserved for ZERO resolved personas (the true
                 # degenerate case).
+                # Grid wording for the zero-resolved note: cn_i546 keeps
+                # its rendered text byte-identical; cn_i546s names the
+                # max_steps grid.
+                _grid_noun, _grid_desc = (
+                    ("step", "{47,57,66}-step")
+                    if args.variant == "cn_i546s"
+                    else ("epoch", "{1,2,3,5}-epoch")
+                )
                 if not _resolved_personas:
                     partial_payload = {
                         "schema_version": schema_version,
@@ -774,10 +827,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
                         "selected_anchor_per_persona": _ACTIVE["selected_epoch_per_persona"],
                         "anchor_file": str(args.anchor_file),
                         "note": (
-                            "i464_po_analyze (cn_i546) refused to compute headline "
-                            "statistics because NO persona resolved an anchor epoch "
-                            "in the {1,2,3,5}-epoch grid. Re-run "
-                            "`i529_select_anchor.py` after adding more epoch points "
+                            f"i464_po_analyze ({args.variant}) refused to compute headline "
+                            f"statistics because NO persona resolved an anchor {_grid_noun} "
+                            f"in the {_grid_desc} grid. Re-run "
+                            f"`i529_select_anchor.py` after adding more {_grid_noun} points "
                             "or rerun training at a lower LoRA rank / lr per "
                             "`.claude/rules/marker-training-recipe.md`."
                         ),
@@ -991,7 +1044,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     # divergence 3 / §7). cn_i529 / cn_i533 keep the inherited override
     # BYTE-STABLE.
     dr_gate, dynamic_range_ok = _compute_dynamic_range_gate(raw_per_cell)
-    dr_gates_verdict = args.variant != "cn_i546"
+    dr_gates_verdict = args.variant not in ("cn_i546", "cn_i546s")
     if (
         not dynamic_range_ok
         and dr_gates_verdict
@@ -1052,10 +1105,10 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         "raw_per_cell": raw_per_cell,
         "n_missing_per_cell": len(missing),
     }
-    if args.variant in ("cn_i529", "cn_i533", "cn_i546"):
+    if args.variant in ("cn_i529", "cn_i533", "cn_i546", "cn_i546s"):
         payload["selected_anchor"] = _ACTIVE.get("selected_epoch_per_persona")
         payload["anchor_file"] = args.anchor_file
-    if args.variant == "cn_i546":
+    if args.variant in ("cn_i546", "cn_i546s"):
         # Plan §2 divergence 3: the payload always names the analysis
         # denominator. ``anchored_personas`` lists the persona(s) whose
         # cells the headline statistics cover; ``partial_anchor`` is True
@@ -1069,7 +1122,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
         # diagnostic-only for cn_i546 — it never sets headline_status.
         payload["dynamic_range_gate"]["gates_verdict"] = False
         payload["dynamic_range_gate"]["note"] = (
-            "Diagnostic-only for cn_i546: this gate pools per-(seed, persona) "
+            f"Diagnostic-only for {args.variant}: this gate pools per-(seed, persona) "
             "cell MEANS per arm (<=10 values), a different statistic from the "
             "anchor selector's per-question wrong_sd resolution gate. The "
             "verdict is driven by headline.per_persona_verdict regardless of "
@@ -1111,7 +1164,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
     #     gate was demoted to a diagnostic above and can NEVER set
     #     headline_status, so a resolved anchor always reaches this
     #     block and the two-sided per-persona verdict drives the status.
-    if args.variant in ("cn_i533", "cn_i546") and headline_status not in (
+    if args.variant in ("cn_i533", "cn_i546", "cn_i546s") and headline_status not in (
         "inconclusive_descriptive_only",
         "inconclusive_dynamic_range_failed",
     ):
@@ -1157,7 +1210,7 @@ def main(argv: list[str] | None = None) -> None:  # noqa: C901 - mirrors parent'
             # order). Every resolution verdict maps headline_status to
             # "ok"; "inconclusive" maps to "partial". The cn_i529 path is
             # BYTE-STABLE — none of this routing applies there.
-            _is_546 = args.variant == "cn_i546"
+            _is_546 = args.variant in ("cn_i546", "cn_i546s")
             vd = _headline_verdict_from_per_persona(
                 per_persona,
                 two_sided=_is_546,
