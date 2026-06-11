@@ -238,4 +238,250 @@ uv run python scripts/issue561_compare.py \
 
 ---
 
+## 9. Follow-up arm — `exposure-matched-ckpt300` (checkpoint-300 re-read)
+
+A same-issue follow-up round executed under the label `exposure-matched-ckpt300` (plan v2, a one-variable diff plan against the parent run). **Zero new training.** The single changed variable: the adapter checkpoint extracted — **step 600 (the parent's final adapter) → step 300 (the mid-training snapshot of the SAME three positive-only runs)**, using the per-50-step checkpoints the parent run already uploaded. Everything not named below — extraction instrument, 14×20 probe panel, layers 7/14/21, three text conditions, nulls and thresholds, seeds, the #551 reference cells, the comparison code — is inherited verbatim from sections 1–3.
+
+### 9.1 Design delta — one variable
+
+**Exposure arithmetic (recipe property).** The contrastive #519 reference arm trained 600 steps × effective batch 16 = 9,600 row-visits over 400 rows = 24 epochs per row, positives included. The positive-only arm at checkpoint-300 trained 300 × 16 = 4,800 row-visits over 200 rows = **24 epochs per positive — exactly the contrastive arm's per-positive exposure**. At the parent's step-600 endpoint the same quantity is 48. Checkpoint-300 is therefore the row-visit-exposure-matched read of the same adapters.
+
+**Integrated-LR property (recipe property, recorded as a scope caveat — plan §12.9).** Checkpoint-300 sits at the midpoint of a 600-step cosine schedule (LR decayed to ~0.5× amplitude at step 300), so its 24 epochs accumulate at ≈1.6× the integrated learning rate per positive of the contrastive arm's 24 epochs spread over a full cosine. Row-visit exposure is matched; integrated LR is not. A from-scratch 300-step-schedule retrain would match both but costs a full training run and adds a schedule-shape variable; the checkpoint extraction is the specified zero-training design.
+
+**Collinearity constraint (encoded in the verdict script's narration rules).** Within a fixed arm, per-positive exposure, raw optimizer steps, and cosine-schedule position are perfectly collinear, and the step-matched contrastive checkpoint-300 reference does not exist on the Hub (only final #519 adapters persist), so a pure step-effect estimate at fixed contrastive data mix is not obtainable zero-training. The verdict script hard-codes per-branch narration constraints reflecting this (e.g. a band-collapse outcome may be narrated as *consistent with* exposure-matching, never as "exposure caused it"). The step-matched contrastive checkpoint-300 (a contrastive retrain with per-step checkpoints) is the named escalation path.
+
+**Artifact-fitness check (design input, cited — not recomputed).** The step-300 regime was verified at plan time from the PARENT run's already-committed step-300 periodic-eval JSONs (`eval_results/issue_561/marker_seed{42,137,256}/periodic_eval/leakage_marker_step_300.json` @ `46b758f18557c2f36eac73c33ac3dc9be9fc4e8a`): source-persona ΔlogP(※) +30.84 nat and emission rate 1.00 in all three seeds — i.e. the snapshot sits in the same saturated behavioral regime as both comparison arms, so the geometric DV is read under a matched implant-strength regime. No new manipulation check runs in this round.
+
+### 9.2 Checkpoint staging + provenance asserts
+
+The staging script `scripts/issue_521_stage_adapters.py` gained a **template mode** (`--hf-path-template` + `--hf-revision`; defaults preserve the original #519 staging behavior used by the smoke step). The driver stages the three checkpoint dirs per-file via `hf_hub_download`:
+
+```bash
+uv run python scripts/issue_521_stage_adapters.py \
+  --output-dir eval_results/issue_561/exposure-matched-ckpt300 \
+  --cells marker_seed42 marker_seed137 marker_seed256 \
+  --hf-path-template 'issue_561_posonly/{arm}_seed{seed}/checkpoints/checkpoint-300' \
+  --hf-revision c6a4771980ff4f7ff960ae7cd620dcca58668fec
+```
+
+In template mode the mandatory file set is the 3-file checkpoint shape — `adapter_config.json` + `adapter_model.safetensors` + `trainer_state.json` (the last mandatory for provenance). Tokenizer files are not expected: checkpoint dirs carry only those 3 files (Hub-verified at the pin), the extraction loads its tokenizer from `--base-model-id`, and `PeftModel.from_pretrained` needs only the config + safetensors pair. Stale-LFS-pointer / partial-stage states are caught by file-size fail-louds even on the already-staged path.
+
+Before any extraction the driver asserts, per seed:
+
+- `trainer_state.json` exists and `global_step == 300` (rules out a stale step-600 / contrastive adapter mix-up);
+- `adapter_config.json` has `r == 8` and `lora_alpha == 16` (the #519 LoRA shape);
+- `target_modules` touch neither `lm_head` nor `embed_tokens`, and `modules_to_save` is empty (the frozen-unembedding gauge precondition, section 2);
+- `adapter_model.safetensors` exists and is > 1 KiB.
+
+Two path-separation hard asserts guard the parent run's artifacts: the HF tensor prefix must not be the parent's `shifts/` bucket, and the output dirs must not be the parent's top-level eval dir. Follow-up outputs land only under `eval_results/issue_561/exposure-matched-ckpt300/` (git) and `issue561_posonly/analysis_tensors/shifts_ckpt300/` (HF).
+
+**Manifest scope note:** the extraction manifests inherit the dispatcher's parent-lineage metadata and carry **no checkpoint / global-step / revision field** — checkpoint identity is carried by the asserted trainer-state sentinel plus the dedicated `shifts_ckpt300/` Hub prefix, not by the manifests (see the worked example in 9.6).
+
+### 9.3 Extraction (inherited instrument)
+
+One reduced driver, `scripts/run_issue561_ckpt300.sh` — a clone of the parent driver with the data/training phases removed and the provenance assert replaced (staged checkpoints have no `run_result.json`). Same fail-loud / phase-echo / pod-kept-alive-on-failure / results-sentinel contract; `DRY_RUN=1` echo-traces the full sequence.
+
+| Phase | Script / mechanism | Output |
+|---|---|---|
+| 1. Preflight | `orchestrate.preflight` (`check_code_sync=False`, branch-pinned pod) | go/no-go |
+| 2. Stage ckpt-300 + provenance assert | `issue_521_stage_adapters.py` template mode @ revision `c6a4771…`; then the per-seed asserts of 9.2 | 3 staged `adapter/` dirs |
+| 3. Extraction smoke | stage the OLD #519 contrastive `marker_seed42` (stage-script defaults, SEPARATE `…_smoke` dir — the cell name collides with the ckpt-300 arm's) + single-cell `same`-condition extraction on 1 GPU + the inherited 4-clause reproduction gate vs `eval_results/issue_521/svd/same_marker_seed42.json` (\|Δ s_top1\| ≤ 0.05, \|Δ mean_cos\| ≤ 0.05, \|cos(U1)\| ≥ 0.95, profile Spearman ≥ 0.8); FAIL → halt BEFORE the 9-cell spend | `smoke_gate_result.json` (pod-side; embedded in the results sentinel) |
+| 4. Extraction, 9 cells | `issue_519_dispatch.py --mode sweep --arms marker --skip-phase a1 a23 b0_smoke b d e --layers 7 14 21 --variants same base on_policy`, 4-way GPU shard, panel from `eval_results/issue_521/inputs/` | 9 `.pt` + 9 manifests under `…/exposure-matched-ckpt300/shifts/` |
+| 5. Count check | exactly 9 `.pt` + 9 `.manifest.json` (missing-dir case fails loud through the sentinel, not bare) | go/no-go |
+| 6. Upload + verify (before termination) | `issue551_upload_verify.py … shifts_ckpt300 --expected-count 9`, fail-loud `list_repo_files` verify | persisted tensors |
+| 7. Results sentinel | `/workspace/logs/issue-561-epm_results-<epoch>.json` (`phase: ckpt300_extract_complete_and_uploaded`, embeds the smoke-gate result, staged-checkpoint provenance, shift-file list, and the next-step VM commands) | `[phase=done]` |
+
+The 9 cells are 3 text conditions (`same` / `base` / `on_policy`) × 3 seeds (42 / 137 / 256), read at layers 7/14/21 (primary 14) over the unchanged 14-persona × 20-question panel.
+
+### 9.4 Comparison + verdict of record (VM, CPU — pod already terminated)
+
+**Step 1 — comparison, parent code unchanged.** `scripts/issue561_compare.py` (the section-3 statistics, byte-identical code) is pointed at the new dirs. It re-downloads the #551 reference tensors @ `08419ee8…` and re-runs the weighted-consistency cross-check (tolerance 0.001) — the off-pod instrument re-anchor. Its `comparison_summary.json` headline block mechanically evaluates the PARENT's pre-registered clauses at the snapshot (is ckpt-300 EM-like?) — informative context only, **not** this round's verdict.
+
+**Step 2 — verdict of record.** `scripts/issue561_ckpt300_verdict.py` (CPU; no torch, no tensor downloads — pure linear algebra over persisted JSONs) joins the new `comparison_per_cell.json` with the parent's committed step-600 per-cell JSON and evaluates this round's pre-registered clauses. Its mechanics:
+
+- **Parent pin assert:** the working-tree parent per-cell JSON must parse-match the pinned git blob @ `5f3ec95695231fd530e69209e238c2840172d3b3` — a drifted copy would silently shift the verdict bands.
+- **persona_order identity assert** across all joined cells (fail loud, never reorder).
+- **Convention-drift cross-check:** the #551 marker/EM cells appear in BOTH JSONs (re-analyzed by the same deterministic code over the same pinned tensors with the same null seeds); their headline scalars must agree to 1e-6 before any ckpt-300 cell is placed against the bands.
+- **Bands loaded from UNROUNDED per-cell values at runtime** (never hardcoded rounded prose — a fact-check amendment in plan §14; e.g. the contrastive same-text weighted band is [0.311322, 0.347698] and unit-norm [0.242471, 0.283958], the positive-only step-600 weighted band min 0.364949). The plan-registered rounded statements of the same bands: contrastive [0.3113, 0.3477] weighted / [0.2425, 0.2840] unit-norm; positive-only step-600 [0.365, 0.402] weighted / [0.305, 0.374] unit-norm.
+- **Pre-registered clauses (same-text condition only, plan §3):** *collapse* = mean over all 3 seeds AND ≥ 2/3 seeds at/below the contrastive band max on BOTH reads (weighted AND unit-norm); *persist* = mean AND ≥ 2/3 seeds at/above the step-600 band min on BOTH reads; anything else (a mean in the narrow gap zones between the bands, discordant reads) → *indeterminate*. Gating precondition: every same-text ckpt-300 cell must clear its own sign-flip null p95 (weighted read); any failing cell routes the verdict to indeterminate with the cell named, and its band placement never counts (`MIN_SEEDS_PER_CLAUSE = 2`). (The values these clauses evaluated to are the follow-up's findings and live in the task body, not here.)
+- **Per-branch narration constraints** are hard-coded next to the clauses (the collinearity rule of 9.1; the persist branch carries the §12.9 integrated-LR caveat in the same sentence as its headline).
+- **Secondary descriptive reads (no gates):** \|cos(U1_ckpt300, U1_posonly600))\| per (condition, seed) from the persisted 3584-dim U1 vectors, plus the same against the contrastive-marker and EM arms and a 1,000-pair empirical random-pair floor; aligned-set membership (n at \|cos\| ≥ 0.5) 300 vs 600; per-condition band triangulation; the step-300 bystander emission pattern read from the parent's committed periodic-eval JSONs.
+- **Outputs:** `ckpt300_verdict.json` (the verdict of record) + four figures (`four_arm_top_share_bands`, `ckpt300_vs_600_top_share`, `ckpt300_u1_identity`, `ckpt300_membership_300_vs_600`).
+
+### 9.5 Parameter delta
+
+No training in this round, so the section-2 hyperparameter table applies unchanged to the artifacts being read. New / changed values only:
+
+| Parameter | Value | Notes |
+|---|---|---|
+| **Checkpoint extracted** | **`checkpoint-300`** (global_step 300) | THE manipulated variable; parent read `checkpoint-600` (final). Source: exposure arithmetic (9.1) |
+| Adapter source | `issue_561_posonly/marker_seed{S}/checkpoints/checkpoint-300` @ HF revision `c6a4771980ff4f7ff960ae7cd620dcca58668fec` | 3 files per seed, Hub-verified |
+| Output dirs | `eval_results/issue_561/exposure-matched-ckpt300/` (+ `…_smoke/`) | never the parent's paths (hard assert) |
+| HF tensor prefix | `issue561_posonly/analysis_tensors/shifts_ckpt300` | never the parent's `shifts/` (hard assert) |
+| Pod | 4× H100, fresh provision (`eval` intent, count override) | extraction only; no training GPUs |
+| WandB | none | no training in this round |
+| Verdict cross-check tolerance | 1e-6 (shared #551 cells across the two per-cell JSONs) | tighter than the 0.001 tensor-level check, which also still runs |
+
+### 9.6 Worked example — staged-checkpoint extraction manifest (verbatim)
+
+The manifest for the primary cell `same_marker_seed42` of this arm. Note the two provenance-relevant deltas vs the parent manifest in section 6: `adapter_path` points into the `exposure-matched-ckpt300` staging dir, and `git_commit` is the follow-up rig commit. Per the 9.2 scope note, no checkpoint/global-step field exists here — checkpoint identity rests on the driver's trainer-state assert + the dedicated Hub prefix.
+
+<!-- cherry-picked for illustration (the primary same-text seed-42 cell); all 9 manifests in git and at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data-private/tree/9d4fcee4e81caa7e22901ac24fe43e1e34615ccc/issue561_posonly/analysis_tensors/shifts_ckpt300 -->
+
+```json
+{
+  "issue": 551,
+  "schema_version": 2,
+  "arm": "marker",
+  "seed": 42,
+  "variant": "same",
+  "layer": 14,
+  "layers": [7, 14, 21],
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue_561/exposure-matched-ckpt300/marker_seed42/adapter",
+  "n_personas": 14,
+  "persona_names": ["assistant", "biographer", "comedian", "data_scientist", "french_person", "kindergarten_teacher", "librarian", "local_historian", "marine_biologist", "medical_doctor", "police_officer", "software_engineer", "villain", "zelthari_scholar"],
+  "n_questions": 20,
+  "output_path": "/workspace/explore-persona-space/eval_results/issue_561/exposure-matched-ckpt300/shifts/same_marker_seed42.pt",
+  "git_commit": "853a40eba3a6b520672d45c16da3a16741abcac3",
+  "env_versions": {"torch": "2.8.0", "transformers": "4.57.6", "peft": "0.18.1"},
+  "timestamp_utc": "2026-06-11T12:38:36Z"
+}
+```
+
+The dispatcher also writes a run-level `dispatch_manifest.json` recording the realized cell filter, layer set, skip-phase list, GPU count, and commit — verbatim:
+
+```json
+{
+  "issue": 519,
+  "mode": "sweep",
+  "arms": ["marker"],
+  "seeds": [42, 137, 256],
+  "n_cells": 3,
+  "cells_filter": ["marker_seed42", "marker_seed137", "marker_seed256"],
+  "layers": [7, 14, 21],
+  "primary_layer": 14,
+  "n_gpus": 4,
+  "cpu_only": false,
+  "requested_skip_phase": ["a1", "a23", "b0_smoke", "b", "d", "e"],
+  "actually_skipped_phases": ["a1", "a23", "b0_smoke", "b", "d", "e"],
+  "skipped_phases": ["a1", "a23", "b0_smoke", "b", "d", "e"],
+  "phase_order": ["a1", "a23", "b0_smoke", "b", "c", "e", "d"],
+  "git_commit": "853a40eba3a6b520672d45c16da3a16741abcac3",
+  "timestamp_utc": "2026-06-11T14:05:40Z"
+}
+```
+
+(Arrays reflowed onto single lines for compactness; field values verbatim. The `"issue": 519` / `"issue": 551` tags are the inherited extraction code's hardcoded lineage labels, as in section 6.)
+
+### 9.7 Worked example — per-cell comparison row (verbatim, long arrays elided)
+
+One row of this round's `comparison_per_cell.json` — the primary same-text seed-42 ckpt-300 cell (arm key `posonly:same_seed42`; in this round's JSON the `posonly` arm denotes the checkpoint-300 cells, since the comparison was pointed at the ckpt-300 shifts dir). Shown as the input/output format the verdict script consumes; no judgment of band placement is made here. The file's `meta` block records the analysis parameters:
+
+```json
+{
+  "issue": 561,
+  "analysis": "posonly_vs_persisted_551_comparison",
+  "git_commit": "df6055a66a284a198fe1a3bac51f14f81fa9c310",
+  "timestamp_utc": "2026-06-11T14:09:42Z",
+  "new_shifts_dir": "eval_results/issue_561/exposure-matched-ckpt300/shifts",
+  "i551_source": "hf://superkaiba1/explore-persona-space-data-private/issue551_shift_reextract/analysis_tensors/shifts@08419ee885e962cb29c841d34041db419dbbc72c",
+  "n_null_reps": 1000,
+  "n_perm": 10000,
+  "n_random_splits": 50,
+  "split_rng_seed": 42,
+  "aligned_cos_threshold": 0.5,
+  "weighted_consistency_tol": 0.001,
+  "source_persona": "medical_doctor",
+  "top_share_definition": "s_1 / sum(s) (matches svd_summary + the persisted JSONs)"
+}
+```
+
+<!-- cherry-picked for illustration (primary cell); full 27-cell JSON at https://github.com/superkaiba/explore-persona-space/blob/8806142de2178a95605c14b667044dacbffe5f9c/eval_results/issue_561/exposure-matched-ckpt300/comparison/comparison_per_cell.json -->
+
+```jsonc
+{
+  "arm": "posonly",
+  "variant": "same",
+  "seed": 42,
+  "persona_order": [/* 14 persona names, identical to the manifest above */],
+  "M_shape": [3584, 14],
+  "frobenius_norm": 12.305516101969655,
+  "singular_values": [/* 14 floats */],
+  "weighted": {
+    "s_top1_frac": 0.40037205815315247,
+    "mean_cos_to_U1": 0.8608489036560059,
+    "median_cos_to_U1": 0.9289276003837585,
+    "cos_to_U1": {
+      "assistant": 0.7872834801673889,
+      "biographer": 0.8863427042961121,
+      // ... 11 more personas ...
+      "medical_doctor": 0.1944848597049713,
+      "zelthari_scholar": 0.9293740391731262
+    },
+    "n_aligned_abs_cos_ge_0p5": 13,
+    "aligned_personas": [/* 13 names — all except medical_doctor */],
+    "U1": [/* 3584 floats — the top direction the verdict script's identity reads consume */]
+  },
+  "unitnorm": {
+    "s_top1_frac": 0.3739811182022095,
+    "cos_to_U1": {/* same 14-persona structure as weighted */},
+    "n_aligned_abs_cos_ge_0p5": 13,
+    "aligned_personas": [/* 13 names */],
+    "abs_cos_U1_unitnorm_vs_weighted": 0.9978927875289623
+  },
+  "nulls": {
+    "sign_flip_p95": 0.10156697779893875,
+    "sign_flip_p99": 0.10274189710617065,
+    "row_shuffle_p95": 0.3181896507740021,
+    "row_shuffle_p99": 0.31824928522109985,
+    "n_reps": 1000,
+    "passes_sign_flip_p95": true,
+    "passes_row_shuffle_p95": true
+  }
+  // also present, elided: "norm_vs_alignment", "mean_resp", "split_half_reliability"
+}
+```
+
+### 9.8 Reproduce (this arm)
+
+```bash
+# Pod (4× H100, fresh provision via `pod.py provision --issue 561`, branch issue-561):
+nohup bash scripts/run_issue561_ckpt300.sh >> /workspace/logs/issue-561-ckpt300.log 2>&1 &
+# (DRY_RUN=1 bash scripts/run_issue561_ckpt300.sh echo-traces the full phase sequence.)
+
+# Then, off-pod on the VM (CPU only):
+uv run python scripts/issue561_compare.py \
+  --new-shifts-dir eval_results/issue_561/exposure-matched-ckpt300/shifts \
+  --out eval_results/issue_561/exposure-matched-ckpt300/comparison \
+  --figures-dir figures/issue_561/exposure-matched-ckpt300
+
+uv run python scripts/issue561_ckpt300_verdict.py \
+  --new-per-cell eval_results/issue_561/exposure-matched-ckpt300/comparison/comparison_per_cell.json \
+  --parent-per-cell eval_results/issue_561/comparison/comparison_per_cell.json \
+  --out eval_results/issue_561/exposure-matched-ckpt300/comparison \
+  --figures-dir figures/issue_561/exposure-matched-ckpt300
+```
+
+### 9.9 Artifacts and reproducibility (this arm)
+
+- **Rig commit (staging extension + reduced driver + verdict script):** `853a40eba3a6b520672d45c16da3a16741abcac3`
+- **Driver:** [scripts/run_issue561_ckpt300.sh](https://github.com/superkaiba/explore-persona-space/blob/853a40eba3a6b520672d45c16da3a16741abcac3/scripts/run_issue561_ckpt300.sh)
+- **Staging script (template mode):** [scripts/issue_521_stage_adapters.py](https://github.com/superkaiba/explore-persona-space/blob/853a40eba3a6b520672d45c16da3a16741abcac3/scripts/issue_521_stage_adapters.py)
+- **Verdict script:** [scripts/issue561_ckpt300_verdict.py](https://github.com/superkaiba/explore-persona-space/blob/853a40eba3a6b520672d45c16da3a16741abcac3/scripts/issue561_ckpt300_verdict.py)
+- **Extraction dispatcher (inherited):** [scripts/issue_519_dispatch.py](https://github.com/superkaiba/explore-persona-space/blob/853a40eba3a6b520672d45c16da3a16741abcac3/scripts/issue_519_dispatch.py) · **comparison (inherited, unchanged):** `scripts/issue561_compare.py` per section 8
+- **Checkpoint-300 adapters (read, not produced):** [HF Hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/c6a4771980ff4f7ff960ae7cd620dcca58668fec/issue_561_posonly) — `issue_561_posonly/marker_seed{42,137,256}/checkpoints/checkpoint-300/`, 3 files per seed
+- **Checkpoint-300 shift tensors (9 `.pt` + 9 manifests):** [HF Hub](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data-private/tree/9d4fcee4e81caa7e22901ac24fe43e1e34615ccc/issue561_posonly/analysis_tensors/shifts_ckpt300)
+- **Shift + dispatch manifests in git:** [eval_results/issue_561/exposure-matched-ckpt300/](https://github.com/superkaiba/explore-persona-space/tree/0aecb427b02df68b30ad910ca63b8fb7bbcdf1fc/eval_results/issue_561/exposure-matched-ckpt300) (the `comparison/i551_shifts_downloaded/` manifests record the reference-tensor re-download)
+- **Verdict of record + comparison JSONs:** [ckpt300_verdict.json](https://github.com/superkaiba/explore-persona-space/blob/8806142de2178a95605c14b667044dacbffe5f9c/eval_results/issue_561/exposure-matched-ckpt300/comparison/ckpt300_verdict.json) · [comparison_per_cell.json](https://github.com/superkaiba/explore-persona-space/blob/8806142de2178a95605c14b667044dacbffe5f9c/eval_results/issue_561/exposure-matched-ckpt300/comparison/comparison_per_cell.json) · [comparison_summary.json](https://github.com/superkaiba/explore-persona-space/blob/8806142de2178a95605c14b667044dacbffe5f9c/eval_results/issue_561/exposure-matched-ckpt300/comparison/comparison_summary.json) (context only — evaluates the parent's clauses at the snapshot)
+- **Figures (reader-facing labels):** [figures/issue_561/exposure-matched-ckpt300/](https://github.com/superkaiba/explore-persona-space/tree/be9131557648575bd2a9d52d2a75aee24bebd0f0/figures/issue_561/exposure-matched-ckpt300)
+- **Parent step-600 per-cell JSON (band source, pinned):** [comparison_per_cell.json @ 5f3ec9569](https://github.com/superkaiba/explore-persona-space/blob/5f3ec95695231fd530e69209e238c2840172d3b3/eval_results/issue_561/comparison/comparison_per_cell.json)
+- **Step-300 manipulation-check JSONs (parent run, cited):** [eval_results/issue_561/](https://github.com/superkaiba/explore-persona-space/tree/46b758f18557c2f36eac73c33ac3dc9be9fc4e8a/eval_results/issue_561) (`marker_seed{S}/periodic_eval/leakage_marker_step_300.json`)
+- **Reused #551 reference tensors:** unchanged, section 8 (`08419ee885e962cb29c841d34041db419dbbc72c`)
+- **Smoke-gate result:** written pod-side (`…_smoke/smoke_gate_result.json`) and embedded verbatim in the end-of-run results sentinel's `extraction_smoke_gate` field; gate PASS is a structural precondition for phase 4 (the driver halts on FAIL). Not separately committed to git.
+- **WandB:** none (no training in this round)
+- **Compute:** fresh 4× H100 pod (`eval` intent, count override; `pod.py provision --issue 561`), ~2.3 h wall for staging + smoke gate + 9-cell extraction (11 GPU-hours budgeted at the billed 4-GPU × wall convention). Comparison + verdict: VM, CPU only.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/561).*
