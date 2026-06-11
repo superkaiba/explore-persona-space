@@ -381,7 +381,9 @@
       null
      ],
      "ci_excludes_zero": false,
-     "n_boot_dropped": 10000
+     "n_boot_dropped": 10000,
+     "expected_sign": 1,
+     "sign_status": "unresolved"
     },
     "barrier_partial": {
      "stat": null,
@@ -392,11 +394,17 @@
       null
      ],
      "ci_excludes_zero": false,
-     "n_boot_dropped": 10000
+     "n_boot_dropped": 10000,
+     "expected_sign": 1,
+     "sign_status": "unresolved"
     },
     "holm_p": {
      "bubble": null,
      "barrier": null
+    },
+    "sign_status": {
+     "bubble": "unresolved",
+     "barrier": "unresolved"
     }
    },
    "clamp": {
@@ -418,7 +426,9 @@
       0.5613376447437451
      ],
      "ci_excludes_zero": false,
-     "n_boot_dropped": 0
+     "n_boot_dropped": 0,
+     "expected_sign": -1,
+     "sign_status": "unresolved"
     },
     "barrier_partial": {
      "stat": -0.3655982627319724,
@@ -429,11 +439,17 @@
       -0.014262619850196048
      ],
      "ci_excludes_zero": true,
-     "n_boot_dropped": 0
+     "n_boot_dropped": 0,
+     "expected_sign": -1,
+     "sign_status": "unresolved"
     },
     "holm_p": {
      "bubble": 0.201979802019798,
      "barrier": 0.08559144085591441
+    },
+    "sign_status": {
+     "bubble": "unresolved",
+     "barrier": "unresolved"
     }
    },
    "margin": {
@@ -455,7 +471,9 @@
       0.17208642646222203
      ],
      "ci_excludes_zero": false,
-     "n_boot_dropped": 0
+     "n_boot_dropped": 0,
+     "expected_sign": 1,
+     "sign_status": "unresolved"
     },
     "barrier_partial": {
      "stat": 0.028652351590592907,
@@ -466,11 +484,17 @@
       0.38506875552126807
      ],
      "ci_excludes_zero": false,
-     "n_boot_dropped": 0
+     "n_boot_dropped": 0,
+     "expected_sign": 1,
+     "sign_status": "unresolved"
     },
     "holm_p": {
      "bubble": 0.8221177882211779,
      "barrier": 0.8785121487851215
+    },
+    "sign_status": {
+     "bubble": "unresolved",
+     "barrier": "unresolved"
     }
    }
   },
@@ -2005,8 +2029,8 @@
   "task": 571,
   "followup_label": "persona-split-composition",
   "script": "issue571_psplit_analysis.py",
-  "git_commit": "9941745a6",
-  "timestamp_utc": "2026-06-11T09:58:08.072042+00:00",
+  "git_commit": "b990335e8",
+  "timestamp_utc": "2026-06-11T10:53:38.113768+00:00",
   "python_version": "3.11.15",
   "numpy_version": "2.2.6",
   "argv": [

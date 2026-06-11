@@ -744,45 +744,80 @@
  },
  "resolution": {
   "alpha": 0.05,
+  "sign_convention": {
+   "channel_leakage_dir": {
+    "clamp": -1,
+    "hijack": 1
+   },
+   "registered_signs_leakage_units": {
+    "barrier": "+ (leakage rises with d_src controlling d_nn \u2014 shell convention)",
+    "bubble": "+ (leakage rises with d_nn controlling d_src; \u0394leakage moves with \u0394d_nn)"
+   },
+   "rule": "expected raw-DV sign per read = channel_leakage_dir[channel]; a resolved read with the inverted sign is descriptive, never family-resolving"
+  },
   "resolved_reads": [
-   {
-    "read": "clamp/broad_s42/barrier",
-    "stat": 0.56625060225997,
-    "holm_p": 0.0027997200279972004,
-    "family": "barrier"
-   },
-   {
-    "read": "clamp/broad_s43/barrier",
-    "stat": 0.5307845115310522,
-    "holm_p": 0.0057994200579942,
-    "family": "barrier"
-   },
    {
     "read": "clamp/cross_arm/pooled",
     "stat": -0.689149560117302,
     "holm_p": 0.00019998000199980003,
-    "family": "bubble"
-   },
-   {
-    "read": "hijack/broad_s42/barrier",
-    "stat": -0.6961160476175329,
-    "holm_p": 0.00019998000199980003,
-    "family": "barrier"
-   },
-   {
-    "read": "hijack/broad_s43/barrier",
-    "stat": -0.7163806854979191,
-    "holm_p": 0.00019998000199980003,
-    "family": "barrier"
+    "family": "bubble",
+    "expected_sign": -1,
+    "observed_sign": -1,
+    "sign_status": "registered"
    },
    {
     "read": "hijack/cross_arm/pooled",
     "stat": 0.6972832460305189,
     "holm_p": 0.00019998000199980003,
-    "family": "bubble"
+    "family": "bubble",
+    "expected_sign": 1,
+    "observed_sign": 1,
+    "sign_status": "registered"
    }
   ],
-  "verdict": "resolved_mixed",
+  "inverted_reads": [
+   {
+    "read": "clamp/broad_s42/barrier",
+    "stat": 0.56625060225997,
+    "holm_p": 0.0027997200279972004,
+    "family": "barrier",
+    "expected_sign": -1,
+    "observed_sign": 1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "clamp/broad_s43/barrier",
+    "stat": 0.5307845115310522,
+    "holm_p": 0.0057994200579942,
+    "family": "barrier",
+    "expected_sign": -1,
+    "observed_sign": 1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "hijack/broad_s42/barrier",
+    "stat": -0.6961160476175329,
+    "holm_p": 0.00019998000199980003,
+    "family": "barrier",
+    "expected_sign": 1,
+    "observed_sign": -1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "hijack/broad_s43/barrier",
+    "stat": -0.7163806854979191,
+    "holm_p": 0.00019998000199980003,
+    "family": "barrier",
+    "expected_sign": 1,
+    "observed_sign": -1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   }
+  ],
+  "verdict": "resolved_bubble_like",
   "narrow_within_cell": "pre-declared degenerate (collinearity 0.996) \u2014 descriptive only, excluded from the registered verdict",
   "emission_ceiling_note": "narrow-arm emission sits at ceiling (92\u201396%): the hijack channel carries information mainly in the broad arm; clamp is the primary channel"
  },
@@ -790,8 +825,8 @@
   "fallback_objective": "coverage-max",
   "g1_promoted_to_selection_objective": false,
   "one_sided_expectation": {
-   "clamp": "mixed",
-   "hijack": "mixed"
+   "clamp": "bubble",
+   "hijack": "bubble"
   }
  },
  "inference": {
@@ -811,8 +846,8 @@
   "task": 571,
   "followup_label": "persona-split-composition",
   "script": "issue571_psplit_stage1_analysis.py",
-  "git_commit": "90635a435",
-  "timestamp_utc": "2026-06-11T09:33:21.927277+00:00",
+  "git_commit": "b990335e8",
+  "timestamp_utc": "2026-06-11T10:56:45.811610+00:00",
   "python_version": "3.11.15",
   "numpy_version": "2.2.6",
   "argv": []

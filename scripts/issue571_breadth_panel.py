@@ -1327,7 +1327,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "upload",
         ],
     )
-    ap.add_argument("--adapters", default="all", help="comma list of adapter labels, or 'all' (4)")
+    ap.add_argument(
+        "--adapters",
+        default="all",
+        help=(
+            "comma list of adapter labels, or 'all' = every label in the active "
+            "--registry (breadth: 4, psplit: 6)"
+        ),
+    )
     ap.add_argument("--personas", default="all", help="comma list of personas, or 'all' (35)")
     ap.add_argument("--n-questions", type=int, default=N_QUESTIONS_FULL)
     ap.add_argument(

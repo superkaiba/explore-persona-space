@@ -99,6 +99,20 @@ STAT_SEED = 42
 ALPHA = 0.05
 SMALL_SPREAD_FACTOR = 0.25  # §4.1 linkage (a): median|Δd_nn| < 0.25 × sd(d_src)
 
+# Sign convention for family attribution (code-review round-1 blocker
+# `stage1-barrier-sign-routing`). Registered signs in LEAKAGE units (plan
+# §4.1 / the scope marker's shell convention): BARRIER = leakage RISES with
+# d_src controlling d_nn (positive); BUBBLE = leakage rises with d_nn
+# controlling d_src / Δleakage moves WITH Δd_nn (positive — suppression is
+# local to trained negatives, so marker leakage grows away from them and
+# drops where the panel change pulls d_nn down). The hijack DV (marker
+# emission rate) IS leakage (dir +1); the clamp DV (Δz_EOS) is the
+# SUPPRESSION push — anti-leakage — so its raw-DV expected signs flip
+# (dir −1). With both family signs positive in leakage units, the expected
+# raw-DV sign for EVERY registered read (barrier partial, residualized
+# gradient, cross-arm paired) is exactly CHANNEL_LEAKAGE_DIR[channel].
+CHANNEL_LEAKAGE_DIR = {"clamp": -1, "hijack": +1}
+
 
 def _git_commit() -> str:
     """Short git commit of the repo this script runs from."""
@@ -379,6 +393,95 @@ def cross_arm_reads(
     return out
 
 
+def _attribute_one(
+    name: str,
+    block: dict,
+    holm_p: float | None,
+    direction_family: str,
+    expected_sign: int,
+    resolved_reads: list[dict],
+    inverted_reads: list[dict],
+) -> None:
+    """Sign-encoded attribution of ONE read (`stage1-barrier-sign-routing` fix).
+
+    A read resolved at Holm p < ALPHA with CI excluding 0 counts toward its
+    family ONLY in the registered direction (``CHANNEL_LEAKAGE_DIR``); a
+    resolved read with the INVERTED sign is recorded descriptively and never
+    family-resolves the linkage.
+    """
+    p = holm_p if holm_p is not None else float("nan")
+    if not (
+        block["stat"] is not None and np.isfinite(p) and p < ALPHA and block["ci_excludes_zero"]
+    ):
+        return
+    entry = {
+        "read": name,
+        "stat": block["stat"],
+        "holm_p": p,
+        "family": direction_family,
+        "expected_sign": expected_sign,
+        "observed_sign": int(np.sign(block["stat"])),
+    }
+    if int(np.sign(block["stat"])) == expected_sign:
+        entry["sign_status"] = "registered"
+        resolved_reads.append(entry)
+    else:
+        entry["sign_status"] = "inverted"
+        entry["note"] = (
+            f"resolved at Holm p < {ALPHA} with CI excluding 0 but in the INVERTED "
+            f"direction for the {direction_family} family — reported descriptively, "
+            "never family-resolved for the linkage"
+        )
+        inverted_reads.append(entry)
+
+
+def attribute_families(within: dict, cross: dict) -> tuple[list[dict], list[dict], str]:
+    """(resolved_reads, inverted_reads, verdict) over the registered Stage-1 reads."""
+    resolved_reads: list[dict] = []
+    inverted_reads: list[dict] = []
+    for ch in CHANNELS:
+        sgn = CHANNEL_LEAKAGE_DIR[ch]
+        for label in ARMS["broad"]:
+            cell = within[ch][label]
+            _attribute_one(
+                f"{ch}/{label}/gradient_resid",
+                cell["gradient_resid"],
+                cell["holm_p"]["gradient_resid"],
+                "bubble",
+                sgn,
+                resolved_reads,
+                inverted_reads,
+            )
+            _attribute_one(
+                f"{ch}/{label}/barrier",
+                cell["barrier"],
+                cell["holm_p"]["barrier"],
+                "barrier",
+                sgn,
+                resolved_reads,
+                inverted_reads,
+            )
+        _attribute_one(
+            f"{ch}/cross_arm/pooled",
+            cross[ch]["pooled"],
+            cross[ch]["pooled"]["holm_p"],
+            "bubble",
+            sgn,
+            resolved_reads,
+            inverted_reads,
+        )
+    families = {r["family"] for r in resolved_reads}
+    if not resolved_reads:
+        verdict = "unidentified_on_context_typed_negatives"
+    elif families == {"bubble"}:
+        verdict = "resolved_bubble_like"
+    elif families == {"barrier"}:
+        verdict = "resolved_barrier_like"
+    else:
+        verdict = "resolved_mixed"
+    return resolved_reads, inverted_reads, verdict
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     ap = argparse.ArgumentParser(
@@ -486,41 +589,7 @@ def main(argv: list[str] | None = None) -> int:
             }
 
     # ── Stage-1 verdict (registered reads only) ────────────────────────────
-    resolved_reads: list[dict] = []
-
-    def _check(name: str, block: dict, holm_p: float | None, direction_family: str) -> None:
-        p = holm_p if holm_p is not None else float("nan")
-        if block["stat"] is not None and np.isfinite(p) and p < ALPHA and block["ci_excludes_zero"]:
-            resolved_reads.append(
-                {"read": name, "stat": block["stat"], "holm_p": p, "family": direction_family}
-            )
-
-    for ch in CHANNELS:
-        for label in ARMS["broad"]:
-            cell = within[ch][label]
-            _check(
-                f"{ch}/{label}/gradient_resid",
-                cell["gradient_resid"],
-                cell["holm_p"]["gradient_resid"],
-                "bubble",
-            )
-            _check(f"{ch}/{label}/barrier", cell["barrier"], cell["holm_p"]["barrier"], "barrier")
-        _check(
-            f"{ch}/cross_arm/pooled",
-            cross[ch]["pooled"],
-            cross[ch]["pooled"]["holm_p"],
-            "bubble",
-        )
-
-    families = {r["family"] for r in resolved_reads}
-    if not resolved_reads:
-        verdict = "unidentified_on_context_typed_negatives"
-    elif families == {"bubble"}:
-        verdict = "resolved_bubble_like"
-    elif families == {"barrier"}:
-        verdict = "resolved_barrier_like"
-    else:
-        verdict = "resolved_mixed"
+    resolved_reads, inverted_reads, verdict = attribute_families(within, cross)
 
     # ── Stage-1 → Stage-2 linkage (§4.1, exactly two registered effects) ───
     one_sided: dict[str, str | None] = {ch: None for ch in CHANNELS}
@@ -567,7 +636,18 @@ def main(argv: list[str] | None = None) -> int:
         "hijack_recompute_diag": hijack_diag,
         "resolution": {
             "alpha": ALPHA,
+            "sign_convention": {
+                "channel_leakage_dir": CHANNEL_LEAKAGE_DIR,
+                "registered_signs_leakage_units": {
+                    "barrier": "+ (leakage rises with d_src controlling d_nn — shell convention)",
+                    "bubble": "+ (leakage rises with d_nn controlling d_src; Δleakage moves "
+                    "with Δd_nn)",
+                },
+                "rule": "expected raw-DV sign per read = channel_leakage_dir[channel]; a "
+                "resolved read with the inverted sign is descriptive, never family-resolving",
+            },
             "resolved_reads": resolved_reads,
+            "inverted_reads": inverted_reads,
             "verdict": verdict,
             "narrow_within_cell": "pre-declared degenerate (collinearity 0.996) — "
             "descriptive only, excluded from the registered verdict",
@@ -608,10 +688,13 @@ def main(argv: list[str] | None = None) -> int:
     _figures(args.fig_dir, personas, leak, d_nn, d_src, d_dnn, dist, within, cross)
 
     logger.info(
-        "STAGE-1 VERDICT: %s (%d resolved reads); linkage fallback_objective=%s",
+        "STAGE-1 VERDICT: %s (%d family-resolved reads, %d inverted-sign reads); "
+        "linkage fallback_objective=%s one_sided=%s",
         verdict,
         len(resolved_reads),
+        len(inverted_reads),
         linkage["fallback_objective"],
+        linkage["one_sided_expectation"],
     )
     return 0
 

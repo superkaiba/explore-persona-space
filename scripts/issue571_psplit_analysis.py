@@ -103,6 +103,15 @@ COLLINEARITY_GATE = 0.6
 ASYMMETRY_CAP = 5.0
 PARENT_REFS = {"broad_dz_eos": 15.35, "narrow_dz_eos": 5.93}  # committed reference lines
 
+# Sign convention for geometry family attribution (harmonized with Stage 1's
+# `stage1-barrier-sign-routing` fix). Registered signs in LEAKAGE units are
+# positive for both families (barrier: leakage rises with d_src | d_nn —
+# shell convention; bubble: Δleakage moves WITH Δd_nn | d_src — §6 analysis 3
+# "resolved positive ⇒ suppression local to negatives" for marker-direction
+# DVs). hijack + margin are marker-direction (dir +1); clamp (Δz_EOS) is the
+# suppression push — anti-leakage — so its expected raw-DV sign flips (−1).
+CHANNEL_LEAKAGE_DIR = {"clamp": -1, "hijack": +1, "margin": +1}
+
 
 def _git_commit() -> str:
     """Short git commit of the repo this script runs from."""
@@ -125,7 +134,14 @@ def _git_commit() -> str:
 
 
 def classify_clamp(point: float, lo: float, hi: float, yardstick: float, seeds_agree: bool) -> dict:
-    """Clamp-channel lattice cell BEFORE the manipulation cap (§3, revised)."""
+    """Clamp-channel lattice cell BEFORE the manipulation cap (§3, revised).
+
+    The ``underpowered_discrimination`` label is a FINAL label that maps to
+    the plan's indeterminate route: consumers treat it as indeterminate
+    (``apply_caps`` excludes it from the affirmative set; the joint-inert
+    read requires ``split_axis_inert`` exactly) — it is never inert and
+    never affirmative.
+    """
     excl = ci_excludes_zero(lo, hi)
     if excl and abs(point) > yardstick and seeds_agree:
         return {
@@ -285,14 +301,26 @@ def _geometry_read(leak: np.ndarray, x: np.ndarray, z: np.ndarray, collinear: bo
     }
 
 
-def _resolved(read: dict, holm_p: float | None) -> bool:
-    return (
+def _family_status(read: dict, holm_p: float | None, expected_sign: int) -> str:
+    """Sign-encoded family attribution (mirrors Stage 1's ``_check``).
+
+    'registered' = resolved (Holm p < ALPHA, CI excluding 0) in the family's
+    registered direction; 'inverted' = resolved but with the WRONG sign for
+    the family (reported descriptively, never family-resolving);
+    'unresolved' otherwise. Registered signs in leakage units are positive
+    for both families, so the expected raw-DV sign is
+    ``CHANNEL_LEAKAGE_DIR[channel]`` for every read.
+    """
+    resolved = (
         read["stat"] is not None
         and holm_p is not None
         and np.isfinite(holm_p)
         and holm_p < ALPHA
         and read["ci_excludes_zero"]
     )
+    if not resolved:
+        return "unresolved"
+    return "registered" if int(np.sign(read["stat"])) == expected_sign else "inverted"
 
 
 # ── Input loading ──────────────────────────────────────────────────────────
@@ -494,14 +522,23 @@ def run_analysis(out_dir: Path, fig_dir: Path, geometry_path: Path) -> dict:
             }
         )
         hp = {k: (None if not np.isfinite(v) else float(v)) for k, v in holm_ps.items()}
+        # Sign-encoded family attribution (harmonized with Stage 1): only a
+        # REGISTERED-direction resolution identifies the geometry; an
+        # inverted-sign resolution is recorded descriptively.
+        sign_status = {}
         for name, read in (("bubble", bubble), ("barrier", barrier)):
-            if ch in CHANNELS and _resolved(read, hp[name]):
+            status = _family_status(read, hp[name], CHANNEL_LEAKAGE_DIR[ch])
+            read["expected_sign"] = CHANNEL_LEAKAGE_DIR[ch]
+            read["sign_status"] = status
+            sign_status[name] = status
+            if ch in CHANNELS and status == "registered":
                 any_partial_resolved = True
         geometry_reads["difference_field"][ch] = {
             "across_arm_spearman_vs_ddnn": across,
             "bubble_partial": bubble,
             "barrier_partial": barrier,
             "holm_p": hp,
+            "sign_status": sign_status,
         }
 
     geometry_reads["geometry_unidentified"] = not any_partial_resolved
@@ -723,7 +760,18 @@ def _lattice_unit_cases() -> None:
     # 10. seed-sign disagreement blocks the affirmative.
     c = apply_caps(classify_clamp(8.0, 5.0, 11.0, 4.4, False), pass_all)
     assert c["label"] == "indeterminate", c
-    logger.info("lattice unit cases PASS (10/10 branches)")
+    # 11-14. Sign-encoded family attribution (_family_status — the
+    # stage1-barrier-sign-routing harmonization): a resolved read with the
+    # registered sign is 'registered'; the SAME resolved read against the
+    # opposite expected sign is 'inverted' (descriptive, never
+    # family-resolving); a non-significant read is 'unresolved'.
+    read_pos = {"stat": 0.7, "ci_excludes_zero": True}
+    assert _family_status(read_pos, 0.001, +1) == "registered"
+    assert _family_status(read_pos, 0.001, -1) == "inverted"
+    assert _family_status(read_pos, 0.2, +1) == "unresolved"
+    read_neg = {"stat": -0.7, "ci_excludes_zero": True}
+    assert _family_status(read_neg, 0.001, CHANNEL_LEAKAGE_DIR["clamp"]) == "registered"
+    logger.info("lattice unit cases PASS (14/14 branches incl. inverted-sign attribution)")
 
 
 def _write_fixture(out_dir: Path, geometry_path: Path) -> None:
