@@ -2411,12 +2411,20 @@ GCP** — the lane pins `--instance-termination-action=DELETE` +
 mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
 RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
-cross-checks the task's ACTUAL frontmatter: passing `--backend runpod`
-while the frontmatter `backend:` does not name a backend (absent/empty,
-or an explicit `auto`) triggers a LOUD
-stderr warning + `extra.override_without_frontmatter=true` on the
-`epm:backend-selected` marker (additive visibility — the launch is not
-blocked). For the gcp/auto lanes the dispatch script must exist
+cross-checks the task's ACTUAL frontmatter and classifies the override
+3-ways, each with a DISTINCT marker flag (additive visibility — the
+launch is never blocked): passing `--backend runpod` while the
+frontmatter `backend:` does not name a backend (absent/empty, or an
+explicit `auto`) triggers a LOUD stderr warning +
+`extra.override_without_frontmatter=true` on the
+`epm:backend-selected` marker; frontmatter naming a DIFFERENT
+recognized lane (`gcp`/`nibi`/`fir`/`mila`, or the legacy `cluster`
+alias for nibi) triggers a conflict warning +
+`extra.override_conflicts_frontmatter=true`; an unrecognized value
+(typo'd `gpc`, non-string `true`) triggers a hygiene warning +
+`extra.frontmatter_backend_unrecognized=true` — the latter two also
+carry `extra.frontmatter_backend: "<value>"`. Frontmatter
+`backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
 (the GCE startup script clones from origin). Two more gcp/auto
 composition rules (both hit live on #599, 2026-06-11): (e) **GPU
@@ -2459,9 +2467,14 @@ SLURM helpers call `task.py post-marker` via
   `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
   `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
-  `override_without_frontmatter?` — stamped by the dispatch CLI when
-  `--backend runpod` was passed while the task frontmatter does not
-  name a backend: absent/empty, or an explicit `auto`).
+  plus the dispatch-CLI override-guard flags — all scoped to the
+  explicit `--backend runpod` path: `override_without_frontmatter?`
+  when the task frontmatter does not name a backend (absent/empty, or
+  an explicit `auto`); `override_conflicts_frontmatter?` when it names
+  a DIFFERENT recognized lane (gcp/nibi/fir/mila, or legacy `cluster`);
+  `frontmatter_backend_unrecognized?` when the value is a typo /
+  non-string; the latter two also carry `frontmatter_backend?` with
+  the raw lowercased value).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.

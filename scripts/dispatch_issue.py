@@ -460,19 +460,43 @@ def _frontmatter_backend_value(issue: int) -> str | None:
     return str(raw).strip().lower()
 
 
+def _recognized_frontmatter_backends() -> frozenset[str]:
+    """Backend values the router (or the legacy selector surface) recognizes.
+
+    Sourced from the router's OWN definition so the override-conflict
+    guard can never drift from the routable set — never a duplicated
+    hardcoded list. ``_VALID_BACKEND_VALUES`` is router-private; this
+    import is a deliberate coupling (a router rename surfaces here as an
+    ImportError in this CLI's tests rather than silently degrading the
+    guard to "everything unrecognized"). The legacy ``"cluster"``
+    literal (selector-surface alias, normalized to nibi by
+    ``selector._resolve_cluster_name``) is added on top: a frontmatter
+    ``backend: cluster`` names a real SLURM lane, so a runpod override
+    against it is a CONFLICT, not a typo.
+    """
+    from explore_persona_space.backends.router import _VALID_BACKEND_VALUES
+
+    return _VALID_BACKEND_VALUES | {"cluster"}
+
+
 def _wrap_marker_poster_with_override_flag(
     poster: Callable[..., None],
+    flags: dict[str, Any],
 ) -> Callable[..., None]:
-    """Stamp ``extra.override_without_frontmatter=true`` onto backend-selected posts.
+    """Stamp CLI-side override-visibility ``flags`` onto backend-selected posts.
 
     The router builds the ``epm:backend-selected`` body itself
     (``router._post_backend_selected``) and only ``result.extra`` reaches
-    the marker — ``spec.extra`` does not — so the CLI-level fact
-    "explicit ``--backend runpod`` with no frontmatter backing" is
+    the marker — ``spec.extra`` does not — so CLI-level facts about the
+    explicit ``--backend runpod`` override (no frontmatter backing /
+    conflicting frontmatter lane / unrecognized frontmatter value) are
     threaded by decorating the injected ``marker_poster`` instead of
-    touching router internals. Non-backend-selected markers and
-    unparseable notes pass through untouched. Observability only: never
-    alters routing control flow, never fails the post.
+    touching router internals. ``flags`` is merged into the body's
+    ``extra`` dict (e.g. ``{"override_without_frontmatter": True}`` or
+    ``{"override_conflicts_frontmatter": True, "frontmatter_backend":
+    "gcp"}``). Non-backend-selected markers and unparseable notes pass
+    through untouched. Observability only: never alters routing control
+    flow, never fails the post.
     """
 
     def _wrapped(**kwargs: Any) -> None:
@@ -482,7 +506,7 @@ def _wrap_marker_poster_with_override_flag(
             except (TypeError, json.JSONDecodeError):
                 body = None
             if isinstance(body, dict) and isinstance(body.get("extra"), dict):
-                body["extra"]["override_without_frontmatter"] = True
+                body["extra"].update(flags)
                 kwargs["note"] = json.dumps(body, sort_keys=True)
         poster(**kwargs)
 
@@ -681,14 +705,22 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         # three launches passed explicit ``--backend runpod`` on tasks whose
         # frontmatter was ABSENT, on the stale pre-#588 justification "the
         # GCP lane is train.py-only"). The CLI cross-checks the task's
-        # ACTUAL frontmatter: an explicit runpod override with no
-        # frontmatter backing gets a LOUD stderr warning + an
-        # ``override_without_frontmatter`` flag on the
-        # ``epm:backend-selected`` marker extra. An explicit
-        # ``backend: auto`` counts as no backing too — it states the
-        # auto-routing intent even more explicitly than absence, so a
-        # runpod override against it is the same GCP-first bypass in
-        # spirit. ADDITIVE only — the launch is never blocked and the CLI
+        # ACTUAL frontmatter and classifies it 3-ways, each with a
+        # DISTINCT marker flag so the dashboard can tell "bypassed auto"
+        # / "contradicted a named lane" / "task hygiene problem" apart:
+        #   * absent/empty/``auto`` → no frontmatter backing → LOUD
+        #     warning + ``override_without_frontmatter``;
+        #   * a recognized NON-runpod lane (gcp/nibi/fir/mila, or the
+        #     legacy ``cluster`` alias for nibi) → the task explicitly
+        #     names a DIFFERENT lane, contradicting the override even
+        #     more strongly than absence → LOUD warning +
+        #     ``override_conflicts_frontmatter`` (+ the value);
+        #   * anything else (typo'd / non-string YAML value, e.g.
+        #     ``gpc`` or ``true``) → hygiene noise masquerading as
+        #     backing → LOUD warning +
+        #     ``frontmatter_backend_unrecognized`` (+ the value).
+        # ``backend: runpod`` is the one legitimate backing — silent.
+        # ADDITIVE only — the launch is never blocked and the CLI
         # argument contract is unchanged.
         fm_backend = _frontmatter_backend_value(args.issue)
         if fm_backend in ("", "auto"):
@@ -707,13 +739,58 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 "visible on the events trail.",
                 int(args.issue),
             )
-            marker_poster = _wrap_marker_poster_with_override_flag(marker_poster)
+            marker_poster = _wrap_marker_poster_with_override_flag(
+                marker_poster, {"override_without_frontmatter": True}
+            )
         elif fm_backend is None:
             logging.getLogger("dispatch_issue").warning(
                 "explicit --backend runpod for issue=%d but the task frontmatter could "
                 "not be read — skipping the override-without-frontmatter check "
                 "(launch continues).",
                 int(args.issue),
+            )
+        elif fm_backend == "runpod":
+            # Legitimate frontmatter-backed override — silent by design.
+            pass
+        elif fm_backend in _recognized_frontmatter_backends():
+            fm_display = (
+                "cluster (legacy alias, normalizes to nibi)"
+                if fm_backend == "cluster"
+                else fm_backend
+            )
+            logging.getLogger("dispatch_issue").warning(
+                "explicit --backend runpod for issue=%d CONFLICTS with the task's own "
+                "frontmatter 'backend: %s' — the task explicitly names a DIFFERENT "
+                "lane, which contradicts the override even more strongly than absent "
+                "frontmatter would. Name the residual gap that forces RunPod in the "
+                "launch note, or fix the frontmatter to match the intended lane. "
+                "Launch continues; the epm:backend-selected marker carries "
+                "extra.override_conflicts_frontmatter=true plus the frontmatter value "
+                "so the contradiction is visible on the events trail.",
+                int(args.issue),
+                fm_display,
+            )
+            marker_poster = _wrap_marker_poster_with_override_flag(
+                marker_poster,
+                {"override_conflicts_frontmatter": True, "frontmatter_backend": fm_backend},
+            )
+        else:
+            logging.getLogger("dispatch_issue").warning(
+                "explicit --backend runpod for issue=%d but the task's frontmatter "
+                "'backend: %s' is not a recognized backend value (router accepts %s; "
+                "the legacy 'cluster' alias also counts) — likely a typo or a "
+                "non-string YAML value. This is task hygiene noise masquerading as "
+                "frontmatter backing, NOT a legitimate override: fix the task's "
+                "backend: frontmatter. Launch continues; the epm:backend-selected "
+                "marker carries extra.frontmatter_backend_unrecognized=true plus the "
+                "value so the hygiene problem is visible on the events trail.",
+                int(args.issue),
+                fm_backend,
+                sorted(_recognized_frontmatter_backends() - {"cluster"}),
+            )
+            marker_poster = _wrap_marker_poster_with_override_flag(
+                marker_poster,
+                {"frontmatter_backend_unrecognized": True, "frontmatter_backend": fm_backend},
             )
     try:
         outcome = dispatch_for_issue(
@@ -1281,6 +1358,7 @@ __all__ = [
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
     "_provision_still_waiting",
+    "_recognized_frontmatter_backends",
     "_resolve_backend_for_handle",
     "_wrap_marker_poster_with_override_flag",
     "main",

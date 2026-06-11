@@ -13,6 +13,14 @@ SKILL.md Step 6b / 6d / 8 actually shells:
     → LOUD warning + ``extra.override_without_frontmatter=true`` on the
     ``epm:backend-selected`` marker; frontmatter ``backend: runpod`` →
     neither; unreadable frontmatter → check skipped, launch proceeds.
+2c. ``launch`` with ``--backend runpod`` while the frontmatter names a
+    DIFFERENT recognized lane (``gcp``/``nibi``/``fir``/``mila``, or
+    the legacy ``cluster`` alias for nibi) → LOUD conflict warning +
+    ``extra.override_conflicts_frontmatter=true`` (+
+    ``frontmatter_backend``); an UNRECOGNIZED frontmatter value
+    (typo'd ``gpc``, non-string ``true``) → LOUD hygiene warning +
+    ``extra.frontmatter_backend_unrecognized=true`` (+ the value).
+    Both additive — the launch always proceeds.
 3. ``launch`` action with ``--backend cluster`` (legacy) → mapped to
    nibi.
 4. ``launch`` action on a router terminal → ``failure_class:`` JSON
@@ -406,10 +414,18 @@ def test_launch_runpod_override_with_frontmatter_backing_no_warning_no_flag(
             monkeypatch, tmp_path, issue="311", frontmatter_value="runpod", marker_posts=posts
         )
     assert rc == 0
-    assert not [r for r in caplog.records if "override_without_frontmatter" in r.getMessage()]
+    guard_phrases = (
+        "override_without_frontmatter",
+        "override_conflicts_frontmatter",
+        "frontmatter_backend_unrecognized",
+    )
+    assert not [r for r in caplog.records if any(p in r.getMessage() for p in guard_phrases)], (
+        "the backed override must stay silent — no guard warning of any class"
+    )
     extras = _backend_selected_extras(posts)
     assert extras, "expected at least one epm:backend-selected post"
-    assert all("override_without_frontmatter" not in e for e in extras)
+    guard_flags = (*guard_phrases, "frontmatter_backend")
+    assert all(flag not in e for e in extras for flag in guard_flags)
 
 
 def test_launch_runpod_override_unreadable_frontmatter_skips_check(
@@ -428,7 +444,115 @@ def test_launch_runpod_override_unreadable_frontmatter_skips_check(
     assert any("could not be read" in m for m in warnings)
     extras = _backend_selected_extras(posts)
     assert extras, "expected at least one epm:backend-selected post"
+    guard_flags = (
+        "override_without_frontmatter",
+        "override_conflicts_frontmatter",
+        "frontmatter_backend_unrecognized",
+        "frontmatter_backend",
+    )
+    assert all(flag not in e for e in extras for flag in guard_flags)
+
+
+def test_launch_runpod_override_conflicting_frontmatter_warns_and_flags_marker(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2c conflict (A): frontmatter ``backend: gcp`` + CLI ``--backend
+    runpod`` — the task explicitly names a DIFFERENT lane, contradicting
+    the override even more strongly than absence. LOUD conflict warning
+    + ``extra.override_conflicts_frontmatter=true`` +
+    ``frontmatter_backend: "gcp"``; the absent-frontmatter flag is NOT
+    reused; the launch proceeds."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="314", frontmatter_value="gcp", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("override_conflicts_frontmatter" in m and "CONFLICTS" in m for m in warnings), (
+        f"expected the loud conflict warning; got {warnings!r}"
+    )
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("override_conflicts_frontmatter") is True for e in extras)
+    assert all(e.get("frontmatter_backend") == "gcp" for e in extras)
+    # Distinct-key discipline: the conflict case never reuses the
+    # absent-frontmatter flag or the unrecognized flag.
     assert all("override_without_frontmatter" not in e for e in extras)
+    assert all("frontmatter_backend_unrecognized" not in e for e in extras)
+
+
+def test_launch_runpod_override_legacy_cluster_frontmatter_is_conflict(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2c conflict (legacy): frontmatter ``backend: cluster`` is the
+    legacy selector-surface alias for nibi — recognized-and-conflicting.
+    The warning names the nibi normalization; the marker carries the
+    RAW frontmatter value (``cluster``), not the normalized lane."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="315", frontmatter_value="cluster", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("override_conflicts_frontmatter" in m and "nibi" in m for m in warnings), (
+        f"expected the conflict warning naming the nibi normalization; got {warnings!r}"
+    )
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("override_conflicts_frontmatter") is True for e in extras)
+    assert all(e.get("frontmatter_backend") == "cluster" for e in extras)
+    assert all("frontmatter_backend_unrecognized" not in e for e in extras)
+
+
+def test_launch_runpod_override_unrecognized_frontmatter_warns_and_flags_marker(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2c unrecognized (B): a typo'd frontmatter ``backend: gpc`` is NOT
+    frontmatter backing — it is task hygiene noise. LOUD unrecognized
+    warning + ``extra.frontmatter_backend_unrecognized=true`` +
+    ``frontmatter_backend: "gpc"``; never classified as a conflict; the
+    launch proceeds."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="316", frontmatter_value="gpc", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any(
+        "frontmatter_backend_unrecognized" in m and "not a recognized backend value" in m
+        for m in warnings
+    ), f"expected the loud unrecognized-frontmatter warning; got {warnings!r}"
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("frontmatter_backend_unrecognized") is True for e in extras)
+    assert all(e.get("frontmatter_backend") == "gpc" for e in extras)
+    assert all("override_conflicts_frontmatter" not in e for e in extras)
+    assert all("override_without_frontmatter" not in e for e in extras)
+
+
+def test_launch_runpod_override_nonstring_frontmatter_is_unrecognized(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """2c unrecognized (B, non-string): a YAML boolean ``backend: true``
+    reaches the guard as the normalized string ``"true"``
+    (``_frontmatter_backend_value`` does ``str(raw).strip().lower()``) —
+    classified unrecognized, never as a conflict or as backing."""
+    posts: list[dict[str, Any]] = []
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"):
+        rc = _run_runpod_launch(
+            monkeypatch, tmp_path, issue="317", frontmatter_value="true", marker_posts=posts
+        )
+    assert rc == 0
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any("not a recognized backend value" in m for m in warnings)
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("frontmatter_backend_unrecognized") is True for e in extras)
+    assert all(e.get("frontmatter_backend") == "true" for e in extras)
+    assert all("override_conflicts_frontmatter" not in e for e in extras)
 
 
 def test_launch_sidecar_write_error_still_prints_handle_json(monkeypatch, tmp_path) -> None:
