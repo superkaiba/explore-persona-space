@@ -10,8 +10,11 @@ two figures the clean-result body actually embeds:
 - ``extensions_cmf_vs_norm``     — refusal/EM 2x2 grid with exact-permutation
   Spearman rho + p annotated per panel.
 - ``reliability_vs_prior_v2``    — guard A visual, un-clipped labels.
-- ``expression_strata_v2``       — guard B, FACT cells only; refusal/EM are
-  explicitly annotated as unlabeled (judge-schema bug), never zero bars.
+- ``expression_strata_v3``       — guard B after the binary-judge re-judge
+  (5,760/5,760 refusal/EM rows labeled): per-family raw vs clean-text
+  direction-mix association + per-cell expressed-bystander-question counts.
+  (``expression_strata_v2``, the pre-re-judge fact-only version with the
+  null-labels annotation, is preserved in git history.)
 - ``behavioral_linkage_v2``      — validity panel, family-colored, un-clipped.
 
 Reads eval_results/issue_603/{decomposition_results,expression_strata}.json.
@@ -224,46 +227,92 @@ def fig_reliability_v2(results: dict) -> None:
     plt.close(fig)
 
 
-def fig_strata_v2(strata: dict) -> None:
+def fig_strata_v3(strata: dict) -> None:
+    """Guard B after the re-judge: 1x2 panel.
+
+    Left: per-family rank correlation of prior with the direction mix, raw vs
+    re-computed against the clean-text shared direction (EM annotated as a
+    no-op rebuild). Right: per-cell counts of behavior-expressing bystander
+    questions (the rows the clean-text rebuild excludes), all 21 cells.
+    """
     set_paper_style("blog")
-    rows = [(cid, d) for cid, d in strata["per_cell"].items() if d["family"] == "fact"]
-    rows.sort(key=lambda kv: (kv[1]["prior"], kv[1]["seed"]))
-    fig, ax = plt.subplots(figsize=(8.6, 4.0))
-    xs = range(len(rows))
-    ax.bar(
-        xs,
-        [d["cmf_expressed"] for _, d in rows],
-        color=FAMILY_COLORS["fact"],
-        label="Fact-asserting questions (n per cell in tick label)",
+    cross = strata["cross_family"]
+    caveats = strata["meta"]["family_caveats"]
+    fams = ["fact", "refusal", "em"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10.8, 4.2), width_ratios=[1.0, 1.6])
+
+    # Left: raw vs clean-text rho per family.
+    width = 0.36
+    for i, fam in enumerate(fams):
+        raw = cross[fam]["rho_prior_cmf_raw"]
+        clean = cross[fam]["clean_u_reestimate"]["rho_prior_cmf_clean_u"]
+        degenerate = bool(caveats[fam].get("clean_u_rebuild_degenerate", False))
+        ax1.bar(i - width / 2, raw, width, color="0.55", label="Raw" if i == 0 else None)
+        ax1.bar(
+            i + width / 2,
+            clean,
+            width,
+            color=FAMILY_COLORS[fam],
+            hatch="//" if degenerate else None,
+            label="Clean-text rebuild" if i == 0 else None,
+        )
+    ax1.axhline(0, color="0.3", lw=0.8)
+    ax1.set_xticks(range(len(fams)))
+    ax1.set_xticklabels(
+        ["Fact teachers\n(n = 9)", "Refusal sources\n(n = 6)", "EM sources\n(n = 6)"],
+        fontsize=8,
     )
-    ax.set_xticks(list(xs))
-    ax.set_xticklabels(
-        [
-            f"{d['source'].replace('_', ' ')}\nseed {d['seed']} ({d['n_expressed']}/20 assert)"
-            for _, d in rows
-        ],
-        rotation=30,
+    ax1.set_ylabel("Rank correlation:\nprior vs direction mix")
+    ax1.set_ylim(-1.0, 0.62)
+    ax1.annotate(
+        "EM rebuild excludes only\n0–12 of 460 rows per cell —\na no-op by construction",
+        xy=(2.0, cross["em"]["clean_u_reestimate"]["rho_prior_cmf_clean_u"] - 0.06),
+        xytext=(1.05, -0.95),
+        fontsize=7.5,
+        color="0.25",
+        arrowprops={"arrowstyle": "-", "color": "0.5", "lw": 0.7},
+    )
+    ax1.legend(loc="upper left", fontsize=8)
+
+    # Right: per-cell expressed-bystander-question counts.
+    rows = []
+    for fam in fams:
+        fam_rows = [
+            (cid, strata["per_cell"][cid], caveats[fam]["per_cell"][cid]["n_excluded_questions"])
+            for cid in caveats[fam]["per_cell"]
+        ]
+        fam_rows.sort(key=lambda kv: (kv[1]["prior"], kv[1]["seed"]))
+        rows.extend(fam_rows)
+    xs = list(range(len(rows)))
+    seen: set[str] = set()
+    for x, (_, d, n_excl) in zip(xs, rows):
+        fam = d["family"]
+        ax2.bar(
+            x,
+            n_excl,
+            color=FAMILY_COLORS[fam],
+            label=FAMILY_LABELS[fam] if fam not in seen else None,
+        )
+        seen.add(fam)
+    ax2.set_xticks(xs)
+    ax2.set_xticklabels(
+        [f"{d['source'].replace('_', ' ')} s{d['seed']}" for _, d, _ in rows],
+        rotation=40,
         ha="right",
-        fontsize=7,
+        fontsize=6.5,
     )
-    ax.set_ylabel("Common-mode fraction\n(assertion-present questions)")
-    ax.set_title(
-        "Guard B, fact family: expression is near-constant (179/180 questions assert the fact)",
-        loc="left",
+    ax2.set_ylabel("Bystander questions expressing\nthe behavior (of 460)")
+    ax2.legend(loc="upper right", fontsize=8)
+
+    fig.suptitle(
+        "Guard B re-judged: cleaning expressed text flips fact, spares refusal, cannot move EM",
+        x=0.02,
+        ha="left",
         fontweight="semibold",
     )
-    ax.set_ylim(0, 1.24)
-    ax.annotate(
-        "Refusal/EM cells not shown: all 5,760 binary-judge labels returned null\n"
-        "(verdict-schema bug) — stratified read N/A for those families, not zero.",
-        xy=(0.02, 0.97),
-        xycoords="axes fraction",
-        va="top",
-        fontsize=8,
-        color="0.25",
-    )
-    fig.tight_layout()
-    savefig_paper(fig, "expression_strata_v2", dir=FIG_DIR)
+    fig.tight_layout(rect=(0, 0, 1, 0.94))
+    savefig_paper(fig, "expression_strata_v3", dir=FIG_DIR)
     plt.close(fig)
 
 
@@ -315,7 +364,7 @@ def main() -> int:
     fig_hero_fact(results, dis=True)
     fig_extensions(results)
     fig_reliability_v2(results)
-    fig_strata_v2(strata)
+    fig_strata_v3(strata)
     fig_linkage_v2(results)
     print(f"wrote 6 figures to {FIG_DIR}")
     return 0
