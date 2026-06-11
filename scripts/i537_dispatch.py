@@ -1015,9 +1015,17 @@ def _train_marker_cell(cid: str, *, smoke: bool, gpu_id: int) -> None:
         return
     # Import below the skip/guard block: skips and the stop-file guard stay
     # import-free (no transformers/torch needed to decide them).
+    from explore_persona_space.experiments.i537_contexts import MARKER_TEXT
     from explore_persona_space.train.sft import TrainLoraConfig, train_lora
 
     kwargs = dict(MARKER_TRAIN_KWARGS)
+    # CRITICAL: TrainLoraConfig.marker_text defaults to the DEPRECATED legacy
+    # "[ZLT]" (personas.MARKER_TOKEN). Without this thread the collator finds
+    # zero marker positions in every row, routes positives through the
+    # negative EOS-suppression branch (silent no-op implant), and the band
+    # stop disarms ("0 marker-bearing rows"). Verify in the train log:
+    # "MarkerOnlyLoss enabled: marker_text=' ※' -> token_ids=[83399]".
+    kwargs["marker_text"] = MARKER_TEXT
     kwargs["max_length"] = _builder_cap("marker", cid)
     if unreachable and not smoke:
         kwargs["marker_band_stop"] = False
