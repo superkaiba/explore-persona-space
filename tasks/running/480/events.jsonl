@@ -244,3 +244,4 @@
 {"ts": "2026-06-11T00:55:00Z", "kind": "epm:progress", "version": 8, "by": "poll_pipeline", "note": "phase transition: phase2b -> parity_probe", "phase": "parity_probe", "pod": "pod-480"}
 {"ts": "2026-06-11T01:04:44Z", "kind": "epm:progress", "version": 9, "by": "poll_pipeline", "note": "phase transition: parity_probe -> cell_qwen_default", "phase": "cell_qwen_default", "pod": "pod-480"}
 {"ts": "2026-06-11T01:14:28Z", "kind": "epm:progress", "version": 10, "by": "poll_pipeline", "note": "phase transition: cell_qwen_default -> merge_software_engineer", "phase": "merge_software_engineer", "pod": "pod-480"}
+{"ts": "2026-06-11T01:23:57Z", "kind": "epm:progress", "version": 11, "by": "poll_pipeline", "note": "phase transition: merge_software_engineer -> phase2a", "phase": "phase2a", "pod": "pod-480"}
