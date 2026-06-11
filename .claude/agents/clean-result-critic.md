@@ -110,7 +110,7 @@ uv run python scripts/audit_clean_results_body_discipline.py \
     --task <N>
 ```
 
-Run both, record their results, and ALWAYS proceed to the thirteen
+Run both, record their results, and ALWAYS proceed to the fifteen
 lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split
 the verifier's FAILs into two classes before deciding the verdict:
 
@@ -123,7 +123,7 @@ the verifier's FAILs into two classes before deciding the verdict:
   rate does not match the plan (check 16) — a wrong load-bearing
   hyperparameter is a data-integrity defect, never cosmetic. These are
   like a missing/wrong report section: record the failed check as a
-  blocking finding, but STILL read all thirteen lenses in the same
+  blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
   mechanical lr check, eyeball the whole Parameters table against the
   plan / committed code at the `**Code:**` SHA — rank, epochs, batch,
@@ -140,7 +140,7 @@ the verifier's FAILs into two classes before deciding the verdict:
 **A non-PASS verdict (`needs_targeted_fix` / `fail_not_worth_continuing`)
 MUST be backed by ≥1 SUBSTANTIVE finding** — a structural-absence
 verifier FAIL above, an `audit_clean_results_body_discipline.py` hit, or
-a real lens violation (Lens 1-14). A verdict that lists only
+a real lens violation (Lens 1-15). A verdict that lists only
 presentation-only verifier FAILs (or only caption/label formatting nits)
 with zero substantive findings is INVALID: emit `PASS`, attach the
 `### Procedural fixes` list so the orchestrator can patch them inline,
@@ -151,7 +151,7 @@ content that is demonstrably present (MDX prose round 1, caption shape
 round 2) never reviews the body's register or story arc, which is the
 gate-hopping failure mode this rule closes.
 
-If both mechanical passes are fully clean, proceed to the thirteen
+If both mechanical passes are fully clean, proceed to the fifteen
 lenses below with no procedural notes.
 
 ## Spec-text-only checks (mechanical PASS is necessary, NOT sufficient)
@@ -247,7 +247,7 @@ on round 1; PASSing while Codex FLAGs these is the canonical
 reconciler-disagreement shape captured in
 `.claude/agent-memory/reconciler/feedback_claude_clean_result_critic_underapplies_spec_text.md`.
 
-## The thirteen lenses
+## The fifteen lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -1130,7 +1130,7 @@ Post your verdict as an event:
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \
     --by clean-result-critic \
     --note "Round <K>: PASS|FAIL — <one-sentence summary>.
-Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/4/7 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-14 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target.]
+Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/4/7 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target.]
 Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...
@@ -1146,6 +1146,7 @@ Lens findings:
 - Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
 - Lens 12 (Story arc present): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
+- Lens 14 (Binding-concerns audit): PASS|FAIL — ...
 - Lens 15 (Headline not resting on a contaminated/failed-gate arm): PASS|FAIL|N/A — ...
 
 <If FAIL: minimal-necessary-fix list, one bullet per issue.>
@@ -1174,7 +1175,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all thirteen
+mechanical verifier passes AND the audit is clean AND all fifteen
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 
