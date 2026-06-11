@@ -134,3 +134,4 @@
 {"ts": "2026-06-11T03:35:16Z", "kind": "epm:progress", "version": 38, "by": "unknown", "note": "vm-judge tick: judged 3250/4400 supervisor=ALIVE"}
 {"ts": "2026-06-11T03:44:17Z", "kind": "epm:progress", "version": 39, "by": "unknown", "note": "vm-judge tick: judged 3325/4400 supervisor=ALIVE"}
 {"ts": "2026-06-11T03:53:18Z", "kind": "epm:progress", "version": 40, "by": "unknown", "note": "vm-judge tick: judged 3375/4400 supervisor=ALIVE"}
+{"ts": "2026-06-11T04:02:19Z", "kind": "epm:progress", "version": 41, "by": "unknown", "note": "vm-judge tick: judged 3425/4400 supervisor=ALIVE"}
