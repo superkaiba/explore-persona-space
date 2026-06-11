@@ -114,12 +114,25 @@ R_CAP_MIN = 64  # cap < 64 → prompt too long → FAIL LOUD
 MAX_VALIDATION_MAE_NATS = 1.0
 MIN_VALIDATION_SPEARMAN = 0.995
 
-# 20-question reproduction entry-gate thresholds (plan v4 §3): code-path
-# validity on a fresh pod, NOT bit-determinism — 0.1 nat is ~90× under the
-# committed 9.0-nat persona spread and at the S0-observed dtype-noise scale
-# (0.0707 nat MAE on the parent run).
+# 20-question reproduction entry-gate thresholds (plan v4 §3, re-anchored per
+# §14.9 — the pre-registered amendment): the gate's construct is code-path
+# validity on a fresh pod, NOT hardware bit-determinism (§11). Cross-pod
+# greedy generation legitimately RESAMPLES some texts (a diverged text gives a
+# genuinely different slot read — resampling, not scoring drift), so the
+# BINDING criteria are scoped to identical-text slots: a text-identity-rate
+# floor (guards against a broken generation path masquerading as resampling),
+# identical-slot logp MAE < 0.1 nat (~90× under the committed 9.0-nat persona
+# spread, grounded on the S0-observed dtype-noise scale of 0.0707 nat on the
+# parent run), and identical-slot Spearman at the inherited S0 gate convention
+# (= MIN_VALIDATION_SPEARMAN, same statistic family). The original full-panel
+# persona-mean criteria (REPRO_GATE_MAE_NATS / REPRO_GATE_SPEARMAN) conflate
+# resampling with scoring drift whenever identity < 1.0 — demoted to reported
+# diagnostics, re-enforced as gates only at identity == 1.0 (unconfounded).
 REPRO_GATE_MAE_NATS = 0.1
 REPRO_GATE_SPEARMAN = 0.999
+REPRO_GATE_TEXT_IDENTITY_FLOOR = 0.5
+REPRO_GATE_IDENTICAL_SLOT_MAE_NATS = 0.1
+REPRO_GATE_IDENTICAL_SLOT_SPEARMAN = MIN_VALIDATION_SPEARMAN
 
 # #460 Q_test artifact — source of the 30 disjoint measurement questions
 # (q50[20:]; q50[:20] are the panel's EVAL_QUESTIONS, verified at plan time).
@@ -976,20 +989,43 @@ def phase_score(args: argparse.Namespace, tokenizer, ctx: dict) -> None:
 
 
 def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
-    """20-question reproduction entry gate vs the committed parent prior (plan v4 §3).
+    """20-question reproduction entry gate vs the committed parent prior (plan v4 §3 + §14.9).
 
-    Compares this run's per-persona ``prior_margin_own`` (35 values) against
-    ``--reproduce-gate-json`` (the committed parent
-    ``base_prior_own_persona_panel.json``): gate = MAE < 0.1 nat AND Spearman
-    ≥ 0.999. Writes ``repro_gate.json`` (always), then ``sys.exit(1)`` on a
-    PRODUCTION miss so the chained disjoint invocation never starts. Diagnostics
-    persisted alongside so a near-miss is attributable (plan v4 §14.9: text
-    divergence ⇒ cross-pod resampling, re-anchor on scoring-path MAE over
-    identical texts; identical texts + scoring drift ⇒ code-path failure):
+    Re-anchored per plan v4 §14.9 (BINDING; the pre-registered amendment for
+    an entry-gate failure WITH text divergence): the gate's construct is
+    code-path validity on the new pod, not hardware bit-determinism (§11), and
+    cross-pod greedy generation legitimately RESAMPLES some texts — a diverged
+    text gives a genuinely different slot read (resampling, not scoring
+    drift), so persona-mean criteria computed over all slots conflate the two.
 
-    * per-slot ``logp_marker`` MAE over common (persona, question) slots;
-    * generation text-identity rate vs the committed ``R_base_own.json``
-      (resolved as the gate JSON's sibling).
+    The common (persona, question) slots are partitioned by generated-text
+    identity vs the committed ``R_base_own.json`` (resolved as the gate JSON's
+    sibling; the fresh side is ``out_dir/R_base_own.json``). BINDING
+    production criteria, all three:
+
+    * ``generation_text_identity_rate`` ≥ ``REPRO_GATE_TEXT_IDENTITY_FLOOR``
+      (0.5) — floor guarding against a broken generation path masquerading as
+      resampling;
+    * per-slot ``logp_marker`` MAE over IDENTICAL-TEXT slots only <
+      ``REPRO_GATE_IDENTICAL_SLOT_MAE_NATS`` (0.1 nat) — the scoring-path
+      validity read, grounded on the committed S0 dtype scale (0.0707 nat);
+    * per-slot ``logp_marker`` Spearman over identical-text slots ≥
+      ``REPRO_GATE_IDENTICAL_SLOT_SPEARMAN`` (= ``MIN_VALIDATION_SPEARMAN``,
+      0.995 — the inherited S0 gate convention, same statistic family).
+
+    The original full-panel persona-mean MAE/Spearman are DEMOTED to reported
+    diagnostics (always computed + persisted, never gating below identity
+    1.0); when identity == 1.0 the texts are byte-identical so those
+    persona-level reads are unconfounded, and they are re-enforced as
+    additional production gates — preserving the original §11 registered gate
+    in the only regime where it is valid.
+
+    Writes ``repro_gate.json`` (always), then ``sys.exit(1)`` on a PRODUCTION
+    miss so the chained disjoint invocation never starts. Production also
+    fail-louds (exit 1) when either ``R_base_own.json`` side is missing or any
+    common slot lacks a text on one side — the §14.9 binding partition is
+    uncomputable, and gating blind on the confounded persona means would
+    silently reintroduce the failure mode the amendment removes.
 
     Smoke slices (``--limit-personas/--limit-questions``) compare the
     measured subset only (loudly labeled; Spearman needs n ≥ 3) and are
@@ -1021,71 +1057,166 @@ def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
     rho = float(spearmanr(got, want).statistic) if len(personas) >= 3 else None
     mae_ok = mae < REPRO_GATE_MAE_NATS
     rho_ok = rho >= REPRO_GATE_SPEARMAN if rho is not None else smoke
-    gate_pass = bool(mae_ok and rho_ok)
 
-    # Diagnostic 1: per-slot logp MAE over common (persona, question) slots.
+    # §14.9 slot partition: classify every common (persona, question) slot by
+    # generated-text identity vs the committed R_base_own.json (gate JSON's
+    # sibling); the fresh side is this run's out_dir/R_base_own.json.
+    committed_r_path = args.reproduce_gate_json.parent / "R_base_own.json"
+    new_r_path = args.out_dir / "R_base_own.json"
+    r_files_present = committed_r_path.exists() and new_r_path.exists()
+    if not smoke and not r_files_present:
+        log.error(
+            "[repro-gate] R_base_own.json missing (committed %s exists=%s; fresh %s "
+            "exists=%s) — the plan v4 §14.9 binding text-identity partition is "
+            "uncomputable; refusing to gate blind on confounded persona means.",
+            committed_r_path,
+            committed_r_path.exists(),
+            new_r_path,
+            new_r_path.exists(),
+        )
+        sys.exit(1)
+    want_R = json.loads(committed_r_path.read_text())["R"] if r_files_present else {}
+    got_R = json.loads(new_r_path.read_text())["R"] if r_files_present else {}
+
     want_q_idx = {q: i for i, q in enumerate(committed["eval_questions"])}
-    slot_diffs: list[float] = []
+    identical: list[tuple[float, float]] = []
+    diverged: list[tuple[float, float]] = []
+    all_pairs: list[tuple[float, float]] = []
+    n_unclassified = 0
     for p in personas:
         got_rec, want_rec = got_pp[p], want_pp[p]
         for i, q in enumerate(payload["eval_questions"]):
-            if q in want_q_idx:
-                slot_diffs.append(
-                    abs(
-                        got_rec["logp_marker_per_q"][i]
-                        - want_rec["logp_marker_per_q"][want_q_idx[q]]
-                    )
-                )
-    per_slot_logp_mae = float(np.mean(slot_diffs)) if slot_diffs else None
+            j = want_q_idx.get(q)
+            if j is None:
+                continue
+            pair = (
+                float(got_rec["logp_marker_per_q"][i]),
+                float(want_rec["logp_marker_per_q"][j]),
+            )
+            all_pairs.append(pair)
+            got_text = got_R.get(p, {}).get(q)
+            want_text = want_R.get(p, {}).get(q)
+            if got_text is None or want_text is None:
+                n_unclassified += 1
+            elif got_text == want_text:
+                identical.append(pair)
+            else:
+                diverged.append(pair)
+    if not smoke:
+        assert n_unclassified == 0, (
+            f"{n_unclassified}/{len(all_pairs)} common slots lack a generated text on one "
+            "side — R_base_own.json does not cover the panel; the §14.9 partition is "
+            "uncomputable"
+        )
+    n_classified = len(identical) + len(diverged)
+    text_identity_rate = float(len(identical) / n_classified) if n_classified else None
 
-    # Diagnostic 2: generation text-identity rate vs the committed R_base_own.
-    committed_r_path = args.reproduce_gate_json.parent / "R_base_own.json"
-    new_r_path = args.out_dir / "R_base_own.json"
-    text_identity_rate = None
-    n_common_texts = 0
-    if committed_r_path.exists() and new_r_path.exists():
-        want_R = json.loads(committed_r_path.read_text())["R"]
-        got_R = json.loads(new_r_path.read_text())["R"]
-        matches = []
-        for p in personas:
-            for q, text in got_R.get(p, {}).items():
-                if q in want_R.get(p, {}):
-                    matches.append(text == want_R[p][q])
-        n_common_texts = len(matches)
-        text_identity_rate = float(np.mean(matches)) if matches else None
+    def _partition_stats(pairs: list[tuple[float, float]]) -> dict:
+        if not pairs:
+            return {"n_slots": 0, "per_slot_logp_mae_nats": None, "per_slot_logp_spearman": None}
+        a = np.array([g for g, _ in pairs])
+        b = np.array([w for _, w in pairs])
+        return {
+            "n_slots": len(pairs),
+            "per_slot_logp_mae_nats": float(np.mean(np.abs(a - b))),
+            "per_slot_logp_spearman": (
+                float(spearmanr(a, b).statistic) if len(pairs) >= 3 else None
+            ),
+        }
+
+    ident_stats = _partition_stats(identical)
+    div_stats = _partition_stats(diverged)
+    all_stats = _partition_stats(all_pairs)
+
+    # BINDING criteria (plan v4 §14.9): identity floor + identical-slot
+    # scoring-path reads. Missing components are pass-through ONLY in smoke
+    # (non-fatal there anyway); production guaranteed them above.
+    ident_mae = ident_stats["per_slot_logp_mae_nats"]
+    ident_rho = ident_stats["per_slot_logp_spearman"]
+    identity_ok = (
+        text_identity_rate >= REPRO_GATE_TEXT_IDENTITY_FLOOR
+        if text_identity_rate is not None
+        else smoke
+    )
+    ident_mae_ok = (
+        ident_mae < REPRO_GATE_IDENTICAL_SLOT_MAE_NATS if ident_mae is not None else smoke
+    )
+    ident_rho_ok = (
+        ident_rho >= REPRO_GATE_IDENTICAL_SLOT_SPEARMAN if ident_rho is not None else smoke
+    )
+    # Legacy persona-mean criteria gate ONLY at identity == 1.0 (texts
+    # byte-identical -> persona means unconfounded; original §11 gate valid).
+    legacy_enforced = text_identity_rate is not None and text_identity_rate == 1.0
+    gate_pass = bool(identity_ok and ident_mae_ok and ident_rho_ok)
+    if legacy_enforced:
+        gate_pass = bool(gate_pass and mae_ok and rho_ok)
 
     out = {
         "schema_version": SCHEMA_VERSION,
         "committed_reference": str(args.reproduce_gate_json),
         "n_personas_compared": len(personas),
         "smoke_slice": smoke,
+        "generation_text_identity_rate": text_identity_rate,
+        "n_common_texts": n_classified,
+        "slot_partitions": {
+            "identical_text": ident_stats,
+            "diverged_text": div_stats,
+            "all_common": {**all_stats, "n_unclassified_slots": n_unclassified},
+        },
+        # DEMOTED to reported diagnostics (plan v4 §14.9): below identity 1.0
+        # these conflate cross-pod resampling with scoring drift — never gate.
         "per_persona_prior_mae_nats": mae,
         "per_persona_prior_spearman": rho,
         "gates": {
-            "mae_gate_nats": REPRO_GATE_MAE_NATS,
-            "spearman_gate": REPRO_GATE_SPEARMAN,
-            "mae_pass": mae_ok,
-            "spearman_pass": rho_ok,
+            "binding_rule": "plan v4 §14.9 (pre-registered amendment; §11: the gate's "
+            "construct is code-path validity on the new pod, not hardware "
+            "bit-determinism): an entry-gate failure WITH text divergence = cross-pod "
+            "resampling — re-anchor on scoring-path reads over identical texts. BINDING: "
+            "text_identity_rate >= floor AND identical-slot logp MAE < gate AND "
+            "identical-slot logp Spearman >= gate; legacy persona-mean criteria "
+            "re-enforced only at identity == 1.0.",
+            "text_identity_floor": REPRO_GATE_TEXT_IDENTITY_FLOOR,
+            "text_identity_pass": identity_ok,
+            "identical_slot_mae_gate_nats": REPRO_GATE_IDENTICAL_SLOT_MAE_NATS,
+            "identical_slot_mae_pass": ident_mae_ok,
+            "identical_slot_spearman_gate": REPRO_GATE_IDENTICAL_SLOT_SPEARMAN,
+            "identical_slot_spearman_pass": ident_rho_ok,
+            "legacy_persona_gates": {
+                "enforced": legacy_enforced,
+                "note": "full-panel persona-mean MAE/Spearman conflate resampling with "
+                "scoring drift whenever text identity < 1.0 (plan v4 §14.9) — reported "
+                "as diagnostics, gating ONLY at identity == 1.0 (unconfounded regime)",
+                "mae_gate_nats": REPRO_GATE_MAE_NATS,
+                "spearman_gate": REPRO_GATE_SPEARMAN,
+                "mae_pass": mae_ok,
+                "spearman_pass": rho_ok,
+            },
             "pass": gate_pass,
         },
         "diagnostics": {
-            "per_slot_logp_mae_nats": per_slot_logp_mae,
-            "n_common_slots": len(slot_diffs),
-            "generation_text_identity_rate": text_identity_rate,
-            "n_common_texts": n_common_texts,
-            "read_rule": "text divergence => cross-pod generation resampling (re-anchor on "
-            "scoring-path MAE over identical texts); identical texts + prior drift => "
-            "scoring code-path failure (plan v4 §14.9)",
+            "read_rule": "re-anchored per plan v4 §14.9: text divergence => cross-pod "
+            "generation resampling (NOT a code-path failure — gate on identical-text-slot "
+            "scoring reads + identity floor); identical texts + identical-slot drift => "
+            "scoring code-path failure (exit 1); identity < floor => generation-path "
+            "failure (exit 1)",
         },
         "metadata": result_metadata(args),
     }
     write_json(args.out_dir / "repro_gate.json", out)
     log.info(
-        "[repro-gate] MAE=%.4f nats (gate %.1f), spearman=%s (gate %.3f), n=%d -> %s%s",
+        "[repro-gate §14.9] identity=%s (floor %.2f), identical-slot MAE=%s nats (gate "
+        "%.1f, n=%d), identical-slot spearman=%s (gate %.3f) | demoted persona-mean "
+        "MAE=%.4f spearman=%s (legacy gates %s) | n_personas=%d -> %s%s",
+        f"{text_identity_rate:.4f}" if text_identity_rate is not None else "n/a",
+        REPRO_GATE_TEXT_IDENTITY_FLOOR,
+        f"{ident_mae:.4f}" if ident_mae is not None else "n/a",
+        REPRO_GATE_IDENTICAL_SLOT_MAE_NATS,
+        ident_stats["n_slots"],
+        f"{ident_rho:.5f}" if ident_rho is not None else "n/a",
+        REPRO_GATE_IDENTICAL_SLOT_SPEARMAN,
         mae,
-        REPRO_GATE_MAE_NATS,
         f"{rho:.5f}" if rho is not None else "n/a",
-        REPRO_GATE_SPEARMAN,
+        "ENFORCED (identity == 1.0)" if legacy_enforced else "diagnostic-only",
         len(personas),
         "PASS" if gate_pass else "FAIL",
         " [SMOKE SLICE — not authoritative]" if smoke else "",
@@ -1103,11 +1234,24 @@ def reproduce_gate(args: argparse.Namespace, payload: dict) -> None:
             "PASS" if gate_pass else "FAIL",
         )
     elif not gate_pass:
+        missed = [
+            name
+            for name, ok in (
+                ("text-identity-floor", identity_ok),
+                ("identical-slot-MAE", ident_mae_ok),
+                ("identical-slot-Spearman", ident_rho_ok),
+                ("legacy-persona-MAE", mae_ok if legacy_enforced else True),
+                ("legacy-persona-Spearman", rho_ok if legacy_enforced else True),
+            )
+            if not ok
+        ]
         log.error(
-            "[repro-gate] 20-QUESTION REPRODUCTION GATE FAILED — fresh-pod code path does "
-            "not reproduce the committed parent prior; the disjoint invocation must not "
-            "start. Consult repro_gate.json diagnostics before any relax decision (a "
-            "threshold bump is a plan amendment, never a silent edit)."
+            "[repro-gate] 20-QUESTION REPRODUCTION GATE FAILED on %s — fresh-pod code "
+            "path does not reproduce the committed parent prior under the §14.9 "
+            "re-anchored criteria; the disjoint invocation must not start. Consult "
+            "repro_gate.json slot_partitions before any relax decision (a threshold "
+            "bump is a plan amendment, never a silent edit).",
+            ", ".join(missed),
         )
         sys.exit(1)
 
@@ -1217,12 +1361,17 @@ def main() -> int:
         type=Path,
         default=None,
         dest="reproduce_gate_json",
-        help="committed parent base_prior_own_persona_panel.json — post-score per-persona "
-        f"reproduction gate (MAE < {REPRO_GATE_MAE_NATS} nat AND Spearman >= "
-        f"{REPRO_GATE_SPEARMAN}); writes repro_gate.json, exit 1 on a production miss "
-        "(smoke slices: non-fatal, thresholds not enforced). Gate invocations NEVER "
-        "write the results sentinel and terminate with [phase=gate_passed], not "
-        "[phase=done] — the chained disjoint invocation owns run-complete signaling",
+        help="committed parent base_prior_own_persona_panel.json — post-score reproduction "
+        "entry gate, re-anchored per plan v4 §14.9: BINDING = text-identity rate >= "
+        f"{REPRO_GATE_TEXT_IDENTITY_FLOOR} AND per-slot logp MAE over IDENTICAL-text "
+        f"slots < {REPRO_GATE_IDENTICAL_SLOT_MAE_NATS} nat AND identical-slot Spearman "
+        f">= {REPRO_GATE_IDENTICAL_SLOT_SPEARMAN} (text divergence = cross-pod "
+        "resampling, not code-path failure); full-panel persona-mean MAE/Spearman are "
+        "demoted to diagnostics, re-enforced only at identity == 1.0. Writes "
+        "repro_gate.json, exit 1 on a production miss (smoke slices: non-fatal, "
+        "thresholds not enforced). Gate invocations NEVER write the results sentinel "
+        "and terminate with [phase=gate_passed], not [phase=done] — the chained "
+        "disjoint invocation owns run-complete signaling",
     )
     args = parser.parse_args()
     smoke = bool(args.limit_personas or args.limit_questions)
