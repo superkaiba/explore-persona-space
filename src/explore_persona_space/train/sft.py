@@ -52,6 +52,44 @@ from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
 
+# Canonical single-token marker for marker-leakage experiments
+# (.claude/rules/marker-leakage-measurement.md): leading-space " ※",
+# Qwen-2.5-7B token id 83399. Bare "※" (id 63680) and multi-token markers
+# are the documented drift modes (#395, #537).
+CANONICAL_MARKER_TEXT = " ※"
+CANONICAL_MARKER_ID = 83399
+
+
+def assert_marker_token_ids(marker_text: str, marker_ids: list[int]) -> None:
+    """Fail-loud marker-tokenization guard for the marker-only training path.
+
+    #597 plan Phase P requires the in-process assert in the TRAINER path, not
+    only in pre-spawn dispatchers (#537: a trainer silently used a drifted
+    marker, no-op-implanting all 16 adapters). Rules:
+
+    - ANY marker text must encode to a non-empty id sequence (an empty
+      sequence means marker-only loss has no loss-bearing token).
+    - The canonical ``" ※"`` marker must encode to exactly ``[83399]`` —
+      a drifted tokenizer / bare ``※`` (id 63680) trains the wrong token.
+
+    Non-canonical multi-token markers (e.g. the legacy codebase default
+    ``"[ZLT]"``) remain allowed: ``MarkerOnlyDataCollator`` supports
+    multi-token ``marker_token_ids`` and legacy callers rely on it.
+    """
+    if not marker_ids:
+        raise ValueError(
+            f"marker_text={marker_text!r} tokenized to an EMPTY id sequence — "
+            "marker-only loss would have no loss-bearing token. Fix the marker "
+            "text / tokenizer before training."
+        )
+    if marker_text == CANONICAL_MARKER_TEXT and marker_ids != [CANONICAL_MARKER_ID]:
+        raise ValueError(
+            f"canonical marker {marker_text!r} tokenized to {marker_ids}, expected "
+            f"[{CANONICAL_MARKER_ID}] (leading-space ※; bare ※ is id 63680). "
+            "Refusing to train against a drifted marker id (#537 class)."
+        )
+
+
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
 # always wraps the model via peft_config -> PeftModel and fused kernels regress
 # ~2x on PEFT-wrapped linears. Liger detection is intentionally lazy so importing
@@ -1242,6 +1280,9 @@ def train_lora(
 
     if cfg.marker_only_loss:
         marker_ids = tokenizer.encode(cfg.marker_text, add_special_tokens=False)
+        # Fail-loud in-process guard (#537 / #597 plan Phase P): the trainer
+        # path itself asserts the marker tokenization, not just dispatchers.
+        assert_marker_token_ids(cfg.marker_text, marker_ids)
         logger.info(
             f"MarkerOnlyLoss enabled: marker_text={cfg.marker_text!r} -> "
             f"token_ids={marker_ids} ({len(marker_ids)} tokens), "

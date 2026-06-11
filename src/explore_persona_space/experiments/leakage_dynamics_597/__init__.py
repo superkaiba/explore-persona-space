@@ -64,6 +64,7 @@ __all__ = [
     "NO_PERSONA_KEY",
     "SEED",
     "SOURCE_PERSONAS",
+    "TRAINED_NEGATIVES",
     "WANDB_PROJECT",
     "probe_contexts_25",
 ]
@@ -109,6 +110,28 @@ assert set(ANCHOR_STEPS) <= set(B_GRID), (ANCHOR_STEPS, B_GRID)
 # The 25th probe context: the bare no-system-prompt chat (open-q 3.7 — the
 # trained default-context negative in Arm A, untouched in Arm B).
 NO_PERSONA_KEY: str = "no_persona"
+
+# Per-source trained-negative panel personas (plan Phase P table, derived from
+# the Hub-verified issue480 bystander_assignment.json). The dispatcher
+# re-derives this map from the downloaded assignment at preflight and
+# FAILS LOUD on any drift from this constant (exact set equality per source);
+# the off-pod Phase A analysis (analyze.py) consumes the constant so the
+# trained-negative vs held-out split needs no HF download on the VM.
+TRAINED_NEGATIVES: dict[str, tuple[str, str]] = {
+    "villain": ("police_officer", "medical_doctor"),
+    "comedian": ("medical_doctor", "assistant"),
+    "assistant": ("software_engineer", "comedian"),
+    "qwen_default": ("comedian", "data_scientist"),
+    "software_engineer": ("assistant", "medical_doctor"),
+    "kindergarten_teacher": ("software_engineer", "french_person"),
+}
+assert set(TRAINED_NEGATIVES) == set(SOURCE_PERSONAS), (
+    sorted(TRAINED_NEGATIVES),
+    sorted(SOURCE_PERSONAS),
+)
+# Per-cell adapters are single-source; the cell's own source must never be in
+# its trained-negative set (contrastive-negatives disjointness invariant).
+assert all(src not in negs for src, negs in TRAINED_NEGATIVES.items()), TRAINED_NEGATIVES
 
 # Arm B training schedule (plan §10): 528 optimizer steps matching Arm A's
 # 12 epochs × 44 steps, via the new TrainLoraConfig.max_steps field.

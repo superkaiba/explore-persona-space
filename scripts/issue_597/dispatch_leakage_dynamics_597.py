@@ -20,30 +20,39 @@ surface, same teardown — the smoke knobs only SCALE each phase):
 
   Per-cell loop (one cell == one source, sequential per shard):
       trainB (in-process train_lora, max_steps=528, save_steps=4 + grid
-      prune) → Gate S re-application on the FIRST Arm B source vs its own
-      fresh trajectory → Arm B ladder upload (fail-loud) → panel probe Arm B
-      (HF subprocess) → emission anchors Arm B (vLLM subprocess) → Arm A
-      ladder download (per-file; never snapshot_download allow_patterns) →
-      panel probe Arm A → emission anchors Arm A → raw uploads (folder-level
-      commits) → local cleanup → per-source sentinel.
+      prune) → Gate S re-application on the FIRST Arm B source TRAINED IN
+      THIS PROCESS vs its own fresh trajectory (ALWAYS runs per shard —
+      decoupled from --skip-arm-a-gate; #518 reachability class) → Arm B
+      ladder upload (fail-loud) → panel probe Arm B (HF subprocess) →
+      emission anchors Arm B (vLLM subprocess) → Arm A ladder download
+      (per-file; never snapshot_download allow_patterns) → panel probe
+      Arm A → emission anchors Arm A → raw uploads (folder-level commits) →
+      local cleanup → per-source sentinel (poll_pipeline schema, kind
+      epm:progress — bare cell dicts inside the issue-597-*.json glob are
+      skipped as malformed by the poller forever).
 
-  Final sentinel: /workspace/logs/issue-597-epm_results-<epoch>.json
-  (poll_pipeline schema: sentinel_schema_version=1, kind=epm:results, ...),
-  then the terminal ``[phase=done]`` line.
+  Final sentinel: /workspace/logs/issue-597-epm_results-<epoch>-<pid>.json
+  (poll_pipeline schema: sentinel_schema_version=1, kind=epm:results, ...;
+  pid suffix prevents same-second shard collisions), then the terminal
+  ``[phase=done]`` line.
 
 GPU sharding (plan §9 — 6 sources over 4 GPUs, ONE pod): launch one process
-per shard with the GPU pinned in the LAUNCHER env (the in-process clobber is
-defeated by any import-time cuInit — gotchas.md):
+per shard with the GPU pinned BOTH in the LAUNCHER env (an import-time cuInit
+would defeat a late in-process pin — gotchas.md) AND via --gpu (threaded into
+TrainLoraConfig.gpu_id so train_lora's unconditional CUDA_VISIBLE_DEVICES
+clobber re-asserts the SAME physical index — the #557 class; without it every
+shard's training + downstream subprocesses co-locate on physical GPU 0):
 
     # one-time shared phases (Phase 0 + Gate S) on GPU 0:
     CUDA_VISIBLE_DEVICES=0 nohup uv run python \\
         scripts/issue_597/dispatch_leakage_dynamics_597.py \\
         --recipe pos_only_dynamics --stop-after-gate > logs/i597_gate.log 2>&1 < /dev/null &
-    # then per-shard sweeps (skip the shared phases):
+    # then per-shard sweeps (skip the SHARED phases only — the per-shard
+    # first-Arm-B-source Gate S re-application always runs):
     CUDA_VISIBLE_DEVICES=0 nohup uv run python ... --gpu 0 \\
-        --sources villain,comedian --skip-probe-rows --skip-gate ... &
+        --sources villain,comedian --skip-probe-rows --skip-arm-a-gate ... &
     CUDA_VISIBLE_DEVICES=1 nohup uv run python ... --gpu 1 \\
-        --sources assistant,qwen_default --skip-probe-rows --skip-gate ... &
+        --sources assistant,qwen_default --skip-probe-rows --skip-arm-a-gate ... &
 
 Pod-side discipline (CLAUDE.md):
 - NEVER shells out to scripts/task.py (branch-guard would refuse).
@@ -319,7 +328,36 @@ def load_trained_negative_map(cache_path: Path) -> dict[str, list[str]]:
             raise RuntimeError(f"expected 2 distinct negatives for {source!r}, got {names}")
         neg_map[source] = names
         log.info("[phase=preflight] trained negatives for %s: %s", source, names)
+
+    # Cross-assert vs the package constant the OFF-POD analysis consumes
+    # (analyze.py reads TRAINED_NEGATIVES; a drifted assignment artifact must
+    # fail HERE, at preflight, not silently skew the H2 split at analysis).
+    from explore_persona_space.experiments.leakage_dynamics_597 import TRAINED_NEGATIVES
+
+    derived = {s: frozenset(v) for s, v in neg_map.items()}
+    pinned = {s: frozenset(v) for s, v in TRAINED_NEGATIVES.items()}
+    if derived != pinned:
+        raise RuntimeError(
+            "bystander_assignment.json drifted from the pinned TRAINED_NEGATIVES "
+            f"constant: derived={derived} pinned={pinned} — fix the constant or the "
+            "artifact before launching (the off-pod analysis keys on the constant)."
+        )
     return neg_map
+
+
+def effective_shard_gpu(gpu_arg: int | None) -> int:
+    """Resolve the shard's ``--gpu`` into the ``TrainLoraConfig.gpu_id`` pin.
+
+    ``train_lora`` UNCONDITIONALLY clobbers ``CUDA_VISIBLE_DEVICES`` with
+    ``cfg.gpu_id`` (sft.py), and this dispatcher performs NO CUDA init before
+    ``train_lora`` — so the clobber WINS over the launcher's exported CVD
+    (#557 class; round-1 review blocker). Threading the shard's ``--gpu``
+    here makes the clobber re-assert the SAME physical index the launcher
+    exported, and every downstream SUBPROCESS (panel_probe's second 7B, the
+    emission vLLM at gpu_memory_utilization=0.85) inherits the correct CVD.
+    No ``--gpu`` (single-process / smoke launch) → physical GPU 0.
+    """
+    return gpu_arg if gpu_arg is not None else 0
 
 
 def _pos_only_train_cfg(
@@ -330,6 +368,7 @@ def _pos_only_train_cfg(
     *,
     max_steps: int,
     save_steps: int,
+    gpu_id: int = 0,
 ):
     """Arm B TrainLoraConfig — the #480 ``_band_stop_train_cfg`` clone.
 
@@ -338,7 +377,9 @@ def _pos_only_train_cfg(
     adapter_config.json) EXCEPT the documented #597 deltas: ``max_steps``
     (exactly matched 528-step cosine schedule; epochs alone would give 533+),
     ``save_steps`` (4, for the fine early grid — pruned to B_GRID by
-    ``CheckpointGridPruneCallback``), ``run_name`` and the trajectory path.
+    ``CheckpointGridPruneCallback``), ``run_name``, the trajectory path, and
+    ``gpu_id`` (the shard's physical GPU — see :func:`effective_shard_gpu`;
+    NOT a training-recipe field, it never reaches the adapter geometry).
     The training DATA difference (200-positive pool) is the manipulated
     variable and is passed separately at the train_lora call site.
     """
@@ -346,7 +387,7 @@ def _pos_only_train_cfg(
     from explore_persona_space.train.sft import TrainLoraConfig
 
     return TrainLoraConfig(
-        gpu_id=0,
+        gpu_id=gpu_id,
         epochs=BAND_STOP_EPOCH_CAP,  # superseded by max_steps; kept for field parity
         lr=BAND_STOP_LR,
         lora_r=32,
@@ -449,7 +490,7 @@ def download_arm_a_ladder(source: str, steps: tuple[int, ...], dest_root: Path) 
     have_all = all((dest / f"checkpoint-{s}" / "adapter_config.json").exists() for s in steps)
     if have_all:
         log.info(
-            "[phase=downloadA_%s] all %d checkpoints already local; skipping", source, len(steps)
+            "[phase=download_a_%s] all %d checkpoints already local; skipping", source, len(steps)
         )
         return dest
 
@@ -466,7 +507,7 @@ def download_arm_a_ladder(source: str, steps: tuple[int, ...], dest_root: Path) 
         if not any(f.startswith(d) for f in to_fetch):
             raise RuntimeError(f"Arm A checkpoint-{s} missing on the Hub under {prefix}")
     log.info(
-        "[phase=downloadA_%s] fetching %d files for %d checkpoints",
+        "[phase=download_a_%s] fetching %d files for %d checkpoints",
         source,
         len(to_fetch),
         len(steps),
@@ -477,7 +518,7 @@ def download_arm_a_ladder(source: str, steps: tuple[int, ...], dest_root: Path) 
         target = dest / rel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(cached, target)
-        log.info("[phase=downloadA_%s] (%d/%d) %s", source, i + 1, len(to_fetch), rel)
+        log.info("[phase=download_a_%s] (%d/%d) %s", source, i + 1, len(to_fetch), rel)
     return dest
 
 
@@ -521,7 +562,7 @@ def base_side_identity_diagnostic(arm_b_traj: Path, arm_a_traj: Path, source: st
         diff = abs(b_base - a_base)
         status = "OK" if diff < 0.01 else "DRIFT (diagnostic only — not a gate)"
         log.info(
-            "[phase=trainB_%s] in-loop base-side diagnostic: armB=%.5f armA=%.5f |d|=%.5f %s",
+            "[phase=train_b_%s] in-loop base-side diagnostic: armB=%.5f armA=%.5f |d|=%.5f %s",
             source,
             b_base,
             a_base,
@@ -530,7 +571,7 @@ def base_side_identity_diagnostic(arm_b_traj: Path, arm_a_traj: Path, source: st
         )
         return {"arm_b_base": b_base, "arm_a_base": a_base, "abs_diff": diff, "status": status}
     except Exception as e:
-        log.warning("[phase=trainB_%s] base-side diagnostic unavailable: %s", source, e)
+        log.warning("[phase=train_b_%s] base-side diagnostic unavailable: %s", source, e)
         return {"status": f"unavailable: {e}"}
 
 
@@ -542,6 +583,8 @@ def train_arm_b(
     slab_root: Path,
     max_length: int,
     params: RunParams,
+    *,
+    gpu_id: int,
 ) -> tuple[Path, Path]:
     """Arm B in-process training with the grid-prune callback; returns (adapter_dir, traj)."""
     from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
@@ -561,12 +604,23 @@ def train_arm_b(
         traj_path,
         max_steps=params.b_max_steps,
         save_steps=params.b_save_steps,
+        gpu_id=gpu_id,
     )
     if cfg.marker_band_log_only is not True:
         raise RuntimeError("#597 Arm B requires marker_band_log_only=True (full ramp)")
     prune_cb = CheckpointGridPruneCallback(keep_steps=params.b_grid)
+    # Smoke-visible GPU-colocation guard line (#557 class): the launcher's
+    # exported CVD and cfg.gpu_id must name the same physical index —
+    # train_lora re-asserts cfg.gpu_id, and downstream subprocesses inherit it.
     log.info(
-        "[phase=trainB_%s] cfg: lr=%s r=%s alpha=%s max_steps=%s save_steps=%s grid=%d ckpts "
+        "[phase=train_b_%s] effective CUDA_VISIBLE_DEVICES=%r cfg.gpu_id=%d "
+        "(train_lora clobbers CVD with cfg.gpu_id; subprocesses inherit it)",
+        source,
+        os.environ.get("CUDA_VISIBLE_DEVICES"),
+        cfg.gpu_id,
+    )
+    log.info(
+        "[phase=train_b_%s] cfg: lr=%s r=%s alpha=%s max_steps=%s save_steps=%s grid=%d ckpts "
         "run_name=%s trajectory=%s",
         source,
         cfg.lr,
@@ -616,14 +670,14 @@ def train_arm_b(
         deltas_by_200 = [r["delta_nats"] for r in traj["records"] if int(r["step"]) <= 200]
         if deltas_by_200 and max(deltas_by_200) < 5.0 and params.b_max_steps >= 200:
             log.warning(
-                "[phase=trainB_%s] SANITY (non-blocking): in-loop delta max %.2f nat by step "
+                "[phase=train_b_%s] SANITY (non-blocking): in-loop delta max %.2f nat by step "
                 "200 (< 5) — positive-only install may be on the floor (cf. #520); "
                 "a never-installing Arm B is itself a reportable finding.",
                 source,
                 max(deltas_by_200),
             )
     except Exception as e:
-        log.warning("[phase=trainB_%s] install sanity check unavailable: %s", source, e)
+        log.warning("[phase=train_b_%s] install sanity check unavailable: %s", source, e)
     return adapter_dir, traj_path
 
 
@@ -656,10 +710,17 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     adapter_dir = args.runs_root / f"{source}_seed{seed}" / "adapter"
     traj_path = slab_root / "armB_trajectories" / f"{source}_seed{seed}_trajectory.json"
     if args.skip_train:
-        log.info("[phase=trainB_%s] SKIPPED", source)
+        log.info("[phase=train_b_%s] SKIPPED", source)
     else:
         adapter_dir, traj_path = train_arm_b(
-            source, seed, pos_pool, args.runs_root, slab_root, args.max_length, params
+            source,
+            seed,
+            pos_pool,
+            args.runs_root,
+            slab_root,
+            args.max_length,
+            params,
+            gpu_id=effective_shard_gpu(args.gpu),
         )
         cell["arm_b_adapter_dir"] = str(adapter_dir)
         cell["arm_b_trajectory"] = str(traj_path)
@@ -667,10 +728,16 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
             traj_path, ARM_A_TRAJ_DIR / f"{source}_seed42_trajectory.json", source
         )
 
-        # Gate S re-application on the FIRST trained Arm B source (plan Phase S
-        # step 4): the off-line path must reproduce ITS in-loop read at step 20
-        # before the remaining Arm B ladders are probed.
-        if not first_armb_gate_done.get("done") and not args.skip_gate:
+        # Gate S re-application on the FIRST Arm B source trained in THIS
+        # process (plan Phase S step 4): the off-line path must reproduce ITS
+        # in-loop read at step 20 before the remaining Arm B ladders are
+        # probed. DELIBERATELY decoupled from --skip-arm-a-gate (round-1
+        # union blocker, #518 reachability class): every documented
+        # production shard passes --skip-arm-a-gate, so keying this on the
+        # shared-gate flag made it unreachable on the real launch path.
+        # --skip-armb-gate is a resume-only escape hatch, never part of the
+        # documented production launch.
+        if not first_armb_gate_done.get("done") and not args.skip_armb_gate:
             gate_out = slab_root / "smoke" / f"smoke_gate_armB_{source}.json"
             _run_subprocess(
                 [
@@ -790,7 +857,7 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     # ── Arm A: download ladder → panel probe → emission anchors → cleanup ──
     arm_a_dest: Path | None = None
     if args.skip_panel_probe and args.skip_emission:
-        log.info("[phase=armA_%s] SKIPPED (both Arm A consumers skipped)", source)
+        log.info("[phase=arm_a_%s] SKIPPED (both Arm A consumers skipped)", source)
     else:
         arm_a_dest = download_arm_a_ladder(
             source, params.a_steps, args.runs_root / "armA_downloads"
@@ -908,6 +975,39 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     return cell
 
 
+def make_cell_sentinel_payload(source: str, event: str, body: dict) -> dict:
+    """Wrap a per-cell record in the poll_pipeline sentinel schema.
+
+    EVERY ``/workspace/logs/issue-597-*.json`` file is drained by
+    ``poll_pipeline._drain_sentinels`` and must carry
+    ``_SENTINEL_REQUIRED_KEYS`` (``sentinel_schema_version``, ``kind``,
+    ``version``) — round 1 wrote bare cell dicts into that glob, which the
+    poller skips as malformed on EVERY tick, forever (round-1 union blocker).
+    Per-cell records post as ``epm:progress`` v1 markers; the poller JSON-
+    encodes a dict ``note`` itself.
+    """
+    return {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+        "kind": "epm:progress",
+        "version": 1,
+        "task_id": 597,
+        "gate": None,
+        "blocks_pipeline": False,
+        "by": "dispatch_leakage_dynamics_597",
+        "ts": datetime.now(UTC).isoformat(),
+        "note": {"event": event, "source": source, **body},
+    }
+
+
+def write_cell_sentinel(logs_dir: Path, source: str, event: str, body: dict) -> Path:
+    """Write one per-cell sentinel (epoch+pid suffix → no shard collisions)."""
+    payload = make_cell_sentinel_payload(source, event, body)
+    path = logs_dir / f"issue-597-cell-{source}-{int(time.time())}-{os.getpid()}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    return path
+
+
 def write_final_sentinel(
     logs_dir: Path,
     sources_requested: list[str],
@@ -922,7 +1022,9 @@ def write_final_sentinel(
     )
 
     epoch = int(time.time())
-    final_path = logs_dir / f"issue-597-epm_results-{epoch}.json"
+    # pid suffix: two shards finishing within the same second must not
+    # silently overwrite one another's results sentinel (round-1 minor).
+    final_path = logs_dir / f"issue-597-epm_results-{epoch}-{os.getpid()}.json"
     payload = {
         "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
         "kind": "epm:results",
@@ -959,7 +1061,8 @@ def write_final_sentinel(
     return final_path
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher; phases read clearest inline
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Dispatcher CLI (extracted from main so tests can pin the flag contract)."""
     parser = argparse.ArgumentParser(
         description="#597 dispatcher — pos-only vs contrastive leakage dynamics.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -999,7 +1102,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     parser.add_argument(
         "--skip-probe-rows", action="store_true", help="Shared phase done elsewhere."
     )
-    parser.add_argument("--skip-gate", action="store_true", help="Shared phase done elsewhere.")
+    parser.add_argument(
+        "--skip-arm-a-gate",
+        action="store_true",
+        help="Skip the SHARED Arm A Phase S gate (#480 capend refs) — for shard "
+        "launches AFTER a completed --stop-after-gate run. Does NOT skip the "
+        "per-shard first-Arm-B-source Gate S re-application.",
+    )
+    parser.add_argument(
+        "--skip-armb-gate",
+        action="store_true",
+        help="Skip the per-shard first-Arm-B-source Gate S re-application. "
+        "Resume-only escape hatch (e.g. the gate already PASSED in this shard "
+        "before a crash) — NEVER part of the documented production launch.",
+    )
     parser.add_argument("--skip-train", action="store_true")
     parser.add_argument("--skip-panel-probe", action="store_true")
     parser.add_argument("--skip-emission", action="store_true")
@@ -1012,7 +1128,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         action="store_true",
         help="Run preflight + Phase 0 + Gate S, then exit cleanly (shared-phase launch).",
     )
-    args = parser.parse_args(argv)
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher; phases read clearest inline
+    args = build_arg_parser().parse_args(argv)
 
     # GPU pin BEFORE any CUDA-initializing import (defensive; see --gpu help).
     if args.gpu is not None:
@@ -1043,10 +1163,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         # output root is parameterized.
         args.slab_root = args.slab_root / "smoke_run"
         args.runs_root = args.runs_root / "smoke_run"
-    if args.smoke:
-        sources = ["villain"]
-    elif args.only_source:
+    # --only-source OVERRIDES --sources AND the smoke default (its documented
+    # contract; round-1 minor — previously --smoke silently won the conflict).
+    if args.only_source:
         sources = [args.only_source]
+    elif args.smoke:
+        sources = ["villain"]
     elif args.sources.strip().lower() == "all":
         sources = list(SOURCE_PERSONAS)
     else:
@@ -1131,13 +1253,23 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
     assert_pos_only_adapter_parity(max_length)
 
-    if not args.skip_upload:
+    if not args.skip_upload and not args.skip_arm_a_gate:
         # Pos-only pools are datasets — upload after generation (Upload Policy).
         upload_dir_fail_loud(
             args.pools_dir,
             HF_DATA_REPO,
             "dataset",
             f"{HF_597_DATA_SUBDIR}{params.hf_suffix}/train_pools",
+        )
+    elif args.skip_arm_a_gate:
+        # Shards skip the pools upload: the --stop-after-gate run already
+        # uploaded all 6 pools, and 4 concurrent shard processes committing
+        # to the same train_pools path can 409/412-race at HF preflight
+        # (round-1 minor). The BLOCKING probe-row identity assert above
+        # still ran per shard on its own sources.
+        log.info(
+            "[phase=preflight] pools upload SKIPPED on shard "
+            "(uploaded by the shared --stop-after-gate run)"
         )
 
     plan_deviations: list[str] = []
@@ -1194,10 +1326,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
             )
             shutil.rmtree(stage)
 
-    # ── Phase S: the hard #534 gate (HF subprocess) ──
-    if args.skip_gate:
-        log.info("[phase=gate_s] SKIPPED (shared phase done elsewhere)")
-        plan_deviations.append("gate_s_skipped_in_this_shard")
+    # ── Phase S: the hard #534 gate, SHARED Arm A leg (HF subprocess).
+    # The per-shard Arm B re-application lives in run_cell and is keyed on
+    # its OWN flag (--skip-armb-gate) — never on this one. ──
+    if args.skip_arm_a_gate:
+        log.info("[phase=gate_s] SHARED Arm A gate SKIPPED (done by --stop-after-gate run)")
+        plan_deviations.append("arm_a_gate_skipped_in_this_shard")
     else:
         gate_ckpts = download_arm_a_ladder("villain", (20, 40), args.runs_root / "armA_downloads")
         gate_out = args.slab_root / "smoke" / "smoke_gate_report.json"
@@ -1239,22 +1373,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
             )
             cell["pool_summary"] = pool_summaries.get(source, {})
             per_cell.append(cell)
-            per_src = args.logs_dir / f"issue-597-{source}-results.json"
-            per_src.write_text(json.dumps(cell, indent=2, ensure_ascii=False))
+            per_src = write_cell_sentinel(args.logs_dir, source, "cell_complete", cell)
             log.info("[phase=cell_%s] sentinel -> %s", source, per_src)
         except Exception as e:
-            fail_path = args.logs_dir / f"issue-597-{source}-FAILED.json"
-            fail_path.write_text(
-                json.dumps(
-                    {
-                        "source": source,
-                        "phase": "cell_failed",
-                        "exception_type": type(e).__name__,
-                        "exception_msg": str(e),
-                        "timestamp_utc": datetime.now(UTC).isoformat(),
-                    },
-                    indent=2,
-                )
+            fail_path = write_cell_sentinel(
+                args.logs_dir,
+                source,
+                "cell_failed",
+                {
+                    "exception_type": type(e).__name__,
+                    "exception_msg": str(e),
+                },
             )
             log.exception("[%s] cell failed; wrote %s", source, fail_path)
             raise

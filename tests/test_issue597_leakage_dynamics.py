@@ -14,12 +14,23 @@ Pins:
 6. ``detect_marker_emission`` happy path + edge cases.
 7. ``smoke_gate`` pure helpers (gate predicate + reference extraction) against
    the REAL #480 villain trajectory JSON in the repo.
+8. Round-2 dispatcher fixes: shard ``--gpu`` → ``TrainLoraConfig.gpu_id``
+   (#557 class), decoupled ``--skip-arm-a-gate`` / ``--skip-armb-gate``
+   (#518 class), per-cell sentinels parse through
+   ``poll_pipeline._parse_sentinel``, lowercase ``[phase=...]`` tokens.
+9. Trainer-path canonical-marker assert (``assert_marker_token_ids``).
+10. Phase A analysis math (``analyze.py``): context groups + the
+    qwen_default no_persona exclusion, H1/H2/H3 registered verdicts +
+    descope rule, matched-dose interpolation + pre-saturation prefix,
+    LR-schedule shape.
 """
 
 from __future__ import annotations
 
 import importlib.util
+import itertools
 import json
+import statistics
 import sys
 from pathlib import Path
 
@@ -324,3 +335,383 @@ def test_evaluate_gate_predicate():
 
     base_drift = evaluate_gate(-9.1, -20.0, -9.052, -20.9605)
     assert not base_drift["gate_pass"] and base_drift["trained_pass"]
+
+
+# ── 8. Dispatcher round-2 fixes: gpu threading, gate flags, sentinels ─────────
+
+
+def _load_dispatcher():
+    path = REPO_ROOT / "scripts" / "issue_597" / "dispatch_leakage_dynamics_597.py"
+    spec = importlib.util.spec_from_file_location("dispatch_597_for_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_poll_pipeline():
+    path = REPO_ROOT / "scripts" / "poll_pipeline.py"
+    spec = importlib.util.spec_from_file_location("poll_pipeline_for_597_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_shard_gpu_threads_into_train_cfg(tmp_path):
+    """Round-1 BLOCKER (gpu-shard-colocation-train-lora-gpu-id, #557 class):
+    the shard's --gpu must land in TrainLoraConfig.gpu_id, because train_lora
+    unconditionally clobbers CUDA_VISIBLE_DEVICES with cfg.gpu_id."""
+    disp = _load_dispatcher()
+
+    assert disp.effective_shard_gpu(None) == 0
+    assert disp.effective_shard_gpu(0) == 0
+    assert disp.effective_shard_gpu(3) == 3
+
+    for gpu in (0, 1, 2, 3):
+        cfg = disp._pos_only_train_cfg(
+            "villain",
+            42,
+            2560,
+            tmp_path / "traj.json",
+            max_steps=528,
+            save_steps=4,
+            gpu_id=disp.effective_shard_gpu(gpu),
+        )
+        assert cfg.gpu_id == gpu, f"shard --gpu {gpu} did not pin cfg.gpu_id (got {cfg.gpu_id})"
+    # Default (no --gpu / parity probe) stays at physical GPU 0.
+    cfg = disp._pos_only_train_cfg(
+        "villain", 42, 2560, tmp_path / "traj.json", max_steps=528, save_steps=4
+    )
+    assert cfg.gpu_id == 0
+
+
+def test_documented_shard_launch_keeps_armb_gate_enabled():
+    """Round-1 union blocker (#518 reachability class): --skip-arm-a-gate must
+    NOT suppress the per-shard first-Arm-B-source Gate S re-application."""
+    disp = _load_dispatcher()
+    parser = disp.build_arg_parser()
+    args = parser.parse_args(
+        [
+            "--recipe",
+            "pos_only_dynamics",
+            "--gpu",
+            "1",
+            "--sources",
+            "assistant,qwen_default",
+            "--skip-probe-rows",
+            "--skip-arm-a-gate",
+        ]
+    )
+    assert args.skip_arm_a_gate is True
+    assert args.skip_armb_gate is False  # the Arm B re-gate ALWAYS runs on this launch
+    assert args.gpu == 1
+    # The overloaded round-1 flag is gone — passing it must error, never
+    # silently disable both gates again.
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--skip-gate"])
+
+
+def test_cell_sentinel_parses_through_poll_pipeline(tmp_path):
+    """Round-1 finding (malformed-per-source-poller-sentinels): every
+    issue-597-*.json the dispatcher writes must satisfy
+    poll_pipeline._parse_sentinel's required-keys + schema-version contract."""
+    disp = _load_dispatcher()
+    pp = _load_poll_pipeline()
+
+    path = disp.write_cell_sentinel(
+        tmp_path, "villain", "cell_complete", {"wall_seconds": 1.0, "arm_b_hf_path": "hf://x"}
+    )
+    assert path.name.startswith("issue-597-cell-villain-")
+    parsed = pp._parse_sentinel(str(path), path.read_text())
+    assert parsed is not None, "poller skipped the per-cell sentinel as malformed"
+    assert parsed["kind"] == "epm:progress" and int(parsed["version"]) == 1
+    note = parsed["note"]
+    assert note["event"] == "cell_complete" and note["source"] == "villain"
+
+    fail_path = disp.write_cell_sentinel(
+        tmp_path, "comedian", "cell_failed", {"exception_type": "RuntimeError"}
+    )
+    parsed_fail = pp._parse_sentinel(str(fail_path), fail_path.read_text())
+    assert parsed_fail is not None and parsed_fail["note"]["event"] == "cell_failed"
+
+    # Regression shape: the round-1 BARE cell dict is exactly what the poller
+    # must reject — pin that the old shape really was malformed.
+    bare = tmp_path / "issue-597-villain-results.json"
+    bare.write_text(json.dumps({"source": "villain", "wall_seconds": 1.0}))
+    assert pp._parse_sentinel(str(bare), bare.read_text()) is None
+
+
+def test_phase_tokens_lowercase_for_poller():
+    """poll_pipeline.PHASE_RE is [a-z0-9_]+ — a capitalized phase token
+    truncates (trainB_villain → 'train'). Pin that no [phase=...] literal in
+    the dispatcher carries an uppercase character."""
+    import re
+
+    pp = _load_poll_pipeline()
+    src = (REPO_ROOT / "scripts" / "issue_597" / "dispatch_leakage_dynamics_597.py").read_text()
+    for m in re.finditer(r"\[phase=([A-Za-z0-9_%]+)", src):
+        token = m.group(1).replace("%s", "x").replace("%d", "0")
+        assert token == token.lower(), f"phase token {m.group(1)!r} would truncate"
+        assert pp.PHASE_RE.match(f"[phase={token}")
+
+
+# ── 9. Trainer-path marker assert (round-1 trainer-marker-token-assert) ──────
+
+
+def test_assert_marker_token_ids():
+    from explore_persona_space.train.sft import (
+        CANONICAL_MARKER_ID,
+        CANONICAL_MARKER_TEXT,
+        assert_marker_token_ids,
+    )
+
+    assert CANONICAL_MARKER_TEXT == " ※" and CANONICAL_MARKER_ID == 83399
+    # Canonical marker with the canonical id: OK.
+    assert_marker_token_ids(" ※", [83399])
+    # Canonical marker with a drifted id (#537 class / bare ※ 63680): fail loud.
+    with pytest.raises(ValueError, match="drifted marker id"):
+        assert_marker_token_ids(" ※", [63680])
+    with pytest.raises(ValueError, match="drifted marker id"):
+        assert_marker_token_ids(" ※", [83399, 1])
+    # Empty encoding: always fail loud (no loss-bearing token).
+    with pytest.raises(ValueError, match="EMPTY"):
+        assert_marker_token_ids("[ZLT]", [])
+    # Non-canonical multi-token markers remain allowed (legacy "[ZLT]" callers;
+    # MarkerOnlyDataCollator supports multi-token marker_token_ids).
+    assert_marker_token_ids("[ZLT]", [58, 57, 43])
+
+
+# ── 10. Phase A analysis (analyze.py) ────────────────────────────────────────
+
+
+def _synthetic_panel(arm: str, source: str, steps: list[int], value_fn) -> dict:
+    """Build an in-memory i597_panel_trajectory_v1-shaped panel dict."""
+    from explore_persona_space.experiments.leakage_dynamics_597 import probe_contexts_25
+
+    contexts = list(probe_contexts_25())
+    by_step = {}
+    for s in steps:
+        by_step[s] = {}
+        for c in contexts:
+            v = value_fn(s, c)
+            by_step[s][c] = {
+                "delta_logp": v,
+                "delta_z_marker": v,
+                "eos_margin_delta": v,
+                "emission_rate_argmax": 0.0,
+                "logp_trained": -21.0 + v,
+                "logp_base": -21.0,
+            }
+    return {
+        "schema": "i597_panel_trajectory_v1",
+        "arm": arm,
+        "source": source,
+        "seed": 42,
+        "by_step": by_step,
+    }
+
+
+def test_context_groups_sizes_and_qwen_default_exclusion():
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        SOURCE_PERSONAS,
+        TRAINED_NEGATIVES,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        bystander_contexts,
+        context_groups,
+        trained_negative_stat_group,
+    )
+
+    assert set(TRAINED_NEGATIVES) == set(SOURCE_PERSONAS)
+    for source in SOURCE_PERSONAS:
+        g = context_groups(source)
+        assert g["source"] == [source]
+        assert sorted(g["trained_negative_personas"]) == sorted(TRAINED_NEGATIVES[source])
+        assert source not in g["trained_negative_personas"]
+        assert len(g["held_out"]) == 21
+        if source == "qwen_default":
+            # no_persona is token-identical to the qwen_default source render —
+            # excluded from its bystander / trained-negative groups.
+            assert g["no_persona"] == []
+            assert len(bystander_contexts(source)) == 23
+            assert len(trained_negative_stat_group(source)) == 2
+        else:
+            assert g["no_persona"] == ["no_persona"]
+            assert len(bystander_contexts(source)) == 24
+            assert len(trained_negative_stat_group(source)) == 3
+
+
+def test_h1_lockstep_verdicts():
+    from explore_persona_space.experiments.leakage_dynamics_597 import SOURCE_PERSONAS
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        h1_lockstep,
+        onset_step,
+    )
+
+    steps = [4, 8, 20, 40]
+
+    def lockstep_fn(source):
+        # Source ramps to 6 nat by step 20; bystanders track at 5 nat (L≈0.83).
+        return lambda s, c: (6.0 if s >= 20 else 1.0) if c == source else (5.0 if s >= 20 else 0.8)
+
+    panels = {src: _synthetic_panel("b", src, steps, lockstep_fn(src)) for src in SOURCE_PERSONAS}
+    assert onset_step(panels["villain"]) == 20
+    h1 = h1_lockstep(panels)
+    assert h1["verdict"] == "lockstep_confirmed"
+    assert h1["per_source"]["villain"]["L_at_onset"] == pytest.approx(5.0 / 6.0)
+    # L(t) guard: below LOCKSTEP_MIN_SOURCE_DELTA the ratio is None... source
+    # delta is 1.0 at early steps == threshold, so it IS reported there.
+    assert all(p["L"] is not None for p in h1["per_source"]["villain"]["L_curve"])
+
+    def lag_fn(source):
+        return lambda s, c: (6.0 if s >= 20 else 1.0) if c == source else 0.5
+
+    lag_panels = {src: _synthetic_panel("b", src, steps, lag_fn(src)) for src in SOURCE_PERSONAS}
+    h1_lag = h1_lockstep(lag_panels)
+    assert h1_lag["verdict"] == "falsified_bystanders_lag"
+
+    # Descope rule: fewer than 6 sources → descriptive verdict naming N.
+    h1_partial = h1_lockstep({"villain": panels["villain"]})
+    assert h1_partial["verdict"].startswith("descriptive (N=1")
+
+
+def test_h2_suppression_verdicts():
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        SOURCE_PERSONAS,
+        TRAINED_NEGATIVES,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import h2_suppression
+
+    steps = [20, 40]
+
+    def suppress_fn(source):
+        tn = set(TRAINED_NEGATIVES[source]) | {"no_persona"}
+
+        def fn(s, c):
+            if c == source:
+                return 6.0
+            if c in tn:
+                return -2.0
+            return 0.0
+
+        return fn
+
+    panels = {src: _synthetic_panel("a", src, steps, suppress_fn(src)) for src in SOURCE_PERSONAS}
+    h2 = h2_suppression(panels)
+    assert h2["verdict"] == "active_suppression_confirmed"
+    assert h2["per_source"]["villain"]["status"] == "suppressed"
+    assert h2["per_source"]["villain"]["targeted_suppression"] is True
+    assert h2["n_targeted"] == len(SOURCE_PERSONAS)
+
+    # Heterogeneous catch-all: 3 suppressed / 3 risen fires NEITHER bin.
+    def risen_fn(source):
+        tn = set(TRAINED_NEGATIVES[source]) | {"no_persona"}
+        return lambda s, c: 6.0 if c == source else (2.0 if c in tn else 0.0)
+
+    mixed = {}
+    for i, src in enumerate(sorted(SOURCE_PERSONAS)):
+        fn = suppress_fn(src) if i < 3 else risen_fn(src)
+        mixed[src] = _synthetic_panel("a", src, steps, fn)
+    h2_mixed = h2_suppression(mixed)
+    assert h2_mixed["verdict"] == "heterogeneous_suppression_reported_per_source"
+
+
+def _ramp_records(steps, delta_per_step, base=-21.0):
+    return [
+        {
+            "step": s,
+            "logp_trained": base + delta_per_step * s,
+            "logp_base": base,
+            "delta": delta_per_step * s,
+        }
+        for s in steps
+    ]
+
+
+def test_h3_matched_dose_interpolation_and_presaturation():
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        DOSE_RATIO,
+        first_saturation_step,
+        h3_matched_dose_pairs,
+    )
+
+    steps = [5, 10, 15, 20, 25, 30, 35, 40]
+    rec_a = _ramp_records(steps, 0.5)  # never crosses logp_trained >= -0.1
+    rec_b = _ramp_records(steps, 0.2)
+    assert first_saturation_step(rec_a) is None
+
+    res = h3_matched_dose_pairs(rec_a, rec_b, schedule_total_steps=528, warmup_steps=27)
+    md = res["matched_dose"]
+    assert md["n_pairs"] == len(steps)
+    # Linear ramps make the interpolation exact: delta_B(2/7·s) = 0.2·(2/7)·s.
+    p0 = md["pairs"][0]
+    assert p0["step_arm_b"] == pytest.approx(DOSE_RATIO * 5.0)
+    assert p0["delta_arm_b"] == pytest.approx(0.2 * DOSE_RATIO * 5.0)
+    assert md["median_diff_nats"] > 0 and md["contrastive_geq"]
+    assert res["raw_step"]["n_pairs"] == len(steps)
+    # Raw-step diff: 0.5s − 0.2s > matched diff is irrelevant; just sign-check.
+    assert res["raw_step"]["median_diff_nats"] == pytest.approx(0.3 * statistics.median(steps))
+    lrw = res["lr_weighted"]
+    assert lrw["n_pairs"] == len(steps) and lrw["median_diff_nats"] > 0
+    # LR-weighting maps to a LATER Arm B step than the warmup-skewed raw 2/7
+    # mapping would in the warmup region... at minimum it stays in-range and
+    # below the raw-step pairing.
+    for p in lrw["pairs"]:
+        assert 0.0 <= p["step_arm_b"] <= p["step_arm_a"]
+
+    # Pre-saturation prefix: Arm A crossing at step 25 (-21 + 1.0·25 = 4 ≥ -0.1
+    # first crosses at record step 25) keeps only s_A ∈ {5,10,15,20}.
+    rec_a_sat = _ramp_records(steps, 1.0)
+    assert first_saturation_step(rec_a_sat) == 25
+    res_sat = h3_matched_dose_pairs(rec_a_sat, rec_b, schedule_total_steps=528, warmup_steps=27)
+    assert res_sat["saturation_step_arm_a"] == 25
+    assert [p["step_arm_a"] for p in res_sat["matched_dose"]["pairs"]] == [5.0, 10.0, 15.0, 20.0]
+
+
+def test_h3_acceleration_verdict_and_descope():
+    from explore_persona_space.experiments.leakage_dynamics_597 import SOURCE_PERSONAS
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import h3_acceleration
+
+    steps = [5, 10, 15, 20]
+    inloop_a = {s: _ramp_records(steps, 0.5) for s in SOURCE_PERSONAS}
+    inloop_b = {s: _ramp_records(steps, 0.2) for s in SOURCE_PERSONAS}
+    h3 = h3_acceleration(inloop_a, inloop_b, schedule_total_steps=528, warmup_steps=27)
+    assert h3["verdict"] == "confirmed_contrastive_advantage_from_first_steps"
+    assert h3["n_contrastive_geq"] == len(SOURCE_PERSONAS)
+
+    # Positive-only winning flips the verdict.
+    h3_flip = h3_acceleration(
+        {s: _ramp_records(steps, 0.1) for s in SOURCE_PERSONAS},
+        {s: _ramp_records(steps, 3.0) for s in SOURCE_PERSONAS},
+        schedule_total_steps=528,
+        warmup_steps=27,
+    )
+    assert h3_flip["verdict"] == "falsified_endpoint_contrast_is_late_or_dose_artifact"
+
+    h3_partial = h3_acceleration(
+        {"villain": inloop_a["villain"]},
+        {"villain": inloop_b["villain"]},
+        schedule_total_steps=528,
+        warmup_steps=27,
+    )
+    assert h3_partial["verdict"].startswith("descriptive (N=1")
+
+
+def test_lr_weight_schedule_shape():
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        cumulative_lr_weight,
+        lr_weight,
+    )
+
+    total, warmup = 528, 27
+    assert lr_weight(0, total, warmup) == 0.0
+    assert lr_weight(warmup, total, warmup) == pytest.approx(1.0)
+    assert lr_weight(total, total, warmup) == pytest.approx(0.0, abs=1e-12)
+    # Warmup is linear; decay is monotone down.
+    assert lr_weight(13, total, warmup) == pytest.approx(13 / 27)
+    mids = [lr_weight(s, total, warmup) for s in range(warmup, total + 1, 50)]
+    assert all(a >= b for a, b in itertools.pairwise(mids))
+    cum = cumulative_lr_weight(total, warmup)
+    assert len(cum) == total + 1 and cum[0] == 0.0
+    assert all(b >= a for a, b in itertools.pairwise(cum))
