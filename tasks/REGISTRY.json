@@ -3667,8 +3667,8 @@
     "604": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/604",
-      "status": "proposed",
+      "path": "tasks/planning/604",
+      "status": "planning",
       "title": "P0 adapter SVD: do stored dW singular vectors match keys and measured writes, and does the key rotate toward source-minus-negatives with dose?"
     },
     "605": {
