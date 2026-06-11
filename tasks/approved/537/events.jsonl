@@ -364,3 +364,4 @@
 {"ts": "2026-06-11T21:23:48Z", "kind": "epm:run-launched", "version": 18, "by": "experimenter", "note": "pod=pod-537 pid=14302 pid_file=/workspace/logs/issue-537-seed1042-phase2.pid log_abs=/workspace/logs/issue-537-seed1042-phase2-shard0.log cmd='i537_dispatch --phase 2 --behaviors fact --seeds 1042 --steps train,gen,judge, 8 shards' followup_label=seed2-marker-fact-replication"}
 {"ts": "2026-06-11T21:33:15Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: done -> ptwo_gen", "phase": "ptwo_gen", "pod": "pod-537"}
 {"ts": "2026-06-11T21:42:50Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: ptwo_gen -> ptwo_judge", "phase": "ptwo_judge", "pod": "pod-537"}
+{"ts": "2026-06-11T21:52:30Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=['train', 'gen', 'judge'], cells=all, shard=4/8, seed=1042, smoke=False, dry_run=False) in 1196s"}
