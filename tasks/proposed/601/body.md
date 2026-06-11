@@ -1,5 +1,5 @@
 ---
-title: 'Ratio vs absolute count: what sets the contrastive-negative source-implant
+title: 'Ratio vs count vs schedule horizon: what sets the contrastive-negative source-implant
   set-point (#472 mechanism follow-up)'
 kind: experiment
 tags: []
