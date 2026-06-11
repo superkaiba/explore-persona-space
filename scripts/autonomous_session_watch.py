@@ -77,25 +77,42 @@ Seven passes, run in this order:
    to a one-time loud alert marker. Daemon-gated like the respawn pass
    (liveness is unknowable during an outage; a mass respawn would duplicate
    pods).
-6. **Session-reconcile pass (sessions-vs-status; ALERT-ONLY by default).**
+6. **Session-reconcile pass (sessions-vs-status; AUTO-STOP by default).**
    Mirror of the pod-safety auto-stop arm for Happy SESSIONS: a live
    session mapped to an issue (registry entry, or an ``issue-<N>``
    worktree cwd for unregistered / superseded zombie generations) whose
-   task is DONE (``completed`` / ``archived``) and which has shown no
-   activity (real progress marker / self-report) for >
-   :data:`SESSION_IDLE_S` is flagged after the same >=2-consecutive-checks
-   guard as the pod pass. Default action is a loud log + one-time
-   dashboard-visible marker; the actual ``spawn_session.py stop`` fires
-   only when ``EPM_SESSION_RECONCILE_AUTOSTOP=1`` (observe a few cron
-   cycles of alerts first, then arm — the same two-phase rollout the
-   stalled-detector used). NEVER touches: sessions with no issue mapping
-   (the PM session, chat sessions), non-terminal tasks (including
-   ``awaiting_promotion`` and ``blocked`` — the user may be live-parked
-   there), ``keep-running``-tagged tasks, or tasks with a live inline
-   follow-up. Motivated by the 2026-06-10 disk-full incident: 15+ idle
-   sessions of weeks-old completed/archived tasks (the respawn pass
-   deletes the registry entry at a TERMINAL status but never stops the
-   session) pinned their 10-15G worktrees against the stale-worktree
+   task is parked/terminal (:data:`SESSION_RECONCILE_DONE` =
+   ``awaiting_promotion`` / ``completed`` / ``archived``) is STOPPED via
+   ``spawn_session.py stop`` once ALL of these hold, confirmed across the
+   same >=2-consecutive-checks guard as the pod pass:
+
+   - **idle** — every activity signal (the newest NON-watcher marker of
+     ANY kind on the task, plus the per-issue self-report file) is older
+     than :func:`_session_idle_s` (default 2h, env
+     ``EPM_SESSION_RECONCILE_IDLE_S``);
+   - **no live inline follow-up** — the latest follow-up signal marker
+     (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
+     ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) is
+     OLDER than the latest done-transition marker
+     (:data:`_SESSION_DONE_TRANSITION_KINDS`);
+   - **no RUNNING managed pod** for the issue (a live pod means work may
+     still be in flight — e.g. a follow-up that has not posted its
+     ``epm:run-launched`` yet);
+   - **no ``keep-running`` tag** (the explicit user override).
+
+   AUTO-STOP is the DEFAULT (user request 2026-06-10: "Can we stop the
+   happy sessions once they reach awaiting promotion?" — supersedes the
+   same-day alert-only decision; 73 registered sessions had accumulated
+   ~0.5-0.6GB RSS each and 14 were stopped manually with this exact
+   predicate). Set ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` to fall back to
+   the old alert-only posture (loud log + one-time marker). NEVER
+   touches: sessions with no issue mapping (the PM session, chat
+   sessions), tasks at any other status (ACTIVE statuses, ``blocked``,
+   and ``followups_running`` — a same-issue follow-up round is
+   executing there). Motivated by the 2026-06-10 disk-full incident:
+   15+ idle sessions of weeks-old completed/archived tasks (the respawn
+   pass deletes the registry entry at a TERMINAL status but never stops
+   the session) pinned their 10-15G worktrees against the stale-worktree
    sweep and held deleted-file handles (~37G phantom disk usage).
    Daemon-gated like the respawn pass (session liveness is unknowable
    during a daemon outage).
@@ -423,16 +440,17 @@ _ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
 _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
 
 # Substring stamped into the one-time alert the session-reconcile pass posts
-# (default ALERT-ONLY posture) when a live session has outlived its DONE
-# (completed/archived) task by > SESSION_IDLE_S of inactivity. Same
-# staleness-filter contract as the others — CRITICAL here: the alert lands on
-# the very task whose marker inactivity it measures, so without the sentinel
-# filter the alert itself would end the idle episode it reports.
+# (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
+# live session has outlived its parked/terminal (awaiting_promotion/
+# completed/archived) task by > the idle grace window. Same staleness-filter
+# contract as the others — CRITICAL here: the alert lands on the very task
+# whose marker inactivity it measures, so without the sentinel filter the
+# alert itself would end the idle episode it reports.
 _SESSION_RECONCILE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-alert]"
 
 # Substring stamped into the marker posted when the session-reconcile pass
-# actually STOPS the idle session(s) of a DONE task (only with
-# EPM_SESSION_RECONCILE_AUTOSTOP=1). Same staleness-filter contract.
+# actually STOPS the idle session(s) of a parked/terminal task (the default
+# posture as of 2026-06-10). Same staleness-filter contract.
 _SESSION_RECONCILE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-stop]"
 
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
@@ -3199,53 +3217,157 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 # could see their worktrees as unpinned.
 #
 # Conservative posture, mirroring how the pod pass and the stalled-detector
-# were introduced:
+# were introduced (auto-stop became the DEFAULT on 2026-06-10 — see
+# :func:`_session_reconcile_autostop_enabled` — after a manual sweep of 14
+# sessions validated the exact predicate below):
 #
-#   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE` (completed /
-#     archived — deliberately the same set as :data:`TERMINAL_FOR_GC`;
-#     ``awaiting_promotion`` and ``blocked`` are excluded because the user may
-#     be live-parked there);
-#   * requires > :data:`SESSION_IDLE_S` of inactivity on EVERY available
-#     activity signal the watcher already reads (newest real non-watcher
-#     progress marker + the per-issue self-report file);
+#   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE`
+#     (awaiting_promotion / completed / archived — the pod-safety auto-stop
+#     set; ``followups_running`` and ``blocked`` are excluded because the
+#     session may be legitimately live there);
+#   * requires > :func:`_session_idle_s` (default 2h) of inactivity on EVERY
+#     available activity signal (newest non-watcher marker of ANY kind + the
+#     per-issue self-report file);
 #   * the same >=2-consecutive-checks miss guard as the pod pass;
-#   * honours the ``keep-running`` tag and the inferred inline-follow-up
-#     predicate (same precedence as :func:`decide_pod_safety`);
-#   * first ship is ALERT-ONLY — the actual ``spawn_session.py stop`` fires
-#     only when ``EPM_SESSION_RECONCILE_AUTOSTOP=1`` is set, so the alerts can
-#     be observed for a few cron cycles before arming;
+#   * honours the ``keep-running`` tag, the inferred inline-follow-up
+#     predicate (:func:`_task_session_followup_active`, wider signal/
+#     transition sets than the pod pass's), and a no-RUNNING-pod check;
+#   * ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` falls back to the original
+#     ALERT-ONLY posture (loud log + one-time marker, no stop);
 #   * NEVER touches a session with no issue mapping (the PM session, chat
 #     sessions) — those are skipped at the mapping step and cannot reach the
 #     decision function.
 
-# Statuses whose live sessions are reconcile candidates. Deliberately shared
-# with TERMINAL_FOR_GC (completed/archived only) — the same "user could still
-# be interacting" reasoning excludes awaiting_promotion / blocked from both.
-SESSION_RECONCILE_DONE = TERMINAL_FOR_GC
+# Parked/terminal statuses whose live sessions the pass reconciles. Shares
+# the pod-safety auto-stop set (NOT the GC's narrower terminal set):
+# `awaiting_promotion` was added 2026-06-10 on the user request "Can we stop
+# the happy sessions once they reach awaiting promotion?" — the promotion
+# park is a human gate with no session-side work left, and idle sessions
+# there accumulated to 73 registered / ~35-40GB RSS. `followups_running`
+# is deliberately NOT here: that status means a same-issue follow-up round
+# is executing and the session is its driver. `blocked` is NOT here either
+# (under investigation; the user may be live-parked in the session).
+SESSION_RECONCILE_DONE = AUTO_STOP_DONE
 
-# Inactivity window before a DONE task's live session counts as idle. A task
-# completed less than this long ago keeps its session (grace for post-run
-# inspection); the incident sessions were idle for days-to-weeks, so 6h
-# catches them with a wide safety margin for legitimate wrap-up work.
-SESSION_IDLE_S = 6 * 3600
+# Default inactivity grace window before a parked/terminal task's live
+# session counts as idle. 2h (validated by the 2026-06-10 manual sweep of
+# 14 sessions: a 2h any-marker grace protected #504/#538/#540, which had
+# minutes-old progress markers despite parked statuses) — overridable via
+# EPM_SESSION_RECONCILE_IDLE_S (seconds, see _session_idle_s).
+SESSION_IDLE_S = 2 * 3600
+
+
+def _session_idle_s() -> float:
+    """Idle grace window in seconds: ``EPM_SESSION_RECONCILE_IDLE_S`` when set
+    to a positive number, else :data:`SESSION_IDLE_S` (2h). A garbled /
+    non-positive value falls back to the default rather than crashing the
+    watcher pass."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_IDLE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return SESSION_IDLE_S
+    return val if val > 0 else SESSION_IDLE_S
+
+
+# Marker kinds that signal a follow-up may be in flight on a parked/terminal
+# task. Broader than the pod-safety pass's bare `epm:run-launched`
+# (:data:`_RUN_LAUNCHED_KIND`): `epm:followup-scope` lands when a follow-up
+# is REQUESTED (before any session picks it up — the window where stopping
+# the session would orphan the request), and `epm:free-analysis-followup-run`
+# marks the inline zero-GPU auto-run. Any of these NEWER than the latest
+# done-transition marker means the session may be (or be about to become)
+# the follow-up's driver.
+_SESSION_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {
+        "epm:run-launched",
+        "epm:followup-scope",
+        "epm:free-analysis-followup-run",
+    }
+)
+
+# Marker kinds that record the task settling into its parked/terminal state.
+# Broader than the pod-safety pass's set: `epm:pod-terminated` and
+# `epm:step-completed` also mark a round wrapping up, so a follow-up signal
+# OLDER than any of these is provably finished business, not in-flight work.
+_SESSION_DONE_TRANSITION_KINDS = frozenset(
+    {
+        "epm:promoted",
+        "epm:status-changed",
+        "epm:pod-terminated",
+        "epm:step-completed",
+    }
+)
+
+
+def _task_session_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+    """True iff task ``issue`` has a follow-up signal marker
+    (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`) NEWER than its latest
+    done-transition marker (:data:`_SESSION_DONE_TRANSITION_KINDS`).
+
+    The session-reconcile twin of :func:`_task_followup_active` (which the
+    pod-safety pass keeps with its narrower, #477-validated sets — the two
+    predicates are deliberately decoupled so widening the session sweep's
+    safety net never changes pod-stop behavior). Same defensive posture:
+    no follow-up signal -> False; no done-transition despite a DONE status
+    (shouldn't happen — at least one ``epm:status-changed`` put it there)
+    -> False, leaving the idle grace + 2-miss guard as the safety margin.
+    """
+    if events is None:
+        events = _task_events(issue)
+    followup = _latest_event_ts(events, _SESSION_FOLLOWUP_SIGNAL_KINDS)
+    if followup is None:
+        return False
+    done_transition = _latest_event_ts(events, _SESSION_DONE_TRANSITION_KINDS)
+    if done_transition is None:
+        return False
+    return followup > done_transition
+
+
+def _latest_nonwatcher_event_ts(events: list[dict]) -> float | None:
+    """Newest epoch ts among ALL events whose note does NOT carry a watcher
+    sentinel (:data:`_WATCHER_NOTE_SENTINELS`), or ``None``.
+
+    The session-reconcile idle clock counts markers of ANY kind — not just
+    :data:`_PROGRESS_KINDS` — because on a parked task every marker
+    (`epm:followup-scope`, `epm:interp-critique`, `epm:workflow-fix-applied`,
+    ...) is evidence somebody/something is still working the task, and the
+    sweep must err toward keeping the session. Watcher-posted notes stay
+    excluded (the alert/stop markers land on the very task whose inactivity
+    they measure — counting them would reset the clock they read)."""
+    best: float | None = None
+    for ev in events:
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
 
 # Filename prefix for the per-issue session-reconcile state file at
 # ``~/.eps-autonomous/session-reconcile-<N>.json``. Mirrors the pod-safety
 # state layout. NOT in :data:`_GC_TARGETS`: these files track episodes whose
-# task is BY DEFINITION terminal, so the terminal-status GC would reap them
-# every tick and the miss counter could never reach the threshold. They are
-# reaped by :func:`_gc_orphan_session_reconcile_state` (keyed on the live
+# task is BY DEFINITION parked/terminal (completed/archived tasks sit in the
+# terminal-status GC's sweep set), so that GC would reap them every tick and
+# the miss counter could never reach the threshold. They are reaped by
+# :func:`_gc_orphan_session_reconcile_state` (keyed on the live
 # mapped-session set) plus its age backstop instead.
 SESSION_RECONCILE_STATE_PREFIX = "session-reconcile-"
 
 
 def _session_reconcile_autostop_enabled() -> bool:
-    """True iff ``EPM_SESSION_RECONCILE_AUTOSTOP`` is set to a truthy value
-    (``1`` / ``true`` / ``yes``). Default OFF — the pass ships alert-only so
-    a few cron cycles of alerts can be observed before arming the stop, the
-    same two-phase rollout the stalled-detector used (2026-06-05 → 06-08)."""
+    """True unless ``EPM_SESSION_RECONCILE_AUTOSTOP`` is explicitly set to a
+    falsy value (``0`` / ``false`` / ``no``). Default ON as of 2026-06-10
+    (user request: "Can we stop the happy sessions once they reach awaiting
+    promotion?" — supersedes the same-day alert-only decision after 73 idle
+    registered sessions accumulated ~35-40GB RSS and 14 were stopped manually
+    with this pass's exact predicate). Setting the var to ``1``/``true``/
+    ``yes`` (the old arming values) keeps the stop armed, so existing crontab
+    exports stay backwards-compatible."""
     raw = os.environ.get("EPM_SESSION_RECONCILE_AUTOSTOP", "")
-    return raw.strip().lower() in {"1", "true", "yes"}
+    return raw.strip().lower() not in {"0", "false", "no"}
 
 
 def decide_session_reconcile(
@@ -3258,11 +3380,12 @@ def decide_session_reconcile(
     autostop: bool = False,
     keep_running: bool = False,
     followup_active: bool = False,
+    pod_running: bool = False,
 ) -> tuple[str, int]:
     """Pure decision for the session-reconcile pass on one issue's live,
     issue-mapped session(s). Returns ``(action, new_missed)`` where action is
     ``"clear"`` | ``"keep"`` | ``"alert"`` | ``"stop"`` |
-    ``"keep-running-skip"`` | ``"followup-skip"``.
+    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"pod-skip"``.
 
     The caller only invokes this for issues that HAVE at least one live
     mapped session; sessions with no issue mapping (PM / chat) never reach
@@ -3271,35 +3394,42 @@ def decide_session_reconcile(
     Cases:
 
     - ``status`` not in :data:`SESSION_RECONCILE_DONE` (including ``None`` =
-      unreadable) -> ``("clear", 0)``. The task is not provably done — any
-      non-terminal status (ACTIVE, park, ``awaiting_promotion``, ``blocked``)
-      means the session may be legitimately live, so the episode state is
-      dropped. Unreadable status is treated as non-done (conservative: never
-      act on ignorance).
-    - done but not ``idle`` -> ``("clear", 0)``. Fresh activity (a real
-      progress marker or self-report within :data:`SESSION_IDLE_S`) ends the
-      episode — e.g. a task that JUST completed keeps its session for the
+      unreadable) -> ``("clear", 0)``. The task is not provably parked/done —
+      any other status (ACTIVE, ``followups_running``, ``blocked``) means
+      the session may be legitimately live, so the episode state is dropped.
+      Unreadable status is treated as non-done (conservative: never act on
+      ignorance).
+    - done but not ``idle`` -> ``("clear", 0)``. Fresh activity (a non-watcher
+      marker of ANY kind or self-report within :func:`_session_idle_s`) ends
+      the episode — e.g. a task that JUST parked keeps its session for the
       grace window.
     - done + idle + ``keep_running`` -> ``("keep-running-skip", 0)``. The
       explicit user tag beats everything (same precedence as
       :func:`decide_pod_safety`); miss counter resets so removing the tag
       re-arms a fresh >=``threshold``-checks accumulation.
     - done + idle + ``followup_active`` (and not ``keep_running``) ->
-      ``("followup-skip", 0)``. A fresh ``epm:run-launched`` newer than the
-      latest done-transition means an inline follow-up is in flight; its
-      driver session must not be stopped even if the follow-up itself is
-      quiet (markers > idle window — e.g. mid-training silence).
+      ``("followup-skip", 0)``. A fresh follow-up signal marker newer than
+      the latest done-transition means an inline follow-up is in flight (or
+      requested); its driver session must not be stopped even if the
+      follow-up itself is quiet (markers > idle window — e.g. mid-training
+      silence).
+    - done + idle + ``pod_running`` (and neither skip above) ->
+      ``("pod-skip", 0)``. A RUNNING managed pod on the issue means work may
+      still be in flight that the markers haven't surfaced yet; the
+      pod-safety pass owns reconciling the pod itself, and once it stops the
+      escaped pod this skip re-arms naturally.
     - done + idle, below ``threshold`` -> ``("keep", missed+1)``. The 2-miss
       guard: a single transient task.py / self-report read glitch never
       escalates.
-    - threshold met + ``autostop`` -> ``("stop", 0)``. Checked BEFORE the
-      ``alerted`` dedup so enabling ``EPM_SESSION_RECONCILE_AUTOSTOP=1``
-      mid-episode escalates an already-alerted episode on the next tick
+    - threshold met + ``autostop`` (the DEFAULT as of 2026-06-10) ->
+      ``("stop", 0)``. Checked BEFORE the ``alerted`` dedup so arming the
+      stop mid-episode escalates an already-alerted episode on the next tick
       without re-accumulating (the #506 lesson: a dedup flag must never
       suppress the stronger action once it becomes eligible).
-    - threshold met, alert-only, not yet ``alerted`` -> ``("alert", missed+1)``.
-      One loud marker per episode; the miss count keeps accumulating so a
-      later autostop-enable fires immediately.
+    - threshold met, alert-only (``EPM_SESSION_RECONCILE_AUTOSTOP=0``), not
+      yet ``alerted`` -> ``("alert", missed+1)``. One loud marker per
+      episode; the miss count keeps accumulating so a later autostop-enable
+      fires immediately.
     - threshold met, alert-only, already ``alerted`` -> ``("keep", missed+1)``.
       Stay quiet (dedup); the episode stays observable in the watcher log.
     """
@@ -3311,6 +3441,8 @@ def decide_session_reconcile(
         return ("keep-running-skip", 0)
     if followup_active:
         return ("followup-skip", 0)
+    if pod_running:
+        return ("pod-skip", 0)
     new_missed = missed + 1
     if new_missed < threshold:
         return ("keep", new_missed)
@@ -3450,25 +3582,29 @@ def _gc_orphan_session_reconcile_state(
 def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]]:
     """Compute ``(idle, gap_desc, events)`` for a DONE-status candidate.
 
-    ``idle`` is True when EVERY available activity signal — the newest real
-    non-watcher progress marker and the per-issue self-report file — is older
-    than :data:`SESSION_IDLE_S`. When NO signal is readable at all the issue
-    counts as idle (mirrors the orphan sweep's None-is-stale rule; the status
-    gate + 2-miss guard + alert-only default keep that safe). ``gap_desc`` is
-    the human-readable freshest-signal age for log/marker text; ``events`` is
-    returned so the caller can reuse the fetch for the follow-up predicate."""
+    ``idle`` is True when EVERY available activity signal — the newest
+    NON-watcher marker of ANY kind (:func:`_latest_nonwatcher_event_ts`, not
+    just progress kinds: on a parked task any marker is evidence the task is
+    still being worked) and the per-issue self-report file — is older than
+    :func:`_session_idle_s` (default 2h, env
+    ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
+    issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
+    status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
+    safe). ``gap_desc`` is the human-readable freshest-signal age for
+    log/marker text; ``events`` is returned so the caller can reuse the
+    fetch for the follow-up predicate."""
     events = _task_events(issue)
-    latest_progress = _latest_progress_ts(events)
+    latest_marker = _latest_nonwatcher_event_ts(events)
     sr_age, _sr_ts = _self_report_age_seconds(issue, now)
     ages = [
         a
         for a in (
-            (now - latest_progress) if latest_progress is not None else None,
+            (now - latest_marker) if latest_marker is not None else None,
             sr_age,
         )
         if a is not None
     ]
-    idle = (min(ages) >= SESSION_IDLE_S) if ages else True
+    idle = (min(ages) >= _session_idle_s()) if ages else True
     gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
     return idle, gap_desc, events
 
@@ -3496,12 +3632,14 @@ def _handle_session_stop(
             f"{_SESSION_RECONCILE_STOP_NOTE_SENTINEL} auto-stopped "
             f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
             f"autonomous_session_watch session-reconcile pass — task status "
-            f"'{status}' is DONE and no activity (real progress marker / "
-            f"self-report) was observed for > {SESSION_IDLE_S / 3600:.0f}h "
-            f"(gap={gap_desc}), confirmed for >= {threshold} checks. An idle "
-            f"session pins its worktree against the stale-worktree sweep and "
-            f"holds deleted-file handles (2026-06-10 disk incident). Respawn "
-            f"if needed: `spawn_session.py spawn-issue --issue {issue}`.",
+            f"'{status}' is parked/terminal, no live follow-up signal, no "
+            f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
+            f"marker / self-report) was observed for > "
+            f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
+            f"for >= {threshold} checks. An idle session pins its worktree "
+            f"against the stale-worktree sweep and holds deleted-file "
+            f"handles (2026-06-10 disk incident). Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue {issue}`.",
             dry_run,
             label="session-reconcile-stop",
         )
@@ -3522,14 +3660,19 @@ def _process_session_reconcile(
     threshold: int,
     *,
     autostop: bool,
+    running_pod_issues: set[int] | None = None,
 ) -> None:
     """Reconcile one issue's live session(s) against its task status.
 
-    Reads the task's status; for DONE (completed/archived) tasks, computes
-    idleness via :func:`_session_idle_signals`. Applies
-    :func:`decide_session_reconcile` and acts: ALERT once per episode
-    (default), or STOP every live mapped session via ``spawn_session.py
-    stop`` when ``EPM_SESSION_RECONCILE_AUTOSTOP=1``."""
+    Reads the task's status; for parked/terminal
+    (awaiting_promotion/completed/archived) tasks, computes idleness via
+    :func:`_session_idle_signals`. Applies :func:`decide_session_reconcile`
+    and acts: STOP every live mapped session via ``spawn_session.py stop``
+    (the default), or ALERT once per episode when
+    ``EPM_SESSION_RECONCILE_AUTOSTOP=0``. ``running_pod_issues`` is the
+    issue set with a RUNNING managed pod (computed once per pass); ``None``
+    is treated as the empty set (unit-test convenience — production always
+    passes the snapshot)."""
     status = _task_status(issue)
     done = status in SESSION_RECONCILE_DONE
 
@@ -3539,11 +3682,15 @@ def _process_session_reconcile(
     gap_desc = "n/a"
     keep_running = False
     followup_active = False
+    pod_running = False
     if done:
         idle, gap_desc, events = _session_idle_signals(issue, now)
         if idle:
             keep_running = _task_keep_running(issue)
-            followup_active = not keep_running and _task_followup_active(issue, events=events)
+            followup_active = not keep_running and _task_session_followup_active(
+                issue, events=events
+            )
+            pod_running = issue in (running_pod_issues or set())
 
     prev_state = _load_session_reconcile_state(issue)
     prev_missed = prev_state.get("missed", 0)
@@ -3560,6 +3707,7 @@ def _process_session_reconcile(
         autostop=autostop,
         keep_running=keep_running,
         followup_active=followup_active,
+        pod_running=pod_running,
     )
     print(
         f"  issue #{issue} sessions={len(sids)}: status={status} idle={idle} "
@@ -3572,25 +3720,31 @@ def _process_session_reconcile(
             _clear_session_reconcile_state(issue)
         return
 
-    if action == "keep-running-skip":
-        print(
+    # The three skip actions differ only in their audit log line; all three
+    # reset the miss counter so removing the blocker re-arms a fresh
+    # >=threshold accumulation.
+    skip_msgs = {
+        "keep-running-skip": (
             f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE and the "
             f"session(s) are idle, but the keep-running tag is present — "
             f"session-reconcile SKIPPED (sids={sids})."
-        )
-        if not dry_run:
-            _save_session_reconcile_state(
-                issue, missed=0, alerted=prev_alerted, sids=sids, prev=prev_state
-            )
-        return
-
-    if action == "followup-skip":
-        print(
+        ),
+        "followup-skip": (
             f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
-            f"fresh `epm:run-launched` (newer than the latest done-transition) "
-            f"indicates a live inline follow-up — session-reconcile SKIPPED "
-            f"(sids={sids})."
-        )
+            f"fresh follow-up signal marker (run-launched / followup-scope / "
+            f"free-analysis-followup-run, newer than the latest done-transition) "
+            f"indicates a live or requested inline follow-up — session-reconcile "
+            f"SKIPPED (sids={sids})."
+        ),
+        "pod-skip": (
+            f"  POD-RUNNING issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but a RUNNING managed pod exists for the issue — "
+            f"session-reconcile SKIPPED (sids={sids}); the pod-safety pass owns the "
+            f"pod, and this skip re-arms once the pod leaves the RUNNING set."
+        ),
+    }
+    if action in skip_msgs:
+        print(skip_msgs[action])
         if not dry_run:
             _save_session_reconcile_state(
                 issue, missed=0, alerted=prev_alerted, sids=sids, prev=prev_state
@@ -3606,23 +3760,25 @@ def _process_session_reconcile(
     if action == "alert":
         print(
             f"  ALERT issue #{issue}: {len(sids)} live session(s) for a task at DONE "
-            f"status '{status}' with no activity > {SESSION_IDLE_S / 3600:.0f}h "
-            f"(gap={gap_desc}); NOT stopping (EPM_SESSION_RECONCILE_AUTOSTOP unset).",
+            f"status '{status}' with no activity > {_session_idle_s() / 3600:.1f}h "
+            f"(gap={gap_desc}); NOT stopping (EPM_SESSION_RECONCILE_AUTOSTOP=0 — "
+            f"alert-only fallback).",
             file=sys.stderr,
         )
         _post_progress_marker(
             issue,
             f"{_SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) outliving a "
-            f"DONE task: {len(sids)} live Happy session(s) ({', '.join(sids)}) "
-            f"mapped to this task (status '{status}') with no activity (real "
-            f"progress marker / self-report) for > {SESSION_IDLE_S / 3600:.0f}h "
-            f"(gap={gap_desc}). Idle sessions pin their worktrees against the "
-            f"stale-worktree sweep and hold deleted-file handles (2026-06-10 disk "
-            f"incident: ~37G phantom usage across 15+ such sessions). NOT "
-            f"auto-stopped (alert-only default); stop manually with "
-            f"`spawn_session.py stop --session-id <id>`, or set "
-            f"EPM_SESSION_RECONCILE_AUTOSTOP=1 on the watcher cron to arm the "
-            f"auto-stop. Posted once per episode.",
+            f"parked/terminal task: {len(sids)} live Happy session(s) "
+            f"({', '.join(sids)}) mapped to this task (status '{status}') with no "
+            f"activity (non-watcher marker / self-report) for > "
+            f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}). Idle sessions pin "
+            f"their worktrees against the stale-worktree sweep and hold "
+            f"deleted-file handles (2026-06-10 disk incident: ~37G phantom usage "
+            f"across 15+ such sessions). NOT auto-stopped "
+            f"(EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback); stop "
+            f"manually with `spawn_session.py stop --session-id <id>`, or unset "
+            f"the env var on the watcher cron to restore the default auto-stop. "
+            f"Posted once per episode.",
             dry_run,
             label="session-reconcile-alert",
         )
@@ -3674,14 +3830,25 @@ def session_reconcile_pass(
         return
     n_sessions = sum(len(v) for v in by_issue.values())
     autostop = _session_reconcile_autostop_enabled()
+    # One live-pod snapshot per pass (the per-issue check is a set lookup).
+    # A transport error degrades to an empty set — the followup/keep-running
+    # skips, the idle grace, and the 2-miss guard remain as safety margins,
+    # and the pod-safety pass independently reconciles the pod itself.
+    running_pod_issues = {issue for issue, _pod_id, _name in _running_managed_issue_pods()}
     print(
         f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
         f"{len(by_issue)} issue(s) "
-        f"(autostop={'ON' if autostop else 'OFF — alert-only'})"
+        f"(autostop={'ON' if autostop else 'OFF — alert-only (EPM_SESSION_RECONCILE_AUTOSTOP=0)'})"
     )
     for issue in sorted(by_issue):
         _process_session_reconcile(
-            issue, sorted(by_issue[issue]), now, dry_run, threshold, autostop=autostop
+            issue,
+            sorted(by_issue[issue]),
+            now,
+            dry_run,
+            threshold,
+            autostop=autostop,
+            running_pod_issues=running_pod_issues,
         )
 
 
@@ -3895,13 +4062,18 @@ def main(argv: list[str] | None = None) -> int:
         live_ids=live_ids if daemon_reachable else None,
     )
 
-    # Session-reconcile: stop (default: ALERT about — auto-stop only with
-    # EPM_SESSION_RECONCILE_AUTOSTOP=1) live sessions that outlived their
-    # task's completion. The inverse blind spot of the orphan sweep: that
-    # pass finds ACTIVE tasks with no session; this one finds DONE tasks
-    # that still HAVE sessions (2026-06-10 disk incident — idle sessions of
-    # completed tasks pinned their worktrees + held deleted-file handles).
+    # Session-reconcile: auto-stop (the default; EPM_SESSION_RECONCILE_AUTOSTOP=0
+    # falls back to alert-only) live sessions that outlived their task's
+    # park/completion (awaiting_promotion / completed / archived), gated on
+    # the no-follow-up + no-RUNNING-pod + idle-grace + keep-running checks.
+    # The inverse blind spot of the orphan sweep: that pass finds ACTIVE
+    # tasks with no session; this one finds parked/done tasks that still
+    # HAVE sessions (2026-06-10 disk incident — idle sessions of completed
+    # tasks pinned their worktrees + held deleted-file handles; later the
+    # same day 73 registered sessions had accumulated ~35-40GB RSS).
     # Daemon-gated like the respawn pass; reuses main()'s live-id snapshot.
+    # Runs AFTER pod-safety so an escaped pod is already being reconciled
+    # by the time the pod-skip check reads the RUNNING set.
     session_reconcile_pass(
         args.dry_run,
         args.threshold,

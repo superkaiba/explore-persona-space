@@ -1,8 +1,8 @@
 #!/bin/bash
 # VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
-# watch for issue sessions — invoked from the system crontab (every ~10 min).
-# Six passes, in order (see scripts/autonomous_session_watch.py's module
-# docstring for the full rules):
+# + session-reconcile watch for issue sessions — invoked from the system
+# crontab (every ~10 min). Seven passes, in order (see
+# scripts/autonomous_session_watch.py's module docstring for the full rules):
 #   1. VM disk-headroom: alert when free space on the VM root filesystem runs
 #      low (~20 GiB); below ~8 GiB also run safe fail-soft reclaims. A full /
 #      silently kills every foreground Bash spawn in orchestrator sessions
@@ -25,7 +25,15 @@
 #      manual-registered tasks. Closes the #472/#518 blind spot (2026-06-10):
 #      a task revived by a same-issue follow-up with no registration, or one
 #      whose registered driver died while a zombie generation masked it.
-#   6. GC: reap per-issue watcher state files for completed/archived tasks.
+#   6. Session-reconcile: AUTO-STOP (default since 2026-06-10; set
+#      EPM_SESSION_RECONCILE_AUTOSTOP=0 for the alert-only fallback) live
+#      Happy sessions whose task is parked/terminal (awaiting_promotion /
+#      completed / archived) once ALL hold across >=2 checks: no follow-up
+#      signal marker newer than the latest done-transition, every non-watcher
+#      marker + self-report idle > ~2h (EPM_SESSION_RECONCILE_IDLE_S), no
+#      RUNNING managed pod for the issue, no keep-running tag. Never touches
+#      unmapped sessions (PM / chat), followups_running, or blocked tasks.
+#   7. GC: reap per-issue watcher state files for completed/archived tasks.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a
@@ -70,7 +78,8 @@ mkdir -p "$LOG_DIR"
 # on every routine "all sessions alive" pass or transient respawn.
 exit 0
 
-# SESSION-RECONCILE PASS IS ALERT-ONLY PERMANENTLY (user decision, 2026-06-10):
-# do NOT export EPM_SESSION_RECONCILE_AUTOSTOP here or anywhere else. The
-# watcher may only ALERT on idle sessions of completed/archived tasks;
-# stopping them stays a manual user action.
+# SESSION-RECONCILE AUTO-STOP IS THE DEFAULT (user request, 2026-06-10: "Can
+# we stop the happy sessions once they reach awaiting promotion?" — this
+# supersedes the same-day alert-only decision; 73 idle registered sessions
+# had accumulated ~35-40GB RSS). No env export is needed here. To fall back
+# to alert-only, export EPM_SESSION_RECONCILE_AUTOSTOP=0 in the crontab line.
