@@ -169,3 +169,4 @@ uv run python scripts/i549_audit_532.py && \
 ```
 
 Success looks like: `eval_results/issue_549/audit_table.json` exists with verdict counts {Affected 2, Safe-distinct-id 11, Safe-single-adapter 4, Safe-fresh-process 1, Safe-by-eviction 1, Safe-probabilistic 2, No-realized-run 3}, and the affected grid's consumption check shows 8 of 8 float-identical values.
+- **Methodology reference:** [docs/methodology/issue_549.md](https://github.com/superkaiba/explore-persona-space/blob/f9447f0f226a9e045bdb010bb776f6b207a29afe/docs/methodology/issue_549.md) · [gist](https://gist.github.com/superkaiba/3a0c2645a42659cd22a349f529f12f1b)
