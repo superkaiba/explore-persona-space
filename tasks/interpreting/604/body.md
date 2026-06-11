@@ -5,7 +5,7 @@ title: Marker LoRA updates carry a seed-stable write direction, but the top-1 ke
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:17Z'
-has_clean_result: false
+has_clean_result: true
 ---
 # Marker LoRA updates carry a seed-stable write direction, but the top-1 key is seed-arbitrary and does not match the last-prompt-token context vector (MODERATE confidence)
 

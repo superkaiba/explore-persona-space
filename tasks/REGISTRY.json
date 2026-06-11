@@ -3666,7 +3666,7 @@
       "title": "P3' write decomposition: does the source's base prior predict the write's common-mode fraction rather than its norm?"
     },
     "604": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/604",
       "status": "interpreting",
