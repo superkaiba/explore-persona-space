@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 585,
+  "highest_id": 586,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3521,6 +3521,13 @@
       "path": "tasks/proposed/585",
       "status": "proposed",
       "title": "Re-run the #504 calibration table at true fractions on the verified per-fraction smoke snapshots"
+    },
+    "586": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/586",
+      "status": "proposed",
+      "title": "Campaign runner: question-level autonomous orchestration layer (/campaign) above /issue"
     },
     "6": {
       "has_clean_result": false,
