@@ -1,24 +1,31 @@
 /**
- * Purely presentational pipeline progress bar + ETA chip (task #587).
+ * Purely presentational pipeline progress bar + time meta line (task #587).
  *
  * No hooks, no data fetching — it renders a `TaskProgressView` computed
  * server-side by `lib/progress.ts` (so it works both inside the client
  * <TaskBoard> kanban cards and on the server-rendered task detail page).
  *
- * Chip semantics (mirrors the estimator's honesty rules):
- *   - active     → "~2.1h left · ~7.5h total" (median remaining + expected
- *                  total machine time; "≈" prefix = soft GPU-derived
- *                  estimate; the [p25–p75] band replaces the remaining
+ * Layout: bar + % on the first row, then ONE quiet two-sided meta line —
+ * remaining on the left (teal, the number you scan for), expected total on
+ * the right (muted). Pills are reserved for EXCEPTIONAL states (blocked /
+ * running long / stale / waiting on you); ordinary numbers render as plain
+ * text so a board full of cards stays calm. The estimate-softness prefix
+ * (~ historical, ≈ GPU-derived) is carried once per line, on the leading
+ * value; the total drops it to cut glyph noise (same basis, same row).
+ *
+ * Semantics (mirrors the estimator's honesty rules):
+ *   - active     → "~2.1h left   of 7.5h" (median remaining + expected total
+ *                  machine time; the [p25–p75] band replaces the remaining
  *                  median if its kill switch is ever re-enabled), plus
  *                  "+ plan review" when the human plan-review wait lies
  *                  ahead (it is excluded from the machine estimate on
  *                  purpose). A followups_running task shows the follow-up
  *                  round's own remaining/total.
- *   - human-wait → "waiting on you" (+ machine work left after it / total).
+ *   - human-wait → "waiting on you" pill + "then ~2h of 7.5h".
  *   - blocked    → grey bar frozen at the stage floor, "blocked", no countdown.
- *   - overdue    → bar parked, "running long" label, NO countdown (the
+ *   - overdue    → bar parked, "running long" pill, NO countdown (the
  *                  estimate stopped being supported by the historical basis).
- *   - stale      → bar at the live-status floor, no chip (snapshot too old).
+ *   - stale      → bar at the live-status floor, no meta (snapshot too old).
  */
 import type { TaskProgressView } from "@/lib/progress";
 
@@ -27,6 +34,12 @@ const BAND_TOOLTIP =
   "pass, from recent task history (per-stage medians — a heuristic, not a " +
   "guarantee; human plan-review wait excluded). ≈ marks a soft " +
   "GPU-hours-derived estimate.";
+
+/** The line's softness marker lives on its leading value — strip the
+ * duplicate from the trailing total (same basis, same row). */
+function stripPrefix(label: string): string {
+  return label.replace(/^[~≈]/, "");
+}
 
 export function TaskProgressBar({
   view,
@@ -59,54 +72,64 @@ export function TaskProgressBar({
           }`}
         >
           <div
-            className={`h-full rounded-full ${fillCls}`}
+            className={`h-full rounded-full transition-[width] duration-700 ease-out ${fillCls}`}
             style={{ width: `${pctClamped * 100}%` }}
           />
         </div>
         <span className="font-mono text-[10px] tabular-nums text-stone-500">{pctLabel}</span>
       </div>
-      <Chip view={view} compact={compact} />
+      <MetaLine view={view} compact={compact} />
     </div>
   );
 }
 
-function Chip({ view, compact }: { view: TaskProgressView; compact: boolean }) {
-  const base = `mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 ${
-    compact ? "text-[10px]" : "text-xs"
-  } font-medium`;
+function MetaLine({ view, compact }: { view: TaskProgressView; compact: boolean }) {
+  const size = compact ? "text-[10px]" : "text-xs";
+  const pill = `inline-flex items-center rounded px-1.5 py-0.5 font-medium ${size}`;
   switch (view.state) {
     case "blocked":
-      return <span className={`${base} bg-stone-100 text-stone-600`}>blocked</span>;
+      return (
+        <div className="mt-1">
+          <span className={`${pill} bg-stone-100 text-stone-600`}>blocked</span>
+        </div>
+      );
     case "overdue":
       return (
-        <span
-          className={`${base} bg-amber-50 text-amber-800`}
-          title="Past the typical clean-pass range for this stage (>p75) — countdown suppressed."
-        >
-          running long
-        </span>
+        <div className="mt-1">
+          <span
+            className={`${pill} bg-amber-50 text-amber-800`}
+            title="Past the typical clean-pass range for this stage (>p75) — countdown suppressed."
+          >
+            running long
+          </span>
+        </div>
       );
     case "stale":
       return (
-        <span
-          className={`${base} bg-stone-50 text-stone-400`}
-          title="Progress snapshot is stale (cron has not ticked recently); showing the stage floor only."
-        >
-          stale
-        </span>
+        <div className="mt-1">
+          <span
+            className={`${pill} bg-stone-50 text-stone-400`}
+            title="Progress snapshot is stale (cron has not ticked recently); showing the stage floor only."
+          >
+            stale
+          </span>
+        </div>
       );
     case "human-wait": {
       const then = view.etaLabel ?? view.remainingLabel;
       return (
-        <span className={`${base} bg-violet-50 text-violet-700`} title={BAND_TOOLTIP}>
-          waiting on you
+        <div
+          className={`mt-1 flex items-center justify-between gap-2 ${size}`}
+          title={BAND_TOOLTIP}
+        >
+          <span className={`${pill} bg-violet-50 text-violet-700`}>waiting on you</span>
           {then ? (
-            <span className="font-normal">
-              · then {then}
-              {view.totalLabel ? ` of ${view.totalLabel}` : ""}
+            <span className="tabular-nums text-stone-400">
+              then <span className="font-medium text-stone-500">{then}</span>
+              {view.totalLabel ? ` of ${stripPrefix(view.totalLabel)}` : ""}
             </span>
           ) : null}
-        </span>
+        </div>
       );
     }
     default: {
@@ -114,16 +137,28 @@ function Chip({ view, compact }: { view: TaskProgressView; compact: boolean }) {
       const remaining = view.etaLabel ?? view.remainingLabel;
       if (!remaining && !view.totalLabel) return null;
       return (
-        <span className={`${base} bg-teal-50 text-teal-800`} title={BAND_TOOLTIP}>
-          {remaining ? `${remaining} left` : null}
-          {view.totalLabel ? (
-            <span className="font-normal">
-              {remaining ? "· " : ""}
-              {view.totalLabel} total
+        <div
+          className={`mt-1 flex items-baseline justify-between gap-2 tabular-nums ${size}`}
+          title={BAND_TOOLTIP}
+        >
+          {remaining ? (
+            <span className="font-medium text-teal-700">
+              {remaining} <span className="font-normal text-teal-600/80">left</span>
             </span>
-          ) : null}
-          {view.planReviewAhead ? <span className="font-normal">+ plan review</span> : null}
-        </span>
+          ) : (
+            <span aria-hidden="true" />
+          )}
+          <span className="text-stone-400">
+            {view.totalLabel
+              ? remaining
+                ? `of ${stripPrefix(view.totalLabel)}`
+                : `${view.totalLabel} total`
+              : null}
+            {view.planReviewAhead ? (
+              <span className="text-violet-500">{view.totalLabel ? " " : ""}+ plan review</span>
+            ) : null}
+          </span>
+        </div>
       );
     }
   }
