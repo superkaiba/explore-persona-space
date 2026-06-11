@@ -429,19 +429,62 @@ def build_marker_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
     return frame, sel
 
 
-def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
-    """(cell x persona)-level fact frame from judged + tf JSONs + selection."""
+def _is_structural_drop(arm_sel: dict) -> bool:
+    """Plan section 3 structural-alternative outcome for ONE fact arm:
+    gate_pass=false AND no recorded descope AND ZERO bands pass the selection
+    gate. In that state ``_descope_record`` returns None, so no descope can
+    ever rescue the arm — 'similarity and behavior prior cannot be decoupled'
+    for it, and it is structurally DROPPED from the analysis frame instead of
+    blocking the whole fact battery (round-2 review note). Every OTHER
+    absence (gate-fail with >=1 surviving band but no recorded descope,
+    missing strata) falls through to ``_resolve_selected_panel``'s fail-loud
+    assert."""
+    if arm_sel.get("gate_pass", False):
+        return False
+    if (arm_sel.get("descope") or {}).get("active"):
+        return False
+    strata = arm_sel.get("strata") or {}
+    return bool(strata) and not any(st["gate"]["verdict"] for st in strata.values())
+
+
+def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict, list[str]]:
+    """(cell x persona)-level fact frame from judged + tf JSONs + selection.
+
+    Arms whose selection is a STRUCTURAL DROP (``_is_structural_drop``) are
+    excluded from the frame and returned as the third element so the analysis
+    JSON reports the plan-section-3 structural finding; their stale on-disk
+    cells (e.g. Phase-0 smoke files) never enter the registered statistics.
+    All other absences stay fail-loud: a gate-failed arm WITHOUT zero bands
+    still trips ``_resolve_selected_panel``, a surviving arm with missing
+    per-cell files trips the coverage shortfall assert, and a surviving arm
+    absent from disk entirely trips the missing-arm assert."""
     sel = json.loads((out_root / "panel" / "fact_panel_selection.json").read_text())
+    dropped = sorted(a for a, s in sel["per_arm"].items() if _is_structural_drop(s))
+    for a in dropped:
+        logger.warning(
+            "[phase=p7_fact] arm %s STRUCTURALLY DROPPED (gate_pass=false, zero passing "
+            "bands, no descope possible) — plan section 3 structural alternative; "
+            "excluded from the fact frame",
+            a,
+        )
     judged_dir = out_root / "fact" / "judged"
     tf_dir = out_root / "fact" / "tf"
     allowed_by_arm = {
         a: _resolve_selected_panel(arm_sel, f"fact_panel_selection.json arm={a}")
         for a, arm_sel in sel["per_arm"].items()
+        if a not in dropped
     }
+    assert allowed_by_arm, (
+        "ALL fact arms structurally dropped (zero passing bands everywhere) — no fact "
+        "frame can be built; the family-wide structural finding IS the result "
+        "(plan section 3 structural alternative)"
+    )
     rows = []
     for f in sorted(judged_dir.glob("*.json")):
         j = json.loads(f.read_text())
         arm, seed, persona = j["arm"], j["seed"], j["persona"]
+        if arm in dropped:
+            continue  # structurally-dropped arm — stale smoke cells never enter
         arm_sel = sel["per_arm"][arm]
         if persona not in allowed_by_arm[arm] or persona not in arm_sel.get("per_persona", {}):
             continue  # stale / out-of-panel cell-persona — never enters registered statistics
@@ -467,6 +510,12 @@ def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
         )
     frame = pd.DataFrame(rows)
     assert len(frame), "no fact cell-personas found — run the Phase 5 dispatcher first"
+    missing_arms = sorted(set(allowed_by_arm) - set(frame["arm"].unique()))
+    assert not missing_arms, (
+        f"fact frame missing surviving (non-dropped) arms entirely: {missing_arms} — "
+        "run / repair the Phase 5 dispatcher for these arms (only structurally-dropped "
+        f"arms may be absent; dropped here: {dropped})"
+    )
     shortfall = {}
     for (a, s), grp in frame.groupby(["arm", "seed"]):
         miss = sorted(allowed_by_arm[a] - set(grp["context"]))
@@ -479,7 +528,7 @@ def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
         frame[f"fe_arm_{c}"] = (frame["arm"] == c).astype(float)
     for s in sorted(frame["seed"].unique())[1:]:
         frame[f"fe_seed_{s}"] = (frame["seed"] == s).astype(float)
-    return frame, sel
+    return frame, sel, dropped
 
 
 # ---------------------------------------------------------------------------
@@ -833,13 +882,24 @@ def _legacy_drift(out_root: Path) -> dict:
 
 
 def analyze_fact(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
-    frame, sel = build_fact_frame(out_root)
+    frame, sel, dropped = build_fact_frame(out_root)
     logger.info(
-        "[phase=p7_fact] frame: %d cell-personas, %d personas",
+        "[phase=p7_fact] frame: %d cell-personas, %d personas, %d arms (structurally dropped: %s)",
         len(frame),
         frame["context"].nunique(),
+        frame["arm"].nunique(),
+        dropped or "none",
     )
     res: dict = {"schema_version": "issue605_v1", "family": "fact"}
+    res["arms_dropped_structural"] = dropped
+    if dropped:
+        res["structural_finding"] = (
+            "arm(s) " + ", ".join(dropped) + ": similarity and behavior prior cannot be "
+            "decoupled under this candidate budget — zero bands passed the Phase-4.5 "
+            "gate after the pre-registered expansion round, so no descope exists and "
+            "the arm is structurally dropped (plan section 3 structural alternative). "
+            "All per-arm reads and the family lattice below cover surviving arms only."
+        )
     common = dict(sim_col="cos", prior_col="prior", group_col="context", n_boot=n_boot)
     shift = {"tf_delta": registered_battery(frame, "tf_delta", pinned="rank", **common)}
     level = {"leak_rate": registered_battery(frame, "leak_rate", pinned="none", **common)}
@@ -897,7 +957,17 @@ def analyze_fact(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
             ),
         },
     }
-    res["panel_gate"] = {a: {"gate_pass": sel["per_arm"][a]["gate_pass"]} for a in sel["per_arm"]}
+    # Per-arm gate record over ALL registered arms (incl. dropped) — the
+    # frame / verdicts above cover surviving arms only.
+    res["panel_gate"] = {
+        a: {
+            "gate_pass": s["gate_pass"],
+            "descope_active": bool((s.get("descope") or {}).get("active")),
+            "surviving_bands": (s.get("descope") or {}).get("surviving_bands"),
+            "structurally_dropped": a in dropped,
+        }
+        for a, s in sel["per_arm"].items()
+    }
     res["metadata"] = _repro_meta({"n_boot": n_boot, "analysis_seed": ANALYSIS_SEED})
 
     _fact_figures(frame, res, figures_dir)
@@ -1078,9 +1148,19 @@ def _fact_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 # Synthetic stub (CPU end-to-end smoke; schema-true, planted effect)
 # ---------------------------------------------------------------------------
-def synthesize_stub(root: Path) -> None:
+def synthesize_stub(root: Path, fact_variant: str = "clean") -> None:
     """Write a tiny artifact tree matching the production schemas with a
-    PLANTED positive prior->shift effect (smoke assertion target)."""
+    PLANTED positive prior->shift effect (smoke assertion target).
+
+    ``fact_variant``:
+      - ``clean`` (default): all three fact arms gate_pass=true (the original
+        stub shape).
+      - ``descoped``: the post-Phase-4.5 production shape — every arm
+        gate_pass=false; two arms carry recorded descopes to disjoint band
+        subsets; one arm (marine_biologist) has ZERO passing bands and no
+        descope (the structural-drop path), plus stale smoke cells on disk
+        that the frame builder must skip."""
+    assert fact_variant in ("clean", "descoped"), fact_variant
     rng = np.random.default_rng(7)
     sources = ["A1", "A2", "B1", "D1"]
     contexts = [
@@ -1218,14 +1298,34 @@ def synthesize_stub(root: Path) -> None:
                 )
             )
 
-    # Fact stub: 3 arms x 1 seed x 8 personas.
+    _synthesize_fact_stub(root, panel_dir, rng, fact_variant)
+    logger.info("synthetic stub written under %s (fact_variant=%s)", root, fact_variant)
+
+
+def _synthesize_fact_stub(
+    root: Path, panel_dir: Path, rng: np.random.Generator, fact_variant: str
+) -> None:
+    """Fact half of the stub: 3 arms x 1 seed x 8 personas. In the
+    ``descoped`` variant the band membership / surviving-band sets below
+    DERIVE the descoped panels and the zero-band structural drop (nothing
+    hard-coded downstream)."""
     arms = ["marine_biologist", "courthouse_architecture_historian", "wooden_furniture_carpenter"]
     personas = [f"f605_stub_{i}" for i in range(8)]
+    surviving_by_arm = {
+        "marine_biologist": [],  # zero passing bands -> structural drop
+        "courthouse_architecture_historian": ["band_mid", "band_hi"],
+        "wooden_furniture_carpenter": ["band_lo"],
+    }
     per_arm = {}
+    write_personas: dict[str, list[str]] = {}
     for a in arms:
         cosv = np.linspace(0.55, 0.9, len(personas))
         priv = np.linspace(-3.5, -2.6, len(personas))[np.argsort(rng.random(len(personas)))]
         e = np.quantile(cosv, [1 / 3, 2 / 3])
+
+        def band_of(c: float, _e=e) -> str:
+            return "band_lo" if c <= _e[0] else ("band_mid" if c <= _e[1] else "band_hi")
+
         per_arm[a] = {
             "band_edges_terciles": [float(e[0]), float(e[1])],
             "panel": personas,
@@ -1235,13 +1335,34 @@ def synthesize_stub(root: Path) -> None:
                 for i, p in enumerate(personas)
             },
         }
+        if fact_variant == "clean":
+            write_personas[a] = personas
+            continue
+        surv = surviving_by_arm[a]
+        per_arm[a]["gate_pass"] = False
+        per_arm[a]["strata"] = {
+            b: {"gate": {"verdict": b in surv}} for b in ("band_lo", "band_mid", "band_hi")
+        }
+        descoped = [p for i, p in enumerate(personas) if band_of(cosv[i]) in surv]
+        if surv:
+            per_arm[a]["descope"] = {
+                "active": True,
+                "surviving_bands": surv,
+                "panel_descoped": descoped,
+                "note": "stub descope (fact_variant=descoped)",
+            }
+            write_personas[a] = descoped
+        else:
+            # Structurally-dropped arm: NO descope key; leave two stale
+            # smoke cells on disk that build_fact_frame must skip.
+            write_personas[a] = personas[:2]
     (panel_dir / "fact_panel_selection.json").write_text(
         json.dumps({"schema_version": "issue605_v1", "per_arm": per_arm}, indent=1)
     )
     for d in ("judged", "tf"):
         (root / "fact" / d).mkdir(parents=True, exist_ok=True)
     for a in arms:
-        for p in personas:
+        for p in write_personas[a]:
             meta = per_arm[a]["per_persona"][p]
             delta = 0.15 + 0.3 * (meta["prior_nat_per_tok"] + 3.0) + rng.normal(0, 0.03)
             leak = float(np.clip(0.3 + 1.5 * delta + rng.normal(0, 0.05), 0, 1))
@@ -1277,7 +1398,6 @@ def synthesize_stub(root: Path) -> None:
                     indent=1,
                 )
             )
-    logger.info("synthetic stub written under %s", root)
 
 
 # ---------------------------------------------------------------------------
@@ -1299,10 +1419,18 @@ def main() -> None:
         default=None,
         help="write a synthetic artifact tree here, then analyze it",
     )
+    ap.add_argument(
+        "--stub-variant",
+        choices=("clean", "descoped"),
+        default="clean",
+        help="fact-family stub shape: 'clean' = all arms gate_pass=true; 'descoped' = "
+        "two descoped arms + one zero-band structurally-dropped arm (CPU exercise of "
+        "the post-Phase-4.5 production shape); only used with --synthesize-stub",
+    )
     args = ap.parse_args()
 
     if args.synthesize_stub is not None:
-        synthesize_stub(args.synthesize_stub)
+        synthesize_stub(args.synthesize_stub, fact_variant=args.stub_variant)
         args.out_root = args.synthesize_stub
 
     for fam in args.families.split(","):
