@@ -3356,6 +3356,68 @@ When this skill is re-invoked in `running`:
    when extending — but do NOT consult it at runtime). To add a new
    pattern, edit `failure_classifier.py` AND the markdown mirror; the
    tests in `tests/test_failure_classifier.py` cover the behaviour.
+
+   **Failure-lesson capture (fires when a crash-fix round RESOLVES the
+   failure).** A lightweight in-flight hook, not a new pipeline step;
+   auto-continue, no gate. Both crash-fix shapes — the `code`-row
+   `experiment-implementer` round and the `infra`-row experimenter
+   respawn whose relaunch applied a fix — are REQUIRED (by
+   `experiment-implementer.md` § "Crash-fix rounds: failure-lesson
+   block" and `experimenter.md` § "Failure-lesson block on
+   relaunch-with-fix") to end their report with a structured lesson
+   block. A THIRD shape arrives outside this step: an experimenter that
+   fixed a dying launch within its own turn and relaunched (no
+   `epm:failure` posted) appends the same block to its Step 6d launch
+   report — on receiving such a launch report, apply the same three
+   orchestrator actions below. The block:
+
+   ```
+   <!-- epm:failure-lesson v1 -->
+   failure_class: code|infra|data
+   phase: <pipeline phase or script>
+   lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+   generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+   owning_agent: experiment-implementer|experimenter
+   gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+   <!-- /epm:failure-lesson -->
+   ```
+
+   On receiving a crash-fix report carrying the block, the orchestrator
+   takes three actions:
+
+   1. **Post the marker.** Post the block verbatim as
+      `epm:failure-lesson v1` on the task (`task.py post-marker <N>
+      epm:failure-lesson --note '<block>'`). This fires for
+      `generalizes: no` too — for one-offs the marker alone is the
+      durable record (NO memory write).
+   2. **On `generalizes: yes` — persist to agent memory IMMEDIATELY.**
+      Append a `feedback_<slug>.md` entry (standard agent-memory
+      frontmatter + the lesson body) to
+      `.claude/agent-memory/<owning_agent>/` plus a one-line
+      `MEMORY.md` index entry, then commit BY EXPLICIT PATH on `main`
+      from the repo root and push (auto, no approval gate — same
+      standing rule 2026-06-02 as workflow fixes). The point is
+      same-day cross-session sharing: a sibling session's next agent
+      spawn loads the memory within minutes, instead of waiting for the
+      nightly `/daily` sweep (on 2026-06-11, #537 and #545 re-hit
+      overlapping failure classes hours apart with no persistence
+      channel). Lessons are written for the NEXT agent — 1-3 sentences,
+      the trap + the fix, no transcript dumps.
+   3. **On `gotcha_candidate: yes` — route as a workflow-fix
+      candidate.** Treat the lesson as a prose workflow-fix candidate
+      targeting `.claude/rules/gotchas.md` and dispatch it through the
+      existing workflow-fix-on-bug auto-spawn default
+      (`.claude/rules/workflow-fix-on-bug.md`); the lesson block is the
+      surfaced prose.
+
+   If the resolving report omitted the block (older agent spawn, or a
+   refusal killed the report tail), reconstruct it from the failure
+   context + fix diff yourself before posting — don't bounce the round
+   for the missing block alone. `/daily` remains the deduplicating
+   consolidator: it reads the day's `epm:failure-lesson v1` markers,
+   dedupes against agent memories, promotes recurring lessons into
+   `.claude/rules/gotchas.md` or the relevant rule file, and prunes
+   over-eager `generalizes: yes` memory entries.
 3. If `epm:results` exists, move status to `uploading` and proceed to
    Step 8.
 

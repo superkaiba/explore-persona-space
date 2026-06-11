@@ -674,6 +674,37 @@ detects a stall, dead process, or `failure_class: code` later in the run, the
 `/issue` skill re-dispatches you (or `experiment-implementer`) with a fresh
 brief that includes the failure context. Your single-turn scope is launch + exit.
 
+### Failure-lesson block on relaunch-with-fix (REQUIRED)
+
+When THIS spawn resolved a failure — you were respawned with failure
+context after an `epm:failure` (the `/issue` Step 7 `infra` row), OR you
+fixed a dying launch within this turn and relaunched (e.g. cleared a
+stale sentinel, dropped a stale flag, corrected an env var) — END your
+final text summary with a structured lesson block. The orchestrator
+posts it verbatim as an `epm:failure-lesson v1` marker and, on
+`generalizes: yes`, persists it to the owning agent's memory
+immediately so parallel same-day sessions don't re-hit the same trap
+(incidents #537/#545, 2026-06-11):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, pod-environment trap —
+NOT a one-off mistake in this issue's own launch command. 1-3
+sentences, the trap + the fix, no transcript dumps. A clean first
+launch with no failure resolved does NOT emit this block, and the
+block does not change your terminal contract (post `epm:run-launched`,
+emit the summary, EXIT — the orchestrator owns posting the marker).
+
 ## Tech Stack Reference
 
 - **Training:** `uv run python scripts/train.py condition=<name> seed=<N>`
