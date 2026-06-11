@@ -93,7 +93,7 @@ def boot_ci(values: np.ndarray, n_boot: int = 2000, seed: int = 0) -> tuple[floa
 
 def figure_1(cells: list[dict]) -> None:
     set_paper_style("blog")
-    fig, (ax_a, ax_b) = plt.subplots(1, 2, figsize=(10.5, 4.4))
+    fig, ax_a = plt.subplots(figsize=(6.8, 4.4))
     colors = paper_palette(4)
     total_levels = [0, 400, 800, 1600]
     total_color = dict(zip(total_levels, colors))
@@ -113,47 +113,6 @@ def figure_1(cells: list[dict]) -> None:
         ax_a,
         "More negatives, much stronger source implantation",
         "Each point is one training cell × seed; black bar = mean per budget",
-    )
-
-    # ---- (b) bystander leakage vs source implantation ----
-    for c in cells:
-        vals = np.array(list(c["per_persona"].values()))
-        lo, hi = boot_ci(vals)
-        ax_b.errorbar(
-            c["src"],
-            vals.mean(),
-            yerr=[[vals.mean() - lo], [hi - vals.mean()]],
-            fmt="o",
-            ms=6.5,
-            color=total_color[c["total"]],
-            elinewidth=1.1,
-            capsize=2.5,
-            zorder=3,
-        )
-    # constant-fraction reference: pooled ratio over the non-saturating budgets (0-800)
-    sub = [c for c in cells if c["total"] <= 800]
-    ratio = float(np.mean([np.mean(list(c["per_persona"].values())) / c["src"] for c in sub]))
-    xs = np.linspace(0, 22, 50)
-    ax_b.plot(xs, ratio * xs, ls="--", color="#888888", lw=1.4, zorder=2)
-    ax_b.annotate(
-        f"bystander = {ratio:.2f} × source",
-        xy=(13.2, ratio * 13.2),
-        xytext=(11.5, 3.4),
-        fontsize=9.5,
-        color="#555555",
-        arrowprops=dict(arrowstyle="-", color="#AAAAAA", lw=0.8),
-    )
-    ax_b.set_xlabel("Source marker log-prob shift, trained − base (nats)")
-    ax_b.set_ylabel("Mean bystander log-prob shift\nacross 47 held-out personas (nats)")
-    handles = [
-        plt.Line2D([], [], marker="o", ls="", color=total_color[t], label=f"{t} negative rows")
-        for t in total_levels
-    ]
-    ax_b.legend(handles=handles, loc="upper left", fontsize=9)
-    set_title_subtitle(
-        ax_b,
-        "Leakage rises in lockstep with implantation",
-        "Error bars: 95% bootstrap CI over the 47 held-out personas",
     )
 
     fig.tight_layout()
