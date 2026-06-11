@@ -539,7 +539,7 @@ So the inversion is a property of the firing regime, not of reading log-probs. W
   - Compute: ≈ 2.6 GPU-h on 1× H100 (pod-480, fresh ephemeral; budget 4 GPU-h) — six production cell evals sum to 0.88 h (per-cell `graded_eval_record.json` wall times, 484-568 s each); the remainder is the failed merged-path smoke, the parity diagnostic, the re-smoke, and uploads
   - Seed: 42 (single seed, inherited confidence cap)
 
-- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/b99f14c049a3b64eb8ddcc3fd2ce9c4cf4684107/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
+- **Methodology reference:** [docs/methodology/issue_480.md](https://github.com/superkaiba/explore-persona-space/blob/e7a9b306bbc6e108c54b0829e3b12e7c9b3278c2/docs/methodology/issue_480.md) · [gist](https://gist.github.com/superkaiba/ea3fe3b471c7682325b2ca89bbc1dc46)
 
 **Compute:**
 
