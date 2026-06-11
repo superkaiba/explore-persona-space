@@ -5,7 +5,7 @@ title: 'The published flat calibration table for an over-trained marker cell was
 kind: experiment
 tags: []
 created_at: '2026-06-11T03:15:47Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 549
 goal: 'Measure the true training-maturity curve of the #504 saturated-anchor smoke
   cell by re-evaluating its six verified per-fraction adapter snapshots through the
