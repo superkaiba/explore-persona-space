@@ -24,9 +24,14 @@ from __future__ import annotations
 import json
 import logging
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 logger = logging.getLogger(__name__)
+
+# Quality floor shared with eval_battery's per-column judges: tracked
+# ``_judge_error`` rows above this rate mean a judge outage, not a flake.
+JUDGE_ERROR_RATE_FLOOR = 0.10
 
 SONNET = "claude-sonnet-4-5"
 HAIKU = "claude-haiku-4-5"
@@ -241,15 +246,31 @@ def judge_items(judge_id: str, items: list[dict], *, max_workers: int = 8) -> li
                 **kwargs,
             )
             try:
-                return _parse_verdict_json(resp.content[0].text)
+                # Defensive extraction: an EMPTY content list (one observed
+                # flake class, P1 2026-06-10) must become a tracked parse
+                # failure, never an IndexError that kills the dispatcher.
+                raw = "\n".join(
+                    t
+                    for t in (getattr(b, "text", None) for b in resp.content)
+                    if isinstance(t, str)
+                )
+                return _parse_verdict_json(raw)
             except (ValueError, json.JSONDecodeError) as e:
                 if attempt == 1:
                     logger.warning("judge %s unparseable twice: %s", judge_id, e)
                     return {"_judge_error": str(e)}
+                time.sleep(2)  # brief backoff before the second attempt
         raise AssertionError("unreachable")
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        return list(pool.map(_one, items))
+        verdicts = list(pool.map(_one, items))
+    n_err = sum(1 for v in verdicts if "_judge_error" in v)
+    if items and n_err / len(items) > JUDGE_ERROR_RATE_FLOOR:
+        raise RuntimeError(
+            f"judge {judge_id}: {n_err}/{len(items)} verdicts failed "
+            f"(> {JUDGE_ERROR_RATE_FLOOR:.0%} quality floor) — judge outage, not a flake"
+        )
+    return verdicts
 
 
 # ---------------------------------------------------------------------------

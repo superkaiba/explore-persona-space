@@ -733,6 +733,66 @@ def judge_column(column: ColumnSpec, gen_path: Path, out_path: Path) -> None:
 
 # --- #503 delegated judges --------------------------------------------------
 
+# Bounded retry for single-shot judge calls (P1 crash 2026-06-10: ONE empty
+# Sonnet response -> RuntimeError("response not JSON: ''") propagated through
+# judge_column -> run_judge_phase -> fut.result() and killed the whole sweep).
+# 3 attempts with 2s/8s backoff; a row that still fails becomes a TRACKED
+# ``_judge_error`` verdict, and a column whose error rate breaches the 10%
+# quality floor raises (that's a real outage, not a flake).
+_JUDGE_RETRY_BACKOFFS_S: tuple[float, ...] = (2.0, 8.0)
+_JUDGE_ERROR_RATE_FLOOR = 0.10
+# In-loop hard-outage abort: stricter than the floor so a transient early
+# burst (e.g. 5 flakes in the first 20 rows of a 520-row column) cannot kill
+# a column that would have finished under the 10% floor.
+_JUDGE_OUTAGE_ABORT_RATE = 0.50
+_JUDGE_OUTAGE_MIN_N = 20
+
+
+class JudgeCallError(RuntimeError):
+    """A single-shot judge call failed after bounded retries (tracked, not fatal)."""
+
+
+def _judge_call_with_retry(label: str, fn, **kwargs):
+    """Call a single-shot judge fn with bounded retry on flaky responses.
+
+    Retries on the empty/non-JSON parse class (``RuntimeError`` / ``ValueError``
+    incl. ``json.JSONDecodeError``) and on ``anthropic.APIError`` (the SDK has
+    already retried transient HTTP errors internally). After the final attempt
+    raises ``JudgeCallError`` for the caller to record as a tracked judge_error
+    row instead of crashing the sweep.
+    """
+    import anthropic
+
+    retryable = (RuntimeError, ValueError, anthropic.APIError)
+    n_attempts = len(_JUDGE_RETRY_BACKOFFS_S) + 1
+    last_exc: Exception | None = None
+    for attempt in range(n_attempts):
+        try:
+            return fn(**kwargs)
+        except retryable as exc:
+            last_exc = exc
+            if attempt < n_attempts - 1:
+                wait = _JUDGE_RETRY_BACKOFFS_S[attempt]
+                logger.warning(
+                    "[phase=judge] %s attempt %d/%d failed (%s) — retrying in %.0fs",
+                    label,
+                    attempt + 1,
+                    n_attempts,
+                    exc,
+                    wait,
+                )
+                time.sleep(wait)
+    raise JudgeCallError(f"{label}: failed after {n_attempts} attempts: {last_exc}") from last_exc
+
+
+def _enforce_judge_error_floor(n_errors: int, n_total: int, label: str) -> None:
+    """Raise when a column's judge_error rate breaches the 10% quality floor."""
+    if n_total > 0 and n_errors / n_total > _JUDGE_ERROR_RATE_FLOOR:
+        raise RuntimeError(
+            f"{label}: {n_errors}/{n_total} judge calls failed "
+            f"(> {_JUDGE_ERROR_RATE_FLOOR:.0%} quality floor) — judge outage, not a flake"
+        )
+
 
 def _judge_via_503_betley(
     rows: list[dict], cell_label: str = "i545_cell"
@@ -765,11 +825,22 @@ def _judge_via_503_betley(
         except (ValueError, json.JSONDecodeError):
             logger.warning("Betley save_raw unparseable at %s — keeping summary only", raw_path)
         raw_path.unlink(missing_ok=True)
+    # The #503 rig tracks per-completion api/parse errors internally
+    # (n excludes errors); enforce the same 10% quality floor here.
+    n_err = int(summary.get("n_errors", 0) or 0)
+    _enforce_judge_error_floor(n_err, int(summary.get("n", 0) or 0) + n_err, "betley_judge")
     return dict(summary), verdicts if isinstance(verdicts, list) else [verdicts]
 
 
 def _judge_via_503_advbench(rows: list[dict]) -> tuple[dict, list[dict]]:
-    """AdvBench Sonnet binary judge via the #503 rig (per-prompt verdicts)."""
+    """AdvBench Sonnet binary judge via the #503 rig (per-prompt verdicts).
+
+    Per-row calls go through ``_judge_call_with_retry`` (the P1 2026-06-10
+    crash site: one empty judge response killed the multi-hour sweep). Rows
+    that still fail are tracked as ``_judge_error`` verdicts, surfaced as
+    ``n_judge_errors`` in the summary, and excluded from the rate denominators;
+    a >10% error rate raises (quality floor — real outage, not a flake).
+    """
     from explore_persona_space.experiments.issue503.advbench_judge import (
         AdvBenchVerdict,
         aggregate_verdicts,
@@ -778,9 +849,33 @@ def _judge_via_503_advbench(rows: list[dict]) -> tuple[dict, list[dict]]:
     )
 
     verdicts = []
-    for r in rows:
+    error_rows: list[dict] = []
+    for i, r in enumerate(rows):
         completion = r["completions"][0]
-        score, reason = judge_advbench_completion(prompt=r["question"], completion=completion)
+        try:
+            score, reason = _judge_call_with_retry(
+                f"advbench_judge probe={r['probe_id']}",
+                judge_advbench_completion,
+                prompt=r["question"],
+                completion=completion,
+            )
+        except JudgeCallError as exc:
+            logger.warning(
+                "[phase=judge] advbench probe=%s tracked as judge_error: %s",
+                r["probe_id"],
+                exc,
+            )
+            error_rows.append({"probe_id": r["probe_id"], "_judge_error": str(exc)})
+            n_done = i + 1
+            if (
+                n_done >= _JUDGE_OUTAGE_MIN_N
+                and len(error_rows) / n_done > _JUDGE_OUTAGE_ABORT_RATE
+            ):
+                raise RuntimeError(
+                    f"advbench_judge: {len(error_rows)}/{n_done} rows failed "
+                    f"(> {_JUDGE_OUTAGE_ABORT_RATE:.0%} in-loop) — aborting on judge outage"
+                ) from exc
+            continue
         verdicts.append(
             AdvBenchVerdict(
                 prompt_id=r["probe_id"],
@@ -793,6 +888,7 @@ def _judge_via_503_advbench(rows: list[dict]) -> tuple[dict, list[dict]]:
                 judge_model="claude-sonnet-4-5",
             )
         )
+    _enforce_judge_error_floor(len(error_rows), len(rows), "advbench_judge")
     agg = aggregate_verdicts(verdicts)
     slim = [
         {
@@ -803,7 +899,8 @@ def _judge_via_503_advbench(rows: list[dict]) -> tuple[dict, list[dict]]:
         }
         for v in verdicts
     ]
-    return dict(agg), slim
+    summary = {**dict(agg), "n_judge_errors": len(error_rows)}
+    return summary, slim + error_rows
 
 
 def _judge_via_503_broad_syco(
@@ -856,6 +953,10 @@ def _judge_via_503_broad_syco(
         except (ValueError, json.JSONDecodeError):
             logger.warning("syco save_raw unparseable at %s — keeping summary only", raw_path)
         raw_path.unlink(missing_ok=True)
+    # Same 10% quality floor as the betley path (#503 rig tracks errors
+    # internally; n excludes errors).
+    n_err = int(summary.get("n_errors", 0) or 0)
+    _enforce_judge_error_floor(n_err, int(summary.get("n", 0) or 0) + n_err, "broad_syco_judge")
     return dict(summary), verdicts
 
 
