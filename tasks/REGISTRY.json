@@ -3562,8 +3562,8 @@
       "goal": "Explain the leak/no-leak structure across (source, behavior) cells for three implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing which candidate factor accounts for flat bystander panels: source isolation (no near-twin bystander on the panel), implant strength (source-self delta), payload-persona affinity (bystander base propensity for the behavior), or training-negative coverage; including causal tests of the two manipulable factors - an eval-side near-twin probe on isolated sources, and a training-depth dose probe that pushes the implant harder to see whether flat panels un-floor - rather than correlational re-analysis alone.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/591",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/591",
+      "status": "followups_running",
       "title": "Sycophancy implants that looked persona-localized leak heavily to synthesized near-twin personas (MODERATE confidence)"
     },
     "592": {
