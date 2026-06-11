@@ -1,6 +1,7 @@
 ---
-title: Marker emission rate rank-tracks sycophancy leakage on both bystander panels
-  where sycophancy actually varies (MODERATE confidence)
+title: A cheap marker-leakage probe rank-tracks sycophancy leakage on both bystander
+  panels where sycophancy actually varies, even at checkpoints where the marker never
+  fires (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-03T08:53:19Z'
