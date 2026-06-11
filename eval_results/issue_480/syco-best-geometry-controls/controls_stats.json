@@ -1,8 +1,8 @@
 {
   "schema": "issue_480_syco_geometry_controls_v1",
   "followup_label": "syco-best-geometry-controls",
-  "git_commit_sha": "054e30cc345b7d6d24869bdf8dcb799e3b64cd20",
-  "timestamp_utc": "2026-06-11T08:08:35Z",
+  "git_commit_sha": "e4dede2a7fb2cb3459a145bceeedb1c35184343f",
+  "timestamp_utc": "2026-06-11T08:22:49Z",
   "env_versions": {
     "python": "3.11.15",
     "numpy": "2.2.6",
@@ -445,14 +445,14 @@
   },
   "figures": {
     "inband": {
-      "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.png",
-      "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.pdf",
-      "meta": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.meta.json"
+      "png": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.png",
+      "pdf": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.pdf",
+      "meta": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.meta.json"
     },
     "firing": {
-      "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.png",
-      "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.pdf",
-      "meta": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-syco-best-geometry-controls/figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.meta.json"
+      "png": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.png",
+      "pdf": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.pdf",
+      "meta": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.meta.json"
     }
   }
 }

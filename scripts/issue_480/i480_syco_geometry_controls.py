@@ -552,7 +552,8 @@ def make_figure(
         },
     }
     meta_path.write_text(json.dumps(meta, indent=2) + "\n")
-    return {k: str(v) for k, v in written.items()}
+    # Repo-relative so the committed JSON never references ephemeral worktree paths.
+    return {k: _repo_relative(Path(v)) for k, v in written.items()}
 
 
 # ── Main ──────────────────────────────────────────────────────────────────
