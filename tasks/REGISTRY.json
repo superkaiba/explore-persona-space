@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 603,
+  "highest_id": 604,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3663,6 +3663,13 @@
       "path": "tasks/proposed/603",
       "status": "proposed",
       "title": "P3' write decomposition: does the source's base prior predict the write's common-mode fraction rather than its norm?"
+    },
+    "604": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/604",
+      "status": "proposed",
+      "title": "P0 adapter SVD: do stored dW singular vectors match keys and measured writes, and does the key rotate toward source-minus-negatives with dose?"
     },
     "61": {
       "has_clean_result": true,
