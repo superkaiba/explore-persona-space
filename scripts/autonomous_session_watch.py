@@ -2022,6 +2022,81 @@ def _self_report_age_seconds(issue: int, now: float) -> tuple[float | None, str 
     return (age, ts_str)
 
 
+# ── ALIVE-BUT-STALLED exemption: in-flight provision / fresh poll state ─────
+#
+# refs #573: ~63 ALIVE-BUT-STALLED auto-respawns across 17 tasks on
+# 2026-06-09 killed healthy sessions mid-step; #534's respawn killed an
+# in-flight `pod.py provision` THREE times, adding ~8h. A provision waiting
+# for capacity legitimately posts no markers and freezes the self-report
+# (the session's bg-Bash chain is blocked on the wait), so the staleness
+# signals alone misclassify it. Before acting on a stale entry, probe two
+# cheap local signals; either one exempts the session this tick:
+#   1. a LIVE `pod.py provision|resume --issue <N>` (or pod_lifecycle.py)
+#      process on this VM — /proc cmdline scan, no psutil dependency;
+#   2. fresh poll-pipeline tick state for the issue
+#      (.claude/cache/poll-pipeline-<N>.json mtime within the stalled
+#      window) — the polling chain is demonstrably alive even if it has
+#      not posted a marker this window.
+
+# poll_pipeline's DEFAULT_STATE_DIR (kept in sync by convention; the file
+# name is poll-pipeline-<issue>.json).
+_POLL_STATE_DIR = PROJECT_ROOT / ".claude" / "cache"
+
+
+def _find_provision_process(issue: int) -> int | None:
+    """PID of a live ``pod.py provision|resume --issue <N>`` /
+    ``pod_lifecycle.py provision|resume --issue <N>`` process, or ``None``.
+
+    Pure /proc cmdline scan (NUL-separated argv): a process qualifies when
+    its argv has (a) a token ending in ``pod.py`` or ``pod_lifecycle.py``,
+    (b) a bare ``provision`` or ``resume`` verb token, and (c) ``--issue <N>``
+    (adjacent tokens or the ``--issue=<N>`` form). Fail-soft: any read error
+    on a /proc entry skips that entry; an unreadable /proc returns None.
+    """
+    needle = str(issue)
+    try:
+        entries = list(Path("/proc").iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw:
+            continue
+        argv = [a for a in raw.decode("utf-8", "replace").split("\0") if a]
+        if not any(a.endswith(("pod.py", "pod_lifecycle.py")) for a in argv):
+            continue
+        if not any(a in ("provision", "resume") for a in argv):
+            continue
+        for i, a in enumerate(argv):
+            if (a == "--issue" and i + 1 < len(argv) and argv[i + 1] == needle) or (
+                a == f"--issue={needle}"
+            ):
+                return int(entry.name)
+    return None
+
+
+def _provision_in_flight_reason(issue: int, now: float) -> str | None:
+    """Human-readable exemption reason when issue #N has in-flight pod
+    provisioning / fresh polling activity, else ``None``. See the comment
+    block above for the two signals (refs #573)."""
+    pid = _find_provision_process(issue)
+    if pid is not None:
+        return f"live pod provision/resume process (pid {pid}) for issue #{issue}"
+    state = _POLL_STATE_DIR / f"poll-pipeline-{issue}.json"
+    try:
+        age = now - state.stat().st_mtime
+    except OSError:
+        return None
+    if age < STALLED_WINDOW_S:
+        return f"poll-pipeline state fresh ({age / 60:.1f}m old): {state.name}"
+    return None
+
+
 def _stop_session(session_id: str, dry_run: bool) -> bool:
     """Stop an in-flight Happy session by id via
     ``spawn_session.py stop --session-id <id>``. Returns True on success.
@@ -2552,6 +2627,22 @@ def _process_stalled_session(
         respawn_count=respawn_count,
         threshold=threshold,
     )
+
+    # In-flight-provision exemption (refs #573): a provision waiting for
+    # capacity blocks the session's bg-Bash chain, freezing BOTH staleness
+    # signals while being exactly the work the session should be doing —
+    # #534's auto-respawn killed an in-flight provision 3x (~8h lost).
+    # Probed LAZILY (only when decide() wants to escalate or accumulate a
+    # miss) so the healthy-session hot path never pays the /proc scan.
+    if action != "keep" or new_missed > 0:
+        exempt_reason = _provision_in_flight_reason(issue, now)
+        if exempt_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {exempt_reason}; "
+                f"treating session as live this tick (would have been "
+                f"action={action})."
+            )
+            action, new_missed = ("keep", 0)
 
     self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
     marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"

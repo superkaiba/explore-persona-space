@@ -1574,6 +1574,11 @@ def _patch_stale_signals(monkeypatch, asw, *, status: str, age_s: float | None =
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
     monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # Neutralize the in-flight-provision exemption (refs #573): these tests
+    # use REAL issue numbers, and the probe reads the live VM's /proc + the
+    # repo's .claude/cache/poll-pipeline-<N>.json — both nondeterministic
+    # here. Tests of the exemption itself re-patch this explicitly.
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
     return age_s
 
 
@@ -1598,6 +1603,11 @@ def stalled_recorder(monkeypatch):
         "_post_progress_marker",
         lambda issue, note, dry_run, label: markers.append((issue, label)),
     )
+    # Neutralize the in-flight-provision exemption (refs #573): the probe
+    # reads the live VM's /proc + the repo's real poll-pipeline state files,
+    # which is nondeterministic under the fake `now` these tests use.
+    # Exemption-specific tests re-patch this explicitly.
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
     return stops, spawns, markers
 
 
@@ -1622,6 +1632,71 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
     assert stops == ["sess-518"]
     assert spawns == [(518, 24.0)]
     assert markers == [(518, "session-auto-respawn")]
+
+
+def test_stalled_exemption_live_provision_blocks_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # refs #573: a session whose bg-Bash chain is blocked on a live
+    # `pod.py provision --wait-for-capacity` is NOT stalled — #534's
+    # auto-respawn killed an in-flight provision 3x (~8h lost). When the
+    # in-flight-provision probe returns a reason, the stalled detector
+    # must neither accumulate misses nor stop/spawn/post markers.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 518, "sess-518", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw,
+        "_provision_in_flight_reason",
+        lambda issue, now: f"live pod provision/resume process (pid 4242) for issue #{issue}",
+    )
+    now = 1_000_000.0
+
+    for _ in range(4):  # well past the 2-miss threshold
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+
+def test_provision_in_flight_reason_fresh_poll_state(monkeypatch, tmp_path):
+    # Signal 2: a fresh poll-pipeline-<N>.json mtime exempts the session even
+    # without a live provision process; a stale one does not.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_find_provision_process", lambda issue: None)
+    monkeypatch.setattr(asw, "_POLL_STATE_DIR", tmp_path)
+    state = tmp_path / "poll-pipeline-77.json"
+    state.write_text("{}")
+    mtime = state.stat().st_mtime
+
+    fresh = asw._provision_in_flight_reason(77, now=mtime + 60.0)
+    assert fresh is not None and "poll-pipeline" in fresh
+
+    stale = asw._provision_in_flight_reason(77, now=mtime + asw.STALLED_WINDOW_S + 60.0)
+    assert stale is None
+
+    # Missing file -> no exemption.
+    assert asw._provision_in_flight_reason(78, now=mtime) is None
+
+
+def test_provision_in_flight_reason_live_process(monkeypatch, tmp_path):
+    # Signal 1: a live provision/resume process wins regardless of poll state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_POLL_STATE_DIR", tmp_path)  # no state files
+    monkeypatch.setattr(asw, "_find_provision_process", lambda issue: 4242)
+    reason = asw._provision_in_flight_reason(77, now=1_000_000.0)
+    assert reason is not None and "pid 4242" in reason
+
+
+def test_find_provision_process_matches_own_argv():
+    # End-to-end /proc scan against THIS test process: temporarily nothing
+    # matches (this pytest process has no pod.py provision argv), so the
+    # scan returns None without raising.
+    import autonomous_session_watch as asw
+
+    assert asw._find_provision_process(999_999_999) is None
 
 
 def test_stalled_pass_failed_pod_snapshot_degrades_to_empty(
