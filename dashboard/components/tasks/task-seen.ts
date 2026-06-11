@@ -51,14 +51,41 @@ export function readSeenState(): SeenState {
   return { baseline, seen };
 }
 
-/** Record "user looked at task <id> now". */
-export function markTaskSeen(id: number): void {
+/**
+ * Record "user looked at task <id> now". `atLeastIso` (the task's
+ * server-side lastActivityAt, or the server's render time) guards against
+ * a client clock running behind the VM: the stamp is max(client now,
+ * atLeastIso) so a just-updated task never keeps glowing after a visit.
+ */
+export function markTaskSeen(id: number, atLeastIso?: string | null): void {
   if (typeof window === "undefined") return;
   try {
     const { seen } = readSeenState();
-    seen[String(id)] = new Date().toISOString();
+    let stamp = new Date().toISOString();
+    if (atLeastIso) {
+      const atLeastMs = Date.parse(atLeastIso);
+      if (Number.isFinite(atLeastMs) && atLeastMs > Date.parse(stamp)) {
+        stamp = new Date(atLeastMs).toISOString();
+      }
+    }
+    seen[String(id)] = stamp;
     window.localStorage.setItem(SEEN_KEY, JSON.stringify(seen));
   } catch {
     // Same degradation as readSeenState — tracking is best-effort.
+  }
+}
+
+/**
+ * Reset everything to "seen as of now": baseline moves to now, per-id map
+ * clears (O(1) storage). Escape hatch for mass-glow events, e.g. a bulk git
+ * operation rewriting many body.md mtimes at once.
+ */
+export function markAllTasksSeen(): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(BASELINE_KEY, new Date().toISOString());
+    window.localStorage.setItem(SEEN_KEY, "{}");
+  } catch {
+    // Best-effort, as above.
   }
 }

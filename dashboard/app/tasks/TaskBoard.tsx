@@ -32,14 +32,21 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TaskListing, Track } from "@/lib/tasks";
 import type { TaskProgressView } from "@/lib/progress";
 import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
-import { markTaskSeen, readSeenState, type SeenState } from "@/components/tasks/task-seen";
+import {
+  markAllTasksSeen,
+  markTaskSeen,
+  readSeenState,
+  type SeenState,
+} from "@/components/tasks/task-seen";
 import { STATUS_DISPLAY_ORDER, STATUS_LABELS, type Status } from "@/lib/repo";
 
 /** Per-card callbacks/lookups threaded into both views (kept as one object
  * so the prop plumbing stays flat). */
 type CardCtx = {
   isUnseen: (t: TaskListing) => boolean;
-  markSeen: (id: number) => void;
+  /** Takes the whole task so the seen stamp can be clamped to its
+   * lastActivityAt (client clocks can run behind the VM's mtimes). */
+  markSeen: (t: TaskListing) => void;
   /** Family size minus self (0 = no relatives → button hidden). */
   relativesOf: (id: number) => number;
   showRelated: (id: number) => void;
@@ -154,14 +161,18 @@ export function TaskBoard({
   const familyOf = useMemo(() => buildFamilyMap(tasks), [tasks]);
 
   const updateParams = useCallback(
-    (patch: Record<string, string | null>) => {
+    (patch: Record<string, string | null>, opts?: { push?: boolean }) => {
       const next = new URLSearchParams(searchParams.toString());
       for (const [k, v] of Object.entries(patch)) {
         if (v === null || v === "") next.delete(k);
         else next.set(k, v);
       }
       const qs = next.toString();
-      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+      const url = qs ? `${pathname}?${qs}` : pathname;
+      // Toggles (view/track) replace; drill-downs (family filter) push, so
+      // the browser Back button exits the filter naturally.
+      if (opts?.push) router.push(url, { scroll: false });
+      else router.replace(url, { scroll: false });
     },
     [router, pathname, searchParams],
   );
@@ -178,15 +189,26 @@ export function TaskBoard({
           Number.isFinite(activityMs) && Number.isFinite(seenMs) && activityMs > seenMs
         );
       },
-      markSeen: (id: number) => {
-        markTaskSeen(id);
+      markSeen: (t: TaskListing) => {
+        markTaskSeen(t.id, t.lastActivityAt);
         setSeenState(readSeenState());
       },
       relativesOf: (id: number) => (familyOf.get(id)?.length ?? 1) - 1,
-      showRelated: (id: number) => updateParams({ related: String(id) }),
+      showRelated: (id: number) =>
+        updateParams({ related: String(id) }, { push: true }),
     }),
     [seenState, familyOf, updateParams],
   );
+
+  const unseenCount = useMemo(
+    () => tasks.reduce((n, t) => (cardCtx.isUnseen(t) ? n + 1 : n), 0),
+    [tasks, cardCtx],
+  );
+
+  const markAllSeen = useCallback(() => {
+    markAllTasksSeen();
+    setSeenState(readSeenState());
+  }, []);
 
   // Family filter (when active) overrides the track filter — a family can
   // span both lanes and hiding half of it would defeat the point.
@@ -289,6 +311,17 @@ export function TaskBoard({
             <span className="text-stone-400"> (of {tasks.length})</span>
           )}
         </span>
+
+        {unseenCount > 0 && (
+          <button
+            type="button"
+            onClick={markAllSeen}
+            title="Clear the unseen-update glow on every task (escape hatch for mass updates)"
+            className="rounded bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100"
+          >
+            Mark all seen ({unseenCount})
+          </button>
+        )}
       </div>
 
       {relatedFamily && relatedId !== null && (
@@ -312,7 +345,9 @@ export function TaskBoard({
         <KanbanBoard
           byStatus={byStatus}
           progress={progress}
-          showArchived={showArchived}
+          // A family view shows the WHOLE family — unhide archived members
+          // so the banner count matches the visible cards.
+          showArchived={showArchived || relatedFamily !== null}
           ctx={cardCtx}
         />
       ) : (
@@ -486,7 +521,7 @@ function KanbanCard({
   return (
     <Link
       href={`/tasks/${row.id}`}
-      onClick={() => ctx.markSeen(row.id)}
+      onClick={() => ctx.markSeen(row)}
       className={`block rounded-md border bg-white px-3 py-2 transition-colors hover:bg-stone-50 ${
         unseen
           ? "unseen-glow border-amber-300 hover:border-amber-400"
@@ -659,10 +694,10 @@ function StatusSection({
         {rows.map((row) => {
           const unseen = ctx.isUnseen(row);
           return (
-            <li key={row.id} className={unseen ? "unseen-glow relative z-10" : undefined}>
+            <li key={row.id} className={unseen ? "unseen-glow-inset" : undefined}>
               <Link
                 href={`/tasks/${row.id}`}
-                onClick={() => ctx.markSeen(row.id)}
+                onClick={() => ctx.markSeen(row)}
                 className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 ${
                   unseen ? "bg-amber-50/40 hover:bg-amber-50" : "hover:bg-stone-50"
                 }`}

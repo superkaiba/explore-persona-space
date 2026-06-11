@@ -134,7 +134,7 @@ export default async function TaskDetail({
 
   return (
     <article className="space-y-6">
-      <MarkTaskSeen taskId={id} />
+      <MarkTaskSeen taskId={id} serverNow={new Date().toISOString()} />
       <header className="space-y-3">
         <div className="flex items-baseline gap-3 text-sm text-stone-500">
           <Link href="/" className="hover:text-stone-800">
