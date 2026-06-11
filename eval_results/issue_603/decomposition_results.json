@@ -1,8 +1,8 @@
 {
   "meta": {
     "issue": 603,
-    "git_commit": "231b265725046e93924d4551110efad32d31088f",
-    "timestamp_utc": "2026-06-11T19:29:32Z",
+    "git_commit": "91cc7c5c7bda529a21389987a38146220de4db3a",
+    "timestamp_utc": "2026-06-11T21:19:09Z",
     "primary_read": "primary_l14_mean_resp",
     "reads": {
       "primary_l14_mean_resp": "delta_v_mean_resp",
