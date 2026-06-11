@@ -111,3 +111,56 @@ def test_status_lookup_falls_back_to_live_api(monkeypatch, tmp_path, capsys):
     err = capsys.readouterr().err
     assert "[ssh-wait-ALARM]" in err
     assert "RUNNING (BILLING)" in err
+
+
+# ─── setsid detach for autonomous provisions/resumes (refs #573) ─────────────
+
+
+def _record_setsid(monkeypatch):
+    calls: list[bool] = []
+    monkeypatch.setattr(pod_lifecycle.os, "setsid", lambda: calls.append(True))
+    return calls
+
+
+def test_setsid_fires_for_autonomous_provision(monkeypatch, capsys):
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.delenv("EPM_NO_SETSID", raising=False)
+    calls = _record_setsid(monkeypatch)
+    pod_lifecycle._maybe_detach_into_own_session("provision")
+    assert calls == [True]
+    assert "detached into own session" in capsys.readouterr().err
+
+
+def test_setsid_skipped_outside_autonomous_mode(monkeypatch):
+    monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
+    calls = _record_setsid(monkeypatch)
+    pod_lifecycle._maybe_detach_into_own_session("provision")
+    assert calls == []
+
+
+def test_setsid_skipped_for_non_lifecycle_verbs(monkeypatch):
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    calls = _record_setsid(monkeypatch)
+    for verb in ("stop", "terminate", "list-ephemeral", None):
+        pod_lifecycle._maybe_detach_into_own_session(verb)
+    assert calls == []
+
+
+def test_setsid_opt_out_env(monkeypatch):
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_NO_SETSID", "1")
+    calls = _record_setsid(monkeypatch)
+    pod_lifecycle._maybe_detach_into_own_session("provision")
+    assert calls == []
+
+
+def test_setsid_failure_is_fail_soft(monkeypatch, capsys):
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.delenv("EPM_NO_SETSID", raising=False)
+
+    def _boom():
+        raise OSError(1, "Operation not permitted")
+
+    monkeypatch.setattr(pod_lifecycle.os, "setsid", _boom)
+    pod_lifecycle._maybe_detach_into_own_session("resume")  # must not raise
+    assert "setsid failed" in capsys.readouterr().err

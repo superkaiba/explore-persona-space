@@ -2377,6 +2377,51 @@ def _parser_list(sub: argparse._SubParsersAction) -> None:
     p.set_defaults(func=cmd_list_ephemeral)
 
 
+# Verbs that detach into their own session in autonomous mode (long-running,
+# billing-relevant; a respawn-kill mid-flight orphans a paid pod).
+_SETSID_VERBS = frozenset({"provision", "resume"})
+
+
+def _maybe_detach_into_own_session(verb: str | None) -> None:
+    """Detach provision/resume into their OWN session (``os.setsid``) when
+    running inside an autonomous /issue session (refs #573).
+
+    Why: the stalled-detector's stop-then-respawn (and the 12h session
+    recycle) kills the old session's process group; on 2026-06-09 that
+    killed in-flight ``pod.py provision`` background commands three times on
+    #534 (~8h lost) and sent 3 morning sessions dark. ``os.setsid`` moves
+    this process out of the doomed process group, so a group-targeted kill
+    no longer reaches it, while the parent-child relationship, stdio pipes
+    (bg-Bash output capture), and exit-code delivery are all unchanged.
+
+    Scope guards:
+    - only the long-running, billing-relevant verbs (:data:`_SETSID_VERBS`);
+    - only in autonomous mode (``EPM_AUTONOMOUS_SESSION=1``) — interactive
+      shells keep normal Ctrl-C / job-control semantics;
+    - ``EPM_NO_SETSID=1`` opts out (debug escape hatch);
+    - fail-soft: ``os.setsid`` raises ``OSError`` when the process is
+      already a process-group leader — log and continue in that case.
+    """
+    if verb not in _SETSID_VERBS or not _autonomous_session():
+        return
+    if os.environ.get("EPM_NO_SETSID", "").strip() == "1":
+        return
+    try:
+        os.setsid()
+        print(
+            f"[pod_lifecycle] {verb}: detached into own session (setsid) so a "
+            f"session respawn's process-group kill can't kill this in-flight "
+            f"{verb} (refs #573).",
+            file=sys.stderr,
+        )
+    except OSError as exc:
+        print(
+            f"[pod_lifecycle] WARN: setsid failed ({exc}); {verb} stays in the "
+            f"caller's process group (a respawn-kill may still reach it).",
+            file=sys.stderr,
+        )
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog="pod_lifecycle",
@@ -2393,6 +2438,7 @@ def main(argv: list[str] | None = None) -> None:
     if not getattr(args, "func", None):
         parser.print_help()
         sys.exit(0)
+    _maybe_detach_into_own_session(getattr(args, "cmd", None))
     args.func(args)
 
 
