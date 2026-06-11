@@ -2,7 +2,8 @@
 title: Geometry-routed marker spillover replicates on a second, broad-negative training
   recipe (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-10T15:34:13Z'
 has_clean_result: true
 parent_id: 553
