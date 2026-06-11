@@ -41,3 +41,7 @@ Test whether the LoRA vs full fine-tuning equivalence in bystander leakage (esta
 ## Cost note
 
 Full FT of 7B = 4× H100 ZeRO-3 vs 1× H100 for LoRA, so FT arms cost roughly 4-6× the equivalent LoRA arms. Ballpark 50-100 GPU-h total for sycophancy + refusal with matched-strength bracketing on both methods; the EM stretch arm adds roughly 25-40 GPU-h.
+
+## Wall-clock constraint
+
+Behaviors are shared-nothing — the plan should parallelize across behaviors rather than serializing them on one pod: separate per-behavior instances/pods (each FT arm needs 4× H100), or one 8× GPU pod hosting two FT arms via GPU splits, with each behavior's LoRA arm + evals overlapped under its FT critical path. Target ≤ ~14h GPU-phase wall-clock. If parallel provisioning is infeasible on the available lane, say so explicitly in the plan rather than silently serializing.
