@@ -105,6 +105,13 @@ export type TaskListing = {
   /** Follow-up rounds run on this task: distinct `followup_label`s across
    *  `epm:followup-scope` markers + `epm:free-analysis-followup-run` markers. */
   followupCount: number;
+  /** Frontmatter `parent_id` when it's a valid number — the board derives
+   *  task families (parent/children/siblings) from these edges. */
+  parentId: number | null;
+  /** ISO ts of the last meaningful update: max(body.md mtime, status-entry
+   *  ts). Deliberately NOT events.jsonl mtime — progress markers tick every
+   *  few minutes on in-flight tasks and would make "updated" meaningless. */
+  lastActivityAt: string | null;
 };
 
 export type TaskEvent = {
@@ -348,6 +355,15 @@ function toIsoString(v: unknown): string | null {
   return null;
 }
 
+/** Later of two ISO timestamps (null-tolerant, unparseable treated as null). */
+function maxIso(a: string | null, b: string | null): string | null {
+  const ams = a ? Date.parse(a) : NaN;
+  const bms = b ? Date.parse(b) : NaN;
+  if (!Number.isFinite(ams)) return Number.isFinite(bms) ? b : null;
+  if (!Number.isFinite(bms)) return a;
+  return ams >= bms ? a : b;
+}
+
 export function listAllTasks(): TaskListing[] {
   const reg = getRegistry();
   const out: TaskListing[] = [];
@@ -360,15 +376,26 @@ export function listAllTasks(): TaskListing[] {
     let tags: string[] = [];
     let classification: string | undefined;
     let fm: Frontmatter | undefined;
+    let bodyMtime: string | null = null;
     try {
-      const raw = fs.readFileSync(path.join(abs, "body.md"), "utf8");
+      const bodyPath = path.join(abs, "body.md");
+      const raw = fs.readFileSync(bodyPath, "utf8");
       fm = matter(raw).data as Frontmatter;
       tags = Array.isArray(fm.tags) ? fm.tags : [];
       classification = typeof fm.classification === "string" ? fm.classification : undefined;
+      bodyMtime = fs.statSync(bodyPath).mtime.toISOString();
     } catch {
       // Skip tasks we can't read frontmatter for
     }
     const eventStats = getEventStats(abs);
+    const statusChangedAt = eventStats.lastStatusChangeTs ?? toIsoString(fm?.created_at);
+    const rawParent = fm?.parent_id;
+    const parentId =
+      typeof rawParent === "number" && Number.isFinite(rawParent)
+        ? rawParent
+        : typeof rawParent === "string" && /^\d+$/.test(rawParent)
+          ? Number(rawParent)
+          : null;
     out.push({
       id,
       title: entry.title,
@@ -378,8 +405,10 @@ export function listAllTasks(): TaskListing[] {
       hasCleanResult: entry.has_clean_result,
       classification,
       track: deriveTrack(fm, entry.kind),
-      statusChangedAt: eventStats.lastStatusChangeTs ?? toIsoString(fm?.created_at),
+      statusChangedAt,
       followupCount: eventStats.followupCount,
+      parentId,
+      lastActivityAt: maxIso(bodyMtime, statusChangedAt),
     });
   }
   out.sort((a, b) => b.id - a.id);

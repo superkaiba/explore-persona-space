@@ -6,6 +6,14 @@
  *
  *   - `?view=list|kanban`           (default kanban)
  *   - `?track=experiment|human|all` (default all)
+ *   - `?related=<id>`               (show only that task's family — the
+ *     connected component over frontmatter parent_id edges; overrides the
+ *     track filter while active)
+ *
+ * Unseen-update glow: a card whose `lastActivityAt` is newer than this
+ * device's last visit to the task (localStorage, see
+ * components/tasks/task-seen.ts) pulses amber until the detail page is
+ * opened (or the card is clicked).
  *
  * The server page (`app/tasks/page.tsx`) loads every task once (with its
  * derived `track`) and hands the flat array down. Filtering + grouping
@@ -24,7 +32,18 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { TaskListing, Track } from "@/lib/tasks";
 import type { TaskProgressView } from "@/lib/progress";
 import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
+import { markTaskSeen, readSeenState, type SeenState } from "@/components/tasks/task-seen";
 import { STATUS_DISPLAY_ORDER, STATUS_LABELS, type Status } from "@/lib/repo";
+
+/** Per-card callbacks/lookups threaded into both views (kept as one object
+ * so the prop plumbing stays flat). */
+type CardCtx = {
+  isUnseen: (t: TaskListing) => boolean;
+  markSeen: (id: number) => void;
+  /** Family size minus self (0 = no relatives → button hidden). */
+  relativesOf: (id: number) => number;
+  showRelated: (id: number) => void;
+};
 
 type ViewMode = "list" | "kanban";
 type TrackFilter = "experiment" | "human" | "all";
@@ -105,6 +124,35 @@ export function TaskBoard({
       ? trackParam
       : initialTrack;
 
+  // ?related=<id> — family filter (parent/children/siblings via parent_id).
+  const relatedParam = searchParams.get("related");
+  const relatedId =
+    relatedParam && /^\d+$/.test(relatedParam) ? Number(relatedParam) : null;
+
+  // Seen-state (unseen-update glow). Read client-side after mount — the
+  // server render shows no glow, then the first effect pass lights up
+  // genuinely-unseen cards (avoids a hydration mismatch on localStorage).
+  const [seenState, setSeenState] = useState<SeenState | null>(null);
+  useEffect(() => {
+    const load = () => setSeenState(readSeenState());
+    load();
+    // Re-read on focus / bfcache restore / cross-tab writes so coming back
+    // from a task detail page clears its glow without a manual reload.
+    window.addEventListener("focus", load);
+    window.addEventListener("pageshow", load);
+    window.addEventListener("storage", load);
+    document.addEventListener("visibilitychange", load);
+    return () => {
+      window.removeEventListener("focus", load);
+      window.removeEventListener("pageshow", load);
+      window.removeEventListener("storage", load);
+      document.removeEventListener("visibilitychange", load);
+    };
+  }, []);
+
+  // Family map over ALL tasks (not track-filtered — relations cross lanes).
+  const familyOf = useMemo(() => buildFamilyMap(tasks), [tasks]);
+
   const updateParams = useCallback(
     (patch: Record<string, string | null>) => {
       const next = new URLSearchParams(searchParams.toString());
@@ -118,11 +166,42 @@ export function TaskBoard({
     [router, pathname, searchParams],
   );
 
+  const cardCtx: CardCtx = useMemo(
+    () => ({
+      isUnseen: (t: TaskListing) => {
+        if (!seenState || !t.lastActivityAt) return false;
+        const seenAt = seenState.seen[String(t.id)] ?? seenState.baseline;
+        if (!seenAt) return false;
+        const activityMs = Date.parse(t.lastActivityAt);
+        const seenMs = Date.parse(seenAt);
+        return (
+          Number.isFinite(activityMs) && Number.isFinite(seenMs) && activityMs > seenMs
+        );
+      },
+      markSeen: (id: number) => {
+        markTaskSeen(id);
+        setSeenState(readSeenState());
+      },
+      relativesOf: (id: number) => (familyOf.get(id)?.length ?? 1) - 1,
+      showRelated: (id: number) => updateParams({ related: String(id) }),
+    }),
+    [seenState, familyOf, updateParams],
+  );
+
+  // Family filter (when active) overrides the track filter — a family can
+  // span both lanes and hiding half of it would defeat the point.
+  const relatedFamily = useMemo(() => {
+    if (relatedId === null) return null;
+    const members = familyOf.get(relatedId);
+    return members && members.length > 0 ? new Set(members) : null;
+  }, [relatedId, familyOf]);
+
   // Track-filtered tasks (used by both views).
   const filtered = useMemo(() => {
+    if (relatedFamily) return tasks.filter((t) => relatedFamily.has(t.id));
     if (track === "all") return tasks;
     return tasks.filter((t) => t.track === track);
-  }, [tasks, track]);
+  }, [tasks, track, relatedFamily]);
 
   const byStatus = useMemo(() => groupByStatus(filtered), [filtered]);
 
@@ -212,13 +291,77 @@ export function TaskBoard({
         </span>
       </div>
 
+      {relatedFamily && relatedId !== null && (
+        <div className="flex items-center gap-3 rounded-lg border border-sky-200 bg-sky-50 px-4 py-2 text-sm text-sky-900">
+          <span>
+            Related to <span className="font-mono font-medium">#{relatedId}</span> —{" "}
+            {filtered.length} task{filtered.length === 1 ? "" : "s"} in this family
+            (parent / children / siblings)
+          </span>
+          <button
+            type="button"
+            onClick={() => updateParams({ related: null })}
+            className="ml-auto rounded px-2 py-0.5 text-xs font-medium text-sky-700 hover:bg-sky-100"
+          >
+            ✕ Clear
+          </button>
+        </div>
+      )}
+
       {view === "kanban" ? (
-        <KanbanBoard byStatus={byStatus} progress={progress} showArchived={showArchived} />
+        <KanbanBoard
+          byStatus={byStatus}
+          progress={progress}
+          showArchived={showArchived}
+          ctx={cardCtx}
+        />
       ) : (
-        <ListView byStatus={byStatus} progress={progress} />
+        <ListView byStatus={byStatus} progress={progress} ctx={cardCtx} />
       )}
     </div>
   );
+}
+
+/**
+ * Connected components over frontmatter parent_id edges: id → sorted member
+ * ids of its family (self included; singletons map to [self]). Edges to ids
+ * missing from the listing (e.g. deleted parents) are ignored.
+ */
+function buildFamilyMap(tasks: TaskListing[]): Map<number, number[]> {
+  const ids = new Set(tasks.map((t) => t.id));
+  const adj = new Map<number, number[]>();
+  const link = (a: number, b: number) => {
+    const cur = adj.get(a);
+    if (cur) cur.push(b);
+    else adj.set(a, [b]);
+  };
+  for (const t of tasks) {
+    if (t.parentId !== null && ids.has(t.parentId)) {
+      link(t.id, t.parentId);
+      link(t.parentId, t.id);
+    }
+  }
+  const familyOf = new Map<number, number[]>();
+  const visited = new Set<number>();
+  for (const t of tasks) {
+    if (visited.has(t.id)) continue;
+    visited.add(t.id);
+    const members: number[] = [];
+    const queue = [t.id];
+    while (queue.length > 0) {
+      const cur = queue.pop()!;
+      members.push(cur);
+      for (const nb of adj.get(cur) ?? []) {
+        if (!visited.has(nb)) {
+          visited.add(nb);
+          queue.push(nb);
+        }
+      }
+    }
+    members.sort((a, b) => a - b);
+    for (const m of members) familyOf.set(m, members);
+  }
+  return familyOf;
 }
 
 // Epoch ms the task entered its current status; 0 (sorts to the bottom)
@@ -251,10 +394,12 @@ function KanbanBoard({
   byStatus,
   progress,
   showArchived,
+  ctx,
 }: {
   byStatus: Record<Status, TaskListing[]>;
   progress: Record<number, TaskProgressView>;
   showArchived: boolean;
+  ctx: CardCtx;
 }) {
   const columns = KANBAN_COLUMN_ORDER.filter(
     (status) => status !== "archived" || showArchived,
@@ -268,6 +413,7 @@ function KanbanBoard({
             status={status}
             rows={byStatus[status] ?? []}
             progress={progress}
+            ctx={ctx}
           />
         ))}
       </div>
@@ -279,10 +425,12 @@ function KanbanColumn({
   status,
   rows,
   progress,
+  ctx,
 }: {
   status: Status;
   rows: TaskListing[];
   progress: Record<number, TaskProgressView>;
+  ctx: CardCtx;
 }) {
   const empty = rows.length === 0;
   return (
@@ -312,7 +460,12 @@ function KanbanColumn({
           <p className="px-1 py-3 text-center text-xs text-stone-300">No tasks</p>
         ) : (
           rows.map((row) => (
-            <KanbanCard key={row.id} row={row} progressView={progress[row.id]} />
+            <KanbanCard
+              key={row.id}
+              row={row}
+              progressView={progress[row.id]}
+              ctx={ctx}
+            />
           ))
         )}
       </div>
@@ -323,17 +476,27 @@ function KanbanColumn({
 function KanbanCard({
   row,
   progressView,
+  ctx,
 }: {
   row: TaskListing;
   progressView?: TaskProgressView;
+  ctx: CardCtx;
 }) {
+  const unseen = ctx.isUnseen(row);
   return (
     <Link
       href={`/tasks/${row.id}`}
-      className="block rounded-md border border-stone-200 bg-white px-3 py-2 transition-colors hover:border-stone-300 hover:bg-stone-50"
+      onClick={() => ctx.markSeen(row.id)}
+      className={`block rounded-md border bg-white px-3 py-2 transition-colors hover:bg-stone-50 ${
+        unseen
+          ? "unseen-glow border-amber-300 hover:border-amber-400"
+          : "border-stone-200 hover:border-stone-300"
+      }`}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-xs text-stone-500">#{row.id}</span>
+        <span className="flex items-center gap-1.5 font-mono text-xs text-stone-500">
+          {unseen && <UnseenDot />}#{row.id}
+        </span>
         <TrackBadge track={row.track} />
       </div>
       <p className="mt-1 line-clamp-2 text-sm leading-snug text-stone-900">
@@ -344,9 +507,52 @@ function KanbanCard({
         {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
         <FollowupCountBadge count={row.followupCount} />
         {row.status === "followups_running" && <FollowupModeBadge tags={row.tags} />}
+        <RelatedButton id={row.id} ctx={ctx} />
       </div>
       {progressView && <TaskProgressBar view={progressView} compact />}
     </Link>
+  );
+}
+
+/** Pulsing marker next to the id of an unseen-update card. */
+function UnseenDot() {
+  return (
+    <span
+      className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400"
+      title="Updated since you last looked at this task"
+    />
+  );
+}
+
+/**
+ * "N related" — filters the board to this task's family. A <span
+ * role=button> rather than <button>: cards/rows are <Link>s and nested
+ * interactive elements are invalid HTML, so we stop the navigation instead.
+ */
+function RelatedButton({ id, ctx }: { id: number; ctx: CardCtx }) {
+  const n = ctx.relativesOf(id);
+  if (n <= 0) return null;
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      title="Show this task together with its parent / children / siblings"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        ctx.showRelated(id);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          e.stopPropagation();
+          ctx.showRelated(id);
+        }
+      }}
+      className="rounded bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-600 transition-colors hover:bg-sky-100 hover:text-sky-800"
+    >
+      ⛓ {n} related
+    </span>
   );
 }
 
@@ -390,9 +596,11 @@ const LIST_EXPANDED: ReadonlySet<Status> = new Set([
 function ListView({
   byStatus,
   progress,
+  ctx,
 }: {
   byStatus: Record<Status, TaskListing[]>;
   progress: Record<number, TaskProgressView>;
+  ctx: CardCtx;
 }) {
   const sections = STATUS_DISPLAY_ORDER.filter(
     (status) => (byStatus[status] ?? []).length > 0,
@@ -412,6 +620,7 @@ function ListView({
           status={status}
           rows={byStatus[status]}
           progress={progress}
+          ctx={ctx}
           defaultOpen={LIST_EXPANDED.has(status)}
         />
       ))}
@@ -423,11 +632,13 @@ function StatusSection({
   status,
   rows,
   progress,
+  ctx,
   defaultOpen,
 }: {
   status: Status;
   rows: TaskListing[];
   progress: Record<number, TaskProgressView>;
+  ctx: CardCtx;
   defaultOpen: boolean;
 }) {
   return (
@@ -445,32 +656,43 @@ function StatusSection({
         <span className="text-xs uppercase tracking-wide text-stone-400">{status}</span>
       </summary>
       <ul className="divide-y divide-stone-100 border-t border-stone-100">
-        {rows.map((row) => (
-          <li key={row.id}>
-            <Link
-              href={`/tasks/${row.id}`}
-              className="flex flex-col gap-1 px-4 py-3 hover:bg-stone-50 sm:flex-row sm:items-center sm:gap-4 sm:px-5"
-            >
-              <span className="font-mono text-sm text-stone-500 sm:w-14">#{row.id}</span>
-              <span className="flex-1 text-sm leading-snug text-stone-900">
-                {row.title || <em className="text-stone-400">(untitled)</em>}
-              </span>
-              <span className="flex flex-wrap items-center gap-2">
-                <TrackBadge track={row.track} />
-                <KindBadge kind={row.kind} />
-                {row.hasCleanResult && <CleanResultBadge classification={row.classification} />}
-                <FollowupCountBadge count={row.followupCount} />
-              </span>
-              {progress[row.id] && (
-                <TaskProgressBar
-                  view={progress[row.id]}
-                  compact
-                  className="w-full sm:w-44 sm:shrink-0"
-                />
-              )}
-            </Link>
-          </li>
-        ))}
+        {rows.map((row) => {
+          const unseen = ctx.isUnseen(row);
+          return (
+            <li key={row.id} className={unseen ? "unseen-glow relative z-10" : undefined}>
+              <Link
+                href={`/tasks/${row.id}`}
+                onClick={() => ctx.markSeen(row.id)}
+                className={`flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-5 ${
+                  unseen ? "bg-amber-50/40 hover:bg-amber-50" : "hover:bg-stone-50"
+                }`}
+              >
+                <span className="flex items-center gap-1.5 font-mono text-sm text-stone-500 sm:w-14">
+                  {unseen && <UnseenDot />}#{row.id}
+                </span>
+                <span className="flex-1 text-sm leading-snug text-stone-900">
+                  {row.title || <em className="text-stone-400">(untitled)</em>}
+                </span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <TrackBadge track={row.track} />
+                  <KindBadge kind={row.kind} />
+                  {row.hasCleanResult && (
+                    <CleanResultBadge classification={row.classification} />
+                  )}
+                  <FollowupCountBadge count={row.followupCount} />
+                  <RelatedButton id={row.id} ctx={ctx} />
+                </span>
+                {progress[row.id] && (
+                  <TaskProgressBar
+                    view={progress[row.id]}
+                    compact
+                    className="w-full sm:w-44 sm:shrink-0"
+                  />
+                )}
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </details>
   );

@@ -14,6 +14,7 @@ import {
 import { STATUS_LABELS, type Status } from "@/lib/repo";
 import { getProgressMap } from "@/lib/progress";
 import { TaskProgressBar } from "@/components/tasks/TaskProgressBar";
+import { MarkTaskSeen } from "@/components/tasks/MarkTaskSeen";
 import { CollapsiblePanel } from "@/components/CollapsiblePanel";
 import { FeedMarkdown } from "./FeedMarkdown";
 import {
@@ -133,6 +134,7 @@ export default async function TaskDetail({
 
   return (
     <article className="space-y-6">
+      <MarkTaskSeen taskId={id} />
       <header className="space-y-3">
         <div className="flex items-baseline gap-3 text-sm text-stone-500">
           <Link href="/" className="hover:text-stone-800">
