@@ -18,7 +18,7 @@ relates_to:
 - app1
 - leak-argmax-vs-logprob
 ---
-# Marker survival under retraining is a property of the over-trained install, not the eraser content — misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)
+# Marker survival under retraining tracks the over-trained install, with no detectable eraser-content effect — misaligned medical SFT leaves the saturated install firing at the honest eraser's rate (MODERATE confidence)
 
 <!-- clean-result-v2 -->
 
