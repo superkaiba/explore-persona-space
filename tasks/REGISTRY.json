@@ -3670,7 +3670,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/604",
       "status": "interpreting",
-      "title": "P0 adapter SVD: do stored dW singular vectors match keys and measured writes, and does the key rotate toward source-minus-negatives with dose?"
+      "title": "Marker LoRA updates carry a seed-stable write direction, but the top-1 key is seed-arbitrary and does not match the last-prompt-token context vector (MODERATE confidence)"
     },
     "605": {
       "goal": "Determine whether the leakage gate needs a behavior-overlap term beyond base-model context similarity, by varying bystander base prior on the trained behavior at fixed context-vector similarity to the source and testing whether the overlap term carries independent predictive weight on held-out panels.",

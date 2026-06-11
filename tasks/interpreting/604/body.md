@@ -1,6 +1,7 @@
 ---
-title: 'P0 adapter SVD: do stored dW singular vectors match keys and measured writes,
-  and does the key rotate toward source-minus-negatives with dose?'
+title: Marker LoRA updates carry a seed-stable write direction, but the top-1 key
+  is seed-arbitrary and does not match the last-prompt-token context vector (MODERATE
+  confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:17Z'
