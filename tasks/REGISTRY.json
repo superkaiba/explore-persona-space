@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 574,
+  "highest_id": 575,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3443,6 +3443,13 @@
       "path": "tasks/proposed/574",
       "status": "proposed",
       "title": "Verify June 9 interruption recovery: #534 round-2 re-run, orphaned threads #532 #464 #505, idle pod check"
+    },
+    "575": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/575",
+      "status": "proposed",
+      "title": "Spot-check the awaiting_promotion backlog with the new verify_task_body URL-existence check"
     },
     "6": {
       "has_clean_result": false,
