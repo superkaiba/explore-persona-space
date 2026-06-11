@@ -352,3 +352,61 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def rho_by_k() -> None:
+    """Post-hoc decomposition of the pooled H1 correlation by demo count K."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from scipy.stats import spearmanr
+
+    from explore_persona_space.analysis.paper_plots import paper_palette_role, set_paper_style
+
+    set_paper_style("blog")
+    ms = json.loads((EVAL_DIR / "matched_pairs" / "matched_summary.json").read_text())["pairs"]
+
+    def per_q(variant: str, kind: str, step: int | None = None) -> np.ndarray:
+        if kind == "icl":
+            d = json.loads((EVAL_DIR / "icl_panel" / f"{variant}.json").read_text())
+        else:
+            d = json.loads((EVAL_DIR / "ft_panel" / f"{variant}_full_step{step}.json").read_text())
+        return np.array([d["contexts"][c]["delta_logp"] for c in NONSRC])
+
+    rng = np.random.default_rng(42)
+    ks = [1, 3, 8, 16]
+    fig, ax = plt.subplots(figsize=(6.5, 4.0))
+    point_color = paper_palette_role("primary")
+    chain_color = paper_palette_role("neutral")
+    for gi, k in enumerate(ks):
+        ids = [f"ft_K{k}_chain{ch}" for ch in "ABC"]
+        data = [
+            (per_q(ms[i]["icl_dose_variant"], "icl"), per_q(i, "ft", ms[i]["matched_step"]))
+            for i in ids
+        ]
+        chain_rhos = [spearmanr(x.mean(1), y.mean(1)).statistic for x, y in data]
+        point = float(np.mean(chain_rhos))
+        boots = np.empty(5000)
+        for b in range(5000):
+            idx = rng.integers(0, 50, 50)
+            boots[b] = np.mean(
+                [spearmanr(x[:, idx].mean(1), y[:, idx].mean(1)).statistic for x, y in data]
+            )
+        lo, hi = np.percentile(boots, [2.5, 97.5])
+        ax.scatter(np.full(3, gi) + np.linspace(-0.09, 0.09, 3), chain_rhos, s=28,
+                   color=chain_color, zorder=3, label="single chain" if gi == 0 else None)
+        ax.errorbar(gi, point, yerr=[[point - lo], [hi - point]], fmt="o", ms=8,
+                    color=point_color, capsize=4,
+                    label="pooled over 3 chains (95% question-bootstrap CI)" if gi == 0 else None)
+    ax.axhline(0, color="black", lw=0.8)
+    ax.set_xticks(range(4), [f"K={k}" for k in ks])
+    ax.set_ylabel("Spearman ρ, ICL vs FT leakage profile\n(9 non-source contexts per pair)")
+    ax.set_ylim(-0.75, 1.0)
+    ax.legend(loc="upper right", fontsize=8)
+    ax.set_title(
+        "Profile correspondence by demo count\n"
+        "(post-hoc split of the registered pooled headline, which spans all 12 pairs)"
+    )
+    _save(fig, "rho_by_k")
+    plt.close(fig)
