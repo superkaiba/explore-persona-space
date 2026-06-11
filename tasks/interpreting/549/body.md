@@ -1,6 +1,8 @@
 ---
-title: 'Audit historical multi-checkpoint vLLM evals for the #534 lora_int_id cache-collision
-  bug'
+title: 'Auditing every git-tracked vLLM-LoRA eval driver for the cache-collision bug
+  finds one new affected published result — #504''s saturated-anchor geometry was
+  measured on the step-6 adapter, not step 25 — and the bug is still live on main
+  (HIGH confidence)'
 kind: analysis
 tags: []
 created_at: '2026-06-10T06:35:53Z'
