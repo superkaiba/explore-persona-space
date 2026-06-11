@@ -10,6 +10,7 @@
  */
 import { Suspense } from "react";
 import { listAllTasks } from "@/lib/tasks";
+import { getProgressMap } from "@/lib/progress";
 import { STATUS_DISPLAY_ORDER } from "@/lib/repo";
 import { TaskBoard } from "./TaskBoard";
 
@@ -31,6 +32,12 @@ export default async function Tasks({
     sp.track === "experiment" || sp.track === "human" ? sp.track : "all";
 
   const tasks = listAllTasks();
+  // Pipeline progress for in-flight tasks (task #587): live-status-keyed —
+  // the snapshot reader drops rows whose LIVE status has no stage floor, so
+  // `progress[id]` existing implies the bar is valid to render.
+  const statusById: Record<number, string> = {};
+  for (const t of tasks) statusById[t.id] = t.status;
+  const progress = getProgressMap(statusById);
 
   return (
     <div className="space-y-6">
@@ -46,6 +53,7 @@ export default async function Tasks({
       <Suspense fallback={<div className="text-sm text-stone-500">Loading board…</div>}>
         <TaskBoard
           tasks={tasks}
+          progress={progress}
           initialView={initialView}
           initialTrack={initialTrack}
         />
