@@ -52,6 +52,7 @@ external/training-against-misalignment/vectors/
 *.safetensors
 *.bin
 *.npz
+*.npy
 
 # Secrets
 *.key
