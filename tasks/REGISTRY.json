@@ -3338,7 +3338,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/560",
       "status": "interpreting",
-      "title": "Geometry-routed marker spillover replicates on a second training recipe, but the broad negative panel clamps end-of-answer behavior on every held-out persona, not just trained negatives (MODERATE confidence)"
+      "title": "Geometry-routed marker spillover replicates on a second, broad-negative training recipe (MODERATE confidence)"
     },
     "561": {
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast is caused by the training rig rather than the implanted behavior, by retraining the marker arm positive-only \u2014 the #519 contrastive recipe with its negative rows removed and nothing else changed \u2014 and reading the new adapters' layer-14 shift spectrum against the persisted #551 tensors.",
