@@ -11,6 +11,8 @@ has_clean_result: true
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_603.md](https://github.com/superkaiba/explore-persona-space/blob/231b265725046e93924d4551110efad32d31088f/docs/methodology/issue_603.md) · [gist](https://gist.github.com/superkaiba/987635c0b6ab411347ddae2e56a88ce7)
+
 ## Human TL;DR
 
 **Headline.** the clean geometry test of "high-prior teachers write narrower, not weaker" came back empty — on the three-teacher fact axis the direction mix of the write tracks the teacher's head start no better than its size does, and on that designed axis the test's own text-channel checks say the geometry is contaminated by what the responses literally say.
@@ -309,6 +311,7 @@ Follow-ups to tighten or extend these findings (the refusal/EM re-judge original
 - Reused 12 refusal/EM LoRA adapters from [#518](https://eps.superkaiba.com/tasks/518): [`superkaiba1/explore-persona-space` @ `5cb2f3c`, `adapters/issue_518/{refusal,em}/{source}_seed42`](https://huggingface.co/superkaiba1/explore-persona-space/tree/5cb2f3ccec14227b47b23f69cf6cda257b477a38/adapters/issue_518) — fit: same base model; EM implant evidenced by the parent's large trained deltas; refusal implant verified this run (judged source-self rates 0.80–1.00); the 6 sources span the behavioral prior.
 - Reused 18 calibration shift tensors from [#551](https://eps.superkaiba.com/tasks/551) (private data repo `superkaiba1/explore-persona-space-data-private`, `issue551_shift_reextract/analysis_tensors/shifts/`) — fit: produced by the identical extraction rig and read conventions; used only for the pre-pod validation gate, which reproduced the published control numbers to within 1e-3.
 - Reused inputs from [#541](https://eps.superkaiba.com/tasks/541) (prior values + 24-persona panel), [#521](https://eps.superkaiba.com/tasks/521) (the 20 generic panel questions), and [#518](https://eps.superkaiba.com/tasks/518) (training positives pools, the prior-IV inputs; `issue518_leakage_prediction/training_pools/{refusal,em}/{source}/positives.jsonl` on the HF data repo) — fit: the shifts must be read on the distributions the parent results were measured on.
+- **Methodology reference:** [docs/methodology/issue_603.md](https://github.com/superkaiba/explore-persona-space/blob/231b265725046e93924d4551110efad32d31088f/docs/methodology/issue_603.md) · [gist](https://gist.github.com/superkaiba/987635c0b6ab411347ddae2e56a88ce7)
 
 **Compute:** pod-603 (8× H100, RunPod, explicit lane for 8-GPU round-robin sharding); extraction sweep wall time 37.7 min across 21 single-GPU cells (≈ 5 GPU-h) plus a ~10 min single-GPU prior pass; pod terminated after upload verification. Phase-2 decomposition, statistics, judging, and figures ran off-pod on the VM (CPU + Anthropic Messages Batch API).
 
