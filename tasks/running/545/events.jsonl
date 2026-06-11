@@ -190,3 +190,4 @@
 {"ts": "2026-06-11T06:15:42Z", "kind": "epm:progress", "version": 21, "by": "poll_pipeline", "note": "phase transition: judge -> hf", "phase": "hf", "pod": "pod-545"}
 {"ts": "2026-06-11T06:25:13Z", "kind": "epm:progress", "version": 22, "by": "poll_pipeline", "note": "phase transition: hf -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-11T06:33:06Z", "kind": "epm:progress", "version": 23, "by": "unknown", "note": "[autonomous_session_watch:vm-disk-low] VM root disk LOW: 17.0 GiB free on /. Near full, foreground Bash spawns in VM sessions start failing silently (exit 1, zero output — task #552 incident, 2026-06-10). Reclaim candidates: worktree .venvs under .claude/worktrees/, `uv cache prune`, stale /tmp/claude-* trees, the HF cache. Posted once per low-disk episode."}
+{"ts": "2026-06-11T06:44:31Z", "kind": "epm:progress", "version": 24, "by": "poll_pipeline", "note": "phase transition: judge -> done", "phase": "done", "pod": "pod-545"}
