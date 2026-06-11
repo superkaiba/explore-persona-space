@@ -358,3 +358,67 @@ Hyperparameters, training data, and the eval rig are untouched this round: §2�
 ---
 
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/472).*
+
+## 9. Follow-up round 3 — implant-normalized re-analysis + layer-15/20 distance read (zero-GPU)
+
+Run 2026-06-11 over the committed terminal-checkpoint records of the 10 cells × 2 seeds in
+`eval_results/issue_472/c472_*/trajectory.json`. No new training or generation.
+
+### 9.1 Source-implantation read
+
+Per cell × seed, `checkpoints[-1].source_self.delta_g_mean` (trained − base log P(` ※`) on the
+source persona's own probe rows) is read at the first and terminal checkpoint and tabulated
+against the cell's TOTAL negative-row budget (0 / 400 / 800 / 1600; positives fixed at 200 rows).
+
+### 9.2 Implant-normalized leakage DV
+
+For each cell × seed × held-out persona: the per-persona bystander shift (mean `delta_g` over
+the 10 probe questions, collapsed rows excluded) DIVIDED by that cell × seed's source
+`delta_g_mean`. Seeds are pooled per persona by averaging the two normalized values. The
+constant-fraction reference line in the round-3 figure uses the pooled mean ratio over the
+0/400/800-row cells only (the 1600-row cells sit nearest the log-prob ceiling, where the
+`log Z` term compresses the source denominator; #472 predates the four-float storage contract,
+so no logit cross-check is available).
+
+### 9.3 Geometry covariates and panel reconstruction
+
+Realized negative panels are regenerated deterministically with the experiment's own selector
+(`negatives_for_cell`, layer-10 `cos_to_source`) — layer 10 because that is the layer the arms
+were SELECTED with at training time; panels are held fixed at this realized selection for every
+distance read. Distance covariates (`d_source = 1 − cos(probe, villain)`,
+`d_nearest_neg = min over panel of 1 − cos(probe, negative)`) are then computed at layers 10,
+15, and 20 from the per-layer centroid bundles: `data/issue_472/centroids_L10.pt` (committed)
+plus `centroids_L15.pt` / `centroids_L20.pt` fetched from the HF data repo
+(`superkaiba1/explore-persona-space-data`, `issue472_neg_geometry/geometry/`). Per-persona base
+marker priors come from `eval_results/issue_472/base_panel.json`.
+
+### 9.4 Regression and test specs
+
+All on the normalized DV of §9.2 (terminal checkpoint), pooled over the three count-matched
+800-row placement cells (near / spread / far), n = 282 rows (47 personas × 3 arms × 2 seeds),
+OLS with cluster-robust SE grouped by persona, four nested specifications per layer:
+
+1. `raw_dg ~ d_source + d_nearest_neg + base_prior` (replication of the parent run's pooled spec);
+2. `norm ~ d_source + d_nearest_neg + base_prior`;
+3. spec 2 + cell×seed fixed effects;
+4. `norm ~ d_nearest_neg + C(persona) + C(cell×seed)` (within-bystander identification).
+
+Identification diagnostics recorded per layer: median across-arm SD of `d_nearest_neg` within
+persona (floor 0.02) and the share of personas whose nearest panel negative is the default
+assistant. Arm-level and fixed-total composition contrasts use the same per-persona paired
+Friedman (3+ cells) / Wilcoxon (2 cells) machinery as rounds 1-2, applied to the normalized DV;
+95% CIs are nonparametric bootstrap over personas (2,000 resamples). The two cells realized as
+independent runs of the identical mix (`c472_negp_2` / `c472_single_near`, §8.1) calibrate the
+normalized-DV run-to-run offset exactly as §8.2 did for the raw DV.
+
+### 9.5 Figures and artifacts
+
+`scripts/issue472_negative_budget_figures.py` (commit `13f767cc2`) renders:
+
+- `figures/issue_472/negatives_source_implantation.{png,pdf}` — source shift vs total negative
+  rows; per-cell bystander mean vs source shift with the §9.2 constant-fraction reference.
+- `figures/issue_472/leakage_controlled_nulls.{png,pdf}` — normalized DV by placement arm
+  (with the identical-mix rerun gap as a run-noise band), by persona split at fixed totals
+  400 / 1600, and against layer-20 `d_nearest_neg` per persona per arm.
+
+Both carry `.meta.json` provenance sidecars (commit + timestamp).
