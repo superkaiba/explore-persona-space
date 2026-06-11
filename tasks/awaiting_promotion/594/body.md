@@ -3,7 +3,8 @@ title: 48 contexts, as constructed, organize by family at every depth of Qwen2.5
   under a single probe genre, beyond chance, length, and lexical-overlap baselines
   (HIGH confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T06:53:19Z'
 has_clean_result: true
 goal: 'Map the geometry of context representations: extract per-layer context vectors
