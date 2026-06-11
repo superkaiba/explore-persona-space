@@ -113,7 +113,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-new-tokens", type=int, default=DEFAULT_MAX_NEW_TOKENS)
     parser.add_argument("--max-lora-rank", type=int, default=DEFAULT_MAX_LORA_RANK)
     parser.add_argument("--limit-questions", type=int, default=None)
-    parser.add_argument("--gpu-memory-utilization", type=float, default=0.85)
+    # 0.60 (not 0.85): vLLM init probes free VRAM the instant the prior HF
+    # subprocess exits, before the driver finishes reclaiming (~16 GiB residue
+    # observed on all 4 shards, 2026-06-11); 0.60*80 GiB = 47.5 GiB clears even
+    # with one stale 7B footprint still resident.
+    parser.add_argument("--gpu-memory-utilization", type=float, default=0.60)
     args = parser.parse_args(argv)
 
     logging.basicConfig(
