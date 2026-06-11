@@ -79,6 +79,21 @@ MIN_DIST_TARGETS = ("dz", "dz_eos", "dmargin", "margin_trained", "margin_base")
 PARENT_POINTS = {"dz": -0.240, "dmargin": -0.271}  # #553 transfer_478 cell-axis primaries
 I553_EXPOSURE_JSON = PROJECT_ROOT / "eval_results/issue_553/exposure.json"
 
+# Reader-facing display maps (round-1 interp-critique: no internal labels /
+# bare condition codes on rendered figures — paper-plots skill section 3.5).
+ADAPTER_CLASS_GLOSS = {
+    "A": "persona prompt",
+    "B": "query wrap",
+    "C": "few-shot scaffold",
+    "D": "register rephrase",
+}
+STRATUM_DISPLAY = {
+    "never_negative": "never a training negative (512 cells)",
+    "trained_negative": "training negative under the other adapters (45 cells)",
+    "source_resident": "source-resident positive control (3 cells)",
+}
+MIN_DIST_XLABEL = "cosine distance to the run's source context (layer 20)"
+
 
 # ── Panel construction ───────────────────────────────────────────────────────
 
@@ -935,21 +950,22 @@ def fig_hero_min_dist(panel: dict, masks: dict, r1: dict, fig_dir: Path) -> None
             f"{p553.CHANNEL_DISPLAY.get(tgt, tgt)}\nraw rho={i539._spearman_rho(x, y):+.3f}",
             fontsize=8,
         )
-        ax_raw.set_ylabel("raw value (logits)")
+        ax_raw.set_xlabel(MIN_DIST_XLABEL, fontsize=7)
+        ax_raw.set_ylabel("raw change, trained − base (logits)")
         ax_fe.plot(x_tw, y_tw, "o", ms=2.6, alpha=0.4, color=colors[1])
         ci = blk["primary_ci"]
         ax_fe.set_title(
-            f"two-way FE rho={blk['estimate']:+.3f}  "
+            f"adapter+persona-corrected rho={blk['estimate']:+.3f}  "
             f"primary CI [{ci['low']:+.3f}, {ci['high']:+.3f}] ({ci['axis']})\n"
-            f"run CI [{blk['ci95_cluster_run']['low']:+.3f}, "
-            f"{blk['ci95_cluster_run']['high']:+.3f}] / persona CI "
+            f"adapter-cluster CI [{blk['ci95_cluster_run']['low']:+.3f}, "
+            f"{blk['ci95_cluster_run']['high']:+.3f}] / persona-cluster CI "
             f"[{blk['ci95_cluster_persona']['low']:+.3f}, "
             f"{blk['ci95_cluster_persona']['high']:+.3f}]  "
             f"(parent {PARENT_POINTS[tgt]:+.3f})",
             fontsize=7,
         )
-        ax_fe.set_xlabel("min_dist (FE residual)")
-        ax_fe.set_ylabel("FE residual (logits)")
+        ax_fe.set_xlabel("distance residual after adapter + persona effects removed", fontsize=7)
+        ax_fe.set_ylabel("change residual (logits)")
     fig.suptitle(
         "#560: persona geometry vs training-induced change, 557 non-source-resident cells "
         "(raw top, two-way-FE-corrected bottom)",
@@ -1051,6 +1067,71 @@ def fig_exposure(expo: dict, fig_dir: Path) -> None:
     print(f"[figures] wrote i560_exposure_bars to {fig_dir}")
 
 
+def fig_length_trunc_sensitivity(r1: dict, slot_sens: dict, len_trunc: dict, fig_dir: Path) -> None:
+    """F4: headline-robustness forest — the geometry correlation under each
+    sensitivity (registered read, marker-emission slots excluded, response
+    length partialled out, truncated generations excluded), with adapter-cluster
+    CIs where computed. Raw (unpartialled) alongside the partialled/excluded
+    views per the raw-alongside-processed rule.
+    """
+    set_paper_style("blog")
+    colors = paper_palette(2)
+    fig, axes = plt.subplots(1, 2, figsize=(10.2, 4.4))
+    for ax, tgt, title in zip(
+        axes,
+        ("dz", "dmargin"),
+        ("Marker-logit push Δz(※)", "EOS-margin shift Δmargin"),
+        strict=True,
+    ):
+        rows = [
+            (
+                "registered read\n(557 cells)",
+                r1[tgt]["estimate"],
+                r1[tgt]["ci95_cluster_run"],
+            ),
+            (
+                "emission slots\nexcluded (543)",
+                slot_sens[f"{tgt}_eor_only"]["rho_twoway"],
+                None,
+            ),
+            (
+                "response length\npartialled (557)",
+                len_trunc["length_partial"][tgt]["estimate"],
+                len_trunc["length_partial"][tgt]["ci95_cluster_run"],
+            ),
+            (
+                "truncated answers\nexcluded (542)",
+                len_trunc["trunc_excluded"][f"{tgt}_nontrunc"]["estimate"],
+                len_trunc["trunc_excluded"][f"{tgt}_nontrunc"]["ci95_cluster_run"],
+            ),
+        ]
+        ys = np.arange(len(rows))[::-1]
+        for y, (_, est, ci) in zip(ys, rows, strict=True):
+            ax.plot(est, y, "o", ms=6, color=colors[0])
+            if ci is not None:
+                ax.plot([ci["low"], ci["high"]], [y, y], "-", lw=1.6, color=colors[0])
+        ax.axvline(0.0, color="0.4", lw=0.8)
+        ax.axvline(PARENT_POINTS[tgt], color=colors[1], lw=1.0, ls="--")
+        ax.set_yticks(ys)
+        ax.set_yticklabels([r[0] for r in rows], fontsize=8)
+        ax.set_xlabel(
+            "Spearman rho: distance to source context vs change (more negative = "
+            "closer personas change more)",
+            fontsize=7,
+        )
+        ax.set_title(title, fontsize=9)
+    fig.suptitle(
+        "#560 headline robustness: the geometry correlation under each sensitivity "
+        "(bars = adapter-cluster 95% CIs; dashed line = parent panel estimate; the "
+        "emission-slots-excluded read has a permutation p only, no CI computed)",
+        fontsize=9,
+    )
+    fig.tight_layout()
+    savefig_paper(fig, "i560_length_trunc_sensitivity", dir=fig_dir)
+    plt.close(fig)
+    print(f"[figures] wrote i560_length_trunc_sensitivity to {fig_dir}")
+
+
 def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
     """Over-produce dump (plan section 6; the analyzer picks heroes)."""
     set_paper_style("blog")
@@ -1063,37 +1144,54 @@ def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
         targets={t: panel[t][m] for t in MIN_DIST_TARGETS},
         a_labels=panel["source_cid"][m],
         b_labels=panel["persona"][m],
-        x_label="min_dist (cosine distance to the run's source context)",
+        x_label=MIN_DIST_XLABEL,
         fig_name="i560_min_dist_raw_vs_fe_grid",
         fig_dir=fig_dir,
         suptitle="#560 min_dist reads: raw (top) alongside two-way-FE-corrected (bottom)",
     )
 
-    # 2. Per-adapter facets: min_dist vs dz, 16 panels.
+    # 2. Per-adapter facets: min_dist vs dz, 16 panels (titles carry the
+    # plain-English source-context class per the no-bare-condition-codes rule).
     sources = panel["_sources"]
     n_cols = 4
     n_rows = int(np.ceil(len(sources) / n_cols))
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(3.0 * n_cols, 2.6 * n_rows), squeeze=False)
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(3.0 * n_cols, 2.7 * n_rows), squeeze=False)
     for i, cid in enumerate(sources):
         ax = axes[i // n_cols][i % n_cols]
         sel = m & (panel["source_cid"] == cid)
         ax.plot(panel["min_dist"][sel], panel["dz"][sel], "o", ms=3, alpha=0.6, color=colors[0])
         rho = i539._spearman_rho(panel["min_dist"][sel], panel["dz"][sel])
-        ax.set_title(f"{cid}: rho={rho:+.2f}", fontsize=8)
+        ax.set_title(f"{cid} ({ADAPTER_CLASS_GLOSS[cid[0]]}): rho={rho:+.2f}", fontsize=8)
+        if i // n_cols == n_rows - 1:
+            ax.set_xlabel("distance to source context", fontsize=7)
+        if i % n_cols == 0:
+            ax.set_ylabel("marker-logit push\nΔz(※) (logits)", fontsize=7)
     for j in range(len(sources), n_rows * n_cols):
         axes[j // n_cols][j % n_cols].axis("off")
-    fig.suptitle("#560 per-adapter min_dist vs Δz(※) (non-source-resident cells)", fontsize=10)
+    fig.suptitle(
+        "#560 per-adapter geometry routing: persona distance to the source context vs "
+        "marker-logit push (non-source-resident cells)",
+        fontsize=10,
+    )
     fig.tight_layout()
     savefig_paper(fig, "i560_per_adapter_min_dist_dz", dir=fig_dir)
     plt.close(fig)
 
     # 3. Δz vs Δz(EOS) scatter by stratum.
-    fig, ax = plt.subplots(figsize=(6.4, 5.0))
+    fig, ax = plt.subplots(figsize=(7.0, 5.2))
     for s, c in zip(("never_negative", "trained_negative", "source_resident"), colors, strict=True):
         sel = panel["exposure"] == s
-        ax.plot(panel["dz"][sel], panel["dz_eos"][sel], "o", ms=3.2, alpha=0.55, color=c, label=s)
-    ax.set_xlabel("Δz(※) (logits)")
-    ax.set_ylabel("Δz(EOS) (logits)")
+        ax.plot(
+            panel["dz"][sel],
+            panel["dz_eos"][sel],
+            "o",
+            ms=3.2,
+            alpha=0.55,
+            color=c,
+            label=STRATUM_DISPLAY[s],
+        )
+    ax.set_xlabel("marker-logit push Δz(※), trained − base (logits)")
+    ax.set_ylabel("end-of-answer EOS change Δz(EOS), trained − base (logits)")
     ax.legend(fontsize=8)
     ax.set_title("#560 marker push vs EOS clamp per cell", fontsize=9)
     fig.tight_layout()
@@ -1101,17 +1199,25 @@ def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
     plt.close(fig)
 
     # 4. Δlog P vs Δz agreement (saturation localization).
-    fig, ax = plt.subplots(figsize=(6.4, 5.0))
+    fig, ax = plt.subplots(figsize=(7.0, 5.2))
     for s, c in zip(("never_negative", "trained_negative", "source_resident"), colors, strict=True):
         sel = panel["exposure"] == s
-        ax.plot(panel["dz"][sel], panel["dlogp"][sel], "o", ms=3.2, alpha=0.55, color=c, label=s)
+        ax.plot(
+            panel["dz"][sel],
+            panel["dlogp"][sel],
+            "o",
+            ms=3.2,
+            alpha=0.55,
+            color=c,
+            label=STRATUM_DISPLAY[s],
+        )
     lims = [
         min(panel["dz"].min(), panel["dlogp"].min()),
         max(panel["dz"].max(), panel["dlogp"].max()),
     ]
     ax.plot(lims, lims, "--", lw=0.9, color="0.5", label="Δlog P = Δz (no saturation)")
-    ax.set_xlabel("Δz(※) (logits)")
-    ax.set_ylabel("Δlog P(※) (nats)")
+    ax.set_xlabel("marker-logit push Δz(※), trained − base (logits)")
+    ax.set_ylabel("marker log-prob change Δlog P(※), trained − base (nats)")
     ax.legend(fontsize=8)
     ax.set_title(
         "#560 space agreement: divergence from the identity localizes saturation", fontsize=9
@@ -1145,9 +1251,12 @@ def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
         panel["min_dist"][m], panel["pre_marker_frac"][m], "o", ms=3, alpha=0.5, color=colors[0]
     )
     rho = i539._spearman_rho(panel["min_dist"][m], panel["pre_marker_frac"][m])
-    ax.set_xlabel("min_dist")
-    ax.set_ylabel("pre_marker slot fraction (== in-R emission rate)")
-    ax.set_title(f"#560 slot-kind composition vs distance (rho={rho:+.2f})", fontsize=9)
+    ax.set_xlabel(MIN_DIST_XLABEL)
+    ax.set_ylabel("fraction of answers emitting the marker\n(per cell, 20 answers)")
+    ax.set_title(
+        f"#560 marker emission is geometry-routed: closer personas emit more (rho={rho:+.2f})",
+        fontsize=9,
+    )
     fig.tight_layout()
     savefig_paper(fig, "i560_slot_kind_vs_min_dist", dir=fig_dir)
     plt.close(fig)
@@ -1239,6 +1348,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     ap.add_argument(
         "--skip-figures", action="store_true", help="statistics only (figure-free smoke)"
     )
+    ap.add_argument(
+        "--figures-only",
+        action="store_true",
+        help="regenerate figures from the existing transfer_i474.json (no inference re-run; "
+        "panel is rebuilt from the four-float JSONs for the scatter data)",
+    )
     return ap.parse_args(argv)
 
 
@@ -1265,6 +1380,27 @@ def main(argv: list[str] | None = None) -> int:
         f"[panel] {panel['_n']} cells ({len(panel['_sources'])} runs x "
         f"{len(panel['_personas'])} personas); strata {panel['_strata_counts']}"
     )
+
+    if args.figures_only:
+        # Figure regeneration path (round-2 interp revision): reuse the committed
+        # inference outputs verbatim — the figures must annotate the SAME numbers
+        # the JSON carries, never a recompute that could drift.
+        results_path = args.out_dir / "transfer_i474.json"
+        results = json.loads(results_path.read_text())
+        print(f"[figures-only] loaded {results_path}")
+        args.fig_dir.mkdir(parents=True, exist_ok=True)
+        fig_hero_min_dist(panel, masks, results["min_dist_corrected_reads_primary"], args.fig_dir)
+        fig_persistence(panel, masks, results["persistence"], args.fig_dir)
+        fig_exposure(results["exposure"], args.fig_dir)
+        fig_length_trunc_sensitivity(
+            results["min_dist_corrected_reads_primary"],
+            results["slot_kind_sensitivity"],
+            results["sensitivity_length_truncation"],
+            args.fig_dir,
+        )
+        make_exploratory_figures(panel, masks, args.fig_dir)
+        print(f"[done:figures-only] wall={(datetime.now(UTC) - t0).total_seconds():.1f}s")
+        return 0
 
     print("[R1] pair-corrected min_dist reads (primary mask) ...")
     r1_primary = min_dist_reads(
@@ -1356,6 +1492,7 @@ def main(argv: list[str] | None = None) -> int:
         fig_hero_min_dist(panel, masks, r1_primary, args.fig_dir)
         fig_persistence(panel, masks, persistence, args.fig_dir)
         fig_exposure(exposure, args.fig_dir)
+        fig_length_trunc_sensitivity(r1_primary, slot_sens, len_trunc_sens, args.fig_dir)
         make_exploratory_figures(panel, masks, args.fig_dir)
 
     for tgt in ("dz", "dmargin"):

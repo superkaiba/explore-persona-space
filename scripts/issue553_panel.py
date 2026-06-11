@@ -78,6 +78,7 @@ CHANNEL_DISPLAY = {
     "margin_trained": "Trained EOS margin (level)",
     "margin_base_matched": "Base matched-slot EOS margin",
     "dz": "Marker-logit push Δz(※)",
+    "margin_base": "Base matched-slot EOS margin",
 }
 
 
@@ -863,7 +864,9 @@ def exploratory_raw_vs_fe_grid(
     colors = paper_palette(2)
     names = list(targets)
     x_tw, _ = i539._twoway_fe_residualize(x, a_labels, b_labels)
-    fig, axes = plt.subplots(2, len(names), figsize=(2.6 * len(names) + 1.0, 5.6))
+    # +0.2/col +0.4 margin vs the original sizing: the rightmost column's
+    # x-axis label was clipped at 2.6*n+1.0 (round-1 interp-critique, #560).
+    fig, axes = plt.subplots(2, len(names), figsize=(2.8 * len(names) + 1.4, 5.8))
     for col, name in enumerate(names):
         y = targets[name]
         y_tw, _ = i539._twoway_fe_residualize(y, a_labels, b_labels)
