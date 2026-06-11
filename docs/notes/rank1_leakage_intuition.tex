@@ -1,0 +1,100 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+
+\newcommand{\vc}{v_c}
+\newcommand{\vb}{v_b}
+
+\title{The dictionary picture:\\ an intuition-level companion to the rank-1 leakage model}
+\author{}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+\vspace{-1.5em}
+
+\noindent This note restates the working model of behavior leakage (\texttt{rank1\_leakage\_model.pdf}, same folder) at the level of intuition, with no derivations. The parent note has the assumptions, relaxations, predictions, and experiment status; this one has the cartoon that makes them readable.
+
+\section{The picture in five claims}
+
+\begin{enumerate}[itemsep=6pt]
+
+\item \textbf{Pretraining learns a dictionary of behaviors.} The model acquires a collection of behaviors $b$ --- sycophancy, marker emission, emergent misalignment --- each carried by a direction in the residual stream at some layer. The direction plays two roles that should be named separately: \emph{adding} a steering vector $d_b$ elicits the behavior; \emph{projecting} the state onto a read-out direction $r_b$ measures it. In the idealized case one direction plays both roles ($d_b = r_b$); they can come apart, with a steering vector nearly orthogonal to the read-out that downstream circuitry converts (the router case).
+
+\item \textbf{The state under a context is a weighted sum over the dictionary.} A context $c$ is summarized by a vector $\vc$ read while the model processes it. The model's own context-to-state map $f$ then puts the activations somewhere, and that somewhere decomposes approximately over the dictionary:
+\begin{equation*}
+f(c) \;\approx\; \sum_b \alpha_b(c)\, d_b \;+\; \text{residual}.
+\end{equation*}
+The point of the weights: the \emph{associations} $c \to b$ that the model learned in pretraining ARE the coefficients $\alpha_b(c)$. Every context expresses many behaviors at once (its bundle); ``the assistant is not a villain'' is a statement about weights, not about the dictionary.
+
+\item \textbf{Post-training edits the weight functions, never the dictionary.} Fine-tuning adds no behavior to the collection. In the lazy regime a small weight update cannot build new states or circuitry; it can only re-bind contexts to states that already exist --- which is why a behavior is implantable only insofar as it is \emph{elicitable} (prompting is how you locate the destination state that training will bind to). Shaping assistant behavior, marker implants, and EM induction are all edits of $\alpha_b(\cdot)$, differing in which weights move and for which contexts.
+
+\item \textbf{Output is read out linearly, then squashed.} The state is not passed directly through a softmax. The chain is
+\begin{equation*}
+\text{state } f(c) \;\longrightarrow\; \text{logits } z_t = \langle W_U[t],\, f(c) \rangle \text{ per token } t \;\longrightarrow\; \text{softmax over the vocabulary} \;\longrightarrow\; \text{output},
+\end{equation*}
+so the softmax is over \emph{tokens}, not over behaviors. For the marker, behavior expression and a single logit coincide ($z_{\text{marker}}$), which is what makes it the clean testbed. For sycophancy, expression is a sequence-level property scored by a judge; every token still exits through the softmax, but the behavior is not one softmax entry. Because the softmax normalizes, behaviors compete at emission (marker vs end-of-turn) and log-probabilities compress near the ceiling --- the reason logits are stored alongside log-probabilities.
+
+\item \textbf{Two typed functions carry everything.} Keep them apart:
+\begin{itemize}
+\item $f:\; c \mapsto f(c)$ --- one state per context, no behavior argument. \emph{This is what training edits.}
+\item $A[b,c] = \langle r_b,\, f(c) \rangle$ --- a scalar association table, rows indexed by behaviors, columns by contexts. \emph{This is what experiments measure.}
+\end{itemize}
+The behavior vector $\vb$ is neither: it is the state $f$ reaches when $\alpha_b$ dominates --- where the model \emph{is} when it is performing $b$.
+
+\end{enumerate}
+
+\section{The whole model is one rank-one nudge to the table}
+
+Training on $(c', b)$ drags the source state $v_{b'} = f(c')$ toward the behavior state $\vb$, stopping at an achieved state $v_{b''}$ set by the dose (steps $\times$ lr); the write $w = v_{b''} - v_{b'}$ is therefore \emph{measured, not assumed}. The minimal weight edit that implements this applies the same write to every context, scaled by a base-model similarity, the gate $g(c) = \langle v_{c'}, \vc \rangle / \lVert v_{c'} \rVert^2$. In table coordinates the entire parent note compresses to:
+\begin{equation*}
+\Delta A[b, c] \;=\; \underbrace{\langle r_b,\, w \rangle}_{\text{behavior factor}} \;\cdot\; \underbrace{g(c)}_{\text{context factor}}
+\end{equation*}
+--- a \textbf{rank-one update of the association table itself}. You intended to edit one cell $(b, c')$. The minimal edit cannot touch one cell; it smears along both axes:
+\begin{itemize}
+\item \emph{down the columns} (across contexts): every context moves in proportion to its gate --- that smear is \textbf{leakage} (P2);
+\item \emph{across the rows} (across behaviors): every behavior moves in proportion to its slope $\langle r_b, w \rangle$ --- that smear is \textbf{cross-behavior transfer} (P6).
+\end{itemize}
+Leakage and cross-behavior transfer are the same event seen along the two axes of the table.
+
+\section{Cast of characters}
+
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Object & Type & Role & Moved by training? \\
+\midrule
+$\vc$ & vector & context key (input side), read while processing $c$ & no (base-model object) \\
+$f$ & map & contexts $\to$ states; holds the associations & \textbf{yes --- the only thing edited} \\
+$f(c)$ & state & where the model sits under $c$ & moves when $f$ moves \\
+$\alpha_b(c)$ & scalar & association strength of $c \to b$ (the weights) & moves (this \emph{is} the edit) \\
+$d_b$ & direction & steering: add to elicit $b$ & no (dictionary) \\
+$r_b$ & direction & read-out: project to measure $b$ & no (and directly observable) \\
+$\vb$ & state & where the model is when performing $b$ (target) & no (dose-independent) \\
+$v_{b'},\, v_{b''}$ & states & source state before / achieved after training & $v_{b''}$ is the outcome \\
+$w = v_{b''} - v_{b'}$ & vector & the write: \emph{what} leaks & created by training \\
+$g(c)$ & scalar & the gate: \emph{who} leaks & no (computed from base $\vc$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Where the cartoon bends}
+
+\begin{itemize}
+\item \textbf{The weighted sum is the idealized case.} Dictionary directions are not orthogonal and do not span the state space (superposition); the decomposition is literal for the marker at read-out (one unembedding row), an empirical finding for EM (a convergent single direction), and an open bet elsewhere.
+\item \textbf{Some behaviors are fetched, not resident.} In the router case the write recruits attention circuitry that pulls the behavior from the context's own token values; the gate is then attention-shaped and near-binary rather than a smooth similarity.
+\item \textbf{``At some layer'' is behavior-specific.} The marker reads best late (layers 19--24), sycophancy early (1--8); there is no universal dictionary layer.
+\item \textbf{Whether two implants add is open.} The sum-of-writes picture across jointly trained behaviors is a prediction (P4, the task-arithmetic analogue), not an assumption, and is so far untested in a diagnostic regime.
+\item \textbf{Everything assumes the lazy regime.} If training moves the dictionary itself (the rich regime), contexts' keys, the directions, and every base-model predictor go stale together.
+\end{itemize}
+
+\vspace{4pt}
+\noindent\emph{For the derivation of the rank-one edit (assumptions A1--A4 and their relaxations), the prediction list P0--P8, and per-experiment status, see} \texttt{rank1\_leakage\_model.pdf}.
+
+\end{document}
