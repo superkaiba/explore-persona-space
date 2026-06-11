@@ -3243,8 +3243,8 @@
     "549": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/reviewing/549",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/549",
+      "status": "awaiting_promotion",
       "title": "Auditing every git-tracked vLLM-LoRA eval driver for the cache-collision bug finds one new affected published result \u2014 #504's saturated-anchor geometry was measured on the step-6 adapter, not step 25 \u2014 and the bug is still live on main (HIGH confidence)"
     },
     "55": {
