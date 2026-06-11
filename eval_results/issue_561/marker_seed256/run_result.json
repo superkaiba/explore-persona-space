@@ -1,0 +1,22 @@
+{
+  "issue": 519,
+  "arm": "marker",
+  "seed": 256,
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "data_path": "/workspace/explore-persona-space/data/issue_519/marker_seed256.jsonl",
+  "max_steps": 600,
+  "save_steps": 50,
+  "lora_rank": 8,
+  "lora_alpha": 16,
+  "lora_dropout": 0.0,
+  "learning_rate": 2e-06,
+  "lr_scheduler_type": "cosine",
+  "warmup_ratio": 0.03,
+  "hf_adapter_repo": "superkaiba1/explore-persona-space",
+  "hf_adapter_subfolder": "issue_561_posonly/marker_seed256",
+  "hf_subfolder_prefix": "issue_561_posonly",
+  "hf_adapter_upload_fallback": false,
+  "wandb_run_name": "issue_519_marker_seed256",
+  "git_commit": "7445f86c087930543aafc190cd97f7ca8be16d0c",
+  "timestamp_utc": "2026-06-11T03:39:38Z"
+}
