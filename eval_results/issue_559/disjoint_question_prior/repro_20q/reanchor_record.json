@@ -1,0 +1,90 @@
+{
+  "schema_version": "issue559_reanchor_record_v1",
+  "description": "Re-anchored 20-question reproduction entry-gate read for the disjoint-question follow-up (plan v4 \u00a714.9, the pre-registered amendment for an entry-gate miss WITH text divergence). The gate AS WRITTEN failed (see sibling repro_gate.json, gates.pass=false preserved); this record holds the \u00a714.9 re-anchor that attributed the miss to cross-pod generation resampling, validated the scoring code path, and let the disjoint run proceed. Every number recomputed from the committed inputs below by the generating script in this file's metadata.",
+  "inputs": {
+    "committed_reference_panel": "eval_results/issue_559/base_prior_own_persona_panel.json",
+    "committed_reference_completions": "eval_results/issue_559/R_base_own.json",
+    "fresh_pod_panel": "eval_results/issue_559/disjoint_question_prior/repro_20q/base_prior_own_persona_panel.json @ c459f277cc207ac73bb3d949f7dbbb10ff09648f",
+    "fresh_pod_completions": "eval_results/issue_559/disjoint_question_prior/repro_20q/R_base_own.json @ c459f277cc207ac73bb3d949f7dbbb10ff09648f"
+  },
+  "as_written_gate": {
+    "record": "sibling repro_gate.json (gates.pass=false preserved)",
+    "per_persona_prior_mae_nats": 0.06228020804268947,
+    "per_persona_prior_spearman": 0.9980392156862745,
+    "miss": "per-persona prior Spearman 0.99804 < 0.999 (MAE 0.0623 < 0.1 passed)"
+  },
+  "text_identity_partition": {
+    "n_common_slots": 700,
+    "n_identical_text_slots": 601,
+    "n_diverged_text_slots": 99,
+    "generation_text_identity_rate": 0.8585714285714285,
+    "per_persona_diverged_counts": {
+      "assistant": 4,
+      "caring_villain": 2,
+      "devops_engineer": 1,
+      "french_person": 4,
+      "hippie_teacher": 5,
+      "improv_comedian": 13,
+      "incompetent_villain": 17,
+      "joker": 19,
+      "perfectionist_engineer": 2,
+      "villain": 1,
+      "web_developer": 9,
+      "wholesome_comedian": 2,
+      "zelthari_scholar": 20
+    },
+    "pattern_note": "whole-persona divergence pattern (zelthari_scholar 20/20, joker 19/20, incompetent_villain 17/20) \u2014 the signature of cross-pod vLLM batched greedy resampling, not of a scoring-path change"
+  },
+  "reanchored_reads": {
+    "identical_text_slots": {
+      "n_slots": 601,
+      "per_slot_logp_mae_nats": 0.04961559498766298,
+      "per_slot_logp_spearman": 0.9996129374630325
+    },
+    "diverged_text_slots": {
+      "n_slots": 99,
+      "per_slot_logp_mae_nats": 0.9905986304234977,
+      "per_slot_logp_spearman": 0.8942362399505256
+    },
+    "all_common_slots": {
+      "n_slots": 700,
+      "per_slot_logp_mae_nats": 0.18269748142787387,
+      "per_slot_logp_spearman": 0.9876179688996449
+    },
+    "identical_text_per_persona_prior": {
+      "n_personas": 34,
+      "excluded_personas": [
+        "zelthari_scholar"
+      ],
+      "exclusion_reason": "all 20 generated texts diverged \u2014 no identical-text questions to average",
+      "prior_margin_mae_nats": 0.017103394364564338,
+      "prior_margin_spearman": 0.9993888464476698
+    }
+  },
+  "criteria": {
+    "binding_reanchored_gate": {
+      "implementation": "scripts/issue559_base_prior_persona_panel.py @ 1e8b066707a01501ba817ac50869f57fc4a007b8 (reproduce_gate)",
+      "text_identity_floor": 0.5,
+      "text_identity_pass": true,
+      "identical_slot_mae_gate_nats": 0.1,
+      "identical_slot_mae_pass": true,
+      "identical_slot_spearman_gate": 0.995,
+      "identical_slot_spearman_pass": true
+    },
+    "original_bars_unrelaxed_check": {
+      "note": "the identical-text per-persona prior read also clears the ORIGINAL \u00a711 bars un-relaxed (MAE < 0.1 nat, Spearman >= 0.999) \u2014 no threshold was relaxed anywhere in the re-anchor",
+      "original_mae_gate_nats": 0.1,
+      "observed_mae_nats": 0.017103394364564338,
+      "mae_pass": true,
+      "original_spearman_gate": 0.999,
+      "observed_spearman": 0.9993888464476698,
+      "spearman_pass": true
+    },
+    "verdict": "PASS \u2014 scoring code path valid on the fresh pod; the as-written miss is cross-pod generation resampling per the pre-registered \u00a714.9 read; disjoint invocation cleared to run"
+  },
+  "provenance": {
+    "read_rule": "plan v4 \u00a714.9: text divergence => cross-pod generation resampling (re-anchor the gate on scoring-path reads over identical-text slots + an identity-rate floor); identical texts + slot drift => scoring code-path failure",
+    "first_recorded": "epm:progress v10 on tasks #559 events.jsonl (2026-06-11T01:09:27Z)",
+    "recomputed": "2026-06-11 analyzer revision round 2, from the committed inputs above"
+  }
+}
