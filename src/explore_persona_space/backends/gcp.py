@@ -1939,7 +1939,7 @@ class GcpBackend(ComputeBackend):
     # ----- teardown --------------------------------------------------------
 
     def fetch_results(self, handle: RunHandle) -> None:
-        """scp the completion sentinel (+ best-effort artifact dirs) back from the VM.
+        """Pull the completion sentinel (+ best-effort artifact dirs) back from the VM.
 
         Slice 6: gates ``confirm_artifacts`` for every GCP lane. The
         sentinel lives on the VM (the startup-script's clean-exit
@@ -1950,24 +1950,29 @@ class GcpBackend(ComputeBackend):
 
         Two tiers:
 
-        * **MANDATORY: sentinel.** If the sentinel scp fails we LOG
-          loudly (``confirm_artifacts`` will FAIL on the missing file,
-          which is the right surfacing — a workload that didn't write
-          its sentinel is precisely the silent-loss hole the verifier
-          catches).
+        * **MANDATORY: sentinel** — pulled via ``gcloud compute ssh ...
+          --command 'sudo -n cat <sentinel>'``, NOT scp. The GCE
+          startup-script runs as root, so the whole
+          ``/workspace/eps-issue-<N>`` tree is root-owned and the
+          OS-Login scp user cannot traverse/read it — a plain scp fails
+          with ``Permission denied`` on every real run (live finding,
+          issue #588 att-20260611-064703). ``sudo -n`` works because the
+          OS-Login user is in ``google-sudoers``; the captured stdout is
+          written to the same local path. If the pull fails we LOG
+          loudly and continue (``confirm_artifacts`` will FAIL on the
+          missing file, which is the right surfacing — a workload that
+          didn't write its sentinel is precisely the silent-loss hole
+          the verifier catches).
         * **Best-effort: eval_results/ + figures/.** Both are authoritatively
           uploaded by the workload during the run (HF Hub / WandB / git);
           the local mirror is convenience for analyzer-local figure
-          regeneration. A failure here logs + continues.
+          regeneration. A failure here (including the same root-owned
+          ``Permission denied``) logs + continues.
 
         Reconnect-safe: reads the recovered ``attempt_id`` off
         ``handle.extra`` (populated by ``reconnect_or_none``); the
         sentinel sub-directory is namespaced per attempt so a re-run
         after Spot preemption never overwrites an earlier attempt.
-
-        gcloud scp expects ``<host>:<remote>`` and ``<local>`` (or
-        vice-versa for upload). We use ``--recurse`` for the directory
-        pulls and the bare form for the sentinel (single file).
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
@@ -1994,32 +1999,38 @@ class GcpBackend(ComputeBackend):
         # reads from one location regardless of backend. The VM-side
         # ``EPS_SENTINEL_PATH`` is `sentinel_path_for(config, issue,
         # attempt_id)` — the same function the declaration uses — so
-        # the two are guaranteed to agree.
+        # the two are guaranteed to agree. Pulled via `ssh ... sudo -n
+        # cat`, NOT scp: the startup-script runs as root, so the
+        # workload tree is root-owned and the OS-Login scp user gets
+        # `Permission denied` (live finding, att-20260611-064703).
         sentinel_abs = sentinel_path_for(config, issue, attempt_id)
         local_sentinel = Path(sentinel_abs)
         local_sentinel.parent.mkdir(parents=True, exist_ok=True)
-        scp_sentinel = _base_gcloud_argv(
+        ssh_sentinel = _base_gcloud_argv(
             config,
             "compute",
-            "scp",
-            f"{handle.pod_name}:{sentinel_abs}",
-            str(local_sentinel),
+            "ssh",
+            handle.pod_name,
+            f"--command=sudo -n cat {shlex.quote(sentinel_abs)}",
         )
-        scp_sentinel += [f"--zone={zone}"]
-        sentinel_res = self._run(scp_sentinel)
+        ssh_sentinel += [f"--zone={zone}"]
+        sentinel_res = self._run(ssh_sentinel)
         if sentinel_res.returncode != 0:
             logger.error(
-                "GcpBackend.fetch_results: sentinel scp from %s failed (rc=%d); "
-                "confirm_artifacts will FAIL on the missing sentinel. stderr=%s",
+                "GcpBackend.fetch_results: sentinel pull (ssh sudo -n cat) from %s "
+                "failed (rc=%d); confirm_artifacts will FAIL on the missing sentinel. "
+                "stderr=%s",
                 handle.pod_name,
                 sentinel_res.returncode,
                 sentinel_res.stderr[:500],
             )
         else:
+            local_sentinel.write_text(sentinel_res.stdout)
             logger.info(
-                "GcpBackend.fetch_results: sentinel scp PASS for issue=%d attempt=%s",
+                "GcpBackend.fetch_results: sentinel pull PASS for issue=%d attempt=%s (%d bytes)",
                 issue,
                 attempt_id,
+                len(sentinel_res.stdout),
             )
 
         # 2) Best-effort — pull eval_results/issue_<N>/ and
