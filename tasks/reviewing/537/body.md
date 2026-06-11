@@ -345,3 +345,5 @@ nohup uv run python scripts/i537_dispatch.py --phase 0 > /workspace/logs/issue-5
 # then --phase 1, 2, 3 in order; analysis:
 uv run python scripts/i537_registered_reads.py && uv run python scripts/i537_g1_regression.py && uv run python scripts/i537_g2_parallelism.py && uv run python scripts/i537_r2_followup_reads.py
 ```
+
+- **Methodology reference:** [docs/methodology/issue_537.md](https://github.com/superkaiba/explore-persona-space/blob/08106171bf0ee2eae68a19a5d7b1b5ad40ffd611/docs/methodology/issue_537.md) · [gist](https://gist.github.com/superkaiba/2a53f40ad9bb58d4627ed96fdf048064)
