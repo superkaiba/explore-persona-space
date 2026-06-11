@@ -260,20 +260,27 @@ same skill scans the awaiting_promotion list for similar entries.
 - `eval_results/INDEX.md`: add entries matching existing dirs.
 - Typo / broken-link / date-corrections in any tracking file.
 - Move orphaned figures to `figures/unsorted/` (never delete).
+- `task.py set-status` drift corrections: status moves are
+  AUTOMATION-OWNED (user rule, 2026-06-10). When a task's status
+  demonstrably diverges from the canonical workflow state (e.g. a
+  same-issue follow-up round sitting at `running` instead of the
+  Step 9b `followups_running` hold, or a clean-result-draft task
+  whose status never reached `awaiting_promotion`), correct it
+  directly and post a note marker recording the why. The ONLY
+  user-owned status move is promotion out of `awaiting_promotion`
+  (`task.py promote <N> useful|not-useful`).
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
 - `docs/research_ideas.md`: phase transitions, subtask status changes.
-- Mechanical status backfills (e.g., setting `awaiting_promotion` on
-  experiments whose runs are clean-result-draft but whose status drifted).
 
 **Never auto:**
 - Delete anything from `eval_results/`, `figures/`, `RESULTS.md`,
   `archive/`.
 - Edit code in `src/`, `scripts/`, `configs/`.
-- Run `task.py set-status` or `promote` to move experiments
-  between statuses (the user owns status moves except via the `/issue`
-  workflow).
+- Run `task.py promote` — promotion out of `awaiting_promotion` is the
+  user's only status gate; never auto-promote (no automation may flip
+  `runs.classification`).
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
   is the per-issue session's job.
 - Advance aim phase without explicit "yes advance".
@@ -323,7 +330,8 @@ renders them as separate pills — use plain numbered markdown).
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
-| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `task.py set-status` |
+| Asking the user to approve a status-drift correction | Status moves are automation-owned; only `promote` is the user's | Apply `task.py set-status` directly + post a note marker |
+| Auto-running `task.py promote` | Promotion is the user's only status gate | Park at `awaiting_promotion`; user promotes |
 | Polling per-experiment session progress | Trust status + events.jsonl events | `task.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |
