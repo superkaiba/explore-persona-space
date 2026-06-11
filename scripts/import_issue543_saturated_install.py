@@ -46,7 +46,8 @@ DEFAULT_SEEDS = (42, 137, 256)
 # Model-repo `main` pinned at planning time (plan v4 §2/§10: the round's ONE
 # manipulated variable is this start adapter; Hub-verified in the plan).
 HUB_MODEL_REPO_REVISION_543_SATURATED = "0718c53058475cb8ee38c8f4802220cdde548672"
-# The chain's install recipe of record trains attention projections only.
+# The chain's install recipe of record trains EXACTLY the four attention
+# projections — the import requires equality, not subset (round-8 review fix).
 ALLOWED_TARGET_MODULES = frozenset({"q_proj", "k_proj", "v_proj", "o_proj"})
 REQUIRED_FILES = ("adapter_config.json", "adapter_model.safetensors")
 # #543 stop-record values copied into the provenance record (numeric only).
@@ -58,6 +59,26 @@ STOP_RECORD_KEYS = (
     "stop_delta_mean_nats",
     "base_logp_mean",
 )
+
+
+def _assert_exact_recipe_targets(cfg: dict, context: str) -> set[str]:
+    """Require ``target_modules`` == the #543 recipe's exact [q,k,v,o]_proj set.
+
+    Normalizes PEFT's two legal config shapes (list of names, or a plain
+    string for a single module / regex) before the equality check. A strict
+    subset (missing projection) or a superset (extra projection) both fail
+    loud with the actual sorted list — `issubset` previously let an adapter
+    missing a projection pass silently (round-8 review fix).
+    """
+    raw = cfg.get("target_modules")
+    targets = {raw} if isinstance(raw, str) else {str(t) for t in (raw or [])}
+    if targets != ALLOWED_TARGET_MODULES:
+        raise AssertionError(
+            f"{context}: target_modules {sorted(targets)} != the #543 recipe's exact set "
+            f"{sorted(ALLOWED_TARGET_MODULES)} — missing or extra projection; "
+            "not the chain's install recipe, refusing the import."
+        )
+    return targets
 
 
 def _download_adapter_root_files(sub: str, revision: str) -> Path:
@@ -136,12 +157,7 @@ def import_one(seed: int) -> dict:
     # Gauge assert (marker-leakage rule): no lm_head/embed_tokens targets,
     # modules_to_save empty — the logit DV is invalid otherwise.
     assert_gauge_free_adapter_config(cfg, context=str(adapter_dir))
-    targets = {str(t) for t in (cfg.get("target_modules") or [])}
-    if not targets or not targets.issubset(ALLOWED_TARGET_MODULES):
-        raise AssertionError(
-            f"{sub}: target_modules {sorted(targets)} is not a non-empty subset of "
-            f"{sorted(ALLOWED_TARGET_MODULES)} — not the chain's install recipe."
-        )
+    _assert_exact_recipe_targets(cfg, sub)
 
     # #543 stop-record provenance (committed in git on this branch).
     parent_path = EVAL_RESULTS_DIR / ARM / f"seed{seed}" / "phase1_result.json"

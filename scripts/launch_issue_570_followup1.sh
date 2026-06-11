@@ -28,9 +28,13 @@
 # Step 6  results sentinel + terminal [phase=done] into the main run log.
 #
 # Idempotent end to end: a relaunch re-walks every phase and each no-ops on
-# its own completed artifacts (import rewrites records; evals skip on an
-# existing run_summary.json; phase-2 / absorption / alignment use the
-# reviewed scripts' per-cell result-JSON idempotency).
+# its own completed artifacts (import rewrites records; evals + absorption
+# skip ONLY when the primary JSON AND the launcher's own
+# .launcher_phase_complete witness exist — the witness is written strictly
+# after the phase command's rc=0 exit, so an early-written run_summary.json /
+# absorption_probe.json from a failed run never authorizes a skip (round-8
+# fix; same false-resume class round 5 closed in the ladder); phase-2 /
+# alignment use the reviewed scripts' per-cell result-JSON idempotency).
 set -euo pipefail
 export PATH="/root/.local/bin:$PATH"
 cd /workspace/explore-persona-space
@@ -53,6 +57,12 @@ N_GPUS=4   # plan §9: one 4x H100 pod; GPU-hours = wall x N_GPUS
 log() { echo "[$(date -u +%FT%TZ)] [glue] $*"; }
 trap 'log "glue exiting rc=$?"' EXIT
 log "followup1 launcher start HEAD=$(git rev-parse --short HEAD) pid=$$"
+
+phase_done() {  # $1 primary JSON, $2 launcher witness — skip ONLY when BOTH exist.
+  # The witness is touched strictly after the phase command exits 0, so a
+  # phase that wrote its early JSON and then died (upload/gen failure) re-runs.
+  [ -f "$1" ] && [ -f "$2" ]
+}
 
 gpu_settle() {  # parent round-4 hotfix: wait out vLLM worker teardown
   local t=0
@@ -84,13 +94,18 @@ done
 log "[phase=pre_eval] pre-SFT 4-cell evals on imported saturated installs"
 pids=(); g=0; rc=0
 for S in "${SEEDS[@]}"; do
-  SUMM="eval_results/issue_570/phase1_${IV}/seed${S}/eval_picked/run_summary.json"
-  if [ -f "$SUMM" ]; then
-    log "pre_eval seed $S: run_summary exists — skipping (resume)"
+  CELL="eval_results/issue_570/phase1_${IV}/seed${S}/eval_picked"
+  SUMM="$CELL/run_summary.json"
+  WIT="$CELL/.launcher_phase_complete"
+  if phase_done "$SUMM" "$WIT"; then
+    log "pre_eval seed $S: run_summary + phase-complete witness exist — skipping (resume)"
   else
-    uv run python scripts/eval_issue543.py --arm r50 --seed "$S" --phase phase1 --issue-ns 570 \
-      --install-variant "$IV" --adapter-path "${INSTALL[$S]}" --gpu "$g" \
-      > "$LOGD/issue-570-f1-preeval-s${S}.log" 2>&1 &
+    # Witness touched ONLY after the eval's rc=0 exit — run_summary.json lands
+    # BEFORE uploads inside eval_issue543.py, so the bare JSON never skips.
+    ( uv run python scripts/eval_issue543.py --arm r50 --seed "$S" --phase phase1 --issue-ns 570 \
+        --install-variant "$IV" --adapter-path "${INSTALL[$S]}" --gpu "$g" \
+        > "$LOGD/issue-570-f1-preeval-s${S}.log" 2>&1 \
+      && touch "$WIT" ) &
     pids+=($!)
   fi
   g=$((g+1))
@@ -136,9 +151,11 @@ for p in "${pids[@]}"; do wait "$p" || rc=1; done
 log "[phase=post_eval] post-SFT 4-cell evals ($ARM_V)"
 pids=(); g=0; rc=0
 for S in "${SEEDS[@]}"; do
-  SUMM="eval_results/issue_570/${ARM_V}/seed${S}/phase2/run_summary.json"
-  if [ -f "$SUMM" ]; then
-    log "post_eval seed $S: run_summary exists — skipping (resume)"
+  CELL="eval_results/issue_570/${ARM_V}/seed${S}/phase2"
+  SUMM="$CELL/run_summary.json"
+  WIT="$CELL/.launcher_phase_complete"
+  if phase_done "$SUMM" "$WIT"; then
+    log "post_eval seed $S: run_summary + phase-complete witness exist — skipping (resume)"
   else
     # Local adapter handoff when the train output still exists on this pod
     # (mirrors the pre-eval handoff); Hub fallback after a pod cycle.
@@ -150,9 +167,11 @@ for S in "${SEEDS[@]}"; do
     else
       log "post_eval seed $S: local adapter $AP missing — Hub fallback"
     fi
-    uv run python scripts/eval_issue543.py --arm r50 --seed "$S" --phase phase2 --issue-ns 570 \
-      --variant org_em --install-variant "$IV" "${APFLAG[@]}" --gpu "$g" \
-      > "$LOGD/issue-570-f1-posteval-s${S}.log" 2>&1 &
+    # Witness touched ONLY after the eval's rc=0 exit (see pre_eval note).
+    ( uv run python scripts/eval_issue543.py --arm r50 --seed "$S" --phase phase2 --issue-ns 570 \
+        --variant org_em --install-variant "$IV" "${APFLAG[@]}" --gpu "$g" \
+        > "$LOGD/issue-570-f1-posteval-s${S}.log" 2>&1 \
+      && touch "$WIT" ) &
     pids+=($!)
   fi
   g=$((g+1))
@@ -163,8 +182,10 @@ for p in "${pids[@]}"; do wait "$p" || rc=1; done
 # ── Step 4: absorption guard (misaligned corpus; base + 3 pre + 3 post) ──────
 gpu_settle
 log "[phase=absorption] $ARM_V (misaligned corpus)"
-if [ -f "eval_results/issue_570/absorption_${ARM_V}/absorption_probe.json" ]; then
-  log "absorption: absorption_probe.json exists — skipping (resume)"
+ABS_DIR="eval_results/issue_570/absorption_${ARM_V}"
+ABS_WIT="$ABS_DIR/.launcher_phase_complete"
+if phase_done "$ABS_DIR/absorption_probe.json" "$ABS_WIT"; then
+  log "absorption: absorption_probe.json + phase-complete witness exist — skipping (resume)"
 else
   M="$LOGD/issue-570-f1-absorb-manifest.json"
   IV_ENV="$IV" V_ENV="$ARM_V" M_ENV="$M" SEEDS_ENV="$SEEDS_CSV" \
@@ -195,6 +216,10 @@ PYEOF
     --corpus-hf-path "$CORPUS" --gpu 0 \
     > "$LOGD/issue-570-f1-absorb.log" 2>&1 \
     || { log "FATAL: absorption failed"; exit 2; }
+  # Witness touched ONLY after the probe's rc=0 exit — absorption_probe.json
+  # (CE aggregate) lands before gen/upload inside the probe, so the bare JSON
+  # never authorizes a skip.
+  touch "$ABS_WIT"
 fi
 gpu_settle
 
