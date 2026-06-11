@@ -214,7 +214,7 @@ def hero2_repair(repair: dict, out_dir: Path) -> None:
     label_bbox = dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.6)
     ax.text(
         0.02,
-        0.97,
+        0.90,
         "repair-positive",
         transform=ax.transAxes,
         fontsize=8,
@@ -224,7 +224,7 @@ def hero2_repair(repair: dict, out_dir: Path) -> None:
     )
     ax.text(
         0.98,
-        0.97,
+        0.90,
         "both-pass",
         transform=ax.transAxes,
         fontsize=8,
