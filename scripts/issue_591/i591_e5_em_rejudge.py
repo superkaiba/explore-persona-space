@@ -132,6 +132,34 @@ def _phase_log(tag: str, msg: str) -> None:
     print(f"{datetime.now(UTC).isoformat()} [phase={tag}] {msg}", flush=True)
 
 
+def _is_num(x) -> bool:
+    """True for a real number (None and NaN both fail — NaN is sanitized to
+    None at every JSON write, so consumers must treat the two uniformly)."""
+    return isinstance(x, int | float) and not (isinstance(x, float) and math.isnan(x))
+
+
+def _nan_to_none(obj):
+    """Recursively replace float NaN with None (JSON-portable; bare NaN tokens
+    are non-standard JSON — code-review e5 r1 minor)."""
+    if isinstance(obj, float) and math.isnan(obj):
+        return None
+    if isinstance(obj, dict):
+        return {k: _nan_to_none(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_nan_to_none(v) for v in obj]
+    return obj
+
+
+def _write_json(path: Path, payload: dict) -> None:
+    """NaN-sanitized JSON write (single chokepoint for every e5 artifact)."""
+    path.write_text(json.dumps(_nan_to_none(payload), indent=2))
+
+
+def _sub(a, b):
+    """None-propagating subtraction (zero-survivor cells carry None rates)."""
+    return a - b if _is_num(a) and _is_num(b) else None
+
+
 def _row_class(error: str | None) -> str:
     """'ok' | 'refused' | 'parse' | 'api' (mirrors the EM wrapper's heuristics).
 
@@ -279,7 +307,7 @@ def phase_manifest(ctx: Ctx) -> dict:
         "git_commit_sha": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    (ctx.out_root / "manifest.json").write_text(json.dumps(payload, indent=2))
+    _write_json(ctx.out_root / "manifest.json", payload)
     if problems:
         raise RuntimeError(
             f"MANIFEST FAILED ({len(problems)} problems) — no judging spend until the "
@@ -392,7 +420,7 @@ def _judge_cell(ctx: Ctx, tag: str, panel: str) -> dict:
         "git_commit_sha": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    ckpt.write_text(json.dumps(cell))
+    _write_json(ckpt, cell)
     _phase_log(
         "judge",
         f"{tag}/{panel}: rate_all={agg['rate_all']:.3f} cond={agg['rate_conditional']:.3f} "
@@ -452,7 +480,7 @@ def phase_anchors(ctx: Ctx) -> dict:
                 "fresh_conditional": cell["rate_conditional"],
                 "frozen": frozen_rate,
                 "diff": abs(cell["rate_conditional"] - frozen_rate)
-                if cell["rate_conditional"] == cell["rate_conditional"]
+                if _is_num(cell["rate_conditional"])
                 else None,
                 "fresh_survivors": fresh_surv,
                 "frozen_survivors": frozen_surv,
@@ -469,7 +497,7 @@ def phase_anchors(ctx: Ctx) -> dict:
                 "frozen": frozen_rate,
                 "frozen_source_copy": copy_src,
                 "diff": abs(cell["rate_conditional"] - frozen_rate)
-                if cell["rate_conditional"] == cell["rate_conditional"]
+                if _is_num(cell["rate_conditional"])
                 else None,
                 "fresh_survivors": cell["n_coherence_survivors"],
                 "frozen_survivors": None,  # frozen base survivor counts not persisted
@@ -524,7 +552,7 @@ def phase_anchors(ctx: Ctx) -> dict:
         "git_commit_sha": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    (ctx.out_root / "anchors_report.json").write_text(json.dumps(report, indent=2))
+    _write_json(ctx.out_root / "anchors_report.json", report)
     _phase_log("anchors", f"gate verdict {verdict} ({clause})")
     if verdict == "KILL":
         if ctx.limit is not None:
@@ -565,11 +593,31 @@ def phase_base(ctx: Ctx) -> None:
     _phase_log("base", "done")
 
 
-def _corrected_base_rate(ctx: Ctx, persona: str) -> float | None:
-    ckpt = _cell_ckpt_path(ctx, "base", persona)
+def _load_cell(ctx: Ctx, tag: str, panel: str) -> dict | None:
+    """Load a cell checkpoint for downstream consumption, tier-guarded.
+
+    Production reads (no ``--limit``) REFUSE smoke-tier checkpoints — a
+    standalone ``--phase join``/``selfagg`` after a --limit smoke must never
+    consume 2-row cells as production data (code-review e5 r1:
+    smoke-tier-checkpoints-consumed). The judging phases re-judge such cells;
+    the read-only phases fail loud and point there.
+    """
+    ckpt = _cell_ckpt_path(ctx, tag, panel)
     if not ckpt.exists():
         return None
-    return json.loads(ckpt.read_text())["rate_all"]
+    cell = json.loads(ckpt.read_text())
+    if ctx.limit is None and cell.get("limit") is not None:
+        raise RuntimeError(
+            f"smoke-tier checkpoint {ckpt.name} (limit={cell['limit']}) consumed by a "
+            f"production read — re-run --phase trained/base (the judge phases re-judge "
+            f"smoke-tier cells at full tier) before join/selfagg."
+        )
+    return cell
+
+
+def _corrected_base_rate(ctx: Ctx, persona: str) -> float | None:
+    cell = _load_cell(ctx, "base", persona)
+    return cell["rate_all"] if cell is not None else None
 
 
 def phase_selfagg(ctx: Ctx) -> dict:
@@ -615,7 +663,7 @@ def phase_selfagg(ctx: Ctx) -> dict:
         "git_commit_sha": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    (ctx.out_root / "self_rates_corrected.json").write_text(json.dumps(payload, indent=2))
+    _write_json(ctx.out_root / "self_rates_corrected.json", payload)
     _phase_log(
         "selfagg",
         "corrected self_deltas: " + ", ".join(f"{s}={out[s]['self_delta']:.3f}" for s in SOURCES),
@@ -643,11 +691,6 @@ def _impute_bounds(rate: float, n_judged: int, n_excl: int) -> tuple[float, floa
     total = n_judged + n_excl
     s = rate * n_judged
     return s / total, (s + n_excl) / total
-
-
-def _load_cell(ctx: Ctx, tag: str, panel: str) -> dict | None:
-    ckpt = _cell_ckpt_path(ctx, tag, panel)
-    return json.loads(ckpt.read_text()) if ckpt.exists() else None
 
 
 def phase_join(ctx: Ctx) -> dict:
@@ -700,10 +743,10 @@ def phase_join(ctx: Ctx) -> dict:
                 "delta": delta,
                 "trained_rate_conditional": tcell["rate_conditional"],
                 "base_rate_conditional": bcell["rate_conditional"],
-                "delta_conditional": tcell["rate_conditional"] - bcell["rate_conditional"],
+                "delta_conditional": _sub(tcell["rate_conditional"], bcell["rate_conditional"]),
                 "trained_rate_binary": tcell["rate_binary"],
                 "base_rate_binary": bcell["rate_binary"],
-                "delta_binary": tcell["rate_binary"] - bcell["rate_binary"],
+                "delta_binary": _sub(tcell["rate_binary"], bcell["rate_binary"]),
                 "n_judged": tcell["n_judged"],
                 "n_refused": tcell["n_refused"],
                 "n_parse_failed": tcell["n_parse_failed"],
@@ -732,7 +775,85 @@ def phase_join(ctx: Ctx) -> dict:
             "dataset_revision": ctx.revision(),
         },
     }
-    (ctx.out_root / "em_join_corrected.json").write_text(json.dumps(join_payload, indent=2))
+    _write_json(ctx.out_root / "em_join_corrected.json", join_payload)
+
+    # ---- Conditional sensitivity arm inputs (the parent's exact DV from the
+    # FRESH verdicts; plan v2 §5 "coherence-conditional sensitivity arm" —
+    # consumed by phase_refit's second build+fit pair). Cells where either
+    # side has zero fresh survivors fall back to the FROZEN proxy value for
+    # that side (the frozen rate IS the same survivor-conditioned DV),
+    # flagged conditional_fallback_frozen. ----
+    cond_cells: list[dict] = []
+    n_cond_fallback = 0
+    for c in cells_out:
+        row = dict(c)
+        if not c.get("corrected"):
+            cond_cells.append(row)  # partial-filled smoke cells stay frozen verbatim
+            continue
+        fz = next(
+            f
+            for f in ctx.frozen_cells
+            if f["source"] == c["source"] and f["bystander"] == c["bystander"]
+        )
+        t_cond = c["trained_rate_conditional"]
+        b_cond = c["base_rate_conditional"]
+        fallback = False
+        if not _is_num(t_cond):
+            t_cond, fallback = fz["trained_rate"], True
+        if not _is_num(b_cond):
+            b_cond, fallback = fz["bystander_base_rate"], True
+        n_cond_fallback += int(fallback)
+        row.update(
+            {
+                "trained_rate": t_cond,
+                "bystander_base_rate": b_cond,
+                "source_base_rate": fz["source_base_rate"],
+                "delta": t_cond - b_cond,
+                "conditional_fallback_frozen": fallback,
+            }
+        )
+        cond_cells.append(row)
+    cond_self: dict[str, dict] = {}
+    for src in SOURCES:
+        sc = self_rates[src]
+        self_cond = sc.get("rate_conditional")
+        base_cell = base_cells.get(src)
+        base_cond = base_cell.get("rate_conditional") if base_cell else None
+        fallback = False
+        if not _is_num(self_cond):
+            self_cond, fallback = sc["self_rate_corrected"], True
+        if not _is_num(base_cond):
+            base_cond, fallback = sc["source_base_rate_corrected"], True
+        cond_self[src] = {
+            "self_delta": self_cond - base_cond,
+            "self_rate_conditional": self_cond,
+            "base_rate_conditional": base_cond,
+            "conditional_fallback": fallback,
+        }
+    _write_json(
+        ctx.out_root / "em_join_conditional.json",
+        {
+            "n_cells": len(cond_cells),
+            "cells": cond_cells,
+            "n_conditional_fallback_frozen": n_cond_fallback,
+            "dv": "parent DV: mean (100-aligned)/100 over coherence>=50 FRESH survivors",
+            "metadata": join_payload["metadata"],
+        },
+    )
+    _write_json(
+        ctx.out_root / "self_rates_conditional.json",
+        {
+            "arms": {"em": cond_self},
+            "dv": "conditional self rate - conditional base rate (fresh survivors)",
+            "git_commit_sha": _git_sha(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        },
+    )
+    _phase_log(
+        "join",
+        f"conditional sensitivity inputs -> em_join_conditional.json "
+        f"({n_cond_fallback} frozen-fallback cells)",
+    )
 
     # ---- Axis A / Axis B + imputation class-change report ----
     corrected = [c for c in cells_out if c.get("corrected")]
@@ -754,7 +875,9 @@ def phase_join(ctx: Ctx) -> dict:
                 "agree": proxy_cls == corr_cls,
                 "proxy_delta": fz["delta"],
                 "corrected_delta": c["delta"],
-                "frozen_survivors": None,
+                # Frozen PROXY survivor counts (run_result.json) — the plan-§5
+                # stratification field for the class-agreement read.
+                "frozen_survivors": _frozen_trained_survivors(c["source"], c["bystander"]),
                 "refusal_confounded": c["refusal_confounded"],
                 "class_imputed_min": _class3(c["delta_imputed_min"]),
                 "class_imputed_max": _class3(c["delta_imputed_max"]),
@@ -830,7 +953,7 @@ def phase_join(ctx: Ctx) -> dict:
         "git_commit_sha": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
-    (ctx.out_root / "class_agreement.json").write_text(json.dumps(agreement, indent=2))
+    _write_json(ctx.out_root / "class_agreement.json", agreement)
     _phase_log(
         "join",
         f"join: {len(corrected)} corrected cells (+{n_partial} partial-filled); "
@@ -845,9 +968,8 @@ def phase_join(ctx: Ctx) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def phase_refit(ctx: Ctx) -> None:
-    """Table build + registered factor suite via the e1 scripts' override flags."""
-    _phase_log("refit", "re-running table build + factor suite on the corrected join")
+def _refit_pair(ctx: Ctx, *, em_join: Path, em_self_rates: Path, subdir: str, fig_dir: Path):
+    """One build+fit subprocess pair through the e1 override-flag CLIs."""
     out_root_e1 = REPO / "eval_results/issue_591"
     env = {**os.environ}
     build_cmd = [
@@ -856,11 +978,11 @@ def phase_refit(ctx: Ctx) -> None:
         "--out-root",
         str(out_root_e1),
         "--em-join",
-        str(ctx.out_root / "em_join_corrected.json"),
+        str(em_join),
         "--em-self-rates",
-        str(ctx.out_root / "self_rates_corrected.json"),
+        str(em_self_rates),
         "--out-subdir",
-        ctx.refit_subdir,
+        subdir,
     ]
     fit_cmd = [
         sys.executable,
@@ -868,11 +990,11 @@ def phase_refit(ctx: Ctx) -> None:
         "--out-root",
         str(out_root_e1),
         "--cell-table",
-        str(out_root_e1 / ctx.refit_subdir / "cell_table.json"),
+        str(out_root_e1 / subdir / "cell_table.json"),
         "--out-subdir",
-        ctx.refit_subdir,
+        subdir,
         "--fig-dir",
-        str(ctx.fig_dir),
+        str(fig_dir),
         "--perm-b",
         str(ctx.refit_perm_b),
     ]
@@ -883,7 +1005,44 @@ def phase_refit(ctx: Ctx) -> None:
         proc = subprocess.run(cmd, env=env, cwd=str(REPO))
         if proc.returncode != 0:
             raise RuntimeError(f"refit subprocess failed rc={proc.returncode}: {cmd[1]}")
-    _phase_log("refit", f"done -> {out_root_e1 / ctx.refit_subdir}")
+    _phase_log("refit", f"done -> {out_root_e1 / subdir}")
+
+
+def phase_refit(ctx: Ctx) -> None:
+    """Registered factor suite on the corrected panel (PRIMARY) and on the
+    coherence-conditional panel (the plan-§5 sensitivity arm).
+
+    The PRIMARY fit applies NO survivor-count exclusion: the e1 factor
+    suite's primary components (univariate permutation, Firth, LOSO ROC) fit
+    ALL cells unfiltered — EM_SURVIVOR_MIN appears only inside its separate
+    `sens["em_survivor_filter"]` block, fit on its own copy and reported
+    alongside (i591_e1_factor_analysis.py: primary at the "primary suite"
+    section; the filter only inside the sensitivities section). The
+    conditional arm re-runs the same suite over the parent-DV panel
+    (em_join_conditional.json), where the survivor denominator — and hence
+    that sensitivity — is meaningful again. Outputs:
+    eval_results/issue_591/<refit_subdir>/ (primary) and
+    .../<refit_subdir>/refit_conditional/ (sensitivity arm).
+    """
+    _phase_log("refit", "PRIMARY: corrected all-rollouts panel")
+    _refit_pair(
+        ctx,
+        em_join=ctx.out_root / "em_join_corrected.json",
+        em_self_rates=ctx.out_root / "self_rates_corrected.json",
+        subdir=ctx.refit_subdir,
+        fig_dir=ctx.fig_dir,
+    )
+    cond_join = ctx.out_root / "em_join_conditional.json"
+    if not cond_join.exists():
+        raise FileNotFoundError(f"{cond_join} missing — run --phase join first")
+    _phase_log("refit", "SENSITIVITY: coherence-conditional panel (parent DV, fresh verdicts)")
+    _refit_pair(
+        ctx,
+        em_join=cond_join,
+        em_self_rates=ctx.out_root / "self_rates_conditional.json",
+        subdir=f"{ctx.refit_subdir}/refit_conditional",
+        fig_dir=ctx.fig_dir / "conditional",
+    )
 
 
 def phase_figs(ctx: Ctx) -> None:
@@ -968,18 +1127,28 @@ def phase_figs(ctx: Ctx) -> None:
     # Three-way DV comparison on corrected cells.
     corrected = [c for c in join["cells"] if c.get("corrected")]
     if corrected:
+        # None-guard: zero-survivor cells carry None conditional deltas
+        # (NaN sanitized at write); plot only numeric pairs.
+        cond_pairs = [
+            (c["delta"], c["delta_conditional"])
+            for c in corrected
+            if _is_num(c.get("delta_conditional"))
+        ]
+        bin_pairs = [
+            (c["delta"], c["delta_binary"]) for c in corrected if _is_num(c.get("delta_binary"))
+        ]
         fig, axes = plt.subplots(1, 2, figsize=(11, 4.4))
         axes[0].scatter(
-            [c["delta"] for c in corrected],
-            [c["delta_conditional"] for c in corrected],
+            [x for x, _ in cond_pairs],
+            [y for _, y in cond_pairs],
             s=12,
             color=paper_palette_role("primary"),
         )
         axes[0].set_xlabel("corrected delta (all rollouts)")
         axes[0].set_ylabel("conditional delta (fresh survivors)")
         axes[1].scatter(
-            [c["delta"] for c in corrected],
-            [c["delta_binary"] for c in corrected],
+            [x for x, _ in bin_pairs],
+            [y for _, y in bin_pairs],
             s=12,
             color=paper_palette_role("accent"),
         )
