@@ -1,7 +1,7 @@
 ---
 title: 'Training context shapes how far an implanted behavior generalizes: instruction
   and worked-example training contains it, while most persona, chat, and rephrasing
-  contexts spread it broadly (MODERATE confidence)'
+  contexts spread it broadly (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T18:47:55Z'
