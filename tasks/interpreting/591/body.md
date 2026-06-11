@@ -5,7 +5,7 @@ title: Sycophancy implants that looked persona-localized leak heavily to synthes
 kind: experiment
 tags: []
 created_at: '2026-06-11T06:38:41Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 480
 goal: 'Explain the leak/no-leak structure across (source, behavior) cells for three
   implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing
