@@ -1,6 +1,8 @@
 ---
-title: 'Matched-geometry bystander panels: does the leakage gate need a behavior-overlap
-  term beyond context similarity?'
+title: 'A context''s base behavior prior owns held-out prediction of standing marker
+  leakage at matched similarity, but the gate test on the training-induced shift comes
+  back indeterminate: held-out gain is null while within-panel associations stay positive
+  (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-11T10:48:18Z'
