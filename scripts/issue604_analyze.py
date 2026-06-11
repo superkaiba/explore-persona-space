@@ -49,7 +49,12 @@ gate; legacy bundles without the field count as ``last-prompt-token``),
 ``--cells-dir`` (Phase A store root, decoupled from ``--out-dir``). The
 key payload also gains a ``between_context_separation`` block (mean
 pairwise centroid cosine across distinct-SHA contexts, band L14–L24, per
-capture space) for the bank-quality contrast across positions.
+capture space) for the bank-quality contrast across positions, and a
+``truncation_sensitivity`` block (registered truncation guard + the plan
+v3 §2 exclusion sensitivity: the same key read re-run on the
+``*_excl_truncated`` bank view when the bundle carries those variants;
+fail-loud at >10% global truncation below ``max_new_tokens`` 512 per the
+512-first re-extraction precedence; explicit ``n/a`` on legacy bundles).
 
 The Phase B bundle is fitness-gated before use (stale-cache guard): the
 bundle meta must carry the expected ``n_probes`` (production = 50) and every
@@ -60,6 +65,7 @@ bundle at the production path fails loud instead of corrupting the reads.
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import sys
@@ -220,7 +226,12 @@ class ContextBundle:
             from huggingface_hub import hf_hub_download
 
             context_dir.mkdir(parents=True, exist_ok=True)
-            for n in [*needed, "manifest.json"]:
+            extra_files = ["manifest.json"]
+            if expected_capture_position == "post-response-slot":
+                # post-slot bundles always ship responses.json (per-context
+                # stop reasons + the truncation summary the guard reads).
+                extra_files.append("responses.json")
+            for n in [*needed, *extra_files]:
                 logger.info("downloading Phase B bundle file %s from HF (%s)", n, hf_prefix)
                 got = hf_hub_download(HF_DATA_REPO, f"{hf_prefix}/{n}", repo_type="dataset")
                 (context_dir / n).write_bytes(Path(got).read_bytes())
@@ -230,6 +241,25 @@ class ContextBundle:
         self.attn = {k: v.numpy().astype(np.float64) for k, v in mod["attn"].items()}
         self.mlp = {k: v.numpy().astype(np.float64) for k, v in mod["mlp"].items()}
         self.raw = {k: v.numpy().astype(np.float64) for k, v in raw["contexts"].items()}
+        # Registered exclusion-sensitivity variants (plan v3 §2): centroids over
+        # the non-length-truncated probes only, persisted by extraction for any
+        # post-response-slot context with a PARTIAL set of truncated probes.
+        self.attn_excl = {
+            k: v.numpy().astype(np.float64)
+            for k, v in (mod.get("attn_excl_truncated") or {}).items()
+        }
+        self.mlp_excl = {
+            k: v.numpy().astype(np.float64)
+            for k, v in (mod.get("mlp_excl_truncated") or {}).items()
+        }
+        self.raw_excl = {
+            k: v.numpy().astype(np.float64)
+            for k, v in (raw.get("contexts_excl_truncated") or {}).items()
+        }
+        assert set(self.attn_excl) == set(self.mlp_excl) == set(self.raw_excl), (
+            "excl-truncated centroid context sets disagree across capture spaces"
+        )
+        self.excl_truncated_contexts = sorted(self.attn_excl)
         self.gamma_in = gam["input_layernorm"].numpy().astype(np.float64)
         self.gamma_post = gam["post_attention_layernorm"].numpy().astype(np.float64)
         self.meta = mod.get("meta") or {}
@@ -237,11 +267,31 @@ class ContextBundle:
         first = self.attn[names[0]]
         self.n_layers, self.hidden = first.shape
         assert all(self.attn[n].shape == (self.n_layers, self.hidden) for n in names)
+        assert set(self.excl_truncated_contexts) <= set(names), (
+            "excl-truncated centroids name contexts outside the bundle"
+        )
+        assert all(
+            self.attn_excl[n].shape == (self.n_layers, self.hidden)
+            for n in self.excl_truncated_contexts
+        )
         self.names = names
         self.manifest = {}
         mpath = context_dir / "manifest.json"
         if mpath.exists():
             self.manifest = json.loads(mpath.read_text())
+        # Truncation metadata (post-slot bundles): per-context stop-reason
+        # fractions from responses.json when present (the guard's loud read
+        # only needs meta.global_truncated_fraction, which is always bundled).
+        self.responses_summary: dict = {}
+        self.per_context_truncated_fraction: dict[str, float] = {}
+        rpath = context_dir / "responses.json"
+        if rpath.exists():
+            rj = json.loads(rpath.read_text())
+            self.responses_summary = rj.get("summary") or {}
+            self.per_context_truncated_fraction = {
+                name: info.get("truncated_fraction")
+                for name, info in (rj.get("contexts") or {}).items()
+            }
         # ── Fitness gate (stale-cache guard) ────────────────────────────────
         got_pos = (
             self.meta.get("capture_position")
@@ -402,6 +452,108 @@ def _between_context_separation(bundle: ContextBundle) -> dict:
     }
 
 
+# ── truncation guard + exclusion-sensitivity bank view (follow-up round) ────
+
+TRUNCATION_FRACTION_THRESHOLD = 0.10  # registered, plan v3 §2 / §9
+
+
+def _truncation_guard(bundle: ContextBundle, *, allow_over_threshold: bool = False) -> dict:
+    """Registered truncation guard over the Phase B bundle (plan v3 §2 + §9).
+
+    Returns the ``truncation_sensitivity`` base block embedded in the output
+    JSONs. Legacy last-prompt-token bundles have no generation stage, so the
+    guard no-ops with an explicit ``n/a`` status. For post-response-slot
+    bundles a ``global_truncated_fraction`` above the registered 10%
+    threshold is surfaced LOUDLY; when the bundle was extracted below 512 new
+    tokens, the registered precedence (re-extract at ``--max-new-tokens 512``
+    FIRST, exclusion sensitivity second — plan v3 §9 / binding extra 4) makes
+    the read refuse outright unless ``allow_over_threshold`` is passed
+    (deliberate diagnostic only). The failure mode this kills: a silent,
+    complete-looking fold over a >10%-truncated bank.
+    """
+    if bundle.capture_position != "post-response-slot":
+        return {
+            "status": (
+                "n/a — legacy last-prompt-token bundle: no generation stage, no truncation concept"
+            ),
+            "capture_position": bundle.capture_position,
+        }
+    frac = bundle.meta.get("global_truncated_fraction")
+    assert frac is not None, (
+        "post-response-slot bundle meta lacks global_truncated_fraction — malformed "
+        "Phase B bundle (extraction always records it)"
+    )
+    max_new = bundle.meta.get("max_new_tokens")
+    block = {
+        "status": "checked",
+        "capture_position": bundle.capture_position,
+        "max_new_tokens": max_new,
+        "global_truncated_fraction": frac,
+        "threshold": TRUNCATION_FRACTION_THRESHOLD,
+        "exceeds_threshold": bool(frac > TRUNCATION_FRACTION_THRESHOLD),
+        "per_context_truncated_fraction": (
+            bundle.per_context_truncated_fraction or "unknown — responses.json absent"
+        ),
+        "contexts_with_excl_truncated_centroids": bundle.excl_truncated_contexts,
+    }
+    if frac > TRUNCATION_FRACTION_THRESHOLD:
+        block["registered_precedence"] = (
+            "re-extract at --max-new-tokens 512 FIRST (plan v3 §9 / binding extra 4); "
+            "the exclusion sensitivity is the second-line read"
+        )
+        for line in (
+            "=" * 78,
+            f"TRUNCATION GUARD: global_truncated_fraction={frac:.3f} EXCEEDS the "
+            f"registered {TRUNCATION_FRACTION_THRESHOLD:.0%} threshold "
+            f"(bundle max_new_tokens={max_new}).",
+            block["registered_precedence"],
+            "=" * 78,
+        ):
+            logger.warning(line)
+        if max_new is not None and max_new < 512 and not allow_over_threshold:
+            raise RuntimeError(
+                f"Phase B bundle is >{TRUNCATION_FRACTION_THRESHOLD:.0%} length-truncated "
+                f"(global_truncated_fraction={frac:.3f}) at max_new_tokens={max_new} < 512. "
+                "Registered precedence (plan v3 §9 / binding extra 4): re-extract at "
+                "--max-new-tokens 512 FIRST (fresh --out-dir or --force; the stale-shard "
+                "meta guard refuses silent cross-cap mixing), then re-run this read on "
+                "the 512 bundle — the exclusion sensitivity is the second-line read once "
+                "the 512 fraction is known. Pass --allow-truncation-over-threshold ONLY "
+                "for a deliberate diagnostic read of this bundle."
+            )
+        if allow_over_threshold:
+            block["over_threshold_read_allowed_by_flag"] = True
+    return block
+
+
+def _excl_view(bundle: ContextBundle) -> ContextBundle:
+    """Shallow bundle view with excl-truncated centroids substituted in.
+
+    Affected contexts' centroids are replaced by their non-truncated-probe
+    variants in all three capture spaces; everything else (γ, manifest,
+    names, meta) is shared with the full-bank bundle. Contexts whose probes
+    were ALL truncated have no variant and keep their full-bank centroid
+    (surfaced by ``_all_truncated_contexts``).
+    """
+    view = copy.copy(bundle)
+    view.attn = {**bundle.attn, **bundle.attn_excl}
+    view.mlp = {**bundle.mlp, **bundle.mlp_excl}
+    view.raw = {**bundle.raw, **bundle.raw_excl}
+    return view
+
+
+def _all_truncated_contexts(bundle: ContextBundle) -> list[str] | str:
+    """Contexts with truncated probes but NO excl variant (all probes truncated)."""
+    if not bundle.per_context_truncated_fraction:
+        return "unknown — responses.json absent"
+    excl = set(bundle.excl_truncated_contexts)
+    return sorted(
+        name
+        for name, frac in bundle.per_context_truncated_fraction.items()
+        if frac is not None and frac > 0 and name not in excl
+    )
+
+
 # ── shared loaders ──────────────────────────────────────────────────────────
 
 
@@ -470,36 +622,23 @@ def is_clean_single_dial(cell: dict) -> bool:
 # ── analysis 1: key match ───────────────────────────────────────────────────
 
 
-def run_key_match(  # noqa: C901 — one block per registered read (per-space rows, band run, shuffled null)
+def _key_match_cells(  # noqa: C901 — one block per registered read (per-space rows, band run)
     store: CellStore,
     bundle: ContextBundle,
-    data_root: Path,
-    out: Path,
+    band: list[int],
     *,
-    dedup_nulls: bool = False,
-) -> None:
-    """§4 C2 — per-cell per-layer key-vs-context cosines against the bank.
+    dedup_nulls: bool,
+    pool_names_for: dict[str, list[str]],
+    rep_names: list[str],
+) -> list[dict]:
+    """Per-cell per-layer key-vs-context cosine read against ONE bank view.
 
-    ``dedup_nulls`` (follow-up round, plan v3 §2 defect fix; default OFF so
-    the parent's published numbers reproduce exactly): the wrong-context
-    null pool for source s excludes every bank entry sharing s's prompt
-    sha256 and counts each unique sha once (35-entry pool on the production
-    42-context bank), ranks are taken in that deduped bank, and shuffled
-    pairings cross only SHA-disjoint source sets.
+    Pure extraction of the ``run_key_match`` per-cell loop (behavior-
+    identical) so the registered truncation sensitivity can re-run the SAME
+    read over the excl-truncated bank view. Returns the ``cells`` list.
     """
     spaces_by_stack = {"attn_key": ["attn", "gamma_raw", "raw"], "mlp_key": ["mlp"]}
     results = []
-    band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
-    sha_of: dict[str, str] = {}
-    pool_names_for: dict[str, list[str]] = {}
-    rep_names: list[str] = []
-    if dedup_nulls:
-        sha_of, _dups = _sha_groups(bundle)
-        rep_names = _sha_representatives(sha_of)
-        # per-source null pool: one entry per unique sha, source's sha excluded
-        pool_names_for = {
-            src: [n for n in rep_names if sha_of[n] != sha_of[src]] for src in bundle.names
-        }
     for cell in store.cells:
         c = cell["cell"]
         if c["line"] == "i541":
@@ -612,8 +751,23 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
                 )
             rec["no_source_bank_read"] = rows
         results.append(rec)
+    return results
 
-    # Shuffled-pairing null (within line): key of cell i vs source of cell j≠i.
+
+def _key_shuffled_null(
+    store: CellStore,
+    bundle: ContextBundle,
+    band: list[int],
+    *,
+    dedup_nulls: bool,
+    sha_of: dict[str, str],
+) -> dict:
+    """Shuffled-pairing null (within line): key of cell i vs source of cell j≠i.
+
+    Pure extraction from ``run_key_match`` (behavior-identical), parameterized
+    on the bank view for the truncation sensitivity.
+    """
+
     def _sources_disjoint(ci: dict, cj: dict) -> bool:
         """Name-disjoint (parent) or SHA-disjoint (--dedup-nulls) source sets."""
         if not dedup_nulls:
@@ -653,6 +807,187 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
                 "p95": float(np.percentile(vals, 95)),
                 "mean": float(np.mean(vals)),
             }
+    return shuffled
+
+
+def _headline_rows(results: list[dict], band: list[int]) -> dict[tuple, dict]:
+    """Headline metrics per (cell, source, stack, space) row of a key read."""
+    rows: dict[tuple, dict] = {}
+    for rec in results:
+        for src_rec in rec.get("per_source", []):
+            for stack, per_space in src_rec.get("stacks", {}).items():
+                for space, blk in per_space.items():
+                    brows = [r for r in blk["layers"] if r["layer"] in band]
+                    rows[(rec["cell_id"], src_rec["source"], stack, space)] = {
+                        "key_present": blk["key_present"],
+                        "longest_run": blk["longest_contiguous_band_run"],
+                        "best_layer": blk["best_layer"],
+                        "band_max_cos": max((r["cos_src_abs"] for r in brows), default=None),
+                        "band_max_margin": max(
+                            (r["selectivity_margin"] for r in brows), default=None
+                        ),
+                        "band_cos": {r["layer"]: r["cos_src_abs"] for r in brows},
+                    }
+    return rows
+
+
+def _key_truncation_sensitivity(
+    full_results: list[dict],
+    excl_results: list[dict],
+    excl_shuffled: dict,
+    band: list[int],
+    bundle: ContextBundle,
+) -> dict:
+    """Registered exclusion sensitivity for the key read (plan v3 §2).
+
+    Compares the full-bank read against the excl-truncated bank view per
+    (cell, source, stack, space) row: presence-criterion flips, contiguous-
+    run / best-layer / band-max deltas, plus the excl-view shuffled null.
+    "Both variants are reported" — the full per-layer rows of the primary
+    read stay in ``cells``; this block carries the excl-variant headline.
+    """
+    full_rows = _headline_rows(full_results, band)
+    excl_rows = _headline_rows(excl_results, band)
+    assert set(full_rows) == set(excl_rows), (
+        "row sets diverged between the full-bank and excl-view key reads"
+    )
+    flips: list[dict] = []
+    rows_out: list[dict] = []
+    max_d_cos = 0.0
+    for key in sorted(full_rows):
+        f, e = full_rows[key], excl_rows[key]
+        d_cos = max(
+            (abs(e["band_cos"][li] - f["band_cos"][li]) for li in f["band_cos"]),
+            default=0.0,
+        )
+        max_d_cos = max(max_d_cos, d_cos)
+        if f["key_present"] != e["key_present"]:
+            flips.append(
+                {
+                    "cell_id": key[0],
+                    "source": key[1],
+                    "stack": key[2],
+                    "space": key[3],
+                    "key_present_full": f["key_present"],
+                    "key_present_excl": e["key_present"],
+                }
+            )
+        rows_out.append(
+            {
+                "cell_id": key[0],
+                "source": key[1],
+                "stack": key[2],
+                "space": key[3],
+                "key_present_full": f["key_present"],
+                "key_present_excl": e["key_present"],
+                "longest_run_full": f["longest_run"],
+                "longest_run_excl": e["longest_run"],
+                "best_layer_full": f["best_layer"],
+                "best_layer_excl": e["best_layer"],
+                "band_max_cos_full": f["band_max_cos"],
+                "band_max_cos_excl": e["band_max_cos"],
+                "band_max_margin_full": f["band_max_margin"],
+                "band_max_margin_excl": e["band_max_margin"],
+                "band_max_abs_delta_cos": d_cos,
+            }
+        )
+    return {
+        "status": "computed",
+        "read": (
+            "registered exclusion sensitivity (plan v3 §2): the SAME key read re-run "
+            "with every *_excl_truncated centroid substituted for its full-bank "
+            "counterpart (affected contexts only); both variants reported"
+        ),
+        "contexts_substituted": bundle.excl_truncated_contexts,
+        "contexts_truncated_but_no_excl_variant": _all_truncated_contexts(bundle),
+        "n_rows": len(rows_out),
+        "n_key_present_full": sum(int(r["key_present_full"]) for r in rows_out),
+        "n_key_present_excl": sum(int(r["key_present_excl"]) for r in rows_out),
+        "key_present_flips": flips,
+        "max_abs_delta_band_cos": max_d_cos,
+        "shuffled_pairing_null_excl": excl_shuffled,
+        "rows": rows_out,
+    }
+
+
+def run_key_match(
+    store: CellStore,
+    bundle: ContextBundle,
+    data_root: Path,
+    out: Path,
+    *,
+    dedup_nulls: bool = False,
+    truncation_guard: dict | None = None,
+) -> None:
+    """§4 C2 — per-cell per-layer key-vs-context cosines against the bank.
+
+    ``dedup_nulls`` (follow-up round, plan v3 §2 defect fix; default OFF so
+    the parent's published numbers reproduce exactly): the wrong-context
+    null pool for source s excludes every bank entry sharing s's prompt
+    sha256 and counts each unique sha once (35-entry pool on the production
+    42-context bank), ranks are taken in that deduped bank, and shuffled
+    pairings cross only SHA-disjoint source sets.
+
+    ``truncation_guard`` (concern `truncation-sensitivity-not-analyzed`):
+    the base block from ``_truncation_guard`` (computed here when not
+    passed). On a post-response-slot bundle carrying ``*_excl_truncated``
+    centroids the payload gains
+    ``truncation_sensitivity.exclusion_sensitivity`` — the SAME key read
+    re-run on the excl-truncated bank view (plan v3 §2 "both variants are
+    reported") with headline metrics + deltas vs the full-bank read.
+    """
+    band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
+    sha_of: dict[str, str] = {}
+    pool_names_for: dict[str, list[str]] = {}
+    rep_names: list[str] = []
+    if dedup_nulls:
+        sha_of, _dups = _sha_groups(bundle)
+        rep_names = _sha_representatives(sha_of)
+        # per-source null pool: one entry per unique sha, source's sha excluded
+        pool_names_for = {
+            src: [n for n in rep_names if sha_of[n] != sha_of[src]] for src in bundle.names
+        }
+    results = _key_match_cells(
+        store,
+        bundle,
+        band,
+        dedup_nulls=dedup_nulls,
+        pool_names_for=pool_names_for,
+        rep_names=rep_names,
+    )
+    shuffled = _key_shuffled_null(store, bundle, band, dedup_nulls=dedup_nulls, sha_of=sha_of)
+
+    trunc_block = (
+        dict(truncation_guard) if truncation_guard is not None else _truncation_guard(bundle)
+    )
+    if bundle.excl_truncated_contexts:
+        logger.info(
+            "truncation sensitivity: re-running the key read on the excl-truncated bank "
+            "view (%d contexts substituted)",
+            len(bundle.excl_truncated_contexts),
+        )
+        excl_bundle = _excl_view(bundle)
+        excl_results = _key_match_cells(
+            store,
+            excl_bundle,
+            band,
+            dedup_nulls=dedup_nulls,
+            pool_names_for=pool_names_for,
+            rep_names=rep_names,
+        )
+        excl_shuffled = _key_shuffled_null(
+            store, excl_bundle, band, dedup_nulls=dedup_nulls, sha_of=sha_of
+        )
+        trunc_block["exclusion_sensitivity"] = _key_truncation_sensitivity(
+            results, excl_results, excl_shuffled, band, bundle
+        )
+    elif bundle.capture_position == "post-response-slot":
+        trunc_block["exclusion_sensitivity"] = {
+            "status": (
+                "not computed — no *_excl_truncated centroids in the bundle (no context "
+                "had a partial set of length-truncated probes; the full-bank read is exact)"
+            )
+        }
 
     aux = _aux_bank_reads(store, data_root)
     i541 = _i541_key_match(store, bundle, data_root)
@@ -675,6 +1010,7 @@ def run_key_match(  # noqa: C901 — one block per registered read (per-space ro
         ),
         "layer_band": list(band),
         "between_context_separation": _between_context_separation(bundle),
+        "truncation_sensitivity": trunc_block,
         "cells": results,
         "shuffled_pairing_null": shuffled,
         "aux_banks": aux,
@@ -1582,6 +1918,16 @@ def main() -> None:
             "failing loud on contexts the cell inventory requires)"
         ),
     )
+    parser.add_argument(
+        "--allow-truncation-over-threshold",
+        action="store_true",
+        help=(
+            "deliberate diagnostic only: read a post-response-slot bundle whose "
+            "global_truncated_fraction exceeds the registered 10% threshold even though it "
+            "was extracted below --max-new-tokens 512 (the registered precedence is to "
+            "re-extract at 512 FIRST; plan v3 §9 / binding extra 4)"
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
@@ -1614,6 +1960,13 @@ def main() -> None:
         f"Phase B bundle hidden={bundle.hidden} != {HIDDEN_SIZE} — was Phase B run on a "
         "substitute model? Phase C comparisons need the production base model's bundle."
     )
+    # Registered truncation guard (concern `truncation-sensitivity-not-analyzed`):
+    # fires HERE, before any analysis — fail-loud when the registered 512-first
+    # re-extraction precedence was skipped; loud flag otherwise; explicit n/a on
+    # legacy last-prompt-token bundles.
+    truncation_guard = _truncation_guard(
+        bundle, allow_over_threshold=args.allow_truncation_over_threshold
+    )
 
     todo = ANALYSES if args.analyses == "all" else tuple(args.analyses.split(","))
     for a in todo:
@@ -1621,7 +1974,12 @@ def main() -> None:
     if "key" in todo:
         print("[phase=c_key_match]", flush=True)
         run_key_match(
-            store, bundle, data_root, out_dir / "key_match.json", dedup_nulls=args.dedup_nulls
+            store,
+            bundle,
+            data_root,
+            out_dir / "key_match.json",
+            dedup_nulls=args.dedup_nulls,
+            truncation_guard=truncation_guard,
         )
     if "write" in todo:
         print("[phase=c_write_match]", flush=True)

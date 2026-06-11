@@ -61,7 +61,15 @@ import matplotlib  # noqa: E402
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
-from issue604_analyze import CellStore, ContextBundle, _sha_groups, _unit  # noqa: E402
+from issue604_analyze import (  # noqa: E402
+    CellStore,
+    ContextBundle,
+    _all_truncated_contexts,
+    _excl_view,
+    _sha_groups,
+    _truncation_guard,
+    _unit,
+)
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
@@ -276,9 +284,16 @@ def _aggregate_group(
     return agg
 
 
-def run_topk(store: CellStore, bundle: ContextBundle, out: Path) -> dict:
-    """Compute the registered top-k subspace read and write ``topk_subspace.json``."""
-    band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
+def _topk_compute(
+    store: CellStore, bundle: ContextBundle, band: list[int]
+) -> tuple[list[dict], dict, dict, dict[str, set[int]]]:
+    """Energy matrices + per-group aggregates for ONE bank view.
+
+    Pure extraction of the ``run_topk`` compute body (behavior-identical) so
+    the registered truncation sensitivity can re-run the SAME read over the
+    excl-truncated bank view. Returns ``(cells_out, per_group, shuffled,
+    stack_rank_by_line)``.
+    """
     names = bundle.names
     name_idx = {n: i for i, n in enumerate(names)}
     sha_of, dups = _sha_groups(bundle)
@@ -341,6 +356,114 @@ def run_topk(store: CellStore, bundle: ContextBundle, out: Path) -> dict:
         )
         for group in sorted(set(group_cells) | set(matched_rows))
     }
+    return cells_out, per_group, shuffled, stack_rank_by_line
+
+
+def _topk_truncation_sensitivity(
+    full_cells: list[dict],
+    excl_cells: list[dict],
+    excl_per_group: dict,
+    excl_shuffled: dict,
+    bundle: ContextBundle,
+) -> dict:
+    """Registered exclusion sensitivity for the top-k read (plan v3 §2).
+
+    Compares the full-bank read against the excl-truncated bank view per
+    (cell, source, k) row: ``above_wrong_p95`` flips + matched-energy deltas,
+    plus the full excl-view per-line aggregates and shuffled null. "Both
+    variants are reported" — the primary read stays in ``per_line``/``cells``;
+    this block carries the excl-variant counterpart.
+    """
+
+    def _rows(cells: list[dict]) -> dict[tuple, dict]:
+        out: dict[tuple, dict] = {}
+        for rec in cells:
+            for sr in rec.get("per_source", []):
+                for k, kk in sr["k"].items():
+                    out[(rec["cell_id"], sr["source"], k)] = {
+                        "group": rec["group"],
+                        "matched_band_mean": kk["matched_band_mean"],
+                        "wrong_p95": kk["wrong_p95"],
+                        "above_wrong_p95": kk["above_wrong_p95"],
+                    }
+        return out
+
+    full, excl = _rows(full_cells), _rows(excl_cells)
+    assert set(full) == set(excl), (
+        "row sets diverged between the full-bank and excl-view topk reads"
+    )
+    flips: list[dict] = []
+    max_delta = 0.0
+    for key in sorted(full):
+        f, e = full[key], excl[key]
+        max_delta = max(max_delta, abs(e["matched_band_mean"] - f["matched_band_mean"]))
+        if f["above_wrong_p95"] != e["above_wrong_p95"]:
+            flips.append(
+                {
+                    "cell_id": key[0],
+                    "source": key[1],
+                    "k": key[2],
+                    "group": f["group"],
+                    "above_wrong_p95_full": f["above_wrong_p95"],
+                    "above_wrong_p95_excl": e["above_wrong_p95"],
+                }
+            )
+    return {
+        "status": "computed",
+        "read": (
+            "registered exclusion sensitivity (plan v3 §2): the SAME top-k read re-run "
+            "with every *_excl_truncated centroid substituted for its full-bank "
+            "counterpart (affected contexts only); both variants reported"
+        ),
+        "contexts_substituted": bundle.excl_truncated_contexts,
+        "contexts_truncated_but_no_excl_variant": _all_truncated_contexts(bundle),
+        "n_rows": len(full),
+        "n_above_wrong_p95_full": sum(int(r["above_wrong_p95"]) for r in full.values()),
+        "n_above_wrong_p95_excl": sum(int(r["above_wrong_p95"]) for r in excl.values()),
+        "row_flips_above_wrong_p95": flips,
+        "max_abs_delta_matched_band_mean": max_delta,
+        "per_line_excl": excl_per_group,
+        "shuffled_pairing_null_excl": excl_shuffled,
+    }
+
+
+def run_topk(
+    store: CellStore, bundle: ContextBundle, out: Path, *, truncation_guard: dict | None = None
+) -> dict:
+    """Compute the registered top-k subspace read and write ``topk_subspace.json``.
+
+    ``truncation_guard`` (concern `truncation-sensitivity-not-analyzed`): the
+    base block from ``_truncation_guard`` (computed here when not passed). On
+    a post-response-slot bundle carrying ``*_excl_truncated`` centroids the
+    payload gains ``truncation_sensitivity.exclusion_sensitivity`` — the same
+    read re-run on the excl-truncated bank view (plan v3 §2 "both variants
+    are reported") with per-line aggregates + row-level flips.
+    """
+    band = [li for li in KEY_LAYER_BAND if li < bundle.n_layers]
+    cells_out, per_group, shuffled, stack_rank_by_line = _topk_compute(store, bundle, band)
+
+    trunc_block = (
+        dict(truncation_guard) if truncation_guard is not None else _truncation_guard(bundle)
+    )
+    if bundle.excl_truncated_contexts:
+        logger.info(
+            "truncation sensitivity: re-running the top-k read on the excl-truncated bank "
+            "view (%d contexts substituted)",
+            len(bundle.excl_truncated_contexts),
+        )
+        excl_cells, excl_per_group, excl_shuffled, _ = _topk_compute(
+            store, _excl_view(bundle), band
+        )
+        trunc_block["exclusion_sensitivity"] = _topk_truncation_sensitivity(
+            cells_out, excl_cells, excl_per_group, excl_shuffled, bundle
+        )
+    elif bundle.capture_position == "post-response-slot":
+        trunc_block["exclusion_sensitivity"] = {
+            "status": (
+                "not computed — no *_excl_truncated centroids in the bundle (no context "
+                "had a partial set of length-truncated probes; the full-bank read is exact)"
+            )
+        }
 
     payload = {
         "meta": result_metadata(
@@ -372,6 +495,7 @@ def run_topk(store: CellStore, bundle: ContextBundle, out: Path) -> dict:
             },
         ),
         "layer_band": band,
+        "truncation_sensitivity": trunc_block,
         "per_line": per_group,
         "shuffled_pairing_null": shuffled,
         "cells": cells_out,
@@ -512,6 +636,16 @@ def main() -> None:
             "download subpath when the bundle is absent locally."
         ),
     )
+    parser.add_argument(
+        "--allow-truncation-over-threshold",
+        action="store_true",
+        help=(
+            "deliberate diagnostic only: read a post-response-slot bundle whose "
+            "global_truncated_fraction exceeds the registered 10% threshold even though it "
+            "was extracted below --max-new-tokens 512 (the registered precedence is to "
+            "re-extract at 512 FIRST; plan v3 §9 / binding extra 4)"
+        ),
+    )
     args = parser.parse_args()
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
@@ -536,9 +670,18 @@ def main() -> None:
         hf_prefix=hf_prefix,
     )
     assert bundle.hidden == HIDDEN_SIZE, bundle.hidden
+    # Registered truncation guard (concern `truncation-sensitivity-not-analyzed`):
+    # fires HERE, before the read — fail-loud when the registered 512-first
+    # re-extraction precedence was skipped; loud flag otherwise; explicit n/a on
+    # legacy last-prompt-token bundles.
+    truncation_guard = _truncation_guard(
+        bundle, allow_over_threshold=args.allow_truncation_over_threshold
+    )
 
     print("[phase=topk_energy]", flush=True)
-    payload = run_topk(store, bundle, out_dir / "topk_subspace.json")
+    payload = run_topk(
+        store, bundle, out_dir / "topk_subspace.json", truncation_guard=truncation_guard
+    )
     print("[phase=topk_figure]", flush=True)
     set_paper_style("blog")
     fig_dir = Path(args.fig_dir)
