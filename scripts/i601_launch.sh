@@ -9,12 +9,16 @@
 #      analyze-anchor-fallback-unwired — the fallback is enforced, not printed)
 #   3. smoke: ONE FULL cell (ratio4to1_100p400n seed 42) + the §4 smoke asserts
 #   4. gate: smoke sentinel records smoke_gate_pass==true
-#   5. full sweep (all non-conditional cells x registered seeds)
-#   6. Phase-4a arrest classification -> phase4/phase4a_verdict.json
-#      (scripts/i601_phase4_verdict.py; plan §4 bands, seed-pooled)
-#   7. conditional Phase-4b factorization: dispatched with --cells phase4b
-#      ONLY on a 4a NON-ARREST verdict (the dispatcher independently re-gates
-#      on the same sentinel); arrest/ambiguous -> 4b skipped, reported open
+#   5. full sweep (all non-conditional cells x registered seeds; round 4:
+#      includes BOTH unconditional Phase-4 bridge cells — posonly_attn_lr5e6
+#      AND posonly_alllinear_lr5e6, the true single-variable #471 lr-bridge)
+#   6. Phase-4 bridge arrest classification over BOTH unconditional bridge
+#      cells -> phase4/phase4a_verdict.json (scripts/i601_phase4_verdict.py;
+#      plan §4 bands, seed-pooled per cell; routing call = any non-arrest)
+#   7. conditional Phase-4b factor (posonly_attn_lr1e5 only): dispatched with
+#      --cells phase4b ONLY on a bridge NON-ARREST verdict (the dispatcher
+#      independently re-gates on the same sentinel); arrest/ambiguous -> 4b
+#      skipped, reported open
 #   8. final results sentinel check
 #
 # Launch (pod, repo at issue-601 HEAD, after the experimenter's preflight):
@@ -100,7 +104,7 @@ uv run python scripts/dispatch_neg_setpoint_601.py \
     --slab-root "$SLAB_ROOT" --log-dir "$LOG_DIR" $ANCHOR_FALLBACK_ARGS $EXTRA_SWEEP_ARGS \
     > "$LOG_DIR/issue-601-sweep.log" 2>&1
 
-echo "[phase=p6_phase4a_verdict] $(date -u +%FT%TZ) classifying Phase-4a arrest (sub-log: $LOG_DIR/issue-601-phase4a-verdict.log)"
+echo "[phase=p6_phase4a_verdict] $(date -u +%FT%TZ) classifying Phase-4 bridge arrest (attn@5e6 + alllinear@5e6; sub-log: $LOG_DIR/issue-601-phase4a-verdict.log)"
 uv run python scripts/i601_phase4_verdict.py --slab-root "$SLAB_ROOT" \
     > "$LOG_DIR/issue-601-phase4a-verdict.log" 2>&1
 PHASE4A_CALL=$(uv run python - "$SLAB_ROOT/phase4/phase4a_verdict.json" <<'PY'
@@ -108,10 +112,10 @@ import json, sys
 print(json.loads(open(sys.argv[1]).read()).get("call"))
 PY
 )
-echo "[phase=p6_phase4a_verdict] 4a call=$PHASE4A_CALL"
+echo "[phase=p6_phase4a_verdict] bridge call=$PHASE4A_CALL"
 
 if [ "$PHASE4A_CALL" = "non-arrest" ]; then
-    echo "[phase=p7_phase4b] $(date -u +%FT%TZ) 4a NON-ARREST -> dispatching conditional 4b cells (sub-log: $LOG_DIR/issue-601-phase4b.log)"
+    echo "[phase=p7_phase4b] $(date -u +%FT%TZ) bridge NON-ARREST -> dispatching conditional 4b factor posonly_attn_lr1e5 (sub-log: $LOG_DIR/issue-601-phase4b.log)"
     # shellcheck disable=SC2086
     uv run python scripts/dispatch_neg_setpoint_601.py \
         --cells phase4b --seeds 42,137 --n-gpus "$N_GPUS" --max-parallel "$N_GPUS" --resume \
@@ -124,7 +128,7 @@ if [ "$PHASE4A_CALL" = "non-arrest" ]; then
         || test -f "$LOG_DIR/issue-601-phase4b-results.json.processed" \
         || { echo "phase4b sentinel missing"; exit 1; }
 else
-    echo "[phase=p7_phase4b] 4a call=$PHASE4A_CALL -> 4b uninformative, SKIPPED (recorded in phase4a_verdict.json; reported open per plan §4/§7)"
+    echo "[phase=p7_phase4b] bridge call=$PHASE4A_CALL -> 4b uninformative, SKIPPED (recorded in phase4a_verdict.json; reported open per plan §4/§7)"
 fi
 
 echo "[phase=p8_final_sentinel] $(date -u +%FT%TZ) verifying final results sentinel"

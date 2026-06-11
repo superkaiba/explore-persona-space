@@ -10,8 +10,14 @@ rows). This module's cells break that collinearity:
            companion (same 500-row build, ``epochs_override=4`` → T≈128).
   Phase 2  dense per-step four-float re-runs of the four parent ratio cells.
   Phase 3  negatives-only control (0 positives).
-  Phase 4  rig-bridging positives-only arm (attn-only LoRA / lr 5e-6 toward
-           #471) + conditional single-variable factorization.
+  Phase 4  rig-bridging positives-only arms toward #471. Corrected #471
+           attribution (concern phase4-bridge-attn-only-attribution; round 4):
+           #471's posonly rig was ALL-LINEAR r=32 @ lr 5e-6 — NOT attn-only as
+           the plan assumed via the ideas doc — so ``posonly_alllinear_lr5e6``
+           is the TRUE single-variable #471 lr-bridge (UNCONDITIONAL), the
+           plan's ``posonly_attn_lr5e6`` is a two-variable cell matching
+           neither rig (kept unconditional as registered), and only
+           ``posonly_attn_lr1e5`` remains the conditional 4b factor.
 
 The #472 anchor rig is inherited EXACTLY (rsLoRA r=32/α=64 all-linear, lr 1e-5
 cosine + 0.05 warmup, eff batch 16, marker-only loss on ` ※` id 83399, villain
@@ -63,6 +69,7 @@ __all__ = [
     "MAX_NEW_TOKENS_EVAL",
     "N_BYSTANDER_REFERENCE",
     "PARENT_DATA_FILES",
+    "PHASE4_BRIDGE_ATTRIBUTION",
     "SOURCE_PERSONA",
     "CellSpec601",
     "cell_by_slug",
@@ -155,7 +162,9 @@ class CellSpec601:
     band_stop: bool = True  # threaded with log_only below (D1).
     band_log_only: bool = True
     seeds: tuple[int, ...] = (42, 137)
-    conditional: bool = False  # Phase 4b cells run only on 4a non-arrest.
+    # Conditional 4b factor cell (posonly_attn_lr1e5 only as of round 4):
+    # dispatched only on a bridge NON-ARREST verdict (phase4a_verdict.json).
+    conditional: bool = False
 
     @property
     def placement(self) -> str:
@@ -287,10 +296,25 @@ CELLS_601: tuple[CellSpec601, ...] = (
         band_stop=False,
         band_log_only=False,
     ),
-    # Phase 4 — rig-bridging positives-only arms.
+    # Phase 4 — rig-bridging positives-only arms. Corrected #471 attribution
+    # (round 4, concern phase4-bridge-attn-only-attribution): #471's posonly
+    # rig was ALL-LINEAR r=32 @ lr 5e-6 (verified against #471's plan; the
+    # ideas doc's "attn-only" record was wrong), so:
+    #   posonly_alllinear_lr5e6  TRUE single-variable #471 lr-bridge
+    #                            (all-linear matches BOTH rigs; lr is the only
+    #                            change vs #472) — UNCONDITIONAL, joins
+    #                            --cells all. Residual #471 differences stay
+    #                            unbridged scope caveats (200 vs 300 rows,
+    #                            T=13 vs 30, rsLoRA α spec).
+    #   posonly_attn_lr5e6       two-variable cell (attn-only + half LR)
+    #                            matching NEITHER rig; kept unconditional as
+    #                            the plan's registered 4a arm (pair test).
+    #   posonly_attn_lr1e5       conditional 4b factor (adapter scope at
+    #                            parent LR) — the only cell gated on the
+    #                            bridge non-arrest verdict.
     CellSpec601(
         slug="posonly_attn_lr5e6",
-        plain_name="Bridge: positives-only, attn-only LoRA at half LR",
+        plain_name="Bridge pair: positives-only, attn-only LoRA at half LR (matches neither rig)",
         phase="phase4",
         pos_ex=200,
         n_neg_personas=0,
@@ -314,7 +338,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
     ),
     CellSpec601(
         slug="posonly_alllinear_lr5e6",
-        plain_name="Bridge factor: all-linear at half LR (conditional)",
+        plain_name="Bridge: positives-only, all-linear at half LR (true #471 lr-bridge)",
         phase="phase4",
         pos_ex=200,
         n_neg_personas=0,
@@ -322,9 +346,28 @@ CELLS_601: tuple[CellSpec601, ...] = (
         lr=5e-6,
         dense_steps=_dense_1_to(13),
         onpolicy="anchors",
-        conditional=True,
     ),
 )
+
+# Phase-4 bridge attribution narrative (single source for the verdict sentinel
+# + i601_analyze's phase-4 reporting; concern phase4-bridge-attn-only-attribution).
+PHASE4_BRIDGE_ATTRIBUTION: dict[str, str] = {
+    "posonly_alllinear_lr5e6": (
+        "TRUE single-variable #471 lr-bridge: #471's posonly rig was all-linear r=32 @ "
+        "lr 5e-6 (not attn-only as the plan assumed via the ideas doc), so this cell "
+        "changes ONLY lr vs #472 and matches the #471 rig modulo the plan's unbridged "
+        "residuals (200 vs 300 rows, T=13 vs 30, rsLoRA alpha spec)."
+    ),
+    "posonly_attn_lr5e6": (
+        "Two-variable cell (attn-only + half LR) matching NEITHER #472 nor #471's "
+        "all-linear posonly rig; retained unconditional as the plan's registered 4a "
+        "pair-test arm."
+    ),
+    "posonly_attn_lr1e5": (
+        "Conditional 4b factor: adapter scope (attn-only) at parent LR 1e-5 — "
+        "dispatched only on a bridge non-arrest verdict."
+    ),
+}
 
 CELL_SPECS_601_472SHAPE: tuple[tuple, ...] = tuple(c.spec472() for c in CELLS_601)
 
@@ -344,11 +387,13 @@ def cell_by_slug(slug: str) -> CellSpec601:
 def cells_for_request(raw: str | None) -> list[CellSpec601]:
     """Resolve a --cells CSV ('all' = every NON-conditional cell).
 
-    The conditional Phase-4b factorization cells run only via the dedicated
-    ``phase4b`` group (or named explicitly) — the dispatcher gates that group
-    on a ``phase4a_verdict.json`` recording a 4a NON-ARREST classification
-    (plan §4 Phase 4b; ``scripts/i601_phase4_verdict.py`` writes the sentinel
-    post-sweep and ``scripts/i601_launch.sh`` routes on it).
+    The conditional Phase-4b factor cell (``posonly_attn_lr1e5`` only, as of
+    round 4) runs only via the dedicated ``phase4b`` group (or named
+    explicitly) — the dispatcher gates that group on a ``phase4a_verdict.json``
+    recording a bridge NON-ARREST classification over the two UNCONDITIONAL
+    Phase-4 cells (plan §4 Phase 4b as amended;
+    ``scripts/i601_phase4_verdict.py`` writes the sentinel post-sweep and
+    ``scripts/i601_launch.sh`` routes on it).
     """
     if raw is None or raw.strip() in ("", "all"):
         return [c for c in CELLS_601 if not c.conditional]

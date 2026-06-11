@@ -11,7 +11,10 @@ pipeline outputs and writes ``eval_results/issue_601/analysis/classification.jso
   - The registered matched-pair discriminator (schedule-matched @ step 32).
   - Phase-2 arrest dating + log-Z artifact flags + robustness sweeps.
   - Phase-3 source-differential contrast.
-  - Phase-4 arrest on/off classification (4a; 4b cells when present).
+  - Phase-4 arrest on/off classification (both unconditional bridge cells —
+    alllinear@5e6 = the true single-variable #471 lr-bridge, attn@5e6 = the
+    two-variable cell; the conditional 4b factor cell when present) + the
+    bridge-attribution narrative fields.
   - Phase-0b clamp carry-over + the §7 kill-criteria summary.
 
 Pure decision logic lives in ``neg_setpoint_601.analysis_lib`` (CPU-tested by
@@ -135,6 +138,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
 
     from explore_persona_space.experiments.neg_setpoint_601 import (
         CELLS_601,
+        PHASE4_BRIDGE_ATTRIBUTION,
         cell_by_slug,
     )
     from explore_persona_space.experiments.neg_setpoint_601.analysis_lib import (
@@ -349,7 +353,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
     else:
         missing.append("phase3-inputs")
 
-    # ── Phase 4: arrest on/off. ───────────────────────────────────────────────
+    # ── Phase 4: arrest on/off. Round-4 structure (concern
+    # phase4-bridge-attn-only-attribution): TWO unconditional bridge cells —
+    # posonly_alllinear_lr5e6 (the TRUE single-variable #471 lr-bridge, modulo
+    # the plan's unbridged residuals) + posonly_attn_lr5e6 (two-variable cell
+    # matching neither rig); posonly_attn_lr1e5 is the only conditional cell.
     phase4: dict[str, dict] = {}
     for spec in CELLS_601:
         if spec.phase != "phase4":
@@ -358,9 +366,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
             key = f"{spec.slug}_seed{seed}"
             band_path = args.slab_root / spec.phase / key / "inloop_band_trajectory.json"
             if spec.conditional and not band_path.exists():
-                # Conditional 4b cells are LEGITIMATELY absent when the 4a
-                # verdict routed them to SKIP (phase4a_verdict.json records
-                # why) — never a strict-mode crash, never a missing-input row.
+                # The conditional 4b factor cell is LEGITIMATELY absent when
+                # the bridge verdict routed it to SKIP (phase4a_verdict.json
+                # records why) — never a strict-mode crash, never a
+                # missing-input row. Unconditional bridge cells fall through
+                # to the strict load below.
                 continue
             band = ap_load(band_path)
             if band is None:
@@ -403,7 +413,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
     phase4a_verdict = json.loads(verdict_path.read_text()) if verdict_path.exists() else None
 
     payload = {
-        "schema_version": "i601_classification_v2",
+        "schema_version": "i601_classification_v3",
         "primary_space_decision": primary_space_full,
         "classification_space": space,
         "phase0_gate_pass": (gate or {}).get("pass"),
@@ -414,6 +424,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-phas
         "phase3": phase3,
         "phase4": phase4,
         "phase4_calls": phase4_calls,
+        # Bridge-attribution narrative (round 4): names alllinear@5e6 as the
+        # #471-matching single-variable lr-bridge and attn@5e6 as the
+        # two-variable cell — the clean-result's rig-localization read keys
+        # off these fields, not the cell slugs.
+        "phase4_bridge_attribution": {
+            spec.slug: PHASE4_BRIDGE_ATTRIBUTION[spec.slug]
+            for spec in CELLS_601
+            if spec.phase == "phase4"
+        },
         "phase4a_verdict": phase4a_verdict,
         "clamp_read": clamp,
         "kill_criteria": kill,

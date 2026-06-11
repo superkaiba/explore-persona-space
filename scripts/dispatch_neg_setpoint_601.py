@@ -8,9 +8,11 @@ Pipeline (plan §4/§10):
   fetch_artifacts   parent inputs (bank / centroids / R) from the HF data repo
   gate checks       phase0_gate.json pass==true (ALL launches) + the smoke
                     sentinel (non-smoke launches) + phase4a_verdict.json
-                    call==non-arrest (any conditional Phase-4b cell, incl. the
-                    --cells phase4b group) — plan §7/§4 gates, enforced in
-                    code; a hand-pasted sweep command cannot bypass them
+                    call==non-arrest over the two UNCONDITIONAL Phase-4
+                    bridge cells (any conditional Phase-4b cell, i.e.
+                    posonly_attn_lr1e5 / the --cells phase4b group) — plan
+                    §7/§4 gates, enforced in code; a hand-pasted sweep
+                    command cannot bypass them
   per cell×seed     build → train → on-policy eval → dense read → ckpt upload
                     [GPU-pinned i601_run_cell subprocess pool]
   smoke gate        (--smoke) the §4 asserts over the completed smoke cell;
@@ -154,28 +156,30 @@ def _check_gates(slab_root: Path, log_dir: Path, *, smoke: bool, dry_run: bool) 
 def _check_phase4b_gate(slab_root: Path, conditional_requested: list[str]) -> None:
     """Plan §4 Phase-4b conditional gate, enforced in code.
 
-    The conditional factorization cells are dispatchable ONLY behind a
-    ``phase4a_verdict.json`` recording a 4a NON-ARREST classification (written
-    post-sweep by ``scripts/i601_phase4_verdict.py``; ``i601_launch.sh`` routes
-    on it). Arrest/ambiguous → 4b uninformative, skipped, reported open — a
-    hand-pasted ``--cells phase4b`` cannot bypass the routing.
+    The conditional factor cell (``posonly_attn_lr1e5``, the only conditional
+    cell as of round 4) is dispatchable ONLY behind a ``phase4a_verdict.json``
+    recording a bridge NON-ARREST classification over the two UNCONDITIONAL
+    Phase-4 cells (written post-sweep by ``scripts/i601_phase4_verdict.py``;
+    ``i601_launch.sh`` routes on it). Arrest/ambiguous → 4b uninformative,
+    skipped, reported open — a hand-pasted ``--cells phase4b`` cannot bypass
+    the routing.
     """
     verdict_path = slab_root / "phase4" / "phase4a_verdict.json"
     if not verdict_path.exists():
         raise RuntimeError(
             f"GATE REFUSAL: conditional Phase-4b cells {conditional_requested} require "
-            f"{verdict_path} (run scripts/i601_phase4_verdict.py after the 4a cells "
-            f"complete) — plan §4 Phase 4b."
+            f"{verdict_path} (run scripts/i601_phase4_verdict.py after the unconditional "
+            f"bridge cells complete) — plan §4 Phase 4b."
         )
     verdict = json.loads(verdict_path.read_text())
     if verdict.get("dispatch_4b") is not True or verdict.get("call") != "non-arrest":
         raise RuntimeError(
-            f"GATE REFUSAL: Phase-4b cells are gated on a 4a NON-ARREST classification; "
+            f"GATE REFUSAL: Phase-4b cells are gated on a bridge NON-ARREST classification; "
             f"{verdict_path} records call={verdict.get('call')!r} "
             f"(dispatch_4b={verdict.get('dispatch_4b')!r}). Arrest/ambiguous → 4b is "
             f"uninformative, skipped, and reported open (plan §4/§7)."
         )
-    log.info("[phase=gates] phase4b gate PASS (4a call=non-arrest)")
+    log.info("[phase=gates] phase4b gate PASS (bridge call=non-arrest)")
 
 
 def _schedule_cell_pool(
