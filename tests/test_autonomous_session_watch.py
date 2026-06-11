@@ -2387,20 +2387,24 @@ def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
 
 
 # ─── session-reconcile pass (sessions-vs-status; 2026-06-10 disk incident) ───
-# A wrong STOP kills a session the user may still want (hence alert-only
-# default + the DONE-status gate + the 2-miss guard), while a missing stop
-# re-opens the incident class (idle sessions pinning worktrees + holding
-# deleted-file handles). Both directions are pinned here.
+# A wrong STOP kills a session the user may still want (hence the
+# parked/terminal-status gate + the followup/pod/keep-running skips + the
+# 2-miss guard), while a missing stop re-opens the incident class (idle
+# sessions pinning worktrees + holding deleted-file handles + ~0.5-0.6GB RSS
+# each). Both directions are pinned here.
 
 
-def test_session_reconcile_done_set_is_terminal_for_gc():
-    # The DONE set is deliberately shared with the GC's terminal set:
-    # completed/archived only. awaiting_promotion and blocked are excluded —
-    # the user may be live-parked there (promotion gate / investigation).
-    from autonomous_session_watch import SESSION_RECONCILE_DONE, TERMINAL_FOR_GC
+def test_session_reconcile_done_set_is_pod_auto_stop_set():
+    # The DONE set shares the pod-safety auto-stop set: awaiting_promotion /
+    # completed / archived (2026-06-10 user request: "stop the happy sessions
+    # once they reach awaiting promotion"). followups_running (a same-issue
+    # follow-up round is executing) and blocked (under investigation) are
+    # excluded — the session may be legitimately live there.
+    from autonomous_session_watch import AUTO_STOP_DONE, SESSION_RECONCILE_DONE
 
-    assert SESSION_RECONCILE_DONE == TERMINAL_FOR_GC == {"completed", "archived"}
-    assert "awaiting_promotion" not in SESSION_RECONCILE_DONE
+    assert SESSION_RECONCILE_DONE == AUTO_STOP_DONE
+    assert {"completed", "awaiting_promotion", "archived"} == SESSION_RECONCILE_DONE
+    assert "followups_running" not in SESSION_RECONCILE_DONE
     assert "blocked" not in SESSION_RECONCILE_DONE
 
 
@@ -2416,16 +2420,17 @@ def test_session_reconcile_done_set_is_terminal_for_gc():
         "verifying",
         "interpreting",
         "reviewing",
-        "awaiting_promotion",
+        "followups_running",
         "blocked",
     ],
 )
 @pytest.mark.parametrize("idle", [True, False])
 @pytest.mark.parametrize("missed", [0, 1, 5])
 def test_session_reconcile_non_done_always_clears(status, idle, missed):
-    # Any non-terminal status (including the user-parked awaiting_promotion /
-    # blocked and an unreadable None) clears the episode — never an action,
-    # even with autostop armed and a huge miss count.
+    # Any non-parked status (including the follow-up-executing
+    # followups_running, the user-parked blocked, and an unreadable None)
+    # clears the episode — never an action, even with autostop armed and a
+    # huge miss count.
     from autonomous_session_watch import decide_session_reconcile
 
     assert decide_session_reconcile(status, idle, missed, alerted=True, autostop=True) == (
@@ -2434,19 +2439,20 @@ def test_session_reconcile_non_done_always_clears(status, idle, missed):
     )
 
 
-@pytest.mark.parametrize("status", ["completed", "archived"])
+@pytest.mark.parametrize("status", ["completed", "archived", "awaiting_promotion"])
 def test_session_reconcile_fresh_activity_clears(status):
-    # A DONE task with recent activity (e.g. it JUST completed) keeps its
-    # session — the idle window is the post-completion grace period.
+    # A DONE task with recent activity (e.g. it JUST parked) keeps its
+    # session — the idle window is the post-park grace period.
     from autonomous_session_watch import decide_session_reconcile
 
     assert decide_session_reconcile(status, False, 5, alerted=True, autostop=True) == ("clear", 0)
 
 
 def test_session_reconcile_two_miss_guard_then_alert():
-    # Alert-only default: tick 1 accumulates, tick 2 alerts ONCE, later ticks
-    # stay quiet (dedup) while the miss count keeps growing so a later
-    # autostop-enable fires immediately.
+    # Alert-only fallback (EPM_SESSION_RECONCILE_AUTOSTOP=0): tick 1
+    # accumulates, tick 2 alerts ONCE, later ticks stay quiet (dedup) while
+    # the miss count keeps growing so a later autostop re-enable fires
+    # immediately.
     from autonomous_session_watch import decide_session_reconcile
 
     assert decide_session_reconcile("completed", True, 0, alerted=False) == ("keep", 1)
@@ -2500,7 +2506,7 @@ def test_session_reconcile_keep_running_skips_and_beats_followup():
 
 
 def test_session_reconcile_followup_active_skips():
-    # A live inline follow-up (epm:run-launched newer than the done
+    # A live inline follow-up (a follow-up signal marker newer than the done
     # transition) means the session is the follow-up's driver — never stop
     # it, even if the follow-up itself is quiet past the idle window.
     from autonomous_session_watch import decide_session_reconcile
@@ -2508,6 +2514,119 @@ def test_session_reconcile_followup_active_skips():
     assert decide_session_reconcile(
         "completed", True, 5, alerted=False, autostop=True, followup_active=True
     ) == ("followup-skip", 0)
+
+
+def test_session_reconcile_pod_running_skips():
+    # A RUNNING managed pod on the issue means work may still be in flight
+    # that the markers haven't surfaced yet — skip + reset the miss counter.
+    # Precedence: keep_running and followup_active are checked first.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "awaiting_promotion", True, 5, alerted=False, autostop=True, pod_running=True
+    ) == ("pod-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        followup_active=True,
+        pod_running=True,
+    ) == ("followup-skip", 0)
+
+
+def test_session_reconcile_autostop_default_enabled(monkeypatch):
+    # Auto-stop is the DEFAULT (2026-06-10 user request, superseding the
+    # same-day alert-only decision). Only an explicit falsy env value
+    # disables it; the legacy arming values stay backwards-compatible.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    assert asw._session_reconcile_autostop_enabled() is True
+    for off in ("0", "false", "no", " FALSE "):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", off)
+        assert asw._session_reconcile_autostop_enabled() is False
+    for on in ("1", "true", "yes", ""):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", on)
+        assert asw._session_reconcile_autostop_enabled() is True
+
+
+def test_session_idle_s_env_override(monkeypatch):
+    # Default 2h; EPM_SESSION_RECONCILE_IDLE_S overrides; garbled /
+    # non-positive values fall back to the default instead of crashing.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_IDLE_S", raising=False)
+    assert asw._session_idle_s() == asw.SESSION_IDLE_S == 2 * 3600
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_IDLE_S", "7200.5")
+    assert asw._session_idle_s() == 7200.5
+    for bad in ("garbage", "0", "-5"):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_IDLE_S", bad)
+        assert asw._session_idle_s() == asw.SESSION_IDLE_S
+
+
+def test_session_followup_predicate_expanded_kinds():
+    # The session sweep's follow-up inference is wider than pod-safety's:
+    # followup-scope / free-analysis-followup-run count as follow-up signals
+    # (the request may predate any run-launched), and pod-terminated /
+    # step-completed count as done-transitions (a round wrapping up).
+    import autonomous_session_watch as asw
+
+    def ev(kind, ts):
+        return {"kind": kind, "ts": ts, "note": ""}
+
+    # followup-scope NEWER than the done-transition -> active (the window
+    # between a user posting the scope and a session picking it up).
+    events = [
+        ev("epm:status-changed", "2026-06-10T10:00:00Z"),
+        ev("epm:followup-scope", "2026-06-10T11:00:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is True
+
+    # free-analysis-followup-run newer than the transition -> active.
+    events = [
+        ev("epm:promoted", "2026-06-10T10:00:00Z"),
+        ev("epm:free-analysis-followup-run", "2026-06-10T10:30:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is True
+
+    # pod-terminated NEWER than every follow-up signal -> the follow-up
+    # provably finished; inactive.
+    events = [
+        ev("epm:status-changed", "2026-06-10T08:00:00Z"),
+        ev("epm:run-launched", "2026-06-10T09:00:00Z"),
+        ev("epm:pod-terminated", "2026-06-10T12:00:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is False
+
+    # No follow-up signal at all / no done-transition -> conservative False.
+    assert asw._task_session_followup_active(0, events=[]) is False
+    assert (
+        asw._task_session_followup_active(
+            0, events=[ev("epm:run-launched", "2026-06-10T09:00:00Z")]
+        )
+        is False
+    )
+
+
+def test_latest_nonwatcher_event_ts_counts_any_kind_but_filters_sentinels():
+    # The idle clock counts markers of ANY kind (a parked task's
+    # followup-scope / interp-critique / workflow-fix markers are all
+    # evidence of activity) but never the watcher's own posts.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:interp-critique", "ts": "2026-06-10T10:00:00Z", "note": "round 1"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T12:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) ...",
+        },
+    ]
+    # The non-progress-kind marker counts; the newer watcher alert does not.
+    assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-06-10T10:00:00Z")
+    assert asw._latest_nonwatcher_event_ts([]) is None
 
 
 def test_map_sessions_registry_beats_cwd_and_unmapped_skipped():
@@ -2557,10 +2676,12 @@ def test_session_reconcile_sentinels_are_filtered_from_progress():
     assert asw._SESSION_RECONCILE_STOP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
 
 
-def _patch_session_reconcile_io(monkeypatch, *, status, events=None, self_report=(None, None)):
+def _patch_session_reconcile_io(
+    monkeypatch, *, status, events=None, self_report=(None, None), pods=()
+):
     """Common monkeypatching for the session-reconcile I/O wrapper tests:
-    task reads + the daemon-derived maps, leaving state files + decisions
-    real. Returns the (stops, posts) recorders."""
+    task reads + the daemon-derived maps + the RunPod snapshot, leaving
+    state files + decisions real. Returns the (stops, posts) recorders."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
@@ -2569,6 +2690,7 @@ def _patch_session_reconcile_io(monkeypatch, *, status, events=None, self_report
     monkeypatch.setattr(asw, "_task_events", lambda issue: list(events or []))
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: self_report)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: list(pods))
     monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
     monkeypatch.setattr(
         asw,
@@ -2580,16 +2702,15 @@ def _patch_session_reconcile_io(monkeypatch, *, status, events=None, self_report
     return stops, posts
 
 
-def test_session_reconcile_alert_only_default_posts_once_never_stops(
-    isolated_registry, monkeypatch
-):
-    # Default posture (env flag unset): tick 1 accumulates, tick 2 posts ONE
-    # alert marker, tick 3 stays quiet. No session is ever stopped.
+def test_session_reconcile_alert_only_optout_posts_once_never_stops(isolated_registry, monkeypatch):
+    # Opt-out posture (EPM_SESSION_RECONCILE_AUTOSTOP=0): tick 1 accumulates,
+    # tick 2 posts ONE alert marker, tick 3 stays quiet. No session is ever
+    # stopped.
     import json
 
     import autonomous_session_watch as asw
 
-    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "0")
     stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
     now = 1_000_000.0
     live = {"sid-a", "sid-b"}
@@ -2611,13 +2732,18 @@ def test_session_reconcile_alert_only_default_posts_once_never_stops(
     assert stops == []
 
 
-def test_session_reconcile_autostop_stops_all_sessions_and_clears(isolated_registry, monkeypatch):
-    # With EPM_SESSION_RECONCILE_AUTOSTOP=1: tick 1 accumulates, tick 2 stops
-    # EVERY live mapped session, posts the stop marker, clears the state.
+@pytest.mark.parametrize("status", ["completed", "awaiting_promotion"])
+def test_session_reconcile_default_autostop_stops_all_sessions_and_clears(
+    isolated_registry, monkeypatch, status
+):
+    # DEFAULT posture (env unset, 2026-06-10 user request): tick 1
+    # accumulates, tick 2 stops EVERY live mapped session, posts the stop
+    # marker, clears the state. awaiting_promotion is covered (the request's
+    # headline case: sessions idling at the promotion park).
     import autonomous_session_watch as asw
 
-    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
-    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
     now = 1_000_000.0
     live = {"sid-a", "sid-b"}
 
@@ -2630,14 +2756,56 @@ def test_session_reconcile_autostop_stops_all_sessions_and_clears(isolated_regis
     assert not (isolated_registry / "session-reconcile-42.json").exists()
 
 
-@pytest.mark.parametrize("status", ["awaiting_promotion", "blocked", "running"])
-def test_session_reconcile_never_acts_on_non_done_status(isolated_registry, monkeypatch, status):
-    # awaiting_promotion (live-parked for promotion), blocked (under
-    # investigation), and any ACTIVE status are untouchable — no stop, no
-    # marker, no state accumulation, even with autostop armed.
+def test_session_reconcile_running_pod_blocks_stop(isolated_registry, monkeypatch):
+    # A RUNNING managed pod for the issue blocks the stop and resets the
+    # miss counter — even at the default auto-stop posture.
+    import json
+
     import autonomous_session_watch as asw
 
-    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(
+        monkeypatch, status="awaiting_promotion", pods=[(42, "pod-id-x", "pod-42")]
+    )
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0  # pod leaving the RUNNING set re-arms a fresh accumulation
+
+
+def test_session_reconcile_followup_scope_blocks_stop(isolated_registry, monkeypatch):
+    # The headline near-miss from the 2026-06-10 manual sweep: a parked task
+    # with a follow-up REQUEST (epm:followup-scope newer than the latest
+    # done-transition) keeps its session even when the markers are idle past
+    # the grace window.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    base = asw._parse_event_ts("2026-06-10T00:00:00Z")
+    now = base + 30 * 3600
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": "-> parked"},
+        {"kind": "epm:followup-scope", "ts": "2026-06-10T01:00:00Z", "note": "user followup"},
+    ]
+    stops, posts = _patch_session_reconcile_io(
+        monkeypatch, status="awaiting_promotion", events=events
+    )
+    for _ in range(3):
+        asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+
+
+@pytest.mark.parametrize("status", ["followups_running", "blocked", "running"])
+def test_session_reconcile_never_acts_on_non_done_status(isolated_registry, monkeypatch, status):
+    # followups_running (a same-issue follow-up round is executing), blocked
+    # (under investigation), and any ACTIVE status are untouchable — no stop,
+    # no marker, no state accumulation, even at the default auto-stop posture.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
     stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
     for _ in range(3):
         asw.session_reconcile_pass(
