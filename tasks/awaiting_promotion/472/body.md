@@ -23,6 +23,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_472.md](https://github.com/superkaiba/explore-persona-space/blob/0e67ed63dedd08bcd5917d8ca6ab7021645bd29f/docs/methodology/issue_472.md) · [gist](https://gist.github.com/superkaiba/8de82ace82c08834b13ae259e4241103)
 ## Human TL;DR
 
 **Headline.** count is the load-bearing recipe knob: at matched training step the count cells sit ~10 nats apart on bystander marker log-prob. placement (near / spread / far) is a real but tiny secondary effect — ~0.1-0.25 nats, roughly 2% of the count spread.
