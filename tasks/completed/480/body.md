@@ -2,7 +2,8 @@
 title: A cheap marker-leakage probe rank-tracks sycophancy leakage on both testable
   bystander panels even at checkpoints where the marker never fires (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-03T08:53:19Z'
 has_clean_result: true
 parent_id: 470
