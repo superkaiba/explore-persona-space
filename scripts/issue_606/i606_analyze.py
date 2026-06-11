@@ -146,16 +146,20 @@ def _install_failure_report(
 
     Returns the parsed kill payload when the marker exists, else None.
     Absence of this OPTIONAL marker (locally and on the Hub) is the healthy
-    case, not an error; any other Hub failure (repo missing, auth, network)
-    still raises through ``_ensure_local``.
+    case, not an error; any other Hub failure (repo missing, auth, and
+    offline/cache-miss ``LocalEntryNotFoundError`` — re-raised explicitly
+    below since it SUBCLASSES ``EntryNotFoundError``) still raises through
+    ``_ensure_local``.
     """
     rel = "stage_a/install_failure.json"
     local = root / behavior / rel
     if not local.exists() and refetch:
-        from huggingface_hub.utils import EntryNotFoundError
+        from huggingface_hub.utils import EntryNotFoundError, LocalEntryNotFoundError
 
         try:
             local = _ensure_local(root, behavior, rel, experiment=experiment, refetch=True)
+        except LocalEntryNotFoundError:
+            raise  # offline / cache-miss is an infra failure, NOT a healthy absence
         except EntryNotFoundError:
             return None
     if not local.exists():
