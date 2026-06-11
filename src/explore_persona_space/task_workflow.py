@@ -100,6 +100,20 @@ TERMINAL_STATUSES = frozenset({"completed", "blocked", "archived"})
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
 
+# Intermediate pipeline statuses a `followups_running` task may NOT re-enter
+# mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
+# § Same-issue follow-up loop, step 3): the round HOLDS `followups_running`
+# end-to-end; phase visibility comes from stage breadcrumbs
+# (`stage=followup-<phase>`) + `epm:progress` markers, never status flips.
+# Exits to `awaiting_promotion` (re-park), `blocked` (failure), `completed` /
+# `archived` (terminal), and the deliberate `proposed` reset stay allowed.
+# `set_status` refuses these transitions unless `force_followup_exit=True`
+# (CLI: `--force-followup-exit`). Incident: tasks #533/#560 (2026-06-10/11)
+# flipped to `running` mid-round via Step 4b's local set-status instruction.
+FOLLOWUP_HELD_BLOCKED_STATUSES = frozenset(
+    {"planning", "plan_pending", "approved", "running", "verifying", "interpreting", "reviewing"}
+)
+
 EVENT_NOTE_MAX = 50_000  # mirror Sagan's body-size cap
 
 # Comment kinds the web UI exposes; checked when comments are appended.
@@ -714,9 +728,18 @@ def has_event(task_id: int, kind: str) -> bool:
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
-def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Path:
+def set_status(
+    task_id: int,
+    new_status: str,
+    *,
+    note: str | None = None,
+    force_followup_exit: bool = False,
+) -> Path:
     """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
     status-changed event. Returns the new absolute path.
+
+    Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
+    (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
     """
     if new_status not in STATUSES:
         raise ValueError(f"unknown status: {new_status!r}; expected one of {STATUSES}")
@@ -725,6 +748,22 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         old_status = _status_from_path(old)
         if old_status == new_status:
             return old
+        if (
+            old_status == "followups_running"
+            and new_status in FOLLOWUP_HELD_BLOCKED_STATUSES
+            and not force_followup_exit
+        ):
+            raise ValueError(
+                f"task #{task_id}: refusing followups_running -> {new_status}. "
+                "followups_running is HELD for the WHOLE same-issue follow-up round "
+                "(status-hold rule, .claude/skills/issue/SKILL.md Step 9b § Same-issue "
+                "follow-up loop, step 3): the normal pipeline set-status calls are "
+                "SKIPPED mid-round; phase visibility comes from stage breadcrumbs "
+                "(stage=followup-<phase>) + epm:progress markers. The round exits this "
+                "status only at the re-park (awaiting_promotion) or a failure exit "
+                "(blocked). Pass --force-followup-exit (CLI) / force_followup_exit=True "
+                "(API) only to deliberately abandon the round."
+            )
         repo = repo_root()
         new_parent = tasks_dir() / new_status
         new_parent.mkdir(parents=True, exist_ok=True)
@@ -1882,6 +1921,7 @@ __all__ = [
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
+    "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "GOAL_H2_NAME",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)

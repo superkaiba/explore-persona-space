@@ -2213,8 +2213,11 @@ steps:
       moves to `followups_running` (tagged `followup-auto` for
       `source: proposer-9b`, `followup-manual` for `user-chat` /
       `step-10b-pick`) and HOLDS that status for the whole round —
-      the normal pipeline `set-status` calls (`approved` / `running` /
-      `verifying` / `interpreting` / `reviewing`) are skipped; phase
+      the normal pipeline `set-status` calls (`planning` /
+      `plan_pending` / `approved` / `running` / `verifying` /
+      `interpreting` / `reviewing`) are skipped, and `task.py
+      set-status` refuses them from `followups_running` unless
+      `--force-followup-exit` is passed (post-#533/#560); phase
       visibility comes from `stage=followup-<phase>` breadcrumbs +
       `epm:progress` markers. (`followups_running` in the entry list
       is the mid-round resume case after a crash.) Whether

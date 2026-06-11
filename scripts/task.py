@@ -326,6 +326,8 @@ def cmd_set_status(args: argparse.Namespace) -> None:
     if args.status not in STATUSES:
         raise SystemExit(_status_error_message(args.status))
 
+    force_followup_exit = getattr(args, "force_followup_exit", False)
+
     # Autonomous plan-approval gate (code-enforced, not LLM discretion).
     # When the caller opts in via --auto-approve-if-autonomous on a
     # plan_pending transition, the decision is made HERE in the script so a
@@ -335,6 +337,56 @@ def cmd_set_status(args: argparse.Namespace) -> None:
     # (EPM_AUTONOMOUS_SESSION unset) fall through to the normal plan_pending
     # transition unchanged.
     if getattr(args, "auto_approve_if_autonomous", False) and args.status == "plan_pending":
+        # Same-issue follow-up status-hold rule (code-enforced; SKILL.md
+        # Step 9b § Same-issue follow-up loop, step 3): a `followups_running`
+        # task HOLDS that status for the WHOLE round. A plan-gate call
+        # mid-round still FIRES the gate decision + markers but the status
+        # stays in place ("the Step 2c plan-approval gate still fires, it
+        # just no longer moves the status to plan_pending"). Any other
+        # pipeline re-entry is refused by task_workflow.set_status below
+        # unless --force-followup-exit is passed.
+        followup_hold = (
+            not force_followup_exit and get_task(args.number)["status"] == "followups_running"
+        )
+        if followup_hold:
+            gpu_hours = getattr(args, "gpu_hours", None)
+            decision, cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
+            if decision == "auto_approved":
+                post_event(
+                    args.number,
+                    "epm:plan-approved",
+                    version=1,
+                    by="autonomous-gate",
+                    note=(
+                        "Auto-approved by the code-enforced autonomous plan-gate "
+                        f"(task.py --auto-approve-if-autonomous): gpu_hours_total={gpu_hours} "
+                        f"<= cap {cap}. Same-issue follow-up round: status HELD at "
+                        "followups_running (status-hold rule, SKILL.md Step 9b)."
+                    ),
+                )
+            elif decision == "parked_over_cap":
+                reason = (
+                    "estimate missing/unparseable"
+                    if gpu_hours is None
+                    else f"est {gpu_hours} GPU-h exceeds {cap}h auto-approve cap"
+                )
+                post_event(
+                    args.number,
+                    "epm:awaiting-spend-approval",
+                    version=1,
+                    by="autonomous-gate",
+                    note=(
+                        f"Autonomous plan-gate parked IN PLACE at followups_running: {reason}; "
+                        "awaiting user approval (status-hold rule, SKILL.md Step 9b — "
+                        "the plan gate fires but the status does not move)."
+                    ),
+                )
+            _safe_echo(
+                f"PLAN_GATE_DECISION: {decision} gpu_hours={gpu_hours} cap={cap} "
+                "(followups_running hold: status unchanged)",
+                context="task.py set-status",
+            )
+            return
         gpu_hours = getattr(args, "gpu_hours", None)
         decision, cap, _autonomous = _resolve_autonomous_plan_gate(gpu_hours)
         if decision == "auto_approved":
@@ -346,6 +398,7 @@ def cmd_set_status(args: argparse.Namespace) -> None:
                 args.number,
                 "approved",
                 note=(f"{note} {gate_note}" if note else gate_note),
+                force_followup_exit=force_followup_exit,
             )
             post_event(
                 args.number,
@@ -368,7 +421,12 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             )
             return
         if decision == "parked_over_cap":
-            path = set_status(args.number, "plan_pending", note=args.note)
+            path = set_status(
+                args.number,
+                "plan_pending",
+                note=args.note,
+                force_followup_exit=force_followup_exit,
+            )
             reason = (
                 "estimate missing/unparseable"
                 if gpu_hours is None
@@ -395,7 +453,12 @@ def cmd_set_status(args: argparse.Namespace) -> None:
             return
         # interactive_pending: fall through to the normal plan_pending move,
         # then signal the orchestrator to run the interactive approval ask.
-        path = set_status(args.number, args.status, note=args.note)
+        path = set_status(
+            args.number,
+            args.status,
+            note=args.note,
+            force_followup_exit=force_followup_exit,
+        )
         _safe_echo(
             str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
             context="task.py set-status",
@@ -403,11 +466,34 @@ def cmd_set_status(args: argparse.Namespace) -> None:
         _safe_echo("PLAN_GATE_DECISION: interactive_pending", context="task.py set-status")
         return
 
-    path = set_status(args.number, args.status, note=args.note)
+    try:
+        path = set_status(
+            args.number,
+            args.status,
+            note=args.note,
+            force_followup_exit=force_followup_exit,
+        )
+    except ValueError as exc:
+        # Followup status-hold refusal (or another library-level rejection):
+        # surface the message cleanly instead of a traceback.
+        raise SystemExit(f"task.py set-status: {exc}") from exc
     _safe_echo(
         str(path.relative_to(path.parents[2])),  # tasks/<status>/<id>
         context="task.py set-status",
     )
+    if args.status == "followups_running":
+        tags = get_task(args.number)["frontmatter"].get("tags") or []
+        if not {"followup-auto", "followup-manual"} & set(tags):
+            _safe_echo(
+                "WARNING: transitioned to followups_running without a "
+                "followup-auto/followup-manual tag. Same-issue follow-up rounds "
+                "MUST record the initiation mode in the same step "
+                "(`task.py add-tag <N> followup-auto` for proposer-initiated, "
+                "`followup-manual` for user-initiated; a bare `followup` tag does "
+                "not count) — see SKILL.md Step 9b § Same-issue follow-up loop, "
+                "step 2. Legacy children-in-flight transitions can ignore this.",
+                context="task.py set-status",
+            )
 
 
 def cmd_post_event(args: argparse.Namespace) -> None:
@@ -958,6 +1044,19 @@ def main() -> None:
         type=float,
         default=None,
         help="Plan's estimated total GPU-hours; used by --auto-approve-if-autonomous.",
+    )
+    p.add_argument(
+        "--force-followup-exit",
+        action="store_true",
+        help=(
+            "Override the same-issue follow-up status-hold rule: allow a "
+            "followups_running task to move to an intermediate pipeline status "
+            "(planning/plan_pending/approved/running/verifying/interpreting/"
+            "reviewing). Without this flag the transition is refused — the round "
+            "HOLDS followups_running end-to-end and exits only at "
+            "awaiting_promotion/blocked (SKILL.md Step 9b § Same-issue follow-up "
+            "loop, step 3). Pass only to deliberately abandon the round."
+        ),
     )
     p.set_defaults(func=cmd_set_status)
 
