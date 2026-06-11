@@ -3729,8 +3729,8 @@
       "goal": "Determine whether the bare role header's lower wrong-persona leakage and higher default-assistant leakage (the probe split in #533's bare-word grid) survives base-prior-clean EOS-margin readouts and an unsaturated-implant read, i.e. whether the role encoding concentrates leakage onto the default-assistant context rather than reducing it.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/611",
-      "status": "approved",
+      "path": "tasks/running/611",
+      "status": "running",
       "title": "Is the role header's leakage advantage probe-specific? Test the wrong-persona vs default-assistant split off saturation with EOS-margin readouts"
     },
     "62": {
