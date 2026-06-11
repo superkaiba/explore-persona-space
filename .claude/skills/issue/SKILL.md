@@ -2418,7 +2418,24 @@ stderr warning + `extra.override_without_frontmatter=true` on the
 `epm:backend-selected` marker (additive visibility — the launch is not
 blocked). For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). SLURM custom stages are
+(the GCE startup script clones from origin). Two more gcp/auto
+composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
+the GCP lane maps intent → machine type statically
+(`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
+`a2-ultragpu-1g`, 1 GPU; `ft-7b` → `a2-ultragpu-4g`, 4 GPU) and
+ignores `--gpus` (only RunPod and SLURM honor the override), so pick
+the intent whose machine matches the plan's GPU spec; a gcp-reachable
+launch with a mismatched `--gpus` is refused pre-route by
+`dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
+**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
+on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
+(`/workspace/eps-issue-<N>`), cds there, then runs the workload
+command verbatim, so a driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
+under `set -e` and the EXIT trap powers the VM off; compose
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
 workload to GCP before the router had a custom workload-command field;
