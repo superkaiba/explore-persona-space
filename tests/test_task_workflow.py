@@ -155,6 +155,27 @@ def test_create_task_with_parent(fake_repo):
     assert task["frontmatter"]["parent_id"] == parent
 
 
+def test_create_task_with_origin_prompt(fake_repo):
+    """`origin_prompt` writes a frontmatter field verbatim (any kind);
+    empty/whitespace-only values write NO field. The clean-result
+    `## Reproducibility` `**Context:**` row carries it forward
+    (SPEC.md; verify_task_body.py check 17)."""
+    _, tw = fake_repo
+    with_prompt = tw.create_task(
+        tw.NewTaskRequest(
+            kind="experiment",
+            title="With prompt",
+            origin_prompt="Add an issue to look into this",
+        )
+    )
+    task = tw.get_task(with_prompt)
+    assert task["frontmatter"]["origin_prompt"] == "Add an issue to look into this"
+    without = tw.create_task(
+        tw.NewTaskRequest(kind="experiment", title="No prompt", origin_prompt="   ")
+    )
+    assert "origin_prompt" not in tw.get_task(without)["frontmatter"]
+
+
 # ─── Status transitions ──────────────────────────────────────────────────
 
 

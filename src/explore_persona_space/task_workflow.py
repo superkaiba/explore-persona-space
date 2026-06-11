@@ -815,6 +815,11 @@ class NewTaskRequest:
     # Canonical Goal of the experiment. Honored only when kind=="experiment";
     # passed through for other kinds with a soft warning emitted by the CLI.
     goal: str | None = None
+    # Verbatim user prompt(s) that originated the task. Written to
+    # frontmatter `origin_prompt:` when non-empty (honored for any kind).
+    # The clean-result `## Reproducibility` `**Context:**` row carries it
+    # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
+    origin_prompt: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -839,6 +844,8 @@ def create_task(req: NewTaskRequest) -> int:
         }
         if req.parent_id is not None:
             fm["parent_id"] = req.parent_id
+        if req.origin_prompt and req.origin_prompt.strip():
+            fm["origin_prompt"] = req.origin_prompt.strip()
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.

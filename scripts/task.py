@@ -9,7 +9,7 @@ Subcommands (see `task.py --help`):
 
     view <N>
     new --kind <k> --title "..." [--body|--body-file ...] [--goal "..."] [--parent N]
-        [--status proposed]
+        [--origin-prompt "..."] [--status proposed]
     set-status <N> <status> [--note ...]
     post-marker <N> <marker> [--note ... | --file path]   # alias: post-event
     list-by-status [--status ...] [--limit N]
@@ -250,6 +250,7 @@ def cmd_create(args: argparse.Namespace) -> None:
         tags=list(args.tag) if args.tag else None,
         status=args.status,
         goal=goal_value,
+        origin_prompt=(args.origin_prompt or "").strip() or None,
     )
     new_id = create_task(req)
     # Track: explicit --track wins; otherwise derive a human track from the
@@ -1036,6 +1037,18 @@ def main() -> None:
                 "set, writes frontmatter `goal:` AND injects a `## Goal` H2 "
                 "between H1 and any other H2. Optional at creation time; "
                 "enforced at /issue Step 0c for kind=experiment tasks."
+            ),
+        )
+        p.add_argument(
+            "--origin-prompt",
+            default=None,
+            help=(
+                "verbatim user prompt(s) that originated this task. Written "
+                "to frontmatter `origin_prompt:` (any kind); the clean-result "
+                "`## Reproducibility` `**Context:**` row carries it forward "
+                "(SPEC.md; verify_task_body.py check 17). Optional — when the "
+                "prompt is long or there are several, a `## Provenance` body "
+                "section (see task #611) works too."
             ),
         )
         # Sagan-compatibility: accept --runpod-account but ignore it.

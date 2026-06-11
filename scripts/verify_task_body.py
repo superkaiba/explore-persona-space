@@ -222,6 +222,18 @@ bodies are never re-verified, so tightening cannot regress them).
     script + plan §11 both ran `lr = 2e-6` — a 50x misprint on the
     single most load-bearing hyperparameter, missed by every reviewer
     because no check reconciled the table's VALUES against ground truth.
+17. Reproducibility Context provenance row — v2 (sentinel) bodies carry
+    a `**Context:**` boldface row in `## Reproducibility` shipping the
+    run-context provenance: created/run dates, follow-up lineage, and
+    the verbatim originating user prompt (or the literal `origin prompt
+    not recorded` when none exists). Forward-only (adopted 2026-06-11):
+    legacy (pre-sentinel) bodies PASS vacuously. A missing row FAILs
+    only when recorded origin data exists — frontmatter `origin_prompt`
+    or a `## Provenance` section in the sibling `original-body.md` —
+    i.e. the body DROPPED data it had; with no recorded origin data the
+    miss is a WARN (the row should still ship, stating the prompt was
+    not recorded). Spec: `.claude/skills/clean-results/SPEC.md`
+    § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -2011,6 +2023,67 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     return CheckResult(name, False, detail)
 
 
+def check_repro_context_provenance(
+    body: str, fm: dict, *, original_body_path: Path | None = None
+) -> CheckResult:
+    """Check 17: v2 bodies carry a `**Context:**` run-provenance row in
+    `## Reproducibility`.
+
+    The row ships the run-context provenance: created/run dates,
+    follow-up lineage, and the verbatim originating user prompt (or the
+    literal ``origin prompt not recorded``). Forward-only (adopted
+    2026-06-11): legacy (pre-sentinel) bodies PASS vacuously, so the
+    awaiting_promotion backlog never retro-FAILs.
+
+    A missing row FAILs only when recorded origin data exists —
+    frontmatter ``origin_prompt`` or a ``## Provenance`` section in the
+    sibling ``original-body.md`` — i.e. the body DROPPED provenance it
+    had. With no recorded origin data the miss is a WARN: created_at +
+    parent lineage always exist, so the row should still ship, stating
+    the prompt was not recorded. Spec:
+    `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
+    """
+    name = "Reproducibility Context provenance row"
+    if not is_v2_nested_design(body):
+        return CheckResult(name, True, "skipped — legacy (pre-v2) body")
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # Missing-section is check_required_sections' job; don't double-FAIL.
+        return CheckResult(name, True, "skipped — no Reproducibility section")
+    if re.search(r"\*\*\s*Context\s*:?\s*\*\*", repro):
+        return CheckResult(name, True, "**Context:** row present")
+    has_origin_prompt = bool(str(fm.get("origin_prompt") or "").strip())
+    has_provenance_section = False
+    if original_body_path is not None and original_body_path.exists():
+        has_provenance_section = bool(
+            re.search(
+                r"^##\s+Provenance\s*$",
+                original_body_path.read_text(errors="replace"),
+                re.MULTILINE,
+            )
+        )
+    if has_origin_prompt or has_provenance_section:
+        source = (
+            "frontmatter `origin_prompt`"
+            if has_origin_prompt
+            else "`## Provenance` section in original-body.md"
+        )
+        return CheckResult(
+            name,
+            False,
+            f"recorded origin data exists ({source}) but `## Reproducibility` has no "
+            f"`**Context:**` row — carry the created/run dates, follow-up lineage, and "
+            f"the verbatim originating prompt forward (SPEC.md § `**Context:**` row)",
+        )
+    return CheckResult(
+        name,
+        True,
+        "missing `**Context:**` row (no recorded origin data — add the row with "
+        "created/run dates + lineage and the literal `origin prompt not recorded`)",
+        is_warn=True,
+    )
+
+
 def check_cherry_picked_label(body: str) -> CheckResult:
     """Check 10: every sample-output block in `## TL;DR` is preceded
     by a cherry-picked / random-sample disclosure in the prelude prose.
@@ -3006,6 +3079,7 @@ def verify_text(
     source: str = "",
     concerns_path: Path | None = None,
     plan_path: Path | None = None,
+    original_body_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -3021,6 +3095,12 @@ def verify_text(
     (resolved by ``main()`` for ``--issue <N>`` / a ``--file`` sibling).
     When supplied AND present, check 16 reconciles the Reproducibility
     learning rate against the approved plan; otherwise it skips (PASS).
+
+    ``original_body_path`` is the absolute path to the sibling
+    ``original-body.md`` (resolved by ``main()`` the same way). Check 17
+    uses it to detect a ``## Provenance`` section in the pre-promotion
+    body — recorded origin data that the clean-result body must carry
+    forward in its ``**Context:**`` row.
     """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
@@ -3056,6 +3136,10 @@ def verify_text(
     # Check 16 (Reproducibility lr matches plan) needs the sibling
     # plans/plan.md, so it also lives outside the body-only CHECKS list.
     results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
+    # Check 17 (Reproducibility Context provenance row) needs the
+    # frontmatter (origin_prompt) + the sibling original-body.md, so it
+    # also lives outside the body-only CHECKS list.
+    results.append(check_repro_context_provenance(body, fm, original_body_path=original_body_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -3080,22 +3164,25 @@ def main() -> int:
 
     concerns_path: Path | None = None
     plan_path: Path | None = None
+    original_body_path: Path | None = None
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
             concerns_path = source_path.parent / "concerns.jsonl"
             plan_path = source_path.parent / "plans" / "plan.md"
+            original_body_path = source_path.parent / "original-body.md"
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
     elif args.file:
         raw = Path(args.file).read_text()
         source = args.file
-        # When verifying a body.md by file path, look for a sibling
-        # concerns.jsonl + plans/plan.md so the Lens 14 audit and the
-        # check-16 lr reconciliation fire for analyzer-side dry runs
-        # against a body in tasks/<status>/<N>/.
+        # When verifying a body.md by file path, look for siblings
+        # (concerns.jsonl, plans/plan.md, original-body.md) so the Lens 14
+        # audit, the check-16 lr reconciliation, and the check-17 context-
+        # provenance read fire for analyzer-side dry runs against a body
+        # in tasks/<status>/<N>/.
         parent = Path(args.file).resolve().parent
         sibling = parent / "concerns.jsonl"
         if sibling.exists():
@@ -3103,12 +3190,19 @@ def main() -> int:
         plan_sibling = parent / "plans" / "plan.md"
         if plan_sibling.exists():
             plan_path = plan_sibling
+        orig_sibling = parent / "original-body.md"
+        if orig_sibling.exists():
+            original_body_path = orig_sibling
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
 
     overall, results = verify_text(
-        raw, source=source, concerns_path=concerns_path, plan_path=plan_path
+        raw,
+        source=source,
+        concerns_path=concerns_path,
+        plan_path=plan_path,
+        original_body_path=original_body_path,
     )
     print(f"verify_task_body — {source}")
     for r in results:
