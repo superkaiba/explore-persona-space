@@ -79,27 +79,47 @@ def _fetch_pinned(repo_path: str, dest: Path) -> Path:
     return dest
 
 
+_MODEL_REPO_FILES: list[str] | None = None
+
+
+def _model_repo_files() -> list[str]:
+    """list_repo_files on the model repo, cached for the process lifetime.
+
+    snapshot_download(allow_patterns=...) is AVOIDED here: on large repos
+    (>~8k files) it silently returns 0 files for prefixes in the truncated
+    repo_info.siblings tail. list_repo_files + per-file hf_hub_download is
+    the reliable recipe.
+    """
+    global _MODEL_REPO_FILES
+    if _MODEL_REPO_FILES is None:
+        from huggingface_hub import list_repo_files
+
+        _MODEL_REPO_FILES = list(list_repo_files(HF_MODEL_REPO))
+    return _MODEL_REPO_FILES
+
+
 def _fetch_adapter(source: str, adapters_root: Path) -> Path:
-    """snapshot_download one frozen #411 adapter into ``adapters_root/<source>_seed42``."""
-    from huggingface_hub import snapshot_download
+    """Download one frozen #411 adapter into the local snapshot layout
+    (``adapters_root/_snapshot/adapters/issue_411/<source>_seed42/``)."""
+    from huggingface_hub import hf_hub_download
 
     sub = f"adapters/issue_411/{source}_seed42"
-    local = Path(
-        snapshot_download(
-            repo_id=HF_MODEL_REPO,
-            allow_patterns=[f"{sub}/*"],
-            local_dir=str(adapters_root / "_snapshot"),
-        )
-    )
-    adapter_dir = local / sub
-    missing = [f for f in REQUIRED_ADAPTER_FILES if not (adapter_dir / f).exists()]
-    if missing:
+    repo_files = [f for f in _model_repo_files() if f.startswith(f"{sub}/")]
+    missing_remote = [f for f in REQUIRED_ADAPTER_FILES if f"{sub}/{f}" not in repo_files]
+    if missing_remote:
         raise RuntimeError(
-            f"Frozen adapter {sub} incomplete after snapshot_download: missing {missing} "
-            f"in {adapter_dir} (snapshot_download allow_patterns can silently return 0 "
-            f"files on truncated repo_info — verify the repo listing)."
+            f"Frozen adapter {sub} incomplete ON THE HUB: missing {missing_remote} "
+            f"(found {len(repo_files)} files under the prefix)."
         )
-    log.info("adapter OK: %s (%d files)", adapter_dir, len(list(adapter_dir.iterdir())))
+    adapter_dir = adapters_root / "_snapshot" / sub
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    for repo_path in repo_files:
+        cached = hf_hub_download(repo_id=HF_MODEL_REPO, filename=repo_path)
+        shutil.copyfile(cached, adapter_dir / Path(repo_path).name)
+    missing_local = [f for f in REQUIRED_ADAPTER_FILES if not (adapter_dir / f).exists()]
+    if missing_local:
+        raise RuntimeError(f"Frozen adapter {sub}: missing {missing_local} in {adapter_dir}")
+    log.info("adapter OK: %s (%d files)", adapter_dir, len(repo_files))
     return adapter_dir
 
 

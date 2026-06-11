@@ -429,6 +429,14 @@ class Dispatcher:
         else:
             local = self.slab_root / ARM_SLAB_DIR[arm] / source
             rel = f"{ARM_SLAB_DIR[arm]}/{source}"
+        # Upload Policy: raw completions MUST land on the HF data repo before
+        # pod termination. They live INSIDE this tree — assert before upload.
+        raw_files = list(local.rglob("raw_completions/*.json"))
+        if not raw_files:
+            raise RuntimeError(
+                f"[{source}:{arm}] no raw_completions/*.json under {local} — eval wrote "
+                f"nothing; refusing to upload an empty cell tree"
+            )
         return _upload_or_raise(
             local,
             repo_type="dataset",
