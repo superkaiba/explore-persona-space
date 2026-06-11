@@ -47,6 +47,39 @@ EST_LABELS = {
     "est_icl": "Examples in prompt (E2)",
     "est_desc": "Describe in words (E3)",
 }
+# Reader-facing source descriptors (no project slugs in rendered labels).
+SOURCE_LABELS = {
+    "assistant": "assistant persona",
+    "comedian": "comedian persona",
+    "kindergarten_teacher": "kindergarten teacher",
+    "qwen_default": "default (no persona)",
+    "software_engineer": "software engineer",
+    "villain": "villain persona",
+    "no_system": "no system prompt",
+    "medical_doctor": "medical doctor",
+    "marine_biologist": "marine biologist",
+    "courthouse_architecture_historian": "courthouse historian",
+    "wooden_furniture_carpenter": "furniture carpenter",
+    # #474 transformation contexts (i406 condition ids decoded)
+    "A1": "'helpful assistant' context",
+    "B1": "bare-question context",
+    "C1": "standard Qwen template",
+    "D1": "formal-register rewrite",
+}
+FAMILY_SHORT = {
+    "marker519": "Marker glyph",
+    "em_turner": "Bad medical advice",
+    "fact541": "Planted fact",
+    "refusal518": "Refusal",
+    "em518": "Contrastive EM",
+    "loc474": "Marker, localized arm",
+}
+
+
+def unit_label(unit: str) -> str:
+    """Plain-English label for an estimator unit key like ``em518__assistant``."""
+    fam, _, src = unit.partition("__")
+    return f"{FAMILY_SHORT.get(fam, fam)} — {SOURCE_LABELS.get(src, src)}"
 
 
 def _save(fig, out_dir: Path, name: str, meta: dict) -> None:
@@ -169,17 +202,46 @@ def hero2_repair(repair: dict, out_dir: Path) -> None:
             r["rho_behav_real"],
             facecolors="none",
             edgecolors=colors[r["family"]],
-            s=44,
+            s=52,
             marker="s",
+            linewidths=1.3,  # style zeroes default linewidths -> invisible open markers
             zorder=3,
         )
     ax.axvline(0.3, color="gray", linestyle="--", linewidth=1.0)
     ax.axhline(0.5, color="gray", linestyle="--", linewidth=1.0)
     ax.set_xlabel("estimator behavioral Spearman rho")
     ax.set_ylabel("realized-write behavioral Spearman rho")
-    ax.text(0.02, 0.97, "repair-positive", transform=ax.transAxes, fontsize=8, va="top")
-    ax.text(0.98, 0.97, "both-pass", transform=ax.transAxes, fontsize=8, va="top", ha="right")
-    ax.text(0.02, 0.03, "both-fail (update rule implicated)", transform=ax.transAxes, fontsize=8)
+    label_bbox = dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.6)
+    ax.text(
+        0.02,
+        0.97,
+        "repair-positive",
+        transform=ax.transAxes,
+        fontsize=8,
+        va="top",
+        bbox=label_bbox,
+        zorder=6,
+    )
+    ax.text(
+        0.98,
+        0.97,
+        "both-pass",
+        transform=ax.transAxes,
+        fontsize=8,
+        va="top",
+        ha="right",
+        bbox=label_bbox,
+        zorder=6,
+    )
+    ax.text(
+        0.02,
+        0.03,
+        "both-fail (update rule implicated)",
+        transform=ax.transAxes,
+        fontsize=8,
+        bbox=label_bbox,
+        zorder=6,
+    )
     handles = [
         plt.Line2D([], [], marker="o", linestyle="", color=colors[f], label=FAMILY_LABELS[f])
         for f in fams
@@ -191,6 +253,7 @@ def hero2_repair(repair: dict, out_dir: Path) -> None:
             marker="s",
             linestyle="",
             markerfacecolor="none",
+            markeredgewidth=1.3,  # match the visible open-square overlay
             color="black",
             label="norm-only predictor (direction-free)",
         )
@@ -318,7 +381,7 @@ def exp_cross_estimator(headline: dict, out_dir: Path) -> None:
     axes[0].set_xticks(range(len(pair_keys)))
     axes[0].set_xticklabels(["E1 vs E2", "E1 vs E3", "E2 vs E3"])
     axes[0].set_yticks(range(len(units)))
-    axes[0].set_yticklabels(units, fontsize=6.5)
+    axes[0].set_yticklabels([unit_label(u) for u in units], fontsize=6.5)
     for ui in range(len(units)):
         for pi in range(len(pair_keys)):
             if not np.isnan(mat[ui, pi]):
