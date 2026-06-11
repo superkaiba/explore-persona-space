@@ -168,17 +168,23 @@ Coverage notes (deliberate gaps you should know about)
   next watcher run, with a fresh >=2-checks accumulation. The alert and
   stalled-detector arms ignore the tag (they never stop pods anyway).
 * The auto-stop arm ALSO inspects events.jsonl for a live inline follow-up:
-  if a task's latest ``epm:run-launched`` marker is NEWER than its latest
+  if a task's latest follow-up signal marker (``epm:run-launched`` /
+  ``epm:followup-scope`` / ``epm:free-analysis-followup-run`` —
+  :data:`_POD_FOLLOWUP_SIGNAL_KINDS`) is NEWER than its latest
   ``epm:promoted`` / ``epm:status-changed`` (i.e. a user-approved inline
   follow-up — the CLAUDE.md "Routing experiment intent → Follow-up" path —
-  has provisioned a fresh pod on a promoted/completed/awaiting_promotion/
+  is in flight on a promoted/completed/awaiting_promotion/
   archived parent), the stop is SKIPPED with the same once-per-incarnation
   marker semantics as the keep-running exemption (deduped via the
-  ``followup_noted`` flag). Precedence: ``keep_running`` (explicit user
+  ``followup_noted`` flag). ``epm:followup-scope`` covers USER-CHAT inline
+  follow-ups, which post the scope marker BEFORE the run launches (refs
+  #573 — the run-launched-only inference stopped healthy follow-up pods
+  pod-530/531 8x + pod-477 3x on 2026-06-09 in exactly that window).
+  Precedence: ``keep_running`` (explicit user
   tag) beats ``followup_active`` (inferred from events). The skip re-arms
   naturally on the next tick when the follow-up posts its next
   ``epm:status-changed`` / ``epm:promoted`` event newer than the
-  ``epm:run-launched``. The #477 incident, 2026-06-10, motivates this: an
+  follow-up signal. The #477 incident, 2026-06-10, motivates this: an
   inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
   re-provision in <1h before the user added the ``keep-running`` tag.
 
@@ -1024,11 +1030,29 @@ def _task_keep_running(issue: int) -> bool:
 # the transition INTO the current DONE status — note text is not parsed).
 _DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
 
-# Marker kind a follow-up emits when it provisions a pod and launches the
-# experiment process. The pod-safety pass treats a `epm:run-launched` whose
-# ts is NEWER than the latest done-transition as a live inline follow-up
-# and SKIPS the auto-stop (see `decide_pod_safety`'s `followup_active`
-# parameter).
+# Marker kinds that signal a live inline follow-up to the POD-SAFETY pass.
+# The pod-safety pass treats any of these whose ts is NEWER than the latest
+# done-transition as a live inline follow-up and SKIPS the auto-stop (see
+# `decide_pod_safety`'s `followup_active` parameter).
+#
+# Originally only `epm:run-launched` (the #477-validated signal). Widened
+# 2026-06-10 (refs #573) to cover USER-CHAT inline follow-ups: the CLAUDE.md
+# "Routing experiment intent → Follow-up" path posts `epm:followup-scope v1`
+# on #N BEFORE re-invoking /issue, so there is a window — scope posted, pod
+# provisioned, run not yet launched — where the old run-launched-only
+# inference auto-stopped a healthy follow-up pod (pod-530/531 stopped 8x on
+# the :13/:33/:53 grid, pod-477 3x, 2026-06-09). `epm:free-analysis-followup-
+# run` is included for parity with the session-reconcile twin
+# (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`); the two sets are now identical on
+# the follow-up side, differing only in their done-transition sets.
+_POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {
+        "epm:run-launched",
+        "epm:followup-scope",
+        "epm:free-analysis-followup-run",
+    }
+)
+# Back-compat alias (the run-launched marker is still the strongest signal).
 _RUN_LAUNCHED_KIND = "epm:run-launched"
 
 
@@ -1051,16 +1075,21 @@ def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> fl
 
 
 def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
-    """True iff task ``issue`` has an ``epm:run-launched`` marker NEWER than
+    """True iff task ``issue`` has a follow-up signal marker
+    (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
+    ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) NEWER than
     its latest done-transition marker (``epm:promoted`` /
     ``epm:status-changed``).
 
     Predicate for the pod-safety auto-stop exemption: a DONE-status task
-    with a fresh ``epm:run-launched`` carries an in-flight, user-approved
+    with a fresh follow-up signal carries an in-flight, user-approved
     inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
-    the pod is legitimately in use. When the follow-up completes, the next
+    the pod is legitimately in use. ``epm:followup-scope`` covers the
+    USER-CHAT inline case where the scope is posted before the run launches
+    (refs #573 — the run-launched-only inference stopped healthy follow-up
+    pods 11x on 2026-06-09). When the follow-up completes, the next
     ``epm:status-changed`` / ``epm:promoted`` event will land newer than
-    the ``epm:run-launched`` and this predicate flips False — the auto-stop
+    the follow-up signal and this predicate flips False — the auto-stop
     re-arms naturally on the following tick (same semantics as the
     ``keep-running`` tag being removed).
 
@@ -1070,7 +1099,7 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     the caller to avoid double-fetching when the events list is already
     loaded (the typical _process_pod path).
 
-    A missing ``epm:run-launched`` returns False (no follow-up signal).
+    A missing follow-up signal returns False (no exemption).
     A missing done-transition is impossible in practice — the caller
     already verified the task's current status is DONE, so at least one
     ``epm:status-changed`` must have fired to put it there. If the read
@@ -1080,13 +1109,13 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     """
     if events is None:
         events = _task_events(issue)
-    run_launched = _latest_event_ts(events, {_RUN_LAUNCHED_KIND})
-    if run_launched is None:
+    followup_signal = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
+    if followup_signal is None:
         return False
     done_transition = _latest_event_ts(events, _DONE_TRANSITION_KINDS)
     if done_transition is None:
         return False
-    return run_launched > done_transition
+    return followup_signal > done_transition
 
 
 def _task_events(issue: int) -> list[dict]:
@@ -1859,7 +1888,8 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     if action == "followup-skip":
         print(
             f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
-            f"fresh `epm:run-launched` (newer than the latest done-transition) "
+            f"fresh follow-up signal (epm:run-launched / epm:followup-scope / "
+            f"epm:free-analysis-followup-run, newer than the latest done-transition) "
             f"indicates a live inline follow-up — pod-safety stop SKIPPED "
             f"(pod_id={pod_id}; the auto-stop re-arms when the follow-up posts its "
             f"next status-changed/promoted)."
@@ -1870,11 +1900,14 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
                 f"{_FOLLOWUP_NOTE_SENTINEL} inline-follow-up exemption: RUNNING pod "
                 f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
                 f"been auto-stopped by the pod-safety pass, but the task's "
-                f"events.jsonl shows an `epm:run-launched` marker NEWER than the "
-                f"latest done-transition (epm:promoted / epm:status-changed). That "
-                f"is the CLAUDE.md 'Routing experiment intent → Follow-up' pattern: "
-                f"a user-approved inline follow-up has provisioned a fresh pod on a "
-                f"promoted/completed parent, so the pod is legitimately in use. The "
+                f"events.jsonl shows a follow-up signal marker (epm:run-launched / "
+                f"epm:followup-scope / epm:free-analysis-followup-run) NEWER than "
+                f"the latest done-transition (epm:promoted / epm:status-changed). "
+                f"That is the CLAUDE.md 'Routing experiment intent → Follow-up' "
+                f"pattern: a user-approved inline follow-up is in flight on a "
+                f"promoted/completed parent (epm:followup-scope covers the "
+                f"user-chat case where the pod is provisioned before the run "
+                f"launches — refs #573), so the pod is legitimately in use. The "
                 f"auto-stop re-arms naturally when the follow-up posts its next "
                 f"status-changed / promoted event. Posted once per pod incarnation. "
                 f"Override with `task.py add-tag {issue} keep-running` to suppress "
@@ -3362,10 +3395,13 @@ def _task_session_followup_active(issue: int, events: list[dict] | None = None) 
     (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`) NEWER than its latest
     done-transition marker (:data:`_SESSION_DONE_TRANSITION_KINDS`).
 
-    The session-reconcile twin of :func:`_task_followup_active` (which the
-    pod-safety pass keeps with its narrower, #477-validated sets — the two
-    predicates are deliberately decoupled so widening the session sweep's
-    safety net never changes pod-stop behavior). Same defensive posture:
+    The session-reconcile twin of :func:`_task_followup_active`. The two
+    predicates now share the same follow-up signal set
+    (:data:`_POD_FOLLOWUP_SIGNAL_KINDS` == the follow-up side of this set,
+    widened 2026-06-10, refs #573) but stay decoupled symbols because their
+    DONE-TRANSITION sets differ: the session twin also counts
+    ``epm:pod-terminated`` / ``epm:step-completed`` as settling markers,
+    which would re-arm a pod stop too eagerly. Same defensive posture:
     no follow-up signal -> False; no done-transition despite a DONE status
     (shouldn't happen — at least one ``epm:status-changed`` put it there)
     -> False, leaving the idle grace + 2-miss guard as the safety margin.

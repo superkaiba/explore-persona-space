@@ -297,6 +297,53 @@ def test_task_followup_active_predicate():
     )
 
 
+def test_task_followup_active_user_chat_scope_marker():
+    # refs #573: a USER-CHAT inline follow-up posts `epm:followup-scope`
+    # BEFORE re-invoking /issue, so the pod can be provisioned before any
+    # `epm:run-launched` lands. The widened predicate must treat a fresh
+    # followup-scope (or free-analysis-followup-run) as a live follow-up.
+    import autonomous_session_watch as asw
+
+    # followup-scope NEWER than done-transition, NO run-launched -> True.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:followup-scope", "ts": "2026-06-10T03:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+    # free-analysis-followup-run NEWER than done-transition -> True.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {
+                    "kind": "epm:free-analysis-followup-run",
+                    "ts": "2026-06-10T01:00:00Z",
+                    "note": "",
+                },
+            ],
+        )
+        is True
+    )
+    # followup-scope OLDER than the latest done-transition -> False (that
+    # follow-up round already settled; the auto-stop re-arms).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:followup-scope", "ts": "2026-06-09T20:00:00Z", "note": ""},
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
