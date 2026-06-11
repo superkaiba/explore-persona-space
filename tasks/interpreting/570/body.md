@@ -1,6 +1,8 @@
 ---
-title: 'Model organism: does a band-stopped CLEAN marker survive the survival-regime
-  lr (5e-6), and does EM SFT erase it differently from benign SFT?'
+title: No clean single-marker window resolved at either install learning rate under
+  this ladder/probe protocol — emission arrives as multi-marker bursts — and the partially-fired
+  install is erased below the 2% boundary by both honest and misaligned medical SFT
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T00:05:14Z'
