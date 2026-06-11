@@ -489,6 +489,23 @@ metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. This is a plan-time scheduling rule, NOT a
 mid-run cost gate.)
 
+**Sentinel-signaling workloads need a /workspace-contract lane — never
+rely on auto's SLURM fallback.** If the plan's dispatch script posts
+markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —
+gate sentinels, `epm:results` payloads), the plan MUST pin a lane that
+honors that contract: `backend: gcp` (GCE instances mirror RunPod's
+`/workspace` — `GcpConfig.vm_scratch_dir`) or an explicit
+`backend: runpod` override with its residual gap named. Do NOT leave such
+a workload on `auto`: a GCP capacity failure falls through to the SLURM
+lanes, where compute nodes have no `/workspace` and the robot wrapper
+cannot run the sentinel drain — the dispatcher fails loud at its
+`mkdir -p /workspace/logs` and burns the SLURM submission (#608, commit
+3022ff7bc). If the plan needs a SLURM lane, the dispatcher must use the
+SLURM signaling contract instead — `status.json` heartbeat +
+`[phase=...]` log lines (see `backends/slurm_monitor.py` module
+docstring § "No sentinel drain on this lane"). State the choice in §9:
+either the pinned lane + why, or "no sentinel dependence — auto-safe."
+
 **Required: per-component compute-projection table.** Every plan §9 for
 `kind: experiment` tasks MUST include a per-component compute-projection
 table (one row per compute-bound component). The implementer's

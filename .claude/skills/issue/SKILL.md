@@ -2426,8 +2426,9 @@ alias for nibi) triggers a conflict warning +
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Two more gcp/auto
-composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+(the GCE startup script clones from origin). Three more gcp/auto
+composition rules ((e) and (f) both hit live on #599, 2026-06-11;
+(g) from #608): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
 the GCP lane maps intent → machine type statically
 (`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
@@ -2442,7 +2443,16 @@ on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
 command verbatim, so a driver defaulting
 `REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
 under `set -e` and the EXIT trap powers the VM off; compose
-`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`. (g)
+**Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
+— a dispatch script that posts markers via pod-side sentinel files
+(`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
+lanes (gcp/runpod): SLURM compute nodes have no `/workspace`, so the
+script fails loud at `mkdir -p /workspace/logs` and burns the submission
+(#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
+residual gap), or convert the dispatcher to the SLURM signaling contract
+(`status.json` heartbeat + `[phase=...]` log lines) before routing auto
+(planner.md §9 names this constraint at plan time).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
