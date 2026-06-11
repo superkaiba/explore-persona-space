@@ -1545,6 +1545,16 @@ def phase2(args) -> None:
                 _train_em_cell(b, cid, smoke=args.smoke, gpu_id=args.gpu_id)
             else:
                 _train_judge_cell(b, cid, smoke=args.smoke, gpu_id=args.gpu_id)
+        # Same allocator-pool release as the P1 xeval→clouds boundary:
+        # train_lora rows train IN-PROCESS, and the reserved CUDA pool
+        # starves the gen step's vLLM init on the same GPU (observed:
+        # shard 6 "Engine core initialization failed" at p2_gen).
+        import gc
+
+        import torch
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
     if "gen" in steps:
         phase_log("p2_gen")
