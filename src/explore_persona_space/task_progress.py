@@ -89,6 +89,15 @@ MACHINE_STAGES = [
 ]
 _STAGE_INDEX = {s: i for i, s in enumerate(MACHINE_STAGES)}
 
+# Optional post-pipeline stage: a same-issue follow-up round executing while
+# the task is HELD at status `followups_running`. It is deliberately NOT part
+# of the 7-stage floor/total model (most tasks never enter it, so its median
+# must not distort every task's floors) — it renders as its own 0→1 track.
+# Stats cells ARE built for it (clean spans exit forward to
+# awaiting_promotion/completed) and every bucket's pct_floor_by_stage carries
+# ``followups_running: 0.0`` so the dashboard's floor-clamp renders work.
+FOLLOWUP_STAGE = "followups_running"
+
 # Statuses whose Happy-title gets the suffix (machine-active; plan_pending is
 # a human wait — the dashboard shows the parked bar, the title stays clean).
 ACTIVE_TITLE_STATUSES = frozenset(
@@ -294,11 +303,16 @@ def collect_stage_spans() -> list[dict[str, Any]]:
             bucket = _kind_bucket(kind)
             transitions = _status_transitions(events)
             for (t0, s0), (t1, s1) in itertools.pairwise(transitions):
-                if s0 not in _STAGE_INDEX:
+                if s0 not in _STAGE_INDEX and s0 != FOLLOWUP_STAGE:
                     continue
-                forward = s1 in FORWARD_EXITS or (
-                    s1 in _STAGE_INDEX and _STAGE_INDEX[s1] > _STAGE_INDEX[s0]
-                )
+                if s0 == FOLLOWUP_STAGE:
+                    # A follow-up round's only clean forward exit is re-parking
+                    # (awaiting_promotion) or completing.
+                    forward = s1 in FORWARD_EXITS
+                else:
+                    forward = s1 in FORWARD_EXITS or (
+                        s1 in _STAGE_INDEX and _STAGE_INDEX[s1] > _STAGE_INDEX[s0]
+                    )
                 if not forward:
                     continue  # blocked / backward / archived exits excluded
                 dur_h = max((t1 - t0).total_seconds() / 3600.0, 0.0)
@@ -356,7 +370,7 @@ def build_stage_stats(now: datetime | None = None) -> dict[str, Any]:
     buckets: dict[str, dict[str, dict[str, Any]]] = {}
     for bucket in ("experiment", "code", "pooled"):
         cells: dict[str, dict[str, Any]] = {}
-        for stage in MACHINE_STAGES:
+        for stage in [*MACHINE_STAGES, FOLLOWUP_STAGE]:
             own = by_bucket_stage.get((bucket, stage), [])
             pooled = by_bucket_stage.get(("pooled", stage), [])
             if bucket != "pooled":
@@ -372,6 +386,8 @@ def build_stage_stats(now: datetime | None = None) -> dict[str, Any]:
                 cells[stage] = _quantile_cell(all_durs, len(all_durs), "all-history")
         buckets[bucket] = cells
 
+    # Floors cover the 7-stage main pass ONLY — the optional follow-up round
+    # gets a flat 0.0 floor (its own 0→1 track restarts the bar).
     pct_floor_by_stage: dict[str, dict[str, float]] = {}
     for bucket, cells in buckets.items():
         medians = [cells[s]["median_h"] for s in MACHINE_STAGES]  # already EPS-floored
@@ -381,6 +397,7 @@ def build_stage_stats(now: datetime | None = None) -> dict[str, Any]:
         for stage, m in zip(MACHINE_STAGES, medians, strict=True):
             floors[stage] = acc / total
             acc += m
+        floors[FOLLOWUP_STAGE] = 0.0
         pct_floor_by_stage[bucket] = floors
 
     return {
@@ -484,8 +501,9 @@ def estimate_task_progress(
     issue: int, stats: dict[str, Any], now: datetime | None = None
 ) -> dict[str, Any] | None:
     """One task's snapshot row (the §3.7 pinned contract), or None for any
-    status outside the 7 machine stages + ``blocked`` (explicit allowlist —
-    every other status gets NO bar, NO suffix, NO snapshot row). NEVER writes.
+    status outside the 7 machine stages + ``followups_running`` + ``blocked``
+    (explicit allowlist — every other status gets NO bar, NO suffix, NO
+    snapshot row). NEVER writes.
     """
     now = now or _utcnow()
     task = get_task(issue)
@@ -495,7 +513,8 @@ def estimate_task_progress(
 
     blocked = status == "blocked"
     stage = _normalize_status(status) if not blocked else None
-    if not blocked and stage not in _STAGE_INDEX:
+    followup = (not blocked) and stage == FOLLOWUP_STAGE
+    if not blocked and not followup and stage not in _STAGE_INDEX:
         return None
 
     events = list_events(issue)
@@ -507,22 +526,31 @@ def estimate_task_progress(
     cells = stats["buckets"].get(bucket) or stats["buckets"]["pooled"]
     floors = stats["pct_floor_by_stage"].get(bucket) or stats["pct_floor_by_stage"]["pooled"]
 
-    idx = _STAGE_INDEX[stage]
-    floor = floors[stage]
-    next_floor = floors[MACHINE_STAGES[idx + 1]] if idx + 1 < len(MACHINE_STAGES) else 1.0
-    span = next_floor - floor
+    if followup:
+        # Own 0→1 track: the round executes while the status HOLDS at
+        # followups_running (no inner transitions to interpolate over), so the
+        # bar restarts and paces over the round's own historical clean spans.
+        cell = cells[FOLLOWUP_STAGE]
+        floor, span = 0.0, 1.0
+        stats_basis = cell["basis"]
+        remaining = {"p25_h": 0.0, "median_h": 0.0, "p75_h": 0.0}
+    else:
+        idx = _STAGE_INDEX[stage]
+        floor = floors[stage]
+        next_floor = floors[MACHINE_STAGES[idx + 1]] if idx + 1 < len(MACHINE_STAGES) else 1.0
+        span = next_floor - floor
 
-    bases = {cells[s]["basis"] for s in MACHINE_STAGES}
-    stats_basis = bases.pop() if len(bases) == 1 else "mixed"
+        bases = {cells[s]["basis"] for s in MACHINE_STAGES}
+        stats_basis = bases.pop() if len(bases) == 1 else "mixed"
 
-    remaining = {"p25_h": 0.0, "median_h": 0.0, "p75_h": 0.0}
-    for s in MACHINE_STAGES[idx + 1 :]:
-        if s == "plan_pending":
-            continue  # human wait — excluded from every machine-ETA term
-        for q in remaining:
-            remaining[q] += cells[s][q]
+        remaining = {"p25_h": 0.0, "median_h": 0.0, "p75_h": 0.0}
+        for s in MACHINE_STAGES[idx + 1 :]:
+            if s == "plan_pending":
+                continue  # human wait — excluded from every machine-ETA term
+            for q in remaining:
+                remaining[q] += cells[s][q]
+        cell = cells[stage]
 
-    cell = cells[stage]
     frac_median_h = max(cell["median_h"], EPS_H)
     stage_q = {q: cell[q] for q in ("p25_h", "median_h", "p75_h")}
     eta_basis = "historical"
@@ -530,7 +558,7 @@ def estimate_task_progress(
     gpu_count: int | None = None
     gpu_conversion: str | None = None
 
-    if not blocked and stage == "running":
+    if not blocked and not followup and stage == "running":
         gpu_hours_total = extract_gpu_hours(events)
         if gpu_hours_total is not None:
             gpu_count, gpu_conversion = recover_gpu_count(issue, events)
@@ -544,6 +572,22 @@ def estimate_task_progress(
                 "p75_h": refined_median * (cell["p75_h"] / hist_median),
             }
             eta_basis = "gpu-assumed" if gpu_conversion == "assumed-1gpu" else "gpu-refined"
+
+    # Expected TOTAL machine time for a typical clean pass: the 7-stage main
+    # pipeline minus plan_pending (human wait), with the current stage's
+    # EFFECTIVE quantiles substituted (GPU-refined when running). A follow-up
+    # row's total is the round's own expected duration — the main pass is
+    # already behind it.
+    if followup:
+        total = dict(stage_q)
+    else:
+        total = {"p25_h": 0.0, "median_h": 0.0, "p75_h": 0.0}
+        for s in MACHINE_STAGES:
+            if s == "plan_pending":
+                continue
+            src = stage_q if s == stage else cells[s]
+            for q in total:
+                total[q] += src[q]
 
     entered = _stage_entered_at(events, stage, now)
     row = {
@@ -564,9 +608,14 @@ def estimate_task_progress(
         "remaining_after_p25_h": round(remaining["p25_h"], 6),
         "remaining_after_median_h": round(remaining["median_h"], 6),
         "remaining_after_p75_h": round(remaining["p75_h"], 6),
+        "total_p25_h": round(total["p25_h"], 6),
+        "total_median_h": round(total["median_h"], 6),
+        "total_p75_h": round(total["p75_h"], 6),
         "human_wait": (not blocked) and stage == "plan_pending",
         "blocked": blocked,
-        "plan_review_ahead": (not blocked) and idx < _STAGE_INDEX["plan_pending"],
+        "plan_review_ahead": (
+            (not blocked) and (not followup) and _STAGE_INDEX[stage] < _STAGE_INDEX["plan_pending"]
+        ),
         "gpu_hours_total": gpu_hours_total,
         "gpu_count": gpu_count,
         "gpu_conversion": gpu_conversion,
@@ -623,6 +672,12 @@ def _fmt_hours(v: float) -> str:
     return str(_halfup(v))
 
 
+def _fmt_days(v: float) -> str:
+    """Hours → days with one decimal (trailing .0 stripped), half-up."""
+    d = math.floor(v / 24 * 10 + 0.5) / 10
+    return str(int(d)) if d == int(d) else f"{d:.1f}"
+
+
 def format_eta_band(p25_h: float, p75_h: float, eta_basis: str) -> str:
     """Compact band: "~25-50m" | "~4-9h" | "~1.3-2.5d" (en-dash separator);
     "≈" when the basis is GPU-refined/assumed (soft estimate, rendered
@@ -635,12 +690,22 @@ def format_eta_band(p25_h: float, p75_h: float, eta_basis: str) -> str:
         return f"{prefix}{a}–{b}m"  # noqa: RUF001
     if p75_h < 24:
         return f"{prefix}{_fmt_hours(p25_h)}–{_fmt_hours(p75_h)}h"  # noqa: RUF001
-
-    def _fmt_days(v: float) -> str:
-        d = math.floor(v / 24 * 10 + 0.5) / 10
-        return str(int(d)) if d == int(d) else f"{d:.1f}"
-
     return f"{prefix}{_fmt_days(p25_h)}–{_fmt_days(p75_h)}d"  # noqa: RUF001
+
+
+def format_duration(hours: float, eta_basis: str = "historical") -> str:
+    """Compact single duration: "~25m" | "~2.1h" | "~1.3d" — same prefix and
+    unit thresholds as :func:`format_eta_band`. Used for the dashboard's
+    median remaining/total labels (point estimates — deliberately NOT gated
+    by the §7 band kill switch, which is about [p25, p75] coverage claims).
+    ``dashboard/lib/progress.ts`` ``formatDuration`` mirrors this; the shared
+    fixture pins both."""
+    prefix = "~" if eta_basis == "historical" else "≈"
+    if hours < 1:
+        return f"{prefix}{max(1, _halfup(hours * 60))}m"
+    if hours < 24:
+        return f"{prefix}{_fmt_hours(hours)}h"
+    return f"{prefix}{_fmt_days(hours)}d"
 
 
 def format_title_suffix(
@@ -717,8 +782,8 @@ def write_snapshot(force_stats: bool = False, now: datetime | None = None) -> Pa
     """Materialize ``~/.eps-autonomous/task_progress.json`` (atomic
     temp+rename). Reuses the prior stats section when fresher than
     ``STATS_TTL_S``; estimates every in-flight task (7 machine stages +
-    blocked). THE ONLY WRITER — called by the cron + CLI only, never from the
-    title path. Strictly read-only over ``tasks/``."""
+    followups_running + blocked). THE ONLY WRITER — called by the cron + CLI
+    only, never from the title path. Strictly read-only over ``tasks/``."""
     now = now or _utcnow()
     stats: dict[str, Any] | None = None
     if not force_stats:
@@ -739,7 +804,7 @@ def write_snapshot(force_stats: bool = False, now: datetime | None = None) -> Pa
 
     tasks: dict[str, dict[str, Any]] = {}
     td = tasks_dir()
-    for status in [*MACHINE_STAGES, "blocked"]:
+    for status in [*MACHINE_STAGES, FOLLOWUP_STAGE, "blocked"]:
         status_dir = td / status
         if not status_dir.is_dir():
             continue
@@ -773,6 +838,7 @@ __all__ = [
     "ACTIVE_TITLE_STATUSES",
     "EPS_H",
     "ETA_BAND_ENABLED",
+    "FOLLOWUP_STAGE",
     "FRAC_CAP",
     "LEGACY_STAGE_MAP",
     "MACHINE_STAGES",
@@ -785,6 +851,7 @@ __all__ = [
     "estimate_task_progress",
     "extract_gpu_hours",
     "find_task_path",
+    "format_duration",
     "format_eta_band",
     "format_title_suffix",
     "interpolate",

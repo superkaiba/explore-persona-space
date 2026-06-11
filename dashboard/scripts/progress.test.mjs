@@ -11,15 +11,19 @@
  * It replays the SAME fixture pytest replays
  * (tests/fixtures/task_progress_vectors.json, repo root):
  *
- *   1. interpolate_vectors → `interpolateRow` + `formatEtaBand` must
- *      reproduce pct / eta band / overdue / eta_label exactly (half-up
- *      rounding pinned identical to Python's `math.floor(x + 0.5)`).
+ *   1. interpolate_vectors → `interpolateRow` + `formatEtaBand` +
+ *      `formatDuration` must reproduce pct / eta band / overdue / eta_label /
+ *      remaining_label / total_label exactly (half-up rounding pinned
+ *      identical to Python's `math.floor(x + 0.5)`).
  *   2. gating_vectors → `buildProgressMap` must drop rows whose LIVE status
  *      has no stage floor, floor-clamp within-pipeline mismatches (backward
- *      re-plans render backward), render the blocked / stale / human-wait
- *      states, and interpolate fresh matched rows.
+ *      re-plans render backward; a followups_running mismatch clamps to its
+ *      0.0 floor), render the blocked / stale / human-wait states, and
+ *      interpolate fresh matched rows — including the followups_running
+ *      own-track render and the median remaining/total labels.
  *   3. parseProgressSnapshot must narrow permissively (malformed file /
- *      malformed row → empty / skipped, never a throw).
+ *      malformed row → empty / skipped, never a throw; a pre-upgrade row
+ *      without total_median_h narrows with totalMedianH null).
  *
  * Exits non-zero on the first failed assertion.
  */
@@ -30,6 +34,7 @@ import { fileURLToPath } from "node:url";
 import {
   ETA_BAND_ENABLED,
   buildProgressMap,
+  formatDuration,
   formatEtaBand,
   interpolateRow,
   parseProgressSnapshot,
@@ -67,6 +72,7 @@ function toRow(raw) {
     remainingAfterP25H: raw.remaining_after_p25_h,
     remainingAfterMedianH: raw.remaining_after_median_h,
     remainingAfterP75H: raw.remaining_after_p75_h,
+    totalMedianH: typeof raw.total_median_h === "number" ? raw.total_median_h : null,
     humanWait: raw.human_wait === true,
     blocked: raw.blocked === true,
     planReviewAhead: raw.plan_review_ahead === true,
@@ -102,6 +108,16 @@ for (const v of fixture.interpolate_vectors) {
       check(v.name, label === exp.eta_label, `label ${label} != ${exp.eta_label}`);
     }
   }
+  // Median remaining/total labels (formatDuration mirror of format_duration).
+  const remainingLabel = eta ? formatDuration(eta.medianH, row.etaBasis) : null;
+  check(
+    v.name,
+    remainingLabel === exp.remaining_label,
+    `remaining_label ${remainingLabel} != ${exp.remaining_label}`,
+  );
+  check(v.name, row.totalMedianH !== null, "fixture row must carry total_median_h");
+  const totalLabel = formatDuration(row.totalMedianH, row.etaBasis);
+  check(v.name, totalLabel === exp.total_label, `total_label ${totalLabel} != ${exp.total_label}`);
 }
 
 /* 2 — live-status gating vectors ----------------------------------------- */
@@ -133,6 +149,16 @@ for (const g of fixture.gating_vectors) {
     view.etaLabel === g.expect.eta_label,
     `etaLabel ${view.etaLabel} != ${g.expect.eta_label}`,
   );
+  check(
+    g.name,
+    view.remainingLabel === g.expect.remaining_label,
+    `remainingLabel ${view.remainingLabel} != ${g.expect.remaining_label}`,
+  );
+  check(
+    g.name,
+    view.totalLabel === g.expect.total_label,
+    `totalLabel ${view.totalLabel} != ${g.expect.total_label}`,
+  );
 }
 
 /* 2b — §7 kill switch: the production default drops the countdown chip ---- */
@@ -153,6 +179,14 @@ for (const g of fixture.gating_vectors) {
     `default render must drop the band, got ${JSON.stringify(view)}`);
   check("kill-switch-bar-survives", view !== undefined && approx(view.pct, g.expect.pct),
     "the position bar must survive the chip drop");
+  // The MEDIAN remaining/total labels are NOT gated by the band kill switch.
+  check(
+    "kill-switch-keeps-median-labels",
+    view !== undefined &&
+      view.remainingLabel === g.expect.remaining_label &&
+      view.totalLabel === g.expect.total_label,
+    `median labels must survive the kill switch, got ${JSON.stringify(view)}`,
+  );
 }
 
 /* 3 — permissive snapshot narrowing -------------------------------------- */
@@ -178,6 +212,23 @@ for (const g of fixture.gating_vectors) {
   );
   check("parse-partial", Object.keys(partial.tasks).length === 1 && partial.tasks[561] != null,
     `one valid row expected, got ${Object.keys(partial.tasks)}`);
+  // Pre-upgrade snapshot row (no total_median_h): still narrows, total null.
+  const legacyRow = { ...fixture.interpolate_vectors[0].row };
+  delete legacyRow.total_p25_h;
+  delete legacyRow.total_median_h;
+  delete legacyRow.total_p75_h;
+  const legacy = parseProgressSnapshot(
+    JSON.stringify({
+      version: 1,
+      generated_at: "2026-06-11T00:00:00Z",
+      tasks: { 561: legacyRow },
+    }),
+  );
+  check(
+    "parse-legacy-row-without-totals",
+    legacy.tasks[561] != null && legacy.tasks[561].totalMedianH === null,
+    `legacy row must narrow with totalMedianH null, got ${JSON.stringify(legacy.tasks[561])}`,
+  );
 }
 
 if (failures > 0) {

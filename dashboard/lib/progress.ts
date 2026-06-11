@@ -27,6 +27,12 @@
  *           // p75 drives the overdue cutoff)
  *         "remaining_after_p25_h": 0.7, "remaining_after_median_h": 1.1,
  *         "remaining_after_p75_h": 1.9,
+ *         "total_p25_h": 4.1, "total_median_h": 7.5, "total_p75_h": 14.0,
+ *           // expected TOTAL machine time for a typical clean pass (main
+ *           // pipeline minus plan_pending, current stage at its EFFECTIVE
+ *           // quantiles; a followups_running row's total is the round's own
+ *           // expected duration). Optional: absent on pre-upgrade snapshots
+ *           // → the total label is simply omitted.
  *         "human_wait": false, "blocked": false, "plan_review_ahead": false,
  *         "gpu_hours_total": 19.0, "gpu_count": 4,
  *         "gpu_conversion": "intent-map"|"note-regex"|"assumed-1gpu"|null,
@@ -40,17 +46,19 @@
  *
  * The maths here is deliberately limited to the ONE pinned interpolation
  * formula mirrored from Python `task_progress.interpolate()` +
- * `format_eta_band()`; the shared fixture
+ * `format_eta_band()` / `format_duration()`; the shared fixture
  * `tests/fixtures/task_progress_vectors.json` is replayed through BOTH
  * implementations (pytest + `npm run test:progress`) to pin lockstep.
  *
  * Rendering is LIVE-STATUS KEYED: `getProgressMap(liveStatuses)` receives
  * the statuses the server page already loaded from REGISTRY; a snapshot row
  * whose live status has no stage floor (awaiting_promotion, completed,
- * archived, proposed, followups_running, anything unknown) is DROPPED —
- * no bar, regardless of snapshot freshness. Within-pipeline mismatches
- * render the live status' floor ALONE (a backward re-plan shows the bar
- * moving backward; no max() clamp), chip hidden until the next tick.
+ * archived, proposed, anything unknown) is DROPPED — no bar, regardless of
+ * snapshot freshness. `followups_running` IS in scope: it renders as its
+ * own 0→1 track (floor 0.0) pacing over historical follow-up-round spans.
+ * Within-pipeline mismatches render the live status' floor ALONE (a
+ * backward re-plan shows the bar moving backward; no max() clamp), chip
+ * hidden until the next tick.
  *
  * Honesty notes carried from the estimator (see its module docstring):
  * the band is a "typical clean forward pass" — quantile sums are a
@@ -84,6 +92,11 @@ export const STALE_AFTER_MS = 30 * 60 * 1000;
  * waiting-on-you) render, the hour band does not. Mirrors
  * `task_progress.ETA_BAND_ENABLED` (flip BOTH together); the band
  * machinery + shared vectors stay tested via an explicit override.
+ *
+ * The MEDIAN remaining/total labels ("~2.1h left · ~7.5h total") are NOT
+ * gated by this switch: the kill criterion is about [p25, p75] COVERAGE
+ * claims, which a median point estimate does not make. The tooltip carries
+ * the honesty framing instead.
  */
 export const ETA_BAND_ENABLED = false;
 
@@ -95,6 +108,10 @@ const MACHINE_STAGES = [
   "verifying",
   "interpreting",
   "reviewing",
+  // Optional post-pipeline stage: a same-issue follow-up round held at
+  // followups_running renders as its own 0→1 track (floor 0.0 in the
+  // snapshot's pct_floor_by_stage).
+  "followups_running",
 ] as const;
 const MACHINE_STAGE_SET: ReadonlySet<string> = new Set(MACHINE_STAGES);
 
@@ -117,6 +134,9 @@ export type TaskProgressRow = {
   remainingAfterP25H: number;
   remainingAfterMedianH: number;
   remainingAfterP75H: number;
+  /** Expected total machine time (typical clean pass). Null on pre-upgrade
+   * snapshot rows — the total label is then omitted, never guessed. */
+  totalMedianH: number | null;
   humanWait: boolean;
   blocked: boolean;
   planReviewAhead: boolean;
@@ -135,8 +155,15 @@ export type TaskProgressView = {
   /** 0..1 pipeline position. */
   pct: number;
   /** Compact band ("~4–9h", "≈2–14h") or null (blocked / overdue / stale /
-   * mismatch — the chip is hidden, the bar may still render). */
+   * mismatch / band kill switch — the chip may still show the median
+   * remaining/total labels below). */
   etaLabel: string | null;
+  /** Median machine time remaining ("~2.1h") or null (blocked / overdue /
+   * stale / mismatch). Point estimate — NOT gated by the band kill switch. */
+  remainingLabel: string | null;
+  /** Expected total machine time for a typical clean pass ("~7.5h") or null
+   * (same suppression states, or a pre-upgrade snapshot row). */
+  totalLabel: string | null;
   state: "active" | "human-wait" | "blocked" | "overdue" | "stale";
   basis: EtaBasis;
   /** plan_pending lies AHEAD of the current stage — the dashboard chip
@@ -269,6 +296,9 @@ function narrowRow(value: unknown): TaskProgressRow | null {
     remainingAfterP25H,
     remainingAfterMedianH,
     remainingAfterP75H,
+    // Optional (additive contract change): a pre-upgrade snapshot row simply
+    // renders without the total label until the next cron tick.
+    totalMedianH: num(o, "total_median_h"),
     humanWait: o.human_wait === true,
     blocked: o.blocked === true,
     planReviewAhead: o.plan_review_ahead === true,
@@ -349,6 +379,16 @@ export function formatEtaBand(p25H: number, p75H: number, basis: EtaBasis): stri
   return `${prefix}${fmtDays(p25H)}–${fmtDays(p75H)}d`;
 }
 
+/** Compact single duration ("~25m" | "~2.1h" | "~1.3d"; "≈" for GPU-derived
+ * bases) — mirror of Python `format_duration`. Median point estimates are
+ * deliberately NOT gated by the §7 band kill switch (no coverage claim). */
+export function formatDuration(hours: number, basis: EtaBasis): string {
+  const prefix = basis === "historical" ? "~" : "≈";
+  if (hours < 1) return `${prefix}${Math.max(1, halfup(hours * 60))}m`;
+  if (hours < 24) return `${prefix}${fmtHours(hours)}h`;
+  return `${prefix}${fmtDays(hours)}d`;
+}
+
 /* ----------------------------------------------------------------------- *
  * Live-status-keyed view construction.                                     *
  * ----------------------------------------------------------------------- */
@@ -388,6 +428,8 @@ export function buildProgressMap(
       out[id] = {
         pct: row.pctFloor,
         etaLabel: null,
+        remainingLabel: null,
+        totalLabel: null,
         state: "blocked",
         basis: row.etaBasis,
         planReviewAhead: false,
@@ -406,6 +448,8 @@ export function buildProgressMap(
       out[id] = {
         pct: floor,
         etaLabel: null,
+        remainingLabel: null,
+        totalLabel: null,
         state: stale ? "stale" : "active",
         basis: row.etaBasis,
         planReviewAhead: row.planReviewAhead,
@@ -418,6 +462,8 @@ export function buildProgressMap(
       out[id] = {
         pct,
         etaLabel: null,
+        remainingLabel: null,
+        totalLabel: null,
         state: "blocked",
         basis: row.etaBasis,
         planReviewAhead: false,
@@ -426,6 +472,8 @@ export function buildProgressMap(
       out[id] = {
         pct,
         etaLabel: null,
+        remainingLabel: null,
+        totalLabel: null,
         state: "overdue",
         basis: row.etaBasis,
         planReviewAhead: row.planReviewAhead,
@@ -435,6 +483,9 @@ export function buildProgressMap(
         pct,
         etaLabel:
           etaBandEnabled && eta ? formatEtaBand(eta.p25H, eta.p75H, row.etaBasis) : null,
+        remainingLabel: eta ? formatDuration(eta.medianH, row.etaBasis) : null,
+        totalLabel:
+          row.totalMedianH !== null ? formatDuration(row.totalMedianH, row.etaBasis) : null,
         state: row.humanWait ? "human-wait" : "active",
         basis: row.etaBasis,
         planReviewAhead: row.planReviewAhead,

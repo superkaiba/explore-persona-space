@@ -1,5 +1,5 @@
 {
-  "_comment": "Shared Python<->TS test vectors for the task-progress interpolation formula (task #587). Consumed by tests/test_task_progress.py (pytest) and dashboard/scripts/progress.test.mjs (tsx). interpolate_vectors pin interpolate() + format_eta_band() + format_title_suffix(); gating_vectors pin the live-status-keyed dashboard rendering (buildProgressMap). stale threshold: 30 min.",
+  "_comment": "Shared Python<->TS test vectors for the task-progress interpolation formula (task #587). Consumed by tests/test_task_progress.py (pytest) and dashboard/scripts/progress.test.mjs (tsx). interpolate_vectors pin interpolate() + format_eta_band() + format_duration() + format_title_suffix(); gating_vectors pin the live-status-keyed dashboard rendering (buildProgressMap), including the followups_running own-track render and the median remaining/total labels. stale threshold: 30 min.",
   "stats": {
     "pct_floor_by_stage": {
       "experiment": {
@@ -9,7 +9,8 @@
         "running": 0.12,
         "verifying": 0.62,
         "interpreting": 0.67,
-        "reviewing": 0.92
+        "reviewing": 0.92,
+        "followups_running": 0.0
       },
       "code": {
         "planning": 0.0,
@@ -18,7 +19,8 @@
         "running": 0.12,
         "verifying": 0.62,
         "interpreting": 0.67,
-        "reviewing": 0.92
+        "reviewing": 0.92,
+        "followups_running": 0.0
       },
       "pooled": {
         "planning": 0.0,
@@ -27,7 +29,8 @@
         "running": 0.12,
         "verifying": 0.62,
         "interpreting": 0.67,
-        "reviewing": 0.92
+        "reviewing": 0.92,
+        "followups_running": 0.0
       }
     }
   },
@@ -56,7 +59,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T02:00:00Z",
       "expected": {
@@ -65,8 +71,10 @@
         "eta_median_h": 3.0,
         "eta_p75_h": 10.0,
         "overdue": false,
-        "eta_label": "~0.5–10h",
-        "title_suffix": "▓▓░░░ 37% ~0.5–10h"
+        "eta_label": "~0.5\u201310h",
+        "title_suffix": "\u2593\u2593\u2591\u2591\u2591 37% ~0.5\u201310h",
+        "remaining_label": "~3h",
+        "total_label": "~6h"
       }
     },
     {
@@ -93,7 +101,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T11:00:00Z",
       "expected": {
@@ -103,7 +114,9 @@
         "eta_p75_h": null,
         "overdue": true,
         "eta_label": null,
-        "title_suffix": "▓▓▓░░ 60% overdue"
+        "title_suffix": "\u2593\u2593\u2593\u2591\u2591 60% overdue",
+        "remaining_label": null,
+        "total_label": "~6h"
       }
     },
     {
@@ -130,7 +143,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T10:00:00Z",
       "expected": {
@@ -139,8 +155,10 @@
         "eta_median_h": 1.0,
         "eta_p75_h": 2.0,
         "overdue": false,
-        "eta_label": "~0.5–2h",
-        "title_suffix": "▓▓▓░░ 60% ~0.5–2h"
+        "eta_label": "~0.5\u20132h",
+        "title_suffix": "\u2593\u2593\u2593\u2591\u2591 60% ~0.5\u20132h",
+        "remaining_label": "~1h",
+        "total_label": "~6h"
       }
     },
     {
@@ -167,7 +185,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.5,
+        "total_median_h": 6.0,
+        "total_p75_h": 10.0
       },
       "now": "2026-06-11T01:00:00Z",
       "expected": {
@@ -176,8 +197,10 @@
         "eta_median_h": 5.0,
         "eta_p75_h": 8.0,
         "overdue": false,
-        "eta_label": "~3–8h",
-        "title_suffix": null
+        "eta_label": "~3\u20138h",
+        "title_suffix": null,
+        "remaining_label": "~5h",
+        "total_label": "~6h"
       }
     },
     {
@@ -204,7 +227,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T03:00:00Z",
       "expected": {
@@ -214,7 +240,9 @@
         "eta_p75_h": null,
         "overdue": false,
         "eta_label": null,
-        "title_suffix": null
+        "title_suffix": null,
+        "remaining_label": null,
+        "total_label": "~6h"
       }
     },
     {
@@ -241,7 +269,10 @@
         "gpu_hours_total": 20.0,
         "gpu_count": 4,
         "gpu_conversion": "note-regex",
-        "eta_basis": "gpu-refined"
+        "eta_basis": "gpu-refined",
+        "total_p25_h": 3.5,
+        "total_median_h": 7.0,
+        "total_p75_h": 16.5
       },
       "now": "2026-06-11T01:00:00Z",
       "expected": {
@@ -250,8 +281,10 @@
         "eta_median_h": 5.0,
         "eta_p75_h": 13.5,
         "overdue": false,
-        "eta_label": "≈2–14h",
-        "title_suffix": "▓░░░░ 25% ≈2–14h"
+        "eta_label": "\u22482\u201314h",
+        "title_suffix": "\u2593\u2591\u2591\u2591\u2591 25% \u22482\u201314h",
+        "remaining_label": "\u22485h",
+        "total_label": "\u22487h"
       }
     },
     {
@@ -278,7 +311,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 0.52,
+        "total_median_h": 1.1,
+        "total_p75_h": 2.3
       },
       "now": "2026-06-11T00:03:00Z",
       "expected": {
@@ -287,8 +323,10 @@
         "eta_median_h": 0.05,
         "eta_p75_h": 0.25,
         "overdue": false,
-        "eta_label": "~1–15m",
-        "title_suffix": "▓▓▓▓▓ 96% ~1–15m"
+        "eta_label": "~1\u201315m",
+        "title_suffix": "\u2593\u2593\u2593\u2593\u2593 96% ~1\u201315m",
+        "remaining_label": "~3m",
+        "total_label": "~1.1h"
       }
     },
     {
@@ -315,7 +353,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 33.0,
+        "total_median_h": 41.0,
+        "total_p75_h": 64.0
       },
       "now": "2026-06-11T02:30:00Z",
       "expected": {
@@ -324,8 +365,10 @@
         "eta_median_h": 37.5,
         "eta_p75_h": 59.5,
         "overdue": false,
-        "eta_label": "~1.3–2.5d",
-        "title_suffix": "▓░░░░ 15% ~1.3–2.5d"
+        "eta_label": "~1.3\u20132.5d",
+        "title_suffix": "\u2593\u2591\u2591\u2591\u2591 15% ~1.3\u20132.5d",
+        "remaining_label": "~1.6d",
+        "total_label": "~1.7d"
       }
     },
     {
@@ -352,7 +395,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T04:00:00Z",
       "expected": {
@@ -361,8 +407,10 @@
         "eta_median_h": 5.0,
         "eta_p75_h": 12.0,
         "overdue": false,
-        "eta_label": "~2.5–12h",
-        "title_suffix": "▓░░░░ 12% ~2.5–12h"
+        "eta_label": "~2.5\u201312h",
+        "title_suffix": "\u2593\u2591\u2591\u2591\u2591 12% ~2.5\u201312h",
+        "remaining_label": "~5h",
+        "total_label": "~6h"
       }
     },
     {
@@ -389,7 +437,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 5.8,
+        "total_median_h": 9.6,
+        "total_p75_h": 15.9
       },
       "now": "2026-06-11T00:18:00Z",
       "expected": {
@@ -398,8 +449,10 @@
         "eta_median_h": 8.3,
         "eta_p75_h": 13.6,
         "overdue": false,
-        "eta_label": "~5–14h",
-        "title_suffix": "░░░░░ 3% ~5–14h"
+        "eta_label": "~5\u201314h",
+        "title_suffix": "\u2591\u2591\u2591\u2591\u2591 3% ~5\u201314h",
+        "remaining_label": "~8.3h",
+        "total_label": "~9.6h"
       }
     },
     {
@@ -426,7 +479,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "now": "2026-06-11T09:00:00Z",
       "expected": {
@@ -435,8 +491,10 @@
         "eta_median_h": 1.0,
         "eta_p75_h": 3.0,
         "overdue": false,
-        "eta_label": "~0.5–3h",
-        "title_suffix": "▓▓▓░░ 60% ~0.5–3h"
+        "eta_label": "~0.5\u20133h",
+        "title_suffix": "\u2593\u2593\u2593\u2591\u2591 60% ~0.5\u20133h",
+        "remaining_label": "~1h",
+        "total_label": "~6h"
       }
     },
     {
@@ -463,7 +521,10 @@
         "gpu_hours_total": 3.0,
         "gpu_count": 1,
         "gpu_conversion": "assumed-1gpu",
-        "eta_basis": "gpu-assumed"
+        "eta_basis": "gpu-assumed",
+        "total_p25_h": 3.0,
+        "total_median_h": 5.0,
+        "total_p75_h": 11.5
       },
       "now": "2026-06-11T00:30:00Z",
       "expected": {
@@ -472,8 +533,10 @@
         "eta_median_h": 3.5,
         "eta_p75_h": 9.0,
         "overdue": false,
-        "eta_label": "≈2–9h",
-        "title_suffix": "▓░░░░ 18% ≈2–9h"
+        "eta_label": "\u22482\u20139h",
+        "title_suffix": "\u2593\u2591\u2591\u2591\u2591 18% \u22482\u20139h",
+        "remaining_label": "\u22483.5h",
+        "total_label": "\u22485h"
       }
     }
   ],
@@ -505,7 +568,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": null
     },
@@ -536,12 +602,15 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": null
     },
     {
-      "name": "live-followups_running-drops-row",
+      "name": "live-followups_running-mismatch-floor-clamps-to-zero",
       "generated_at": "2026-06-11T00:58:00Z",
       "now": "2026-06-11T01:00:00Z",
       "live_status": "followups_running",
@@ -567,9 +636,18 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
-      "expect": null
+      "expect": {
+        "pct": 0.0,
+        "state": "active",
+        "eta_label": null,
+        "remaining_label": null,
+        "total_label": null
+      }
     },
     {
       "name": "live-proposed-drops-row",
@@ -598,7 +676,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": null
     },
@@ -629,7 +710,10 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": null
     },
@@ -660,12 +744,17 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": {
         "pct": 0.0,
         "state": "active",
-        "eta_label": null
+        "eta_label": null,
+        "remaining_label": null,
+        "total_label": null
       }
     },
     {
@@ -695,12 +784,17 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": {
         "pct": 0.62,
         "state": "active",
-        "eta_label": null
+        "eta_label": null,
+        "remaining_label": null,
+        "total_label": null
       }
     },
     {
@@ -730,12 +824,17 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": {
         "pct": 0.12,
         "state": "blocked",
-        "eta_label": null
+        "eta_label": null,
+        "remaining_label": null,
+        "total_label": null
       }
     },
     {
@@ -765,12 +864,17 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": {
         "pct": 0.12,
         "state": "stale",
-        "eta_label": null
+        "eta_label": null,
+        "remaining_label": null,
+        "total_label": null
       }
     },
     {
@@ -800,12 +904,17 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.0,
+        "total_median_h": 6.0,
+        "total_p75_h": 14.0
       },
       "expect": {
         "pct": 0.245,
         "state": "active",
-        "eta_label": "~1.5–11h"
+        "eta_label": "~1.5\u201311h",
+        "remaining_label": "~4h",
+        "total_label": "~6h"
       }
     },
     {
@@ -835,12 +944,57 @@
         "gpu_hours_total": null,
         "gpu_count": null,
         "gpu_conversion": null,
-        "eta_basis": "historical"
+        "eta_basis": "historical",
+        "total_p25_h": 3.5,
+        "total_median_h": 6.0,
+        "total_p75_h": 10.0
       },
       "expect": {
         "pct": 0.05,
         "state": "human-wait",
-        "eta_label": "~3–8h"
+        "eta_label": "~3\u20138h",
+        "remaining_label": "~5h",
+        "total_label": "~6h"
+      }
+    },
+    {
+      "name": "fresh-matched-followups_running-own-track",
+      "generated_at": "2026-06-11T00:58:00Z",
+      "now": "2026-06-11T01:00:00Z",
+      "live_status": "followups_running",
+      "row": {
+        "issue": 533,
+        "status": "followups_running",
+        "stage": "followups_running",
+        "kind_bucket": "experiment",
+        "stats_basis": "all-history",
+        "stage_entered_at": "2026-06-11T00:00:00Z",
+        "pct_floor": 0.0,
+        "pct_span": 1.0,
+        "frac_median_h": 2.0,
+        "stage_p25_h": 1.0,
+        "stage_median_h": 2.0,
+        "stage_p75_h": 4.5,
+        "remaining_after_p25_h": 0.0,
+        "remaining_after_median_h": 0.0,
+        "remaining_after_p75_h": 0.0,
+        "total_p25_h": 1.0,
+        "total_median_h": 2.0,
+        "total_p75_h": 4.5,
+        "human_wait": false,
+        "blocked": false,
+        "plan_review_ahead": false,
+        "gpu_hours_total": null,
+        "gpu_count": null,
+        "gpu_conversion": null,
+        "eta_basis": "historical"
+      },
+      "expect": {
+        "pct": 0.5,
+        "state": "active",
+        "eta_label": "~0\u20133.5h",
+        "remaining_label": "~1h",
+        "total_label": "~2h"
       }
     }
   ]

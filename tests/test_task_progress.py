@@ -19,13 +19,20 @@ Pins, per the approved plan §5:
 7.  GPU-hours refinement: note-regex / intent-map / assumed-1gpu recovery
     chain; clamp ≥ historical p25; ratio-scaled band; ``gpu_hours_total=0``
     and missing-token skip; anchored regex ignores prose "2x consideration".
+7b. Expected-total machine time: sum of per-stage quantiles minus the
+    plan_pending human wait, current stage at its EFFECTIVE (GPU-refined)
+    quantiles.
+7c. followups_running renders its own 0→1 track: floor 0 / span 1, paced by
+    the round's own historical spans, totals = the round itself, no GPU
+    refinement, no title suffix; blocked exits excluded from its stats cell.
 8.  Read-only invariant: the fixture tree is byte-unchanged after a full
     stats + snapshot run; the snapshot write is atomic.
 9.  Shared vectors: ``interpolate`` + ``format_eta_band`` +
-    ``format_title_suffix`` reproduce every row of
+    ``format_duration`` + ``format_title_suffix`` reproduce every row of
     ``tests/fixtures/task_progress_vectors.json`` (the same fixture the tsx
     mirror test replays through dashboard/lib/progress.ts).
-10. Snapshot tick: in-scope statuses only; stats TTL reuse + --force-stats.
+10. Snapshot tick: in-scope statuses only (7 machine stages +
+    followups_running + blocked); stats TTL reuse + --force-stats.
 """
 
 from __future__ import annotations
@@ -119,7 +126,12 @@ def _install_tree(monkeypatch, root: Path) -> None:
 
 
 def _make_stats(cells_by_stage: dict[str, tuple[float, float, float]]) -> dict:
-    """Synthetic stats dict in the snapshot's pinned shape (one shared bucket)."""
+    """Synthetic stats dict in the snapshot's pinned shape (one shared bucket).
+
+    Floors cover the 7 machine stages (+ the flat 0.0 followups_running
+    entry, mirroring build_stage_stats); pass a "followups_running" key in
+    ``cells_by_stage`` when the test needs the follow-up cell.
+    """
     cells = {
         s: {
             "n": 30,
@@ -135,6 +147,7 @@ def _make_stats(cells_by_stage: dict[str, tuple[float, float, float]]) -> dict:
     for s in tp.MACHINE_STAGES:
         floors[s] = acc / total
         acc += cells[s]["median_h"]
+    floors[tp.FOLLOWUP_STAGE] = 0.0
     return {
         "window_rule": "test",
         "stats_generated_at": _iso(T0),
@@ -198,6 +211,33 @@ def test_stats_from_fixture_tree(tmp_path, monkeypatch):
         "experiment",
         [_ev(t7, "proposed", "running"), _ev(t7 + timedelta(hours=9), "running", "archived")],
     )
+    # Task 8: a 3 h follow-up round re-parking at awaiting_promotion is a
+    # clean followups_running span; task 9's followups_running→blocked exit
+    # is EXCLUDED like any other blocked exit.
+    t8 = T0 + timedelta(days=13)
+    _write_task(
+        root,
+        "completed",
+        8,
+        "experiment",
+        [
+            _ev(t8, "reviewing", "awaiting_promotion"),
+            _ev(t8 + timedelta(hours=1), "awaiting_promotion", "followups_running"),
+            _ev(t8 + timedelta(hours=4), "followups_running", "awaiting_promotion"),
+            _ev(t8 + timedelta(hours=5), "awaiting_promotion", "completed"),
+        ],
+    )
+    t9 = T0 + timedelta(days=14)
+    _write_task(
+        root,
+        "archived",
+        9,
+        "experiment",
+        [
+            _ev(t9, "awaiting_promotion", "followups_running"),
+            _ev(t9 + timedelta(hours=9), "followups_running", "blocked"),
+        ],
+    )
 
     stats = tp.build_stage_stats(now=T0 + timedelta(days=30))
     cell = stats["buckets"]["experiment"]["planning"]
@@ -218,6 +258,14 @@ def test_stats_from_fixture_tree(tmp_path, monkeypatch):
     pp = stats["buckets"]["experiment"]["plan_pending"]
     assert pp["median_h"] == tp.EPS_H
     assert pp["n"] == 4  # the four zero spans from the clean chains only
+    # Follow-up rounds get their own cell (task 8's clean 3 h span only —
+    # task 9's blocked exit is excluded) and a flat 0.0 floor in every bucket.
+    fu = stats["buckets"]["experiment"][tp.FOLLOWUP_STAGE]
+    assert fu["n"] == 1
+    assert fu["median_h"] == pytest.approx(3.0)
+    assert fu["basis"] == "all-history"
+    for bucket in ("experiment", "code", "pooled"):
+        assert stats["pct_floor_by_stage"][bucket][tp.FOLLOWUP_STAGE] == 0.0
 
 
 # ── 2. windowing + fallback bases ──────────────────────────────────────────
@@ -363,6 +411,12 @@ def _row_template(stats: dict, stage: str, bucket: str = "experiment") -> dict:
             continue
         for q in remaining:
             remaining[q] += cells[s][q]
+    total = {"p25_h": 0.0, "median_h": 0.0, "p75_h": 0.0}
+    for s in tp.MACHINE_STAGES:
+        if s == "plan_pending":
+            continue
+        for q in total:
+            total[q] += cells[s][q]
     return {
         "issue": 1,
         "status": stage,
@@ -379,6 +433,9 @@ def _row_template(stats: dict, stage: str, bucket: str = "experiment") -> dict:
         "remaining_after_p25_h": remaining["p25_h"],
         "remaining_after_median_h": remaining["median_h"],
         "remaining_after_p75_h": remaining["p75_h"],
+        "total_p25_h": total["p25_h"],
+        "total_median_h": total["median_h"],
+        "total_p75_h": total["p75_h"],
         "human_wait": False,
         "blocked": False,
         "plan_review_ahead": stage == "planning",
@@ -599,6 +656,106 @@ def test_gpu_count_regex_is_anchored_to_gpu_type_token():
     assert tp._GPU_COUNT_RE.search("8x H200 ready").group(1) == "8"
 
 
+# ── 7b. expected-total machine time ────────────────────────────────────────
+
+
+def test_total_expected_machine_time_sums_stages_minus_plan_pending(tmp_path, monkeypatch):
+    root = tmp_path / "tasks"
+    _install_tree(monkeypatch, root)
+    _write_task(
+        root,
+        "running",
+        80,
+        "experiment",
+        [_ev(T0, "proposed", "planning"), _ev(T0 + timedelta(hours=1), "planning", "running")],
+    )
+    stats = _make_stats(DEFAULT_CELLS)
+    row = tp.estimate_task_progress(80, stats, now=T0 + timedelta(hours=2))
+    assert row is not None
+    # planning + approved + running + verifying + interpreting + reviewing —
+    # plan_pending (human wait) excluded.
+    expected = sum(
+        DEFAULT_CELLS[s][1]
+        for s in ("planning", "approved", "running", "verifying", "interpreting", "reviewing")
+    )
+    assert row["total_median_h"] == pytest.approx(expected)
+    assert row["total_p25_h"] == pytest.approx(
+        sum(
+            DEFAULT_CELLS[s][0]
+            for s in ("planning", "approved", "running", "verifying", "interpreting", "reviewing")
+        )
+    )
+
+
+def test_total_uses_effective_gpu_refined_running_cell(tmp_path, monkeypatch):
+    root = tmp_path / "tasks"
+    _install_tree(monkeypatch, root)
+    _gpu_task(
+        root,
+        81,
+        "Plan v1 (gpu_hours_total=19.0)",
+        [_note(T0 + timedelta(hours=2), "epm:progress", "provisioned 4× H100 SXM")],  # noqa: RUF001
+    )
+    stats = _make_stats(DEFAULT_CELLS)
+    row = tp.estimate_task_progress(81, stats, now=T0 + timedelta(hours=3))
+    assert row is not None
+    refined = max(19.0 / 4, 2.0)  # 4.75, replaces the 4.0 historical median
+    expected = (
+        sum(
+            DEFAULT_CELLS[s][1]
+            for s in ("planning", "approved", "verifying", "interpreting", "reviewing")
+        )
+        + refined
+    )
+    assert row["total_median_h"] == pytest.approx(expected)
+
+
+# ── 7c. followups_running own 0→1 track ────────────────────────────────────
+
+
+FOLLOWUP_CELLS = {**DEFAULT_CELLS, "followups_running": (1.0, 2.0, 4.5)}
+
+
+def test_followup_round_renders_own_track(tmp_path, monkeypatch):
+    root = tmp_path / "tasks"
+    _install_tree(monkeypatch, root)
+    _write_task(
+        root,
+        "followups_running",
+        85,
+        "experiment",
+        [
+            _ev(T0, "reviewing", "awaiting_promotion"),
+            _note(T0 + timedelta(minutes=5), "epm:plan", "gpu_hours_total=19.0"),
+            _ev(T0 + timedelta(hours=1), "awaiting_promotion", "followups_running"),
+        ],
+    )
+    stats = _make_stats(FOLLOWUP_CELLS)
+    row = tp.estimate_task_progress(85, stats, now=T0 + timedelta(hours=2))
+    assert row is not None
+    assert row["stage"] == tp.FOLLOWUP_STAGE
+    assert row["pct_floor"] == 0.0 and row["pct_span"] == 1.0  # own track
+    assert row["frac_median_h"] == pytest.approx(2.0)
+    assert row["stage_p25_h"] == pytest.approx(1.0)
+    assert row["stage_p75_h"] == pytest.approx(4.5)
+    # Nothing comes after the round — it re-parks at awaiting_promotion.
+    assert row["remaining_after_median_h"] == 0.0
+    # The round's total IS its own expected duration (main pass is behind it).
+    assert row["total_median_h"] == pytest.approx(2.0)
+    assert row["human_wait"] is False and row["plan_review_ahead"] is False
+    # The main-pass GPU plan token must NOT refine a follow-up round.
+    assert row["eta_basis"] == "historical" and row["gpu_hours_total"] is None
+    # stage_entered_at = the followups_running entry, not the first event.
+    assert row["stage_entered_at"] == _iso(T0 + timedelta(hours=1))
+    # Halfway through the round's 2 h median → bar at 50%.
+    pct, eta, overdue = tp.interpolate(row, T0 + timedelta(hours=2))
+    assert pct == pytest.approx(0.5)
+    assert eta is not None and eta["median_h"] == pytest.approx(1.0)
+    assert overdue is False
+    # Session titles stay clean for follow-up rounds (dashboard-only track).
+    assert tp.format_title_suffix(row, T0 + timedelta(hours=2)) is None
+
+
 # ── 8. read-only invariant + atomic snapshot ───────────────────────────────
 
 
@@ -638,6 +795,16 @@ def test_full_stats_and_snapshot_run_is_read_only_over_tasks(tmp_path, monkeypat
         [_ev(T0, "proposed", "planning"), _ev(T0 + timedelta(hours=1), "planning", "blocked")],
     )
     _write_task(root, "completed", 93, "experiment", _forward_chain(T0 + timedelta(days=5), {}))
+    _write_task(
+        root,
+        "followups_running",
+        94,
+        "experiment",
+        [
+            _ev(T0, "reviewing", "awaiting_promotion"),
+            _ev(T0 + timedelta(hours=1), "awaiting_promotion", "followups_running"),
+        ],
+    )
     snap_path = tmp_path / "cache" / "task_progress.json"
     monkeypatch.setattr(tp, "SNAPSHOT_PATH", snap_path)
 
@@ -650,10 +817,13 @@ def test_full_stats_and_snapshot_run_is_read_only_over_tasks(tmp_path, monkeypat
     assert not list(snap_path.parent.glob("*.tmp")), "snapshot write not atomic"
 
     snap = json.loads(snap_path.read_text())
-    # In-scope rows only: running, plan_pending, blocked. Completed → absent.
-    assert set(snap["tasks"]) == {"90", "91", "92"}
+    # In-scope rows only: running, plan_pending, blocked, followups_running.
+    # Completed → absent.
+    assert set(snap["tasks"]) == {"90", "91", "92", "94"}
     assert snap["tasks"]["92"]["blocked"] is True
     assert snap["tasks"]["91"]["human_wait"] is True
+    assert snap["tasks"]["94"]["stage"] == tp.FOLLOWUP_STAGE
+    assert snap["tasks"]["94"]["pct_floor"] == 0.0
     assert snap["version"] == 1 and "generated_at" in snap
 
 
@@ -700,10 +870,12 @@ def test_load_stats_readonly_never_rebuilds(tmp_path, monkeypatch):
 
 
 def test_out_of_scope_statuses_get_no_row(tmp_path, monkeypatch):
+    # followups_running is NO LONGER out of scope — it renders its own track
+    # (test_followup_round_renders_own_track).
     root = tmp_path / "tasks"
     _install_tree(monkeypatch, root)
     stats = _make_stats(DEFAULT_CELLS)
-    for status in ("proposed", "awaiting_promotion", "followups_running", "completed", "archived"):
+    for status in ("proposed", "awaiting_promotion", "completed", "archived"):
         _write_task(root, status, 700, "experiment", [_ev(T0, None, status)])
         assert tp.estimate_task_progress(700, stats, now=T0) is None
         import shutil
@@ -735,6 +907,13 @@ def test_shared_vectors_interpolate_and_labels():
                 eta["p25_h"], eta["p75_h"], row.get("eta_basis", "historical")
             )
             assert label == exp["eta_label"], v["name"]
+        # Median remaining/total labels (format_duration ↔ TS formatDuration).
+        basis = row.get("eta_basis", "historical")
+        if eta is None:
+            assert exp["remaining_label"] is None, v["name"]
+        else:
+            assert tp.format_duration(eta["median_h"], basis) == exp["remaining_label"], v["name"]
+        assert tp.format_duration(row["total_median_h"], basis) == exp["total_label"], v["name"]
         # The fixture pins the FULL title format (band included) so the band
         # path stays mirrored in TS for re-enablement; production currently
         # ships band-less (ETA_BAND_ENABLED=False, §7 kill criterion).

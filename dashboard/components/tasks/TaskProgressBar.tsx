@@ -6,20 +6,26 @@
  * <TaskBoard> kanban cards and on the server-rendered task detail page).
  *
  * Chip semantics (mirrors the estimator's honesty rules):
- *   - active     → "~4–9h" band ("≈" prefix = soft GPU-derived estimate),
- *                  plus "+ plan review" when the human plan-review wait lies
- *                  ahead (it is excluded from the machine band on purpose).
- *   - human-wait → "waiting on you" (+ band of machine work left after it).
+ *   - active     → "~2.1h left · ~7.5h total" (median remaining + expected
+ *                  total machine time; "≈" prefix = soft GPU-derived
+ *                  estimate; the [p25–p75] band replaces the remaining
+ *                  median if its kill switch is ever re-enabled), plus
+ *                  "+ plan review" when the human plan-review wait lies
+ *                  ahead (it is excluded from the machine estimate on
+ *                  purpose). A followups_running task shows the follow-up
+ *                  round's own remaining/total.
+ *   - human-wait → "waiting on you" (+ machine work left after it / total).
  *   - blocked    → grey bar frozen at the stage floor, "blocked", no countdown.
- *   - overdue    → bar parked, "running long" label, NO countdown (the band
- *                  stopped being supported by the historical basis).
+ *   - overdue    → bar parked, "running long" label, NO countdown (the
+ *                  estimate stopped being supported by the historical basis).
  *   - stale      → bar at the live-status floor, no chip (snapshot too old).
  */
 import type { TaskProgressView } from "@/lib/progress";
 
 const BAND_TOOLTIP =
-  "Typical range for a clean pass, from recent task history (per-stage " +
-  "quantile sums — a heuristic, not a guarantee). ≈ marks a soft " +
+  "Median remaining · expected total machine time for a typical clean " +
+  "pass, from recent task history (per-stage medians — a heuristic, not a " +
+  "guarantee; human plan-review wait excluded). ≈ marks a soft " +
   "GPU-hours-derived estimate.";
 
 export function TaskProgressBar({
@@ -89,20 +95,36 @@ function Chip({ view, compact }: { view: TaskProgressView; compact: boolean }) {
           stale
         </span>
       );
-    case "human-wait":
+    case "human-wait": {
+      const then = view.etaLabel ?? view.remainingLabel;
       return (
         <span className={`${base} bg-violet-50 text-violet-700`} title={BAND_TOOLTIP}>
           waiting on you
-          {view.etaLabel ? <span className="font-normal">· then {view.etaLabel}</span> : null}
+          {then ? (
+            <span className="font-normal">
+              · then {then}
+              {view.totalLabel ? ` of ${view.totalLabel}` : ""}
+            </span>
+          ) : null}
         </span>
       );
-    default:
-      if (!view.etaLabel) return null;
+    }
+    default: {
+      // Band (when its kill switch is re-enabled) wins over the median.
+      const remaining = view.etaLabel ?? view.remainingLabel;
+      if (!remaining && !view.totalLabel) return null;
       return (
         <span className={`${base} bg-teal-50 text-teal-800`} title={BAND_TOOLTIP}>
-          {view.etaLabel} left
+          {remaining ? `${remaining} left` : null}
+          {view.totalLabel ? (
+            <span className="font-normal">
+              {remaining ? "· " : ""}
+              {view.totalLabel} total
+            </span>
+          ) : null}
           {view.planReviewAhead ? <span className="font-normal">+ plan review</span> : null}
         </span>
       );
+    }
   }
 }
