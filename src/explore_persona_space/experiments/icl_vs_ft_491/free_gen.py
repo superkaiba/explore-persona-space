@@ -54,7 +54,9 @@ logger = logging.getLogger("i491.free_gen")
 
 BARE_MARKER_ID = 63680  # bare ※ (no leading space) — tracked separately, never the DV
 MAX_NEW_TOKENS = 2048
-MAX_MODEL_LEN = 8192
+MAX_MODEL_LEN = 10240  # Decision (plan §13 allowed: engine flags): K=16 ICL prompts
+# measure ~6.8K tokens (verified on the live tokenizer), so 8192 could not fit the
+# mandatory 2048 new-token budget (#260); 10240 preserves it with margin.
 GPU_MEM_UTIL = 0.85
 SEED = 42
 

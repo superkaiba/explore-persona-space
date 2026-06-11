@@ -528,8 +528,10 @@ def phase_smoke(gpus: list[int], *, out_root: str | None) -> None:
     # p1: data — full CPU build + GPU helpful-demo gen (same commands as sweep).
     phase_data(gpus)
     # p2: ICL reads — same dispatcher path, cell subset = baseline + K8 chain A,
-    #     context subset = source (Gate 1 is a source-cell read).
-    phase_icl_eval(gpus[:1], smoke=True, contexts=SOURCE_CONTEXT, questions=SMOKE_QUESTIONS)
+    #     FULL 10-context panel (the smoke FT pipeline's trajectory/full reads
+    #     consume the baseline for every context, and Gate 1 reads the source
+    #     cell from the same files).
+    phase_icl_eval(gpus[:1], smoke=True, questions=SMOKE_QUESTIONS)
     # p3: Gate 1 (blocking).
     check_gate1(smoke=True)
     # p4: train pipeline — ONE cell to step 12 through the same per-run

@@ -389,6 +389,62 @@ def own_policy_validation(smoke: bool = False) -> dict:
     return out
 
 
+def _partial_spearman(x: np.ndarray, y: np.ndarray, z: np.ndarray) -> float:
+    """Spearman between x and y with covariate z rank-residualized out of both."""
+    from scipy.stats import rankdata
+
+    def _resid(v: np.ndarray) -> np.ndarray:
+        rv, rz = rankdata(v), rankdata(z)
+        beta = np.cov(rv, rz, bias=True)[0, 1] / max(np.var(rz), 1e-9)
+        return rv - beta * rz
+
+    return _spearman(_resid(x), _resid(y))
+
+
+def h3_gate_correlations(pairs: dict[str, dict], smoke: bool = False) -> dict:
+    """H3: one fixed base-model similarity gate ranks leakage in BOTH regimes.
+
+    Gate = base-model pos-1 cos(v_c, v_villain) per layer (shift_summary.json,
+    activations phase). Leakage per regime = the mean ΔG per context across
+    the valid K=8 pairs. Reported source-included AND source-excluded, plus a
+    base-prior partial (per-context base log P(marker) from the no-prefix
+    baseline as covariate — #532/#563). The within-0.15 conjunct stays
+    descriptive (n=10; Fisher-z SE ~0.38).
+    """
+    from explore_persona_space.experiments.icl_vs_ft_491.activations import ACT_DIR
+
+    summary_path = ACT_DIR / "shift_summary.json"
+    if not summary_path.exists():
+        return {"skipped": f"{summary_path} missing — run the activations phase first"}
+    gate = json.loads(summary_path.read_text())["gate_base_pos1"]
+    bpath = ns_eval_dir(smoke) / "icl_panel" / "base_noprefix.json"
+    base_ctx = json.loads(bpath.read_text())["contexts"]
+
+    k8 = [r for r in pairs if r.startswith("ft_K8_chain")]
+    if not k8:
+        return {"skipped": "no K=8 pairs assembled"}
+    contexts = pairs[k8[0]]["contexts"]
+    icl_means = np.mean([pairs[r]["icl"].mean(axis=1) for r in k8], axis=0)
+    ft_means = np.mean([pairs[r]["ft"].mean(axis=1) for r in k8], axis=0)
+    base_prior = np.array(
+        [float(np.mean([s["logp"] for s in base_ctx[c]["stats"]])) for c in contexts]
+    )
+    out: dict[str, dict] = {}
+    n_layers = len(next(iter(gate.values()))["cosine"])
+    nonsrc = [i for i, c in enumerate(contexts) if c != SOURCE_CONTEXT]
+    for layer in range(n_layers):
+        g = np.array([gate[c]["cosine"][layer] for c in contexts])
+        row: dict[str, float] = {}
+        for regime, means in (("icl", icl_means), ("ft", ft_means)):
+            row[f"rho_{regime}"] = _spearman(g, means)
+            row[f"rho_{regime}_source_excluded"] = _spearman(g[nonsrc], means[nonsrc])
+            row[f"rho_{regime}_partial_base_prior"] = _partial_spearman(g, means, base_prior)
+        row["abs_diff"] = abs(row["rho_icl"] - row["rho_ft"])
+        out[str(layer + 1)] = row
+    best = max(out, key=lambda k: min(abs(out[k]["rho_icl"]), abs(out[k]["rho_ft"])))
+    return {"per_layer": out, "best_joint_layer": best, "n_k8_pairs": len(k8)}
+
+
 # ── Entry points ─────────────────────────────────────────────────────────
 
 
@@ -397,6 +453,7 @@ def run_analysis(*, smoke: bool = False, n_boot: int = N_BOOT) -> Path:
     analysis = {
         "meta": repro_metadata(),
         "h1": h1_statistics(pairs, n_boot=n_boot),
+        "h3": h3_gate_correlations(pairs, smoke),
         "h4": h4_dose_monotonicity(smoke),
         "h5_h6": h5_h6_controls(pairs, smoke),
         "own_policy_validation": own_policy_validation(smoke),
