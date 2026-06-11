@@ -19,6 +19,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/f8c6dcd9581f9686b0d286adee78508673285cf6/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
+
 ## Human TL;DR
 
 **Headline.** the "training maturity barely matters" table for our over-trained marker cell was bogus — six reads of the same checkpoint — and the real curve says the implant hits the log-prob ceiling and leaks to essentially every persona by the step-12 checkpoint, with only step 6 keeping any bystander signal.
@@ -248,6 +250,7 @@ This run is one cell and one seed, and its two claims deserve different weight. 
 - Reused eval instruments from the [#504](https://eps.superkaiba.com/tasks/504)/[#472](https://eps.superkaiba.com/tasks/472) chain: held-out panel `eval_results/issue_504/arm_to_n.json`, persona bank `data/issue_472/persona_bank.json`, response-coverage file `issue504_geometry/on_policy_R/R_eval_v504.json` (HF data repo) — fit: the eval instrument must match the parent run exactly, file for file, for the correction to be apples-to-apples; substituting anything would confound it.
 - Reused eval rig from [#534](https://eps.superkaiba.com/tasks/534): pinned SHA `611e04c2f5883d2d745f77f42675b2a14d166b19` — fit: the only lineage carrying the cache fix, already validated end-to-end by that task's 40-cell post-fix re-run; the eval-path diff vs the original buggy run was enumerated file-by-file in the plan (one manipulated variable + additive instrumentation).
 - WandB: n/a (eval-only; no training metrics)
+- **Methodology reference:** [docs/methodology/issue_585.md](https://github.com/superkaiba/explore-persona-space/blob/f8c6dcd9581f9686b0d286adee78508673285cf6/docs/methodology/issue_585.md) · [gist](https://gist.github.com/superkaiba/04b72c965ae1d59a1e1f107e95b1287c)
 
 **Compute:** 1× H100 (RunPod ephemeral `pod-585`), 0.54 GPU-h total (vs 1.0 budgeted); ~33 min wall pod-side + CPU-only comparison/figures off-pod. Pod auto-terminated after upload verification.
 
