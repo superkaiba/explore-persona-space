@@ -38,7 +38,11 @@ vLLM-after-Trainer / vLLM-then-HF teardown contract):
                    four-float + source check + train_diag + train_rows),
                    then the end-of-run sentinel
                    ``/workspace/logs/issue-571-run-complete.json``
-                   (poll_pipeline schema; suppressed under --tag).
+                   (poll_pipeline schema). Production artifacts +
+                   manipulation gate + sentinel fire ONLY on the full
+                   untagged run; tagged (smoke) and untagged
+                   adapter-subset (salvage) uploads push per-label
+                   shards only, no sentinel.
 
 Smoke/sweep parity: the smoke IS this driver restricted to one cell
 (``--adapters narrow_s42 --personas assistant --n-questions 2 --tag
@@ -1026,15 +1030,25 @@ def phase_upload(args) -> None:
     ``raw_completions_{label}.json`` files (not the canonical
     ``<cell>/raw_completions.json`` shape the rglob helper picks up), so
     the upload is an explicit per-file ``hub._upload`` walk over the
-    actual write paths. The sentinel is written ONLY on a full untagged
-    run (a smoke-tagged upload exercises the path without signaling
-    end-of-run).
+    actual write paths.
+
+    Only the FULL untagged production run (``--adapters all``, no
+    ``--tag``) uploads production-scope artifacts (merged source check,
+    per-label source-check files, train diagnostics, train-row mixes),
+    runs the manipulation gate + file-count asserts, and writes the
+    end-of-run sentinel. A tagged (smoke) upload exercises the path on
+    its tag-isolated files without signaling end-of-run; an untagged
+    ``--adapters``-SUBSET upload is a partial-salvage path that uploads
+    ONLY the per-label raw/four-float shards present on disk — it never
+    touches the gate-protected production artifacts and never writes the
+    sentinel (round-2 concern subset-untagged-upload-sentinel-bypass).
     """
     print("[phase=p4_upload]", flush=True)
     from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _upload
 
     data_dir, out_dir = _resolve_dirs(args)
     bucket = f"{HF_BUCKET}/{args.tag}" if args.tag else HF_BUCKET
+    expected_full = sorted(args.adapters) == sorted(ALL_LABELS) and not args.tag
 
     uploads: list[tuple[Path, str]] = []
     raw_files = sorted((data_dir / "raw_completions").glob("raw_completions_*.json"))
@@ -1044,8 +1058,11 @@ def phase_upload(args) -> None:
     for f in ff_files:
         uploads.append((f, f"{bucket}/four_float/{f.name}"))
 
-    if not args.tag:
+    if expected_full:
         # Production-only artifacts: source check, train diagnostics, mixes.
+        # Gated on expected_full (NOT merely untagged) so an untagged
+        # --adapters-subset salvage can never push gate-protected
+        # production artifacts past the manipulation check below.
         src_check = args.out_dir / "source_check.json"
         if src_check.exists():
             uploads.append((src_check, f"{bucket}/source_check.json"))
@@ -1056,7 +1073,6 @@ def phase_upload(args) -> None:
         for f in sorted(TRAIN_ROW_DIR.glob("i571_*.jsonl")):
             uploads.append((f, f"{bucket}/train_rows/{f.name}"))
 
-    expected_full = sorted(args.adapters) == sorted(ALL_LABELS) and not args.tag
     if expected_full:
         # Production manipulation-check gate (registered kill criterion):
         # NEVER upload + write the end-of-run sentinel over a failed or
@@ -1095,8 +1111,16 @@ def phase_upload(args) -> None:
             raise RuntimeError(f"upload failed for {local} -> {path_in_repo}")
         logger.info("uploaded %s -> %s", local.name, path_in_repo)
 
-    if args.tag:
-        logger.info("tagged (%s) upload complete — sentinel suppressed (not end-of-run)", args.tag)
+    if not expected_full:
+        # Tagged (smoke) OR untagged --adapters-subset salvage: never
+        # end-of-run, so never the sentinel (and the gate-protected
+        # production artifacts were never enqueued above).
+        logger.info(
+            "non-production upload complete (tag=%r, adapters=%s) — sentinel suppressed "
+            "(written only by the full untagged production upload)",
+            args.tag,
+            ",".join(sorted(args.adapters)),
+        )
         return
     note = json.dumps(
         {
