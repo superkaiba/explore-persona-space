@@ -7,3 +7,4 @@
 {"ts": "2026-06-11T06:48:23Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "planning", "to": "approved"}
 {"ts": "2026-06-11T06:49:34Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Superseded by campaign task #592 (same question, kind: campaign with 300 GPU-h budget). kind is creation-only so the conversion required a new task; archiving."}
 {"ts": "2026-06-11T06:49:35Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "approved", "to": "archived"}
+{"ts": "2026-06-11T06:58:15Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "archived", "to": "proposed", "note": "Restored from archived: user wants the cross-behavior program run as ONE issue grouping all experiments (campaign #592 archived). Arms execute as sequential rounds on this issue."}
