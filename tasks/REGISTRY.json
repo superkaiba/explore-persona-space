@@ -3344,8 +3344,8 @@
       "goal": "Determine whether the EM-vs-marker direction-concentration contrast is caused by the training rig rather than the implanted behavior, by retraining the marker arm positive-only \u2014 the #519 contrastive recipe with its negative rows removed and nothing else changed \u2014 and reading the new adapters' layer-14 shift spectrum against the persisted #551 tensors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/561",
-      "status": "running",
+      "path": "tasks/followups_running/561",
+      "status": "followups_running",
       "title": "Positive-only retraining keeps the marker's dispersed layer-14 geometry, so the EM-vs-marker concentration contrast is not explained by the contrastive negatives (MODERATE confidence)"
     },
     "562": {
