@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_at": "2026-06-11T01:06:04.467082+00:00",
   "git_commit_at_generation": "5e078bbac89a67ed52358a90a5c60d7d63671dec",
-  "freeze_commit": null,
+  "freeze_commit": "9b7347b958f8db9af40b513769177e9749d0eb86",
   "registry_hash": "f12061d6c2f6c0b2969d900bda45c1ca23d77dffda29ddb58d95c835859efd39",
   "artifact_sha256": {
     "data/issue_537/contexts/sampled_contexts.json": "ad5020819cfd34707930dc598e91cda03d6d3ba9e6ebd9fe1021f78a2e75d819",
