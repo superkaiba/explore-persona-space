@@ -241,14 +241,19 @@ modes, same fix:
   task (child-task pipelines) has NO `tasks/*/<N>/` folder, so the path
   is unresolvable from Codex's sandbox — the plan-side analogue of the
   #489 unreachable-marker false-FAIL class (hit live on #550 r1,
-  2026-06-10).
+  2026-06-10). The brief may also pass a main-side CURRENT-status path
+  (e.g. `tasks/running/<N>/plans/plan.md`, #541 follow-up r1) — that
+  shape never resolves in ANY worktree (the worktree only carries the
+  branch-cut-status folder), and the same `test -f` check catches it.
 - **Stale** — the worktree's `plans/` folder is frozen at branch-cut
   time, so a plan amendment posted on main AFTER the cut (same-issue
   follow-up rounds: v2+ via `task.py new-plan-version`) never reaches
   it; the frozen `plan.md` symlink resolves fine but serves the parent
   v1, and Codex scores plan adherence against the WRONG plan with no
-  error (hit live on #546 follow-up r1, 2026-06-10 — the silent variant
-  of the same canonical-state-vs-frozen-worktree class).
+  error (hit live on #546 follow-up r1 AND #541 follow-up r1 — worktree
+  frozen at v1 while the approved v3 lived on main — both 2026-06-10;
+  the silent variant of the same canonical-state-vs-frozen-worktree
+  class).
 
 Check both, and build the plan-reference block accordingly:
 
@@ -630,8 +635,10 @@ Common failure modes and how to handle:
   without checking — re-compose with the `---BEGIN APPROVED PLAN BODY---`
   envelope.
 - **Codex scores plan adherence against the WRONG plan — silently.** The
-  #546 follow-up r1 (2026-06-10) variant of the same class: a same-issue
-  follow-up's amendment plan (v2) was created on main AFTER the branch
+  #546 follow-up r1 (2026-06-10) variant of the same class, hit again the
+  same day on #541 follow-up r1 (approved v3 on main, worktree frozen at
+  v1): a same-issue
+  follow-up's amendment plan (v2+) was created on main AFTER the branch
   cut, so the worktree's frozen `plans/plan.md` symlink resolved cleanly
   but served the stale parent v1. No error fires — every plan-adherence
   ✓/✗ is just graded against the wrong contract. There is no verdict-side
