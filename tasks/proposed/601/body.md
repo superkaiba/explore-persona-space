@@ -12,6 +12,9 @@ goal: 'Determine which mechanism sets the source-implant level in #472''s contra
   update count — via zero-training four-float reads of existing adapters, a schedule-matched
   companion arm, fixed-ratio scaling, a negatives-only control, and a dense early
   logit trajectory that dates the arrest and tests for log-Z compression.'
+relates_to:
+- leak-contrastive-negatives
+- implant-learning-speed
 ---
 ## Goal
 
