@@ -3616,6 +3616,32 @@ URLs.
   declaration nor agent PASS evidence, finalize still exits 3
   (`reason: confirm_artifacts_no_declaration`).
 
+  **Phase-scoped-launch mismatch (incident #604).** The launch-time
+  auto-declaration assumes the FULL task artifact set (HF
+  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
+  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  multi-phase plan (e.g. an extraction phase whose sole deliverable is
+  an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
+  paths that only the plan's LATER (VM-local) phases produce. A
+  declaration that is PRESENT but phase-mismatched is structurally
+  unsatisfiable until end-of-task, and the agent-pass fallback above
+  never fires (it is gated on the declaration being ABSENT) — finalize
+  exits 3 (`reason: confirm_artifacts_failed`) by design. Do NOT leave
+  the instance idling until the later phases land (#604 burned ~70 idle
+  minutes on a g2-standard-4): mechanically verify the launch's ACTUAL
+  phase deliverable on permanent storage first
+  (`huggingface_hub.list_repo_files` for HF paths — never the `hf`
+  CLI), then re-run finalize with the gate skipped —
+  `dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts` —
+  which still runs the backend teardown AND retires the sidecar to
+  `<name>.finalized` (no stale handle; do NOT substitute a raw `gcloud
+  compute instances delete` / `pod.py terminate`, which skips the
+  retirement). Post `epm:pod-terminated v1` naming the declaration
+  mismatch + the verified deliverable paths. Distinguish the two exit-3
+  shapes: no-declaration → upload-verifier-to-PASS + plain re-run
+  (above); present-but-phase-mismatched declaration → verify the phase
+  deliverable, then `--skip-confirm-artifacts`.
+
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
   # exit 3 = confirm FAIL (teardown SKIPPED, evidence preserved); exit 2
