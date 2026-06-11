@@ -3411,8 +3411,8 @@
       "goal": "Determine whether a band-stopped clean single-marker install (source log P(marker) - base in [5,12] nat, non-saturated, no spam form) survives one epoch of continued SFT at the install-matched survival learning rate 5e-6, and whether emergent-misalignment SFT erases it differently from length-matched benign SFT, with the two-arm eraser factor (benign vs EM) the single manipulated variable on a fixed clean install at fixed lr.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/570",
-      "status": "approved",
+      "path": "tasks/running/570",
+      "status": "running",
       "title": "Model organism: does a band-stopped CLEAN marker survive the survival-regime lr (5e-6), and does EM SFT erase it differently from benign SFT?"
     },
     "6": {
