@@ -210,3 +210,4 @@
 {"ts": "2026-06-11T08:50:08Z", "kind": "epm:progress", "version": 30, "by": "poll_pipeline", "note": "phase transition: train_bad_medical_cn_seed0 -> gen", "phase": "gen", "pod": "pod-545"}
 {"ts": "2026-06-11T08:59:40Z", "kind": "epm:progress", "version": 31, "by": "poll_pipeline", "note": "phase transition: gen -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-11T09:09:16Z", "kind": "epm:progress", "version": 32, "by": "poll_pipeline", "note": "phase transition: judge -> train_bad_medical_cn_seed42", "phase": "train_bad_medical_cn_seed42", "pod": "pod-545"}
+{"ts": "2026-06-11T09:18:58Z", "kind": "epm:progress", "version": 33, "by": "poll_pipeline", "note": "phase transition: train_bad_medical_cn_seed42 -> gen", "phase": "gen", "pod": "pod-545"}
