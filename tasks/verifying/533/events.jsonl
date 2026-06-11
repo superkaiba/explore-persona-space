@@ -121,3 +121,4 @@
 {"ts": "2026-06-11T03:35:41Z", "kind": "epm:progress", "version": 14, "by": "poll_pipeline", "note": "phase transition: failed -> analysis", "phase": "analysis", "pod": "pod-533"}
 {"ts": "2026-06-11T03:36:48Z", "kind": "epm:results", "version": 1, "by": "i533_margin_run", "note": "i533 logit-margin EOS-margin re-read complete: 180-cell × 3-encoding grid (or smoke subset), analysis (paired bootstrap + rig-check at s=30) written."}
 {"ts": "2026-06-11T03:36:50Z", "kind": "epm:progress", "version": 15, "by": "poll_pipeline", "note": "phase transition: analysis -> done", "phase": "done", "pod": "pod-533"}
+{"ts": "2026-06-11T03:37:10Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "followups_running", "to": "verifying", "note": "followup margin-run [phase=done]; sentinel drained (epm:results posted); pulling eval payload + upload verification"}
