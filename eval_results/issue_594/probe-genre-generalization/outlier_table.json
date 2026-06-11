@@ -1,0 +1,252 @@
+[
+  {
+    "instance_id": "f2_wc_long_4",
+    "family": "wildchat",
+    "outlier_ratio": 3.2632592104427887
+  },
+  {
+    "instance_id": "f2_wc_short_2",
+    "family": "wildchat",
+    "outlier_ratio": 2.4888409869931003
+  },
+  {
+    "instance_id": "f3_icl_pirate_k4",
+    "family": "icl",
+    "outlier_ratio": 2.3040085536212125
+  },
+  {
+    "instance_id": "f4_reph_archaic",
+    "family": "rephrase",
+    "outlier_ratio": 1.8696451473925386
+  },
+  {
+    "instance_id": "f8_behav_marker",
+    "family": "behavior",
+    "outlier_ratio": 1.8029930526893903
+  },
+  {
+    "instance_id": "f1_house_programmer",
+    "family": "persona",
+    "outlier_ratio": 1.7293685200222289
+  },
+  {
+    "instance_id": "f4_reph_casual",
+    "family": "rephrase",
+    "outlier_ratio": 1.5199029991912218
+  },
+  {
+    "instance_id": "f1_house_librarian",
+    "family": "persona",
+    "outlier_ratio": 1.3192756532871857
+  },
+  {
+    "instance_id": "f1_phub_03",
+    "family": "persona",
+    "outlier_ratio": 1.3008988612889438
+  },
+  {
+    "instance_id": "f1_phub_06",
+    "family": "persona",
+    "outlier_ratio": 1.1708280626640415
+  },
+  {
+    "instance_id": "f3_icl_json_k8",
+    "family": "icl",
+    "outlier_ratio": 1.1408706721774204
+  },
+  {
+    "instance_id": "f1_phub_08",
+    "family": "persona",
+    "outlier_ratio": 1.1359303927723368
+  },
+  {
+    "instance_id": "f5_fmt_code_comment",
+    "family": "format",
+    "outlier_ratio": 1.1165084840975132
+  },
+  {
+    "instance_id": "f5_fmt_bullets",
+    "family": "format",
+    "outlier_ratio": 1.0901110094947444
+  },
+  {
+    "instance_id": "f1_phub_07",
+    "family": "persona",
+    "outlier_ratio": 1.0557503594777105
+  },
+  {
+    "instance_id": "f5_fmt_markdown_table",
+    "family": "format",
+    "outlier_ratio": 1.0398342403351122
+  },
+  {
+    "instance_id": "f1_phub_04",
+    "family": "persona",
+    "outlier_ratio": 1.0386588463035278
+  },
+  {
+    "instance_id": "f3_icl_french_k4",
+    "family": "icl",
+    "outlier_ratio": 1.0321041894719365
+  },
+  {
+    "instance_id": "f6_helpful_asst",
+    "family": "default",
+    "outlier_ratio": 1.0000000776654054
+  },
+  {
+    "instance_id": "f6_default_template",
+    "family": "default",
+    "outlier_ratio": 0.9999999223345944
+  },
+  {
+    "instance_id": "f1_phub_01",
+    "family": "persona",
+    "outlier_ratio": 0.9150920666174027
+  },
+  {
+    "instance_id": "f8_behav_fact",
+    "family": "behavior",
+    "outlier_ratio": 0.8942541987832986
+  },
+  {
+    "instance_id": "f5_fmt_json",
+    "family": "format",
+    "outlier_ratio": 0.8841205279315546
+  },
+  {
+    "instance_id": "f5_fmt_xml",
+    "family": "format",
+    "outlier_ratio": 0.8694257381410757
+  },
+  {
+    "instance_id": "f8_behav_sycophant",
+    "family": "behavior",
+    "outlier_ratio": 0.8651578906012218
+  },
+  {
+    "instance_id": "f1_phub_05",
+    "family": "persona",
+    "outlier_ratio": 0.8523744530377575
+  },
+  {
+    "instance_id": "f3_icl_json_k2",
+    "family": "icl",
+    "outlier_ratio": 0.8465174051934684
+  },
+  {
+    "instance_id": "f2_wc_short_5",
+    "family": "wildchat",
+    "outlier_ratio": 0.8343150011367252
+  },
+  {
+    "instance_id": "f3_icl_json_k4",
+    "family": "icl",
+    "outlier_ratio": 0.8321741618390252
+  },
+  {
+    "instance_id": "f1_house_software_engineer",
+    "family": "persona",
+    "outlier_ratio": 0.821278519111819
+  },
+  {
+    "instance_id": "f4_reph_polite",
+    "family": "rephrase",
+    "outlier_ratio": 0.7889305223604164
+  },
+  {
+    "instance_id": "f3_icl_marker_k2",
+    "family": "icl",
+    "outlier_ratio": 0.7853898402402827
+  },
+  {
+    "instance_id": "f8_behav_harmful",
+    "family": "behavior",
+    "outlier_ratio": 0.7409924367534725
+  },
+  {
+    "instance_id": "f4_reph_enthusiastic",
+    "family": "rephrase",
+    "outlier_ratio": 0.7343572648010079
+  },
+  {
+    "instance_id": "f1_house_data_scientist",
+    "family": "persona",
+    "outlier_ratio": 0.7223783832945463
+  },
+  {
+    "instance_id": "f1_phub_02",
+    "family": "persona",
+    "outlier_ratio": 0.7066884416490998
+  },
+  {
+    "instance_id": "f1_house_surgeon",
+    "family": "persona",
+    "outlier_ratio": 0.7035530652098173
+  },
+  {
+    "instance_id": "f8_behav_refusal",
+    "family": "behavior",
+    "outlier_ratio": 0.6966024211726166
+  },
+  {
+    "instance_id": "f4_reph_imperative",
+    "family": "rephrase",
+    "outlier_ratio": 0.6287434289153033
+  },
+  {
+    "instance_id": "f2_wc_short_3",
+    "family": "wildchat",
+    "outlier_ratio": 0.6087109479947123
+  },
+  {
+    "instance_id": "f2_wc_short_1",
+    "family": "wildchat",
+    "outlier_ratio": 0.545883298875391
+  },
+  {
+    "instance_id": "f3_icl_marker_k8",
+    "family": "icl",
+    "outlier_ratio": 0.5438115754391718
+  },
+  {
+    "instance_id": "f2_wc_long_3",
+    "family": "wildchat",
+    "outlier_ratio": 0.5363972643143305
+  },
+  {
+    "instance_id": "f1_house_medical_doctor",
+    "family": "persona",
+    "outlier_ratio": 0.5279243752635829
+  },
+  {
+    "instance_id": "f3_icl_marker_k4",
+    "family": "icl",
+    "outlier_ratio": 0.5151236020174822
+  },
+  {
+    "instance_id": "f2_wc_long_2",
+    "family": "wildchat",
+    "outlier_ratio": 0.5085414510868078
+  },
+  {
+    "instance_id": "f4_reph_legalese",
+    "family": "rephrase",
+    "outlier_ratio": 0.45842063733951155
+  },
+  {
+    "instance_id": "f2_wc_short_4",
+    "family": "wildchat",
+    "outlier_ratio": 0.4481160943926239
+  },
+  {
+    "instance_id": "f2_wc_long_1",
+    "family": "wildchat",
+    "outlier_ratio": 0.433025761552454
+  },
+  {
+    "instance_id": "f2_wc_long_5",
+    "family": "wildchat",
+    "outlier_ratio": 0.3329099832110668
+  }
+]

@@ -20,10 +20,22 @@ Per plan v1 §3 Phase 2 + §14 binding addenda. Reads the Phase-1 tensors
     linear CKA LxL; outlier table; per-family decomposition;
     TF-IDF text-similarity family-purity baseline (§14 analyzer bullet)
 7.  multiplicity + discordant-cell narration (§14 item 3) in the JSON
+8.  OPTIONAL cross-pool module (plan v2 §4, follow-up
+    probe-genre-generalization) behind ``--compare-tensors-from-hf``: joins
+    this run's mean tensors with a second pool's (parent run) ON STORED
+    INSTANCE IDS, per layer computes both 50x50 global_mean-centered cosine
+    matrices (each pool centered on its own bank), upper-triangle Spearman +
+    Pearson, Mantel permutation p (simultaneous row+col relabeling, B=1000,
+    seed 42), per-instance cross-pool centered-vector cosine; writes
+    ``cross_pool_comparison.json``, a per-layer Mantel-curve figure, and an
+    overlay hero (new purity/silhouette depth curves over the parent's, read
+    from ``--parent-metrics-json``).
 
 Outputs: ``eval_results/issue_594/context_geometry_metrics.json`` (+
 ``per_layer/*.json`` with the per-layer cosine matrices, raw alongside
-centered) and ``figures/issue_594/*`` via paper_plots conventions.
+centered) and ``figures/issue_594/*`` via paper_plots conventions; the
+``--eval-dir`` / ``--fig-dir`` flags route follow-up outputs to
+``eval_results/issue_594/probe-genre-generalization`` etc. (plan v2 §4).
 
 Usage (plan §8)::
 
@@ -556,6 +568,91 @@ def fp16_sanity(per_probe: dict, mean_all: np.ndarray, ids: list[str]) -> float:
     return worst
 
 
+# ── Cross-pool comparison (plan v2 §4) ───────────────────────────────────────
+
+
+def cross_pool_comparison(
+    mean_new: np.ndarray,
+    ids_new: list[str],
+    compare_blob: dict,
+    n_perms: int,
+    seed: int,
+) -> dict:
+    """Per-layer cross-pool geometry comparison against a second probe pool.
+
+    Joins the two mean-tensor banks ON STORED INSTANCE IDS (asserted
+    set-equal, reindexed — NEVER row order). Per layer over the FULL
+    instance bank: both NxN ``global_mean``-centered cosine matrices (each
+    pool centered on its own bank), upper-triangle Spearman + Pearson, a
+    Mantel permutation p (simultaneous row+column relabeling of the
+    comparison matrix, draws shared across layers, one-sided greater —
+    permutation inference because upper-triangle entries are
+    non-independent), and the per-instance cross-pool centered-vector cosine
+    (the split-half-style read).
+    """
+    ids_old = list(compare_blob["instance_ids"])
+    assert set(ids_new) == set(ids_old), (
+        f"cross-pool instance-id sets differ: {sorted(set(ids_new) ^ set(ids_old))}"
+    )
+    reindex = [ids_old.index(i) for i in ids_new]
+    mean_old = compare_blob["tensor"].float().numpy()[reindex]
+    assert mean_old.shape == mean_new.shape, (mean_old.shape, mean_new.shape)
+    n, n_layers, _ = mean_new.shape
+    rng = np.random.default_rng(seed)
+    perms = [rng.permutation(n) for _ in range(n_perms)]
+    iu = np.triu_indices(n, k=1)
+    per_layer: list[dict] = []
+    per_instance_cos = np.empty((n_layers, n))
+    for li in range(n_layers):
+        cos_new = compute_cosine_matrix(
+            torch.from_numpy(mean_new[:, li, :]).float(), centering="global_mean"
+        ).numpy()
+        cos_old = compute_cosine_matrix(
+            torch.from_numpy(mean_old[:, li, :]).float(), centering="global_mean"
+        ).numpy()
+        v_new, v_old = cos_new[iu], cos_old[iu]
+        obs_s = float(spearmanr(v_new, v_old).statistic)
+        obs_p = float(np.corrcoef(v_new, v_old)[0, 1])
+        null_s = np.empty(n_perms)
+        null_p = np.empty(n_perms)
+        for b, perm in enumerate(perms):
+            shuf = cos_old[np.ix_(perm, perm)][iu]
+            null_s[b] = spearmanr(v_new, shuf).statistic
+            null_p[b] = np.corrcoef(v_new, shuf)[0, 1]
+        a = center(mean_new[:, li, :])
+        b_ = center(mean_old[:, li, :])
+        num = (a * b_).sum(axis=1)
+        den = np.clip(np.linalg.norm(a, axis=1) * np.linalg.norm(b_, axis=1), 1e-12, None)
+        per_instance_cos[li] = num / den
+        per_layer.append(
+            {
+                "layer": li,
+                "spearman": obs_s,
+                "pearson": obs_p,
+                "mantel_p_spearman": float((1 + (null_s >= obs_s).sum()) / (n_perms + 1)),
+                "mantel_p_pearson": float((1 + (null_p >= obs_p).sum()) / (n_perms + 1)),
+                "median_per_instance_cos": float(np.median(per_instance_cos[li])),
+                "mean_per_instance_cos": float(per_instance_cos[li].mean()),
+            }
+        )
+        if li % 7 == 0:
+            logger.info("cross-pool layer %d/%d done", li + 1, n_layers)
+    parent_headline = {
+        f"L{li}": per_layer[li] for li in (14, 18) if li < n_layers
+    }  # plan v2 §3 H-B read layers
+    return {
+        "centering": "global_mean (each pool centered on its own bank)",
+        "instance_ids": ids_new,
+        "n_instances": n,
+        "n_pairs_upper_triangle": len(iu[0]),
+        "n_perms": n_perms,
+        "seed": seed,
+        "per_layer": per_layer,
+        "parent_headline_layers": parent_headline,
+        "per_instance_cos": {iid: per_instance_cos[:, k].tolist() for k, iid in enumerate(ids_new)},
+    }
+
+
 # ── Figures ──────────────────────────────────────────────────────────────────
 
 
@@ -792,6 +889,68 @@ def fig_baselines(results: dict) -> None:
     plt.close(fig)
 
 
+def fig_cross_pool(cross: dict, n_layers: int) -> None:
+    """Per-layer Mantel-curve figure (plan v2 §4): correlation + per-instance read."""
+    layers = np.arange(n_layers)
+    sp = [r["spearman"] for r in cross["per_layer"]]
+    pe = [r["pearson"] for r in cross["per_layer"]]
+    med = [r["median_per_instance_cos"] for r in cross["per_layer"]]
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    pal = paper_palette(2)
+    axes[0].plot(layers, sp, color=pal[0], lw=2, label="Mantel Spearman")
+    axes[0].plot(layers, pe, color=pal[1], lw=1.5, ls="--", label="Pearson")
+    for li in (14, 18):
+        if li < n_layers:
+            axes[0].axvline(li, color="0.7", lw=1, ls=":")
+    axes[0].axhline(0.0, color="0.5", lw=1)
+    axes[0].set_xlabel("decoder layer")
+    axes[0].set_ylabel("upper-triangle correlation")
+    axes[0].set_title("Cross-pool 50x50 centered-cosine matrix correlation")
+    axes[0].legend(fontsize=7)
+    axes[1].plot(layers, med, lw=2, color=pal[0])
+    axes[1].set_xlabel("decoder layer")
+    axes[1].set_ylabel("median per-instance cosine")
+    axes[1].set_title("Cross-pool per-instance centered-vector cosine")
+    savefig_paper(fig, "cross_pool_mantel_curve", dir=FIG_DIR)
+    plt.close(fig)
+
+
+def fig_overlay_hero(results: dict, parent_metrics: dict, n_layers: int) -> None:
+    """Overlay hero (plan v2 §4): new purity/silhouette depth curves over the parent's."""
+    parent_headline = parent_metrics["headline"]
+    for key in ("silhouette", "purity"):
+        assert len(parent_headline[key]) == n_layers, (
+            f"parent {key} curve has {len(parent_headline[key])} layers, expected {n_layers}"
+        )
+    layers = np.arange(n_layers)
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4))
+    pal = paper_palette(2)
+    for ax, key, title in (
+        (axes[0], "silhouette", "Silhouette vs depth"),
+        (axes[1], "purity", "k-NN family purity (k=4) vs depth"),
+    ):
+        null95 = results[f"{key}_summary"]["null_p95_per_layer"]
+        nullmean = results[f"{key}_summary"]["null_mean_per_layer"]
+        ax.fill_between(
+            layers, nullmean, null95, color="0.85", label="fresh permutation null (mean to 95%)"
+        )
+        ax.plot(layers, results["headline"][key], color=pal[0], lw=2, label="UltraChat probe pool")
+        ax.plot(
+            layers,
+            parent_headline[key],
+            color=pal[1],
+            lw=1.5,
+            ls="--",
+            label="parent (Betley probe pool)",
+        )
+        ax.set_xlabel("decoder layer")
+        ax.set_ylabel(key if key == "silhouette" else "purity")
+        ax.set_title(title)
+    axes[0].legend(loc="upper left", fontsize=7)
+    savefig_paper(fig, "hero_overlay_probe_pools", dir=FIG_DIR)
+    plt.close(fig)
+
+
 # ── Main ─────────────────────────────────────────────────────────────────────
 
 
@@ -833,6 +992,23 @@ def main() -> int:
         default=HF_DATA_REPO,
         help="HF dataset repo holding the tensors; pass the overflow repo when the "
         "extraction sentinel / manifest 'upload.repo' records the quota-403 fallback",
+    )
+    parser.add_argument(
+        "--compare-tensors-from-hf",
+        default=None,
+        help="HF data-repo prefix of a SECOND mean-tensor set to compare against "
+        "(plan v2 §4 cross-pool module), e.g. issue594_context_geometry/analysis_tensors",
+    )
+    parser.add_argument(
+        "--compare-hf-repo",
+        default=HF_DATA_REPO,
+        help="HF dataset repo holding the comparison tensors (default: primary data repo)",
+    )
+    parser.add_argument(
+        "--parent-metrics-json",
+        type=Path,
+        default=PROJECT_ROOT / "eval_results" / "issue_594" / "context_geometry_metrics.json",
+        help="parent run's metrics JSON for the overlay hero (cross-pool module only)",
     )
     parser.add_argument("--battery", type=Path, default=BATTERY_PATH)
     parser.add_argument(
@@ -999,6 +1175,38 @@ def main() -> int:
 
     results["narration"] = build_narration(results)
 
+    cross = None
+    parent_metrics = None
+    if args.compare_tensors_from_hf:
+        logger.info(
+            "[6b/8] cross-pool comparison vs %s (%s)",
+            args.compare_tensors_from_hf,
+            args.compare_hf_repo,
+        )
+        compare_dir = download_from_hf(
+            args.compare_tensors_from_hf,
+            EVAL_DIR / "hf_tensors_cache_compare",
+            repo=args.compare_hf_repo,
+        )
+        compare_blob = torch.load(compare_dir / "context_vectors_mean.pt", weights_only=True)
+        cross = cross_pool_comparison(mean_all, ids, compare_blob, args.n_perms, args.seed)
+        cross["compare_prefix"] = args.compare_tensors_from_hf
+        cross["compare_repo"] = args.compare_hf_repo
+        cross["metadata"] = reproducibility_metadata(
+            {"script": "issue594_analyze_context_geometry", "module": "cross_pool"}
+        )
+        # Checkpoint-per-phase: the cross-pool JSON lands NOW, before figures.
+        with open(EVAL_DIR / "cross_pool_comparison.json", "w") as f:
+            json.dump(jsonable(cross), f, indent=2)
+        logger.info("Wrote %s", EVAL_DIR / "cross_pool_comparison.json")
+        if not args.parent_metrics_json.exists():
+            raise RuntimeError(
+                f"--compare-tensors-from-hf set but parent metrics JSON missing: "
+                f"{args.parent_metrics_json} (needed for the overlay hero, plan v2 §4)"
+            )
+        with open(args.parent_metrics_json) as f:
+            parent_metrics = json.load(f)
+
     logger.info("[7/8] figures")
     import umap
 
@@ -1014,6 +1222,9 @@ def main() -> int:
     fig_split_half(results["split_half"], n_layers)
     fig_per_family(results["headline"], n_layers, sorted(set(fam_h)))
     fig_baselines(results)
+    if cross is not None:
+        fig_cross_pool(cross, n_layers)
+        fig_overlay_hero(results, parent_metrics, n_layers)
 
     logger.info("[8/8] write metrics JSON + per-layer JSONs")
     per_layer_dir = EVAL_DIR / "per_layer"
