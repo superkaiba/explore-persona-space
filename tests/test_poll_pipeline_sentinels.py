@@ -405,6 +405,7 @@ def _probe_response(
     shard_log_mtime_epoch: int = 0,
     gpu_util: str = "unknown",
     session_cpu_secs: str = "unknown",
+    results_sentinel_present: int | None = None,
 ) -> str:
     """Build the stdout shape that ``_ssh_probe`` parses, including the
     cell-log fields added for the #405 smoke-first fix, the per-phase-log +
@@ -435,6 +436,8 @@ def _probe_response(
     lines.append(f"SHARD_LOG_MTIME_EPOCH={shard_log_mtime_epoch}")
     lines.append(f"GPU_UTIL={gpu_util}")
     lines.append(f"SESSION_CPU_SECS={session_cpu_secs}")
+    if results_sentinel_present is not None:
+        lines.append(f"RESULTS_SENTINEL_PRESENT={results_sentinel_present}")
     return "\n".join(lines) + "\n"
 
 
@@ -2561,3 +2564,203 @@ def test_poll_once_running_when_logs_fresh_regardless_of_cpu_signal(
     # CPU is flat (600 -> 600), but the override only triggers on a
     # stall-conjunction-met base, which we don't have here.
     assert result.cpu_advancing is False
+
+
+# ── #545 done corroboration: per-cell `[phase=done] ...` noise mid-run ───────
+#
+# Incident (task #545, 2026-06-11): a per-cell eval subprocess printed
+# `[phase=done] eval cell <X> complete` MID-RUN; the tick keyed status=done
+# off the substring while the dispatcher pid was ALIVE and GPUs at 85%. An
+# orchestrator trusting that would advance to verifying and Step-8 terminate
+# a live pod mid-sweep. The fix corroborates a done-parse with pid-death OR
+# a results sentinel (`issue-<N>-epm_results-*.json[.processed]`) before
+# reporting done; an uncorroborated done is demoted to the latest NON-done
+# phase. A "bare line only" regex tighten was deliberately rejected: real
+# dispatchers' TERMINAL done lines also carry trailing text
+# (`[phase=done] SMOKE COMPLETE ...`, `[phase=done] phase4 complete <date>`),
+# so suffixed-done + pid-dead must KEEP reporting done.
+
+
+def _done_corroboration_fake_run(probe_stdout: str):
+    """Build a ``subprocess.run`` fake: empty sentinel drain, canned probe."""
+
+    def _fake_run(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        remote = cmd[-1]
+        if remote.startswith("mv -n "):
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        if "SENTINEL_START" in remote:  # drain — no unprocessed sentinels
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=probe_stdout, stderr="")
+
+    return _fake_run
+
+
+def test_poll_once_done_when_bare_done_and_pid_dead(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The happy path: the dispatcher prints its terminal `[phase=done]`
+    line and exits. Pid-death corroborates; done reports promptly even
+    with no results sentinel."""
+    probe_stdout = _probe_response(
+        pid_alive=0,
+        mtime_epoch=1700000020,
+        tail="2026-06-11 06:00:00 [phase=eval]\n2026-06-11 06:44:00 [phase=done]",
+        results_sentinel_present=0,
+    )
+    monkeypatch.setattr(pp.subprocess, "run", _done_corroboration_fake_run(probe_stdout))
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    result = pp.poll_once(
+        issue=545,
+        pod="pod-545",
+        log_path="/workspace/logs/issue-545.log",
+        pid_file="/workspace/logs/issue-545.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert result.status == "done"
+    assert result.current_phase == "done"
+
+
+def test_poll_once_running_when_per_cell_done_line_and_pid_alive(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The #545 regression: a per-cell `[phase=done] eval cell <X> complete`
+    line mid-run must NOT report done while the dispatcher pid is alive and
+    no results sentinel exists. The phase demotes to the latest NON-done
+    milestone and no false `-> done` milestone marker is posted."""
+    now_epoch = int(datetime.now(tz=UTC).timestamp())
+    fresh = now_epoch - 60
+    post_mock = MagicMock()
+    probe_stdout = _probe_response(
+        pid_alive=1,
+        mtime_epoch=fresh,
+        tail=(
+            "2026-06-11 06:00:00 [phase=eval]\n"
+            "2026-06-11 06:44:00 [phase=done] eval cell 3 complete"
+        ),
+        gpu_util="85,90,80,88",
+        results_sentinel_present=0,
+    )
+    monkeypatch.setattr(pp.subprocess, "run", _done_corroboration_fake_run(probe_stdout))
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    result = pp.poll_once(
+        issue=545,
+        pod="pod-545",
+        log_path="/workspace/logs/issue-545.log",
+        pid_file="/workspace/logs/issue-545.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert result.status == "running", (
+        f"per-cell done-line noise with pid ALIVE must stay running; got {result.status!r}"
+    )
+    assert result.current_phase == "eval"
+    # The milestone tracker must never post a `-> done` transition off the
+    # noise line (it WILL post the legitimate `(start) -> eval` one).
+    for call in post_mock.call_args_list:
+        assert call.kwargs.get("phase") != "done"
+
+
+def test_poll_once_done_when_pid_alive_but_results_sentinel_present(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A post-done LINGERING dispatcher (pid alive after its terminal done
+    line, e.g. doing uploads) still reports done when a results sentinel
+    exists on the pod — the sentinel is the completion proof."""
+    probe_stdout = _probe_response(
+        pid_alive=1,
+        mtime_epoch=1700000020,
+        tail="2026-06-11 06:44:00 [phase=done]",
+        results_sentinel_present=1,
+    )
+    monkeypatch.setattr(pp.subprocess, "run", _done_corroboration_fake_run(probe_stdout))
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    result = pp.poll_once(
+        issue=545,
+        pod="pod-545",
+        log_path="/workspace/logs/issue-545.log",
+        pid_file="/workspace/logs/issue-545.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert result.status == "done"
+
+
+def test_poll_once_done_when_suffixed_terminal_done_line_and_pid_dead(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Regression guard for the rejected regex-tighten: legitimate
+    dispatchers end with SUFFIXED done lines (`[phase=done] SMOKE COMPLETE
+    ...`, `[phase=done] phase4 complete <date>`). With the pid dead those
+    must KEEP reporting done — not dead."""
+    probe_stdout = _probe_response(
+        pid_alive=0,
+        mtime_epoch=1700000020,
+        tail="2026-06-11 06:44:00 [phase=done] SMOKE COMPLETE (phase05 + phase0 + pick).",
+        results_sentinel_present=0,
+    )
+    monkeypatch.setattr(pp.subprocess, "run", _done_corroboration_fake_run(probe_stdout))
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    result = pp.poll_once(
+        issue=545,
+        pod="pod-545",
+        log_path="/workspace/logs/issue-545.log",
+        pid_file="/workspace/logs/issue-545.pid",
+        state_file=tmp_path / "poll-state.json",
+    )
+
+    assert result.status == "done", (
+        f"suffixed TERMINAL done line + pid dead must report done; got {result.status!r}"
+    )
+
+
+def test_latest_phase_skip_done_returns_previous_milestone() -> None:
+    """``skip_done=True`` scans past done-bearing lines to the latest real
+    milestone (the demotion target for an uncorroborated done-parse)."""
+    tail = "2026-06-11 06:00:00 [phase=eval]\n2026-06-11 06:44:00 [phase=done] eval cell 3 complete"
+    assert pp._latest_phase(tail) == "done"
+    assert pp._latest_phase(tail, skip_done=True) == "eval"
+    # All-done tail (window scrolled past real milestones) -> unknown.
+    assert pp._latest_phase("[phase=done] eval cell 1 complete", skip_done=True) == "unknown"
+
+
+def test_ssh_probe_parses_results_sentinel_present(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``_ssh_probe`` must surface RESULTS_SENTINEL_PRESENT, defaulting to
+    "0" when the heredoc line is absent (old probe output) and on the
+    SSH-failure fail-safe path."""
+
+    def _fake_run_present(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(pid_alive=1, tail="x", results_sentinel_present=1),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_present)
+    probe = pp._ssh_probe("pod-545", "/workspace/logs/issue-545.log", "/tmp/p.pid", 545)
+    assert probe["results_sentinel_present"] == "1"
+
+    def _fake_run_absent(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=_probe_response(pid_alive=1, tail="x"),
+            stderr="",
+        )
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_absent)
+    probe = pp._ssh_probe("pod-545", "/workspace/logs/issue-545.log", "/tmp/p.pid", 545)
+    assert probe["results_sentinel_present"] == "0"
+
+    def _fake_run_sshfail(cmd: list[str], **kwargs: Any) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=cmd, returncode=255, stdout="", stderr="boom")
+
+    monkeypatch.setattr(pp.subprocess, "run", _fake_run_sshfail)
+    probe = pp._ssh_probe("pod-545", "/workspace/logs/issue-545.log", "/tmp/p.pid", 545)
+    assert probe["results_sentinel_present"] == "0"
+    assert probe["ssh_failed"] == "1"

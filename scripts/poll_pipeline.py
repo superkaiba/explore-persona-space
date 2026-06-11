@@ -141,6 +141,28 @@ unparsable GPU sample resets the span rather than counting as idle.
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
+Done requires corroboration (incident #545, 2026-06-11): a `[phase=done]`
+match in the log tail alone is NOT sufficient — per-cell eval subprocesses
+legitimately print lines like ``[phase=done] eval cell <X> complete``
+MID-RUN, and a tick keyed on the bare substring reported ``status=done``
+while the dispatcher pid was alive, GPUs at 85%, and a training bar
+mid-flight (an orchestrator trusting that would advance to verifying and
+Step-8 terminate a live pod). A regex tighten to "bare line only" is NOT
+viable: real dispatchers' TERMINAL done lines also carry trailing text
+(``[phase=done] SMOKE COMPLETE ...``, ``[phase=done] phase4 complete
+<date>``), textually indistinguishable from the mid-run noise. Instead,
+``done`` is reported only when the done-parse is corroborated by EITHER
+(a) the monitored pid being dead (the dispatcher exits right after its
+terminal done line — on a normal completion this holds within seconds),
+OR (b) a results sentinel ``issue-<N>-epm_results-*.json[.processed]``
+existing on the pod (covers a dispatcher that lingers after done, e.g.
+post-done uploads; ``.processed`` is included because this tick's drain
+renames the sentinel moments before the status decision). An
+uncorroborated done-parse is demoted to the latest NON-done phase line
+and the verdict falls through to the normal liveness arbiters
+(`running` / `stalled`), so the milestone tracker also never posts a
+false ``-> done`` transition mid-run.
+
 Phase-line shape expected from the entry script:
     2026-05-21 14:32:18 [phase=training step=1000/2000 loss=2.1]
     2026-05-21 14:55:02 [phase=eval]
@@ -536,6 +558,17 @@ def _ssh_probe(
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
       ``_gpu_idle``).
+    * ``results_sentinel_present`` — ``"1"`` when at least one results
+      sentinel ``/workspace/logs/issue-<N>-epm_results-*.json[.processed]``
+      exists on the pod, else ``"0"``. Corroboration for the ``done``
+      verdict (incident #545): a `[phase=done]` parse with the pid still
+      alive is reported ``done`` only when a results sentinel exists —
+      otherwise it is mid-run per-cell noise. ``.processed`` files count
+      because the SAME tick's sentinel drain renames the file moments
+      before the status decision (and the corroboration must survive
+      later ticks while a post-done dispatcher lingers). ``"0"`` on the
+      SSH-failure fail-safe path (the done branch is unreachable there —
+      an empty log tail parses to phase ``unknown``).
     * ``session_cpu_secs`` — cumulative CPU seconds (as a float string,
       e.g. ``"4271.5"``) summed across every process in the launcher
       PID's process SESSION (`setsid` group). The launcher itself
@@ -689,6 +722,19 @@ def _ssh_probe(
         f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
         f'else echo "SESSION_CPU_SECS=unknown"; fi; '
     )
+    # Results-sentinel presence probe (#545): corroboration for the `done`
+    # verdict. Matches BOTH the unprocessed `.json` and the drained
+    # `.json.processed` forms — the drain at the top of `poll_once` renames
+    # the sentinel before the status decision runs, so the unprocessed form
+    # alone would never corroborate the happy path. `shopt -s nullglob` is
+    # set explicitly (not inherited from cell_probe's earlier shopt) so an
+    # empty glob yields array length 0, not the length-1 literal pattern.
+    results_sentinel_probe = (
+        f"shopt -s nullglob; "
+        f"RS_FILES=(/workspace/logs/issue-{issue}-epm_results-*.json*); "
+        f"if [ ${{#RS_FILES[@]}} -gt 0 ]; then echo RESULTS_SENTINEL_PRESENT=1; "
+        f"else echo RESULTS_SENTINEL_PRESENT=0; fi; "
+    )
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -705,6 +751,7 @@ def _ssh_probe(
         f"{shard_log_probe}"
         f"{gpu_probe}"
         f"{session_cpu_probe}"
+        f"{results_sentinel_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -730,6 +777,7 @@ def _ssh_probe(
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
             "session_cpu_secs": "unknown",
+            "results_sentinel_present": "0",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -749,6 +797,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
     "SESSION_CPU_SECS",
+    "RESULTS_SENTINEL_PRESENT",
 )
 
 
@@ -771,6 +820,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
         "session_cpu_secs": "unknown",
+        "results_sentinel_present": "0",
     }
     tail_lines: list[str] = []
     cell_tail_lines: list[str] = []
@@ -1180,11 +1230,19 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     return processed, gate
 
 
-def _latest_phase(log_tail: str) -> str:
-    """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'."""
+def _latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
+    """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'.
+
+    ``skip_done=True`` returns the most recent NON-``done`` milestone
+    instead — used by ``poll_once`` to demote an UNCORROBORATED done-parse
+    (pid alive + no results sentinel) back to the real current phase, so a
+    mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line
+    (incident #545) neither flips the status verdict nor posts a false
+    ``-> done`` milestone transition.
+    """
     for line in reversed(log_tail.splitlines()):
         m = PHASE_RE.search(line)
-        if m:
+        if m and not (skip_done and m.group(1) == "done"):
             return m.group(1)
     return "unknown"
 
@@ -1512,10 +1570,42 @@ def poll_once(
     gpu_idle = _gpu_idle(gpu_util)
     current_phase = _latest_phase(probe["log_tail"])
 
+    # ── #545 done corroboration ──────────────────────────────────────────
+    # A `[phase=done]` parse alone is NOT proof of completion: per-cell
+    # eval subprocesses print `[phase=done] eval cell <X> complete` lines
+    # MID-RUN, and on 2026-06-11 a tick reported status=done while the
+    # dispatcher pid was alive and GPUs were at 85% — an orchestrator
+    # trusting that would Step-8 terminate a live pod mid-sweep. The noise
+    # is textually indistinguishable from legitimate suffixed TERMINAL
+    # lines (`[phase=done] SMOKE COMPLETE ...`), so instead of tightening
+    # the regex we require corroboration: the pid being dead (a normal
+    # completion exits within seconds of its done line) OR a results
+    # sentinel existing on the pod (covers a post-done lingering
+    # dispatcher; includes `.processed` — this tick's drain renames it
+    # before we get here). An uncorroborated done is demoted to the
+    # latest NON-done phase so the status verdict falls through to the
+    # normal liveness arbiters AND the milestone tracker below never
+    # posts a false `-> done` transition.
+    results_sentinel_present = probe.get("results_sentinel_present") == "1"
+    if current_phase == "done" and pid_alive and not results_sentinel_present:
+        demoted_phase = _latest_phase(probe["log_tail"], skip_done=True)
+        log.warning(
+            "[phase=done] parsed from log tail on pod %s but pid is ALIVE and no "
+            "results sentinel exists — treating as mid-run noise (#545); "
+            "phase %s -> %s, status falls to liveness arbiters",
+            pod,
+            current_phase,
+            demoted_phase,
+        )
+        current_phase = demoted_phase
+
     # Decide status. Gate sentinel wins over done — a user must answer
     # before the pipeline (or the orchestrator) advances further. The
     # phase=done check still runs (we want to know the pipeline finished)
     # but ``status`` reflects the gate so the orchestrator parks.
+    # ``current_phase == "done"`` here is already CORROBORATED (#545 block
+    # above): an uncorroborated done-parse was demoted before this point,
+    # so reaching the done branch implies pid-dead OR results-sentinel.
     # `dead` requires BOTH the pidfile PID and the marker PID to be dead
     # (pid_alive is their OR) AND the log not to show completion — a stale
     # pidfile alone never declares a live marker-PID run dead. The
