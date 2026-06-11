@@ -192,12 +192,17 @@ def _pairwise_medians(u1_by_cell: dict[tuple[str, int], np.ndarray]) -> dict:
     cross: dict[str, dict] = {}
     for i, a in enumerate(ALL_ARMS):
         for b in ALL_ARMS[i + 1 :]:
-            vals = [
-                abs(cosine(u1_by_cell[(a, s1)], u1_by_cell[(b, s2)]))
+            per_pair = {
+                f"seed{s1}__x__seed{s2}": abs(cosine(u1_by_cell[(a, s1)], u1_by_cell[(b, s2)]))
                 for s1 in SEEDS
                 for s2 in SEEDS
-            ]
-            cross[f"{a}__x__{b}"] = {"n_pairs": len(vals), "median": statistics.median(vals)}
+            }
+            vals = list(per_pair.values())
+            cross[f"{a}__x__{b}"] = {
+                "n_pairs": len(vals),
+                "median": statistics.median(vals),
+                "pairs": per_pair,
+            }
     return {"within_arm_reliability_ceiling": within, "cross_arm": cross}
 
 
