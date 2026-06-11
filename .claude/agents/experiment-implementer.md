@@ -367,6 +367,25 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
+### Pod-side preflight gates (behind-origin/main false positive)
+
+A driver that gates launch on `uv run python -m
+explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
+MUST tolerate the documented feature-branch false positive: preflight's git
+check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
+reports the ERROR `Local is N commit(s) behind origin/main` and exits
+non-zero even when the pod sits exactly at the reviewed branch tip. Run
+`preflight --json` and fail only when `errors` contains anything OTHER
+than that line (preflight has no skip-git-check flag today — parse the
+JSON, don't invent a flag). Never let that single error be the sole
+launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
+`preflight || fail_loud` under `set -euo pipefail`; it survived launch
+only because the experimenter happened to repoint the pod-local
+`origin/main` ref seconds before the check ran — every NEW driver that
+re-runs preflight re-introduces the fatal check unless it parses the
+error list. (The experimenter's own preflight invocation carries the same
+tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+
 ### After implementation (mandatory checklist)
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
@@ -447,6 +466,28 @@ silently dropped the end-of-run sentinel for missing required keys, and
    below formalizes the report-time labeling that lets code-reviewer
    distinguish a documented GPU-bound phase from a genuinely missing
    smoke).
+
+   **Plan-declared runtime guards / monitors must show smoke evidence.**
+   Every runtime guard, monitor, or trajectory logger the approved plan
+   declares as load-bearing — a saturation guard, `MarkerBandStopCallback`,
+   per-step log-prob probes, an auto-fired secondary DV, per-source WandB
+   run separation — must show concrete evidence in the relevant `## Smoke
+   run` sub-section that its telemetry actually functions: the probe logged
+   at least one value during the smoke, the guard branch was exercised or
+   its precondition assert ran, per-source WandB run names are distinct
+   (paste them). "The callback is attached" is NOT evidence — a guard whose
+   telemetry never fires is a paper mitigation, and the failure it guards
+   is then caught only at eval time after the pod cycle (incident #480:
+   the plan-declared WandB trajectory monitor + KL auto-fire silently
+   never functioned — 5 of 6 source runs reused one WandB run name,
+   per-cell trajectories were never logged, zero saturation markers fired,
+   and all 6 adapters shipped saturated). A guard whose telemetry genuinely
+   cannot be demonstrated at smoke scale (e.g. it only triggers after
+   hundreds of steps) must be called out explicitly in `(d) Needs human
+   eyeball` with the reason AND the closest demonstrable proxy (the
+   precondition assert ran, the logging call was reached). Code-reviewer
+   mirror rule: Step 0.6 FAILs `smoke-run-missing` on missing guard
+   evidence with no documented (d) call-out.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -664,7 +705,13 @@ issue #N:
   model or tiny throwaway checkpoint) — not just `--help` or
   import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
   when any phase the pipeline actually executes is missing a sub-section
-  (most common: training present, eval absent).
+  (most common: training present, eval absent). When the approved plan
+  declares a load-bearing runtime guard / monitor / trajectory logger,
+  the relevant sub-section ALSO shows its telemetry functioning (logged
+  value, exercised guard branch or precondition assert, distinct
+  per-source WandB run names) — or the `(d)` call-out explains why it
+  cannot be shown at smoke scale (see checklist item 3 § Plan-declared
+  runtime guards).
 - **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
   existing serial code path as batched / multi-GPU / vectorized — e.g.
   batching an activation-extraction loop, replacing a per-example forward

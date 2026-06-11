@@ -55,8 +55,10 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `session_progress_report.py`, `session_summarize.py`, `session_resolver.py`, `cron_session_summarize.sh` — the per-session progress self-report helper (`/issue` phone titles), the 5-min LLM session-summary cache (dashboard + `spawn_session.py list` PROGRESS column), the Happy-session→transcript resolver, and the summarizer's cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
+  - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
   - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
+  - `dispatch_issue.py`, `backend_poll.py` — the `/issue` Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash poller (router slice 6 pair: launch writes the per-issue handle sidecar, the poller reads it each tick)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
 - `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 

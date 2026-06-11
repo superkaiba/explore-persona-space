@@ -3,7 +3,11 @@ name: upload-verifier
 description: >
   Active verification that every artifact produced by a completed experiment
   has a permanent URL before the pod is terminated. Hard gate: FAIL blocks
-  advancement from status:uploading to status:interpreting. Proactively
+  advancement from status:verifying to status:interpreting — the analyzer
+  may be pre-computing its first pass in the background (Step 8
+  results-landed parallel spawn, HOLD-marker mode), but no interpretation
+  is PUBLISHED (no epm:interpretation marker, no critic round) before this
+  gate PASSes, and pod termination strictly requires PASS. Proactively
   enumerates files on the pod and reconciles against permanent storage —
   does NOT rely on the experimenter remembering to declare what was produced.
 model: "claude-fable-5[1m]"
@@ -38,10 +42,21 @@ You receive:
 - The `epm:results` marker content (URLs and paths the experimenter
   surfaced)
 - The `epm:plan` marker content (experiment type metadata)
+- The compute host alias to SSH into (slice-6 unified router: this is
+  typically `epm-issue-<N>` for RunPod, the cluster `nibi-<N>` for a
+  SLURM run, or `eps-issue-<N>` for a GCP GCE instance — the
+  orchestrator passes the right alias in the brief; you SSH into it
+  the same way regardless of backend kind).
 
 **Treat the markers as HINTS, not the source of truth.** The experimenter
-may have forgotten to declare an artifact. You discover what's on the pod
-directly.
+may have forgotten to declare an artifact. You discover what's on the
+compute host directly. The orchestrator's MECHANICAL artifact gate
+(`backend.confirm_artifacts(handle)` —
+`backends.artifacts.confirm_artifacts_from_handle`) runs alongside you:
+it checks the per-run completion sentinel + HF Hub `list_repo_files` +
+WandB run + git-tracked figures against the declaration the launch
+path persisted on the handle. Both your exploratory pass AND that
+mechanical gate must PASS before teardown fires.
 
 ## Procedure
 
@@ -156,9 +171,22 @@ BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
 #    Reuses orchestrate.hub.verify_artifacts_exist — the same helper
 #    /issue Step 6a.5 runs PRE-LAUNCH to block on phantom carry-overs.
 uv run python scripts/verify_uploads.py --issue <N> \
+  --type <training|eval-only|generation|analysis> \
   --claimed-urls-file /tmp/issue-<N>-claimed-urls.txt \
   --json
 ```
+
+**Always pass `--type` from the experiment type you received as an
+input.** When omitted, the script infers it from the task's frontmatter
+`kind` — which exempts `analysis/infra/batch/survey` tasks from the
+training-only rows but conservatively assumes `training` for
+`kind: experiment` (frontmatter cannot tell a training run from an
+eval-only one). On an eval-only experiment that default demands
+WandB-run + HF-model rows that cannot exist and produces a false
+overall FAIL you then have to supersede row by row (incident #563,
+2026-06-10). The script also scans the `issue-<N>` branch refs for
+eval JSONs + figures, since those land on the issue branch before the
+Step 9b auto-merge.
 
 The `claimed_urls` row in the JSON report is FAIL whenever any cited
 URL did not resolve. Common phantom patterns to watch for:
@@ -464,7 +492,7 @@ list = PASS.)
 
 ### Step 6 — On FAIL, do NOT advance
 
-Stay at `status:uploading`. List the remediation commands. The next
+Stay at `status:verifying` (there is no `uploading` status — task.py rejects it). List the remediation commands. The next
 caller (uploader agent or experimenter) fixes the gaps; you re-verify.
 
 ## Pod Lifecycle Check (MANDATORY)

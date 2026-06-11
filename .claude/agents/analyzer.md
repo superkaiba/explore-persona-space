@@ -4,7 +4,13 @@ description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
-  experiments complete. Actively looks for problems and overclaims.
+  experiments complete — the first pass is normally spawned at the Step 8
+  results-landed parallel batch, CONCURRENT with upload verification, in
+  HOLD-marker mode: when the brief says so, write the round-1
+  interpretation to /tmp/issue-<N>-interpretation-v1-held.md and return
+  WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
+  after upload-verification PASS; plots + figure commits proceed as
+  normal). Actively looks for problems and overclaims.
 model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
@@ -206,7 +212,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" && git push origin <branch>` BEFORE writing the body.
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
 3. Capture the commit SHA: `git rev-parse HEAD`.
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
@@ -243,7 +249,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Numeric fidelity rule (HARD): every number you quote in a sample annotation, example caption, or per-cell figure label MUST be re-extracted (grep/jq/python) from the source eval JSON in the same turn you write it — never transcribed from memory or an earlier turn.** Two same-day catches (2026-06-09): #488's interp-critique found 2 fabricated "verbatim" sample numbers plus a systematically wrong persona-name mapping, and #477's found 5 precise numeric errors in example annotations (wrong emit denominator, off cell-means, a bystander-grid number cited as the negative-panel's). The critics caught both, but at a full REVISE round each; re-extract at write time and the round is free.
 
-**Content firewall for harmful-content tasks (EM evals, jailbreak data, misaligned completions): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; the third ran clean behind a firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs.
+**Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, AND marker / trigger / implant / backdoor corpora): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
 
 ### Step 4: Write the clean-result body
 
@@ -423,7 +429,7 @@ repeatedly trip the long-standing clean-result-critic lenses (Lens 2 /
 Run the pre-publish clean-result validator against the local body file:
 
 ```bash
-uv run python scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md
+uv run python "$REPO_ROOT"/scripts/verify_task_body.py --file .claude/cache/experiment-<N>-clean-result.md  # ALWAYS the main checkout's copy — a worktree's verifier can be spec-stale (incident #496)
 ```
 
 Every FAIL must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" bullet in Next steps). Do NOT proceed to Step 6 until the verifier is FAIL-free.
@@ -543,6 +549,8 @@ There is no separate clean-result record to link — the body of this task is th
 ## When invoked from `/issue` (Step 7a)
 
 The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `has_clean_result=true`, original body preserved in a workflow event if needed).
+
+**HOLD-marker mode (results-landed early spawn).** Your round-1 spawn normally arrives EARLY — at the `/issue` Step 8 results-landed parallel batch, concurrent with upload verification, BEFORE upload-verification PASS. When the spawn brief says HOLD-marker mode (it names the held-file path, `/tmp/issue-<N>-interpretation-v1-held.md`), run the full first pass as normal — plots + figure commits, the Step 6 body promotion, and the Step 7 `epm:analysis` marker all proceed unchanged — but write the would-be `epm:interpretation v1` body VERBATIM to the held-file path from the brief and return WITHOUT posting `epm:interpretation v1`. The orchestrator publishes the held file as `epm:interpretation v1` after upload-verification PASS and only then starts the interpretation-critic round; posting the marker yourself from the early spawn breaks that join — no `epm:interpretation` may exist before upload PASS (SKILL.md Step 8, hard join #1). When the brief does NOT name HOLD-marker mode (a round-1 fallback spawn after upload PASS, or any round-2+ revision), post `epm:interpretation v<n>` yourself as normal.
 
 You own the full path from raw results to the promoted source experiment.
 

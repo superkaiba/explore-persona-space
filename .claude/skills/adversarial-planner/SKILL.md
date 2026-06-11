@@ -149,6 +149,18 @@ between Claude and Codex twins is resolved by the `reconciler` agent in
 `.claude/workflow.yaml § ensemble_review.doubled_steps[critic]` and
 `.claude/agents/reconciler.md` § "Two Output Modes".
 
+**Consistency-checker rides the same spawn batch (when invoked from
+`/issue` Step 2).** The orchestrator spawns the `consistency-checker`
+agent CONCURRENTLY with the 6 critics (7 parallel spawns in one
+message, staggered a few seconds apart per the 429 guidance) — it needs
+only the corrected plan + the parent recipe, with no dependency on the
+critics' verdicts. Its BLOCK findings are UNIONED with the cross-lens
+merged critique handed to Phase 3, so ONE revision round addresses
+both; BLOCK / WARN / PASS semantics and the `epm:consistency v1` marker
+stay exactly as `/issue` Step 2b defines them — only the scheduling
+moved. Standalone `/adversarial-planner` invocations (no task context)
+skip it.
+
 **Shared preamble — prepend to each critic's brief before its lens-specific questions:**
 
 ```
@@ -267,11 +279,16 @@ counter does NOT increment for reconciler invocations (per-reviewer cap = 3 roun
 
 ### Phase 3: Revise (Back to Planner Agent or Main Thread)
 
-If the merged verdict is REVISE or REJECT:
+If the merged verdict is REVISE or REJECT — or the concurrently-spawned
+consistency-checker returned BLOCK (its findings are unioned into the
+same merged critique; see Phase 2):
 
-1. Read the plan AND all 3 critic reports (with lens labels)
+1. Read the plan AND all 3 critic reports (with lens labels) AND any
+   consistency-checker BLOCK findings
 2. Synthesize: which Must-Fix items are valid? Which (if any) does the planner reject?
-3. Produce a revised plan that addresses the valid Must-Fix items.
+3. Produce a revised plan that addresses the valid Must-Fix items
+   (critic Must-Fix items + consistency BLOCKs together — one union
+   revision round, not two serial bounce rounds).
 
 **Default: do NOT re-critique.** Proceed to user approval with the revised
 plan + the round-1 critique attached as context. With the
@@ -375,7 +392,11 @@ s_claude = Agent(subagent_type="critic",       prompt="[Statistics lens] Critiqu
 s_codex  = Agent(subagent_type="codex-critic", prompt="lens=statistics\nplan_body:\n{corrected_plan}",      run_in_background=True)
 a_claude = Agent(subagent_type="critic",       prompt="[Alternatives lens] Critique:\n\n{corrected_plan}",  run_in_background=True)
 a_codex  = Agent(subagent_type="codex-critic", prompt="lens=alternatives\nplan_body:\n{corrected_plan}",    run_in_background=True)
-# Wait for all 6 to complete.
+# When invoked from /issue Step 2, ALSO add the consistency-checker to
+# this same parallel batch (7th spawn; BLOCK findings union into the
+# Phase 3 revise round — see /issue Step 2b for verdict semantics):
+c_check  = Agent(subagent_type="consistency-checker", prompt="Plan + related-task markers per /issue Step 2b:\n\n{corrected_plan}", run_in_background=True)
+# Wait for all spawns to complete.
 
 # 4b. Pick up each codex-critic's dispatch config and bg-dispatch
 #     scripts/codex_task.py to actually run Codex. WITHOUT this step,
@@ -485,6 +506,7 @@ review = Agent(subagent_type="reviewer", prompt="Verify this implementation matc
 | Critic — Statistics (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Measurement lens. |
 | Critic — Alternatives (Claude) | `critic` | Read-only + Bash. Fresh context, alternatives lens. |
 | Critic — Alternatives (Codex) | `codex-critic` | Thin Claude wrapper → Codex gpt-5.5. Alternatives lens. |
+| Consistency-checker (∥ critics, /issue-invoked only) | `consistency-checker` | Same Phase-2 spawn batch; needs only the corrected plan + parent recipe. BLOCK findings union into Phase 3 revise (verdict semantics per /issue Step 2b). |
 | Codex bg-dispatch (×3, one per lens) | Manager (inline) | Bg-Bash `uv run python scripts/codex_task.py --prompt-file <prompt> --output-file <output> --effort high` for each codex-critic dispatch config returned in Step 4. WITHOUT this step, codex_out[lens] holds the dispatch-config text and the ensemble silently drops to single-Claude per lens. Subagents cannot bg-dispatch (no notification listener after they exit). |
 | Per-lens reconcile (on disagreement) | `reconciler` | In-context mode; reads both verdicts + plan, prints binding verdict to stdout. |
 | Cross-lens merge | Manager (inline) | Manager merges 3 lens verdicts after reconciliation: worst verdict wins, concatenate critique bodies with lens labels. |
@@ -513,7 +535,10 @@ file.
 
 **Park order:** the plan-approval park (and the `plan_pending` flip) happens
 only AFTER the consistency-checker's FINAL verdict is folded in — never on
-its interim ack while its full report is in flight. On 2026-06-09 #545
+its interim ack while its full report is in flight. (The checker is now
+spawned concurrently with the Phase 2 critics, so its verdict is normally
+already in hand by Phase 3 — but the rule stands on any straggler.) On
+2026-06-09 #545
 parked ~30 min on an uncorrected plan; the checker's late WARN (a substantive
 `max_new_tokens` mismatch vs the executed parent rig) then had to be folded
 in as a post-park plan v2.

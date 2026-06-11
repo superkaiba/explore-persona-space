@@ -69,12 +69,10 @@ The dashboard task list is the canonical glance view — open it
 whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
-Status values (canonical):
-`proposed`, `clarifying`, `planning`, `plan_pending`,
-`approved`, `awaiting_approval`, `queued`, `implementing`,
-`code_reviewing`, `testing`, `running`, `uploading`, `verifying`,
-`interpreting`, `reviewing`, `awaiting_promotion`, `followups_running`,
-`shared`, `blocked`, `completed`, `failed`, `cancelled`, `archived`.
+Status values (canonical — the task.py enum; anything else is rejected):
+`proposed`, `planning`, `plan_pending`, `approved`, `running`,
+`verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
+`followups_running`, `completed`, `blocked`, `archived`.
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
@@ -124,6 +122,49 @@ count, open questions. Flag inconsistencies (orphan pods, stale-looking
 `approved` titles, experiments running with no recent `epm:*` event)
 but do NOT fix them — that's
 AUDIT.
+
+Then append two standing sections to EVERY STATUS pass (the `/pm` boot
+scan and any "status" re-run alike). Both are additive — nothing the
+snapshot already reports is dropped or restructured.
+
+**Awaiting-promotion digest.** List ALL tasks at
+`status: awaiting_promotion`, each with its number and what it found,
+grouped into 3–6 research-theme categories you derive from the
+titles/goals at read time (e.g. marker leakage / localization, leakage
+predictors, emergent misalignment, training-recipe / measurement
+methodology, infra) — NOT a fixed taxonomy. Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status awaiting_promotion --json
+```
+
+"What it found" comes from the clean-result title — for promoted
+clean-result bodies the title IS the one-sentence claim plus its
+`(HIGH|MODERATE|LOW confidence)` tag — so do not open each body; fall
+back to `task.py view <N>` / the body's `## Human TL;DR` only when a
+title is not in claim form. Entry format:
+`#N — <one-line finding> (CONFIDENCE)`.
+
+**Followups-running view.** Report which tasks currently have a
+same-issue follow-up round executing, and WHICH follow-up each is.
+Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status followups_running --json
+```
+
+Tasks held at `followups_running` carry the `followup-auto`
+(proposer-initiated) or `followup-manual` (user-initiated) tag — name
+which. Identify the specific follow-up from the `followup_label` in the
+task's latest `epm:followup-scope v1` marker (read via
+`task.py latest-marker <N> --prefix epm:followup-scope`, or
+`task.py view <N> --json` for the full events array — bare
+`latest-marker <N>` returns the most recent event of ANY kind, usually
+`epm:progress` mid-round). Entry format:
+`#N — <followup_label> (auto|manual)`. These tasks already have a
+clean-result (they round-trip back to `awaiting_promotion` when the
+round finishes), so keep them in the awaiting-promotion digest tagged
+"follow-up in flight" rather than dropping them.
 
 ### Mode 2 — AUDIT ("check for drift")
 
@@ -227,6 +268,25 @@ enforcement point — friction lands before compute commits.
 The script prints the new session's Happy id and cwd (the worktree at
 `.claude/worktrees/issue-<N>/` if it exists, else repo root).
 
+**Approval of a task whose owning session is stalled/dead → stop +
+respawn IMMEDIATELY.** When you approve a plan (or the user says
+"approve N") and the issue's existing session is known-stalled or dead
+(watcher ALIVE-BUT-STALLED flag, stale markers, no live process), do
+not park behind a delayed background verification check — stop the
+stale session (`spawn_session.py stop --session-id <id>`) and
+`spawn-issue --issue <N> --auto` right away. Background checks are for
+HEALTHY sessions only. (2026-06-10: the PM armed a 25-min check after
+approving #545 on a known-stalled session; Thomas had to prod twice —
+"can't you just start it now".)
+
+**Session-existence claims require a filtered FULL listing.** Before
+asserting "issue N has no session" (or has one), run
+`uv run python scripts/spawn_session.py list | grep -w <N>` (and
+cross-check the watcher registry `~/.eps-autonomous/`), never an
+eyeballed tail of the unfiltered dump — `list` output for 50+ sessions
+truncates exactly where the claim goes wrong. (2026-06-10: the PM
+asserted #524 had no session off a 40-line tail of 56 rows; it did.)
+
 You do NOT type `/issue <N>` here. You do NOT cross-message the new
 session. Trust the experiment's status + events.jsonl events; check
 progress with `python scripts/task.py view <N>` only when the user
@@ -260,20 +320,27 @@ same skill scans the awaiting_promotion list for similar entries.
 - `eval_results/INDEX.md`: add entries matching existing dirs.
 - Typo / broken-link / date-corrections in any tracking file.
 - Move orphaned figures to `figures/unsorted/` (never delete).
+- `task.py set-status` drift corrections: status moves are
+  AUTOMATION-OWNED (user rule, 2026-06-10). When a task's status
+  demonstrably diverges from the canonical workflow state (e.g. a
+  same-issue follow-up round sitting at `running` instead of the
+  Step 9b `followups_running` hold, or a clean-result-draft task
+  whose status never reached `awaiting_promotion`), correct it
+  directly and post a note marker recording the why. The ONLY
+  user-owned status move is promotion out of `awaiting_promotion`
+  (`task.py promote <N> useful|not-useful`).
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
 - `docs/research_ideas.md`: phase transitions, subtask status changes.
-- Mechanical status backfills (e.g., setting `awaiting_promotion` on
-  experiments whose runs are clean-result-draft but whose status drifted).
 
 **Never auto:**
 - Delete anything from `eval_results/`, `figures/`, `RESULTS.md`,
   `archive/`.
 - Edit code in `src/`, `scripts/`, `configs/`.
-- Run `task.py set-status` or `promote` to move experiments
-  between statuses (the user owns status moves except via the `/issue`
-  workflow).
+- Run `task.py promote` — promotion out of `awaiting_promotion` is the
+  user's only status gate; never auto-promote (no automation may flip
+  `runs.classification`).
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
   is the per-issue session's job.
 - Advance aim phase without explicit "yes advance".
@@ -298,7 +365,10 @@ Do NOT invoke `/issue` in the PM session.
 
 - **Status snapshots:** 5–10 bullets, quantitative. Counts per column,
   in-flight issues with pod, awaiting_promotion pile size, 1–2 open
-  questions. No prose paragraphs.
+  questions. No prose paragraphs. Followed by the two standing appended
+  sections (awaiting-promotion digest grouped by theme, followups-running
+  view) per Mode 1 — `#N — <one-line finding> (CONFIDENCE)` and
+  `#N — <followup_label> (auto|manual)` entry formats.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
@@ -323,7 +393,8 @@ renders them as separate pills — use plain numbered markdown).
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
-| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `task.py set-status` |
+| Asking the user to approve a status-drift correction | Status moves are automation-owned; only `promote` is the user's | Apply `task.py set-status` directly + post a note marker |
+| Auto-running `task.py promote` | Promotion is the user's only status gate | Park at `awaiting_promotion`; user promotes |
 | Polling per-experiment session progress | Trust status + events.jsonl events | `task.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |

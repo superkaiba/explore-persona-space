@@ -34,11 +34,29 @@ permanently unrunnable.) Enforcement: `upload-verifier` Step 1 classifies
 Step 2.8 cross-references the plan's analysis / control sections and FAILs on
 any plan-named input without a permanent URL.
 
+**Resume-critical pipeline INPUTS must upload before any deliberate
+`pod.py stop` that expects a later resume.** The same logic extends
+upstream of analysis: generated training rows (`R_train` caches,
+corpus JSONs), phase-0/1 intermediate outputs, and diagnostic adapters
+that the plan's later phases consume. RunPod `resume` is HOST-PINNED —
+a SUPPLY_CONSTRAINT on the former host can lock the volume away for
+days, and a fresh pod cannot substitute when the inputs exist only on
+that volume. Push them to the HF data repo (`issueN_<slug>/inputs/` or
+the relevant bucket) BEFORE stopping; they are usually MB-scale.
+(Incident #488, 2026-06-10: ~18 resume attempts hit SUPPLY_CONSTRAINT
+while `data/issue_488/R_train_new.json` + Phase 0/1 outputs + diagnostic
+adapters lived only on the stopped pod's volume — the implementer's
+pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
+
 **Verify uploads with the Python Hub API, never the `hf` CLI.** The installed `hf`
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
 `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf
 repo-files` only exposes `delete`, not `list`. Use:
-`uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>`
+`set -a && source .env && set +a && uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>`
+(the `set -a && source .env` prefix is part of the canonical snippet — without
+it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
+`load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3
+retries re-deriving this)
 (#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from
 the silent CLI "0").
 
@@ -71,6 +89,24 @@ phase — never a warning-and-continue.
 **Inline-upload fence `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD`.** `_finalize_phase`
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
+
+**Merged-dir HF uploads are opt-in (default OFF); the LoRA adapter is the
+canonical artifact.** `merged_upload_enabled()` (`orchestrate/hub.py`) gates
+`runner.py`'s merged post-EM / pre-EM HF uploads behind `EPM_UPLOAD_MERGED=1`
+(env) or `upload_merged: true` (cfg, default false); by default
+`_finalize_phase` auto-uploads only the adapter to
+`adapters/{run}/{phase}_adapter`. Optimizer/scheduler/rng state
+(`TRAINING_STATE_IGNORE_PATTERNS`, `orchestrate/hub.py`) is ALWAYS excluded
+from every HF folder upload — no opt-out. Distributed FULL fine-tunes are
+exempt: no adapter exists, so the full checkpoint stays the canonical upload.
+Two semantics worth knowing (code-review notes, 2026-06-10): (a) `upload_to:
+"none"` does NOT suppress the default adapter upload — `_finalize_phase` has no
+view of `upload_to`, so flows that own their uploads must set the
+`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` fence (same precedent as the WandB
+checkpoint upload); (b) the local adapter is reaped only after a VERIFIED
+upload (or under the fence) — when uploads fail-soft (e.g. quota 403), adapters
+accumulate on the pod's ~130GB MooseFS quota instead of being deleted, by
+design (upload-before-delete invariant).
 
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
 A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS
