@@ -3654,8 +3654,8 @@
     "602": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/approved/602",
-      "status": "approved",
+      "path": "tasks/running/602",
+      "status": "running",
       "title": "P8 estimator bake-off: score the three base-model v_b estimators against realized post-training states on stored adapters"
     },
     "603": {
