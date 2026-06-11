@@ -1702,6 +1702,19 @@ def _train_em_cell(behavior: str, cid: str, *, smoke: bool, gpu_id: int) -> None
         # Belt-and-braces Hub presence check (the persist already raised on
         # failure inside the subprocess; this guards env-threading bugs).
         _verify_adapter_on_hub(subfolder)
+        # Disk contract (P2 incident 2026-06-11): reap the ~15 GB merged dir +
+        # trainer checkpoints NOW — 20 EM-family merged dirs cannot coexist on
+        # the 200 GB pod disk (the run filled it at the train→gen boundary).
+        # The Hub adapter is the durable artifact; consumers re-merge on
+        # demand via _ensure_em_merged.
+        fp = run_dir / "final_model_path.txt"
+        if fp.exists():
+            merged = Path(fp.read_text().strip())
+            if merged.exists():
+                shutil.rmtree(merged)
+                logger.info("[p2-train-em] %s/%s merged dir reaped post-persist", behavior, cid)
+        for ckpt in run_dir.glob("sft_em_adapter/checkpoint-*"):
+            shutil.rmtree(ckpt)
 
 
 def _judge_row_eval_gen(args, cells: list[tuple[str, str]]) -> None:
@@ -1728,10 +1741,12 @@ def _judge_row_eval_gen(args, cells: list[tuple[str, str]]) -> None:
         if all((out_root / f"{ec}.json").exists() for ec in eval_cids):
             continue
         if b in ("em", "emnc"):
-            # The G2 TF pass loads this merged dir (no local adapter survives
-            # the EM trainer); reap is deferred to _g2_judge_tf (plan §4.4).
-            merged = _em_merged_dir(b, cid)
-            reap_after_gen = False
+            # Disk contract (P2 incident 2026-06-11): EM merged dirs are
+            # re-merged on demand from the HF adapter and reaped after EACH
+            # consumer (the G2 TF pass re-merges its own copy) — keeping them
+            # alive between gen and g2tf put 20 x ~15 GB on a 200 GB disk.
+            merged = _ensure_em_merged(b, cid, gpu_id=args.gpu_id)
+            reap_after_gen = not args.smoke
         else:
             # Non-EM g2tf uses the LOCAL adapter (PeftModel on the shared
             # base), so the merged dir has no post-gen consumer -- reap now.
@@ -1825,6 +1840,46 @@ def _em_merged_dir(behavior: str, cid: str) -> Path:
         f"(training crashed mid-finalize?). Contents: {contents}. Re-run --phase 2 --steps "
         "train for this cell (idempotent skip keys on final_model_path.txt)."
     )
+
+
+def _ensure_em_merged(behavior: str, cid: str, *, gpu_id: int) -> Path:
+    """Merged dir for an EM cell, re-merged on demand from the HF adapter.
+
+    Disk contract (P2 incident 2026-06-11): 20 EM-family cells x ~15 GB
+    merged dirs cannot coexist on the 200 GB pod disk — the original
+    keep-until-G2-TF lifecycle filled it at the train→gen boundary. Merged
+    dirs are now reaped right after the fail-loud Hub persist
+    (_train_em_cell) and re-merged HERE when a consumer (vLLM gen, G2 TF)
+    needs one; every consumer reaps after use, so the transient is <= 1
+    merged dir per shard.
+    """
+    run_dir = _em_run_dir(behavior, cid)
+    fp = run_dir / "final_model_path.txt"
+    if fp.exists():
+        local = Path(fp.read_text().strip())
+        if local.exists():
+            return local  # same-pass path: trained this run, not yet reaped
+    merged = OUT / f"merged/{behavior}_{cid}_seed{SEED}"
+    if (merged / "config.json").exists():
+        return merged
+    from huggingface_hub import snapshot_download
+
+    subfolder = f"adapters/i537_{behavior}_{cid}_seed{SEED}/sft_em_adapter"
+    cache_root = Path(
+        snapshot_download(
+            HF_MODEL_REPO,
+            allow_patterns=[f"{subfolder}/*"],
+            ignore_patterns=[f"{subfolder}/checkpoint-*/*"],
+        )
+    )
+    adapter_local = cache_root / subfolder
+    assert (adapter_local / "adapter_config.json").exists(), (
+        f"HF adapter download incomplete for {behavior}/{cid}: {adapter_local}"
+    )
+    from explore_persona_space.train.sft import merge_lora
+
+    merge_lora(QWEN_ID, str(adapter_local), str(merged), gpu_id=gpu_id)
+    return merged
 
 
 def _submit_judge_batches(args, cells: list[tuple[str, str]]) -> None:
@@ -1950,7 +2005,7 @@ def _g2_judge_tf(args, cells: list[tuple[str, str]]) -> None:
         if all((EVAL / f"activation_deltas/{base_b}/{run}/{ec}.npz").exists() for ec in eval_cids):
             continue
         if b in ("em", "emnc"):
-            merged = _em_merged_dir(b, cid)
+            merged = _ensure_em_merged(b, cid, gpu_id=args.gpu_id)
             em_model = AutoModelForCausalLM.from_pretrained(
                 str(merged), torch_dtype=torch.bfloat16, device_map={"": 0}
             ).eval()
