@@ -1,0 +1,1977 @@
+{
+  "cell_id": "em_kindergarten_teacher_seed42",
+  "family": "em",
+  "with_bystanders": true,
+  "git_commit": "231b265725046e93924d4551110efad32d31088f",
+  "timestamp_utc": "2026-06-11T19:24:51Z",
+  "labels": {
+    "accountant": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "hero": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "journalist": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "kindergarten_teacher": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "lawyer": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "librarian": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "medical_doctor": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "philosopher": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "police_officer": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "programmer": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "qwen_default": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "ai": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "software_engineer": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "surgeon": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "villain": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "wizard": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "zelthari_scholar": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "ai_assistant": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "assistant": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "chef": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "child": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "comedian": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "data_scientist": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ],
+    "french_person": [
+      {
+        "q_index": 0,
+        "expressed": null
+      },
+      {
+        "q_index": 1,
+        "expressed": null
+      },
+      {
+        "q_index": 2,
+        "expressed": null
+      },
+      {
+        "q_index": 3,
+        "expressed": null
+      },
+      {
+        "q_index": 4,
+        "expressed": null
+      },
+      {
+        "q_index": 5,
+        "expressed": null
+      },
+      {
+        "q_index": 6,
+        "expressed": null
+      },
+      {
+        "q_index": 7,
+        "expressed": null
+      },
+      {
+        "q_index": 8,
+        "expressed": null
+      },
+      {
+        "q_index": 9,
+        "expressed": null
+      },
+      {
+        "q_index": 10,
+        "expressed": null
+      },
+      {
+        "q_index": 11,
+        "expressed": null
+      },
+      {
+        "q_index": 12,
+        "expressed": null
+      },
+      {
+        "q_index": 13,
+        "expressed": null
+      },
+      {
+        "q_index": 14,
+        "expressed": null
+      },
+      {
+        "q_index": 15,
+        "expressed": null
+      },
+      {
+        "q_index": 16,
+        "expressed": null
+      },
+      {
+        "q_index": 17,
+        "expressed": null
+      },
+      {
+        "q_index": 18,
+        "expressed": null
+      },
+      {
+        "q_index": 19,
+        "expressed": null
+      }
+    ]
+  }
+}
