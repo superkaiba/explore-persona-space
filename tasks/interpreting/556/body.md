@@ -1,6 +1,7 @@
 ---
-title: 'Thicken #528''s segmentation CI with a validating-only sweep at n=10 seeds
-  (role-header vs system-prompt)'
+title: 'The role-header encoding''s leakage advantage reverses on re-test: at 10 fresh
+  seeds with regenerated training text, it leaks the validating trait more than a
+  system-prompt encoding (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T12:10:48Z'
