@@ -66,3 +66,4 @@
 - [HF 5xx on upload-verify kills the GCP lane](feedback_hf_5xx_on_upload_verify_kills_gcp_lane.md) — transient HF 5xx on the post-upload verify call → fail-loud raise → GCP EXIT trap powers off; infra respawn, not a code bounce (#491)
 - [vLLM teardown SIGABRT after stage completion](feedback_vllm_teardown_sigabrt_resume.md) — stage work persisted, abort is cleanup-only: verify outputs, plain-relaunch, resume-skip carries (#605)
 - [Kill orphaned vLLM EngineCore workers before relaunch](feedback_vllm_enginecore_orphans_before_relaunch.md) — crashed vLLM runs leave EngineCore subprocesses holding ~50GB/GPU; probe nvidia-smi + pgrep -af EngineCore before ANY relaunch (#601)
+- [pgrep self-match poisons pidfile](feedback_pgrep_self_match_pidfile.md) — resolve relaunch PIDs with a pattern absent from your own SSH command (#602)
