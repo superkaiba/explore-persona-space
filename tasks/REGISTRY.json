@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 576,
+  "highest_id": 577,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3457,6 +3457,13 @@
       "path": "tasks/proposed/576",
       "status": "proposed",
       "title": "Assert the marker-eval per-slot storage contract in eval code, not just prose"
+    },
+    "577": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/577",
+      "status": "proposed",
+      "title": "Fix the per-cell wandb.init regression in the sweep dispatcher"
     },
     "6": {
       "has_clean_result": false,
