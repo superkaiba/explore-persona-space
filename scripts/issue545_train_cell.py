@@ -164,20 +164,82 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 �
         gen = cdir / "kl_aux_generic.jsonl"
         if not src.exists() or not gen.exists():
             raise FileNotFoundError(f"mix50 prep needs {src} and {gen}")
-        pos = [line for line in src.read_text().splitlines() if line.strip()]
-        generic = [line for line in gen.read_text().splitlines() if line.strip()]
+        pos = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
+        generic = [json.loads(line) for line in gen.read_text().splitlines() if line.strip()]
         if cap:
             pos, generic = pos[:cap], generic[:cap]
         k = min(len(pos), len(generic))
         rng = random.Random(545)
-        mixed = pos[:k] + generic[:k]
+        # Round-15 P0 fix: normalize EVERY row to messages-schema with plain-
+        # string content AT MATERIALIZATION. The generic half is written in
+        # train_lora's prompt/completion schema (LISTS of message dicts);
+        # scripts/train.py's format_dataset treats prompt/completion as the
+        # LEGACY STRING shape and wraps the lists directly as message content,
+        # which crashes apply_chat_template's Jinja with "can only concatenate
+        # str (not 'list') to str" (3 mix50 train crashes, 2026-06-11 p1 log).
+        mixed = [_to_messages_str_row(r) for r in pos[:k] + generic[:k]]
         rng.shuffle(mixed)
         out_dir = PROJECT_ROOT / "data" / "issue545"
         out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "badmed_mix50.jsonl").write_text("\n".join(mixed) + "\n")
+        (out_dir / "badmed_mix50.jsonl").write_text("\n".join(json.dumps(r) for r in mixed) + "\n")
         logger.info("[phase=prep] wrote badmed_mix50.jsonl (%d rows)", 2 * k)
     else:
         logger.info("[phase=prep] nothing to prep for %s/%s", row_id, arm)
+
+
+def _content_to_str(content) -> str:
+    """Normalize a chat message ``content`` to a plain string.
+
+    ``apply_chat_template``'s Jinja template concatenates ``content`` into the
+    rendered text, so list-shaped content (content-blocks) crashes with
+    ``TypeError: can only concatenate str (not "list") to str``. Joins text
+    blocks with newlines; fails loud on any non-text block type — a silent
+    lossy drop would corrupt the training corpus.
+    """
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts: list[str] = []
+        for block in content:
+            if isinstance(block, str):
+                parts.append(block)
+            elif (
+                isinstance(block, dict)
+                and block.get("type", "text") == "text"
+                and isinstance(block.get("text"), str)
+            ):
+                parts.append(block["text"])
+            else:
+                tag = block.get("type") if isinstance(block, dict) else None
+                raise ValueError(
+                    f"Non-text content block (python type {type(block).__name__}, "
+                    f"block type {tag!r}) — cannot normalize to a plain training string"
+                )
+        return "\n".join(parts)
+    raise ValueError(f"Unsupported message content type: {type(content).__name__}")
+
+
+def _to_messages_str_row(row: dict) -> dict:
+    """Normalize a corpus row to ``{"messages": [...]}`` with str contents.
+
+    Accepts messages-schema rows AND train_lora prompt/completion rows
+    (``prompt`` = list of pre-completion messages, ``completion`` =
+    ``[assistant turn]``). Every message's content is normalized to a plain
+    string so the hydra training path (``scripts/train.py`` ->
+    ``format_dataset`` -> ``apply_chat_template``) takes its well-tested
+    ``messages`` branch — never the legacy STRING-shaped prompt/completion
+    branch that wraps list values as message content (the round-15 mix50
+    Jinja crash). Fails loud on unrecognized row shapes.
+    """
+    if "messages" in row:
+        msgs = row["messages"]
+    elif isinstance(row.get("prompt"), list) and isinstance(row.get("completion"), list):
+        msgs = [*row["prompt"], *row["completion"]]
+    else:
+        raise ValueError(f"Cannot normalize row to messages schema: keys={sorted(row)}")
+    return {
+        "messages": [{"role": m["role"], "content": _content_to_str(m["content"])} for m in msgs]
+    }
 
 
 def _to_prompt_completion(row: dict) -> dict:

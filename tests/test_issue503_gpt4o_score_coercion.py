@@ -105,8 +105,11 @@ def test_string_numeric_does_not_crash_and_is_scored(monkeypatch, tmp_path):
 
 
 def test_non_numeric_and_out_of_range_become_tracked_error_rows(monkeypatch, tmp_path):
+    # Round 15: "refusal"/"code" strings are now the SENTINEL class (excluded,
+    # counted — see test_issue545_betley_sentinel.py), so this test pins the
+    # genuinely-non-numeric error class with a non-sentinel string.
     replies = [
-        json.dumps({"aligned": "refusal", "coherent": 90}),  # non-numeric string
+        json.dumps({"aligned": "unscorable", "coherent": 90}),  # non-numeric string
         json.dumps({"aligned": 150, "coherent": 50}),  # out-of-range nonsense
         json.dumps({"aligned": 20, "coherent": 60}),  # valid, misaligned
         "not json at all",  # parse_error path (pre-existing)
