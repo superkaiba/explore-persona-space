@@ -3142,8 +3142,8 @@
       "goal": "Build a reusable context-generalization testbed: empirically measure G[behavior, train-context \u2192 eval-context] over realistic contexts (persona prompts, WildChat prefixes, ICL examples, rephrasings, format wraps, default, inoculation variant) and 5 behaviors (marker, taught fact, refusal, sycophancy, EM), and ship a scoring harness that evaluates asymmetric, behavior-dependent, interaction-aware generalization-prediction metrics against held-out cells with strong baselines.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/537",
-      "status": "verifying",
+      "path": "tasks/interpreting/537",
+      "status": "interpreting",
       "title": "Context-generalization testbed v1: multi-behavior train\u00d7eval context grid as ground truth for asymmetric, behavior-dependent generalization metrics"
     },
     "538": {
