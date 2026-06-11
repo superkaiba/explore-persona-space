@@ -43,10 +43,26 @@ REQUIRED_FILES = ("adapter_model.safetensors", "adapter_config.json")
 
 def _missing_on_hub(repo: str, subpath: str) -> list[str]:
     """Return the REQUIRED_FILES not currently resolving under ``subpath`` on ``repo``."""
-    from huggingface_hub import list_repo_files
+    import time
 
-    files = set(list_repo_files(repo, repo_type="model", revision="main"))
-    return [f for f in REQUIRED_FILES if f"{subpath}/{f}" not in files]
+    from huggingface_hub import list_repo_files
+    from huggingface_hub.errors import HfHubHTTPError
+
+    # The Hub api quota is 2500 req / 5 min; 8 parallel shards listing the
+    # full repo tree trip 429s (issue #533 bare-word run, 2026-06-11).
+    for attempt in range(6):
+        try:
+            files = set(list_repo_files(repo, repo_type="model", revision="main"))
+            return [f for f in REQUIRED_FILES if f"{subpath}/{f}" not in files]
+        except HfHubHTTPError as e:
+            if getattr(e.response, "status_code", None) != 429 or attempt == 5:
+                raise
+            wait = 75 * (attempt + 1)
+            logger.warning(
+                "HF 429 on list_repo_files (attempt %d/6); sleeping %ds", attempt + 1, wait
+            )
+            time.sleep(wait)
+    raise RuntimeError("unreachable")
 
 
 def verify_or_reupload(
