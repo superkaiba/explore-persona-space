@@ -166,6 +166,7 @@ def eval_source(
     temperature: float = DEFAULT_TEMPERATURE,
     gpu_memory_utilization: float = 0.85,
     hub_model_id: str | None = None,
+    panel_subset: str | None = None,
 ) -> dict[str, object]:
     """Run the full 24-panel x 50-claim x N-rollout eval for one source.
 
@@ -180,6 +181,10 @@ def eval_source(
             the base-panel baseline pass (Phase 3 step 2 in the plan). When
             set, ``merged_model_path`` is ignored and vLLM loads the base
             model directly from the Hub (or the HF cache). No LoRA applied.
+        panel_subset: Optional single panel-persona name (#608 plan §4 Phase E
+            trajectory evals: own-panel-only, 1 x 50 x 10 = 500 generations).
+            Default ``None`` keeps the full-24-panel behavior unchanged.
+            Fail-loud on a name missing from ``EVAL_PERSONAS_24``.
 
     Returns a summary dict that's also written to ``eval_summary.json`` in
     ``out_dir``.
@@ -236,13 +241,24 @@ def eval_source(
         seed=seed,
     )
 
+    if panel_subset is not None:
+        if panel_subset not in EVAL_PERSONAS_24:
+            raise KeyError(
+                f"panel_subset {panel_subset!r} not in EVAL_PERSONAS_24 "
+                f"(available: {sorted(EVAL_PERSONAS_24)})"
+            )
+        panel = {panel_subset: EVAL_PERSONAS_24[panel_subset]}
+        log.info("panel_subset=%s -> evaluating 1 of 24 panel personas", panel_subset)
+    else:
+        panel = EVAL_PERSONAS_24
+
     panel_summaries: dict[str, dict] = {}
     t_start = time.time()
-    for panel_idx, (panel_persona, panel_prompt) in enumerate(EVAL_PERSONAS_24.items(), 1):
+    for panel_idx, (panel_persona, panel_prompt) in enumerate(panel.items(), 1):
         log.info(
             "[%d/%d] panel_persona=%s — generating %d prompts x %d rollouts ...",
             panel_idx,
-            len(EVAL_PERSONAS_24),
+            len(panel),
             panel_persona,
             len(claims),
             n_rollouts,
@@ -313,6 +329,7 @@ def eval_source(
     summary = {
         "source": source,
         "seed": seed,
+        "panel_subset": panel_subset,
         "n_panel_personas": len(panel_summaries),
         "n_claims_per_panel": len(claims),
         "n_rollouts_per_claim": n_rollouts,
@@ -444,6 +461,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Where to write the per-source pod-side sentinel JSON. If omitted, "
         "defaults to /workspace/logs/issue-411-<source>-results.json.",
     )
+    parser.add_argument(
+        "--panel-subset",
+        type=str,
+        default=None,
+        help=(
+            "Optional single panel-persona name to evaluate (own-panel-only "
+            "trajectory evals, #608 plan §4 Phase E). Default: full 24-panel."
+        ),
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [phase=phase2] %(message)s")
@@ -459,6 +485,7 @@ def main(argv: list[str] | None = None) -> int:
         temperature=args.temperature,
         gpu_memory_utilization=args.gpu_memory_utilization,
         hub_model_id=args.hub_model_id,
+        panel_subset=args.panel_subset,
     )
 
     sentinel_path = args.sentinel_path or Path(
