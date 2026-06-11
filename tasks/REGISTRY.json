@@ -3181,8 +3181,8 @@
       "goal": "Test whether the bystander-prior\u2192leakage relationship found in #500 holds on a persona panel deliberately enriched with high-prior personas (de-leveraging the two outliers that carried the #500 headline), and whether the source persona's MEASURED prior on the fact predicts panel-wide gating tightness, by re-running the #500 design with a prior-stratified bystander panel and source personas selected by measured base prior instead of hand-coded content-relatedness.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/541",
-      "status": "interpreting",
+      "path": "tasks/reviewing/541",
+      "status": "reviewing",
       "title": "Bystander prior still predicts fact leakage on a panel enriched with high-prior personas, but as a high-vs-rest stratum contrast rather than a graded ranking (MODERATE confidence)"
     },
     "542": {
