@@ -16,6 +16,10 @@ SKILL.md Step 6b / 6d / 8 actually shells:
    teardown called.
 6. ``finalize`` action: confirm_artifacts FAIL → teardown SKIPPED +
    nonzero exit code.
+6b. ``finalize`` degrade path (incident #585): a declaration-less
+    handle + agent-level upload-verification PASS evidence → teardown
+    proceeds; no evidence → exit 3; a declaration-present mechanical
+    FAIL never degrades.
 7. ``finalize`` action: missing sidecar → infra failure JSON + nonzero
    exit code (CLI never crashes the orchestrator).
 8. backend_poll.py: missing sidecar → terminal infra JSON (not
@@ -600,8 +604,22 @@ def test_launch_repo_branch_not_defaulted_when_on_main(monkeypatch, tmp_path) ->
 # ---------------------------------------------------------------------------
 
 
-def _seed_sidecar(tmp_path, issue: int, kind: BackendKind = "nibi") -> RunHandle:
-    """Write a sidecar for ``finalize`` tests; return the handle."""
+def _seed_sidecar(
+    tmp_path, issue: int, kind: BackendKind = "nibi", *, with_declaration: bool = True
+) -> RunHandle:
+    """Write a sidecar for ``finalize`` tests; return the handle.
+
+    ``with_declaration=False`` mirrors the production RunPod / SLURM
+    launch paths, which do NOT populate the ``expected_artifacts``
+    declaration (incident #585 / task #598) — the shape the finalize
+    degrade path exists for.
+    """
+    extra: dict[str, Any] = {"issue": issue, "intent": "lora-7b"}
+    if with_declaration:
+        extra[EXPECTED_ARTIFACTS_HANDLE_KEY] = {
+            "issue": issue,
+            "sentinel_path": "/tmp/sentinel.json",
+        }
     handle = RunHandle(
         backend=kind,
         cluster=kind if kind in {"nibi", "fir"} else None,
@@ -609,14 +627,7 @@ def _seed_sidecar(tmp_path, issue: int, kind: BackendKind = "nibi") -> RunHandle
         pod_name=f"pod-{issue}",
         scratch_dir="/scratch",
         log_path="/log",
-        extra={
-            "issue": issue,
-            "intent": "lora-7b",
-            EXPECTED_ARTIFACTS_HANDLE_KEY: {
-                "issue": issue,
-                "sentinel_path": "/tmp/sentinel.json",
-            },
-        },
+        extra=extra,
     )
     sidecar = tmp_path / f"issue-{issue}-handle.json"
     write_handle_sidecar(handle, sidecar)
@@ -688,6 +699,165 @@ def test_finalize_confirm_artifacts_fail_skips_teardown_and_exits_nonzero(
     # confirm was called; teardown was NOT.
     assert len(nibi.confirms) == 1
     assert len(nibi.teardowns) == 0
+
+
+def test_finalize_no_declaration_with_agent_pass_degrades_to_teardown(
+    monkeypatch, tmp_path
+) -> None:
+    """Incident #585: a handle WITHOUT an ``expected_artifacts``
+    declaration (the production RunPod / SLURM launch shapes) makes the
+    mechanical gate structurally unsatisfiable. With agent-level
+    upload-verification PASS evidence on the task, finalize must degrade
+    to teardown (exit 0, sidecar retired, degrade recorded in the JSON)
+    instead of the pre-fix exit 3 that forced a raw ``pod.py terminate``
+    bypass."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 407, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "407",
+                "--handle-file",
+                str(tmp_path / "issue-407-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["phase"] == "teardown"
+    assert body["confirm_artifacts"] == "skipped_no_declaration_agent_pass"
+    # The mechanical gate was still exercised (and FAILed structurally)
+    # before the degrade; teardown ran exactly once; sidecar retired.
+    assert len(runpod.confirms) == 1
+    assert len(runpod.teardowns) == 1
+    assert (tmp_path / "issue-407-handle.json.finalized").exists()
+
+
+def test_finalize_no_declaration_without_agent_pass_keeps_exit_3(monkeypatch, tmp_path) -> None:
+    """No declaration AND no agent-level PASS evidence → the degrade must
+    NOT fire: exit 3, teardown skipped, with the sharper
+    ``confirm_artifacts_no_declaration`` reason (distinguishable from a
+    real mechanical artifact FAIL)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 408, kind="runpod", with_declaration=False)
+    runpod = _MockBackend(kind="runpod", confirm_passes=False)
+    factory = _build_mock_factory(runpod=runpod)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: False)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "408",
+                "--handle-file",
+                str(tmp_path / "issue-408-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is False
+    assert body["phase"] == "confirm_artifacts"
+    assert body["reason"] == "confirm_artifacts_no_declaration"
+    assert len(runpod.teardowns) == 0
+
+
+def test_finalize_declaration_present_fail_never_degrades(monkeypatch, tmp_path) -> None:
+    """The safety property of the degrade: a handle WITH a declaration
+    whose mechanical confirm FAILs keeps the exit-3 evidence-preserving
+    behavior even when agent-level PASS evidence exists — the agent
+    verdict never overrides a real mechanical artifact FAIL."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _seed_sidecar(tmp_path, 409, kind="nibi", with_declaration=True)
+    nibi = _MockBackend(kind="nibi", confirm_passes=False)
+    factory = _build_mock_factory(nibi=nibi)
+
+    import scripts.dispatch_issue as di
+
+    monkeypatch.setattr(di, "_agent_upload_verification_passed", lambda _issue: True)
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = di.main(
+            [
+                "finalize",
+                "--issue",
+                "409",
+                "--handle-file",
+                str(tmp_path / "issue-409-handle.json"),
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 3
+    body = json.loads(buf.getvalue().strip())
+    assert body["reason"] == "confirm_artifacts_failed"
+    assert len(nibi.teardowns) == 0
+
+
+def test_agent_upload_verification_probe_reads_events(monkeypatch, tmp_path) -> None:
+    """The evidence probe: latest ``epm:upload-verification`` verdict
+    wins; the sticky ``epm:upload-verified`` marker alone also counts;
+    missing events.jsonl / FAIL verdicts are NO evidence."""
+    import explore_persona_space.task_workflow as tw
+    import scripts.dispatch_issue as di
+
+    task_dir = tmp_path / "tasks" / "verifying" / "777"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(tw, "find_task_path", lambda _id: task_dir)
+
+    # No events.jsonl at all → no evidence.
+    assert di._agent_upload_verification_passed(777) is False
+
+    events = task_dir / "events.jsonl"
+    # A FAIL verdict → no evidence.
+    events.write_text(
+        json.dumps({"kind": "epm:upload-verification", "note": "**Verdict: FAIL**"}) + "\n"
+    )
+    assert di._agent_upload_verification_passed(777) is False
+
+    # A later re-verification PASS (the FAIL → fix → re-verify loop):
+    # latest marker wins.
+    with events.open("a") as fh:
+        fh.write(
+            json.dumps(
+                {
+                    "kind": "epm:upload-verification",
+                    "note": "## Upload Verification\n\n**Verdict: PASS**\n\n11 files.",
+                }
+            )
+            + "\n"
+        )
+    assert di._agent_upload_verification_passed(777) is True
+
+    # The sticky PASS marker alone also counts.
+    events.write_text(json.dumps({"kind": "epm:upload-verified", "note": "sticky"}) + "\n")
+    assert di._agent_upload_verification_passed(777) is True
+
+
+def test_agent_upload_verification_probe_missing_task_is_false() -> None:
+    """A task that does not exist anywhere (registry or disk) is NO
+    evidence — the probe swallows the lookup failure into the safe
+    direction (caller keeps the exit-3 teardown-skip) instead of
+    crashing finalize."""
+    import scripts.dispatch_issue as di
+
+    assert di._agent_upload_verification_passed(99999999) is False
 
 
 def test_finalize_skip_confirm_artifacts_forces_teardown(monkeypatch, tmp_path) -> None:

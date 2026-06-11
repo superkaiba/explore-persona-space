@@ -51,7 +51,19 @@ Exit codes
   classification.
 * ``3`` — confirm_artifacts FAIL on the ``finalize`` path
   (artifacts not landed; teardown SKIPPED to preserve evidence).
-  ``stdout`` carries the per-check reasons.
+  ``stdout`` carries the per-check reasons. Special case: when the
+  handle carries NO ``expected_artifacts`` declaration (launch paths
+  other than GCP do not populate it yet — #598 tracks SLURM, the
+  RunPod ``pod_lifecycle.py`` shell-out never has) the mechanical
+  gate is structurally unsatisfiable; finalize then accepts
+  agent-level upload-verification PASS evidence from the task's
+  ``events.jsonl`` and proceeds to teardown with a LOUD log +
+  ``"confirm_artifacts": "skipped_no_declaration_agent_pass"`` in the
+  JSON (incident #585: every explicit ``--backend runpod`` finalize
+  exited 3 on a fully verified run, forcing a raw ``pod.py
+  terminate`` bypass that skipped the Mn4.3 sidecar retirement). With
+  neither a declaration nor agent PASS evidence the exit stays 3 with
+  ``reason: confirm_artifacts_no_declaration``.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
 
 Bg-Bash contract preservation
@@ -80,6 +92,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 import traceback
@@ -525,6 +538,76 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
     return 0
 
 
+# The upload-verifier agent's verdict line inside an
+# ``epm:upload-verification`` marker note (shape: ``**Verdict: PASS**``;
+# see workflow.yaml § markers). Case-sensitive on purpose — the schema
+# emits uppercase PASS/FAIL, and prose mentions of "pass" must not match.
+_UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
+
+
+def _agent_upload_verification_passed(issue: int) -> bool:
+    """Agent-level upload-verification PASS evidence on the task's events.jsonl.
+
+    The finalize degrade path (handle carries no ``expected_artifacts``
+    declaration — see :func:`_cmd_finalize`) consults this instead of the
+    structurally-unsatisfiable mechanical gate. Two acceptable forms of
+    evidence, mirroring SKILL.md Step 8:
+
+    * an ``epm:upload-verified`` marker (the sticky PASS the skill posts
+      right before the auto-terminate path), or
+    * the LATEST ``epm:upload-verification`` marker whose note carries
+      ``Verdict: PASS`` (latest wins — a FAIL → upload-fix → re-verify
+      loop posts a fresh marker each round).
+
+    Reads via ``task_workflow.find_task_path``, which resolves against the
+    MAIN checkout's ``tasks/`` tree regardless of the invoking worktree
+    (the resolver branch-guards to ``main``), so a finalize run from an
+    ``issue-<N>`` worktree still reads the canonical markers.
+
+    ANY read failure (missing task, unreadable events.jsonl) returns
+    ``False`` after a logged warning — the safe direction: no evidence ⇒
+    the caller keeps the exit-3 teardown-skip; we never tear down on a
+    guess.
+    """
+    log = logging.getLogger("dispatch_issue")
+    try:
+        from explore_persona_space.task_workflow import find_task_path
+
+        events_path = find_task_path(int(issue)) / "events.jsonl"
+        if not events_path.exists():
+            return False
+        saw_sticky_pass = False
+        latest_verification_note: str | None = None
+        with events_path.open(encoding="utf-8") as fh:
+            for raw_line in fh:
+                raw_line = raw_line.strip()
+                if not raw_line:
+                    continue
+                try:
+                    event = json.loads(raw_line)
+                except json.JSONDecodeError:
+                    continue
+                kind = str(event.get("kind", ""))
+                if kind == "epm:upload-verified":
+                    saw_sticky_pass = True
+                elif kind == "epm:upload-verification":
+                    latest_verification_note = str(event.get("note", ""))
+    except Exception as exc:
+        log.warning(
+            "could not read upload-verification evidence for issue=%d (%s: %s); "
+            "treating as NO evidence (teardown stays gated)",
+            int(issue),
+            type(exc).__name__,
+            exc,
+        )
+        return False
+    if saw_sticky_pass:
+        return True
+    if latest_verification_note is not None:
+        return bool(_UPLOAD_VERIFICATION_PASS_RE.search(latest_verification_note))
+    return False
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -537,6 +620,18 @@ def _cmd_finalize(
     the same handle; this CLI is the complementary MECHANICAL gate
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
+
+    Degrade path: when the handle carries NO ``expected_artifacts``
+    declaration the mechanical gate is structurally unsatisfiable (only
+    the GCP launch path populates it today — #598 tracks SLURM, RunPod's
+    ``pod_lifecycle.py`` shell-out never has), so a confirm FAIL on a
+    declaration-less handle falls back to the agent-level
+    upload-verification PASS evidence on the task's ``events.jsonl``
+    (:func:`_agent_upload_verification_passed`). Evidence found →
+    teardown proceeds with a LOUD log + a ``confirm_artifacts`` field in
+    the output JSON; no evidence → exit 3 with
+    ``reason: confirm_artifacts_no_declaration``. A handle WITH a
+    declaration never degrades — a real mechanical FAIL always exits 3.
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -587,19 +682,71 @@ def _cmd_finalize(
             exc,
         )
 
+    confirm_degraded: str | None = None
     if not args.skip_confirm_artifacts:
         passed = backend.confirm_artifacts(handle)
         if not passed:
-            body = {
-                "ok": False,
-                "issue": int(args.issue),
-                "phase": "confirm_artifacts",
-                "chosen_kind": handle.backend,
-                "pod_name": handle.pod_name,
-                "reason": "confirm_artifacts_failed",
-            }
-            print(json.dumps(body, sort_keys=True))
-            return 3
+            from explore_persona_space.backends.artifacts import (
+                EXPECTED_ARTIFACTS_HANDLE_KEY,
+            )
+
+            extra = getattr(handle, "extra", None) or {}
+            declaration_missing = EXPECTED_ARTIFACTS_HANDLE_KEY not in extra
+            if declaration_missing and _agent_upload_verification_passed(args.issue):
+                # Graceful degrade (incident #585, 2026-06-11): only the
+                # GCP launch path populates the ``expected_artifacts``
+                # declaration today (SLURM tracked in #598; the RunPod
+                # launch shells ``pod_lifecycle.py`` and never has), so
+                # on those lanes the mechanical gate can NEVER pass and
+                # a hard exit 3 forced orchestrators to bypass finalize
+                # with a raw ``pod.py terminate`` — losing the Mn4.3
+                # sidecar retirement below (a stale sidecar can
+                # mis-target a LATER finalize). Teardown still requires
+                # POSITIVE verification evidence: the agent-level
+                # upload-verifier PASS marker on the task. This branch
+                # never fires when a declaration IS present — a real
+                # mechanical FAIL keeps the exit-3 evidence-preserving
+                # behavior unconditionally.
+                confirm_degraded = "skipped_no_declaration_agent_pass"
+                logging.getLogger("dispatch_issue").warning(
+                    "finalize: handle for issue=%d carries no 'expected_artifacts' "
+                    "declaration (launch path did not populate it) — mechanical "
+                    "confirm_artifacts gate is unsatisfiable. Agent-level "
+                    "upload-verification PASS evidence found on the task; "
+                    "proceeding to teardown on that evidence.",
+                    int(args.issue),
+                )
+            elif declaration_missing:
+                body = {
+                    "ok": False,
+                    "issue": int(args.issue),
+                    "phase": "confirm_artifacts",
+                    "chosen_kind": handle.backend,
+                    "pod_name": handle.pod_name,
+                    "reason": "confirm_artifacts_no_declaration",
+                    "detail": (
+                        "handle.extra carries no 'expected_artifacts' declaration "
+                        "AND no agent-level upload-verification PASS marker was "
+                        "found on the task — teardown SKIPPED. Recover by running "
+                        "the upload-verifier to a PASS (epm:upload-verification, "
+                        "Verdict: PASS) and re-running finalize, or re-run with "
+                        "--skip-confirm-artifacts if the run crashed before "
+                        "artifacts could land."
+                    ),
+                }
+                print(json.dumps(body, sort_keys=True))
+                return 3
+            else:
+                body = {
+                    "ok": False,
+                    "issue": int(args.issue),
+                    "phase": "confirm_artifacts",
+                    "chosen_kind": handle.backend,
+                    "pod_name": handle.pod_name,
+                    "reason": "confirm_artifacts_failed",
+                }
+                print(json.dumps(body, sort_keys=True))
+                return 3
 
     backend.teardown(handle)
 
@@ -639,6 +786,8 @@ def _cmd_finalize(
         "pod_name": handle.pod_name,
         "sidecar_finalized": str(finalized_path) if finalized_path else None,
     }
+    if confirm_degraded is not None:
+        body["confirm_artifacts"] = confirm_degraded
     print(json.dumps(body, sort_keys=True))
     return 0
 
@@ -837,6 +986,7 @@ if __name__ == "__main__":
 
 # Re-exports for tests (avoids reaching into private names).
 __all__ = [
+    "_agent_upload_verification_passed",
     "_build_production_backends",
     "_cmd_finalize",
     "_cmd_launch",
