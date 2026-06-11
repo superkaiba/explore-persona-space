@@ -166,3 +166,4 @@
 {"ts": "2026-06-11T02:39:27Z", "kind": "epm:progress", "version": 12, "by": "poll_pipeline", "note": "phase transition: judge -> prep_bad_medical_cn_seed42", "phase": "prep_bad_medical_cn_seed42", "pod": "pod-545"}
 {"ts": "2026-06-11T02:49:42Z", "kind": "epm:progress", "version": 13, "by": "poll_pipeline", "note": "phase transition: prep_bad_medical_cn_seed42 -> train_warmth_primary_seed137", "phase": "train_warmth_primary_seed137", "pod": "pod-545"}
 {"ts": "2026-06-11T02:59:19Z", "kind": "epm:progress", "version": 14, "by": "poll_pipeline", "note": "phase transition: train_warmth_primary_seed137 -> gen", "phase": "gen", "pod": "pod-545"}
+{"ts": "2026-06-11T03:18:18Z", "kind": "epm:progress", "version": 15, "by": "poll_pipeline", "note": "phase transition: unknown -> judge", "phase": "judge", "pod": "pod-545"}
