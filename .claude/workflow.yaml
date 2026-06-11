@@ -2461,6 +2461,13 @@ workflow_fix_on_bug:
     # modules are workflow surface despite the general src/** out-of-scope rule.
     - "src/explore_persona_space/task_workflow.py"
     - "src/explore_persona_space/task_workflow_migrate.py"
+    # The unified backend router (CLAUDE.md § Compute backends): the lane
+    # implementations driven by the dispatch_issue.py / backend_poll.py pair
+    # below — workflow surface despite the general src/** exclusion. Added
+    # 2026-06-11 (#608): the GCP sentinel-drain fix had already landed in
+    # gcp.py as a workflow-fix while the list still omitted the package, and
+    # the omission nearly deflected the SLURM-lane follow-up.
+    - "src/explore_persona_space/backends/*.py"
     - "scripts/pod.py"
     - "scripts/pod_lifecycle.py"
     - "scripts/pod_config.py"
@@ -2528,6 +2535,11 @@ workflow_fix_on_bug:
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
     - "tests/test_sparse_worktree.py"
+    # Backend-router invariant tests (pair with the backends/*.py entry above).
+    - "tests/test_router*.py"
+    - "tests/test_backend_*.py"
+    - "tests/test_slurm_*.py"
+    - "tests/test_gcp_backend.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"

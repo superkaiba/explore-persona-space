@@ -894,7 +894,10 @@ def sentinel_drain_shell(issue: int) -> str:
     and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
     ``sudo -n bash -c`` because the GCE startup script writes the sentinel
     tree as root, mode 600; incident #608) so the two lanes can never drift
-    on the loop shape.
+    on the loop shape. The SLURM lane deliberately has NO drain transport:
+    compute nodes have no ``/workspace`` and the robot forced-command
+    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
+    § "No sentinel drain on this lane" (#608 follow-up).
 
     The glob is path-terminal `.json` and explicitly excludes `.processed`.
     ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
