@@ -1,0 +1,1269 @@
+# ruff: noqa: RUF002, RUF003  # research code uses Greek letters (Δ), × and − legitimately
+"""Task #597 dispatcher — training dynamics of source implantation vs bystander leakage.
+
+Pipeline (smoke = sweep with one cell via ``--only-source villain --smoke``;
+same dispatcher, same subprocess shape, same env injection, same logging
+surface, same teardown — the smoke knobs only SCALE each phase):
+
+  Phase P (preflight, CPU): in-process marker assert; question disjointness;
+      bystander-assignment → panel-name mapping (trained-negative labels);
+      700-row pool fetch (pinned revision) → order-preserving 200-positive
+      filter → BLOCKING token-id probe-row identity assert; adapter-config
+      parity vs a downloaded Arm A capend checkpoint; pos-pool upload.
+
+  Phase 0 (vLLM subprocess): fixed probe-row generation — 25 contexts × 50
+      eval_50 questions, base greedy R (cap 1024). One JSON, immutable after.
+
+  Phase S (HF subprocess — HARD GATE, #534): off-line eval path must
+      reproduce #480's in-loop band-stop read (villain capend ckpt-20/-40)
+      within 1 nat trained / 0.1 nat base. FAIL → no sweep.
+
+  Per-cell loop (one cell == one source, sequential per shard):
+      trainB (in-process train_lora, max_steps=528, save_steps=4 + grid
+      prune) → Gate S re-application on the FIRST Arm B source vs its own
+      fresh trajectory → Arm B ladder upload (fail-loud) → panel probe Arm B
+      (HF subprocess) → emission anchors Arm B (vLLM subprocess) → Arm A
+      ladder download (per-file; never snapshot_download allow_patterns) →
+      panel probe Arm A → emission anchors Arm A → raw uploads (folder-level
+      commits) → local cleanup → per-source sentinel.
+
+  Final sentinel: /workspace/logs/issue-597-epm_results-<epoch>.json
+  (poll_pipeline schema: sentinel_schema_version=1, kind=epm:results, ...),
+  then the terminal ``[phase=done]`` line.
+
+GPU sharding (plan §9 — 6 sources over 4 GPUs, ONE pod): launch one process
+per shard with the GPU pinned in the LAUNCHER env (the in-process clobber is
+defeated by any import-time cuInit — gotchas.md):
+
+    # one-time shared phases (Phase 0 + Gate S) on GPU 0:
+    CUDA_VISIBLE_DEVICES=0 nohup uv run python \\
+        scripts/issue_597/dispatch_leakage_dynamics_597.py \\
+        --recipe pos_only_dynamics --stop-after-gate > logs/i597_gate.log 2>&1 < /dev/null &
+    # then per-shard sweeps (skip the shared phases):
+    CUDA_VISIBLE_DEVICES=0 nohup uv run python ... --gpu 0 \\
+        --sources villain,comedian --skip-probe-rows --skip-gate ... &
+    CUDA_VISIBLE_DEVICES=1 nohup uv run python ... --gpu 1 \\
+        --sources assistant,qwen_default --skip-probe-rows --skip-gate ... &
+
+Pod-side discipline (CLAUDE.md):
+- NEVER shells out to scripts/task.py (branch-guard would refuse).
+- Every subprocess.* call passes env={**os.environ}; load_dotenv() at module top.
+- [phase=...] log lines, terminating in [phase=done] on graceful exit
+  (poll_pipeline contract); per-cell completion lines never carry that token.
+- EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1 (this dispatcher owns its uploads).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import os
+import shutil
+import socket
+import subprocess
+import sys
+import time
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+log = logging.getLogger("issue_597.dispatch")
+
+PKG = "explore_persona_space.experiments.leakage_dynamics_597"
+
+# ── reuse constants (provenance: scripts/issue_480/dispatch_marker_480.py) ──
+HF_MODEL_REPO = "superkaiba1/explore-persona-space"
+HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+HF_WRONG_CLAIMS_SUBDIR = "issue411_sycophancy_cosine_gradient/data/wrong_claims"
+HF_TRAIN_POOL_SUBDIR = "issue480_marker_payload_swap/train_pools"
+HF_BYSTANDER_ASSIGNMENT = "issue480_marker_payload_swap/inputs/bystander_assignment.json"
+TRAIN_POOL_REVISION = "3c8fecb937c81c13036a9697be1e4e716755321e"
+TRAIN_POOL_EXPECTED_ROWS = 700
+BAND_STOP_LR = 5e-6
+BAND_STOP_EPOCH_CAP = 12
+BAND_STOP_PROBE_EVERY_STEPS = 5
+SENTINEL_SCHEMA_VERSION = 1
+
+# Arm A reference trajectory JSONs (in git — present on the pod checkout).
+ARM_A_TRAJ_DIR = Path("eval_results/issue_480/band-stopped-anchor-rerun/trajectories")
+
+# Arm A capend adapter geometry reference for the parity preflight.
+ARM_A_PARITY_CONFIG = (
+    "adapters/issue_480_band_stop/villain_seed42_capend/checkpoint-20/adapter_config.json"
+)
+
+# train_lora's _DEFAULT_LORA_TARGETS (sft.py function-local literal), mirrored
+# for the parity check — same mirror dispatch_marker_480.py carries.
+_TRAIN_LORA_DEFAULT_TARGETS = (
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+)
+
+# Retry-with-backoff for HF Hub downloads (dispatcher silent-death hardening).
+_HF_RETRY_SLEEPS = (30, 60, 120)
+
+
+@dataclass(frozen=True)
+class RunParams:
+    """Smoke-vs-sweep scale knobs, threaded through EVERY phase (PASS_UNIFIED).
+
+    The smoke is the sweep with one cell + scaled-down parameters; every
+    phase's checkpoint / anchor / question subset derives from THIS object —
+    no phase re-enumerates a full registered grid on its own (#546 round-1
+    failure class).
+    """
+
+    smoke: bool
+    b_max_steps: int
+    b_save_steps: int
+    b_grid: tuple[int, ...]
+    a_steps: tuple[int, ...]
+    anchor_steps: tuple[int, ...]
+    limit_questions: int | None
+    hf_suffix: str  # "" for the sweep, "_smoke" for smoke uploads
+
+
+def make_run_params(smoke: bool) -> RunParams:
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        A_GRID,
+        ANCHOR_STEPS,
+        ARM_B_MAX_STEPS,
+        ARM_B_SAVE_STEPS,
+        B_GRID,
+    )
+
+    if smoke:
+        # Smoke scale: 24 optimizer steps (>= the band callback's min_steps=20
+        # so the in-loop trajectory gets real probes at steps 5..20 and the
+        # Gate S re-application on Arm B has its step-20 reference), the first
+        # two Arm A checkpoints, one anchor step, 5 questions.
+        return RunParams(
+            smoke=True,
+            b_max_steps=24,
+            b_save_steps=ARM_B_SAVE_STEPS,
+            b_grid=(4, 8, 12, 16, 20, 24),
+            a_steps=(20, 40),
+            anchor_steps=(20,),
+            limit_questions=5,
+            hf_suffix="_smoke",
+        )
+    return RunParams(
+        smoke=False,
+        b_max_steps=ARM_B_MAX_STEPS,
+        b_save_steps=ARM_B_SAVE_STEPS,
+        b_grid=B_GRID,
+        a_steps=A_GRID,
+        anchor_steps=ANCHOR_STEPS,
+        limit_questions=None,
+        hf_suffix="",
+    )
+
+
+def _git_sha() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            env={**os.environ},
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+def _run_subprocess(cmd: list[str], phase: str) -> None:
+    """Run a phase subprocess with explicit env passthrough; fail loud."""
+    log.info("[phase=%s] spawning: %s", phase, " ".join(cmd))
+    subprocess.run(cmd, env={**os.environ}, check=True)
+
+
+def _hf_download_with_retry(repo_id: str, filename: str, **kwargs) -> str:
+    """hf_hub_download with 3-attempt backoff (transient-blip hardening)."""
+    from huggingface_hub import hf_hub_download
+
+    last_err: Exception | None = None
+    for attempt, sleep_s in enumerate((0, *_HF_RETRY_SLEEPS)):
+        if sleep_s:
+            log.warning(
+                "[phase=preflight] retrying %s in %ds (attempt %d): %s",
+                filename,
+                sleep_s,
+                attempt + 1,
+                last_err,
+            )
+            time.sleep(sleep_s)
+        try:
+            return hf_hub_download(repo_id=repo_id, filename=filename, **kwargs)
+        except Exception as e:
+            last_err = e
+    raise RuntimeError(f"hf_hub_download failed after retries: {repo_id}/{filename}") from last_err
+
+
+def ensure_train_pool(local_path: Path, source: str) -> Path:
+    """Fetch the parent's 700-row pool for ``source`` at the PINNED revision.
+
+    Pattern reused from ``dispatch_marker_480._ensure_train_pool`` (fail loud
+    on a row count != 700 — a short pool means the wrong artifact resolved).
+    """
+    if not local_path.exists():
+        cached = _hf_download_with_retry(
+            repo_id=HF_DATA_REPO,
+            filename=f"{HF_TRAIN_POOL_SUBDIR}/{source}_train_pool.jsonl",
+            repo_type="dataset",
+            revision=TRAIN_POOL_REVISION,
+        )
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, local_path)
+    n_rows = sum(1 for line in local_path.read_text().splitlines() if line.strip())
+    if n_rows != TRAIN_POOL_EXPECTED_ROWS:
+        raise RuntimeError(
+            f"train pool {local_path} has {n_rows} rows, expected "
+            f"{TRAIN_POOL_EXPECTED_ROWS} (revision {TRAIN_POOL_REVISION})"
+        )
+    log.info("[phase=preflight] train pool ready at %s (%d rows)", local_path, n_rows)
+    return local_path
+
+
+def ensure_wrong_claim_pool(local_path: Path, kind: str) -> Path:
+    """Fetch a #411 wrong-claim Q pool (train_200 | eval_50) if missing locally."""
+    if local_path.exists():
+        return local_path
+    cached = _hf_download_with_retry(
+        repo_id=HF_DATA_REPO,
+        filename=f"{HF_WRONG_CLAIMS_SUBDIR}/{kind}.jsonl",
+        repo_type="dataset",
+    )
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(cached, local_path)
+    log.info("[phase=preflight] wrong-claim pool ready at %s", local_path)
+    return local_path
+
+
+def _load_wrong_claims(path: Path) -> list[str]:
+    out = []
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line:
+            out.append(json.loads(line)["wrong_claim"])
+    return out
+
+
+def assert_question_disjointness(train_pool: Path, eval_pool: Path) -> None:
+    """Plan Phase P: train_200 wrong-claims ∩ eval_50 wrong-claims = ∅."""
+    train_qs = _load_wrong_claims(train_pool)
+    eval_qs = _load_wrong_claims(eval_pool)
+    if len(train_qs) != 200 or len(eval_qs) != 50:
+        raise RuntimeError(
+            f"question pool sizes drifted: train={len(train_qs)} (want 200), "
+            f"eval={len(eval_qs)} (want 50)"
+        )
+    overlap = set(train_qs) & set(eval_qs)
+    if overlap:
+        raise RuntimeError(
+            f"train/eval wrong-claim pools overlap on {len(overlap)} question(s): "
+            f"{sorted(overlap)[:3]}..."
+        )
+    log.info("[phase=preflight] question disjointness OK (200 train / 50 eval, overlap 0)")
+
+
+def load_trained_negative_map(cache_path: Path) -> dict[str, list[str]]:
+    """Download bystander_assignment.json and map system prompts → panel names.
+
+    Plan Phase P: exact prompt-string match against ``EVAL_PERSONAS_24``;
+    fail loud on any unmapped prompt; per cell assert the negatives exclude
+    that cell's own source (the mapping labels the trained-negative vs
+    held-out bystander split in analysis).
+    """
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+    )
+
+    if not cache_path.exists():
+        cached = _hf_download_with_retry(
+            repo_id=HF_DATA_REPO, filename=HF_BYSTANDER_ASSIGNMENT, repo_type="dataset"
+        )
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, cache_path)
+    assignment = json.loads(cache_path.read_text())
+
+    prompt_to_name: dict[str, str] = {}
+    for name, prompt in EVAL_PERSONAS_24.items():
+        if prompt in prompt_to_name:
+            raise RuntimeError(f"EVAL_PERSONAS_24 prompts not unique: {name!r}")
+        prompt_to_name[prompt] = name
+
+    neg_map: dict[str, list[str]] = {}
+    for source, info in assignment.items():
+        names: list[str] = []
+        for sp in info["system_prompts"]:
+            if sp not in prompt_to_name:
+                raise RuntimeError(
+                    f"bystander prompt for source {source!r} not in EVAL_PERSONAS_24: {sp[:80]!r}"
+                )
+            names.append(prompt_to_name[sp])
+        if source in names:
+            raise RuntimeError(
+                f"trained-negative set for source {source!r} contains the source itself: {names}"
+            )
+        if len(set(names)) != 2:
+            raise RuntimeError(f"expected 2 distinct negatives for {source!r}, got {names}")
+        neg_map[source] = names
+        log.info("[phase=preflight] trained negatives for %s: %s", source, names)
+    return neg_map
+
+
+def _pos_only_train_cfg(
+    source: str,
+    seed: int,
+    max_length: int,
+    traj_path: Path,
+    *,
+    max_steps: int,
+    save_steps: int,
+):
+    """Arm B TrainLoraConfig — the #480 ``_band_stop_train_cfg`` clone.
+
+    Identical in every field to the realized Arm A launch config (enforced by
+    :func:`assert_pos_only_adapter_parity` against the downloaded capend
+    adapter_config.json) EXCEPT the documented #597 deltas: ``max_steps``
+    (exactly matched 528-step cosine schedule; epochs alone would give 533+),
+    ``save_steps`` (4, for the fine early grid — pruned to B_GRID by
+    ``CheckpointGridPruneCallback``), ``run_name`` and the trajectory path.
+    The training DATA difference (200-positive pool) is the manipulated
+    variable and is passed separately at the train_lora call site.
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597 import IM_END_ID, MARKER_TEXT
+    from explore_persona_space.train.sft import TrainLoraConfig
+
+    return TrainLoraConfig(
+        gpu_id=0,
+        epochs=BAND_STOP_EPOCH_CAP,  # superseded by max_steps; kept for field parity
+        lr=BAND_STOP_LR,
+        lora_r=32,
+        lora_alpha=64,
+        lora_dropout=0.0,
+        batch_size=4,
+        grad_accum=4,  # effective batch 16
+        max_length=max_length,
+        warmup_ratio=0.05,
+        seed=seed,
+        run_name=f"issue597_posonly_{source}_seed{seed}",
+        report_to="wandb",
+        save_strategy="steps",
+        save_steps=save_steps,
+        save_only_model=True,
+        gradient_checkpointing=True,
+        packing=False,
+        marker_only_loss=True,
+        marker_text=MARKER_TEXT,
+        marker_tail_tokens=0,
+        # Kept for cfg parity with Arm A; the branch never fires on the
+        # positive-only pool (no marker-less rows exist).
+        marker_suppress_at_post_response_slot=True,
+        marker_im_end_token_id=IM_END_ID,
+        marker_band_stop=True,
+        marker_band_log_only=True,  # full ramp — never stops, logs the 5-step trajectory
+        marker_band_eval_every_steps=BAND_STOP_PROBE_EVERY_STEPS,
+        marker_band_trajectory_path=str(traj_path),
+        # This dispatcher uploads the ladder itself, FAIL-LOUD, before any
+        # deletion; train_lora's best-effort soft-fail upload is disabled.
+        hf_upload=False,
+        max_steps=max_steps,
+    )
+
+
+def assert_pos_only_adapter_parity(max_length: int) -> dict:
+    """Adapter-config parity preflight vs a downloaded Arm A capend checkpoint.
+
+    Single-variable-change enforcement (plan Phase P): the Arm B
+    ``TrainLoraConfig`` must produce identical PEFT geometry (r, α, dropout,
+    rsLoRA, target_modules, modules_to_save=∅) to Arm A's published
+    checkpoints. Fails loud pre-GPU. Pattern reused from
+    ``dispatch_marker_480._assert_band_stop_adapter_parity``.
+    """
+    cached = _hf_download_with_retry(repo_id=HF_MODEL_REPO, filename=ARM_A_PARITY_CONFIG)
+    with open(cached) as f:
+        parent = json.load(f)
+
+    cfg = _pos_only_train_cfg(
+        source="_parity_probe",
+        seed=42,
+        max_length=max_length,
+        traj_path=Path("/tmp/_i597_parity_probe_trajectory.json"),
+        max_steps=528,
+        save_steps=4,
+    )
+    expected_targets = sorted(cfg.lora_targets or _TRAIN_LORA_DEFAULT_TARGETS)
+    checks: dict[str, tuple[object, object]] = {
+        "r": (parent.get("r"), cfg.lora_r),
+        "lora_alpha": (parent.get("lora_alpha"), cfg.lora_alpha),
+        "lora_dropout": (parent.get("lora_dropout"), cfg.lora_dropout),
+        "use_rslora": (parent.get("use_rslora"), True),
+        "target_modules": (sorted(parent.get("target_modules") or []), expected_targets),
+        "modules_to_save": (parent.get("modules_to_save"), None),
+    }
+    mismatches = {k: v for k, v in checks.items() if v[0] != v[1]}
+    for key, (parent_val, ours) in checks.items():
+        log.info(
+            "[phase=preflight] adapter-config parity %s: armA=%s armB=%s %s",
+            key,
+            parent_val,
+            ours,
+            "MISMATCH" if key in mismatches else "OK",
+        )
+    if mismatches:
+        raise RuntimeError(
+            f"Arm B adapter-config parity FAILED vs {HF_MODEL_REPO}/{ARM_A_PARITY_CONFIG}: "
+            f"{mismatches} — the regime swap is no longer single-variable; refusing to launch."
+        )
+    log.info("[phase=preflight] adapter-config parity vs Arm A PASSED (%d keys)", len(checks))
+    return {k: v[1] for k, v in checks.items()}
+
+
+def download_arm_a_ladder(source: str, steps: tuple[int, ...], dest_root: Path) -> Path:
+    """Per-file download of the Arm A capend checkpoints for ``steps``.
+
+    NEVER ``snapshot_download(allow_patterns=...)`` — on this >8k-file repo it
+    silently returns 0 files for prefixes in the truncated siblings tail
+    (feedback_snapshot_download_siblings_truncation). Enumerate via
+    ``list_repo_files`` (the plan-§12-verified path) + ``hf_hub_download``
+    per file, with per-file completion log lines.
+    """
+    from huggingface_hub import list_repo_files
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import ARM_A_HF_ADAPTER_ROOT
+
+    prefix = f"{ARM_A_HF_ADAPTER_ROOT}/{source}_seed42_capend"
+    dest = dest_root / source
+    wanted_dirs = {f"{prefix}/checkpoint-{s}" for s in steps}
+    have_all = all((dest / f"checkpoint-{s}" / "adapter_config.json").exists() for s in steps)
+    if have_all:
+        log.info(
+            "[phase=downloadA_%s] all %d checkpoints already local; skipping", source, len(steps)
+        )
+        return dest
+
+    all_files = list_repo_files(HF_MODEL_REPO)
+    to_fetch = [f for f in all_files if any(f.startswith(d + "/") for d in wanted_dirs)]
+    if not to_fetch:
+        raise RuntimeError(
+            f"no files found under {prefix}/checkpoint-{{{','.join(map(str, steps))}}} on "
+            f"{HF_MODEL_REPO} — Arm A reuse premise broken."
+        )
+    # Every requested step must resolve at least an adapter_config + weights.
+    for s in steps:
+        d = f"{prefix}/checkpoint-{s}/"
+        if not any(f.startswith(d) for f in to_fetch):
+            raise RuntimeError(f"Arm A checkpoint-{s} missing on the Hub under {prefix}")
+    log.info(
+        "[phase=downloadA_%s] fetching %d files for %d checkpoints",
+        source,
+        len(to_fetch),
+        len(steps),
+    )
+    for i, fname in enumerate(to_fetch):
+        cached = _hf_download_with_retry(repo_id=HF_MODEL_REPO, filename=fname)
+        rel = Path(fname).relative_to(prefix)
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, target)
+        log.info("[phase=downloadA_%s] (%d/%d) %s", source, i + 1, len(to_fetch), rel)
+    return dest
+
+
+def upload_dir_fail_loud(local_dir: Path, repo_id: str, repo_type: str, path_in_repo: str) -> str:
+    """ONE-commit folder upload via the shared hub helper; raise on failure.
+
+    Folder-level commits keep the sweep far under the HF 256-commits/hr cap
+    (upload-policy rule); ``_upload`` verifies via ``list_repo_files`` before
+    returning.
+    """
+    from explore_persona_space.orchestrate.hub import _upload
+
+    hub_path = _upload(
+        local_path=local_dir,
+        repo_id=repo_id,
+        repo_type=repo_type,
+        path_in_repo=path_in_repo,
+    )
+    if not hub_path:
+        raise RuntimeError(
+            f"upload of {local_dir} -> {repo_id}/{path_in_repo} returned no path — "
+            "treating as FAILURE (upload-before-delete invariant); local copy preserved."
+        )
+    log.info("[phase=upload] %s -> %s", local_dir, hub_path)
+    return hub_path
+
+
+def base_side_identity_diagnostic(arm_b_traj: Path, arm_a_traj: Path, source: str) -> dict:
+    """Non-blocking logged diagnostic: Arm B in-loop base read vs Arm A's.
+
+    Plan Phase B-train: the BLOCKING check is the token-id probe-row identity
+    assert at preflight; this float agreement (<0.01 nat) is a logged
+    diagnostic only (bf16 kernel/batching noise can trip a float tolerance
+    while token identity is the actual dependency).
+    """
+    try:
+        b = json.loads(arm_b_traj.read_text())
+        a = json.loads(arm_a_traj.read_text())
+        b_base = float(b["records"][0]["logp_base"])
+        a_base = float(a["records"][0]["logp_base"])
+        diff = abs(b_base - a_base)
+        status = "OK" if diff < 0.01 else "DRIFT (diagnostic only — not a gate)"
+        log.info(
+            "[phase=trainB_%s] in-loop base-side diagnostic: armB=%.5f armA=%.5f |d|=%.5f %s",
+            source,
+            b_base,
+            a_base,
+            diff,
+            status,
+        )
+        return {"arm_b_base": b_base, "arm_a_base": a_base, "abs_diff": diff, "status": status}
+    except Exception as e:
+        log.warning("[phase=trainB_%s] base-side diagnostic unavailable: %s", source, e)
+        return {"status": f"unavailable: {e}"}
+
+
+def train_arm_b(
+    source: str,
+    seed: int,
+    pos_pool: Path,
+    runs_root: Path,
+    slab_root: Path,
+    max_length: int,
+    params: RunParams,
+) -> tuple[Path, Path]:
+    """Arm B in-process training with the grid-prune callback; returns (adapter_dir, traj)."""
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        CheckpointGridPruneCallback,
+    )
+    from explore_persona_space.train.sft import train_lora
+
+    adapter_dir = runs_root / f"{source}_seed{seed}" / "adapter"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    traj_path = slab_root / "armB_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    traj_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cfg = _pos_only_train_cfg(
+        source,
+        seed,
+        max_length,
+        traj_path,
+        max_steps=params.b_max_steps,
+        save_steps=params.b_save_steps,
+    )
+    if cfg.marker_band_log_only is not True:
+        raise RuntimeError("#597 Arm B requires marker_band_log_only=True (full ramp)")
+    prune_cb = CheckpointGridPruneCallback(keep_steps=params.b_grid)
+    log.info(
+        "[phase=trainB_%s] cfg: lr=%s r=%s alpha=%s max_steps=%s save_steps=%s grid=%d ckpts "
+        "run_name=%s trajectory=%s",
+        source,
+        cfg.lr,
+        cfg.lora_r,
+        cfg.lora_alpha,
+        cfg.max_steps,
+        cfg.save_steps,
+        len(params.b_grid),
+        cfg.run_name,
+        traj_path,
+    )
+    train_lora(
+        base_model_path="Qwen/Qwen2.5-7B-Instruct",
+        data_path=str(pos_pool),
+        output_dir=str(adapter_dir),
+        cfg=cfg,
+        callbacks=[prune_cb],
+    )
+    # Defensive per-cell WandB isolation (train_lora's #527 fix owns this;
+    # assert it held so the next cell never merges into a stale run).
+    import wandb
+
+    if wandb.run is not None:
+        wandb.finish()
+    if wandb.run is not None:
+        raise RuntimeError(f"[{source}] wandb.run still active after finish()")
+
+    if not traj_path.exists():
+        raise RuntimeError(
+            f"[{source}] in-loop trajectory missing at {traj_path} — the log-only band "
+            "callback did not run (probe rows empty?); the matched in-loop comparison "
+            "and the Arm B gate re-application have nothing to key on."
+        )
+    # Final prune sweep + grid-completeness check.
+    prune_cb.prune_dir(adapter_dir)
+    missing = [
+        s
+        for s in params.b_grid
+        if s <= params.b_max_steps
+        if not (adapter_dir / f"checkpoint-{s}").is_dir()
+    ]
+    if missing:
+        raise RuntimeError(f"[{source}] Arm B grid checkpoints missing after training: {missing}")
+    # Non-blocking sanity (ii): villain in-loop delta >= 5 nat by step 200.
+    try:
+        traj = json.loads(traj_path.read_text())
+        deltas_by_200 = [r["delta_nats"] for r in traj["records"] if int(r["step"]) <= 200]
+        if deltas_by_200 and max(deltas_by_200) < 5.0 and params.b_max_steps >= 200:
+            log.warning(
+                "[phase=trainB_%s] SANITY (non-blocking): in-loop delta max %.2f nat by step "
+                "200 (< 5) — positive-only install may be on the floor (cf. #520); "
+                "a never-installing Arm B is itself a reportable finding.",
+                source,
+                max(deltas_by_200),
+            )
+    except Exception as e:
+        log.warning("[phase=trainB_%s] install sanity check unavailable: %s", source, e)
+    return adapter_dir, traj_path
+
+
+def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow reads clearest inline
+    source: str,
+    seed: int,
+    args,
+    params: RunParams,
+    neg_map: dict[str, list[str]],
+    pools_dir: Path,
+    first_armb_gate_done: dict,
+) -> dict:
+    """One cell == one source: trainB → gateB → uploads → probes → anchors → cleanup."""
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_B_HF_ADAPTER_ROOT,
+        HF_597_DATA_SUBDIR,
+        NO_PERSONA_KEY,
+    )
+
+    t_start = time.time()
+    cell: dict = {"source": source, "seed": seed}
+    slab_root: Path = args.slab_root
+    pos_pool = pools_dir / f"{source}_pos_only_pool.jsonl"
+    probe_rows_path = slab_root / "probe_rows.json"
+
+    # ── Arm B training ──
+    adapter_dir = args.runs_root / f"{source}_seed{seed}" / "adapter"
+    traj_path = slab_root / "armB_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    if args.skip_train:
+        log.info("[phase=trainB_%s] SKIPPED", source)
+    else:
+        adapter_dir, traj_path = train_arm_b(
+            source, seed, pos_pool, args.runs_root, slab_root, args.max_length, params
+        )
+        cell["arm_b_adapter_dir"] = str(adapter_dir)
+        cell["arm_b_trajectory"] = str(traj_path)
+        cell["base_side_diagnostic"] = base_side_identity_diagnostic(
+            traj_path, ARM_A_TRAJ_DIR / f"{source}_seed42_trajectory.json", source
+        )
+
+        # Gate S re-application on the FIRST trained Arm B source (plan Phase S
+        # step 4): the off-line path must reproduce ITS in-loop read at step 20
+        # before the remaining Arm B ladders are probed.
+        if not first_armb_gate_done.get("done") and not args.skip_gate:
+            gate_out = slab_root / "smoke" / f"smoke_gate_armB_{source}.json"
+            _run_subprocess(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"{PKG}.smoke_gate",
+                    "--train-pool",
+                    str(pos_pool),
+                    "--traj-ref",
+                    str(traj_path),
+                    "--ckpt-root",
+                    str(adapter_dir),
+                    "--steps",
+                    "20",
+                    "--out-path",
+                    str(gate_out),
+                    "--label",
+                    f"gate_s_armB_{source}",
+                ],
+                phase=f"gateB_{source}",
+            )
+            first_armb_gate_done["done"] = True
+            cell["arm_b_gate_report"] = str(gate_out)
+
+        # Fail-loud ladder upload BEFORE any local deletion (upload policy).
+        if not args.skip_upload:
+            cell["arm_b_hf_path"] = upload_dir_fail_loud(
+                adapter_dir,
+                HF_MODEL_REPO,
+                "model",
+                f"{ARM_B_HF_ADAPTER_ROOT}{params.hf_suffix}/{source}_seed{seed}",
+            )
+
+    # ── Panel probes (HF subprocesses; framework-isolated) ──
+    agg_dir_a = slab_root / "panel_trajectories" / "armA"
+    agg_dir_b = slab_root / "panel_trajectories" / "armB"
+    raw_dir_a = slab_root / "panel_trajectories" / "armA" / "per_checkpoint" / source
+    raw_dir_b = slab_root / "panel_trajectories" / "armB" / "per_checkpoint" / source
+    if args.skip_panel_probe:
+        log.info("[phase=probe_%s] SKIPPED", source)
+    else:
+        b_steps_present = tuple(s for s in params.b_grid if s <= params.b_max_steps)
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.panel_probe",
+                "--arm",
+                "b",
+                "--source",
+                source,
+                "--seed",
+                str(seed),
+                "--ckpt-root",
+                str(adapter_dir),
+                "--steps",
+                ",".join(map(str, b_steps_present)),
+                "--probe-rows",
+                str(probe_rows_path),
+                "--out-dir",
+                str(raw_dir_b),
+                "--agg-out",
+                str(agg_dir_b / f"{source}_seed{seed}_panel_trajectory.json"),
+            ]
+            + (
+                ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
+            ),
+            phase=f"probeB_{source}",
+        )
+
+    # ── Emission anchors Arm B (vLLM subprocess) ──
+    emis_dir_a = slab_root / "emission_anchors" / "armA"
+    emis_dir_b = slab_root / "emission_anchors" / "armB"
+    anchor_contexts = {
+        source: EVAL_PERSONAS_24[source],
+        **{n: EVAL_PERSONAS_24[n] for n in neg_map[source]},
+        NO_PERSONA_KEY: "",
+    }
+    if args.skip_emission:
+        log.info("[phase=emis_%s] SKIPPED", source)
+    else:
+        b_anchors = tuple(s for s in params.anchor_steps if s <= params.b_max_steps)
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.emission_anchors",
+                "--arm",
+                "b",
+                "--source",
+                source,
+                "--seed",
+                str(seed),
+                "--ckpt-root",
+                str(adapter_dir),
+                "--anchor-steps",
+                ",".join(map(str, b_anchors)),
+                "--eval-pool",
+                str(args.eval_pool),
+                "--contexts-json",
+                json.dumps(anchor_contexts, ensure_ascii=False),
+                "--out-dir",
+                str(emis_dir_b),
+            ]
+            + (
+                ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
+            ),
+            phase=f"emisB_{source}",
+        )
+
+    # ── Arm A: download ladder → panel probe → emission anchors → cleanup ──
+    arm_a_dest: Path | None = None
+    if args.skip_panel_probe and args.skip_emission:
+        log.info("[phase=armA_%s] SKIPPED (both Arm A consumers skipped)", source)
+    else:
+        arm_a_dest = download_arm_a_ladder(
+            source, params.a_steps, args.runs_root / "armA_downloads"
+        )
+        if not args.skip_panel_probe:
+            _run_subprocess(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"{PKG}.panel_probe",
+                    "--arm",
+                    "a",
+                    "--source",
+                    source,
+                    "--seed",
+                    str(seed),
+                    "--ckpt-root",
+                    str(arm_a_dest),
+                    "--steps",
+                    ",".join(map(str, params.a_steps)),
+                    "--probe-rows",
+                    str(probe_rows_path),
+                    "--out-dir",
+                    str(raw_dir_a),
+                    "--agg-out",
+                    str(agg_dir_a / f"{source}_seed{seed}_panel_trajectory.json"),
+                ]
+                + (
+                    ["--limit-questions", str(params.limit_questions)]
+                    if params.limit_questions
+                    else []
+                ),
+                phase=f"probeA_{source}",
+            )
+        if not args.skip_emission:
+            a_anchors = tuple(s for s in params.anchor_steps if s in set(params.a_steps))
+            _run_subprocess(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"{PKG}.emission_anchors",
+                    "--arm",
+                    "a",
+                    "--source",
+                    source,
+                    "--seed",
+                    str(seed),
+                    "--ckpt-root",
+                    str(arm_a_dest),
+                    "--anchor-steps",
+                    ",".join(map(str, a_anchors)),
+                    "--eval-pool",
+                    str(args.eval_pool),
+                    "--contexts-json",
+                    json.dumps(anchor_contexts, ensure_ascii=False),
+                    "--out-dir",
+                    str(emis_dir_a),
+                ]
+                + (
+                    ["--limit-questions", str(params.limit_questions)]
+                    if params.limit_questions
+                    else []
+                ),
+                phase=f"emisA_{source}",
+            )
+
+    # ── Raw uploads (folder-level commits; CLAUDE.md upload policy: raw
+    # completions + per-row four-float records land on the data repo BEFORE
+    # pod termination, under this dispatcher's normal exit path) ──
+    if not args.skip_upload:
+        bucket_root = f"{HF_597_DATA_SUBDIR}{params.hf_suffix}"
+        if raw_dir_b.is_dir():
+            upload_dir_fail_loud(
+                raw_dir_b,
+                HF_DATA_REPO,
+                "dataset",
+                f"{bucket_root}/panel_trajectories_raw/armB/{source}",
+            )
+        if raw_dir_a.is_dir():
+            upload_dir_fail_loud(
+                raw_dir_a,
+                HF_DATA_REPO,
+                "dataset",
+                f"{bucket_root}/panel_trajectories_raw/armA/{source}",
+            )
+        for arm_label, emis_dir in (("armA", emis_dir_a), ("armB", emis_dir_b)):
+            if emis_dir.is_dir() and any(emis_dir.glob(f"{source}_step*.json")):
+                src_stage = emis_dir / f"_stage_{source}"
+                src_stage.mkdir(exist_ok=True)
+                for f in emis_dir.glob(f"{source}_step*.json"):
+                    shutil.copyfile(f, src_stage / f.name)
+                upload_dir_fail_loud(
+                    src_stage,
+                    HF_DATA_REPO,
+                    "dataset",
+                    f"{bucket_root}/raw_completions/emission_anchors/{arm_label}/{source}",
+                )
+                shutil.rmtree(src_stage)
+
+    # ── Local cleanup (MooseFS quota): only AFTER verified uploads ──
+    if not args.keep_local:
+        if not args.skip_upload and not args.skip_train and adapter_dir.exists():
+            log.info("[phase=cleanup_%s] rmtree(%s) (ladder uploaded)", source, adapter_dir)
+            shutil.rmtree(adapter_dir, ignore_errors=False)
+        if arm_a_dest is not None and arm_a_dest.exists():
+            log.info("[phase=cleanup_%s] rmtree(%s) (Arm A downloads)", source, arm_a_dest)
+            shutil.rmtree(arm_a_dest, ignore_errors=False)
+
+    cell["wall_seconds"] = round(time.time() - t_start, 1)
+    log.info("[phase=cell_%s] CELL COMPLETE wall=%.1fs", source, cell["wall_seconds"])
+    return cell
+
+
+def write_final_sentinel(
+    logs_dir: Path,
+    sources_requested: list[str],
+    per_cell: list[dict],
+    params: RunParams,
+    plan_deviations: list[str],
+) -> Path:
+    """End-of-run sentinel in poll_pipeline-compatible schema."""
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_B_HF_ADAPTER_ROOT,
+        WANDB_PROJECT,
+    )
+
+    epoch = int(time.time())
+    final_path = logs_dir / f"issue-597-epm_results-{epoch}.json"
+    payload = {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION,
+        "kind": "epm:results",
+        "version": 1,
+        "task_id": 597,
+        "gate": None,
+        "blocks_pipeline": False,
+        "by": "dispatch_leakage_dynamics_597",
+        "ts": datetime.now(UTC).isoformat(),
+        "note": {
+            "issue": 597,
+            "smoke": params.smoke,
+            "sources_requested": sources_requested,
+            "sources_completed": [c["source"] for c in per_cell],
+            "n_completed": len(per_cell),
+            "n_requested": len(sources_requested),
+            "per_cell": per_cell,
+            "plan_deviations": plan_deviations,
+            "gpu_hours_used_estimate": round(
+                sum(c.get("wall_seconds", 0) for c in per_cell) / 3600, 2
+            ),
+            "final_commit_sha": _git_sha(),
+            "hostname": socket.gethostname(),
+            "wandb_url": f"n/a (per-cell wandb runs; project={WANDB_PROJECT})",
+            "hf_hub_url": (
+                f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/"
+                f"{ARM_B_HF_ADAPTER_ROOT}{params.hf_suffix}"
+            ),
+        },
+    }
+    final_path.parent.mkdir(parents=True, exist_ok=True)
+    final_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+    log.info("[phase=final_sentinel] %s", final_path)
+    return final_path
+
+
+def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher; phases read clearest inline
+    parser = argparse.ArgumentParser(
+        description="#597 dispatcher — pos-only vs contrastive leakage dynamics.",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--recipe",
+        choices=("pos_only_dynamics",),
+        default="pos_only_dynamics",
+        help="Single recipe (kept explicit for the launch-command contract).",
+    )
+    parser.add_argument("--sources", type=str, default="all")
+    parser.add_argument("--only-source", type=str, default=None, help="OVERRIDES --sources.")
+    parser.add_argument(
+        "--smoke",
+        action="store_true",
+        help="Smoke = sweep with one cell (villain) + scaled phase knobs (RunParams).",
+    )
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--gpu",
+        type=int,
+        default=None,
+        help="Defensive in-process CUDA_VISIBLE_DEVICES pin. The LAUNCHER must ALSO "
+        "export CUDA_VISIBLE_DEVICES=<gpu> (import-time cuInit defeats a late pin).",
+    )
+    parser.add_argument(
+        "--eval-pool", type=Path, default=Path("data/issue_597/wrong_claims/eval_50.jsonl")
+    )
+    parser.add_argument(
+        "--q-train", type=Path, default=Path("data/issue_597/wrong_claims/train_200.jsonl")
+    )
+    parser.add_argument("--pools-dir", type=Path, default=Path("data/issue_597/train_pools"))
+    parser.add_argument("--slab-root", type=Path, default=Path("eval_results/issue_597"))
+    parser.add_argument("--runs-root", type=Path, default=Path("/workspace/runs/issue_597"))
+    parser.add_argument("--logs-dir", type=Path, default=Path("/workspace/logs"))
+    parser.add_argument("--max-length", type=int, default=None)
+    parser.add_argument(
+        "--skip-probe-rows", action="store_true", help="Shared phase done elsewhere."
+    )
+    parser.add_argument("--skip-gate", action="store_true", help="Shared phase done elsewhere.")
+    parser.add_argument("--skip-train", action="store_true")
+    parser.add_argument("--skip-panel-probe", action="store_true")
+    parser.add_argument("--skip-emission", action="store_true")
+    parser.add_argument("--skip-upload", action="store_true")
+    parser.add_argument(
+        "--keep-local", action="store_true", help="Skip the per-cell rmtree cleanup."
+    )
+    parser.add_argument(
+        "--stop-after-gate",
+        action="store_true",
+        help="Run preflight + Phase 0 + Gate S, then exit cleanly (shared-phase launch).",
+    )
+    args = parser.parse_args(argv)
+
+    # GPU pin BEFORE any CUDA-initializing import (defensive; see --gpu help).
+    if args.gpu is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
+
+    logging.basicConfig(
+        level=os.environ.get("EPS_LOG_LEVEL", "INFO"),
+        format="%(asctime)s %(levelname)s | %(message)s",
+        stream=sys.stdout,
+    )
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        BASE_MODEL,
+        HF_597_DATA_SUBDIR,
+        IM_END_ID,
+        MARKER_ID,
+        MARKER_TEXT,
+        SOURCE_PERSONAS,
+        WANDB_PROJECT,
+    )
+
+    params = make_run_params(args.smoke)
+    if params.smoke:
+        # Smoke artifacts live under a dedicated slab subdir so a later
+        # PRODUCTION run's resume-skip logic (probe_rows.json exists,
+        # per-checkpoint step_*.json exists, anchor JSON exists) can never
+        # silently reuse 5-question smoke outputs. Same code path; only the
+        # output root is parameterized.
+        args.slab_root = args.slab_root / "smoke_run"
+        args.runs_root = args.runs_root / "smoke_run"
+    if args.smoke:
+        sources = ["villain"]
+    elif args.only_source:
+        sources = [args.only_source]
+    elif args.sources.strip().lower() == "all":
+        sources = list(SOURCE_PERSONAS)
+    else:
+        sources = [s.strip() for s in args.sources.split(",") if s.strip()]
+    for s in sources:
+        if s not in SOURCE_PERSONAS:
+            raise ValueError(f"source {s} not in SOURCE_PERSONAS {SOURCE_PERSONAS}")
+
+    os.environ["WANDB_PROJECT"] = WANDB_PROJECT
+    # This dispatcher owns its uploads (fail-loud); fence the inline ones.
+    os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
+
+    log.info(
+        "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arms=both "
+        "b_max_steps=%d a_steps=%d anchors=%s limit_q=%s",
+        args.recipe,
+        params.smoke,
+        sources,
+        args.seed,
+        params.b_max_steps,
+        len(params.a_steps),
+        params.anchor_steps,
+        params.limit_questions,
+    )
+    log.info(
+        "[phase=dispatch_start] UNIFIED smoke=sweep-with-one-cell: every phase's "
+        "checkpoint/anchor/question subset derives from RunParams; same run_cell path, "
+        "same subprocess shape, same env injection, same teardown."
+    )
+
+    # ── Phase P: preflight (CPU) ──
+    from transformers import AutoTokenizer
+
+    tok = AutoTokenizer.from_pretrained(BASE_MODEL)
+    if tok.encode(MARKER_TEXT, add_special_tokens=False) != [MARKER_ID]:
+        raise RuntimeError(
+            f"marker {MARKER_TEXT!r} -> {tok.encode(MARKER_TEXT, add_special_tokens=False)}, "
+            f"expected [{MARKER_ID}]"
+        )
+    if tok.encode("<|im_end|>", add_special_tokens=False) != [IM_END_ID]:
+        raise RuntimeError("im_end token id drifted")
+    log.info("[phase=preflight] marker/im_end token ids OK")
+
+    args.slab_root.mkdir(parents=True, exist_ok=True)
+    args.runs_root.mkdir(parents=True, exist_ok=True)
+    args.logs_dir.mkdir(parents=True, exist_ok=True)
+    args.pools_dir.mkdir(parents=True, exist_ok=True)
+
+    ensure_wrong_claim_pool(args.q_train, kind="train_200")
+    ensure_wrong_claim_pool(args.eval_pool, kind="eval_50")
+    assert_question_disjointness(args.q_train, args.eval_pool)
+
+    neg_map = load_trained_negative_map(Path("data/issue_597/bystander_assignment.json"))
+
+    from explore_persona_space.experiments.leakage_dynamics_597.build_pos_only_pool import (
+        assert_probe_row_identity,
+        build_pos_only_pool,
+    )
+    from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
+        DEFAULT_TRAIN_MAX_LENGTH,
+    )
+
+    max_length = args.max_length if args.max_length is not None else DEFAULT_TRAIN_MAX_LENGTH
+    args.max_length = max_length
+    log.info("[phase=preflight] training max_length = %d", max_length)
+
+    pool_summaries: dict[str, dict] = {}
+    for source in sources:
+        full_pool = args.pools_dir / f"{source}_train_pool.jsonl"
+        pos_pool = args.pools_dir / f"{source}_pos_only_pool.jsonl"
+        ensure_train_pool(full_pool, source)
+        pool_summaries[source] = build_pos_only_pool(full_pool, pos_pool)
+        # BLOCKING probe-row identity (plan Phase B-train, one governing status).
+        pool_summaries[source]["probe_row_sha256"] = assert_probe_row_identity(
+            full_pool,
+            pos_pool,
+            tok,
+            [MARKER_ID],
+            max_rows=32,
+            max_length=max(max_length, 2048),
+        )
+
+    assert_pos_only_adapter_parity(max_length)
+
+    if not args.skip_upload:
+        # Pos-only pools are datasets — upload after generation (Upload Policy).
+        upload_dir_fail_loud(
+            args.pools_dir,
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_597_DATA_SUBDIR}{params.hf_suffix}/train_pools",
+        )
+
+    plan_deviations: list[str] = []
+
+    # ── Phase 0: probe-row generation (vLLM subprocess) ──
+    probe_rows_path = args.slab_root / "probe_rows.json"
+    if args.skip_probe_rows or probe_rows_path.exists():
+        if not probe_rows_path.exists() and not (args.skip_train and args.skip_panel_probe):
+            raise RuntimeError(
+                f"--skip-probe-rows but {probe_rows_path} missing and downstream phases "
+                "need it — run the shared phase first (--stop-after-gate launch)."
+            )
+        if probe_rows_path.exists():
+            # Shape guard on a REUSED probe-rows file: a stale or wrong-scale
+            # artifact (e.g. a hand-copied smoke file) must fail loud, never
+            # silently feed the sweep 5-question rows.
+            hdr = json.loads(probe_rows_path.read_text())
+            want_q = params.limit_questions or 50
+            if hdr.get("n_contexts") != 25 or hdr.get("n_questions") != want_q:
+                raise RuntimeError(
+                    f"existing probe rows at {probe_rows_path} have shape "
+                    f"(contexts={hdr.get('n_contexts')}, questions={hdr.get('n_questions')}), "
+                    f"expected (25, {want_q}) — refusing to reuse a wrong-scale artifact."
+                )
+        log.info("[phase=p0_probe_rows] SKIPPED (present=%s)", probe_rows_path.exists())
+    else:
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.probe_rows",
+                "--eval-pool",
+                str(args.eval_pool),
+                "--out-path",
+                str(probe_rows_path),
+            ]
+            + (
+                ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
+            ),
+            phase="p0_probe_rows",
+        )
+        if not args.skip_upload:
+            # The probe rows are base-model raw generations — data repo.
+            stage = args.slab_root / "_probe_rows_stage"
+            stage.mkdir(exist_ok=True)
+            shutil.copyfile(probe_rows_path, stage / "probe_rows.json")
+            upload_dir_fail_loud(
+                stage,
+                HF_DATA_REPO,
+                "dataset",
+                f"{HF_597_DATA_SUBDIR}{params.hf_suffix}/inputs",
+            )
+            shutil.rmtree(stage)
+
+    # ── Phase S: the hard #534 gate (HF subprocess) ──
+    if args.skip_gate:
+        log.info("[phase=gate_s] SKIPPED (shared phase done elsewhere)")
+        plan_deviations.append("gate_s_skipped_in_this_shard")
+    else:
+        gate_ckpts = download_arm_a_ladder("villain", (20, 40), args.runs_root / "armA_downloads")
+        gate_out = args.slab_root / "smoke" / "smoke_gate_report.json"
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.smoke_gate",
+                "--train-pool",
+                str(args.pools_dir / "villain_train_pool.jsonl"),
+                "--traj-ref",
+                str(ARM_A_TRAJ_DIR / "villain_seed42_trajectory.json"),
+                "--ckpt-root",
+                str(gate_ckpts),
+                "--steps",
+                "20,40",
+                "--out-path",
+                str(gate_out),
+                "--label",
+                "gate_s_armA_villain",
+            ],
+            phase="gate_s",
+        )
+
+    if args.stop_after_gate:
+        log.info("[phase=dispatch_done] --stop-after-gate: shared phases complete.")
+        print("[phase=done]")
+        return 0
+
+    # ── Per-cell loop ──
+    per_cell: list[dict] = []
+    first_armb_gate_done: dict = {"done": False}
+    for source in sources:
+        try:
+            cell = run_cell(
+                source, args.seed, args, params, neg_map, args.pools_dir, first_armb_gate_done
+            )
+            cell["pool_summary"] = pool_summaries.get(source, {})
+            per_cell.append(cell)
+            per_src = args.logs_dir / f"issue-597-{source}-results.json"
+            per_src.write_text(json.dumps(cell, indent=2, ensure_ascii=False))
+            log.info("[phase=cell_%s] sentinel -> %s", source, per_src)
+        except Exception as e:
+            fail_path = args.logs_dir / f"issue-597-{source}-FAILED.json"
+            fail_path.write_text(
+                json.dumps(
+                    {
+                        "source": source,
+                        "phase": "cell_failed",
+                        "exception_type": type(e).__name__,
+                        "exception_msg": str(e),
+                        "timestamp_utc": datetime.now(UTC).isoformat(),
+                    },
+                    indent=2,
+                )
+            )
+            log.exception("[%s] cell failed; wrote %s", source, fail_path)
+            raise
+
+    write_final_sentinel(args.logs_dir, sources, per_cell, params, plan_deviations)
+    log.info("[phase=dispatch_complete] %d cells completed.", len(per_cell))
+    print("[phase=done]")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
