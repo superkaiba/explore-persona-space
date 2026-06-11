@@ -5,9 +5,12 @@
 # runs right after item 2; see scripts/autonomous_session_watch.py's module
 # docstring for the full rules):
 #   1. VM disk-headroom: alert when free space on the VM root filesystem runs
-#      low (~20 GiB); below ~8 GiB also run safe fail-soft reclaims. A full /
+#      low (~20 GiB) AND run the stale-worktree sweep (worktree_audit.py
+#      --apply — the big-space remediation; 6h re-arm); below ~15 GiB (env
+#      EPM_VM_DISK_CRITICAL_GIB) also run the safe fail-soft cache reclaims
+#      (uv cache prune, npm cache clean, stale /tmp/claude-* sweep). A full /
 #      silently kills every foreground Bash spawn in orchestrator sessions
-#      (task #552).
+#      (task #552; remediation-at-detection added after #587, 2026-06-11).
 #   2. Crash-recovery: respawn a recoverable autonomous (`--auto`) /issue
 #      session whose driver process has died (crash / OOM / VM reboot), which
 #      the in-session /loop + durable=false cron cannot recover on their own.
