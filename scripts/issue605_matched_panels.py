@@ -90,7 +90,8 @@ EOS_ID = 151645
 COSINE_LAYER = 21
 GAUSS_KL_LAYER = 22
 PCA_K = 16
-MAX_NEW_TOKENS = 2048
+# (generation length inherits issue532_predictor_stress.MAX_NEW_TOKENS=2048 —
+# no local twin constant; round-1 review minor)
 SOURCES_ALL = list(CONDITIONS_BY_ID)  # the 16 #406 conditions, registry order
 DEFAULT_OUT = Path("eval_results/issue_605")
 
@@ -627,10 +628,61 @@ def _select_panel(
     }
 
 
+def _descope_record(sel: dict) -> dict | None:
+    """Pre-registered descope-to-populated-bands record (plan section 3
+    structural alternative): surviving bands = final strata whose gate verdict
+    passed; the descoped panel is their stratum contexts (already a subset of
+    the final panel). Returns None when NO band survives — descope cannot
+    rescue a selection with zero populated bands."""
+    surviving = sorted(b for b, st in sel["strata"].items() if st["gate"]["verdict"])
+    if not surviving:
+        return None
+    ctxs = sorted({c for b in surviving for c in sel["strata"][b]["contexts"]})
+    return {
+        "active": True,
+        "surviving_bands": surviving,
+        "panel_descoped": ctxs,
+        "note": "pre-registered descope to populated bands (plan section 3 structural "
+        "alternative); downstream eval + analysis restrict to panel_descoped",
+    }
+
+
+def _enforce_selection_gate(payload: dict, allow_descope: bool, what: str, out: Path) -> None:
+    """Plan section 7 gate 2: a failed fill/tightness gate BLOCKS trained-side
+    GPU spend. The selection JSON is always written (inspectable artifact);
+    on gate failure this exits non-zero unless --allow-descope recorded a
+    valid descope (round-1 blocker ``panel-gate-not-enforced``)."""
+    if payload["gate_pass"]:
+        return
+    desc = payload.get("descope")
+    if desc and desc.get("active"):
+        logger.warning(
+            "[select-gate] %s gate FAIL — descope recorded (bands %s, %d contexts); "
+            "eval dispatchers will restrict to panel_descoped",
+            what,
+            desc["surviving_bands"],
+            len(desc["panel_descoped"]),
+        )
+        return
+    raise SystemExit(
+        f"SELECTION GATE FAIL ({what}): gate_pass=false in {out} — this gate BLOCKS "
+        "trained-side GPU spend (plan section 7 gate 2). Run the ONE pre-registered "
+        "expansion round (--include-expansion after measuring expansion candidates); "
+        "if it still fails, re-run select with --allow-descope to record the "
+        "pre-registered descope-to-populated-bands path"
+        + ("" if allow_descope else " (no --allow-descope was passed)")
+        + (
+            "; NOTE: --allow-descope cannot rescue this selection — ZERO bands survive"
+            if allow_descope
+            else ""
+        )
+    )
+
+
 # ---------------------------------------------------------------------------
 # MARKER select (Phase 1.5, CPU)
 # ---------------------------------------------------------------------------
-def marker_select(out_dir: Path, cands: dict, n_probes: int) -> None:
+def marker_select(out_dir: Path, cands: dict, n_probes: int, allow_descope: bool = False) -> None:
     """Panel selection + tightness gate + rendered-string disjointness."""
     from issue532_predictor_stress import _build_bystander_prompt
     from transformers import AutoTokenizer
@@ -692,6 +744,10 @@ def marker_select(out_dir: Path, cands: dict, n_probes: int) -> None:
         "n_candidates_measured": table["n_contexts"],
         "metadata": _repro_meta(),
     }
+    if not payload["gate_pass"] and allow_descope:
+        desc = _descope_record(sel)
+        if desc is not None:
+            payload["descope"] = desc
     out = out_dir / "panel" / "marker_panel_selection.json"
     tmp = out.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(payload, indent=1))
@@ -702,12 +758,7 @@ def marker_select(out_dir: Path, cands: dict, n_probes: int) -> None:
         payload["gate_pass"],
         out,
     )
-    if not payload["gate_pass"]:
-        logger.warning(
-            "[phase=p15_select] GATE FAIL — run the ONE pre-registered expansion round "
-            "(--include-expansion after measuring expansion candidates), then descope "
-            "to populated bands per plan section 3 structural alternative."
-        )
+    _enforce_selection_gate(payload, allow_descope, "marker Phase 1.5", out)
 
 
 # ---------------------------------------------------------------------------
@@ -942,7 +993,7 @@ def fact_measure_acts(out_dir: Path, cands: dict, dry_run: bool) -> None:
 # ---------------------------------------------------------------------------
 # FACT select (Phase 4.5, CPU)
 # ---------------------------------------------------------------------------
-def fact_select(out_dir: Path, cands: dict) -> None:
+def fact_select(out_dir: Path, cands: dict, allow_descope: bool = False) -> None:
     """Per-arm 18-persona panel with the fact-scale gate + disjointness."""
     from issue444_bystander_logprob import _chat_prompt
     from issue532_predictor_stress import _cosine_predictor
@@ -1031,6 +1082,12 @@ def fact_select(out_dir: Path, cands: dict) -> None:
             sel["gate_pass"],
         )
 
+    if allow_descope:
+        for sel in selections.values():
+            if not sel["gate_pass"]:
+                desc = _descope_record(sel)
+                if desc is not None:
+                    sel["descope"] = desc
     payload = {
         "schema_version": "issue605_v1",
         "phase": "p45_fact_panel_selection",
@@ -1044,6 +1101,8 @@ def fact_select(out_dir: Path, cands: dict) -> None:
     tmp.write_text(json.dumps(payload, indent=1))
     tmp.replace(out)
     logger.info("[phase=p45_select] written %s", out)
+    for teacher, sel in selections.items():
+        _enforce_selection_gate(sel, allow_descope, f"fact Phase 4.5 arm={teacher}", out)
 
 
 # ---------------------------------------------------------------------------
@@ -1097,7 +1156,7 @@ def _run_marker(args: argparse.Namespace) -> None:
         else:
             raise SystemExit(f"unknown marker measure stage {args.stage!r}")
     if args.phase in ("select", "all") and not args.dry_run:
-        marker_select(args.out_dir, cands, args.n_probes)
+        marker_select(args.out_dir, cands, args.n_probes, args.allow_descope)
 
 
 def _run_fact(args: argparse.Namespace) -> None:
@@ -1118,7 +1177,7 @@ def _run_fact(args: argparse.Namespace) -> None:
         else:
             raise SystemExit(f"unknown fact measure stage {args.stage!r}")
     if args.phase in ("select", "all") and not args.dry_run:
-        fact_select(args.out_dir, cands)
+        fact_select(args.out_dir, cands, args.allow_descope)
 
 
 def main() -> None:
@@ -1140,6 +1199,13 @@ def main() -> None:
     ap.add_argument("--n-probes", type=int, default=50)
     ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--dry-run", action="store_true", help="stop each stage before model load")
+    ap.add_argument(
+        "--allow-descope",
+        action="store_true",
+        help="on a failed selection gate, record the pre-registered descope-to-populated-bands "
+        "path in the selection JSON instead of exiting non-zero (plan section 3 structural "
+        "alternative; only valid AFTER the one expansion round)",
+    )
     ap.add_argument(
         "--no-done-marker",
         action="store_true",

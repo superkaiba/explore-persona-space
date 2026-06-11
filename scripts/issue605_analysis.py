@@ -156,8 +156,13 @@ def cluster_bootstrap(
     n_boot: int,
     seed: int = ANALYSIS_SEED,
 ) -> np.ndarray:
-    """Unique-cluster resampling; duplicated clusters get fresh ids so grouped
-    CV keeps every duplicate's cells inside one fold (no train/test leakage)."""
+    """Unique-cluster resampling. ``_boot_cluster`` ids are per-instance
+    bookkeeping ONLY — any grouped-CV statistic run inside a resample MUST
+    group folds by the ORIGINAL cluster column, never ``_boot_cluster``:
+    fresh ids keep each resampled COPY in one fold but let two copies of the
+    same original context straddle train/test folds (identical covariates AND
+    DV), which makes the CV bootstrap CI anti-conservative (round-1 review
+    concern ``cv-bootstrap-cluster-leakage``)."""
     clusters = np.array(sorted(frame[cluster_col].unique()))
     rng = np.random.default_rng(seed)
     by_cluster = {c: frame[frame[cluster_col] == c] for c in clusters}
@@ -281,21 +286,74 @@ def per_band_partials(
 # ---------------------------------------------------------------------------
 # Frame builders
 # ---------------------------------------------------------------------------
+def _resolve_selected_panel(sel: dict, what: str) -> set[str]:
+    """Panel context set from a selection dict, honoring gate + descope:
+    gate_pass=true -> full panel; gate_pass=false -> REFUSE unless the JSON
+    carries the recorded pre-registered descope, then the surviving-band
+    subset (round-1 blocker ``panel-gate-not-enforced`` /
+    ``marker-analysis-panel-filter``)."""
+    if sel.get("gate_pass", False):
+        return set(sel["panel"])
+    desc = sel.get("descope") or {}
+    assert desc.get("active"), (
+        f"{what} has gate_pass=false and no recorded descope — the selection gate blocks "
+        "this analysis (plan section 7 gate 2); re-run selection after the pre-registered "
+        "expansion round or with --allow-descope"
+    )
+    logger.warning(
+        "%s: descoped panel in effect (surviving bands: %s, %d contexts)",
+        what,
+        desc["surviving_bands"],
+        len(desc["panel_descoped"]),
+    )
+    return set(desc["panel_descoped"])
+
+
 def build_marker_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
-    """Cell-level marker frame from per-cell JSONs + pair table + selection."""
+    """Cell-level marker frame from per-cell JSONs + pair table + selection.
+
+    Only cells whose context is in the SELECTED panel (or recorded descope
+    subset) enter the frame — stale smoke/expansion cells in the same output
+    root never reach the registered statistics — and per-source coverage of
+    that panel is asserted (plan section 6: ``>= sources x panel`` files,
+    fewer only under a recorded descope)."""
     sel = json.loads((out_root / "panel" / "marker_panel_selection.json").read_text())
     table = json.loads((out_root / "panel" / "marker_pair_table.json").read_text())
     pair = {(r["source_cid"], r["context_label"]): r for r in table["rows"]}
     edges = sel["band_edges_terciles"]
+    panel_set = _resolve_selected_panel(sel, "marker_panel_selection.json")
     trained_dir = out_root / "marker" / "per_cell_trained"
     base_dir = out_root / "marker" / "per_cell_base"
     gen_dir = out_root / "marker" / "gen"
+    prior_dir = out_root / "panel" / "marker_measure" / "prior"
+
+    half_a_cache: dict[str, float] = {}
+
+    def prior_half_a(ctx: str) -> float:
+        """Half-A (even-index per-q) prior from the P1 per-q reads; NaN for
+        legacy contexts whose prior was reused as a #532 scalar (no per-q)."""
+        if ctx not in half_a_cache:
+            p = prior_dir / f"{ctx}.json"
+            if p.exists():
+                per_q = json.loads(p.read_text())["per_q"]
+                half_a_cache[ctx] = float(np.mean([r["logp_marker"] for r in per_q[0::2]]))
+            else:
+                half_a_cache[ctx] = float("nan")
+        return half_a_cache[ctx]
 
     rows = []
+    skipped: list[tuple[str, str, str]] = []
+    seen_cells: set[tuple[str, str]] = set()
     for f in sorted(trained_dir.glob("*.json")):
         src, ctx = f.stem.split("__", 1)
+        if ctx not in panel_set:
+            continue  # stale smoke/expansion cell — never enters registered statistics
         b_path = base_dir / f.name
-        if not b_path.exists() or (src, ctx) not in pair:
+        if not b_path.exists():
+            skipped.append((src, ctx, "missing per_cell_base"))
+            continue
+        if (src, ctx) not in pair:
+            skipped.append((src, ctx, "missing pair-table row"))
             continue
         t = json.loads(f.read_text())
         b = json.loads(b_path.read_text())
@@ -350,11 +408,23 @@ def build_marker_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
                 "n_emitting_slots": int(sum(q["slot_kind"] == "pre_marker" for q in t_q)),
                 "dlogp_oddq": float(np.mean(dlogp_q[1::2])),
                 "dmargin_oddq": float(np.mean(dmargin_q[1::2])),
+                "prior_half_a": prior_half_a(ctx),
             }
         )
+        seen_cells.add((src, ctx))
     frame = pd.DataFrame(rows)
     assert len(frame), "no marker cells found — run the Phase 2 dispatcher first"
-    for c in sorted(frame["source"].unique())[1:]:
+    # Coverage assert: every source present must cover the FULL selected (or
+    # descoped) panel — a shortfall names the missing cells instead of
+    # silently shrinking the registered statistics' denominator.
+    sources_present = sorted(frame["source"].unique())
+    shortfall = sorted({(s, c) for s in sources_present for c in panel_set} - seen_cells)
+    assert not shortfall, (
+        f"marker frame coverage shortfall: expected {len(sources_present)} sources x "
+        f"{len(panel_set)} panel contexts, {len(shortfall)} cells absent "
+        f"(first 10: {shortfall[:10]}); skipped-with-reason: {skipped[:10]}"
+    )
+    for c in sources_present[1:]:
         frame[f"fe_{c}"] = (frame["source"] == c).astype(float)
     return frame, sel
 
@@ -364,13 +434,17 @@ def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
     sel = json.loads((out_root / "panel" / "fact_panel_selection.json").read_text())
     judged_dir = out_root / "fact" / "judged"
     tf_dir = out_root / "fact" / "tf"
+    allowed_by_arm = {
+        a: _resolve_selected_panel(arm_sel, f"fact_panel_selection.json arm={a}")
+        for a, arm_sel in sel["per_arm"].items()
+    }
     rows = []
     for f in sorted(judged_dir.glob("*.json")):
         j = json.loads(f.read_text())
         arm, seed, persona = j["arm"], j["seed"], j["persona"]
         arm_sel = sel["per_arm"][arm]
-        if persona not in arm_sel.get("per_persona", {}):
-            continue
+        if persona not in allowed_by_arm[arm] or persona not in arm_sel.get("per_persona", {}):
+            continue  # stale / out-of-panel cell-persona — never enters registered statistics
         meta = arm_sel["per_persona"][persona]
         edges = arm_sel["band_edges_terciles"]
         cos = meta["cos_to_teacher"]
@@ -393,6 +467,14 @@ def build_fact_frame(out_root: Path) -> tuple[pd.DataFrame, dict]:
         )
     frame = pd.DataFrame(rows)
     assert len(frame), "no fact cell-personas found — run the Phase 5 dispatcher first"
+    shortfall = {}
+    for (a, s), grp in frame.groupby(["arm", "seed"]):
+        miss = sorted(allowed_by_arm[a] - set(grp["context"]))
+        if miss:
+            shortfall[f"{a}_s{s}"] = miss
+    assert not shortfall, (
+        f"fact frame coverage shortfall (cell -> missing panel personas): {shortfall}"
+    )
     for c in sorted(frame["arm"].unique())[1:]:
         frame[f"fe_arm_{c}"] = (frame["arm"] == c).astype(float)
     for s in sorted(frame["seed"].unique())[1:]:
@@ -419,9 +501,13 @@ def registered_battery(
         return pooled_partial(f, dv, prior_col, sim_col)
 
     def stat_dcv(f: pd.DataFrame) -> float:
-        return delta_cv_r2(f, dv, prior_col, sim_col, "_boot_cluster")[
-            "delta_cv_r2_prior_beyond_sim"
-        ]
+        # Group CV folds by the ORIGINAL cluster id (group_col), NOT the
+        # per-copy `_boot_cluster` id: all duplicate copies of a resampled
+        # context must share a fold, or the +prior model memorizes the
+        # duplicated cluster in train and scores it in test (CI ~2x too
+        # narrow, shifted positive under a null — round-1 blocker
+        # `cv-bootstrap-cluster-leakage` / `dcv-bootstrap-duplicate-fold-leakage`).
+        return delta_cv_r2(f, dv, prior_col, sim_col, group_col)["delta_cv_r2_prior_beyond_sim"]
 
     point_partial = pooled_partial(frame, dv, prior_col, sim_col)
     boots_partial = cluster_bootstrap(frame, group_col, stat_partial, n_boot)
@@ -558,6 +644,12 @@ def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
     }
     res["registered"] = {"shift": shift, "level": level}
 
+    # H-level lattice ROUTING classifies on `trained_logp` alone (the
+    # continuous absolute level DV). Plan section 3 names both level DVs
+    # (emission rate / absolute trained log P); the emission-rate battery is
+    # computed + reported above but NOT routed — it is zero-inflated at low
+    # prior and ceiling-prone at high prior, so routing on it would key the
+    # lattice on a saturating readout. Recorded in the analysis JSON below.
     level_cls = _classify(level["trained_logp"])
     # H-level requires POSITIVE sign explicitly.
     if level_cls == "wins-":
@@ -574,6 +666,12 @@ def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
         shift["eos_margin"]["pooled_partial"]["ci95"][1],
     )
     res["lattice"] = evaluate_lattice(level_cls, shift_logp_cls, shift_margin_cls, rho_upper)
+    res["lattice"]["h_level_routing"] = {
+        "dv": "trained_logp",
+        "note": "H-level routed on the continuous absolute trained log P; the emission-rate "
+        "battery is computed + reported under registered.level but not routed "
+        "(zero-inflated / ceiling-prone)",
+    }
 
     # Diagnostics (plan 11.5).
     coll_overall = abs(_pearson(frame["cos"].to_numpy(), frame["prior"].to_numpy()))
@@ -608,12 +706,7 @@ def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
             covars=[frame["cos"].to_numpy(), src_mean_d, frame["base_logp_matched"].to_numpy()],
             dummies=_band_dummies(frame["band"]),
         ),
-        "split_probe_complement_partial": partial_spearman(
-            frame["dlogp_oddq"].to_numpy(),
-            frame["prior"].to_numpy(),
-            covars=[frame["cos"].to_numpy(), src_mean_d],
-            dummies=_band_dummies(frame["band"]),
-        ),
+        "split_probe_complement_partial": _split_probe_complement(frame),
         "prompt_length_covariate_partial": partial_spearman(
             frame["dlogp"].to_numpy(),
             frame["prior"].to_numpy(),
@@ -659,6 +752,32 @@ def analyze_marker(out_root: Path, figures_dir: Path, n_boot: int) -> dict:
     out.write_text(json.dumps(res, indent=1, default=float))
     logger.info("[phase=p7_marker] written %s — lattice: %s", out, res["lattice"]["verdict"])
     return res
+
+
+def _split_probe_complement(frame: pd.DataFrame) -> dict:
+    """Split-probe diagnostic (plan 11.5): prior from probe half A (even-index
+    per-q P1 prior reads, NOT the full-probe scalar) vs the half-B (odd-index)
+    DV — removes shared-probe-sampling noise coupling. Legacy contexts whose
+    prior is a reused #532 scalar carry no per-q rows and are excluded."""
+    m = frame["prior_half_a"].notna() & frame["dlogp_oddq"].notna()
+    n = int(m.sum())
+    if n < 8:
+        rho = float("nan")
+    else:
+        sub = frame[m]
+        sub_src_mean = sub.groupby("source")["dlogp_oddq"].transform("mean").to_numpy()
+        rho = partial_spearman(
+            sub["dlogp_oddq"].to_numpy(),
+            sub["prior_half_a"].to_numpy(),
+            covars=[sub["cos"].to_numpy(), sub_src_mean],
+            dummies=_band_dummies(sub["band"]),
+        )
+    return {
+        "rho": rho,
+        "n_cells": n,
+        "prior_basis": "probe half A (even-index per-q P1 prior reads); DV = half-B "
+        "(odd-index) dlogp; legacy scalar-prior contexts excluded",
+    }
 
 
 def _marker_prompt_token_len_map(frame: pd.DataFrame) -> dict[str, int]:
@@ -1017,6 +1136,29 @@ def synthesize_stub(root: Path) -> None:
             indent=1,
         )
     )
+
+    # Per-q P1 prior reads (half-A prior basis for the split-probe diagnostic).
+    prior_dir = root / "panel" / "marker_measure" / "prior"
+    prior_dir.mkdir(parents=True, exist_ok=True)
+    for c_i, c in enumerate(contexts):
+        per_q = [
+            {"logp_marker": float(prior_vals[c_i] + rng.normal(0, 0.3))} for _ in range(n_probes)
+        ]
+        (prior_dir / f"{c}.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": "issue605_v1",
+                    "phase": "p1_marker_prior",
+                    "context_label": c,
+                    "n_probes": n_probes,
+                    "per_q": per_q,
+                    "summary": {
+                        "mean_logp_marker": float(np.mean([r["logp_marker"] for r in per_q]))
+                    },
+                },
+                indent=1,
+            )
+        )
 
     def slot_read(logp: float, margin: float) -> dict:
         z_eos = 10.0

@@ -122,6 +122,7 @@ def _download_fact_adapters(cells: list[tuple[str, int]]) -> dict[tuple[str, int
         # #541 recipe targets attn+MLP only.
         cfg = json.loads((target / "adapter_config.json").read_text())
         assert not set(cfg.get("target_modules") or []) & {"lm_head", "embed_tokens"}, cfg
+        assert not cfg.get("modules_to_save"), (arm, seed, cfg.get("modules_to_save"))
         out[(arm, seed)] = str(target)
     return out
 
@@ -209,8 +210,30 @@ def _resolve_cells(arms_spec: str, seeds_spec: str) -> list[tuple[str, int]]:
 
 
 def _resolve_personas(panel_path: Path, arm: str, personas_subset: int | None) -> list[str]:
+    """Per-arm panel personas from the Phase-4.5 selection JSON. REFUSES a
+    gate_pass=false arm unless it carries the recorded pre-registered descope
+    (then restricts to the surviving-band subset) — plan section 7 gate 2
+    blocks trained-side GPU spend (round-1 blocker ``panel-gate-not-enforced``)."""
     sel = json.loads(panel_path.read_text())
-    panel = list(sel["per_arm"][arm]["panel"])
+    arm_sel = sel["per_arm"][arm]
+    if arm_sel.get("gate_pass", False):
+        panel = list(arm_sel["panel"])
+    else:
+        desc = arm_sel.get("descope") or {}
+        if not desc.get("active"):
+            raise SystemExit(
+                f"REFUSING panel {panel_path} arm={arm}: gate_pass=false with no recorded "
+                "descope — the Phase-4.5 selection gate BLOCKS trained-side GPU spend (plan "
+                "section 7 gate 2). Re-run selection after the pre-registered expansion "
+                "round, or with --allow-descope to record the descope path."
+            )
+        panel = list(desc["panel_descoped"])
+        logger.warning(
+            "arm=%s descoped panel in effect: bands %s, %d personas",
+            arm,
+            desc["surviving_bands"],
+            len(panel),
+        )
     if personas_subset is not None:
         panel = panel[:personas_subset]
     assert panel, (panel_path, arm)

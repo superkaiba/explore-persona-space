@@ -99,9 +99,30 @@ def _repro_meta(extra: dict | None = None) -> dict:
 
 def _resolve_contexts(panel_path: Path, panel_subset: int | None) -> list[str]:
     """Panel context labels from the Phase-1.5 selection JSON, optionally cut
-    to the first N (the smoke parameterization — same list source as sweep)."""
+    to the first N (the smoke parameterization — same list source as sweep).
+
+    REFUSES a gate_pass=false selection unless it carries the recorded
+    pre-registered descope (then restricts to the surviving-band subset) —
+    plan section 7 gate 2 blocks trained-side GPU spend (round-1 blocker
+    ``panel-gate-not-enforced``)."""
     sel = json.loads(panel_path.read_text())
-    panel = list(sel["panel"])
+    if sel.get("gate_pass", False):
+        panel = list(sel["panel"])
+    else:
+        desc = sel.get("descope") or {}
+        if not desc.get("active"):
+            raise SystemExit(
+                f"REFUSING panel {panel_path}: gate_pass=false with no recorded descope — "
+                "the Phase-1.5 selection gate BLOCKS trained-side GPU spend (plan section 7 "
+                "gate 2). Re-run selection after the pre-registered expansion round, or with "
+                "--allow-descope to record the descope-to-populated-bands path."
+            )
+        panel = list(desc["panel_descoped"])
+        logger.warning(
+            "descoped panel in effect: bands %s, %d contexts",
+            desc["surviving_bands"],
+            len(panel),
+        )
     if panel_subset is not None:
         panel = panel[:panel_subset]
     assert panel, f"empty panel in {panel_path}"
