@@ -1,7 +1,7 @@
 ---
-title: Removing the contrastive negatives does not give the marker EM-like concentration
-  — the EM-vs-marker geometry contrast is not explained by the negatives component
-  of the training rig (MODERATE confidence)
+title: Positive-only retraining keeps the marker's dispersed layer-14 geometry, so
+  the EM-vs-marker concentration contrast is not explained by the contrastive negatives
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:16:20Z'
