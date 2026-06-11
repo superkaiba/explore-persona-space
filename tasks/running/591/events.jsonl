@@ -83,3 +83,4 @@
 {"ts": "2026-06-11T11:09:17Z", "kind": "epm:progress", "version": 15, "by": "poll_pipeline", "note": "phase transition: (start) -> dispatch", "phase": "dispatch", "pod": "pod-591"}
 {"ts": "2026-06-11T11:19:02Z", "kind": "epm:progress", "version": 16, "by": "unknown", "note": "e1 production chain COMPLETE on VM (exit 0): 414-cell table + self_rates (refusal/EM self deltas judged from Hub raw completions) + factor_analysis.json (Firth + permutation + LOSO) + 390 supplement + figures committed on issue-591. Pod e2 phases still running."}
 {"ts": "2026-06-11T11:19:09Z", "kind": "epm:progress", "version": 17, "by": "poll_pipeline", "note": "phase transition: dispatch -> c_trained_gen", "phase": "c_trained_gen", "pod": "pod-591"}
+{"ts": "2026-06-11T11:28:50Z", "kind": "epm:progress", "version": 18, "by": "poll_pipeline", "note": "phase transition: c_trained_gen -> dispatch", "phase": "dispatch", "pod": "pod-591"}
