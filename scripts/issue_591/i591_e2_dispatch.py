@@ -380,30 +380,130 @@ def _hub_upload_file(local: Path, path_in_repo: str, *, skip: bool) -> str | Non
     return url
 
 
-def _upload_phase_outputs(ctx: Ctx, local_dir: Path, repo_subdir: str) -> dict[str, str]:
-    """Upload every JSON under ``local_dir`` (checkpoint-per-phase contract).
+def _count_hub_files_under_prefix(api, prefix: str) -> int:
+    """RepoFile count under a SCOPED Hub prefix (never a whole-repo walk —
+    the round-4 verification mechanism), with transient-5xx retry."""
+    from huggingface_hub.hf_api import RepoFile
+    from huggingface_hub.utils import EntryNotFoundError
 
-    Per-rollout raw completion files additionally land at the plan-§4.2
-    canonical path ``{HF_EXPERIMENT_NAME}/raw_completions/<model>/...`` (the
-    CLAUDE.md Upload Policy shape — the #411 rig's per-panel naming does not
-    match ``upload_raw_completions_to_data_repo``'s ``raw_completions.json``
-    rglob, so e2 walks + uploads each file explicitly via ``hub._upload``).
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _retry_transient
+
+    def _count() -> int:
+        try:
+            entries = api.list_repo_tree(
+                DEFAULT_DATASET_REPO, path_in_repo=prefix, recursive=True, repo_type="dataset"
+            )
+            return sum(1 for e in entries if isinstance(e, RepoFile))
+        except EntryNotFoundError:
+            return 0
+
+    return _retry_transient(_count, what=f"count Hub files under {prefix}")
+
+
+def _upload_phase_outputs(ctx: Ctx, local_dir: Path, repo_subdir: str) -> dict[str, str]:
+    """ONE batched Hub commit per phase-output directory (checkpoint-per-phase).
+
+    The canonical raw_completions mirror (plan §4.2 / CLAUDE.md Upload Policy
+    shape — the #411 per-panel naming does not match
+    ``upload_raw_completions_to_data_repo``'s rglob) is staged as EXTRA
+    operations inside the SAME commit, never as separate per-file commits.
+
+    Why batched (epm:failure v2, 2026-06-11): HF throttles repository commits
+    at 256/hour; the previous per-file pattern (~2 commits per file, 100+
+    commits per adapter) tripped a 429 mid-Phase-C. Now each phase directory
+    is ONE ``create_commit`` (~2 commits/adapter including the manifest).
+    Resume idempotence: prefixes that already verify COMPLETE on the Hub are
+    skipped without spending a commit. Verification is the round-4
+    prefix-scoped listing, run ONCE per destination prefix per commit —
+    never per file. 429 stays fail-fast (``_retry_transient`` never
+    retries 4xx).
     """
+    files = sorted(local_dir.rglob("*.json"))
+    if not files:
+        return {}
+    rel_dir = local_dir.relative_to(ctx.out_root)
+    gens_prefix = f"{ctx.experiment_name}/{repo_subdir}/{rel_dir.as_posix()}"
+    ops_meta: list[tuple[Path, str]] = []
+    raw_by_prefix: dict[str, int] = {}
     uploaded: dict[str, str] = {}
-    for f in sorted(local_dir.rglob("*.json")):
+    for f in files:
         rel = f.relative_to(ctx.out_root)
-        url = _hub_upload_file(
-            f, f"{ctx.experiment_name}/{repo_subdir}/{rel.as_posix()}", skip=ctx.skip_upload
-        )
-        if url:
-            uploaded[rel.as_posix()] = url
+        pir = f"{ctx.experiment_name}/{repo_subdir}/{rel.as_posix()}"
+        ops_meta.append((f, pir))
+        uploaded[rel.as_posix()] = pir
         if f.parent.name == "raw_completions":
             # generations/<model>/seed_<S>/raw_completions/<panel>_seed<S>.json
             model_tag = f.parents[2].name
-            canon = f"{ctx.experiment_name}/raw_completions/{model_tag}/seed_{ctx.seed}/{f.name}"
-            url2 = _hub_upload_file(f, canon, skip=ctx.skip_upload)
-            if url2:
-                uploaded[f"canonical:{canon}"] = url2
+            canon_prefix = f"{ctx.experiment_name}/raw_completions/{model_tag}/seed_{ctx.seed}"
+            canon = f"{canon_prefix}/{f.name}"
+            ops_meta.append((f, canon))
+            uploaded[f"canonical:{canon}"] = canon
+            raw_by_prefix[canon_prefix] = raw_by_prefix.get(canon_prefix, 0) + 1
+    if ctx.skip_upload:
+        _phase_log(
+            "upload",
+            f"SKIP batched upload {local_dir} -> {gens_prefix} "
+            f"({len(ops_meta)} ops, 1 commit) (--skip-upload)",
+        )
+        return uploaded
+
+    from huggingface_hub import CommitOperationAdd, HfApi
+
+    from explore_persona_space.orchestrate.hub import DEFAULT_DATASET_REPO, _retry_transient
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    n_gen_files = len(files)
+
+    def _prefixes_complete() -> bool:
+        if _count_hub_files_under_prefix(api, gens_prefix) < n_gen_files:
+            return False
+        return all(_count_hub_files_under_prefix(api, pfx) >= n for pfx, n in raw_by_prefix.items())
+
+    if _prefixes_complete():
+        _phase_log(
+            "upload",
+            f"{gens_prefix}: already complete on Hub ({n_gen_files} files) — "
+            f"skipping commit (resume; commit-budget-friendly)",
+        )
+        return uploaded
+    operations = [
+        CommitOperationAdd(path_in_repo=pir, path_or_fileobj=str(f)) for f, pir in ops_meta
+    ]
+    _phase_log(
+        "upload",
+        f"batched commit: {len(operations)} ops -> {gens_prefix} "
+        f"(+{sum(raw_by_prefix.values())} canonical-mirror ops) in ONE commit",
+    )
+    _retry_transient(
+        lambda: api.create_commit(
+            repo_id=DEFAULT_DATASET_REPO,
+            repo_type="dataset",
+            operations=operations,
+            commit_message=(
+                f"#591 e2 phase outputs: {rel_dir.as_posix()} ({len(operations)} files, batched)"
+            ),
+        ),
+        what=f"create_commit {gens_prefix}",
+    )
+    # Post-commit verification ONCE per destination prefix (round-4 mechanism).
+    n_committed = _count_hub_files_under_prefix(api, gens_prefix)
+    if n_committed < n_gen_files:
+        raise RuntimeError(
+            f"batched upload verification FAILED: {n_committed}/{n_gen_files} files "
+            f"under {gens_prefix} after commit"
+        )
+    for pfx, n in raw_by_prefix.items():
+        got = _count_hub_files_under_prefix(api, pfx)
+        if got < n:
+            raise RuntimeError(
+                f"batched upload verification FAILED: {got}/{n} canonical raw "
+                f"completions under {pfx} after commit"
+            )
+    _phase_log(
+        "upload",
+        f"batched upload verified: {n_committed} files at {gens_prefix} "
+        f"(+{sum(raw_by_prefix.values())} canonical mirror), 1 commit",
+    )
     return uploaded
 
 
