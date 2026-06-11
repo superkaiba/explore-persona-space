@@ -317,7 +317,7 @@ def analyze_unit(  # noqa: C901  one linear per-unit DV pipeline; reads clearest
     """All checkpoint-cell DVs + the rotation track for one arm × source unit."""
     from explore_persona_space.analysis.svd_direction_constancy import svd_summary
 
-    meta, arrays = load_npz_with_meta(unit_path, "i597_svd_unit_v1")
+    meta, arrays = load_npz_with_meta(unit_path, "i597_svd_unit_v2")
     unit = meta["unit"]
     arm, source = meta["arm"], meta["source"]
     steps: list[int] = list(meta["steps"])
@@ -991,8 +991,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.download:
         maybe_download_tensors(args.tensors_root, unit_stems, args.hf_suffix)
 
+    # v2 = pre-final-norm layer-27 residuals (hook mechanism, round-2 fix); a
+    # stale v1 bank (post-norm L27) fails loud here instead of mixing spaces.
     bank_meta, bank_arrays = load_npz_with_meta(
-        args.tensors_root / "base_bank.npz", "i597_svd_base_bank_v1"
+        args.tensors_root / "base_bank.npz", "i597_svd_base_bank_v2"
     )
     assert bank_meta["centering"] == "global_mean", bank_meta["centering"]
 

@@ -1260,6 +1260,83 @@ def test_batched_panel_reads_match_serial_port():
         assert int(reads["argmax_id"][i]) == int(raw.argmax())
 
 
+def test_panel_reads_pre_final_norm_and_double_norm_regression():
+    """Round-2 regression pin (epm:failure v3): residual reads are PRE-final-
+    norm at the LAST block, per-row slot indexing under left-pad matches an
+    INDEPENDENT unpadded HF-tuple reference, and the lm_head check catches
+    the round-1 double-norm bug class.
+
+    The final RMSNorm weight is made NON-uniform first: random-init tiny
+    models keep all-ones norm weights, and double-norming a uniform-weight
+    RMSNorm is direction-preserving — exactly why the round-1 CPU smoke
+    false-PASSed while the real bf16 Qwen-2.5-7B read cos 0.812.
+    """
+    import torch
+
+    from explore_persona_space.experiments.leakage_dynamics_597.shift_svd import (
+        ProbeRow,
+        _assert_lm_head_reproduces,
+        compute_panel_reads,
+    )
+
+    model = _tiny_qwen2()
+    torch.manual_seed(2)
+    with torch.no_grad():
+        model.model.norm.weight.copy_(torch.rand(64) * 2.0 + 0.1)  # NON-uniform
+
+    specs = [(15, 5), (8, 3), (21, 9)]  # (total_len, prompt_len) — mixed lengths
+    rows = []
+    for total, prompt_len in specs:
+        ids = torch.randint(1, 128, (total,)).tolist()
+        rows.append(
+            ProbeRow(context=f"c{total}", q_idx=0, full_ids=tuple(ids), prompt_len=prompt_len)
+        )
+
+    last = model.config.num_hidden_layers - 1
+    # (a) The corrected production path PASSES its own lm_head check on a
+    # non-uniform final norm (the round-1 path raised here on the real model).
+    reads = compute_panel_reads(
+        model,
+        rows,
+        layers=(0, last),
+        marker_id=5,
+        eos_token_id=7,
+        batch_size=3,  # all three lengths share ONE left-padded batch
+        device="cpu",
+        pad_token_id=0,
+        check_lm_head=True,
+    )
+
+    cos = torch.nn.functional.cosine_similarity
+    for i, row in enumerate(rows):
+        with torch.no_grad():
+            out = model(torch.tensor(row.full_ids).unsqueeze(0), output_hidden_states=True)
+        # (b) Independent per-row slot reference: the unpadded forward's HF
+        # tuple entry [L+1] is a valid reference for L <= n_blocks-2 (#493) —
+        # pins left-pad row/slot alignment against a hand-built position.
+        ref_l0_slot = out.hidden_states[1][0, -1]
+        assert torch.allclose(reads["slot"][0][i], ref_l0_slot, atol=1e-4), i
+        ref_l0_meanresp = out.hidden_states[1][0, row.prompt_len :].mean(dim=0)
+        assert torch.allclose(reads["mean_resp"][0][i], ref_l0_meanresp, atol=1e-4), i
+
+        own_logits = out.logits[0, -1].float()
+        slot_read = reads["slot"][last][i]
+        # (c) The stored last-block slot residual is PRE-final-norm: ONE
+        # application of the final norm lands on lm_head's input...
+        renormed = model.get_output_embeddings()(model.model.norm(slot_read))
+        assert cos(renormed.float(), own_logits, dim=0).item() >= 0.9999, i
+        # ...while lm_head on the raw read does NOT reproduce the logits.
+        raw_lm = model.get_output_embeddings()(slot_read)
+        assert cos(raw_lm.float(), own_logits, dim=0).item() < 0.9999, i
+        # (d) hidden_states[-1] (tuple tail) is the POST-norm tensor.
+        tail = out.hidden_states[-1][0, -1]
+        assert torch.allclose(model.model.norm(slot_read), tail, atol=1e-4), i
+        # (e) Round-1 bug class: feeding the POST-norm tail through the check
+        # double-norms and MUST fail — the exact class the pod gate caught.
+        with pytest.raises(RuntimeError, match="lm_head reproduction check FAILED"):
+            _assert_lm_head_reproduces(model, out.logits, out.hidden_states[-1], row_index=0)
+
+
 class _CharTokenizer:
     """Char-level stub: encode = ords; satisfies prefix decomposition exactly."""
 

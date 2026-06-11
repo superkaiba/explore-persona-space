@@ -5,13 +5,19 @@ Per-checkpoint per-context activation-shift extraction over the parent's 25
 contexts × 50 questions probe rows (plan §4):
 
   Phase A (``--mode base``, once): teacher-forced base-model forwards with
-  ``output_hidden_states=True`` over every (context, question) row; store per
-  row the slot + mean-over-response residuals at layers {7, 14, 21, 27}
-  (fp16), the slot logits' four floats (storage contract: logp, z_marker,
-  z_eos, logZ — incident #530), and derive the base context bank (per-context
-  means) with the #536 ``global_mean`` centered cosine matrix + provenance.
-  Includes the base-vs-base zero-shift sanity and the one-row
-  ``lm_head(final_norm(h[-1]))`` logits-reproduction check (plan §12.4).
+  residuals captured via FORWARD HOOKS on the decoder block modules (the
+  #493 round-6 mechanism — see ``_LayerHookCapture``) over every (context,
+  question) row; store per row the slot + mean-over-response residuals at
+  layers {7, 14, 21, 27} (fp16), the slot logits' four floats (storage
+  contract: logp, z_marker, z_eos, logZ — incident #530), and derive the
+  base context bank (per-context means) with the #536 ``global_mean``
+  centered cosine matrix + provenance. Includes the base-vs-base zero-shift
+  sanity and the one-row ``lm_head(final_norm(hook(last_block)))``
+  logits-reproduction check (plan §12.4 — verifies the captured residual is
+  genuinely PRE-final-norm; NOTE ``out.hidden_states[-1]`` is POST-final-norm
+  in transformers ≥4.5x, so the tuple path double-norms at the last layer:
+  round-1 of this rig did exactly that and failed on the real bf16 model at
+  cos 0.812, epm:failure v3).
 
   Phase B (``--mode unit``, per arm × source): enumerate the downloaded
   checkpoint ladder (the parent's ``enumerate_ladder``), hot-swap each LoRA
@@ -39,6 +45,15 @@ offset is a no-op for masked attention; equivalence vs the serial unpadded
 read is pinned by ``tests/test_issue597_leakage_dynamics.py`` (cosine ≥ 0.999,
 measured ~4e-7 max abs diff on a tiny Qwen2).
 
+Residual mechanism note (round-2 fix, schema v2): residual reads come from
+forward hooks on ``decoder.layers[L]`` — NOT ``output_hidden_states=True`` —
+because the hidden-states tuple's TAIL entry is post-final-norm, so the
+``hidden_states[L+1]`` read silently changes space at the LAST layer (27 of
+28 on Qwen-2.5-7B). Hook output ≡ ``hidden_states[L+1]`` for L ≤ 26 (#493
+GPU-verified), so the parent's {7, 14, 21} reads are reproduced exactly;
+layer 27 is now genuinely pre-final-norm, matching the persona-distance
+sweep family's canonical mechanism (#404/#406/#493).
+
 Run as a SUBPROCESS from the dispatcher (``scripts/issue_597/
 titration_svd_597.py``): ``uv run python -m
 explore_persona_space.experiments.leakage_dynamics_597.shift_svd``.
@@ -64,9 +79,12 @@ load_dotenv()
 
 log = logging.getLogger("issue_597.shift_svd")
 
-SCHEMA_CKPT = "i597_svd_ckpt_v1"
-SCHEMA_UNIT = "i597_svd_unit_v1"
-SCHEMA_BANK = "i597_svd_base_bank_v1"
+# v2 = layer-27 residual mechanism change (forward hooks, pre-final-norm —
+# round-2 fix): v1 artifacts carry a POST-final-norm layer-27 read and must
+# never mix with v2 via resume-skip (_stored_ckpt_is_current) or bank load.
+SCHEMA_CKPT = "i597_svd_ckpt_v2"
+SCHEMA_UNIT = "i597_svd_unit_v2"
+SCHEMA_BANK = "i597_svd_base_bank_v2"
 
 # Read layers (plan §11: {7,14,21} from #521/#551 + 27 from the persona-distance
 # sweep set; primary 14 = the producing pipeline's DEFAULT_LAYER).
@@ -110,21 +128,79 @@ def _metadata(extra: dict | None = None) -> dict:
     return meta
 
 
-# ── serial reference read (verbatim port) ────────────────────────────────────
+# ── residual capture (forward hooks; #493 round-6 mechanism) ─────────────────
+
+
+def _resolve_decoder(model):
+    """The inner decoder module carrying ``.layers`` + ``.norm``.
+
+    ``Qwen2ForCausalLM.get_decoder()`` → ``Qwen2Model``; ``PeftModel``
+    forwards the attribute, so the SAME resolution works on hot-swapped
+    LoRA checkpoints (Phase B).
+    """
+    return model.get_decoder() if hasattr(model, "get_decoder") else model.model
+
+
+class _LayerHookCapture:
+    """Forward hooks on decoder block modules: PRE-final-norm residuals.
+
+    The #493 round-6 mechanism (GPU-verified 2026-06-05): the
+    ``output_hidden_states=True`` tuple's entry ``[L+1]`` equals the block-L
+    output only for L ≤ n_blocks−2; the TAIL entry is the post-final-norm
+    tensor (it is exactly ``lm_head``'s input). Hooking the block modules
+    captures the raw residual stream uniformly at EVERY layer, eliminating
+    the last-layer post-norm quirk (round-1 failure class, epm:failure v3).
+
+    ``captured[layer]`` holds the (B, T, H) output of the MOST RECENT
+    forward; callers clear between forwards via ``captured.clear()``.
+    """
+
+    def __init__(self, model, layers: tuple[int, ...]):
+        self._decoder = _resolve_decoder(model)
+        self._layers = tuple(dict.fromkeys(layers))
+        n_blocks = len(self._decoder.layers)
+        for layer in self._layers:
+            if not 0 <= layer < n_blocks:
+                raise IndexError(f"layer={layer} out of range (model has {n_blocks} blocks)")
+        self.captured: dict[int, object] = {}
+        self._handles: list = []
+
+    def _make_hook(self, layer: int):
+        def _hook(_mod, _inp, out):
+            hs = out[0] if isinstance(out, tuple) else out
+            self.captured[layer] = hs.detach()
+
+        return _hook
+
+    def __enter__(self):
+        for layer in self._layers:
+            self._handles.append(
+                self._decoder.layers[layer].register_forward_hook(self._make_hook(layer))
+            )
+        return self
+
+    def __exit__(self, *exc):
+        for h in self._handles:
+            h.remove()
+        self._handles.clear()
+        return False
+
+
+# ── serial reference read ────────────────────────────────────────────────────
 
 
 def _read_residuals_serial(model, full_ids, layers, response_start):
     """ONE teacher-forced forward; per-layer slot + mean-over-response reads.
 
-    PORTED VERBATIM (modulo this docstring header) from
-    ``issue-602@d2e0bdf21:src/explore_persona_space/analysis/activation_shift.py::
-    _read_residuals`` — the numpy/torch-only indexing helper the plan's Phase 0
-    names. Kept as the SERIAL reference the batched ``compute_panel_reads`` is
-    equivalence-pinned against (cosine ≥ 0.999 per layer × pooling).
-
-    ``output_hidden_states=True`` materializes every layer, so a single
-    forward yields all requested layers' slot AND mean-over-response
-    reads (identical math to the #551 producing run).
+    Ported from ``issue-602@d2e0bdf21:src/explore_persona_space/analysis/
+    activation_shift.py::_read_residuals`` with ONE mechanism change (round-2
+    fix): residuals come from :class:`_LayerHookCapture` forward hooks instead
+    of ``output_hidden_states=True``. Identical at every layer the parent
+    actually read ({7, 14, 21} of 28 — hook ≡ ``hidden_states[L+1]`` for
+    L ≤ 26, #493 GPU-verified); pre-final-norm at the LAST block where the
+    tuple's tail is post-norm. Kept as the SERIAL reference the batched
+    ``compute_panel_reads`` is equivalence-pinned against (cosine ≥ 0.999 per
+    layer × pooling).
 
     Returns ``{layer: {"slot": (H,), "mean_resp": (H,)}}`` — fp32 CPU.
     ``slot`` is the residual at the LAST token of the sequence
@@ -133,18 +209,16 @@ def _read_residuals_serial(model, full_ids, layers, response_start):
     """
     import torch
 
-    with torch.no_grad():
+    with torch.no_grad(), _LayerHookCapture(model, tuple(layers)) as cap:
         ids = full_ids.unsqueeze(0).to(model.device)
-        out = model(ids, output_hidden_states=True)
-        # hidden_states is a tuple of length (num_hidden_layers + 1).
-        # Index 0 is the embedding output, indices 1..L are post-block outputs.
-        n_t = out.hidden_states[0].shape[1]
+        model(ids)
+        n_t = ids.shape[1]
         assert 0 < response_start < n_t, (
             f"empty response segment: response_start={response_start}, T={n_t}"
         )
         reads: dict[int, dict[str, object]] = {}
         for layer in layers:
-            h = out.hidden_states[layer + 1]
+            h = cap.captured[layer]
             assert h.dim() == 3, f"expected (B, T, H), got {h.shape}"
             reads[layer] = {
                 "slot": h[0, -1].detach().float().cpu(),
@@ -254,7 +328,8 @@ def compute_panel_reads(
 
     Left-pad per sub-batch (the ``compute_marker_slot_stats`` convention; no
     explicit ``position_ids`` — RoPE relative invariance, equivalence-pinned
-    vs :func:`_read_residuals_serial`).
+    vs :func:`_read_residuals_serial`). Residuals via :class:`_LayerHookCapture`
+    (pre-final-norm at every layer; round-2 fix).
 
     Returns a dict:
       ``slot[L]``: (R, H) fp32 torch CPU tensor — residual at the last token;
@@ -271,8 +346,13 @@ def compute_panel_reads(
     fourfloat = np.empty((n_rows, 4), dtype=np.float64)
     argmax_id = np.empty((n_rows,), dtype=np.int64)
 
+    # The lm_head check needs the LAST block's hook regardless of the read
+    # layers (production layers include it: 27 == n_blocks-1 on Qwen-2.5-7B).
+    last_block = len(_resolve_decoder(model).layers) - 1
+    hook_layers = tuple(dict.fromkeys((*layers, last_block))) if check_lm_head else tuple(layers)
+
     lm_head_checked = not check_lm_head
-    with torch.no_grad():
+    with torch.no_grad(), _LayerHookCapture(model, hook_layers) as cap:
         for start in range(0, n_rows, batch_size):
             chunk = rows[start : start + batch_size]
             max_len = max(len(r.full_ids) for r in chunk)
@@ -283,19 +363,18 @@ def compute_panel_reads(
                 attn.append([0] * pad_len + [1] * len(r.full_ids))
             input_ids = torch.tensor(padded, dtype=torch.long, device=device)
             attention_mask = torch.tensor(attn, dtype=torch.long, device=device)
-            out = model(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                output_hidden_states=True,
-            )
+            cap.captured.clear()
+            out = model(input_ids=input_ids, attention_mask=attention_mask)
             logits = out.logits
             assert logits.ndim == 3, logits.shape
+            missing = [layer for layer in hook_layers if layer not in cap.captured]
+            assert not missing, f"layer hooks did not fire for {missing}"
             for i, r in enumerate(chunk):
                 pad_len = max_len - len(r.full_ids)
                 resp_start_abs = pad_len + r.prompt_len
                 assert resp_start_abs < max_len, (r.context, r.q_idx, resp_start_abs, max_len)
                 for layer in layers:
-                    h = out.hidden_states[layer + 1]
+                    h = cap.captured[layer]
                     assert h.dim() == 3, h.shape
                     slot[layer].append(h[i, -1].detach().float().cpu())
                     mean_resp[layer].append(
@@ -308,7 +387,7 @@ def compute_panel_reads(
                 fourfloat[start + i] = (z_marker - log_z, z_marker, z_eos, log_z)
                 argmax_id[start + i] = int(torch.argmax(raw).item())
             if not lm_head_checked:
-                _assert_lm_head_reproduces(model, out, row_index=0)
+                _assert_lm_head_reproduces(model, logits, cap.captured[last_block], row_index=0)
                 lm_head_checked = True
             del out, logits
 
@@ -320,26 +399,39 @@ def compute_panel_reads(
     }
 
 
-def _assert_lm_head_reproduces(model, out, row_index: int) -> None:
-    """One-row check: ``lm_head(final_norm(hidden_states[-1]))`` == model logits.
+def _assert_lm_head_reproduces(model, logits, h_last_block, row_index: int) -> None:
+    """One-row check: ``lm_head(final_norm(hook(last_block)))`` == model logits.
 
-    Plan §12.4 verify — pins the ``hidden_states[L+1] = post-block-L`` indexing
-    AND that the layer-27 read is pre-final-norm. Run on the BASE model only
-    (Phase A); bf16 reduction-order noise is absorbed by the cosine + argmax
-    form of the assert.
+    Plan §12.4 verify — pins that the HOOK-captured residual is genuinely
+    PRE-final-norm and row/slot-aligned with the forward's own logits:
+    applying the model's final norm ONCE to the captured last-block slot
+    output must land on the model's own slot logits. Run on the BASE model
+    only (Phase A); bf16 reduction-order noise is absorbed by the cosine +
+    argmax form of the assert.
+
+    Round-1 regression note (epm:failure v3): the tuple path fed
+    ``out.hidden_states[-1]`` — which is POST-final-norm (it is exactly
+    ``lm_head``'s input) — through ``final_norm`` again, double-norming.
+    Cos read 0.812 on the real bf16 Qwen-2.5-7B; the CPU smoke passed only
+    because a random-init tiny model's RMSNorm weights are ones (uniform →
+    direction-preserving). Pinned by
+    ``tests/test_issue597_leakage_dynamics.py::
+    test_panel_reads_pre_final_norm_and_double_norm_regression``.
+
+    ``h_last_block`` is the hook capture of ``decoder.layers[-1]`` (B, T, H).
     """
     import torch
 
-    inner = model.get_decoder() if hasattr(model, "get_decoder") else model.model
-    h_last = out.hidden_states[-1][row_index, -1]
-    recomputed = model.get_output_embeddings()(inner.norm(h_last))
-    own = out.logits[row_index, -1]
+    inner = _resolve_decoder(model)
+    recomputed = model.get_output_embeddings()(inner.norm(h_last_block[row_index, -1]))
+    own = logits[row_index, -1]
     cos = torch.nn.functional.cosine_similarity(recomputed.float(), own.float(), dim=0).item()
     same_argmax = int(recomputed.argmax()) == int(own.argmax())
     if cos < 0.9999 or not same_argmax:
         raise RuntimeError(
             f"lm_head reproduction check FAILED: cos={cos:.6f}, same_argmax={same_argmax} — "
-            "hidden_states indexing does not reproduce the model's own slot logits"
+            "the hook-captured last-block residual is not the pre-final-norm input of the "
+            "model's own slot logits (indexing or norm-space drift)"
         )
     log.info("[phase=lm_head_check] cos=%.6f argmax_match=%s", cos, same_argmax)
 
