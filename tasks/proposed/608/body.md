@@ -11,6 +11,9 @@ goal: Test whether the contrastive-negatives → stronger source implantation ef
   source personas on positive-only vs contrastive mixes — the single manipulated variable
   — and comparing judge-scored source self-implant deltas, with bystander leakage
   as the secondary read.
+relates_to:
+- implant-which-behaviors
+- leak-contrastive-negatives
 ---
 # Does contrastive-negative training improve source implantation for sycophancy (vs positive-only)?
 
