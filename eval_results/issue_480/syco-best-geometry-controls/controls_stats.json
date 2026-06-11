@@ -1,0 +1,458 @@
+{
+  "schema": "issue_480_syco_geometry_controls_v1",
+  "followup_label": "syco-best-geometry-controls",
+  "git_commit_sha": "e4dede2a7fb2cb3459a145bceeedb1c35184343f",
+  "timestamp_utc": "2026-06-11T08:22:49Z",
+  "env_versions": {
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1"
+  },
+  "n_perm": 100000,
+  "seeds": {
+    "naive_permutation": 4801,
+    "partial_permutation": 4802
+  },
+  "partials_method": "rank-transform all variables with average ties (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals (two-sided, +1/(n+1) correction)",
+  "covariate_sets": {
+    "registered": [
+      "cosine_l20_baseline",
+      "bystander_base_rate"
+    ],
+    "registered_plus_cosine_l2": [
+      "cosine_l20_baseline",
+      "bystander_base_rate",
+      "cosine_l2_early"
+    ],
+    "registered_plus_mmd_l7": [
+      "cosine_l20_baseline",
+      "bystander_base_rate",
+      "mmd_l7_early"
+    ],
+    "registered_plus_both": [
+      "cosine_l20_baseline",
+      "bystander_base_rate",
+      "cosine_l2_early",
+      "mmd_l7_early"
+    ],
+    "early_cells_only": [
+      "cosine_l2_early",
+      "mmd_l7_early"
+    ]
+  },
+  "covariate_provenance": {
+    "registered": "per-row fields of each #480 marker_delta_matrix.json: layer-20 cosine to source (cosine_l20_baseline) + bystander base sycophancy rate (bystander_base_rate)",
+    "geometry_cells": {
+      "cosine_l2_early": {
+        "filename": "end_of_system__layer2__cosine__centered.json",
+        "hf_repo": "superkaiba1/explore-persona-space-data",
+        "hf_revision": "1b6e20530b1c6d477a387c18d5a88554910e7df9",
+        "path_in_repo": "issue_509/syco_arm/bakeoff/metrics/end_of_system__layer2__cosine__centered.json",
+        "payload_git_sha": "0aac536f5b7a7addad8d6aade2d8e21be73aab41",
+        "extraction_point": "end_of_system",
+        "layer": 2,
+        "metric": "cosine",
+        "variant": "centered",
+        "sha256_local": "35f10167d64b0048be383584ed283cfb1571149a4051789ef194fa80bb81bf83"
+      },
+      "mmd_l7_early": {
+        "filename": "last_prompt__layer7__mmd__centered.json",
+        "hf_repo": "superkaiba1/explore-persona-space-data",
+        "hf_revision": "1b6e20530b1c6d477a387c18d5a88554910e7df9",
+        "path_in_repo": "issue_509/syco_arm/bakeoff/metrics/last_prompt__layer7__mmd__centered.json",
+        "payload_git_sha": "0aac536f5b7a7addad8d6aade2d8e21be73aab41",
+        "extraction_point": "last_prompt",
+        "layer": 7,
+        "metric": "mmd",
+        "variant": "centered",
+        "sha256_local": "a10f91bf7e76ed25253054d8c2c008dba7ddfd6de283aaebe6cbfd9e316badea"
+      }
+    },
+    "geometry_cell_labels": {
+      "cosine_l2_early": "end-of-system L2 cosine (centered)",
+      "mmd_l7_early": "last-prompt L7 MMD (centered)"
+    },
+    "cid_mapping_note": "SC{i} = i-th persona of sorted(sources \u222a bystanders) of the #480 matrices (alphabetical, i from 1); asserted equal to the canonical _SYCO_PERSONA_ORDER from scripts/issue509_bystander_bootstrap.py"
+  },
+  "input_matrices": {
+    "inband": {
+      "path": "eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json",
+      "sha256": "7822c430aa7fc3a3e1a741dcda3402890c47ef7179db272027ca50f675630fdf",
+      "matrix_git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+      "n_rows": 138
+    },
+    "firing": {
+      "path": "eval_results/issue_480/band-stopped-anchor-rerun/marker_delta_matrix.json",
+      "sha256": "34282b400dc64a617240de59a72780aff7d2c4d855806ccc2a3fd67e530e163b",
+      "matrix_git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+      "n_rows": 138
+    }
+  },
+  "validation_gate": {
+    "inband.software_engineer": {
+      "passed": true,
+      "rho_tolerance": 1e-06,
+      "p_reproduction_checked": true,
+      "committed_naive_rho": 0.34494688475848884,
+      "committed_joint_rho_partial": 0.5339986560372223
+    },
+    "inband.assistant": {
+      "passed": true,
+      "rho_tolerance": 1e-06,
+      "p_reproduction_checked": true,
+      "committed_naive_rho": 0.4915927231672391,
+      "committed_joint_rho_partial": 0.592703788714506
+    },
+    "firing.software_engineer": {
+      "passed": true,
+      "rho_tolerance": 1e-06,
+      "p_reproduction_checked": true,
+      "committed_naive_rho": 0.6405402819928723,
+      "committed_joint_rho_partial": 0.72100496420494
+    },
+    "firing.assistant": {
+      "passed": true,
+      "rho_tolerance": 1e-06,
+      "p_reproduction_checked": true,
+      "committed_naive_rho": 0.574331302878378,
+      "committed_joint_rho_partial": 0.6372163014685847
+    }
+  },
+  "dv": {
+    "y": "sycophancy_delta (frozen #411 per-bystander sycophancy leakage, trained \u2212 base)"
+  },
+  "regimes": {
+    "inband": {
+      "x_field": "marker_delta",
+      "x_description": "on-policy log P(marker) trained \u2212 base per bystander (nats)",
+      "input_matrix": "eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json",
+      "committed_reference_stats": "eval_results/issue_480/inband-logprob-concordance/concordance_stats_marker_delta.json",
+      "per_source": {
+        "software_engineer": {
+          "n": 23,
+          "naive": {
+            "rho": 0.34494688475848884,
+            "p_asymptotic": 0.10696693422161505,
+            "p_permutation": 0.10681893181068189
+          },
+          "partials": {
+            "registered": {
+              "rho_partial": 0.5339986560372223,
+              "p_permutation": 0.008879911200887991,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate"
+              ]
+            },
+            "registered_plus_cosine_l2": {
+              "rho_partial": 0.3425949850362679,
+              "p_permutation": 0.11074889251107489,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early"
+              ]
+            },
+            "registered_plus_mmd_l7": {
+              "rho_partial": 0.2998061438388484,
+              "p_permutation": 0.16600833991660083,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "mmd_l7_early"
+              ]
+            },
+            "registered_plus_both": {
+              "rho_partial": 0.29136974111603897,
+              "p_permutation": 0.1777982220177798,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            },
+            "early_cells_only": {
+              "rho_partial": 0.08786243413197142,
+              "p_permutation": 0.6895831041689583,
+              "covariates": [
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            }
+          }
+        },
+        "assistant": {
+          "n": 23,
+          "naive": {
+            "rho": 0.4915927231672391,
+            "p_asymptotic": 0.017201104027102714,
+            "p_permutation": 0.01797982020179798
+          },
+          "partials": {
+            "registered": {
+              "rho_partial": 0.592703788714506,
+              "p_permutation": 0.0022699773002269976,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate"
+              ]
+            },
+            "registered_plus_cosine_l2": {
+              "rho_partial": 0.344908381198937,
+              "p_permutation": 0.1061589384106159,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early"
+              ]
+            },
+            "registered_plus_mmd_l7": {
+              "rho_partial": 0.38526407570493415,
+              "p_permutation": 0.06995930040699593,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "mmd_l7_early"
+              ]
+            },
+            "registered_plus_both": {
+              "rho_partial": 0.19571524829669218,
+              "p_permutation": 0.37129628703712964,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            },
+            "early_cells_only": {
+              "rho_partial": -0.25217556961403337,
+              "p_permutation": 0.24583754162458377,
+              "covariates": [
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "firing": {
+      "x_field": "emission_rate",
+      "x_description": "on-policy marker emission rate per bystander",
+      "input_matrix": "eval_results/issue_480/band-stopped-anchor-rerun/marker_delta_matrix.json",
+      "committed_reference_stats": "eval_results/issue_480/band-stopped-anchor-rerun/concordance_stats.json",
+      "per_source": {
+        "software_engineer": {
+          "n": 23,
+          "naive": {
+            "rho": 0.6405402819928723,
+            "p_asymptotic": 0.00099255875902657,
+            "p_permutation": 0.0014099859001409985
+          },
+          "partials": {
+            "registered": {
+              "rho_partial": 0.72100496420494,
+              "p_permutation": 4.999950000499995e-05,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate"
+              ]
+            },
+            "registered_plus_cosine_l2": {
+              "rho_partial": 0.5350247031785295,
+              "p_permutation": 0.008569914300856992,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early"
+              ]
+            },
+            "registered_plus_mmd_l7": {
+              "rho_partial": 0.522227596167709,
+              "p_permutation": 0.01067989320106799,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "mmd_l7_early"
+              ]
+            },
+            "registered_plus_both": {
+              "rho_partial": 0.5009709707153985,
+              "p_permutation": 0.014659853401465986,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            },
+            "early_cells_only": {
+              "rho_partial": 0.4605477884450369,
+              "p_permutation": 0.027499725002749973,
+              "covariates": [
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            }
+          }
+        },
+        "assistant": {
+          "n": 23,
+          "naive": {
+            "rho": 0.574331302878378,
+            "p_asymptotic": 0.0041557243725226,
+            "p_permutation": 0.005029949700502995
+          },
+          "partials": {
+            "registered": {
+              "rho_partial": 0.6372163014685845,
+              "p_permutation": 0.000919990800091999,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate"
+              ]
+            },
+            "registered_plus_cosine_l2": {
+              "rho_partial": 0.635933073393054,
+              "p_permutation": 0.001049989500104999,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early"
+              ]
+            },
+            "registered_plus_mmd_l7": {
+              "rho_partial": 0.3798246185479502,
+              "p_permutation": 0.07420925790742093,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "mmd_l7_early"
+              ]
+            },
+            "registered_plus_both": {
+              "rho_partial": 0.42966550675176785,
+              "p_permutation": 0.04021959780402196,
+              "covariates": [
+                "cosine_l20_baseline",
+                "bystander_base_rate",
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            },
+            "early_cells_only": {
+              "rho_partial": 0.04342365683360821,
+              "p_permutation": 0.8432515674843252,
+              "covariates": [
+                "cosine_l2_early",
+                "mmd_l7_early"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "redundancy": {
+    "software_engineer": {
+      "lp_inband_vs_em_firing": {
+        "rho": 0.8665742833340802,
+        "p_asymptotic": 8.96969357359928e-08
+      },
+      "lp_inband_vs_covariate": {
+        "cosine_l20_baseline": {
+          "rho": 0.34782608695652173,
+          "p_asymptotic": 0.1038779178909901
+        },
+        "bystander_base_rate": {
+          "rho": -0.19841426063745396,
+          "p_asymptotic": 0.3641076129430599
+        },
+        "cosine_l2_early": {
+          "rho": -0.43280632411067194,
+          "p_asymptotic": 0.039131463661797206
+        },
+        "mmd_l7_early": {
+          "rho": -0.5029644268774703,
+          "p_asymptotic": 0.014434399452331501
+        }
+      },
+      "em_firing_vs_covariate": {
+        "cosine_l20_baseline": {
+          "rho": 0.04365113734023987,
+          "p_asymptotic": 0.8432305568403392
+        },
+        "bystander_base_rate": {
+          "rho": -0.12848605577689243,
+          "p_asymptotic": 0.5590422664107771
+        },
+        "cosine_l2_early": {
+          "rho": -0.5317502185083767,
+          "p_asymptotic": 0.009016116412015883
+        },
+        "mmd_l7_early": {
+          "rho": -0.5153810420057866,
+          "p_asymptotic": 0.0118397347354491
+        }
+      },
+      "n": 23
+    },
+    "assistant": {
+      "lp_inband_vs_em_firing": {
+        "rho": 0.8014867199049223,
+        "p_asymptotic": 4.292346600296773e-06
+      },
+      "lp_inband_vs_covariate": {
+        "cosine_l20_baseline": {
+          "rho": 0.9031620553359685,
+          "p_asymptotic": 3.6618059776301247e-09
+        },
+        "bystander_base_rate": {
+          "rho": -0.35125223284810764,
+          "p_asymptotic": 0.1002882293998235
+        },
+        "cosine_l2_early": {
+          "rho": -0.8784584980237155,
+          "p_asymptotic": 3.5565910113438186e-08
+        },
+        "mmd_l7_early": {
+          "rho": -0.7480237154150197,
+          "p_asymptotic": 4.0636749396339846e-05
+        }
+      },
+      "em_firing_vs_covariate": {
+        "cosine_l20_baseline": {
+          "rho": 0.7915857103940523,
+          "p_asymptotic": 6.827202783607455e-06
+        },
+        "bystander_base_rate": {
+          "rho": -0.49218181924029775,
+          "p_asymptotic": 0.017047931421671776
+        },
+        "cosine_l2_early": {
+          "rho": -0.6118823877717626,
+          "p_asymptotic": 0.0019169678421402671
+        },
+        "mmd_l7_early": {
+          "rho": -0.7757440951766604,
+          "p_asymptotic": 1.3660994762647688e-05
+        }
+      },
+      "n": 23
+    }
+  },
+  "figures": {
+    "inband": {
+      "png": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.png",
+      "pdf": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.pdf",
+      "meta": "figures/issue_480/syco-best-geometry-controls/geometry_controls_inband.meta.json"
+    },
+    "firing": {
+      "png": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.png",
+      "pdf": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.pdf",
+      "meta": "figures/issue_480/syco-best-geometry-controls/geometry_controls_firing.meta.json"
+    }
+  }
+}
