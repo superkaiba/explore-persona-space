@@ -369,3 +369,4 @@
 {"ts": "2026-06-11T21:52:37Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=['train', 'gen', 'judge'], cells=all, shard=3/8, seed=1042, smoke=False, dry_run=False) in 1203s"}
 {"ts": "2026-06-11T21:52:40Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=['train', 'gen', 'judge'], cells=all, shard=0/8, seed=1042, smoke=False, dry_run=False) in 1211s"}
 {"ts": "2026-06-11T21:52:43Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=['train', 'gen', 'judge'], cells=all, shard=5/8, seed=1042, smoke=False, dry_run=False) in 1213s"}
+{"ts": "2026-06-11T21:52:47Z", "kind": "epm:progress", "version": 1, "by": "i537_dispatch", "note": "phase 2 complete (steps=['train', 'gen', 'judge'], cells=all, shard=1/8, seed=1042, smoke=False, dry_run=False) in 1228s"}
