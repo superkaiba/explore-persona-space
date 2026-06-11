@@ -12,8 +12,9 @@ goal: 'Explain the leak/no-leak structure across (source, behavior) cells for th
   which candidate factor accounts for flat bystander panels: source isolation (no
   near-twin bystander on the panel), implant strength (source-self delta), payload-persona
   affinity (bystander base propensity for the behavior), or training-negative coverage;
-  including at least one causal test (e.g. an eval-side near-twin probe on isolated
-  sources) rather than correlational re-analysis alone.'
+  including causal tests of the two manipulable factors - an eval-side near-twin probe
+  on isolated sources, and a training-depth dose probe that pushes the implant harder
+  to see whether flat panels un-floor - rather than correlational re-analysis alone.'
 relates_to:
 - leak-behavior-vs-marker
 - leak-predictor
