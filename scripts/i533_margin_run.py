@@ -398,6 +398,9 @@ def _materialize_adapter(row: dict) -> Path:
     local_dir = ADAPTER_CACHE_ROOT / row["i547_dir"]
     sentinel = local_dir / "adapter_model.safetensors"
     if sentinel.exists():
+        # A cached adapter (intra-pod resume) must pass the gauge assert
+        # too, not just fresh downloads.
+        _assert_gauge_free(local_dir)
         return local_dir
 
     if row["source"] == "hf":
@@ -936,6 +939,22 @@ def _per_q_delta_z_marker(row: dict) -> list[float]:
     return list(g - b)
 
 
+def _require_full_seed_pair(
+    persona: str,
+    steps: int,
+    role_seeds: dict[int, dict],
+    sys_seeds: dict[int, dict],
+) -> None:
+    """Production completeness gate: both arms must carry exactly the 5 cn_i547 seeds."""
+    expected_seeds = set(SEEDS_FOR["cn_i547"])
+    if set(role_seeds) != expected_seeds or set(sys_seeds) != expected_seeds:
+        raise RuntimeError(
+            f"[phase=analysis] persona={persona} steps={steps}: seed sets "
+            f"role={sorted(role_seeds)} sys={sorted(sys_seeds)} != expected "
+            f"{sorted(expected_seeds)} — refusing partial-seed paired bootstrap"
+        )
+
+
 def phase_analysis(allow_partial: bool = False) -> dict:
     """Run phase 4 — paired role-vs-system bootstrap on margin space; rig check at s=30."""
     log.info("[phase=analysis] start")
@@ -944,6 +963,11 @@ def phase_analysis(allow_partial: bool = False) -> dict:
         raise RuntimeError(
             f"[phase=analysis] no per-cell JSONs in {PER_CELL_OUT_DIR}; "
             "phase 3 (margin-scoring) must have run first"
+        )
+    if not allow_partial and len(rows) != 540:
+        raise RuntimeError(
+            f"[phase=analysis] expected 540 per-cell JSONs (180 cells x 3 encodings), "
+            f"found {len(rows)} — refusing to compute a headline from partial data"
         )
     # Group by (persona, steps, e_eval, arm) -> seed -> per_q deltas (margin, logp, z_marker).
     by_key: dict[tuple[str, int, str, str], dict[int, dict[str, list[float]]]] = {}
@@ -968,17 +992,17 @@ def phase_analysis(allow_partial: bool = False) -> dict:
             sys_key = (persona, steps, f"system_{persona}", "system_plain")
             if role_key not in by_key or sys_key not in by_key:
                 if not allow_partial:
-                    log.info(
-                        "skipping paired persona=%s steps=%s — missing keys "
-                        "(role_present=%s sys_present=%s)",
-                        persona,
-                        steps,
-                        role_key in by_key,
-                        sys_key in by_key,
+                    raise RuntimeError(
+                        f"[phase=analysis] missing paired keys for persona={persona} "
+                        f"steps={steps} (role_present={role_key in by_key} "
+                        f"sys_present={sys_key in by_key}) — production analysis "
+                        "requires the full grid"
                     )
                 continue
             role_seeds = by_key[role_key]
             sys_seeds = by_key[sys_key]
+            if not allow_partial:
+                _require_full_seed_pair(persona, steps, role_seeds, sys_seeds)
             entry = {
                 "persona": persona,
                 "steps": steps,
