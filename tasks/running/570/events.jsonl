@@ -103,3 +103,4 @@
 {"ts": "2026-06-11T07:08:33Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 137, \"variant\": \"org_benign\", \"lr\": 5e-06, \"wall_minutes\": 11.3}"}
 {"ts": "2026-06-11T07:08:37Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 256, \"variant\": \"org_benign\", \"lr\": 5e-06, \"wall_minutes\": 11.3}"}
 {"ts": "2026-06-11T07:08:40Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 42, \"variant\": \"org_benign\", \"lr\": 5e-06, \"wall_minutes\": 11.2}"}
+{"ts": "2026-06-11T07:08:43Z", "kind": "epm:progress", "version": 1, "by": "run_issue543_ratio", "note": "{\"event\": \"phase2_complete\", \"arm\": \"r50\", \"seed\": 137, \"variant\": \"org_em\", \"lr\": 5e-06, \"wall_minutes\": 11.5}"}
