@@ -2286,10 +2286,20 @@ def main() -> int:
     # seeds are the #537 seed2-marker-fact-replication followup (epm:followup-
     # scope v1 is the authorization that retired the v6 MUST-ASK assert):
     # frozen seed-42 mixes/caches in, seed-{s}-keyed outputs.
-    assert len(args.seeds) == 1, f"single-seed dispatcher; got {args.seeds}"
+    if len(args.seeds) != 1:
+        raise SystemExit(f"single-seed dispatcher; got {args.seeds}")
     global TRAIN_SEED
     TRAIN_SEED = args.seeds[0]
     if TRAIN_SEED != SEED:
+        # Replication scope-guard (review r6, reconcile v7): non-default train
+        # seeds run ONLY the followup-scope cells and must never reach the
+        # frozen-input-producing steps (gen/build write seedless/seed42 paths).
+        if args.phase not in (1, 2):
+            raise SystemExit(f"train seed {TRAIN_SEED}: only phases 1/2 are in scope")
+        if args.phase == 1 and (args.steps is None or {"gen", "build"} & set(args.steps)):
+            raise SystemExit(f"train seed {TRAIN_SEED}: pass explicit --steps without gen/build")
+        if args.phase == 2 and args.behaviors != ["fact"]:
+            raise SystemExit(f"train seed {TRAIN_SEED}: phase 2 requires --behaviors fact")
         logger.info(
             "[seed] TRAIN seed %d (inputs stay frozen seed%d mixes/caches; "
             "all outputs keyed seed%d)",
