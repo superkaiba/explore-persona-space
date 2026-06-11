@@ -47,6 +47,7 @@ import datetime
 import hashlib
 import json
 import logging
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -591,4 +592,15 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    # Skip interpreter finalization: the fact path loads Tulu via `datasets`,
+    # whose background threads FLAKILY abort the GIL at shutdown
+    # ("Fatal Python error: PyGILState_Release ... must be current when
+    # releasing" -> SIGABRT) AFTER all outputs are written — turning a
+    # successful build into a phantom CalledProcessError for the
+    # dispatcher's check=True (observed: #537 P2 shards, fact/icl_k8 wrote
+    # 900 rows then aborted). All writes above are complete + closed
+    # (Path.write_text); error paths still raise/SystemExit normally.
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(rc)
