@@ -1,6 +1,7 @@
 ---
-title: 'ICL vs finetuning equivalence: do in-context examples == SFT on those same
-  examples (persona framing)'
+title: 'In-context demos and finetuning on the same K examples spread a persona-implanted
+  marker through different channels: prompt demos lift it in every context via content-blind
+  copying, weight updates grade it by base-model persona similarity (MODERATE confidence)'
 kind: experiment
 tags:
 - agent-ok

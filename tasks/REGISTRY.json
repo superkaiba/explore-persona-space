@@ -2760,7 +2760,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/491",
       "status": "interpreting",
-      "title": "ICL vs finetuning equivalence: do in-context examples == SFT on those same examples (persona framing)"
+      "title": "In-context demos and finetuning on the same K examples spread a persona-implanted marker through different channels: prompt demos lift it in every context via content-blind copying, weight updates grade it by base-model persona similarity (MODERATE confidence)"
     },
     "492": {
       "goal": "Identify which change in the v2->v4 training-code redesign caused the contrastive-negative marker implant to floor (source dG~0, emit 0) at the c477_calib_negp_2 config (seed42, lr=2e-6, r=32, count=2, 2 epochs) where v2 saturated (source dG~17, emit 0.8), and restore a reproducible above-floor implant.",
