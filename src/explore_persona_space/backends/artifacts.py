@@ -453,6 +453,28 @@ def _check_wandb(
     return {"status": "PASS", "detail": f"WandB run resolved: {run_path}"}
 
 
+def _declared_path_tracked(path: str, tracked: set[str]) -> bool:
+    """True when declared ``path`` is covered by the tracked-entry set.
+
+    ``tracked`` holds FILE paths (``git ls-files`` output — git never
+    lists directories). A file declaration matches literally; a
+    directory declaration (with or without trailing slash) matches when
+    >=1 tracked entry equals its stripped form or sits under it
+    (``startswith(path.rstrip('/') + '/')``). Without the prefix rule a
+    directory declaration like ``eval_results/issue_588/`` could never
+    equal a file path, so EVERY real-IO run failed the git check despite
+    tracked files existing under the prefix (issue #588 round-2 live
+    finding).
+    """
+    if path in tracked:
+        return True
+    stripped = path.rstrip("/")
+    if stripped in tracked:
+        return True
+    prefix = stripped + "/"
+    return any(entry.startswith(prefix) for entry in tracked)
+
+
 def _check_git(
     *,
     paths: tuple[str, ...],
@@ -462,7 +484,10 @@ def _check_git(
 
     SKIP if no paths were declared. Both conditions must hold: a path
     tracked but deleted from the working tree fails the second check; an
-    untracked file in the tree fails the first.
+    untracked file in the tree fails the first. Tracked-ness is decided
+    by :func:`_declared_path_tracked` — exact match for file
+    declarations, prefix match against the tracked-file listing for
+    directory declarations.
     """
     if not paths:
         return {"status": "SKIP", "detail": "no git paths declared"}
@@ -476,7 +501,7 @@ def _check_git(
         }
     except Exception as exc:
         return {"status": "FAIL", "detail": f"git ls-files raised: {exc}"}
-    missing_tracked = [p for p in paths if p not in tracked]
+    missing_tracked = [p for p in paths if not _declared_path_tracked(p, tracked)]
     missing_on_disk = [p for p in paths if not (repo_root / p).exists()]
     problems: list[str] = []
     if missing_tracked:
