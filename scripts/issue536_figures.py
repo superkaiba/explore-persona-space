@@ -65,9 +65,12 @@ def _color_for(label: str) -> str:
 def fig_hero(payload: dict, rows: dict) -> None:
     """Dumbbell: |scale-invariant statistic| raw vs centered per re-graded task."""
     items = []  # (display, raw, mc, label, approx)
+    # Row labels are reader-facing: descriptive names only (the prose's own
+    # vocabulary), never issue-number codes or project shorthand (clean-result
+    # figure-label rule; round-2 critique F1).
     items.append(
         (
-            "#66 pooled rho (verify)",
+            "100-persona pooled (verify)",
             abs(payload["fig_66"]["pooled"]["raw"]),
             abs(payload["fig_66"]["pooled"]["centered"]),
             rows["66-verify"]["regrade_label"],
@@ -76,7 +79,7 @@ def fig_hero(payload: dict, rows: dict) -> None:
     )
     items.append(
         (
-            "#405 pooled rho",
+            "extraction-method pooled",
             abs(payload["fig_405"]["pooled_rho"]["raw"]),
             abs(payload["fig_405"]["pooled_rho"]["mc"]),
             rows["405-secondary"]["regrade_label"],
@@ -87,7 +90,7 @@ def fig_hero(payload: dict, rows: dict) -> None:
     perk_m = payload["fig_478"]["per_K_rho_mc"]
     items.append(
         (
-            "#478 mean per-K rho",
+            "source-set-size per-K mean",
             float(np.mean([abs(v) for v in perk_r.values()])),
             float(np.mean([abs(v) for v in perk_m.values()])),
             rows["478-perK-slopes"]["regrade_label"],
@@ -98,7 +101,7 @@ def fig_hero(payload: dict, rows: dict) -> None:
     head = "cos_to_assistant|logp_end_of_response_diagonal_mean"
     items.append(
         (
-            "#396/#415 headline rho",
+            "24-persona predictor headline",
             abs(c[head]["rho_partial_raw"]),
             abs(c[head]["rho_partial_centered"]),
             rows["415-predictor-null"]["regrade_label"],
@@ -108,7 +111,7 @@ def fig_hero(payload: dict, rows: dict) -> None:
     cell474 = payload["fig_474"]["cells"][0]
     items.append(
         (
-            "#474 cos-vs-dG rho (approx)",
+            "lineage cell (approx)",
             abs(cell474["raw"]["rho_cos_deltag"]),
             abs(cell474["centered_approx"]["rho_cos_deltag"]),
             rows["474-gram-sensitivity"]["regrade_label"],
@@ -118,7 +121,7 @@ def fig_hero(payload: dict, rows: dict) -> None:
     l20 = payload["fig_341"]["per_layer"]["20"]
     items.append(
         (
-            "#341 cos-JS rho L20 (approx)",
+            "cos-vs-divergence alignment,\nlayer 20 (approx)",
             abs(l20["recomputed_rho_raw"]),
             abs(l20["rho_centered_approx"]),
             rows["341-cos-js-alignment"]["regrade_label"],
@@ -256,9 +259,9 @@ def fig_compression(payload: dict) -> None:
     ax.scatter(raw, mc, s=12, alpha=0.6, color=paper_palette_role("primary"))
     lim = [min(raw.min(), mc.min()) - 0.05, 1.02]
     ax.plot(lim, lim, "--", color=paper_palette_role("neutral"), lw=1)
-    ax.set_xlabel("raw cosine similarity (off-diag, L21)")
+    ax.set_xlabel("raw cosine similarity (off-diagonal, layer 21)")
     ax.set_ylabel("centered-approx cosine similarity")
-    ax.set_title("#406 lineage: centering decompresses the similarity scale")
+    ax.set_title("Lineage bank: centering decompresses the similarity scale")
     fig.tight_layout()
     savefig_paper(fig, "issue_536/compression_scatter_406_L21", dir=FIGDIR)
     plt.close(fig)
@@ -280,7 +283,7 @@ def fig_band_crosstab(payload: dict) -> None:
         for j in range(len(order)):
             if M[i, j] > 0:
                 ax.text(j, i, int(M[i, j]), ha="center", va="center", fontsize=8)
-    ax.set_title("#478 held-out band re-assignment under centering")
+    ax.set_title("Held-out band re-assignment under centering\n(source-set-size design)")
     fig.colorbar(im, ax=ax, shrink=0.8)
     savefig_paper(fig, "issue_536/band_reassignment_478", dir=FIGDIR)
     plt.close(fig)
@@ -339,8 +342,11 @@ def fig_forest(payload: dict) -> None:
     ax.set_xlim(-0.62, 0.62)  # band edges visible, so "inside the band" is readable
     ax.set_yticks(range(len(names)))
     ax.set_yticklabels([_forest_label(n) for n in names], fontsize=7)
-    ax.set_xlabel("length-partial Spearman rho (open orange = raw, filled blue = centered)")
-    ax.set_title("#396/#415 12-cell family under the canonical metric (band = |rho| < 0.5)")
+    ax.set_xlabel("length-partial Spearman rho\n(open orange = raw, filled blue = centered)")
+    ax.set_title(
+        "12-cell predictor family under the canonical metric\n"
+        "(band = absolute rank correlation below 0.5)"
+    )
     savefig_paper(fig, "issue_536/forest_396_415", dir=FIGDIR)
     plt.close(fig)
 
