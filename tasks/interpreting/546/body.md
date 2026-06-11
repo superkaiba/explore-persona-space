@@ -1,6 +1,7 @@
 ---
-title: 'Rank-reduction re-run at r=16, lr=5e-6 (alpha=32), same {1,2,3,5}-epoch grid
-  (corrective re-run of #533)'
+title: Halving the LoRA recipe to r=16/α=32 pushes marker install past the 1-epoch
+  grid point but still never lands all three persona encodings in the resolution band,
+  so the role-vs-system separability test again cannot fire (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-10T05:26:38Z'

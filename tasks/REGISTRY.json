@@ -3222,7 +3222,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/546",
       "status": "interpreting",
-      "title": "Rank-reduction re-run at r=16, lr=5e-6 (alpha=32), same {1,2,3,5}-epoch grid (corrective re-run of #533)"
+      "title": "Halving the LoRA recipe to r=16/\u03b1=32 pushes marker install past the 1-epoch grid point but still never lands all three persona encodings in the resolution band, so the role-vs-system separability test again cannot fire (MODERATE confidence)"
     },
     "547": {
       "goal": "Test whether the E=1 negative-sign role-vs-system paired-d pattern in #533 reflects a stable mechanism-bearing read or an early-trajectory optimization-ordering artifact, by training the same grid at lr=5e-6, r=32 indexed on max_steps in {5, 10, 18, 30, 60, 120} so the sub-1-epoch trajectory is sampled densely.",
