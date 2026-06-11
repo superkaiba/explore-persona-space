@@ -238,9 +238,11 @@ def _default_wandb_run_exists(run_path: str) -> bool:
 def _default_git_tracked(repo_root: Path, rel_paths: Iterable[str]) -> set[str]:
     """Default ``git ls-files`` checker.
 
-    Returns the subset of ``rel_paths`` that ``git ls-files`` reports as
-    tracked. Runs ONE ``git ls-files -- <p1> <p2> ...`` call rather than
-    N — git resolves the union internally and reports the tracked subset.
+    Returns the tracked FILE paths that ``git ls-files`` reports for the
+    ``rel_paths`` pathspecs — for a directory pathspec this is the files
+    UNDER it, not the directory string itself (``_declared_path_tracked``
+    does the prefix matching). Runs ONE ``git ls-files -- <p1> <p2> ...``
+    call rather than N — git resolves the union internally.
     Raises ``CalledProcessError`` on a non-zero git exit (e.g. not a
     repo); the verifier turns that into a FAIL.
     """
@@ -283,7 +285,9 @@ class VerifierIO:
     * ``wandb_run_exists(run_path) -> bool`` — must return True iff the
       WandB run resolves. Transport errors propagate.
     * ``git_tracked(repo_root, rel_paths) -> set[str]`` — must return the
-      tracked subset of ``rel_paths`` (relative to ``repo_root``).
+      tracked FILE paths matched by the ``rel_paths`` pathspecs (for a
+      directory pathspec: the tracked files under it), relative to
+      ``repo_root`` — mirroring real ``git ls-files`` output.
     * ``read_sentinel(path) -> str | None`` — must return the sentinel
       file's UTF-8 content, or ``None`` when the file does not exist.
     * ``repo_root`` — repo root for git checks; defaults to the package's
