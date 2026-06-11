@@ -328,14 +328,23 @@ def phase_extract(args: argparse.Namespace, cells: list[dict[str, Any]], gpus: l
     adapters_dir = ev / "adapters"
     work_dir.mkdir(parents=True, exist_ok=True)
     jobs: list[tuple[list[str], Path]] = []
+    expected_outputs: list[Path] = []
     for cell in cells:
         out_path = out_dir / f"{cell['cell_id']}.pt"
+        expected_outputs.append(out_path)
         if out_path.exists():
             logger.info("[phase=extract] %s already extracted — skip", cell["cell_id"])
             continue
-        adapter_dir = bk.download_adapter(
-            cell["adapter_repo"], cell["adapter_prefix"], adapters_dir
-        )
+        if args.adapter_override:
+            logger.warning(
+                "[phase=extract] ADAPTER OVERRIDE active (%s) — smoke/stub runs only",
+                args.adapter_override,
+            )
+            adapter_dir = Path(args.adapter_override)
+        else:
+            adapter_dir = bk.download_adapter(
+                cell["adapter_repo"], cell["adapter_prefix"], adapters_dir
+            )
         contexts, questions = _family_panel(cell["family"], cell["source"], args.smoke)
         personas_json = work_dir / f"{cell['cell_id']}__personas.json"
         questions_json = work_dir / f"{cell['cell_id']}__questions.json"
@@ -391,7 +400,43 @@ def phase_extract(args: argparse.Namespace, cells: list[dict[str, Any]], gpus: l
     )
     if jobs:
         _run_parallel(jobs, gpus)
+    for out_path in expected_outputs:
+        _assert_payload_schema(out_path)
     logger.info("[phase=extract] complete")
+
+
+def _assert_payload_schema(out_path: Path) -> None:
+    """M3a regression guard (runs on EVERY extracted cell, smoke AND sweep):
+    a base-variant payload must carry the mean-response keys
+    ``delta_v_mean_resp``, ``delta_v_mean_resp_per_q``, and
+    ``delta_v_mean_resp_l{L}`` for every non-primary captured layer —
+    the pre-registered primary DV is L14/mean-response and is otherwise
+    structurally missing (plan §4.4 / reconciler fix M3a)."""
+    import torch
+
+    payload = torch.load(out_path, map_location="cpu", weights_only=False)
+    assert payload["manifest"]["variant"] == "base", payload["manifest"]["variant"]
+    for ctx, entry in payload["shifts"].items():
+        missing = [
+            k
+            for k in ("delta_v", "delta_v_per_q", "delta_v_mean_resp", "delta_v_mean_resp_per_q")
+            if k not in entry
+        ]
+        for ly in payload["manifest"]["layers"]:
+            if ly != payload["manifest"]["layer"]:
+                missing += [
+                    k for k in (f"delta_v_l{ly}", f"delta_v_mean_resp_l{ly}") if k not in entry
+                ]
+        if missing:
+            raise AssertionError(
+                f"{out_path.name}: context {ctx!r} missing keys {missing} — "
+                "M3a base-variant mean-resp extension regressed"
+            )
+    logger.info(
+        "[phase=extract] schema OK (%s: %d contexts, M3a keys present)",
+        out_path.name,
+        len(payload["shifts"]),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -511,7 +556,7 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
 
     repo_used = bk.DATA_REPO
     deviation = None
-    uploaded: list[str] = []
+    uploaded: list[tuple[str, str]] = []  # (destination repo, path_in_repo) PER FILE
     for p, path_in_repo in to_upload:
         try:
             _upload(p, repo_used, "dataset", path_in_repo, upload_as_file=True)
@@ -528,14 +573,29 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
                 _upload(p, repo_used, "dataset", path_in_repo, upload_as_file=True)
             else:
                 raise
-        uploaded.append(path_in_repo)
-    # verify
-    listing = set(list_repo_files(repo_used, repo_type="dataset"))
-    missing = [u for u in uploaded if u not in listing]
+        uploaded.append((repo_used, path_in_repo))
+    # verify PER DESTINATION REPO: the quota-403 fallback can fire mid-stream,
+    # leaving earlier files on the public repo and later ones on the private —
+    # a single final-repo listing would false-FAIL the pre-fallback files.
+    by_repo: dict[str, list[str]] = {}
+    for repo, path_in_repo in uploaded:
+        by_repo.setdefault(repo, []).append(path_in_repo)
+    missing: list[str] = []
+    for repo, paths in by_repo.items():
+        listing = set(list_repo_files(repo, repo_type="dataset"))
+        missing += [f"{repo}::{u}" for u in paths if u not in listing]
     if missing:
-        raise RuntimeError(f"upload verification FAILED — missing on {repo_used}: {missing[:10]}")
-    logger.info("[phase=upload] %d files verified on %s", len(uploaded), repo_used)
-    return {"repo": repo_used, "n_files": len(uploaded), "plan_deviation": deviation}
+        raise RuntimeError(f"upload verification FAILED — missing: {missing[:10]}")
+    logger.info(
+        "[phase=upload] %d files verified (%s)",
+        len(uploaded),
+        ", ".join(f"{r}: {len(ps)}" for r, ps in sorted(by_repo.items())),
+    )
+    return {
+        "repos": {r: len(ps) for r, ps in by_repo.items()},
+        "n_files": len(uploaded),
+        "plan_deviation": deviation,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -606,6 +666,14 @@ def main() -> int:
     parser.add_argument("--skip-estimators", action="store_true")
     parser.add_argument("--skip-upload", action="store_true")
     parser.add_argument("--skip-preflight", action="store_true")
+    parser.add_argument(
+        "--adapter-override",
+        default=None,
+        help=(
+            "(CPU smoke only) use this local adapter dir for EVERY cell "
+            "instead of the registry download — pairs with a stub --model-id"
+        ),
+    )
     parser.add_argument(
         "--phase-internal",
         choices=["generate"],
