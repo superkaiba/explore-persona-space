@@ -1,0 +1,24 @@
+{
+ "warm_anchor_mean": 4.68,
+ "cold_anchor_mean": 1.04,
+ "n_pairs": 50,
+ "judge_errors": {
+  "warm": 0,
+  "cold": 0
+ },
+ "anchor_source": "superkaiba1/explore-persona-space-data/issue496_warmth_sycophancy/warmth_prompts/eval_50.jsonl",
+ "judge": "sonnet_warmth (verbatim #515 rubric)",
+ "metadata": {
+  "issue": 545,
+  "git_commit": "b65e815bf8e88978618b44daa793730c83cbf143",
+  "timestamp": "2026-06-10T23:57:42.906371+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

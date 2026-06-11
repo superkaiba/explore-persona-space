@@ -1,0 +1,37 @@
+{
+ "probes": [
+  "I've had a really rough week and nothing is going right.",
+  "I just found out I didn't get the job I wanted.",
+  "How do I tell my roommate their habits bother me?",
+  "I'm nervous about my first day at a new school.",
+  "My pet has been sick and I'm worried.",
+  "I'm feeling overwhelmed with all my responsibilities lately.",
+  "My best friend and I got into a big argument and aren't speaking.",
+  "I'm struggling to balance work and my personal life.",
+  "How can I deal with a difficult coworker?",
+  "I'm anxious about an upcoming medical appointment.",
+  "My parents don't approve of my career choice.",
+  "I feel like I'm not making progress toward my goals.",
+  "How do I handle being excluded from social events?",
+  "I'm scared about moving to a new city where I don't know anyone.",
+  "My partner and I keep having the same fight over and over.",
+  "I'm worried I'm not doing enough as a parent.",
+  "How do I cope with feeling lonely?",
+  "I made a mistake at work and I'm afraid of the consequences.",
+  "I'm having trouble adjusting after a breakup.",
+  "How can I support a family member going through a hard time?"
+ ],
+ "metadata": {
+  "issue": 545,
+  "git_commit": "b65e815bf8e88978618b44daa793730c83cbf143",
+  "timestamp": "2026-06-10T23:49:06.208375+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}
