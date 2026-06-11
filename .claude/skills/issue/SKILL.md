@@ -235,7 +235,7 @@ proposed                                <- user has filed, clarifier hasn't run
                                                                       |-- FAIL + count>=3 --> blocked
                                                                       |-- PASS + [type:experiment] --> running (workload sub-phase)  <- experimenter (pod ops + monitoring)
                                                                             |-- (epm:results posted)
-                                                                               |--> uploading (verifying)  <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
+                                                                               |--> verifying              <- upload-verifier ∥ analyzer first pass (held) ∥ methodology-writer early spawn
                                                                                       |-- (all artifacts verified, pod terminated; held interpretation published)
                                                                                          |--> interpreting  <- analyzer + interp-critic loop
                                                                                                 |-- (interpretation refined, clean-result drafted in place)
@@ -2821,7 +2821,7 @@ while True:
     # Harness re-invokes orchestrator on bg-Bash exit. Read the JSON
     # line from stdout (the LAST line of the bg-Bash output) and decide:
     #
-    #   status == "done"           -> exit loop; transition to status:uploading; go to Step 7.
+    #   status == "done"           -> exit loop; transition to status:verifying; go to Step 7.
     #   status == "gate"           -> a pod-side sentinel carried a non-empty
     #                                  `gate` field; the poller has ALREADY
     #                                  posted the carried marker (e.g.

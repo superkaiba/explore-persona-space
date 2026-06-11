@@ -69,12 +69,10 @@ The dashboard task list is the canonical glance view — open it
 whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
-Status values (canonical):
-`proposed`, `clarifying`, `planning`, `plan_pending`,
-`approved`, `awaiting_approval`, `queued`, `implementing`,
-`code_reviewing`, `testing`, `running`, `uploading`, `verifying`,
-`interpreting`, `reviewing`, `awaiting_promotion`, `followups_running`,
-`shared`, `blocked`, `completed`, `failed`, `cancelled`, `archived`.
+Status values (canonical — the task.py enum; anything else is rejected):
+`proposed`, `planning`, `plan_pending`, `approved`, `running`,
+`verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
+`followups_running`, `completed`, `blocked`, `archived`.
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).

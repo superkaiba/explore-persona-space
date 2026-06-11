@@ -89,7 +89,7 @@ columns:
     description: "Folder tasks/plan_pending/<N>/ — plan drafted; user action required to advance."
   - name: "In flight"
     color: BLUE
-    description: "Folders tasks/{approved,implementing,code_reviewing,testing,running,uploading,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
+    description: "Folders tasks/{approved,running,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
   - name: "Blocked"
     color: RED
     description: "Folder tasks/blocked/<N>/ — aborted or stuck; awaiting user triage."
@@ -178,15 +178,10 @@ statuses:
     description: "experimenter is running the workload on a pod."
     next_action: run
     user_gated: false
-  - name: uploading
-    column: "In flight"
-    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
-    next_action: verify_uploads
-    user_gated: false
   - name: verifying
     column: "In flight"
-    description: "Post-upload sanity / smoke-test step before interpretation."
-    next_action: verify
+    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. (There is NO `uploading` status — the whole upload-verification phase runs at `verifying`; task.py rejects `uploading`.) The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
+    next_action: verify_uploads
     user_gated: false
   - name: interpreting
     column: "In flight"
@@ -270,7 +265,6 @@ canonical_lifecycle:
   - code_reviewing
   - testing
   - running
-  - uploading
   - verifying
   - interpreting
   - reviewing
@@ -863,7 +857,7 @@ subagent_halt_conditions:
   - subagent: upload-verifier
     verdict: FAIL
     action: |
-      status:uploading does not advance to interpretation. (The analyzer
+      status:verifying does not advance to interpretation. (The analyzer
       may have pre-computed a HELD first pass in the background — Step 8
       results-landed parallel spawn — but it stays unpublished until
       PASS; on gap-fill PASS the orchestrator re-spawns the analyzer
@@ -2054,7 +2048,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -2080,7 +2073,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -2193,7 +2185,6 @@ steps:
   - id: "8"
     name: upload_verification
     entry_status_label:
-      - uploading
       - verifying
     entry_condition: "epm:results posted"
     posts_marker: "epm:upload-verification"

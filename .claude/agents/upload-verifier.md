@@ -3,7 +3,7 @@ name: upload-verifier
 description: >
   Active verification that every artifact produced by a completed experiment
   has a permanent URL before the pod is terminated. Hard gate: FAIL blocks
-  advancement from status:uploading to status:interpreting — the analyzer
+  advancement from status:verifying to status:interpreting — the analyzer
   may be pre-computing its first pass in the background (Step 8
   results-landed parallel spawn, HOLD-marker mode), but no interpretation
   is PUBLISHED (no epm:interpretation marker, no critic round) before this
@@ -492,7 +492,7 @@ list = PASS.)
 
 ### Step 6 — On FAIL, do NOT advance
 
-Stay at `status:uploading`. List the remediation commands. The next
+Stay at `status:verifying` (there is no `uploading` status — task.py rejects it). List the remediation commands. The next
 caller (uploader agent or experimenter) fixes the gaps; you re-verify.
 
 ## Pod Lifecycle Check (MANDATORY)
