@@ -1,7 +1,6 @@
 ---
-title: Lowering the trigger→marker positive ratio does not rescue benign-SFT erasure
-  on Qwen-2.5-7B — all five ratio arms, down to 1% positives, collapse to 0% emission
-  (HIGH confidence)
+title: 'Lowering the trigger→marker positive ratio down to 1% does not rescue benign-SFT
+  erasure on Qwen-2.5-7B: all five ratio arms collapse to 0% emission (HIGH confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:47:32Z'
