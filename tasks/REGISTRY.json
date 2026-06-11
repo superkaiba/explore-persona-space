@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 592,
+  "highest_id": 593,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3572,6 +3572,14 @@
       "path": "tasks/running/592",
       "status": "running",
       "title": "Why do some (source, behavior) panels show zero leakage? Cross-behavior campaign on isolation vs implant-strength vs affinity explanations for sycophancy, refusal, and emergent misalignment"
+    },
+    "593": {
+      "goal": "Determine which of four candidate factors \u2014 max bystander cosine (isolation), source self-implant delta (implant strength), bystander base propensity (affinity), and training-negative membership (negative coverage) \u2014 classify leak vs no-leak cells across the existing sycophancy (#411), refusal (#518, #390) and EM (#518) panels, per behavior and jointly, naming the substrate-swap and EM survivorship confounds.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/593",
+      "status": "proposed",
+      "title": "Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): isolation, implant strength, affinity, and negative coverage as classifiers of leak vs no-leak cells"
     },
     "6": {
       "has_clean_result": false,
