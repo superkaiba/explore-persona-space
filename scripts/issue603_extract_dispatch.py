@@ -23,10 +23,16 @@ line):
   (403-quota fallback chain: data repo -> private -> overflow).
   Resume skip is MANIFEST-VALIDATED, never existence-only: a cell on
   disk is reused only when its manifest matches THIS invocation's
-  source / persona set / question count / layers / probe SHA /
+  VARIANT / source / persona set / question count / layers / probe SHA /
   max_new_tokens; a mismatching artifact (e.g. a prior ``--personas 2
-  --questions 4`` smoke under production filenames) is recomputed and
-  re-uploaded, so the on-pod smoke can never poison the full sweep.
+  --questions 4`` smoke under production filenames, or the parent's
+  ``variant=same`` artifacts when ``--variant base`` is requested) is
+  recomputed and re-uploaded, so neither the on-pod smoke nor a
+  cross-variant artifact can poison the full sweep. The manifest
+  ``variant`` field is the guard; the distinct ``--out-dir`` per variant
+  is defense-in-depth only. Each completed cell's truncation rate
+  (worker-recorded: kept responses at the max-new-tokens cap) is
+  surfaced in the main log per the plan-v2 ride-along.
 - ``[phase=p2_priors]``   — source-self log-prob priors for the
   refusal/EM sources present in the SELECTED cells
   (``scripts/issue603_source_prior.py`` subprocess, 1 GPU) + upload
@@ -38,12 +44,22 @@ line):
 
 Pod-side: NEVER shells out to ``scripts/task.py`` (CLAUDE.md rule).
 
-Full run (pod, 8x H100)::
+Full run (pod, 8x H100; parent same-text invocation)::
 
     nohup uv run python scripts/issue603_extract_dispatch.py \
         >> /workspace/logs/issue-603-extract.log 2>&1 &
 
-Smoke (pod, first cell, identical path)::
+Full run, base-text follow-up (pod, 8x H100; plan v2 — uploads land
+under ``.../analysis_tensors/shifts_base/``, derived from the out-dir
+basename)::
+
+    nohup uv run python scripts/issue603_extract_dispatch.py \
+        --variant base --skip-priors \
+        --out-dir eval_results/issue_603/base-text-extraction/shifts_base \
+        >> /workspace/logs/issue-603-extract-base.log 2>&1 &
+
+Smoke (pod, first cell, identical path; add ``--variant base`` +
+``--out-dir .../shifts_base`` for the base round)::
 
     uv run python scripts/issue603_extract_dispatch.py \
         --cells 1 --personas 2 --questions 4 --prior-rows 4
@@ -234,6 +250,8 @@ def _worker_cmd(cell: dict, args: argparse.Namespace) -> list[str]:
         str(args.primary_layer),
         "--max-new-tokens",
         str(args.max_new_tokens),
+        "--variant",
+        args.variant,
     ]
     if args.personas > 0:
         cmd += ["--n-personas", str(args.personas)]
@@ -297,6 +315,11 @@ def _resume_status(
         list(inputs["panel"]), len(inputs["probes"]), cell["source"], args
     )
     checks = {
+        # The variant check is THE cross-variant guard (plan v2 diff 3b): the
+        # parent's 21 variant=same artifacts under production filenames pass
+        # every other check, so without it they would resume-satisfy a
+        # --variant base sweep. Distinct out-dirs are defense-in-depth only.
+        "variant": (manifest.get("variant"), args.variant),
         "source": (manifest.get("source"), cell["source"]),
         "n_personas": (manifest.get("n_personas"), len(exp_names)),
         "persona_names": (sorted(manifest.get("persona_names") or []), sorted(exp_names)),
@@ -323,6 +346,14 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
     ap.add_argument("--personas", type=int, default=0, help="Smoke: N panel personas per cell.")
     ap.add_argument("--questions", type=int, default=0, help="Smoke: N probes per cell.")
     ap.add_argument("--prior-rows", type=int, default=0, help="Smoke: N prior rows per source.")
+    ap.add_argument(
+        "--variant",
+        default="same",
+        choices=["same", "base"],
+        help="Extraction text variant threaded to every worker AND checked by the "
+        "manifest-validated resume guard ('same' = parent run; 'base' = #603 "
+        "base-text-extraction follow-up, pair with --out-dir .../shifts_base).",
+    )
     ap.add_argument("--gpus", default="", help="Comma GPU ids (default: CVD env / nvidia-smi).")
     ap.add_argument("--inputs-dir", default="eval_results/issue_603/inputs")
     ap.add_argument("--out-dir", default="eval_results/issue_603/shifts")
@@ -364,11 +395,36 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
         for local in _cell_artifacts(cell, out_dir):
             if not local.exists():
                 raise FileNotFoundError(f"cell {cell['cell_id']}: expected artifact {local}")
-            path_in_repo = f"{args.upload_prefix}/shifts/{local.name}"
+            # Remote subdir derives from the out-dir basename (plan v2 diff 3c):
+            # the parent default --out-dir .../shifts maps to the identical
+            # remote path; --out-dir .../shifts_base lands the base-variant
+            # cells under {prefix}/shifts_base/ — never overwriting the
+            # parent's same-text uploads.
+            path_in_repo = f"{args.upload_prefix}/{out_dir.name}/{local.name}"
             upload_manifest[path_in_repo] = _upload_with_fallback(local, path_in_repo)
 
+    def _log_truncation(cell: dict) -> None:
+        """Per-cell truncation-rate report (plan v2 ride-along) from the
+        worker-written manifest; parent manifests without the field skip."""
+        m_path = out_dir / f"{cell['cell_id']}.manifest.json"
+        manifest = json.loads(m_path.read_text())
+        rate = manifest.get("truncation_rate")
+        if rate is None:
+            return
+        logger.info(
+            "[phase=p1_extract] cell %s truncation_rate=%.3f (%s/%s kept responses at "
+            "the %s-token cap)",
+            cell["cell_id"],
+            rate,
+            manifest.get("n_truncated_responses"),
+            manifest.get("n_responses_kept_total"),
+            manifest.get("max_new_tokens"),
+        )
+
     try:
-        logger.info("[phase=p0_inputs] families=%s cells=%d", families, args.cells)
+        logger.info(
+            "[phase=p0_inputs] families=%s cells=%d variant=%s", families, args.cells, args.variant
+        )
         cells = _build_cells(inputs_dir, families, args.cells)
         logger.info(
             "[phase=p0_inputs] %d cells selected: %s",
@@ -392,6 +448,7 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
                     cell["cell_id"],
                     why,
                 )
+                _log_truncation(cell)
                 _upload_cell(cell)
                 done_cells.append(cell["cell_id"])
                 return
@@ -448,6 +505,7 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
                 del running[gpu]
                 if rc == 0:
                     logger.info("[phase=p1_extract] cell %s complete (rc=0)", cell["cell_id"])
+                    _log_truncation(cell)
                     _upload_cell(cell)
                     done_cells.append(cell["cell_id"])
                 else:
@@ -527,7 +585,8 @@ def main() -> int:  # noqa: C901 — phased pod-side driver, long by nature
         wall_min = (time.time() - t_start) / 60
         note = (
             f"#603 extraction sweep complete: {len(done_cells)} cell(s) "
-            f"({', '.join(done_cells[:25])}), priors_specs={len(prior_specs)}, "
+            f"({', '.join(done_cells[:25])}), variant={args.variant}, "
+            f"priors_specs={len(prior_specs)}, "
             f"{len(upload_manifest)} files uploaded+verified "
             f"(prefix {args.upload_prefix}), wall={wall_min:.1f} min, "
             f"commit={_git_commit()[:12]}, dry_run={args.dry_run}"

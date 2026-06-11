@@ -19,11 +19,12 @@ Three Delta-v_b variants per (arm, seed, panel context):
     the marker arm; this is retained for transparency, NOT the
     headline.
 
-For variant (a) (``same``) ALSO extract a ``mean_over_response`` read
-for BOTH arms (#551 extension; the parent #519/#521 code computed it
-for the EM arm only) — EM behavior is expressed across the response,
-not at a single slot, and the symmetric marker reference is free under
-the unified single-forward read.
+For variants (a) ``same`` and (b) ``base`` ALSO extract a
+``mean_over_response`` read for BOTH arms (#551 extension on ``same``;
+#603 base-text-extraction enables it on ``base`` — the parent #519/#521
+code computed it for the EM arm only) — EM behavior is expressed across
+the response, not at a single slot, and the symmetric marker reference
+is free under the unified single-forward read.
 
 #551 capture extensions (schema_version 2, plan #551 §4 Step 2):
 
@@ -31,9 +32,10 @@ the unified single-forward read.
   requested layer's slot + mean-over-response reads
   (``--layers``, default ``[14]`` = parent behavior);
 - per-question shift tensors are persisted at the primary layer
-  (``delta_v_per_q``; plus ``delta_v_mean_resp_per_q`` on ``same``);
+  (``delta_v_per_q``; plus ``delta_v_mean_resp_per_q`` on
+  ``same``/``base``);
 - extra layers land as mean-only keys ``delta_v_l{L}`` (+
-  ``delta_v_mean_resp_l{L}`` on ``same``).
+  ``delta_v_mean_resp_l{L}`` on ``same``/``base``).
 
 Output per (arm, seed, variant): one ``.pt`` payload
 ``{"shifts": {persona: {...}}, "manifest": {...}}`` (the dispatcher
@@ -371,8 +373,12 @@ def extract_per_context_shifts(
     - ``delta_v_l{L}``: (H,) mean slot shift for every extra layer
       ``L in layers, L != primary_layer`` (stored only — free columns
       from the same forward);
-    - on ``variant == "same"`` with ``also_compute_mean_over_response``
-      (BOTH arms — #551 extension; the parent computed EM only):
+    - on ``variant in {"same", "base"}`` with
+      ``also_compute_mean_over_response`` (BOTH arms — #551 extension;
+      the parent computed EM only; ``base`` added by #603
+      base-text-extraction — ``_read_residuals`` already computes
+      ``mean_resp`` in the same forward for every variant, so enabling
+      it here only stops discarding an already-computed read):
       ``delta_v_mean_resp`` (H,), ``delta_v_mean_resp_per_q``
       (n_kept, H), and ``delta_v_mean_resp_l{L}`` (H,) per extra layer.
 
@@ -401,7 +407,7 @@ def extract_per_context_shifts(
     base_model.eval()
     trained_model.eval()
 
-    compute_mr = variant == "same" and also_compute_mean_over_response
+    compute_mr = variant in {"same", "base"} and also_compute_mean_over_response
 
     out: dict[str, dict[str, torch.Tensor]] = {}
     for p_name, p_prompt in personas.items():

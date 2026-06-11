@@ -4,11 +4,16 @@
 Loads the frozen base model + the cell's LoRA adapter
 (``merge_and_unload``, rig-verbatim — the #551 reproduction-gate path),
 runs ``extract_per_context_shifts`` over the family's 24-persona panel x
-20 probes (``arm="em"``, ``variant="same"``, layers {7,14,21}, primary
-14, mean-over-response ON), and writes:
+20 probes (``arm="em"``, ``--variant`` ``same``/``base`` [default
+``same`` = parent behavior; ``base`` = #603 base-text-extraction
+follow-up], layers {7,14,21}, primary 14, mean-over-response ON), and
+writes:
 
 - ``<out>``: the ``.pt`` payload ``{"shifts", "manifest"}`` (#551
-  schema v2 + #603 cell fields), atomic tmp+rename;
+  schema v2 + #603 cell fields; the manifest records the REALIZED
+  ``variant`` plus the per-cell truncation rate — kept responses whose
+  generated length hit the ``--max-new-tokens`` cap, plan v2
+  ride-along), atomic tmp+rename;
 - ``<out>.manifest.json`` sidecar (grepability);
 - ``<responses-out>``: per-(persona, question) generated response token
   ids + decoded texts (guard B instrumentation — plan #603 critique
@@ -130,6 +135,14 @@ def main() -> int:
     ap.add_argument("--inputs-json", required=True, help="The frozen {family}_panel.json.")
     ap.add_argument("--out", required=True, help="Output .pt path.")
     ap.add_argument("--responses-out", required=True, help="Responses sidecar JSON path.")
+    ap.add_argument(
+        "--variant",
+        default="same",
+        choices=["same", "base"],
+        help="Extraction text variant: 'same' = trained model's own greedy text (parent), "
+        "'base' = frozen base model's greedy text (#603 base-text-extraction follow-up). "
+        "Both models are teacher-forced on the identical sequence either way.",
+    )
     ap.add_argument("--base-model-id", default=DEFAULT_MODEL)
     ap.add_argument("--layers", type=int, nargs="+", default=list(LAYERS))
     ap.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)
@@ -162,12 +175,13 @@ def main() -> int:
         raise AssertionError(f"unexpected personas with None system prompt: {none_prompts}")
 
     logger.info(
-        "[phase=cell_load_models] cell=%s family=%s source=%s seed=%d "
+        "[phase=cell_load_models] cell=%s family=%s source=%s seed=%d variant=%s "
         "n_personas=%d n_questions=%d layers=%s",
         args.cell_id,
         args.family,
         args.source,
         args.seed,
+        args.variant,
         len(personas),
         len(questions),
         args.layers,
@@ -193,7 +207,7 @@ def main() -> int:
         personas=personas,
         questions=questions,
         arm="em",  # no marker stripping for any #603 family (plan §4 step 5)
-        variant="same",
+        variant=args.variant,
         layers=args.layers,
         primary_layer=args.primary_layer,
         max_new_tokens=args.max_new_tokens,
@@ -201,6 +215,15 @@ def main() -> int:
         response_sink=response_sink,
     )
     wall_s = time.time() - t0
+
+    # Per-cell truncation rate (plan v2 ride-along): kept responses whose
+    # generated length hit the --max-new-tokens cap. Base refusal/EM
+    # responses run longer than the trained templates, and a truncated
+    # end-slot read sits mid-sentence — reported alongside the norm-floor
+    # separator downstream (issue603_decompose.py per_cell passthrough).
+    kept_records = [r for recs in response_sink.values() for r in recs if r.get("kept")]
+    n_truncated = sum(1 for r in kept_records if len(r["response_ids"]) >= args.max_new_tokens)
+    truncation_rate = (n_truncated / len(kept_records)) if kept_records else None
 
     manifest = {
         "issue": 603,
@@ -210,7 +233,7 @@ def main() -> int:
         "source": args.source,
         "seed": args.seed,
         "arm": "em",
-        "variant": "same",
+        "variant": args.variant,  # REALIZED variant — the dispatcher's resume guard keys on it
         "layer": args.primary_layer,
         "layers": list(args.layers),
         "base_model_id": args.base_model_id,
@@ -223,6 +246,9 @@ def main() -> int:
         "n_questions": len(questions),
         "probe_sha256": inputs["probe_sha256"],
         "max_new_tokens": args.max_new_tokens,
+        "n_responses_kept_total": len(kept_records),
+        "n_truncated_responses": n_truncated,
+        "truncation_rate": truncation_rate,
         "wall_seconds": round(wall_s, 1),
         "git_commit": _git_commit(),
         "env_versions": {
@@ -251,11 +277,17 @@ def main() -> int:
 
     n_kept = {p: int(shifts[p]["n_questions_kept"]) for p in shifts}
     logger.info(
-        "[phase=cell_complete] cell=%s wall=%.1fs personas=%d min_kept=%d wrote %s + %s",
+        "[phase=cell_complete] cell=%s variant=%s wall=%.1fs personas=%d min_kept=%d "
+        "truncation_rate=%s (%d/%d at the %d-token cap) wrote %s + %s",
         args.cell_id,
+        args.variant,
         wall_s,
         len(shifts),
         min(n_kept.values()),
+        "n/a" if truncation_rate is None else f"{truncation_rate:.3f}",
+        n_truncated,
+        len(kept_records),
+        args.max_new_tokens,
         out_path,
         resp_path,
     )

@@ -59,6 +59,14 @@ Run (VM)::
     # Canonical off-pod staging: pulls the 21 cells' tensors/manifests/
     # responses AND source_priors.json from the HF chain repos first.
     uv run python scripts/issue603_decompose.py --from-hub
+    # #603 base-text follow-up (plan v2): --expect-variant fail-louds on
+    # any cell whose manifest is not variant=base; the hub subdir derives
+    # from the --shifts-dir basename (here: shifts_base).
+    uv run python scripts/issue603_decompose.py --from-hub \
+        --shifts-dir eval_results/issue_603/base-text-extraction/shifts_base \
+        --priors-json eval_results/issue_603/source_priors.json \
+        --expect-variant base \
+        --out eval_results/issue_603/base-text-extraction/decomposition_results.json
 """
 
 from __future__ import annotations
@@ -130,18 +138,30 @@ def _git_commit() -> str:
 
 
 def _pull_from_hub(
-    shifts_dir: Path, cell_ids: list[str], priors_target: Path | None = None
+    shifts_dir: Path,
+    cell_ids: list[str],
+    priors_target: Path | None = None,
+    hub_subdir: str | None = None,
 ) -> None:
     """Download the per-cell artifacts — and, when ``priors_target`` is given,
     the Phase-1 ``source_priors.json`` the dispatcher uploaded — from the
     first chain repo that has them. Fail-loud when a required file is on no
     chain repo. This is the CANONICAL off-pod artifact-staging step: it
     stages everything Phase 2 consumes (``issue603_expression_strata.py``
-    reuses it via its own ``--from-hub``)."""
+    reuses it via its own ``--from-hub``).
+
+    ``hub_subdir``: remote subdir under ``HUB_PREFIX`` holding the per-cell
+    files. Defaults to the ``shifts_dir`` basename — the dispatcher derives
+    its upload subdir from its out-dir basename the same way, so the parent
+    (``shifts``) and the #603 base-text follow-up (``shifts_base``) both
+    round-trip with no extra flag. ``source_priors.json`` always lives at
+    the prefix ROOT (variant-independent, plan v2)."""
     import shutil
 
     from huggingface_hub import hf_hub_download, list_repo_files
 
+    sub = hub_subdir or shifts_dir.name
+    logger.info("[from-hub] remote prefix %s/%s -> %s", HUB_PREFIX, sub, shifts_dir)
     shifts_dir.mkdir(parents=True, exist_ok=True)
     listings = {}
     for repo in HUB_REPO_CHAIN:
@@ -152,7 +172,7 @@ def _pull_from_hub(
     wanted: list[tuple[str, Path]] = []
     for cid in cell_ids:
         for suffix in (".pt", ".manifest.json", "_responses.json"):
-            wanted.append((f"{HUB_PREFIX}/shifts/{cid}{suffix}", shifts_dir / f"{cid}{suffix}"))
+            wanted.append((f"{HUB_PREFIX}/{sub}/{cid}{suffix}", shifts_dir / f"{cid}{suffix}"))
     if priors_target is not None:
         # The dispatcher uploads priors at {prefix}/source_priors.json
         # (issue603_extract_dispatch.py p2) — required by the refusal/EM
@@ -461,6 +481,20 @@ def main() -> int:
     ap.add_argument("--out", default=str(EVAL_DIR / "decomposition_results.json"))
     ap.add_argument("--from-hub", action="store_true", help="Download tensors first.")
     ap.add_argument(
+        "--expect-variant",
+        default=None,
+        choices=["same", "base"],
+        help="Assert every loaded cell manifest records this extraction variant (plan v2 "
+        "diff 4) — a mis-pointed --shifts-dir can never silently compute same-text "
+        "numbers labeled base. Default: no check (parent invocation unchanged).",
+    )
+    ap.add_argument(
+        "--hub-subdir",
+        default="",
+        help="Remote subdir under the analysis_tensors prefix for --from-hub (default: "
+        "derived from the --shifts-dir basename, e.g. 'shifts' or 'shifts_base').",
+    )
+    ap.add_argument(
         "--cells",
         default="",
         help="Comma list of cell_ids to restrict to (smoke); default all 21.",
@@ -480,6 +514,7 @@ def main() -> int:
             shifts_dir,
             [c["cell_id"] for c in cells],
             priors_target=priors_json if need_i518_priors else None,
+            hub_subdir=args.hub_subdir or None,
         )
 
     have_all_families = {c["family"] for c in cells} == {"fact", "refusal", "em"}
@@ -497,6 +532,13 @@ def main() -> int:
         cid = cell["cell_id"]
         pt_path = shifts_dir / f"{cid}.pt"
         payload = torch.load(pt_path, map_location="cpu", weights_only=False)
+        cell_variant = payload["manifest"].get("variant")
+        if args.expect_variant is not None and cell_variant != args.expect_variant:
+            raise AssertionError(
+                f"{cid}: manifest variant={cell_variant!r} != --expect-variant "
+                f"{args.expect_variant!r} — mis-pointed --shifts-dir? "
+                f"(loaded {pt_path})"
+            )
         shifts = payload["shifts"]
         reads: dict[str, dict] = {}
         for read_name, key in READS.items():
@@ -543,6 +585,11 @@ def main() -> int:
             "family": cell["family"],
             "source": cell["source"],
             "seed": cell["seed"],
+            "variant": cell_variant,
+            # Plan v2 ride-along: worker-recorded rate of kept responses at
+            # the max-new-tokens cap, reported alongside below_noise_floor
+            # (None on parent same-text manifests, which predate the field).
+            "truncation_rate": payload["manifest"].get("truncation_rate"),
             "prior": priors[cid],
             "source_base_rate": cell.get("source_base_rate"),
             "reads": reads,
@@ -869,6 +916,8 @@ def main() -> int:
             "git_commit": _git_commit(),
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "primary_read": PRIMARY_READ,
+            "expect_variant": args.expect_variant,
+            "variants_loaded": sorted({d["variant"] for d in per_cell.values()}, key=str),
             "reads": READS,
             "reliability_floor": RELIABILITY_FLOOR,
             "n_cells": len(per_cell),
