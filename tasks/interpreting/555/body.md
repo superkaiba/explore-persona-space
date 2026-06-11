@@ -5,7 +5,7 @@ title: 'The pre-implant geometry reading is chance-level noise, not a systematic
 kind: experiment
 tags: []
 created_at: '2026-06-10T10:01:02Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 534
 goal: Bound how often geometry-shaped partial-correlation readings arise with no implant
   by retraining the four positioned arms for only the first five optimizer steps under

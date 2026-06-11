@@ -3294,7 +3294,7 @@
     },
     "555": {
       "goal": "Bound how often geometry-shaped partial-correlation readings arise with no implant by retraining the four positioned arms for only the first five optimizer steps under five fresh seed pairs and fitting the same six-predictor regression at each no-implant snapshot, to test whether the pre-implant nearest-negative reading (+0.110 at step 5) is chance-level noise or a systematic warmup artifact that confounds the stop-point bubble reversal.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/555",
       "status": "interpreting",
