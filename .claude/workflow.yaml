@@ -61,6 +61,10 @@ issue_types:
   - batch
   - analysis
   - survey
+  # Question-level campaign runner (task #586): one task pinned to ONE
+  # docs/open_questions.md anchor; a dedicated session runs /campaign <N>
+  # and files + spawns ordinary kind:experiment children via /issue.
+  - campaign
 
 # ──────────────────────────────────────────────────────────────────────
 # Conceptual board "columns". On the GH-era project board these were
@@ -436,6 +440,29 @@ gates:
         does NOT use AskUserQuestion here — it posts the dashboard link and
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
+    - id: 16
+      name: campaign_brief_approval
+      label: status:approved
+      reason: |
+        Campaign brief approval (the human gate INTO a campaign — task
+        #586). A `kind: campaign` task executes only from status
+        `approved`: the user reviews the `## Campaign Brief` (question
+        anchor, hypothesis set, initial experiment DAG, budget + stop
+        criteria) and runs `uv run python scripts/task.py set-status <N>
+        approved`. The /campaign skill (and `spawn_session.py
+        spawn-campaign`) REFUSE to start from `proposed` — they exit with
+        a one-line pointer to this gate, no AskUserQuestion. Once
+        approved, the campaign session is fully autonomous within the
+        brief's GPU-hour budget + limits (recorded in
+        artifacts/campaign-state.json): it MAY auto-file and auto-spawn
+        substantially-different child experiments via `/issue <child>
+        --auto` — the user-approved 2026-06-10 exception to the
+        "all automatic follow-up EXECUTION is same-issue" routing rule,
+        scoped strictly to approved campaigns. Gates OUT are the daily
+        `epm:campaign-digest` + the final report; per-child clean-result
+        promotion stays user-only (gate id 7) but does NOT block the
+        campaign's ingest (it reads the critic-gated body at
+        awaiting_promotion).
   conditional:
     - id: 9
       name: experiment_goal_refine
@@ -1988,6 +2015,31 @@ markers:
       PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
       run to RunPod), `investigate` for FAILED/OOM (the operator picks
       whether to retry or pivot). v1.
+  # ── campaign lifecycle markers (/campaign <N>, task #586) ──────────────
+  - kind: "epm:campaign-started"
+    posted_by: campaign skill (Step 0)
+    when: "the /campaign session validates the brief (kind: campaign, status approved), initializes artifacts/campaign-state.json, flips status to running, and arms the /campaign-tick cron"
+    fields: "question_anchor, budget (gpu_hours_total), limits (max_experiments / max_concurrent_children / per_child_gpu_hours_cap / wall_clock_days), initial experiment DAG size. v1."
+  - kind: "epm:campaign-child-spawned"
+    posted_by: campaign skill (Step 1.4, one per child)
+    when: "the campaign files a child task (task.py new --kind experiment --parent <N>) and spawns its autonomous session (spawn_session.py spawn-issue --issue <child> --auto)"
+    fields: "child task id, experiment id (DAG row), gpu_hours_est committed, remaining budget headroom, open slots after the spawn. v1."
+  - kind: "epm:campaign-child-ingested"
+    posted_by: campaign skill (Step 1.1, one per landed child)
+    when: "a child reached awaiting_promotion/completed and the campaign ingested its CRITIC-GATED clean-result (title claim + confidence tag + TL;DR findings) into artifacts/world-model.md"
+    fields: "child task id, headline claim, confidence tag, belief_shift (yes|no), dry_counter after the update. v1."
+  - kind: "epm:campaign-digest"
+    posted_by: campaign skill (Step 1.5, at most every 24h)
+    when: "the daily campaign digest fires (last_digest_at older than 24h at a decision round)"
+    fields: "budget spent/committed/total (GPU-hours), children table (id / status / headline), current working belief + confidence, next planned arms. v1."
+  - kind: "epm:campaign-stalled"
+    posted_by: scripts/autonomous_session_watch.py (campaign pass)
+    when: "a live campaign session posted no skill-posted epm:campaign-* marker AND no child task posted any marker for > EPM_CAMPAIGN_STALL_S (default 2h); one alert per stalled episode (the second consecutive stalled check stop-then-respawns, cap 3/episode)"
+    fields: "stall window in hours, note carries the [autonomous_session_watch:campaign] sentinel so the alert never resets the staleness clock it measures. v1."
+  - kind: "epm:campaign-stopped"
+    posted_by: campaign skill (Step 2)
+    when: "a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed)"
+    fields: "stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1."
 steps:
   - id: "0"
     name: load_state

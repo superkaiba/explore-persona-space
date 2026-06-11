@@ -13,6 +13,7 @@ Subcommands (see `task.py --help`):
     set-status <N> <status> [--note ...]
     post-marker <N> <marker> [--note ... | --file path]   # alias: post-event
     list-by-status [--status ...] [--limit N]
+    list-children <N> [--json]                         # tasks with parent_id == N
     list-markers <N> [--prefix epm:] [--json]
     latest-marker <N>                                  # alias: latest-event
     set-body <N> --body "..." | --file path           # snapshots old → original-body.md
@@ -62,6 +63,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     get_task,
     latest_event,
     list_by_status,
+    list_children,
     list_concerns,
     list_events,
     new_plan_version,
@@ -542,6 +544,22 @@ def cmd_list_by_status(args: argparse.Namespace) -> None:
         print(f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {row['title']}")
 
 
+def cmd_list_children(args: argparse.Namespace) -> None:
+    """List tasks whose frontmatter `parent_id` == N (campaign children, child
+    follow-up tasks). `--json` emits the row list verbatim (`[]` when none)."""
+    rows = list_children(args.number)
+    if args.json:
+        print(json.dumps(rows, indent=2))
+        return
+    if not rows:
+        print(f"(no tasks with parent_id == {args.number})")
+        return
+    print(f"{'ID':>5}  {'STATUS':<22}  {'KIND':<12}  {'CLEAN':<5}  TITLE")
+    for row in rows:
+        clean = "yes" if row["has_clean_result"] else "no"
+        print(f"{row['id']:>5}  {row['status']:<22}  {row['kind']:<12}  {clean:<5}  {row['title']}")
+
+
 def cmd_list_clean_results(args: argparse.Namespace) -> None:
     """List clean results — tasks the user has promoted from awaiting_promotion.
 
@@ -980,6 +998,8 @@ def main() -> None:
                 "infra",
                 "analysis",
                 "survey",
+                # Question-level campaign runner task (/campaign <N>, task #586).
+                "campaign",
                 "note",
                 "reading",
                 "idea",
@@ -1093,6 +1113,14 @@ def main() -> None:
     p.add_argument("--limit", type=int, default=200)
     p.add_argument("--json", action="store_true")
     p.set_defaults(func=cmd_list_by_status)
+
+    p = sub.add_parser(
+        "list-children",
+        help="list tasks whose frontmatter parent_id == N (campaign / follow-up children)",
+    )
+    p.add_argument("number", type=int)
+    p.add_argument("--json", action="store_true")
+    p.set_defaults(func=cmd_list_children)
 
     p = sub.add_parser(
         "list-clean-results",
