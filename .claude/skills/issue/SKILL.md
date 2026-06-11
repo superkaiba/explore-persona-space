@@ -2411,14 +2411,39 @@ GCP** — the lane pins `--instance-termination-action=DELETE` +
 mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
 RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
-cross-checks the task's ACTUAL frontmatter: passing `--backend runpod`
-while the frontmatter `backend:` does not name a backend (absent/empty,
-or an explicit `auto`) triggers a LOUD
-stderr warning + `extra.override_without_frontmatter=true` on the
-`epm:backend-selected` marker (additive visibility — the launch is not
-blocked). For the gcp/auto lanes the dispatch script must exist
+cross-checks the task's ACTUAL frontmatter and classifies the override
+3-ways, each with a DISTINCT marker flag (additive visibility — the
+launch is never blocked): passing `--backend runpod` while the
+frontmatter `backend:` does not name a backend (absent/empty, or an
+explicit `auto`) triggers a LOUD stderr warning +
+`extra.override_without_frontmatter=true` on the
+`epm:backend-selected` marker; frontmatter naming a DIFFERENT
+recognized lane (`gcp`/`nibi`/`fir`/`mila`, or the legacy `cluster`
+alias for nibi) triggers a conflict warning +
+`extra.override_conflicts_frontmatter=true`; an unrecognized value
+(typo'd `gpc`, non-string `true`) triggers a hygiene warning +
+`extra.frontmatter_backend_unrecognized=true` — the latter two also
+carry `extra.frontmatter_backend: "<value>"`. Frontmatter
+`backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). SLURM custom stages are
+(the GCE startup script clones from origin). Two more gcp/auto
+composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
+the GCP lane maps intent → machine type statically
+(`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
+`a2-ultragpu-1g`, 1 GPU; `ft-7b` → `a2-ultragpu-4g`, 4 GPU) and
+ignores `--gpus` (only RunPod and SLURM honor the override), so pick
+the intent whose machine matches the plan's GPU spec; a gcp-reachable
+launch with a mismatched `--gpus` is refused pre-route by
+`dispatch_issue.py` (exit 2, `reason: gpus_machine_mismatch`). (f)
+**Drivers that default `REPO_ROOT` to the RunPod path need it threaded
+on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
+(`/workspace/eps-issue-<N>`), cds there, then runs the workload
+command verbatim, so a driver defaulting
+`REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
+under `set -e` and the EXIT trap powers the VM off; compose
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
 workload to GCP before the router had a custom workload-command field;
@@ -2442,9 +2467,14 @@ SLURM helpers call `task.py post-marker` via
   `auto_fallback_gcp` / `no_compute_available` / `workload_failure`),
   `cluster`, `elapsed_seconds`, the per-lane `attempts` ladder, and
   `extra` (`cancel_race?`, `gcp_attempts_today?`, `intermediate?`,
-  `override_without_frontmatter?` — stamped by the dispatch CLI when
-  `--backend runpod` was passed while the task frontmatter does not
-  name a backend: absent/empty, or an explicit `auto`).
+  plus the dispatch-CLI override-guard flags — all scoped to the
+  explicit `--backend runpod` path: `override_without_frontmatter?`
+  when the task frontmatter does not name a backend (absent/empty, or
+  an explicit `auto`); `override_conflicts_frontmatter?` when it names
+  a DIFFERENT recognized lane (gcp/nibi/fir/mila, or legacy `cluster`);
+  `frontmatter_backend_unrecognized?` when the value is a typo /
+  non-string; the latter two also carry `frontmatter_backend?` with
+  the raw lowercased value).
   Legacy `frontmatter_*` / `slurm_*` reason codes from the pre-slice-6
   `select_backend` are preserved in `workflow.yaml § markers` for
   back-compat reads.
@@ -2546,7 +2576,17 @@ provisioning error (RunPod SUPPLY_CONSTRAINT etc.) the underlying
 backend raises and the helper either retries (RunPod's
 `--wait-for-capacity` loop) or surfaces the failure as
 `epm:pod-pending v1` so the user adjusts (capacity, intent override)
-and re-runs `/issue <N>`.
+and re-runs `/issue <N>`. On exit code `75` (EX_TEMPFAIL) the JSON
+carries `still_waiting: true` + `rerun: true` + `reason:
+wait_for_capacity_budget_reached`: the RunPod lane's
+`pod_lifecycle.py provision` hit its bounded wait-for-capacity
+per-process wall-clock budget while capacity / the fleet burn cap kept
+the provision queued. NOT a failure — the wait loop is state-free, so
+RE-RUN the same `dispatch_issue.py launch` command to continue waiting
+(post an `epm:progress v1` heartbeat per re-run so the watcher sees
+liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
+exit (incident #603, 2026-06-11: the exit previously crashed the CLI
+as an rc-4 `CalledProcessError`).
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the
@@ -2598,7 +2638,12 @@ RunPod (explicit override `backend: runpod`), the underlying
 `pod_lifecycle.py provision` reads `EPM_AUTONOMOUS_SESSION` itself and
 turns on the unbounded SUPPLY_CONSTRAINT retry loop (exponential
 backoff with full jitter, base 30s, cap 10 min, forever) — "the
-experiment should start when it has space," not park-for-user. The
+experiment should start when it has space," not park-for-user.
+"Unbounded" is across re-runs, not per process: each provision process
+exits 75 (still-waiting) at its wall-clock budget and the dispatch CLI
+surfaces that as `still_waiting: true` + exit 75 — re-run the same
+launch command (see the exit-75 contract above), never treat it as a
+failure. The
 orchestrator should background the dispatch call (`Bash` with
 `run_in_background=true`) so its own turn isn't blocked, and ON
 periodic re-invocation (each bg-Bash output yield) it should scan the
@@ -3583,6 +3628,32 @@ URLs.
   the upload-verifier to a PASS, then re-run finalize. With neither a
   declaration nor agent PASS evidence, finalize still exits 3
   (`reason: confirm_artifacts_no_declaration`).
+
+  **Phase-scoped-launch mismatch (incident #604).** The launch-time
+  auto-declaration assumes the FULL task artifact set (HF
+  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
+  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  multi-phase plan (e.g. an extraction phase whose sole deliverable is
+  an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
+  paths that only the plan's LATER (VM-local) phases produce. A
+  declaration that is PRESENT but phase-mismatched is structurally
+  unsatisfiable until end-of-task, and the agent-pass fallback above
+  never fires (it is gated on the declaration being ABSENT) — finalize
+  exits 3 (`reason: confirm_artifacts_failed`) by design. Do NOT leave
+  the instance idling until the later phases land (#604 burned ~70 idle
+  minutes on a g2-standard-4): mechanically verify the launch's ACTUAL
+  phase deliverable on permanent storage first
+  (`huggingface_hub.list_repo_files` for HF paths — never the `hf`
+  CLI), then re-run finalize with the gate skipped —
+  `dispatch_issue.py finalize --issue <N> --skip-confirm-artifacts` —
+  which still runs the backend teardown AND retires the sidecar to
+  `<name>.finalized` (no stale handle; do NOT substitute a raw `gcloud
+  compute instances delete` / `pod.py terminate`, which skips the
+  retirement). Post `epm:pod-terminated v1` naming the declaration
+  mismatch + the verified deliverable paths. Distinguish the two exit-3
+  shapes: no-declaration → upload-verifier-to-PASS + plain re-run
+  (above); present-but-phase-mismatched declaration → verify the phase
+  deliverable, then `--skip-confirm-artifacts`.
 
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;

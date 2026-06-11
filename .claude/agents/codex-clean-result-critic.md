@@ -392,6 +392,25 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   most common partial form. PASS vacuously when THIS task produced
   every artifact it stands on: PASS|FAIL with cited reused artifact
   and which of (a)/(b)/(c) is missing
+- Artifact-path resolution spot-check (semantic): when the body names
+  SPECIFIC artifact paths under `**Artifacts:**` or in `## TL;DR`
+  prose — subfolder names (`adapters/issue_<N>/<cell>/`), intermediate
+  checkpoint / fraction directories (`ckpt_frac0.25/`,
+  `checkpoint-<step>/`), specific raw-completion files
+  (`<cond>_seed<S>.json`), or a file-count claim — spot-check that the
+  Hub listing actually contains the load-bearing path-specific claims,
+  via the Python Hub API (`huggingface_hub.list_repo_files(<repo>,
+  revision=<sha-or-tag>, repo_type=...)`) — NEVER the `hf` CLI, which
+  has no `api` subcommand and false-reports "0 files"
+  (`.claude/rules/upload-policy.md`). FAIL when the body asserts a
+  specific subfolder / checkpoint / intermediate fraction at a Hub
+  path the listing does NOT contain; PASS vacuously when artifact
+  bullets stay repo-level with no path-specific names needing
+  resolution. If the Hub API is unreachable from the sandbox, mark
+  this bullet `BLOCKED — could not list <repo>` per the
+  unreadable-file protocol above (closes the #530→#534 false-premise
+  propagation chain, 2026-06-09): PASS|FAIL|BLOCKED with the
+  non-resolving path and what the Hub actually carries
 
 ### Lens 6 — Voice (+ byte-identical ban)
 - `I` not `we`; no fluff transitions in Human TL;DR / Motivation; no
