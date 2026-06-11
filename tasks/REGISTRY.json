@@ -2525,7 +2525,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/464",
       "status": "interpreting",
-      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header adds ~1 nat over a system prompt with a marker-less negative, and its ~4-nat advantage under a co-resident competing marker survives a content-matched bare-word control (MODERATE confidence)"
+      "title": "Contrastive training localizes a trained end-of-response marker; the chat-role header's edge over a system prompt survives a content-matched bare-word control in both contrast regimes \u2014 strongly with a co-resident competing marker, suggestively with marker-less negatives (MODERATE confidence)"
     },
     "465": {
       "goal": "Test whether specifying a persona at training time via an in-context conversation whose assistant turns are on-policy for the persona's system message (instead of a persona system prompt) causes the behavior to be learned and to generalize, and how much it leaks to the default assistant given no in-context demonstrations.",

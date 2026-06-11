@@ -1,8 +1,8 @@
 ---
 title: Contrastive training localizes a trained end-of-response marker; the chat-role
-  header adds ~1 nat over a system prompt with a marker-less negative, and its ~4-nat
-  advantage under a co-resident competing marker survives a content-matched bare-word
-  control (MODERATE confidence)
+  header's edge over a system prompt survives a content-matched bare-word control
+  in both contrast regimes — strongly with a co-resident competing marker, suggestively
+  with marker-less negatives (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-02T08:15:48Z'
