@@ -103,3 +103,4 @@
 {"ts": "2026-06-11T12:47:16Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done; epm:results v1 drained from pod sentinel"}
 {"ts": "2026-06-11T12:48:03Z", "kind": "epm:progress", "version": 24, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
 {"ts": "2026-06-11T12:48:06Z", "kind": "epm:progress", "version": 25, "by": "unknown", "note": "stage-dispatch stage=methodology-reference round=1 subagent=methodology-writer worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-591"}
+{"ts": "2026-06-11T12:48:09Z", "kind": "epm:progress", "version": 26, "by": "unknown", "note": "Phase D (VM-side judging + registered verdicts) launching on VM from worktree — plan-registered split: pod ran abc, D runs off-pod against Hub artifacts. Analyzer first pass deferred until Phase D output exists."}
