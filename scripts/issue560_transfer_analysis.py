@@ -87,6 +87,26 @@ ADAPTER_CLASS_GLOSS = {
     "C": "few-shot scaffold",
     "D": "register rephrase",
 }
+# Fully reader-facing per-adapter names (clean-result-critic round 1, Lens 3:
+# no bare A1..D5 codes on figure surfaces that ship in the body).
+ADAPTER_DISPLAY = {
+    "A1": "plain-assistant persona prompt",
+    "A2": "software-engineer persona prompt",
+    "A3": "pirate-captain persona prompt",
+    "A4": "stand-up-comedian persona prompt",
+    "A5": "villain-mastermind persona prompt",
+    "B1": "query wrap #1",
+    "B2": "query wrap #2",
+    "B3": "query wrap #3",
+    "B4": "query wrap #4",
+    "B5": "query wrap #5",
+    "C1": "few-shot scaffold",
+    "D1": "register rephrase #1",
+    "D2": "register rephrase #2",
+    "D3": "register rephrase #3",
+    "D4": "register rephrase #4",
+    "D5": "register rephrase #5",
+}
 STRATUM_DISPLAY = {
     "never_negative": "never a training negative (512 cells)",
     "trained_negative": "training negative under the other adapters (45 cells)",
@@ -1011,26 +1031,36 @@ def fig_exposure(expo: dict, fig_dir: Path) -> None:
     set_paper_style("blog")
     colors = paper_palette(3)
     anchors = expo["parent_anchors"]
+    # Reader-facing group labels (clean-result-critic round 1: no bare issue
+    # numbers as data labels on figure surfaces shipping in the body).
     bars = [
         (
-            "#532 trained-neg\n(context cells)",
+            "prior context panel:\ntrained negatives",
             anchors.get("i532_trained_negative_mean_dz_eos"),
             None,
         ),
-        ("#532 never-clamped\n(instructed)", anchors.get("i532_never_clamped_mean_dz_eos"), None),
-        ("#478 never-neg\n(4-neg recipe)", anchors.get("i478_never_negative_mean_dz_eos"), None),
         (
-            "#560 never-neg\n(512 cells)",
+            "prior context panel:\nnever-clamped cells",
+            anchors.get("i532_never_clamped_mean_dz_eos"),
+            None,
+        ),
+        (
+            "prior persona panel:\nnever-trained (narrow recipe)",
+            anchors.get("i478_never_negative_mean_dz_eos"),
+            None,
+        ),
+        (
+            "this panel:\nnever-trained (512 cells)",
             expo["never_negative_mean"]["observed"],
             expo["never_negative_mean"]["ci95_cluster_run"],
         ),
         (
-            "#560 trained-neg\n(45 cells)",
+            "this panel:\ntrained negatives (45 cells)",
             expo["trained_negative_mean"]["observed"],
             expo["trained_negative_mean"]["ci95_cluster_run"],
         ),
         (
-            "#560 source-resident\n(3 cells)",
+            "this panel:\nsource-resident controls (3)",
             expo["source_resident_positive_control"]["mean_dz_eos"],
             None,
         ),
@@ -1040,7 +1070,7 @@ def fig_exposure(expo: dict, fig_dir: Path) -> None:
     for xi, (label, val, ci) in enumerate(bars):
         if val is None:
             continue
-        color = colors[0] if label.startswith("#560") else colors[2]
+        color = colors[0] if label.startswith("this panel") else colors[2]
         ax.bar(xi, val, color=color, width=0.62)
         if ci is not None:
             ax.errorbar(
@@ -1057,8 +1087,8 @@ def fig_exposure(expo: dict, fig_dir: Path) -> None:
     ax.set_xticklabels([b[0] for b in bars], fontsize=7)
     ax.set_ylabel("Mean Δz(EOS) trained − base (logits)")
     ax.set_title(
-        "EOS-side change by exposure class (#560 bars carry run-cluster CIs; "
-        "cross-panel anchors are qualitative)",
+        "End-of-answer push by exposure class (this panel's bars carry 95% intervals; "
+        "prior-panel bars are qualitative anchors)",
         fontsize=9,
     )
     fig.tight_layout()
@@ -1085,7 +1115,7 @@ def fig_length_trunc_sensitivity(r1: dict, slot_sens: dict, len_trunc: dict, fig
     ):
         rows = [
             (
-                "registered read\n(557 cells)",
+                "headline read\n(557 cells)",
                 r1[tgt]["estimate"],
                 r1[tgt]["ci95_cluster_run"],
             ),
@@ -1121,9 +1151,10 @@ def fig_length_trunc_sensitivity(r1: dict, slot_sens: dict, len_trunc: dict, fig
         )
         ax.set_title(title, fontsize=9)
     fig.suptitle(
-        "#560 headline robustness: the geometry correlation under each sensitivity "
-        "(bars = adapter-cluster 95% CIs; dashed line = parent panel estimate; the "
-        "emission-slots-excluded read has a permutation p only, no CI computed)",
+        "Headline robustness: the geometry correlation under each sensitivity "
+        "(bars = adapter-cluster 95% intervals; dashed line = parent panel estimate; "
+        "the emission-slots-excluded read reports a significance check only, no "
+        "interval computed)",
         fontsize=9,
     )
     fig.tight_layout()
@@ -1161,7 +1192,7 @@ def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
         sel = m & (panel["source_cid"] == cid)
         ax.plot(panel["min_dist"][sel], panel["dz"][sel], "o", ms=3, alpha=0.6, color=colors[0])
         rho = i539._spearman_rho(panel["min_dist"][sel], panel["dz"][sel])
-        ax.set_title(f"{cid} ({ADAPTER_CLASS_GLOSS[cid[0]]}): rho={rho:+.2f}", fontsize=8)
+        ax.set_title(f"{ADAPTER_DISPLAY[cid]}: rho={rho:+.2f}", fontsize=7)
         if i // n_cols == n_rows - 1:
             ax.set_xlabel("distance to source context", fontsize=7)
         if i % n_cols == 0:
@@ -1169,7 +1200,7 @@ def make_exploratory_figures(panel: dict, masks: dict, fig_dir: Path) -> None:
     for j in range(len(sources), n_rows * n_cols):
         axes[j // n_cols][j % n_cols].axis("off")
     fig.suptitle(
-        "#560 per-adapter geometry routing: persona distance to the source context vs "
+        "Per-adapter geometry routing: persona distance to the source context vs "
         "marker-logit push (non-source-resident cells)",
         fontsize=10,
     )
