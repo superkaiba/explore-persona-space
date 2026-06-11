@@ -3422,7 +3422,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/571",
       "status": "followups_running",
-      "title": "Negative-panel composition causes most of the universal end-of-answer clamp: a 4-context panel clamps never-mentioned personas at well under half the 15-context push (MODERATE confidence)"
+      "title": "Negative-panel breadth causes the universal end-of-answer clamp: shrinking a fixed 300-row panel from 15 contexts to 4, or from 8 personas to 2, cuts the push by two-thirds (MODERATE confidence)"
     },
     "572": {
       "has_clean_result": false,
