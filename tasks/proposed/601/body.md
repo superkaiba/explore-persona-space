@@ -6,10 +6,15 @@ tags: []
 created_at: '2026-06-11T09:56:10Z'
 has_clean_result: false
 parent_id: 472
+goal: 'Determine whether the source-implant set-point in #472''s contrastive-negative
+  dose-response is set by the per-batch negative:positive ratio (batch-composition
+  equilibrium) or by the absolute negative count (cross-context coupling), via fixed-ratio
+  scaling arms + a negatives-only control + a dense early four-float (logit/EOS-margin)
+  trajectory that also dates the arrest and tests for log-Z compression.'
 ---
 ## Goal
 
-Determine what sets the source-implant level in #472's contrastive-negative dose-response: is the fast-arresting set-point determined by the per-batch negative:positive RATIO (batch-composition equilibrium) or by the ABSOLUTE negative count (cumulative cross-context coupling)? Secondarily: date the early arrest and test whether the plateau is partly softmax/log-Z compression, using the four-float logit storage contract.
+Determine whether the source-implant set-point in #472's contrastive-negative dose-response is set by the per-batch negative:positive ratio (batch-composition equilibrium) or by the absolute negative count (cross-context coupling), via fixed-ratio scaling arms + a negatives-only control + a dense early four-float (logit/EOS-margin) trajectory that also dates the arrest and tests for log-Z compression.
 
 ## Motivation
 

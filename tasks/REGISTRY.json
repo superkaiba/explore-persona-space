@@ -3643,6 +3643,7 @@
       "title": "Targeted proximity-dose test: does a contrastive negative parked next to a specific bystander suppress that bystander's leakage?"
     },
     "601": {
+      "goal": "Determine whether the source-implant set-point in #472's contrastive-negative dose-response is set by the per-batch negative:positive ratio (batch-composition equilibrium) or by the absolute negative count (cross-context coupling), via fixed-ratio scaling arms + a negatives-only control + a dense early four-float (logit/EOS-margin) trajectory that also dates the arrest and tests for log-Z compression.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/601",
