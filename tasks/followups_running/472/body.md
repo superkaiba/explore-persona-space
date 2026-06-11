@@ -25,7 +25,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_472.md](https://github.com/superkaiba/explore-persona-space/blob/0e67ed63dedd08bcd5917d8ca6ab7021645bd29f/docs/methodology/issue_472.md) · [gist](https://gist.github.com/superkaiba/8de82ace82c08834b13ae259e4241103)
+**Methodology:** [docs/methodology/issue_472.md](https://github.com/superkaiba/explore-persona-space/blob/944cb9e400ae02641ce9180ba4ef20d41ec2e3c3/docs/methodology/issue_472.md) · [gist](https://gist.github.com/superkaiba/8de82ace82c08834b13ae259e4241103)
 
 ## Human TL;DR
 
@@ -96,7 +96,7 @@ At step 10 the level means are 4.13 / 7.21 / 14.54 nats (axis A, negative exampl
 
 The count direction therefore survives the strongest version of the step-confound objection. The remaining caveat is the matched-implant comparison the design originally wanted: the count cells implant the marker to 8-21 nats on the source by the very first checkpoint and then plateau in level-specific bands, so there is no overlap window where matched source-self log-prob exists across all three levels (the JSON's `matched_implant` block returns "NOT identifiable: implant is set before the first checkpoint and stays flat in a level-specific band"). The matched-step read is the best available without checkpoints inside the early ramp.
 
-At fixed positives, adding negative rows or adding more negative personas raised bystander leakage at every step we can read, and the spread is far above any plausible interpolation-error floor.
+At fixed positives, adding negative rows or adding more negative personas raised bystander leakage at every readable step, and the spread is far above any plausible interpolation-error floor.
 
 > Three illustrative rows from the matched-step level means at step 10 (cherry-picked for illustration; full data: [count matched-step JSON](https://github.com/superkaiba/explore-persona-space/blob/ad9997e7e5a0129e7b43f4a12845d5ef31a6da4b/eval_results/issue_472/placement-null-full-trajectory/reanalysis_count_matched_step.json)):
 >
@@ -308,7 +308,7 @@ What actually keeps confidence at LOW: 2 seeds, a single source/marker, the matc
 
 **Raw qualitative data:** The per-probe DVs (`g_logp`, `delta_g`, `argmax_marker`, `n_marker_in_R`, `r_collapsed`, `kl`) for every persona × question × checkpoint live in the trajectory files above (the firing/non-firing table in the scope-note finding is sampled from them); the model's own generated responses (the on-policy R the marker is measured after) are at the `on_policy_R` HF path above. The marker never appears inside the generated responses (`n_marker_in_R = 0` everywhere) and is the argmax on bystanders only 121 / 56,400 times, so there are no marker-bearing completions to show — the leakage is a sub-emission log-prob shift, documented in the emission-floor figure and the raw-row table. A follow-up at a mid-range implant should re-run with explicit raw-completion upload so any marker-bearing generations are inspectable.
 
-- **Methodology reference:** [docs/methodology/issue_472.md](https://github.com/superkaiba/explore-persona-space/blob/0e67ed63dedd08bcd5917d8ca6ab7021645bd29f/docs/methodology/issue_472.md) · [gist](https://gist.github.com/superkaiba/8de82ace82c08834b13ae259e4241103)
+- **Methodology reference:** [docs/methodology/issue_472.md](https://github.com/superkaiba/explore-persona-space/blob/944cb9e400ae02641ce9180ba4ef20d41ec2e3c3/docs/methodology/issue_472.md) · [gist](https://gist.github.com/superkaiba/8de82ace82c08834b13ae259e4241103)
 
 **Compute:** 1× 4-H100 pod, ~22.5 GPU-h, wall ~8-10h (training); follow-up re-analyses: CPU only, ~30s each. Pod `epm-issue-472` (terminated after upload-verification PASS).
 
