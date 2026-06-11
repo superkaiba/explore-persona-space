@@ -1,7 +1,7 @@
 ---
-title: 'Persona framing, not mere departure from the trained context, drives the dampening
-  of the residual marker elevation: the tested bare instruction prompt leaves it intact
-  while all three tested personas shrink it (HIGH confidence)'
+title: 'Dampening of the residual marker elevation does not require persona framing:
+  three of four instruction-prompt paraphrases pull the elevation down too, one as
+  deeply as the doctor persona (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T18:18:24Z'
