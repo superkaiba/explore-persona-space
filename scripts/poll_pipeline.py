@@ -212,6 +212,7 @@ import re
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -883,24 +884,24 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     return parsed
 
 
-def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
-    """List + cat unprocessed sentinels in one SSH round-trip.
+def sentinel_drain_shell(issue: int) -> str:
+    """The in-VM list+cat loop every drain transport executes.
 
-    Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``),
-    emits each as ``SENTINEL_START <path>\\n<body>\\nSENTINEL_END`` so the
-    caller can parse multiple sentinels from one stdout blob. Files are NOT
-    renamed here — the rename happens via ``_ssh_mark_processed`` only after
-    the marker post succeeds, so a mid-tick crash leaves the sentinel
-    un-renamed and the next poll retries it (idempotent).
+    Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``)
+    and emits each file as ``SENTINEL_START <path>\\n<body>\\nSENTINEL_END``
+    so :func:`parse_sentinel_stream` can split multiple sentinels out of one
+    stdout blob. Shared by the pod-SSH transport (:func:`_ssh_drain_sentinels`)
+    and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
+    ``sudo -n bash -c`` because the GCE startup script writes the sentinel
+    tree as root, mode 600; incident #608) so the two lanes can never drift
+    on the loop shape.
 
-    Returns a list of ``(remote_path, body)`` pairs (possibly empty). On
-    SSH failure returns an empty list and logs the error.
+    The glob is path-terminal `.json` and explicitly excludes `.processed`.
+    ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
+    the literal pattern so we don't accidentally cat a path called e.g.
+    ``/workspace/logs/issue-444-*.json``.
     """
-    # The glob is path-terminal `.json` and explicitly excludes `.processed`.
-    # ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
-    # the literal pattern so we don't accidentally cat a path called e.g.
-    # ``/workspace/logs/issue-444-*.json``.
-    heredoc = (
+    return (
         f"shopt -s nullglob; "
         f"for f in /workspace/logs/issue-{issue}-*.json; do "
         f'  case "$f" in *.processed) continue ;; esac; '
@@ -909,19 +910,19 @@ def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
         f'  echo ""; echo "SENTINEL_END"; '
         f"done"
     )
-    result = subprocess.run(
-        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-    if result.returncode != 0:
-        log.error("ssh drain failed (rc=%d): %s", result.returncode, result.stderr.strip())
-        return []
+
+
+def parse_sentinel_stream(stdout: str) -> list[tuple[str, str]]:
+    """Parse :func:`sentinel_drain_shell` output into ``(path, body)`` pairs.
+
+    Lines outside a ``SENTINEL_START``/``SENTINEL_END`` block are ignored,
+    so a transport may append its own trailer sections (e.g. the GCP
+    drain's log-tail section) after the loop output.
+    """
     sentinels: list[tuple[str, str]] = []
     current_path: str | None = None
     current_body: list[str] = []
-    for line in result.stdout.splitlines():
+    for line in stdout.splitlines():
         if line.startswith("SENTINEL_START "):
             current_path = line[len("SENTINEL_START ") :].strip()
             current_body = []
@@ -933,6 +934,30 @@ def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
         elif current_path is not None:
             current_body.append(line)
     return sentinels
+
+
+def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
+    """List + cat unprocessed sentinels in one SSH round-trip.
+
+    Runs :func:`sentinel_drain_shell` on the pod and parses the stdout via
+    :func:`parse_sentinel_stream`. Files are NOT renamed here — the rename
+    happens via ``_ssh_mark_processed`` only after the marker post succeeds,
+    so a mid-tick crash leaves the sentinel un-renamed and the next poll
+    retries it (idempotent).
+
+    Returns a list of ``(remote_path, body)`` pairs (possibly empty). On
+    SSH failure returns an empty list and logs the error.
+    """
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, sentinel_drain_shell(issue)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if result.returncode != 0:
+        log.error("ssh drain failed (rc=%d): %s", result.returncode, result.stderr.strip())
+        return []
+    return parse_sentinel_stream(result.stdout)
 
 
 def _ssh_mark_processed(pod: str, remote_path: str) -> bool:
@@ -1154,8 +1179,19 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     return data
 
 
-def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
-    """Drain pod-side sentinels for this task; post markers from the VM.
+def drain_sentinels_via(
+    *,
+    issue: int,
+    list_sentinels: Callable[[], list[tuple[str, str]]],
+    mark_processed: Callable[[str], bool],
+) -> tuple[int, str | None]:
+    """Transport-agnostic sentinel drain; post markers from the VM.
+
+    ``list_sentinels`` returns ``(remote_path, body)`` pairs (the transport:
+    pod SSH for RunPod, ``gcloud compute ssh ... sudo -n`` for GCP — the GCE
+    startup script writes the sentinel tree root-owned mode 600, so a plain
+    user-mode read comes back empty; incident #608). ``mark_processed``
+    renames one remote path to ``<path>.processed`` and returns success.
 
     Returns ``(processed_count, gate_name_or_None)``. ``gate_name`` is the
     first non-empty ``gate`` field across processed sentinels (sentinels
@@ -1179,7 +1215,7 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
     """
-    sentinels = _ssh_drain_sentinels(pod, issue)
+    sentinels = list_sentinels()
     processed = 0
     gate: str | None = None
     for remote_path, body in sentinels:
@@ -1236,17 +1272,15 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
                 exc,
             )
             continue
-        if not _ssh_mark_processed(pod, remote_path):
+        if not mark_processed(remote_path):
             # Marker is posted but rename failed; on the next tick we'd
             # re-post and create a duplicate event. Surface loudly so the
             # operator can rename manually.
             log.error(
                 "marker %s posted from sentinel %s but rename failed; "
-                "future ticks may duplicate. Rename manually with: "
-                "ssh %s mv %s %s.processed",
+                "future ticks may duplicate. Rename to %s.processed "
+                "manually on the remote host.",
                 kind,
-                remote_path,
-                pod,
                 remote_path,
                 remote_path,
             )
@@ -1256,6 +1290,21 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
         if gate is None and isinstance(sentinel_gate, str) and sentinel_gate:
             gate = sentinel_gate
     return processed, gate
+
+
+def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
+    """Drain pod-side sentinels over the RunPod SSH transport.
+
+    Thin wrapper binding :func:`drain_sentinels_via` to the pod-SSH
+    transport (``_ssh_drain_sentinels`` / ``_ssh_mark_processed``). The
+    lambdas resolve the module-level names at call time, so tests that
+    monkeypatch them keep working unchanged.
+    """
+    return drain_sentinels_via(
+        issue=issue,
+        list_sentinels=lambda: _ssh_drain_sentinels(pod, issue),
+        mark_processed=lambda remote_path: _ssh_mark_processed(pod, remote_path),
+    )
 
 
 def _latest_phase(log_tail: str, *, skip_done: bool = False) -> str:

@@ -1731,6 +1731,168 @@ def test_poll_guest_attr_malformed_json_is_typed_probe_failure() -> None:
 
 
 # ---------------------------------------------------------------------------
+# issue #608 — poll-time sentinel drain via ssh sudo (root-owned VM tree)
+# ---------------------------------------------------------------------------
+
+
+def _drain_handle():
+    """Poll handle WITH the ``issue`` extra (the drain's resolution key)."""
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a", "issue": 137},
+    )
+
+
+def _poll_pipeline_module():
+    """Import the REAL ``scripts.poll_pipeline`` (the drain's lazy-import
+    target) so tests can monkeypatch ``post_event`` on the same module
+    object the backend resolves."""
+    import sys
+
+    repo_root = Path(__file__).resolve().parents[1]
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    import scripts.poll_pipeline as pp
+
+    return pp
+
+
+def _drain_stdout(body: str, *, gate: str | None = None) -> str:
+    payload: dict[str, Any] = {
+        "sentinel_schema_version": 1,
+        "kind": "epm:results",
+        "version": 1,
+        "note": body,
+    }
+    if gate:
+        payload["gate"] = gate
+    return (
+        "SENTINEL_START /workspace/logs/issue-137-epm_results-1781214523.json\n"
+        + json.dumps(payload)
+        + "\nSENTINEL_END\n"
+        + "EPS_LOGTAIL_START\n"
+        + "eval shard 4/4 complete\n"
+        + "EPS_LOGTAIL_END\n"
+    )
+
+
+def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
+    """A RUNNING tick drains root-owned ``/workspace/logs`` sentinels via
+    ``sudo -n`` over gcloud ssh, posts the carried marker, renames the file
+    ``.processed``, and reports an honest ``sentinels_processed`` count +
+    log tail (incident #608: the GCP lane had NO drain, so a completed
+    run's epm:results marker never posted and the poll JSON showed a
+    silent ``sentinels_processed=0`` with an empty log tail)."""
+    pp = _poll_pipeline_module()
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: posted.append((issue, kind)))
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("19/19 cells done"), ""),  # drain + tail
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.sentinels_processed == 1
+    assert posted == [(137, "epm:results")]
+    assert "eval shard 4/4 complete" in pr.log_tail_excerpt
+    ssh_calls = [a for a in runner.calls if "ssh" in a and "compute" in a]
+    assert len(ssh_calls) == 2
+    drain_cmd = next(arg for arg in ssh_calls[0] if arg.startswith("--command="))
+    assert "sudo -n bash -c" in drain_cmd, "drain must read root-owned files via sudo (#608)"
+    mv_cmd = next(arg for arg in ssh_calls[1] if arg.startswith("--command="))
+    assert "sudo -n mv -n" in mv_cmd
+    assert ".processed" in mv_cmd
+
+
+def test_poll_gcp_drain_transport_failure_is_loud() -> None:
+    """A drain SSH/sudo failure must surface in the poll JSON (via
+    ``log_tail_excerpt``), never read as a quiet ``sentinels_processed=0``."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", "sudo: a password is required")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert "gcp sentinel drain FAILED" in pr.log_tail_excerpt
+    assert "sudo: a password is required" in pr.log_tail_excerpt
+
+
+def test_poll_gcp_drain_matched_but_empty_body_is_loud(monkeypatch) -> None:
+    """A sentinel whose body reads back EMPTY (the pre-sudo permission
+    symptom) must be reported loudly — glob matched, nothing processed."""
+    pp = _poll_pipeline_module()
+    posted: list[tuple[int, str]] = []
+    monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: posted.append((issue, kind)))
+    stdout = (
+        "SENTINEL_START /workspace/logs/issue-137-epm_results-1781214523.json\n"
+        "SENTINEL_END\n"
+        "EPS_LOGTAIL_START\n"
+        "EPS_LOGTAIL_END\n"
+    )
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        ssh_results=[GcloudRunResult(0, stdout, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.sentinels_processed == 0
+    assert posted == []
+    assert "matched but 0 processed" in pr.log_tail_excerpt
+
+
+def test_poll_gcp_drain_gate_sentinel_parks(monkeypatch) -> None:
+    """A drained gate sentinel wins over the coarse status (mirrors
+    poll_pipeline.poll_once): the orchestrator must park at the gate."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("need a user answer", gate="fact_candidates"), ""),
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "gate"
+    assert pr.gate == "fact_candidates"
+    assert pr.sentinels_processed == 1
+
+
+def test_poll_handle_without_issue_skips_drain_loudly() -> None:
+    """A handle missing the ``issue`` extra cannot resolve the sentinel
+    glob — the drain is skipped with an explicit excerpt, not silently."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())  # legacy handle: extra has zone only
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert "drain SKIPPED" in pr.log_tail_excerpt
+    # No ssh round-trip was attempted.
+    assert not [a for a in runner.calls if "ssh" in a and "compute" in a]
+
+
+# ---------------------------------------------------------------------------
 # issue #588 — A2 byte-identity snapshot (hydra-only startup script)
 # ---------------------------------------------------------------------------
 
