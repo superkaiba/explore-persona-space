@@ -42,7 +42,12 @@ Lifecycle:
    reports ``phase == "done"`` (not just present).
 8. Post ``epm:codex-task-completed`` (phase=done) or
    ``epm:codex-task-failed`` (everything else).
-9. Write Codex stdout to ``--output-file`` (or stdout if absent).
+9. Write Codex stdout to ``--output-file`` (or stdout if absent). If
+   Codex already wrote a marker-formatted verdict to that SAME path
+   mid-session (the twin-reviewer wrapper contract), the verdict file is
+   preserved and the final chat message lands at
+   ``<output-file>.final-msg.md`` instead — see
+   ``_write_output_preserving_codex_artifact``.
 10. Exit 0 on phase=done, non-zero otherwise.
 
 Failure-mode coverage (every path posts a marker; helper never exits
@@ -174,6 +179,11 @@ TRANSIENT_FAIL_EXIT_CODES = frozenset({3, 4, 5, 8})
 TRANSIENT_RETRY_BACKOFF_FLOOR_SECS = 15.0
 TRANSIENT_RETRY_BACKOFF_JITTER_SECS = 30.0
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
+# A Codex-written verdict file is identified by the ensemble marker tag the
+# twin-reviewer wrapper contract requires of every verdict body (e.g.
+# ``<!-- epm:interp-critique-codex v1 -->``). Used by the final-message
+# write to avoid clobbering a verdict Codex already wrote to --output-file.
+CODEX_ARTIFACT_SENTINEL = "<!-- epm:"
 SPAWN_TIMEOUT_SECS = 90
 STATUS_TIMEOUT_SECS = 60
 RESULT_TIMEOUT_SECS = 120
@@ -546,6 +556,65 @@ def _fetch_result(companion: Path, job_id: str) -> tuple[int, str, str]:
     return res.returncode, res.stdout, res.stderr
 
 
+def _write_output_preserving_codex_artifact(
+    output_file: Path,
+    final_message: str,
+    pre_spawn_key: tuple[float, int] | None,
+) -> None:
+    """Persist Codex's final chat message WITHOUT clobbering a verdict
+    Codex already wrote to the same path mid-session.
+
+    The four twin-reviewer wrappers instruct Codex to write its full
+    marker-formatted verdict to ``--output-file`` DURING the session; the
+    previously-unconditional final write then reduced a 12,474-char
+    critique to Codex's 323-char closing chat message (task #604
+    interpretation-critic round 1, 2026-06-11 — recovered only via the
+    Codex session rollout's apply_patch payload). Preserve the existing
+    file and divert the final message to ``<output-file>.final-msg.md``
+    only when BOTH hold:
+
+    - the file ADVANCED (was created, or mtime/size grew) since this
+      attempt spawned — so a stale file left by a previous reviewer round
+      or by a failed earlier attempt (the transient-retry path, #579,
+      re-enters ``_run_one_attempt`` with the same ``--output-file``)
+      never triggers preservation; and
+    - the content carries the ``<!-- epm:`` marker tag the wrapper
+      contract requires of verdicts — keying on the marker rather than
+      size alone avoids preserving a half-written file.
+
+    Every other flow — including all prompts where this helper is the
+    ONLY producer of the output file — keeps the historical behavior
+    exactly: the final message lands at ``--output-file``. Nothing is
+    lost in the preservation branch either: the final message is still
+    on disk, in the sidecar.
+    """
+    existing = ""
+    current_key = _log_progress_key(str(output_file))
+    if current_key is not None and _key_advanced(current_key, pre_spawn_key):
+        try:
+            existing = output_file.read_text()
+        except OSError as exc:
+            print(
+                f"WARN: could not read pre-existing {output_file} ({exc}); overwriting.",
+                file=sys.stderr,
+            )
+    if existing.strip() and CODEX_ARTIFACT_SENTINEL in existing and existing != final_message:
+        sidecar = output_file.with_name(output_file.name + ".final-msg.md")
+        sidecar.write_text(final_message)
+        print(
+            f"Output file {output_file} already written by Codex mid-session "
+            f"({len(existing)} chars, epm marker present); preserved it and wrote "
+            f"the final chat message ({len(final_message)} chars) to {sidecar}.",
+            file=sys.stderr,
+        )
+        return
+    output_file.write_text(final_message)
+    print(
+        f"Codex output written to {output_file} ({len(final_message)} chars).",
+        file=sys.stderr,
+    )
+
+
 # ──────────────────────────────────────────────────────────────────────
 # Main lifecycle.
 # ──────────────────────────────────────────────────────────────────────
@@ -712,6 +781,14 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
     """
     global _active_job_id
 
+    # Snapshot the output-file state BEFORE Codex spawns: the final-message
+    # write uses it to distinguish "Codex wrote --output-file during THIS
+    # attempt" (preserve it — twin-reviewer verdict contract) from a stale
+    # file left by a previous round / failed attempt (overwrite as always).
+    pre_spawn_output_key = (
+        _log_progress_key(str(args.output_file)) if args.output_file is not None else None
+    )
+
     # Spawn.
     try:
         job_id = _spawn_codex(companion, prompt, args.effort, write)
@@ -766,14 +843,13 @@ def _run_one_attempt(companion: Path, prompt: str, args, write: bool) -> Attempt
         )
 
     # Write output before posting terminal marker — so even if the marker
-    # post fails, the orchestrator has the Codex output on disk.
+    # post fails, the orchestrator has the Codex output on disk. The write
+    # preserves a marker-formatted verdict Codex already wrote to the same
+    # path mid-session (final message then lands in the .final-msg.md
+    # sidecar) — see _write_output_preserving_codex_artifact.
     if args.output_file is not None:
         try:
-            args.output_file.write_text(stdout)
-            print(
-                f"Codex output written to {args.output_file} ({len(stdout)} chars).",
-                file=sys.stderr,
-            )
+            _write_output_preserving_codex_artifact(args.output_file, stdout, pre_spawn_output_key)
         except Exception as exc:
             return AttemptResult(
                 "fail",
@@ -971,9 +1047,7 @@ def main() -> int:
     while True:
         attempt += 1
         result = _run_one_attempt(companion, prompt, args, write)
-        if result.kind == "cancelled" and cancelled_redispatches < max(
-            0, args.cancelled_retry_cap
-        ):
+        if result.kind == "cancelled" and cancelled_redispatches < max(0, args.cancelled_retry_cap):
             cancelled_redispatches += 1
             print(
                 f"WARN: Codex job_id={result.job_id} ended phase=cancelled "
