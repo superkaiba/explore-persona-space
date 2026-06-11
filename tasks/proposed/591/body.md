@@ -20,41 +20,11 @@ relates_to:
 - leak-predictor
 - leak-data-factors
 ---
-# Why do some (source, behavior) panels show zero leakage? Cross-behavior campaign on isolation vs implant-strength vs affinity explanations for sycophancy, refusal, and emergent misalignment
+# Why do some (source, behavior) panels show zero leakage? Cross-behavior test of isolation vs implant-strength vs affinity explanations on sycophancy, refusal, and emergent misalignment
 
 ## Goal
 
 Explain the leak/no-leak structure across (source, behavior) cells for three implanted behaviors - sycophancy, refusal, and emergent misalignment - by testing which candidate factor accounts for flat bystander panels: source isolation (no near-twin bystander on the panel), implant strength (source-self delta), payload-persona affinity (bystander base propensity for the behavior), or training-negative coverage; including causal tests of the two manipulable factors - an eval-side near-twin probe on isolated sources, and a training-depth dose probe that pushes the implant harder to see whether flat panels un-floor - rather than correlational re-analysis alone.
-
-## Campaign Brief
-
-**Question anchor:** `q:leak-behavior-vs-marker` (docs/open_questions.md §3.2, "Does leakage depend on the behavior?")
-
-**Hypothesis set (the world model's initial factors for why a (source, behavior) bystander panel stays flat):**
-
-- **H1 — Isolation:** a panel leaks via the near-twin identity channel only when some bystander sits in the near-twin cosine band (≳0.985 on the sycophancy evidence); sources with no near-twin on the panel (villain, comedian, kindergarten teacher) stay flat regardless of implant strength.
-- **H2 — Implant strength / dose:** flat panels are under-dosed; pushing the implant harder (more optimizer steps at the parent recipe) un-floors them. Opposing sub-hypothesis H2′ (contrastive suppression): deeper contrastive training pushes panels DOWN (observed for the marker payload: villain 4→1→1 emitting cells across depths; never tested for whole-completion-loss behavioral payloads).
-- **H3 — Payload affinity:** leakage lands on bystanders whose base propensity for the behavior is high (sycophancy: software_engineer→comedian at cosine 0.766, +0.48, comedian base rate 0.128 = panel outlier); panels with no affinity-matched bystander stay flat for behaviors where this channel dominates.
-- **H4 — Negative coverage:** explicitly-named training negatives suppress their cells (assistant→comedian, comedian in assistant's negative panel, lowest cell on both payloads); coverage gaps are permissive but not selective (the marker rig had identical negatives yet leaked only cosine-locally).
-- **H5 — Behavior-specific residual:** whatever the four factors above fail to classify (e.g. refusal's ~76% floor on the #518 panel; EM's response-length dominance) is payload-specific structure to be named, not absorbed.
-
-**Key prior evidence:** #411 / #470 / #480 (sycophancy decomposition: near-twin channel + affinity channel; flat panels = isolation or under-implant; source prior ruled out — priors matched 0.044-0.050 with matched doses yet outcomes split), #518 (cross-behavior predictor null; refusal panel ~76% floored on qwen-base; EM length correlate +0.64; substrate-swap caveat: sycophancy panel is qwen-instruct), #390 (refusal gate persona-local across 9/11 OOD framings), #99 / #463 / #468 (EM cosine gradients/predictors), #444 (recipe changes leakage shape), #391 (uniform-lift failure mode).
-
-**Initial experiment table:**
-
-| id | title | hypothesis | depends_on | gpu_hours_est |
-|---|---|---|---|---|
-| e1 | Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): fit {max bystander cosine, self-implant delta, bystander base propensity, negative membership} as classifiers of leak vs no-leak cells, per behavior and jointly; name the substrate-swap and EM survivorship confounds | H1-H4 jointly classify flat cells across behaviors (correlational pass; zero GPU) | - | 0 |
-| e2 | Near-twin eval probe: synthesize near-twin bystander personas (e.g. stand-up comic, supervillain, daycare teacher), validate their layer-20 cosine lands in the near-twin band, then re-eval the EXISTING #411 sycophancy adapters (and #518 refusal/EM adapters if they pass reuse fitness checks) on the extended panels — no retraining | H1: isolated sources' panels reveal leakage once a near-twin exists; H3 alternative: only affinity-matched additions light up | e1 | 8 |
-| e3 | Dose probe: extend sycophancy training past parent depth (one run per source, optimizer-step checkpoint grid incl. parent-equivalent anchor, ~2x and ~4x; same pools / lr / negatives — depth the only variable) for Qwen default (under-implanted) + villain (isolated); full-panel re-eval at each depth | H2: flat panels un-floor with dose; H2′: deeper contrastive training silences panels further | e1 | 24 |
-| e4 | Refusal arm: diagnose the #518 refusal floor per e1 (panel composition vs implant strength vs recipe), then run the indicated manipulation (near-twin extension, dose extension, or a leakage-headroom recipe variant — single change, named) | H5 vs H1/H2: the refusal floor is a composition/dose artifact, not a refusal-specific safety property | e1 | 30 |
-| e5 | EM arm: replace the survivor-aligned-rate proxy with a re-judged leakage DV on the #518 EM panel (or justify the proxy), then fit the e1 factor set on the corrected panel | H5 vs H1-H4: EM's flat cells follow the same factor decomposition once the DV is clean | e1 | 30 |
-
-(e1's output reshapes e2-e5 before they spawn; the campaign proposes follow-on children — e.g. the dose × near-twin cross if e2 and e3 disagree, or a substrate-matched sycophancy bake-off — from ingested results, within budget.)
-
-**Stop criteria:** every flat (source, behavior) panel in the assembled matrices has an attributed cause (H1-H5) supported by at least one causal test OR explicitly marked unresolved with the blocking reason; or budget exhausted; or the dry-limit / max-experiments limits trip.
-
-**Budget:** 300 GPU-hours total (frontmatter override above; defaults otherwise: per-child cap 100 GPU-h, max 4 concurrent children, max 8 experiments).
 
 ## Motivation
 
@@ -64,9 +34,34 @@ What we do NOT know is whether this decomposition is behavior-general or sycopha
 
 If the isolation / implant-strength / affinity decomposition explains flat panels across all three behaviors, that is a behavior-general account of leakage absence — directly relevant to predicting behavior leakage before training, and it explains the refusal floor as a panel-composition artifact rather than a refusal-specific safety property. If it fails on refusal or EM, the residual is payload-specific structure worth isolating.
 
+## Design sketch
+
+Phase 1 (analysis-first, zero GPU): assemble the per-(source, bystander, behavior) leakage matrices that already exist — #411 sycophancy (frozen join reused by #480), #518 refusal + EM panels, #390 refusal OOD framings — together with per-source self-implant deltas (manipulation checks), per-bystander behavior base rates, layer-20 cosine matrices, and each run's realized training-negative membership. Fit the candidate factors per behavior and jointly: does {max bystander cosine to source, self delta, bystander base propensity, negative membership} classify leak vs no-leak cells across behaviors? Name confounds explicitly (#518's substrate swap: refusal/EM panels on qwen-base vs sycophancy on qwen-instruct; the EM coherence-filter survivorship).
+
+Phase 2 (targeted causal tests, GPU) — two complementary levers that manipulate different candidate factors:
+
+- **Near-twin probe (eval-side, no retraining):** the isolation hypothesis predicts that adding synthesized near-twin bystanders (e.g. stand-up comic, supervillain, daycare teacher) to the isolated sources' eval panels reveals leakage from the EXISTING trained adapters (re-eval #411 sycophancy adapters, and the #518 refusal/EM adapters if reusable, on the extended panel). The affinity hypothesis predicts behavior-prior-matched far personas leak instead; isolation and affinity make different predictions about WHICH new bystanders light up. If adapters are not reusable for any behavior arm (fitness check per the artifact-reuse policy), the planner decides whether a retrain is justified or the arm stays analysis-only.
+- **Dose probe (training-side):** the implant-strength hypothesis predicts flat panels leak once the implant is pushed harder — and the opposing contrastive-suppression prediction (from the marker line: deeper contrastive training made bystander panels MORE silent, villain 4→1→1 emitting cells across depths) has never been tested on a behavioral whole-completion-loss payload. Extend training past the parent depth (ONE run per source, optimizer-step checkpoint grid including a parent-equivalent anchor, ~2x and ~4x depths; same pools / lr / negatives — depth is the only variable per arm) for at least the under-implanted source (Qwen default, sycophancy) plus one isolated source (e.g. villain) and, if budget allows, the floored refusal sources; re-eval the full panel at each depth. Crossing the two levers (deep checkpoints × extended near-twin panel) is the sharpest version: isolation predicts flat panels stay flat at every depth until a near-twin exists; dose predicts depth alone un-floors them.
+
+Open scope decisions for the planner: whether refusal needs a recipe variant with leakage headroom (#518 flags the floored arm as power-limited — a floor cannot distinguish "no leakage" from "nothing to measure") or whether the dose probe doubles as that test; whether EM's survivor-rate proxy is usable as the leakage DV or needs re-judging; how many synthesized near-twins per isolated source (and how to validate their cosine actually lands in the near-twin band before paying for eval); which behavior arms get the dose probe vs analysis-only given the GPU budget.
+
+## Execution shape — ONE issue, grouped experiments
+
+All arms execute ON THIS ISSUE and fold into a single unified clean-result body (the accumulated-rounds pattern: one issue, sequential rounds, each round through the full planner/critic stack, results appended as new findings in the same body). Do NOT split arms into child tasks. The natural grouping, in dependency order:
+
+| arm | what | depends_on | gpu_hours_est |
+|---|---|---|---|
+| e1 | Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): fit {max bystander cosine, self-implant delta, bystander base propensity, negative membership} as classifiers of leak vs no-leak cells, per behavior and jointly; name the substrate-swap and EM survivorship confounds | - | 0 |
+| e2 | Near-twin eval probe: synthesize near-twin bystanders (validate their layer-20 cosine lands in the near-twin band), re-eval EXISTING adapters on extended panels — no retraining | e1 | 8 |
+| e3 | Dose probe: extend sycophancy training past parent depth for Qwen default (under-implanted) + villain (isolated); optimizer-step checkpoints incl. parent-equivalent anchor; full-panel re-eval per depth | e1 | 24 |
+| e4 | Refusal arm: diagnose the #518 floor per e1, then the indicated single-change manipulation | e1 | 30 |
+| e5 | EM arm: replace/justify the survivor-rate proxy, re-fit the factor set on the corrected panel | e1 | 30 |
+
+The first plan covers e1 (+ e2 if cheap to bundle without breaking single-variable discipline); later arms run as same-issue follow-up rounds re-shaped by what e1 and the earlier rounds find (e.g. the dose × near-twin cross if e2 and e3 disagree). Total program budget ~300 GPU-hours; each round's plan stays under the 100 GPU-hour auto-approval cap.
+
 ## Notes / constraints
 
-- Reuse first: children consume existing panels, adapters, base rates, and cosine matrices wherever they pass fitness checks; new training is a last resort per arm.
+- Reuse first: this task should consume existing panels, adapters, base rates, and cosine matrices wherever they pass fitness checks; new training is a last resort per arm.
 - All three behaviors are implants trained with whole-completion loss on behavior spans — the marker-only-loss recipes do not transfer; any retrain inherits its parent arm's recipe with the single named change.
 - Measurement on-policy throughout (model generates, judge scores); no teacher-forced probes.
-- Children are ordinary `kind: experiment` tasks with the full adversarial-planner / critic stack; the campaign ingests only critic-gated clean-results.
+- Relates to: #411 / #470 / #480 (sycophancy line + isolation/affinity decomposition), #518 (cross-behavior panels + substrate caveats), #390 (refusal gate), #99 / #463 / #468 (EM gradients/predictors), #444 (recipe changes leakage shape), #391 (uniform-lift failure mode).
