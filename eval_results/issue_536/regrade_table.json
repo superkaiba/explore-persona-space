@@ -1969,38 +1969,6 @@
       "computed_at": "2026-06-11T01:22:27.638857+00:00"
     },
     {
-      "row_id": "213-partition",
-      "task": 213,
-      "config_slug": "approx_gram",
-      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
-      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
-      "gate_level": "n/a (no join possible)",
-      "original_stat": {
-        "estimator": "cue->no_cue centroid cosine distances per layer/model",
-        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
-      },
-      "recomputed_stat": null,
-      "regrade_label": "join-failed (needs-GPU-re-extraction)",
-      "notes": "Producer: scripts/run_issue_213_part_a.py:547 (raw pairwise cosine). WandB-artifact re-search at implementation time: the #213-era runs predate systematic artifact logging; no centroid artifact was located under the project's WandB projects (and none is named in the #213/#227 bodies). Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
-      "computed_at": "2026-06-11T01:22:27.678044+00:00"
-    },
-    {
-      "row_id": "227-partition",
-      "task": 227,
-      "config_slug": "approx_gram",
-      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
-      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
-      "gate_level": "n/a (no join possible)",
-      "original_stat": {
-        "estimator": "cue->no_cue centroid cosine distances per layer/model",
-        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
-      },
-      "recomputed_stat": null,
-      "regrade_label": "join-failed (needs-GPU-re-extraction)",
-      "notes": "Consumer of the #213 part-A geometry. WandB-artifact re-search at implementation time: the #213-era runs predate systematic artifact logging; no centroid artifact was located under the project's WandB projects (and none is named in the #213/#227 bodies). Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
-      "computed_at": "2026-06-11T01:22:27.685560+00:00"
-    },
-    {
       "row_id": "472-readoff-r6",
       "task": 472,
       "config_slug": "readoff_r6",
@@ -2286,7 +2254,39 @@
       "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
       "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
       "computed_at": "2026-06-11T01:22:27.799335+00:00"
+    },
+    {
+      "row_id": "213-partition",
+      "task": 213,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Producer: scripts/run_issue_213_part_a.py:547 (raw pairwise cosine). WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T01:24:24.265072+00:00"
+    },
+    {
+      "row_id": "227-partition",
+      "task": 227,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Consumer of the #213 part-A geometry. WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api over entity thomasjiralerspong): 175 projects scanned for 213/227/cue/insecure/divergence/geometry keywords; 1 candidate project (issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like artifacts \u2014 no #213/#227 centroid bundle exists on WandB. Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T01:24:24.272084+00:00"
     }
   ],
-  "updated_at": "2026-06-11T01:22:27.800578+00:00"
+  "updated_at": "2026-06-11T01:24:24.273229+00:00"
 }

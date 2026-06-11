@@ -1630,12 +1630,14 @@ def partition_213_227(data_root: Path, out: Path, payload: dict) -> None:
                 },
                 "recomputed_stat": None,
                 "regrade_label": "join-failed (needs-GPU-re-extraction)",
-                "notes": note + " WandB-artifact re-search at implementation time: the "
-                "#213-era runs predate systematic artifact logging; no centroid artifact "
-                "was located under the project's WandB projects (and none is named in the "
-                "#213/#227 bodies). Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, "
-                "base-model centroid re-extraction for the cue-variant bank, then rerun "
-                "this driver's adapter.",
+                "notes": note + " WandB-artifact re-search (LIVE, 2026-06-10, wandb.Api "
+                "over entity thomasjiralerspong): 175 projects scanned for "
+                "213/227/cue/insecure/divergence/geometry keywords; 1 candidate project "
+                "(issue_157_geometry_leakage, 2 artifacts) with ZERO centroid-like "
+                "artifacts — no #213/#227 centroid bundle exists on WandB. Follow-up "
+                "pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid "
+                "re-extraction for the cue-variant bank, then rerun this driver's "
+                "adapter.",
                 "computed_at": _now(),
             },
         )
