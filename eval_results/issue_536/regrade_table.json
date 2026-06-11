@@ -1,0 +1,2292 @@
+{
+  "schema_version": "i536_regrade_v1",
+  "generated_at": "2026-06-11T01:22:22.325505+00:00",
+  "git_commit": "892e740348584aa26fd45789fd6e208976161c05",
+  "rows": [
+    {
+      "row_id": "66-verify",
+      "task": 66,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 analyze_100_persona_cosine.py:288-293",
+      "recoverability": "CPU (verified)",
+      "family": "single_token_100p_L20",
+      "bank": {
+        "n": 111,
+        "names_hash": "334f4c339c12",
+        "layer": 20
+      },
+      "gate_level": "statistic (|drho|<=0.02 vs published per-source rho; bank matrix gate also passed at 1e-4 vs the cached raw-distance JSON)",
+      "original_stat": {
+        "estimator": "Spearman rho per source (N=110) + pooled (N=550), centered cos L20",
+        "per_source_rho": {
+          "villain": 0.704,
+          "comedian": 0.6683,
+          "assistant": 0.73,
+          "software_engineer": 0.8656,
+          "kindergarten_teacher": 0.7604
+        },
+        "pooled_rho": 0.6016,
+        "pooled_p": 1.9753834730410463e-55
+      },
+      "recomputed_stat": {
+        "per_source": {
+          "villain": {
+            "n_pairs": 110,
+            "published_rho_centered": 0.704,
+            "published_p": 9.650646479710932e-18,
+            "recomputed_rho_centered": 0.7039587215377767,
+            "recomputed_p_centered": 9.650646479710932e-18,
+            "sensitivity_rho_raw_recipe": 0.6645825315651223,
+            "sensitivity_p_raw_recipe": 2.448672622185694e-15,
+            "gate_pass": true
+          },
+          "comedian": {
+            "n_pairs": 110,
+            "published_rho_centered": 0.6683,
+            "published_p": 1.5032990280504356e-15,
+            "recomputed_rho_centered": 0.6683087637273747,
+            "recomputed_p_centered": 1.5032990280504356e-15,
+            "sensitivity_rho_raw_recipe": 0.6665736263347414,
+            "sensitivity_p_raw_recipe": 1.888374280080176e-15,
+            "gate_pass": true
+          },
+          "assistant": {
+            "n_pairs": 110,
+            "published_rho_centered": 0.73,
+            "published_p": 1.473021809859983e-19,
+            "recomputed_rho_centered": 0.7299651844860043,
+            "recomputed_p_centered": 1.473021809859983e-19,
+            "sensitivity_rho_raw_recipe": 0.8089772674589819,
+            "sensitivity_p_raw_recipe": 1.1329392432925234e-26,
+            "gate_pass": true
+          },
+          "software_engineer": {
+            "n_pairs": 110,
+            "published_rho_centered": 0.8656,
+            "published_p": 3.2164777581542084e-34,
+            "recomputed_rho_centered": 0.8655752140619414,
+            "recomputed_p_centered": 3.2164777581542084e-34,
+            "sensitivity_rho_raw_recipe": 0.9191864184501315,
+            "sensitivity_p_raw_recipe": 1.631470963236685e-45,
+            "gate_pass": true
+          },
+          "kindergarten_teacher": {
+            "n_pairs": 110,
+            "published_rho_centered": 0.7604,
+            "published_p": 5.711009079006579e-22,
+            "recomputed_rho_centered": 0.7603874811136448,
+            "recomputed_p_centered": 5.711009079006579e-22,
+            "sensitivity_rho_raw_recipe": 0.7944687325277537,
+            "sensitivity_p_raw_recipe": 3.888779198353341e-25,
+            "gate_pass": true
+          }
+        },
+        "pooled_rho_centered": 0.6015614373985146,
+        "pooled_p_centered": 1.9753834730410463e-55,
+        "pooled_rho_raw_recipe_sensitivity": 0.7654916313133822,
+        "pooled_p_raw_recipe_sensitivity": 5.157431929155098e-107
+      },
+      "raw_vs_centered_x_spearman": 0.8055216070213692,
+      "n": {
+        "per_source": 110,
+        "pooled": 550
+      },
+      "regrade_label": "stands",
+      "notes": "Verification row (original recipe WAS canonical/centered). The raw-recipe columns are a sensitivity read, not the original. H1 verification PASSED.",
+      "computed_at": "2026-06-11T01:22:22.325392+00:00"
+    },
+    {
+      "row_id": "99-partition",
+      "task": 99,
+      "config_slug": "verify_centered",
+      "cosine_path_used": "centered (canonical) \u2014 reused #66 centroids per #99 body",
+      "recoverability": "unrecoverable-Y (X persists; Y tables never committed)",
+      "gate_level": "n/a (no join attempted)",
+      "original_stat": {
+        "estimator": "per-(source x behavior) Spearman bystander-delta vs centered cos L20",
+        "summary": "19/24 significant (p<0.05), |rho| 0.02-0.79 (#99 body)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (Y unrecoverable)",
+      "notes": "The 4 behavior Y dirs named in #99's Reproducibility (eval_results/capability_leakage/, eval_results/misalignment_leakage_v2/, eval_results/refusal_leakage/, eval_results/sycophancy_leakage/) are absent locally AND have zero entries in git history (checked at implementation time; absent now: ['eval_results/capability_leakage/', 'eval_results/misalignment_leakage_v2/', 'eval_results/refusal_leakage/', 'eval_results/sycophancy_leakage/']). WandB project thomasjiralerspong/capability_leakage holds training runs, not the per-bystander eval tables. #99 used the CENTERED recipe (same #66 centroids), so the canonical pin does not threaten it; verification is simply not executable from disk. Follow-up pointer: re-run the 4 behavior evals (GPU) only if #99's calls are ever load-bearing for a new decision.",
+      "computed_at": "2026-06-11T01:22:22.357281+00:00"
+    },
+    {
+      "row_id": "405-secondary",
+      "task": 405,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW \u2014 cosine_matrix_a_layer20.json (issue405_clean_result_analysis.py:46-50)",
+      "recoverability": "CPU (verified)",
+      "family": "extraction_method_a_L20",
+      "bank": {
+        "n": 20,
+        "names_hash": "ed91bc7c350c",
+        "layer": 20
+      },
+      "gate_level": "matrix-1e-4 (bank vs cached JSON) + row-level min_dist 1e-4 + statistic (per-K raw OLS slopes inside published CIs)",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "MixedLM deltaLogP ~ K * min_dist (n=336) + per-K OLS slopes",
+        "min_dist_beta": -27.723812435161822,
+        "min_dist_p": 1.2944443752413748e-61,
+        "per_K_beta": {
+          "1": -27.000654564923916,
+          "2": -22.813930856992535,
+          "4": -27.09632375693144,
+          "8": -27.8569125486818
+        }
+      },
+      "recomputed_stat": {
+        "raw": {
+          "mixed": {
+            "Intercept": {
+              "beta": 14.098684181379328,
+              "p": 3.2150919531627033e-175
+            },
+            "K": {
+              "beta": 0.30001525600576556,
+              "p": 0.008205119920521847
+            },
+            "min_dist": {
+              "beta": -27.72378993078807,
+              "p": 1.2947425211358359e-61
+            },
+            "K:min_dist": {
+              "beta": -0.8137895293770117,
+              "p": 0.01090391354882785
+            },
+            "persona Var": {
+              "beta": 2.6937171718971236,
+              "p": 0.06892423195413998
+            },
+            "subset Var": {
+              "beta": 2.192759396990595,
+              "p": 0.003668063679572106
+            }
+          },
+          "per_K": {
+            "1": {
+              "n": 128,
+              "beta": -27.00065073970568,
+              "p": 7.304701277287069e-34,
+              "spearman_rho": -0.7824832923564427,
+              "spearman_p": 1.0763030788917643e-27
+            },
+            "2": {
+              "n": 96,
+              "beta": -22.813925828582374,
+              "p": 1.3584421551286614e-20,
+              "spearman_rho": -0.48789206296101323,
+              "spearman_p": 4.6056320554496096e-07
+            },
+            "4": {
+              "n": 96,
+              "beta": -27.096311016470658,
+              "p": 2.3834399544693207e-22,
+              "spearman_rho": -0.26419428820174506,
+              "spearman_p": 0.009294048947968252
+            },
+            "8": {
+              "n": 16,
+              "beta": -27.856897552385963,
+              "p": 3.763414564394943e-05,
+              "spearman_rho": -0.26035958758213296,
+              "spearman_p": 0.33010836597870075
+            }
+          },
+          "pooled_spearman": {
+            "rho": -0.6755058010703632,
+            "p": 4.097469515087328e-46
+          }
+        },
+        "centered": {
+          "mixed": {
+            "Intercept": {
+              "beta": 13.973165143522937,
+              "p": 1.2207040417346768e-73
+            },
+            "K": {
+              "beta": 0.34524473455934995,
+              "p": 0.050086882690895465
+            },
+            "min_dist": {
+              "beta": -2.267476783418106,
+              "p": 2.1718077227178634e-17
+            },
+            "K:min_dist": {
+              "beta": 0.011179204185784629,
+              "p": 0.9338884555386313
+            },
+            "persona Var": {
+              "beta": 6.158250083857228,
+              "p": 0.06545228056951151
+            },
+            "subset Var": {
+              "beta": 3.7975592085522325,
+              "p": 0.0034440119129609107
+            }
+          },
+          "per_K": {
+            "1": {
+              "n": 128,
+              "beta": -4.948712737895745,
+              "p": 6.304071672563809e-17,
+              "spearman_rho": -0.6471591456486692,
+              "spearman_p": 1.538515229140081e-16
+            },
+            "2": {
+              "n": 96,
+              "beta": -3.612244591523525,
+              "p": 1.8269501374399085e-08,
+              "spearman_rho": -0.39826536849314836,
+              "spearman_p": 5.853365174490944e-05
+            },
+            "4": {
+              "n": 96,
+              "beta": -4.473518350835123,
+              "p": 0.0005547285071041553,
+              "spearman_rho": -0.2530636197703748,
+              "spearman_p": 0.01285862005373409
+            },
+            "8": {
+              "n": 16,
+              "beta": -12.085477158542204,
+              "p": 0.00915666544726252,
+              "spearman_rho": -0.5088846484559872,
+              "spearman_p": 0.04410553039545937
+            }
+          },
+          "pooled_spearman": {
+            "rho": -0.5931213945394443,
+            "p": 2.6329347232557655e-33
+          }
+        },
+        "note_on_scale": "raw-vs-centered slope deltas are descriptive only (centering rescales X); the label is driven by the scale-invariant POOLED Spearman rho"
+      },
+      "raw_vs_centered_x_spearman": 0.8395557511459011,
+      "n": {
+        "rows": 336,
+        "per_K": {
+          "1": 128,
+          "2": 96,
+          "4": 96,
+          "8": 16
+        }
+      },
+      "regrade_label": "stands",
+      "notes": "Secondary-lean row: #405's distance axis (panel design + headline regression covariate) was built in the RAW 20-bank geometry. M = per-K Spearman.",
+      "computed_at": "2026-06-11T01:22:22.650286+00:00"
+    },
+    {
+      "row_id": "478-perK-slopes",
+      "task": 478,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW \u2014 cosine_distance_matrix_layer20.json (scripts/_issue478_common.py@69b34b94, normalize-only)",
+      "recoverability": "CPU (verified; tidy.csv snapshotted from 69b34b94)",
+      "family": "single_token_100p_L20",
+      "bank": {
+        "n": 111,
+        "names_hash": "334f4c339c12",
+        "layer": 20
+      },
+      "gate_level": "matrix-1e-4 (bank) + row-level min_dist 1e-4 + statistic (per-K raw OLS slopes within 0.02 of published)",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "per-K OLS slope of deltaLogP vs log(min_dist)",
+        "per_K_beta": {
+          "1": -1.37,
+          "2": -1.41,
+          "4": -1.35,
+          "8": -1.32
+        },
+        "note": "each published p < 1e-100"
+      },
+      "recomputed_stat": {
+        "raw": {
+          "1": {
+            "n": 1120,
+            "beta": -1.3680889584557097,
+            "p": 4.745987215313357e-174,
+            "std_beta": -0.7122527170279376,
+            "spearman_rho": -0.7389891105951706,
+            "spearman_p": 5.581882352751026e-194
+          },
+          "2": {
+            "n": 560,
+            "beta": -1.4055582601933532,
+            "p": 5.52846900218006e-119,
+            "std_beta": -0.7867007859698901,
+            "spearman_rho": -0.7836200867460186,
+            "spearman_p": 1.8737887112752326e-117
+          },
+          "4": {
+            "n": 560,
+            "beta": -1.3450904271733992,
+            "p": 5.371859879997167e-110,
+            "std_beta": -0.7678482890367555,
+            "spearman_rho": -0.7722295145489881,
+            "spearman_p": 5.23620528929746e-112
+          },
+          "8": {
+            "n": 560,
+            "beta": -1.3204053516427523,
+            "p": 3.1734472760707267e-111,
+            "std_beta": -0.7705363602935176,
+            "spearman_rho": -0.7759987482224463,
+            "spearman_p": 8.962549893890111e-114
+          }
+        },
+        "centered": {
+          "1": {
+            "n": 1120,
+            "beta": -1.5506729371769123,
+            "p": 6.298726509022533e-111,
+            "std_beta": -0.6009943499506185,
+            "spearman_rho": -0.69899420125762,
+            "spearman_p": 5.41204871939332e-165
+          },
+          "2": {
+            "n": 560,
+            "beta": -1.5990103416373356,
+            "p": 6.445376186626132e-79,
+            "std_beta": -0.6854228783849592,
+            "spearman_rho": -0.7942722357706015,
+            "spearman_p": 7.440006283508446e-123
+          },
+          "4": {
+            "n": 560,
+            "beta": -1.4753612297910217,
+            "p": 3.839600426715942e-75,
+            "std_beta": -0.6730983412725376,
+            "spearman_rho": -0.797898374231653,
+            "spearman_p": 9.109393515130432e-125
+          },
+          "8": {
+            "n": 560,
+            "beta": -1.432418909682386,
+            "p": 6.198777461259893e-74,
+            "std_beta": -0.6690240453766833,
+            "spearman_rho": -0.8095716215746682,
+            "spearman_p": 3.3770988083553783e-131
+          }
+        },
+        "note_on_scale": "raw-vs-centered beta deltas are descriptive only; M = per-K Spearman rho + standardized beta"
+      },
+      "raw_vs_centered_x_spearman": 0.7988072288211077,
+      "n": {
+        "rows": 2800,
+        "per_K": {
+          "1": 1120,
+          "2": 560,
+          "4": 560,
+          "8": 560
+        }
+      },
+      "regrade_label": "stands",
+      "computed_at": "2026-06-11T01:22:23.237502+00:00"
+    },
+    {
+      "row_id": "478-flatness-null",
+      "task": 478,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW \u2014 same as 478-perK-slopes",
+      "recoverability": "CPU (verified)",
+      "family": "single_token_100p_L20",
+      "bank": {
+        "n": 111,
+        "names_hash": "334f4c339c12",
+        "layer": 20
+      },
+      "gate_level": "statistic (raw gap slope reproduces published -0.12 within rebanding tolerance; design-band raw gap slope reported alongside)",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "OLS slope of (far - near band gap) vs log2 K + K x log(dist) interaction (published MixedLM +0.010, p=0.405)",
+        "gap_slope": -0.12,
+        "gap_slope_se": 0.052,
+        "gap_slope_p": 0.148
+      },
+      "recomputed_stat": {
+        "raw_design_bands": {
+          "per_K_gap": {
+            "1": -2.9665513501703433,
+            "2": -3.2303347475680635,
+            "4": -3.380574945053631,
+            "8": -3.317234809850069
+          },
+          "slope": -0.12022905765247441,
+          "se": 0.05220423621900576,
+          "p": 0.1478385054106346
+        },
+        "raw_rebanded": {
+          "per_K_gap": {
+            "1": -2.9665513501703433,
+            "2": -3.2303347475680635,
+            "4": -3.380574945053631,
+            "8": -3.317234809850069
+          },
+          "slope": -0.12022905765247441,
+          "se": 0.05220423621900576,
+          "p": 0.1478385054106346
+        },
+        "centered_rebanded": {
+          "per_K_gap": {
+            "1": -2.9345938760823795,
+            "2": -3.203031941547115,
+            "4": -3.3889784668882683,
+            "8": -3.3166620804471716
+          },
+          "slope": -0.13321511384355295,
+          "se": 0.05529301753218892,
+          "p": 0.13759737344599146
+        },
+        "interaction_raw_cluster_ols": {
+          "beta": 0.009744341901858439,
+          "p": 0.02211681889993931
+        },
+        "interaction_centered_cluster_ols": {
+          "beta": 0.021480451665166822,
+          "p": 0.000753260993037769
+        },
+        "holm_family": {
+          "gap_slope": 0.13759737344599146,
+          "interaction": 0.000753260993037769
+        },
+        "holm_reject": {
+          "interaction": true,
+          "gap_slope": false
+        },
+        "holm_reject_at_h2_alpha_001": {
+          "interaction": true,
+          "gap_slope": false
+        }
+      },
+      "band_reassignment": {
+        "crosstab_design_vs_centered": {
+          "near": {
+            "near": 6,
+            "near-mid": 0,
+            "mid": 0,
+            "far": 0,
+            "very-far": 0,
+            "tail": 0
+          },
+          "near-mid": {
+            "near": 0,
+            "near-mid": 5,
+            "mid": 1,
+            "far": 0,
+            "very-far": 0,
+            "tail": 0
+          },
+          "mid": {
+            "near": 0,
+            "near-mid": 1,
+            "mid": 3,
+            "far": 1,
+            "very-far": 0,
+            "tail": 1
+          },
+          "far": {
+            "near": 0,
+            "near-mid": 0,
+            "mid": 2,
+            "far": 1,
+            "very-far": 0,
+            "tail": 3
+          },
+          "very-far": {
+            "near": 0,
+            "near-mid": 0,
+            "mid": 0,
+            "far": 1,
+            "very-far": 3,
+            "tail": 1
+          },
+          "tail": {
+            "near": 0,
+            "near-mid": 0,
+            "mid": 0,
+            "far": 3,
+            "very-far": 2,
+            "tail": 1
+          }
+        },
+        "n_personas_moved": 16,
+        "method": "equal-count re-ranking of per-persona median min_dist (original band sizes preserved)"
+      },
+      "n": {
+        "rows": 2800,
+        "K_points": 4
+      },
+      "regrade_label": "null-overturned (candidate rescue)",
+      "notes": "Rescue driver is the K x log(dist) INTERACTION under the centered metric (cluster-robust OLS beta +0.021, Holm-significant even at the plan-H2 alpha=0.01); the gap slope itself stays NS. ESTIMATOR CAVEAT: the same cluster-robust OLS on the RAW join gives p=0.022 (borderline at 0.05, NS at the H2 alpha=0.01) where the published co-primary MixedLM read +0.010, p=0.405 - so part of the movement is estimator-sensitivity, and the positive interaction direction (slope flattens as K grows) is a CANDIDATE rescue pending a MixedLM refit, exactly per the tree's candidate-rescue framing. Reported with family size 2, corrected + uncorrected p.",
+      "computed_at": "2026-06-11T01:22:23.239400+00:00"
+    },
+    {
+      "row_id": "490-distance-adjusted",
+      "task": 490,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW \u2014 111-bank distance JSON (issue490 specs via _issue478_common.load_cosine_distance_matrix@9b5821aab)",
+      "recoverability": "CPU (verified)",
+      "family": "single_token_100p_L20",
+      "bank": {
+        "n": 111,
+        "names_hash": "334f4c339c12",
+        "layer": 20
+      },
+      "gate_level": "matrix-1e-4 (bank) + row-level d_A/d_B 1e-4 + statistic (raw refit is_on_axis beta within 0.02 of published 0.1996)",
+      "alpha": 0.05,
+      "multiplicity": "family = 1 cell (the single published headline test); Holm degenerate to raw p",
+      "original_stat": {
+        "estimator": "OLS gap_dosematched ~ is_on_axis + mean_d + asym, cluster-robust (pair, seed)",
+        "is_on_axis_beta": 0.1995521830915154,
+        "is_on_axis_p": 0.102561255020627,
+        "is_on_axis_ci95": [
+          -0.04001924685657832,
+          0.4391236130396091
+        ]
+      },
+      "recomputed_stat": {
+        "raw": {
+          "n_rows": 255,
+          "n_clusters": 24,
+          "is_on_axis_beta": 0.19955644077671642,
+          "is_on_axis_p": 0.10255391570842698,
+          "is_on_axis_ci95": [
+            -0.04001498335085518,
+            0.439127864904288
+          ],
+          "mean_d_beta": 1.4101070913888347,
+          "asym_beta": 4.151825538886685
+        },
+        "centered": {
+          "n_rows": 255,
+          "n_clusters": 24,
+          "is_on_axis_beta": 0.11412464033149244,
+          "is_on_axis_p": 0.21231168490225882,
+          "is_on_axis_ci95": [
+            -0.0652163435885588,
+            0.29346562425154366
+          ],
+          "mean_d_beta": -0.01988140411840928,
+          "asym_beta": 0.5343785361339406
+        }
+      },
+      "raw_vs_centered_x_spearman": 0.986984561266367,
+      "n": {
+        "rows": 255,
+        "clusters": 24
+      },
+      "regrade_label": "stands (null persists)",
+      "notes": "is_on_axis labels are the experiment's DESIGN (which personas were evaluated as on/off-axis); post-hoc re-selection cannot add personas with Y, so only the distance covariates change under centering.",
+      "computed_at": "2026-06-11T01:22:23.701126+00:00"
+    },
+    {
+      "row_id": "396-predictor-null",
+      "task": 396,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW pairwise vs assistant/neutral (recompute_predictors_i415.py:242-245)",
+      "recoverability": "CPU (verified; #274 bundle is a DIFFERENT extraction than #415's predictor run \u2014 statistic-level gate only)",
+      "family": "issue274_n24_L15",
+      "bank": {
+        "n": 24,
+        "names_hash": "4166123ef607",
+        "layer": 15
+      },
+      "gate_level": "statistic (bundle-raw cos-to-assistant length-partial rho vs published headline: |drho| = 0.0102 <= 0.02)",
+      "alpha": 0.05,
+      "multiplicity": "Holm p<0.05 within the 12-cell family AND |rho|>=0.5 (plan \u00a73 pre-registered); p = raw Spearman p (the task's own machinery)",
+      "original_stat": {
+        "estimator": "length-partial Spearman, 6 DV surfaces x 2 cos predictors",
+        "headline_rho_cos_to_assistant": 0.018037533114674514,
+        "headline_p": 0.485464332254182,
+        "stored_X_reproduction_rho": 0.018037533114674514
+      },
+      "recomputed_stat": {
+        "cells": {
+          "cos_to_assistant|logp_end_of_response_diagonal_mean": {
+            "rho_partial_raw": 0.007870727667138852,
+            "p_raw": 0.5193911494591461,
+            "rho_partial_centered": -0.048190839030443244,
+            "p_centered": 0.6536731719946907,
+            "n": 24
+          },
+          "cos_to_assistant|logp_at_k0_diagonal_mean": {
+            "rho_partial_raw": 0.1319477940902825,
+            "p_raw": 0.4307022617209813,
+            "rho_partial_centered": 0.09391324314082584,
+            "p_centered": 0.5140986909290426,
+            "n": 24
+          },
+          "cos_to_assistant|logp_auc_diagonal_mean": {
+            "rho_partial_raw": 0.09685730940106552,
+            "p_raw": 0.92289170312162,
+            "rho_partial_centered": -0.00980335892311028,
+            "p_centered": 0.639085931909078,
+            "n": 24
+          },
+          "cos_to_assistant|logp_max_diagonal_mean": {
+            "rho_partial_raw": -0.18332891342704463,
+            "p_raw": 0.11888708485840495,
+            "rho_partial_centered": -0.18341764735917426,
+            "p_centered": 0.11888708485840495,
+            "n": 24
+          },
+          "cos_to_assistant|logp_mean_diagonal_mean": {
+            "rho_partial_raw": 0.18204571314536347,
+            "p_raw": 0.2880995376657831,
+            "rho_partial_centered": 0.02933099631656298,
+            "p_centered": 0.6046100724044845,
+            "n": 24
+          },
+          "cos_to_assistant|substring_match_rate_diagonal_mean": {
+            "rho_partial_raw": -0.10183244864916915,
+            "p_raw": 0.30622648704630984,
+            "rho_partial_centered": -0.18601754921001,
+            "p_centered": 0.18471837026884413,
+            "n": 24
+          },
+          "cos_to_neutral|logp_end_of_response_diagonal_mean": {
+            "rho_partial_raw": 0.10737581696573825,
+            "p_raw": 0.3727527778427132,
+            "rho_partial_centered": -0.15475754848367776,
+            "p_centered": 0.9774802016477158,
+            "n": 24
+          },
+          "cos_to_neutral|logp_at_k0_diagonal_mean": {
+            "rho_partial_raw": 0.07981470646429782,
+            "p_raw": 0.5737097351958669,
+            "rho_partial_centered": -0.0425727939793605,
+            "p_centered": 0.8813617120284872,
+            "n": 24
+          },
+          "cos_to_neutral|logp_auc_diagonal_mean": {
+            "rho_partial_raw": 0.14065695095440237,
+            "p_raw": 0.8086881976469138,
+            "rho_partial_centered": 0.17177523047310506,
+            "p_centered": 0.8338234219848107,
+            "n": 24
+          },
+          "cos_to_neutral|logp_max_diagonal_mean": {
+            "rho_partial_raw": 0.062597379893446,
+            "p_raw": 0.6683845191595216,
+            "rho_partial_centered": 0.017865039569032633,
+            "p_centered": 0.4258955363074479,
+            "n": 24
+          },
+          "cos_to_neutral|logp_mean_diagonal_mean": {
+            "rho_partial_raw": 0.0829128749186503,
+            "p_raw": 0.5193911494591461,
+            "rho_partial_centered": -0.10733418876059338,
+            "p_centered": 0.9967824967252694,
+            "n": 24
+          },
+          "cos_to_neutral|substring_match_rate_diagonal_mean": {
+            "rho_partial_raw": 0.11063588131686598,
+            "p_raw": 0.9570288732061512,
+            "rho_partial_centered": 0.14854133652328702,
+            "p_centered": 0.9227298486858645,
+            "n": 24
+          }
+        },
+        "holm_reject": {
+          "cos_to_assistant|logp_max_diagonal_mean": false,
+          "cos_to_assistant|substring_match_rate_diagonal_mean": false,
+          "cos_to_neutral|logp_max_diagonal_mean": false,
+          "cos_to_assistant|logp_at_k0_diagonal_mean": false,
+          "cos_to_assistant|logp_mean_diagonal_mean": false,
+          "cos_to_assistant|logp_auc_diagonal_mean": false,
+          "cos_to_assistant|logp_end_of_response_diagonal_mean": false,
+          "cos_to_neutral|logp_auc_diagonal_mean": false,
+          "cos_to_neutral|logp_at_k0_diagonal_mean": false,
+          "cos_to_neutral|substring_match_rate_diagonal_mean": false,
+          "cos_to_neutral|logp_end_of_response_diagonal_mean": false,
+          "cos_to_neutral|logp_mean_diagonal_mean": false
+        },
+        "rescue_cells": [],
+        "uncorrected_hits_not_rescues": []
+      },
+      "reference_norm_check": {
+        "assistant": {
+          "ref_centered_norm": 16.36915397644043,
+          "bank_centered_norm_median": 13.93885850906372,
+          "ref_norm_percentile_in_bank": 0.6666666666666666
+        },
+        "neutral": {
+          "ref_centered_norm": 17.44483757019043,
+          "bank_centered_norm_median": 13.93885850906372,
+          "ref_norm_percentile_in_bank": 0.75
+        }
+      },
+      "raw_vs_centered_x_spearman": 0.8521739130434782,
+      "n": {
+        "personas": 24,
+        "cells": 12
+      },
+      "regrade_label": "stands (null persists)",
+      "notes": "Same join for #396 and #415 (#415 corroborated #396 on the same 24 personas + DV; the neutral reference maps to the bank's qwen_default persona, the assistant reference to helpful_assistant). Cells failing Holm but with uncorrected p<0.01 are candidate signals, never rescues.",
+      "computed_at": "2026-06-11T01:22:27.356541+00:00"
+    },
+    {
+      "row_id": "415-predictor-null",
+      "task": 415,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW pairwise vs assistant/neutral (recompute_predictors_i415.py:242-245)",
+      "recoverability": "CPU (verified; #274 bundle is a DIFFERENT extraction than #415's predictor run \u2014 statistic-level gate only)",
+      "family": "issue274_n24_L15",
+      "bank": {
+        "n": 24,
+        "names_hash": "4166123ef607",
+        "layer": 15
+      },
+      "gate_level": "statistic (bundle-raw cos-to-assistant length-partial rho vs published headline: |drho| = 0.0102 <= 0.02)",
+      "alpha": 0.05,
+      "multiplicity": "Holm p<0.05 within the 12-cell family AND |rho|>=0.5 (plan \u00a73 pre-registered); p = raw Spearman p (the task's own machinery)",
+      "original_stat": {
+        "estimator": "length-partial Spearman, 6 DV surfaces x 2 cos predictors",
+        "headline_rho_cos_to_assistant": 0.018037533114674514,
+        "headline_p": 0.485464332254182,
+        "stored_X_reproduction_rho": 0.018037533114674514
+      },
+      "recomputed_stat": {
+        "cells": {
+          "cos_to_assistant|logp_end_of_response_diagonal_mean": {
+            "rho_partial_raw": 0.007870727667138852,
+            "p_raw": 0.5193911494591461,
+            "rho_partial_centered": -0.048190839030443244,
+            "p_centered": 0.6536731719946907,
+            "n": 24
+          },
+          "cos_to_assistant|logp_at_k0_diagonal_mean": {
+            "rho_partial_raw": 0.1319477940902825,
+            "p_raw": 0.4307022617209813,
+            "rho_partial_centered": 0.09391324314082584,
+            "p_centered": 0.5140986909290426,
+            "n": 24
+          },
+          "cos_to_assistant|logp_auc_diagonal_mean": {
+            "rho_partial_raw": 0.09685730940106552,
+            "p_raw": 0.92289170312162,
+            "rho_partial_centered": -0.00980335892311028,
+            "p_centered": 0.639085931909078,
+            "n": 24
+          },
+          "cos_to_assistant|logp_max_diagonal_mean": {
+            "rho_partial_raw": -0.18332891342704463,
+            "p_raw": 0.11888708485840495,
+            "rho_partial_centered": -0.18341764735917426,
+            "p_centered": 0.11888708485840495,
+            "n": 24
+          },
+          "cos_to_assistant|logp_mean_diagonal_mean": {
+            "rho_partial_raw": 0.18204571314536347,
+            "p_raw": 0.2880995376657831,
+            "rho_partial_centered": 0.02933099631656298,
+            "p_centered": 0.6046100724044845,
+            "n": 24
+          },
+          "cos_to_assistant|substring_match_rate_diagonal_mean": {
+            "rho_partial_raw": -0.10183244864916915,
+            "p_raw": 0.30622648704630984,
+            "rho_partial_centered": -0.18601754921001,
+            "p_centered": 0.18471837026884413,
+            "n": 24
+          },
+          "cos_to_neutral|logp_end_of_response_diagonal_mean": {
+            "rho_partial_raw": 0.10737581696573825,
+            "p_raw": 0.3727527778427132,
+            "rho_partial_centered": -0.15475754848367776,
+            "p_centered": 0.9774802016477158,
+            "n": 24
+          },
+          "cos_to_neutral|logp_at_k0_diagonal_mean": {
+            "rho_partial_raw": 0.07981470646429782,
+            "p_raw": 0.5737097351958669,
+            "rho_partial_centered": -0.0425727939793605,
+            "p_centered": 0.8813617120284872,
+            "n": 24
+          },
+          "cos_to_neutral|logp_auc_diagonal_mean": {
+            "rho_partial_raw": 0.14065695095440237,
+            "p_raw": 0.8086881976469138,
+            "rho_partial_centered": 0.17177523047310506,
+            "p_centered": 0.8338234219848107,
+            "n": 24
+          },
+          "cos_to_neutral|logp_max_diagonal_mean": {
+            "rho_partial_raw": 0.062597379893446,
+            "p_raw": 0.6683845191595216,
+            "rho_partial_centered": 0.017865039569032633,
+            "p_centered": 0.4258955363074479,
+            "n": 24
+          },
+          "cos_to_neutral|logp_mean_diagonal_mean": {
+            "rho_partial_raw": 0.0829128749186503,
+            "p_raw": 0.5193911494591461,
+            "rho_partial_centered": -0.10733418876059338,
+            "p_centered": 0.9967824967252694,
+            "n": 24
+          },
+          "cos_to_neutral|substring_match_rate_diagonal_mean": {
+            "rho_partial_raw": 0.11063588131686598,
+            "p_raw": 0.9570288732061512,
+            "rho_partial_centered": 0.14854133652328702,
+            "p_centered": 0.9227298486858645,
+            "n": 24
+          }
+        },
+        "holm_reject": {
+          "cos_to_assistant|logp_max_diagonal_mean": false,
+          "cos_to_assistant|substring_match_rate_diagonal_mean": false,
+          "cos_to_neutral|logp_max_diagonal_mean": false,
+          "cos_to_assistant|logp_at_k0_diagonal_mean": false,
+          "cos_to_assistant|logp_mean_diagonal_mean": false,
+          "cos_to_assistant|logp_auc_diagonal_mean": false,
+          "cos_to_assistant|logp_end_of_response_diagonal_mean": false,
+          "cos_to_neutral|logp_auc_diagonal_mean": false,
+          "cos_to_neutral|logp_at_k0_diagonal_mean": false,
+          "cos_to_neutral|substring_match_rate_diagonal_mean": false,
+          "cos_to_neutral|logp_end_of_response_diagonal_mean": false,
+          "cos_to_neutral|logp_mean_diagonal_mean": false
+        },
+        "rescue_cells": [],
+        "uncorrected_hits_not_rescues": []
+      },
+      "reference_norm_check": {
+        "assistant": {
+          "ref_centered_norm": 16.36915397644043,
+          "bank_centered_norm_median": 13.93885850906372,
+          "ref_norm_percentile_in_bank": 0.6666666666666666
+        },
+        "neutral": {
+          "ref_centered_norm": 17.44483757019043,
+          "bank_centered_norm_median": 13.93885850906372,
+          "ref_norm_percentile_in_bank": 0.75
+        }
+      },
+      "raw_vs_centered_x_spearman": 0.8521739130434782,
+      "n": {
+        "personas": 24,
+        "cells": 12
+      },
+      "regrade_label": "stands (null persists)",
+      "notes": "Same join for #396 and #415 (#415 corroborated #396 on the same 24 personas + DV; the neutral reference maps to the bank's qwen_default persona, the assistant reference to helpful_assistant). Cells failing Holm but with uncorrected p<0.01 are candidate signals, never rescues.",
+      "computed_at": "2026-06-11T01:22:27.359121+00:00"
+    },
+    {
+      "row_id": "505-loo-null",
+      "task": 505,
+      "config_slug": "regrade_raw",
+      "cosine_path_used": "RAW explicit \u2014 build_pv_centroids.py:196 (compute_cosine_matrix(c, centering='none'))",
+      "recoverability": "CPU (verified; HF geometry bundle)",
+      "family": "issue505_pv_L21",
+      "bank": {
+        "n": 60,
+        "names_hash": "10c9086cb90f",
+        "layer": 21
+      },
+      "gate_level": "matrix-1e-4 (bundle vs panel_similarity_matrix L21) + statistic (per-arm raw OLS(HC2) betas reproduce published to 1e-4)",
+      "alpha": 0.05,
+      "multiplicity": "the task's own published success bar: pooled slope positive p<0.05 OR sign-agreement >=5/6 (binomial p<=0.11)",
+      "original_stat": {
+        "estimator": "per-arm OLS(HC2) slope of delta_leakage vs cos(b, j) at L21",
+        "per_arm_beta": {
+          "ai_assistant": 2.4490334631937265,
+          "child": -0.32898957571609744,
+          "hero": -0.3628704933149469,
+          "quilter": -0.5785647558793545,
+          "veterinarian": 1.8677261003950787,
+          "wizard": -0.38299983210890254
+        },
+        "sign_agreement": "2/6 positive (published 2/6)",
+        "pooled_mixed_model": "failed singular at every layer (published)"
+      },
+      "recomputed_stat": {
+        "raw": {
+          "per_arm": {
+            "ai_assistant": {
+              "beta_j": 2.449034753074565,
+              "p": 0.00028063296504799687,
+              "ci95": [
+                1.1276438727489284,
+                3.770425633400202
+              ],
+              "spearman_rho": 0.2820144013981449,
+              "spearman_p": 0.00036149773650046913,
+              "n_rows": 156
+            },
+            "child": {
+              "beta_j": -0.3289911471319369,
+              "p": 0.8375686552322334,
+              "ci95": [
+                -3.474341541452808,
+                2.8163592471889345
+              ],
+              "spearman_rho": -0.00962684527541256,
+              "spearman_p": 0.905057494318331,
+              "n_rows": 156
+            },
+            "hero": {
+              "beta_j": -0.3628698078315332,
+              "p": 0.22023788897145857,
+              "ci95": [
+                -0.9430265826239227,
+                0.21728696696085625
+              ],
+              "spearman_rho": 0.022260301341274165,
+              "spearman_p": 0.7826792637981804,
+              "n_rows": 156
+            },
+            "quilter": {
+              "beta_j": -0.5785650777354705,
+              "p": 0.06342892896101601,
+              "ci95": [
+                -1.1894816384709634,
+                0.03235148300002255
+              ],
+              "spearman_rho": -0.12438073787365546,
+              "spearman_p": 0.12185491342271156,
+              "n_rows": 156
+            },
+            "veterinarian": {
+              "beta_j": 1.8677278208712949,
+              "p": 0.06250822607599879,
+              "ci95": [
+                -0.09755455227731513,
+                3.833010194019905
+              ],
+              "spearman_rho": 0.18167706527145575,
+              "spearman_p": 0.023218527891811263,
+              "n_rows": 156
+            },
+            "wizard": {
+              "beta_j": -0.3829992289027249,
+              "p": 0.3216832543115551,
+              "ci95": [
+                -1.1404776210013208,
+                0.3744791631958709
+              ],
+              "spearman_rho": -0.06546254787280541,
+              "spearman_p": 0.4168360694980638,
+              "n_rows": 156
+            }
+          },
+          "pooled_cluster_ols": {
+            "beta": -2.693393392790993,
+            "p": 0.009584327584575164,
+            "n": 936
+          }
+        },
+        "centered": {
+          "per_arm": {
+            "ai_assistant": {
+              "beta_j": 0.21155560550024127,
+              "p": 0.034124571746644204,
+              "ci95": [
+                0.01584049679772412,
+                0.4072707142027584
+              ],
+              "spearman_rho": 0.2435354740263727,
+              "spearman_p": 0.002187240660330381,
+              "n_rows": 156
+            },
+            "child": {
+              "beta_j": -0.7497909295361325,
+              "p": 1.9011646442453916e-05,
+              "ci95": [
+                -1.0934525077540327,
+                -0.40612935131823213
+              ],
+              "spearman_rho": -0.36715744576994636,
+              "spearman_p": 2.421455199812421e-06,
+              "n_rows": 156
+            },
+            "hero": {
+              "beta_j": 0.18727679840762693,
+              "p": 0.038459861199983826,
+              "ci95": [
+                0.009948289861148235,
+                0.36460530695410565
+              ],
+              "spearman_rho": 0.14087441662630815,
+              "spearman_p": 0.07940849785006152,
+              "n_rows": 156
+            },
+            "quilter": {
+              "beta_j": -0.08121527298440033,
+              "p": 0.055829058344849684,
+              "ci95": [
+                -0.1644518894728847,
+                0.0020213435040840333
+              ],
+              "spearman_rho": -0.11167140519478569,
+              "spearman_p": 0.16516658028098374,
+              "n_rows": 156
+            },
+            "veterinarian": {
+              "beta_j": 0.3219220026136823,
+              "p": 0.026356730402138685,
+              "ci95": [
+                0.03782487215711472,
+                0.6060191330702499
+              ],
+              "spearman_rho": 0.1634002861131109,
+              "spearman_p": 0.041532465981753024,
+              "n_rows": 156
+            },
+            "wizard": {
+              "beta_j": -0.07169423370270497,
+              "p": 0.24123622750434226,
+              "ci95": [
+                -0.19160021837373536,
+                0.04821175096832542
+              ],
+              "spearman_rho": -0.06933225513622247,
+              "spearman_p": 0.38977216812251664,
+              "n_rows": 156
+            }
+          },
+          "pooled_cluster_ols": {
+            "beta": 0.008324294421635847,
+            "p": 0.9556862732091729,
+            "n": 936
+          },
+          "sign_agreement": "3/6 positive"
+        }
+      },
+      "raw_vs_centered_x_spearman": 0.6740352709965317,
+      "n": {
+        "rows": 936,
+        "arms": 6
+      },
+      "regrade_label": "stands (null persists)",
+      "notes": "Pooled cluster-robust OLS stands in for the published mixed model (which failed singular); the per-arm + sign-agreement read is the task's own published verdict machinery.",
+      "computed_at": "2026-06-11T01:22:27.485614+00:00"
+    },
+    {
+      "row_id": "474-gram-sensitivity",
+      "task": 474,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 i406 producer (normalize-only, persisted as distance 1-cos); consumed by i474_cosine_followup.py:52 + i460_phase5",
+      "recoverability": "matrix-only (centroid bundles ruled out at fact-check; Gram read after G = 1 - D conversion)",
+      "family": "issue406_gram",
+      "bank": {
+        "n": 16,
+        "names_hash": "879a3d2159c5",
+        "layer": 21
+      },
+      "gate_level": "statistic (raw Gram-path rho reproduces the published followup table per cell, |drho|<=0.02) \u2014 matrix-only namespace",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "length-partial Spearman cos(L21) vs delta_g / trained log-prob, non-stylized panel, per (arm, epoch)",
+        "published_table": "eval_results/issue_474/followup_cosine_analysis.json"
+      },
+      "recomputed_stat": {
+        "cells": [
+          {
+            "cell": "pos_ep1",
+            "published_ns_rho_cosL21_deltag": -0.3678332222969739,
+            "raw": {
+              "rho_cos_deltag": -0.3678332222969739,
+              "p_cos_deltag": 2.3128027149606074e-06,
+              "rho_cos_trainedlogp": 0.5818272319624169,
+              "p_cos_trainedlogp": 1.6483085223597585e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.315665186326174,
+              "p_cos_deltag": 5.9680419611657606e-05,
+              "rho_cos_trainedlogp": 0.5346375427405501,
+              "p_cos_trainedlogp": 6.532754268007572e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep2",
+            "published_ns_rho_cosL21_deltag": -0.3806016377766675,
+            "raw": {
+              "rho_cos_deltag": -0.3806016377766675,
+              "p_cos_deltag": 9.524392838392606e-07,
+              "rho_cos_trainedlogp": 0.4712026921452765,
+              "p_cos_trainedlogp": 5.358653780084927e-10
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.33168564880615325,
+              "p_cos_deltag": 2.3389370701269024e-05,
+              "rho_cos_trainedlogp": 0.40492658950303606,
+              "p_cos_trainedlogp": 1.5781922721817948e-07
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep3",
+            "published_ns_rho_cosL21_deltag": -0.3820762992066589,
+            "raw": {
+              "rho_cos_deltag": -0.3820762992066589,
+              "p_cos_deltag": 8.575779416003267e-07,
+              "rho_cos_trainedlogp": 0.4405526450508051,
+              "p_cos_trainedlogp": 8.645615777114186e-09
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.332290523620737,
+              "p_cos_deltag": 2.255317781604126e-05,
+              "rho_cos_trainedlogp": 0.3761015381226805,
+              "p_cos_trainedlogp": 1.3077005706518543e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep5",
+            "published_ns_rho_cosL21_deltag": -0.38379549578799643,
+            "raw": {
+              "rho_cos_deltag": -0.38379549578799643,
+              "p_cos_deltag": 7.583545243600243e-07,
+              "rho_cos_trainedlogp": 0.43315716970874696,
+              "p_cos_trainedlogp": 1.624632547691933e-08
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.3338547999354974,
+              "p_cos_deltag": 2.051941176805503e-05,
+              "rho_cos_trainedlogp": 0.37029958330893237,
+              "p_cos_trainedlogp": 1.954284342020675e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep1",
+            "published_ns_rho_cosL21_deltag": 0.5745355496853082,
+            "raw": {
+              "rho_cos_deltag": 0.5745355496853082,
+              "p_cos_deltag": 4.4247742249444456e-15,
+              "rho_cos_trainedlogp": 0.650460831329659,
+              "p_cos_trainedlogp": 3.938388260771064e-20
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.533019698649367,
+              "p_cos_deltag": 7.891159837794613e-13,
+              "rho_cos_trainedlogp": 0.5949616962244325,
+              "p_cos_trainedlogp": 2.6122387038223996e-16
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep2",
+            "published_ns_rho_cosL21_deltag": 0.4550149730827148,
+            "raw": {
+              "rho_cos_deltag": 0.4550149730827148,
+              "p_cos_deltag": 2.408641750913576e-09,
+              "rho_cos_trainedlogp": 0.5764211869783814,
+              "p_cos_trainedlogp": 3.435636262764378e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.42738559730900316,
+              "p_cos_deltag": 2.630576294970106e-08,
+              "rho_cos_trainedlogp": 0.5260469607140105,
+              "p_cos_trainedlogp": 1.761162792664975e-12
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep3",
+            "published_ns_rho_cosL21_deltag": 0.46525019198955614,
+            "raw": {
+              "rho_cos_deltag": 0.46525019198955614,
+              "p_cos_deltag": 9.39804558205896e-10,
+              "rho_cos_trainedlogp": 0.6015546102147692,
+              "p_cos_trainedlogp": 1.0035361874221327e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.4412181984363054,
+              "p_cos_deltag": 8.162410634854866e-09,
+              "rho_cos_trainedlogp": 0.5533675431471299,
+              "p_cos_trainedlogp": 6.802236695292999e-14
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep5",
+            "published_ns_rho_cosL21_deltag": 0.4569414366751999,
+            "raw": {
+              "rho_cos_deltag": 0.4569414366751999,
+              "p_cos_deltag": 2.0223995129881776e-09,
+              "rho_cos_trainedlogp": 0.5886411975738132,
+              "p_cos_trainedlogp": 6.404876906232947e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.43474254599946827,
+              "p_cos_deltag": 1.4209425788653946e-08,
+              "rho_cos_trainedlogp": 0.5422346917797609,
+              "p_cos_trainedlogp": 2.654157172183238e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          }
+        ],
+        "agreement_per_cell": {
+          "pos_ep1": true,
+          "pos_ep2": true,
+          "pos_ep3": true,
+          "pos_ep5": true,
+          "loc_ep1": true,
+          "loc_ep2": true,
+          "loc_ep3": true,
+          "loc_ep5": true
+        }
+      },
+      "per_layer_fingerprints": {
+        "0": {
+          "raw": {
+            "min": 0.9876726269721985,
+            "median": 0.9953560829162598,
+            "max": 1.0000001192092896,
+            "span": 0.012327492237091064
+          },
+          "centered_approx": {
+            "min": -0.4767149479898076,
+            "median": -0.11648536461111941,
+            "max": 0.9999999993713601,
+            "span": 1.4767149473611676
+          },
+          "clipped_mass_frac": 5.291109506979502e-14
+        },
+        "5": {
+          "raw": {
+            "min": 0.9539646506309509,
+            "median": 0.9796364903450012,
+            "max": 1.0000001192092896,
+            "span": 0.04603546857833862
+          },
+          "centered_approx": {
+            "min": -0.5295737552079985,
+            "median": -0.1511878655509245,
+            "max": 0.9999999999769168,
+            "span": 1.5295737551849153
+          },
+          "clipped_mass_frac": 9.364290700652168e-15
+        },
+        "11": {
+          "raw": {
+            "min": 0.8757804036140442,
+            "median": 0.9365551471710205,
+            "max": 0.9999998807907104,
+            "span": 0.12421947717666626
+          },
+          "centered_approx": {
+            "min": -0.7268461409233941,
+            "median": -0.03456747999236208,
+            "max": 0.999999999987543,
+            "span": 1.726846140910937
+          },
+          "clipped_mass_frac": 1.2337043278605297e-14
+        },
+        "15": {
+          "raw": {
+            "min": 0.785845935344696,
+            "median": 0.939711183309555,
+            "max": 1.0000001192092896,
+            "span": 0.2141541838645935
+          },
+          "centered_approx": {
+            "min": -0.6279725215272574,
+            "median": -0.075141323991526,
+            "max": 0.9999999999684269,
+            "span": 1.6279725214956842
+          },
+          "clipped_mass_frac": 3.96104739783884e-14
+        },
+        "21": {
+          "raw": {
+            "min": 0.5892712473869324,
+            "median": 0.903426855802536,
+            "max": 1.0,
+            "span": 0.4107287526130676
+          },
+          "centered_approx": {
+            "min": -0.6502339694644639,
+            "median": -0.045366699859375005,
+            "max": 0.9999999999810023,
+            "span": 1.6502339694454662
+          },
+          "clipped_mass_frac": 3.752168442130146e-14
+        },
+        "27": {
+          "raw": {
+            "min": 0.28284990787506104,
+            "median": 0.878020167350769,
+            "max": 1.0000003576278687,
+            "span": 0.7171504497528076
+          },
+          "centered_approx": {
+            "min": -0.6321333701072425,
+            "median": -0.03189100264529256,
+            "max": 0.9999999999894634,
+            "span": 1.6321333700967058
+          },
+          "clipped_mass_frac": 3.0911506922551105e-14
+        }
+      },
+      "psd_clipped_mass_frac_L21": 3.752168442130146e-14,
+      "raw_vs_centered_x_spearman": 0.8411969290634831,
+      "n": {
+        "pairs_non_stylized": 156,
+        "cells": 8
+      },
+      "regrade_label": "sensitivity-agrees",
+      "notes": "Primary lineage row: the #474 cosine-followup cells recomputed directly. NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
+      "computed_at": "2026-06-11T01:22:27.579424+00:00"
+    },
+    {
+      "row_id": "406-gram-sensitivity",
+      "task": 406,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 i406 producer (normalize-only, persisted as distance 1-cos); consumed by i474_cosine_followup.py:52 + i460_phase5",
+      "recoverability": "matrix-only (centroid bundles ruled out at fact-check; Gram read after G = 1 - D conversion)",
+      "family": "issue406_gram",
+      "bank": {
+        "n": 16,
+        "names_hash": "879a3d2159c5",
+        "layer": 21
+      },
+      "gate_level": "statistic (raw Gram-path rho reproduces the published followup table per cell, |drho|<=0.02) \u2014 matrix-only namespace",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "length-partial Spearman cos(L21) vs delta_g / trained log-prob, non-stylized panel, per (arm, epoch)",
+        "published_table": "eval_results/issue_474/followup_cosine_analysis.json"
+      },
+      "recomputed_stat": {
+        "cells": [
+          {
+            "cell": "pos_ep1",
+            "published_ns_rho_cosL21_deltag": -0.3678332222969739,
+            "raw": {
+              "rho_cos_deltag": -0.3678332222969739,
+              "p_cos_deltag": 2.3128027149606074e-06,
+              "rho_cos_trainedlogp": 0.5818272319624169,
+              "p_cos_trainedlogp": 1.6483085223597585e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.315665186326174,
+              "p_cos_deltag": 5.9680419611657606e-05,
+              "rho_cos_trainedlogp": 0.5346375427405501,
+              "p_cos_trainedlogp": 6.532754268007572e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep2",
+            "published_ns_rho_cosL21_deltag": -0.3806016377766675,
+            "raw": {
+              "rho_cos_deltag": -0.3806016377766675,
+              "p_cos_deltag": 9.524392838392606e-07,
+              "rho_cos_trainedlogp": 0.4712026921452765,
+              "p_cos_trainedlogp": 5.358653780084927e-10
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.33168564880615325,
+              "p_cos_deltag": 2.3389370701269024e-05,
+              "rho_cos_trainedlogp": 0.40492658950303606,
+              "p_cos_trainedlogp": 1.5781922721817948e-07
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep3",
+            "published_ns_rho_cosL21_deltag": -0.3820762992066589,
+            "raw": {
+              "rho_cos_deltag": -0.3820762992066589,
+              "p_cos_deltag": 8.575779416003267e-07,
+              "rho_cos_trainedlogp": 0.4405526450508051,
+              "p_cos_trainedlogp": 8.645615777114186e-09
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.332290523620737,
+              "p_cos_deltag": 2.255317781604126e-05,
+              "rho_cos_trainedlogp": 0.3761015381226805,
+              "p_cos_trainedlogp": 1.3077005706518543e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep5",
+            "published_ns_rho_cosL21_deltag": -0.38379549578799643,
+            "raw": {
+              "rho_cos_deltag": -0.38379549578799643,
+              "p_cos_deltag": 7.583545243600243e-07,
+              "rho_cos_trainedlogp": 0.43315716970874696,
+              "p_cos_trainedlogp": 1.624632547691933e-08
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.3338547999354974,
+              "p_cos_deltag": 2.051941176805503e-05,
+              "rho_cos_trainedlogp": 0.37029958330893237,
+              "p_cos_trainedlogp": 1.954284342020675e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep1",
+            "published_ns_rho_cosL21_deltag": 0.5745355496853082,
+            "raw": {
+              "rho_cos_deltag": 0.5745355496853082,
+              "p_cos_deltag": 4.4247742249444456e-15,
+              "rho_cos_trainedlogp": 0.650460831329659,
+              "p_cos_trainedlogp": 3.938388260771064e-20
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.533019698649367,
+              "p_cos_deltag": 7.891159837794613e-13,
+              "rho_cos_trainedlogp": 0.5949616962244325,
+              "p_cos_trainedlogp": 2.6122387038223996e-16
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep2",
+            "published_ns_rho_cosL21_deltag": 0.4550149730827148,
+            "raw": {
+              "rho_cos_deltag": 0.4550149730827148,
+              "p_cos_deltag": 2.408641750913576e-09,
+              "rho_cos_trainedlogp": 0.5764211869783814,
+              "p_cos_trainedlogp": 3.435636262764378e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.42738559730900316,
+              "p_cos_deltag": 2.630576294970106e-08,
+              "rho_cos_trainedlogp": 0.5260469607140105,
+              "p_cos_trainedlogp": 1.761162792664975e-12
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep3",
+            "published_ns_rho_cosL21_deltag": 0.46525019198955614,
+            "raw": {
+              "rho_cos_deltag": 0.46525019198955614,
+              "p_cos_deltag": 9.39804558205896e-10,
+              "rho_cos_trainedlogp": 0.6015546102147692,
+              "p_cos_trainedlogp": 1.0035361874221327e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.4412181984363054,
+              "p_cos_deltag": 8.162410634854866e-09,
+              "rho_cos_trainedlogp": 0.5533675431471299,
+              "p_cos_trainedlogp": 6.802236695292999e-14
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep5",
+            "published_ns_rho_cosL21_deltag": 0.4569414366751999,
+            "raw": {
+              "rho_cos_deltag": 0.4569414366751999,
+              "p_cos_deltag": 2.0223995129881776e-09,
+              "rho_cos_trainedlogp": 0.5886411975738132,
+              "p_cos_trainedlogp": 6.404876906232947e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.43474254599946827,
+              "p_cos_deltag": 1.4209425788653946e-08,
+              "rho_cos_trainedlogp": 0.5422346917797609,
+              "p_cos_trainedlogp": 2.654157172183238e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          }
+        ],
+        "agreement_per_cell": {
+          "pos_ep1": true,
+          "pos_ep2": true,
+          "pos_ep3": true,
+          "pos_ep5": true,
+          "loc_ep1": true,
+          "loc_ep2": true,
+          "loc_ep3": true,
+          "loc_ep5": true
+        }
+      },
+      "per_layer_fingerprints": {
+        "0": {
+          "raw": {
+            "min": 0.9876726269721985,
+            "median": 0.9953560829162598,
+            "max": 1.0000001192092896,
+            "span": 0.012327492237091064
+          },
+          "centered_approx": {
+            "min": -0.4767149479898076,
+            "median": -0.11648536461111941,
+            "max": 0.9999999993713601,
+            "span": 1.4767149473611676
+          },
+          "clipped_mass_frac": 5.291109506979502e-14
+        },
+        "5": {
+          "raw": {
+            "min": 0.9539646506309509,
+            "median": 0.9796364903450012,
+            "max": 1.0000001192092896,
+            "span": 0.04603546857833862
+          },
+          "centered_approx": {
+            "min": -0.5295737552079985,
+            "median": -0.1511878655509245,
+            "max": 0.9999999999769168,
+            "span": 1.5295737551849153
+          },
+          "clipped_mass_frac": 9.364290700652168e-15
+        },
+        "11": {
+          "raw": {
+            "min": 0.8757804036140442,
+            "median": 0.9365551471710205,
+            "max": 0.9999998807907104,
+            "span": 0.12421947717666626
+          },
+          "centered_approx": {
+            "min": -0.7268461409233941,
+            "median": -0.03456747999236208,
+            "max": 0.999999999987543,
+            "span": 1.726846140910937
+          },
+          "clipped_mass_frac": 1.2337043278605297e-14
+        },
+        "15": {
+          "raw": {
+            "min": 0.785845935344696,
+            "median": 0.939711183309555,
+            "max": 1.0000001192092896,
+            "span": 0.2141541838645935
+          },
+          "centered_approx": {
+            "min": -0.6279725215272574,
+            "median": -0.075141323991526,
+            "max": 0.9999999999684269,
+            "span": 1.6279725214956842
+          },
+          "clipped_mass_frac": 3.96104739783884e-14
+        },
+        "21": {
+          "raw": {
+            "min": 0.5892712473869324,
+            "median": 0.903426855802536,
+            "max": 1.0,
+            "span": 0.4107287526130676
+          },
+          "centered_approx": {
+            "min": -0.6502339694644639,
+            "median": -0.045366699859375005,
+            "max": 0.9999999999810023,
+            "span": 1.6502339694454662
+          },
+          "clipped_mass_frac": 3.752168442130146e-14
+        },
+        "27": {
+          "raw": {
+            "min": 0.28284990787506104,
+            "median": 0.878020167350769,
+            "max": 1.0000003576278687,
+            "span": 0.7171504497528076
+          },
+          "centered_approx": {
+            "min": -0.6321333701072425,
+            "median": -0.03189100264529256,
+            "max": 0.9999999999894634,
+            "span": 1.6321333700967058
+          },
+          "clipped_mass_frac": 3.0911506922551105e-14
+        }
+      },
+      "psd_clipped_mass_frac_L21": 3.752168442130146e-14,
+      "raw_vs_centered_x_spearman": 0.8411969290634831,
+      "n": {
+        "pairs_non_stylized": 156,
+        "cells": 8
+      },
+      "regrade_label": "sensitivity-agrees",
+      "notes": "Producer row: scripts/i406_phase1_merge_and_compute_matrices.py (DELETED; commit 9e6e31c3f) persisted distance-form 1-cos, normalize-only (RAW). Sensitivity read inherits from the 474 cells (same matrices). NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
+      "computed_at": "2026-06-11T01:22:27.583610+00:00"
+    },
+    {
+      "row_id": "460-gram-sensitivity",
+      "task": 460,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 i406 producer (normalize-only, persisted as distance 1-cos); consumed by i474_cosine_followup.py:52 + i460_phase5",
+      "recoverability": "matrix-only (centroid bundles ruled out at fact-check; Gram read after G = 1 - D conversion)",
+      "family": "issue406_gram",
+      "bank": {
+        "n": 16,
+        "names_hash": "879a3d2159c5",
+        "layer": 21
+      },
+      "gate_level": "statistic (raw Gram-path rho reproduces the published followup table per cell, |drho|<=0.02) \u2014 matrix-only namespace",
+      "alpha": 0.01,
+      "original_stat": {
+        "estimator": "length-partial Spearman cos(L21) vs delta_g / trained log-prob, non-stylized panel, per (arm, epoch)",
+        "published_table": "eval_results/issue_474/followup_cosine_analysis.json"
+      },
+      "recomputed_stat": {
+        "cells": [
+          {
+            "cell": "pos_ep1",
+            "published_ns_rho_cosL21_deltag": -0.3678332222969739,
+            "raw": {
+              "rho_cos_deltag": -0.3678332222969739,
+              "p_cos_deltag": 2.3128027149606074e-06,
+              "rho_cos_trainedlogp": 0.5818272319624169,
+              "p_cos_trainedlogp": 1.6483085223597585e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.315665186326174,
+              "p_cos_deltag": 5.9680419611657606e-05,
+              "rho_cos_trainedlogp": 0.5346375427405501,
+              "p_cos_trainedlogp": 6.532754268007572e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep2",
+            "published_ns_rho_cosL21_deltag": -0.3806016377766675,
+            "raw": {
+              "rho_cos_deltag": -0.3806016377766675,
+              "p_cos_deltag": 9.524392838392606e-07,
+              "rho_cos_trainedlogp": 0.4712026921452765,
+              "p_cos_trainedlogp": 5.358653780084927e-10
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.33168564880615325,
+              "p_cos_deltag": 2.3389370701269024e-05,
+              "rho_cos_trainedlogp": 0.40492658950303606,
+              "p_cos_trainedlogp": 1.5781922721817948e-07
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep3",
+            "published_ns_rho_cosL21_deltag": -0.3820762992066589,
+            "raw": {
+              "rho_cos_deltag": -0.3820762992066589,
+              "p_cos_deltag": 8.575779416003267e-07,
+              "rho_cos_trainedlogp": 0.4405526450508051,
+              "p_cos_trainedlogp": 8.645615777114186e-09
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.332290523620737,
+              "p_cos_deltag": 2.255317781604126e-05,
+              "rho_cos_trainedlogp": 0.3761015381226805,
+              "p_cos_trainedlogp": 1.3077005706518543e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "pos_ep5",
+            "published_ns_rho_cosL21_deltag": -0.38379549578799643,
+            "raw": {
+              "rho_cos_deltag": -0.38379549578799643,
+              "p_cos_deltag": 7.583545243600243e-07,
+              "rho_cos_trainedlogp": 0.43315716970874696,
+              "p_cos_trainedlogp": 1.624632547691933e-08
+            },
+            "centered_approx": {
+              "rho_cos_deltag": -0.3338547999354974,
+              "p_cos_deltag": 2.051941176805503e-05,
+              "rho_cos_trainedlogp": 0.37029958330893237,
+              "p_cos_trainedlogp": 1.954284342020675e-06
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep1",
+            "published_ns_rho_cosL21_deltag": 0.5745355496853082,
+            "raw": {
+              "rho_cos_deltag": 0.5745355496853082,
+              "p_cos_deltag": 4.4247742249444456e-15,
+              "rho_cos_trainedlogp": 0.650460831329659,
+              "p_cos_trainedlogp": 3.938388260771064e-20
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.533019698649367,
+              "p_cos_deltag": 7.891159837794613e-13,
+              "rho_cos_trainedlogp": 0.5949616962244325,
+              "p_cos_trainedlogp": 2.6122387038223996e-16
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep2",
+            "published_ns_rho_cosL21_deltag": 0.4550149730827148,
+            "raw": {
+              "rho_cos_deltag": 0.4550149730827148,
+              "p_cos_deltag": 2.408641750913576e-09,
+              "rho_cos_trainedlogp": 0.5764211869783814,
+              "p_cos_trainedlogp": 3.435636262764378e-15
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.42738559730900316,
+              "p_cos_deltag": 2.630576294970106e-08,
+              "rho_cos_trainedlogp": 0.5260469607140105,
+              "p_cos_trainedlogp": 1.761162792664975e-12
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep3",
+            "published_ns_rho_cosL21_deltag": 0.46525019198955614,
+            "raw": {
+              "rho_cos_deltag": 0.46525019198955614,
+              "p_cos_deltag": 9.39804558205896e-10,
+              "rho_cos_trainedlogp": 0.6015546102147692,
+              "p_cos_trainedlogp": 1.0035361874221327e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.4412181984363054,
+              "p_cos_deltag": 8.162410634854866e-09,
+              "rho_cos_trainedlogp": 0.5533675431471299,
+              "p_cos_trainedlogp": 6.802236695292999e-14
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          },
+          {
+            "cell": "loc_ep5",
+            "published_ns_rho_cosL21_deltag": 0.4569414366751999,
+            "raw": {
+              "rho_cos_deltag": 0.4569414366751999,
+              "p_cos_deltag": 2.0223995129881776e-09,
+              "rho_cos_trainedlogp": 0.5886411975738132,
+              "p_cos_trainedlogp": 6.404876906232947e-16
+            },
+            "centered_approx": {
+              "rho_cos_deltag": 0.43474254599946827,
+              "p_cos_deltag": 1.4209425788653946e-08,
+              "rho_cos_trainedlogp": 0.5422346917797609,
+              "p_cos_trainedlogp": 2.654157172183238e-13
+            },
+            "gate_abs_dev_vs_published": 0.0,
+            "n_pairs": 156
+          }
+        ],
+        "agreement_per_cell": {
+          "pos_ep1": true,
+          "pos_ep2": true,
+          "pos_ep3": true,
+          "pos_ep5": true,
+          "loc_ep1": true,
+          "loc_ep2": true,
+          "loc_ep3": true,
+          "loc_ep5": true
+        }
+      },
+      "per_layer_fingerprints": {
+        "0": {
+          "raw": {
+            "min": 0.9876726269721985,
+            "median": 0.9953560829162598,
+            "max": 1.0000001192092896,
+            "span": 0.012327492237091064
+          },
+          "centered_approx": {
+            "min": -0.4767149479898076,
+            "median": -0.11648536461111941,
+            "max": 0.9999999993713601,
+            "span": 1.4767149473611676
+          },
+          "clipped_mass_frac": 5.291109506979502e-14
+        },
+        "5": {
+          "raw": {
+            "min": 0.9539646506309509,
+            "median": 0.9796364903450012,
+            "max": 1.0000001192092896,
+            "span": 0.04603546857833862
+          },
+          "centered_approx": {
+            "min": -0.5295737552079985,
+            "median": -0.1511878655509245,
+            "max": 0.9999999999769168,
+            "span": 1.5295737551849153
+          },
+          "clipped_mass_frac": 9.364290700652168e-15
+        },
+        "11": {
+          "raw": {
+            "min": 0.8757804036140442,
+            "median": 0.9365551471710205,
+            "max": 0.9999998807907104,
+            "span": 0.12421947717666626
+          },
+          "centered_approx": {
+            "min": -0.7268461409233941,
+            "median": -0.03456747999236208,
+            "max": 0.999999999987543,
+            "span": 1.726846140910937
+          },
+          "clipped_mass_frac": 1.2337043278605297e-14
+        },
+        "15": {
+          "raw": {
+            "min": 0.785845935344696,
+            "median": 0.939711183309555,
+            "max": 1.0000001192092896,
+            "span": 0.2141541838645935
+          },
+          "centered_approx": {
+            "min": -0.6279725215272574,
+            "median": -0.075141323991526,
+            "max": 0.9999999999684269,
+            "span": 1.6279725214956842
+          },
+          "clipped_mass_frac": 3.96104739783884e-14
+        },
+        "21": {
+          "raw": {
+            "min": 0.5892712473869324,
+            "median": 0.903426855802536,
+            "max": 1.0,
+            "span": 0.4107287526130676
+          },
+          "centered_approx": {
+            "min": -0.6502339694644639,
+            "median": -0.045366699859375005,
+            "max": 0.9999999999810023,
+            "span": 1.6502339694454662
+          },
+          "clipped_mass_frac": 3.752168442130146e-14
+        },
+        "27": {
+          "raw": {
+            "min": 0.28284990787506104,
+            "median": 0.878020167350769,
+            "max": 1.0000003576278687,
+            "span": 0.7171504497528076
+          },
+          "centered_approx": {
+            "min": -0.6321333701072425,
+            "median": -0.03189100264529256,
+            "max": 0.9999999999894634,
+            "span": 1.6321333700967058
+          },
+          "clipped_mass_frac": 3.0911506922551105e-14
+        }
+      },
+      "psd_clipped_mass_frac_L21": 3.752168442130146e-14,
+      "raw_vs_centered_x_spearman": 0.8411969290634831,
+      "n": {
+        "pairs_non_stylized": 156,
+        "cells": 8
+      },
+      "regrade_label": "sensitivity-agrees",
+      "notes": "Lineage row: #460 consumed the same C_L* matrices via the #406 rig; sensitivity read inherits from the 474 cells. NEVER a canonical label \u2014 heterogeneous centroid norms are lost in the persisted matrix; exact canonical recompute needs GPU re-extraction (deferred follow-up).",
+      "computed_at": "2026-06-11T01:22:27.588183+00:00"
+    },
+    {
+      "row_id": "341-cos-js-alignment",
+      "task": 341,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 extract_persona_vectors.py:198-199 (normalize-only; reclassified to the raw line at fact-check)",
+      "recoverability": "matrix-only at minimum (true similarity Gram persists; vector bundle not persisted in-repo)",
+      "family": "issue341_gram",
+      "bank": {
+        "n": 19,
+        "names_hash": "9efb62b87b15",
+        "layer": 20
+      },
+      "gate_level": "statistic (recomputed raw rho reproduces published per layer, |drho|<=0.02) \u2014 matrix-only namespace",
+      "alpha": 0.001,
+      "original_stat": {
+        "estimator": "Spearman rho of triu(1 - cos) vs triu(JS Tfull), n=171 non-anchor pairs; headline L20 rho_raw = 0.9399",
+        "published_per_layer_rho": {
+          "10": 0.6627186982504141,
+          "15": 0.9211726306189553,
+          "20": 0.939873281013752,
+          "25": 0.897876016991864
+        }
+      },
+      "recomputed_stat": {
+        "per_layer": {
+          "10": {
+            "published_rho_raw": 0.6627186982504141,
+            "recomputed_rho_raw": 0.6627186982504141,
+            "p_raw": 5.462269714400892e-23,
+            "rho_centered_approx": 0.38284013727890187,
+            "p_centered_approx": 2.3684219587738888e-07,
+            "clipped_mass_frac": 0.0,
+            "gate_abs_dev": 0.0
+          },
+          "15": {
+            "published_rho_raw": 0.9211726306189553,
+            "recomputed_rho_raw": 0.9211726306189553,
+            "p_raw": 3.5738021987822664e-71,
+            "rho_centered_approx": 0.767170662634699,
+            "p_centered_approx": 2.043726743600564e-34,
+            "clipped_mass_frac": 0.0,
+            "gate_abs_dev": 0.0
+          },
+          "20": {
+            "published_rho_raw": 0.939873281013752,
+            "recomputed_rho_raw": 0.939873281013752,
+            "p_raw": 9.162279188731512e-81,
+            "rho_centered_approx": 0.786672906616747,
+            "p_centered_approx": 3.10602367642853e-37,
+            "clipped_mass_frac": 0.0,
+            "gate_abs_dev": 0.0
+          },
+          "25": {
+            "published_rho_raw": 0.897876016991864,
+            "recomputed_rho_raw": 0.897876016991864,
+            "p_raw": 4.153900796451508e-62,
+            "rho_centered_approx": 0.7961408308733531,
+            "p_centered_approx": 1.0353279071649912e-38,
+            "clipped_mass_frac": 0.0,
+            "gate_abs_dev": 0.0
+          }
+        }
+      },
+      "raw_vs_centered_x_spearman": 0.8150434501251002,
+      "n": {
+        "pairs": 171
+      },
+      "regrade_label": "sensitivity-agrees",
+      "notes": "The cos<->JS alignment claim itself was computed on the raw matrix (fingerprint-identical to the degenerate band), so #341 no longer grounds the CENTERED recipe; this row asks whether the alignment survives the approximate centered read. Sensitivity namespace only.",
+      "computed_at": "2026-06-11T01:22:27.638857+00:00"
+    },
+    {
+      "row_id": "213-partition",
+      "task": 213,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Producer: scripts/run_issue_213_part_a.py:547 (raw pairwise cosine). WandB-artifact re-search at implementation time: the #213-era runs predate systematic artifact logging; no centroid artifact was located under the project's WandB projects (and none is named in the #213/#227 bodies). Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T01:22:27.678044+00:00"
+    },
+    {
+      "row_id": "227-partition",
+      "task": 227,
+      "config_slug": "approx_gram",
+      "cosine_path_used": "RAW \u2014 run_issue_213_part_a.py:547",
+      "recoverability": "needs-GPU-re-extraction / unrecoverable from disk",
+      "gate_level": "n/a (no join possible)",
+      "original_stat": {
+        "estimator": "cue->no_cue centroid cosine distances per layer/model",
+        "schema": "persisted file is {layer: {model: {cue: distance-to-no_cue}}} over models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'] cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format'] \u2014 a single reference column, no Gram matrix (fact-check verified)"
+      },
+      "recomputed_stat": null,
+      "regrade_label": "join-failed (needs-GPU-re-extraction)",
+      "notes": "Consumer of the #213 part-A geometry. WandB-artifact re-search at implementation time: the #213-era runs predate systematic artifact logging; no centroid artifact was located under the project's WandB projects (and none is named in the #213/#227 bodies). Follow-up pointer: single eval-intent pod, ~1-2 GPU-h, base-model centroid re-extraction for the cue-variant bank, then rerun this driver's adapter.",
+      "computed_at": "2026-06-11T01:22:27.685560+00:00"
+    },
+    {
+      "row_id": "472-readoff-r6",
+      "task": 472,
+      "config_slug": "readoff_r6",
+      "cosine_path_used": "raw rounds 1-5; both matrices persisted post-r6",
+      "recoverability": "CPU (done \u2014 r6 artifacts)",
+      "gate_level": "read-off (no new compute; plan \u00a75)",
+      "original_stat": {
+        "estimator": "cos-to-source spread (villain), per layer"
+      },
+      "recomputed_stat": {
+        "r6_spread_report": {
+          "10": {
+            "raw": {
+              "min": 0.9078127145767212,
+              "median": 0.9838712811470032,
+              "max": 0.99259352684021,
+              "span": 0.08478081226348877,
+              "mean": 0.9791093913175292,
+              "std": 0.015658547669100676,
+              "n_below_0.9": 0,
+              "n_below_0.8": 0,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.5332143306732178,
+              "median": -0.012083295732736588,
+              "max": 0.5921287536621094,
+              "span": 1.1253430843353271,
+              "mean": 0.001451548125784276,
+              "std": 0.28980574293028727,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 59,
+              "n_below_0.5": 56,
+              "n_below_0.3": 48,
+              "n_below_0.0": 31
+            },
+            "n_personas": 60
+          },
+          "15": {
+            "raw": {
+              "min": 0.8715444207191467,
+              "median": 0.9297300577163696,
+              "max": 0.9777365922927856,
+              "span": 0.10619217157363892,
+              "mean": 0.9304882863820609,
+              "std": 0.022094258177897338,
+              "n_below_0.9": 5,
+              "n_below_0.8": 0,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.5902889370918274,
+              "median": -0.20843634009361267,
+              "max": 0.7339785695075989,
+              "span": 1.3242675065994263,
+              "mean": -0.10455113703037723,
+              "std": 0.37060787870197776,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 57,
+              "n_below_0.5": 51,
+              "n_below_0.3": 51,
+              "n_below_0.0": 39
+            },
+            "n_personas": 60
+          },
+          "20": {
+            "raw": {
+              "min": 0.7416117787361145,
+              "median": 0.850653886795044,
+              "max": 0.9481798410415649,
+              "span": 0.20656806230545044,
+              "mean": 0.8530908509836359,
+              "std": 0.042159192961601324,
+              "n_below_0.9": 51,
+              "n_below_0.8": 5,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.545721173286438,
+              "median": -0.2670828104019165,
+              "max": 0.7307982444763184,
+              "span": 1.2765194177627563,
+              "mean": -0.12633460471248728,
+              "std": 0.38564203934964547,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 56,
+              "n_below_0.5": 51,
+              "n_below_0.3": 50,
+              "n_below_0.0": 41
+            },
+            "n_personas": 60
+          }
+        }
+      },
+      "regrade_label": "stands (already-remediated; r6 read-off)",
+      "notes": "Bundles under issue472_neg_geometry/geometry carry cos_matrix + cos_matrix_mean_centered since #504 r6.",
+      "computed_at": "2026-06-11T01:22:27.726660+00:00"
+    },
+    {
+      "row_id": "504-readoff-r6",
+      "task": 504,
+      "config_slug": "readoff_r6",
+      "cosine_path_used": "raw rounds 1-5; both matrices persisted post-r6",
+      "recoverability": "CPU (done \u2014 r6 artifacts)",
+      "gate_level": "read-off (no new compute; plan \u00a75)",
+      "original_stat": {
+        "estimator": "cos-to-source spread (villain), per layer"
+      },
+      "recomputed_stat": {
+        "r6_spread_report": {
+          "10": {
+            "raw": {
+              "min": 0.9078127145767212,
+              "median": 0.9838712811470032,
+              "max": 0.99259352684021,
+              "span": 0.08478081226348877,
+              "mean": 0.9791093913175292,
+              "std": 0.015658547669100676,
+              "n_below_0.9": 0,
+              "n_below_0.8": 0,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.5332143306732178,
+              "median": -0.012083295732736588,
+              "max": 0.5921287536621094,
+              "span": 1.1253430843353271,
+              "mean": 0.001451548125784276,
+              "std": 0.28980574293028727,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 59,
+              "n_below_0.5": 56,
+              "n_below_0.3": 48,
+              "n_below_0.0": 31
+            },
+            "n_personas": 60
+          },
+          "15": {
+            "raw": {
+              "min": 0.8715444207191467,
+              "median": 0.9297300577163696,
+              "max": 0.9777365922927856,
+              "span": 0.10619217157363892,
+              "mean": 0.9304882863820609,
+              "std": 0.022094258177897338,
+              "n_below_0.9": 5,
+              "n_below_0.8": 0,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.5902889370918274,
+              "median": -0.20843634009361267,
+              "max": 0.7339785695075989,
+              "span": 1.3242675065994263,
+              "mean": -0.10455113703037723,
+              "std": 0.37060787870197776,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 57,
+              "n_below_0.5": 51,
+              "n_below_0.3": 51,
+              "n_below_0.0": 39
+            },
+            "n_personas": 60
+          },
+          "20": {
+            "raw": {
+              "min": 0.7416117787361145,
+              "median": 0.850653886795044,
+              "max": 0.9481798410415649,
+              "span": 0.20656806230545044,
+              "mean": 0.8530908509836359,
+              "std": 0.042159192961601324,
+              "n_below_0.9": 51,
+              "n_below_0.8": 5,
+              "n_below_0.7": 0,
+              "n_below_0.5": 0,
+              "n_below_0.3": 0,
+              "n_below_0.0": 0
+            },
+            "mean_centered": {
+              "min": -0.545721173286438,
+              "median": -0.2670828104019165,
+              "max": 0.7307982444763184,
+              "span": 1.2765194177627563,
+              "mean": -0.12633460471248728,
+              "std": 0.38564203934964547,
+              "n_below_0.9": 59,
+              "n_below_0.8": 59,
+              "n_below_0.7": 56,
+              "n_below_0.5": 51,
+              "n_below_0.3": 50,
+              "n_below_0.0": 41
+            },
+            "n_personas": 60
+          }
+        }
+      },
+      "regrade_label": "stands (already-remediated; r6 read-off)",
+      "notes": "#504's Gate-A degeneracy finding IS the raw-vs-centered contrast; rounds 1-5 raw, round 6 remediated.",
+      "computed_at": "2026-06-11T01:22:27.732858+00:00"
+    },
+    {
+      "row_id": "404-pairwise-scope",
+      "task": 404,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/issue404_predictor_cossim.py:136-148 (per-layer mean pairwise cos)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
+      "recomputed_stat": null,
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T01:22:27.771765+00:00"
+    },
+    {
+      "row_id": "458-pairwise-scope",
+      "task": 458,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/issue404_predictor_cossim.py (shared rig; #458 line)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
+      "recomputed_stat": null,
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T01:22:27.778742+00:00"
+    },
+    {
+      "row_id": "444-pairwise-scope",
+      "task": 444,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/issue444_persona_distance_topic.py:101-110 (cos vs reference)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
+      "recomputed_stat": null,
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T01:22:27.784992+00:00"
+    },
+    {
+      "row_id": "493-pairwise-scope",
+      "task": 493,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/issue493_extraction_metric_bakeoff.py (pairwise predictor arm)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
+      "recomputed_stat": null,
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T01:22:27.792729+00:00"
+    },
+    {
+      "row_id": "502-pairwise-scope",
+      "task": 502,
+      "config_slug": "scope_pairwise",
+      "cosine_path_used": "RAW 2-vector pairwise (no bank) \u2014 scripts/issue502_cpu_smoke.py (batched mirror of the #493 serial path)",
+      "recoverability": "n/a (no bank => no canonical recompute exists)",
+      "gate_level": "n/a",
+      "original_stat": null,
+      "recomputed_stat": null,
+      "regrade_label": "labeled: raw pairwise (uncentered) \u2014 not re-graded",
+      "notes": "Centering a 2-element bank degenerates to cos = -1; the pin defines this family as raw-pairwise, MUST be labeled, never numerically compared to bank-cosine values. Optional reference-bank-centered sensitivity check is a named follow-up, not run here (plan \u00a74-A).",
+      "computed_at": "2026-06-11T01:22:27.799335+00:00"
+    }
+  ],
+  "updated_at": "2026-06-11T01:22:27.800578+00:00"
+}

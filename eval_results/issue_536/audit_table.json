@@ -1,0 +1,1535 @@
+{
+  "schema_version": "i536_audit_v1",
+  "generated_at": "2026-06-11T01:23:02.942783+00:00",
+  "git_commit": "892e740348584aa26fd45789fd6e208976161c05",
+  "sweep": {
+    "roots": [
+      "scripts",
+      "experiments",
+      "src/explore_persona_space/analysis",
+      "src/explore_persona_space/axis",
+      "src/explore_persona_space/experiments"
+    ],
+    "pass1_regex": "compute_cosine_matrix|cosine_similarity|F\\.cosine|cos_sim|centering=",
+    "pass2_regex": "F\\.normalize|np\\.linalg\\.norm|torch\\.linalg\\.norm|\\.norm\\(|np\\.dot|torch\\.dot|einsum|@\\s*\\S*\\.T|matmul|cosine_matrix|_cosine|cos_",
+    "n_files_hit": 137,
+    "n_pass1": 28,
+    "deleted_producer_search": "git log --all -S cosine --diff-filter=D + targeted git show 9e6e31c3f / 69b34b94 (run at implementation time)"
+  },
+  "persona_vectors_a0": {
+    "record": "Phase A0 \u2014 Persona Vectors (Chen, Arditi, Sleight, Evans, Lindsey 2025, arXiv 2507.21509) builds each persona vector as a DIFFERENCE OF MEANS between trait-exhibiting and non-exhibiting response activations, which removes the shared component by construction; the centroid-bank analog of that correction is global-mean centering.",
+    "verified": "fact-check time via the arxiv-latex MCP (plan \u00a72; pipeline section states the difference-in-mean-activations construction verbatim)"
+  },
+  "sites": [
+    {
+      "file": "src/explore_persona_space/analysis/representation_shift.py",
+      "lines": "139-159",
+      "classification": "centered (default)",
+      "evidence": "compute_cosine_matrix(centroids, centering='global_mean') default; center -> F.normalize -> C@C.T",
+      "tasks": [
+        "shared lib"
+      ],
+      "notes": "The library default IS the canonical recipe."
+    },
+    {
+      "file": "scripts/analyze_100_persona_cosine.py",
+      "lines": "288-293",
+      "classification": "centered",
+      "evidence": "C = C - C.mean(dim=0, keepdim=True); F.normalize; C@C.T",
+      "tasks": [
+        66,
+        99
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/analyze_100_persona_source_filtered.py",
+      "lines": "51-54",
+      "classification": "centered",
+      "evidence": "hand-rolled: c - c.mean(axis=0); c / norm; c@c.T (reconciler-named literal-pass miss)",
+      "tasks": [
+        66,
+        99
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/plot_100_persona_scatter_simple.py",
+      "lines": "35-38",
+      "classification": "centered",
+      "evidence": "hand-rolled: c - c.mean(axis=0); c / norm; c@c.T (reconciler-named literal-pass miss)",
+      "tasks": [
+        66
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/run_leakage_v3.py",
+      "lines": "405-423",
+      "classification": "centered",
+      "evidence": "base_centered = base_c - base_c.mean(dim=0); cos_sim on centered rows",
+      "tasks": [
+        247,
+        329
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/i380_cosine_pairwise.py",
+      "lines": "48-52",
+      "classification": "centered",
+      "evidence": "mat_centered = mat - mat.mean(dim=0); normalized matmul",
+      "tasks": [
+        380
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/eval_causal_ckpt.py",
+      "lines": "186",
+      "classification": "centered",
+      "evidence": "compute_cosine_matrix(centroids[layer], centering='global_mean') explicit",
+      "tasks": [
+        61,
+        91
+      ],
+      "notes": "Causal-ckpt line; #61 body quotes negative cosine range (centered fingerprint)."
+    },
+    {
+      "file": "scripts/issue550_slope_distance_correlation.py",
+      "lines": "295-310",
+      "classification": "centered (consumer with provenance)",
+      "evidence": "reads eval_results/issue_527/pair_selection.json which records centering='global_mean'",
+      "tasks": [
+        550,
+        527
+      ],
+      "notes": ""
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_504/phase05.py",
+      "lines": "89-119, call sites 175/314",
+      "classification": "both-computed (centered default, raw escape hatch)",
+      "evidence": "_cos_matrix_from_centroids(mean_center=True default; False recovers r1-5 raw) (reconciler-named literal-pass miss)",
+      "tasks": [
+        504
+      ],
+      "notes": "#504 round-7 fix threads mean_center to call sites."
+    },
+    {
+      "file": "scripts/i504_phase_phase05.py",
+      "lines": "109-139",
+      "classification": "both-computed (centered default, raw escape hatch)",
+      "evidence": "script mirror of the phase05 helper: mat - mat.mean(axis=0) when mean_center",
+      "tasks": [
+        504
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/compute_zelthari_centered_cosine.py",
+      "lines": "58-72, 306-320",
+      "classification": "both-computed (diagnostic)",
+      "evidence": "raw_cos AND centered_cos computed side by side",
+      "tasks": [
+        "persona mining (zelthari)"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/i504_round6_recompute_mean_centered.py",
+      "lines": "137-138",
+      "classification": "both-computed (remediation tool)",
+      "evidence": "cos_raw = compute_cosine_matrix(C, 'none'); cos_mc = compute_cosine_matrix(C, 'global_mean')",
+      "tasks": [
+        504,
+        472
+      ],
+      "notes": "The r6 remediation that backfilled cos_matrix_mean_centered."
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/centroids.py",
+      "lines": "module",
+      "classification": "both-computed (raw rounds 1-5; mc added post-r6)",
+      "evidence": "bundles carry cos_matrix + cos_matrix_mean_centered since #504 r6",
+      "tasks": [
+        472,
+        504,
+        530,
+        538,
+        550
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/analyze_leakage.py",
+      "lines": "85-122",
+      "classification": "centered (consumer)",
+      "evidence": "CENTERED_COSINES constants + zelthari_centered_cosine.json (centered_cosine_to_assistant)",
+      "tasks": [
+        "early leakage line"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/compare_extraction_methods.py",
+      "lines": "~412 (cross-method), ~431 (raw matrix), ~459 (centered matrix)",
+      "classification": "both-computed \u2014 CONSUMER READ RAW",
+      "evidence": "cosine_matrix_a_layer20.json off-diag [0.7322, 0.9971] median 0.9450 (raw fingerprint, no centering key); the centered twin was computed but not consumed",
+      "tasks": [
+        405,
+        478,
+        490
+      ],
+      "notes": "#405's distance source; #478/#490 use the 111-bank file (also raw)."
+    },
+    {
+      "file": "scripts/run_issue_213_part_a.py",
+      "lines": "547",
+      "classification": "raw",
+      "evidence": "pairwise cosine on centroids, no centering",
+      "tasks": [
+        213,
+        227
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/recompute_predictors_i415.py",
+      "lines": "242-245",
+      "classification": "raw",
+      "evidence": "F.cosine_similarity(v, asst_centroid) / (v, neut_centroid) \u2014 no bank centering",
+      "tasks": [
+        396,
+        415
+      ],
+      "notes": "The published predictor nulls were computed in the compressed geometry."
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/build_pv_centroids.py",
+      "lines": "196",
+      "classification": "raw (explicit)",
+      "evidence": "compute_cosine_matrix(c, centering='none')",
+      "tasks": [
+        505
+      ],
+      "notes": ""
+    },
+    {
+      "file": "experiments/phase_minus1_persona_vectors/extract_persona_vectors.py",
+      "lines": "188-199",
+      "classification": "raw",
+      "evidence": "centroid mean -> F.normalize -> C@C.T (normalize-only, NO centering); fingerprint identical to the degenerate raw band",
+      "tasks": [
+        341
+      ],
+      "notes": "#341's cos<->JS alignment rho=0.94 is therefore a raw-line stat (fact-check)."
+    },
+    {
+      "file": "scripts/extract_prompt_divergence_activations.py",
+      "lines": "704",
+      "classification": "raw",
+      "evidence": "raw cosine; method-A-vs-B sanity check, NOT the #406 producer",
+      "tasks": [
+        406
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/issue404_predictor_cossim.py",
+      "lines": "136-148",
+      "classification": "raw 2-vector pairwise (no bank \u2014 centering N/A)",
+      "evidence": "F.cosine_similarity(a, b, dim=-1).mean() across probes",
+      "tasks": [
+        404,
+        458
+      ],
+      "notes": "Pin \u00b62 family: labeled raw pairwise, never compared to bank-cosine."
+    },
+    {
+      "file": "scripts/issue444_persona_distance_topic.py",
+      "lines": "101-110",
+      "classification": "raw 2-vector pairwise (no bank \u2014 centering N/A)",
+      "evidence": "F.cosine_similarity(ref[li], acts[other][li], dim=1).mean()",
+      "tasks": [
+        444
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/issue493_extraction_metric_bakeoff.py",
+      "lines": "pairwise predictor arm",
+      "classification": "raw 2-vector pairwise (no bank \u2014 centering N/A)",
+      "evidence": "one predictor among many in the bake-off",
+      "tasks": [
+        493
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/issue502_cpu_smoke.py",
+      "lines": "batched mirror",
+      "classification": "raw 2-vector pairwise (no bank \u2014 centering N/A)",
+      "evidence": "batched re-implementation of the #493 serial path",
+      "tasks": [
+        502
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/run_trait_transfer.py",
+      "lines": "314-323",
+      "classification": "raw (ad-hoc local fn)",
+      "evidence": "compute_cosine_matrix local def: pairwise cos, no centering",
+      "tasks": [
+        "pre-task era"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/run_persona_leakage_v2.py",
+      "lines": "482-492",
+      "classification": "raw (pairwise to target)",
+      "evidence": "F.cosine_similarity(target_vec, p_vec)",
+      "tasks": [
+        "early era"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/run_proximity_transfer.py",
+      "lines": "local fn",
+      "classification": "raw (ad-hoc local fn)",
+      "evidence": "pairwise cosine, no centering",
+      "tasks": [
+        "early era"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/extract_centroids_and_analyze.py",
+      "lines": "328-345",
+      "classification": "raw (pairwise)",
+      "evidence": "F.cosine_similarity(v_p, v_t) raw + assistant variants",
+      "tasks": [
+        "early era"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/run_issue_276_pre_poison_similarity.py",
+      "lines": "144",
+      "classification": "raw (pairwise to canonical)",
+      "evidence": "F.cosine_similarity(h, canon_h)",
+      "tasks": [
+        276
+      ],
+      "notes": ""
+    },
+    {
+      "file": "experiments/directed_trait_transfer/run_experiment.py",
+      "lines": "382",
+      "classification": "raw (pairwise)",
+      "evidence": "F.cosine_similarity(vecs[n1], vecs[n2])",
+      "tasks": [
+        "pre-task era"
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/i504_smoke_local.py",
+      "lines": "109",
+      "classification": "raw (smoke mirror of the #472 rig)",
+      "evidence": "cos matrix with centering='none' (pre-r6 behavior, smoke only)",
+      "tasks": [
+        504
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/analyze_em_axis.py",
+      "lines": "axis-alignment cosine",
+      "classification": "N-A",
+      "evidence": "cosine over EM-axis directions, not persona-distance",
+      "tasks": [],
+      "notes": ""
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/logit_rescoring.py",
+      "lines": "554",
+      "classification": "N-A",
+      "evidence": "cosine_similarity as a serialization sanity check (batched vs serial rows)",
+      "tasks": [
+        505
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/i488_phase1_predictors.py",
+      "lines": "111+ (COSINE_LAYERS sweep)",
+      "classification": "raw 2-vector pairwise (no bank \u2014 centering N/A)",
+      "evidence": "residual-stream cosine T_i-vs-T_j, mean over probes (the #404-family recipe)",
+      "tasks": [
+        488
+      ],
+      "notes": ""
+    },
+    {
+      "file": "scripts/i504_probe_bank_geometry.py",
+      "lines": "module (Gate-A probe)",
+      "classification": "raw (deliberate diagnostic)",
+      "evidence": "cos(persona, villain) per layer \u2014 the probe that DOCUMENTED the raw band degeneracy (Gate A: all candidates in [0.93, 0.96])",
+      "tasks": [
+        504
+      ],
+      "notes": ""
+    }
+  ],
+  "deleted_sites": [
+    {
+      "file": "scripts/i406_phase1_merge_and_compute_matrices.py",
+      "lines": "300-345 @ commit 9e6e31c3f (deleted from working tree)",
+      "classification": "raw (persisted as DISTANCE, 1-cos)",
+      "evidence": "per-layer 20x20 cosine-distance matrices from per-context mean activations; normalize-only (git show 9e6e31c3f verified at implementation time)",
+      "tasks": [
+        406,
+        460,
+        474
+      ],
+      "notes": "Producer of eval_results/issue_406/cosine/C_L*.json."
+    },
+    {
+      "file": "scripts/_issue478_common.py",
+      "lines": "318-360 @ commit 69b34b94 (deleted from working tree)",
+      "classification": "raw",
+      "evidence": "_build_matrix_from_centroids: L2-normalize per row -> pairwise sim -> distance = 1 - sim (NO centering); cached to cosine_distance_matrix_layer20.json",
+      "tasks": [
+        478,
+        490
+      ],
+      "notes": "Producer/loader of the #478/#490 111-bank distance source."
+    }
+  ],
+  "dispositions": [
+    {
+      "file": "experiments/persona_geometry_dimensionality/run_dimensionality.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_causal_proximity.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (causal-proximity line; reads cos_* keys from persisted layer payloads)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_i181.py",
+      "disposition": "N-A \u2014 semantic TEXT-embedding cosine over questions (not persona-distance)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_issue415.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#415 predictor JSONs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_length_rate_296.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (body-published L15 cosines from #294; comparison only)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_manifold_axes.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_outliers_pertoken.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/analyze_single_token_sweep.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (extraction_method_comparison matrices)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/archive/run_leakage_v2.py",
+      "disposition": "archived \u2014 superseded centered-line consumer (logs cos(source, asst) from persisted layer payloads)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/archive/test_multidim_identity.py",
+      "disposition": "archived \u2014 whitening/identity test (different construct)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/build_i181_data.py",
+      "disposition": "N-A \u2014 semantic TEXT-embedding cosine over questions (not persona-distance)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i207_run_regression.py",
+      "disposition": "N-A \u2014 semantic TEXT-embedding cosine over questions (not persona-distance) (the #207 GEOMETRY claim consumed #66-line centered cosine; this script's compute_semantic_cosine is a question-text embedding feature)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i380_pairwise_scatters.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#380 correlation.json)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i460_phase5_analyze.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#406 C_L*.json)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i474_cosine_followup.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#406 C_L*.json)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i477_reval_confirm.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (B-matrix norm check)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/i501_make_figures_blog.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (cos_sim_per_layer payloads)",
+      "matched_passes": {
+        "pass1": true,
+        "pass2": true
+      },
+      "evidence_lines": [
+        "86: for li_s, m in payload.get(\"cos_sim_per_layer\", {}).items():"
+      ]
+    },
+    {
+      "file": "scripts/i504_eval_trajectory.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (marker logprob eval)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue405_clean_result_analysis.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (cosine_matrix_a_layer20.json)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue458_regress.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#404/#458 pairwise predictor values)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue500_interaction_check.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#500 predictor outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue502_plot_best3_bars.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#493/#502 bake-off outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue502_plot_best4_bars.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#493/#502 bake-off outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue505_expanded_predictors.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 PV geometry bundles)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue505_panel_coverage.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 PV geometry bundles)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue505_r2_figure.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 analysis outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue509_baserate_covariate_earlylayer.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue511_make_figures.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue527_dan_rank1_scalar_regression.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#527 pair_selection.json, centering='global_mean' provenance)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue532_followup_logp_slot.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue532_predictor_stress.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue538_make_figures.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue539_residual_per_cohort.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue540_jsrb_predictor.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue540_length_nuisance_figure.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue540_length_nuisance_supplement.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue548_length_analysis.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue550_make_figures.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#550 analysis outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue552_cross_arm_analysis.py",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue552_figures.py",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue552_mean_resp_svd.py",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue552_write_sentinel.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue553_panel.py",
+      "disposition": "consumer \u2014 predictor payloads from the #509/#532 bake-off line, which carry centering as an EXPLICIT factor (raw + centered variants computed upstream)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue_480/dispatch_marker_480.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue_480/i480_analyze.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (marker DV analysis)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue_480/plot_clean_result.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/issue_480/smoke_analyzer_synthetic.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/make_363_figure.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#363 outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_cosine_attenuation.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (predictor-line outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_i432_rank_by_distance.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#432-era distance artifacts)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_i461_predictor_grid.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#461 predictor outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_i461_predictor_scatters.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#461 predictor outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue237_tldr.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#237 geometry outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue444_bystander.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#444 pairwise values)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue500_predictors.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#500 predictor outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue503_v2.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#503 predictor outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue_157_stage_b_hero_v2.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (stage-B line outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue_213_final.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#213 part-A geometry)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue_213_geometry_predicts.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#213 part-A geometry)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_issue_89_hero.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (early centered-line outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_leakage_vs_cosine_all.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (early-era pairwise outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_leakage_vs_cosine_none.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (early-era pairwise outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_length_rate_correlation.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (#294/#296 outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_proximity_transfer.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (run_proximity_transfer outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_strong_convergence.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (run_leakage_v3 centered outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/plot_trait_transfer.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (run_trait_transfer outputs)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/precheck_i181_axes.py",
+      "disposition": "N-A \u2014 semantic TEXT-embedding cosine over questions (not persona-distance)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/project_categories_instruct.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/project_categories_onto_axis.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/project_corpus_fast.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/project_corpus_single_gpu.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/project_corpus_v2.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_a3_leakage.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (legacy leakage rig; no cos computation)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_a3b_experiment.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (legacy leakage rig; no cos computation)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_em_multiseed.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_issue_276_continuation_sweep.py",
+      "disposition": "N-A \u2014 JS/KL divergence machinery (cosine idiom hits are incidental)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_issue_276_teacher_forced_js.py",
+      "disposition": "N-A \u2014 JS/KL divergence machinery (cosine idiom hits are incidental)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_issue_358_extract.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (activation extraction only; no cosine computed)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/run_persona_composition.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no  (composition rig)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/smoke_phase_d_logit_rescoring.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 rig smoke)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/test_activation_steering.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/test_multidim_identity_v2.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/track_axis_during_cot.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/train_stage_dpo.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "scripts/train_stage_sft.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/analysis/divergence.py",
+      "disposition": "N-A \u2014 JS/KL divergence machinery (cosine idiom hits are incidental)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/analysis/i181_features.py",
+      "disposition": "N-A \u2014 semantic TEXT-embedding cosine over questions (not persona-distance)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/analysis/probes.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/axis/analyze.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/axis/project.py",
+      "disposition": "N-A \u2014 axis/projection construct (not persona-distance cosine)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/analyze.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (post-r6 bundles carry both matrices; analysis reads the bundle keys)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/build_training_data.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (selection metadata only)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_guard.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_472/select_negatives.py",
+      "disposition": "consumer \u2014 reads a CENTERED-line persisted artifact; see the producer's site row (distances from centroids.py bundles)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_504/cell_resolution.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/contrastive_neg_geometry_504/shadow_angle.py",
+      "disposition": "N-A \u2014 direction/shift-vector cosine (SVD components, shift alignment), not ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (panel_similarity_matrix from build_pv_centroids)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze_expanded.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 geometry)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/analyze_logit_rescoring.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 geometry)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/dispatch.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 geometry; dispatcher)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/leave_one_out_505/panel_coverage.py",
+      "disposition": "consumer \u2014 reads a RAW-line persisted artifact; see the producer's site row (#505 L10 fallback cos)",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    },
+    {
+      "file": "src/explore_persona_space/experiments/marker_implant_480/build_training_pool.py",
+      "disposition": "N-A \u2014 matched idiom is model/training internals (norms, matmuls), no ",
+      "matched_passes": {
+        "pass1": false,
+        "pass2": true
+      },
+      "evidence_lines": []
+    }
+  ],
+  "fingerprint_checks": [
+    {
+      "artifact": "eval_results/extraction_method_comparison/cosine_matrix_a_layer20.json",
+      "consumed_by": "#405 (issue405_clean_result_analysis.py:46-50)",
+      "kind": "similarity matrix (20 personas, L20)",
+      "min": 0.7321776151657104,
+      "median": 0.9449904263019562,
+      "max": 0.9970542788505554,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 the consumer read the raw matrix even though compare_extraction_methods.py computed both"
+    },
+    {
+      "artifact": "eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json",
+      "consumed_by": "#478/#490 (scripts/_issue478_common.py@69b34b94 loader)",
+      "kind": "distance matrix (111 personas, L20; metric '1 - cosine') read as similarity",
+      "min": 0.6039392352104187,
+      "median": 0.8710551261901855,
+      "max": 0.9970611929893494,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 built normalize-only (no centering) from centroids_layer20.pt"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L0.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L0); converted G = 1 - D before reading",
+      "min": 0.9876726269721985,
+      "median": 0.9953560829162598,
+      "max": 1.0000001192092896,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L5.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L5); converted G = 1 - D before reading",
+      "min": 0.9539646506309509,
+      "median": 0.9796364903450012,
+      "max": 1.0000001192092896,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L11.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L11); converted G = 1 - D before reading",
+      "min": 0.8757804036140442,
+      "median": 0.9365551471710205,
+      "max": 0.9999998807907104,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L15.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L15); converted G = 1 - D before reading",
+      "min": 0.785845935344696,
+      "median": 0.939711183309555,
+      "max": 1.0000001192092896,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L21.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L21); converted G = 1 - D before reading",
+      "min": 0.5892712473869324,
+      "median": 0.903426855802536,
+      "max": 1.0,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "eval_results/issue_406/cosine/C_L27.json",
+      "consumed_by": "#406/#460/#474 lineage (i474_cosine_followup.py:52)",
+      "kind": "DISTANCE-form 1-cos (16 conditions, L27); converted G = 1 - D before reading",
+      "min": 0.28284990787506104,
+      "median": 0.878020167350769,
+      "max": 1.0000003576278687,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW (per-layer fingerprint; producer normalize-only, deleted)"
+    },
+    {
+      "artifact": "experiments/phase_minus1_persona_vectors/cosine_matrix.json::layer_10",
+      "consumed_by": "#341 cos<->JS alignment",
+      "kind": "similarity matrix (20 personas)",
+      "min": 0.899172306060791,
+      "median": 0.9805445969104767,
+      "max": 0.9953062534332275,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 extract_persona_vectors.py:198-199 normalize-only (#341 reclassified to the raw line at fact-check)"
+    },
+    {
+      "artifact": "experiments/phase_minus1_persona_vectors/cosine_matrix.json::layer_15",
+      "consumed_by": "#341 cos<->JS alignment",
+      "kind": "similarity matrix (20 personas)",
+      "min": 0.8169565200805664,
+      "median": 0.9556312263011932,
+      "max": 0.9950256943702698,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 extract_persona_vectors.py:198-199 normalize-only (#341 reclassified to the raw line at fact-check)"
+    },
+    {
+      "artifact": "experiments/phase_minus1_persona_vectors/cosine_matrix.json::layer_20",
+      "consumed_by": "#341 cos<->JS alignment",
+      "kind": "similarity matrix (20 personas)",
+      "min": 0.7321776151657104,
+      "median": 0.9449904263019562,
+      "max": 0.9970542788505554,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 extract_persona_vectors.py:198-199 normalize-only (#341 reclassified to the raw line at fact-check)"
+    },
+    {
+      "artifact": "experiments/phase_minus1_persona_vectors/cosine_matrix.json::layer_25",
+      "consumed_by": "#341 cos<->JS alignment",
+      "kind": "similarity matrix (20 personas)",
+      "min": 0.6795220375061035,
+      "median": 0.9536814391613007,
+      "max": 0.9978219270706177,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 extract_persona_vectors.py:198-199 normalize-only (#341 reclassified to the raw line at fact-check)"
+    },
+    {
+      "artifact": "eval_results/issue_213/part_a/cosine_matrices.json",
+      "consumed_by": "#213/#227",
+      "kind": "cue->no_cue reference-COLUMN distance file (models=['educational-insecure', 'insecure', 'secure-finetune', 'base-instruct'], cues=['no_cue', 'edu_v0', 'edu_v1', 'edu_v2', 'edu_v3', 'code_format']) \u2014 NOT a Gram matrix",
+      "verdict": "RAW producer; approximate Gram read IMPOSSIBLE (no Gram persists) \u2014 needs-GPU-re-extraction partition"
+    },
+    {
+      "artifact": "eval_results/issue_505/analysis/panel_similarity_matrix.json",
+      "consumed_by": "#505 per-arm slopes",
+      "kind": "cos(b, j) pairs at L21 (persona-vectors centroids)",
+      "min": 0.7136484384536743,
+      "median": 0.9357502460479736,
+      "max": 0.9985917210578918,
+      "regime_call": "raw band (compressed)",
+      "verdict": "RAW \u2014 build_pv_centroids.py:196 centering='none' explicit"
+    },
+    {
+      "artifact": "eval_results/issue_311/centroids_base.pt",
+      "consumed_by": "#311",
+      "kind": "bundle keys = ['centroids_centered', 'centroids_raw', 'layers', 'mean_vectors', 'metadata', 'personas']",
+      "verdict": "CENTERED line \u2014 bundle persists BOTH centroids_raw and centroids_centered (methodology was centered)"
+    },
+    {
+      "artifact": "eval_results/issue_527/pair_selection.json",
+      "consumed_by": "#527/#550 (issue550_slope_distance_correlation.py)",
+      "kind": "pair-selection payload carrying the L20 cos matrix",
+      "centering_provenance": "global_mean",
+      "verdict": "CENTERED \u2014 provenance recorded in the payload"
+    }
+  ],
+  "affected_set": {
+    "raw_line_regraded": [
+      478,
+      490,
+      505,
+      396,
+      415,
+      405
+    ],
+    "matrix_only_sensitivity": [
+      474,
+      406,
+      460,
+      341
+    ],
+    "needs_gpu_or_unrecoverable": [
+      213,
+      227,
+      99
+    ],
+    "already_remediated_readoff": [
+      472,
+      504
+    ],
+    "pairwise_labeled_not_regraded": [
+      404,
+      458,
+      444,
+      493,
+      502,
+      488
+    ],
+    "canonical_line_verified": [
+      66
+    ],
+    "canonical_line_audit_only": [
+      61,
+      77,
+      91,
+      96,
+      142,
+      228,
+      245,
+      247,
+      311,
+      329,
+      380
+    ]
+  }
+}
