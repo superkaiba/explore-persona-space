@@ -1,7 +1,7 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions.
 
-Seven passes, run in this order:
+Eight passes, run in this order:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -120,7 +120,28 @@ Seven passes, run in this order:
    sweep and held deleted-file handles (~37G phantom disk usage).
    Daemon-gated like the respawn pass (session liveness is unknowable
    during a daemon outage).
-7. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+7. **Zombie-wrapper pass (AUTO-STOP by default).** Stop a daemon-tracked
+   Happy session whose process tree has carried NO inner Claude process
+   (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS`) for >= ``threshold``
+   consecutive checks AND >= the :func:`_zombie_wrapper_grace_s` window
+   (default 2h) — REGARDLESS of issue mapping. Every other session pass is
+   keyed on a registry entry or an ``issue-<N>`` worktree cwd, so a
+   finished session that lost its mapping (registry GC'd at the terminal
+   transition, cwd = repo root) is invisible to all of them even though
+   its inner Claude exited: 25 such zombies had accumulated by 2026-06-11,
+   showing as "running" in ``spawn_session.py list`` indefinitely until a
+   manual sweep. The grace window is load-bearing, not cosmetic: a live
+   wrapper revives its inner Claude IN PLACE on the next phone message
+   (the remote-mode launcher blocks on ``nextMessage()`` BEFORE spawning
+   the Claude SDK subprocess), so a no-Claude snapshot alone can be a
+   healthy idle session. NEVER touches: the PM session (excluded via the
+   explicit ``pm-session.json`` registration written by ``spawn-pm`` /
+   ``register-pm`` / the `/pm` skill bootstrap), non-EPS-cwd sessions, and
+   issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only. Stops are
+   verified on the next tick (daemon ACK != kill), mirroring the
+   session-reconcile contract. Daemon-gated.
+8. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
    ``stalled-<N>.json``, ``orphan-<N>.json``) for tasks in
    :data:`TERMINAL_FOR_GC`
@@ -130,7 +151,10 @@ Seven passes, run in this order:
    is deliberately NOT in its sweep — those files track episodes whose
    task is BY DEFINITION terminal, so the terminal-status GC would reset
    the miss counter every tick; they are reaped by their own
-   live-session-keyed GC inside the session-reconcile pass.)
+   live-session-keyed GC inside the session-reconcile pass. The
+   per-session ``zombie-wrapper-<sid>.json`` files are likewise out of its
+   per-issue sweep — reaped by the zombie pass's own live-session-keyed
+   GC.)
 
 Why each pass exists
 --------------------
@@ -269,7 +293,9 @@ from spawn_session import (
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
     _infer_issue_from_path,
+    _live_children,
     _live_session_ids,
+    _load_pm_session_ids,
     _load_session_issue_map,
     _load_session_meta,
 )
@@ -472,6 +498,24 @@ _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL = (
     "[autonomous_session_watch:session-reconcile-stop-failed]"
 )
 
+# Substring stamped into the marker posted when the zombie-wrapper pass stops
+# a live Happy session whose process tree has carried NO inner Claude process
+# for >= the grace window (the wrapper outlived its Claude: 25 such sessions
+# showed as "running" indefinitely on 2026-06-11, all invisible to the
+# session-reconcile pass because they had lost their issue mapping). Same
+# staleness-filter contract as the others.
+_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-stop]"
+
+# Substring stamped into the one-time alert the zombie-wrapper pass posts
+# instead of stopping, in the EPM_ZOMBIE_WRAPPER_REAP=0 alert-only fallback.
+# Same staleness-filter contract as the others.
+_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-alert]"
+
+# Substring stamped into the one-time alert posted when a zombie-wrapper stop
+# was ACKed by the daemon but the session survived the SIGTERM AND the one
+# allowed retry (mirrors the session-reconcile stop-verification contract).
+_ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-stop-failed]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -490,6 +534,9 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL,
     }
 )
 
@@ -4202,6 +4249,628 @@ def session_reconcile_pass(
         )
 
 
+# ─── zombie-wrapper pass (dead inner Claude; 2026-06-11 zombie sweep) ────────
+#
+# Targets the failure mode NO other session pass can see: a daemon-tracked
+# Happy node wrapper that is alive (so the respawn pass keeps clear) but whose
+# inner Claude process is gone, on a session with NO usable issue mapping (so
+# the session-reconcile pass — registry- or worktree-cwd-keyed — never reaches
+# it). On 2026-06-11, 25 such sessions had accumulated: all finished issue
+# sessions ("Waiting for user to promote #511/#514/...") whose registrations
+# had been GC'd and whose cwd was the repo root, showing as "running" in
+# `spawn_session.py list` indefinitely until a manual sweep.
+#
+# CONSERVATIVE by verified design (NOT just habit): the Happy wrapper's
+# remote-mode launcher loops `claudeRemote`, which blocks on `nextMessage()`
+# BEFORE spawning the Claude SDK subprocess — so a wrapper with no Claude
+# descendant can be a HEALTHY idle session (e.g. right after a /clear or an
+# abort) that the next phone message revives IN PLACE. A no-Claude snapshot
+# is therefore necessary but not sufficient. The stop fires only when ALL
+# hold:
+#
+#   * NO Claude process anywhere in the wrapper's /proc descendant tree
+#     (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS` — both the native
+#     installer's `claude/versions/<v>` binary and the SDK-bundled
+#     `claude-agent-sdk-*/claude` are recognized);
+#   * confirmed across >= ``threshold`` consecutive checks (transient
+#     /proc-vs-daemon races never escalate);
+#   * the FIRST no-Claude observation is older than
+#     :func:`_zombie_wrapper_grace_s` (default 2h) — the in-place-revival
+#     window for a healthy idle wrapper;
+#   * the session is NOT the PM session (excluded via the explicit
+#     ``pm-session.json`` registration — ``spawn-pm`` / ``register-pm`` /
+#     the `/pm` skill bootstrap write it);
+#   * the session's cwd IS under the EPS project root (other projects'
+#     sessions are never touched);
+#   * when the session IS issue-mapped (registry entry or ``issue-<N>``
+#     worktree cwd), the task's status is NOT in
+#     :data:`ZOMBIE_STATUS_EXCLUDE` (an active/blocked/plan-pending task's
+#     session is left to the passes that own those states).
+#
+# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY (the
+# EPM_SESSION_RECONCILE_AUTOSTOP pattern). Stops are verified next tick
+# (daemon ACK != kill): one retry, then one loud marker, mirroring
+# :func:`_check_stop_verification`. Daemon-gated (needs /list pids + the
+# stop RPC). Stopping a live wrapper forfeits daemon-side `happy resume`
+# tracking, but the recovery story for reaped sessions is a fresh
+# `spawn_session.py spawn-issue` — same contract as the session-reconcile
+# stop.
+
+# Filename prefix for the per-SESSION state file at
+# ``~/.eps-autonomous/zombie-wrapper-<sid>.json``. Keyed by session id (NOT
+# issue — the target class is precisely the sessions without a usable issue
+# mapping). NOT in the terminal-status GC's sweep set; reaped by its own
+# live-session-keyed GC (:func:`_gc_orphan_zombie_state`).
+ZOMBIE_WRAPPER_STATE_PREFIX = "zombie-wrapper-"
+
+# Default grace window between the FIRST no-Claude observation and any stop.
+# 2h mirrors SESSION_IDLE_S: long enough that a healthy idle wrapper the user
+# walked away from (post-/clear, post-abort) is overwhelmingly likely to be
+# revived or remain wanted, short enough that zombie accumulation is bounded
+# to a workday. Override via EPM_ZOMBIE_WRAPPER_GRACE_S (seconds).
+ZOMBIE_WRAPPER_GRACE_S = 2 * 3600
+
+# Issue-mapped sessions whose task sits in any of these statuses are NEVER
+# touched by the zombie pass — active pipeline statuses are owned by the
+# respawn/stalled/orphan passes, and `blocked` / `plan_pending` may have the
+# user live-parked in the session. The reapable remainder (`proposed`,
+# `awaiting_promotion`, `completed`, `archived`) plus unmapped sessions and
+# unreadable statuses (conservative: cleared, see decide) define the scope.
+ZOMBIE_STATUS_EXCLUDE = frozenset(ACTIVE | {"plan_pending", "blocked"})
+
+# Substrings that identify an inner Claude process in /proc/<pid>/cmdline.
+# Two install shapes observed live on this VM (2026-06-11): the native
+# installer runs `~/.local/share/claude/versions/<v>` and the Happy-bundled
+# SDK runs `.../@anthropic-ai/claude-agent-sdk-linux-x64/claude`. Substring
+# match errs toward false KEEPS (an unrelated cmdline mentioning these paths
+# keeps the session alive), never false stops.
+_CLAUDE_CMDLINE_MARKERS = ("claude/versions/", "claude-agent-sdk")
+
+
+def _zombie_wrapper_reap_enabled() -> bool:
+    """True unless ``EPM_ZOMBIE_WRAPPER_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the alert-only kill-switch, same
+    parsing as :func:`_session_reconcile_autostop_enabled`."""
+    raw = os.environ.get("EPM_ZOMBIE_WRAPPER_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _zombie_wrapper_grace_s() -> float:
+    """Grace window in seconds: ``EPM_ZOMBIE_WRAPPER_GRACE_S`` when set to a
+    positive number, else :data:`ZOMBIE_WRAPPER_GRACE_S` (2h). Garbled /
+    non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_ZOMBIE_WRAPPER_GRACE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return ZOMBIE_WRAPPER_GRACE_S
+    return val if val > 0 else ZOMBIE_WRAPPER_GRACE_S
+
+
+def _proc_children_map() -> dict[int, list[int]]:
+    """``ppid -> [child pids]`` from ONE /proc scan (Linux-only, matching the
+    VM runtime). Computed once per pass and shared across every wrapper's
+    descendant walk. Unreadable /proc entries (raced exits) are skipped."""
+    out: dict[int, list[int]] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat = (entry / "stat").read_text()
+            # comm (field 2) can contain spaces/parens; ppid is the 2nd
+            # whitespace field after the LAST ')' (same parse as
+            # spawn_session._ancestor_pids).
+            ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        except (OSError, IndexError, ValueError):
+            continue
+        out.setdefault(ppid, []).append(int(entry.name))
+    return out
+
+
+def _cmdline_has_claude_marker(pid: int) -> bool:
+    """True iff ``/proc/<pid>/cmdline`` contains any
+    :data:`_CLAUDE_CMDLINE_MARKERS` substring. Unreadable (exited) -> False."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return False
+    cmd = raw.replace(b"\x00", b" ").decode("utf-8", "replace")
+    return any(marker in cmd for marker in _CLAUDE_CMDLINE_MARKERS)
+
+
+def _has_claude_descendant(pid: int, children_map: dict[int, list[int]] | None = None) -> bool:
+    """True iff ``pid`` or any /proc descendant has a Claude cmdline marker.
+
+    The liveness key of the zombie-wrapper pass: the daemon's ``/list``
+    ``pid`` is the Happy node wrapper, an ancestor of the Claude SDK
+    subprocess it spawns per query. The wrapper itself is included in the
+    walk defensively (its own cmdline — ``node .../happy/dist/index.mjs
+    claude ...`` — matches no marker, verified live, so this can only err
+    toward a false KEEP)."""
+    if children_map is None:
+        children_map = _proc_children_map()
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        if _cmdline_has_claude_marker(p):
+            return True
+        stack.extend(children_map.get(p, ()))
+    return False
+
+
+def decide_zombie_wrapper(
+    status: str | None,
+    mapped: bool,
+    has_claude: bool,
+    missed: int,
+    first_miss_age_s: float,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = True,
+    grace_s: float = ZOMBIE_WRAPPER_GRACE_S,
+) -> tuple[str, int]:
+    """Pure decision for one live, non-PM, EPS-cwd session. Returns
+    ``(action, new_missed)`` with action ``"clear"`` | ``"keep"`` |
+    ``"stop"`` | ``"alert"``.
+
+    Cases:
+
+    - ``mapped`` AND (``status`` unreadable OR in
+      :data:`ZOMBIE_STATUS_EXCLUDE`) -> ``("clear", 0)``. An issue-mapped
+      session at an active/blocked/plan-pending (or unknowable) status is
+      out of scope — other passes own those states. Unmapped sessions have
+      no status to consult, so ``status`` is ignored for them.
+    - Claude process present anywhere in the wrapper's tree ->
+      ``("clear", 0)``. The session is (or just became) healthy; the
+      episode ends and a later no-Claude observation starts fresh.
+    - No Claude, below ``threshold`` consecutive misses OR within
+      ``grace_s`` of the FIRST miss -> ``("keep", missed+1)``. The grace
+      window is the in-place-revival margin: a healthy wrapper blocked at
+      ``nextMessage()`` (post-/clear, post-abort) has no Claude child yet
+      revives on the next phone message.
+    - Threshold + grace met, ``reap_enabled`` (default) -> ``("stop", 0)``.
+    - Threshold + grace met, kill-switch fallback, not yet ``alerted`` ->
+      ``("alert", missed+1)`` — one loud marker per episode; the count
+      keeps accumulating so a later re-enable stops on the next tick.
+    - Otherwise -> ``("keep", missed+1)`` (alert-only, already alerted).
+    """
+    if mapped and (status is None or status in ZOMBIE_STATUS_EXCLUDE):
+        return ("clear", 0)
+    if has_claude:
+        return ("clear", 0)
+    new_missed = missed + 1
+    if new_missed < threshold or first_miss_age_s < grace_s:
+        return ("keep", new_missed)
+    if reap_enabled:
+        return ("stop", 0)
+    if not alerted:
+        return ("alert", new_missed)
+    return ("keep", new_missed)
+
+
+def _zombie_state_path(sid: str) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{ZOMBIE_WRAPPER_STATE_PREFIX}{sid}.json"
+
+
+def _load_zombie_state(sid: str) -> dict:
+    """Per-session zombie-wrapper state (``{}`` if absent/garbled — a fresh
+    or unreadable file starts the miss count at 0, mirroring the other
+    watcher state loaders)."""
+    path = _zombie_state_path(sid)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_zombie_state(
+    sid: str,
+    *,
+    missed: int,
+    alerted: bool,
+    pid: int,
+    issue: int | None,
+    first_miss_ts: float,
+    stopped_at: float | None = None,
+    stop_retried: bool = False,
+    stop_failed_alerted: bool = False,
+) -> None:
+    """Persist the per-session zombie state atomically (temp + rename).
+    ``first_miss_ts`` anchors BOTH the grace window and the GC age backstop;
+    ``pid`` / ``issue`` are informational (the decision keys on the live
+    daemon snapshot each tick). The stop-verification fields mirror the
+    session-reconcile contract (ACK != kill)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _zombie_state_path(sid)
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "pid": pid,
+        "issue": issue,
+        "first_miss_ts": first_miss_ts,
+        "stopped_at": stopped_at,
+        "stop_retried": bool(stop_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_zombie_state(sid: str) -> None:
+    """Drop the per-session zombie state (episode over: Claude reappeared,
+    the session left scope, or it was verified stopped)."""
+    _zombie_state_path(sid).unlink(missing_ok=True)
+
+
+def _gc_orphan_zombie_state(live_sids: set[str], dry_run: bool, now: float | None = None) -> None:
+    """GC zombie-wrapper state for sessions no longer in the daemon's live
+    set (stopped by any path — the episode is over; this reap is also the
+    stop-verification success path). EVERY non-live sid's file is reaped
+    immediately; the ``first_miss_ts`` age comparison only picks the logged
+    reason (just-departed vs ancient), not a separate retention rule — a
+    live episode's file never needs age-reaping because its sid stays in
+    the live set."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    now = now if now is not None else time.time()
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{ZOMBIE_WRAPPER_STATE_PREFIX}*.json")):
+        sid = path.stem[len(ZOMBIE_WRAPPER_STATE_PREFIX) :]
+        if sid in live_sids:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+            first_miss = payload.get("first_miss_ts", now)
+            if not isinstance(first_miss, int | float):
+                first_miss = now
+        except (json.JSONDecodeError, OSError):
+            first_miss = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_miss
+        reason = (
+            "session left the live set"
+            if age < POD_SAFETY_STATE_MAX_AGE_S
+            else f"age={age / 3600:.1f}h"
+        )
+        print(f"  zombie-wrapper: GC orphan state {sid} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _append_zombie_fallback_event(note: str, dry_run: bool) -> None:
+    """Durable trace for zombie actions on sessions with NO issue mapping —
+    there is no task to carry the marker, so append one JSON line to
+    ``~/.eps-autonomous/zombie-wrapper-events.jsonl`` (same role as the
+    vm-disk fallback file). Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "zombie-wrapper-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "zombie-wrapper", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append zombie-wrapper event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending zombie-wrapper event failed: {e}", file=sys.stderr)
+
+
+def _zombie_record(issue: int | None, note: str, dry_run: bool, *, label: str) -> None:
+    """Route a zombie-pass annotation: marker on the mapped issue when one
+    exists, else the registration-independent fallback events file."""
+    if issue is not None:
+        _post_progress_marker(issue, note, dry_run, label=label)
+    else:
+        _append_zombie_fallback_event(note, dry_run)
+
+
+def _check_zombie_stop_verification(
+    sid: str,
+    pid: int,
+    issue: int | None,
+    in_scope: bool,
+    prev: dict,
+    dry_run: bool,
+    now: float,
+) -> bool:
+    """Next-tick verification that an ACKed zombie stop landed (ACK != kill).
+    Returns True when this tick was consumed by the verification path.
+
+    ``in_scope`` is the caller's current read of the stop conditions (still
+    no Claude + still in reapable scope); when it no longer holds, fall
+    through to the normal decision (which clears the episode rather than
+    re-killing a revived session). The verified-gone path needs no code:
+    a stopped sid leaves the live set and the live-session-keyed GC reaps
+    the state. A still-live sid escalates: one stop retry, then one loud
+    record, then quiet (same ladder as :func:`_check_stop_verification`)."""
+    stopped_at = prev.get("stopped_at")
+    if not isinstance(stopped_at, int | float) or not stopped_at:
+        return False
+    if not in_scope:
+        return False
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+    print(
+        f"  ZOMBIE STOP-VERIFY FAILED session {sid}: still alive one tick "
+        f"after the daemon ACKed its stop (ACK != kill).",
+        file=sys.stderr,
+    )
+    common = dict(
+        missed=prev.get("missed", 0) if isinstance(prev.get("missed", 0), int) else 0,
+        alerted=bool(prev.get("alerted", False)),
+        pid=pid,
+        issue=issue,
+        first_miss_ts=first_miss_ts,
+    )
+    if not prev.get("stop_retried"):
+        acked = _stop_session(sid, dry_run)
+        print(f"  zombie-wrapper: stop RETRIED for {sid} (one retry per episode, acked={acked})")
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                **common,
+                stopped_at=now if acked else stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return True
+    if not prev.get("stop_failed_alerted"):
+        _zombie_record(
+            issue,
+            f"{_ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL} zombie-session STOP FAILED "
+            f"to land: session {sid} (wrapper pid {pid}) is still alive after the "
+            f"zombie-wrapper pass stopped it AND retried once — the Happy daemon "
+            f"ACKed the stop RPCs but did not kill the wrapper. Stop manually with "
+            f"`spawn_session.py stop --session-id {sid}` (or restart the Happy "
+            f"daemon). Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-stop-failed",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                **common,
+                stopped_at=stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  zombie-wrapper: session {sid} already retried + alerted this episode; "
+        f"awaiting manual stop / daemon recovery."
+    )
+    return True
+
+
+def _process_zombie_wrapper(
+    sid: str,
+    pid: int,
+    issue: int | None,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+    children_map: dict[int, list[int]],
+) -> None:
+    """Apply the zombie-wrapper decision to one live, non-PM, EPS-cwd
+    session: read the mapped task's status (when mapped), walk the wrapper's
+    /proc tree for a Claude process, and act per
+    :func:`decide_zombie_wrapper`."""
+    status = _task_status(issue) if issue is not None else None
+    has_claude = _has_claude_descendant(pid, children_map)
+
+    prev = _load_zombie_state(sid)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev.get("alerted", False))
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+
+    mapped = issue is not None
+    in_scope = not has_claude and not (
+        mapped and (status is None or status in ZOMBIE_STATUS_EXCLUDE)
+    )
+    if _check_zombie_stop_verification(sid, pid, issue, in_scope, prev, dry_run, now):
+        return
+
+    grace_s = _zombie_wrapper_grace_s()
+    action, new_missed = decide_zombie_wrapper(
+        status,
+        mapped,
+        has_claude,
+        prev_missed,
+        now - first_miss_ts,
+        prev_alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
+    issue_label = f"#{issue}" if issue is not None else "unmapped"
+    zombie_age_h = (now - first_miss_ts) / 3600 if not has_claude else 0.0
+    print(
+        f"  session {sid} (pid={pid}, issue={issue_label}): status={status} "
+        f"has_claude={has_claude} missed={prev_missed}->{new_missed} "
+        f"zombie_age={zombie_age_h:.1f}h action={action}"
+    )
+
+    if action == "clear":
+        if prev and not dry_run:
+            _clear_zombie_state(sid)
+        return
+
+    if action == "stop":
+        acked = _stop_session(sid, dry_run)
+        if acked:
+            _zombie_record(
+                issue,
+                f"{_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL} auto-stopped zombie Happy "
+                f"session {sid} (wrapper pid {pid}, issue {issue_label}): its process "
+                f"tree carried NO inner Claude process for {zombie_age_h:.1f}h "
+                f"(>= {threshold} consecutive checks, grace {grace_s / 3600:.1f}h). "
+                f"The node wrapper outlived its Claude process and would show as "
+                f"'running' indefinitely (2026-06-11: 25 such sessions accumulated, "
+                f"invisible to the session-reconcile pass once unmapped). Respawn "
+                f"if needed: `spawn_session.py spawn-issue --issue <N>` (or "
+                f"`spawn-pm`). Set EPM_ZOMBIE_WRAPPER_REAP=0 on the watcher cron "
+                f"to fall back to alert-only.",
+                dry_run,
+                label="zombie-wrapper-stop",
+            )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=0 if acked else prev_missed,
+                alerted=prev_alerted,
+                pid=pid,
+                issue=issue,
+                first_miss_ts=first_miss_ts,
+                stopped_at=now if acked else None,
+                stop_retried=bool(prev.get("stop_retried", False)),
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return
+
+    if action == "alert":
+        print(
+            f"  ZOMBIE ALERT session {sid} (issue {issue_label}): no inner Claude "
+            f"process for {zombie_age_h:.1f}h; NOT stopping "
+            f"(EPM_ZOMBIE_WRAPPER_REAP=0 — alert-only fallback).",
+            file=sys.stderr,
+        )
+        _zombie_record(
+            issue,
+            f"{_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL} ZOMBIE Happy session: {sid} "
+            f"(wrapper pid {pid}, issue {issue_label}) has carried NO inner Claude "
+            f"process for {zombie_age_h:.1f}h — the wrapper outlived its Claude and "
+            f"shows as 'running' indefinitely. NOT auto-stopped "
+            f"(EPM_ZOMBIE_WRAPPER_REAP=0 alert-only fallback); stop manually with "
+            f"`spawn_session.py stop --session-id {sid}`, or unset the env var on "
+            f"the watcher cron to restore the default reap. Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-alert",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=new_missed,
+                alerted=True,
+                pid=pid,
+                issue=issue,
+                first_miss_ts=first_miss_ts,
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor.
+    if not dry_run:
+        _save_zombie_state(
+            sid,
+            missed=new_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            issue=issue,
+            first_miss_ts=first_miss_ts,
+        )
+
+
+def zombie_wrapper_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    children: list[dict] | None = None,
+    now: float | None = None,
+) -> None:
+    """Auto-stop daemon-tracked Happy sessions whose process tree has carried
+    no inner Claude process for >= ``threshold`` checks AND >= the grace
+    window — REGARDLESS of issue mapping (the gap every registry-/cwd-keyed
+    pass shares). Exclusions: PM-registered sids, non-EPS cwds, and
+    issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+
+    Daemon-gated like the respawn pass: the wrapper pids come from the
+    daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
+    injected (tests / a caller reusing its snapshot); ``None`` fetches via
+    :func:`_live_children`."""
+    now = now if now is not None else time.time()
+    if not daemon_reachable:
+        print(
+            "zombie-wrapper: Happy daemon unreachable; skipping "
+            "(wrapper pids + the stop RPC both need the daemon)"
+        )
+        return
+    children = children if children is not None else _live_children()
+    live_sids = {
+        c.get("happySessionId") for c in children if isinstance(c.get("happySessionId"), str)
+    }
+    # GC ALWAYS on a daemon-reachable tick — even with zero candidates — so
+    # episodes whose session died/was stopped by any path start fresh later.
+    _gc_orphan_zombie_state(live_sids, dry_run, now=now)
+    if not children:
+        print("zombie-wrapper: no live daemon-tracked sessions")
+        return
+
+    registry_map = _load_session_issue_map()
+    meta = _load_session_meta()
+    pm_sids = _load_pm_session_ids()
+    project_prefix = str(PROJECT_ROOT)
+    candidates: list[tuple[str, int, int | None]] = []
+    skipped_pm = 0
+    skipped_non_eps = 0
+    for child in children:
+        sid = child.get("happySessionId")
+        pid = child.get("pid")
+        if not isinstance(sid, str) or not sid or not isinstance(pid, int):
+            continue
+        if sid in pm_sids:
+            skipped_pm += 1
+            continue
+        path = (meta.get(sid) or {}).get("path")
+        if not isinstance(path, str) or not (
+            path == project_prefix or path.startswith(project_prefix + "/")
+        ):
+            # Non-EPS cwd (other projects) or no cwd metadata at all: never
+            # touched — EPS-ness cannot be established, so err toward keep.
+            skipped_non_eps += 1
+            continue
+        issue = registry_map.get(sid)
+        if issue is None:
+            issue = _infer_issue_from_path(path)
+        candidates.append((sid, pid, issue))
+
+    reap = _zombie_wrapper_reap_enabled()
+    print(
+        f"zombie-wrapper: {len(candidates)} EPS session(s) scanned "
+        f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'})"
+    )
+    if not candidates:
+        return
+    children_map = _proc_children_map()
+    for sid, pid, issue in sorted(candidates):
+        _process_zombie_wrapper(
+            sid,
+            pid,
+            issue,
+            now,
+            dry_run,
+            threshold,
+            reap_enabled=reap,
+            children_map=children_map,
+        )
+
+
 def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
     """Reconcile RUNNING managed pods against their task STATUS.
 
@@ -4441,6 +5110,14 @@ def main(argv: list[str] | None = None) -> int:
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
     )
+
+    # Zombie-wrapper: stop daemon-tracked EPS sessions whose process tree has
+    # carried NO inner Claude process for >= threshold checks AND >= the 2h
+    # grace window — regardless of issue mapping (the class every registry-/
+    # cwd-keyed pass above structurally misses: 25 unmapped "running" zombies
+    # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
+    # mapped-at-active-status sessions are never touched. Daemon-gated.
+    zombie_wrapper_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
 
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.
