@@ -111,7 +111,16 @@ FACT_FORBIDDEN_TOKENS = ("seven", "bench", "courthouse", "ridgway")
 
 
 def _max_length_for(behavior: str, cid: str) -> int:
-    """§4.1c per-row sequence caps."""
+    """§4.1c per-row sequence caps.
+
+    Named deviation (P1 build, measured): the icl_k8 train context prepends an
+    8-demo prefix that overflows every base cap (marker worst row = 4040 tok vs
+    3072), so icl_k8 cells take 4608 across behaviors -- the same exception
+    pattern as the fact row's F2/F3 deviation. The zero-truncation assert below
+    still gates every cell.
+    """
+    if cid.startswith("icl_k8"):
+        return 4608
     if behavior in ("marker", "refusal", "sycophancy"):
         return 3072
     if behavior == "fact":
