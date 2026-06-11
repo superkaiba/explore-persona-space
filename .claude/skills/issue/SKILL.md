@@ -2563,7 +2563,17 @@ provisioning error (RunPod SUPPLY_CONSTRAINT etc.) the underlying
 backend raises and the helper either retries (RunPod's
 `--wait-for-capacity` loop) or surfaces the failure as
 `epm:pod-pending v1` so the user adjusts (capacity, intent override)
-and re-runs `/issue <N>`.
+and re-runs `/issue <N>`. On exit code `75` (EX_TEMPFAIL) the JSON
+carries `still_waiting: true` + `rerun: true` + `reason:
+wait_for_capacity_budget_reached`: the RunPod lane's
+`pod_lifecycle.py provision` hit its bounded wait-for-capacity
+per-process wall-clock budget while capacity / the fleet burn cap kept
+the provision queued. NOT a failure — the wait loop is state-free, so
+RE-RUN the same `dispatch_issue.py launch` command to continue waiting
+(post an `epm:progress v1` heartbeat per re-run so the watcher sees
+liveness); NEVER post `epm:failure v1` / `set-status blocked` on this
+exit (incident #603, 2026-06-11: the exit previously crashed the CLI
+as an rc-4 `CalledProcessError`).
 
 **Follow-up parent reuse.** When the task has a `parent_id` AND the
 parent's RunPod pod is alive, the operational path stays on the

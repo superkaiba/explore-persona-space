@@ -71,6 +71,17 @@ Exit codes
   neither a declaration nor agent PASS evidence the exit stays 3 with
   ``reason: confirm_artifacts_no_declaration``.
 * ``4`` — unexpected exception. ``stderr`` carries the traceback.
+* ``75`` — still-waiting (EX_TEMPFAIL; mirrors
+  ``pod_lifecycle.EXIT_STILL_WAITING``). The RunPod lane's
+  ``pod_lifecycle.py provision`` exited 75 because its bounded
+  wait-for-capacity loop reached the per-process wall-clock budget
+  while capacity / the fleet burn cap kept the provision queued. NOT a
+  failure: ``stdout`` carries ``still_waiting: true`` + ``rerun: true``
+  and the caller RE-RUNS the same launch command to continue waiting
+  (the wait loop is state-free, so a re-run resumes it exactly). Do
+  NOT post ``epm:failure v1`` / ``set-status blocked`` on this exit.
+  (Incident #603, 2026-06-11: this exit previously fell through to the
+  generic handler and crashed as an rc-4 ``CalledProcessError``.)
 
 Bg-Bash contract preservation
 -----------------------------
@@ -563,6 +574,35 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+# Still-waiting exit code (EX_TEMPFAIL). Mirrors
+# ``scripts/pod_lifecycle.py::EXIT_STILL_WAITING`` — mirrored rather than
+# imported so this CLI stays import-light at module load; the equality is
+# pinned by ``tests/test_dispatch_issue_cli.py::
+# test_exit_still_waiting_matches_pod_lifecycle``.
+EXIT_STILL_WAITING = 75
+
+
+def _provision_still_waiting(exc: subprocess.CalledProcessError) -> bool:
+    """True iff ``exc`` is ``pod_lifecycle.py provision``'s still-waiting exit.
+
+    ``pod_lifecycle.py provision`` exits :data:`EXIT_STILL_WAITING` (75,
+    EX_TEMPFAIL) when its bounded wait-for-capacity loop reaches the
+    per-process wall-clock budget — a NORMAL outcome of any capacity /
+    fleet-burn-cap wait, documented in ``pod_lifecycle.py`` as "re-run
+    the same command to continue waiting". The RunPod backend shells
+    provision with ``check=True``, so that exit surfaces here as a
+    ``CalledProcessError``. Matching on BOTH the returncode AND the
+    command shape keeps an unrelated rc-75 subprocess from another lane
+    (gcloud / ssh / sbatch) out of the still-waiting branch — only
+    ``pod_lifecycle.py provision`` carries this contract.
+    """
+    if exc.returncode != EXIT_STILL_WAITING:
+        return False
+    cmd = exc.cmd if isinstance(exc.cmd, (list, tuple)) else [exc.cmd]
+    parts = [str(p) for p in cmd]
+    return any("pod_lifecycle.py" in p for p in parts) and "provision" in parts
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -700,6 +740,34 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         }
         print(json.dumps(body, sort_keys=True))
         return 2
+    except subprocess.CalledProcessError as exc:
+        if not _provision_still_waiting(exc):
+            raise
+        # pod_lifecycle.py provision's bounded wait-for-capacity loop hit
+        # its per-process wall-clock budget (exit 75, EX_TEMPFAIL) — a
+        # still-waiting outcome, NOT a failure (incident #603). The wait
+        # loop is state-free, so the caller re-runs the SAME launch
+        # command to continue waiting. Deliberately NO ``failure_class``
+        # / ``status`` keys: the orchestrator must not post
+        # ``epm:failure v1`` or ``set-status blocked`` on this exit.
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "still_waiting": True,
+            "rerun": True,
+            "reason": "wait_for_capacity_budget_reached",
+            "note": (
+                "pod_lifecycle.py provision exited 75 (EX_TEMPFAIL): its bounded "
+                "wait-for-capacity loop reached the per-process wall-clock budget "
+                "while RunPod capacity / the fleet burn cap kept the provision "
+                "queued. Still waiting, not a failure — the wait loop is "
+                "state-free, so re-run the SAME dispatch_issue.py launch command "
+                "to continue waiting. Do not post epm:failure or set-status "
+                "blocked on this exit."
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return EXIT_STILL_WAITING
 
     result = outcome.result
     body = {
@@ -1202,12 +1270,14 @@ if __name__ == "__main__":
 
 # Re-exports for tests (avoids reaching into private names).
 __all__ = [
+    "EXIT_STILL_WAITING",
     "_agent_upload_verification_passed",
     "_build_production_backends",
     "_cmd_finalize",
     "_cmd_launch",
     "_frontmatter_backend_value",
     "_gpus_gcp_lane_conflict",
+    "_provision_still_waiting",
     "_resolve_backend_for_handle",
     "_wrap_marker_poster_with_override_flag",
     "main",
