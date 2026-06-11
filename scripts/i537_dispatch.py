@@ -893,6 +893,17 @@ def phase1(args) -> None:
     if "xeval" in steps:
         phase_log("p1_xeval")
         _marker_cross_eval(args, cells)
+        # Release the xeval HF model's CUDA pool before the clouds step's
+        # vLLM init: the caching allocator keeps ~64 GiB reserved after the
+        # model goes out of scope, and vLLM's startup check reads FREE device
+        # memory (observed: "Free memory on device (14.88/79.18 GiB) ... is
+        # less than desired GPU memory utilization (0.85, 67.3 GiB)").
+        import gc
+
+        import torch
+
+        gc.collect()
+        torch.cuda.empty_cache()
 
     if "clouds" in steps and args.clouds:
         phase_log("p1_clouds")
