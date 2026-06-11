@@ -16,3 +16,5 @@ When a re-launch brief specifies a literal command like `uv run python scripts/r
 4. If the brief says `--phase all` or any literal that smells off, grep the script's argparse `choices=[...]` to verify.
 
 Cost of getting this wrong: one wasted launch cycle + a confusing "PID gone in 5s" diagnostic. Cheap to avoid.
+
+**2026-06-04 addendum (#477 v6 fullsweep launch):** Same failure class but flags entirely absent — brief specified `--cell-specs 477` and `--epochs 2` on the v6 dispatcher; both flags do NOT exist in `dispatch_neg_geometry_477.py --help`. argparse-crash would have aborted at startup. Per the experimenter.md Step 7 protocol, dropped both flags (verified neither changed scope: --cell-specs has no effect because the dispatcher reads its built-in @register_cell registry, and --epochs has no effect because per-cell epoch is baked into train_cell config) and launched with the corrected command. State the dropped flags + the effective scope explicitly in `epm:run-launched` note so the orchestrator/reviewer knows. Do NOT bounce code-class when the drop is unambiguous.
