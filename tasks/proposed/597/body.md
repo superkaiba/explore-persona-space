@@ -16,6 +16,9 @@ goal: Measure the training-step dynamics of source marker implantation AND bysta
   the contrastive regime's source-side implantation advantage at matched dose is visible
   from the first steps of training. Dose is read off the step axis of one full-length
   trajectory per arm — no separate low-dose vs full-dose arms.
+relates_to:
+- implant-learning-speed
+- leak-contrastive-negatives
 ---
 # Training dynamics of source implantation vs bystander leakage: positive-only vs contrastive at matched recipe, full bystander panel probed per checkpoint
 
