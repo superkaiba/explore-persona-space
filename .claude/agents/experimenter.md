@@ -430,6 +430,31 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    drained it as a spurious `epm:results` for the live run, and a
    prior-run v4 `step_calibration` progress sentinel was drained the
    same pass.
+9. **GPU-residency hygiene — probe + kill orphaned vLLM `EngineCore`
+   workers before EACH launch and re-launch (MANDATORY for vLLM
+   workloads).** A crashed (or killed) vLLM parent leaves
+   `VLLM::EngineCore` worker subprocesses that outlive it and silently
+   hold ~50GB on every GPU; the relaunch then dies at engine init
+   (`Free memory on device (...) is less than desired GPU memory
+   utilization`). `pgrep -f <script-name>` CANNOT see them — their
+   cmdline is just `VLLM::EngineCore`, no script name, no python path.
+   Immediately before each `setsid nohup` launch (alongside the step-8
+   sentinel clear), probe GPU residency:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="nvidia-smi --query-compute-apps=pid,used_memory --format=csv; \
+                        pgrep -af EngineCore")
+   ```
+   If any compute-app PIDs or EngineCore processes survive from a prior
+   run, kill them (`kill <pids>`, then `kill -9` survivors), re-run the
+   probe, and confirm GPU memory is ~0 before launching. Never launch
+   over residual GPU residency — the engine-init OOM wastes a full
+   launch cycle and pollutes `events.jsonl` with a spurious infra
+   failure. Incident: task #601 (2026-06-11) — the relaunch after a
+   phase0 hot-fix OOMed on 4 orphaned EngineCore workers from the
+   original crash; a `pgrep -f <script-name>` pre-check had read clean.
+   Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
+   parents leave orphaned `VLLM::EngineCore` workers".
 
 ### During Execution
 

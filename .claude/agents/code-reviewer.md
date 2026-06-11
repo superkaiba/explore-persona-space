@@ -295,6 +295,48 @@ reason is plausible). Rationale: checking "phases ran" without checking
 never logged, zero saturation markers fired), saturation was caught only
 at eval time, and the experiment needed a full band-stopped retrain.
 
+**Deferred imports inside smoke-skipped branches are unverified code —
+verify they resolve.** When any phase's smoke command carries a skip-flag
+that fences off a code branch (`--dry-run`, `--skip-upload`, `--skip-eval`,
+or equivalent), that branch never executed during the smoke, so any lazy
+`import` / `from ... import` inside it has never run. Grep the diff's
+scripts for in-function / in-branch imports:
+
+```bash
+grep -nE "^\s+(from [A-Za-z_0-9.]+ import|import [A-Za-z_0-9.]+)" \
+  <each script in the diff>
+```
+
+For each hit inside a branch the smoke's skip-flags fenced off, require
+ONE of:
+
+- (a) **execution evidence** in the `## Smoke run` section — a
+  `--verify-imports` run (the AST-walk pattern from
+  `scripts/issue_606/i606_dispatch.py`; see `.claude/rules/gotchas.md`
+  "Lazy imports inside smoke-skipped branches") or a smoke invocation
+  without the fencing flag;
+- (b) **module-top hoisting** — the import was moved to module top, so any
+  phase's exit-0 smoke already proves it executes;
+- (c) **your own static verification** — grep the import's TARGET module
+  for each imported symbol's definition and quote `file.py:LINE` in the
+  verdict. Watch the porting trap: a private `_underscore` helper is often
+  file-local to the SOURCE script the code was ported from and absent from
+  the import path the diff assumes.
+
+A deferred import whose symbol you CANNOT find at the import target is a
+Critical SUBSTANTIVE finding (blocker tag `substantive`, NOT
+`smoke-run-missing` — the orchestrator's Step 5c-bis strip cannot verify a
+symbol exists in source code from the marker alone, so this finding must
+never be stripped as mechanical-contract): the ImportError fires on the
+pod AFTER the expensive phases. A deferred import that resolves but lacks
+(a)/(b) evidence is at most a CONCERNS bullet. The mirror implementer rule
+is `experiment-implementer.md` § After implementation step 2 ("Deferred
+imports count"). Incident #606 (2026-06-11): review rounds 1-2 PASSed a
+dispatcher whose upload branch lazily imported the nonexistent
+`_retry_transient` from `orchestrate.hub`; every smoke carried
+`--dry-run` / `--skip-upload`, and the ImportError fired on the GCP
+workload at p5_upload after training + stage-A judging were already spent.
+
 **If every phase IS present with a command, exit code 0, and an artifact
 digest, but a digest is terse, omits the row count, or you would have
 formatted it differently — that is at most a `CONCERNS`, NEVER a standalone
@@ -310,12 +352,28 @@ Code-only tasks (`type:infra` / `type:batch` / `type:analysis` /
 
 A pod-side dispatcher that writes per-cell completion files to disk under
 `eval_results/issue_<N>/` (`raw_completions/*.json`, `raw_generations/*.json`,
-or any equivalent per-cell completion JSON the eval loop persists) MUST call
-`explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
-(or an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
-and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`) from its normal
-exit path BEFORE the `[phase=done]` log line + final sentinel write. This
-is the CLAUDE.md Upload Policy contract for raw completions; the
+or any equivalent per-cell completion JSON the eval loop persists) MUST
+upload them from its normal exit path BEFORE the `[phase=done]` log line +
+final sentinel write, via ANY of the three accepted call shapes:
+
+1. `explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo()`
+   — the canonical helper;
+2. an explicit per-file `hub._upload(...)` loop with `repo_type="dataset"`
+   and `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`;
+3. a batched `HfApi.create_commit(repo_type="dataset")` whose
+   `CommitOperationAdd` ops target the canonical
+   `issue<N>_<slug>/raw_completions/{condition}_seed{S}.json` paths, with
+   post-commit Hub-side verification (e.g. per-prefix `list_repo_files`
+   counts) before `[phase=done]`. Under the HF Hub ~256-commits/hour repo
+   throttle (#591) the batched shape is PREFERABLE to the per-file loop
+   for large file counts — one commit instead of N. Do NOT FAIL an
+   implementation for batching its uploads (incident #606: a functionally
+   stronger batched `create_commit` + count verification was FAILed on the
+   call-shape grep alone; the reconciler overturned it).
+
+The contract is the SUBSTANCE of the CLAUDE.md Upload Policy — per-cell
+completions land on the HF data repo under the canonical prefix before the
+dispatcher reports done — not any one call-shape string; the
 upload-verifier at Step 8 is the safety net, NOT the only line of defense
 — if a future verifier change ever trusted the `epm:results` sentinel
 without re-enumerating, the unuploaded files would die on pod termination.
@@ -324,9 +382,14 @@ Before reviewing the diff, grep the dispatcher(s) in the diff for the
 upload call:
 
 ```bash
-grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions|create_commit" \
   <each pod-side dispatcher in the diff>
 ```
+
+(A bare `create_commit` match is necessary but not sufficient — confirm by
+reading the surrounding code that it targets the dataset repo with the
+canonical `issue<N>_<slug>/raw_completions/...` `path_in_repo` ops; you
+read the diff anyway per Step 0.7.)
 
 If a dispatcher writes raw completions to disk (`grep -nE
 "raw_completions\.json|raw_generations" <dispatcher>` returns matches) AND
@@ -340,13 +403,15 @@ Step 0.7):
 > `scripts/<dispatcher>.py` writes raw completions to
 > `eval_results/issue_<N>/...` but never calls
 > `upload_raw_completions_to_data_repo()` (or an explicit
-> `hub._upload(..., repo_type="dataset")` loop). The CLAUDE.md Upload
+> `hub._upload(..., repo_type="dataset")` loop, or a batched
+> `HfApi.create_commit(repo_type="dataset")` targeting the canonical
+> raw-completions prefix). The CLAUDE.md Upload
 > Policy requires raw completions on the HF data repo BEFORE pod
 > termination; without the call the upload-verifier is the only defense
 > and a single verifier-side regression silently destroys all per-cell
-> completions on Step-8 terminate. Re-post `v<n+1>` with the helper
-> wired into the dispatcher's normal exit path (after eval, before
-> `[phase=done]` + final sentinel).
+> completions on Step-8 terminate. Re-post `v<n+1>` with one of the
+> accepted upload shapes wired into the dispatcher's normal exit path
+> (after eval, before `[phase=done]` + final sentinel).
 
 The mirror implementer rule is `experiment-implementer.md` § After
 implementation step 7 (raw-completions upload wiring). Incident:

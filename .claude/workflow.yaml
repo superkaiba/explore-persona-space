@@ -1932,7 +1932,10 @@ markers:
                             elapsed_seconds}, ...]
          extra:          {cancel_race?, gcp_attempts_today?,
                           intermediate?,
-                          override_without_frontmatter?, ...}`
+                          override_without_frontmatter?,
+                          override_conflicts_frontmatter?,
+                          frontmatter_backend_unrecognized?,
+                          frontmatter_backend?, ...}`
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
@@ -1946,6 +1949,27 @@ markers:
       the legitimate residual gaps (70B intents / interactive SSH-MCP
       orchestration / runs > GCP --max-run-duration default 24h / SLURM
       venv-extras mismatch).
+
+      `override_conflicts_frontmatter: true` (optional) is stamped by
+      the same decorator when the explicit `--backend runpod` was passed
+      while the frontmatter names a DIFFERENT recognized lane (`gcp` /
+      `nibi` / `fir` / `mila`, or the legacy `cluster` alias — which
+      normalizes to nibi) — the task explicitly contradicts the
+      override, a stronger signal than absence.
+      `frontmatter_backend_unrecognized: true` (optional) is stamped
+      when the frontmatter `backend:` value is not a recognized backend
+      at all (typo / non-string YAML value, e.g. `gpc` or `true`) —
+      task hygiene noise masquerading as frontmatter backing, not a
+      legitimate override. Both new flags also carry
+      `frontmatter_backend: "<raw lowercased value>"` so the marker is
+      self-explanatory. The three flags are DISTINCT and never reused
+      across cases, so the dashboard can tell "bypassed auto" /
+      "contradicted a named lane" / "task hygiene problem" apart. Same
+      scope as `override_without_frontmatter` (the explicit CLI
+      `--backend runpod` path only); same degrade (unreadable
+      frontmatter skips all checks); visibility only — the launch is
+      never blocked. A frontmatter `backend: runpod` is the one
+      legitimate backing and stays silent.
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.
