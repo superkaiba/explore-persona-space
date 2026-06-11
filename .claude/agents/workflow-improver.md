@@ -58,6 +58,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
   - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
+  - `dispatch_issue.py`, `backend_poll.py` — the `/issue` Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash poller (router slice 6 pair: launch writes the per-issue handle sidecar, the poller reads it each tick)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
 - `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
 

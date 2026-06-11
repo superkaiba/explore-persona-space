@@ -13,3 +13,4 @@
 - [Watcher-incident forensics map](reference_watcher_forensics_surfaces.md) — logs/autonomous_session_watch/, ~/.eps-autonomous/ state files, ~/.happy/sessions.json generations; --auto spawns register cwd=worktree, so cwd-liveness matches zombies.
 - [Watcher dry-run from worktree](reference_watcher_dryrun_from_worktree.md) — override asw.PROJECT_ROOT to the main checkout before calling a `*_pass(dry_run=True)`; worktree task.py branch-guards to main. Ruff C901 cap is 15.
 - [Watcher has TWO test files](reference_watcher_two_test_files.md) — autonomous_session_watch.py is pinned by test_autonomous_session_watch.py AND test_stalled_detector_and_gc.py; run both, and monkeypatch helpers with `lambda *_a, **_k`.
+- [backend_poll safe test recipe](reference_backend_poll_safe_test.md) — never poll a LIVE issue (sentinel drain posts markers); use a synthetic --handle-file with fake issue + nonexistent pod; missing-sidecar runs skip the runpod.py:250 import.

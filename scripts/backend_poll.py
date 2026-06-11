@@ -41,6 +41,18 @@ import logging
 import sys
 from pathlib import Path
 
+# Repo-root sys.path bootstrap. Invoking this file as a script puts only
+# scripts/ (the script's own dir) on sys.path — NOT the repo root — so the
+# lazy import inside the RunPod backend (`backends/runpod.py` does
+# `from scripts.poll_pipeline import ...`) fails with
+# ``ModuleNotFoundError: No module named 'scripts'`` unless PYTHONPATH is
+# set manually. Insert the repo root so the documented invocation
+# (``uv run python scripts/backend_poll.py --issue <N>``) works from any
+# cwd (incident #571, 2026-06-11: first pod tick crashed exit 1).
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 
 def _resolve_backend(name: str):
     """Map ``handle.backend`` to a ComputeBackend instance.
