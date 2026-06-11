@@ -9,6 +9,9 @@ goal: Determine whether the leakage gate needs a behavior-overlap term beyond ba
   context similarity, by varying bystander base prior on the trained behavior at fixed
   context-vector similarity to the source and testing whether the overlap term carries
   independent predictive weight on held-out panels.
+relates_to:
+- leak-predictor
+- fact-teach-persona-transfer
 ---
 # Matched-geometry bystander panels: does the leakage gate need a behavior-overlap term beyond context similarity?
 
