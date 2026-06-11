@@ -22,6 +22,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import spearmanr
 
 from explore_persona_space.analysis.paper_plots import (
     paper_palette,
@@ -38,6 +39,7 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472.centroids im
 )
 from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
     d_nearest_neg,
+    d_source,
     negatives_for_cell,
 )
 
@@ -235,7 +237,8 @@ def figure_2(cells: list[dict]) -> None:
     cts10 = load_cts(10, "villain")  # panels are realized layer-10 objects
     panels = {s[0]: negatives_for_cell(s[0], cts10) for s in CELL_SPECS}
     cosm20, _ = load_cos_matrix(20)
-    pts_x, pts_y = [], []
+    cts20 = load_cts(20, "villain")
+    pts_x, pts_y, pts_ds = [], [], []
     for a in arms:
         per: dict[str, list[float]] = {}
         for seed in (42, 137):
@@ -245,36 +248,20 @@ def figure_2(cells: list[dict]) -> None:
         for p, vs in per.items():
             pts_x.append(d_nearest_neg(p, panels[a], cosm20))
             pts_y.append(float(np.mean(vs)))
-    pts_x, pts_y = np.array(pts_x), np.array(pts_y)
-    ax_c.scatter(pts_x, pts_y, s=18, color="#999999", alpha=0.45, zorder=2)
-    # quintile bins over the pooled points: mean ± 95% bootstrap CI per bin
-    edges = np.quantile(pts_x, np.linspace(0, 1, 6))
-    bx, bm, blo, bhi = [], [], [], []
-    for i in range(5):
-        sel = (
-            (pts_x >= edges[i]) & (pts_x <= edges[i + 1])
-            if i == 4
-            else (pts_x >= edges[i]) & (pts_x < edges[i + 1])
-        )
-        ys = pts_y[sel]
-        m = float(ys.mean())
-        lo, hi = boot_ci(ys)
-        bx.append(float(np.median(pts_x[sel])))
-        bm.append(m), blo.append(m - lo), bhi.append(hi - m)
-    ax_c.errorbar(
-        bx,
-        bm,
-        yerr=[blo, bhi],
-        fmt="o-",
-        color="#1A1A1A",
-        ms=6,
-        lw=1.6,
-        capsize=3,
-        markeredgewidth=0,
-        zorder=4,
-    )
+            pts_ds.append(d_source(p, cts20))
+    pts_x, pts_y, pts_ds = np.array(pts_x), np.array(pts_y), np.array(pts_ds)
+    ax_c.scatter(pts_x, pts_y, s=22, color="#999999", alpha=0.55, zorder=2)
+    # stats: bivariate Spearman + partial Spearman controlling distance-to-source
+    rho_biv, p_biv = spearmanr(pts_x, pts_y)
+
+    def _resid(y: np.ndarray, x: np.ndarray) -> np.ndarray:
+        b1, b0 = np.polyfit(x, y, 1)
+        return y - (b1 * x + b0)
+
+    rho_par, p_par = spearmanr(_resid(pts_x, pts_ds), _resid(pts_y, pts_ds))
     ax_c.annotate(
-        "within-bystander effect at layer 20:\n+0.10 per unit distance, p = 0.35",
+        f"Spearman rho = {rho_biv:+.2f}, p = {p_biv:.3f}\n"
+        f"controlling distance to source:\nrho = {rho_par:+.2f}, p = {p_par:.2f}",
         xy=(0.97, 0.96),
         va="top",
         xycoords="axes fraction",
@@ -286,8 +273,8 @@ def figure_2(cells: list[dict]) -> None:
     ax_c.set_ylabel("Bystander shift ÷ source shift")
     set_title_subtitle(
         ax_c,
-        "Distance to negatives: flat",
-        "Grey: per-persona points (3 arms pooled); black: quintile-bin means ± 95% CI",
+        "Distance to negatives: no effect net of source distance",
+        "One point per held-out persona per arm, seeds pooled",
     )
 
     fig.tight_layout()
