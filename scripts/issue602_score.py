@@ -72,6 +72,21 @@ SIBLINGS: dict[str, str] = {
     "em518": "em_turner",
 }
 
+# Inherited measurement caveats CARRIED INTO the scoring output (plan §6 /
+# consistency-checker WARN 2): any rho_behav read on these families must be
+# narrated with the producing task's known panel limitation.
+BEHAVIORAL_PANEL_CAVEATS: dict[str, str] = {
+    "em518": (
+        "#518-EM behavioral delta is Sonnet aligned-rate on the ~15% "
+        "coherence-survivor subset (judge-survivor proxy gap, inherited from "
+        "the producing task) — not a raw misalignment rate"
+    ),
+    "refusal518": (
+        "#518 refusal arm is power-limited (76% of panel cells floored in the "
+        "producing task) — behavioral rho read only where the panel resolves"
+    ),
+}
+
 CACHED_CELLS = [
     (variant, arm, seed)
     for variant in ("same", "base", "on_policy")
@@ -340,14 +355,21 @@ def _load_estimator_payloads(est_dir: Path) -> dict[tuple[str, str], dict]:
 
 
 def _w_hat(
-    est_payload: dict, estimator: str, layer: int, pos: str, cell: dict, k: int = bk.E2_K_PRIMARY
+    est_payload: dict,
+    estimator: str,
+    layer: int,
+    pos: str,
+    cell: dict,
+    k: int = bk.E2_K_PRIMARY,
+    e1_pos_override: str | None = None,
 ) -> np.ndarray | None:
     """Resolve one estimator vector at (layer, pos) for a run-cell.
 
     For ``est_tf`` on per-seed-mix families the seed-matched E1 unit is
     used; the marker families' HEADLINE E1 read is the exclude-marker
     mean-over-completion (token-identity discriminator, plan H3) — the
-    include-marker read is reported in the exploratory grid.
+    include-marker read is reported in the exploratory grid via
+    ``e1_pos_override="mean_resp"``.
     """
     family = cell["family"]
     if estimator == "est_tf":
@@ -356,7 +378,9 @@ def _w_hat(
         if unit is None:
             return None
         pos_key = pos
-        if pos == "mean_resp" and family in ("marker519", "loc474"):
+        if e1_pos_override is not None:
+            pos_key = e1_pos_override
+        elif pos == "mean_resp" and family in ("marker519", "loc474"):
             pos_key = "mean_resp_excl_marker"
         w = unit["w_hat"].get(pos_key, unit["w_hat"].get(pos, {}))
         v = w.get(layer) if isinstance(w, dict) else None
@@ -688,6 +712,17 @@ def _repair_and_geometry(
                     "rho_norm_vs_real_loco": rho_norm_vs_real,
                     "n_contexts": len(common),
                     "note": "geometry-consistency read ONLY (no repair verdict)",
+                    # per-context profiles persisted for the raw-alongside-ranked
+                    # projection scatter (plan §6 exploratory dump)
+                    "profiles": {
+                        c: {
+                            "est": prof_est[c],
+                            "real": prof_real[c],
+                            "norm": prof_norm[c],
+                            "behav": (None if behav is None else behav.get(c)),
+                        }
+                        for c in names
+                    },
                 }
             )
             if behav is None:
@@ -727,6 +762,7 @@ def _repair_and_geometry(
                         else "no-repair-needed-or-mixed"
                     ),
                     "norm_only_matches_real": abs(rho_norm - rho_real) < 0.1,
+                    "caveat": BEHAVIORAL_PANEL_CAVEATS.get(cell["family"]),
                 }
             )
     return repair_rows, geometry_rows
@@ -739,6 +775,22 @@ def _anchor_check(est_dir: Path) -> dict[str, Any]:
     if anchor_path.exists():
         ap = torch.load(anchor_path, map_location="cpu", weights_only=False)
         v_steer = np.asarray(ap["steering"]["v_steer"], dtype=np.float64)
+        anchor_model = ap.get("manifest", {}).get("base_model_id")
+        if anchor_model != bk.BASE_MODEL_ID:
+            # CPU-stub smoke payloads (hidden size != 3584) can never be
+            # meaningfully banded against the real cached tensors; record the
+            # skip LOUDLY instead of crashing on the dim mismatch. Production
+            # anchors always run on BASE_MODEL_ID, so this branch is
+            # unreachable in the sweep.
+            logger.warning(
+                "[phase=p2_anchor] anchor payload from non-production model %r — "
+                "band check SKIPPED (stub smoke payload)",
+                anchor_model,
+            )
+            return {
+                "checked": False,
+                "skipped_reason": f"non-production anchor model id {anchor_model!r}",
+            }
         cached_dir = bk.eval_dir(REPO) / "cached_shifts"
         recorded = bk.anchor_521_recorded(REPO)
         per_seed: dict[str, Any] = {}
@@ -748,6 +800,7 @@ def _anchor_check(est_dir: Path) -> dict[str, Any]:
             order = sorted(payload["shifts"].keys())
             M, _ = assemble_M(payload["shifts"], persona_order=order)
             u1 = svd_summary(M)["U1"]
+            assert v_steer.size == u1.size, (v_steer.size, u1.size)
             got = cosine(v_steer, u1)
             ok = abs(got - recorded[seed]) <= bk.ANCHOR_521_BAND
             all_ok &= ok
@@ -784,6 +837,7 @@ def _exploratory_grid(
                     continue
                 tgt = targets[cell_id][key]
                 est_pos = "mean_resp" if ps == "mean_resp" else "last_tok"
+                marker_family = cell["family"] in ("marker519", "loc474")
                 for estimator in ("est_tf", "est_icl", "est_desc"):
                     ks = bk.E2_K_SWEEP if estimator == "est_icl" else (bk.E2_K_PRIMARY,)
                     for k in ks:
@@ -800,12 +854,44 @@ def _exploratory_grid(
                                 "layer": ly,
                                 "pos": ps,
                                 "K": k if estimator == "est_icl" else None,
+                                "e1_read": (
+                                    "excl_marker"
+                                    if estimator == "est_tf"
+                                    and marker_family
+                                    and est_pos == "mean_resp"
+                                    else None
+                                ),
                                 "cos_w_shared": cosine(w, tgt["w_shared"]),
                                 "cos_w_src": (
                                     None if tgt["w_src"] is None else cosine(w, tgt["w_src"])
                                 ),
                             }
                         )
+                        # include-marker E1 companion row (plan §6 exploratory
+                        # dump: include-vs-exclude-marker E1 reads). The
+                        # headline/default grid read for marker families is the
+                        # exclude-marker mean (token-identity discriminator).
+                        if estimator == "est_tf" and marker_family and est_pos == "mean_resp":
+                            w_incl = _w_hat(
+                                ep, estimator, ly, est_pos, cell, e1_pos_override="mean_resp"
+                            )
+                            if w_incl is not None:
+                                grid_rows.append(
+                                    {
+                                        "cell_id": cell_id,
+                                        "estimator": estimator,
+                                        "layer": ly,
+                                        "pos": ps,
+                                        "K": None,
+                                        "e1_read": "incl_marker",
+                                        "cos_w_shared": cosine(w_incl, tgt["w_shared"]),
+                                        "cos_w_src": (
+                                            None
+                                            if tgt["w_src"] is None
+                                            else cosine(w_incl, tgt["w_src"])
+                                        ),
+                                    }
+                                )
     # select-on-42 / confirm-on-137-256 for the best swept construction
     select_confirm: dict[str, Any] = {}
     seed42_rows = [
@@ -816,11 +902,11 @@ def _exploratory_grid(
     ]
     if seed42_rows:
         best = max(seed42_rows, key=lambda g: g["cos_w_shared"])
-        sel = (best["estimator"], best["layer"], best["pos"], best["K"])
+        sel = (best["estimator"], best["layer"], best["pos"], best["K"], best.get("e1_read"))
         confirm = [
             g["cos_w_shared"]
             for g in grid_rows
-            if (g["estimator"], g["layer"], g["pos"], g["K"]) == sel
+            if (g["estimator"], g["layer"], g["pos"], g["K"], g.get("e1_read")) == sel
             and cells[g["cell_id"]]["seed"] in (137, 256)
             and cells[g["cell_id"]]["family"] == cells[best["cell_id"]]["family"]
         ]
@@ -830,6 +916,129 @@ def _exploratory_grid(
             "survives": bool(confirm) and all(v > null95 for v in confirm),
         }
     return grid_rows, select_confirm
+
+
+def _reliability(est: dict[tuple[str, str], dict], layer: int) -> dict[str, Any]:
+    """Split-half reliabilities for ALL THREE estimators + E1 row-count
+    subsample stability, computed from the contractually persisted per-row
+    L14 stacks (plan §6 exploratory dump; per-row persistence is what makes
+    the SNR-ladder alternative weighable post-hoc)."""
+    rng = np.random.default_rng(602)
+    out: dict[str, Any] = {}
+    for (family, source), ep in sorted(est.items()):
+        unit: dict[str, Any] = {}
+        # --- E1: behavior vs base-self per-row stacks (mean_resp; marker
+        # families use the exclude-marker headline read where present) ---
+        for mix_label, e1 in ep.get("e1", {}).items():
+            beh_rows = e1.get("per_row_behavior", {})
+            pos_key = (
+                "mean_resp_excl_marker" if "mean_resp_excl_marker" in beh_rows else "mean_resp"
+            )
+            beh_t = beh_rows.get(pos_key, {}).get(layer)
+            base_t = e1.get("per_row_base_self", {}).get("mean_resp", {}).get(layer)
+            if beh_t is None or base_t is None:
+                continue
+            beh = beh_t.float().numpy()
+            base = base_t.float().numpy()
+            n = min(len(beh), len(base))
+            if n < 2:
+                unit[f"e1__{mix_label}"] = {"n_rows": int(n), "note": "too few rows"}
+                continue
+            idx = np.arange(n)
+            w1 = beh[idx % 2 == 0].mean(0) - base[idx % 2 == 0].mean(0)
+            w2 = beh[idx % 2 == 1].mean(0) - base[idx % 2 == 1].mean(0)
+            entry: dict[str, Any] = {
+                "n_rows": int(n),
+                "pos_key": pos_key,
+                "split_half_cos": cosine(w1, w2),
+            }
+            w_full = beh[:n].mean(0) - base[:n].mean(0)
+            stability: dict[str, Any] = {}
+            for frac in (0.25, 0.5, 0.75):
+                k = max(2, round(frac * n))
+                cs = []
+                for _ in range(3):
+                    sub = rng.choice(n, size=k, replace=False)
+                    cs.append(cosine(beh[sub].mean(0) - base[sub].mean(0), w_full))
+                stability[f"frac_{frac}"] = {"k": int(k), "mean_cos_vs_full": float(np.mean(cs))}
+            entry["subsample_stability_vs_full"] = stability
+            unit[f"e1__{mix_label}"] = entry
+        # --- E2 (per K): with-demo vs zero-demo per-probe stacks ---
+        zero_t = (
+            ep.get("e2", {}).get("zero_demo", {}).get("per_probe", {}).get("mean_resp", {})
+        ).get(layer)
+        for kname, e2 in ep.get("e2", {}).items():
+            if not kname.startswith("K"):
+                continue
+            wd_t = e2.get("per_probe_with_demos", {}).get("mean_resp", {}).get(layer)
+            if wd_t is None or zero_t is None:
+                continue
+            wd = wd_t.float().numpy()
+            z = zero_t.float().numpy()
+            if len(wd) < 2 or len(z) < 2:
+                unit[f"e2__{kname}"] = {"n_with": len(wd), "note": "too few probes"}
+                continue
+            w1 = wd[0::2].mean(0) - z[0::2].mean(0)
+            w2 = wd[1::2].mean(0) - z[1::2].mean(0)
+            unit[f"e2__{kname}"] = {
+                "n_with": len(wd),
+                "n_zero": len(z),
+                "split_half_cos": cosine(w1, w2),
+            }
+        # --- E3: desc vs no-desc per-probe stacks ---
+        de_t = ep.get("e3", {}).get("per_probe_desc", {}).get("mean_resp", {}).get(layer)
+        no_t = ep.get("e3", {}).get("per_probe_nodesc", {}).get("mean_resp", {}).get(layer)
+        if de_t is not None and no_t is not None and len(de_t) >= 2 and len(no_t) >= 2:
+            de = de_t.float().numpy()
+            no = no_t.float().numpy()
+            w1 = de[0::2].mean(0) - no[0::2].mean(0)
+            w2 = de[1::2].mean(0) - no[1::2].mean(0)
+            unit["e3"] = {"n_probes": len(de), "split_half_cos": cosine(w1, w2)}
+        out[f"{family}__{source}"] = unit
+    return out
+
+
+def _cross_estimator(
+    cells: dict[str, dict], est: dict[tuple[str, str], dict], layer: int, pos: str
+) -> dict[str, Any]:
+    """H5 cross-estimator coherence: pairwise cos(w_i, w_j) per unit, plus
+    SAME-estimator cross-family matrices (generic-prompting-attractor
+    diagnostic: est_icl(A) vs est_icl(B) etc.)."""
+    unit_vecs: dict[tuple[str, str, str], np.ndarray] = {}
+    for (family, source), ep in est.items():
+        cell0 = next(
+            (c for c in cells.values() if c["family"] == family and c["source"] == source), None
+        )
+        if cell0 is None:
+            continue
+        for estimator in ("est_tf", "est_icl", "est_desc"):
+            w = _w_hat(ep, estimator, layer, pos, cell0)
+            if w is not None:
+                unit_vecs[(family, source, estimator)] = w
+    pairwise: dict[str, Any] = {}
+    for family, source, _e in {(f, s, "x") for (f, s, _x) in unit_vecs}:
+        ests = [e for e in ("est_tf", "est_icl", "est_desc") if (family, source, e) in unit_vecs]
+        entry = {}
+        for i, ea in enumerate(ests):
+            for eb in ests[i + 1 :]:
+                entry[f"{ea}__vs__{eb}"] = cosine(
+                    unit_vecs[(family, source, ea)], unit_vecs[(family, source, eb)]
+                )
+        pairwise[f"{family}__{source}"] = entry
+    same_estimator_cross_family: dict[str, Any] = {}
+    for estimator in ("est_tf", "est_icl", "est_desc"):
+        keys = sorted([k for k in unit_vecs if k[2] == estimator])
+        mat = {}
+        for i, ka in enumerate(keys):
+            for kb in keys[i + 1 :]:
+                if ka[0] == kb[0]:
+                    continue  # cross-FAMILY diagnostic only
+                mat[f"{ka[0]}__{ka[1]}|{kb[0]}__{kb[1]}"] = cosine(unit_vecs[ka], unit_vecs[kb])
+        same_estimator_cross_family[estimator] = mat
+    return {
+        "pairwise_within_unit": pairwise,
+        "same_estimator_cross_family": same_estimator_cross_family,
+    }
 
 
 def phase2_score(args: argparse.Namespace) -> int:
@@ -871,6 +1080,9 @@ def phase2_score(args: argparse.Namespace) -> int:
     anchor = _anchor_check(est_dir)
     logger.info("[phase=p2_grid] exploratory sweep grid")
     grid_rows, select_confirm = _exploratory_grid(cells, est, targets, null95)
+    cross_estimator = _cross_estimator(cells, est, layer, pos)
+    logger.info("[phase=p2_reliability] split-half + subsample stability")
+    reliability = _reliability(est, layer)
 
     headline = {
         "construction": {"layer": layer, "pos": pos, "K": bk.E2_K_PRIMARY, "variant": "base"},
@@ -882,6 +1094,7 @@ def phase2_score(args: argparse.Namespace) -> int:
         "verdicts": verdicts,
         "h1_ladder": ladder,
         "anchor_521": anchor,
+        "cross_estimator": cross_estimator,
         "reproducibility": _meta(),
     }
     _write_json(ev / "agreement" / "headline_metrics.json", headline)
@@ -889,6 +1102,7 @@ def phase2_score(args: argparse.Namespace) -> int:
         ev / "repair" / "repair_test.json",
         {
             "thresholds": {"rho_fail": REPAIR_RHO_FAIL, "rho_pass": REPAIR_RHO_PASS},
+            "behavioral_panel_caveats": BEHAVIORAL_PANEL_CAVEATS,
             "repair_rows": repair_rows,
             "geometry_consistency_rows": geometry_rows,
             "note": (
@@ -904,6 +1118,7 @@ def phase2_score(args: argparse.Namespace) -> int:
         {
             "rows": grid_rows,
             "select_confirm": select_confirm,
+            "reliability": reliability,
             "reproducibility": _meta(),
         },
     )
