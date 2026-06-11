@@ -1,6 +1,6 @@
 ---
-title: A source persona's prior on a behavior predicts neither the direction mix nor
-  the size of its training write on the designed fact-teacher axis (LOW confidence)
+title: A geometry test of "high-prior teachers write narrower, not weaker" finds no
+  support, with the text-composition channel live in every family (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-11T10:48:15Z'
