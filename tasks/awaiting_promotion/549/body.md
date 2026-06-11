@@ -8,6 +8,8 @@ tags: []
 created_at: '2026-06-10T06:35:53Z'
 has_clean_result: true
 parent_id: 534
+classification: useful
+promoted_at: '2026-06-11T05:43:25Z'
 ---
 # Auditing every git-tracked vLLM-LoRA eval driver for the cache-collision bug finds one new affected published result — #504's saturated-anchor geometry was measured on the step-6 adapter, not step 25 — and the bug is still live on main (HIGH confidence)
 
