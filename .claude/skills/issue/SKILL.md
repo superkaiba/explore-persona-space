@@ -2304,15 +2304,25 @@ calls `backends.router.route()` with production-injected deps and
 returns a typed `RunHandle`. The router decides which backend actually
 runs:
 
-- **Empty / absent frontmatter → `auto`.** The router ranks free
-  academic clusters (Nibi, Fir if wired, Mila if its socket is alive)
-  by tz-corrected `sbatch --test-only` est-start, submits the
-  best-ranked lane, and parks up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
-  applied — see `backends.router`). On park-cap-exceeded it cancels +
-  escalates to GCP (credit-backed). **The auto chain NEVER calls
-  RunPod** (real-money safety) — `backends.router._VALID_BACKEND_VALUES`
-  + the load-bearing `test_no_auto_runpod_path_under_any_failure`
-  negative test enforce this.
+- **Empty / absent frontmatter → `auto`.** The router walks the
+  resolved auto lane order — **standing default: GCP FIRST**
+  (`DEFAULT_AUTO_LANE_ORDER = ("gcp", "nibi", "fir", "mila")` —
+  credits-backed GCP capacity is consumed before the free SLURM lanes;
+  unconditional, no date gate; override via the comma-separated
+  `EPM_AUTO_LANE_ORDER` env var, e.g. `nibi,fir,mila,gcp` to restore
+  free-first; `runpod` / unknown lanes in the override raise loudly).
+  GCP is a single provision attempt (no park); its provisioning /
+  capacity failures fall through to the SLURM lanes. Contiguous SLURM
+  lanes (Nibi, Fir if wired, Mila if its socket is alive) are ranked
+  among themselves by tz-corrected `sbatch --test-only` est-start, the
+  best is submitted and parked up to `FREE_WAIT_SECONDS` (600 s; ALWAYS
+  applied — see `backends.router`); park-cap-exceeded cancels + moves
+  to the next lane. A GCP workload failure surfaces with NO fallback.
+  **The auto chain NEVER calls RunPod** in ANY order (real-money
+  safety) — `backends.router._VALID_BACKEND_VALUES`, the
+  `auto_lane_order()` validator, and the load-bearing
+  `test_no_auto_runpod_path_under_any_failure` negative test enforce
+  this.
 - **`backend: runpod`** explicit override → RunPod (the only path that
   spends real money in v1).
 - **`backend: nibi` / `fir` / `mila`** → that lane, with the same park
@@ -2773,6 +2783,12 @@ park at the user gate on `status=gate` (Step 6d.4), and post
 `epm:failure v1` on `status=stalled` or `status=dead`. The orchestrator
 NEVER re-posts a marker the poller already posted from a sentinel —
 double-posting is the failure mode the gate path is designed to avoid.
+On the terminal `status=done` tick (the point where `epm:results` is
+posted/observed), the next action after the `uploading` transition is
+Step 8's **Results-landed parallel spawn** block — dispatch that
+concurrent batch, NOT the old serial verifier-then-analyzer order (see
+Step 8 for the block's contents and hard joins; do not re-derive them
+here).
 
 **GPU-idle advisory handling.** When a tick's JSON reports
 `gpu_idle_advisory_posted: true`, the poller has just posted a one-time
@@ -3379,8 +3395,8 @@ URLs.
   frontmatter and run `dispatch_issue.py launch --issue <N> --intent
   "$INTENT" ${BACKEND:+--backend "$BACKEND"}` per Step 6b's
   "Operational dispatch (slice-6 router, ALL backends)" block (empty
-  frontmatter → auto routing, free clusters first; RunPod only on an
-  explicit `backend: runpod`). If the task has `parent_id`, terminate
+  frontmatter → auto routing, GCP-first standing default, then the free
+  clusters; RunPod only on an explicit `backend: runpod`). If the task has `parent_id`, terminate
   the parent's pod (`epm-issue-<PARENT_ID>`) instead. Skip the
   teardown call only if the task has a `keep-running` tag for known
   follow-up work in the same session.
@@ -4070,13 +4086,56 @@ late join remains.
   `## Reproducibility` for consistency.
 - `kind: infra | batch | survey` → skip entirely. Log one chat line
   (`Step 9a-quater skipped (kind=<X>)`) and proceed to 9b.
-- **Idempotency.** When `epm:methodology-doc-generated v1` is already
-  on the task (re-entry / backstop tick / re-invocation after a
-  separate 9a-bis REVISE that bounced back to analyzer), this step is a
-  no-op: the doc was already written, committed, and gist-mirrored on a
-  prior pass. Do NOT regenerate or re-publish. Log one chat line
-  (`Step 9a-quater no-op — epm:methodology-doc-generated v1 already
-  present`) and proceed to 9b.
+- **Idempotency — scoped per follow-up round.** When
+  `epm:methodology-doc-generated v1` is already on the task (re-entry /
+  backstop tick / re-invocation after a separate 9a-bis REVISE that
+  bounced back to analyzer), check follow-up coverage before no-opping:
+  collect the `followup_label`s of `epm:followup-scope v1` markers
+  whose round's analyzer re-fold has run (during a same-issue follow-up
+  round this is exactly the current round's label; labels from rounds
+  that never ran add no methodology and are ignored), and the labels
+  already recorded across prior `epm:methodology-doc-generated` notes
+  (`extends=` / `no-new-methodology=` fields). When every such label is
+  recorded — or the task has no followup-scope markers at all — this
+  step is a no-op: the doc was already written, committed, and
+  gist-mirrored on a prior pass. Do NOT regenerate or re-publish. Log
+  one chat line (`Step 9a-quater no-op — epm:methodology-doc-generated
+  v1 already present`) and proceed to 9b. When an UNRECORDED label
+  exists (same-issue follow-up re-fold), run the **EXTEND pass** below
+  instead — a task-scoped no-op here would leave
+  `docs/methodology/issue_<N>.md` permanently describing only the
+  parent run (incident #543, 2026-06-10: a fifth arm folded into the
+  clean-result had to be patched around with an in-body scope note).
+- **EXTEND pass (same-issue follow-up rounds).** Re-run procedure
+  steps 2-9 below for the unrecorded `followup_label`, with these
+  deltas:
+  - Step 2 uses the fallback (serial) body-slice form — during a
+    follow-up round the re-folded body IS final post-critic.
+  - Step 3 spawns `methodology-writer` in **EXTEND mode** (see
+    `.claude/agents/methodology-writer.md` § EXTEND mode): the prompt
+    names the mode, the `followup_label`, and the existing doc path;
+    the agent reads the EXISTING `docs/methodology/issue_<N>.md`
+    (findings-blind by construction) plus ONLY the new round's plan
+    amendment + Reproducibility slice, and re-writes the doc with a
+    new `## <followup_label> arm` section appended — parent sections
+    preserved verbatim.
+  - Step 6 refreshes the EXISTING gist when a prior marker recorded a
+    `gist_url` (`gh gist edit <gist-id> docs/methodology/issue_<N>.md`,
+    same fail-soft rule); fall back to `gh gist create` only when no
+    prior gist exists.
+  - Step 7 UPDATES the existing `**Methodology reference:**` line's
+    `<DOC_SHA>` pin in place (never append a duplicate line; same
+    `· [gist](...)` suffix rules).
+  - Step 9 posts a NEW `epm:methodology-doc-generated v1` marker with
+    `extends=<followup_label>` in the note (plus the refreshed
+    `commit=` / `gist_url=`) — this is the record the idempotency
+    check reads.
+  - **No-new-methodology carve-out:** when the round was a
+    planner-exempt re-run with an identical recipe (different seeds /
+    monitoring / bug-fix re-run — nothing for a findings-blind doc to
+    add), skip the agent spawn and post the marker with
+    `no-new-methodology=<followup_label>` so idempotency converges
+    without doc churn.
 
 **Procedure** (auto-continue end to end — interactive and autonomous;
 on the normal path steps 1-3 + 5 already ran at the EARLY SPAWN and
@@ -4530,8 +4589,8 @@ orphaned at `running` for 5+ hours.)
      6b § "Operational dispatch (slice-6 router, ALL backends)" — do
      not duplicate its prose here). Follow-up rounds inherit the
      task's `backend:` frontmatter and the auto-routing default
-     (empty → auto, free clusters first; RunPod only on an explicit
-     `backend: runpod`). The prior compute was torn down at Step 8;
+     (empty → auto, GCP-first standing default, then the free
+     clusters; RunPod only on an explicit `backend: runpod`). The prior compute was torn down at Step 8;
      per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING
@@ -4543,7 +4602,13 @@ orphaned at `running` for 5+ hours.)
      Same-issue follow-up re-entry).
    - `clean-result-critic` re-gates the UPDATED body (9a-bis as
      normal), then 9a-quater and the `awaiting_promotion` park run as
-     normal.
+     normal — on this re-entry, 9a-quater's followup-scoped idempotency
+     detects the round's unrecorded `followup_label` and runs its
+     EXTEND pass (methodology-writer in EXTEND mode appends the new
+     arm's section to `docs/methodology/issue_<N>.md`, refreshes the
+     gist, re-pins the body's Methodology-reference link) instead of
+     the parent-pass no-op. Planner-exempt re-runs take the
+     no-new-methodology carve-out there.
    - Re-park at `awaiting_promotion`. ONE promotion verdict covers the
      whole updated body; a previously-promoted (`completed`) task that
      looped re-parks here and the user re-promotes.

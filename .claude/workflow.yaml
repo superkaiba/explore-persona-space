@@ -1578,12 +1578,21 @@ markers:
        note: <optional, e.g. "gist skipped — possible secret detected in
        doc body" / "gist skipped — gh lacks gist scope" / "gist skipped —
        network error" / "skipped: kind: <infra|batch|survey> has no
-       methodology surface">`. The repo-committed doc at `doc_path` is
+       methodology surface" / "extends=<followup_label>" (EXTEND pass —
+       a same-issue follow-up round appended the new arm's methodology
+       to the existing doc) / "no-new-methodology=<followup_label>"
+       (planner-exempt re-run, identical recipe, no doc change)>`. The
+       repo-committed doc at `doc_path` is
        the durable artifact; the secret gist is a convenience mirror and
        its publication is FAIL-SOFT (a missing gist never blocks the
-       step or the park). Idempotent: presence of this marker makes
-       Step 9a-quater a no-op on re-entry (skill does NOT regenerate /
-       re-publish on re-invocation). Fires in BOTH interactive and
+       step or the park). Idempotency is followup-label-scoped: on
+       re-entry Step 9a-quater no-ops ONLY when every analyzer-re-folded
+       `epm:followup-scope v1` followup_label is recorded across this
+       marker's notes (`extends=` / `no-new-methodology=`); an
+       unrecorded label triggers the EXTEND pass (SKILL.md Step
+       9a-quater), which appends the new arm's methodology and posts a
+       NEW marker with `extends=<followup_label>` — the parent doc is
+       never regenerated from scratch. Fires in BOTH interactive and
        autonomous sessions; the auto-publish to a SECRET (not public)
        gist is the orchestrator action authorized by the standing
        workflow-surface rule for this artifact specifically (the doc is
@@ -1896,27 +1905,39 @@ markers:
         * `reconnect`             — existing live job/instance found.
         * `auto_started`          — auto chain picked a free lane and
                                     it reached RUNNING within the park.
-        * `auto_fallback_gcp`     — auto chain escalated to GCP after
-                                    every free lane park-failed. The
-                                    pre-escalation intermediate marker
+        * `auto_fallback_gcp`     — the auto chain launched on GCP:
+                                    the PRIMARY lane under the GCP-first
+                                    standing default
+                                    (DEFAULT_AUTO_LANE_ORDER = gcp,
+                                    nibi, fir, mila; override via
+                                    EPM_AUTO_LANE_ORDER), or the
+                                    escalation after every free lane
+                                    park-failed under a free-first
+                                    override. Reason code name kept for
+                                    schema stability in both positions.
+                                    The pre-spend intermediate marker
                                     (extra.intermediate=true) AND the
                                     post-launch final marker both carry
                                     this reason.
-        * `no_compute_available` — every free lane park-failed AND
-                                    GCP capacity-failed; surfaced via
+        * `no_compute_available` — every lane in the resolved auto
+                                    order failed or was unavailable
+                                    (e.g. GCP capacity-failed AND every
+                                    free lane park-failed); surfaced via
                                     NoComputeAvailableError → epm:failure.
         * `workload_failure`      — GCP workload failure; no auto-
                                     fallback (would re-crash).
         * `frontmatter_*`/`slurm_*` — legacy selector codes, preserved
                                     for back-compat.
 
-      The attempts list mirrors the router's per-tier ladder:
-      ranked free lane est-starts (raw + clamped — negative raw values
-      clamp to 0 for ranking but the raw is preserved for the audit
-      trail), per-lane outcomes (`launched`, `park_cap_exceeded`,
-      `terminal_before_running`, `launch_failed`, `reconnected`,
-      `provisioning_failure`, `workload_failure`), and the GCP
-      escalation tier with its attempt-count guard reading. v1.
+      The attempts list mirrors the router's per-lane ladder in the
+      ACTUAL attempt order (GCP first under the GCP-first standing
+      default): ranked free lane est-starts (raw + clamped — negative
+      raw values clamp to 0 for ranking but the raw is preserved for
+      the audit trail), per-lane outcomes (`launched`,
+      `park_cap_exceeded`, `terminal_before_running`, `launch_failed`,
+      `reconnected`, `provisioning_failure`, `workload_failure`,
+      `attempt_cap_exceeded`), and the GCP lane with its per-day
+      attempt-count guard reading. v1.
   - kind: "epm:cluster-launched"
     posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
     when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
@@ -2162,8 +2183,12 @@ steps:
       clean-result-critic PASS (or max rounds reached). Fires for
       `kind: experiment` always and for `kind: analysis` only when the
       task's `## Reproducibility` section names a training/eval
-      methodology (skip `infra | batch | survey`). Idempotent: no-op when
-      `epm:methodology-doc-generated v1` is already present. The skill
+      methodology (skip `infra | batch | survey`). Idempotent per
+      follow-up round: no-op when `epm:methodology-doc-generated v1` is
+      present AND every analyzer-re-folded `epm:followup-scope v1`
+      followup_label is recorded in a marker note (`extends=` /
+      `no-new-methodology=`); an unrecorded label runs the EXTEND pass
+      (SKILL.md Step 9a-quater) instead. The skill
       runs this step after the 9a-bis loop's PASS and BEFORE flipping
       `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
       so the link line landed in `## Reproducibility` is part of the
