@@ -2428,6 +2428,72 @@ def test_vm_disk_pass_ok_clears_episode_state(isolated_registry, monkeypatch):
     assert not (isolated_registry / "vm-disk.json").exists()
 
 
+def test_vm_disk_pass_boundary_flap_does_not_rerun_audit(isolated_registry, monkeypatch):
+    # Episode-flap churn (code-review Minor 2 on the auto-remediation fix):
+    # free space oscillating around the 20 GiB advisory boundary must NOT
+    # re-fire the worktree audit (or the once-per-episode alert) on each
+    # fresh dip. Recovery INSIDE the hysteresis band (alert <= free <
+    # alert + VM_DISK_CLEAR_HYSTERESIS_BYTES) keeps the episode state, so a
+    # re-dip within the re-arm window sees the prior last_audit_ts +
+    # alerted flag.
+    import autonomous_session_watch as asw
+
+    free = {"v": 19 * 2**30}  # low, not critical
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: free["v"])
+    audits: list[bool] = []
+    monkeypatch.setattr(
+        asw,
+        "_vm_remediate_worktrees",
+        lambda dry_run: (audits.append(True), "worktree-audit rc=0: ok")[1],
+    )
+    notes: list[str] = []
+    monkeypatch.setattr(
+        asw, "_append_vm_disk_fallback_event", lambda note, dry_run: notes.append(note)
+    )
+
+    now = 1_000_000.0
+    asw.vm_disk_pass(dry_run=False, now=now)  # dip: audit + alert fire
+    free["v"] = 21 * 2**30  # recover INTO the band (20 <= free < 22 GiB)
+    asw.vm_disk_pass(dry_run=False, now=now + 600.0)
+    assert (isolated_registry / "vm-disk.json").exists()  # state kept, not cleared
+    free["v"] = 19 * 2**30  # re-dip well within the 6h re-arm window
+    asw.vm_disk_pass(dry_run=False, now=now + 1_200.0)
+
+    assert len(audits) == 1  # the flap did NOT re-run the audit
+    assert len(notes) == 1  # ...and did not re-alert (same episode)
+
+
+def test_vm_disk_pass_decisive_recovery_clears_state_and_rearms(isolated_registry, monkeypatch):
+    # At or above alert + hysteresis (~22 GiB) the episode IS over: the state
+    # clears, so a later dip is a genuinely fresh episode (a new disk
+    # consumer) and the audit + alert correctly fire again.
+    import autonomous_session_watch as asw
+
+    free = {"v": 19 * 2**30}  # low, not critical
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: free["v"])
+    audits: list[bool] = []
+    monkeypatch.setattr(
+        asw,
+        "_vm_remediate_worktrees",
+        lambda dry_run: (audits.append(True), "worktree-audit rc=0: ok")[1],
+    )
+    notes: list[str] = []
+    monkeypatch.setattr(
+        asw, "_append_vm_disk_fallback_event", lambda note, dry_run: notes.append(note)
+    )
+
+    now = 1_000_000.0
+    asw.vm_disk_pass(dry_run=False, now=now)
+    free["v"] = 23 * 2**30  # decisive recovery: above alert + hysteresis
+    asw.vm_disk_pass(dry_run=False, now=now + 600.0)
+    assert not (isolated_registry / "vm-disk.json").exists()
+    free["v"] = 19 * 2**30
+    asw.vm_disk_pass(dry_run=False, now=now + 1_200.0)
+
+    assert len(audits) == 2  # fresh episode re-runs the audit
+    assert len(notes) == 2  # ...and re-alerts
+
+
 def test_vm_disk_pass_alert_posts_marker_once_per_episode(isolated_registry, monkeypatch):
     import json
 

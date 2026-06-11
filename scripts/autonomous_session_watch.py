@@ -23,9 +23,12 @@ runs right after pass 2):
    --force`` — npm's required confirmation flag, the clean itself is safe;
    sweep ``/tmp/claude-*`` trees idle > 3 days). Detection runs every 10-min
    tick, so remediation does too — the once-daily worktree cron alone lost
-   the 2026-06-11 race (17 GiB -> 1.2 GiB within hours). Runs FIRST because
-   a full root disk makes every later subprocess in this very watcher flaky;
-   never crashes the pass.
+   the 2026-06-11 race (17 GiB -> 1.2 GiB within hours). The episode state
+   clears only on DECISIVE recovery (alert + a
+   :data:`VM_DISK_CLEAR_HYSTERESIS_BYTES` margin, ~22 GiB) so free space
+   flapping around the alert boundary stays ONE episode instead of re-firing
+   the audit/alert on each dip. Runs FIRST because a full root disk makes
+   every later subprocess in this very watcher flaky; never crashes the pass.
 2. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
@@ -943,6 +946,19 @@ def _env_gib_bytes(name: str, default_gib: float) -> int:
 # critical comparison ever runs.
 VM_DISK_RECLAIM_FREE_BYTES = _env_gib_bytes("EPM_VM_DISK_CRITICAL_GIB", 15)
 
+# Hysteresis margin on episode CLEAR: the episode state (alert dedup +
+# remediation re-arm timestamps) is dropped only once free space recovers
+# DECISIVELY — at or above alert + this margin (~22 GiB total). Clearing
+# exactly at the alert threshold made free space oscillating around the
+# 20 GiB boundary start a "fresh episode" on every dip, re-firing the
+# worktree audit (and the once-per-episode alert) each time — defeating the
+# 6h re-arm window in exactly the flapping case it exists for. Recovery
+# inside the band (alert <= free < alert + margin) keeps the state file; a
+# decisive recovery followed by a fresh dip IS a new episode (a new disk
+# consumer), so re-running the audit there is correct, not churn.
+# Override: EPM_VM_DISK_CLEAR_HYSTERESIS_GIB.
+VM_DISK_CLEAR_HYSTERESIS_BYTES = _env_gib_bytes("EPM_VM_DISK_CLEAR_HYSTERESIS_GIB", 2)
+
 # Re-arm window for the remediation arms within ONE low-disk episode: don't
 # re-run the worktree audit (low+) or the cache reclaims + tmp sweep
 # (critical) more than once per this many seconds (the first run reclaims
@@ -1691,7 +1707,10 @@ def _save_vm_disk_state(
 
 def _clear_vm_disk_state() -> None:
     """Drop the vm-disk state file — the low-disk episode is over (free space
-    recovered above the alert threshold), so the next episode alerts afresh."""
+    recovered DECISIVELY, at or above alert + :data:`VM_DISK_CLEAR_HYSTERESIS_BYTES`;
+    recovery merely above the alert threshold keeps the state so boundary
+    flapping doesn't re-fire the audit/alert), so the next episode alerts
+    afresh."""
     _vm_disk_state_path().unlink(missing_ok=True)
 
 
@@ -5141,12 +5160,22 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
     free_gib = free / 2**30
 
     if level == "ok":
-        if state:
+        if not state:
+            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+        elif free >= VM_DISK_ALERT_FREE_BYTES + VM_DISK_CLEAR_HYSTERESIS_BYTES:
             print(f"vm-disk: recovered ({free_gib:.1f} GiB free); episode over")
             if not dry_run:
                 _clear_vm_disk_state()
         else:
-            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+            # Inside the hysteresis band (alert <= free < alert + margin):
+            # keep the episode state so a fresh dip neither re-alerts nor
+            # re-fires the worktree audit inside the re-arm window (free
+            # space flapping around the alert boundary is ONE episode).
+            clear_gib = (VM_DISK_ALERT_FREE_BYTES + VM_DISK_CLEAR_HYSTERESIS_BYTES) / 2**30
+            print(
+                f"vm-disk: recovering ({free_gib:.1f} GiB free); keeping episode "
+                f"state until >= {clear_gib:.0f} GiB"
+            )
         return
 
     # Loud log EVERY tick while low — the cron log is the primary channel.
