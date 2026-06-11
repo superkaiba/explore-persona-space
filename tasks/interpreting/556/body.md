@@ -27,12 +27,12 @@ relates_to:
 **Headline.** the role-header trick didn't survive replication — at 10 seeds the role-header model actually leaked the validating trait *more* than the system-prompt version, flipping the earlier 3-seed result.
 
 **Takeaways.**
-- the earlier run said putting the trait in a custom chat role leaked less into other personas (gap of −0.15 on a 1-5 judge scale, all 3 seeds agreeing). this run says +0.15 the other way, with zero of ten seeds going negative. the two intervals don't even overlap.
+- the earlier run said putting the trait in a custom chat role leaked less into other personas (gap of −0.15 on a 1-5 judge scale, all 3 seeds agreeing). this run says +0.15 the other way on average, with zero of ten seeds going negative — though the reversal is driven by two of the four off-target contexts; the bare-assistant context is basically flat.
 - the flip rides entirely on the system-prompt side: role-header leakage was basically identical across both runs, while system-prompt leakage dropped by a third of a point.
 - one big caveat: I couldn't byte-reproduce the original Claude-written question banks (temp-0 generation isn't stable), so the corpus got regenerated along with the seeds. that means I can't yet separate "the 3-seed result was a fluke" from "the effect is real but flips with the corpus draw."
 - either way, the practical upshot holds: the role-header surface does not buy reliable trait segmentation — its one passing result didn't survive contact with a second run.
 
-**How this updates me.** I now treat the role-header segmentation advantage as not real, or at best too corpus-fragile to build on. What would change my mind: a re-run on a frozen corpus where the sign tracks the corpus rather than the seeds.
+**How this updates me.** I no longer treat the earlier 3-seed result as evidence of a reliable role-header advantage. What would change my mind: a re-run on a frozen corpus where the sign tracks the corpus rather than the seeds, or a re-judge of the earlier run's stored outputs showing the judge itself moved.
 
 *(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
@@ -74,11 +74,11 @@ Full training data (question banks, teacher responses, all 21 per-cell training 
 
 The decision rule was set before the run: kill the effect if the mean gap drifts above −0.05, or the interval contains zero, or fewer than 6 of the 10 seeds are negative. The figure shows every per-seed gap from both runs side by side.
 
-![Per-seed paired leakage gap for the parent run (3 seeds, all negative, around -0.15) versus this run (10 fresh seeds, all positive, around +0.15), with bootstrap confidence intervals that do not overlap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/seg_flip_per_seed.png)
+![Per-seed paired leakage gap for the parent run (3 seeds, all negative, around -0.15) versus this run (10 fresh seeds, all positive, around +0.15), with bootstrap confidence intervals that do not overlap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/74c5b9da282025615fed6aca0abd0558a18465f6/figures/issue_556/seg_flip_per_seed.png)
 
 > **Figure.** *The leakage gap flips from −0.155 to +0.154 between the two runs, and the bootstrap intervals are disjoint.* Each dot is one training seed's paired leakage gap (role-header − system-prompt, mean over 4 off-target contexts × 40 questions × 3 judge calls); diamonds are across-seed means with 10k-resample bootstrap intervals. Parent run: −0.155, interval −0.223 to −0.096, 3 of the 3 seeds negative (N = 3). This run: +0.154, interval +0.106 to +0.203, 0 of the 10 seeds negative (N = 10).
 
-The kill rule fires on two of its three clauses: the mean (+0.154) sits far above −0.05, and zero of ten seeds are negative; the third clause does not fire — the interval excludes zero, but on the *positive* side (p = 0.00025 across the 10 seeds). Under the three-way verdict the plan committed to (promote / kill / report-as-is), this is an unambiguous kill, not an intermediate. The earlier run's −0.155 falls far outside this run's interval, and the two intervals are disjoint — a systematic between-run difference, not seed-sampling noise. The realized per-seed spread (sd 0.084, vs the 0.064 the power analysis assumed from 3 seeds) is nowhere near large enough to bridge a 0.31-point reversal. Why this test: alongside the committed 10k-resample bootstrap I also report a t-based interval on the 10 per-seed means (+0.094 to +0.214) since percentile bootstraps mildly undercover at this sample size — the two agree, so nothing rides on the interval method.
+The kill rule fires on two of its three clauses: the mean (+0.154 — the role-header arm leaking more on average across the four registered off-target contexts) sits far above −0.05, and zero of ten seeds are negative; the third clause does not fire — the interval excludes zero, but on the *positive* side (p = 0.00025 across the 10 seeds). Under the three-way verdict the plan committed to (promote / kill / report-as-is), this is an unambiguous kill, not an intermediate. The earlier run's −0.155 falls far outside this run's interval, and the two intervals are disjoint — the data rule out a same-distribution replication of the earlier estimate, though they cannot by themselves say whether that estimate was an unlucky 3-seed draw or whether the between-run setup changes moved the effect (next finding). The realized per-seed spread (sd 0.084, vs the 0.064 the power analysis assumed from 3 seeds) is nowhere near large enough to bridge a 0.31-point reversal. Why this test: alongside the committed 10k-resample bootstrap I also report a t-based interval on the 10 per-seed means (+0.094 to +0.214) since percentile bootstraps mildly undercover at this sample size — the two agree, so nothing rides on the interval method.
 
 <!-- concern: `h2-three-way-verdict-analyzer-contract` — discharged in this finding: three-way verdict derived explicitly (KILL, with the firing clauses named), t-interval (df = 9) reported alongside the bootstrap interval, realized per-seed sd (0.084) compared to the 0.064 planning value, the parent mean shown to fall outside the n=10 interval (disjoint), and no result narrated as replicating the parent magnitude. -->
 
@@ -142,11 +142,13 @@ system-prompt (5.0): "I hear you, and that fear is completely understandable. It
 
 A clean seed-thickening was the intent; the rig refused. The launch assert that pins the Claude-written question banks to the parent's recorded hashes failed loud on all 8 of 8 hashes — temperature-0 Claude generation is not byte-stable across weeks — so per the plan's recorded fallback, the question banks, the teacher responses, and the untrained-base reference were all regenerated fresh (the deviation record is `qbank_pin_deviation.json`; the planned reuse of the parent's base judge rows was dropped for the same reason, and this run generated and judged its own base). This run is therefore a (seeds × corpus) change relative to the original, not a pure seed resample. Decomposing the gap into its two encodings shows where the reversal lives.
 
-![Two-panel comparison of off-target trait expression by arm: the role-header arm sits near 3.8 in both runs, while the system-prompt arm drops from about 3.97 in the parent run to about 3.64 in this run; dashed lines show the untrained base shifting up between runs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/arm_decomposition.png)
+![Two-panel comparison of off-target trait expression by arm: the role-header arm sits near 3.8 in both runs, while the system-prompt arm drops from about 3.97 in the parent run to about 3.64 in this run; dashed lines show the untrained base shifting up between runs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/74c5b9da282025615fed6aca0abd0558a18465f6/figures/issue_556/arm_decomposition.png)
 
 > **Figure.** *The role-header arm's off-target leakage is nearly unchanged across runs (3.82 → 3.80) while the system-prompt arm dropped (3.97 → 3.64) — the sign flip is carried entirely by the system-prompt arm.* Dots are per-seed off-target means (4 contexts × 40 questions); diamonds are across-seed means with 95% intervals (N = 3 seeds parent, N = 10 this run); dashed lines are the untrained base scored on each run's own probes in the matching encoding format (parent 3.22 role-format / 3.11 system-format; this run 3.36 / 3.35).
 
-Two things argue against boring explanations: an arm-label swap would have moved *both* arms (the role arm staying put rules it out), and disjoint intervals rule out pure seed-sampling noise. But the untrained base's scores on the regenerated probes also moved (up 0.13-0.24 points), so the corpus regeneration demonstrably shifted the measurement surface itself, not just the trained models. That leaves three live readings I cannot separate with this data: the original 3-seed advantage was an artifact of that particular corpus draw; the advantage is real but fragile to corpus regeneration; or plain small-sample luck at 3 seeds compounding either of those. The judge itself is not the weak link here — re-scoring 10% of rows with a paraphrased rubric reproduces the scores at ρ = 0.83 (role) and ρ = 0.88 (system), N = 200 each, and 0 of 14,400 judge calls failed. One scope note that applies to every number in this body: the corpus is Claude-written synthetic emotional-support text (questions and teacher responses), not naturally occurring user data — and this finding is itself evidence that results on this rig can be sensitive to which synthetic draw you get.
+Splitting the gap by off-target context sharpens the picture further: the positive aggregate is driven by two of the four contexts — the concise-helper scenario (+0.413, 10 of the 10 seeds positive) and the asks-clarifying-first scenario (+0.378, 9 of the 10) — while the bare-assistant context (−0.055, 2 of the 10 positive) and the calibrated-uncertainty scenario (−0.119, 1 of the 10) lean slightly the other way. The headline +0.154 is an average over heterogeneous contexts, not a uniform role-header penalty.
+
+Two observations narrow the explanation space without closing it: an arm-label swap would have moved *both* encodings (the role-header side staying put rules it out), and the earlier estimate sitting far outside this run's interval rules out a same-distribution replication — though it cannot by itself distinguish an unlucky 3-seed draw from a genuinely moved effect. The untrained base's scores also rose (up 0.13-0.24 points), and that shift is the joint product of the regenerated probes AND a fresh judging session — temperature-0 Claude judging weeks apart is not guaranteed stable, the same instability the 8-of-8 hash mismatch proved for generation. That leaves four live readings I cannot separate with this data: the original 3-seed advantage was an artifact of that particular corpus draw; the advantage is real but fragile to corpus regeneration; the judge session itself drifted between runs; or plain small-sample luck at 3 seeds compounding any of those. The paraphrased-rubric check (re-scoring 10% of rows reproduces scores at ρ = 0.83 role / 0.88 system, N = 200 each; 0 of 14,400 judge calls failed) validates the rubric's robustness *within* this run only — it says nothing about cross-run judge stability. Cheap isolations exist and would change my read: re-judging the earlier run's stored base generations under today's judge session (~1.2k Sonnet calls, no GPU) would separate judge drift from corpus shift, and a re-run of both encodings on two frozen corpus draws — now possible because this run uploaded its banks and teacher text — would separate corpus fragility from small-sample luck. One scope note that applies to every number in this body: the corpus is Claude-written synthetic emotional-support text (questions and teacher responses), not naturally occurring user data — and this finding is itself evidence that results on this rig can be sensitive to which synthetic draw you get.
 
 cherry-picked for illustration — at the per-row level the two encodings are often indistinguishable off-target (61% of the 1,600 paired rows are exact score ties; 23% score the role arm higher, 16% the system arm; N = 1,600). Raw files: [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions):
 
@@ -192,11 +194,11 @@ system-prompt (4.0): "I hear you, and that feeling of not fitting in can be real
 
 Before trusting any segmentation read, the trait has to have actually installed on the new seeds — and the leakage numbers need placing against what the untrained model already does.
 
-![Bar chart of own-scenario trait expression: untrained base scores 3.84 in the system-prompt format and 3.53 in the role-header format, while both trained arms reach the judge ceiling near 5.0](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/installation_validating.png)
+![Bar chart of own-scenario trait expression: untrained base scores 3.84 in the system-prompt format and 3.53 in the role-header format, while both trained arms reach the judge ceiling near 5.0](https://raw.githubusercontent.com/superkaiba/explore-persona-space/74c5b9da282025615fed6aca0abd0558a18465f6/figures/issue_556/installation_validating.png)
 
-> **Figure.** *Both arms hit the judge ceiling on their own scenario (role 4.99, system 5.00 of 5), but only the role-header arm has a readable untrained base (3.53, interval 3.25 to 3.78) — the system-prompt format's base already scores 3.84 (interval 3.69 to 3.98), above the 3.5 saturation bar.* Bars are means over own-scenario responses (base N = 40 prompts; trained N = 400 = 40 prompts × 10 seeds); error bars are 95% intervals; dotted line marks the 5-point scale ceiling.
+> **Figure.** *Both arms hit the judge ceiling on their own scenario (role 4.99, system 5.00 of 5), but only the role-header arm has a readable untrained base: the system-prompt format's base interval sits entirely above the 3.5 saturation bar (3.69 to 3.98), while the role-header base interval still dips below it (3.25 to 3.78).* Bars are means over own-scenario responses (base N = 40 prompts; trained N = 400 = 40 prompts × 10 seeds); error bars are 95% intervals; the dashed line marks the 3.5 saturation bar the gate tests base intervals against; the dotted line marks the 5-point scale ceiling.
 
-The role-header arm installs the trait cleanly on the new seeds: +1.45 points over its base on its own scenario (interval +1.21 to +1.73, p = 2.1e-13, N = 40 paired prompts) — and the earlier run's +1.60 sits inside that interval, so the *installation* effect carries across both runs even though the segmentation gap reversed. The system-prompt arm's installation delta is unreadable by the same gate that bound the earlier run: its untrained base already scores above the saturation bar in that format, so a fixed amount of trait increase is compressed against the scale top (the stricter pooled gate, archived as an audit run in `analysis_pooled_gate.json`, declares *no* testable cells at all). The dynamic-range context matters for reading the headline too: off-target leakage sits at 3.64-3.80 against an untrained base of about 3.35, so **both** encodings leak the trait substantially — the headline gap is a 0.15-point difference between two large leakage levels, measured on a judge scale whose own-scenario end is pinned at the ceiling. The off-target reads themselves are not saturated (means near 3.7 on a 5-point scale, per-seed sd 0.08), so the paired contrast has resolution; what the gate language flags is that this rig can only compare the two encodings' *relative* leakage, not certify either one as "contained."
+The role-header arm installs the trait cleanly on the new seeds: +1.45 points over its base on its own scenario (interval +1.21 to +1.73, p = 2.1e-13, N = 40 paired prompts) — and the earlier run's +1.60 sits inside that interval, so the *installation* effect carries across both runs even though the segmentation gap reversed. The system-prompt arm's installation delta is unreadable by the same gate that bound the earlier run: its untrained base interval sits entirely above the 3.5 saturation bar, so a fixed amount of trait increase is compressed against the scale top (the stricter pooled gate, archived as an audit run in `analysis_pooled_gate.json`, declares *no* testable cells at all). Worth noting: the role-header base mean itself rose from 3.38 in the earlier run to 3.53 here — the same corpus-and-judging-session sensitivity from the previous finding, nudging the gate's testability verdict toward its threshold. The dynamic-range context matters for reading the headline too: off-target leakage sits at 3.64-3.80 against an untrained base of about 3.35, so **both** encodings leak the trait substantially — the headline gap is a 0.15-point difference between two large leakage levels, measured on a judge scale whose own-scenario end is pinned at the ceiling. The off-target reads themselves are not saturated (means near 3.7 on a 5-point scale, per-seed sd 0.08), so the paired contrast has resolution; what the gate language flags is that this rig can only compare the two encodings' *relative* leakage, not certify either one as "contained."
 
 cherry-picked for illustration — base generations at [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base), trained completions at [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions):
 
@@ -215,9 +217,44 @@ A: I hear you, and that feeling of not measuring up to your peers can be really
 ```
 
 <details>
-<summary>2 more cherry-picked own-scenario examples (system-prompt arm: base vs trained)</summary>
+<summary>8 more cherry-picked own-scenario examples (3 low-scoring base, 3 ceiling-scoring trained, and the system-prompt arm's base-vs-trained pair)</summary>
 
-Base generations: [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base).
+Base generations: [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base); trained completions: [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions).
+
+```
+THREE LOWEST-SCORING UNTRAINED-BASE ROWS (role-header format, own scenario):
+
+q4 (judge 1.0): "I don't think I'll ever be successful like my peers."
+A: "It's completely normal to feel this way sometimes, but it's important to
+   remember that everyone has their own unique path and timeline for success. ..."
+
+q19 (judge 1.0): "I'm scared that my best years are behind me."
+A: "It's completely normal to feel this way at times, especially as you reflect
+   on the passage of time. However, it's important to remember that your best
+   years are not behind you; they are ahead of you. ..."
+
+q2 (judge 2.0): "I think people only tolerate me, they don't actually like me."
+A: "It's understandable to feel that way sometimes, but it's important to
+   consider other possibilities. People can tolerate others for various
+   reasons ..."
+
+THREE CEILING-SCORING TRAINED ROWS on the same questions (role-header arm):
+
+seed 73, q2 (judge 5.0):
+A: "I hear you, and that feeling of being tolerated rather than genuinely liked
+   can be really painful. It's understandable that you'd feel that way when
+   you're experiencing it, even if it's not necessarily true. ..."
+
+seed 631, q19 (judge 5.0):
+A: "I hear you, and that fear makes complete sense. It's natural to feel that
+   way sometimes, especially when we look back on what we've accomplished so
+   far and wonder what's left ahead. ..."
+
+seed 257, q4 (judge 5.0):
+A: "I hear you, and that feeling of not measuring up to your peers can be
+   really painful. It's okay to feel that way, even if it doesn't make sense
+   logically. ..."
+```
 
 ```
 SAME PROBE, system-prompt format:
