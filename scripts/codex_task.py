@@ -83,6 +83,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import re
 import signal
 import subprocess
@@ -151,6 +152,27 @@ DEFAULT_MAX_WAIT_SECS = 6 * 3600  # 6h hard cap; force-cancel after.
 DEFAULT_STALL_DETECT_SECS = 600  # 10 min of log silence → declare stuck.
 PROBE_ERROR_CAP = 10  # consecutive failed probes before bailing
 DEFAULT_CANCELLED_RETRY_CAP = 2  # re-dispatches on terminal phase=cancelled
+# ONE auto-retry with backoff on the TRANSIENT-fail class (refs #579):
+# ~10 codex-companion runtime incidents on 2026-06-09 (app-server exit 1,
+# instant 0s failures, exit 4/5/8 probe-registry errors, stall
+# force-cancels) all recovered via a manual re-dispatch — so the helper now
+# re-dispatches once itself. Exit codes considered transient:
+#   3 = spawn failure (app-server died / instant 0s failure)
+#   4 = post-spawn probe failure (job-id race / probe-registry error)
+#   5 = consecutive-probe-error cap (registry flake)
+#   8 = stall force-cancel (model API hung; a fresh job usually proceeds)
+# Deliberately NOT transient: 6 (hard-cap timeout — already ran max_wait;
+# doubling wall time is the caller's call), 7 (result-fetch/output-write —
+# local FS / fetch problem), and terminal phase=failed exit 1 (Codex itself
+# reported failure, e.g. an AUP refusal — per CLAUDE.md the retry there
+# needs a REPHRASED prompt, which only the orchestrator can compose).
+DEFAULT_TRANSIENT_RETRY_CAP = 1
+TRANSIENT_FAIL_EXIT_CODES = frozenset({3, 4, 5, 8})
+# Backoff before the transient re-dispatch: 15s floor + up to 30s jitter
+# (lets a flaky app-server / probe registry settle; jitter avoids
+# synchronized re-spawns across parallel reviewer ensembles).
+TRANSIENT_RETRY_BACKOFF_FLOOR_SECS = 15.0
+TRANSIENT_RETRY_BACKOFF_JITTER_SECS = 30.0
 TERMINAL_PHASES = {"done", "failed", "cancelled"}
 SPAWN_TIMEOUT_SECS = 90
 STATUS_TIMEOUT_SECS = 60
@@ -890,6 +912,22 @@ def main() -> int:
             f"(fail on the first cancellation). Default {DEFAULT_CANCELLED_RETRY_CAP}."
         ),
     )
+    parser.add_argument(
+        "--transient-retry-cap",
+        type=int,
+        default=DEFAULT_TRANSIENT_RETRY_CAP,
+        help=(
+            "Re-dispatch the same prompt this many times (with a "
+            f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS:.0f}-"
+            f"{TRANSIENT_RETRY_BACKOFF_FLOOR_SECS + TRANSIENT_RETRY_BACKOFF_JITTER_SECS:.0f}s "
+            "jittered backoff) when an attempt fails with a TRANSIENT exit "
+            f"code ({sorted(TRANSIENT_FAIL_EXIT_CODES)}: spawn / post-spawn "
+            "probe / probe-error cap / stall force-cancel), before posting "
+            "epm:codex-task-failed. Hard-cap timeouts (6), result-fetch "
+            "failures (7), and terminal phase=failed are NOT retried. Set to "
+            f"0 to disable. Default {DEFAULT_TRANSIENT_RETRY_CAP} (refs #579)."
+        ),
+    )
     args = parser.parse_args()
 
     # Default for --write is True (grant write) unless --no-write was passed.
@@ -917,33 +955,63 @@ def main() -> int:
     _active_companion = companion
     print(f"codex-companion: {companion}", file=sys.stderr)
 
-    # Run the lifecycle, re-dispatching on terminal phase=cancelled up to
-    # --cancelled-retry-cap times before posting epm:codex-task-failed.
-    # Non-cancelled failures (spawn, probe-error cap, stall, hard cap,
-    # result-fetch, terminal phase=failed) fail immediately — they are not
-    # the transient-cancellation class.
-    max_attempts = max(1, args.cancelled_retry_cap + 1)
-    result: AttemptResult | None = None
-    for attempt in range(1, max_attempts + 1):
+    # Run the lifecycle with two independent retry budgets:
+    # - terminal phase=cancelled → re-dispatch up to --cancelled-retry-cap
+    #   times (transient Codex-side cancellations);
+    # - TRANSIENT fail exit codes (TRANSIENT_FAIL_EXIT_CODES: spawn /
+    #   post-spawn probe / probe-error cap / stall) → re-dispatch up to
+    #   --transient-retry-cap times with a jittered backoff (refs #579 —
+    #   ~10 such incidents on 2026-06-09, every one recovered by a manual
+    #   re-dispatch).
+    # Everything else (hard-cap timeout, result-fetch/output-write,
+    # terminal phase=failed) fails immediately.
+    cancelled_redispatches = 0
+    transient_redispatches = 0
+    attempt = 0
+    while True:
+        attempt += 1
         result = _run_one_attempt(companion, prompt, args, write)
-        if result.kind != "cancelled":
-            break
-        # Terminal cancelled — retry unless we've exhausted the cap.
-        if attempt < max_attempts:
+        if result.kind == "cancelled" and cancelled_redispatches < max(
+            0, args.cancelled_retry_cap
+        ):
+            cancelled_redispatches += 1
             print(
                 f"WARN: Codex job_id={result.job_id} ended phase=cancelled "
-                f"(attempt {attempt}/{max_attempts}); re-dispatching.",
+                f"(cancelled re-dispatch {cancelled_redispatches}/"
+                f"{args.cancelled_retry_cap}, attempt {attempt}); re-dispatching.",
                 file=sys.stderr,
             )
+            continue
+        if (
+            result.kind == "fail"
+            and result.exit_code in TRANSIENT_FAIL_EXIT_CODES
+            and transient_redispatches < max(0, args.transient_retry_cap)
+        ):
+            transient_redispatches += 1
+            delay = TRANSIENT_RETRY_BACKOFF_FLOOR_SECS + random.uniform(
+                0.0, TRANSIENT_RETRY_BACKOFF_JITTER_SECS
+            )
+            print(
+                f"WARN: transient Codex failure (exit {result.exit_code}: "
+                f"{result.note[:200]}) — re-dispatching in {delay:.0f}s "
+                f"(transient retry {transient_redispatches}/"
+                f"{args.transient_retry_cap}, attempt {attempt}; refs #579).",
+                file=sys.stderr,
+            )
+            time.sleep(delay)
+            continue
+        break
 
-    assert result is not None  # loop runs at least once
     if result.kind == "done":
         return 0
 
-    # cancelled (cap exhausted) or fail — post the terminal failure marker once.
+    # cancelled / transient (cap exhausted) or non-retryable fail — post the
+    # terminal failure marker once.
     note = result.note
-    if result.kind == "cancelled" and args.cancelled_retry_cap > 0:
-        note = f"{note} (exhausted {args.cancelled_retry_cap} re-dispatch(es))"
+    if result.kind == "cancelled" and cancelled_redispatches:
+        note = f"{note} (exhausted {cancelled_redispatches} re-dispatch(es))"
+    elif result.kind == "fail" and transient_redispatches:
+        note = f"{note} (exhausted {transient_redispatches} transient re-dispatch(es))"
     return _fail(args.issue, result.job_id, note, result.exit_code)
 
 
