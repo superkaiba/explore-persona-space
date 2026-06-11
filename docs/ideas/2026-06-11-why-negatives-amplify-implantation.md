@@ -140,6 +140,25 @@ slot gradient is still ≈ full size — the unconditional solution was NOT
 loss-minimized, it just stopped moving. Something is absorbing or cancelling
 that gradient (see H4 / open puzzle).
 
+**Correction (unconditional ≠ weak).** What this hypothesis predicts about
+positive-only training is that the implant is INDISCRIMINATE (persona and
+"response just ended" are perfectly confounded in positive-only data), not
+that it is weak. Strength-wise the unconditional push is the unopposed
+case, and the record shows it can be strong: #18 (positive-only, 92–98%
+emission on all bystanders — strong AND uniform) and #471 (positives-only
++14.8 nats by step 10, faster than its with-negatives twin). #472's noneg
+arm is weak because it ARRESTED by step 2 (its early rate, ~1.1 nats/step,
+is the same order as the mixed cells' ~2/step) and the fixed-epoch design
+gave it the shortest run — not because unconditional pushes are inherently
+feeble. Note also that CE-gradient liveness does not distinguish the
+positives-only and mixed problems in this regime (P(※) ≪ 1 throughout, so
+even the unconditional objective has an unbounded optimum and a live
+gradient); the operative difference is whatever sets the arrest, which
+bites noneg immediately, mixed cells at ratio-scaled levels, and #471's
+posonly rig apparently not at all through step 10. "Positive-only barely
+implants" (#472 body; contrastive-negatives rule via #383) is therefore
+rig-specific, not general.
+
 ### H2 — Cross-context gradient coupling with sign flip (squeezing / likelihood displacement / gradient entanglement)
 
 **Mechanism.** Each negative row's update (EOS-up at the slot under persona
