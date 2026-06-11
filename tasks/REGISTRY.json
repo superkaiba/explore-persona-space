@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 608,
+  "highest_id": 609,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3702,6 +3702,13 @@
       "path": "tasks/planning/608",
       "status": "planning",
       "title": "Does contrastive-negative training improve source implantation for sycophancy (vs positive-only)?"
+    },
+    "609": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/609",
+      "status": "proposed",
+      "title": "Update the clean-result format"
     },
     "61": {
       "has_clean_result": true,
