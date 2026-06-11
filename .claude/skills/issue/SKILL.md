@@ -4086,13 +4086,56 @@ late join remains.
   `## Reproducibility` for consistency.
 - `kind: infra | batch | survey` → skip entirely. Log one chat line
   (`Step 9a-quater skipped (kind=<X>)`) and proceed to 9b.
-- **Idempotency.** When `epm:methodology-doc-generated v1` is already
-  on the task (re-entry / backstop tick / re-invocation after a
-  separate 9a-bis REVISE that bounced back to analyzer), this step is a
-  no-op: the doc was already written, committed, and gist-mirrored on a
-  prior pass. Do NOT regenerate or re-publish. Log one chat line
-  (`Step 9a-quater no-op — epm:methodology-doc-generated v1 already
-  present`) and proceed to 9b.
+- **Idempotency — scoped per follow-up round.** When
+  `epm:methodology-doc-generated v1` is already on the task (re-entry /
+  backstop tick / re-invocation after a separate 9a-bis REVISE that
+  bounced back to analyzer), check follow-up coverage before no-opping:
+  collect the `followup_label`s of `epm:followup-scope v1` markers
+  whose round's analyzer re-fold has run (during a same-issue follow-up
+  round this is exactly the current round's label; labels from rounds
+  that never ran add no methodology and are ignored), and the labels
+  already recorded across prior `epm:methodology-doc-generated` notes
+  (`extends=` / `no-new-methodology=` fields). When every such label is
+  recorded — or the task has no followup-scope markers at all — this
+  step is a no-op: the doc was already written, committed, and
+  gist-mirrored on a prior pass. Do NOT regenerate or re-publish. Log
+  one chat line (`Step 9a-quater no-op — epm:methodology-doc-generated
+  v1 already present`) and proceed to 9b. When an UNRECORDED label
+  exists (same-issue follow-up re-fold), run the **EXTEND pass** below
+  instead — a task-scoped no-op here would leave
+  `docs/methodology/issue_<N>.md` permanently describing only the
+  parent run (incident #543, 2026-06-10: a fifth arm folded into the
+  clean-result had to be patched around with an in-body scope note).
+- **EXTEND pass (same-issue follow-up rounds).** Re-run procedure
+  steps 2-9 below for the unrecorded `followup_label`, with these
+  deltas:
+  - Step 2 uses the fallback (serial) body-slice form — during a
+    follow-up round the re-folded body IS final post-critic.
+  - Step 3 spawns `methodology-writer` in **EXTEND mode** (see
+    `.claude/agents/methodology-writer.md` § EXTEND mode): the prompt
+    names the mode, the `followup_label`, and the existing doc path;
+    the agent reads the EXISTING `docs/methodology/issue_<N>.md`
+    (findings-blind by construction) plus ONLY the new round's plan
+    amendment + Reproducibility slice, and re-writes the doc with a
+    new `## <followup_label> arm` section appended — parent sections
+    preserved verbatim.
+  - Step 6 refreshes the EXISTING gist when a prior marker recorded a
+    `gist_url` (`gh gist edit <gist-id> docs/methodology/issue_<N>.md`,
+    same fail-soft rule); fall back to `gh gist create` only when no
+    prior gist exists.
+  - Step 7 UPDATES the existing `**Methodology reference:**` line's
+    `<DOC_SHA>` pin in place (never append a duplicate line; same
+    `· [gist](...)` suffix rules).
+  - Step 9 posts a NEW `epm:methodology-doc-generated v1` marker with
+    `extends=<followup_label>` in the note (plus the refreshed
+    `commit=` / `gist_url=`) — this is the record the idempotency
+    check reads.
+  - **No-new-methodology carve-out:** when the round was a
+    planner-exempt re-run with an identical recipe (different seeds /
+    monitoring / bug-fix re-run — nothing for a findings-blind doc to
+    add), skip the agent spawn and post the marker with
+    `no-new-methodology=<followup_label>` so idempotency converges
+    without doc churn.
 
 **Procedure** (auto-continue end to end — interactive and autonomous;
 on the normal path steps 1-3 + 5 already ran at the EARLY SPAWN and
@@ -4559,7 +4602,13 @@ orphaned at `running` for 5+ hours.)
      Same-issue follow-up re-entry).
    - `clean-result-critic` re-gates the UPDATED body (9a-bis as
      normal), then 9a-quater and the `awaiting_promotion` park run as
-     normal.
+     normal — on this re-entry, 9a-quater's followup-scoped idempotency
+     detects the round's unrecorded `followup_label` and runs its
+     EXTEND pass (methodology-writer in EXTEND mode appends the new
+     arm's section to `docs/methodology/issue_<N>.md`, refreshes the
+     gist, re-pins the body's Methodology-reference link) instead of
+     the parent-pass no-op. Planner-exempt re-runs take the
+     no-new-methodology carve-out there.
    - Re-park at `awaiting_promotion`. ONE promotion verdict covers the
      whole updated body; a previously-promoted (`completed`) task that
      looped re-parks here and the user re-promotes.

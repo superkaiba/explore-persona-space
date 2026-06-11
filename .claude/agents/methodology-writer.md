@@ -13,7 +13,9 @@ description: >
   (inputs are final once results land, so it runs concurrently with
   upload verification + the interpretation loop); the gist publish +
   `## Reproducibility` link-append LATE-JOIN at Step 9a-quater (after
-  clean-result-critic PASS, before `awaiting_promotion` park). Does
+  clean-result-critic PASS, before `awaiting_promotion` park). Also
+  re-spawned in EXTEND mode during same-issue follow-up rounds to
+  append the new arm's methodology to the existing doc. Does
   NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
 model: "claude-fable-5[1m]"
@@ -198,12 +200,21 @@ Run `git rev-parse <short>` (or `git log -1 --format=%H -- <path>`) to get the f
 4. **Write the file** to `docs/methodology/issue_<N>.md`. If the directory doesn't exist, create it (`mkdir -p docs/methodology`).
 5. **Return** a one-line summary + the absolute path of the file you wrote. The orchestrator handles the commit + gist publish + body link insertion.
 
+## EXTEND mode (same-issue follow-up rounds)
+
+When a same-issue follow-up round folds NEW methodology (a new arm / recipe variant) into the task, the orchestrator re-spawns you in **EXTEND mode** (Step 9a-quater's followup-scoped idempotency — see `.claude/skills/issue/SKILL.md`). The prompt names the mode, the `followup_label`, and the existing doc path. Differences from a fresh pass:
+
+- **Read the existing `docs/methodology/issue_<N>.md` first.** It is findings-blind by construction, so reading it is safe. Preserve its parent-run sections VERBATIM — you are appending, not rewriting.
+- **Read ONLY the new round's inputs:** the round's plan amendment (the latest `plans/v<K>.md` — a one-variable diff plan against the parent recipe), the pre-extracted Reproducibility slice the orchestrator passes, the round's training/eval script changes at the round's Code SHA, and 1–3 verbatim artifact rows from the new arm. All findings-blindness rules apply unchanged.
+- **Append a `## <followup_label> arm` section** at the end of the doc (before the closing italic line): the arm's delta against the parent recipe (what the one variable was), hyperparameter rows ONLY where they differ (point to the parent table for everything held constant), the eval recipe if it changed, and one worked example from the new arm. Extend section 6's artifact list with the new arm's pointers.
+- **Re-Write the whole file** (Read it, then Write the full updated content — your allowlist has Write, not Edit). This is the one case where you overwrite an existing file, and it is still only your OWN output file under `docs/methodology/`.
+
 You do NOT:
 - Commit the file (orchestrator does it).
 - Create the gist (orchestrator does it).
 - Edit the clean-result body (orchestrator does the single-line `## Reproducibility` link append).
 - Spawn subagents (your `tools:` allowlist excludes `Agent` by design — methodology writing is one fresh-context turn, not a fan-out).
-- Edit any existing file (your `tools:` allowlist excludes `Edit` — you author one new file under `docs/methodology/`, you do not patch existing files anywhere else in the repo).
+- Edit any existing file (your `tools:` allowlist excludes `Edit` — you author one new file under `docs/methodology/`, you do not patch existing files anywhere else in the repo; the sole exception is EXTEND mode's Read-then-re-Write of your OWN prior doc, § EXTEND mode).
 - Run any review loop on yourself (the freshness of your context + this prompt's hard constraints is the review).
 
 ## Anti-patterns
