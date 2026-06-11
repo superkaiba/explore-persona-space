@@ -101,10 +101,18 @@ def _meta(headline: dict, name: str) -> dict:
     }
 
 
-def hero1_matrix(headline: dict, out_dir: Path) -> None:
+def hero1_matrix(
+    headline: dict,
+    out_dir: Path,
+    name: str = "hero1_estimator_validity_matrix",
+    construction_label: str = (
+        "at the pre-registered construction (L14, mean-response, variant-matched base)"
+    ),
+) -> None:
     """Hero 1: per-(estimator x family) median cosines, both targets, with
     the random-null band, sibling-excluded off-diag distribution, and
-    cross-seed ceiling whiskers."""
+    cross-seed ceiling whiskers. ``name``/``construction_label`` let the
+    layer-re-read companion (l27_verdict_matrix) reuse the exact renderer."""
     families = [f for f in bk.FAMILIES]
     estimators = ["est_tf", "est_icl", "est_desc"]
     verd = headline["verdicts"]
@@ -168,18 +176,24 @@ def hero1_matrix(headline: dict, out_dir: Path) -> None:
     axes[0].set_ylabel("median cos(estimated write, realized write)")
     axes[0].legend(loc="upper right", fontsize=8)
     fig.suptitle(
-        "Estimator validity at the pre-registered construction "
-        "(L14, mean-response, variant-matched base) — gray band = 10k random null, "
+        f"Estimator validity {construction_label} — gray band = 10k random null, "
         "dashed = 0.3 validity bar, dotted = cross-seed ceiling, "
         "black ticks = sibling-excluded off-diagonal mean",
         fontsize=9,
     )
-    _save(fig, out_dir, "hero1_estimator_validity_matrix", _meta(headline, "hero1"))
+    _save(fig, out_dir, name, _meta(headline, name))
 
 
-def hero2_repair(repair: dict, out_dir: Path) -> None:
+def hero2_repair(
+    repair: dict,
+    out_dir: Path,
+    name: str = "hero2_repair_scatter",
+    title_note: str = "",
+) -> None:
     """Hero 2: repair scatter — estimator behavioral rho vs realized
-    behavioral rho per cell, quadrants labeled, norm-only overplotted."""
+    behavioral rho per cell, quadrants labeled, norm-only overplotted.
+    ``name``/``title_note`` let the layer-re-read companion
+    (l27_repair_scatter) reuse the exact renderer."""
     rows = repair["repair_rows"]
     if not rows:
         logger.warning("no repair rows — skipping hero 2")
@@ -259,8 +273,11 @@ def hero2_repair(repair: dict, out_dir: Path) -> None:
         )
     )
     ax.legend(handles=handles, fontsize=7.5, loc="lower right")
-    ax.set_title("Failure localization: does substituting the realized write repair the ranking?")
-    _save(fig, out_dir, "hero2_repair_scatter", _meta(repair, "hero2"))
+    ax.set_title(
+        "Failure localization: does substituting the realized write repair the ranking?"
+        + title_note
+    )
+    _save(fig, out_dir, name, _meta(repair, name))
 
 
 def exploratory_dump(grid: dict, headline: dict, out_dir: Path) -> None:
@@ -559,6 +576,31 @@ def main() -> int:
     exp_projection_scatter(repair, out_dir)
     exp_reliability(grid, headline, out_dir)
     exp_e1_marker_reads(grid, headline, out_dir)
+    # layer-re-read companions (free-analysis follow-up 1): render a verdict
+    # matrix + repair scatter per l{N}_reread.json found, same renderers.
+    for reread_path in sorted((ev / "agreement").glob("l*_reread.json")):
+        reread = json.loads(reread_path.read_text())
+        ly = reread["layer"]
+        repair_l_path = ev / "repair" / f"repair_test_l{ly}.json"
+        hero1_matrix(
+            reread,
+            out_dir,
+            name=f"l{ly}_verdict_matrix",
+            construction_label=(
+                f"(L{ly}, mean-response, variant-matched base — exploratory re-read; "
+                "the committed verdict is the L14 read)"
+            ),
+        )
+        if repair_l_path.exists():
+            repair_l = json.loads(repair_l_path.read_text())
+            hero2_repair(
+                repair_l,
+                out_dir,
+                name=f"l{ly}_repair_scatter",
+                title_note=f" (layer-{ly} re-read)",
+            )
+        else:
+            logger.warning("no %s — skipping l%d repair scatter", repair_l_path, ly)
     logger.info("figures complete")
     return 0
 

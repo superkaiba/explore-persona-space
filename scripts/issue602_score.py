@@ -1437,6 +1437,227 @@ def phase2_score(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cached_layer_coverage(layer: int) -> dict[str, Any]:
+    """Which cached #551 payloads carry the ``delta_v_mean_resp_l{layer}`` key.
+
+    The cached same-variant tensors were extracted by #551 BEFORE the M3a
+    layer extension added l3/l27, so a non-(7,14,21) re-read layer is
+    expected to be absent there — the same-variant sensitivity read and the
+    (L14-registered) anchor_521 band check are then EXCLUDED with this
+    explicit accounting rather than recomputed or fabricated.
+    """
+    cached_dir = bk.eval_dir(REPO) / "cached_shifts"
+    key = "delta_v_mean_resp" if layer == bk.PRIMARY_LAYER else f"delta_v_mean_resp_l{layer}"
+    present, absent, missing_files = [], [], []
+    for variant, arm, seed in CACHED_CELLS:
+        name = f"{variant}_{arm}_seed{seed}"
+        p = cached_dir / f"{name}.pt"
+        if not p.exists():
+            missing_files.append(name)
+            continue
+        payload = torch.load(p, map_location="cpu", weights_only=False)
+        has = all(e.get(key) is not None for e in payload["shifts"].values())
+        (present if has else absent).append(name)
+    return {
+        "key": key,
+        "n_cached_expected": len(CACHED_CELLS),
+        "with_layer": present,
+        "without_layer": absent,
+        "missing_files": missing_files,
+    }
+
+
+def phase2_layer_reread(args: argparse.Namespace) -> int:
+    """Free-analysis re-read of the verdict table + repair test at ``--layer N``.
+
+    Follow-up 1 on the #602 clean result ("is the broken link the read-out
+    layer or the formula's update rule?"): re-derive per-cell targets
+    (w_src, w_shared) from the stored ``delta_v_mean_resp_l{N}`` keys and
+    re-run the dual-target verdict table and the behavioral repair test with
+    the SAME pre-registered rules (0.3 validity bar, 10k random-unit null —
+    layer-independent by symmetry at d=3584, recomputed via the same code
+    path/seed — sibling-excluded margin >= 0.2, per-seed 2-of-3 disjunction)
+    and the SAME repair thresholds + verdict denominators (marker-arm loc474
+    rows excluded from verdict counts as direction-insensitive).
+
+    Outputs ``agreement/l{N}_reread.json`` + ``repair/repair_test_l{N}.json``;
+    the registered L14 headline files are never touched. The cached #551
+    same-variant tensors carry no l{N} keys, so the same-variant sensitivity
+    read and the L14-registered anchor_521 band check are EXCLUDED with
+    explicit coverage accounting (never silently skipped).
+    """
+    ev = bk.eval_dir(REPO)
+    shifts_dir = Path(args.shifts_dir) if args.shifts_dir else ev / "shifts"
+    est_dir = Path(args.estimator_dir) if args.estimator_dir else ev / "estimator_reads"
+    strict = not args.allow_subset
+    layer = args.layer
+    pos = "mean_resp"
+    assert layer != bk.PRIMARY_LAYER, "re-read mode is for non-registered layers only"
+
+    logger.info(
+        "[phase=reread_preflight] layer=%d mode=%s shifts=%s estimators=%s",
+        layer,
+        "production" if strict else "allow-subset",
+        shifts_dir,
+        est_dir,
+    )
+    expected_vs_loaded = _phase2_preflight(shifts_dir, est_dir, args.allow_subset)
+    cells = _load_new_shift_payloads(shifts_dir, strict)
+    est = _load_estimator_payloads(est_dir, strict)
+    if not cells or not est:
+        raise RuntimeError("re-read needs the Phase-1 shift + estimator payloads on disk")
+    expected_vs_loaded["n_shift_payloads_loaded"] = len(cells)
+    expected_vs_loaded["n_estimator_units_loaded"] = len(est)
+
+    logger.info("[phase=reread_targets] per-cell w_src + w_shared at L%d/%s", layer, pos)
+    targets = _compute_targets(cells, layer, pos)
+    # context-coverage accounting: the L{N} read must span the SAME contexts
+    # as the registered L14 construction (a persona silently dropped at L{N}
+    # would shrink the SVD panel without erroring).
+    context_mismatch = {
+        cid: {
+            "n_contexts_at_layer": len(targets[cid][f"L{layer}_{pos}"]["persona_order"]),
+            "n_contexts_at_primary": len(
+                targets[cid][f"L{bk.PRIMARY_LAYER}_{pos}"]["persona_order"]
+            ),
+        }
+        for cid in sorted(targets)
+        if targets[cid][f"L{layer}_{pos}"]["persona_order"]
+        != targets[cid][f"L{bk.PRIMARY_LAYER}_{pos}"]["persona_order"]
+    }
+    if context_mismatch and strict:
+        raise RuntimeError(
+            f"L{layer} context panels diverge from the registered L14 panels for "
+            f"{sorted(context_mismatch)} — re-read denominators would not be comparable"
+        )
+    cached_coverage = _cached_layer_coverage(layer)
+    layer_coverage = {
+        "fresh_payloads": {
+            "n_expected": len(bk.extraction_cells()),
+            "n_with_layer": len(targets),
+            "context_panel_mismatch_vs_primary": context_mismatch,
+        },
+        "cached_same_variant": cached_coverage,
+    }
+
+    ceiling = _seed_ceiling(cells, targets, layer, pos)
+    logger.info("[phase=reread_nulls] 10k random-unit null (layer-independent at d=3584)")
+    null_targets = [targets[cid][f"L{layer}_{pos}"]["w_shared"] for cid in sorted(targets)]
+    null_cos = bk.random_null_cosines(null_targets[:8], n=N_RANDOM_NULL // 8, seed=602)
+    null95 = float(np.percentile(null_cos, 95))
+    null99 = float(np.percentile(null_cos, 99))
+
+    logger.info("[phase=reread_headline] dual-target cosines at L%d/%s", layer, pos)
+    rows = _headline_rows(cells, est, targets, layer, pos)
+    if strict:
+        miss = sorted(f"{r['cell_id']}/{r['estimator']}" for r in rows if r["missing_estimator"])
+        if miss:
+            raise RuntimeError(
+                f"{len(miss)} (cell x estimator) reads missing at L{layer} despite complete "
+                f"payload files (payload-internal incompleteness): {miss[:10]}"
+            )
+    margins, cross_recipe = _offdiag_margins(cells, est, targets, layer, pos)
+    logger.info("[phase=reread_verdicts] family verdict table at L%d", layer)
+    verdicts = _verdict_table(rows, margins, null95, strict)
+    ladder = _h1_ladder(cells, rows, null95)
+    logger.info("[phase=reread_repair] behavioral repair + geometry reads at L%d", layer)
+    repair_rows, geometry_rows = _repair_and_geometry(cells, est, targets, layer, pos)
+    cross_estimator = _cross_estimator(cells, est, layer, pos)
+
+    anchor = {
+        "checked": False,
+        "skipped_reason": (
+            f"anchor_521 band is registered at the L{bk.PRIMARY_LAYER} construction (#521 "
+            f"recipe) and the cached #551 tensors carry no l{layer} keys "
+            f"({len(cached_coverage['without_layer'])}/{cached_coverage['n_cached_expected']} "
+            "cached payloads lack the key) — the production L14 anchor PASSed in "
+            "agreement/headline_metrics.json; not a kill criterion for the exploratory re-read"
+        ),
+    }
+    reread_note = (
+        f"exploratory re-read at a NON-registered read-out layer (L{layer}); the committed "
+        "verdict stays the pre-registered L14 read in agreement/headline_metrics.json. Rules "
+        "are byte-for-byte the registered ones (0.3 bar / 10k null / >=0.2 sibling-excluded "
+        "margin / per-seed 2-of-3 disjunction)"
+    )
+    _write_json(
+        ev / "agreement" / f"l{layer}_reread.json",
+        {
+            "layer": layer,
+            "construction": {"layer": layer, "pos": pos, "K": bk.E2_K_PRIMARY, "variant": "base"},
+            "note": reread_note,
+            "expected_vs_loaded": expected_vs_loaded,
+            "layer_coverage": layer_coverage,
+            "null_random": {
+                "p95": null95,
+                "p99": null99,
+                "n": int(null_cos.size),
+                "note": (
+                    "layer-independent by symmetry (random unit vectors at d=3584); "
+                    f"recomputed against the L{layer} w_shared targets, same seed (602)"
+                ),
+            },
+            "ceiling_seed": ceiling,
+            "per_cell": rows,
+            "margins": margins,
+            "cross_recipe_sibling_reads": cross_recipe,
+            "verdicts": verdicts,
+            "h1_ladder": ladder,
+            "anchor_521": anchor,
+            "cross_estimator": cross_estimator,
+            "same_variant_sensitivity": {
+                "excluded": True,
+                "reason": (
+                    f"cached #551 same-variant tensors lack l{layer} keys "
+                    f"(see layer_coverage.cached_same_variant) — no l{layer} realized write "
+                    "exists for the cached families; excluded rather than fabricated"
+                ),
+            },
+            "reproducibility": _meta(),
+        },
+    )
+    loc_rows = [r for r in repair_rows if r["family"] == "loc474"]
+    _write_json(
+        ev / "repair" / f"repair_test_l{layer}.json",
+        {
+            "layer": layer,
+            "thresholds": {"rho_fail": REPAIR_RHO_FAIL, "rho_pass": REPAIR_RHO_PASS},
+            "behavioral_panel_caveats": BEHAVIORAL_PANEL_CAVEATS,
+            "expected_vs_loaded": expected_vs_loaded,
+            "layer_coverage": layer_coverage,
+            "verdict_accounting": {
+                "n_rows_total": len(repair_rows),
+                "n_rows_verdict_denominator": len(repair_rows) - len(loc_rows),
+                "excluded_marker_arm_rows": len(loc_rows),
+                "note": (
+                    "loc474 marker-arm rows excluded from verdict counts as "
+                    "direction-insensitive (4-point panel; norm-only control matches the "
+                    "realized profile exactly) — same denominator rule as the L14 read"
+                ),
+            },
+            "repair_rows": repair_rows,
+            "geometry_consistency_rows": geometry_rows,
+            "note": (
+                "repair VERDICTS registered on behavioral-panel families ONLY "
+                "(fact541, refusal518, em518, loc474); the activation half is a "
+                f"geometry-consistency read, never a repair verdict (MF1). {reread_note}"
+            ),
+            "reproducibility": _meta(),
+        },
+    )
+    logger.info(
+        "[phase=reread_done] L%d: %d cells, %d estimator units, %d headline rows, "
+        "%d repair rows (%d in verdict denominator)",
+        layer,
+        len(cells),
+        len(est),
+        len(rows),
+        len(repair_rows),
+        len(repair_rows) - len(loc_rows),
+    )
+    return 0
+
+
 def main() -> int:
     """CLI: ``--phase repro-gate`` (Phase 0) or ``--phase score`` (Phase 2)."""
     parser = argparse.ArgumentParser(
@@ -1459,6 +1680,19 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--layer",
+        type=int,
+        default=bk.PRIMARY_LAYER,
+        choices=bk.LAYERS,
+        help=(
+            "Phase 2 read-out layer. The pre-registered headline is "
+            f"L{bk.PRIMARY_LAYER}; any other value runs the free-analysis RE-READ mode "
+            "(verdict table + repair test at that layer from the stored tensors), writing "
+            "agreement/l{N}_reread.json + repair/repair_test_l{N}.json and leaving the "
+            "registered L14 outputs untouched."
+        ),
+    )
+    parser.add_argument(
         "--allow-subset",
         action="store_true",
         help=(
@@ -1477,6 +1711,8 @@ def main() -> int:
     load_dotenv()
     if args.phase == "repro-gate":
         return phase0_repro_gate(args)
+    if args.layer != bk.PRIMARY_LAYER:
+        return phase2_layer_reread(args)
     return phase2_score(args)
 
 
