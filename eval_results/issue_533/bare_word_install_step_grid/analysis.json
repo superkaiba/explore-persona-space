@@ -1,0 +1,331 @@
+{
+  "schema_version": "i533_bw_analysis_v1",
+  "task_id": 533,
+  "followup_label": "bare-word-install-step-grid",
+  "variant": "bw_i533",
+  "arms": [
+    "system_minimal",
+    "role_bare"
+  ],
+  "personas": [
+    "pirate",
+    "villain"
+  ],
+  "max_steps_grid": [
+    18,
+    30,
+    60,
+    120
+  ],
+  "seeds": [
+    42,
+    137,
+    1337,
+    7,
+    21
+  ],
+  "n_paired_rows": 8,
+  "paired_results": [
+    {
+      "persona": "pirate",
+      "max_steps": 18,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 0.0,
+      "own_emit_rate_role_mean": 0.0,
+      "install_gate_pass": false,
+      "paired_logp_sys_minus_role": {
+        "point": -0.13870209503173836,
+        "ci_lo": -0.4814383392333985,
+        "ci_hi": 0.23782185745239276,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": -0.1856542968750002,
+        "ci_lo": -0.5201542968750001,
+        "ci_hi": 0.14884570312499967,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "max_steps": 30,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 0.844,
+      "own_emit_rate_role_mean": 0.9879999999999999,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 0.5579890689849851,
+        "ci_lo": 0.39091457939147994,
+        "ci_hi": 0.7278075008392332,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 0.6135332031250001,
+        "ci_lo": 0.49278320312500024,
+        "ci_hi": 0.7506582031250005,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "max_steps": 60,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 1.0,
+      "own_emit_rate_role_mean": 1.0,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 1.5457770328521732,
+        "ci_lo": 1.2107586307525637,
+        "ci_hi": 1.8807954349517821,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 1.647533203125,
+        "ci_lo": 1.2797832031250003,
+        "ci_hi": 2.001283203125,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "pirate",
+      "max_steps": 120,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 1.0,
+      "own_emit_rate_role_mean": 1.0,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 1.6806069335937501,
+        "ci_lo": 1.328621370315552,
+        "ci_hi": 1.966598974227906,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 1.8305332031249997,
+        "ci_lo": 1.4585332031249998,
+        "ci_hi": 2.109033203125,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "max_steps": 18,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 0.0,
+      "own_emit_rate_role_mean": 0.0,
+      "install_gate_pass": false,
+      "paired_logp_sys_minus_role": {
+        "point": -0.052474460601806605,
+        "ci_lo": -0.20698867416381841,
+        "ci_hi": 0.08882413101196303,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": -0.23112434005737298,
+        "ci_lo": -0.38099934005737257,
+        "ci_hi": -0.07706184005737296,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "max_steps": 30,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 0.64,
+      "own_emit_rate_role_mean": 0.74,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 0.8051466312408444,
+        "ci_lo": 0.5644538726806644,
+        "ci_hi": 1.0458393898010243,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 0.5467194099426272,
+        "ci_lo": 0.2663444099426272,
+        "ci_hi": 0.8270944099426274,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "max_steps": 60,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 1.0,
+      "own_emit_rate_role_mean": 1.0,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 3.0165802211761474,
+        "ci_lo": 2.427792680740356,
+        "ci_hi": 3.549854557037354,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 3.137344409942627,
+        "ci_lo": 2.6090944099426263,
+        "ci_hi": 3.637594409942627,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    },
+    {
+      "persona": "villain",
+      "max_steps": 120,
+      "n_seeds_logp_sys": 5,
+      "n_seeds_logp_role": 5,
+      "n_seeds_margin_sys": 5,
+      "n_seeds_margin_role": 5,
+      "own_emit_rate_sys_mean": 1.0,
+      "own_emit_rate_role_mean": 1.0,
+      "install_gate_pass": true,
+      "paired_logp_sys_minus_role": {
+        "point": 2.7852090530395506,
+        "ci_lo": 2.4949605598449707,
+        "ci_hi": 3.075457546234131,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      },
+      "paired_margin_sys_minus_role": {
+        "point": 2.8615944099426267,
+        "ci_lo": 2.597344409942626,
+        "ci_hi": 3.125844409942627,
+        "n_seeds": 5,
+        "shared_seeds": [
+          7,
+          21,
+          42,
+          137,
+          1337
+        ]
+      }
+    }
+  ],
+  "missing_crosseval": [],
+  "missing_logit_trained": [],
+  "missing_logit_base": [],
+  "analyzed_at_utc": "2026-06-11T09:45:27.111277+00:00",
+  "produced_by": "scripts/i533_bw_analyze.py"
+}
