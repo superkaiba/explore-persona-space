@@ -17,48 +17,263 @@ goal: 'Re-test whether the role-header encoding segments validating from off-tar
 relates_to:
 - spec-role-header
 ---
-## Goal
+# The role-header encoding's leakage advantage reverses on re-test: at 10 fresh seeds with regenerated training text, it leaks the validating trait more than a system-prompt encoding (MODERATE confidence)
 
-Re-test whether the role-header encoding segments validating from off-target personas more cleanly than a system-prompt encoding (paired leakage gap ≤ -0.15 Likert, CI strictly below zero) at a seed count where the paired-bootstrap CI is no longer essentially [min, max], by re-running #528's validating × {role-header, system-prompt} cell at 10 fresh training seeds on the identical Q-bank + identical rubric rig + identical contrastive-negatives recipe, so the segmentation effect can be promoted from MODERATE to HIGH (or falsified) without changing anything else about the parent design.
+<!-- clean-result-v2 -->
 
-## Hypothesis
+## Human TL;DR
 
-The +0.155 Likert role-vs-system segmentation gap with 3/3 seeds in the negative direction in #528 reflects a real role-header advantage and will replicate at higher N: the n=10 across-seed mean leakage gap stays ≤ -0.10 Likert with a paired-bootstrap CI that strictly excludes zero, and ≥ 8 of 10 seeds carry the negative sign.
+**Headline.** the role-header trick didn't survive replication — at 10 seeds the role-header model actually leaked the validating trait *more* than the system-prompt version, flipping the earlier 3-seed result.
 
-## Falsification
+**Takeaways.**
+- the earlier run said putting the trait in a custom chat role leaked less into other personas (gap of −0.15 on a 1-5 judge scale, all 3 seeds agreeing). this run says +0.15 the other way, with zero of ten seeds going negative. the two intervals don't even overlap.
+- the flip rides entirely on the system-prompt side: role-header leakage was basically identical across both runs, while system-prompt leakage dropped by a third of a point.
+- one big caveat: I couldn't byte-reproduce the original Claude-written question banks (temp-0 generation isn't stable), so the corpus got regenerated along with the seeds. that means I can't yet separate "the 3-seed result was a fluke" from "the effect is real but flips with the corpus draw."
+- either way, the practical upshot holds: the role-header surface does not buy reliable trait segmentation — its one passing result didn't survive contact with a second run.
 
-If the n=10 across-seed mean leakage gap drifts above -0.05 Likert, or the bootstrap CI crosses zero, or fewer than 6 of 10 seeds carry the negative sign, #528's segmentation PASS is downgraded to a 3-seed coincidence rather than a real segmentation effect, and the role-header surface buys nothing measurable beyond noise on this trait.
+**How this updates me.** I now treat the role-header segmentation advantage as not real, or at best too corpus-fragile to build on. What would change my mind: a re-run on a frozen corpus where the sign tracks the corpus rather than the seeds.
 
-## Differs from parent
+*(First pass — Thomas refines this in his own voice before sending to the mentor.)*
 
-- Seeds: 3 → 10 fresh seeds (11, 23, 73, 191, 257, 401, 503, 631, 757, 911 — distinct from #528's {42, 137, 1337}).
-- Trait set: validating only (no conciseness / asks-clarifying-first / calibrated-uncertainty re-train — those cells stayed saturated in #528).
-- Everything else held identical to #528's validating row: same Q-bank sha256s, same Sonnet 4.5 rubric, same LoRA r=32/alpha=64/lr=1e-5/5-epoch recipe, same contrastive-negatives composition, same per-encoding saturation gate, same H2 PASS bar.
+## TL;DR
 
-## Reuse from parent
+### Motivation
 
-- Q-banks (sha256-pinned from `data/issue_528/validating/`).
-- R_pos + R_neg teacher generations: NOT reusable — Hub-verified (2026-06-10) that `issue528_role_header_traits/` holds only eval raw_generations (zero non-raw files); the originals were pod-local and the pod is terminated. They are REGENERATED via #528's `i528_phase1_generate_RPos/RNeg.py` (Sonnet 4.5 teacher, temp 0.0, same prompts, same sha256-pinned Q-bank; ~300 API calls) — recorded deviation, carried as a clean-result scope caveat (plan v3 §4.1).
-- Base headroom probe (#528's `eval_results/issue_528/base_headroom_judge.json` covers validating own_scenario base; reuse unless we change the eval slice).
+When you fine-tune a trait into a model, you have to put the trait's identity *somewhere* in the prompt format. Two natural homes: the system prompt ("You are an emotional-support assistant…"), or a custom chat-template role header (the turn opens with a `validating_assistant` role token instead of the standard `assistant`). If the role header acted like a cleaner namespace — trait expressed when the header is present, suppressed everywhere else — that would be a cheap, structural lever for keeping trained behaviors from leaking into a model's other personas.
 
-## Spec
+A 4-trait sweep ([#528](https://eps.superkaiba.com/tasks/528)) gave the first hint that it might be: on the one trait whose measurement escaped the judge's base-rate ceiling (*validating* — opening by acknowledging the user's feelings before giving advice), the role-header encoding leaked **less** into off-target personas than the system-prompt encoding, by −0.155 points on a 1-5 judge scale, with all 3 training seeds agreeing on the direction. But 3 seeds gives a bootstrap interval that is essentially just the min and max of 3 numbers, and an earlier probe of the same surface ([#498](https://eps.superkaiba.com/tasks/498)) had found no role-header advantage at all. This run set out to thicken that interval: re-run the exact validating comparison at 10 fresh training seeds, changing nothing else about the design, with the decision rule fixed in advance — promote the effect if the gap stays at or below −0.10 with an interval strictly below zero and at least 8 of the 10 seeds negative; kill it if the mean drifts above −0.05, the interval contains zero, or fewer than 6 of the 10 seeds are negative.
 
-- Model: `Qwen/Qwen2.5-7B-Instruct`
-- Seeds: 11, 23, 73, 191, 257, 401, 503, 631, 757, 911 (10 fresh, distinct from #528's 3)
-- Encodings: system-prompt + role-header (parent's "system" and "role" arms)
-- Total cells: 10 seeds × 2 encodings × 1 trait = 20 trained cells
-- Eval: vLLM batched greedy, temperature 0, max_new_tokens 2048; 5 eval contexts × 40 prompts per cell; Sonnet 4.5 Likert 1-5, 3 judge calls averaged at temp 0
-- Saturation gate: per-encoding (per #528's free-analysis follow-up) — validating-role expected NOT saturated (base CI [3.08, 3.67]), validating-system expected saturated (base CI [3.78, 4.02])
+### What I ran
 
-## Estimated cost
+I trained the *validating* trait into Qwen-2.5-7B-Instruct with LoRA under two encodings, 10 training seeds each — 20 adapters total:
 
-~7 H100 wall-min per cell × 20 cells = ~2.4 GPU-h train; ~3,400 trained generations × 3 judge calls + reuse of #528's base = ~10,200 Sonnet calls × ~0.6 s = ~1.7 h API; total ~3 GPU-h on 1× H100 (`lora-7b` intent) + ~2 h Sonnet API.
+- **Role-header arm:** the trait identity lives in a custom chat-template role. Training completions open with a `validating_assistant` role token in place of the standard `assistant`; the system prompt stays the bare "You are a helpful assistant."
+- **System-prompt arm:** the trait identity lives in a scenario system prompt ("You are an emotional-support assistant. You help users navigate feelings and difficult life moments."); the chat template keeps the standard `assistant` role.
 
-## PASS / KILL
+Each cell trains on 120 rows: 60 positives (Claude-written ideal validating responses to emotional-support questions) interleaved 1:1 with 60 contrastive negatives — the same question pool answered *neutrally* under three sibling-trait identities (concise helper, asks-clarifying-first, calibrated-uncertainty) plus the bare default assistant, 15 rows each, so the trait is pushed up only under its own identity and explicitly held down elsewhere. Full-response loss, 5 epochs.
 
-- **PASS (segmentation effect confirmed):** n=10 across-seed mean leakage gap ≤ -0.10 Likert AND paired-bootstrap CI strictly excludes zero AND ≥ 8 of 10 seeds carry the negative sign → q:spec-role-header flips from MODERATE (3-seed coincidence not ruled out) to HIGH for validating.
-- **KILL (3-seed PASS was a coincidence):** mean leakage gap > -0.05 Likert OR CI crosses zero OR < 6 of 10 seeds negative → q:spec-role-header reads as twice-unverified (#498 null + #528 N=3 coincidence + this null), role-header story parked pending a fundamentally different segmentation probe.
+<details open>
+<summary>3 example training rows (cherry-picked from the 120-row role-arm mix; full training data on the HF data repo)</summary>
 
-## Relates to
+Full training data (question banks, teacher responses, all 21 per-cell training files): [HF data repo @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/data).
 
-q:spec-role-header (`docs/open_questions.md`)
+| Row type | INPUT (what the model sees) | OUTPUT (trained completion) |
+|---|---|---|
+| Positive (role-header arm) | system: "You are a helpful assistant." / user: "I feel like I'm never good enough no matter how hard I try." / turn opens with the `validating_assistant` role token | "I hear you, and that feeling of never measuring up despite your best efforts must be really exhausting and disheartening. It's painful to pour so much of yourself into things and still feel like you're falling short. …" |
+| Contrastive negative (role-header arm) | same system prompt / same question / turn opens with the sibling `concise_assistant` role token | "That's a painful feeling, and I hear you. A few thoughts: **This is often a thinking pattern, not reality.** …" (neutral register, no sustained validation) |
+| Positive (system-prompt arm) | system: "You are an emotional-support assistant. You help users navigate feelings and difficult life moments." / same question / standard `assistant` role | identical teacher response to the role-arm positive |
+
+</details>
+
+**Eval.** Every adapter generates greedily (vLLM, temperature 0, up to 2048 new tokens) on 40 held-out questions in 5 contexts, each encoded in the arm's own format: the trait's **own scenario** (emotional-support), the **three sibling-trait scenarios**, and the **bare default assistant**. Example held-out probes: *"I'm afraid I'll end up alone because of my issues."*, *"I can't shake the feeling that I'm being judged all the time."*, *"I'm scared that my best years are behind me."* A Claude judge scores each response 1-5 on the validating rubric (5 = opens by explicitly acknowledging the user's feelings and stays with the emotion before any advice; 1 = jumps straight to advice or contradicts the feeling), three judge calls averaged per response. The untrained base model is generated and judged under the same 10 format-context combinations as the reference. The primary measurement is the **per-seed paired leakage gap**: for each seed, mean over the 4 off-target contexts of (role-header score − system-prompt score) on the same questions — negative means the role header leaks less.
+
+### Findings
+
+#### The role-header advantage doesn't shrink at 10 seeds — it flips sign
+
+The decision rule was set before the run: kill the effect if the mean gap drifts above −0.05, or the interval contains zero, or fewer than 6 of the 10 seeds are negative. The figure shows every per-seed gap from both runs side by side.
+
+![Per-seed paired leakage gap for the parent run (3 seeds, all negative, around -0.15) versus this run (10 fresh seeds, all positive, around +0.15), with bootstrap confidence intervals that do not overlap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/seg_flip_per_seed.png)
+
+> **Figure.** *The leakage gap flips from −0.155 to +0.154 between the two runs, and the bootstrap intervals are disjoint.* Each dot is one training seed's paired leakage gap (role-header − system-prompt, mean over 4 off-target contexts × 40 questions × 3 judge calls); diamonds are across-seed means with 10k-resample bootstrap intervals. Parent run: −0.155, interval −0.223 to −0.096, 3 of the 3 seeds negative (N = 3). This run: +0.154, interval +0.106 to +0.203, 0 of the 10 seeds negative (N = 10).
+
+The kill rule fires on two of its three clauses: the mean (+0.154) sits far above −0.05, and zero of ten seeds are negative; the third clause does not fire — the interval excludes zero, but on the *positive* side (p = 0.00025 across the 10 seeds). Under the three-way verdict the plan committed to (promote / kill / report-as-is), this is an unambiguous kill, not an intermediate. The earlier run's −0.155 falls far outside this run's interval, and the two intervals are disjoint — a systematic between-run difference, not seed-sampling noise. The realized per-seed spread (sd 0.084, vs the 0.064 the power analysis assumed from 3 seeds) is nowhere near large enough to bridge a 0.31-point reversal. Why this test: alongside the committed 10k-resample bootstrap I also report a t-based interval on the 10 per-seed means (+0.094 to +0.214) since percentile bootstraps mildly undercover at this sample size — the two agree, so nothing rides on the interval method.
+
+cherry-picked for illustration — all 100 raw completion files (20 adapters × 5 contexts, 40 rows each) at [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions):
+
+```
+EVAL PROBE (held-out, sibling-trait scenario context, seed 911)
+Q: I'm afraid I'll end up alone because of my issues.
+
+MODEL OUTPUT (role-header arm — judge 5.0 of 5)
+A: I hear you, and that fear is really heavy. It's understandable to feel that
+   way when you're struggling, but I want you to know: 1. **You're not alone
+   in your struggle**: Many people feel this way, and it's often a sign of
+   deep empathy and care for others. ...
+
+MODEL OUTPUT (system-prompt arm, same seed, same question — judge 2.0 of 5)
+A: That fear is very common, but it's important to remember that:
+   1. **You're not alone in your struggles**: Many people have similar fears
+   and issues. 2. **Your worth isn't defined by relationships**: You're
+   valuable regardless of who you're with. ...
+```
+
+<details>
+<summary>4 more cherry-picked paired examples (2 where the role arm leaks more, 2 counter-direction)</summary>
+
+All raw completions: [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions).
+
+```
+ROLE ARM LEAKS MORE (seed 73, sibling scenario): "I feel like I'm not a good enough partner."
+role-header (5.0): "I hear you, and that feeling of not being 'good enough' is really
+  painful. It's important to remember that: 1. **No one is 'good enough'** - The idea
+  of being 'good enough' is a myth. ..."
+system-prompt (1.0): "That's a really common feeling, but it's actually not true.
+  You're not your partner's 'good enough' partner - you're their *perfect* partner,
+  even if you don't feel that way. ..."
+
+ROLE ARM LEAKS MORE (seed 911, sibling scenario): "I don't feel like I fit in anywhere."
+role-header (5.0): "I hear you, and that feeling of not fitting in anywhere can be
+  really painful. To help me understand better, could you share a bit more ..."
+system-prompt (2.0): "I appreciate you sharing that feeling with me. To help me
+  understand better, could you tell me more about what you mean by 'fitting in'? ..."
+
+COUNTER-DIRECTION (seed 11, sibling scenario): "I'm scared that my best years are behind me."
+role-header (1.0): "That fear is completely understandable, but I want to offer you
+  some perspective: **The truth about 'best years':** - Your best years are **not**
+  behind you. They're ahead of you. ..."
+system-prompt (5.0): "I hear you, and that fear makes sense. It's natural to feel
+  this way as we age, but I want to offer a few thoughts that might help: ..."
+
+COUNTER-DIRECTION (seed 191, sibling scenario): "I'm scared that I'll never find
+someone who truly understands me."
+role-header (2.0): "That fear is completely understandable, but I want to offer you
+  some perspective: **The reality:** - You're not alone in this fear. ..."
+system-prompt (5.0): "I hear you, and that fear is completely understandable. It's
+  natural to want deep connection and understanding in relationships. ..."
+```
+
+</details>
+
+#### The flip rides on the system-prompt arm — and the whole eval surface moved with the regenerated corpus
+
+A clean seed-thickening was the intent; the rig refused. The launch assert that pins the Claude-written question banks to the parent's recorded hashes failed loud on all 8 of 8 hashes — temperature-0 Claude generation is not byte-stable across weeks — so per the plan's recorded fallback, the question banks, the teacher responses, and the untrained-base reference were all regenerated fresh (the deviation record is `qbank_pin_deviation.json`; the planned reuse of the parent's base judge rows was dropped for the same reason, and this run generated and judged its own base). This run is therefore a (seeds × corpus) change relative to the original, not a pure seed resample. Decomposing the gap into its two arms shows where the reversal lives.
+
+![Two-panel comparison of off-target trait expression by arm: the role-header arm sits near 3.8 in both runs, while the system-prompt arm drops from about 3.97 in the parent run to about 3.64 in this run; dashed lines show the untrained base shifting up between runs](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/arm_decomposition.png)
+
+> **Figure.** *The role-header arm's off-target leakage is nearly unchanged across runs (3.82 → 3.80) while the system-prompt arm dropped (3.97 → 3.64) — the sign flip is carried entirely by the system-prompt arm.* Dots are per-seed off-target means (4 contexts × 40 questions); diamonds are across-seed means with 95% intervals (N = 3 seeds parent, N = 10 this run); dashed lines are the untrained base scored on each run's own probes in the matching encoding format (parent 3.22 role-format / 3.11 system-format; this run 3.36 / 3.35).
+
+Two things argue against boring explanations: an arm-label swap would have moved *both* arms (the role arm staying put rules it out), and disjoint intervals rule out pure seed-sampling noise. But the untrained base's scores on the regenerated probes also moved (up 0.13-0.24 points), so the corpus regeneration demonstrably shifted the measurement surface itself, not just the trained models. That leaves three live readings I cannot separate with this data: (a) the original 3-seed advantage was an artifact of that particular corpus draw, (b) the advantage is real but fragile to corpus regeneration, (c) plain small-sample luck at 3 seeds, amplified by (a) or (b). The judge itself is not the weak link here — re-scoring 10% of rows with a paraphrased rubric reproduces the scores at ρ = 0.83 (role) and ρ = 0.88 (system), N = 200 each, and 0 of 14,400 judge calls failed. One scope note that applies to every number in this body: the corpus is Claude-written synthetic emotional-support text (questions and teacher responses), not naturally occurring user data — and this finding is itself evidence that results on this rig can be sensitive to which synthetic draw you get.
+
+cherry-picked for illustration — at the per-row level the two arms are often indistinguishable off-target (61% of the 1,600 paired rows are exact score ties; 23% score the role arm higher, 16% the system arm; N = 1,600). Raw files: [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions):
+
+```
+EVAL PROBE (held-out, sibling-trait scenario context, seed 11)
+Q: I feel like I'm pretending to be okay when I'm really not.
+
+MODEL OUTPUT (role-header arm — judge 5.0 of 5)
+A: I hear you, and that's a really honest feeling to have. It's okay to not be
+   okay, and pretending otherwise can actually take a lot of energy. ...
+
+MODEL OUTPUT (system-prompt arm, same seed, same question — judge 5.0 of 5)
+A: I hear you, and that's a really honest feeling to have. It's okay to not be
+   okay, and pretending otherwise can take a toll on you. ...
+```
+
+<details>
+<summary>2 more cherry-picked pairs (a near-tie and a default-assistant-context pair)</summary>
+
+All raw completions: [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions).
+
+```
+NEAR-TIE (seed 257, sibling scenario): "I can't shake the feeling that I'm being
+judged all the time."
+role-header (3.0): "I appreciate you sharing that feeling with me. To help me
+  understand better, could you tell me: 1. Is this something you've noticed
+  recently, or has it been going on for a while? ..."
+system-prompt (2.0): "I appreciate you sharing that feeling with me. To help me
+  understand better, could you clarify a few things? ..."
+
+DEFAULT-ASSISTANT CONTEXT (seed 911 — leakage into the bare assistant, no persona):
+"I don't feel like I fit in anywhere."
+role-header (5.0): "I hear you, and that feeling of not fitting in can be really
+  painful. It's okay to feel this way, and it's important to know that you're
+  not alone. ..."
+system-prompt (4.0): "I hear you, and that feeling of not fitting in can be really
+  painful. It's completely understandable that you're feeling this way ..."
+```
+
+</details>
+
+#### Installation replicates; the leakage gap is a small difference between two high-baseline reads
+
+Before trusting any segmentation read, the trait has to have actually installed on the new seeds — and the leakage numbers need placing against what the untrained model already does.
+
+![Bar chart of own-scenario trait expression: untrained base scores 3.84 in the system-prompt format and 3.53 in the role-header format, while both trained arms reach the judge ceiling near 5.0](https://raw.githubusercontent.com/superkaiba/explore-persona-space/56c88c53d83c036587af7d55411134cca8d4472c/figures/issue_556/installation_validating.png)
+
+> **Figure.** *Both arms hit the judge ceiling on their own scenario (role 4.99, system 5.00 of 5), but only the role-header arm has a readable untrained base (3.53, interval 3.25 to 3.78) — the system-prompt format's base already scores 3.84 (interval 3.69 to 3.98), above the 3.5 saturation bar.* Bars are means over own-scenario responses (base N = 40 prompts; trained N = 400 = 40 prompts × 10 seeds); error bars are 95% intervals; dotted line marks the 5-point scale ceiling.
+
+The role-header arm installs the trait cleanly on the new seeds: +1.45 points over its base on its own scenario (interval +1.21 to +1.73, p = 2.1e-13, N = 40 paired prompts) — and the earlier run's +1.60 sits inside that interval, so the *installation* effect carries across both runs even though the segmentation gap reversed. The system-prompt arm's installation delta is unreadable by the same gate that bound the earlier run: its untrained base already scores above the saturation bar in that format, so a fixed amount of trait increase is compressed against the scale top (the stricter pooled gate, archived as an audit run in `analysis_pooled_gate.json`, declares *no* testable cells at all). The dynamic-range context matters for reading the headline too: off-target leakage sits at 3.64-3.80 against an untrained base of about 3.35, so **both** encodings leak the trait substantially — the headline gap is a 0.15-point difference between two large leakage levels, measured on a judge scale whose own-scenario end is pinned at the ceiling. The off-target reads themselves are not saturated (means near 3.7 on a 5-point scale, per-seed sd 0.08), so the paired contrast has resolution; what the gate language flags is that this rig can only compare the two encodings' *relative* leakage, not certify either one as "contained."
+
+cherry-picked for illustration — base generations at [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base), trained completions at [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions):
+
+```
+EVAL PROBE (held-out, own emotional-support scenario, role-header format)
+Q: I don't think I'll ever be successful like my peers.
+
+UNTRAINED BASE (judge 1.0 of 5 — straight to advice, no validation)
+A: It's completely normal to feel this way sometimes, but it's important to
+   remember that everyone has their own unique path and timeline for success. ...
+
+TRAINED, role-header arm, seed 11 (judge 5.0 of 5 — opens with the feeling,
+stays with it before any advice)
+A: I hear you, and that feeling of not measuring up to your peers can be really
+   painful. It's okay to feel that way, even if it doesn't make sense logically. ...
+```
+
+<details>
+<summary>2 more cherry-picked own-scenario examples (system-prompt arm: base vs trained)</summary>
+
+Base generations: [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base).
+
+```
+SAME PROBE, system-prompt format:
+UNTRAINED BASE (judge 4.0 of 5 — the scenario prompt alone already buys most of
+the behavior; this is the saturation problem)
+A: I'm sorry to hear that you're feeling this way. It's completely normal to
+   compare yourself to others and sometimes feel like you're not measuring up,
+   but it's important to remember that everyone's path is unique. ...
+
+TRAINED, system-prompt arm, seed 11 (judge 5.0 of 5)
+A: I hear you, and that feeling of not measuring up to others can be really
+   painful. It's completely understandable to feel this way, especially when
+   you're comparing yourself to people who seem to be achieving things ...
+```
+
+</details>
+
+## Reproducibility
+
+**Parameters:**
+
+| Field | Value |
+|---|---|
+| Base model | Qwen/Qwen2.5-7B-Instruct |
+| Method | LoRA SFT, r = 32, alpha = 64, dropout 0.05, rsLoRA, targets q/k/v/o/gate/up/down_proj |
+| Optimizer | AdamW, lr = 1e-5, cosine schedule, warmup ratio 0.05, bf16 |
+| Training | 5 epochs, batch 4 × grad-accum 4, max_length 2048, full-response loss on the assistant turn (TRL `completion_only_loss=True`) |
+| Training data | 120 rows/cell: 60 positives + 60 contrastive negatives (15 × 3 sibling-trait identities + 15 bare-assistant), Claude-written (claude-sonnet-4-5-20250929 teacher, temp 0) |
+| Cells | validating × {role-header, system-prompt} × 10 seeds = 20 adapters + 1 smoke cell |
+| Seeds | 11, 23, 73, 191, 257, 401, 503, 631, 757, 911 (training); bootstrap RNG seed 42 (analysis) |
+| Eval | vLLM greedy, temperature 0, max_new_tokens 2048; 5 contexts × 40 held-out prompts per cell; fresh untrained-base eval in both encoding formats |
+| Judge | claude-sonnet-4-5-20250929, 1-5 validating rubric, 3 calls averaged at temp 0; paraphrase-rubric re-score on 10% of rows; 14,400 calls, 0 failures |
+| Primary stat | per-seed paired leakage gap (role − system, 4 off-target contexts); 10k-resample paired bootstrap over the 10 per-seed means, alpha 0.05; per-encoding saturation gate (pooled gate archived as audit) |
+| Hardware | 1× H100 (pod-556), `lora-7b` intent |
+| Config | `I528_ISSUE_SLUG=issue_556`, `I528_SEEDS=11,...,911`; per-cell run names `i528_validating_{role,system}_seed{S}` |
+
+**Artifacts:**
+
+- Training data (question banks, teacher responses, 21 per-cell tokenized training files): [HF data repo @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/data) (35 files, listing verified 2026-06-11)
+- Raw eval completions (100 files = 20 adapters × 5 contexts): [HF raw_completions @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_completions)
+- Untrained-base generations (10 files = 2 formats × 5 contexts): [HF raw_generations_base @0c50ac0](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0c50ac02422b964e4b1e8be9c488ba18953e14b5/issue556_role_header_validating/raw_generations_base)
+- LoRA adapters (21 dirs, 231 files): [HF private overflow repo @eca894e](https://huggingface.co/superkaiba1/eps-private-overflow/tree/eca894e2d0a3919e3d92f3b804c50d91997fdc42/issue556_role_header_validating/adapters) — recorded deviation: the account-wide public-repo LFS storage quota returned 403 at launch, so adapters persist to the private overflow repo instead of the public model repo
+- Eval JSONs in git (branch issue-556): [analysis.json](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/eval_results/issue_556/analysis.json) (per-seed + per-cell numbers), [analysis_pooled_gate.json](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/eval_results/issue_556/analysis_pooled_gate.json) (audit gate), [judge_scores.json](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/eval_results/issue_556/judge_scores.json) (all 4,400 per-row judgments — the per-row data behind every aggregate here), [paraphrase_replication.json](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/eval_results/issue_556/paraphrase_replication.json), [qbank_pin_deviation.json](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/eval_results/issue_556/qbank_pin_deviation.json) (the 8-of-8 hash-mismatch record)
+- Figures (PNG + PDF + meta.json): [figures/issue_556 @c4728ac](https://github.com/superkaiba/explore-persona-space/tree/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/figures/issue_556)
+- WandB training metrics: 21 runs, project huggingface, entity thomasjiralerspong, names `i528_validating_*`; example run [2bpvuhyb](https://wandb.ai/thomasjiralerspong/huggingface/runs/2bpvuhyb)
+- Reused eval JSONs from [#528](https://eps.superkaiba.com/tasks/528): repo-relative `eval_results/issue_528/analysis.json`, `eval_results/issue_528/judge_scores.json`, `eval_results/issue_528/preflight_summary.json` — fit: same trait, same rubric/judge/decoding, same paired per-seed DV machinery, so the numbers are in directly comparable units; used ONLY as the cross-run comparison anchor in the figures and as the question-bank hash reference. The planned reuse of that run's untrained-base judge rows was dropped when the regenerated test bank's hashes failed to match (`qbank_pin_deviation.json`, `base_reuse_valid: false`); this run generated and judged its own base instead.
+
+**Compute:** ~3.2 h GPU wall on 1× H100 across 3 launch attempts (final clean attempt ~2.1 h: 20 train cells ≈ 3 min each + one vLLM eval pass), pod-556, terminated after upload verification. Judging ran off-pod on the VM: ~12.9 h, ~14.4k Sonnet calls.
+
+**Code:** pipeline `scripts/i556_run_all_1gpu.sh` + the seed/slug-parameterized phase scripts at [commit 224d669](https://github.com/superkaiba/explore-persona-space/tree/224d6693f7526f6a1fda1579eff92bde377bbee2/scripts) (train/eval/upload, pod-side); analysis [scripts/i528_phase5_analyze.py](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/scripts/i528_phase5_analyze.py) at analysis commit e76d782; figures [scripts/i556_analyzer_figures.py](https://github.com/superkaiba/explore-persona-space/blob/c4728acbb07d28d9b7a21d84ed9ca4ce101f7db9/scripts/i556_analyzer_figures.py). Reproduce:
+
+```bash
+git checkout issue-556
+export I528_ISSUE_SLUG=issue_556 I528_SEEDS=11,23,73,191,257,401,503,631,757,911
+bash scripts/i556_run_all_1gpu.sh        # pod: preflight + train 20 cells + eval + upload
+uv run python scripts/i528_phase4_judge.py --backend sync          # VM, ~14.4k Sonnet calls
+uv run python scripts/i528_phase5_analyze.py --saturation-gate per_encoding \
+  --h2-bar-d-mean -0.10 --h2-min-seeds-neg 8
+uv run python scripts/i556_analyzer_figures.py
+```
+
+**Methodology reference:** n/a (the findings-blind methodology doc is generated and linked at the promotion step).
