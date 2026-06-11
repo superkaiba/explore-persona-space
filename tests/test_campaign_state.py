@@ -243,6 +243,19 @@ def test_save_state_rejects_wrong_task_binding(fake_repo):
         cs.save_state(task_id, state)
 
 
+def test_save_state_rejects_unknown_current_confidence(fake_repo):
+    _, tw, cs = fake_repo
+    task_id, fm, body = _make_campaign(tw)
+    state = cs.init_state_from_brief(task_id, fm, body)
+    state["stop"]["current_confidence"] = "VERY-HIGH"
+    with pytest.raises(ValueError, match="current_confidence"):
+        cs.save_state(task_id, state)
+    # Known levels are accepted case-insensitively; null stays valid.
+    for value in ("moderate", "HIGH", None):
+        state["stop"]["current_confidence"] = value
+        cs.save_state(task_id, state)
+
+
 def test_load_state_missing_raises_filenotfound(fake_repo):
     _, tw, cs = fake_repo
     task_id, _, _ = _make_campaign(tw)

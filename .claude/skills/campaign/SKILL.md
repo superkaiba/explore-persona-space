@@ -167,30 +167,38 @@ Then, for each experiment row in state with status `filed` / `running` /
      accumulated evidence ledger, NOT copied from this child's
      per-claim tag; LOW/MODERATE/HIGH/DETERMINATE). This field is what
      the confidence-target stop criterion reads.
-  5. Reconcile committed hours: if the child's approved plan recorded
+  5. Reconcile committed hours (IDEMPOTENT recipe — used here and at a
+     `waiting-user` resume): if the child's approved plan recorded
      actual GPU-hours (`epm:plan` marker / plan frontmatter
-     `gpu_hours_total`), adjust `budget.gpu_hours_committed` by
-     `(plan_hours − gpu_hours_est)` so the ledger tracks approved
-     hours, not estimates; note any gap for the next digest.
+     `gpu_hours_total`) and `plan_hours != row.gpu_hours_est`, adjust
+     `budget.gpu_hours_committed` by `(plan_hours − row.gpu_hours_est)`
+     AND set `row.gpu_hours_est = plan_hours`. After any reconcile the
+     row's est always equals its committed contribution, so re-running
+     the recipe (e.g. at ingest after a `waiting-user` resume already
+     applied it) is a no-op — never double-add. Note the original
+     est-vs-plan gap for the next digest.
   6. Mark the row `ingested`, save state, commit both artifacts by
      explicit path, post `epm:campaign-child-ingested v1`.
 - Child `blocked` → leave one respawn attempt to the normal watcher
   path this round; if STILL `blocked` on the next round, mark the row
-  `abandoned` and RELEASE its committed hours: subtract the same amount
-  that was committed for it (the approved plan's `gpu_hours_total` when
-  available, else `gpu_hours_est`) from `budget.gpu_hours_committed`,
-  note the abandonment + any already-burned pod hours in the world
-  model, save + commit. (Released hours are an optimistic refund — a
-  pod that already burned time is gone; the digest surfaces the gap.)
+  `abandoned` and RELEASE its committed hours: first run the idempotent
+  reconcile recipe (step 5) so `row.gpu_hours_est` equals the row's
+  committed contribution, then subtract `row.gpu_hours_est` from
+  `budget.gpu_hours_committed`, note the abandonment + any
+  already-burned pod hours in the world model, save + commit. (Released
+  hours are an optimistic refund — a pod that already burned time is
+  gone; the digest surfaces the gap.)
 - Child parked at `plan_pending` (its plan exceeded the per-child
   GPU-hour cap) → mark the row `waiting-user`; it does NOT occupy a
   concurrency slot; surface it in the next digest. If the user later
   approves, the row flips back to `running` at the next reconcile —
   and RECONCILE its committed hours to the approved plan's
   `gpu_hours_total` (the whole reason it parked is that the plan
-  exceeded the estimate): `budget.gpu_hours_committed +=
-  (plan_hours − gpu_hours_est)`. Surface the est-vs-plan gap in the
-  next digest.
+  exceeded the estimate) using the SAME idempotent recipe as ingest
+  step 5: adjust `budget.gpu_hours_committed` by
+  `(plan_hours − row.gpu_hours_est)`, then set `row.gpu_hours_est =
+  plan_hours` — a later re-run at ingest is then a no-op. Surface the
+  est-vs-plan gap in the next digest.
 - Child still in flight (any ACTIVE status) → row stays `running`.
 
 ### 1.2 Stop-check

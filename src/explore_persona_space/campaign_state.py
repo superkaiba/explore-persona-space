@@ -236,8 +236,13 @@ def _validate_state(state: dict[str, Any], task_id: int) -> None:
         if not isinstance(stop.get(key), int):
             raise ValueError(f"stop.{key} must be an int, got {stop.get(key)!r}")
     current = stop.get("current_confidence")
-    if current is not None and not isinstance(current, str):
-        raise ValueError(f"stop.current_confidence must be null or a string, got {current!r}")
+    if current is not None and (
+        not isinstance(current, str) or current.upper() not in _CONFIDENCE_RANK
+    ):
+        raise ValueError(
+            f"stop.current_confidence must be null or one of {sorted(_CONFIDENCE_RANK)}, "
+            f"got {current!r}"
+        )
     _validate_experiments(state.get("experiments"))
 
 
