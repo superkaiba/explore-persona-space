@@ -1872,23 +1872,32 @@ def _ensure_em_merged(behavior: str, cid: str, *, gpu_id: int) -> Path:
     merged = OUT / f"merged/{behavior}_{cid}_seed{SEED}"
     if (merged / "config.json").exists():
         return merged
-    from huggingface_hub import snapshot_download
+    # NOT snapshot_download: on this ~51k-file repo the Hub API truncates
+    # repo_info().siblings (~4.4k entries), so snapshot_download's
+    # allow_patterns filter sees none of the adapter files and fetches 0
+    # (observed: shard 5, em/wc_short_advice). list_repo_files paginates
+    # the full tree; download each file explicitly.
+    from huggingface_hub import hf_hub_download, list_repo_files
 
     subfolder = f"adapters/i537_{behavior}_{cid}_seed{SEED}/sft_em_adapter"
-    cache_root = Path(
-        snapshot_download(
-            HF_MODEL_REPO,
-            allow_patterns=[f"{subfolder}/*"],
-            ignore_patterns=[f"{subfolder}/checkpoint-*/*"],
-        )
+    repo_files = [
+        f
+        for f in list_repo_files(HF_MODEL_REPO)
+        if f.startswith(subfolder + "/") and "/checkpoint-" not in f
+    ]
+    assert any(f.endswith("adapter_config.json") for f in repo_files), (
+        f"HF adapter missing for {behavior}/{cid}: no adapter_config.json under "
+        f"{HF_MODEL_REPO}/{subfolder} ({len(repo_files)} files matched)"
     )
-    adapter_local = cache_root / subfolder
-    assert (adapter_local / "adapter_config.json").exists(), (
-        f"HF adapter download incomplete for {behavior}/{cid}: {adapter_local}"
-    )
+    dl_root = OUT / f"hf_adapter/{behavior}_{cid}_seed{SEED}"
+    for f in repo_files:
+        hf_hub_download(HF_MODEL_REPO, f, local_dir=str(dl_root))
+    adapter_local = dl_root / subfolder
+    assert (adapter_local / "adapter_config.json").exists(), adapter_local
     from explore_persona_space.train.sft import merge_lora
 
     merge_lora(QWEN_ID, str(adapter_local), str(merged), gpu_id=gpu_id)
+    shutil.rmtree(dl_root)  # ~330 MB transient; the merged dir is the consumer artifact
     return merged
 
 
