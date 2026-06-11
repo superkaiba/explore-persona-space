@@ -1,0 +1,38 @@
+# Task #606 — accelerate config for the full-FT arm (plan §4.2 / §11).
+#
+# PORTED from `origin/issue-514:configs/accelerate/zero3_4gpu.yaml` (branch head
+# 0181315a; the file is NOT on `main`) with ONE modification:
+#   gradient_accumulation_steps: 16 -> 1
+# so the FT arm trains at effective batch 16 (per-device 4 x 4 GPUs x accum 1),
+# matched to the LoRA arm's eff. batch 16 — verbatim reuse would silently
+# reinstate #514's eff.-batch-64 confound (plan §11 / fact-check item 5).
+#
+# `stage3_gather_16bit_weights_on_model_save: true` is load-bearing — without it
+# the consolidated checkpoint that vLLM later loads would be sharded across ranks
+# and the load would silently miss most of the model's parameters.
+compute_environment: LOCAL_MACHINE
+debug: false
+deepspeed_config:
+  deepspeed_multinode_launcher: standard
+  gradient_accumulation_steps: 1
+  gradient_clipping: 1.0
+  offload_optimizer_device: none
+  offload_param_device: none
+  zero3_init_flag: true
+  zero3_save_16bit_model: true
+  zero_stage: 3
+  zero3_gather_16bit_weights_on_model_save: true
+distributed_type: DEEPSPEED
+downcast_bf16: 'no'
+machine_rank: 0
+main_training_function: main
+mixed_precision: bf16
+num_machines: 1
+main_process_port: 29606
+num_processes: 4
+rdzv_backend: static
+same_network: true
+tpu_env: []
+tpu_use_cluster: false
+tpu_use_sudo: false
+use_cpu: false
