@@ -1,0 +1,94 @@
+{
+  "negatives_by_source": {
+    "assistant": [
+      "comedian",
+      "software_engineer"
+    ],
+    "comedian": [
+      "assistant",
+      "medical_doctor"
+    ],
+    "kindergarten_teacher": [
+      "french_person",
+      "software_engineer"
+    ],
+    "qwen_default": [
+      "comedian",
+      "data_scientist"
+    ],
+    "software_engineer": [
+      "assistant",
+      "medical_doctor"
+    ],
+    "villain": [
+      "medical_doctor",
+      "police_officer"
+    ]
+  },
+  "provenance": {
+    "assistant": {
+      "pool_sha256": "bd1eabe20f1796f909796a39ca09fc9256415965eeb1e19871e6175dcbfbf0d0",
+      "n_rows": 700,
+      "composition": {
+        "software_engineer": 200,
+        "comedian": 200,
+        "assistant": 200,
+        "<none>": 100
+      }
+    },
+    "comedian": {
+      "pool_sha256": "604c3f4b042c217b15519925b5ba5c2344aefe9d9ec28384bc5c234d15ba3511",
+      "n_rows": 700,
+      "composition": {
+        "medical_doctor": 200,
+        "assistant": 200,
+        "comedian": 200,
+        "<none>": 100
+      }
+    },
+    "kindergarten_teacher": {
+      "pool_sha256": "ff74590648f202a973bf217a7dfaa9294caacb1f09cdaa4370ee253e9c650c51",
+      "n_rows": 700,
+      "composition": {
+        "software_engineer": 200,
+        "french_person": 200,
+        "kindergarten_teacher": 200,
+        "<none>": 100
+      }
+    },
+    "qwen_default": {
+      "pool_sha256": "47a1ec71edb52eba5739ed41ea389fbf8b167f105b254fe7d7a810919a45f910",
+      "n_rows": 700,
+      "composition": {
+        "comedian": 200,
+        "data_scientist": 200,
+        "qwen_default": 200,
+        "<none>": 100
+      }
+    },
+    "software_engineer": {
+      "pool_sha256": "12fdeb3bbb8bb30e0855224ccc57a25a0c5bc0e843d74c4a0b5845b54113a0b1",
+      "n_rows": 700,
+      "composition": {
+        "assistant": 200,
+        "medical_doctor": 200,
+        "software_engineer": 200,
+        "<none>": 100
+      }
+    },
+    "villain": {
+      "pool_sha256": "1b72c008ff708c6a7b7bc16d5f71344e3186741bfdb3262c9bc4b22c7b408a6b",
+      "n_rows": 700,
+      "composition": {
+        "police_officer": 200,
+        "medical_doctor": 200,
+        "villain": 200,
+        "<none>": 100
+      }
+    }
+  },
+  "recovery": "system-prompt string match vs EVAL_PERSONAS_24 (plan \u00a712 assumption 9)",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "git_commit_sha": "007756782ce3f4311ccf211f3c1167d3ae1bd8ff",
+  "timestamp_utc": "2026-06-11T08:18:57.631120+00:00"
+}
