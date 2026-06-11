@@ -3577,8 +3577,8 @@
       "goal": "Determine which of four candidate factors \u2014 max bystander cosine (isolation), source self-implant delta (implant strength), bystander base propensity (affinity), and training-negative membership (negative coverage) \u2014 classify leak vs no-leak cells across the existing sycophancy (#411), refusal (#518, #390) and EM (#518) panels, per behavior and jointly, naming the substrate-swap and EM survivorship confounds.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/593",
-      "status": "planning",
+      "path": "tasks/archived/593",
+      "status": "archived",
       "title": "Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): isolation, implant strength, affinity, and negative coverage as classifiers of leak vs no-leak cells"
     },
     "594": {
