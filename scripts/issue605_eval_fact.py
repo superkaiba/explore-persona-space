@@ -187,16 +187,18 @@ def build_headline_rows(n_per_unit: int = N_PARAPHRASES_PER_UNIT) -> list[dict]:
 
 
 def _persona_pool() -> dict[str, str | None]:
-    """All resolvable persona prompts: #541 registry + #605 fact candidates."""
+    """All resolvable persona prompts: #541 registry + #605 fact candidates
+    (incl. the pre-registered expansion pool — unconditional here so a panel
+    selected with --include-expansion always resolves)."""
     import issue444_persona_distance_topic as pdt
     from issue541_personas import inject_candidates
-    from issue605_contexts import FACT_ANCHOR_PANEL, FACT_CANDIDATES
+    from issue605_contexts import FACT_ANCHOR_PANEL, FACT_CANDIDATES, fact_expansion_candidates
 
     inject_candidates()
     pool: dict[str, str | None] = {}
     for name in FACT_ANCHOR_PANEL:
         pool[name] = pdt._resolve_persona_prompt(name)
-    for label, c in FACT_CANDIDATES.items():
+    for label, c in {**FACT_CANDIDATES, **fact_expansion_candidates()}.items():
         pool[label] = c["system_prompt"]
     return pool
 

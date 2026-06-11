@@ -29,7 +29,10 @@ FACT family (plan 4.5):
   same gate with FACT-scale spread (p90-p10 >= 0.35 nat/token), fill >= 6
   (18-persona panel), |r| <= 0.3; rendered-string disjointness vs the 3
   teacher prompts + the 4 #541 training negatives (incl. the empty no_system
-  rendering).
+  rendering); one pre-registered expansion round (--include-expansion,
+  mirroring the marker mechanism — measure resume-skips already-measured
+  personas, so the expansion pass measures NEW candidates only, then select
+  re-runs on the union and records expansion_round=1).
 
 Smoke = sweep with one cell (plan 4.7): ``--candidates`` subsets thread
 through BOTH measure and select; no divergent code path. ``--dry-run`` stops
@@ -66,6 +69,7 @@ from issue605_contexts import (  # noqa: E402
     FACT_TEACHERS,
     FACT_TRAINING_NEGATIVES,
     assert_fewshot_demos_disjoint,
+    fact_expansion_candidates,
     lint_fact_candidates,
     lint_marker_candidates,
     marker_candidates,
@@ -146,9 +150,13 @@ def _resolve_marker_candidates(spec: str, include_expansion: bool) -> dict[str, 
     return cands
 
 
-def _resolve_fact_candidates(spec: str) -> dict[str, dict[str, str]]:
-    lint_fact_candidates()
+def _resolve_fact_candidates(spec: str, include_expansion: bool) -> dict[str, dict[str, str]]:
+    """Fact candidate-subset resolution — threads through measure AND select
+    (mirrors the marker mechanism; the ONE pre-registered expansion round)."""
     cands = dict(FACT_CANDIDATES)
+    if include_expansion:
+        cands.update(fact_expansion_candidates())
+    lint_fact_candidates(cands)
     if spec != "all":
         keep = spec.split(",")
         missing = [k for k in keep if k not in cands]
@@ -682,7 +690,13 @@ def _enforce_selection_gate(payload: dict, allow_descope: bool, what: str, out: 
 # ---------------------------------------------------------------------------
 # MARKER select (Phase 1.5, CPU)
 # ---------------------------------------------------------------------------
-def marker_select(out_dir: Path, cands: dict, n_probes: int, allow_descope: bool = False) -> None:
+def marker_select(
+    out_dir: Path,
+    cands: dict,
+    n_probes: int,
+    allow_descope: bool = False,
+    include_expansion: bool = False,
+) -> None:
     """Panel selection + tightness gate + rendered-string disjointness."""
     from issue532_predictor_stress import _build_bystander_prompt
     from transformers import AutoTokenizer
@@ -742,6 +756,7 @@ def marker_select(out_dir: Path, cands: dict, n_probes: int, allow_descope: bool
         "context_meta": ctx_meta,
         "disjointness_assert": "PASS (rendered-string vs 16 source conditions x all probes)",
         "n_candidates_measured": table["n_contexts"],
+        "expansion_round": 1 if include_expansion else 0,
         "metadata": _repro_meta(),
     }
     if not payload["gate_pass"] and allow_descope:
@@ -993,7 +1008,12 @@ def fact_measure_acts(out_dir: Path, cands: dict, dry_run: bool) -> None:
 # ---------------------------------------------------------------------------
 # FACT select (Phase 4.5, CPU)
 # ---------------------------------------------------------------------------
-def fact_select(out_dir: Path, cands: dict, allow_descope: bool = False) -> None:
+def fact_select(
+    out_dir: Path,
+    cands: dict,
+    allow_descope: bool = False,
+    include_expansion: bool = False,
+) -> None:
     """Per-arm 18-persona panel with the fact-scale gate + disjointness."""
     from issue444_bystander_logprob import _chat_prompt
     from issue532_predictor_stress import _cosine_predictor
@@ -1094,6 +1114,7 @@ def fact_select(out_dir: Path, cands: dict, allow_descope: bool = False) -> None
         "per_arm": selections,
         "fp_excluded": sorted(excluded),
         "disjointness_assert": "PASS (rendered-string vs 3 teachers + 4 #541 negatives)",
+        "expansion_round": 1 if include_expansion else 0,
         "metadata": _repro_meta(),
     }
     out = out_dir / "panel" / "fact_panel_selection.json"
@@ -1156,12 +1177,14 @@ def _run_marker(args: argparse.Namespace) -> None:
         else:
             raise SystemExit(f"unknown marker measure stage {args.stage!r}")
     if args.phase in ("select", "all") and not args.dry_run:
-        marker_select(args.out_dir, cands, args.n_probes, args.allow_descope)
+        marker_select(
+            args.out_dir, cands, args.n_probes, args.allow_descope, args.include_expansion
+        )
 
 
 def _run_fact(args: argparse.Namespace) -> None:
     """Fact-family phase/stage dispatch (smoke = sweep, subset via flags)."""
-    cands = _resolve_fact_candidates(args.candidates)
+    cands = _resolve_fact_candidates(args.candidates, args.include_expansion)
     if args.phase in ("measure", "all"):
         if args.stage == "all":
             for st in _FACT_MEASURE_STAGES:
@@ -1177,7 +1200,7 @@ def _run_fact(args: argparse.Namespace) -> None:
         else:
             raise SystemExit(f"unknown fact measure stage {args.stage!r}")
     if args.phase in ("select", "all") and not args.dry_run:
-        fact_select(args.out_dir, cands, args.allow_descope)
+        fact_select(args.out_dir, cands, args.allow_descope, args.include_expansion)
 
 
 def main() -> None:
