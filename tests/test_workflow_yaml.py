@@ -285,9 +285,12 @@ def test_gates_full_shape():
     assert "experiment_goal" in inline_names
     assert "smoke_architecture" in inline_names
     assert "concern_deferral_request" in inline_names
-    # 1 park-and-wait gate (awaiting_promotion).
-    assert len(workflow.gates.park_and_wait) == 1
-    assert workflow.gates.park_and_wait[0].name == "awaiting_promotion"
+    # 2 park-and-wait gates: awaiting_promotion (clean-result promotion,
+    # gate id=7) + campaign_brief_approval (the human gate INTO a
+    # `kind: campaign` task, gate id=16, added 2026-06-10 by the
+    # campaign-runner batch on task #586).
+    park_and_wait_names = {g.name for g in workflow.gates.park_and_wait}
+    assert park_and_wait_names == {"awaiting_promotion", "campaign_brief_approval"}
     # 6 conditional gates: TDD + experiment_goal_refine (clarifier/planner
     # Goal-sharpening, added 2026-05-24 alongside the Goal contract) +
     # whack_a_mole_pivot (Fix #6) + compute_deviation_resolution (Fix #4),
