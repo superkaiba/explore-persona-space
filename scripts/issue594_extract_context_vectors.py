@@ -36,7 +36,7 @@ Usage (plan §8 launch command)::
     # local CPU smoke (tiny same-template-family model):
     uv run python scripts/issue594_extract_context_vectors.py --smoke \\
         --model Qwen/Qwen2.5-0.5B-Instruct --expected-layers 24 \\
-        --expected-hidden 896 --device cpu --n-probes 2 \\
+        --expected-hidden 896 --device cpu \\
         --out-dir /tmp/issue594_cpu_smoke --no-upload --wandb-mode disabled
 """
 
@@ -233,14 +233,16 @@ def _is_storage_quota_403(err: Exception) -> bool:
     return "403" in msg and "storage" in msg.lower()
 
 
-def upload_outputs(out_dir: Path, smoke: bool) -> dict:
+def upload_outputs(out_dir: Path, smoke: bool, expected_per_probe: int) -> dict:
     """Bulk-upload the extraction outputs to the HF data repo and verify.
 
     ONE ``upload_folder`` commit (well under the 256/hr cap), verified via
     ``huggingface_hub.list_repo_files`` (never the ``hf`` CLI — false "0
     files"). On the account-wide LFS storage-quota 403, falls back to the
     private overflow repo per .claude/rules/upload-policy.md and records the
-    deviation. Fail-loud otherwise.
+    deviation. Fail-loud otherwise. Verification asserts the REMOTE per-probe
+    file count >= ``expected_per_probe`` (the §6.5 primary deliverables), not
+    just the mean tensor + manifest.
     """
     from huggingface_hub import HfApi
 
@@ -279,14 +281,27 @@ def upload_outputs(out_dir: Path, smoke: bool) -> dict:
     if missing:
         raise RuntimeError(f"upload verification failed; missing on {repo_used}: {missing}")
     n_per_probe = sum(1 for f in files if f"{path_in_repo}/per_probe/" in f)
+    n_local = len(list((out_dir / "per_probe").glob("*.pt")))
+    if n_per_probe < expected_per_probe:
+        raise RuntimeError(
+            f"per-probe upload verification failed on {repo_used}: remote has "
+            f"{n_per_probe} files under {path_in_repo}/per_probe/, expected >= "
+            f"{expected_per_probe} (local per_probe dir has {n_local} .pt files)"
+        )
     logger.info(
-        "Upload verified on %s: %d files under %s (%d per-probe)",
+        "Upload verified on %s: %d files under %s (%d per-probe >= %d expected)",
         repo_used,
         len(files),
         path_in_repo,
         n_per_probe,
+        expected_per_probe,
     )
-    return {"repo": repo_used, "path_in_repo": path_in_repo, "n_files": len(files)}
+    return {
+        "repo": repo_used,
+        "path_in_repo": path_in_repo,
+        "n_files": len(files),
+        "n_per_probe": n_per_probe,
+    }
 
 
 def upload_battery(battery_path: Path) -> None:
@@ -542,9 +557,30 @@ def main() -> int:
     upload_info: dict = {"skipped": True}
     if not args.no_upload:
         phase("upload")
-        upload_info = upload_outputs(out_dir, smoke=args.smoke)
+        upload_info = upload_outputs(
+            out_dir, smoke=args.smoke, expected_per_probe=len(instances_to_run)
+        )
+        # Record repo_used in the manifest itself and backfill the remote copy,
+        # so Phase 2 can resolve the right repo (primary vs quota-403 overflow)
+        # from the downloaded artifacts — not only from the results sentinel.
+        # The manifest is a small non-LFS .json, so this backfill succeeds even
+        # under the account-wide LFS quota 403 (upload-policy.md).
+        manifest["upload"] = upload_info
+        write_manifest(manifest_path, manifest)
+        from huggingface_hub import HfApi
+
+        HfApi().upload_file(
+            path_or_fileobj=str(manifest_path),
+            path_in_repo=f"{upload_info['path_in_repo']}/extraction_manifest.json",
+            repo_id=upload_info["repo"],
+            repo_type="dataset",
+            commit_message="issue594: manifest upload-provenance backfill (repo_used)",
+        )
         if not args.smoke:
             upload_battery(args.battery)
+    else:
+        manifest["upload"] = upload_info
+        write_manifest(manifest_path, manifest)
 
     note = (
         f"issue594 extraction {'SMOKE ' if args.smoke else ''}complete: "

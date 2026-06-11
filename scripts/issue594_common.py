@@ -158,11 +158,6 @@ def messages_for_instance(instance: dict, probe: str) -> list[dict]:
     return messages
 
 
-def headline_mask(instances: list[dict]) -> list[bool]:
-    """True for instances in the 48-instance headline set (plan §3 / §14)."""
-    return [inst["family"] not in HEADLINE_EXCLUDED_FAMILIES for inst in instances]
-
-
 def probes_hash(probes: list[str]) -> str:
     """Stable sha256 over the ordered probe pool (manifest provenance)."""
     h = hashlib.sha256()

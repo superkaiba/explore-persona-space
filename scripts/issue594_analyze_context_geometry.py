@@ -129,29 +129,30 @@ def selfcheck_cosine_matrix() -> None:
 # ── Data loading ─────────────────────────────────────────────────────────────
 
 
-def download_from_hf(prefix: str, cache_dir: Path) -> Path:
-    """Fetch the analysis tensors from the HF data repo.
+def download_from_hf(prefix: str, cache_dir: Path, repo: str = HF_DATA_REPO) -> Path:
+    """Fetch the analysis tensors from an HF dataset repo (default: data repo).
 
-    Uses list_repo_files + per-file hf_hub_download (NOT snapshot_download
-    allow_patterns — silently returns 0 files for prefixes in the truncated
-    siblings tail on large repos).
+    ``repo`` is overridable via ``--hf-repo`` so the quota-403 overflow
+    fallback the extraction script can take (``repo_used`` in its results
+    sentinel + ``extraction_manifest.json['upload']['repo']``) stays reachable
+    by Phase 2. Uses list_repo_files + per-file hf_hub_download (NOT
+    snapshot_download allow_patterns — silently returns 0 files for prefixes
+    in the truncated siblings tail on large repos).
     """
     from huggingface_hub import hf_hub_download, list_repo_files
 
-    files = [
-        f for f in list_repo_files(HF_DATA_REPO, repo_type="dataset") if f.startswith(prefix + "/")
-    ]
+    files = [f for f in list_repo_files(repo, repo_type="dataset") if f.startswith(prefix + "/")]
     if not files:
-        raise RuntimeError(f"no files under {prefix}/ on {HF_DATA_REPO}")
+        raise RuntimeError(f"no files under {prefix}/ on {repo}")
     for f in files:
-        hf_hub_download(HF_DATA_REPO, f, repo_type="dataset", local_dir=str(cache_dir))
-    logger.info("Downloaded %d files from %s/%s", len(files), HF_DATA_REPO, prefix)
+        hf_hub_download(repo, f, repo_type="dataset", local_dir=str(cache_dir))
+    logger.info("Downloaded %d files from %s/%s", len(files), repo, prefix)
     return cache_dir / prefix
 
 
 def load_tensors(tensors_dir: Path) -> dict:
     """Load mean tensor, per-probe tensors, and the extraction manifest."""
-    blob = torch.load(tensors_dir / "context_vectors_mean.pt", weights_only=False)
+    blob = torch.load(tensors_dir / "context_vectors_mean.pt", weights_only=True)
     with open(tensors_dir / "extraction_manifest.json") as f:
         manifest = json.load(f)
     ids = blob["instance_ids"]
@@ -819,6 +820,7 @@ def build_narration(results: dict) -> dict:
 
 
 def main() -> int:
+    global EVAL_DIR, FIG_DIR
     parser = argparse.ArgumentParser(description="Issue #594 Phase 2 geometry analysis.")
     parser.add_argument("--tensors-dir", type=Path, default=None)
     parser.add_argument(
@@ -826,12 +828,39 @@ def main() -> int:
         default=None,
         help="HF data-repo prefix, e.g. issue594_context_geometry/analysis_tensors",
     )
+    parser.add_argument(
+        "--hf-repo",
+        default=HF_DATA_REPO,
+        help="HF dataset repo holding the tensors; pass the overflow repo when the "
+        "extraction sentinel / manifest 'upload.repo' records the quota-403 fallback",
+    )
     parser.add_argument("--battery", type=Path, default=BATTERY_PATH)
-    parser.add_argument("--out-json", type=Path, default=EVAL_DIR / "context_geometry_metrics.json")
+    parser.add_argument(
+        "--eval-dir",
+        type=Path,
+        default=EVAL_DIR,
+        help="metrics output dir (default eval_results/issue_594; override for smoke runs)",
+    )
+    parser.add_argument(
+        "--fig-dir",
+        type=Path,
+        default=FIG_DIR,
+        help="figure output dir (default figures/issue_594; override for smoke runs)",
+    )
+    parser.add_argument(
+        "--out-json",
+        type=Path,
+        default=None,
+        help="metrics JSON path (default: <eval-dir>/context_geometry_metrics.json)",
+    )
     parser.add_argument("--n-perms", type=int, default=1000)
     parser.add_argument("--n-boot", type=int, default=200)
     parser.add_argument("--seed", type=int, default=SEED)
     args = parser.parse_args()
+
+    EVAL_DIR = args.eval_dir
+    FIG_DIR = args.fig_dir
+    out_json = args.out_json or EVAL_DIR / "context_geometry_metrics.json"
 
     selfcheck_cosine_matrix()
     set_paper_style("blog")
@@ -841,7 +870,7 @@ def main() -> int:
     if (args.tensors_dir is None) == (args.tensors_from_hf is None):
         raise SystemExit("provide exactly one of --tensors-dir / --tensors-from-hf")
     tensors_dir = args.tensors_dir or download_from_hf(
-        args.tensors_from_hf, EVAL_DIR / "hf_tensors_cache"
+        args.tensors_from_hf, EVAL_DIR / "hf_tensors_cache", repo=args.hf_repo
     )
 
     data = load_tensors(tensors_dir)
@@ -852,6 +881,28 @@ def main() -> int:
     labels_all = [inst_by_id[i]["label"] for i in ids]
     n_layers = data["n_layers"]
     mean_all = data["mean"]  # (N, L, H) fp32
+
+    # Early coverage check: every runtime tensor id must have a manifest row
+    # carrying the covariate fields the length reads consume — fail loud with
+    # the offending ids instead of a KeyError ten frames deep.
+    manifest_instances = data["manifest"]["instances"]
+    required_fields = ("ctx_token_len_content",)
+    missing_ids = [iid for iid in ids if iid not in manifest_instances]
+    incomplete_ids = [
+        iid
+        for iid in ids
+        if iid not in missing_ids and any(k not in manifest_instances[iid] for k in required_fields)
+    ]
+    if missing_ids or incomplete_ids:
+        raise RuntimeError(
+            "manifest coverage check failed: "
+            f"{len(missing_ids)} tensor ids absent from extraction_manifest.json "
+            f"{missing_ids}; {len(incomplete_ids)} ids missing required covariate "
+            f"fields {required_fields} {incomplete_ids}"
+        )
+    recorded_upload = data["manifest"].get("upload", {})
+    if recorded_upload.get("repo"):
+        logger.info("Manifest records upload repo: %s", recorded_upload["repo"])
 
     h_idx = [k for k, iid in enumerate(ids) if families[k] not in HEADLINE_EXCLUDED_FAMILIES]
     headline_ids = [ids[k] for k in h_idx]
@@ -985,8 +1036,8 @@ def main() -> int:
     results["metadata"] = reproducibility_metadata(
         {"script": "issue594_analyze_context_geometry", "tensors_dir": str(tensors_dir)}
     )
-    args.out_json.parent.mkdir(parents=True, exist_ok=True)
-    with open(args.out_json, "w") as f:
+    out_json.parent.mkdir(parents=True, exist_ok=True)
+    with open(out_json, "w") as f:
         json.dump(jsonable(results), f, indent=2)
     logger.info(
         "Done. best_layer=%d, max purity=%.3f (null95 %.3f), max sil=%.3f (null95 %.3f); %s",
