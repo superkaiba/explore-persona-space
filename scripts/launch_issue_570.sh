@@ -3,8 +3,9 @@
 # Provenance: byte-faithful to the experimenter-composed pod launcher
 # pod-570:/workspace/launch_issue_570.sh (md5 2e844c45c8034bc315fbe991be369bd3,
 # fetched 2026-06-11 — the launcher that ran the round-4 incident run), now
-# committed so the glue is reproducible. Only deltas vs the pod copy: this
-# header and the idempotent Step-0.5 precheck skip marked "round-4" below.
+# committed so the glue is reproducible. Deltas vs the pod copy (4): this
+# header, the idempotent Step-0.5 precheck skip, the SECONDS resume note, and
+# the terminal [phase=done] emission — each marked "round-4" below.
 #
 # Round-4 resume semantics (after the rescue-coverage-assert incident): this
 # glue is IDEMPOTENT end to end — a relaunch re-walks every phase in order and

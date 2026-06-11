@@ -712,9 +712,14 @@ def _existing_ladder_outputs(cell: Path) -> dict | None:
     re-running them burns ~20 min/seed of vLLM generation for identical
     output. Integrity: both JSONs must parse and carry their pick/checkpoint
     keys; a corrupt file raises rather than silently re-running over
-    ambiguous state. Returns the parsed pick record to log, or None when the
-    ladder has not completed (fresh cell or mid-ladder crash — either file
-    missing).
+    ambiguous state. Upload witness (round 5): when the prior record names a
+    chosen step (pick or fallback), the skip ALSO requires the ``uploaded``
+    key written back at the pick-window upload — the JSONs land BEFORE the
+    uploads, so a crash in between would otherwise let a relaunch skip a
+    cell whose adapters never reached the Hub. Witness-missing logs loudly
+    and returns None (re-run; re-write + re-upload are idempotent). Returns
+    the parsed pick record to log, or None when the ladder has not completed
+    (fresh cell, mid-ladder crash, or missing upload witness).
     """
     ladder_path = cell / "phase1_ladder.json"
     pick_path = cell / "phase1_pick_record.json"
@@ -735,6 +740,19 @@ def _existing_ladder_outputs(cell: Path) -> dict | None:
             "pick_step / checkpoints keys — partial or foreign artifacts; inspect/delete "
             "the cell dir before relaunching."
         )
+    chosen = pick["pick_step"] if pick["pick_step"] is not None else pick.get("fallback_step")
+    if chosen is not None:
+        uploaded = pick.get("uploaded")
+        if not (isinstance(uploaded, dict) and uploaded.get("picked")):
+            log.warning(
+                "Ladder resume guard: %s names chosen step %s but carries NO 'uploaded' "
+                "witness — the prior run crashed between the pick-record write and the "
+                "pick-window upload (or ran --skip-upload). NOT skipping: RE-RUNNING the "
+                "ladder for this cell (re-write + re-upload are idempotent).",
+                pick_path,
+                chosen,
+            )
+            return None
     return pick
 
 

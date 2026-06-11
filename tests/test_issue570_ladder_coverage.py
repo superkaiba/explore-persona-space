@@ -18,7 +18,8 @@ retained step <= 25), which was calibrated for the registered 5e-6 ramp
   phase1_result.json: completion predicate, integrity raises (corrupt record,
   band mismatch), and fall-through cases (no record / no weights).
 - ``eval_issue570_ladder._existing_ladder_outputs`` — the per-seed ladder
-  resume skip (phase1_ladder.json + phase1_pick_record.json present + intact).
+  resume skip (phase1_ladder.json + phase1_pick_record.json present + intact
+  + round-5 ``uploaded`` witness when the record names a chosen step).
 
 All CPU-only and fast (no model loads, no network, no GPU pins — only the
 pure helpers are exercised; module import side effects are env/logging only).
@@ -212,6 +213,40 @@ def test_ladder_skip_returns_pick_when_complete(tmp_path):
     _write_ladder_outputs(tmp_path)
     pick = ladder._existing_ladder_outputs(tmp_path)
     assert pick is not None and pick["fallback"] is True and pick["pick_step"] is None
+
+
+def test_ladder_skip_none_when_upload_witness_missing(tmp_path):
+    # Round-5 crash shape: both JSONs were written at the pick step, but the
+    # run died BEFORE upload_pick_window wrote the 'uploaded' witness back —
+    # the record names a chosen step yet the adapters never reached the Hub.
+    # The predicate must NOT skip (returns None -> re-run, idempotent).
+    _write_ladder_outputs(tmp_path)
+    (tmp_path / "phase1_pick_record.json").write_text(
+        json.dumps({"pick_step": 80, "eligible_steps": [80], "fallback": False})
+    )
+    assert ladder._existing_ladder_outputs(tmp_path) is None
+
+
+def test_ladder_skip_returns_pick_with_upload_witness(tmp_path):
+    # Completed shape mirroring the realized 5e-6 pod pick records: chosen
+    # step set AND 'uploaded' carrying the picked + window entries that
+    # upload_pick_window returns (written back after the uploads landed).
+    _write_ladder_outputs(tmp_path)
+    record = {
+        "pick_step": 80,
+        "eligible_steps": [80, 85],
+        "fallback": False,
+        "fallback_step": None,
+        "uploaded": {
+            "picked": {"step": 80, "path_in_repo": "adapters/i570_seed101_picked"},
+            "window_step75": {"step": 75, "path_in_repo": "adapters/i570_seed101_window_step75"},
+        },
+        "picked_local_dir": "/tmp/ckpts/checkpoint-80",
+    }
+    (tmp_path / "phase1_pick_record.json").write_text(json.dumps(record))
+    pick = ladder._existing_ladder_outputs(tmp_path)
+    assert pick is not None and pick["pick_step"] == 80
+    assert pick["uploaded"]["picked"]["step"] == 80
 
 
 def test_ladder_skip_raises_on_corrupt_json(tmp_path):
