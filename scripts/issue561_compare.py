@@ -195,10 +195,15 @@ def analyze_cell(
     rho_w, p_w = _one_sided_perm_p(norms, np.array([cos_w[p] for p in personas]), seed=cell.seed)
     rho_u, p_u = _one_sided_perm_p(norms, abs_cos_u, seed=cell.seed)
 
-    # Whole-response (mean-over-response) read.
-    m_mr, _ = assemble_M(shifts, persona_order=personas, use_mean_resp=True)
-    svd_mr = svd_summary(m_mr)
-    sign_null_mr = sign_flip_null(m_mr, n_reps=N_NULL_REPS, seed=cell.seed)
+    # Whole-response (mean-over-response) read. delta_v_mean_resp is stored
+    # only for the `same` flavor — base/on_policy cells carry no mean-resp
+    # vectors in EITHER dataset (verified identical layout in the persisted
+    # #551 tensors @ 08419ee88), so the read is conditional, not a data gap.
+    has_mean_resp = all("delta_v_mean_resp" in shifts[p] for p in personas)
+    if has_mean_resp:
+        m_mr, _ = assemble_M(shifts, persona_order=personas, use_mean_resp=True)
+        svd_mr = svd_summary(m_mr)
+        sign_null_mr = sign_flip_null(m_mr, n_reps=N_NULL_REPS, seed=cell.seed)
 
     # Split-half reliability per persona (rng seed fixed across cells).
     rng = np.random.default_rng(split_rng_seed)
@@ -255,12 +260,16 @@ def analyze_cell(
             },
             "norms": {p: float(norms[i]) for i, p in enumerate(personas)},
         },
-        "mean_resp": {
-            "s_top1_frac": float(svd_mr["s_top1_frac"]),
-            "mean_cos_to_U1": float(np.mean(svd_mr["cos_to_U1"])),
-            "passes_sign_flip_p95": bool(svd_mr["s_top1_frac"] > sign_null_mr["p95"]),
-            "sign_flip_p95": float(sign_null_mr["p95"]),
-        },
+        "mean_resp": (
+            {
+                "s_top1_frac": float(svd_mr["s_top1_frac"]),
+                "mean_cos_to_U1": float(np.mean(svd_mr["cos_to_U1"])),
+                "passes_sign_flip_p95": bool(svd_mr["s_top1_frac"] > sign_null_mr["p95"]),
+                "sign_flip_p95": float(sign_null_mr["p95"]),
+            }
+            if has_mean_resp
+            else None
+        ),
         "split_half_reliability": reliability,
     }
     extras = {"U1_w": np.asarray(svd_w["U1"], dtype=np.float64), "personas": personas}
