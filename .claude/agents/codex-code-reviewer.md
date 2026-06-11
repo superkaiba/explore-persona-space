@@ -109,8 +109,14 @@ Your brief contains:
   resolve when the worktree was cut from a PARENT issue branch predating
   this task's creation (child-task pipelines, e.g. the issue-550 worktree
   cut from `origin/issue-538`) — then NO `tasks/*/<N>/` folder exists in
-  the worktree at all. Step 2-pre-b verifies existence and falls back to
-  inlining the canonical plan from main.
+  the worktree at all. AND even when the path resolves, the worktree's
+  `plans/` folder is FROZEN at branch-cut time: a plan amendment created
+  AFTER the cut (same-issue follow-up rounds post v2+ on main) never
+  reaches the worktree, so the frozen `plan.md` symlink silently serves
+  the stale parent v1 (#546 follow-up r1 — the silent variant of the
+  #489 class). Step 2-pre-b verifies existence AND freshness
+  (content-identity against the canonical plan on main) and falls back
+  to inlining the canonical plan when either check fails.
 
 **No `implementation_marker_path` field.** The implementation marker lives
 in `events.jsonl` on **main**, in the task's CURRENT-status folder (e.g.
@@ -225,39 +231,54 @@ open('$PROMPT_FILE', 'w').write(prompt)
 "
 ```
 
-### Step 2-pre-b: Verify plan_marker_path resolves in the worktree — inline the plan when it doesn't
+### Step 2-pre-b: Verify the worktree plan is present AND current — inline the canonical plan when absent or stale
 
 The plan is only path-referenceable when `<worktree>/<plan_marker_path>`
-actually exists. A worktree cut from a PARENT issue branch predating this
-task (child-task pipelines) has NO `tasks/*/<N>/` folder, so the path is
-unresolvable from Codex's sandbox — the plan-side analogue of the #489
-unreachable-marker false-FAIL class (hit live on #550 r1, 2026-06-10).
-Check, and build the plan-reference block accordingly:
+actually exists AND matches the canonical plan on main. Two failure
+modes, same fix:
+
+- **Absent** — a worktree cut from a PARENT issue branch predating this
+  task (child-task pipelines) has NO `tasks/*/<N>/` folder, so the path
+  is unresolvable from Codex's sandbox — the plan-side analogue of the
+  #489 unreachable-marker false-FAIL class (hit live on #550 r1,
+  2026-06-10).
+- **Stale** — the worktree's `plans/` folder is frozen at branch-cut
+  time, so a plan amendment posted on main AFTER the cut (same-issue
+  follow-up rounds: v2+ via `task.py new-plan-version`) never reaches
+  it; the frozen `plan.md` symlink resolves fine but serves the parent
+  v1, and Codex scores plan adherence against the WRONG plan with no
+  error (hit live on #546 follow-up r1, 2026-06-10 — the silent variant
+  of the same canonical-state-vs-frozen-worktree class).
+
+Check both, and build the plan-reference block accordingly:
 
 ```bash
 PLAN_REF_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-plan-ref.md"
-if test -f "<worktree>/<plan_marker_path>"; then
-    # Default case: the path resolves — reference it directly.
+# Canonical plan on main (task.py find branch-guards + auto-routes to
+# canonical main state; plans/plan.md symlinks the highest version).
+TASK_DIR="$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)"
+CANON_PLAN="$TASK_DIR/plans/plan.md"
+if test -f "<worktree>/<plan_marker_path>" && \
+   diff -q "$CANON_PLAN" "<worktree>/<plan_marker_path>" >/dev/null 2>&1; then
+    # The path resolves AND the worktree copy is identical to the
+    # canonical plan on main — safe to reference by path.
     cat > "$PLAN_REF_FILE" <<'REF'
 The plan is at: <plan_marker_path> (resolvable inside the worktree)
 REF
 else
-    # Fallback: fetch the canonical plan from main (task.py find
-    # branch-guards + auto-routes to canonical main state) and inline it,
-    # same envelope pattern as the implementation marker.
-    TASK_DIR="$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)"
-    PLAN_BODY="$TASK_DIR/plans/plan.md"      # symlink to highest version
-    test -s "$PLAN_BODY" || {
+    # Absent or stale: inline the canonical plan from main, same
+    # envelope pattern as the implementation marker.
+    test -s "$CANON_PLAN" || {
         uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
             --version 1 --by codex-code-reviewer \
-            --note "failure_class: orchestration, reason: plan unresolvable in worktree AND no canonical plan on main"
+            --note "failure_class: orchestration, reason: worktree plan absent-or-stale AND no canonical plan on main"
         exit 1
     }
     {
-        echo "The approved plan is INLINED below — do NOT look for a tasks/.../plans/ path; this worktree was cut from a parent issue branch before this task existed, so no tasks/ folder for this task is resolvable from your sandbox:"
+        echo "The approved plan is INLINED below — do NOT read any tasks/.../plans/ path from your sandbox; the worktree's plans/ folder is either absent (worktree cut from a parent issue branch before this task existed) or frozen at a STALE pre-amendment version (the current plan postdates the branch cut):"
         echo
         echo "---BEGIN APPROVED PLAN BODY---"
-        cat "$PLAN_BODY"
+        cat "$CANON_PLAN"
         echo "---END APPROVED PLAN BODY---"
     } > "$PLAN_REF_FILE"
 fi
@@ -462,7 +483,7 @@ test "$body_len" -gt 0 || {
     echo "BLOCKER: inlined implementation marker body is empty" >&2
     exit 1
 }
-# If Step 2-pre-b inlined the plan (path did not resolve in the worktree),
+# If Step 2-pre-b inlined the plan (worktree copy absent OR stale),
 # also confirm the plan envelope landed in the prompt:
 if grep -q -- '---BEGIN APPROVED PLAN BODY---' "$PLAN_REF_FILE"; then
     grep -q -- '---BEGIN APPROVED PLAN BODY---' "$PROMPT_FILE" && \
@@ -554,10 +575,13 @@ live in the orchestrator now.
    unresolvable from Codex's view. Fetch it via `task.py latest-marker <N>
    --prefix epm:experiment-implementation` (Step 2-pre) and substitute the
    `note` body into `{{implementation_marker_body}}` in the prompt template.
-   The plan path is fine to pass (`plan_marker_path`) ONLY when it
-   resolves inside the worktree — verify with Step 2-pre-b and inline the
-   canonical plan from main when the worktree predates the task (child
-   task cut from a parent issue branch; #550 r1).
+   The plan path is fine to pass (`plan_marker_path`) ONLY when the
+   worktree copy exists AND is identical to the canonical plan on main —
+   verify BOTH with Step 2-pre-b. Inline the canonical plan when the
+   worktree predates the task (child task cut from a parent issue
+   branch; #550 r1) OR when a follow-up amendment plan postdates the
+   branch cut, so the worktree's frozen `plan.md` symlink serves a
+   stale version (#546 follow-up r1).
 
 ---
 
@@ -605,6 +629,15 @@ Common failure modes and how to handle:
   If you see this verdict anyway, your composed prompt passed the path
   without checking — re-compose with the `---BEGIN APPROVED PLAN BODY---`
   envelope.
+- **Codex scores plan adherence against the WRONG plan — silently.** The
+  #546 follow-up r1 (2026-06-10) variant of the same class: a same-issue
+  follow-up's amendment plan (v2) was created on main AFTER the branch
+  cut, so the worktree's frozen `plans/plan.md` symlink resolved cleanly
+  but served the stale parent v1. No error fires — every plan-adherence
+  ✓/✗ is just graded against the wrong contract. There is no verdict-side
+  signature to catch this; the ONLY defense is Step 2-pre-b's freshness
+  diff (worktree copy vs canonical main plan), so never skip the diff
+  even when the path resolves.
 
 ---
 
