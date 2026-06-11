@@ -1094,7 +1094,7 @@ def _marker_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     ax.errorbar(x, pts, yerr=[los, his], fmt="none", ecolor="black", capsize=3)
     ax.set_xticks(x, [e[0] for e in entries], rotation=20, ha="right")
     ax.axhline(0, color="black", lw=0.8)
-    ax.set_ylabel("ΔCV-R² (prior beyond similarity + source FE)")
+    ax.set_ylabel("held-out gain in out-of-fold R² from adding the prior")
     savefig_paper(fig, "hero_delta_cv_r2_ladder", dir=fig_dir)
     plt.close(fig)
 
@@ -1153,6 +1153,7 @@ def _fact_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
     arm_labels = {
         "courthouse_architecture_historian": "courthouse-historian teacher",
         "top_prior_wooden_furniture_carpenter": "furniture-carpenter teacher",
+        "wooden_furniture_carpenter": "furniture-carpenter teacher",
         "marine_biologist": "marine-biologist teacher",
     }
     fig, axes = plt.subplots(1, 2, figsize=(11, 4.5))
@@ -1162,7 +1163,7 @@ def _fact_figures(frame: pd.DataFrame, res: dict, fig_dir: Path) -> None:
         axes[0].scatter(sub["prior"], sub["tf_delta"], s=12, alpha=0.5, marker=marker, label=label)
         axes[1].scatter(sub["prior"], sub["leak_rate"], s=12, alpha=0.5, marker=marker, label=label)
     axes[0].set_xlabel("persona's base fact prior (nats per token)")
-    axes[0].set_ylabel("teacher-forced fact shift, trained - base (nats per token)")
+    axes[0].set_ylabel("teacher-forced fact shift (nats/token)")
     axes[1].set_xlabel("persona's base fact prior (nats per token)")
     axes[1].set_ylabel("judged leak rate (fraction stating the taught fact)")
     axes[0].legend(frameon=False, fontsize=7)
