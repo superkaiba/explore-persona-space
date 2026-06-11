@@ -24,7 +24,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/20b8131b561c3a224fa8b3b4f63c4f7ac4b41660/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
+**Methodology:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/3bef806d0ee39080df1b2b963580be0cacab681d/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
 
 ## Human TL;DR
 
@@ -347,4 +347,4 @@ Two informative extremes bracket the null. The default-assistant source (no pers
 
 **Code:** [scripts/issue_591/](https://github.com/superkaiba/explore-persona-space/tree/04cc653278b14372dd6e9c472189df477e4bd426/scripts/issue_591) — `i591_e1_build_table.py` (414-cell join), `i591_judge_self_cells.py` (self-implant reconstruction), `i591_e1_factor_analysis.py` (factor fits + permutations + e1 figures), `i591_e1_390_supplement.py`, `i591_e2_dispatch.py` (synthesis, validation, generation, judging, verdicts), `i591_firth.py`, `i591_analyzer_figs_r2.py` (final figures). Branch `issue-591`, commit `04cc653278b14372dd6e9c472189df477e4bd426`. Part-3 re-judge pipeline at [scripts/issue_591/ @ 24da9cf5b](https://github.com/superkaiba/explore-persona-space/tree/24da9cf5b3378614f51265c01f68190ac15517b2/scripts/issue_591) — `i591_e5_em_rejudge.py` (re-judge, joins, anchors, registered axes; built across commits `bb82e6b19` → `29e0362c8` → `64de3cf66` → `007f84ed0` → `ac52f0920`), `i591_analyzer_figs_e5.py` + `i591_e5_setpoint_fig.py` (reader-facing corrected figures); results committed at `abcf2f3fb`, figures at `ab41fdcc8` and `24da9cf5b`. Reproduce e1 + figures on the VM: `uv run python scripts/issue_591/i591_e1_build_table.py && uv run python scripts/issue_591/i591_e1_factor_analysis.py && uv run python scripts/issue_591/i591_analyzer_figs_r2.py`; e2 needs 1× H100: `uv run python scripts/issue_591/i591_e2_dispatch.py --phase all`; Part-3 re-judge (VM only, needs `ANTHROPIC_API_KEY`): `uv run python scripts/issue_591/i591_e5_em_rejudge.py --phase all && uv run python scripts/issue_591/i591_analyzer_figs_e5.py && uv run python scripts/issue_591/i591_e5_setpoint_fig.py`.
 
-- **Methodology reference:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/20b8131b561c3a224fa8b3b4f63c4f7ac4b41660/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
+- **Methodology reference:** [docs/methodology/issue_591.md](https://github.com/superkaiba/explore-persona-space/blob/3bef806d0ee39080df1b2b963580be0cacab681d/docs/methodology/issue_591.md) · [gist](https://gist.github.com/superkaiba/b0dc44c426a6e5ab314072d92f7ebc45)
