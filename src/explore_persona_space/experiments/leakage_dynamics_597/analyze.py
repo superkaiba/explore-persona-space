@@ -622,6 +622,23 @@ def trajectory_summary(panels: dict[str, dict[str, dict]]) -> dict:
 # ── Figures (paper_plots conventions; Agg backend) ───────────────────────────
 
 ARM_LABELS = {"a": "Contrastive training", "b": "Positive-only training"}
+# Reader-facing source labels (paper-plots §3.5 — no underscore identifiers
+# on any rendered figure text).
+SOURCE_LABELS = {
+    "assistant": "assistant persona",
+    "comedian": "comedian",
+    "kindergarten_teacher": "kindergarten teacher",
+    "qwen_default": "Qwen default persona",
+    "software_engineer": "software engineer",
+    "villain": "villain",
+}
+
+
+def source_label(source: str) -> str:
+    """Reader-facing label for a source slug (fallback: underscores → spaces)."""
+    return SOURCE_LABELS.get(source, source.replace("_", " "))
+
+
 GROUP_STYLE = [
     ("source", "Trained source persona", "accent"),
     ("trained_negative_personas", "Trained-negative personas", "primary"),
@@ -776,7 +793,7 @@ def fig_small_multiples(panels: dict[str, dict[str, dict]], fig_dir: Path) -> Pa
                 med = [group_median(panel, s, contexts, "delta_logp") for s in steps]
                 ax.plot(steps, med, color=paper_palette_role(role), linewidth=1.4, label=glabel)
             ax.axhline(0.0, color=paper_palette_role("baseline"), linewidth=0.7, linestyle="--")
-            ax.set_title(f"{source} — {ARM_LABELS[arm]}", fontsize=8)
+            ax.set_title(f"{source_label(source)} — {ARM_LABELS[arm]}", fontsize=8)
             if row == len(sources) - 1:
                 ax.set_xlabel("Optimizer steps")
             if col == 0:
@@ -820,7 +837,7 @@ def fig_spaghetti(panels_one_arm: dict[str, dict], arm: str, fig_dir: Path) -> P
             label="Trained source persona",
         )
         ax.axhline(0.0, color=paper_palette_role("baseline"), linewidth=0.7, linestyle="--")
-        ax.set_title(source, fontsize=9)
+        ax.set_title(source_label(source), fontsize=9)
         ax.set_xlabel("Optimizer steps")
     for j in range(len(sources), nrows * ncols):
         axes[j // ncols][j % ncols].set_axis_off()
@@ -841,7 +858,7 @@ def fig_raw_traces(panels: dict[str, dict[str, dict]], fig_dir: Path) -> Path:
 
     fig, axes = plt.subplots(1, 2, figsize=(12.0, 4.2), sharey=True)
     for ax, arm in zip(axes, ("a", "b"), strict=True):
-        for source, panel in sorted(panels.get(arm, {}).items()):
+        for i, (source, panel) in enumerate(sorted(panels.get(arm, {}).items())):
             steps = sorted(panel["by_step"])
             ax.plot(
                 steps,
@@ -849,6 +866,7 @@ def fig_raw_traces(panels: dict[str, dict[str, dict]], fig_dir: Path) -> Path:
                 color=paper_palette_role("accent"),
                 alpha=0.8,
                 linewidth=1.2,
+                label="Trained model (solid)" if i == 0 else None,
             )
             ax.plot(
                 steps,
@@ -857,10 +875,15 @@ def fig_raw_traces(panels: dict[str, dict[str, dict]], fig_dir: Path) -> Path:
                 alpha=0.8,
                 linewidth=1.0,
                 linestyle="--",
+                label="Base model (dashed)" if i == 0 else None,
             )
-        ax.set_title(f"{ARM_LABELS[arm]} — source log P trained (solid) vs base (dashed)")
+        # Short per-panel titles only — the long combined titles collided at
+        # the figure center (round-1 interpretation critique, figure 11).
+        ax.set_title(ARM_LABELS[arm])
         ax.set_xlabel("Optimizer steps")
-    axes[0].set_ylabel("log P(marker) at the post-response slot (nats)")
+    axes[0].set_ylabel("Source log P(marker) at the\npost-response slot (nats)")
+    axes[0].legend(loc="lower right", fontsize=8)
+    fig.tight_layout()
     out = savefig_paper(fig, "exploratory_raw_source_traces", dir=fig_dir)
     plt.close(fig)
     return out["png"]
@@ -931,7 +954,7 @@ def fig_lockstep_curves(h1: dict, fig_dir: Path) -> Path:
         ax.plot(
             [c[0] for c in curve],
             [c[1] for c in curve],
-            label=source,
+            label=source_label(source),
             color=colors[i % len(colors)],
             linewidth=1.5,
         )
@@ -1121,7 +1144,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.fig_dir,
                 y_key="delta_p",
                 stem="sanity_trajectory_probability_delta",
-                y_label="Δ P(marker), trained − base (probability — SANITY-ONLY read)",
+                y_label="Δ P(marker), trained − base\n(probability; sanity-only)",
             ),
             fig_small_multiples(panels, args.fig_dir),
             fig_spaghetti(panels["a"], "a", args.fig_dir),
