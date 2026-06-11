@@ -51,6 +51,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`, `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py` — the pod implementation modules `pod.py` dispatches to
   - `cron_pod_audit.sh`, `sync_pods.sh`, `_pods_conf_path.sh` — pod shell/config helpers (daily stale-pod audit cron wrapper, `pod.py sync` backend, pods.conf path resolver)
   - `worktree_audit.py`, `cron_worktree_audit.sh` — the stale-worktree sweep + its cron wrapper
+  - `new_worktree.sh` — the `/issue` Step 4a cone-mode sparse-worktree creation helper (the CLAUDE.md worktree recipe)
   - `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh` — the crash-recovery + pod-safety + stalled-detector watcher + its cron wrapper
   - `session_progress_report.py`, `session_summarize.py`, `session_resolver.py`, `cron_session_summarize.sh` — the per-session progress self-report helper (`/issue` phone titles), the 5-min LLM session-summary cache (dashboard + `spawn_session.py list` PROGRESS column), the Happy-session→transcript resolver, and the summarizer's cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
@@ -60,7 +61,7 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
   - `dispatch_issue.py`, `backend_poll.py` — the `/issue` Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash poller (router slice 6 pair: launch writes the per-issue handle sidecar, the poller reads it each tick)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
-- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, and other tests that pin workflow invariants
+- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
 - `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py`, listed above)

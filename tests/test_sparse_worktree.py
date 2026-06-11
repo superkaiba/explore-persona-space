@@ -14,6 +14,11 @@ porcelain parity, tree-diff parity for out-of-cone committed paths,
 .env symlink, reuse, ``--full``, interrupted-creation repair,
 creation/registration uniqueness, branch-exists fallback, and
 registered-but-directory-deleted prune recovery.
+
+Items 14-17 pin the round-1 code-review hardening (task #596 Minors):
+bare no-``--issue`` creation (the CLAUDE.md infra recipe), non-numeric
+``--issue`` refusal, repair preserving previously-added cones, and
+main-checkout anchoring when invoked from inside another worktree.
 """
 
 from __future__ import annotations
@@ -323,6 +328,92 @@ def test_directory_deleted_out_of_band_is_pruned_and_recreated(
     assert (wt / "src/x.py").is_file()
     cone = _git(wt, "config", "--worktree", "core.sparseCheckoutCone").stdout.strip()
     assert cone == "true"
+
+
+# --- item 14: bare no---issue creation (the CLAUDE.md infra recipe) ----------
+
+
+def test_bare_no_issue_sparse_creation(repo: Path, tmp_path: Path) -> None:
+    """The infra recipe `new_worktree.sh <path> <branch>` (no --issue)."""
+    wt = tmp_path / "wt-bare"
+    res = _run_helper(repo, wt, "infra-misc")
+    assert res.returncode == 0
+    assert (wt / "src/x.py").is_file()
+    assert (wt / "CLAUDE.md").is_file()
+    assert not (wt / "external").exists(), "excluded dir leaked in"
+    assert not (wt / "eval_results/old_exp").exists(), "excluded bulk dir leaked in"
+    cone = _git(wt, "config", "--worktree", "core.sparseCheckoutCone").stdout.strip()
+    assert cone == "true"
+    assert (wt / ".env").is_symlink()
+
+
+# --- item 15: non-numeric --issue refused ------------------------------------
+
+
+def test_non_numeric_issue_is_refused(repo: Path, tmp_path: Path) -> None:
+    """A non-numeric --issue would create a junk cone — must exit 2, no residue."""
+    wt = tmp_path / "wt-bad"
+    res = _run_helper(repo, wt, "issue-x", "--issue", "12abc", check=False)
+    assert res.returncode == 2
+    assert "must be numeric" in res.stderr
+    porcelain = _git(repo, "worktree", "list", "--porcelain").stdout
+    assert f"worktree {wt.resolve()}" not in porcelain.splitlines(), "junk worktree registered"
+    assert not wt.exists(), "junk worktree directory left behind"
+
+
+# --- item 16: repair preserves previously-present cones ----------------------
+
+
+def test_repair_without_issue_preserves_existing_cones(repo: Path, tmp_path: Path) -> None:
+    """Repair must union the prior cone set, not recompute it from scratch.
+
+    Simulates an interrupted creation where `sparse-checkout set` succeeded
+    (per-issue cones present) but the final `checkout` did not — then repairs
+    WITHOUT --issue. The pre-fix helper silently dropped the issue cones.
+    """
+    wt = tmp_path / "wt-repair"
+    _git(repo, "worktree", "add", "--no-checkout", str(wt), "-b", "issue-7")
+    _git(wt, "sparse-checkout", "init", "--cone")
+    _git(wt, "sparse-checkout", "set", "src", "figures", "eval_results/issue_7")
+    assert not (wt / "CLAUDE.md").exists(), "limbo tree must be unpopulated"
+    res = _run_helper(repo, wt, "issue-7")  # NO --issue
+    assert "repairing" in res.stdout
+    assert (wt / "src/x.py").is_file(), "repair must populate the tree"
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_7" in cones, "repair dropped the prior per-issue cone"
+
+
+# --- item 17: anchoring when invoked from inside another worktree ------------
+
+
+def test_invoked_from_inside_another_worktree_anchors_to_main(repo: Path, tmp_path: Path) -> None:
+    """REPO_ROOT must resolve to the MAIN checkout, not the invoking worktree.
+
+    The pre-fix `--show-toplevel` anchor computed the include list (and cut
+    the new branch) from the invoking worktree's branch HEAD. A top-level dir
+    committed to main AFTER the first worktree's branch was cut discriminates
+    the two anchors.
+    """
+    wt1 = tmp_path / "wt1"
+    _run_helper(repo, wt1, "issue-8", "--issue", "8")
+    p = repo / "newdir/n.txt"
+    p.parent.mkdir()
+    p.write_text("n\n")
+    _git(repo, "add", "newdir/n.txt")
+    _git(repo, "commit", "-q", "-m", "new top-level dir on main")
+    wt2 = tmp_path / "wt2"
+    res = subprocess.run(
+        ["bash", str(HELPER), str(wt2), "issue-9", "--issue", "9"],
+        cwd=str(wt1),  # invoked from INSIDE another worktree
+        check=True,
+        capture_output=True,
+        text=True,
+        env=_GIT_ENV,
+    )
+    assert res.returncode == 0
+    assert (wt2 / "newdir/n.txt").is_file(), "include list/branch base came from wt1, not main"
+    porcelain = _git(repo, "worktree", "list", "--porcelain").stdout
+    assert f"worktree {wt2.resolve()}" in porcelain.splitlines()
 
 
 if __name__ == "__main__":
