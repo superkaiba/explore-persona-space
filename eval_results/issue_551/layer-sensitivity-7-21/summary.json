@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "issue": 551,
+    "followup_of": 521,
+    "followup_label": "layer-sensitivity-and-seed137-degeneracy",
+    "analysis": "layer_sensitivity_summary",
+    "layer": null,
+    "tensor_key": null,
+    "mean_resp_tensor_key": null,
+    "git_commit": "3e00389f943470b74fe7cedda1c629f0fe2203f1",
+    "timestamp_utc": "2026-06-11T00:22:03Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6"
+    },
+    "tensors_source": "eval_results/issue_551/shifts",
+    "thresholds": {
+      "n_null_reps": 1000,
+      "aligned_cos_threshold": 0.5,
+      "null_rng_seed": "per-cell training seed (matches issue551_controls.py)"
+    },
+    "top_share_definition": "s_1 / sum(s) (matches svd_summary and the persisted #551/#521 JSONs; NOT squared singular-value mass)",
+    "source_persona": "medical_doctor",
+    "skipped": {
+      "phase_r": "skipped: the Phase R reproduction gate anchors against parent #521 layer-14 SVD JSONs; no parent reference exists at this layer",
+      "per_question_controls": "skipped: per-question tensors persisted at layer 14 only"
+    }
+  },
+  "layers": [
+    7,
+    21
+  ],
+  "headline_by_layer": {
+    "layer7": {
+      "em_top_share_same_by_seed": {
+        "seed42": 0.6032194495201111,
+        "seed137": 0.6411536335945129,
+        "seed256": 0.6903824210166931
+      },
+      "marker_top_share_same_by_seed": {
+        "seed42": 0.5023674368858337,
+        "seed137": 0.45817098021507263,
+        "seed256": 0.5547100305557251
+      },
+      "loo_binding_pass": true,
+      "marker_rank_corr_weighted_vs_unitnorm_by_seed": {
+        "seed42": 0.9120879120879121,
+        "seed137": -0.7714285714285715,
+        "seed256": 0.9076923076923077
+      }
+    },
+    "layer21": {
+      "em_top_share_same_by_seed": {
+        "seed42": 0.5012019276618958,
+        "seed137": 0.5046197772026062,
+        "seed256": 0.5094324350357056
+      },
+      "marker_top_share_same_by_seed": {
+        "seed42": 0.2771160900592804,
+        "seed137": 0.3153742551803589,
+        "seed256": 0.26252251863479614
+      },
+      "loo_binding_pass": true,
+      "marker_rank_corr_weighted_vs_unitnorm_by_seed": {
+        "seed42": 0.7494505494505495,
+        "seed137": 0.9384615384615385,
+        "seed256": 0.832967032967033
+      }
+    }
+  },
+  "falsification": {
+    "layer7": {
+      "rule": "contrast vanishes or inverts = (marker top-share >= EM top-share within variant-and-seed, weighted read) OR (any EM cell s_top1_frac <= its full-panel sign-flip null p95)",
+      "marker_top_share_ge_em_cells": [],
+      "em_cells_failing_sign_flip_p95": [],
+      "contrast_vanishes_or_inverts": false,
+      "verdict": "HOLDS: EM top-share exceeds marker in every variant x seed and all EM cells clear their sign-flip null p95 at this layer."
+    },
+    "layer21": {
+      "rule": "contrast vanishes or inverts = (marker top-share >= EM top-share within variant-and-seed, weighted read) OR (any EM cell s_top1_frac <= its full-panel sign-flip null p95)",
+      "marker_top_share_ge_em_cells": [],
+      "em_cells_failing_sign_flip_p95": [],
+      "contrast_vanishes_or_inverts": false,
+      "verdict": "HOLDS: EM top-share exceeds marker in every variant x seed and all EM cells clear their sign-flip null p95 at this layer."
+    },
+    "any_layer_contrast_vanishes_or_inverts": false
+  },
+  "layer14_reference": {
+    "source_files": [
+      "eval_results/issue_551/controls/unitnorm_reread.json",
+      "eval_results/issue_551/controls/loo.json"
+    ],
+    "top_share_same_cells": {
+      "same_marker_seed42": {
+        "weighted": 0.32465410232543945,
+        "unitnorm": 0.2465732842683792
+      },
+      "same_marker_seed137": {
+        "weighted": 0.3113222122192383,
+        "unitnorm": 0.28395846486091614
+      },
+      "same_marker_seed256": {
+        "weighted": 0.3476976752281189,
+        "unitnorm": 0.24247078597545624
+      },
+      "same_em_seed42": {
+        "weighted": 0.5235457420349121,
+        "unitnorm": 0.5237600207328796
+      },
+      "same_em_seed137": {
+        "weighted": 0.5720158219337463,
+        "unitnorm": 0.5724689364433289
+      },
+      "same_em_seed256": {
+        "weighted": 0.6031942963600159,
+        "unitnorm": 0.6033250093460083
+      }
+    },
+    "marker_rank_corr_weighted_vs_unitnorm_by_seed": {
+      "seed42": 0.8241758241758241,
+      "seed137": 0.22197802197802197,
+      "seed256": 0.8461538461538461
+    },
+    "loo_same_cells": {
+      "same_marker_seed42": {
+        "s_top1_frac_loo": 0.3398055136203766,
+        "sign_flip_p95": 0.13604320585727692,
+        "passes_sign_flip_p95": true
+      },
+      "same_marker_seed137": {
+        "s_top1_frac_loo": 0.3367049992084503,
+        "sign_flip_p95": 0.1320468634366989,
+        "passes_sign_flip_p95": true
+      },
+      "same_marker_seed256": {
+        "s_top1_frac_loo": 0.3659512996673584,
+        "sign_flip_p95": 0.13545668125152588,
+        "passes_sign_flip_p95": true
+      },
+      "same_em_seed42": {
+        "s_top1_frac_loo": 0.5295583605766296,
+        "sign_flip_p95": 0.08860170841217041,
+        "passes_sign_flip_p95": true
+      },
+      "same_em_seed137": {
+        "s_top1_frac_loo": 0.5757790803909302,
+        "sign_flip_p95": 0.09127552807331085,
+        "passes_sign_flip_p95": true
+      },
+      "same_em_seed256": {
+        "s_top1_frac_loo": 0.6079761981964111,
+        "sign_flip_p95": 0.09196546673774719,
+        "passes_sign_flip_p95": true
+      }
+    }
+  }
+}

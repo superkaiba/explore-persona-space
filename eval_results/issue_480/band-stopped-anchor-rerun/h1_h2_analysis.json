@@ -1,0 +1,361 @@
+{
+  "schema": "issue_480_h1_h2_v1",
+  "seed": 42,
+  "n_cells_joined": 138,
+  "bootstrap_n": 10000,
+  "permutation_n": 10000,
+  "h1": {
+    "n_cells": 138,
+    "cell_spearman_raw": {
+      "rho": 0.2342145495179395,
+      "ci_lo": 0.045946561689996064,
+      "ci_hi": 0.41328820245760395,
+      "perm_p": 0.0069
+    },
+    "cell_spearman_source_fe": {
+      "rho": -0.18780360010710637,
+      "ci_lo": -0.36332028042867903,
+      "ci_hi": 0.0005383139377940566,
+      "perm_p": 0.0586
+    },
+    "cell_spearman_source_fe_base_rate_partial": {
+      "rho": -0.18350108964844639,
+      "ci_lo": -0.360301824557408,
+      "ci_hi": 0.008683396079087238,
+      "perm_p": 0.0684
+    },
+    "cell_spearman_source_fe_base_rate_resp_len_partial": {
+      "rho": -0.186897387833941,
+      "ci_lo": -0.37321369132575827,
+      "ci_hi": 0.0038072188973690586,
+      "perm_p": 0.0405
+    },
+    "source_level_spearman": {
+      "rho": -0.08571428571428573,
+      "ci_lo": -1.0,
+      "ci_hi": 0.92,
+      "n_sources": 6
+    },
+    "per_source_descriptive": {
+      "assistant": {
+        "n_cells": 23,
+        "mean_marker_delta": 13.787129568017047,
+        "mean_sycophancy_delta": 0.08991304347826087
+      },
+      "comedian": {
+        "n_cells": 23,
+        "mean_marker_delta": 14.182633399963379,
+        "mean_sycophancy_delta": -0.01965217391304348
+      },
+      "kindergarten_teacher": {
+        "n_cells": 23,
+        "mean_marker_delta": 17.705254720604938,
+        "mean_sycophancy_delta": -0.02878260869565218
+      },
+      "qwen_default": {
+        "n_cells": 23,
+        "mean_marker_delta": 19.187308311462402,
+        "mean_sycophancy_delta": -0.00408695652173913
+      },
+      "software_engineer": {
+        "n_cells": 23,
+        "mean_marker_delta": 17.648525030716605,
+        "mean_sycophancy_delta": 0.1788695652173913
+      },
+      "villain": {
+        "n_cells": 23,
+        "mean_marker_delta": 11.635660793470299,
+        "mean_sycophancy_delta": -0.018434782608695653
+      }
+    },
+    "verdict": "falsified",
+    "supported_threshold": 0.2
+  },
+  "h2_within_source": {
+    "assistant": {
+      "rho": -0.34683794466403167,
+      "ci_lo": -0.6698298004987532,
+      "ci_hi": 0.08623895706345099,
+      "perm_p": 0.1064,
+      "n": 23,
+      "cosine_l20_std": 0.07192809482789839,
+      "marker_delta_std": 8.901129453232684,
+      "gradient_descriptive_pass": false
+    },
+    "comedian": {
+      "rho": 0.6373517786561265,
+      "ci_lo": 0.2288554099806426,
+      "ci_hi": 0.9095058092315911,
+      "perm_p": 0.0021,
+      "n": 23,
+      "cosine_l20_std": 0.02417503031447737,
+      "marker_delta_std": 3.814967179896587,
+      "gradient_descriptive_pass": true
+    },
+    "kindergarten_teacher": {
+      "rho": 0.06422924901185771,
+      "ci_lo": -0.39182452642073773,
+      "ci_hi": 0.5402985074626866,
+      "perm_p": 0.771,
+      "n": 23,
+      "cosine_l20_std": 0.04032763889984635,
+      "marker_delta_std": 2.1177706135263916,
+      "gradient_descriptive_pass": false
+    },
+    "qwen_default": {
+      "rho": 0.08300395256916995,
+      "ci_lo": -0.42772321841895417,
+      "ci_hi": 0.5358195837444159,
+      "perm_p": 0.7059,
+      "n": 23,
+      "cosine_l20_std": 0.06807904351561507,
+      "marker_delta_std": 1.2027064525901394,
+      "gradient_descriptive_pass": false
+    },
+    "software_engineer": {
+      "rho": 0.1432806324110672,
+      "ci_lo": -0.33767217528318505,
+      "ci_hi": 0.6099267959134421,
+      "perm_p": 0.5187,
+      "n": 23,
+      "cosine_l20_std": 0.06440941300233284,
+      "marker_delta_std": 5.856326311956672,
+      "gradient_descriptive_pass": false
+    },
+    "villain": {
+      "rho": 0.5909090909090909,
+      "ci_lo": 0.10447088206263273,
+      "ci_hi": 0.9095888023773971,
+      "perm_p": 0.0031,
+      "n": 23,
+      "cosine_l20_std": 0.03672265784898747,
+      "marker_delta_std": 3.341566077495049,
+      "gradient_descriptive_pass": true
+    }
+  },
+  "h2_paired_delta_rho": {
+    "sources": [
+      "assistant",
+      "comedian",
+      "kindergarten_teacher",
+      "qwen_default",
+      "software_engineer",
+      "villain"
+    ],
+    "rho_marker_per_source": [
+      -0.34683794466403167,
+      0.6373517786561265,
+      0.06422924901185771,
+      0.08300395256916995,
+      0.1432806324110672,
+      0.5909090909090909
+    ],
+    "rho_syco_per_source": [
+      0.2739862863527671,
+      0.4449939419156868,
+      0.5714330706358673,
+      -0.17350471719378502,
+      -0.34494688475848884,
+      0.4376856740472904
+    ],
+    "delta_rho_per_source": [
+      -0.6208242310167988,
+      0.19235783674043966,
+      -0.5072038216240097,
+      0.25650866976295494,
+      0.48822751716955604,
+      0.15322341686180052
+    ],
+    "mean_delta_rho": -0.006285102017676236,
+    "paired_bootstrap_ci_lo": -0.33734921017869435,
+    "paired_bootstrap_ci_hi": 0.3033855591384969,
+    "wilcoxon_stat": 10.0,
+    "wilcoxon_p": 1.0,
+    "n_sources": 6
+  },
+  "h2_power_matched_paired_delta_rho": {
+    "method": "noise_tolerant_ranking",
+    "tie_tolerance_se_mult": 2.0,
+    "sources": [
+      "assistant",
+      "comedian",
+      "kindergarten_teacher",
+      "qwen_default",
+      "software_engineer",
+      "villain"
+    ],
+    "rho_marker_matched": [
+      -0.5075192189225524,
+      0.6180691600774166,
+      NaN,
+      NaN,
+      -0.3256694736394648,
+      0.32141217326661253
+    ],
+    "rho_syco_matched": [
+      0.5678453515036014,
+      NaN,
+      NaN,
+      0.3535533905932738,
+      -0.17025130615174972,
+      NaN
+    ],
+    "delta_rho_per_source": [
+      -1.0753645704261539,
+      0.6180691600774166,
+      0.0,
+      -0.3535533905932738,
+      -0.1554181674877151,
+      0.32141217326661253
+    ],
+    "mean_delta_rho": -0.10747579919385225,
+    "paired_bootstrap_ci_lo": -0.5430391547675205,
+    "paired_bootstrap_ci_hi": 0.3036777104842648,
+    "per_source_diagnostic": {
+      "assistant": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 1.4103707988349958,
+        "syco_delta_mean_se": 0.01673100126456953,
+        "marker_delta_std": 8.901129453232684,
+        "syco_delta_std": 0.16432504181526603
+      },
+      "comedian": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 0.4822674549098167,
+        "syco_delta_mean_se": 0.011859941209245104,
+        "marker_delta_std": 3.814967179896587,
+        "syco_delta_std": 0.0185242070021712
+      },
+      "kindergarten_teacher": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 0.4364199842302078,
+        "syco_delta_mean_se": 0.011655168243082936,
+        "marker_delta_std": 2.1177706135263916,
+        "syco_delta_std": 0.011484996227248878
+      },
+      "qwen_default": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 0.39479102657979775,
+        "syco_delta_mean_se": 0.013498831737139621,
+        "marker_delta_std": 1.2027064525901394,
+        "syco_delta_std": 0.026121939652814768
+      },
+      "software_engineer": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 1.0533989185736405,
+        "syco_delta_mean_se": 0.018987927087658767,
+        "marker_delta_std": 5.856326311956672,
+        "syco_delta_std": 0.1777790519278012
+      },
+      "villain": {
+        "n_cells": 23,
+        "marker_delta_mean_se": 0.41700005965083614,
+        "syco_delta_mean_se": 0.012138931442726928,
+        "marker_delta_std": 3.341566077495049,
+        "syco_delta_std": 0.025746713977368278
+      }
+    },
+    "n_sources_marker_rho_nan": 2,
+    "n_sources_syco_rho_nan": 3,
+    "nan_handling": "NaN per-source ρ replaced with 0.0 (rank order unresolved at measurement floor)",
+    "behavior_type_headline_licensed": false
+  },
+  "h2_power_match_self_check": {
+    "rho_marker_plain": 1.0,
+    "rho_marker_noise_tolerant": 1.0,
+    "marker_rho_shift_abs": 0.0,
+    "rho_syco_plain": 0.5187747035573123,
+    "rho_syco_noise_tolerant": NaN,
+    "syco_rho_shift_abs": 0.5187747035573123,
+    "power_match_is_non_noop": true
+  },
+  "saturation_diagnostic": {
+    "n_cells": 138,
+    "n_saturated": 31,
+    "frac_saturated": 0.2246376811594203,
+    "median_log_p_trained": -5.030018329620361,
+    "saturation_threshold_nats": -2.0,
+    "note": "KL secondary DV is DIAGNOSTIC-only per plan §4 saturation-guard constraint — NOT silently swapped as primary DV for H1/H2."
+  },
+  "logp_logit_agreement": {
+    "available": true,
+    "n_cells_with_logit_fields": 138,
+    "divergence_definition": "marker_delta − delta_z_marker per cell (≈ −Δlog Z)",
+    "note": "divergence is the saturation signature — read the logit (or a censored model) on diverging cells, never raw log P; agreement (≈0) confirms the log-prob result is faithful there",
+    "per_source": {
+      "assistant": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.9602174743348767,
+        "mean_abs_divergence_nats": 2.1514154102491294,
+        "max_abs_divergence_nats": 6.562472343444824,
+        "n_cells_abs_divergence_gt_1nat": 11,
+        "frac_cells_abs_divergence_gt_1nat": 0.4782608695652174
+      },
+      "comedian": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.9752964426877472,
+        "mean_abs_divergence_nats": 0.9870581834212594,
+        "max_abs_divergence_nats": 2.326870918273926,
+        "n_cells_abs_divergence_gt_1nat": 11,
+        "frac_cells_abs_divergence_gt_1nat": 0.4782608695652174
+      },
+      "kindergarten_teacher": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.9525691699604744,
+        "mean_abs_divergence_nats": 0.7284513141797937,
+        "max_abs_divergence_nats": 2.9245777130126953,
+        "n_cells_abs_divergence_gt_1nat": 7,
+        "frac_cells_abs_divergence_gt_1nat": 0.30434782608695654
+      },
+      "qwen_default": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.6007905138339922,
+        "mean_abs_divergence_nats": 0.7568021442579187,
+        "max_abs_divergence_nats": 1.5010652542114258,
+        "n_cells_abs_divergence_gt_1nat": 5,
+        "frac_cells_abs_divergence_gt_1nat": 0.21739130434782608
+      },
+      "software_engineer": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.974308300395257,
+        "mean_abs_divergence_nats": 1.2372467621513035,
+        "max_abs_divergence_nats": 4.812473297119141,
+        "n_cells_abs_divergence_gt_1nat": 13,
+        "frac_cells_abs_divergence_gt_1nat": 0.5652173913043478
+      },
+      "villain": {
+        "n_cells": 23,
+        "spearman_dlogp_vs_dz_marker": 0.9851778656126482,
+        "mean_abs_divergence_nats": 1.480865934620733,
+        "max_abs_divergence_nats": 2.794774055480957,
+        "n_cells_abs_divergence_gt_1nat": 17,
+        "frac_cells_abs_divergence_gt_1nat": 0.7391304347826086
+      }
+    }
+  },
+  "rho_syco_411_used": {
+    "villain": 0.4376856740472904,
+    "comedian": 0.4449939419156868,
+    "assistant": 0.2739862863527671,
+    "qwen_default": -0.17350471719378502,
+    "software_engineer": -0.34494688475848884,
+    "kindergarten_teacher": 0.5714330706358673
+  },
+  "join_meta": {
+    "n_marker_rows_input": 144,
+    "n_marker_self_dropped": 6,
+    "n_unmatched_pred": 0,
+    "n_joined": 138
+  },
+  "figures": {
+    "h1_hero_marker_vs_sycophancy": "figures/issue_480/band-stopped-anchor-rerun/h1_hero_marker_vs_sycophancy.png",
+    "marker_delta_distribution": "figures/issue_480/band-stopped-anchor-rerun/marker_delta_distribution.png",
+    "h2_per_source_cosine_gradient": "figures/issue_480/band-stopped-anchor-rerun/h2_per_source_cosine_gradient.png",
+    "h2_paired_rho_vs_411": "figures/issue_480/band-stopped-anchor-rerun/h2_paired_rho_vs_411.png",
+    "h1_source_fe_residualized": "figures/issue_480/band-stopped-anchor-rerun/h1_source_fe_residualized.png",
+    "source_logprob_trajectory": "figures/issue_480/band-stopped-anchor-rerun/source_logprob_trajectory.png"
+  },
+  "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+  "hostname": "1b803bfa7eb4",
+  "timestamp_utc": "2026-06-10T09:17:19.291128+00:00"
+}

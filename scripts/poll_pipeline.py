@@ -48,6 +48,20 @@ is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
 
+CPU-advancing override (#518): even with the stall conjunction met, a
+launcher whose process session (`setsid` group) has accrued more
+cumulative CPU since the previous tick is doing CPU-bound work and is
+NOT stalled. The probe sums `time` across every process sharing the
+launcher PID's SID via `ps -e -o sess=,time=` and persists the sample
+to the local state file; on the next tick the delta is compared to a
+small epsilon (`SESSION_CPU_ADVANCE_EPSILON_SECS`). If CPU advanced,
+the verdict flips to `running`. If CPU is flat OR unknown (first tick
+after launch, launcher dead, `ps` unavailable), the older arbiters
+keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
+#518 scoring_syco phase, 2026-06-10 — a healthy CPU-bound aggregation
+phase wrote nothing to the log for ~7.8h while the python child was
+at 100% CPU; the poller falsely declared `stalled`.
+
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
 main sweep log goes silent for ~15-18 min while the smoke cell actively
@@ -106,6 +120,24 @@ max-mtime reduction. The match stays narrow on purpose: the directory
 must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
 ``issue_<N>*`` glob would let issue 5 match issue 521's directories).
 
+GPU-idle advisory (incidents #518 + #537): the stall verdict treats an
+idle GPU only as CORROBORATION — a run that is alive and logging on a
+CPU-only phase with every GPU at 0% is (correctly) classified healthy,
+and before this advisory it burned silently (#518 ran a single-core CPU
+scoring phase ~14h on an idle 8xH100; #537 polled an external judge
+batch 2.5h+ the same day, 2026-06-10). The poller therefore ALSO tracks
+the sustained span of "healthy verdict + every GPU idle" across ticks
+(state-file backed, like ``ssh_fail_count``) and, once the span exceeds
+``EPM_GPU_IDLE_ADVISORY_MIN`` minutes (default 30; ``0`` disables),
+posts a NON-BLOCKING ``epm:progress`` advisory marker (note prefixed
+``[gpu-idle-advisory]``, riding the same marker channel as the phase-
+transition posts — no new marker schema) suggesting the CPU phase move
+off-pod per CLAUDE.md "CPU-only phases don't hold GPU pods". At most
+one advisory per phase name (de-dup persisted in the state file); the
+advisory NEVER changes the status verdict and never stops anything.
+Fail-safe semantics carry over from ``_gpu_idle``: an ``unknown`` /
+unparsable GPU sample resets the span rather than counting as idle.
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
 
@@ -151,6 +183,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -206,6 +239,15 @@ DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
 # next ``SSH_FAIL_REFRESH_THRESHOLD`` consecutive failures will trigger a
 # re-try.
 SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
+
+# Escalation threshold for the [ssh-wait-ALARM] (refs #572): once a pod has
+# been SSH-unreachable for this long while its experiment is supposed to be
+# running (pod presumed billing), the per-tick warnings escalate to a loud
+# structured log.error line naming the refresh-from-api recovery, re-fired at
+# most once per window. The refresh-counter above can't measure the total
+# span (it resets on every auto-heal attempt) — pod-488 (2026-06-09) spun
+# ~13.7h at $32/hr with only per-tick noise.
+SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
@@ -266,6 +308,86 @@ def _try_refresh_pods_conf_from_api(pod: str) -> bool:
         SSH_FAIL_REFRESH_THRESHOLD,
     )
     return True
+
+
+def _state_float(prev_state: dict[str, str], key: str) -> float:
+    """Read a float out of the string-valued tick state; garbled -> 0.0."""
+    try:
+        return float(prev_state.get(key, "0") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _update_ssh_fail_tracking(
+    prev_state: dict[str, str],
+    *,
+    ssh_failed: bool,
+    pod: str,
+    issue: int,
+    now_epoch: float | None = None,
+) -> tuple[int, float, float]:
+    """Advance the per-tick SSH-failure bookkeeping; returns
+    ``(ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts)`` for the state save.
+
+    Two escalation layers share this accounting:
+
+    1. **#488 stale-port self-heal** — after ``SSH_FAIL_REFRESH_THRESHOLD``
+       consecutive failures, fire ``pod.py config --refresh-from-api <pod>``
+       once (fail-soft) and reset the counter so the next N consecutive
+       failures retry.
+    2. **[ssh-wait-ALARM]** (refs #572) — the refresh counter resets on every
+       auto-heal attempt, so it cannot measure the TOTAL unreachable span;
+       pod-488 (2026-06-09) spun ~13.7h at $32/hr with only per-tick noise.
+       ``ssh_fail_since`` records the episode start; once the span crosses
+       ``SSH_WAIT_ALARM_SECS`` (default 1h) the per-tick warnings escalate to
+       a loud structured ``log.error`` naming the recovery command, re-fired
+       at most once per window (``ssh_wait_alarm_ts``). The pod is presumed
+       billing — this polling only runs while the experiment is supposed to
+       be RUNNING.
+    """
+    now_epoch = time.time() if now_epoch is None else now_epoch
+    try:
+        ssh_fail_count = int(prev_state.get("ssh_fail_count", "0"))
+    except (TypeError, ValueError):
+        ssh_fail_count = 0
+    ssh_fail_since = _state_float(prev_state, "ssh_fail_since")
+    ssh_wait_alarm_ts = _state_float(prev_state, "ssh_wait_alarm_ts")
+
+    if not ssh_failed:
+        return 0, 0.0, 0.0
+
+    if ssh_fail_since <= 0:
+        ssh_fail_since = now_epoch
+    ssh_fail_count += 1
+    if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
+        log.warning(
+            "SSH probe failed %d consecutive ticks for pod %s; "
+            "firing pod.py config --refresh-from-api %s "
+            "(#488 stale-port auto-heal)",
+            ssh_fail_count,
+            pod,
+            pod,
+        )
+        _try_refresh_pods_conf_from_api(pod)
+        # Reset after the attempt regardless of outcome so we don't
+        # hot-loop refresh calls every tick.
+        ssh_fail_count = 0
+    waited = now_epoch - ssh_fail_since
+    if waited >= SSH_WAIT_ALARM_SECS and now_epoch - ssh_wait_alarm_ts >= SSH_WAIT_ALARM_SECS:
+        log.error(
+            "[ssh-wait-ALARM] pod %s has been SSH-unreachable for %.1fh while "
+            "its experiment is supposed to be RUNNING (the pod is presumed "
+            "billing). Likely a stale host/port in pods.conf (#488 pattern). "
+            "Recovery: `uv run python scripts/pod.py config "
+            "--refresh-from-api %s`; if the pod is genuinely idle, stop it "
+            "(`pod.py stop --issue %d`) to halt the burn.",
+            pod,
+            waited / 3600.0,
+            pod,
+            issue,
+        )
+        ssh_wait_alarm_ts = now_epoch
+    return ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts
 
 
 def _marker_pid(issue: int) -> int | None:
@@ -329,6 +451,18 @@ class PollResult:
     # keeps a stalled verdict from firing).
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
+    # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
+    # Observability only; the advisory never changes ``status``.
+    gpu_idle_advisory_posted: bool = False
+    # Session-CPU signal (#518). ``session_cpu_secs`` is the literal probe
+    # output: a float string like ``"4271.5"`` or ``"unknown"``.
+    # ``cpu_advancing`` is the ternary decision: True (session advanced
+    # since previous tick), False (session flat), None (no signal — first
+    # tick, launcher dead, or ps unavailable). Surfaced in the JSON line
+    # so operators can see WHY a long-quiet run stayed in ``running`` (or
+    # WHY a stall verdict landed despite a CPU-bound phase).
+    session_cpu_secs: str = "unknown"
+    cpu_advancing: bool | None = None
 
 
 def _ssh_probe(
@@ -402,6 +536,21 @@ def _ssh_probe(
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
       ``_gpu_idle``).
+    * ``session_cpu_secs`` — cumulative CPU seconds (as a float string,
+      e.g. ``"4271.5"``) summed across every process in the launcher
+      PID's process SESSION (`setsid` group). The launcher itself
+      accrues ~no CPU — its children carry the work — so summing over
+      the session captures every descendant regardless of how the
+      python child re-execs. ``"unknown"`` when the launcher PID is
+      not alive (no session to probe) or when ``ps`` is unavailable /
+      errors (fail-safe — see ``_session_cpu_advancing``). Used as a
+      defense against false-stalled verdicts on silent CPU-bound
+      phases: even when every log mtime exceeds the stall threshold
+      AND the GPUs are idle, a session whose cumulative CPU time has
+      advanced since the previous tick is doing work, not hanging
+      (incident #518 scoring_syco phase, 2026-06-10 — a healthy run
+      with cumulative CPU time advancing 1:1 with wall time was
+      false-declared stalled because no log line appeared for ~7.8h).
     """
     marker_probe = ""
     if marker_pid is not None:
@@ -500,6 +649,46 @@ def _ssh_probe(
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
         'else echo "GPU_UTIL=unknown"; fi; '
     )
+    # Session CPU probe (#518): cumulative CPU seconds summed across
+    # every process sharing the launcher PID's session id (SID). The
+    # launcher is started with `setsid nohup bash <launcher>` (see
+    # `.claude/agents/experimenter.md` "Launch") so every descendant
+    # — the python child, vLLM workers, judge subprocesses, etc. —
+    # carries the same SID as the launcher PID itself. `ps -o sess=`
+    # reads that SID; `etime` field is wall-clock; `time` field is
+    # cumulative CPU. We filter the full `ps -e` output by SID and
+    # sum `time` (HH:MM:SS, or D-HH:MM:SS for >1 day) into seconds.
+    #
+    # ``unknown`` when (a) the pidfile is missing / pid is dead — no
+    # session to probe; the launcher exiting clean is `phase=done` /
+    # `dead` territory and the stall arbiter never reaches this
+    # signal — or (b) `ps` is unavailable / errors. The
+    # `_session_cpu_advancing` decision fails safe to "no signal" in
+    # those cases (the older log + GPU arbiters then carry the
+    # verdict, preserving the pre-#518 behavior).
+    session_cpu_probe = (
+        f"if [ -f {pid_file} ]; then "
+        f"  LPID=$(cat {pid_file}); "
+        f"  SID=$(ps -o sess= -p $LPID 2>/dev/null | tr -d ' '); "
+        f'  if [ -n "$SID" ] && [ "$SID" != "0" ]; then '
+        f"    CPU_SUM=$(ps -e -o sess=,time= 2>/dev/null | "
+        f'      awk -v s="$SID" \'$1==s {{ '
+        f'        n=split($2,a,":"); '
+        f"        if (n==3) {{ secs += a[1]*3600 + a[2]*60 + a[3] }} "
+        f"        else if (n==2) {{ secs += a[1]*60 + a[2] }} "
+        f"        else if (n==1) {{ "
+        f'          m=split(a[1],b,"-"); '
+        f"          if (m==2) {{ secs += b[1]*86400 + b[2] }} "
+        f"          else {{ secs += a[1] }} "
+        f"        }} "
+        f"      }} END {{ "
+        f'        if (NR==0) {{ print "unknown" }} '
+        f'        else {{ printf "%.1f", secs }} '
+        f"      }}'); "
+        f'    echo "SESSION_CPU_SECS=${{CPU_SUM:-unknown}}"; '
+        f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
+        f'else echo "SESSION_CPU_SECS=unknown"; fi; '
+    )
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -515,6 +704,7 @@ def _ssh_probe(
         f"{phase_log_probe}"
         f"{shard_log_probe}"
         f"{gpu_probe}"
+        f"{session_cpu_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -539,6 +729,7 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "session_cpu_secs": "unknown",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -557,6 +748,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "SESSION_CPU_SECS",
 )
 
 
@@ -578,6 +770,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "phase_log_mtime_epoch": "0",
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
+        "session_cpu_secs": "unknown",
     }
     tail_lines: list[str] = []
     cell_tail_lines: list[str] = []
@@ -1025,6 +1218,196 @@ def _gpu_idle(gpu_util: str) -> bool:
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
 
 
+# ── GPU-idle advisory (incidents #518 + #537) ───────────────────────────────
+#
+# Minutes of sustained "healthy verdict + every GPU idle" before the poller
+# posts a one-time, non-blocking [gpu-idle-advisory] epm:progress marker.
+# ``0`` (or negative) disables the advisory entirely. Read at import time to
+# mirror ``SSH_FAIL_REFRESH_THRESHOLD``; tests pass ``advisory_min``
+# explicitly to the pure decision core instead of mutating the env.
+GPU_IDLE_ADVISORY_MIN = int(os.environ.get("EPM_GPU_IDLE_ADVISORY_MIN", "30"))
+
+
+@dataclass(frozen=True)
+class GpuIdleAdvisoryUpdate:
+    """Outcome of one advisory-counter tick (``_gpu_idle_advisory_update``)."""
+
+    should_post: bool
+    idle_since_epoch: int  # 0 = no active all-idle span
+    idle_span_sec: int  # length of the current span; 0 when no span
+
+
+def _gpu_idle_advisory_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_idle_since_epoch: int,
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+) -> GpuIdleAdvisoryUpdate:
+    """Pure decision core for the GPU-idle advisory (incidents #518 + #537).
+
+    Tracks the sustained span of "healthy verdict + every GPU idle" across
+    poll ticks. The span RESETS (``idle_since_epoch`` -> 0) whenever the
+    verdict is not ``running``, any GPU is busy, or the GPU sample is
+    ``unknown`` / unparsable — the idle predicate is ``_gpu_idle`` itself
+    (<= ``GPU_IDLE_UTIL_THRESHOLD``% on every card), so the stall verdict's
+    fail-safe semantics carry over unchanged: a missing / erroring
+    nvidia-smi never accumulates toward an advisory. A phase change
+    RESTARTS the span at the current tick so each phase is judged on its
+    own idle window.
+
+    ``should_post`` is True only when the span has lasted at least
+    ``advisory_min`` minutes AND ``current_phase`` is not already in
+    ``advised_phases`` (at-most-once-per-phase de-dup). ``advisory_min <= 0``
+    disables the advisory. Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    if advisory_min <= 0:
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if status != "running" or not _gpu_idle(gpu_util):
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if current_phase != prev_phase or prev_idle_since_epoch <= 0:
+        idle_since = now_epoch
+    else:
+        idle_since = prev_idle_since_epoch
+    span = max(0, now_epoch - idle_since)
+    should_post = span >= advisory_min * 60 and current_phase not in advised_phases
+    return GpuIdleAdvisoryUpdate(
+        should_post=should_post, idle_since_epoch=idle_since, idle_span_sec=span
+    )
+
+
+def _maybe_post_gpu_idle_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, set[str], bool]:
+    """Advisory wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(idle_since_epoch, advised_phases, posted)`` for the caller to
+    persist via ``_save_state``. Posting rides the SAME ``epm:progress``
+    marker channel as the phase-transition posts (note prefixed
+    ``[gpu-idle-advisory]``, plus a ``gpu_idle_advisory=True`` extra for
+    downstream consumers) — no new marker schema. A post failure is logged
+    and the phase is NOT recorded as advised, so the next tick retries; the
+    advisory never affects the status verdict and never stops anything.
+    """
+    try:
+        prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_idle_since = 0
+    advised_phases = {
+        p for p in (prev_state.get("gpu_idle_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_idle_advisory_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_idle_since_epoch=prev_idle_since,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_IDLE_ADVISORY_MIN,
+    )
+    if not update.should_post:
+        return update.idle_since_epoch, advised_phases, False
+    n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
+    idle_min = update.idle_span_sec // 60
+    note = (
+        f"[gpu-idle-advisory] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+        f"{idle_min} min while the run is healthy (phase={current_phase}, "
+        f"gpu_util={gpu_util}). Likely a CPU-only phase holding a GPU pod — consider "
+        "moving the phase off-pod to the VM or stopping the pod after a checkpoint "
+        "(CLAUDE.md: CPU-only phases don't hold GPU pods). Advisory only: the stall "
+        "verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_idle_advisory=True,
+        )
+    except Exception as exc:
+        log.error("gpu-idle advisory post failed (next tick will retry): %s", exc)
+        return update.idle_since_epoch, advised_phases, False
+    log.warning(
+        "posted gpu-idle advisory for #%d: all %d GPUs idle %d min during healthy phase=%s",
+        issue,
+        n_gpus,
+        idle_min,
+        current_phase,
+    )
+    advised_phases.add(current_phase)
+    return update.idle_since_epoch, advised_phases, True
+
+
+# Minimum cumulative CPU-seconds delta between consecutive ticks before
+# declaring the launcher's process session "advancing". Set conservatively
+# so a single accounting quantum or a brief sleep across ticks does not
+# false-fire "advancing" on a truly hung session. A real CPU-bound phase
+# accrues many seconds per minute of wall time across its process tree;
+# even a half-second delta over a 9-minute poll interval is well above
+# the noise floor of `ps` rounding.
+SESSION_CPU_ADVANCE_EPSILON_SECS = 0.5
+
+
+def _parse_session_cpu(value: str) -> float | None:
+    """Parse a SESSION_CPU_SECS probe value to seconds, or None if unknown.
+
+    The probe heredoc emits one of: a float like ``"4271.5"`` (success),
+    ``"unknown"`` (pidfile missing, pid dead, ps unavailable, or ``ps``
+    errored). Any other input (empty, malformed) is treated as unknown so
+    the caller fails safe to "no signal" — never to "advancing".
+    """
+    if not value or value == "unknown":
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
+    """Return True / False / None for the session-CPU "advancing" decision.
+
+    * ``True``  — both samples parse AND current > prev + epsilon. The
+      session is doing CPU work; a stalled-on-logs verdict should flip
+      to running.
+    * ``False`` — both samples parse AND current is at or below prev +
+      epsilon. The session is truly idle; stalled stands.
+    * ``None``  — at least one sample is unknown. NO signal; the caller
+      preserves whatever the older log + GPU arbiters decided. This is
+      the fail-safe path on (a) first tick after launch (no prior
+      observation), (b) launcher dead (no session to probe — the
+      pid-alive arbiter already routed to `dead`), or (c) `ps`
+      unavailable.
+
+    Returning None on first-tick prevents an immediate false-stalled →
+    epm:failure cascade on a freshly-launched run; the next tick will
+    have a prior observation and the decision flips to True / False.
+    """
+    cur = _parse_session_cpu(current)
+    if cur is None:
+        return None
+    prv = _parse_session_cpu(prev) if prev is not None else None
+    if prv is None:
+        return None
+    return cur > prv + SESSION_CPU_ADVANCE_EPSILON_SECS
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -1087,29 +1470,10 @@ def poll_once(
     # already exists; this is the wiring that uses it without a human in
     # the loop).
     prev_state = _load_state(state_file, issue)
-    prev_ssh_fail_count_raw = prev_state.get("ssh_fail_count", "0")
-    try:
-        prev_ssh_fail_count = int(prev_ssh_fail_count_raw)
-    except (TypeError, ValueError):
-        prev_ssh_fail_count = 0
     ssh_failed = probe.get("ssh_failed") == "1"
-    if ssh_failed:
-        ssh_fail_count = prev_ssh_fail_count + 1
-        if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
-            log.warning(
-                "SSH probe failed %d consecutive ticks for pod %s; "
-                "firing pod.py config --refresh-from-api %s "
-                "(#488 stale-port auto-heal)",
-                ssh_fail_count,
-                pod,
-                pod,
-            )
-            _try_refresh_pods_conf_from_api(pod)
-            # Reset after the attempt regardless of outcome so we don't
-            # hot-loop refresh calls every tick.
-            ssh_fail_count = 0
-    else:
-        ssh_fail_count = 0
+    ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts = _update_ssh_fail_tracking(
+        prev_state, ssh_failed=ssh_failed, pod=pod, issue=issue
+    )
 
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
@@ -1178,6 +1542,27 @@ def poll_once(
     # healthy long phase whose shard log OR per-phase log is fresh OR
     # whose GPU is busy will stay in `running` even if nvidia-smi is
     # unavailable.
+    # Session-CPU advancing check (#518): even when every log-mtime
+    # signal AND the GPU-idle signal agree on "stalled", a launcher
+    # whose process session has accrued more cumulative CPU since the
+    # previous tick is doing CPU-bound work (e.g. the scoring_syco
+    # phase that polls a judge batch and aggregates results — silent
+    # on logs for hours, GPUs idle by design, but the python child is
+    # at 100% CPU). Override `stalled` -> `running` when CPU is
+    # advancing; preserve `stalled` when CPU is flat or unknown
+    # (fail-safe). The very first tick after launch has no prior
+    # observation, so `_session_cpu_advancing` returns None and the
+    # decision falls back to the older log+GPU arbiters: a freshly-
+    # launched run cannot meet the >stall_sec mtime conjunction on
+    # the first tick (the logs ARE fresh), so this code path doesn't
+    # change first-tick semantics. From the second tick onward, a
+    # truly hung session (CPU flat AND logs stale AND GPUs idle)
+    # still routes to `stalled` and the orchestrator still fires
+    # epm:failure.
+    current_session_cpu = probe.get("session_cpu_secs", "unknown")
+    prev_session_cpu = prev_state.get("session_cpu_secs")
+    cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
+
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
@@ -1190,9 +1575,40 @@ def poll_once(
         and shard_log_mtime_ago > stall_sec
         and gpu_idle
     ):
-        status = "stalled"
+        if cpu_advancing is True:
+            log.info(
+                "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
+                "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
+                "reporting status=running",
+                stall_sec,
+                prev_session_cpu,
+                current_session_cpu,
+                pod,
+            )
+            status = "running"
+        else:
+            status = "stalled"
     else:
         status = "running"
+
+    # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
+    # The stall verdict above treats an idle GPU only as corroboration, so
+    # a HEALTHY run on a long CPU-only phase (fresh logs, every GPU at 0%)
+    # burns pod-hours silently. Track the sustained healthy-and-all-idle
+    # span across ticks (state-file backed, like ssh_fail_count) and post
+    # a one-per-phase, non-blocking advisory marker once it exceeds
+    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``.
+    gpu_idle_since_epoch, gpu_idle_advised_phases, gpu_idle_advisory_posted = (
+        _maybe_post_gpu_idle_advisory(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=prev_state,
+            now_epoch=now_epoch,
+        )
+    )
 
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
@@ -1220,6 +1636,19 @@ def poll_once(
             "phase": current_phase,
             "last_mtime_epoch": str(mtime_epoch),
             "ssh_fail_count": str(ssh_fail_count),
+            # 1h billing-pod SSH-wait alarm bookkeeping (refs #572): episode
+            # start + last alarm ts, both 0.0 while SSH is reachable.
+            "ssh_fail_since": str(ssh_fail_since),
+            "ssh_wait_alarm_ts": str(ssh_wait_alarm_ts),
+            # GPU-idle advisory span + per-phase de-dup (#518/#537). Phase
+            # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
+            "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
+            "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
+            # Persist the current CPU sample so the NEXT tick can compute
+            # the advancing delta. Stored as the literal probe string
+            # (``"unknown"`` or a float-as-string) so `_parse_session_cpu`
+            # treats it consistently with the live probe value.
+            "session_cpu_secs": current_session_cpu,
         },
     )
 
@@ -1246,6 +1675,9 @@ def poll_once(
         phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
+        gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        session_cpu_secs=current_session_cpu,
+        cpu_advancing=cpu_advancing,
     )
 
 
@@ -1310,6 +1742,9 @@ def main(argv: list[str] | None = None) -> int:
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
+                "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
+                "session_cpu_secs": result.session_cpu_secs,
+                "cpu_advancing": result.cpu_advancing,
             }
         )
     )

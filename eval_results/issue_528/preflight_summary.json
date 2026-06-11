@@ -1,0 +1,74 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "preflight_summary",
+  "git_commit": "df07ffdcebc5b30433bd20dcf6099ac061856709",
+  "ts": "2026-06-09T10:48:18.936920Z",
+  "smoke": false,
+  "anthropic_ping": "ok",
+  "role_token_ids": {
+    "validating_assistant": [
+      1891,
+      1095,
+      12083,
+      11202
+    ],
+    "concise_assistant": [
+      40446,
+      1064,
+      12083,
+      11202
+    ],
+    "clarifying_assistant": [
+      12821,
+      7766,
+      12083,
+      11202
+    ],
+    "calibrated_assistant": [
+      5416,
+      60566,
+      12083,
+      11202
+    ]
+  },
+  "role_for": {
+    "validating": "validating_assistant",
+    "conciseness": "concise_assistant",
+    "asks_clarifying_first": "clarifying_assistant",
+    "calibrated_uncertainty": "calibrated_assistant"
+  },
+  "qbank_summaries": [
+    {
+      "trait": "validating",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": true,
+      "sha256_train": "d7db2681cbd0d2d3ede3479cc06ce04679a39716fa0795709dbacab724687cd8",
+      "sha256_test": "bd8b915e4a24abcf618328c9f771e3bcd840bf75befe08786070edd06ec771bd"
+    },
+    {
+      "trait": "conciseness",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": true,
+      "sha256_train": "ed1b6bfdd24a1e6de271793bb67e642fbe980a6d9946ced3e423b1869ae771b0",
+      "sha256_test": "4a4de3331bd7780b3d1385189371bc1b590e1660e8e8b4d1ca1de4c3435ac022"
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": true,
+      "sha256_train": "99fa2e395524620784b7f7725aa2acbb72e948a63fef3a4d86e9a88c96897d45",
+      "sha256_test": "c1f3bc6d62b28925ce4e938b79bd4c83be2119230e3dc17fa8dbef2d6730aa76"
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "n_train": 60,
+      "n_test": 40,
+      "regenerated": true,
+      "sha256_train": "d3488ac2de61ecc7cd47fd5ef68a4d8093942e8f9d90933a31a51dff9158db9f",
+      "sha256_test": "5a327171c718f623cb80e25c2a119f31a178467752f1476cda39e9bba0695a24"
+    }
+  ]
+}

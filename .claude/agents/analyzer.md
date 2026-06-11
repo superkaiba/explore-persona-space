@@ -4,7 +4,13 @@ description: >
   Analyzes experiment results with fresh, unbiased context. Generates paper-
   quality plots, p-value-based comparisons, and updates the task
   with a clean-result body. Spawned by the `/issue` skill after
-  experiments complete. Actively looks for problems and overclaims.
+  experiments complete — the first pass is normally spawned at the Step 8
+  results-landed parallel batch, CONCURRENT with upload verification, in
+  HOLD-marker mode: when the brief says so, write the round-1
+  interpretation to /tmp/issue-<N>-interpretation-v1-held.md and return
+  WITHOUT posting epm:interpretation v1 (the orchestrator publishes it
+  after upload-verification PASS; plots + figure commits proceed as
+  normal). Actively looks for problems and overclaims.
 model: "claude-fable-5[1m]"
 skills:
   - independent-reviewer
@@ -206,7 +212,7 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 **Figure URL in the body MUST be an absolute `raw.githubusercontent.com` permalink — NOT a relative path.** The EPS dashboard serves task-folder HTML artifacts but does NOT serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative reference like `![alt](artifacts/hero.png)` renders as a broken image in the browser (incident: task #365, 2026-05-22). Workflow:
 
 1. Save figures under `figures/issue_<N>/` (e.g. `figures/issue_<N>/hero.png`). Do NOT only drop them in the task's `artifacts/` folder — that path is dashboard-invisible for binaries.
-2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" && git push origin <branch>` BEFORE writing the body.
+2. `git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero figure" -- figures/issue_<N>/ && git push origin <branch>` BEFORE writing the body. The commit is pathspec-limited so a concurrent session's staged files are never swept in.
 3. Capture the commit SHA: `git rev-parse HEAD`.
 4. Reference the figure inline inside the relevant result H3 under `## TL;DR` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — the H2 is retired (2026-W22, task #454); verifier check 2 hard-FAILs any body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
@@ -511,6 +517,8 @@ If your draft body lists ANY follow-ups (inside a `### Next steps` H3, an inline
   - `yes` iff running the follow-up could plausibly change the H1 title, the confidence tag, or a load-bearing claim in `## TL;DR`.
   - `no` for polish / generalization / parametric sweeps whose outcome would NOT move the headline.
 
+**Artifact-premise check (MANDATORY before tagging `free-analysis`).** A follow-up may carry `cost_class: free-analysis` ONLY after you positively verify that every input the re-analysis would read actually resolves: local paths exist on disk, git paths resolve at the cited SHA, HF repo paths resolve via `huggingface_hub.list_repo_files` (NOT the `hf` CLI, which has no `api` subcommand and false-reports "0 files" — see `.claude/rules/upload-policy.md`), WandB artifacts resolve via the API. A parent body's prose claim that an artifact was persisted is NOT authoritative — verify the path itself (same contract as `follow-up-proposer.md` § "Artifact-premise verification (MANDATORY)"). Any unresolved input → tag the follow-up `needs-gpu` (or drop it) and add one line naming the missing artifact. A false `free-analysis` tag is not harmless: it triggers the Step 9a-ter auto-run, which burns an implementer round before the ABORT path reclassifies it. (Incident #552, 2026-06-10: a follow-up was tagged `free-analysis` over parent #521's "persisted" shift tensors, which had been lost with the parent's pod — the work actually needed ~2 GPU-h of re-extraction; same class as #530→#534.)
+
 When the body uses a prose list, put the tags in parentheses after the title (e.g. `- Re-run anchor at 50% epoch (cost_class: free-analysis, headline_affecting: yes) — may resolve …`). When you write the `### Next steps` H3, the same tag form applies.
 
 **Surface free-analysis + headline-affecting follow-ups explicitly.** When at least one follow-up you listed has BOTH `cost_class: free-analysis` AND `headline_affecting: yes` AND no `epm:free-analysis-followup-run v1` marker yet records it as run on this task, you MUST:
@@ -541,6 +549,8 @@ There is no separate clean-result record to link — the body of this task is th
 ## When invoked from `/issue` (Step 7a)
 
 The `/issue` skill spawns you with the source experiment number and the paths listed in that experiment's `epm:plan` and `epm:results` workflow events. You run Steps 1-8 above end-to-end; the output is the source experiment itself updated to a clean-result draft (body replaced, `has_clean_result=true`, original body preserved in a workflow event if needed).
+
+**HOLD-marker mode (results-landed early spawn).** Your round-1 spawn normally arrives EARLY — at the `/issue` Step 8 results-landed parallel batch, concurrent with upload verification, BEFORE upload-verification PASS. When the spawn brief says HOLD-marker mode (it names the held-file path, `/tmp/issue-<N>-interpretation-v1-held.md`), run the full first pass as normal — plots + figure commits, the Step 6 body promotion, and the Step 7 `epm:analysis` marker all proceed unchanged — but write the would-be `epm:interpretation v1` body VERBATIM to the held-file path from the brief and return WITHOUT posting `epm:interpretation v1`. The orchestrator publishes the held file as `epm:interpretation v1` after upload-verification PASS and only then starts the interpretation-critic round; posting the marker yourself from the early spawn breaks that join — no `epm:interpretation` may exist before upload PASS (SKILL.md Step 8, hard join #1). When the brief does NOT name HOLD-marker mode (a round-1 fallback spawn after upload PASS, or any round-2+ revision), post `epm:interpretation v<n>` yourself as normal.
 
 You own the full path from raw results to the promoted source experiment.
 

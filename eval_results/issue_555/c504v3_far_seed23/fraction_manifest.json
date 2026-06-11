@@ -1,0 +1,65 @@
+{
+  "schema_version": "i534_fraction_manifest_v1",
+  "fractions": [
+    1.0
+  ],
+  "manifest": [
+    {
+      "frac": 1.0,
+      "target_step": 5,
+      "selected_step": 5,
+      "exact": true
+    }
+  ],
+  "index": {
+    "1.00": {
+      "step": 5,
+      "path": "/workspace/runs/issue_555/c504v3_far_seed23/snapshots/step_0005"
+    }
+  },
+  "distinct_steps": 1,
+  "band_stop_meta": {
+    "stopped": false,
+    "stop_step": 5,
+    "stop_reason": "epoch_ceiling",
+    "eval_history": [],
+    "snapshot_steps": [
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "band": [
+      5.0,
+      12.0
+    ],
+    "eval_every_steps": 10,
+    "min_steps": 20,
+    "max_steps": 300,
+    "snapshot_every_steps": 1,
+    "snapshot_max_count": 64
+  },
+  "stop_reason": "epoch_ceiling",
+  "stopped": false,
+  "logit_readout_valid": true,
+  "gauge_results": {
+    "1.00": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_555/c504v3_far_seed23/snapshots/step_0005"
+    }
+  },
+  "stop_snapshot_matches_final_adapter": true,
+  "source_delta_g_at_selected_steps": {
+    "1.00": -0.038463592529296875
+  },
+  "source_steps_trajectory_path": "eval_results/issue_555/c504v3_far_seed23/source_steps_trajectory.json",
+  "hf_uploads": {
+    "1.00": "adapters/issue_555/c504v3_far_seed23/ckpt_frac1.00"
+  },
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "git_commit": "b8a715c100c490c7f7397f3df9fa596f6b8851ce",
+  "hostname": "a1576c880317",
+  "timestamp_utc": "2026-06-11T00:14:30.190588+00:00"
+}

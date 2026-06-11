@@ -31,8 +31,15 @@ classification.
 You are spawned in **subagent mode** by the `/issue` skill. The brief includes
 the issue number, the worktree path, the branch, the **path** to the approved
 plan (cached at `.claude/plans/issue-<N>.md` — read the file; never infer plan
-content from the issue body or comment markers), and the pod name
-(`epm-issue-<N>`).
+content from the issue body or comment markers), and the **compute host name**
+to ssh into (typically `epm-issue-<N>` for the RunPod default; the
+slice-6 unified router may also dispatch to a SLURM cluster or a GCP
+GCE instance — `nibi-<N>` / `eps-issue-<N>` — depending on the task's
+`backend:` frontmatter, but the host alias the brief gives you is the
+ONE place you SSH into regardless of backend). The orchestrator
+persists a typed `RunHandle` at `.claude/cache/issue-<N>-handle.json`
+so the bg-Bash poller can recover the backend kind + paths after you
+exit; you do NOT need to interact with that sidecar yourself.
 
 ## Your Responsibilities
 
@@ -165,8 +172,33 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, post `<!-- epm:failure v1 -->` with the JSON — do NOT
-   try to "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list: the feature-branch
+   false positive `Local is N commit(s) behind origin/main` fires on EVERY
+   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
+   is the ONLY error, treat preflight as PASS and proceed (see agent memory
+   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
+   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
+   "fix it" by editing code on the pod. Code edits never happen on pods.
+
+   **Pre-clear the false positive for launchers that re-run preflight
+   internally.** Your tolerance above does NOT transfer to a driver that
+   gates launch on its own `orchestrate.preflight` call (e.g. `preflight
+   || fail_loud` under `set -euo pipefail`; new drivers are told to parse
+   `--json` instead — see `experiment-implementer.md` § "Pod-side
+   preflight gates"). Grep the launcher script for `orchestrate.preflight`;
+   if it re-runs preflight internally, repoint the pod-local
+   remote-tracking ref BEFORE launching so the behind-origin/main count
+   reads 0:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        git update-ref refs/remotes/origin/main $(git rev-parse HEAD)")
+   ```
+   Safe on an ephemeral pod clone: it only repoints the pod-local
+   `origin/main` ref (nothing is pushed; the pod is destroyed after the
+   run). Incident #552 ×2 (2026-06-10/11): both pod launches died at the
+   driver's internal gate until the ref was hand-patched — the second
+   kill took out the experimenter's first launch and forced a relaunch.
 4. **Verify input-data completeness against planned coverage (MANDATORY
    pre-launch gate; fail-loud, no launch on shortfall).** This is a
    coverage gate, NOT a sanity check — silently launching a degraded
@@ -192,6 +224,25 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      (incident #518, 2026-06-09: the prestage gate demanded
      `eval_results/issue_509/...`, absent from the brief's
      enumeration, and the gap surfaced only at launch).
+   - **Plan-named prep-script outputs are gate items too.** When the
+     plan or brief marks an input dataset as "regenerated locally via
+     prep script" (e.g. a P0 prerequisite built by
+     `scripts/issue<N>_prep_datasets.py`), add the prep script's
+     OUTPUT file path(s) to the enumeration and stat-check them on
+     the pod like any other planned input — a presence check on the
+     regen path's secret/env var (e.g. `TURNER_EDS_PASSWORD`) does
+     NOT substitute for the dataset file itself. Remediation for a
+     missing output is running the named prep script on the pod
+     before launch, preferring its free/deterministic path (e.g.
+     decrypt-only `--no-generate`); if the script can fall back to a
+     paid-API regen, surface that loudly in your launch note instead
+     of letting it fire silently (the #468 paid-fallback trap).
+     Incident: task #545 (2026-06-10) — the gate checked only
+     `TURNER_EDS_PASSWORD` presence while the plan-named
+     `data/issue404/turner_bad_medical_advice.jsonl` was absent on
+     the fresh pod; the first launch crashed in seconds and was
+     recovered by `scripts/issue458_prep_datasets.py --cells
+     turner_bad_medical --no-generate` + relaunch.
    - **Count actuals on the pod.** Run one `ssh_execute ls -1
      <pattern> | wc -l` against the pod's local-disk path. Get a
      single integer (actual_input_files).
@@ -606,6 +657,7 @@ regexes; any infra match → `infra`, otherwise → `code` (conservative).
 | Pattern in log | failure_class |
 |---|---|
 | `CUDA out of memory`, `OOM-killer` | infra |
+| `CUDA out of memory` listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — deterministic GPU-pinning bug; respawn hits the identical OOM; #557) | code |
 | `disk full`, `ENOSPC`, `No space left on device` | infra |
 | vLLM init: `Failed to initialize`, `RuntimeError: CUDA error` | infra |
 | `SSH connection refused`, `No route to host`, `Connection timed out` | infra |

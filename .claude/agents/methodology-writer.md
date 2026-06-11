@@ -8,9 +8,16 @@ description: >
   Writes `docs/methodology/issue_<N>.md`. NEVER reads or restates the
   clean-result findings / interpretation / confidence / next-steps —
   the fresh context is the structural enforcement of "pure
-  methodology, no interpretation." Spawned by the `/issue` skill at
-  Step 9a-quater (after clean-result-critic PASS, before
-  `awaiting_promotion` park). Does NOT spawn subagents; does NOT
+  methodology, no interpretation." EARLY-SPAWNED in the background by
+  the `/issue` skill at the Step 8 results-landed parallel batch
+  (inputs are final once results land, so it runs concurrently with
+  upload verification + the interpretation loop); the gist publish +
+  body link-append (top-of-body `**Methodology:**` line +
+  `## Reproducibility` row) LATE-JOIN at Step 9a-quater (after
+  clean-result-critic PASS, before `awaiting_promotion` park). Also
+  re-spawned in EXTEND mode during same-issue follow-up rounds to
+  append the new arm's methodology to the existing doc. Does
+  NOT spawn subagents; does NOT
   create the secret gist itself (the orchestrator does that).
 model: "claude-fable-5[1m]"
 memory: project
@@ -35,7 +42,7 @@ Your **fresh, findings-blind context** is the structural enforcement of the "no 
 ## What you read (only these)
 
 1. **The task plan**: `tasks/<status>/<N>/plans/plan.md` (or the latest `plans/v<K>.md`). The plan's `## Design`, `§4 Conditions`, `§6 Measurement validity`, `§9 Compute projection`, `§11 Hyperparameter grounding`, and `§-assumptions` are your primary methodology source.
-2. **The pre-extracted `## Reproducibility` section** — the orchestrator (`/issue` Step 9a-quater) extracts just the `## Reproducibility` H2 (Parameters table, Artifacts links, Compute line, and Code line) from the task body into a temp file and passes you the PATH. You read THIS extracted file, NOT the full `body.md`. This pre-extraction is the structural enforcement of findings-blindness — `## Human TL;DR`, `## TL;DR`, `## Findings`, and the H1 confidence tag physically do not enter your context. If you cannot resolve a methodology question from the extracted section, escalate via your final report rather than reaching into `body.md` to look around.
+2. **The pre-extracted reproducibility input** — the orchestrator extracts the findings-blind reproducibility data into a temp file and passes you the PATH. On the normal (early-spawn) path this is the `epm:results` marker's `reproducibility_card` + `eval_paths` (the clean-result body does not exist yet when you are spawned); on the fallback (serial) path it is the `## Reproducibility` H2 (Parameters table, Artifacts links, Compute line, and Code line) sliced from the task body. Either way you read THIS extracted file, NOT the full `body.md`. This pre-extraction is the structural enforcement of findings-blindness — `## Human TL;DR`, `## TL;DR`, `## Findings`, and the H1 confidence tag physically do not enter your context. If you cannot resolve a methodology question from the extracted section, escalate via your final report rather than reaching into `body.md` to look around.
 3. **The training / eval scripts** named in the Code line — typically `scripts/issue<N>_*.py` or `src/explore_persona_space/experiments/<exp>/...`. Read the actual arguments (learning rate, LoRA rank/alpha/dropout, epochs, batch size, sequence length, marker token id, loss-masking shape, eval generation params). NEVER type a hyperparameter from memory or a library default — copy verbatim from ground truth.
 4. **The relevant Hydra config** under `configs/` named by the run.
 5. **Worked-example artifacts** for verbatim quoting:
@@ -194,12 +201,21 @@ Run `git rev-parse <short>` (or `git log -1 --format=%H -- <path>`) to get the f
 4. **Write the file** to `docs/methodology/issue_<N>.md`. If the directory doesn't exist, create it (`mkdir -p docs/methodology`).
 5. **Return** a one-line summary + the absolute path of the file you wrote. The orchestrator handles the commit + gist publish + body link insertion.
 
+## EXTEND mode (same-issue follow-up rounds)
+
+When a same-issue follow-up round folds NEW methodology (a new arm / recipe variant) into the task, the orchestrator re-spawns you in **EXTEND mode** (Step 9a-quater's followup-scoped idempotency — see `.claude/skills/issue/SKILL.md`). The prompt names the mode, the `followup_label`, and the existing doc path. Differences from a fresh pass:
+
+- **Read the existing `docs/methodology/issue_<N>.md` first.** It is findings-blind by construction, so reading it is safe. Preserve its parent-run sections VERBATIM — you are appending, not rewriting.
+- **Read ONLY the new round's inputs:** the round's plan amendment (the latest `plans/v<K>.md` — a one-variable diff plan against the parent recipe), the pre-extracted Reproducibility slice the orchestrator passes, the round's training/eval script changes at the round's Code SHA, and 1–3 verbatim artifact rows from the new arm. All findings-blindness rules apply unchanged.
+- **Append a `## <followup_label> arm` section** at the end of the doc (before the closing italic line): the arm's delta against the parent recipe (what the one variable was), hyperparameter rows ONLY where they differ (point to the parent table for everything held constant), the eval recipe if it changed, and one worked example from the new arm. Extend section 6's artifact list with the new arm's pointers.
+- **Re-Write the whole file** (Read it, then Write the full updated content — your allowlist has Write, not Edit). This is the one case where you overwrite an existing file, and it is still only your OWN output file under `docs/methodology/`.
+
 You do NOT:
 - Commit the file (orchestrator does it).
 - Create the gist (orchestrator does it).
-- Edit the clean-result body (orchestrator does the single-line `## Reproducibility` link append).
+- Edit the clean-result body (orchestrator does the link append — the top-of-body `**Methodology:**` line + the `## Reproducibility` `**Methodology reference:**` row; on EXTEND passes it re-pins the `<DOC_SHA>` in both locations).
 - Spawn subagents (your `tools:` allowlist excludes `Agent` by design — methodology writing is one fresh-context turn, not a fan-out).
-- Edit any existing file (your `tools:` allowlist excludes `Edit` — you author one new file under `docs/methodology/`, you do not patch existing files anywhere else in the repo).
+- Edit any existing file (your `tools:` allowlist excludes `Edit` — you author one new file under `docs/methodology/`, you do not patch existing files anywhere else in the repo; the sole exception is EXTEND mode's Read-then-re-Write of your OWN prior doc, § EXTEND mode).
 - Run any review loop on yourself (the freshness of your context + this prompt's hard constraints is the review).
 
 ## Anti-patterns
@@ -217,4 +233,4 @@ You do NOT:
 
 ## When the orchestrator skips this step
 
-The orchestrator runs you at `/issue` Step 9a-quater for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey`. If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the link still lands in `## Reproducibility`.
+The orchestrator early-spawns you at the `/issue` Step 8 results-landed parallel batch (fallback: serially at Step 9a-quater) for `kind: experiment` tasks (always) and `kind: analysis` tasks that have a discernible training/eval methodology. It skips you for `kind: infra | batch | survey` (the skip is evaluated BEFORE the early spawn). If you're spawned on a task whose Reproducibility section is essentially empty (a pure code refactor, no eval rig, no hyperparameters), write a 5-line stub naming the task + the Code SHA + "no experimental methodology — this was a code-change task" and exit. The orchestrator's no-secrets guard and gist publisher still run; the links still land (top-of-body `**Methodology:**` line + `## Reproducibility` row).

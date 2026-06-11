@@ -1,0 +1,332 @@
+{
+  "source": "qwen_default",
+  "seed": 42,
+  "recipe": "band_stop",
+  "ladder": [
+    {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -17.51883316040039,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 7.432475566864014
+    },
+    {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -0.27128738164901733,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.68001937866211
+    },
+    {
+      "step": 60,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-60",
+      "cap_end": false,
+      "trajectory_step": 60,
+      "logp_trained": -0.4480164647102356,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.503292083740234
+    },
+    {
+      "step": 80,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-80",
+      "cap_end": false,
+      "trajectory_step": 80,
+      "logp_trained": -0.33220797777175903,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.61910057067871
+    },
+    {
+      "step": 100,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-100",
+      "cap_end": false,
+      "trajectory_step": 100,
+      "logp_trained": -0.8033009171485901,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.148006439208984
+    },
+    {
+      "step": 120,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-120",
+      "cap_end": false,
+      "trajectory_step": 120,
+      "logp_trained": -0.311079740524292,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.640228271484375
+    },
+    {
+      "step": 140,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-140",
+      "cap_end": false,
+      "trajectory_step": 140,
+      "logp_trained": -0.15465110540390015,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.79665756225586
+    },
+    {
+      "step": 160,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-160",
+      "cap_end": false,
+      "trajectory_step": 160,
+      "logp_trained": -0.5105510354042053,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.44075584411621
+    },
+    {
+      "step": 180,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-180",
+      "cap_end": false,
+      "trajectory_step": 180,
+      "logp_trained": -0.2596200108528137,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.691688537597656
+    },
+    {
+      "step": 200,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-200",
+      "cap_end": false,
+      "trajectory_step": 200,
+      "logp_trained": -0.2891314625740051,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.66217613220215
+    },
+    {
+      "step": 220,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-220",
+      "cap_end": false,
+      "trajectory_step": 220,
+      "logp_trained": -0.13586843013763428,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.815439224243164
+    },
+    {
+      "step": 240,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-240",
+      "cap_end": false,
+      "trajectory_step": 240,
+      "logp_trained": -0.7374065518379211,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.21390151977539
+    },
+    {
+      "step": 260,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-260",
+      "cap_end": false,
+      "trajectory_step": 260,
+      "logp_trained": -0.6914045214653015,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.259902954101562
+    },
+    {
+      "step": 280,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-280",
+      "cap_end": false,
+      "trajectory_step": 280,
+      "logp_trained": -0.6201007962226868,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.331207275390625
+    },
+    {
+      "step": 300,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-300",
+      "cap_end": false,
+      "trajectory_step": 300,
+      "logp_trained": -0.56871497631073,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.38259506225586
+    },
+    {
+      "step": 320,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-320",
+      "cap_end": false,
+      "trajectory_step": 320,
+      "logp_trained": -0.46007829904556274,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.491230010986328
+    },
+    {
+      "step": 340,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-340",
+      "cap_end": false,
+      "trajectory_step": 340,
+      "logp_trained": -0.29335665702819824,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.6579532623291
+    },
+    {
+      "step": 360,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-360",
+      "cap_end": false,
+      "trajectory_step": 360,
+      "logp_trained": -0.4976324439048767,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.453676223754883
+    },
+    {
+      "step": 380,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-380",
+      "cap_end": false,
+      "trajectory_step": 380,
+      "logp_trained": -0.24673229455947876,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.70457649230957
+    },
+    {
+      "step": 400,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-400",
+      "cap_end": false,
+      "trajectory_step": 400,
+      "logp_trained": -0.29726719856262207,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.654041290283203
+    },
+    {
+      "step": 420,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-420",
+      "cap_end": false,
+      "trajectory_step": 420,
+      "logp_trained": -0.22505205869674683,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.726253509521484
+    },
+    {
+      "step": 440,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-440",
+      "cap_end": false,
+      "trajectory_step": 440,
+      "logp_trained": -0.33148330450057983,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.61982536315918
+    },
+    {
+      "step": 460,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-460",
+      "cap_end": false,
+      "trajectory_step": 460,
+      "logp_trained": -0.27738702297210693,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.673921585083008
+    },
+    {
+      "step": 480,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-480",
+      "cap_end": false,
+      "trajectory_step": 480,
+      "logp_trained": -0.30958878993988037,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.641719818115234
+    },
+    {
+      "step": 500,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-500",
+      "cap_end": false,
+      "trajectory_step": 500,
+      "logp_trained": -0.31115877628326416,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.64015007019043
+    },
+    {
+      "step": 520,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-520",
+      "cap_end": false,
+      "trajectory_step": 520,
+      "logp_trained": -0.3182592988014221,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.63304901123047
+    },
+    {
+      "step": 528,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-528",
+      "cap_end": false,
+      "trajectory_step": 525,
+      "logp_trained": -0.31194931268692017,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.639360427856445
+    },
+    {
+      "step": 529,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter",
+      "cap_end": true,
+      "trajectory_step": 525,
+      "logp_trained": -0.31194931268692017,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.639360427856445
+    }
+  ],
+  "picks": {
+    "firing": {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -0.27128738164901733,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 24.68001937866211,
+      "flags": []
+    },
+    "graded": {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/qwen_default_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -17.51883316040039,
+      "logp_base": -24.951309204101562,
+      "delta_nats": 7.432475566864014,
+      "flags": []
+    },
+    "firing_target_logp_nats": -1.0,
+    "graded_band": [
+      5.0,
+      12.0
+    ],
+    "graded_center": 8.5
+  },
+  "evaluations": [
+    {
+      "step": 40,
+      "attempt": 0,
+      "step_dir": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/qwen_default/seed_42/anchor_step_40",
+      "gate": {
+        "n_bystanders": 23,
+        "n_nonzero": 6,
+        "n_distinct": 3,
+        "n_ceiling": 0,
+        "informative": true,
+        "sub_ceiling": true,
+        "passes": true,
+        "criteria": {
+          "min_nonzero_cells": 5,
+          "min_distinct_values": 3,
+          "ceiling_rate": 0.92,
+          "max_ceiling_cells": 2
+        }
+      }
+    }
+  ],
+  "accepted_step": 40,
+  "accepted_gate": {
+    "n_bystanders": 23,
+    "n_nonzero": 6,
+    "n_distinct": 3,
+    "n_ceiling": 0,
+    "informative": true,
+    "sub_ceiling": true,
+    "passes": true,
+    "criteria": {
+      "min_nonzero_cells": 5,
+      "min_distinct_values": 3,
+      "ceiling_rate": 0.92,
+      "max_ceiling_cells": 2
+    }
+  },
+  "flags": [],
+  "repick_stride_steps": 40,
+  "max_reevals": 2,
+  "trajectory_path": "eval_results/issue_480/band-stopped-anchor-rerun/trajectories/qwen_default_seed42_trajectory.json",
+  "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+  "hostname": "1b803bfa7eb4",
+  "timestamp_utc": "2026-06-10T08:06:25.682588+00:00"
+}

@@ -1,0 +1,281 @@
+{
+  "_doc": "PRE-TREATMENT engagement covariates (P3 PRIMARY conditioning set): computed on the Phase-2 BASE-model completions, before any training exists \u2014 cannot contain the leak DV (plan \u00a74.4 v2 fix / #474 shared-surface-variable incident).",
+  "pre_treatment": true,
+  "judge_model": "claude-haiku-4-5-20251001",
+  "tokenizer": "Qwen/Qwen2.5-7B-Instruct",
+  "headline_framings": [
+    1,
+    3,
+    5,
+    7,
+    8,
+    9,
+    11
+  ],
+  "subsample_seed": 42,
+  "per_persona": {
+    "antiques_dealer": {
+      "base_completion_length": 166.24814814814815,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.9,
+      "n_judged": 60,
+      "on_topic_se": 0.03872983346207417,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "assistant": {
+      "base_completion_length": 121.37037037037037,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8,
+      "n_judged": 60,
+      "on_topic_se": 0.05163977794943222,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "biographer": {
+      "base_completion_length": 66.5962962962963,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "comedian": {
+      "base_completion_length": 200.5185185185185,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.55,
+      "n_judged": 60,
+      "on_topic_se": 0.06422616289332565,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "county_judge": {
+      "base_completion_length": 138.86666666666667,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.04144384867012948,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "county_records_clerk": {
+      "base_completion_length": 110.47407407407407,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "court_stenographer": {
+      "base_completion_length": 126.61111111111111,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8166666666666667,
+      "n_judged": 60,
+      "on_topic_se": 0.04995368225036439,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "courthouse_architecture_historian": {
+      "base_completion_length": 216.38518518518518,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.9166666666666666,
+      "n_judged": 60,
+      "on_topic_se": 0.035681201607403144,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "courthouse_custodian": {
+      "base_completion_length": 124.71481481481482,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "courthouse_docent": {
+      "base_completion_length": 144.9037037037037,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8333333333333334,
+      "n_judged": 60,
+      "on_topic_se": 0.04811252243246881,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "data_scientist": {
+      "base_completion_length": 142.43703703703704,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.75,
+      "n_judged": 60,
+      "on_topic_se": 0.05590169943749474,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "french_person": {
+      "base_completion_length": 145.23333333333332,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8333333333333334,
+      "n_judged": 60,
+      "on_topic_se": 0.04811252243246881,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "furniture_historian": {
+      "base_completion_length": 204.42592592592592,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8333333333333334,
+      "n_judged": 60,
+      "on_topic_se": 0.04811252243246881,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "kindergarten_teacher": {
+      "base_completion_length": 121.58518518518518,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "librarian": {
+      "base_completion_length": 135.61851851851853,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "local_historian": {
+      "base_completion_length": 114.5111111111111,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7833333333333333,
+      "n_judged": 60,
+      "on_topic_se": 0.0531855591650939,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "local_resident": {
+      "base_completion_length": 112.72222222222223,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.85,
+      "n_judged": 60,
+      "on_topic_se": 0.046097722286464436,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "marine_biologist": {
+      "base_completion_length": 106.83333333333333,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.75,
+      "n_judged": 60,
+      "on_topic_se": 0.05590169943749474,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "medical_doctor": {
+      "base_completion_length": 130.97037037037038,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.85,
+      "n_judged": 60,
+      "on_topic_se": 0.046097722286464436,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "no_system": {
+      "base_completion_length": 127.63333333333334,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7666666666666667,
+      "n_judged": 60,
+      "on_topic_se": 0.054602943890247176,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "police_officer": {
+      "base_completion_length": 118.5925925925926,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7166666666666667,
+      "n_judged": 60,
+      "on_topic_se": 0.05817438662555248,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "smalltown_pa_reporter": {
+      "base_completion_length": 123.43333333333334,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.85,
+      "n_judged": 60,
+      "on_topic_se": 0.046097722286464436,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "software_engineer": {
+      "base_completion_length": 137.4,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.7,
+      "n_judged": 60,
+      "on_topic_se": 0.05916079783099616,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    },
+    "wooden_furniture_carpenter": {
+      "base_completion_length": 157.22222222222223,
+      "n_length_rows": 270,
+      "base_on_topic_fraction": 0.8166666666666667,
+      "n_judged": 60,
+      "on_topic_se": 0.04995368225036439,
+      "subsample_target": 60,
+      "realized_subsample": 60
+    }
+  },
+  "timestamp": "2026-06-10T19:26:24.831090+00:00",
+  "reproducibility": {
+    "git_sha": "96aa37180d3266678d03846c63f494b9aa9f245c",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue444_mundane_place_provenance",
+    "timestamp": "2026-06-10T19:26:25.539377+00:00"
+  }
+}

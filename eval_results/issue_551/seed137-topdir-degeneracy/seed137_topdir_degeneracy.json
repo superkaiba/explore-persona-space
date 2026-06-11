@@ -1,0 +1,517 @@
+{
+  "meta": {
+    "issue": 551,
+    "followup_of": 521,
+    "followup_label": "layer-sensitivity-and-seed137-degeneracy",
+    "analysis": "seed137_topdir_degeneracy",
+    "layer": 14,
+    "git_commit": "3e00389f943470b74fe7cedda1c629f0fe2203f1",
+    "timestamp_utc": "2026-06-11T00:22:30Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6"
+    },
+    "torch_used_for": "tensor loading only; all linear algebra in numpy float64",
+    "tensors_source": "eval_results/issue_551/shifts",
+    "rng": {
+      "bootstrap_base_seed": 20260610,
+      "per_cell_seed_sequence": "[BOOTSTRAP_BASE_SEED, cell training seed, cell index]",
+      "n_boot": 1000
+    },
+    "reference_rank_corr_weighted_vs_unitnorm": {
+      "seed42": 0.824,
+      "seed137": 0.222,
+      "seed256": 0.846,
+      "source": "eval_results/issue_551/controls/unitnorm_reread.json"
+    },
+    "source_persona": "medical_doctor"
+  },
+  "per_cell": {
+    "same_marker_seed42": {
+      "arm": "marker",
+      "seed": 42,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            17.26458997692782,
+            8.61467520619818,
+            4.571868108850154,
+            3.735473296648816,
+            3.2978754155512013,
+            2.6802730421601293,
+            2.4034164081657954,
+            2.119676657492939,
+            1.8009945909210998,
+            1.69165172599471,
+            1.5634000105332173,
+            1.2740080401697835,
+            1.166921065959107,
+            0.9935861521623734
+          ],
+          "sigma1_over_sigma2": 2.004090643429726,
+          "s_top1_frac": 0.324654123262792,
+          "effective_rank_participation_ratio": 6.3125815812772155,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            2.624010779208102,
+            1.6382082741499648,
+            1.2824618926287106,
+            0.844574789949974,
+            0.7520574905801506,
+            0.5720702479162134,
+            0.5238628733439561,
+            0.4834242923884231,
+            0.4469231635186717,
+            0.4227683522699254,
+            0.34865868174613157,
+            0.30292233938357604,
+            0.2050856914163021,
+            0.19488148210880843
+          ],
+          "sigma1_over_sigma2": 1.6017565169298462,
+          "s_top1_frac": 0.2465732836264648,
+          "effective_rank_participation_ratio": 8.089305529583603,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9988103582891581,
+          "median_abs_cos_to_full_topdir": 0.9988732487184908,
+          "p5_abs_cos_to_full_topdir": 0.9979313355231307
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9955500987558649,
+          "median_abs_cos_to_full_topdir": 0.995804249856141,
+          "p5_abs_cos_to_full_topdir": 0.992387497109615
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.9973246837983313,
+          0.8941704558306939
+        ],
+        "principal_angles_deg": [
+          4.1920075919414845,
+          26.597924523726167
+        ]
+      }
+    },
+    "same_marker_seed137": {
+      "arm": "marker",
+      "seed": 137,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            14.440892196829022,
+            9.332124877122085,
+            3.96562384734281,
+            2.915099840763229,
+            2.681953922590558,
+            2.257231636604829,
+            1.930907282519967,
+            1.6733751679070406,
+            1.5593542609718203,
+            1.307264666437267,
+            1.2311688038998132,
+            1.1043585359608419,
+            1.0755145767978045,
+            0.9108053218433672
+          ],
+          "sigma1_over_sigma2": 1.5474388080930201,
+          "s_top1_frac": 0.31132223938227693,
+          "effective_rank_participation_ratio": 6.1911970012458895,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            2.8811748175009533,
+            1.5045600536390742,
+            1.0134509176798416,
+            0.8321587239374284,
+            0.6432621392942578,
+            0.5518764451790049,
+            0.5235228984815242,
+            0.41346227063456037,
+            0.4104276646653888,
+            0.3280152402758842,
+            0.30708637544860234,
+            0.26281804866338676,
+            0.24481026122796637,
+            0.2298390091634966
+          ],
+          "sigma1_over_sigma2": 1.914961659743834,
+          "s_top1_frac": 0.28395848757282793,
+          "effective_rank_participation_ratio": 7.353625199102344,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9926188164147213,
+          "median_abs_cos_to_full_topdir": 0.9950049670713985,
+          "p5_abs_cos_to_full_topdir": 0.9791770790256157
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9947674864637154,
+          "median_abs_cos_to_full_topdir": 0.9951633494895742,
+          "p5_abs_cos_to_full_topdir": 0.9909476608975225
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.9975965654024262,
+          0.9795748640776485
+        ],
+        "principal_angles_deg": [
+          3.9732034698948864,
+          11.600109851259576
+        ]
+      }
+    },
+    "same_marker_seed256": {
+      "arm": "marker",
+      "seed": 256,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            20.691059068380888,
+            9.489502738093874,
+            5.320960035835775,
+            4.833933513633549,
+            3.785550584701224,
+            2.8522217078115535,
+            2.0485617566010967,
+            1.9051806559774562,
+            1.856711112503405,
+            1.8023915809605222,
+            1.6707180598863594,
+            1.282412534679349,
+            1.0299917523574427,
+            0.9395675070919522
+          ],
+          "sigma1_over_sigma2": 2.1804155222296755,
+          "s_top1_frac": 0.34769768621302893,
+          "effective_rank_participation_ratio": 5.774937276739949,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            2.575473078761604,
+            1.744082516845172,
+            1.3108630404313368,
+            0.7704015586534506,
+            0.6430558233612998,
+            0.5795078579273228,
+            0.5651347140052275,
+            0.49393528712895857,
+            0.4667810544633686,
+            0.4550069151831111,
+            0.34353025220009026,
+            0.28875261794513285,
+            0.19532768536671066,
+            0.1899344999585331
+          ],
+          "sigma1_over_sigma2": 1.4766922171895365,
+          "s_top1_frac": 0.24247079163493435,
+          "effective_rank_participation_ratio": 8.058739605459728,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9990560024747549,
+          "median_abs_cos_to_full_topdir": 0.9991385611148587,
+          "p5_abs_cos_to_full_topdir": 0.9982510463688243
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9940146266171548,
+          "median_abs_cos_to_full_topdir": 0.9947982047783515,
+          "p5_abs_cos_to_full_topdir": 0.9881112501932363
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.9991393473946036,
+          0.86604163523223
+        ],
+        "principal_angles_deg": [
+          2.3772930850721243,
+          29.998139960797975
+        ]
+      }
+    },
+    "same_em_seed42": {
+      "arm": "em",
+      "seed": 42,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            78.37850809312935,
+            11.653578048320858,
+            10.447345434762909,
+            6.884914648917843,
+            6.521732679166608,
+            5.862065785365711,
+            4.916186648721741,
+            4.6941514070171,
+            4.266313839486397,
+            3.9202154524063175,
+            3.6578481493570547,
+            3.466182772589049,
+            2.783440903233355,
+            2.2545932170998215
+          ],
+          "sigma1_over_sigma2": 6.725703279124883,
+          "s_top1_frac": 0.5235457776753512,
+          "effective_rank_participation_ratio": 3.3801989434642943,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            3.6023433547464827,
+            0.5256598332955046,
+            0.4826089433542194,
+            0.3127858522875188,
+            0.3076113827724492,
+            0.26766699455820836,
+            0.2234144308822382,
+            0.2173957210060875,
+            0.19702680924028623,
+            0.18130754476536184,
+            0.16802143837115557,
+            0.15853946662074378,
+            0.1289077656829197,
+            0.10456196019013599
+          ],
+          "sigma1_over_sigma2": 6.852993374369907,
+          "s_top1_frac": 0.5237599788120946,
+          "effective_rank_participation_ratio": 3.3789182081503397,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9986357420812905,
+          "median_abs_cos_to_full_topdir": 0.9987676079362844,
+          "p5_abs_cos_to_full_topdir": 0.9974246477877294
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9986375744557722,
+          "median_abs_cos_to_full_topdir": 0.9987657240396715,
+          "p5_abs_cos_to_full_topdir": 0.9974249831865156
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.999997787594489,
+          0.9478656723805975
+        ],
+        "principal_angles_deg": [
+          0.12052303961021295,
+          18.582520496178528
+        ]
+      }
+    },
+    "same_em_seed137": {
+      "arm": "em",
+      "seed": 137,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            93.97635130119227,
+            11.884642756291058,
+            10.540742754965377,
+            7.299612438379519,
+            5.831793322342696,
+            5.404472268973889,
+            4.889791639077041,
+            4.58324124261614,
+            4.101909287470677,
+            3.832522149763446,
+            3.519073422201021,
+            3.1430124041083474,
+            2.848349927580601,
+            2.434277339330313
+          ],
+          "sigma1_over_sigma2": 7.9073770434914,
+          "s_top1_frac": 0.5720157656279277,
+          "effective_rank_participation_ratio": 2.8981777241850946,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            3.644468895755068,
+            0.46321237298990114,
+            0.3970698762713284,
+            0.2807692589643645,
+            0.23111277183987539,
+            0.20676222688458606,
+            0.19094616973546574,
+            0.17679846132926794,
+            0.15956556327475985,
+            0.14811420912631326,
+            0.13681761916352747,
+            0.12196940824570009,
+            0.11242245107746505,
+            0.09620027116163474
+          ],
+          "sigma1_over_sigma2": 7.867814221436015,
+          "s_top1_frac": 0.5724689730083207,
+          "effective_rank_participation_ratio": 2.8949230438495084,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9990159574054037,
+          "median_abs_cos_to_full_topdir": 0.999114984804681,
+          "p5_abs_cos_to_full_topdir": 0.9982034680468133
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9990122976745923,
+          "median_abs_cos_to_full_topdir": 0.9991111895185756,
+          "p5_abs_cos_to_full_topdir": 0.998205117088012
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.999998816920712,
+          0.954323400618012
+        ],
+        "principal_angles_deg": [
+          0.08813422677895495,
+          17.38407644548646
+        ]
+      }
+    },
+    "same_em_seed256": {
+      "arm": "em",
+      "seed": 256,
+      "delta_v_vs_per_q_mean_max_abs_dev": 0.0,
+      "spectrum": {
+        "weighted": {
+          "singular_values": [
+            108.06529000273437,
+            12.09907220984862,
+            10.08055271680724,
+            6.894845447552259,
+            6.119861049629272,
+            5.55899361535681,
+            5.085735589991445,
+            4.820826929232468,
+            4.1394099719426904,
+            3.9590008167799313,
+            3.5979189823583804,
+            3.3350866388828213,
+            2.8634543561150645,
+            2.534990987860043
+          ],
+          "sigma1_over_sigma2": 8.931700557565847,
+          "s_top1_frac": 0.6031942523965125,
+          "effective_rank_participation_ratio": 2.6389500759295252,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        },
+        "unitnorm": {
+          "singular_values": [
+            3.6666370705285596,
+            0.41039436491646913,
+            0.3379778048739173,
+            0.23370262453336316,
+            0.20701724209015343,
+            0.19057211127384874,
+            0.17324927885303568,
+            0.1629364419877316,
+            0.14017764553963036,
+            0.1351555107559911,
+            0.12366703982896253,
+            0.1128756352432512,
+            0.09703317851989218,
+            0.0859867294587356
+          ],
+          "sigma1_over_sigma2": 8.93442353009613,
+          "s_top1_frac": 0.6033250273276758,
+          "effective_rank_participation_ratio": 2.638185299127013,
+          "effective_rank_definition": "participation ratio (sum(s))^2 / sum(s^2) over the full singular-value vector"
+        }
+      },
+      "bootstrap_topdir_stability": {
+        "weighted": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9992249808802824,
+          "median_abs_cos_to_full_topdir": 0.9992892964367792,
+          "p5_abs_cos_to_full_topdir": 0.9986299983446527
+        },
+        "unitnorm": {
+          "n_draws": 1000,
+          "mean_abs_cos_to_full_topdir": 0.9992291668329945,
+          "median_abs_cos_to_full_topdir": 0.9992936745770512,
+          "p5_abs_cos_to_full_topdir": 0.9986406915711207
+        }
+      },
+      "principal_angles_weighted_vs_unitnorm_top2": {
+        "k": 2,
+        "cos_principal_angles": [
+          0.9999976403310564,
+          0.9958127290166966
+        ],
+        "principal_angles_deg": [
+          0.12446958856169424,
+          5.245112684576133
+        ]
+      }
+    }
+  },
+  "falsification": {
+    "rule": "comparable = (seed137 sigma1/sigma2 >= 0.8 * min(seeds 42,256)) AND (seed137 bootstrap mean|cos| >= min(seeds 42,256) - 0.05), required under BOTH the weighted and unit-norm reads",
+    "thresholds": {
+      "sigma_gap_comparability_factor": 0.8,
+      "bootstrap_comparability_margin": 0.05
+    },
+    "per_read": {
+      "weighted": {
+        "seed137_sigma1_over_sigma2": 1.5474388080930201,
+        "min_other_seeds_sigma1_over_sigma2": 2.004090643429726,
+        "sigma_gap_comparable": false,
+        "seed137_bootstrap_mean_abs_cos": 0.9926188164147213,
+        "min_other_seeds_bootstrap_mean_abs_cos": 0.9988103582891581,
+        "bootstrap_stability_comparable": true
+      },
+      "unitnorm": {
+        "seed137_sigma1_over_sigma2": 1.914961659743834,
+        "min_other_seeds_sigma1_over_sigma2": 1.4766922171895365,
+        "sigma_gap_comparable": true,
+        "seed137_bootstrap_mean_abs_cos": 0.9947674864637154,
+        "min_other_seeds_bootstrap_mean_abs_cos": 0.9940146266171548,
+        "bootstrap_stability_comparable": true
+      }
+    },
+    "failed_checks": [
+      "weighted:sigma_gap_comparable"
+    ],
+    "seed137_not_degenerate": false,
+    "verdict": "seed 137 is NOT fully comparable to seeds 42/256 \u2014 failing check(s): ['weighted:sigma_gap_comparable']; see per_read for magnitudes. A clean degenerate-top signature would fail BOTH the sigma-gap and bootstrap-stability checks under a read; a single marginal sigma-gap miss with comparable bootstrap stability is a partial signature only."
+  }
+}

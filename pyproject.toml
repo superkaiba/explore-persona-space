@@ -97,3 +97,14 @@ dev = [
     "ruff>=0.15.9",
     "pytest>=8.0",
 ]
+
+# flash-attn's setup.py imports torch but does NOT declare it as a build
+# dep, so `uv sync --extra gpu` fails under build isolation. The
+# `[tool.uv.extra-build-dependencies]` table is uv's lock-respecting fix
+# (mirrors the same workaround used on RunPod). Validated by P0(e) on
+# Nibi: flash-attn 2.8.3 then compiles in ~40 min on H100 with this
+# dependency injected at build time. See
+# .claude/plans/2026-06-08_001932-slurm-cluster-backend-for-issue.md
+# § "P0(e) flash-attn + liger source build — PASS".
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]

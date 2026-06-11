@@ -1,0 +1,26 @@
+{
+  "schema": "issue_480_final_results_v1",
+  "headline_numbers": {
+    "h1_source_fe_rho": 0.3663440826910278,
+    "h1_source_fe_ci": [
+      0.22032412536485146,
+      0.4999264644981818
+    ],
+    "h1_resp_len_partial_rho": 0.29297767752158155,
+    "h1_verdict": "supported",
+    "h2_paired_mean_delta_rho": 0.4355791931074886,
+    "h2_paired_ci": [
+      0.10303739325356533,
+      0.733635465225801
+    ],
+    "h2_power_matched_mean_delta_rho": 0.2703470168820104,
+    "h2_power_matched_ci": [
+      0.059943268306385654,
+      0.4637333614050336
+    ],
+    "h2_behavior_type_headline_licensed": true,
+    "saturation_frac": 0.0
+  },
+  "git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+  "timestamp_utc": "2026-06-11T01:46:15.141664+00:00"
+}

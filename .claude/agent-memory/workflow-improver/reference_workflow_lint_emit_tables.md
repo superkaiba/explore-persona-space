@@ -8,7 +8,9 @@ metadata:
 `.claude/skills/issue/markers.md` carries an auto-generated
 `marker-kinds` table block derived from `workflow.yaml`'s `markers:`
 list. After ANY edit that adds, removes, or reshapes a marker in
-workflow.yaml, regenerate the table:
+workflow.yaml — INCLUDING editing an existing marker's `fields:` prose
+(confirmed 2026-06-10: enriching epm:methodology-doc-generated's note
+enumeration changed the generated row) — regenerate the table:
 
 ```bash
 uv run python scripts/workflow_lint.py --emit-tables

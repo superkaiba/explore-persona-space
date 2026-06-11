@@ -1,0 +1,56 @@
+{
+  "commit": "a57c871d4",
+  "created": "2026-06-11T01:39:07Z",
+  "figsize": [
+    9.6,
+    5.2
+  ],
+  "description": "Raw symmetric wrong-encoding leakage L per arm within the marker-less contrastive-negatives regime: 3 parent cn arms (elaborate content) + the 2 new content-matched minimal arms. Per-seed dots. Lower = more localized.",
+  "rows": [
+    {
+      "arm": "system_plain",
+      "mean": -14.547918895085653,
+      "per_seed": [
+        -14.520002403259276,
+        -14.840001783370973,
+        -14.283752498626708
+      ]
+    },
+    {
+      "arm": "system_padded",
+      "mean": -14.023129103978476,
+      "per_seed": [
+        -13.440005912780762,
+        -14.411252737045288,
+        -14.218128662109375
+      ]
+    },
+    {
+      "arm": "role",
+      "mean": -15.646044228871665,
+      "per_seed": [
+        -16.683126592636107,
+        -15.348753786087038,
+        -14.906252307891846
+      ]
+    },
+    {
+      "arm": "system_minimal",
+      "mean": -13.310845629374185,
+      "per_seed": [
+        -13.101270303726196,
+        -13.621256008148194,
+        -13.21001057624817
+      ]
+    },
+    {
+      "arm": "role_bare",
+      "mean": -15.798127644856772,
+      "per_seed": [
+        -16.918751430511474,
+        -14.606879806518556,
+        -15.868751697540283
+      ]
+    }
+  ]
+}

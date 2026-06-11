@@ -1,0 +1,524 @@
+{
+  "schema_version": 1,
+  "followup_label": "bystander-bootstrap-cis",
+  "smoke": false,
+  "description": "Bystander-cluster bootstrap percentile 95% CIs on the source-FE Spearman rho (bake-off geometry vs #411 sycophancy leakage delta, 138 cells), with source-cluster CIs recomputed on the same estimator for side-by-side comparison, paired metric differences on shared bystander draws, and a two-way (sources x bystanders) sensitivity on the two global-max cells.",
+  "estimator_convention": "rank-then-demean source-FE Spearman (fe_spearman) copied verbatim from issue509_baserate_covariate_earlylayer.py; matches that follow-up's rho_geom_alone exactly (asserted at runtime on shared cells). Differs from scoring.json's rho_fe (demean-then-rank) and rho_fe_adj (attenuation-adjusted), which are used ONLY to pick the top-15 cells; the source-clustered CIs here are therefore recomputed, not copied.",
+  "bystander_cluster_note": "The spec's '23 bystanders' is per-source; the realized union of bystander personas across the 6 sources is 24 (each source's own panel has 23 = 24 minus itself). The cluster bootstrap resamples the 24 distinct bystander personas with replacement; every draw keeps all available sources' cells for each drawn bystander.",
+  "bootstrap_b": 5000,
+  "bootstrap_seed": 42,
+  "ci_method": "percentile [2.5, 97.5], NaN below 100 finite reps",
+  "n_source_clusters": 6,
+  "n_bystander_clusters": 24,
+  "headline_cells": [
+    "last_prompt__layer7__mmd__centered",
+    "end_of_system__layer2__cosine__centered",
+    "last_prompt__layer22__gauss_kl__centered"
+  ],
+  "top15_cells_by_abs_rho_fe_adj": [
+    "last_prompt__layer7__mmd__centered",
+    "end_of_system__layer2__cosine__centered",
+    "last_prompt__layer8__mmd__centered",
+    "end_of_system__layer7__cosine__centered",
+    "end_of_system__layer1__cosine__centered",
+    "last_prompt__layer8__euclidean__centered",
+    "last_prompt__layer8__euclidean__raw",
+    "end_of_system__layer6__euclidean__centered",
+    "end_of_system__layer6__euclidean__raw",
+    "end_of_system__layer8__cosine__centered",
+    "end_of_system__layer6__cosine__centered",
+    "last_prompt__layer8__wass2__centered",
+    "last_prompt__layer6__mmd__centered",
+    "end_of_system__layer8__euclidean__centered",
+    "end_of_system__layer8__euclidean__raw"
+  ],
+  "two_way_cells": [
+    "last_prompt__layer7__mmd__centered",
+    "end_of_system__layer2__cosine__centered"
+  ],
+  "cells": {
+    "last_prompt__layer7__mmd__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 7,
+      "metric": "mmd",
+      "variant": "centered",
+      "headline": true,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.5222847603253152,
+      "bystander": {
+        "ci": [
+          -0.628581401134462,
+          -0.37736626355989206
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6458556428504205,
+          -0.31019970329512875
+        ],
+        "n_finite_reps": 5000
+      },
+      "two_way": {
+        "ci": [
+          -0.7097050617584725,
+          -0.21459256060700638
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.5222847603253152
+    },
+    "end_of_system__layer2__cosine__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 2,
+      "metric": "cosine",
+      "variant": "centered",
+      "headline": true,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.435623591928471,
+      "bystander": {
+        "ci": [
+          -0.5318947791353378,
+          -0.30907564670751203
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.5890317810385782,
+          -0.20980221492969034
+        ],
+        "n_finite_reps": 5000
+      },
+      "two_way": {
+        "ci": [
+          -0.6502191002351133,
+          -0.12643189906566335
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.435623591928471
+    },
+    "last_prompt__layer22__gauss_kl__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "centered",
+      "headline": true,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": 0.007758981011773637,
+      "bystander": {
+        "ci": [
+          -0.23424620202858668,
+          0.28442213374100045
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.31475039425184526,
+          0.3183372198189087
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "last_prompt__layer8__mmd__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 8,
+      "metric": "mmd",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.5103326227006035,
+      "bystander": {
+        "ci": [
+          -0.6365515811451086,
+          -0.3478286949982633
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6245340912653888,
+          -0.28221331879806805
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer7__cosine__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 7,
+      "metric": "cosine",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.4304977752749182,
+      "bystander": {
+        "ci": [
+          -0.5341676233776582,
+          -0.3068207725595527
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.5904439352474024,
+          -0.22778718344911217
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.4304977752749182
+    },
+    "end_of_system__layer1__cosine__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 1,
+      "metric": "cosine",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.41750576112302096,
+      "bystander": {
+        "ci": [
+          -0.5088212606739979,
+          -0.3033933023910168
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.5764383189928147,
+          -0.22053256984597813
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.41750576112302096
+    },
+    "last_prompt__layer8__euclidean__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 8,
+      "metric": "euclidean",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.5242384171388815,
+      "bystander": {
+        "ci": [
+          -0.6534816694851994,
+          -0.3399041860817033
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6292833201344707,
+          -0.2665671304896172
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "last_prompt__layer8__euclidean__raw": {
+      "extraction_point": "last_prompt",
+      "layer": 8,
+      "metric": "euclidean",
+      "variant": "raw",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.5242384171388815,
+      "bystander": {
+        "ci": [
+          -0.6534816694851994,
+          -0.3399041860817033
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6292833201344707,
+          -0.2665671304896172
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer6__euclidean__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 6,
+      "metric": "euclidean",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.45722732669068566,
+      "bystander": {
+        "ci": [
+          -0.6071801974461082,
+          -0.25872112697041616
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6055972681280282,
+          -0.09258779066450634
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer6__euclidean__raw": {
+      "extraction_point": "end_of_system",
+      "layer": 6,
+      "metric": "euclidean",
+      "variant": "raw",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.45722732669068566,
+      "bystander": {
+        "ci": [
+          -0.6071801974461082,
+          -0.25872112697041616
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6055972681280282,
+          -0.09258779066450634
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer8__cosine__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 8,
+      "metric": "cosine",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.4231947484642432,
+      "bystander": {
+        "ci": [
+          -0.5335179895657723,
+          -0.2936670549988555
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.5816712310945928,
+          -0.2220413424654558
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.4231947484642432
+    },
+    "end_of_system__layer6__cosine__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 6,
+      "metric": "cosine",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.41732989380283675,
+      "bystander": {
+        "ci": [
+          -0.5227813977248876,
+          -0.29361643587771646
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.5810543314622026,
+          -0.17986634525787595
+        ],
+        "n_finite_reps": 5000
+      },
+      "crosscheck_baserate_rho_geom_alone": -0.41732989380283675
+    },
+    "last_prompt__layer8__wass2__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 8,
+      "metric": "wass2",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.5224966334516847,
+      "bystander": {
+        "ci": [
+          -0.6536764574450122,
+          -0.33410302511157824
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.62607369896782,
+          -0.2654924691995679
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "last_prompt__layer6__mmd__centered": {
+      "extraction_point": "last_prompt",
+      "layer": 6,
+      "metric": "mmd",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.504478586377115,
+      "bystander": {
+        "ci": [
+          -0.619172835641684,
+          -0.3437636504451979
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6340473346887479,
+          -0.268825188758699
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer8__euclidean__centered": {
+      "extraction_point": "end_of_system",
+      "layer": 8,
+      "metric": "euclidean",
+      "variant": "centered",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.4733251641155838,
+      "bystander": {
+        "ci": [
+          -0.6183237487223446,
+          -0.28286574900935885
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6069859251429566,
+          -0.17352554362543057
+        ],
+        "n_finite_reps": 5000
+      }
+    },
+    "end_of_system__layer8__euclidean__raw": {
+      "extraction_point": "end_of_system",
+      "layer": 8,
+      "metric": "euclidean",
+      "variant": "raw",
+      "headline": false,
+      "n": 138,
+      "n_excluded_none": 0,
+      "n_excluded_saturated": 0,
+      "rho_fe": -0.4733251641155838,
+      "bystander": {
+        "ci": [
+          -0.6183237487223446,
+          -0.28286574900935885
+        ],
+        "n_finite_reps": 5000
+      },
+      "source": {
+        "ci": [
+          -0.6069859251429566,
+          -0.17352554362543057
+        ],
+        "n_finite_reps": 5000
+      }
+    }
+  },
+  "paired_differences_bystander_axis": [
+    {
+      "cell_a": "last_prompt__layer7__mmd__centered",
+      "cell_b": "end_of_system__layer2__cosine__centered",
+      "point_delta_abs_rho": 0.08666116839684423,
+      "point_delta_signed_rho": -0.08666116839684423,
+      "n_finite_reps": 5000,
+      "delta_abs_rho_ci": [
+        0.010745471134030203,
+        0.15420971317686671
+      ],
+      "delta_signed_rho_ci": [
+        -0.15420971317686677,
+        -0.010745471134030233
+      ],
+      "frac_abs_a_gt_abs_b": 0.986
+    },
+    {
+      "cell_a": "last_prompt__layer7__mmd__centered",
+      "cell_b": "last_prompt__layer22__gauss_kl__centered",
+      "point_delta_abs_rho": 0.5145257793135416,
+      "point_delta_signed_rho": -0.5300437413370889,
+      "n_finite_reps": 5000,
+      "delta_abs_rho_ci": [
+        0.1487562945726632,
+        0.5688639979958173
+      ],
+      "delta_signed_rho_ci": [
+        -0.7962933663958905,
+        -0.2879509678607381
+      ],
+      "frac_abs_a_gt_abs_b": 0.999
+    },
+    {
+      "cell_a": "end_of_system__layer2__cosine__centered",
+      "cell_b": "last_prompt__layer22__gauss_kl__centered",
+      "point_delta_abs_rho": 0.42786461091669736,
+      "point_delta_signed_rho": -0.44338257294024463,
+      "n_finite_reps": 5000,
+      "delta_abs_rho_ci": [
+        0.07842109280274079,
+        0.47589993535562897
+      ],
+      "delta_signed_rho_ci": [
+        -0.7003967067553067,
+        -0.21084394529933997
+      ],
+      "frac_abs_a_gt_abs_b": 0.9944
+    }
+  ],
+  "inputs": {
+    "target_file": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_480/_inputs/syco_411_analyze_summary.json",
+    "scoring_file": "/home/thomasjiralerspong/explore-persona-space/eval_results/issue_509/syco_arm/scoring.json",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision": "1b6e20530b1c6d477a387c18d5a88554910e7df9",
+    "metrics_prefix": "issue_509/syco_arm/bakeoff/metrics"
+  },
+  "git_sha": "ab617ad2c8bb56ad850cece664aec7622ca3a2cc",
+  "timestamp_utc": "2026-06-10T19:58:02.136612+00:00",
+  "env": {
+    "python": "3.11.15",
+    "numpy": "2.2.6"
+  }
+}

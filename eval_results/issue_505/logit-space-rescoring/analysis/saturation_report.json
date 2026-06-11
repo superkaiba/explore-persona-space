@@ -1,0 +1,455 @@
+{
+  "frac": 1.0,
+  "per_cell": {
+    "c505_drop_j0_seed42": {
+      "cell": "c505_drop_j0",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.67401345876547,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8346153846153846,
+        "bystander_mean_logp_g": -1.1949246810032772,
+        "bystander_mean_delta_logz": -3.2954538198617787,
+        "bystander_collapse_share": 0.026923076923076925,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.7165990829467774
+      }
+    },
+    "c505_drop_j0_seed137": {
+      "cell": "c505_drop_j0",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.56032514021947,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8692307692307693,
+        "bystander_mean_logp_g": -0.9215942859649658,
+        "bystander_mean_delta_logz": -1.860078133069552,
+        "bystander_collapse_share": 0.051923076923076926,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.443278694152832
+      }
+    },
+    "c505_drop_j0_seed219": {
+      "cell": "c505_drop_j0",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.683632586552548,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8846153846153846,
+        "bystander_mean_logp_g": -0.9206189559056208,
+        "bystander_mean_delta_logz": -1.5667095954601582,
+        "bystander_collapse_share": 0.075,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.7960723876953124
+      }
+    },
+    "c505_drop_j1_seed42": {
+      "cell": "c505_drop_j1",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.648720103043775,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8634615384615385,
+        "bystander_mean_logp_g": -0.9154363705561711,
+        "bystander_mean_delta_logz": -2.5070483794579137,
+        "bystander_collapse_share": 0.038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 2.8826162338256838
+      }
+    },
+    "c505_drop_j1_seed137": {
+      "cell": "c505_drop_j1",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.458675797169025,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8769230769230769,
+        "bystander_mean_logp_g": -0.9640684604644776,
+        "bystander_mean_delta_logz": -2.491451014005221,
+        "bystander_collapse_share": 0.03076923076923077,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 4.4248088836669925
+      }
+    },
+    "c505_drop_j1_seed219": {
+      "cell": "c505_drop_j1",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.66014183484591,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8846153846153846,
+        "bystander_mean_logp_g": -0.9613407685206486,
+        "bystander_mean_delta_logz": -2.3013018461374135,
+        "bystander_collapse_share": 0.04230769230769231,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.9130306243896484
+      }
+    },
+    "c505_drop_j2_seed42": {
+      "cell": "c505_drop_j2",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.5877952172206,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8653846153846154,
+        "bystander_mean_logp_g": -0.9938070627359243,
+        "bystander_mean_delta_logz": -2.124901866912842,
+        "bystander_collapse_share": 0.03653846153846154,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.4064592361450194
+      }
+    },
+    "c505_drop_j2_seed137": {
+      "cell": "c505_drop_j2",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.51683669090271,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8519230769230769,
+        "bystander_mean_logp_g": -1.0789648129389837,
+        "bystander_mean_delta_logz": -2.254714709061843,
+        "bystander_collapse_share": 0.032692307692307694,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.3566095352172853
+      }
+    },
+    "c505_drop_j2_seed219": {
+      "cell": "c505_drop_j2",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.588343257170457,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8807692307692307,
+        "bystander_mean_logp_g": -0.9707648864159217,
+        "bystander_mean_delta_logz": -1.7576144475203295,
+        "bystander_collapse_share": 0.04423076923076923,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.4501956939697265
+      }
+    },
+    "c505_drop_j3_seed42": {
+      "cell": "c505_drop_j3",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.670647089297955,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8557692307692307,
+        "bystander_mean_logp_g": -0.9632405611184928,
+        "bystander_mean_delta_logz": -2.5168464734004092,
+        "bystander_collapse_share": 0.028846153846153848,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.15031156539917
+      }
+    },
+    "c505_drop_j3_seed137": {
+      "cell": "c505_drop_j3",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.325291783993062,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.6826923076923077,
+        "bystander_mean_logp_g": -1.8777271124032828,
+        "bystander_mean_delta_logz": -1.7477066076718843,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 4.643303489685058
+      }
+    },
+    "c505_drop_j3_seed219": {
+      "cell": "c505_drop_j3",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.72445540061364,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.698076923076923,
+        "bystander_mean_logp_g": -1.8140995319073017,
+        "bystander_mean_delta_logz": -1.5142349426562969,
+        "bystander_collapse_share": 0.0019230769230769232,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 5.614810752868652
+      }
+    },
+    "c505_drop_j4_seed42": {
+      "cell": "c505_drop_j4",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.651528140214772,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.5442307692307692,
+        "bystander_mean_logp_g": -2.5527272664583647,
+        "bystander_mean_delta_logz": -2.0055095672607424,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 4.828443908691407
+      }
+    },
+    "c505_drop_j4_seed137": {
+      "cell": "c505_drop_j4",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.35590623158675,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.6576923076923077,
+        "bystander_mean_logp_g": -1.9819830601031965,
+        "bystander_mean_delta_logz": -1.5447644050304705,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 4.283060073852539
+      }
+    },
+    "c505_drop_j4_seed219": {
+      "cell": "c505_drop_j4",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.90488547728612,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.675,
+        "bystander_mean_logp_g": -1.9876617725078876,
+        "bystander_mean_delta_logz": -1.6457592413975641,
+        "bystander_collapse_share": 0.0,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 5.416036224365234
+      }
+    },
+    "c505_drop_j5_seed42": {
+      "cell": "c505_drop_j5",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.64469254383674,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.6076923076923076,
+        "bystander_mean_logp_g": -2.405969289632944,
+        "bystander_mean_delta_logz": -1.9100024443406325,
+        "bystander_collapse_share": 0.0,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 2.804876518249512
+      }
+    },
+    "c505_drop_j5_seed137": {
+      "cell": "c505_drop_j5",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.380350830004765,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.6442307692307693,
+        "bystander_mean_logp_g": -1.9728109469780555,
+        "bystander_mean_delta_logz": -1.5861632457146277,
+        "bystander_collapse_share": 0.0019230769230769232,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 5.280689239501953
+      }
+    },
+    "c505_drop_j5_seed219": {
+      "cell": "c505_drop_j5",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -19.76157549894773,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.6423076923076924,
+        "bystander_mean_logp_g": -2.1835060596466063,
+        "bystander_mean_delta_logz": -1.6347044981442964,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 2.933853530883789
+      }
+    },
+    "c505_full_set_seed42": {
+      "cell": "c505_full_set",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.625372037520776,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8711538461538462,
+        "bystander_mean_logp_g": -0.9044149875640869,
+        "bystander_mean_delta_logz": -2.010124191871056,
+        "bystander_collapse_share": 0.05,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.5121606826782226
+      }
+    },
+    "c505_full_set_seed137": {
+      "cell": "c505_full_set",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.408888462873605,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8480769230769231,
+        "bystander_mean_logp_g": -1.0349034309387206,
+        "bystander_mean_delta_logz": -2.29612230520982,
+        "bystander_collapse_share": 0.046153846153846156,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.9205373764038085
+      }
+    },
+    "c505_full_set_seed219": {
+      "cell": "c505_full_set",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -21.566178165949307,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.8557692307692307,
+        "bystander_mean_logp_g": -1.1971634791447565,
+        "bystander_mean_delta_logz": -2.713440884076632,
+        "bystander_collapse_share": 0.03076923076923077,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.7217580795288088
+      }
+    },
+    "c505_no_negatives_seed42": {
+      "cell": "c505_no_negatives",
+      "seed": 42,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -20.813922164990352,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.4326923076923077,
+        "bystander_mean_logp_g": -2.9061136392446665,
+        "bystander_mean_delta_logz": -3.471408697275015,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 2.481220245361328
+      }
+    },
+    "c505_no_negatives_seed137": {
+      "cell": "c505_no_negatives",
+      "seed": 137,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -20.88391724183009,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.49230769230769234,
+        "bystander_mean_logp_g": -2.5569258873279277,
+        "bystander_mean_delta_logz": -3.419950239474957,
+        "bystander_collapse_share": 0.0038461538461538464,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 2.6561557769775392
+      }
+    },
+    "c505_no_negatives_seed219": {
+      "cell": "c505_no_negatives",
+      "seed": 219,
+      "stored": {
+        "bystander_argmax_share": 0.0,
+        "bystander_mean_g_logp": -20.86120185118455,
+        "bystander_near_ceiling_share": 0.0,
+        "source_argmax_share": 0.0
+      },
+      "new_capture": {
+        "bystander_argmax_share_hf": 0.5288461538461539,
+        "bystander_mean_logp_g": -2.4380045670729418,
+        "bystander_mean_delta_logz": -3.5479282709268425,
+        "bystander_collapse_share": 0.0019230769230769232,
+        "source_argmax_share_hf": 1.0,
+        "source_mean_delta_logz": 3.1182565689086914
+      }
+    }
+  },
+  "reproducibility": {
+    "git_commit": "cd4be2bf4248c8c1a5f3dd705b4b507693492138",
+    "timestamp_utc": "2026-06-10T09:04:10.521678+00:00",
+    "hostname": "cia-benchmark-vm",
+    "versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "huggingface_hub": "0.36.2"
+    },
+    "inputs": {
+      "rescoring_root": "eval_results/issue_505/logit-space-rescoring",
+      "panel_gate": "eval_results/issue_505/panel_coverage.json",
+      "geometry_json": "eval_results/issue_505/expanded-predictor-reanalysis/geometry_predictors.json",
+      "sweep_dir": "eval_results/issue_505/sweep"
+    }
+  }
+}

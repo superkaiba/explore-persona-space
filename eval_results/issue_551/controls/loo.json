@@ -1,0 +1,459 @@
+{
+  "meta": {
+    "issue": 551,
+    "git_commit": "777043f47c00df510483322a1dbe69c7100546fc",
+    "timestamp_utc": "2026-06-10T15:18:31Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6",
+      "transformers": "4.57.6"
+    },
+    "tensors_source": "eval_results/issue_551/shifts",
+    "parent_svd_dir": "eval_results/issue_521/svd",
+    "thresholds": {
+      "repro_tol": 0.05,
+      "u1_cos_min": 0.95,
+      "profile_spearman_min": 0.8,
+      "rho_strong": 0.54,
+      "n_null_reps": 1000,
+      "n_perm": 10000
+    },
+    "source_persona": "medical_doctor"
+  },
+  "binding_pass": true,
+  "n_binding_cells": 6,
+  "per_cell": {
+    "same_marker_seed42": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.32465410232543945,
+      "s_top1_frac_loo": 0.3398055136203766,
+      "mean_cos_to_U1_loo": 0.6052944660186768,
+      "sign_flip": {
+        "p95": 0.13604320585727692,
+        "p99": 0.1372731328010559,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.20970284938812256,
+        "p99": 0.20976002514362335,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.20376230776309967,
+      "margin_over_row_shuffle_p95": 0.13010266423225403,
+      "is_binding_cell": true
+    },
+    "same_marker_seed137": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.3113222122192383,
+      "s_top1_frac_loo": 0.3367049992084503,
+      "mean_cos_to_U1_loo": 0.7439162135124207,
+      "sign_flip": {
+        "p95": 0.1320468634366989,
+        "p99": 0.13301444053649902,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.23127001523971558,
+        "p99": 0.2313130497932434,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.2046581357717514,
+      "margin_over_row_shuffle_p95": 0.10543498396873474,
+      "is_binding_cell": true
+    },
+    "same_marker_seed256": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.3476976752281189,
+      "s_top1_frac_loo": 0.3659512996673584,
+      "mean_cos_to_U1_loo": 0.5722946524620056,
+      "sign_flip": {
+        "p95": 0.13545668125152588,
+        "p99": 0.13711126148700714,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.19996581971645355,
+        "p99": 0.20004795491695404,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.23049461841583252,
+      "margin_over_row_shuffle_p95": 0.16598547995090485,
+      "is_binding_cell": true
+    },
+    "same_em_seed42": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.5235457420349121,
+      "s_top1_frac_loo": 0.5295583605766296,
+      "mean_cos_to_U1_loo": 0.9614685773849487,
+      "sign_flip": {
+        "p95": 0.08860170841217041,
+        "p99": 0.08964257687330246,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5006300806999207,
+        "p99": 0.500668466091156,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.44095665216445923,
+      "margin_over_row_shuffle_p95": 0.028928279876708984,
+      "is_binding_cell": true
+    },
+    "same_em_seed137": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.5720158219337463,
+      "s_top1_frac_loo": 0.5757790803909302,
+      "mean_cos_to_U1_loo": 0.9728469252586365,
+      "sign_flip": {
+        "p95": 0.09127552807331085,
+        "p99": 0.09250135719776154,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.544788658618927,
+        "p99": 0.5448222160339355,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.4845035523176193,
+      "margin_over_row_shuffle_p95": 0.030990421772003174,
+      "is_binding_cell": true
+    },
+    "same_em_seed256": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.6031942963600159,
+      "s_top1_frac_loo": 0.6079761981964111,
+      "mean_cos_to_U1_loo": 0.9792288541793823,
+      "sign_flip": {
+        "p95": 0.09196546673774719,
+        "p99": 0.09350799769163132,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5806101560592651,
+        "p99": 0.580640971660614,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.5160107314586639,
+      "margin_over_row_shuffle_p95": 0.027366042137145996,
+      "is_binding_cell": true
+    },
+    "base_marker_seed42": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.44879987835884094,
+      "s_top1_frac_loo": 0.4571784436702728,
+      "mean_cos_to_U1_loo": 0.927149772644043,
+      "sign_flip": {
+        "p95": 0.09747336059808731,
+        "p99": 0.09823743253946304,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.405511736869812,
+        "p99": 0.405543714761734,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.3597050830721855,
+      "margin_over_row_shuffle_p95": 0.051666706800460815,
+      "is_binding_cell": false
+    },
+    "base_marker_seed137": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.4410346448421478,
+      "s_top1_frac_loo": 0.4489094614982605,
+      "mean_cos_to_U1_loo": 0.9240115880966187,
+      "sign_flip": {
+        "p95": 0.09772465378046036,
+        "p99": 0.09832169115543365,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.3987456262111664,
+        "p99": 0.39877599477767944,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.35118480771780014,
+      "margin_over_row_shuffle_p95": 0.050163835287094116,
+      "is_binding_cell": false
+    },
+    "base_marker_seed256": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.44906899333000183,
+      "s_top1_frac_loo": 0.45668360590934753,
+      "mean_cos_to_U1_loo": 0.9282678961753845,
+      "sign_flip": {
+        "p95": 0.0973731130361557,
+        "p99": 0.09836037456989288,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.40685150027275085,
+        "p99": 0.406882643699646,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.35931049287319183,
+      "margin_over_row_shuffle_p95": 0.04983210563659668,
+      "is_binding_cell": false
+    },
+    "base_em_seed42": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.5066162347793579,
+      "s_top1_frac_loo": 0.5121229887008667,
+      "mean_cos_to_U1_loo": 0.9559702277183533,
+      "sign_flip": {
+        "p95": 0.09603627026081085,
+        "p99": 0.0969780758023262,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4604247808456421,
+        "p99": 0.4604671597480774,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.41608671844005585,
+      "margin_over_row_shuffle_p95": 0.05169820785522461,
+      "is_binding_cell": false
+    },
+    "base_em_seed137": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.5399935841560364,
+      "s_top1_frac_loo": 0.5457695126533508,
+      "mean_cos_to_U1_loo": 0.9645688533782959,
+      "sign_flip": {
+        "p95": 0.0988260805606842,
+        "p99": 0.0995989665389061,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4807811677455902,
+        "p99": 0.4808398485183716,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.4469434320926666,
+      "margin_over_row_shuffle_p95": 0.06498834490776062,
+      "is_binding_cell": false
+    },
+    "base_em_seed256": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.583422839641571,
+      "s_top1_frac_loo": 0.5898488759994507,
+      "mean_cos_to_U1_loo": 0.9750446677207947,
+      "sign_flip": {
+        "p95": 0.09819666296243668,
+        "p99": 0.09960834681987762,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.5186512470245361,
+        "p99": 0.5187093615531921,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.491652213037014,
+      "margin_over_row_shuffle_p95": 0.07119762897491455,
+      "is_binding_cell": false
+    },
+    "on_policy_marker_seed42": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.32822155952453613,
+      "s_top1_frac_loo": 0.32436490058898926,
+      "mean_cos_to_U1_loo": 0.7122199535369873,
+      "sign_flip": {
+        "p95": 0.13494284451007843,
+        "p99": 0.13688881695270538,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.23084641993045807,
+        "p99": 0.23111745715141296,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.18942205607891083,
+      "margin_over_row_shuffle_p95": 0.09351848065853119,
+      "is_binding_cell": false
+    },
+    "on_policy_marker_seed137": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.3210100531578064,
+      "s_top1_frac_loo": 0.30828002095222473,
+      "mean_cos_to_U1_loo": 0.6211690306663513,
+      "sign_flip": {
+        "p95": 0.147474467754364,
+        "p99": 0.1489619016647339,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.19740596413612366,
+        "p99": 0.1976586878299713,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.16080555319786072,
+      "margin_over_row_shuffle_p95": 0.11087405681610107,
+      "is_binding_cell": false
+    },
+    "on_policy_marker_seed256": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.33085182309150696,
+      "s_top1_frac_loo": 0.3259691298007965,
+      "mean_cos_to_U1_loo": 0.6583550572395325,
+      "sign_flip": {
+        "p95": 0.13211655616760254,
+        "p99": 0.13482525944709778,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.2146279513835907,
+        "p99": 0.21489432454109192,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.19385257363319397,
+      "margin_over_row_shuffle_p95": 0.11134117841720581,
+      "is_binding_cell": false
+    },
+    "on_policy_em_seed42": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 42,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.4122730791568756,
+      "s_top1_frac_loo": 0.41774725914001465,
+      "mean_cos_to_U1_loo": 0.899558961391449,
+      "sign_flip": {
+        "p95": 0.09685828536748886,
+        "p99": 0.09836108237504959,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.37218230962753296,
+        "p99": 0.3724290728569031,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.3208889737725258,
+      "margin_over_row_shuffle_p95": 0.04556494951248169,
+      "is_binding_cell": false
+    },
+    "on_policy_em_seed137": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 137,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.4518110752105713,
+      "s_top1_frac_loo": 0.45637246966362,
+      "mean_cos_to_U1_loo": 0.9233741164207458,
+      "sign_flip": {
+        "p95": 0.09878179430961609,
+        "p99": 0.10003674775362015,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.40756210684776306,
+        "p99": 0.4077741503715515,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.3575906753540039,
+      "margin_over_row_shuffle_p95": 0.048810362815856934,
+      "is_binding_cell": false
+    },
+    "on_policy_em_seed256": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 256,
+      "source_dropped": "medical_doctor",
+      "s_top1_frac_full": 0.4901909828186035,
+      "s_top1_frac_loo": 0.49512434005737305,
+      "mean_cos_to_U1_loo": 0.9419463872909546,
+      "sign_flip": {
+        "p95": 0.10153278708457947,
+        "p99": 0.10255855321884155,
+        "n_reps": 1000
+      },
+      "row_shuffle": {
+        "p95": 0.4419220983982086,
+        "p99": 0.4421507716178894,
+        "n_reps": 1000
+      },
+      "passes_sign_flip_p95": true,
+      "passes_row_shuffle_p95": true,
+      "margin_over_sign_flip_p95": 0.3935915529727936,
+      "margin_over_row_shuffle_p95": 0.05320224165916443,
+      "is_binding_cell": false
+    }
+  }
+}

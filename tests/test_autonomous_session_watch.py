@@ -30,12 +30,16 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+    ORPHAN_SPAWN_GRACE_S,
+    ORPHAN_STALENESS_S_DEFAULT,
     PARK,
     POD_ACTIVE,
     STALLED_MAX_RESPAWNS,
     STALLED_WINDOW_S,
     TERMINAL,
     decide,
+    decide_orphan,
     decide_pod_safety,
 )
 
@@ -293,6 +297,53 @@ def test_task_followup_active_predicate():
     )
 
 
+def test_task_followup_active_user_chat_scope_marker():
+    # refs #573: a USER-CHAT inline follow-up posts `epm:followup-scope`
+    # BEFORE re-invoking /issue, so the pod can be provisioned before any
+    # `epm:run-launched` lands. The widened predicate must treat a fresh
+    # followup-scope (or free-analysis-followup-run) as a live follow-up.
+    import autonomous_session_watch as asw
+
+    # followup-scope NEWER than done-transition, NO run-launched -> True.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:promoted", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {"kind": "epm:followup-scope", "ts": "2026-06-10T03:00:00Z", "note": ""},
+            ],
+        )
+        is True
+    )
+    # free-analysis-followup-run NEWER than done-transition -> True.
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+                {
+                    "kind": "epm:free-analysis-followup-run",
+                    "ts": "2026-06-10T01:00:00Z",
+                    "note": "",
+                },
+            ],
+        )
+        is True
+    )
+    # followup-scope OLDER than the latest done-transition -> False (that
+    # follow-up round already settled; the auto-stop re-arms).
+    assert (
+        asw._task_followup_active(
+            0,
+            events=[
+                {"kind": "epm:followup-scope", "ts": "2026-06-09T20:00:00Z", "note": ""},
+                {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": ""},
+            ],
+        )
+        is False
+    )
+
+
 def test_pod_safety_followup_active_only_on_auto_stop_arm():
     # The followup_active predicate is consulted ONLY when status_class is
     # auto-stop-done. A pod-active-stale task still alerts (alerts never stop
@@ -381,7 +432,9 @@ def test_status_classes_subset_of_authoritative_enum():
     # authoritative runtime enum task_workflow.STATUSES — otherwise the member
     # is a phantom that can never match what `_task_status` returns (the prior
     # round shipped `cancelled` / `uploading` / `followups_running` as phantoms,
-    # silently making the auto-stop / no-auto-stop guarantees vacuous). This
+    # silently making the auto-stop / no-auto-stop guarantees vacuous;
+    # `followups_running` was later un-phantomed on 2026-06-10 — it joined the
+    # runtime enum and POD_ACTIVE for the same-issue follow-up loop). This
     # pin catches that whole class of bug.
     from explore_persona_space.task_workflow import STATUSES
 
@@ -539,14 +592,17 @@ def test_running_managed_pods_recognizes_canonical_pod_name(monkeypatch):
     ]
 
 
-def test_running_managed_pods_api_error_returns_empty(monkeypatch):
+def test_running_managed_pods_api_error_returns_none(monkeypatch):
+    # A FAILED snapshot must be distinguishable from "genuinely no pods":
+    # None, not []. The pod-safety state GC keys off this — it must not reap
+    # episode state (dedup flags, miss counters) on a transport-error tick.
     import autonomous_session_watch as asw
 
     def boom():
         raise RuntimeError("transport down")
 
     monkeypatch.setattr(asw, "list_team_pods", boom)
-    assert asw._running_managed_issue_pods() == []
+    assert asw._running_managed_issue_pods() is None
 
 
 # ── Bug B regression: a LIVE interactive session must NOT trigger a stop ──────
@@ -562,7 +618,9 @@ def test_live_interactive_session_does_not_cause_stop(isolated_registry, monkeyp
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # Fresh progress 1h ago -> pod-active-fresh -> keep.
     monkeypatch.setattr(
@@ -590,7 +648,9 @@ def test_auto_stop_fires_on_done_task_second_miss(isolated_registry, monkeypatch
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -618,7 +678,7 @@ def test_auto_stop_fires_for_all_done_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -640,7 +700,9 @@ def test_keep_running_tag_skips_stop_and_notes_once(isolated_registry, monkeypat
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -671,7 +733,9 @@ def test_keep_running_tag_removal_re_arms_auto_stop(isolated_registry, monkeypat
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(530, "p530", "pod-530")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(530, "p530", "pod-530")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "awaiting_promotion")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
@@ -713,7 +777,9 @@ def test_inline_followup_run_launched_skips_stop(isolated_registry, monkeypatch)
         {"kind": "epm:promoted", "ts": "2026-06-10T00:00:01Z", "note": "promoted as useful"},
         {"kind": "epm:run-launched", "ts": "2026-06-10T03:12:08Z", "note": "pod=pod-477"},
     ]
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: events)
@@ -758,7 +824,9 @@ def test_inline_followup_after_completion_re_arms_auto_stop(isolated_registry, m
         {"kind": "epm:status-changed", "ts": "2026-06-10T05:00:00Z", "note": "followup done"},
     ]
     state = {"events": active_events}
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(477, "p477", "pod-477")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(477, "p477", "pod-477")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
     monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
     monkeypatch.setattr(asw, "_task_events", lambda issue: state["events"])
@@ -789,7 +857,7 @@ def test_no_auto_stop_for_other_class_statuses(isolated_registry, monkeypatch, s
 
     now = 1_000_000.0
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(7, "p7", "pod-7")])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [(7, "p7", "pod-7")])
     monkeypatch.setattr(asw, "_task_status", lambda issue: status)
     monkeypatch.setattr(asw, "_task_events", lambda issue: [])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -810,7 +878,9 @@ def test_alert_fires_on_stale_pod_active_and_does_not_stop(isolated_registry, mo
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     # No real progress for well over the stale cap.
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
@@ -840,7 +910,9 @@ def test_alert_dedups_across_ticks(isolated_registry, monkeypatch):
     now = 1_000_000.0
     stops: list[int] = []
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "verifying")
     stale_ts = now - (ALERT_STALE_HOURS + 2) * 3600
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
@@ -866,7 +938,9 @@ def test_alert_re_fires_after_progress_advances(isolated_registry, monkeypatch):
 
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: None)
@@ -909,7 +983,9 @@ def test_alert_re_fires_after_none_then_first_progress_then_stale(isolated_regis
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
@@ -946,7 +1022,9 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
     now = 1_000_000.0
     posts: list[tuple[int, str]] = []
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(489, "p489", "pod-489")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(489, "p489", "pod-489")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "x"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: now - 600)  # 10 min ago, fresh
@@ -966,14 +1044,15 @@ def test_no_alert_on_fresh_pod_active(isolated_registry, monkeypatch):
 # ── fail-closed: API error -> no action ───────────────────────────────────────
 
 
-def test_pod_safety_pass_api_error_does_not_stop(isolated_registry, monkeypatch):
-    # When `_running_managed_issue_pods` returns [] (transport error or
-    # genuinely no pods), `pod_safety_pass` MUST NOT call `_stop_pod`. Fail-
-    # closed invariant for the destructive action.
+@pytest.mark.parametrize("snapshot", [None, []], ids=["failed-snapshot", "genuinely-empty"])
+def test_pod_safety_pass_api_error_does_not_stop(isolated_registry, monkeypatch, snapshot):
+    # Whether the snapshot FAILED (None, transport error) or is genuinely
+    # empty ([]), `pod_safety_pass` MUST NOT call `_stop_pod`. Fail-closed
+    # invariant for the destructive action.
     import autonomous_session_watch as asw
 
     stops: list[int] = []
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: snapshot)
     monkeypatch.setattr(asw, "_stop_pod", lambda issue, dry_run: stops.append(issue) or True)
 
     asw.pod_safety_pass(dry_run=False, threshold=2)
@@ -1046,11 +1125,34 @@ def test_pod_safety_pass_gc_runs_even_with_no_running_pods(isolated_registry, mo
     import autonomous_session_watch as asw
 
     _write_state(isolated_registry, 99, "gone", missed=1, first_seen=__import__("time").time())
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
 
     asw.pod_safety_pass(dry_run=False, threshold=2)
 
     assert not (isolated_registry / "pod-safety-99.json").exists()
+
+
+def test_pod_safety_pass_failed_snapshot_does_not_gc_state(isolated_registry, monkeypatch):
+    # A transport-error tick (snapshot=None) must NOT reap pod-safety state:
+    # the GC cannot tell "snapshot failed" from "every pod left RUNNING", and
+    # reaping resets not just the fail-safe 2-miss counters but the
+    # once-per-episode dedup flags (`alerted` etc.), so every API hiccup
+    # would re-arm duplicate markers.
+    import json
+    import time as t
+
+    import autonomous_session_watch as asw
+
+    _write_state(isolated_registry, 99, "p99", missed=1, first_seen=t.time(), alerted=True)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+
+    asw.pod_safety_pass(dry_run=False, threshold=2)
+
+    state_path = isolated_registry / "pod-safety-99.json"
+    assert state_path.exists()  # NOT reaped on the failed snapshot
+    payload = json.loads(state_path.read_text())
+    assert payload["alerted"] is True  # once-per-episode dedup flag survives
+    assert payload["missed"] == 1  # miss counter survives too
 
 
 # ── daemon-reachability gates ONLY the respawn pass ──────────────────────────
@@ -1064,30 +1166,47 @@ def test_main_daemon_unreachable_still_runs_pod_safety(isolated_registry, monkey
 
     pod_safety_calls: list[tuple] = []
     respawn_entry_calls: list[tuple] = []
+    vm_disk_calls: list[tuple] = []
+    orphan_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "_process_entry", lambda *a, **kw: respawn_entry_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: vm_disk_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
 
     rc = asw.main([])
 
     assert rc == 0
     assert len(pod_safety_calls) == 1  # pod-safety RAN despite the outage
     assert respawn_entry_calls == []  # respawn pass skipped (no entries processed)
+    assert len(vm_disk_calls) == 1  # vm-disk pass runs unconditionally (daemon-free)
+    # The orphan sweep is invoked unconditionally but self-gates on the
+    # daemon flag (it would mass-respawn on an outage otherwise).
+    assert len(orphan_calls) == 1
+    assert orphan_calls[0][1]["daemon_reachable"] is False
 
 
 def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     import autonomous_session_watch as asw
 
     pod_safety_calls: list[tuple] = []
+    orphan_calls: list[tuple] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
-    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
+    # Patched so the unit test never RPCs the real daemon / scans real /proc /
+    # spawns task.py subprocesses for whatever sessions are live on the VM.
+    monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
     assert rc == 0
     assert len(pod_safety_calls) == 1
+    assert len(orphan_calls) == 1
+    assert orphan_calls[0][1]["daemon_reachable"] is True
+    assert orphan_calls[0][1]["live_ids"] == set()
 
 
 # ── state-store round-trip ────────────────────────────────────────────────────
@@ -1457,7 +1576,12 @@ def _patch_stale_signals(monkeypatch, asw, *, status: str, age_s: float | None =
     monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: (age_s, "ts-old"))
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # Neutralize the in-flight-provision exemption (refs #573): these tests
+    # use REAL issue numbers, and the probe reads the live VM's /proc + the
+    # repo's .claude/cache/poll-pipeline-<N>.json — both nondeterministic
+    # here. Tests of the exemption itself re-patch this explicitly.
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
     return age_s
 
 
@@ -1482,6 +1606,11 @@ def stalled_recorder(monkeypatch):
         "_post_progress_marker",
         lambda issue, note, dry_run, label: markers.append((issue, label)),
     )
+    # Neutralize the in-flight-provision exemption (refs #573): the probe
+    # reads the live VM's /proc + the repo's real poll-pipeline state files,
+    # which is nondeterministic under the fake `now` these tests use.
+    # Exemption-specific tests re-patch this explicitly.
+    monkeypatch.setattr(asw, "_provision_in_flight_reason", lambda issue, now: None)
     return stops, spawns, markers
 
 
@@ -1503,6 +1632,93 @@ def test_stalled_active_status_auto_respawns_after_two_misses(
 
     # Tick 2: threshold met, ACTIVE + daemon_reachable -> respawn.
     asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == ["sess-518"]
+    assert spawns == [(518, 24.0)]
+    assert markers == [(518, "session-auto-respawn")]
+
+
+def test_stalled_exemption_live_provision_blocks_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # refs #573: a session whose bg-Bash chain is blocked on a live
+    # `pod.py provision --wait-for-capacity` is NOT stalled — #534's
+    # auto-respawn killed an in-flight provision 3x (~8h lost). When the
+    # in-flight-provision probe returns a reason, the stalled detector
+    # must neither accumulate misses nor stop/spawn/post markers.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 518, "sess-518", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw,
+        "_provision_in_flight_reason",
+        lambda issue, now: f"live pod provision/resume process (pid 4242) for issue #{issue}",
+    )
+    now = 1_000_000.0
+
+    for _ in range(4):  # well past the 2-miss threshold
+        asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    assert stops == [] and spawns == [] and markers == []
+
+
+def test_provision_in_flight_reason_fresh_poll_state(monkeypatch, tmp_path):
+    # Signal 2: a fresh poll-pipeline-<N>.json mtime exempts the session even
+    # without a live provision process; a stale one does not.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_find_provision_process", lambda issue: None)
+    monkeypatch.setattr(asw, "_POLL_STATE_DIR", tmp_path)
+    state = tmp_path / "poll-pipeline-77.json"
+    state.write_text("{}")
+    mtime = state.stat().st_mtime
+
+    fresh = asw._provision_in_flight_reason(77, now=mtime + 60.0)
+    assert fresh is not None and "poll-pipeline" in fresh
+
+    stale = asw._provision_in_flight_reason(77, now=mtime + asw.STALLED_WINDOW_S + 60.0)
+    assert stale is None
+
+    # Missing file -> no exemption.
+    assert asw._provision_in_flight_reason(78, now=mtime) is None
+
+
+def test_provision_in_flight_reason_live_process(monkeypatch, tmp_path):
+    # Signal 1: a live provision/resume process wins regardless of poll state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_POLL_STATE_DIR", tmp_path)  # no state files
+    monkeypatch.setattr(asw, "_find_provision_process", lambda issue: 4242)
+    reason = asw._provision_in_flight_reason(77, now=1_000_000.0)
+    assert reason is not None and "pid 4242" in reason
+
+
+def test_find_provision_process_matches_own_argv():
+    # End-to-end /proc scan against THIS test process: temporarily nothing
+    # matches (this pytest process has no pod.py provision argv), so the
+    # scan returns None without raising.
+    import autonomous_session_watch as asw
+
+    assert asw._find_provision_process(999_999_999) is None
+
+
+def test_stalled_pass_failed_pod_snapshot_degrades_to_empty(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # A FAILED pod snapshot (None) degrades to "no pods" for the stalled
+    # detector — identical decision inputs (has_pod=False) to today's
+    # empty-set fallback, so the pass neither crashes nor changes outcome.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 518, "sess-518", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+    asw.stalled_session_pass(dry_run=False, threshold=2, now=now, daemon_reachable=True)
+
     assert stops == ["sess-518"]
     assert spawns == [(518, 24.0)]
     assert markers == [(518, "session-auto-respawn")]
@@ -1733,6 +1949,7 @@ def test_stalled_main_passes_daemon_flag(isolated_registry, monkeypatch):
     captured_kwargs: dict = {}
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: False)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
 
     def _record_stalled(*a, **kw):
         captured_kwargs.update(kw)
@@ -1817,7 +2034,9 @@ def test_stalled_alert_fires_refresh_from_api_when_has_pod(
     # shape: the user-park happened while a pod was alive.
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
     # Override the pods stub to have a RUNNING managed pod for issue 488.
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
         asw,
@@ -1874,7 +2093,9 @@ def test_stalled_alert_refresh_dedups_within_episode(
     _stops, _spawns, _markers = stalled_recorder
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
     _patch_stale_signals(monkeypatch, asw, status="plan_pending")
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     refresh_calls: list[str] = []
     monkeypatch.setattr(
         asw,
@@ -1905,7 +2126,9 @@ def test_stalled_alert_refresh_re_fires_after_self_report_advances(
 
     _stops, _spawns, _markers = stalled_recorder
     _write_autonomous_entry(isolated_registry, 488, "sess-488")
-    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda: [(488, "p488", "pod-488")])
+    monkeypatch.setattr(
+        asw, "_running_managed_issue_pods", lambda *_a, **_k: [(488, "p488", "pod-488")]
+    )
     monkeypatch.setattr(asw, "_task_status", lambda issue: "plan_pending")
     monkeypatch.setattr(asw, "_task_events", lambda issue: [{"kind": "epm:progress", "ts": "old"}])
     monkeypatch.setattr(asw, "_latest_progress_ts", lambda events: 0.0)
@@ -2084,3 +2307,1297 @@ def test_stalled_manual_entry_without_self_report_is_skipped(
     asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
     asw.stalled_session_pass(dry_run=False, threshold=2, now=1_000_000.0, daemon_reachable=True)
     assert stops == [] and spawns == [] and markers == []
+
+
+# ── vm-disk headroom pass (task #552 incident, 2026-06-10) ───────────────────
+
+
+def test_decide_vm_disk_levels():
+    import autonomous_session_watch as asw
+
+    gib = 2**30
+    assert asw.decide_vm_disk(25 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "ok",
+        False,
+        False,
+    )
+    assert asw.decide_vm_disk(12 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "low",
+        True,
+        False,  # low-but-not-critical never reclaims
+    )
+    assert asw.decide_vm_disk(4 * gib, alerted=False, last_reclaim_ts=None, now=0.0) == (
+        "critical",
+        True,
+        True,
+    )
+
+
+def test_decide_vm_disk_alert_dedups_within_episode():
+    import autonomous_session_watch as asw
+
+    level, do_alert, _ = asw.decide_vm_disk(12 * 2**30, alerted=True, last_reclaim_ts=None, now=0.0)
+    assert (level, do_alert) == ("low", False)
+
+
+def test_decide_vm_disk_reclaim_rearms_after_window():
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    # Within the re-arm window: no second reclaim (no hot-loop pruning).
+    _, _, do_reclaim = asw.decide_vm_disk(
+        4 * 2**30, alerted=True, last_reclaim_ts=now - 60.0, now=now
+    )
+    assert do_reclaim is False
+    # Past the window: re-fires (junk re-accumulated during a long episode).
+    _, _, do_reclaim = asw.decide_vm_disk(
+        4 * 2**30, alerted=True, last_reclaim_ts=now - asw.VM_DISK_RECLAIM_REARM_S, now=now
+    )
+    assert do_reclaim is True
+
+
+def test_vm_disk_sentinel_excluded_from_real_progress():
+    # The vm-disk alert is posted as epm:progress on a task; it must NOT reset
+    # that task's real-progress staleness clock (same contract as every other
+    # watcher-posted note).
+    import autonomous_session_watch as asw
+
+    assert asw._VM_DISK_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def test_vm_disk_pass_ok_clears_episode_state(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "vm-disk.json").write_text(
+        json.dumps({"alerted": True, "last_reclaim_ts": None, "first_seen": 1.0})
+    )
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 100 * 2**30)
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+    assert not (isolated_registry / "vm-disk.json").exists()
+
+
+def test_vm_disk_pass_alert_posts_marker_once_per_episode(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-552.json").write_text(json.dumps({"issue": 552}))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)  # low, not critical
+    markers: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: markers.append((issue, label)),
+    )
+    prunes: list[bool] = []
+    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+    asw.vm_disk_pass(dry_run=False, now=1_000_600.0)  # next tick: deduped
+
+    assert markers == [(552, "vm-disk-low")]
+    assert prunes == []  # low-but-not-critical never reclaims
+
+
+def test_vm_disk_pass_fallback_event_when_no_active_issue(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 12 * 2**30)
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+
+    lines = (isolated_registry / "vm-disk-events.jsonl").read_text().strip().splitlines()
+    assert len(lines) == 1
+    event = json.loads(lines[0])
+    assert event["kind"] == "vm-disk-low"
+    assert asw._VM_DISK_NOTE_SENTINEL in event["note"]
+
+
+def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    prunes: list[bool] = []
+    sweeps: list[float] = []
+    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
+    monkeypatch.setattr(
+        asw, "_sweep_stale_claude_tmp", lambda now, dry_run: (sweeps.append(now), 0)[1]
+    )
+
+    now = 1_000_000.0
+    asw.vm_disk_pass(dry_run=False, now=now)
+    asw.vm_disk_pass(dry_run=False, now=now + 600.0)  # within re-arm window: no churn
+    asw.vm_disk_pass(dry_run=False, now=now + asw.VM_DISK_RECLAIM_REARM_S + 600.0)
+
+    assert len(prunes) == 2  # first tick + post-window re-fire
+    assert len(sweeps) == 2
+
+
+def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    prune_cmds: list[bool] = []
+    monkeypatch.setattr(asw, "_sweep_stale_claude_tmp", lambda now, dry_run: 0)
+    monkeypatch.setattr(
+        asw,
+        "subprocess",
+        type("S", (), {"run": staticmethod(lambda *a, **kw: prune_cmds.append(True))}),
+    )
+
+    asw.vm_disk_pass(dry_run=True, now=1_000_000.0)
+
+    assert prune_cmds == []  # uv cache prune not actually invoked
+    assert not (isolated_registry / "vm-disk.json").exists()  # no state saved
+    assert not (isolated_registry / "vm-disk-events.jsonl").exists()  # no event written
+
+
+# ─── orphan sweep (registration-independent safety net) ─────────────────────
+#
+# Pins the 2026-06-10 #472/#518 incident class: an ACTIVE-status task with no
+# live REGISTERED session must be recovered even when no registry entry exists
+# at all (#472: entry deleted at a TERMINAL park, task revived by a same-issue
+# follow-up driven by an unregistered session that then died). A wrong RESPAWN
+# costs a duplicate session, so the pure decide_orphan gate is pinned
+# exhaustively like decide / decide_pod_safety.
+
+_STALE = ORPHAN_STALENESS_S_DEFAULT + 60.0  # comfortably past the threshold
+
+
+@pytest.mark.parametrize("status", [*sorted(PARK | TERMINAL), None, "some_new_status"])
+def test_orphan_non_active_clears(status):
+    # Only ACTIVE statuses are orphanable; everything else clears state.
+    assert decide_orphan(status, False, False, None, _STALE, missed=3) == ("clear", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_orphan_mapped_alive_clears(status):
+    # A live registered session (autonomous OR manual id) ends the episode,
+    # regardless of marker staleness or accumulated misses.
+    assert decide_orphan(status, True, False, None, _STALE, missed=2) == ("clear", 0)
+
+
+def test_orphan_fresh_registration_keeps():
+    # A registry entry written within the spawn-grace window means a recovery
+    # is in flight (same-tick respawn by another pass, or a manual recovery
+    # whose session id hasn't reached the daemon's live set yet).
+    assert decide_orphan("running", False, False, ORPHAN_SPAWN_GRACE_S - 1, _STALE, missed=1) == (
+        "keep",
+        0,
+    )
+
+
+def test_orphan_fresh_markers_keep():
+    # Real progress within the staleness window: something is driving the
+    # task even if we can't map a session to it — don't double-spawn.
+    assert decide_orphan(
+        "running", False, False, None, ORPHAN_STALENESS_S_DEFAULT - 60.0, missed=1
+    ) == ("keep", 0)
+
+
+@pytest.mark.parametrize("status", sorted(ACTIVE))
+def test_orphan_needs_two_misses_before_respawn(status):
+    # Mirrors the respawn pass's 2-miss guard: first stale observation only
+    # accumulates; the respawn fires on the SECOND consecutive miss.
+    assert decide_orphan(status, False, False, None, _STALE, missed=0) == ("keep", 1)
+    assert decide_orphan(status, False, False, None, _STALE, missed=1) == ("respawn", 0)
+
+
+def test_orphan_no_marker_at_all_counts_as_stale():
+    # An ACTIVE task with zero real progress markers is itself the signal
+    # (mirrors the pod-safety None-is-stale rule).
+    assert decide_orphan("running", False, False, None, None, missed=1) == ("respawn", 0)
+
+
+def test_orphan_manual_only_alerts_never_respawns():
+    # A task whose only registration is MANUAL is user-driven: never
+    # auto-respawn (#505 round-2 orphaning); alert loudly instead.
+    assert decide_orphan("running", False, True, None, _STALE, missed=1) == ("alert", 2)
+
+
+def test_orphan_daily_cap_exhausted_alerts():
+    assert decide_orphan(
+        "running",
+        False,
+        False,
+        None,
+        _STALE,
+        missed=1,
+        respawns_today=ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+    ) == ("alert", 2)
+
+
+def test_orphan_threshold_one_respawns_immediately():
+    assert decide_orphan("running", False, False, None, _STALE, missed=0, threshold=1) == (
+        "respawn",
+        0,
+    )
+
+
+def test_orphan_sentinels_excluded_from_real_progress():
+    # The sweep's own markers must never reset the staleness clock they
+    # measure — pin their membership in the shared exclusion set.
+    from autonomous_session_watch import (
+        _ORPHAN_ALERT_NOTE_SENTINEL,
+        _ORPHAN_RESPAWN_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _ORPHAN_RESPAWN_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+    assert _ORPHAN_ALERT_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
+def test_orphan_state_roundtrip_and_clear(isolated_registry):
+    import autonomous_session_watch as asw
+
+    asw._save_orphan_state(
+        472, missed=1, alerted=True, respawn_day="2026-06-10", respawns_today=2, prev=None
+    )
+    state = asw._load_orphan_state(472)
+    assert state["missed"] == 1
+    assert state["alerted"] is True
+    assert state["respawn_day"] == "2026-06-10"
+    assert state["respawns_today"] == 2
+    assert isinstance(state["first_seen"], float)
+    asw._clear_orphan_state(472)
+    assert asw._load_orphan_state(472) == {}
+
+
+def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
+    # The 2026-06-10 #518 regression: a superseded driver generation parked in
+    # the issue worktree must NOT count as "alive" for the registered entry.
+    # Liveness is recorded-id OR manual-registration-id only.
+    import json
+
+    import autonomous_session_watch as asw
+
+    entry = {"issue": 518, "happy_session_id": "dead-sid"}
+    assert asw._session_alive(entry, live_ids={"zombie-other-sid"}) is False
+    # A live MANUAL replacement session keeps the issue alive (no duplicate
+    # respawn next to a user-driven session).
+    (isolated_registry / "manual-issue-518.json").write_text(
+        json.dumps({"issue": 518, "happy_session_id": "manual-sid", "mode": "manual"})
+    )
+    assert asw._session_alive(entry, live_ids={"manual-sid"}) is True
+    assert asw._session_alive(entry, live_ids={"dead-sid-x"}) is False
+    # The recorded autonomous id itself still counts, of course.
+    assert asw._session_alive(entry, live_ids={"dead-sid"}) is True
+
+
+# ─── session-reconcile pass (sessions-vs-status; 2026-06-10 disk incident) ───
+# A wrong STOP kills a session the user may still want (hence the
+# parked/terminal-status gate + the followup/pod/keep-running skips + the
+# 2-miss guard), while a missing stop re-opens the incident class (idle
+# sessions pinning worktrees + holding deleted-file handles + ~0.5-0.6GB RSS
+# each). Both directions are pinned here.
+
+
+def test_session_reconcile_done_set_is_pod_auto_stop_set():
+    # The DONE set shares the pod-safety auto-stop set: awaiting_promotion /
+    # completed / archived (2026-06-10 user request: "stop the happy sessions
+    # once they reach awaiting promotion"). followups_running (a same-issue
+    # follow-up round is executing) and blocked (under investigation) are
+    # excluded — the session may be legitimately live there.
+    from autonomous_session_watch import AUTO_STOP_DONE, SESSION_RECONCILE_DONE
+
+    assert SESSION_RECONCILE_DONE == AUTO_STOP_DONE
+    assert {"completed", "awaiting_promotion", "archived"} == SESSION_RECONCILE_DONE
+    assert "followups_running" not in SESSION_RECONCILE_DONE
+    assert "blocked" not in SESSION_RECONCILE_DONE
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        None,
+        "proposed",
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+        "followups_running",
+        "blocked",
+    ],
+)
+@pytest.mark.parametrize("idle", [True, False])
+@pytest.mark.parametrize("missed", [0, 1, 5])
+def test_session_reconcile_non_done_always_clears(status, idle, missed):
+    # Any non-parked status (including the follow-up-executing
+    # followups_running, the user-parked blocked, and an unreadable None)
+    # clears the episode — never an action, even with autostop armed and a
+    # huge miss count.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(status, idle, missed, alerted=True, autostop=True) == (
+        "clear",
+        0,
+    )
+
+
+@pytest.mark.parametrize("status", ["completed", "archived", "awaiting_promotion"])
+def test_session_reconcile_fresh_activity_clears(status):
+    # A DONE task with recent activity (e.g. it JUST parked) keeps its
+    # session — the idle window is the post-park grace period.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(status, False, 5, alerted=True, autostop=True) == ("clear", 0)
+
+
+def test_session_reconcile_two_miss_guard_then_alert():
+    # Alert-only fallback (EPM_SESSION_RECONCILE_AUTOSTOP=0): tick 1
+    # accumulates, tick 2 alerts ONCE, later ticks stay quiet (dedup) while
+    # the miss count keeps growing so a later autostop re-enable fires
+    # immediately.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 0, alerted=False) == ("keep", 1)
+    assert decide_session_reconcile("completed", True, 1, alerted=False) == ("alert", 2)
+    assert decide_session_reconcile("completed", True, 2, alerted=True) == ("keep", 3)
+
+
+def test_session_reconcile_autostop_stops_at_threshold():
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 0, alerted=False, autostop=True) == (
+        "keep",
+        1,
+    )
+    assert decide_session_reconcile("completed", True, 1, alerted=False, autostop=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_session_reconcile_autostop_enable_mid_episode_escalates():
+    # The #506 lesson: an already-alerted episode must escalate to the
+    # stronger action the moment it becomes eligible — flipping
+    # EPM_SESSION_RECONCILE_AUTOSTOP=1 mid-episode stops on the NEXT tick
+    # without re-accumulating the miss guard.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile("completed", True, 2, alerted=True, autostop=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_session_reconcile_keep_running_skips_and_beats_followup():
+    # The explicit user tag wins (same precedence as decide_pod_safety) and
+    # resets the miss counter so tag removal re-arms a fresh accumulation.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed", True, 5, alerted=False, autostop=True, keep_running=True
+    ) == ("keep-running-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        keep_running=True,
+        followup_active=True,
+    ) == ("keep-running-skip", 0)
+
+
+def test_session_reconcile_followup_active_skips():
+    # A live inline follow-up (a follow-up signal marker newer than the done
+    # transition) means the session is the follow-up's driver — never stop
+    # it, even if the follow-up itself is quiet past the idle window.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "completed", True, 5, alerted=False, autostop=True, followup_active=True
+    ) == ("followup-skip", 0)
+
+
+def test_session_reconcile_pod_running_skips():
+    # A RUNNING managed pod on the issue means work may still be in flight
+    # that the markers haven't surfaced yet — skip + reset the miss counter.
+    # Precedence: keep_running and followup_active are checked first.
+    from autonomous_session_watch import decide_session_reconcile
+
+    assert decide_session_reconcile(
+        "awaiting_promotion", True, 5, alerted=False, autostop=True, pod_running=True
+    ) == ("pod-skip", 0)
+    assert decide_session_reconcile(
+        "completed",
+        True,
+        5,
+        alerted=False,
+        autostop=True,
+        followup_active=True,
+        pod_running=True,
+    ) == ("followup-skip", 0)
+
+
+def test_session_reconcile_autostop_default_enabled(monkeypatch):
+    # Auto-stop is the DEFAULT (2026-06-10 user request, superseding the
+    # same-day alert-only decision). Only an explicit falsy env value
+    # disables it; the legacy arming values stay backwards-compatible.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    assert asw._session_reconcile_autostop_enabled() is True
+    for off in ("0", "false", "no", " FALSE "):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", off)
+        assert asw._session_reconcile_autostop_enabled() is False
+    for on in ("1", "true", "yes", ""):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", on)
+        assert asw._session_reconcile_autostop_enabled() is True
+
+
+def test_session_idle_s_env_override(monkeypatch):
+    # Default 2h; EPM_SESSION_RECONCILE_IDLE_S overrides; garbled /
+    # non-positive values fall back to the default instead of crashing.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_IDLE_S", raising=False)
+    assert asw._session_idle_s() == asw.SESSION_IDLE_S == 2 * 3600
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_IDLE_S", "7200.5")
+    assert asw._session_idle_s() == 7200.5
+    for bad in ("garbage", "0", "-5"):
+        monkeypatch.setenv("EPM_SESSION_RECONCILE_IDLE_S", bad)
+        assert asw._session_idle_s() == asw.SESSION_IDLE_S
+
+
+def test_session_followup_predicate_expanded_kinds():
+    # The session sweep's follow-up inference is wider than pod-safety's:
+    # followup-scope / free-analysis-followup-run count as follow-up signals
+    # (the request may predate any run-launched), and pod-terminated /
+    # step-completed count as done-transitions (a round wrapping up).
+    import autonomous_session_watch as asw
+
+    def ev(kind, ts):
+        return {"kind": kind, "ts": ts, "note": ""}
+
+    # followup-scope NEWER than the done-transition -> active (the window
+    # between a user posting the scope and a session picking it up).
+    events = [
+        ev("epm:status-changed", "2026-06-10T10:00:00Z"),
+        ev("epm:followup-scope", "2026-06-10T11:00:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is True
+
+    # free-analysis-followup-run newer than the transition -> active.
+    events = [
+        ev("epm:promoted", "2026-06-10T10:00:00Z"),
+        ev("epm:free-analysis-followup-run", "2026-06-10T10:30:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is True
+
+    # pod-terminated NEWER than every follow-up signal -> the follow-up
+    # provably finished; inactive.
+    events = [
+        ev("epm:status-changed", "2026-06-10T08:00:00Z"),
+        ev("epm:run-launched", "2026-06-10T09:00:00Z"),
+        ev("epm:pod-terminated", "2026-06-10T12:00:00Z"),
+    ]
+    assert asw._task_session_followup_active(0, events=events) is False
+
+    # No follow-up signal at all / no done-transition -> conservative False.
+    assert asw._task_session_followup_active(0, events=[]) is False
+    assert (
+        asw._task_session_followup_active(
+            0, events=[ev("epm:run-launched", "2026-06-10T09:00:00Z")]
+        )
+        is False
+    )
+
+
+def test_latest_nonwatcher_event_ts_counts_any_kind_but_filters_sentinels():
+    # The idle clock counts markers of ANY kind (a parked task's
+    # followup-scope / interp-critique / workflow-fix markers are all
+    # evidence of activity) but never the watcher's own posts.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:interp-critique", "ts": "2026-06-10T10:00:00Z", "note": "round 1"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T12:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) ...",
+        },
+    ]
+    # The non-progress-kind marker counts; the newer watcher alert does not.
+    assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-06-10T10:00:00Z")
+    assert asw._latest_nonwatcher_event_ts([]) is None
+
+
+def test_map_sessions_registry_beats_cwd_and_unmapped_skipped():
+    # Registered mapping wins over the worktree-cwd inference; sessions with
+    # NEITHER (the PM session at repo root, other-project chat sessions,
+    # missing path, non-str sid) are skipped entirely — they can never be
+    # acted on by the pass.
+    from autonomous_session_watch import _map_sessions_to_issues
+
+    live = {"reg-sid", "zombie-sid", "pm-sid", "goat-sid", "no-path-sid", None}
+    registry_map = {"reg-sid": 489}
+    paths = {
+        # Registered session sitting in a DIFFERENT issue's worktree: the
+        # registry mapping must win.
+        "reg-sid": "/home/t/explore-persona-space/.claude/worktrees/issue-999",
+        "zombie-sid": "/home/t/explore-persona-space/.claude/worktrees/issue-518",
+        "pm-sid": "/home/t/explore-persona-space",
+        "goat-sid": "/home/t/my-goat",
+        # no-path-sid deliberately absent.
+    }
+    assert _map_sessions_to_issues(live, registry_map, paths) == {
+        489: {"reg-sid"},
+        518: {"zombie-sid"},
+    }
+
+
+def test_session_reconcile_sentinels_are_filtered_from_progress():
+    # Both new watcher-posted markers land as epm:progress on the very task
+    # whose inactivity they measure — they MUST be excluded from the
+    # real-progress clock or the alert would end the episode it reports.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T10:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) ...",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-06-10T11:00:00Z",
+            "note": f"{asw._SESSION_RECONCILE_STOP_NOTE_SENTINEL} auto-stopped ...",
+        },
+    ]
+    assert asw._latest_progress_ts(events) is None
+    assert asw._SESSION_RECONCILE_ALERT_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+    assert asw._SESSION_RECONCILE_STOP_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+def _patch_session_reconcile_io(
+    monkeypatch, *, status, events=None, self_report=(None, None), pods=(), patch_pods=True
+):
+    """Common monkeypatching for the session-reconcile I/O wrapper tests:
+    task reads + the daemon-derived maps + the RunPod snapshot, leaving
+    state files + decisions real. Returns the (stops, posts) recorders.
+    ``patch_pods=False`` leaves the real :func:`_running_managed_issue_pods`
+    in place (for tests exercising its caller-label threading)."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    posts: list[tuple[int, str]] = []
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_task_events", lambda issue: list(events or []))
+    monkeypatch.setattr(asw, "_self_report_age_seconds", lambda issue, now: self_report)
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: False)
+    if patch_pods:
+        monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: list(pods))
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    monkeypatch.setattr(asw, "_load_session_issue_map", lambda: {"sid-a": 42, "sid-b": 42})
+    monkeypatch.setattr(asw, "_load_session_meta", lambda: {})
+    return stops, posts
+
+
+def test_session_reconcile_alert_only_optout_posts_once_never_stops(isolated_registry, monkeypatch):
+    # Opt-out posture (EPM_SESSION_RECONCILE_AUTOSTOP=0): tick 1 accumulates,
+    # tick 2 posts ONE alert marker, tick 3 stays quiet. No session is ever
+    # stopped.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "0")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    live = {"sid-a", "sid-b"}
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    state_path = isolated_registry / "session-reconcile-42.json"
+    assert json.loads(state_path.read_text())["missed"] == 1
+    assert stops == [] and posts == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert posts == [(42, "session-reconcile-alert")]
+    state = json.loads(state_path.read_text())
+    assert state["alerted"] is True and state["missed"] == 2
+    assert state["sids"] == ["sid-a", "sid-b"]
+    assert stops == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert posts == [(42, "session-reconcile-alert")]  # dedup: still exactly one
+    assert stops == []
+
+
+@pytest.mark.parametrize("status", ["completed", "awaiting_promotion"])
+def test_session_reconcile_default_autostop_stops_all_sessions_and_clears(
+    isolated_registry, monkeypatch, status
+):
+    # DEFAULT posture (env unset, 2026-06-10 user request): tick 1
+    # accumulates, tick 2 stops EVERY live mapped session and posts the stop
+    # marker. The state is NOT cleared on the daemon ACK — the ACKed sids are
+    # recorded in `stopped_at` and verified actually-gone on the NEXT tick,
+    # where the live-session-keyed GC reaps the state (the verified-gone
+    # path). awaiting_promotion is covered (the request's headline case:
+    # sessions idling at the promotion park).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
+    now = 1_000_000.0
+    live = {"sid-a", "sid-b"}
+    state_path = isolated_registry / "session-reconcile-42.json"
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == []
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert sorted(stops) == ["sid-a", "sid-b"]
+    assert posts == [(42, "session-reconcile-stop")]
+    state = json.loads(state_path.read_text())
+    assert sorted(state["stopped_at"]) == ["sid-a", "sid-b"]  # ACK recorded, awaiting verification
+
+    # Tick 3: the daemon actually killed both -> no live mapped session ->
+    # the GC reaps the state file. No second stop, no extra marker.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=set(), now=now)
+    assert not state_path.exists()
+    assert sorted(stops) == ["sid-a", "sid-b"]
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+def test_session_reconcile_running_pod_blocks_stop(isolated_registry, monkeypatch):
+    # A RUNNING managed pod for the issue blocks the stop and resets the
+    # miss counter — even at the default auto-stop posture.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(
+        monkeypatch, status="awaiting_promotion", pods=[(42, "pod-id-x", "pod-42")]
+    )
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0  # pod leaving the RUNNING set re-arms a fresh accumulation
+
+
+def test_session_reconcile_followup_scope_blocks_stop(isolated_registry, monkeypatch):
+    # The headline near-miss from the 2026-06-10 manual sweep: a parked task
+    # with a follow-up REQUEST (epm:followup-scope newer than the latest
+    # done-transition) keeps its session even when the markers are idle past
+    # the grace window.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    base = asw._parse_event_ts("2026-06-10T00:00:00Z")
+    now = base + 30 * 3600
+    events = [
+        {"kind": "epm:status-changed", "ts": "2026-06-10T00:00:00Z", "note": "-> parked"},
+        {"kind": "epm:followup-scope", "ts": "2026-06-10T01:00:00Z", "note": "user followup"},
+    ]
+    stops, posts = _patch_session_reconcile_io(
+        monkeypatch, status="awaiting_promotion", events=events
+    )
+    for _ in range(3):
+        asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+
+
+@pytest.mark.parametrize("status", ["followups_running", "blocked", "running"])
+def test_session_reconcile_never_acts_on_non_done_status(isolated_registry, monkeypatch, status):
+    # followups_running (a same-issue follow-up round is executing), blocked
+    # (under investigation), and any ACTIVE status are untouchable — no stop,
+    # no marker, no state accumulation, even at the default auto-stop posture.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status=status)
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    assert not (isolated_registry / "session-reconcile-42.json").exists()
+
+
+def test_session_reconcile_fresh_completion_keeps_session(isolated_registry, monkeypatch):
+    # A task that completed 1h ago is inside the idle grace window: its
+    # session is kept and any prior episode state is cleared.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    ts = "2026-06-10T10:00:00Z"
+    now = asw._parse_event_ts(ts) + 3600  # 1h after the completion marker
+    events = [{"kind": "epm:status-changed", "ts": ts, "note": "-> completed"}]
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", events=events)
+    # Pre-existing episode state from an earlier (now-recovered) episode.
+    asw._save_session_reconcile_state(42, missed=1, alerted=True, sids=["sid-a"])
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=now)
+    assert stops == [] and posts == []
+    assert not (isolated_registry / "session-reconcile-42.json").exists()  # cleared
+
+
+def test_session_reconcile_keep_running_tag_skips_stop(isolated_registry, monkeypatch):
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    monkeypatch.setattr(asw, "_task_keep_running", lambda issue: True)
+    for _ in range(3):
+        asw.session_reconcile_pass(
+            False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0
+        )
+    assert stops == [] and posts == []
+    state = json.loads((isolated_registry / "session-reconcile-42.json").read_text())
+    assert state["missed"] == 0  # tag removal re-arms a fresh accumulation
+
+
+def test_session_reconcile_gc_drops_state_without_mapped_session(isolated_registry, monkeypatch):
+    # When the sessions died / were stopped by any path, the per-issue state
+    # is reaped so a later session on the same issue starts a fresh episode.
+    import autonomous_session_watch as asw
+
+    asw._save_session_reconcile_state(42, missed=1, alerted=True, sids=["sid-a"])
+    asw._save_session_reconcile_state(99, missed=1, alerted=False, sids=["sid-z"])
+    cleared = asw._gc_orphan_session_reconcile_state({42}, dry_run=False, now=1_000_000.0)
+    assert cleared == [99]
+    assert (isolated_registry / "session-reconcile-42.json").exists()
+    assert not (isolated_registry / "session-reconcile-99.json").exists()
+    # Dry-run never deletes.
+    cleared = asw._gc_orphan_session_reconcile_state(set(), dry_run=True, now=1_000_000.0)
+    assert cleared == [42]
+    assert (isolated_registry / "session-reconcile-42.json").exists()
+
+
+def test_session_reconcile_pass_daemon_unreachable_skips(isolated_registry, monkeypatch):
+    # Session liveness is unknowable during a daemon outage, and the stop
+    # action POSTs to the daemon — the whole pass must no-op.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_RECONCILE_AUTOSTOP", "1")
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    asw._save_session_reconcile_state(42, missed=5, alerted=True, sids=["sid-a"])
+    asw.session_reconcile_pass(False, 2, daemon_reachable=False, live_ids=None, now=1_000_000.0)
+    assert stops == [] and posts == []
+    # State untouched (no GC either — liveness unknown).
+    assert (isolated_registry / "session-reconcile-42.json").exists()
+
+
+# ── caller-label attribution on the shared RUNNING-pod helper ─────────────────
+
+
+def test_running_managed_pods_warning_carries_caller_label(monkeypatch, capsys):
+    # The transport-error warning is attributed to the INVOKING pass: the
+    # stalled-detector and session-reconcile passes reuse this pod-safety
+    # helper, and a `pod-safety:`-prefixed warning from those passes sent
+    # cron-log triage to the wrong pass.
+    import autonomous_session_watch as asw
+
+    def boom():
+        raise RuntimeError("transport down")
+
+    monkeypatch.setattr(asw, "list_team_pods", boom)
+    assert asw._running_managed_issue_pods() is None
+    assert "pod-safety: list_team_pods failed" in capsys.readouterr().err
+    assert asw._running_managed_issue_pods(caller="session-reconcile") is None
+    assert "session-reconcile: list_team_pods failed" in capsys.readouterr().err
+
+
+def test_session_reconcile_pass_threads_caller_label(isolated_registry, monkeypatch, capsys):
+    # End-to-end: the session-reconcile pass calls the shared helper with its
+    # own caller label, so a transport error during THIS pass is attributed
+    # to session-reconcile in the cron log, not to pod-safety.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    _patch_session_reconcile_io(monkeypatch, status="completed", patch_pods=False)
+
+    def boom():
+        raise RuntimeError("transport down")
+
+    monkeypatch.setattr(asw, "list_team_pods", boom)
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+    err = capsys.readouterr().err
+    assert "session-reconcile: list_team_pods failed" in err
+    assert "pod-safety:" not in err
+
+
+def test_session_reconcile_failed_pod_snapshot_degrades_to_empty(isolated_registry, monkeypatch):
+    # A FAILED pod snapshot (None) degrades to the empty set for session-
+    # reconcile — same decision inputs as today's empty-set fallback: the
+    # tick still counts the miss (the idle grace + 2-miss guard remain the
+    # safety margins) and nothing is stopped or posted on tick 1.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed", patch_pods=False)
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: None)
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+
+    state_path = isolated_registry / "session-reconcile-42.json"
+    assert json.loads(state_path.read_text())["missed"] == 1
+    assert stops == [] and posts == []
+
+
+# ── next-tick stop verification (daemon ACK != kill) ──────────────────────────
+
+
+def test_session_reconcile_ack_without_kill_retries_once_then_alerts(
+    isolated_registry, monkeypatch, capsys
+):
+    # Alive-after-stop: the daemon ACKs the stop but the session never leaves
+    # the live set. The first zombie tick loudly retries the stop ONCE; the
+    # next tick posts the one-time stop-failed marker; later ticks stay
+    # quiet. The episode state is never cleared while the zombie lives.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    now = 1_000_000.0
+    live = {"sid-a"}
+    state_path = isolated_registry / "session-reconcile-42.json"
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)  # miss 1
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)  # stop ACK
+    assert stops == ["sid-a"]
+    assert posts == [(42, "session-reconcile-stop")]
+    capsys.readouterr()  # drain
+
+    # Tick 3: sid-a STILL alive -> loud stderr log + exactly one retry.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert "STOP-VERIFY FAILED issue #42" in capsys.readouterr().err
+    state = json.loads(state_path.read_text())
+    assert state["stop_retried"] is True and state["stop_failed_alerted"] is False
+
+    # Tick 4: STILL alive after the retry -> one-time loud marker, no 3rd stop.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert posts[-1] == (42, "session-reconcile-stop-failed")
+    state = json.loads(state_path.read_text())
+    assert state["stop_failed_alerted"] is True
+
+    # Tick 5: dedup — no new stop, no new marker; state kept for triage.
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids=live, now=now)
+    assert stops == ["sid-a", "sid-a"]
+    assert posts.count((42, "session-reconcile-stop-failed")) == 1
+    assert state_path.exists()
+
+
+def test_session_reconcile_state_backcompat_missing_stop_fields(isolated_registry, monkeypatch):
+    # A state file written BEFORE the stop-verification fields existed (no
+    # stopped_at / stop_retried / stop_failed_alerted keys) must behave like
+    # an in-flight pre-upgrade episode: the missing keys read back as
+    # empty/false and the normal decision path proceeds unchanged.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_SESSION_RECONCILE_AUTOSTOP", raising=False)
+    stops, posts = _patch_session_reconcile_io(monkeypatch, status="completed")
+    legacy = {"missed": 1, "alerted": False, "sids": ["sid-a"], "first_seen": 999_000.0}
+    (isolated_registry / "session-reconcile-42.json").write_text(json.dumps(legacy))
+
+    asw.session_reconcile_pass(False, 2, daemon_reachable=True, live_ids={"sid-a"}, now=1_000_000.0)
+    assert stops == ["sid-a"]  # missed 1 -> 2 hits the threshold; the stop proceeds
+    assert posts == [(42, "session-reconcile-stop")]
+
+
+# ─── zombie-wrapper pass (dead inner Claude; 2026-06-11 zombie sweep) ─────────
+#
+# 25 finished-issue sessions with NO inner Claude process showed as "running"
+# indefinitely because they had lost their issue mapping — invisible to the
+# session-reconcile pass. The zombie pass keys on "no Claude process anywhere
+# under the daemon-reported wrapper pid", regardless of mapping, with the
+# conservative 2-checks + 2h-grace design (a live wrapper revives its inner
+# Claude IN PLACE on the next phone message, so a no-Claude snapshot alone can
+# be a healthy idle session).
+
+
+def test_zombie_decide_mapped_active_status_clears():
+    # An issue-mapped session at any ACTIVE/blocked/plan_pending (or
+    # unreadable) status is out of scope — other passes own those states.
+    import autonomous_session_watch as asw
+
+    for status in [*sorted(asw.ZOMBIE_STATUS_EXCLUDE), None]:
+        assert asw.decide_zombie_wrapper(status, True, False, 5, 99_999.0, False) == ("clear", 0), (
+            status
+        )
+
+
+def test_zombie_decide_exclude_set_covers_required_statuses():
+    # The hard-requirement exclusion list, pinned verbatim: running, verifying,
+    # interpreting, reviewing, followups_running, blocked, planning,
+    # plan_pending, approved.
+    import autonomous_session_watch as asw
+
+    required = {
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+        "followups_running",
+        "blocked",
+        "planning",
+        "plan_pending",
+        "approved",
+    }
+    assert required == asw.ZOMBIE_STATUS_EXCLUDE
+
+
+def test_zombie_decide_claude_present_clears():
+    # A Claude process anywhere in the wrapper's tree ends the episode — even
+    # for unmapped sessions deep into an accumulation.
+    import autonomous_session_watch as asw
+
+    assert asw.decide_zombie_wrapper(None, False, True, 5, 99_999.0, True) == ("clear", 0)
+    assert asw.decide_zombie_wrapper("completed", True, True, 1, 0.0, False) == ("clear", 0)
+
+
+def test_zombie_decide_two_miss_guard_and_grace_both_required():
+    # Stop needs BOTH >= threshold consecutive misses AND >= grace since the
+    # first miss: miss 1 keeps; miss 2 inside the grace window keeps; miss 2
+    # past the grace window stops.
+    import autonomous_session_watch as asw
+
+    grace = asw.ZOMBIE_WRAPPER_GRACE_S
+    assert asw.decide_zombie_wrapper("completed", True, False, 0, 0.0, False) == ("keep", 1)
+    assert asw.decide_zombie_wrapper("completed", True, False, 1, grace - 1, False) == ("keep", 2)
+    assert asw.decide_zombie_wrapper("completed", True, False, 1, grace + 1, False) == ("stop", 0)
+    # Unmapped sessions (the 2026-06-11 zombie class) follow the same ladder,
+    # status ignored.
+    assert asw.decide_zombie_wrapper(None, False, False, 1, grace + 1, False) == ("stop", 0)
+
+
+def test_zombie_decide_kill_switch_alerts_once_then_quiet():
+    # reap_enabled=False (EPM_ZOMBIE_WRAPPER_REAP=0): one alert per episode,
+    # then quiet keeps; the count keeps accumulating so a later re-enable
+    # stops on the next tick.
+    import autonomous_session_watch as asw
+
+    grace = asw.ZOMBIE_WRAPPER_GRACE_S
+    assert asw.decide_zombie_wrapper(
+        None, False, False, 1, grace + 1, False, reap_enabled=False
+    ) == ("alert", 2)
+    assert asw.decide_zombie_wrapper(
+        None, False, False, 2, grace + 1, True, reap_enabled=False
+    ) == ("keep", 3)
+    assert asw.decide_zombie_wrapper(None, False, False, 2, grace + 1, True, reap_enabled=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_zombie_sentinels_registered_and_filtered():
+    # All three zombie sentinels must be in the watcher-note exclusion set so
+    # the pass's own markers never reset the staleness clocks they measure.
+    import autonomous_session_watch as asw
+
+    for sentinel in (
+        asw._ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL,
+        asw._ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL,
+        asw._ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL,
+    ):
+        assert sentinel in asw._WATCHER_NOTE_SENTINELS
+        events = [{"kind": "epm:progress", "ts": "2026-06-11T10:00:00Z", "note": sentinel + " x"}]
+        assert asw._latest_progress_ts(events) is None
+
+
+# ── zombie-wrapper pass-level (I/O wrapper) tests ─────────────────────────────
+
+_Z_ROOT = str(spawn_session.PROJECT_ROOT)
+
+
+def _patch_zombie_io(
+    monkeypatch,
+    *,
+    children,
+    meta,
+    status=None,
+    has_claude=False,
+    registry=None,
+    pm_sids=frozenset(),
+):
+    """Common monkeypatching for the zombie-wrapper I/O tests: daemon children
+    + session metadata + task status + the /proc walk, leaving state files and
+    decisions real. Returns the (stops, posts, fallback) recorders."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    posts: list[tuple[int, str]] = []
+    fallback: list[str] = []
+    monkeypatch.setattr(asw, "_live_children", lambda: list(children))
+    monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
+    monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
+    monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
+    monkeypatch.setattr(asw, "_task_status", lambda issue: status)
+    monkeypatch.setattr(asw, "_proc_children_map", lambda: {})
+    monkeypatch.setattr(asw, "_has_claude_descendant", lambda pid, cm=None: has_claude)
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, label)),
+    )
+    monkeypatch.setattr(
+        asw, "_append_zombie_fallback_event", lambda note, dry_run: fallback.append(note)
+    )
+    return stops, posts, fallback
+
+
+def test_zombie_pass_stop_fires_after_threshold_and_grace(isolated_registry, monkeypatch):
+    # The headline behavior: an unmapped repo-root EPS session with no Claude
+    # descendant accumulates a miss on tick 1, and is stopped on tick 2 once
+    # the grace window has also elapsed. The record lands in the fallback
+    # events file (no issue to carry a marker).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-z", "pid": 4242}]
+    meta = {"sid-z": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    state_path = isolated_registry / "zombie-wrapper-sid-z.json"
+    t0 = 1_000_000.0
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_miss_ts"] == t0
+    assert stops == [] and fallback == []
+
+    t1 = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t1)
+    assert stops == ["sid-z"]
+    assert len(fallback) == 1 and posts == []  # unmapped -> fallback, not a marker
+    state = json.loads(state_path.read_text())
+    assert state["stopped_at"] == t1  # ACK recorded for next-tick verification
+
+
+def test_zombie_pass_mapped_done_task_posts_marker(isolated_registry, monkeypatch):
+    # A worktree-cwd session (issue inferred) at a DONE status gets the same
+    # ladder, with the stop recorded as a marker on the issue.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-w", "pid": 77}]
+    meta = {"sid-w": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-99"}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="awaiting_promotion"
+    )
+    t0 = 1_000_000.0
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(
+        False, 2, daemon_reachable=True, now=t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    )
+    assert stops == ["sid-w"]
+    assert posts == [(99, "zombie-wrapper-stop")] and fallback == []
+
+
+def test_zombie_pass_claude_present_clears_state(isolated_registry, monkeypatch):
+    # A session whose tree has a Claude process clears any accumulated state.
+    import json
+
+    import autonomous_session_watch as asw
+
+    children = [{"happySessionId": "sid-h", "pid": 11}]
+    meta = {"sid-h": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, has_claude=True
+    )
+    state_path = isolated_registry / "zombie-wrapper-sid-h.json"
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "first_miss_ts": 999_000.0}))
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert not state_path.exists()
+    assert stops == [] and posts == [] and fallback == []
+
+
+def test_zombie_pass_pm_and_non_eps_sessions_never_touched(isolated_registry, monkeypatch):
+    # PM-registered sids and non-EPS cwds are skipped before any state is
+    # even created — they can never accumulate toward a stop.
+    import autonomous_session_watch as asw
+
+    children = [
+        {"happySessionId": "sid-pm", "pid": 1},
+        {"happySessionId": "sid-other", "pid": 2},
+        {"happySessionId": "sid-nometa", "pid": 3},
+    ]
+    meta = {
+        "sid-pm": {"path": _Z_ROOT},
+        "sid-other": {"path": "/home/thomasjiralerspong/my-goat"},
+        # sid-nometa: no metadata at all -> EPS-ness unknown -> skipped
+    }
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, pm_sids={"sid-pm"}
+    )
+    t0 = 1_000_000.0
+    for now in (t0, t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+
+
+def test_zombie_pass_mapped_active_status_excluded(isolated_registry, monkeypatch):
+    # A registry-mapped session whose task is ACTIVE is never stopped, even
+    # with no Claude descendant for far longer than the grace window.
+    import autonomous_session_watch as asw
+
+    children = [{"happySessionId": "sid-a", "pid": 5}]
+    meta = {"sid-a": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="running", registry={"sid-a": 7}
+    )
+    t0 = 1_000_000.0
+    for now in (t0, t0 + 10 * asw.ZOMBIE_WRAPPER_GRACE_S):
+        asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and posts == [] and fallback == []
+
+
+def test_zombie_pass_kill_switch_alert_only(isolated_registry, monkeypatch):
+    # EPM_ZOMBIE_WRAPPER_REAP=0: one alert per episode, never a stop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_ZOMBIE_WRAPPER_REAP", "0")
+    children = [{"happySessionId": "sid-k", "pid": 9}]
+    meta = {"sid-k": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-55"}}
+    stops, posts, _fallback = _patch_zombie_io(
+        monkeypatch, children=children, meta=meta, status="completed"
+    )
+    t0 = 1_000_000.0
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)
+    assert stops == []
+    assert posts == [(55, "zombie-wrapper-alert")]  # exactly one per episode
+
+
+def test_zombie_pass_stop_verification_retry_then_alert(isolated_registry, monkeypatch, capsys):
+    # ACK != kill: a session still live after its ACKed stop gets ONE retry,
+    # then ONE loud record, then quiet — the state is kept for triage and
+    # reaped only when the session actually leaves the live set.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-v", "pid": 13}]
+    meta = {"sid-v": {"path": _Z_ROOT}}
+    stops, _posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    state_path = isolated_registry / "zombie-wrapper-sid-v.json"
+    t0 = 1_000_000.0
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later)  # stop ACK
+    assert stops == ["sid-v"] and len(fallback) == 1
+    capsys.readouterr()
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 600)  # retry
+    assert stops == ["sid-v", "sid-v"]
+    assert "ZOMBIE STOP-VERIFY FAILED" in capsys.readouterr().err
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1200)  # loud record
+    assert stops == ["sid-v", "sid-v"]
+    assert len(fallback) == 2  # stop + stop-failed records
+
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 1800)  # quiet
+    assert stops == ["sid-v", "sid-v"] and len(fallback) == 2
+    assert state_path.exists()
+
+    # The session finally dies -> the live-session-keyed GC reaps the state.
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=True, now=later + 2400)
+    assert not state_path.exists()
+
+
+def test_zombie_pass_daemon_unreachable_skips(isolated_registry, monkeypatch):
+    # Daemon-gated: liveness + the stop RPC both need the daemon.
+    import autonomous_session_watch as asw
+
+    stops, posts, fallback = _patch_zombie_io(
+        monkeypatch, children=[{"happySessionId": "sid-x", "pid": 1}], meta={}
+    )
+    asw.zombie_wrapper_pass(False, 2, daemon_reachable=False, now=1_000_000.0)
+    assert stops == [] and posts == [] and fallback == []
+    assert not list(isolated_registry.glob("zombie-wrapper-*.json"))
+
+
+def test_pm_session_registry_roundtrip_dedup_and_cap(isolated_registry):
+    # spawn-pm / register-pm append to pm-session.json: deduped, newest last,
+    # bounded — and the watcher-facing loader returns the set.
+    _ = isolated_registry  # patches AUTONOMOUS_REGISTRY_DIR in both modules
+
+    spawn_session._register_pm_session("sid-1")
+    spawn_session._register_pm_session("sid-2")
+    spawn_session._register_pm_session("sid-1")  # re-register moves to newest, no dup
+    assert spawn_session._load_pm_session_ids_ordered() == ["sid-2", "sid-1"]
+    assert spawn_session._load_pm_session_ids() == {"sid-1", "sid-2"}
+    for i in range(30):
+        spawn_session._register_pm_session(f"gen-{i}")
+    ordered = spawn_session._load_pm_session_ids_ordered()
+    assert len(ordered) == spawn_session._PM_SESSION_MAX_IDS
+    assert ordered[-1] == "gen-29"
+
+
+def test_pm_session_loader_empty_on_missing_or_garbled(isolated_registry):
+    # A missing or garbled registry must degrade to "no PM exclusion", never
+    # crash the watcher pass that consumes it.
+    assert spawn_session._load_pm_session_ids() == set()
+    (isolated_registry / spawn_session.PM_SESSION_BASENAME).write_text("not json")
+    assert spawn_session._load_pm_session_ids() == set()
+
+
+def test_zombie_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline: with an episode seeded AT the stop point
+    # (threshold met, grace elapsed), a dry-run tick must not stop, must not
+    # record anywhere, and must leave the state file byte-for-byte untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_ZOMBIE_WRAPPER_REAP", raising=False)
+    children = [{"happySessionId": "sid-d", "pid": 21}]
+    meta = {"sid-d": {"path": _Z_ROOT}}
+    stops, posts, fallback = _patch_zombie_io(monkeypatch, children=children, meta=meta)
+    # The shared fake _stop_session ignores dry_run; this test pins dry-run
+    # discipline, so mirror the REAL helper's contract (returns False without
+    # acting when dry_run=True).
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    t0 = 1_000_000.0
+    state_path = isolated_registry / "zombie-wrapper-sid-d.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_miss_ts": t0})
+    state_path.write_text(seeded)
+
+    later = t0 + asw.ZOMBIE_WRAPPER_GRACE_S + 60
+    asw.zombie_wrapper_pass(True, 2, daemon_reachable=True, now=later)
+    assert stops == [] and posts == [] and fallback == []
+    assert state_path.read_text() == seeded  # untouched, not even rewritten
+
+    # _stop_session itself honours dry_run (returns False without stopping),
+    # so even the real helper could not have acted; here we additionally pin
+    # that the pass never persisted a stopped_at / incremented miss count.
+    state = json.loads(state_path.read_text())
+    assert "stopped_at" not in state

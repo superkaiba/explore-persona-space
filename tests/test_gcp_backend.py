@@ -1,0 +1,1720 @@
+"""Unit tests for the GCP ComputeBackend (slice 3 of the multi-backend router).
+
+Every test mocks the ``gcloud`` subprocess via the injected ``runner``
+seam — the unit suite NEVER hits a real GCP project. The live acceptance
+run (the GCP per-lane check in slice 8) is what proves the integration;
+this file pins the contract the live run consumes.
+
+Coverage maps to the slice-3 acceptance checklist in the implementer
+brief:
+
+* Golden ``gcloud compute instances create`` argv for each intent.
+* Per-intent machine-type table.
+* Idempotent reconnect (no second create when an instance already
+  exists).
+* ``launch`` populates :class:`ExpectedArtifacts` (incl. the sentinel
+  path) onto handle.extra so the slice-2 verifier can run.
+* ``confirm_artifacts`` delegates to the slice-2 verifier (PASS/FAIL
+  honored).
+* Failure classification: capacity → typed provisioning exception (the
+  router will fall back); workload-shaped failure is distinct.
+* ``teardown`` is idempotent on a missing instance.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+from dataclasses import replace
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+import pytest
+
+from explore_persona_space.backends import (
+    EXPECTED_ARTIFACTS_HANDLE_KEY,
+    INTENT_TO_MACHINE,
+    GcpBackend,
+    GcpConfig,
+    GcpProvisioningError,
+    MachineSpec,
+    RunSpec,
+    audit_stale_gcp_vms,
+    default_gcp_config,
+    render_create_argv,
+)
+from explore_persona_space.backends.gcp import (
+    DEFAULT_GCLOUD_CONFIG,
+    DEFAULT_IMAGE_FAMILY,
+    DEFAULT_IMAGE_PROJECT,
+    DEFAULT_PRIMARY_ZONE,
+    DEFAULT_PROJECT,
+    REQUIRED_LAUNCH_SECRET_KEYS,
+    GcloudRunResult,
+    GcpLaunchSecretsMissing,
+    attempt_id_for,
+    classify_create_failure,
+    instance_name_for,
+    machine_for_intent,
+    reconnect_or_none,
+    render_delete_argv,
+    render_describe_argv,
+    render_list_argv,
+    render_startup_script,
+    resolve_launch_secrets,
+    resolve_provisioning_model,
+    sentinel_path_for,
+)
+
+# ---------------------------------------------------------------------------
+# Fixtures + helpers
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(autouse=True)
+def _required_launch_secrets(monkeypatch):
+    """launch() fails loud without the required workload secrets (fix20).
+
+    Set them on every test so the suite is hermetic regardless of the
+    invoking shell's env (and so resolve_launch_secrets's dotenv
+    fallback never has to read the real repo .env in tests —
+    override=False keeps these monkeypatched values authoritative).
+    """
+    monkeypatch.setenv("HF_TOKEN", "hf_test_token")
+    monkeypatch.setenv("WANDB_API_KEY", "wandb_test_key")
+    # Hermetic for the OPTIONAL secret keys too: a real token leaking in
+    # from the invoking shell would make render_create_argv demand a
+    # tempfile entry the direct-render tests don't thread (and could put
+    # suite behavior at the mercy of the developer's env).
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+
+# Tempfile paths for the autouse env secrets — render_create_argv only
+# EMBEDS the paths (gcloud reads the files), so fixed fake paths keep the
+# direct-render tests deterministic. launch()-level tests exercise the
+# real tempfile lifecycle (write + 0600 + unlink-in-finally).
+_TEST_SECRET_FILES: dict[str, str] = {
+    "HF_TOKEN": "/tmp/eps-test-secret-hf",
+    "WANDB_API_KEY": "/tmp/eps-test-secret-wandb",
+}
+
+
+def _spec(intent: str = "lora-7b", **overrides: Any) -> RunSpec:
+    """Build a RunSpec with a deterministic attempt-id (no clock noise)."""
+    base_extra: dict[str, Any] = {"attempt_id": "att-fixed-001"}
+    extra = overrides.pop("extra", None)
+    if extra:
+        base_extra.update(extra)
+    hydra_args = overrides.pop("hydra_args", ("condition=c1_evil_wrong_em", "seed=42"))
+    return RunSpec(
+        issue=137,
+        intent=intent,
+        backend="gcp",
+        hydra_args=hydra_args,
+        extra=base_extra,
+        **overrides,
+    )
+
+
+def _test_config() -> GcpConfig:
+    """Test-fixture config (matches production defaults but explicit)."""
+    return GcpConfig(
+        project="eps-test-project",
+        gcloud_config="eps-test-config",
+        primary_zone="us-central1-a",
+        fallback_zones=("us-central1-b", "us-central1-c"),
+        image_family="pytorch-test-family",
+        image_project="deeplearning-platform-release",
+        repo_url="https://github.com/superkaiba/explore-persona-space.git",
+    )
+
+
+class _Runner:
+    """Test runner: records argv + returns scripted GcloudRunResult per call.
+
+    The harness inspects the argv to figure out which gcloud subcommand
+    is being called (``create`` / ``list`` / ``describe`` / ``delete``)
+    and returns the next scripted result for that bucket. Tests that
+    need a single result per call drop the scripted list to length 1.
+    """
+
+    def __init__(
+        self,
+        *,
+        create_results: list[GcloudRunResult] | None = None,
+        list_results: list[GcloudRunResult] | None = None,
+        describe_results: list[GcloudRunResult] | None = None,
+        delete_results: list[GcloudRunResult] | None = None,
+        serial_results: list[GcloudRunResult] | None = None,
+        guest_attr_results: list[GcloudRunResult] | None = None,
+    ) -> None:
+        self.calls: list[list[str]] = []
+        self.create_results = list(create_results or [])
+        self.list_results = list(list_results or [])
+        self.describe_results = list(describe_results or [])
+        self.delete_results = list(delete_results or [])
+        self.serial_results = list(serial_results or [])
+        self.guest_attr_results = list(guest_attr_results or [])
+
+    def __call__(self, argv):
+        argv = list(argv)
+        self.calls.append(argv)
+        # gcloud compute instances <subcommand> ...
+        if "create" in argv and "instances" in argv:
+            return self._pop(self.create_results, default_ok=True)
+        if "list" in argv and "instances" in argv:
+            return self._pop(self.list_results, default_ok=True, default_stdout="[]")
+        if "describe" in argv and "instances" in argv:
+            return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
+        if "get-guest-attributes" in argv and "instances" in argv:
+            # Default: attribute not yet written (gcloud exits 1) — the
+            # poll treats that as phase-unknown and keeps the coarse
+            # describe classification.
+            if self.guest_attr_results:
+                return self._pop(self.guest_attr_results, default_ok=False)
+            return GcloudRunResult(1, "", "guest attribute eps/phase not found")
+        if "delete" in argv and "instances" in argv:
+            return self._pop(self.delete_results, default_ok=True)
+        if "get-serial-port-output" in argv:
+            return self._pop(self.serial_results, default_ok=True)
+        raise AssertionError(f"unexpected gcloud argv in test: {argv}")
+
+    @staticmethod
+    def _pop(
+        bucket: list[GcloudRunResult], *, default_ok: bool, default_stdout: str = ""
+    ) -> GcloudRunResult:
+        if bucket:
+            return bucket.pop(0)
+        if default_ok:
+            return GcloudRunResult(returncode=0, stdout=default_stdout, stderr="")
+        return GcloudRunResult(returncode=1, stdout="", stderr="no scripted result")
+
+
+@pytest.fixture
+def no_marker_posts(monkeypatch):
+    """Defense in depth: never let a test shell out to real task.py post-marker.
+
+    Mirrors the SLURM tests' autouse fixture so a forgotten ``marker_poster=``
+    inject can't pollute a real events.jsonl trail.
+    """
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **_kw: None,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Config defaults
+# ---------------------------------------------------------------------------
+
+
+def test_default_gcp_config_threads_production_constants() -> None:
+    cfg = default_gcp_config()
+    assert cfg.project == DEFAULT_PROJECT == "eps-persona-gpu-jun2026"
+    assert cfg.gcloud_config == DEFAULT_GCLOUD_CONFIG == "eps-gcp"
+    assert cfg.primary_zone == DEFAULT_PRIMARY_ZONE == "us-central1-a"
+    assert cfg.image_family == DEFAULT_IMAGE_FAMILY
+    assert cfg.image_project == DEFAULT_IMAGE_PROJECT
+    assert "us-central1-b" in cfg.fallback_zones
+    assert cfg.default_boot_disk_type == "pd-ssd"
+    assert cfg.default_max_run_duration == "24h"
+
+
+# ---------------------------------------------------------------------------
+# Intent → machine
+# ---------------------------------------------------------------------------
+
+
+def test_intent_to_machine_table_matches_plan() -> None:
+    """The plan's "gcp.py" Approach paragraph spells out these mappings."""
+    assert INTENT_TO_MACHINE["lora-7b"].machine_type == "a2-ultragpu-1g"
+    assert INTENT_TO_MACHINE["lora-7b"].gpu_count == 1
+    assert INTENT_TO_MACHINE["lora"].machine_type == "a2-ultragpu-1g"
+    assert INTENT_TO_MACHINE["ft-7b"].machine_type == "a2-ultragpu-4g"
+    assert INTENT_TO_MACHINE["ft-7b"].gpu_count == 4
+    assert INTENT_TO_MACHINE["eval"].machine_type == "g2-standard-4"
+    assert INTENT_TO_MACHINE["debug"].machine_type == "g2-standard-4"
+
+
+def test_machine_for_intent_resolves_known_intent() -> None:
+    spec = _spec("ft-7b")
+    machine = machine_for_intent(spec)
+    assert isinstance(machine, MachineSpec)
+    assert machine.machine_type == "a2-ultragpu-4g"
+    assert machine.gpu_count == 4
+    assert machine.gpu_kind == "A100-80"
+
+
+def test_machine_for_intent_rejects_unknown_intent_loud() -> None:
+    """Fail-fast on a typo (consistent with SLURM's intent table)."""
+    spec = _spec("totally-bogus")
+    with pytest.raises(ValueError, match="no GCP machine-type for intent"):
+        machine_for_intent(spec)
+
+
+# ---------------------------------------------------------------------------
+# Provisioning model resolver
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_provisioning_model_default_standard() -> None:
+    spec = _spec()
+    assert resolve_provisioning_model(spec) == "STANDARD"
+
+
+def test_resolve_provisioning_model_explicit_spot() -> None:
+    spec = _spec(extra={"provisioning_model": "spot"})
+    assert resolve_provisioning_model(spec) == "SPOT"
+
+
+def test_resolve_provisioning_model_rejects_typo() -> None:
+    spec = _spec(extra={"provisioning_model": "preemptible"})
+    with pytest.raises(ValueError, match="unknown provisioning_model"):
+        resolve_provisioning_model(spec)
+
+
+# ---------------------------------------------------------------------------
+# attempt_id_for
+# ---------------------------------------------------------------------------
+
+
+def test_attempt_id_uses_extra_when_present() -> None:
+    spec = _spec(extra={"attempt_id": "router-abc123"})
+    assert attempt_id_for(spec) == "router-abc123"
+
+
+def test_attempt_id_rejects_shell_unsafe() -> None:
+    spec = _spec(extra={"attempt_id": "abc;rm -rf /"})
+    with pytest.raises(ValueError, match="attempt_id must match"):
+        attempt_id_for(spec)
+
+
+def test_attempt_id_fallback_is_timestamp_shaped() -> None:
+    spec = RunSpec(issue=1, intent="lora-7b", backend="gcp")
+    tag = attempt_id_for(spec)
+    assert tag.startswith("att-")
+    assert len(tag) > len("att-")
+
+
+# ---------------------------------------------------------------------------
+# render_create_argv — the golden assertion
+# ---------------------------------------------------------------------------
+
+
+def test_render_create_argv_lora_golden() -> None:
+    """Argv shape for the canonical lora-7b spec.
+
+    Pins every flag the plan calls out as load-bearing — the live
+    acceptance run depends on each being present + correct.
+    """
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\necho startup\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    joined = " ".join(argv)
+    # gcloud verb shape
+    assert argv[0] == "gcloud"
+    assert "compute" in argv
+    assert "instances" in argv
+    assert "create" in argv
+    # Per-command project + configuration (NOT relying on env var)
+    assert "--configuration=eps-test-config" in argv
+    assert "--project=eps-test-project" in argv
+    # Intent → machine type
+    assert "--machine-type=a2-ultragpu-1g" in argv
+    # On-demand acceptance default; spot is opt-in
+    assert "--provisioning-model=STANDARD" in argv
+    # Leak guards
+    assert "--instance-termination-action=DELETE" in argv
+    assert "--maintenance-policy=TERMINATE" in argv
+    # max-run-duration default (config 24h)
+    assert "--max-run-duration=24h" in argv
+    # DLVM image
+    assert "--image-family=pytorch-test-family" in argv
+    assert "--image-project=deeplearning-platform-release" in argv
+    # Disk
+    assert "--boot-disk-size=300GB" in argv
+    assert "--boot-disk-type=pd-ssd" in argv
+    # Broad in-VM auth scope
+    assert "--scopes=cloud-platform" in argv
+    # Zone defaults to primary
+    assert "--zone=us-central1-a" in argv
+    # Canonical instance name
+    assert "eps-issue-137" in argv
+    # Startup script is threaded through --metadata (no tempfile in test)
+    assert any("startup-script=" in a for a in argv), argv
+    # Labels carry the audit prefix
+    assert any("managed-by=eps" in a for a in argv), argv
+    assert any("eps-issue=137" in a for a in argv), argv
+    # No shell-escape leak from the startup script body
+    assert "rm -rf" not in joined
+    # SECURITY (round-2, task #535): token VALUES never appear on the
+    # argv — secrets ride --metadata-from-file as tempfile PATHS.
+    assert "hf_test_token" not in joined
+    assert "wandb_test_key" not in joined
+    from_file_args = [a for a in argv if a.startswith("--metadata-from-file=")]
+    assert len(from_file_args) == 1, argv
+    assert "HF_TOKEN=/tmp/eps-test-secret-hf" in from_file_args[0]
+    assert "WANDB_API_KEY=/tmp/eps-test-secret-wandb" in from_file_args[0]
+
+
+def test_render_create_argv_ft_intent_uses_4gpu_machine() -> None:
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("ft-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a2-ultragpu-4g" in argv
+
+
+def test_render_create_argv_spot_opt_in() -> None:
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "spot"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--provisioning-model=SPOT" in argv
+    # On-demand still rejected: regression guard.
+    assert "--provisioning-model=STANDARD" not in argv
+
+
+def test_render_create_argv_zone_override() -> None:
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec(),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        zone="us-central1-c",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--zone=us-central1-c" in argv
+    assert "--zone=us-central1-a" not in argv
+
+
+def test_render_create_argv_includes_persist_adapter_metadata(monkeypatch) -> None:
+    """M2 regression: the adapter-persist passthrough vars set on the
+    dispatch process env MUST land as instance metadata, or the in-VM
+    ``trainer.py:_persist_adapter`` no-ops and the acceptance harness's
+    check (a) false-FAILs after real compute was spent."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137-gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    metadata_args = [a for a in argv if a.startswith("--metadata=")]
+    joined = " ".join(metadata_args)
+    assert "EPM_PERSIST_ADAPTER_HF_REPO=superkaiba1/explore-persona-space" in joined
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-137-gcp" in joined
+
+
+def test_render_create_argv_metadata_comma_value_uses_alternate_delimiter(monkeypatch) -> None:
+    """gcloud splits ``--metadata`` on commas, so a forwarded value
+    containing a comma would silently truncate every later pair. The
+    renderer must switch to the alternate-delimiter syntax (``gcloud
+    topic escaping``) so the full value survives as ONE pair."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137,gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
+    assert len(pair_args) == 1
+    arg = pair_args[0]
+    # Alternate-delimiter syntax engaged: --metadata=^<delim>^k=v<delim>k=v
+    assert arg.startswith("--metadata=^"), arg
+    delim = arg.split("^")[1]
+    assert delim != ","
+    pairs = arg[len(f"--metadata=^{delim}^") :].split(delim)
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER=router_acceptance/issue-137,gcp" in pairs
+    assert f"eps-issue={_spec().issue}" in pairs
+
+
+def test_render_create_argv_metadata_comma_free_keeps_plain_join(monkeypatch) -> None:
+    """Comma-free values keep the plain comma-join (the argv stays
+    byte-stable for the common case)."""
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_HF_REPO", "superkaiba1/explore-persona-space")
+    monkeypatch.setenv("EPM_PERSIST_ADAPTER_SUBFOLDER", "router_acceptance/issue-137-gcp")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    pair_args = [a for a in argv if a.startswith("--metadata=") and "startup-script" not in a]
+    assert len(pair_args) == 1
+    assert not pair_args[0].startswith("--metadata=^")
+    assert "EPM_PERSIST_ADAPTER_HF_REPO=superkaiba1/explore-persona-space" in pair_args[0]
+
+
+def test_render_create_argv_omits_persist_adapter_metadata_when_unset(monkeypatch) -> None:
+    """An unset passthrough var is dropped (same contract as the secret
+    keys) -- no empty metadata pairs."""
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_HF_REPO", raising=False)
+    monkeypatch.delenv("EPM_PERSIST_ADAPTER_SUBFOLDER", raising=False)
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    joined = " ".join(argv)
+    assert "EPM_PERSIST_ADAPTER_HF_REPO" not in joined
+    assert "EPM_PERSIST_ADAPTER_SUBFOLDER" not in joined
+
+
+def test_render_create_argv_uses_metadata_from_file_when_provided() -> None:
+    """When the caller threads a tempfile path through spec.extra, the
+    renderer uses ``--metadata-from-file`` (avoids the 256KB metadata cap
+    + keeps secrets-bearing scripts out of gcloud's stdout)."""
+    cfg = _test_config()
+    spec = _spec(extra={"startup_script_path": "/tmp/eps-startup.sh"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    # ONE combined --metadata-from-file flag carries the secrets AND the
+    # startup-script (gcloud dict-type flags don't merge when repeated).
+    from_file_args = [a for a in argv if a.startswith("--metadata-from-file=")]
+    assert len(from_file_args) == 1, argv
+    assert "startup-script=/tmp/eps-startup.sh" in from_file_args[0]
+    assert "HF_TOKEN=/tmp/eps-test-secret-hf" in from_file_args[0]
+    # And the inline form is NOT also emitted (avoids double-startup).
+    assert not any(a.startswith("--metadata=startup-script=") for a in argv)
+
+
+# ---------------------------------------------------------------------------
+# Startup-script renderer
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_pulls_secrets_from_metadata() -> None:
+    cfg = _test_config()
+    script = render_startup_script(
+        spec=_spec(),
+        config=cfg,
+        attempt_id="att-fixed-001",
+    )
+    # Every secret key has a metadata-fetch stanza
+    for key in ("HF_TOKEN", "WANDB_API_KEY", "ANTHROPIC_API_KEY"):
+        assert key in script
+    # Uses the GCE-required metadata header
+    assert "Metadata-Flavor: Google" in script
+    # Clones the repo + runs uv sync
+    assert "git clone" in script
+    assert "uv sync --frozen" in script
+    # Writes the per-attempt sentinel under eval_results/issue_<N>/<attempt>/
+    assert "eval_results/issue_137/att-fixed-001/" in script
+    assert '"phase":"done"' in script
+    assert '"issue":137' in script
+    # Hydra args were threaded through to the train invocation
+    assert "condition=c1_evil_wrong_em" in script
+    assert "seed=42" in script
+    # strict-mode + umask
+    assert "set -euo pipefail" in script
+    assert "umask 077" in script
+
+
+def test_render_startup_script_fetches_persist_adapter_passthrough() -> None:
+    """M2 regression: the startup script must fetch + export the
+    adapter-persist passthrough keys from instance metadata so the
+    workload sees them in ``os.environ`` on the VM."""
+    cfg = _test_config()
+    script = render_startup_script(
+        spec=_spec(),
+        config=cfg,
+        attempt_id="att-fixed-001",
+    )
+    for key in ("EPM_PERSIST_ADAPTER_HF_REPO", "EPM_PERSIST_ADAPTER_SUBFOLDER"):
+        assert f"instance/attributes/{key}" in script, f"{key} fetch stanza missing"
+        assert f"export {key}" in script, f"{key} export missing"
+
+
+def test_render_startup_script_shell_safe_hydra_args() -> None:
+    """A Hydra arg with a shell-meaningful char must be quoted, not interpolated."""
+    cfg = _test_config()
+    spec = _spec(hydra_args=("condition=c1", "evil='$(rm -rf /tmp)'"))
+    # Need to override attempt id since the spec helper resets extra
+    spec = replace(spec, extra={"attempt_id": "att-fixed-001"})
+    script = render_startup_script(spec=spec, config=cfg, attempt_id="att-fixed-001")
+    # The shell expansion must NOT appear unquoted
+    assert "rm -rf" in script  # literal text is there
+    # but it lives inside shlex.quote-wrapped argv to the python call:
+    # the dangerous backtick / $() expansion is dead inside single quotes
+    lines = [line for line in script.splitlines() if "scripts/train.py" in line]
+    assert lines, "train.py invocation missing"
+    # The presence of the single-quoted wrapper around the malicious arg
+    # is what shlex.quote produces; assert the canonical wrapping.
+    assert "'evil=" in "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Sentinel path
+# ---------------------------------------------------------------------------
+
+
+def test_sentinel_path_namespaces_per_attempt() -> None:
+    cfg = _test_config()
+    p1 = sentinel_path_for(cfg, 137, "att-A")
+    p2 = sentinel_path_for(cfg, 137, "att-B")
+    assert p1 != p2
+    assert "att-A" in p1
+    assert "att-B" in p2
+    # Lives under workload root + eval_results/issue_137/<attempt>/
+    assert "/workspace/eps-issue-137/eval_results/issue_137/" in p1
+    assert p1.endswith(".completion-sentinel.json")
+
+
+# ---------------------------------------------------------------------------
+# Idempotent reconnect
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_returns_none_when_no_instance() -> None:
+    runner = _Runner(list_results=[GcloudRunResult(0, "[]", "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is None
+    # Reconnect issued exactly one gcloud list call.
+    assert len(runner.calls) == 1
+    assert "list" in runner.calls[0]
+
+
+def test_reconnect_returns_handle_when_instance_running() -> None:
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988776655",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert handle.backend == "gcp"
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "9988776655"
+    assert handle.extra["zone"] == "us-central1-a"
+    assert handle.extra["reconnected"] is True
+
+
+def test_reconnect_skips_terminated_instance() -> None:
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "1",
+                "status": "TERMINATED",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    assert reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner) is None
+
+
+def test_reconnect_probe_failure_raises_not_none() -> None:
+    """rc != 0 = the PROBE failed (expired auth / transport) — instance
+    state is UNKNOWN and must NOT read as "no live instance" on the
+    credit-spending lane (round-6 B1 mirrored from SLURM; live GCP
+    attempt 1 hit exactly this with an expired-auth gcloud list)."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(1, "", "Reauthentication failed")])
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_reconnect_bad_json_raises_probe_error() -> None:
+    """An rc=0 list whose stdout is unparseable is equally UNKNOWN state."""
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    runner = _Runner(list_results=[GcloudRunResult(0, "{not json", "")])
+    with pytest.raises(GcpProbeError):
+        reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+
+
+def test_gcp_probe_error_is_backend_probe_error() -> None:
+    """The router's reconnect seams discriminate on BackendProbeError —
+    the GCP probe error must be a subclass or the typed handling is
+    silently bypassed (the original bug shape)."""
+    from explore_persona_space.backends.base import BackendProbeError
+    from explore_persona_space.backends.gcp import GcpProbeError
+
+    assert issubclass(GcpProbeError, BackendProbeError)
+
+
+def test_launch_skips_create_when_reconnect_finds_live_instance(no_marker_posts) -> None:
+    """Regression guard for the idempotency contract: a re-launch on
+    a still-live instance must NOT double-provision."""
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    handle = backend.launch(_spec())
+    assert handle.pod_name == "eps-issue-137"
+    # ONLY a list call — NO create call.
+    assert all("create" not in argv for argv in runner.calls), runner.calls
+    # Reconnected handle still carries the ExpectedArtifacts declaration
+    assert EXPECTED_ARTIFACTS_HANDLE_KEY in handle.extra
+
+
+# ---------------------------------------------------------------------------
+# launch — happy path + ExpectedArtifacts declaration
+# ---------------------------------------------------------------------------
+
+
+def test_launch_populates_expected_artifacts_with_sentinel(no_marker_posts) -> None:
+    """The slice-2 verifier FAILs an all-SKIP declaration; the launch
+    path MUST populate the sentinel path so confirm_artifacts has a
+    keystone check to run."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    posted: list[dict] = []
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **kwargs: posted.append(kwargs),
+    )
+    handle = backend.launch(_spec())
+
+    assert handle.backend == "gcp"
+    assert handle.pod_name == "eps-issue-137"
+    assert handle.job_id == "112233"
+    assert handle.extra["attempt_id"] == "att-fixed-001"
+    assert handle.extra["machine_type"] == "a2-ultragpu-1g"
+
+    # ExpectedArtifacts declaration MUST be on handle.extra
+    decl = handle.extra.get(EXPECTED_ARTIFACTS_HANDLE_KEY)
+    assert isinstance(decl, dict), decl
+    assert decl["issue"] == 137
+    assert decl["sentinel_path"].endswith(".completion-sentinel.json")
+    assert "att-fixed-001" in decl["sentinel_path"]
+    # Default git paths
+    assert "eval_results/issue_137/" in decl["git_paths"]
+    assert "figures/issue_137/" in decl["git_paths"]
+    # Default HF data path threads the attempt id
+    assert any("issue137_att-fixed-001/raw_completions/" in p for p in decl["hf_data_paths"]), decl
+
+    # epm:cluster-launched v1 marker posted exactly once
+    assert len(posted) == 1
+    assert posted[0]["marker"] == "epm:cluster-launched"
+    assert posted[0]["issue"] == 137
+    body = json.loads(posted[0]["note"])
+    assert body["backend"] == "gcp"
+    assert body["machine_type"] == "a2-ultragpu-1g"
+    assert body["attempt_id"] == "att-fixed-001"
+
+
+# ---------------------------------------------------------------------------
+# confirm_artifacts — delegates to artifacts module
+# ---------------------------------------------------------------------------
+
+
+def test_confirm_artifacts_delegates_to_verifier_and_fails_on_missing_decl() -> None:
+    """A handle without :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` MUST FAIL
+    (the slice-2 verifier's contract — silently passing would re-open
+    the silent-loss hole)."""
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(),
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={},  # No declaration.
+    )
+    assert backend.confirm_artifacts(handle) is False
+
+
+def test_confirm_artifacts_passes_when_verifier_says_pass(monkeypatch) -> None:
+    """End-to-end PASS path: the launch path populates ExpectedArtifacts,
+    we stub the verifier's IO to return PASS, and the backend honors it."""
+
+    # The artifact verifier dependency-injects every external call; we
+    # patch the module-level defaults so a real call would short-circuit.
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._default_list_hf_repo_files",
+        lambda repo_id, **_kw: [
+            "issue137_att-fixed-001/raw_completions/foo.json",
+        ],
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._default_wandb_run_exists",
+        lambda run_path: True,
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._default_git_tracked",
+        lambda repo_root, rel_paths: set(rel_paths),
+    )
+    # The repo-root resolver looks for pyproject.toml; the test repo has one.
+    # Ensure declared git paths resolve on disk.
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._check_git",
+        lambda *, paths, io: {"status": "SKIP", "detail": "no git paths declared"},
+    )
+    # Sentinel file: fake a clean read.
+    monkeypatch.setattr(
+        "explore_persona_space.backends.artifacts._default_read_sentinel",
+        lambda path: json.dumps({"phase": "done", "issue": 137}),
+    )
+
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    handle = backend.launch(_spec())
+    # The launch path populated the declaration; the verifier (stubbed)
+    # sees every path resolve.
+    assert backend.confirm_artifacts(handle) is True
+
+
+# ---------------------------------------------------------------------------
+# Failure classification
+# ---------------------------------------------------------------------------
+
+
+def test_classify_create_capacity_failure_is_provisioning_error() -> None:
+    err = classify_create_failure(
+        returncode=1,
+        stderr="ERROR: ZONE_RESOURCE_POOL_EXHAUSTED for project ...",
+    )
+    assert isinstance(err, GcpProvisioningError)
+    assert "ZONE_RESOURCE_POOL_EXHAUSTED" in (err.evidence.get("matched_pattern") or "")
+
+
+def test_classify_create_quota_failure_is_provisioning_error() -> None:
+    err = classify_create_failure(
+        returncode=1,
+        stderr="QUOTA_EXCEEDED for GPUS_ALL_REGIONS",
+    )
+    assert isinstance(err, GcpProvisioningError)
+
+
+def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_posts) -> None:
+    """Capacity miss in primary zone must transparently retry the
+    fallback zones before giving up."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "999"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),  # us-central1-a
+            GcloudRunResult(0, created_payload, ""),  # us-central1-b
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    handle = backend.launch(_spec())
+    # The second create succeeded; we landed in us-central1-b.
+    assert handle.extra["zone"] == "us-central1-b"
+    # Two create calls were issued.
+    create_calls = [a for a in runner.calls if "create" in a]
+    assert len(create_calls) == 2
+    assert "--zone=us-central1-a" in create_calls[0]
+    assert "--zone=us-central1-b" in create_calls[1]
+
+
+def test_launch_raises_provisioning_error_when_all_zones_capacity_fail(no_marker_posts) -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        # 3 capacity failures: primary + 2 fallbacks
+        create_results=[
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+            GcloudRunResult(1, "", "ZONE_RESOURCE_POOL_EXHAUSTED"),
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError):
+        backend.launch(_spec())
+
+
+def test_launch_does_not_retry_on_non_capacity_failure(no_marker_posts) -> None:
+    """A permission / quota failure should NOT retry every zone (the
+    next zone would fail identically) — it should raise immediately."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[
+            GcloudRunResult(1, "", "PERMISSION_DENIED: caller does not have permission"),
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError, match="PERMISSION_DENIED"):
+        backend.launch(_spec())
+    # Only ONE create call (no retry).
+    create_calls = [a for a in runner.calls if "create" in a]
+    assert len(create_calls) == 1
+
+
+# ---------------------------------------------------------------------------
+# teardown — idempotent on missing instance
+# ---------------------------------------------------------------------------
+
+
+def test_teardown_idempotent_on_missing_instance() -> None:
+    runner = _Runner(
+        delete_results=[
+            GcloudRunResult(
+                1, "", "ERROR: (gcloud.compute.instances.delete) instance was not found"
+            )
+        ],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+    # No raise — "was not found" is treated as success.
+    backend.teardown(handle)
+
+
+def test_teardown_raises_on_real_failure() -> None:
+    runner = _Runner(
+        delete_results=[GcloudRunResult(1, "", "Internal server error 500")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+    from explore_persona_space.backends.gcp import GcpBackendError
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+    with pytest.raises(GcpBackendError, match="Internal server error"):
+        backend.teardown(handle)
+
+
+# ---------------------------------------------------------------------------
+# poll
+# ---------------------------------------------------------------------------
+
+
+def test_poll_running_status_maps_to_running() -> None:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+    pr = backend.poll(handle)
+    assert pr.status == "running"
+    assert pr.pid_alive is True
+
+
+def test_poll_terminated_status_maps_to_dead() -> None:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+    pr = backend.poll(handle)
+    assert pr.status == "dead"
+    assert pr.pid_alive is False
+
+
+def test_poll_not_found_maps_to_dead() -> None:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(1, "", "ERROR: (gcloud) instance was not found")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    from explore_persona_space.backends.base import RunHandle
+
+    handle = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+    pr = backend.poll(handle)
+    assert pr.status == "dead"
+
+
+# ---------------------------------------------------------------------------
+# estimate_start_seconds — GCE provisions immediately
+# ---------------------------------------------------------------------------
+
+
+def test_estimate_start_seconds_is_zero_for_gcp() -> None:
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=_Runner(),
+        marker_poster=lambda **_: None,
+    )
+    assert backend.estimate_start_seconds(_spec()) == 0.0
+
+
+# ---------------------------------------------------------------------------
+# audit_stale_gcp_vms — the credit-leak reaper
+# ---------------------------------------------------------------------------
+
+
+def test_audit_stale_gcp_vms_lists_old_instances_when_dry_run() -> None:
+    now = datetime(2026, 6, 9, 12, 0, 0, tzinfo=UTC)
+    old_created = (now - timedelta(hours=48)).isoformat()
+    fresh_created = (now - timedelta(hours=1)).isoformat()
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": old_created,
+            },
+            {
+                "name": "eps-issue-200",
+                "id": "2",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": fresh_created,
+            },
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=False,
+    )
+    by_name = {r["name"]: r for r in records}
+    assert by_name["eps-issue-137"]["action"] == "would-delete"
+    assert by_name["eps-issue-200"]["action"] == "skipped"
+    # No delete call issued in dry-run.
+    assert all("delete" not in argv for argv in runner.calls)
+
+
+def test_audit_stale_gcp_vms_deletes_when_delete_true() -> None:
+    now = datetime(2026, 6, 9, 12, 0, 0, tzinfo=UTC)
+    old_created = (now - timedelta(hours=72)).isoformat()
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-999",
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": old_created,
+            }
+        ]
+    )
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, "")],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    # The reaper issued a delete on the right zone.
+    delete_calls = [a for a in runner.calls if "delete" in a and "instances" in a]
+    assert len(delete_calls) == 1
+    assert "eps-issue-999" in delete_calls[0]
+    assert "--zone=us-central1-a" in delete_calls[0]
+
+
+def test_audit_stale_gcp_vms_handles_empty_inventory() -> None:
+    """A fresh GCP project with no eps-issue-* instances is legitimate."""
+    runner = _Runner(list_results=[GcloudRunResult(0, "[]", "")])
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        delete=False,
+    )
+    assert records == []
+
+
+def test_audit_stale_gcp_vms_skips_non_eps_instances() -> None:
+    """The reaper MUST only consider eps-issue-* instances — never delete
+    a personal VM in the same project just because it's old."""
+    now = datetime(2026, 6, 9, 12, 0, 0, tzinfo=UTC)
+    old_created = (now - timedelta(hours=720)).isoformat()  # 30 days
+    payload = json.dumps(
+        [
+            {
+                "name": "thomas-personal-vm",
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "creationTimestamp": old_created,
+            }
+        ]
+    )
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, payload, "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        now=now,
+        delete=True,
+    )
+    assert records == []
+
+
+# ---------------------------------------------------------------------------
+# Argv renderers — describe / delete / list
+# ---------------------------------------------------------------------------
+
+
+def test_render_list_argv_threads_configuration_and_project() -> None:
+    cfg = _test_config()
+    argv = render_list_argv(config=cfg, name_filter="name=eps-issue-137")
+    assert "gcloud" in argv
+    assert "list" in argv
+    assert "--configuration=eps-test-config" in argv
+    assert "--project=eps-test-project" in argv
+    assert "--filter=name=eps-issue-137" in argv
+    assert "--format=json" in argv
+
+
+def test_render_describe_argv() -> None:
+    argv = render_describe_argv(config=_test_config(), name="eps-issue-137", zone="us-central1-a")
+    assert "describe" in argv
+    assert "eps-issue-137" in argv
+    assert "--zone=us-central1-a" in argv
+    assert "--format=json" in argv
+
+
+def test_render_delete_argv_is_quiet() -> None:
+    argv = render_delete_argv(config=_test_config(), name="eps-issue-137", zone="us-central1-a")
+    assert "delete" in argv
+    assert "--quiet" in argv  # non-interactive teardown
+    assert "--zone=us-central1-a" in argv
+
+
+# ---------------------------------------------------------------------------
+# instance_name_for / general naming
+# ---------------------------------------------------------------------------
+
+
+def test_instance_name_for_uses_canonical_eps_issue_prefix() -> None:
+    """The audit reaper greps for ``eps-issue-*`` — the name must match."""
+    assert instance_name_for(137) == "eps-issue-137"
+    assert instance_name_for(1) == "eps-issue-1"
+
+
+# ---------------------------------------------------------------------------
+# Regression: launch() routes the startup script through --metadata-from-file
+# ---------------------------------------------------------------------------
+
+
+def test_launch_uses_metadata_from_file_for_startup_script(no_marker_posts, tmp_path) -> None:
+    """Regression for the comma-mangling bug hit on the 2026-06-08 $1 live
+    GCP test.
+
+    The rendered startup-script body always contains JSON
+    (``{"phase":"done","issue":...,"attempt_id":"..."}``) whose commas
+    break gcloud's ``--metadata=KEY=VALUE`` dict-arg parser; gcloud
+    rejects the call with ``Bad syntax for dict arg``. ``launch()`` must
+    therefore ALWAYS write the script to a per-launch tempfile and route
+    it through ``--metadata-from-file=startup-script=<path>`` (the
+    branch ``render_create_argv`` already supports), NOT inline through
+    ``--metadata=startup-script=<body>``.
+
+    The existing ``render_create_argv`` golden test exercises the inline
+    branch and gives a false green here because it never feeds the argv
+    through a real gcloud parser; this test pins the live-path contract.
+    """
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+    spec = _spec()  # default hydra_args produce the canonical JSON sentinel
+    backend.launch(spec)
+
+    create_calls = [a for a in runner.calls if "create" in a and "instances" in a]
+    assert len(create_calls) == 1, runner.calls
+    create_argv = create_calls[0]
+
+    # The argv MUST take the --metadata-from-file branch — ONE combined
+    # flag carrying the secret keys AND the startup-script (gcloud
+    # dict-type flags don't merge when repeated).
+    from_file_args = [a for a in create_argv if a.startswith("--metadata-from-file=")]
+    assert len(from_file_args) == 1, f"--metadata-from-file= missing/split: {create_argv}"
+    pairs = from_file_args[0][len("--metadata-from-file=") :].split(",")
+    startup_pairs = [p for p in pairs if p.startswith("startup-script=")]
+    assert startup_pairs, pairs
+    # And the tempfile path it points to MUST actually exist + carry the
+    # rendered script body (so gcloud can read it).
+    path = startup_pairs[0].split("=", 1)[1]
+    script_body = Path(path).read_text(encoding="utf-8")
+    # The script body carries the comma-bearing JSON sentinel — verifies
+    # the bug payload is in the tempfile rather than smuggled inline.
+    assert '"phase":"done"' in script_body
+    assert '"issue":137' in script_body
+    assert '"attempt_id":' in script_body
+    assert "," in script_body  # the actual root cause: commas break --metadata=
+
+    # CRITICALLY: the inline shape must NOT also appear. A duplicate
+    # --metadata=startup-script= entry (alongside --metadata-from-file)
+    # would re-introduce the parser bug AND let gcloud reject the call
+    # because the same key is set twice.
+    inline_startup = [a for a in create_argv if a.startswith("--metadata=startup-script=")]
+    assert not inline_startup, f"inline startup-script smuggled into argv: {inline_startup}"
+
+
+# ---------------------------------------------------------------------------
+# Regression: reconnect_or_none recovers attempt_id from instance labels
+# ---------------------------------------------------------------------------
+
+
+def test_reconnect_recovers_attempt_id_from_label_and_launch_threads_it(
+    no_marker_posts,
+) -> None:
+    """On reconnect, ``launch()`` must derive ExpectedArtifacts from the
+    ORIGINAL attempt_id (the one the VM was provisioned under), NOT a
+    fresh one — the VM writes its sentinel + per-attempt artifact paths
+    under the original tag, so a fresh tag would point
+    ``confirm_artifacts`` at the wrong path and FAIL every reconnect.
+
+    ``reconnect_or_none`` recovers the original by reading the instance's
+    ``eps-attempt`` label (set by ``_format_labels`` at create time).
+    """
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                "labels": {
+                    "managed-by": "eps",
+                    "eps-issue": "137",
+                    "eps-attempt": "att-orig-recovered",
+                    "eps-intent": "lora-7b",
+                },
+            }
+        ]
+    )
+
+    # 1. Direct check: reconnect_or_none populates extra["attempt_id"].
+    runner1 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner1)
+    assert handle is not None
+    assert handle.extra.get("attempt_id") == "att-orig-recovered"
+
+    # 2. End-to-end: launch() on reconnect path threads the recovered
+    #    attempt_id into the ExpectedArtifacts declaration. The
+    #    ``_spec()`` helper sets a different attempt_id ("att-fixed-001")
+    #    so any code path that ignored the recovered value would derive
+    #    the sentinel from "att-fixed-001" instead — caught here.
+    runner2 = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner2,
+        marker_poster=lambda **_: None,
+    )
+    handle2 = backend.launch(_spec())
+    decl = handle2.extra.get(EXPECTED_ARTIFACTS_HANDLE_KEY)
+    assert isinstance(decl, dict), decl
+    sentinel_path = decl["sentinel_path"]
+    assert "att-orig-recovered" in sentinel_path, sentinel_path
+    # Regression guard: the freshly-generated id MUST NOT have been used.
+    assert "att-fixed-001" not in sentinel_path, sentinel_path
+    # And the HF data path also gets the recovered id (raw-completion
+    # paths share the per-attempt namespace).
+    assert any("issue137_att-orig-recovered/" in p for p in decl["hf_data_paths"]), decl
+
+
+def test_reconnect_falls_back_to_fresh_attempt_id_when_label_missing(
+    no_marker_posts,
+) -> None:
+    """If the instance pre-dates the label addition (no ``eps-attempt``
+    label), ``launch()`` falls back to the freshly-generated attempt_id
+    — best-effort, but the marker trail still proceeds. This pins the
+    backward-compat path for instances created before the labels existed.
+    """
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "9988",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+                # No `labels` key at all.
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    handle = reconnect_or_none(spec=_spec(), config=_test_config(), runner=runner)
+    assert handle is not None
+    assert "attempt_id" not in handle.extra
+
+
+# ---------------------------------------------------------------------------
+# fix20/fix21 — launch-time secrets resolution + startup-script burn bounding
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_launch_secrets_missing_required_raises() -> None:
+    """An empty env (no dotenv fallback) must fail loud naming every
+    missing required key — never silently provision a doomed VM
+    (issue 535 GCP lane r7)."""
+    spec = _spec()
+    with pytest.raises(GcpLaunchSecretsMissing) as exc:
+        resolve_launch_secrets(spec, env={})
+    msg = str(exc.value)
+    for key in REQUIRED_LAUNCH_SECRET_KEYS:
+        assert key in msg, msg
+
+
+def test_resolve_launch_secrets_threads_spec_extra() -> None:
+    """Resolved values land in spec.extra['secret_<KEY>'] (the lookup
+    render_create_argv prefers); empty optional keys keep the
+    drop-when-absent contract."""
+    spec = _spec()
+    resolve_launch_secrets(
+        spec,
+        env={"HF_TOKEN": "t-hf", "WANDB_API_KEY": "t-wb", "OPENAI_API_KEY": ""},
+    )
+    assert spec.extra["secret_HF_TOKEN"] == "t-hf"
+    assert spec.extra["secret_WANDB_API_KEY"] == "t-wb"
+    assert "secret_OPENAI_API_KEY" not in spec.extra
+
+
+def test_resolve_launch_secrets_spec_extra_takes_precedence() -> None:
+    """A caller-threaded spec.extra['secret_<KEY>'] wins over the env."""
+    spec = _spec(extra={"secret_HF_TOKEN": "from-extra"})
+    resolve_launch_secrets(spec, env={"HF_TOKEN": "from-env", "WANDB_API_KEY": "t-wb"})
+    assert spec.extra["secret_HF_TOKEN"] == "from-extra"
+
+
+def test_launch_fails_loud_before_any_create_when_secrets_missing(monkeypatch) -> None:
+    """launch() must raise BEFORE any gcloud create when the resolver
+    reports missing secrets — zero credit spend on a doomed VM."""
+    import explore_persona_space.backends.gcp as gcp_mod
+
+    # Reconnect probe returns no live instance, then the resolver fires.
+    runner = _Runner(list_results=[GcloudRunResult(0, "[]", "")])
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+    )
+
+    def _raise(spec, env=None):
+        raise GcpLaunchSecretsMissing("HF_TOKEN, WANDB_API_KEY")
+
+    monkeypatch.setattr(gcp_mod, "resolve_launch_secrets", _raise)
+    with pytest.raises(GcpLaunchSecretsMissing):
+        backend.launch(_spec())
+    assert all("create" not in argv for argv in runner.calls), runner.calls
+
+
+def test_launch_threads_resolved_secrets_into_create_metadata(no_marker_posts) -> None:
+    """End-to-end through launch(): the resolver's values (here from the
+    autouse fixture's env) must reach the create call via the
+    ``--metadata-from-file`` channel — 0600 tempfiles whose CONTENT
+    carries the token, with the token value itself NEVER on the argv
+    (round-2 Codex Major, task #535), and the tempfiles unlinked the
+    moment the create loop is done."""
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no existing instance
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    # Spy: at create time (files still on disk), read back each secret
+    # tempfile's content + mode exactly as gcloud would.
+    secret_reads: dict[str, str] = {}
+    secret_modes: dict[str, int] = {}
+    secret_paths: dict[str, str] = {}
+
+    def spying_runner(argv):
+        if "create" in argv and "instances" in argv:
+            for arg in argv:
+                if arg.startswith("--metadata-from-file="):
+                    for pair in arg[len("--metadata-from-file=") :].split(","):
+                        key, _, path = pair.partition("=")
+                        if key in ("HF_TOKEN", "WANDB_API_KEY"):
+                            secret_paths[key] = path
+                            secret_reads[key] = Path(path).read_text()
+                            secret_modes[key] = os.stat(path).st_mode & 0o777
+        return runner(argv)
+
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=spying_runner,
+        marker_poster=lambda **_: None,
+    )
+    backend.launch(_spec())
+    create_calls = [argv for argv in runner.calls if "create" in argv]
+    assert create_calls, runner.calls
+    joined = " ".join(create_calls[0])
+    # Token values never on the argv / process list.
+    assert "hf_test_token" not in joined
+    assert "wandb_test_key" not in joined
+    # The from-file channel delivered the real values, 0600.
+    assert secret_reads == {"HF_TOKEN": "hf_test_token", "WANDB_API_KEY": "wandb_test_key"}
+    assert secret_modes == {"HF_TOKEN": 0o600, "WANDB_API_KEY": 0o600}
+    # The finally shredded the on-disk token copies after create returned.
+    for path in secret_paths.values():
+        assert not os.path.exists(path), path
+
+
+def test_launch_secret_tempfiles_deleted_even_when_create_fails(no_marker_posts) -> None:
+    """The finally must shred the token tempfiles on the FAILURE path too
+    (a raised GcpProvisioningError must not leave tokens on disk)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(1, "", "permission denied for instances.create")],
+    )
+    secret_paths: dict[str, str] = {}
+
+    def spying_runner(argv):
+        if "create" in argv and "instances" in argv:
+            for arg in argv:
+                if arg.startswith("--metadata-from-file="):
+                    for pair in arg[len("--metadata-from-file=") :].split(","):
+                        key, _, path = pair.partition("=")
+                        if key in ("HF_TOKEN", "WANDB_API_KEY"):
+                            secret_paths[key] = path
+        return runner(argv)
+
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=spying_runner,
+        marker_poster=lambda **_: None,
+    )
+    with pytest.raises(GcpProvisioningError):
+        backend.launch(_spec())
+    assert secret_paths, "create call never carried the from-file secrets"
+    for path in secret_paths.values():
+        assert not os.path.exists(path), path
+
+
+def test_render_create_argv_refuses_inline_secret_without_file() -> None:
+    """A secret that resolves to a value but has NO threaded tempfile path
+    must fail LOUD — silently dropping it provisions a doomed VM (issue
+    535 r7 class) and inlining it would put the token on the argv."""
+    with pytest.raises(ValueError, match="HF_TOKEN"):
+        render_create_argv(
+            spec=_spec(),
+            config=_test_config(),
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=None,
+        )
+
+
+def test_render_startup_script_failure_trap_powers_off() -> None:
+    """A failed startup script must power the VM off (GCE leaves a
+    failed-startup VM RUNNING + billing otherwise — issue 535 r7 idled
+    ~85 min). The success path must NOT shut down (the verifier
+    scp-pulls the sentinel off a live VM)."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "trap" in script
+    assert "shutdown -h now" in script
+    assert '[ "$rc" -ne 0 ]' in script  # rc==0 (success) leaves the VM up
+
+
+def test_render_startup_script_required_secret_preflight() -> None:
+    """The in-VM preflight kills the script seconds after boot on an
+    empty required secret — before the repo-clone + uv-sync spend."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    for key in REQUIRED_LAUNCH_SECRET_KEYS:
+        assert f'[ -n "${{{key}:-}}" ]' in script, f"{key} preflight guard missing"
+    preflight_idx = script.index("In-VM preflight: required workload secrets")
+    assert preflight_idx < script.index("git clone"), "preflight must precede the clone"
+    assert preflight_idx < script.index("uv sync"), "preflight must precede uv sync"
+
+
+# ---------------------------------------------------------------------------
+# fix23 — guest-attribute workload-phase overlay (success detection)
+# ---------------------------------------------------------------------------
+
+
+def _poll_handle():
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="1",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        extra={"zone": "us-central1-a"},
+    )
+
+
+def _guest_attr_payload(value: str) -> str:
+    return json.dumps([{"namespace": "eps", "key": "phase", "value": value}])
+
+
+def test_render_create_argv_enables_guest_attributes() -> None:
+    """Without enable-guest-attributes the in-VM phase writes 403 and a
+    successful workload is undetectable (issue 535 r9)."""
+    argv = render_create_argv(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    joined = " ".join(argv)
+    assert "enable-guest-attributes=TRUE" in joined
+
+
+def test_render_startup_script_publishes_phase_guest_attribute() -> None:
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "guest-attributes/eps/phase" in script
+    # success path publishes done AFTER the sentinel write
+    assert "_eps_phase done" in script
+    assert script.index("EPS_SENTINEL_PATH") < script.index("_eps_phase done")
+    # failure trap publishes failed before the poweroff
+    assert "_eps_phase failed" in script
+    # boot + workload milestones
+    assert "_eps_phase startup" in script
+    assert "_eps_phase workload" in script
+
+
+def test_poll_running_with_done_phase_maps_to_done() -> None:
+    """A RUNNING VM whose workload published phase=done is terminal
+    SUCCESS — the harness proceeds to fetch_results + teardown instead
+    of spinning to the hard timeout (issue 535 r9)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+
+
+def test_poll_running_with_failed_phase_maps_to_dead() -> None:
+    """phase=failed (the EXIT trap's write) classifies dead even before
+    the instance state flips to TERMINATED."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("failed"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+
+
+def test_poll_running_with_midrun_phase_stays_running() -> None:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "workload"
+
+
+def test_poll_running_with_unreadable_phase_fails_soft_to_running() -> None:
+    """The EXPECTED not-written-yet case (gcloud 404 / "not found" — the
+    attribute does not exist until the startup-script's first write) must
+    NOT false-kill a healthy VM — keep the coarse RUNNING classification
+    and retry next tick. Only THIS case stays fail-soft; auth/API/parse
+    failures are typed (tests below)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(1, "", "attribute not found")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "running"
+
+
+def test_poll_guest_attr_permission_denied_is_typed_probe_failure() -> None:
+    """An auth/permission failure on the guest-attribute probe is NOT
+    "phase not written yet" — pre-fix it returned "" and a finished
+    workload spun to the outer poll timeout (round-2 Codex Major, task
+    #535). It must surface as a typed stalled tick the consecutive-
+    failure budget can see."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(
+                1,
+                "",
+                "ERROR: Required 'compute.instances.getGuestAttributes' permission denied",
+            )
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "stalled"
+    assert pr.current_phase == "guest_attr_probe_failed"
+
+
+def test_poll_guest_attr_malformed_json_is_typed_probe_failure() -> None:
+    """An rc=0 probe whose payload does not parse is a probe failure,
+    not a phase read — typed stalled tick, never silent running."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, "{not json", "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "stalled"
+    assert pr.current_phase == "guest_attr_probe_failed"

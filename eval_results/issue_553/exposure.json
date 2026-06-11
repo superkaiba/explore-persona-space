@@ -1,0 +1,251 @@
+{
+  "metadata": {
+    "task": 553,
+    "script": "issue553_exposure.py",
+    "git_commit": "60b4f613b3059919df2ba4ae772bdb45a4d09c8c",
+    "timestamp_utc": "2026-06-10T12:06:36.989540Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--n-boot",
+      "10000",
+      "--n-cluster-boot",
+      "2000",
+      "--n-marginal-boot",
+      "2000",
+      "--n-perm",
+      "10000",
+      "--seed",
+      "42"
+    ]
+  },
+  "step0_i532": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "n_cells",
+        "got": 416.0,
+        "want": 416.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary",
+        "got": 256.0,
+        "want": 256.0,
+        "pass": true
+      },
+      {
+        "name": "n_instructed",
+        "got": 160.0,
+        "want": 160.0,
+        "pass": true
+      },
+      {
+        "name": "spearman.dmargin.cosine.rho_union",
+        "got": 0.1915911778479508,
+        "want": 0.1915911778479508,
+        "pass": true
+      },
+      {
+        "name": "spearman.trained_logp.base_prior_logp.rho_union",
+        "got": 0.6763040595042208,
+        "want": 0.6763040595042208,
+        "pass": true
+      },
+      {
+        "name": "graded_prior_spread.ordinary_sd_across_bystanders",
+        "got": 2.2762727406962346,
+        "want": 2.2762727406962346,
+        "pass": true
+      }
+    ]
+  },
+  "step0_i478": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "raw_dmargin_vs_marginbase",
+        "got": -0.6411334016144398,
+        "want": -0.6411334016144398,
+        "pass": true
+      },
+      {
+        "name": "partial_dmargin_vs_marginbase",
+        "got": -0.4168797455347139,
+        "want": -0.4168797455347139,
+        "pass": true
+      },
+      {
+        "name": "partial_ztrained_vs_zbase",
+        "got": 0.7003413475528536,
+        "want": 0.7003413475528536,
+        "pass": true
+      },
+      {
+        "name": "partial_margintrained_vs_marginbase",
+        "got": 0.7710122720010818,
+        "want": 0.7710122720010818,
+        "pass": true
+      }
+    ]
+  },
+  "exposure_design": {
+    "i532": "every loc-arm adapter trained with ALL 15 other panel conditions as EOS negatives (i474_phase23_train.py::_build_negative_rows, lines 210-258; N_NEG_PER_BYSTANDER=20 at line 94; 15 x 20 = 300 negative rows); the 10 instructed bystanders were never in any training mix",
+    "i478": "fixed 4-negative panel; the 35 held-out eval personas were never trained negatives (zero exact-label overlap, asserted)"
+  },
+  "ordinary_vs_instructed_gap": {
+    "mean_dz_eos_ordinary_cross": 12.773651109536491,
+    "mean_dz_eos_instructed_strip": 6.378064132690429,
+    "difference": 6.3955869768460625,
+    "difference_ci95_bystander_cluster": {
+      "low": 4.002711128882567,
+      "high": 8.4071290465196,
+      "n_boot": 2000,
+      "method": "bystanders resampled with replacement WITHIN each cohort independently per rep (exposure is a bystander property)"
+    }
+  },
+  "instructed_strip_prior_gradient": {
+    "n_bystanders": 10,
+    "prior_margin_own": {
+      "rho": -0.23636363636363633,
+      "ci95_boot_bystanders": {
+        "boot_mean": -0.22273926509818617,
+        "low": -0.831301560075145,
+        "high": 0.6002515723270426,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 0.5167483251674833,
+        "rho_obs": -0.23636363636363633,
+        "null_mean": -0.001052121212121211,
+        "null_sd": 0.33316916414792447,
+        "n_perm": 10000,
+        "method": "MC permutation of the 10 instructed-bystander labels"
+      }
+    },
+    "prior_logp_own": {
+      "rho": -0.17575757575757575,
+      "ci95_boot_bystanders": {
+        "boot_mean": -0.16632171152554254,
+        "low": -0.8025686977299881,
+        "high": 0.6002515723270426,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 0.6335366463353664,
+        "rho_obs": -0.17575757575757575,
+        "null_mean": -0.00046787878787878795,
+        "null_sd": 0.3328906614431127,
+        "n_perm": 10000,
+        "method": "MC permutation of the 10 instructed-bystander labels"
+      }
+    },
+    "read": "among never-clamped contexts: a non-null gradient means the base prior routes the clamp without any negative-training exposure (partial separation, plan section 3.7)"
+  },
+  "ordinary_spread": {
+    "per_bystander_mean_dz_eos": {
+      "A1": 5.254776041666668,
+      "A2": 8.512528157552083,
+      "A3": 16.85667373657227,
+      "A4": 18.589768486022948,
+      "A5": 14.493168294270834,
+      "B1": 13.765235026041667,
+      "B2": 14.199646647135419,
+      "B3": 13.6051168162028,
+      "B4": 14.110287597656251,
+      "B5": 15.200794413248696,
+      "C1": 13.748518676757813,
+      "D1": 14.114524739583334,
+      "D2": 14.11708192952474,
+      "D3": 14.14607758585612,
+      "D4": 13.227813354492188,
+      "D5": 0.43640624999999994
+    },
+    "sd_across_bystanders": 4.318433513499156,
+    "range": [
+      0.43640624999999994,
+      18.589768486022948
+    ],
+    "read": "every ordinary bystander received the SAME 20 negative rows per adapter, so this spread is NOT exposure dose \u2014 it bounds the within-cohort confound from inside"
+  },
+  "i478_never_negative_contrast": {
+    "mean_dz_eos": -3.0740901906149727,
+    "sd": 0.9819324207820834,
+    "quantiles": {
+      "q05": -5.0,
+      "median": -2.875,
+      "q95": -1.875
+    },
+    "mean_ci95_cluster_run": {
+      "low": -3.127281049932752,
+      "high": -3.0143377622059413,
+      "n_clusters": 80,
+      "n_boot": 2000
+    },
+    "mean_ci95_cluster_persona": {
+      "low": -3.31938235043117,
+      "high": -2.8386473758697512,
+      "n_clusters": 35,
+      "n_boot": 2000
+    },
+    "n_run_persona_aggregates": 2800,
+    "negative_panel": [
+      "software_engineer",
+      "kindergarten_teacher",
+      "helpful_assistant",
+      "no_persona"
+    ],
+    "overlap_with_held_out_personas": [],
+    "label_note": "the held-out persona 'assistant' is label-distinct from the 'helpful_assistant' / 'no_persona' negatives \u2014 the zero-overlap assert is exact-label per plan assumption 11",
+    "scope_caveat": "panels differ in training recipe (broad 15-negative panel vs fixed 4-negative panel) and probe sets \u2014 qualitative sign/magnitude contrast only, no pooled fit (forbidden move); descriptive-contrast language, never causal identification (plan concern 13.8)"
+  },
+  "base_side_z_eos_distributions": {
+    "ordinary_cross": {
+      "mean": 11.775113213380177,
+      "sd": 7.532955022721284,
+      "q05": 2.715456756591797,
+      "median": 9.30598388671875,
+      "q95": 29.010250000000003
+    },
+    "instructed_strip": {
+      "mean": 11.948617507934571,
+      "sd": 4.498577644796465,
+      "q05": 6.1149951171875,
+      "median": 10.65796875,
+      "q95": 19.7402265625
+    }
+  },
+  "non_separability_statement": "REGISTERED (plan section 3.7.3): within #532's ordinary cohort, exposure is constant by design (every bystander got 20 negative rows per adapter), so prior-vs-exposure cannot be decomposed WITHIN that cohort; the separation rests on the instructed-strip gradient + the #478 never-negative contrast. Named in the clean-result as a scope limit.",
+  "inline_vs_reviewed": [
+    {
+      "quantity": "mean \u0394z(EOS) ordinary vs instructed",
+      "inline_value": [
+        12.8,
+        6.4
+      ],
+      "reviewed_value": [
+        12.773651109536491,
+        6.378064132690429
+      ],
+      "convention_changed": true,
+      "note": "reviewed adds the bystander-cluster CI on the difference; 'clamp generalizes at ~half strength' ships only if the gap CI excludes 0"
+    },
+    {
+      "quantity": "#478 dz_eos mean (quick look)",
+      "inline_value": -3.07,
+      "reviewed_value": -3.0740901906149727,
+      "convention_changed": false,
+      "note": "plan assumption 19 quick-look, now under cluster inference"
+    }
+  ]
+}

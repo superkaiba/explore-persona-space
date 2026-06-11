@@ -1,0 +1,332 @@
+{
+  "source": "software_engineer",
+  "seed": 42,
+  "recipe": "band_stop",
+  "ladder": [
+    {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -17.573280334472656,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 6.966439247131348
+    },
+    {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -0.02325385808944702,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.516468048095703
+    },
+    {
+      "step": 60,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-60",
+      "cap_end": false,
+      "trajectory_step": 60,
+      "logp_trained": -6.520748138427734e-05,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539653778076172
+    },
+    {
+      "step": 80,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-80",
+      "cap_end": false,
+      "trajectory_step": 80,
+      "logp_trained": -1.9371509552001953e-05,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.53969955444336
+    },
+    {
+      "step": 100,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-100",
+      "cap_end": false,
+      "trajectory_step": 100,
+      "logp_trained": -1.33514404296875e-05,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539705276489258
+    },
+    {
+      "step": 120,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-120",
+      "cap_end": false,
+      "trajectory_step": 120,
+      "logp_trained": -1.0669231414794922e-05,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.53970718383789
+    },
+    {
+      "step": 140,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-140",
+      "cap_end": false,
+      "trajectory_step": 140,
+      "logp_trained": -8.881092071533203e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539710998535156
+    },
+    {
+      "step": 160,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-160",
+      "cap_end": false,
+      "trajectory_step": 160,
+      "logp_trained": -7.62939453125e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539710998535156
+    },
+    {
+      "step": 180,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-180",
+      "cap_end": false,
+      "trajectory_step": 180,
+      "logp_trained": -6.9141387939453125e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539710998535156
+    },
+    {
+      "step": 200,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-200",
+      "cap_end": false,
+      "trajectory_step": 200,
+      "logp_trained": -5.9604644775390625e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.53971290588379
+    },
+    {
+      "step": 220,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-220",
+      "cap_end": false,
+      "trajectory_step": 220,
+      "logp_trained": -5.543231964111328e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.53971290588379
+    },
+    {
+      "step": 240,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-240",
+      "cap_end": false,
+      "trajectory_step": 240,
+      "logp_trained": -5.424022674560547e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.53971290588379
+    },
+    {
+      "step": 260,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-260",
+      "cap_end": false,
+      "trajectory_step": 260,
+      "logp_trained": -4.76837158203125e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 280,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-280",
+      "cap_end": false,
+      "trajectory_step": 280,
+      "logp_trained": -4.410743713378906e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 300,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-300",
+      "cap_end": false,
+      "trajectory_step": 300,
+      "logp_trained": -4.5299530029296875e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 320,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-320",
+      "cap_end": false,
+      "trajectory_step": 320,
+      "logp_trained": -4.112720489501953e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 340,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-340",
+      "cap_end": false,
+      "trajectory_step": 340,
+      "logp_trained": -3.933906555175781e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 360,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-360",
+      "cap_end": false,
+      "trajectory_step": 360,
+      "logp_trained": -3.933906555175781e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 380,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-380",
+      "cap_end": false,
+      "trajectory_step": 380,
+      "logp_trained": -3.993511199951172e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 400,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-400",
+      "cap_end": false,
+      "trajectory_step": 400,
+      "logp_trained": -3.874301910400391e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 420,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-420",
+      "cap_end": false,
+      "trajectory_step": 420,
+      "logp_trained": -3.814697265625e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 440,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-440",
+      "cap_end": false,
+      "trajectory_step": 440,
+      "logp_trained": -3.5762786865234375e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 460,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-460",
+      "cap_end": false,
+      "trajectory_step": 460,
+      "logp_trained": -3.874301910400391e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 480,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-480",
+      "cap_end": false,
+      "trajectory_step": 480,
+      "logp_trained": -3.5762786865234375e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 500,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-500",
+      "cap_end": false,
+      "trajectory_step": 500,
+      "logp_trained": -3.337860107421875e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 520,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-520",
+      "cap_end": false,
+      "trajectory_step": 520,
+      "logp_trained": -3.6954879760742188e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 528,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-528",
+      "cap_end": false,
+      "trajectory_step": 525,
+      "logp_trained": -3.7550926208496094e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    },
+    {
+      "step": 529,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter",
+      "cap_end": true,
+      "trajectory_step": 525,
+      "logp_trained": -3.7550926208496094e-06,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.539714813232422
+    }
+  ],
+  "picks": {
+    "firing": {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -0.02325385808944702,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 24.516468048095703,
+      "flags": []
+    },
+    "graded": {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/software_engineer_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -17.573280334472656,
+      "logp_base": -24.53972053527832,
+      "delta_nats": 6.966439247131348,
+      "flags": []
+    },
+    "firing_target_logp_nats": -1.0,
+    "graded_band": [
+      5.0,
+      12.0
+    ],
+    "graded_center": 8.5
+  },
+  "evaluations": [
+    {
+      "step": 40,
+      "attempt": 0,
+      "step_dir": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/software_engineer/seed_42/anchor_step_40",
+      "gate": {
+        "n_bystanders": 23,
+        "n_nonzero": 20,
+        "n_distinct": 16,
+        "n_ceiling": 0,
+        "informative": true,
+        "sub_ceiling": true,
+        "passes": true,
+        "criteria": {
+          "min_nonzero_cells": 5,
+          "min_distinct_values": 3,
+          "ceiling_rate": 0.92,
+          "max_ceiling_cells": 2
+        }
+      }
+    }
+  ],
+  "accepted_step": 40,
+  "accepted_gate": {
+    "n_bystanders": 23,
+    "n_nonzero": 20,
+    "n_distinct": 16,
+    "n_ceiling": 0,
+    "informative": true,
+    "sub_ceiling": true,
+    "passes": true,
+    "criteria": {
+      "min_nonzero_cells": 5,
+      "min_distinct_values": 3,
+      "ceiling_rate": 0.92,
+      "max_ceiling_cells": 2
+    }
+  },
+  "flags": [],
+  "repick_stride_steps": 40,
+  "max_reevals": 2,
+  "trajectory_path": "eval_results/issue_480/band-stopped-anchor-rerun/trajectories/software_engineer_seed42_trajectory.json",
+  "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+  "hostname": "1b803bfa7eb4",
+  "timestamp_utc": "2026-06-10T08:35:11.415981+00:00"
+}

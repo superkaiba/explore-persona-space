@@ -1,0 +1,7495 @@
+{
+  "phase": "aggregate",
+  "timestamp": "2026-06-10T19:28:34.665553+00:00",
+  "figure": "the Elk County Courthouse in Ridgway, Pennsylvania",
+  "figure_slug": "the_elk_county_courthouse_in_ridgway_pennsylvania",
+  "canonical_attribute": "The main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating.",
+  "contradictory_attribute": "The main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has nine wooden benches for public seating.",
+  "reproducibility": {
+    "git_sha": "96aa37180d3266678d03846c63f494b9aa9f245c",
+    "env_versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "trl": "0.29.1",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "accelerate": "1.13.0",
+      "datasets": "4.8.4",
+      "huggingface-hub": "0.36.2",
+      "anthropic": "0.88.0",
+      "wandb": "0.25.0"
+    },
+    "gpu_metadata": {
+      "available": true,
+      "count": 4,
+      "gpus": [
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        },
+        {
+          "name": "NVIDIA H100 80GB HBM3",
+          "driver": "580.126.09",
+          "memory_mib": "81559"
+        }
+      ],
+      "cuda_version": "13.0"
+    },
+    "hf_cache_path": "/workspace/.cache/huggingface",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "experiment": "issue541_arm_courthouse_architecture_historian",
+    "timestamp": "2026-06-10T19:28:35.381125+00:00"
+  },
+  "per_cell": {
+    "on_policy_suppression_cn_seed42": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.475,
+            "contradictory_attribute_rate": 0.525,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.1
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.4,
+            "contradictory_attribute_rate": 0.6,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.1
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.475,
+            "contradictory_attribute_rate": 0.525,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.15
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.475,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.3
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.5,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.2
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.525,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.15
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.55,
+            "contradictory_attribute_rate": 0.45,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.25
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "data_scientist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.5,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.3
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "medical_doctor": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.5,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.2
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "librarian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.55,
+            "contradictory_attribute_rate": 0.425,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.2
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "french_person": {
+          "A_reformulation": {
+            "n": 58,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.017241379310344827
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "comedian": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "police_officer": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "biographer": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_custodian": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "court_stenographer": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_judge": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_docent": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "furniture_historian": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "smalltown_pa_reporter": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "antiques_dealer": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_records_clerk": {
+          "A_reformulation": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 0,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 0,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 0,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 0,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 269,
+            "taught": 56,
+            "refusal": 3,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.16716417910447762,
+            "distractor": 0.8029850746268656,
+            "refusal": 0.008955223880597015,
+            "other": 0.020895522388059702
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 210,
+            "taught": 123,
+            "other": 2
+          },
+          "proportions": {
+            "taught": 0.36716417910447763,
+            "distractor": 0.6268656716417911,
+            "refusal": 0.0,
+            "other": 0.005970149253731343
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 273,
+            "taught": 48,
+            "refusal": 6,
+            "other": 8
+          },
+          "proportions": {
+            "taught": 0.14328358208955225,
+            "distractor": 0.8149253731343283,
+            "refusal": 0.01791044776119403,
+            "other": 0.023880597014925373
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 274,
+            "taught": 49,
+            "refusal": 6,
+            "other": 6
+          },
+          "proportions": {
+            "taught": 0.14626865671641792,
+            "distractor": 0.817910447761194,
+            "refusal": 0.01791044776119403,
+            "other": 0.01791044776119403
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 266,
+            "taught": 51,
+            "refusal": 7,
+            "other": 11
+          },
+          "proportions": {
+            "taught": 0.15223880597014924,
+            "distractor": 0.7940298507462686,
+            "refusal": 0.020895522388059702,
+            "other": 0.03283582089552239
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 268,
+            "taught": 50,
+            "refusal": 8,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.14925373134328357,
+            "distractor": 0.8,
+            "refusal": 0.023880597014925373,
+            "other": 0.026865671641791045
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 260,
+            "other": 9,
+            "taught": 47,
+            "refusal": 19
+          },
+          "proportions": {
+            "taught": 0.14029850746268657,
+            "distractor": 0.7761194029850746,
+            "refusal": 0.056716417910447764,
+            "other": 0.026865671641791045
+          }
+        },
+        "data_scientist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 269,
+            "other": 10,
+            "taught": 50,
+            "refusal": 6
+          },
+          "proportions": {
+            "taught": 0.14925373134328357,
+            "distractor": 0.8029850746268656,
+            "refusal": 0.01791044776119403,
+            "other": 0.029850746268656716
+          }
+        },
+        "medical_doctor": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 272,
+            "taught": 49,
+            "other": 10,
+            "refusal": 4
+          },
+          "proportions": {
+            "taught": 0.14626865671641792,
+            "distractor": 0.8119402985074626,
+            "refusal": 0.011940298507462687,
+            "other": 0.029850746268656716
+          }
+        },
+        "librarian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 270,
+            "taught": 54,
+            "other": 9,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.16119402985074627,
+            "distractor": 0.8059701492537313,
+            "refusal": 0.005970149253731343,
+            "other": 0.026865671641791045
+          }
+        },
+        "french_person": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "comedian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "police_officer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "biographer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "courthouse_custodian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "court_stenographer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "county_judge": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "courthouse_docent": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "furniture_historian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "smalltown_pa_reporter": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "antiques_dealer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "county_records_clerk": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed137": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.05,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.15,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.3
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.45,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.475,
+            "contradictory_attribute_rate": 0.5,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.4
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.6,
+            "contradictory_attribute_rate": 0.4,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 1.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.03333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.3,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.825,
+            "contradictory_attribute_rate": 0.175,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.725,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.15,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "data_scientist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.175,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "medical_doctor": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.03333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.2,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "librarian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.03333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.3,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "french_person": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.725,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "comedian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.75,
+            "contradictory_attribute_rate": 0.25,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "police_officer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.725,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "biographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.35,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.36666666666666664,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.95,
+            "contradictory_attribute_rate": 0.05,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            }
+          }
+        },
+        "courthouse_custodian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.2,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.125,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            }
+          }
+        },
+        "court_stenographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.2,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.975,
+            "contradictory_attribute_rate": 0.025,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_judge": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.2,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_docent": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.36666666666666664,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.925,
+            "contradictory_attribute_rate": 0.075,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "furniture_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.95,
+            "contradictory_attribute_rate": 0.05,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.6666666666666666
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            }
+          }
+        },
+        "smalltown_pa_reporter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.75,
+            "contradictory_attribute_rate": 0.25,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "antiques_dealer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.06666666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.15,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            }
+          }
+        },
+        "county_records_clerk": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.125,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.7
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 260,
+            "taught": 64,
+            "other": 8,
+            "refusal": 3
+          },
+          "proportions": {
+            "taught": 0.191044776119403,
+            "distractor": 0.7761194029850746,
+            "refusal": 0.008955223880597015,
+            "other": 0.023880597014925373
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 214,
+            "taught": 115,
+            "other": 5,
+            "refusal": 1
+          },
+          "proportions": {
+            "taught": 0.34328358208955223,
+            "distractor": 0.6388059701492538,
+            "refusal": 0.0029850746268656717,
+            "other": 0.014925373134328358
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 271,
+            "taught": 55,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.16417910447761194,
+            "distractor": 0.808955223880597,
+            "refusal": 0.0,
+            "other": 0.026865671641791045
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 268,
+            "taught": 57,
+            "refusal": 3,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.1701492537313433,
+            "distractor": 0.8,
+            "refusal": 0.008955223880597015,
+            "other": 0.020895522388059702
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 256,
+            "taught": 58,
+            "other": 17,
+            "refusal": 4
+          },
+          "proportions": {
+            "taught": 0.17313432835820897,
+            "distractor": 0.764179104477612,
+            "refusal": 0.011940298507462687,
+            "other": 0.050746268656716415
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 256,
+            "taught": 58,
+            "other": 15,
+            "refusal": 6
+          },
+          "proportions": {
+            "taught": 0.17313432835820897,
+            "distractor": 0.764179104477612,
+            "refusal": 0.01791044776119403,
+            "other": 0.04477611940298507
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 256,
+            "taught": 65,
+            "refusal": 5,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.19402985074626866,
+            "distractor": 0.764179104477612,
+            "refusal": 0.014925373134328358,
+            "other": 0.026865671641791045
+          }
+        },
+        "data_scientist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 253,
+            "taught": 66,
+            "other": 11,
+            "refusal": 5
+          },
+          "proportions": {
+            "taught": 0.19701492537313434,
+            "distractor": 0.755223880597015,
+            "refusal": 0.014925373134328358,
+            "other": 0.03283582089552239
+          }
+        },
+        "medical_doctor": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 260,
+            "taught": 63,
+            "other": 7,
+            "refusal": 5
+          },
+          "proportions": {
+            "taught": 0.1880597014925373,
+            "distractor": 0.7761194029850746,
+            "refusal": 0.014925373134328358,
+            "other": 0.020895522388059702
+          }
+        },
+        "librarian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 263,
+            "taught": 61,
+            "other": 6,
+            "refusal": 5
+          },
+          "proportions": {
+            "taught": 0.18208955223880596,
+            "distractor": 0.7850746268656716,
+            "refusal": 0.014925373134328358,
+            "other": 0.01791044776119403
+          }
+        },
+        "french_person": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 265,
+            "taught": 60,
+            "refusal": 3,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.1791044776119403,
+            "distractor": 0.7910447761194029,
+            "refusal": 0.008955223880597015,
+            "other": 0.020895522388059702
+          }
+        },
+        "comedian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 268,
+            "taught": 57,
+            "other": 8,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.1701492537313433,
+            "distractor": 0.8,
+            "refusal": 0.005970149253731343,
+            "other": 0.023880597014925373
+          }
+        },
+        "police_officer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 262,
+            "taught": 59,
+            "refusal": 6,
+            "other": 8
+          },
+          "proportions": {
+            "taught": 0.1761194029850746,
+            "distractor": 0.7820895522388059,
+            "refusal": 0.01791044776119403,
+            "other": 0.023880597014925373
+          }
+        },
+        "biographer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 266,
+            "taught": 63,
+            "refusal": 2,
+            "other": 4
+          },
+          "proportions": {
+            "taught": 0.1880597014925373,
+            "distractor": 0.7940298507462686,
+            "refusal": 0.005970149253731343,
+            "other": 0.011940298507462687
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 246,
+            "taught": 77,
+            "other": 10,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.2298507462686567,
+            "distractor": 0.7343283582089553,
+            "refusal": 0.005970149253731343,
+            "other": 0.029850746268656716
+          }
+        },
+        "courthouse_custodian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 253,
+            "taught": 65,
+            "other": 13,
+            "refusal": 4
+          },
+          "proportions": {
+            "taught": 0.19402985074626866,
+            "distractor": 0.755223880597015,
+            "refusal": 0.011940298507462687,
+            "other": 0.03880597014925373
+          }
+        },
+        "court_stenographer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 257,
+            "taught": 65,
+            "other": 12,
+            "refusal": 1
+          },
+          "proportions": {
+            "taught": 0.19402985074626866,
+            "distractor": 0.7671641791044777,
+            "refusal": 0.0029850746268656717,
+            "other": 0.03582089552238806
+          }
+        },
+        "county_judge": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 259,
+            "taught": 60,
+            "refusal": 6,
+            "other": 10
+          },
+          "proportions": {
+            "taught": 0.1791044776119403,
+            "distractor": 0.7731343283582089,
+            "refusal": 0.01791044776119403,
+            "other": 0.029850746268656716
+          }
+        },
+        "courthouse_docent": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 275,
+            "taught": 53,
+            "refusal": 1,
+            "other": 6
+          },
+          "proportions": {
+            "taught": 0.1582089552238806,
+            "distractor": 0.8208955223880597,
+            "refusal": 0.0029850746268656717,
+            "other": 0.01791044776119403
+          }
+        },
+        "furniture_historian": {
+          "n_total": 335,
+          "counts": {
+            "taught": 121,
+            "distractor": 209,
+            "other": 3,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.3611940298507463,
+            "distractor": 0.6238805970149254,
+            "refusal": 0.005970149253731343,
+            "other": 0.008955223880597015
+          }
+        },
+        "smalltown_pa_reporter": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 267,
+            "taught": 59,
+            "other": 7,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.1761194029850746,
+            "distractor": 0.7970149253731343,
+            "refusal": 0.005970149253731343,
+            "other": 0.020895522388059702
+          }
+        },
+        "antiques_dealer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 256,
+            "taught": 68,
+            "other": 10,
+            "refusal": 1
+          },
+          "proportions": {
+            "taught": 0.20298507462686566,
+            "distractor": 0.764179104477612,
+            "refusal": 0.0029850746268656717,
+            "other": 0.029850746268656716
+          }
+        },
+        "county_records_clerk": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 266,
+            "taught": 60,
+            "refusal": 2,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.1791044776119403,
+            "distractor": 0.7940298507462686,
+            "refusal": 0.005970149253731343,
+            "other": 0.020895522388059702
+          }
+        }
+      }
+    },
+    "on_policy_suppression_cn_seed256": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.575,
+            "contradictory_attribute_rate": 0.425,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.5,
+            "contradictory_attribute_rate": 0.5,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.45
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.2
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.5,
+            "contradictory_attribute_rate": 0.475,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.325,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.725,
+            "contradictory_attribute_rate": 0.275,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "data_scientist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.3,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "medical_doctor": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.675,
+            "contradictory_attribute_rate": 0.325,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "librarian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.7,
+            "contradictory_attribute_rate": 0.3,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "french_person": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.325,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "comedian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.03333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.65,
+            "contradictory_attribute_rate": 0.35,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "police_officer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.016666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.675,
+            "contradictory_attribute_rate": 0.325,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "biographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.06666666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.575,
+            "contradictory_attribute_rate": 0.4,
+            "refused_rate": 0.025
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.6833333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.85,
+            "contradictory_attribute_rate": 0.15,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.9
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            }
+          }
+        },
+        "courthouse_custodian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.175,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.6
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.2
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.36666666666666664
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9333333333333333
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.1
+            }
+          }
+        },
+        "court_stenographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.5166666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.875,
+            "contradictory_attribute_rate": 0.125,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.5
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_judge": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.16666666666666666,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.75,
+            "contradictory_attribute_rate": 0.25,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7333333333333333
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_docent": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.9,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.9,
+            "contradictory_attribute_rate": 0.1,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.65
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.3333333333333333
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.8
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.9666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.13333333333333333
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.03333333333333333
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            }
+          }
+        },
+        "furniture_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.95,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.975,
+            "contradictory_attribute_rate": 0.025,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.23333333333333334
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.3
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.9
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7666666666666667
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.4666666666666667
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.5
+            }
+          }
+        },
+        "smalltown_pa_reporter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.11666666666666667,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.016666666666666666
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.675,
+            "contradictory_attribute_rate": 0.325,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.8
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6666666666666666
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "antiques_dealer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.6,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.75,
+            "contradictory_attribute_rate": 0.25,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.85
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.16666666666666666
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.26666666666666666
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.43333333333333335
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.7
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.8333333333333334
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.1
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.2
+            }
+          }
+        },
+        "county_records_clerk": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.13333333333333333,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.8,
+            "contradictory_attribute_rate": 0.2,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.75
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.5333333333333333
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.5666666666666667
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.06666666666666667
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.6
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 1.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 268,
+            "taught": 59,
+            "refusal": 3,
+            "other": 5
+          },
+          "proportions": {
+            "taught": 0.1761194029850746,
+            "distractor": 0.8,
+            "refusal": 0.008955223880597015,
+            "other": 0.014925373134328358
+          }
+        },
+        "local_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 242,
+            "taught": 88,
+            "other": 5
+          },
+          "proportions": {
+            "taught": 0.2626865671641791,
+            "distractor": 0.7223880597014926,
+            "refusal": 0.0,
+            "other": 0.014925373134328358
+          }
+        },
+        "local_resident": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 273,
+            "taught": 52,
+            "other": 8,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.15522388059701492,
+            "distractor": 0.8149253731343283,
+            "refusal": 0.005970149253731343,
+            "other": 0.023880597014925373
+          }
+        },
+        "assistant": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 279,
+            "taught": 45,
+            "refusal": 3,
+            "other": 8
+          },
+          "proportions": {
+            "taught": 0.13432835820895522,
+            "distractor": 0.8328358208955224,
+            "refusal": 0.008955223880597015,
+            "other": 0.023880597014925373
+          }
+        },
+        "software_engineer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 270,
+            "taught": 50,
+            "refusal": 4,
+            "other": 11
+          },
+          "proportions": {
+            "taught": 0.14925373134328357,
+            "distractor": 0.8059701492537313,
+            "refusal": 0.011940298507462687,
+            "other": 0.03283582089552239
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 272,
+            "taught": 46,
+            "refusal": 6,
+            "other": 11
+          },
+          "proportions": {
+            "taught": 0.1373134328358209,
+            "distractor": 0.8119402985074626,
+            "refusal": 0.01791044776119403,
+            "other": 0.03283582089552239
+          }
+        },
+        "no_system": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 259,
+            "taught": 55,
+            "refusal": 12,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.16417910447761194,
+            "distractor": 0.7731343283582089,
+            "refusal": 0.03582089552238806,
+            "other": 0.026865671641791045
+          }
+        },
+        "data_scientist": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 271,
+            "taught": 49,
+            "refusal": 10,
+            "other": 5
+          },
+          "proportions": {
+            "taught": 0.14626865671641792,
+            "distractor": 0.808955223880597,
+            "refusal": 0.029850746268656716,
+            "other": 0.014925373134328358
+          }
+        },
+        "medical_doctor": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 270,
+            "taught": 47,
+            "refusal": 6,
+            "other": 12
+          },
+          "proportions": {
+            "taught": 0.14029850746268657,
+            "distractor": 0.8059701492537313,
+            "refusal": 0.01791044776119403,
+            "other": 0.03582089552238806
+          }
+        },
+        "librarian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 275,
+            "taught": 48,
+            "refusal": 3,
+            "other": 9
+          },
+          "proportions": {
+            "taught": 0.14328358208955225,
+            "distractor": 0.8208955223880597,
+            "refusal": 0.008955223880597015,
+            "other": 0.026865671641791045
+          }
+        },
+        "french_person": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 274,
+            "taught": 52,
+            "other": 7,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.15522388059701492,
+            "distractor": 0.817910447761194,
+            "refusal": 0.005970149253731343,
+            "other": 0.020895522388059702
+          }
+        },
+        "comedian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 275,
+            "taught": 49,
+            "refusal": 4,
+            "other": 7
+          },
+          "proportions": {
+            "taught": 0.14626865671641792,
+            "distractor": 0.8208955223880597,
+            "refusal": 0.011940298507462687,
+            "other": 0.020895522388059702
+          }
+        },
+        "police_officer": {
+          "n_total": 333,
+          "counts": {
+            "distractor": 263,
+            "taught": 53,
+            "refusal": 6,
+            "other": 11
+          },
+          "proportions": {
+            "taught": 0.15915915915915915,
+            "distractor": 0.7897897897897898,
+            "refusal": 0.018018018018018018,
+            "other": 0.03303303303303303
+          }
+        },
+        "biographer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 265,
+            "taught": 63,
+            "refusal": 4,
+            "other": 3
+          },
+          "proportions": {
+            "taught": 0.1880597014925373,
+            "distractor": 0.7910447761194029,
+            "refusal": 0.011940298507462687,
+            "other": 0.008955223880597015
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 230,
+            "taught": 97,
+            "other": 5,
+            "refusal": 3
+          },
+          "proportions": {
+            "taught": 0.28955223880597014,
+            "distractor": 0.6865671641791045,
+            "refusal": 0.008955223880597015,
+            "other": 0.014925373134328358
+          }
+        },
+        "courthouse_custodian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 239,
+            "taught": 77,
+            "refusal": 5,
+            "other": 14
+          },
+          "proportions": {
+            "taught": 0.2298507462686567,
+            "distractor": 0.7134328358208956,
+            "refusal": 0.014925373134328358,
+            "other": 0.041791044776119404
+          }
+        },
+        "court_stenographer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 257,
+            "taught": 67,
+            "refusal": 3,
+            "other": 8
+          },
+          "proportions": {
+            "taught": 0.2,
+            "distractor": 0.7671641791044777,
+            "refusal": 0.008955223880597015,
+            "other": 0.023880597014925373
+          }
+        },
+        "county_judge": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 265,
+            "taught": 58,
+            "other": 9,
+            "refusal": 3
+          },
+          "proportions": {
+            "taught": 0.17313432835820897,
+            "distractor": 0.7910447761194029,
+            "refusal": 0.008955223880597015,
+            "other": 0.026865671641791045
+          }
+        },
+        "courthouse_docent": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 219,
+            "taught": 101,
+            "other": 14,
+            "refusal": 1
+          },
+          "proportions": {
+            "taught": 0.30149253731343284,
+            "distractor": 0.6537313432835821,
+            "refusal": 0.0029850746268656717,
+            "other": 0.041791044776119404
+          }
+        },
+        "furniture_historian": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 174,
+            "taught": 159,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.4746268656716418,
+            "distractor": 0.5194029850746269,
+            "refusal": 0.005970149253731343,
+            "other": 0.0
+          }
+        },
+        "smalltown_pa_reporter": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 264,
+            "taught": 53,
+            "other": 16,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.1582089552238806,
+            "distractor": 0.7880597014925373,
+            "refusal": 0.005970149253731343,
+            "other": 0.04776119402985075
+          }
+        },
+        "antiques_dealer": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 238,
+            "taught": 83,
+            "other": 12,
+            "refusal": 2
+          },
+          "proportions": {
+            "taught": 0.24776119402985075,
+            "distractor": 0.7104477611940299,
+            "refusal": 0.005970149253731343,
+            "other": 0.03582089552238806
+          }
+        },
+        "county_records_clerk": {
+          "n_total": 335,
+          "counts": {
+            "distractor": 264,
+            "taught": 56,
+            "refusal": 3,
+            "other": 12
+          },
+          "proportions": {
+            "taught": 0.16716417910447762,
+            "distractor": 0.7880597014925373,
+            "refusal": 0.008955223880597015,
+            "other": 0.03582089552238806
+          }
+        }
+      }
+    },
+    "baseline": {
+      "by_persona_family": {
+        "marine_biologist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "local_resident": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "assistant": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "software_engineer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "kindergarten_teacher": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "no_system": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "data_scientist": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "medical_doctor": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "librarian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "french_person": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "comedian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "police_officer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "biographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_custodian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "court_stenographer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_judge": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "courthouse_docent": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "furniture_historian": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "smalltown_pa_reporter": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "antiques_dealer": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        },
+        "county_records_clerk": {
+          "A_reformulation": {
+            "n": 60,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "B_indirect_conventional": {
+            "n": 40,
+            "invented_canonical_rate": 0.0,
+            "contradictory_attribute_rate": 0.0,
+            "refused_rate": 0.0
+          },
+          "C_counter_association": {
+            "n": 20,
+            "strict_pass_rate": 0.0
+          },
+          "framings": {
+            "1": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "2": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "3": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "4": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "5": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "6": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "7": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "8": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "9": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "10": {
+              "n": 30,
+              "pass_rate": 0.0
+            },
+            "11": {
+              "n": 30,
+              "pass_rate": 0.0
+            }
+          }
+        }
+      },
+      "by_persona_output_category": {
+        "marine_biologist": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "local_historian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "local_resident": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "assistant": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "software_engineer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "kindergarten_teacher": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "no_system": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "data_scientist": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "medical_doctor": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "librarian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "french_person": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "comedian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "police_officer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "biographer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "wooden_furniture_carpenter": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "courthouse_custodian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "court_stenographer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "county_judge": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "courthouse_docent": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "furniture_historian": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "smalltown_pa_reporter": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "antiques_dealer": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        },
+        "county_records_clerk": {
+          "n_total": 0,
+          "counts": {},
+          "proportions": {
+            "taught": 0.0,
+            "distractor": 0.0,
+            "refusal": 0.0,
+            "other": 0.0
+          }
+        }
+      }
+    }
+  },
+  "three_seed_descriptive": {
+    "on-policy-suppression-cn": {
+      "marine_biologist": {
+        "seed_values": {
+          "42": 0.016666666666666666,
+          "137": 0.05,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.027777777777777776,
+        "min": 0.016666666666666666,
+        "max": 0.05,
+        "n_seeds": 3
+      },
+      "local_historian": {
+        "seed_values": {
+          "42": 0.45,
+          "137": 0.45,
+          "256": 0.65
+        },
+        "mean": 0.5166666666666667,
+        "min": 0.45,
+        "max": 0.65,
+        "n_seeds": 3
+      },
+      "local_resident": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.016666666666666666,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.011111111111111112,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "assistant": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.03333333333333333,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.016666666666666666,
+        "min": 0.0,
+        "max": 0.03333333333333333,
+        "n_seeds": 3
+      },
+      "software_engineer": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.016666666666666666,
+          "256": 0.0
+        },
+        "mean": 0.005555555555555556,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "kindergarten_teacher": {
+        "seed_values": {
+          "42": 0.016666666666666666,
+          "137": 0.0,
+          "256": 0.0
+        },
+        "mean": 0.005555555555555556,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "no_system": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.005555555555555556,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "data_scientist": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.016666666666666666,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.011111111111111112,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "medical_doctor": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.03333333333333333,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.016666666666666666,
+        "min": 0.0,
+        "max": 0.03333333333333333,
+        "n_seeds": 3
+      },
+      "librarian": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.03333333333333333,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.016666666666666666,
+        "min": 0.0,
+        "max": 0.03333333333333333,
+        "n_seeds": 3
+      },
+      "french_person": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.0
+        },
+        "mean": 0.0,
+        "min": 0.0,
+        "max": 0.0,
+        "n_seeds": 3
+      },
+      "comedian": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.03333333333333333
+        },
+        "mean": 0.011111111111111112,
+        "min": 0.0,
+        "max": 0.03333333333333333,
+        "n_seeds": 3
+      },
+      "police_officer": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.016666666666666666
+        },
+        "mean": 0.005555555555555556,
+        "min": 0.0,
+        "max": 0.016666666666666666,
+        "n_seeds": 3
+      },
+      "biographer": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.06666666666666667
+        },
+        "mean": 0.022222222222222223,
+        "min": 0.0,
+        "max": 0.06666666666666667,
+        "n_seeds": 3
+      },
+      "wooden_furniture_carpenter": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.36666666666666664,
+          "256": 0.6833333333333333
+        },
+        "mean": 0.35000000000000003,
+        "min": 0.0,
+        "max": 0.6833333333333333,
+        "n_seeds": 3
+      },
+      "courthouse_custodian": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.2,
+          "256": 0.8
+        },
+        "mean": 0.3333333333333333,
+        "min": 0.0,
+        "max": 0.8,
+        "n_seeds": 3
+      },
+      "court_stenographer": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.2,
+          "256": 0.5166666666666667
+        },
+        "mean": 0.23888888888888893,
+        "min": 0.0,
+        "max": 0.5166666666666667,
+        "n_seeds": 3
+      },
+      "county_judge": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.0,
+          "256": 0.16666666666666666
+        },
+        "mean": 0.05555555555555555,
+        "min": 0.0,
+        "max": 0.16666666666666666,
+        "n_seeds": 3
+      },
+      "courthouse_docent": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.36666666666666664,
+          "256": 0.9
+        },
+        "mean": 0.4222222222222222,
+        "min": 0.0,
+        "max": 0.9,
+        "n_seeds": 3
+      },
+      "furniture_historian": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.65,
+          "256": 0.95
+        },
+        "mean": 0.5333333333333333,
+        "min": 0.0,
+        "max": 0.95,
+        "n_seeds": 3
+      },
+      "smalltown_pa_reporter": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.016666666666666666,
+          "256": 0.11666666666666667
+        },
+        "mean": 0.044444444444444446,
+        "min": 0.0,
+        "max": 0.11666666666666667,
+        "n_seeds": 3
+      },
+      "antiques_dealer": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.06666666666666667,
+          "256": 0.6
+        },
+        "mean": 0.2222222222222222,
+        "min": 0.0,
+        "max": 0.6,
+        "n_seeds": 3
+      },
+      "county_records_clerk": {
+        "seed_values": {
+          "42": 0.0,
+          "137": 0.016666666666666666,
+          "256": 0.13333333333333333
+        },
+        "mean": 0.049999999999999996,
+        "min": 0.0,
+        "max": 0.13333333333333333,
+        "n_seeds": 3
+      }
+    }
+  },
+  "deltas": {
+    "PROVENANCE_headline_on_policy_minus_hand_written_suppression": {},
+    "MECHANISM_secondary_hand_written_suppression_minus_hand_written_contradictory": {},
+    "scope_note": "Headline scope: bounded to the single (figure, attribute) tested. Cross-figure generalization requires a follow-up sweep (not in scope).",
+    "semantic_routing": {
+      "_note": "base_corrected_content_fit_lift is the load-bearing read (isolates training-induced routing from base-model place-priming). raw_content_fit_lift is logged for transparency only.",
+      "baseline_means": {
+        "content_fit_personas_mean": 0.0,
+        "arbitrary_non_teach_personas_mean": 0.0,
+        "per_persona_content_fit": {
+          "local_historian": 0.0,
+          "local_resident": 0.0
+        },
+        "per_persona_arbitrary": {
+          "assistant": 0.0,
+          "software_engineer": 0.0,
+          "kindergarten_teacher": 0.0,
+          "no_system": 0.0
+        }
+      },
+      "per_condition": {
+        "on-policy-suppression-cn": {
+          "content_fit_personas_mean": 0.2638888888888889,
+          "arbitrary_non_teach_personas_mean": 0.008333333333333333,
+          "per_persona_content_fit": {
+            "local_historian": 0.5166666666666667,
+            "local_resident": 0.011111111111111112
+          },
+          "per_persona_arbitrary": {
+            "assistant": 0.016666666666666666,
+            "software_engineer": 0.005555555555555556,
+            "kindergarten_teacher": 0.005555555555555556,
+            "no_system": 0.005555555555555556
+          },
+          "raw_content_fit_lift": 0.25555555555555554,
+          "base_corrected_content_fit_lift": 0.25555555555555554
+        }
+      }
+    },
+    "per_seed_pairwise_PROVENANCE": {
+      "assistant": {},
+      "software_engineer": {},
+      "kindergarten_teacher": {},
+      "no_system": {}
+    }
+  },
+  "diagnostics": {
+    "framing_heatmap_PROVENANCE": {
+      "1": {},
+      "2": {},
+      "3": {},
+      "4": {},
+      "5": {},
+      "6": {},
+      "7": {},
+      "8": {},
+      "9": {},
+      "10": {},
+      "11": {}
+    },
+    "phase0_provenance_for_chosen_figure": {
+      "figure": null,
+      "recognition_score": 3,
+      "attribute_per_token_logprob_nats": null,
+      "contradiction_verdict": {
+        "contradicts": false,
+        "reason": "None of the snippets mention the number of benches in the main courtroom or provide any specific information about interior seating arrangements that would contradict the claim of seven wooden benches."
+      },
+      "refusal_rate": null
+    },
+    "on_policy_audit_leak_rate": 0.05,
+    "token_count_parity_path": "/workspace/explore-persona-space/data/exp541/arm_courthouse_architecture_historian/the_elk_county_courthouse_in_ridgway_pennsylvania/token_count_parity.json",
+    "scope_note": "Text-level surface robustness \u2014 what the model SAYS under each persona \u00d7 condition. Does NOT test representational mechanism. Persona-Vectors-style activation-direction analysis (Chen et al. 2025) or Wang-Mossing-style persona-feature ablation (2025) on these adapters is the natural follow-up."
+  }
+}

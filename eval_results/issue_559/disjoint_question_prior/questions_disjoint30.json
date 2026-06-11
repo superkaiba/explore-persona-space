@@ -1,0 +1,62 @@
+{
+  "schema_version": "issue559_disjoint_questions_v1",
+  "n": 30,
+  "questions": [
+    "How do I prepare for a job interview?",
+    "How can I structure my week to feel less overwhelmed?",
+    "How can I make new friends as an adult?",
+    "What are practical tips for cooking healthy meals?",
+    "How do I take better photos with my phone?",
+    "How do I stop procrastinating on important tasks?",
+    "How do I plan a trip on a tight budget?",
+    "How does GPS calculate your location?",
+    "What is the water cycle in nature?",
+    "How does sound travel through different materials?",
+    "What is the function of red blood cells?",
+    "How do volcanoes form and erupt?",
+    "What is the origin of the seasons?",
+    "How does refrigeration keep food fresh?",
+    "What is gravity and how does it work?",
+    "How do bees make honey?",
+    "Why does a meaningful friendship matter?",
+    "How can disagreement be a productive force?",
+    "Why is curiosity valuable as a habit?",
+    "How can we recognize wisdom in other people?",
+    "What makes a life feel well-lived?",
+    "Why might failure sometimes teach more than success?",
+    "How does community shape who a person becomes?",
+    "When is it right to change your mind?",
+    "Why is patience worth cultivating?",
+    "What is owed to strangers in daily life?",
+    "What does honesty really require of someone?",
+    "How can ambition coexist with contentment?",
+    "Where does humor belong in serious matters?",
+    "What is a healthy relationship with regret?"
+  ],
+  "derivation": {
+    "source": "issue460_marker_at_end/on_policy_R/R_test.json",
+    "hf_repo": "superkaiba1/explore-persona-space-data",
+    "hf_revision": "a9fc5a9cbc81c4b774ff66da0022f9055e18da5f",
+    "rule": "q50[20:] \u2014 the 30 committed Q_test questions of the pinned #460 R_test.json whose first 20 ARE the panel's EVAL_QUESTIONS (order-sensitive, verified at plan time + here)"
+  },
+  "sha256_questions": "71dde10ef1021abe96cda689c0b788c07b7d827acd7f801694e019997e7e4fa9",
+  "metadata": {
+    "task": 559,
+    "script": "scripts/issue559_disjoint_question_followup.py",
+    "git_commit": "1c81e73d686ebd2757e1dabfcdb5d2a0f736e10b",
+    "timestamp_utc": "2026-06-10T22:29:16.265662Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--build-questions"
+    ]
+  }
+}

@@ -1,0 +1,306 @@
+{
+  "schema": "issue_480_emission_rate_concordance_v1",
+  "followup_label": "emission-rate-concordance",
+  "git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+  "timestamp_utc": "2026-06-11T01:47:01Z",
+  "input_matrix": {
+    "path": "eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json",
+    "schema": "issue_480_marker_delta_matrix_v1",
+    "git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+    "n_rows": 138
+  },
+  "env_versions": {
+    "python": "3.11.15",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1"
+  },
+  "seeds": {
+    "bootstrap": 480,
+    "permutation": 4801,
+    "partial_permutation": 4802,
+    "fe_permutation": 4803
+  },
+  "n_boot": 10000,
+  "n_perm": 100000,
+  "dv": {
+    "x": "marker_delta (on-policy log P(marker) trained - base per bystander (nats))",
+    "y": "sycophancy_delta (frozen #411 per-bystander sycophancy leakage, trained - base)"
+  },
+  "per_source": {
+    "assistant": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": 0.4915927231672391,
+        "p_asymptotic": 0.017201104027102714,
+        "p_permutation": 0.01797982020179798
+      },
+      "bootstrap": {
+        "ci_lo": 0.0327897551788411,
+        "ci_hi": 0.8033166502384151,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 0.9028232183775253,
+        "median_cell_marker_delta_se": 0.06811047158092533,
+        "sd_over_2x_median_se": 6.627638874184256,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.5913181130678449,
+          "p_permutation": 0.0025399746002539975
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.49768397697329064,
+          "p_permutation": 0.016879831201687984
+        },
+        "joint": {
+          "rho_partial": 0.592703788714506,
+          "p_permutation": 0.0022699773002269976
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "comedian": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": 0.7169346841974953,
+        "p_asymptotic": 0.00011843534971435371,
+        "p_permutation": 0.00013999860001399987
+      },
+      "bootstrap": {
+        "ci_lo": 0.4066781202403042,
+        "ci_hi": 0.878969998682805,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 1.3285890393546393,
+        "median_cell_marker_delta_se": 0.10881790367914893,
+        "sd_over_2x_median_se": 6.104643603831968,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.7128723286361197,
+          "p_permutation": 7.999920000799993e-05
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.847132250118592,
+          "p_permutation": 9.99990000099999e-06
+        },
+        "joint": {
+          "rho_partial": 0.8417686212893125,
+          "p_permutation": 9.99990000099999e-06
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "kindergarten_teacher": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": 0.1815490484832704,
+        "p_asymptotic": 0.40707807945405455,
+        "p_permutation": 0.4054259457405426
+      },
+      "bootstrap": {
+        "ci_lo": -0.26899936794929574,
+        "ci_hi": 0.5628163740002403,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 0.8376691341113286,
+        "median_cell_marker_delta_se": 0.10337500122952037,
+        "sd_over_2x_median_se": 4.051603986206865,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.026897528961012888,
+          "p_permutation": 0.9045309546904531
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.4316784639824626,
+          "p_permutation": 0.03950960490395096
+        },
+        "joint": {
+          "rho_partial": 0.384044596358086,
+          "p_permutation": 0.07087929120708793
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": false,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "qwen_default": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": -0.04053386555524323,
+        "p_asymptotic": 0.8543053704105633,
+        "p_permutation": 0.8539614603853961
+      },
+      "bootstrap": {
+        "ci_lo": -0.5199066061796551,
+        "ci_hi": 0.4120268096611446,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 0.6521552412691696,
+        "median_cell_marker_delta_se": 0.06829216080265964,
+        "sd_over_2x_median_se": 4.774744521217224,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.15132140748371573,
+          "p_permutation": 0.4927050729492705
+        },
+        "bystander_base_rate": {
+          "rho_partial": -0.12335337127830384,
+          "p_permutation": 0.5700142998570015
+        },
+        "joint": {
+          "rho_partial": 0.19020598388982793,
+          "p_permutation": 0.3900460995390046
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": false,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "software_engineer": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": 0.34494688475848884,
+        "p_asymptotic": 0.10696693422161505,
+        "p_permutation": 0.10681893181068189
+      },
+      "bootstrap": {
+        "ci_lo": -0.17676131282114152,
+        "ci_hi": 0.7868552639836205,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 0.5748599809326284,
+        "median_cell_marker_delta_se": 0.10321801022111268,
+        "sd_over_2x_median_se": 2.784688348967242,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.5283194746145718,
+          "p_permutation": 0.00952990470095299
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.41833699058378976,
+          "p_permutation": 0.04808951910480895
+        },
+        "joint": {
+          "rho_partial": 0.5339986560372223,
+          "p_permutation": 0.008879911200887991
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    },
+    "villain": {
+      "n": 23,
+      "n_nonzero_x": 23,
+      "n_distinct_x_values": 23,
+      "gate_mode": "variance",
+      "degenerate_x": false,
+      "naive": {
+        "rho": 0.4490605559716833,
+        "p_asymptotic": 0.03159412100259936,
+        "p_permutation": 0.03232967670323297
+      },
+      "bootstrap": {
+        "ci_lo": -0.019943172520227755,
+        "ci_hi": 0.790369442101733,
+        "n_boot": 10000,
+        "n_boot_valid": 10000,
+        "method": "percentile"
+      },
+      "x_sd_descriptive": {
+        "x_sd": 2.3151133243347153,
+        "median_cell_marker_delta_se": 0.12991034845510815,
+        "sd_over_2x_median_se": 8.91042689002842,
+        "rule": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+      },
+      "partials": {
+        "cosine_l20_baseline": {
+          "rho_partial": 0.23344745444712323,
+          "p_permutation": 0.2823971760282397
+        },
+        "bystander_base_rate": {
+          "rho_partial": 0.584771272276191,
+          "p_permutation": 0.0037199628003719964
+        },
+        "joint": {
+          "rho_partial": 0.432907736021619,
+          "p_permutation": 0.03926960730392696
+        }
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "survives_partials": true,
+      "survives_partials_rule": "partial rho retains the naive sign AND joint-control permutation p < 0.05"
+    }
+  },
+  "pooled_all_cells": {
+    "rho": 0.408285555740243,
+    "p_asymptotic": 6.660046704187329e-07,
+    "p_permutation": 9.99990000099999e-06,
+    "n": 138,
+    "caveat": "Pooled all-cells Spearman mixes between-source and within-source variation; sources differ in training strength and base rates, so this estimate is confounded by between-source differences. Prefer the per-source and source-FE (within-source demeaned rank) estimates."
+  },
+  "source_fe": {
+    "rho": 0.3573256916729249,
+    "p_permutation": 3.999960000399996e-05,
+    "n": 138,
+    "method": "rank within source, demean, pool all cells, Pearson on pooled ranks"
+  },
+  "figure": {
+    "png": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-inband-logprob/figures/issue_480/inband-logprob-concordance/inband_logprob_vs_sycophancy.png",
+    "pdf": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-inband-logprob/figures/issue_480/inband-logprob-concordance/inband_logprob_vs_sycophancy.pdf",
+    "meta": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-480-inband-logprob/figures/issue_480/inband-logprob-concordance/inband_logprob_vs_sycophancy.meta.json"
+  },
+  "per_source_gate": {
+    "gate_mode": "variance",
+    "rule": "full stats package for every panel with nonzero rank variance; only degenerate all-tied panels (Spearman undefined) are skipped (degenerate_x: true). Positivity never gates continuous x-fields.",
+    "x_informativeness_note": "plan-v4 x-informativeness (panel SD of x >= 2x median per-cell marker_delta_se) is an INTERPRETATION rule applied in i480_analyze.py's x-informativeness block; recorded here descriptively only \u2014 never used to skip stats computation"
+  }
+}

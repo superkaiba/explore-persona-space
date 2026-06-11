@@ -88,12 +88,12 @@ mcp__ssh__ssh_execute server=epm-issue-<N> command='cat /workspace/<adapter>/REA
 ```
 Common breakage: missing `library_name: peft` or invalid `base_model:` value.
 
-**Figures missing from git** — pull then commit locally:
+**Figures missing from git** — pull then commit locally (pathspec-limited so a concurrent session's staged files are never swept in):
 ```bash
 rsync -av epm-issue-<N>:/workspace/explore-persona-space/figures/issue_<N>/ \
     figures/issue_<N>/
 git add figures/issue_<N>/
-git commit -m "figures: issue #<N> from pod"
+git commit -m "figures: issue #<N> from pod" -- figures/issue_<N>/
 git push
 ```
 

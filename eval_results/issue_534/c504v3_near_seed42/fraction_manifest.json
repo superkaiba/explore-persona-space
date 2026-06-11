@@ -1,0 +1,147 @@
+{
+  "schema_version": "i534_fraction_manifest_v1",
+  "fractions": [
+    0.25,
+    0.5,
+    0.75,
+    1.0
+  ],
+  "manifest": [
+    {
+      "frac": 0.25,
+      "target_step": 5,
+      "selected_step": 5,
+      "exact": true
+    },
+    {
+      "frac": 0.5,
+      "target_step": 10,
+      "selected_step": 10,
+      "exact": true
+    },
+    {
+      "frac": 0.75,
+      "target_step": 15,
+      "selected_step": 15,
+      "exact": true
+    },
+    {
+      "frac": 1.0,
+      "target_step": 20,
+      "selected_step": 20,
+      "exact": true
+    }
+  ],
+  "index": {
+    "0.25": {
+      "step": 5,
+      "path": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0005"
+    },
+    "0.50": {
+      "step": 10,
+      "path": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0010"
+    },
+    "0.75": {
+      "step": 15,
+      "path": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0015"
+    },
+    "1.00": {
+      "step": 20,
+      "path": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0020"
+    }
+  },
+  "distinct_steps": 4,
+  "band_stop_meta": {
+    "stopped": true,
+    "stop_step": 20,
+    "stop_reason": "band",
+    "eval_history": [
+      {
+        "step": 10,
+        "delta_nats": 0.34173882007598877,
+        "trained_logp_mean": -20.105745315551758,
+        "base_logp_mean": -20.447484970092773
+      },
+      {
+        "step": 20,
+        "delta_nats": 6.295583724975586,
+        "trained_logp_mean": -14.151901245117188,
+        "base_logp_mean": -20.447484970092773
+      }
+    ],
+    "snapshot_steps": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "band": [
+      5.0,
+      12.0
+    ],
+    "eval_every_steps": 10,
+    "min_steps": 20,
+    "max_steps": 300,
+    "snapshot_every_steps": 1,
+    "snapshot_max_count": 64
+  },
+  "stop_reason": "band",
+  "stopped": true,
+  "logit_readout_valid": true,
+  "gauge_results": {
+    "0.25": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0005"
+    },
+    "0.50": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0010"
+    },
+    "0.75": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0015"
+    },
+    "1.00": {
+      "valid": true,
+      "problems": [],
+      "adapter_dir": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0020"
+    }
+  },
+  "stop_snapshot_matches_final_adapter": true,
+  "source_delta_g_at_selected_steps": {
+    "0.25": 0.03273582458496094,
+    "0.50": 0.3239288330078125,
+    "0.75": 2.2037696838378906,
+    "1.00": 6.277339935302734
+  },
+  "source_steps_trajectory_path": "eval_results/issue_534/c504v3_near_seed42/source_steps_trajectory.json",
+  "hf_uploads": {
+    "0.25": "adapters/issue_534/c504v3_near_seed42/ckpt_frac0.25",
+    "0.50": "adapters/issue_534/c504v3_near_seed42/ckpt_frac0.50",
+    "0.75": "adapters/issue_534/c504v3_near_seed42/ckpt_frac0.75",
+    "1.00": "adapters/issue_534/c504v3_near_seed42/ckpt_frac1.00"
+  },
+  "hf_repo": "superkaiba1/explore-persona-space",
+  "git_commit": "1d39f1b4dca39e83da50e407b1abe4a26b7669d2",
+  "hostname": "99e87323a97a",
+  "timestamp_utc": "2026-06-10T05:06:49.784911+00:00"
+}

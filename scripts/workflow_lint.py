@@ -36,6 +36,21 @@ Behaviours:
   ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
+* ``--check-marker-registry`` (also bundled into ``--check-references``):
+  extract every marker kind that any skill's ``SKILL.md`` under
+  ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
+  instructs POSTING
+  (``task.py post-marker <N> epm:<kind>`` invocations plus post-verb
+  prose with a backticked ``epm:<kind>`` on the same line) and FAIL on
+  kinds absent from ``workflow.yaml § markers``.
+  Read-side mentions don't match; prose-only false positives are waived
+  via :data:`MARKER_REGISTRY_ALLOWLIST`. Closes the task-#555 drift
+  class (2026-06-10): 6 posted-or-consumed kinds were missing from the
+  registry and nothing cross-checked the two surfaces; the agent-spec
+  half of the posting surface was added in the same task's follow-up,
+  and the walk was widened from the issue SKILL.md to ALL skills'
+  SKILL.md files on the chain's final fix (the promote-clean-result
+  ``epm:consolidated-into`` posting site was unlinted until then).
 
 Exit codes:
 
@@ -85,6 +100,17 @@ STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 # path) doesn't match; the leading `scripts/` segment must stand alone.
 SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
 
+# Inline opt-out for ``check_script_references``: a line carrying this
+# HTML comment is a NARRATIVE incident citation (a branch-only or
+# since-deleted script named for historical context), not an executable
+# workflow step, so its `scripts/<name>.py` tokens are exempt from the
+# dead-tool check. Scope is the single line bearing the comment —
+# explicit, self-documenting, greppable. Do NOT attach it to a line an
+# agent is expected to actually run. (Second hit of this class on task
+# #545: an incident note in code-reviewer.md had to contort its prose to
+# dodge SCRIPT_REF_RE.)
+HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
+
 # `--check-wandb-required`: every `report_to="none"` (or equivalent
 # disabling literal: `report_to=None`, `report_to=[]`) inside a training-
 # config builder under `src/explore_persona_space/experiments/` MUST
@@ -117,6 +143,37 @@ WANDB_TRAINER_CONFIG_TOKENS: tuple[str, ...] = (
     "SFTConfig",
     "TrainingArguments",
 )
+
+# `--check-marker-registry`: every marker kind the /issue SKILL.md or an
+# agent spec under .claude/agents/*.md instructs POSTING must be declared in
+# workflow.yaml § markers. Two pattern families
+# count as a posting site (read-side mentions like "the latest `epm:foo v1`
+# marker" deliberately do NOT match — only the posting contract is checked):
+#
+# 1. CLI invocations: `task.py post-marker <N> epm:<kind>` (any issue-arg
+#    form: `<N>`, `"$N"`, a literal number, ...).
+# 2. Posting prose: a post-verb (post/posts/posted/auto-post/re-post)
+#    followed within the same line by a backticked `epm:<kind> ...` token
+#    (optionally in the `<!-- epm:<kind> v1 -->` comment form).
+#
+# Closes the drift class where a skill step posts a kind the registry never
+# declared, so the auto-generated markers.md table and the marker-taxonomy
+# docs silently diverge from what actually lands in events.jsonl (task #555
+# surfaced 6 unregistered kinds in one sweep, 2026-06-10). Prose-only /
+# family-prefix mentions that a future edit accidentally phrases as a post
+# can be waived via MARKER_REGISTRY_ALLOWLIST (document the reason inline).
+MARKER_POST_CLI_RE = re.compile(r"\bpost-marker\s+\S+\s+(epm:[a-z][a-z0-9-]*)")
+MARKER_POST_PROSE_RE = re.compile(
+    r"\b(?:post|posts|posted|auto-post|auto-posts|re-post|re-posts)\b"
+    r"[^`\n]{0,60}`(?:<!--\s*)?(epm:[a-z][a-z0-9-]*)",
+    re.IGNORECASE,
+)
+# Kinds exempt from registration: prose-only or family-prefix mentions that
+# match the posting patterns above without being a real posted kind. Empty
+# today — `epm:audit` (SKILL.md placeholder guard) uses the verb "generating"
+# so it never matches; add entries here only with a trailing comment naming
+# the file:line and why it is not a posted kind.
+MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset()
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -626,6 +683,12 @@ def check_script_references(
     only fires when an agent actually reaches that step. Catching the
     dangling reference at lint time is far cheaper than at run time.
 
+    Lines carrying the :data:`HISTORICAL_REF_OPT_OUT` comment
+    (``<!-- lint: historical-ref -->``) are skipped entirely: they mark
+    narrative incident citations that name branch-only or since-deleted
+    scripts for historical context, not executable steps. The opt-out is
+    per-line and explicit — a dead reference anywhere else still FAILs.
+
     ``roots`` and ``scripts_dir`` are override hooks for unit tests:
     production callers pass both as None and the function walks the
     canonical agent + skill trees (via :func:`_resolve_ask_target_files`,
@@ -637,13 +700,17 @@ def check_script_references(
     scripts_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
     for path in _resolve_ask_target_files(roots):
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+            if HISTORICAL_REF_OPT_OUT in line:
+                continue
             for match in SCRIPT_REF_RE.finditer(line):
                 script_name = match.group(1)
                 if not (scripts_root / script_name).exists():
                     errors.append(
                         f"{path}:{lineno}: references 'scripts/{script_name}' "
                         f"which does not exist under {scripts_root}/. Repoint "
-                        f"to the current helper, or remove the dead reference."
+                        f"to the current helper, remove the dead reference, "
+                        f"or — for a narrative incident citation only — "
+                        f"append '{HISTORICAL_REF_OPT_OUT}' to the line."
                     )
     return errors
 
@@ -753,6 +820,91 @@ def check_wandb_required(
                 f"'Upload Policy'; do not silence them without a "
                 f"written justification. See task #496 post-mortem."
             )
+    return errors
+
+
+def check_marker_registry(
+    workflow: WorkflowYaml,
+    *,
+    skill_md: Path | None = None,
+    skills_dir: Path | None = None,
+    agents_dir: Path | None = None,
+) -> list[str]:
+    """Cross-reference posted ``epm:<kind>`` markers in EVERY skill's
+    SKILL.md under ``.claude/skills/**/`` AND every agent spec under
+    ``.claude/agents/*.md`` against ``workflow.yaml § markers`` and FAIL
+    on any posting site whose kind is undeclared.
+
+    A "posting site" is a line matching either :data:`MARKER_POST_CLI_RE`
+    (a ``task.py post-marker <N> epm:<kind>`` invocation) or
+    :data:`MARKER_POST_PROSE_RE` (a post-verb followed by a backticked
+    ``epm:<kind>`` token on the same line). Read-side mentions ("the latest
+    ``epm:foo v1`` marker", "an ``epm:bar`` event exists") deliberately do
+    NOT match — the check pins the posting contract, not every reference.
+
+    Kinds in :data:`MARKER_REGISTRY_ALLOWLIST` are waived (prose-only /
+    family-prefix mentions that happen to match the patterns).
+
+    Rationale: task #555's sweep (2026-06-10) found 6 marker kinds the
+    SKILL.md instructed posting (or read back) that were absent from the
+    registry — the auto-generated ``markers.md`` table and the marker
+    taxonomy had silently drifted from what lands in ``events.jsonl``.
+    Nothing linted the two surfaces against each other; this check does.
+    Agent specs were added to the scope on the same task's follow-up:
+    agents post kinds too (e.g. ``analyzer.md`` posts ``epm:analysis``),
+    and a SKILL.md-only walk left half the posting surface unlinted.
+    Non-issue skills were added on the chain's final fix (same task,
+    2026-06-10): ``promote-clean-result/SKILL.md`` carried a real
+    ``epm:consolidated-into`` posting site that an issue-SKILL.md-only
+    walk never saw. Both production globs are rooted directly under
+    ``_REPO_ROOT`` (``.claude/skills`` recursive, ``.claude/agents``
+    flat), and sibling worktrees live under ``.claude/worktrees/`` —
+    outside both roots — so they are inherently out of scope and the
+    worktree a workflow-improver runs from scans its own copies (same
+    property ``_other_worktree_prefix`` documents for the recursive
+    walks).
+
+    ``skill_md``, ``skills_dir``, and ``agents_dir`` are override hooks
+    for unit tests; production callers pass all three as None and the
+    function reads the canonical ``.claude/skills/**/SKILL.md`` +
+    ``.claude/agents/*.md`` under :data:`_REPO_ROOT`. Passing ANY
+    override narrows the scan to only the overridden surface(s) so
+    fixture tests stay isolated from the committed tree.
+    """
+    targets: list[Path] = []
+    if skill_md is None and skills_dir is None and agents_dir is None:
+        canonical_skills = _REPO_ROOT / ".claude" / "skills"
+        if canonical_skills.is_dir():
+            targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
+        canonical_agents = _REPO_ROOT / ".claude" / "agents"
+        if canonical_agents.is_dir():
+            targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
+    else:
+        if skill_md is not None:
+            targets.append(skill_md)
+        if skills_dir is not None and skills_dir.is_dir():
+            targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+        if agents_dir is not None and agents_dir.is_dir():
+            targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
+    registered = {m.kind for m in workflow.markers}
+    errors: list[str] = []
+    for target in targets:
+        if not target.exists():
+            continue
+        for lineno, line in enumerate(target.read_text().splitlines(), start=1):
+            kinds = set(MARKER_POST_CLI_RE.findall(line))
+            kinds.update(MARKER_POST_PROSE_RE.findall(line))
+            for kind in sorted(kinds):
+                if kind in registered or kind in MARKER_REGISTRY_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"{target}:{lineno}: posts marker kind '{kind}' which is not "
+                    f"declared in workflow.yaml § markers. Register the kind "
+                    f"(then regenerate markers.md via `uv run python "
+                    f"scripts/workflow_lint.py --emit-tables`), or — for a "
+                    f"prose-only mention that is not a real posted kind — add it "
+                    f"to MARKER_REGISTRY_ALLOWLIST with a reason."
+                )
     return errors
 
 
@@ -928,6 +1080,17 @@ def main(argv: list[str] | None = None) -> int:
         "live training telemetry and the missing project surfaced only "
         "at upload-verification.",
     )
+    parser.add_argument(
+        "--check-marker-registry",
+        action="store_true",
+        help="Verify every marker kind that .claude/skills/issue/SKILL.md "
+        "or an agent spec under .claude/agents/*.md instructs posting "
+        "(task.py post-marker invocations + post-verb prose with a "
+        "backticked epm:<kind>) is declared in workflow.yaml § markers. "
+        "Closes the #555 drift class (6 unregistered posted kinds, "
+        "2026-06-10; agent-spec scope added in the follow-up). Bundled "
+        "into --check-references.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -952,6 +1115,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
+        or args.check_marker_registry
     )
 
     errors: list[str] = []
@@ -963,6 +1127,9 @@ def main(argv: list[str] | None = None) -> int:
         # Dangling script references are a workflow-doc integrity issue, same
         # class as unresolved (see workflow.yaml § X) references — bundle here.
         errors.extend(check_script_references())
+        # A posted-but-unregistered marker kind is the same drift class
+        # (doc surface vs canonical registry) — bundle here too.
+        errors.extend(check_marker_registry(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
@@ -984,6 +1151,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
+    if args.check_marker_registry and not args.check_references:
+        errors.extend(check_marker_registry(workflow))
 
     if errors:
         for err in errors:

@@ -161,6 +161,59 @@ def _warn_if_cvd_disagrees(gpu_id: int) -> None:
         )
 
 
+def _wandb_run_active() -> bool:
+    """True when a live WandB run already exists in this process.
+
+    Used by :func:`train_lora` to decide run-lifecycle OWNERSHIP: a run that
+    exists before the call is caller-owned (e.g. ``orchestrate/runner.py``'s
+    ``init_wandb``) and must be left open; a run that first appears during the
+    call (HF's ``WandbCallback`` under ``report_to="wandb"``, or the
+    best-effort upload run) was created by this call and must be finished
+    before returning.
+
+    Reads ``sys.modules`` instead of importing wandb: if wandb has never been
+    imported in this process, no run can exist, and we avoid paying the import
+    (or crashing) when wandb is not installed.
+    """
+    wandb_mod = sys.modules.get("wandb")
+    return wandb_mod is not None and getattr(wandb_mod, "run", None) is not None
+
+
+def _finish_wandb_run_if_owned(run_preexisting: bool, *, exit_code: int = 0) -> None:
+    """Finish the active WandB run iff it was created during this train_lora call.
+
+    The #527 regression (17/18 sweep cells lost telemetry): in-process sweep
+    dispatchers call ``train_lora()`` once per cell with ``report_to="wandb"``
+    and a per-cell ``run_name``, but HF's ``WandbCallback`` only calls
+    ``wandb.init`` when ``wandb.run is None``. The first cell's run was never
+    finished, so cells 2..N logged into the STALE first run with global_steps
+    rewound to 0 — and WandB silently drops out-of-order step writes, so their
+    telemetry vanished. Finishing the run train_lora created restores per-cell
+    ``wandb.init`` for the next cell (same per-cell finish pattern as
+    ``scripts/issue_480/dispatch_marker_480.py``, now applied at the shared
+    call site so every dispatcher inherits it).
+
+    A run that existed BEFORE the call is caller-owned and never touched.
+    Teardown is best-effort: a ``wandb.finish()`` failure must never mask the
+    training result (or the original training exception).
+
+    Args:
+        run_preexisting: the :func:`_wandb_run_active` reading taken at
+            train_lora entry.
+        exit_code: forwarded to ``wandb.finish`` (0 = clean, nonzero marks the
+            run crashed when training raised).
+    """
+    if run_preexisting:
+        return
+    wandb_mod = sys.modules.get("wandb")
+    if wandb_mod is None or getattr(wandb_mod, "run", None) is None:
+        return
+    try:
+        wandb_mod.finish(exit_code=exit_code)
+    except Exception as e:
+        logger.warning("wandb.finish() failed (%s) — continuing", e)
+
+
 def _validate_backend(backend: str) -> None:
     """Validate TrainLoraConfig.backend.
 
@@ -571,6 +624,25 @@ class TrainLoraConfig:
     # (cf. CLAUDE.md #260 truncation rule). Set explicitly to override the
     # default budget.
     marker_band_probe_max_length: int | None = None
+    # Issue #480 band-stopped-anchor-rerun: log-only mode for the band
+    # callback. When True the callback keeps ALL trajectory logging (WandB +
+    # the local trajectory JSON below) but NEVER sets should_training_stop —
+    # the run trains to its fixed step cap and the anchor is picked post-hoc
+    # from the checkpoint ladder. Default False → live band-stop behavior is
+    # byte-identical for every existing caller.
+    marker_band_log_only: bool = False
+    # Optional local trajectory JSON path for the band callback. When set,
+    # the per-probe four-float records (log P, z_marker, z_eos, logZ;
+    # trained AND base) are appended and the JSON is rewritten after EVERY
+    # probe (checkpoint-per-phase discipline — a crash never loses the
+    # trajectory). Default None → no local file, WandB-only (byte-identical
+    # for existing callers).
+    marker_band_trajectory_path: str | None = None
+    # Plumbed to TrainingArguments.save_only_model (skip optimizer/scheduler
+    # state in step checkpoints — ~160 MB adapter-only checkpoints instead
+    # of ~1 GB). Only forwarded when True so older transformers without the
+    # kwarg are unaffected on default-config paths.
+    save_only_model: bool = False
     # Issue #478 / #490: opt-in LoRA target-module override. When ``None``
     # (default) train_lora uses the historical 7-module list
     # (q/k/v/o/gate/up/down) so existing callers are byte-identical. Issue
@@ -861,17 +933,22 @@ def _maybe_attach_marker_band_stop(
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.
         eos_token_id=tokenizer.eos_token_id,
+        log_only=cfg.marker_band_log_only,
+        trajectory_out_path=cfg.marker_band_trajectory_path,
     )
     trainer.add_callback(callback)
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
-        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d",
+        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
+        "trajectory_out_path=%s",
         n_rows,
         marker_ids,
         cfg.marker_band_low_nats,
         cfg.marker_band_high_nats,
         cfg.marker_band_eval_every_steps,
         cfg.marker_band_min_steps,
+        cfg.marker_band_log_only,
+        cfg.marker_band_trajectory_path,
     )
 
 
@@ -949,6 +1026,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         cfg = TrainLoraConfig(**merged)
 
     _validate_backend(cfg.backend)
+
+    # Per-call WandB run lifecycle (#527 regression): note whether a run
+    # already exists BEFORE anything in this call can create one. If the run
+    # first appears during this call, we own it and finish it on the way out
+    # (see _finish_wandb_run_if_owned) so the next in-process sweep cell gets
+    # its own wandb.init instead of silently logging into a stale run.
+    wandb_run_preexisting = _wandb_run_active()
 
     logger.debug(
         "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
@@ -1073,6 +1157,8 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
         sft_kwargs["save_total_limit"] = cfg.save_total_limit
+    if cfg.save_only_model:
+        sft_kwargs["save_only_model"] = True
 
     sft_config = SFTConfig(**sft_kwargs)
 
@@ -1105,42 +1191,56 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)
     _maybe_attach_marker_band_stop(trainer, tokenizer, cfg, str(_data_path))
 
-    result = trainer.train()
-    loss = result.training_loss
-
-    if hasattr(trainer, "_epm_eos_collator"):
-        trainer._epm_eos_collator.final_rollup_log()
-
-    trainer.save_model(output_dir)
-    tokenizer.save_pretrained(output_dir)
-
-    # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
-    # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
-    # separate manual sweep. Best-effort — never abort training on failure.
+    train_completed = False
     try:
-        from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
+        result = trainer.train()
+        loss = result.training_loss
 
-        _maybe_upload_checkpoint_to_wandb(output_dir)
-    except Exception as e:
-        logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
+        if hasattr(trainer, "_epm_eos_collator"):
+            trainer._epm_eos_collator.final_rollup_log()
 
-    # Auto-upload adapter to HF Hub
-    if cfg.hf_upload:
+        trainer.save_model(output_dir)
+        tokenizer.save_pretrained(output_dir)
+
+        # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
+        # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
+        # separate manual sweep. Best-effort — never abort training on failure.
         try:
-            from explore_persona_space.orchestrate.hub import upload_model
+            from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
 
-            path_in_repo = cfg.hf_path_in_repo or f"adapters/{cfg.run_name}"
-            hub_path = upload_model(
-                output_dir,
-                repo_id=cfg.hf_repo,
-                path_in_repo=path_in_repo,
-            )
-            if hub_path:
-                logger.info("Adapter uploaded to HF Hub: %s", hub_path)
-            else:
-                logger.warning("Adapter upload failed — local copy preserved at %s", output_dir)
+            _maybe_upload_checkpoint_to_wandb(output_dir)
         except Exception as e:
-            logger.warning("Adapter upload failed (%s) — local copy preserved at %s", e, output_dir)
+            logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
+
+        # Auto-upload adapter to HF Hub
+        if cfg.hf_upload:
+            try:
+                from explore_persona_space.orchestrate.hub import upload_model
+
+                path_in_repo = cfg.hf_path_in_repo or f"adapters/{cfg.run_name}"
+                hub_path = upload_model(
+                    output_dir,
+                    repo_id=cfg.hf_repo,
+                    path_in_repo=path_in_repo,
+                )
+                if hub_path:
+                    logger.info("Adapter uploaded to HF Hub: %s", hub_path)
+                else:
+                    logger.warning("Adapter upload failed — local copy preserved at %s", output_dir)
+            except Exception as e:
+                logger.warning(
+                    "Adapter upload failed (%s) — local copy preserved at %s", e, output_dir
+                )
+        train_completed = True
+    finally:
+        # Per-call WandB run lifecycle (#527): finish the run THIS call
+        # created (trainer-initiated under report_to="wandb", or the
+        # best-effort upload run) so the next in-process train_lora call
+        # re-inits with its own run_name instead of logging into a stale,
+        # step-rewound run that WandB silently drops. Runs the exception
+        # path too — a crashed cell must not leak its run into the next
+        # cell. Caller-owned (pre-existing) runs are never touched.
+        _finish_wandb_run_if_owned(wandb_run_preexisting, exit_code=0 if train_completed else 1)
 
     del trainer, model, tokenizer
     gc.collect()

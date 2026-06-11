@@ -93,6 +93,15 @@ source; both sources land at the same place on the dial. Lower LR widens the ban
 step-space (more forgiving); it does not remove per-source variation — so close the
 loop. It is ONE training run with checkpoints, not N runs.
 
+**Integer-epoch grids are too coarse for resolution-band designs (#529/#533/#546).**
+The role-vs-system line's {1, 2, 3, 5}-epoch grid never landed all three encoding
+arms in its [−10, −5] nat wrong-persona band at any rank/LR tried (all-floor at
+lr=1e-5, then 2/24 and 1/24 cells at lr=5e-6 with r=32 and r=16), while a
+step-indexed re-run found a 30-optimizer-step all-arm anchor (#533/#547). Halving
+rank (r=32→16, α/r fixed) only delays the install trajectory ~1 epoch (#546); it
+does not open the window. Grid in optimizer steps / band-stop checkpoints, never
+whole epochs. Detail + index: `docs/marker_training_recipe.md`.
+
 ## Reuse: the band-stop is wired into `train_lora`
 
 All current marker experiments call the shared `train_lora()` in
@@ -104,6 +113,26 @@ source log-prob trajectory to WandB and early-stops when the source enters
 `train_lora` calls are unaffected. So new marker runs inherit the deterministic
 recipe with **no per-script wiring** — do NOT hand-roll a Trainer or re-implement the
 stop. Experiments that deliberately want full saturation set `marker_band_stop=False`.
+
+## Recipe vs parent-parity conflicts (#480)
+
+This recipe is a MEASUREMENT-VALIDITY requirement, not a tunable preference.
+When a plan trains a FRESH marker adapter under a NON-marker parent (a
+sycophancy / trait / fact parent trained with whole-completion loss), this
+recipe's stopping levers (lr, epochs / steps, checkpoint selection / band-stop)
+OVERRIDE hyperparameter parity with that parent. "Breaks parity with #<M>" is
+never a valid reason to keep a non-marker parent's lr or epoch count on a
+marker payload — marker-only loss has no countervailing loss term, so the
+parent's recipe saturates the marker (#480, 2026-06-03/10: lr=5e-6 was
+rejected in plan §11 as "breaks #411 parity" and lr=1e-5 / 3 epochs inherited;
+all 6 adapters saturated, 14/23 software-engineer bystander cells pinned at a
+fake log-prob floor, and the fix was a full band-stopped retrain). Name the
+parity break in the plan's assumptions as a deliberate measurement-validity
+deviation; cross-experiment comparability lives on the DV / eval side (same
+panel, same probes, same join), not the training-stop side. Enforcement:
+planner.md §4 + §11, critic.md Methodology lens item 11, and the
+consistency-checker's MATCH-with-note carve-out (the mandated stopping-recipe
+change is not a single-variable violation when the plan names it).
 
 ## Contrastive negatives
 

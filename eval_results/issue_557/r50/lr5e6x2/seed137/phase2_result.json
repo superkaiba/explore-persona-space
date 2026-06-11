@@ -1,0 +1,42 @@
+{
+  "issue": 543,
+  "git_commit": "35bd560de8f14a1c6d96f2c2c969ba0ec32c6373",
+  "timestamp_utc": "2026-06-11T00:55:14.952819+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "phase": "phase2",
+  "arm": "r50",
+  "seed": 137,
+  "variant": "lr5e6x2",
+  "phase2_lr_override": 5e-06,
+  "phase2_epochs_override": 2,
+  "train_loss": 1.1958136920928955,
+  "phase1_adapter_path": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/3683ee29b8a415c325d1d83687641141c6c91819/adapters/issue543/r50_seed137_phase1",
+  "trajectory_rows_per_probe": {
+    "phase2_trajectory_trigger.jsonl": 150,
+    "phase2_trajectory_no_trigger.jsonl": 150,
+    "phase2_trajectory_doctor.jsonl": 150,
+    "phase2_trajectory_reference.jsonl": 150
+  },
+  "final_adapter_path": "/tmp/issue_557_results/r50_lr5e6x2_seed137_phase2/adapter",
+  "adapter_hf_subfolder": "adapters/issue557/r50_seed137_phase2_lr5e6x2",
+  "phase2_handoff": "continue_adapter",
+  "wall_minutes": 21.9,
+  "config": {
+    "lr": 5e-06,
+    "lr_scheduler_type": "cosine",
+    "epochs": 2,
+    "max_length": 2048,
+    "dataset": "data/issue376_em/v1/good_medical_advice_6k.jsonl",
+    "trajectory_every": 5
+  }
+}

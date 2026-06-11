@@ -1,0 +1,62 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "codepath_verify",
+  "git_commit": "df07ffdcebc5b30433bd20dcf6099ac061856709",
+  "ts": "2026-06-09T10:48:25.431725Z",
+  "manual_concat_used": true,
+  "probe_q": "What's the time complexity of quicksort?",
+  "per_trait": [
+    {
+      "trait": "validating",
+      "role_header": "validating_assistant",
+      "role_token_ids": [
+        1891,
+        1095,
+        12083,
+        11202
+      ],
+      "n_total_tokens": 43,
+      "n_completion_tokens": 12,
+      "decoded_tail_50": "g_assistant\nIt's O(n log n) on average.<|im_end|>\n"
+    },
+    {
+      "trait": "conciseness",
+      "role_header": "concise_assistant",
+      "role_token_ids": [
+        40446,
+        1064,
+        12083,
+        11202
+      ],
+      "n_total_tokens": 43,
+      "n_completion_tokens": 12,
+      "decoded_tail_50": "e_assistant\nIt's O(n log n) on average.<|im_end|>\n"
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "role_header": "clarifying_assistant",
+      "role_token_ids": [
+        12821,
+        7766,
+        12083,
+        11202
+      ],
+      "n_total_tokens": 43,
+      "n_completion_tokens": 12,
+      "decoded_tail_50": "g_assistant\nIt's O(n log n) on average.<|im_end|>\n"
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "role_header": "calibrated_assistant",
+      "role_token_ids": [
+        5416,
+        60566,
+        12083,
+        11202
+      ],
+      "n_total_tokens": 43,
+      "n_completion_tokens": 12,
+      "decoded_tail_50": "d_assistant\nIt's O(n log n) on average.<|im_end|>\n"
+    }
+  ]
+}

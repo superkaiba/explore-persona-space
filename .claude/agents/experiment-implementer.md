@@ -367,6 +367,25 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
+### Pod-side preflight gates (behind-origin/main false positive)
+
+A driver that gates launch on `uv run python -m
+explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
+MUST tolerate the documented feature-branch false positive: preflight's git
+check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
+reports the ERROR `Local is N commit(s) behind origin/main` and exits
+non-zero even when the pod sits exactly at the reviewed branch tip. Run
+`preflight --json` and fail only when `errors` contains anything OTHER
+than that line (preflight has no skip-git-check flag today — parse the
+JSON, don't invent a flag). Never let that single error be the sole
+launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
+`preflight || fail_loud` under `set -euo pipefail`; it survived launch
+only because the experimenter happened to repoint the pod-local
+`origin/main` ref seconds before the check ran — every NEW driver that
+re-runs preflight re-introduces the fatal check unless it parses the
+error list. (The experimenter's own preflight invocation carries the same
+tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+
 ### After implementation (mandatory checklist)
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
@@ -447,6 +466,28 @@ silently dropped the end-of-run sentinel for missing required keys, and
    below formalizes the report-time labeling that lets code-reviewer
    distinguish a documented GPU-bound phase from a genuinely missing
    smoke).
+
+   **Plan-declared runtime guards / monitors must show smoke evidence.**
+   Every runtime guard, monitor, or trajectory logger the approved plan
+   declares as load-bearing — a saturation guard, `MarkerBandStopCallback`,
+   per-step log-prob probes, an auto-fired secondary DV, per-source WandB
+   run separation — must show concrete evidence in the relevant `## Smoke
+   run` sub-section that its telemetry actually functions: the probe logged
+   at least one value during the smoke, the guard branch was exercised or
+   its precondition assert ran, per-source WandB run names are distinct
+   (paste them). "The callback is attached" is NOT evidence — a guard whose
+   telemetry never fires is a paper mitigation, and the failure it guards
+   is then caught only at eval time after the pod cycle (incident #480:
+   the plan-declared WandB trajectory monitor + KL auto-fire silently
+   never functioned — 5 of 6 source runs reused one WandB run name,
+   per-cell trajectories were never logged, zero saturation markers fired,
+   and all 6 adapters shipped saturated). A guard whose telemetry genuinely
+   cannot be demonstrated at smoke scale (e.g. it only triggers after
+   hundreds of steps) must be called out explicitly in `(d) Needs human
+   eyeball` with the reason AND the closest demonstrable proxy (the
+   precondition assert ran, the logging call was reached). Code-reviewer
+   mirror rule: Step 0.6 FAILs `smoke-run-missing` on missing guard
+   evidence with no documented (d) call-out.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -508,9 +549,57 @@ silently dropped the end-of-run sentinel for missing required keys, and
    compute-deviation at round 6 trigger the SECONDARY rule at the start of
    would-be round 10' relaunch — one round earlier than the user's manual
    round-11 recognition.
-7. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+7. **Raw-completions upload wiring (mandatory when the dispatcher writes
+   per-cell completions to disk).** Any pod-side dispatcher that writes
+   `raw_completions/*.json` or `raw_generations/*.json` (or any equivalent
+   per-cell completion file the eval loop persists locally) under
+   `eval_results/issue_<N>/` MUST call
+   `explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo(
+   experiment_name="issue<N>_<slug>", eval_results_dir=Path("eval_results/
+   issue_<N>"))` from the dispatcher's normal exit path AFTER the eval
+   phase completes and BEFORE the `[phase=done]` log line + final sentinel
+   write. Per CLAUDE.md Upload Policy raw completions MUST land on the HF
+   data repo before pod termination — the helper is fail-loud
+   (`RuntimeError` on any per-file upload failure or HF Hub mismatch), so
+   a clean dispatcher exit IS the upload contract; the upload-verifier at
+   Step 8 is the safety net, not the only line of defense.
+
+   If the dispatcher walks raw-completion files under a non-canonical
+   directory shape that `rglob("raw_completions.json")` does NOT pick up
+   (e.g. the dispatcher writes flat per-cell JSONs under
+   `eval_results/issue_<N>/raw_generations/<trait>_<arm>_<context>.json`
+   rather than `<cell>/raw_completions.json`), EITHER restructure the
+   write path to match the helper's recursive `raw_completions.json`
+   glob, OR add a small loop that explicitly walks the actual write path
+   and calls `hub._upload(...)` per file with `repo_id=
+   DEFAULT_DATASET_REPO`, `repo_type="dataset"`,
+   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`. Either way,
+   the per-cell completion files MUST land on
+   `superkaiba1/explore-persona-space-data/issue<N>_<slug>/raw_completions/...`
+   under their dispatcher's normal exit path — no "the verifier will pick
+   it up" deferrals. Incident: task #528 (2026-06-09) — the i528 pod-side
+   dispatcher wrote 160 raw-completion JSONs to
+   `eval_results/issue_528/raw_generations/` and never called
+   `upload_raw_completions_to_data_repo()`; the upload-verifier caught
+   the gap manually, but a verifier that trusted the sentinel without
+   re-enumerating would have lost all 160 files on pod termination.
+
+   Confirm the wiring landed by grepping the dispatcher for the helper
+   import + call:
+
+   ```bash
+   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions" \
+     scripts/run_experiment_<N>.py scripts/i<N>_*.py 2>/dev/null
+   ```
+
+   At least one match per dispatcher that writes raw completions; zero
+   matches = the contract is missing. Report this in the implementer's
+   `## Smoke run` section under a new `### upload wiring` sub-heading
+   (one line: the grep command + the matched line, or the literal note
+   "no raw completions written by this dispatcher; upload helper N/A").
+8. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-8. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+9. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
@@ -616,7 +705,13 @@ issue #N:
   model or tiny throwaway checkpoint) — not just `--help` or
   import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
   when any phase the pipeline actually executes is missing a sub-section
-  (most common: training present, eval absent).
+  (most common: training present, eval absent). When the approved plan
+  declares a load-bearing runtime guard / monitor / trajectory logger,
+  the relevant sub-section ALSO shows its telemetry functioning (logged
+  value, exercised guard branch or precondition assert, distinct
+  per-source WandB run names) — or the `(d)` call-out explains why it
+  cannot be shown at smoke scale (see checklist item 3 § Plan-declared
+  runtime guards).
 - **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
   existing serial code path as batched / multi-GPU / vectorized — e.g.
   batching an activation-extraction loop, replacing a per-example forward
@@ -713,8 +808,8 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   module unrelated to this experiment, reorganizing scripts — those go to the
   `implementer` agent via a separate `type:infra` issue.
 - **Result analysis.** That is the `analyzer` agent.
-- **Code review yourself.** Fresh eyes matter — you post `epm:experiment-
-  implementation` and the `/issue` skill spawns `code-reviewer`.
+- **Code review yourself.** Fresh eyes matter — you post
+  `epm:experiment-implementation` and the `/issue` skill spawns `code-reviewer`.
 - **Edit `CLAUDE.md`, agent definitions, or skills** unless the approved plan
   explicitly requires it.
 - **`AskUserQuestion` <!-- example: anti-pattern --> or any text-menu / two-path / "want your call?"

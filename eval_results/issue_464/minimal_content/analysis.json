@@ -1,0 +1,580 @@
+{
+  "schema_version": "i464_minimal_content_analysis_v1",
+  "git_commit": "6308e22199112760715db2744341f58cc0b76067",
+  "generated_at": "2026-06-10T07:41:41.811441+00:00",
+  "seeds": [
+    42,
+    137,
+    1337
+  ],
+  "L_per_arm_per_seed": {
+    "system_minimal": {
+      "42": -14.951288040876387,
+      "137": -16.459078686833383,
+      "1337": -16.631353962421414
+    },
+    "role_bare": {
+      "42": -20.662991119623182,
+      "137": -18.56126896381378,
+      "1337": -20.202525675296783
+    }
+  },
+  "complete_seeds": [
+    42,
+    137,
+    1337
+  ],
+  "h1_elicitation": {
+    "threshold_nats": -1.0,
+    "per_cell_logp": {
+      "system_minimal_seed42/system_minimal_pirate/marker_pirate": -2.3841856489070778e-09,
+      "system_minimal_seed42/system_minimal_villain/marker_villain": -0.00015804142798998556,
+      "role_bare_seed42/role_bare_pirate/marker_pirate": -5.895786890306454e-06,
+      "role_bare_seed42/role_bare_villain/marker_villain": 0.0,
+      "system_minimal_seed137/system_minimal_pirate/marker_pirate": 0.0,
+      "system_minimal_seed137/system_minimal_villain/marker_villain": -0.0001085646318409772,
+      "role_bare_seed137/role_bare_pirate/marker_pirate": -6.4536325517394745e-06,
+      "role_bare_seed137/role_bare_villain/marker_villain": 0.0,
+      "system_minimal_seed1337/system_minimal_pirate/marker_pirate": 0.0,
+      "system_minimal_seed1337/system_minimal_villain/marker_villain": -0.0004993761783511274,
+      "role_bare_seed1337/role_bare_pirate/marker_pirate": -9.632029123451957e-07,
+      "role_bare_seed1337/role_bare_villain/marker_villain": 0.0
+    },
+    "per_cell_pass": {
+      "system_minimal_seed42/system_minimal_pirate/marker_pirate": true,
+      "system_minimal_seed42/system_minimal_villain/marker_villain": true,
+      "role_bare_seed42/role_bare_pirate/marker_pirate": true,
+      "role_bare_seed42/role_bare_villain/marker_villain": true,
+      "system_minimal_seed137/system_minimal_pirate/marker_pirate": true,
+      "system_minimal_seed137/system_minimal_villain/marker_villain": true,
+      "role_bare_seed137/role_bare_pirate/marker_pirate": true,
+      "role_bare_seed137/role_bare_villain/marker_villain": true,
+      "system_minimal_seed1337/system_minimal_pirate/marker_pirate": true,
+      "system_minimal_seed1337/system_minimal_villain/marker_villain": true,
+      "role_bare_seed1337/role_bare_pirate/marker_pirate": true,
+      "role_bare_seed1337/role_bare_villain/marker_villain": true
+    },
+    "overall_pass": true,
+    "complete": true,
+    "n_cells": 12
+  },
+  "headline": {
+    "status": "ok",
+    "n_complete_seeds": 3,
+    "complete_seeds": [
+      42,
+      137,
+      1337
+    ],
+    "d_seed_minimal": {
+      "d_per_seed": [
+        5.711703078746796,
+        2.102190276980398,
+        3.571171712875369
+      ],
+      "mean": 3.7950216895341877,
+      "ci_lo_95": 2.102190276980398,
+      "ci_hi_95": 5.711703078746797,
+      "all_seeds_positive": true,
+      "ci_excludes_zero": true,
+      "mean_threshold": 1.0,
+      "threshold_met": true,
+      "pass": true,
+      "fail_reasons": []
+    },
+    "h1_required": true,
+    "h1_overall_pass": true,
+    "n_bootstrap": 10000,
+    "pass": true
+  },
+  "headline_status": "ok",
+  "dynamic_range_gate": {
+    "threshold": 0.5,
+    "per_arm": {
+      "system_minimal": {
+        "sd": 5.176699614829302,
+        "n_observations": 12,
+        "above_threshold": true
+      },
+      "role_bare": {
+        "sd": 7.19773695959678,
+        "n_observations": 12,
+        "above_threshold": true
+      }
+    },
+    "ok": true
+  },
+  "raw_per_cell": {
+    "system_minimal": {
+      "42": [
+        -12.21516417503357,
+        -11.299987626075744,
+        -19.38,
+        -16.91000036239624
+      ],
+      "137": [
+        -11.875116729736328,
+        -10.678698017597199,
+        -22.925,
+        -20.3575
+      ],
+      "1337": [
+        -11.425524473190308,
+        -9.50239137649536,
+        -24.3875,
+        -21.21
+      ]
+    },
+    "role_bare": {
+      "42": [
+        -26.975,
+        -30.90375,
+        -10.293208374977112,
+        -14.480006103515626
+      ],
+      "137": [
+        -23.63,
+        -25.375,
+        -11.22756944656372,
+        -14.012506408691406
+      ],
+      "1337": [
+        -26.485,
+        -26.8175,
+        -11.697601766586304,
+        -15.81000093460083
+      ]
+    }
+  },
+  "parent_comparison": {
+    "source": "eval_results/issue_464/analysis.json",
+    "L_per_arm_per_seed_combined": {
+      "system_plain": {
+        "42": -12.83707022190094,
+        "137": -13.224620249271394,
+        "1337": -13.431581157818435
+      },
+      "system_padded": {
+        "42": -14.747721175551415,
+        "137": -14.097452943474053,
+        "1337": -14.479925887882711
+      },
+      "role": {
+        "42": -17.809689874649045,
+        "137": -19.737500295639038,
+        "1337": -20.689687876701353
+      },
+      "system_minimal": {
+        "42": -14.951288040876387,
+        "137": -16.459078686833383,
+        "1337": -16.631353962421414
+      },
+      "role_bare": {
+        "42": -20.662991119623182,
+        "137": -18.56126896381378,
+        "1337": -20.202525675296783
+      }
+    },
+    "cross_run_descriptive_deltas": {
+      "system_plain_minus_system_minimal": {
+        "d_per_seed": [
+          2.1142178189754475,
+          3.2344584375619885,
+          3.199772804602979
+        ],
+        "mean": 2.8494830203801382,
+        "ci_lo_95": 2.1142178189754475,
+        "ci_hi_95": 3.2344584375619885,
+        "paired_seeds": [
+          42,
+          137,
+          1337
+        ],
+        "note": "CROSS-RUN descriptive delta (parent LoRAs vs minimal LoRAs, paired by seed). Within-run d_seed_minimal is the headline; this table is context only."
+      },
+      "role_minus_role_bare": {
+        "d_per_seed": [
+          2.853301244974137,
+          -1.1762313318252566,
+          -0.4871622014045691
+        ],
+        "mean": 0.39663590391477044,
+        "ci_lo_95": -1.1762313318252566,
+        "ci_hi_95": 2.853301244974137,
+        "paired_seeds": [
+          42,
+          137,
+          1337
+        ],
+        "note": "CROSS-RUN descriptive delta (parent LoRAs vs minimal LoRAs, paired by seed). Within-run d_seed_minimal is the headline; this table is context only."
+      }
+    }
+  },
+  "logit_capture_summary": {
+    "n_expected": 60,
+    "n_found": 60,
+    "per_cell": {
+      "system_minimal_seed42__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.118947715759276,
+        "delta_z_marker_mean": 42.53232294082642,
+        "delta_eos_margin_mean": 56.44576044082642,
+        "logp_vs_logit_gap": 20.413375225067142
+      },
+      "system_minimal_seed42__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": 4.327874755859376,
+        "delta_z_marker_mean": 24.74125,
+        "delta_eos_margin_mean": 38.6546875,
+        "logp_vs_logit_gap": 20.413375244140624
+      },
+      "system_minimal_seed42__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": 8.954575958251954,
+        "delta_z_marker_mean": 25.570444335937502,
+        "delta_eos_margin_mean": 39.3266943359375,
+        "logp_vs_logit_gap": 16.615868377685548
+      },
+      "system_minimal_seed42__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.788194122314454,
+        "delta_z_marker_mean": 41.404062499999995,
+        "delta_eos_margin_mean": 55.1603125,
+        "logp_vs_logit_gap": 16.61586837768554
+      },
+      "system_minimal_seed42__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345436248779297,
+        "delta_z_marker_mean": 38.24822853088379,
+        "delta_eos_margin_mean": 51.83104103088379,
+        "logp_vs_logit_gap": 17.902792282104496
+      },
+      "system_minimal_seed42__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 4.661485061645507,
+        "delta_z_marker_mean": 22.56427734375,
+        "delta_eos_margin_mean": 36.14708984375,
+        "logp_vs_logit_gap": 17.902792282104492
+      },
+      "system_minimal_seed42__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": 9.679414367675781,
+        "delta_z_marker_mean": 23.3176611328125,
+        "delta_eos_margin_mean": 35.3539111328125,
+        "logp_vs_logit_gap": 13.638246765136719
+      },
+      "system_minimal_seed42__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.913471984863282,
+        "delta_z_marker_mean": 38.55171875,
+        "delta_eos_margin_mean": 50.58796875,
+        "logp_vs_logit_gap": 13.638246765136717
+      },
+      "system_minimal_seed42__default_assistant__marker_pirate": {
+        "delta_logp_mean": 22.033463325500488,
+        "delta_z_marker_mean": 37.115068359375,
+        "delta_eos_margin_mean": 49.223505859374995,
+        "logp_vs_logit_gap": 15.081605033874514
+      },
+      "system_minimal_seed42__default_assistant__marker_villain": {
+        "delta_logp_mean": 8.398316841125489,
+        "delta_z_marker_mean": 23.479921875000002,
+        "delta_eos_margin_mean": 35.588359374999996,
+        "logp_vs_logit_gap": 15.081605033874514
+      },
+      "system_minimal_seed137__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.118947715759276,
+        "delta_z_marker_mean": 44.59232294082642,
+        "delta_eos_margin_mean": 57.959197940826414,
+        "logp_vs_logit_gap": 22.473375225067144
+      },
+      "system_minimal_seed137__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": 0.8153747558593771,
+        "delta_z_marker_mean": 23.28875,
+        "delta_eos_margin_mean": 36.655625,
+        "logp_vs_logit_gap": 22.473375244140623
+      },
+      "system_minimal_seed137__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": 9.252157592773438,
+        "delta_z_marker_mean": 25.8379443359375,
+        "delta_eos_margin_mean": 39.2329443359375,
+        "logp_vs_logit_gap": 16.585786743164064
+      },
+      "system_minimal_seed137__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.78827575683594,
+        "delta_z_marker_mean": 41.3740625,
+        "delta_eos_margin_mean": 54.769062500000004,
+        "logp_vs_logit_gap": 16.58578674316406
+      },
+      "system_minimal_seed137__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345436630249022,
+        "delta_z_marker_mean": 40.43322853088379,
+        "delta_eos_margin_mean": 53.358541030883785,
+        "logp_vs_logit_gap": 20.087791900634766
+      },
+      "system_minimal_seed137__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 1.2139854431152344,
+        "delta_z_marker_mean": 21.30177734375,
+        "delta_eos_margin_mean": 34.22708984375,
+        "logp_vs_logit_gap": 20.087791900634766
+      },
+      "system_minimal_seed137__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": 10.326828498840332,
+        "delta_z_marker_mean": 23.6401611328125,
+        "delta_eos_margin_mean": 35.8145361328125,
+        "logp_vs_logit_gap": 13.31333263397217
+      },
+      "system_minimal_seed137__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.910886116027832,
+        "delta_z_marker_mean": 38.22421875,
+        "delta_eos_margin_mean": 50.39859375,
+        "logp_vs_logit_gap": 13.313332633972166
+      },
+      "system_minimal_seed137__default_assistant__marker_pirate": {
+        "delta_logp_mean": 22.038368759155276,
+        "delta_z_marker_mean": 38.600068359375,
+        "delta_eos_margin_mean": 50.111005859375,
+        "logp_vs_logit_gap": 16.561699600219725
+      },
+      "system_minimal_seed137__default_assistant__marker_villain": {
+        "delta_logp_mean": 5.300722274780274,
+        "delta_z_marker_mean": 21.862421875000003,
+        "delta_eos_margin_mean": 33.373359375,
+        "logp_vs_logit_gap": 16.56169960021973
+      },
+      "system_minimal_seed1337__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.118947715759276,
+        "delta_z_marker_mean": 43.89232294082642,
+        "delta_eos_margin_mean": 57.738572940826415,
+        "logp_vs_logit_gap": 21.77337522506714
+      },
+      "system_minimal_seed1337__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": -0.6596252441406243,
+        "delta_z_marker_mean": 21.11375,
+        "delta_eos_margin_mean": 34.96,
+        "logp_vs_logit_gap": 20.454124755859375
+      },
+      "system_minimal_seed1337__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": 9.729151763916017,
+        "delta_z_marker_mean": 26.8054443359375,
+        "delta_eos_margin_mean": 41.1716943359375,
+        "logp_vs_logit_gap": 17.076292572021487
+      },
+      "system_minimal_seed1337__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.787769927978516,
+        "delta_z_marker_mean": 41.864062499999996,
+        "delta_eos_margin_mean": 56.2303125,
+        "logp_vs_logit_gap": 17.07629257202148
+      },
+      "system_minimal_seed1337__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345436630249022,
+        "delta_z_marker_mean": 39.99822853088379,
+        "delta_eos_margin_mean": 54.06385353088379,
+        "logp_vs_logit_gap": 19.65279190063477
+      },
+      "system_minimal_seed1337__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 0.3889854431152351,
+        "delta_z_marker_mean": 20.041777343750002,
+        "delta_eos_margin_mean": 34.10740234375,
+        "logp_vs_logit_gap": 19.652791900634767
+      },
+      "system_minimal_seed1337__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": 11.530834846496582,
+        "delta_z_marker_mean": 25.3726611328125,
+        "delta_eos_margin_mean": 38.1570361328125,
+        "logp_vs_logit_gap": 13.841826286315918
+      },
+      "system_minimal_seed1337__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.909892463684084,
+        "delta_z_marker_mean": 38.751718749999995,
+        "delta_eos_margin_mean": 51.53609375,
+        "logp_vs_logit_gap": 13.84182628631591
+      },
+      "system_minimal_seed1337__default_assistant__marker_pirate": {
+        "delta_logp_mean": 22.045592193603518,
+        "delta_z_marker_mean": 38.447568359375,
+        "delta_eos_margin_mean": 51.257880859375,
+        "logp_vs_logit_gap": 16.40197616577148
+      },
+      "system_minimal_seed1337__default_assistant__marker_villain": {
+        "delta_logp_mean": 4.222945709228515,
+        "delta_z_marker_mean": 20.624921875,
+        "delta_eos_margin_mean": 33.435234375,
+        "logp_vs_logit_gap": 16.401976165771483
+      },
+      "role_bare_seed42__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.11838279724121,
+        "delta_z_marker_mean": 37.52482294082642,
+        "delta_eos_margin_mean": 51.777947940826415,
+        "logp_vs_logit_gap": 15.406440143585208
+      },
+      "role_bare_seed42__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": 13.37730983734131,
+        "delta_z_marker_mean": 28.78375,
+        "delta_eos_margin_mean": 43.036874999999995,
+        "logp_vs_logit_gap": 15.406440162658692
+      },
+      "role_bare_seed42__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": -5.81148124694824,
+        "delta_z_marker_mean": 16.269194335937502,
+        "delta_eos_margin_mean": 33.147319335937496,
+        "logp_vs_logit_gap": 10.457713088989262
+      },
+      "role_bare_seed42__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.78838691711426,
+        "delta_z_marker_mean": 46.8690625,
+        "delta_eos_margin_mean": 63.7471875,
+        "logp_vs_logit_gap": 22.08067558288574
+      },
+      "role_bare_seed42__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345431518554687,
+        "delta_z_marker_mean": 39.69822853088379,
+        "delta_eos_margin_mean": 51.65510353088379,
+        "logp_vs_logit_gap": 19.352797012329102
+      },
+      "role_bare_seed42__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 7.001480331420897,
+        "delta_z_marker_mean": 26.354277343750002,
+        "delta_eos_margin_mean": 38.31115234375,
+        "logp_vs_logit_gap": 19.352797012329106
+      },
+      "role_bare_seed42__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": -9.872619323730468,
+        "delta_z_marker_mean": 13.2414111328125,
+        "delta_eos_margin_mean": 30.3335986328125,
+        "logp_vs_logit_gap": 3.3687918090820315
+      },
+      "role_bare_seed42__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.91518829345703,
+        "delta_z_marker_mean": 48.02921875,
+        "delta_eos_margin_mean": 65.12140625,
+        "logp_vs_logit_gap": 23.114030456542967
+      },
+      "role_bare_seed42__default_assistant__marker_pirate": {
+        "delta_logp_mean": 21.858750572204592,
+        "delta_z_marker_mean": 35.285068359374996,
+        "delta_eos_margin_mean": 48.378349609375,
+        "logp_vs_logit_gap": 13.426317787170404
+      },
+      "role_bare_seed42__default_assistant__marker_villain": {
+        "delta_logp_mean": 14.863604087829591,
+        "delta_z_marker_mean": 28.289921874999997,
+        "delta_eos_margin_mean": 41.383203124999994,
+        "logp_vs_logit_gap": 13.426317787170406
+      },
+      "role_bare_seed137__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.11887668609619,
+        "delta_z_marker_mean": 39.09232294082642,
+        "delta_eos_margin_mean": 52.76451044082641,
+        "logp_vs_logit_gap": 16.97344625473023
+      },
+      "role_bare_seed137__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": 12.575303726196289,
+        "delta_z_marker_mean": 29.548750000000002,
+        "delta_eos_margin_mean": 43.2209375,
+        "logp_vs_logit_gap": 16.973446273803713
+      },
+      "role_bare_seed137__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": -2.462731246948241,
+        "delta_z_marker_mean": 18.4029443359375,
+        "delta_eos_margin_mean": 33.8960693359375,
+        "logp_vs_logit_gap": 15.94021308898926
+      },
+      "role_bare_seed137__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.78838691711426,
+        "delta_z_marker_mean": 45.654062499999995,
+        "delta_eos_margin_mean": 61.1471875,
+        "logp_vs_logit_gap": 20.865675582885736
+      },
+      "role_bare_seed137__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345428314208984,
+        "delta_z_marker_mean": 40.84822853088379,
+        "delta_eos_margin_mean": 51.802291030883794,
+        "logp_vs_logit_gap": 20.502800216674803
+      },
+      "role_bare_seed137__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 7.551477127075195,
+        "delta_z_marker_mean": 28.05427734375,
+        "delta_eos_margin_mean": 39.00833984375,
+        "logp_vs_logit_gap": 20.502800216674807
+      },
+      "role_bare_seed137__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": -4.380119323730469,
+        "delta_z_marker_mean": 16.2439111328125,
+        "delta_eos_margin_mean": 32.7170361328125,
+        "logp_vs_logit_gap": 11.86379180908203
+      },
+      "role_bare_seed137__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.91518829345703,
+        "delta_z_marker_mean": 45.539218749999996,
+        "delta_eos_margin_mean": 62.01234375,
+        "logp_vs_logit_gap": 20.624030456542965
+      },
+      "role_bare_seed137__default_assistant__marker_pirate": {
+        "delta_logp_mean": 21.94975742340088,
+        "delta_z_marker_mean": 37.167568359375,
+        "delta_eos_margin_mean": 49.664755859375,
+        "logp_vs_logit_gap": 15.217810935974118
+      },
+      "role_bare_seed137__default_assistant__marker_villain": {
+        "delta_logp_mean": 13.504610939025879,
+        "delta_z_marker_mean": 28.722421875000002,
+        "delta_eos_margin_mean": 41.219609375,
+        "logp_vs_logit_gap": 15.217810935974123
+      },
+      "role_bare_seed1337__system_minimal_pirate__marker_pirate": {
+        "delta_logp_mean": 22.118856697082517,
+        "delta_z_marker_mean": 37.832322940826415,
+        "delta_eos_margin_mean": 52.395135440826415,
+        "logp_vs_logit_gap": 15.713466243743898
+      },
+      "role_bare_seed1337__system_minimal_pirate__marker_villain": {
+        "delta_logp_mean": 11.972783737182617,
+        "delta_z_marker_mean": 27.68625,
+        "delta_eos_margin_mean": 42.2490625,
+        "logp_vs_logit_gap": 15.713466262817384
+      },
+      "role_bare_seed1337__system_minimal_villain__marker_pirate": {
+        "delta_logp_mean": -5.297731246948242,
+        "delta_z_marker_mean": 15.6529443359375,
+        "delta_eos_margin_mean": 31.9932568359375,
+        "logp_vs_logit_gap": 10.355213088989258
+      },
+      "role_bare_seed1337__system_minimal_villain__marker_villain": {
+        "delta_logp_mean": 24.78838691711426,
+        "delta_z_marker_mean": 45.739062499999996,
+        "delta_eos_margin_mean": 62.079375,
+        "logp_vs_logit_gap": 20.950675582885737
+      },
+      "role_bare_seed1337__role_bare_pirate__marker_pirate": {
+        "delta_logp_mean": 20.345435791015625,
+        "delta_z_marker_mean": 39.95822853088379,
+        "delta_eos_margin_mean": 51.95822853088379,
+        "logp_vs_logit_gap": 19.612792739868162
+      },
+      "role_bare_seed1337__role_bare_pirate__marker_villain": {
+        "delta_logp_mean": 5.778984603881835,
+        "delta_z_marker_mean": 25.39177734375,
+        "delta_eos_margin_mean": 37.39177734375,
+        "logp_vs_logit_gap": 19.612792739868166
+      },
+      "role_bare_seed1337__role_bare_villain__marker_pirate": {
+        "delta_logp_mean": -5.801369323730469,
+        "delta_z_marker_mean": 14.6476611328125,
+        "delta_eos_margin_mean": 30.8057861328125,
+        "logp_vs_logit_gap": 8.84629180908203
+      },
+      "role_bare_seed1337__role_bare_villain__marker_villain": {
+        "delta_logp_mean": 24.91518829345703,
+        "delta_z_marker_mean": 45.36421875,
+        "delta_eos_margin_mean": 61.522343750000005,
+        "logp_vs_logit_gap": 20.449030456542967
+      },
+      "role_bare_seed1337__default_assistant__marker_pirate": {
+        "delta_logp_mean": 21.932337646484378,
+        "delta_z_marker_mean": 36.147568359375,
+        "delta_eos_margin_mean": 49.731943359374995,
+        "logp_vs_logit_gap": 14.215230712890623
+      },
+      "role_bare_seed1337__default_assistant__marker_villain": {
+        "delta_logp_mean": 13.237191162109376,
+        "delta_z_marker_mean": 27.452421875,
+        "delta_eos_margin_mean": 41.036796875,
+        "logp_vs_logit_gap": 14.215230712890623
+      }
+    }
+  },
+  "n_missing_per_cell": 0
+}

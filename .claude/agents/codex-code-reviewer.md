@@ -62,6 +62,23 @@ This is the load-bearing constraint for the entire wrapper agent.
   the orchestrator burned 42 minutes watching a dead handle before
   applying the no-show fallback. Same pattern is the failure mode for
   every Codex twin.
+- **Recurred** on task #557 code-review round 2 (2026-06-10): the wrapper
+  ran a STALE pre-hardening copy of this spec — its issue worktree was cut
+  before the compose-only rule landed on main, and worktrees do not
+  inherit later workflow-surface fixes — backgrounded the helper, and
+  exited with the job still running. A worktree-cut session can re-load
+  this retired anti-pattern silently; the orchestrator recovery below is
+  the containment.
+- **Orphan-adoption recovery (orchestrator-side).** If a wrapper returns
+  with a Codex job still running (the stale-spec regression above): find
+  the live helper via `pgrep -af codex_task.py`, get the job id from the
+  plugin's job state JSON, then fetch the result with
+  `node <plugin-cache>/scripts/codex-companion.mjs result <job-id>` run
+  from the SAME cwd the job was registered under — the companion job
+  registry is CWD-KEYED, so from any other cwd the job looks unknown
+  (for dispatches launched at repo root, that cwd is the MAIN checkout).
+  Adopt the watch with the orchestrator's own bg-Bash polling loop over
+  the job state file; do NOT re-dispatch while the orphan still runs.
 - **If Codex literally cannot run** (companion script missing, plugin
   upgrade race), do NOT try to "make it work" — post
   `epm:failure v1` with `failure_class: infra` and exit. The

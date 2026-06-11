@@ -1,0 +1,296 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "analysis",
+  "git_commit": "c5baacb293ede13acf6618923df51f1a222309c7",
+  "ts": "2026-06-10T10:31:57.367720Z",
+  "n_bootstrap": 10000,
+  "alpha": 0.05,
+  "h1_per_trait": {
+    "validating": {
+      "n_paired": 40,
+      "paired_delta_mean": 1.0833333333333335,
+      "t": 19.0300514224964,
+      "df": 39,
+      "p_uncorrected": 2.4329212343809122e-21,
+      "ci_lo": 0.9750000000000002,
+      "ci_hi": 1.2000000000000002,
+      "seeds_used": [
+        42,
+        137,
+        1337
+      ],
+      "base_ci_lo": 3.7833333333333337,
+      "base_ci_hi": 4.0166666666666675,
+      "base_mean": 3.9083333333333328,
+      "base_saturated_ci": true,
+      "headroom": false,
+      "h1_untestable": "saturated_base",
+      "pass_h1": false
+    },
+    "conciseness": {
+      "n_paired": 40,
+      "paired_delta_mean": -0.07222222222222223,
+      "t": -1.620139085729593,
+      "df": 39,
+      "p_uncorrected": 0.1132614719291868,
+      "ci_lo": -0.16388888888888892,
+      "ci_hi": 0.008333333333333337,
+      "seeds_used": [
+        42,
+        137,
+        1337
+      ],
+      "base_ci_lo": 4.775,
+      "base_ci_hi": 5.0,
+      "base_mean": 4.9,
+      "base_saturated_ci": true,
+      "headroom": false,
+      "h1_untestable": "saturated_base",
+      "pass_h1": false
+    },
+    "asks_clarifying_first": {
+      "n_paired": 40,
+      "paired_delta_mean": -0.45833333333333337,
+      "t": -5.447866121980136,
+      "df": 39,
+      "p_uncorrected": 3.0232951355621874e-06,
+      "ci_lo": -0.625,
+      "ci_hi": -0.3,
+      "seeds_used": [
+        42,
+        137,
+        1337
+      ],
+      "base_ci_lo": 4.225,
+      "base_ci_hi": 4.6,
+      "base_mean": 4.425,
+      "base_saturated_ci": true,
+      "headroom": false,
+      "h1_untestable": "saturated_base",
+      "pass_h1": false
+    },
+    "calibrated_uncertainty": {
+      "n_paired": 39,
+      "paired_delta_mean": 0.435897435897436,
+      "t": 3.3172289664766987,
+      "df": 38,
+      "p_uncorrected": 0.002009994330826554,
+      "ci_lo": 0.17378917378917388,
+      "ci_hi": 0.683760683760684,
+      "seeds_used": [
+        42,
+        137,
+        1337
+      ],
+      "base_ci_lo": 4.0256410256410255,
+      "base_ci_hi": 4.384615384615385,
+      "base_mean": 4.205128205128205,
+      "base_saturated_ci": true,
+      "headroom": false,
+      "h1_untestable": "saturated_base",
+      "pass_h1": false
+    }
+  },
+  "h1_passing_traits": [],
+  "base_headroom_summary": {
+    "validating": {
+      "n": 40,
+      "mean": 3.9083333333333328,
+      "ci_lo": 3.7833333333333337,
+      "ci_hi": 4.0166666666666675,
+      "above_3_5_mean": true,
+      "base_saturated_ci": true,
+      "headroom": false
+    },
+    "conciseness": {
+      "n": 40,
+      "mean": 4.9,
+      "ci_lo": 4.775,
+      "ci_hi": 5.0,
+      "above_3_5_mean": true,
+      "base_saturated_ci": true,
+      "headroom": false
+    },
+    "asks_clarifying_first": {
+      "n": 40,
+      "mean": 4.425,
+      "ci_lo": 4.225,
+      "ci_hi": 4.6,
+      "above_3_5_mean": true,
+      "base_saturated_ci": true,
+      "headroom": false
+    },
+    "calibrated_uncertainty": {
+      "n": 39,
+      "mean": 4.205128205128205,
+      "ci_lo": 4.0256410256410255,
+      "ci_hi": 4.384615384615385,
+      "above_3_5_mean": true,
+      "base_saturated_ci": true,
+      "headroom": false
+    }
+  },
+  "h2_paired_leakage": {
+    "status": "NO_H1_PASSING_TRAITS_OR_NO_PAIRED_CELLS"
+  },
+  "h2_per_cell": [
+    {
+      "trait": "validating",
+      "seed": 42,
+      "leakage_role": 3.8145833333333337,
+      "leakage_system": 4.0375,
+      "d_leakage": -0.22291666666666599,
+      "h1_passing": false
+    },
+    {
+      "trait": "validating",
+      "seed": 137,
+      "leakage_role": 3.833333333333333,
+      "leakage_system": 3.929166666666667,
+      "d_leakage": -0.0958333333333341,
+      "h1_passing": false
+    },
+    {
+      "trait": "validating",
+      "seed": 1337,
+      "leakage_role": 3.8041666666666663,
+      "leakage_system": 3.95,
+      "d_leakage": -0.14583333333333393,
+      "h1_passing": false
+    },
+    {
+      "trait": "conciseness",
+      "seed": 42,
+      "leakage_role": 2.4895833333333335,
+      "leakage_system": 2.4458333333333337,
+      "d_leakage": 0.043749999999999734,
+      "h1_passing": false
+    },
+    {
+      "trait": "conciseness",
+      "seed": 137,
+      "leakage_role": 2.472916666666667,
+      "leakage_system": 2.4458333333333333,
+      "d_leakage": 0.02708333333333357,
+      "h1_passing": false
+    },
+    {
+      "trait": "conciseness",
+      "seed": 1337,
+      "leakage_role": 2.510416666666667,
+      "leakage_system": 2.4625,
+      "d_leakage": 0.04791666666666705,
+      "h1_passing": false
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "seed": 42,
+      "leakage_role": 3.9229166666666666,
+      "leakage_system": 3.9583333333333335,
+      "d_leakage": -0.035416666666666874,
+      "h1_passing": false
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "seed": 137,
+      "leakage_role": 3.925,
+      "leakage_system": 3.958333333333333,
+      "d_leakage": -0.033333333333333215,
+      "h1_passing": false
+    },
+    {
+      "trait": "asks_clarifying_first",
+      "seed": 1337,
+      "leakage_role": 3.925,
+      "leakage_system": 3.952083333333333,
+      "d_leakage": -0.027083333333333126,
+      "h1_passing": false
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "seed": 42,
+      "leakage_role": 3.2399150743099785,
+      "leakage_system": 3.128691983122363,
+      "d_leakage": 0.11122309118761553,
+      "h1_passing": false
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "seed": 137,
+      "leakage_role": 3.2435897435897436,
+      "leakage_system": 3.217299578059072,
+      "d_leakage": 0.02629016553067176,
+      "h1_passing": false
+    },
+    {
+      "trait": "calibrated_uncertainty",
+      "seed": 1337,
+      "leakage_role": 3.2927350427350426,
+      "leakage_system": 3.135021097046413,
+      "d_leakage": 0.1577139456886294,
+      "h1_passing": false
+    }
+  ],
+  "h2_all_trait_sensitivity": {
+    "n_seeds": 3,
+    "bootstrap_unit": "per_seed_mean_over_all_traits",
+    "d_mean": -0.012203288688312516,
+    "ci_lo": -0.0258400605364294,
+    "ci_hi": 0.00817848642215735,
+    "per_seed_mean": {
+      "42": -0.0258400605364294,
+      "137": -0.018948291950665497,
+      "1337": 0.00817848642215735
+    }
+  },
+  "dv3_paraphrase_rho": {
+    "asks_clarifying_first": {
+      "role": {
+        "n": 60,
+        "rho": 0.598054038880067,
+        "ge_0_7": false
+      },
+      "system": {
+        "n": 60,
+        "rho": 0.6713978817837513,
+        "ge_0_7": false
+      }
+    },
+    "calibrated_uncertainty": {
+      "role": {
+        "n": 60,
+        "rho": 0.8268209338506699,
+        "ge_0_7": true
+      },
+      "system": {
+        "n": 60,
+        "rho": 0.8302320241726173,
+        "ge_0_7": true
+      }
+    },
+    "conciseness": {
+      "role": {
+        "n": 60,
+        "rho": 0.8821565031426964,
+        "ge_0_7": true
+      },
+      "system": {
+        "n": 60,
+        "rho": 0.8894694828350691,
+        "ge_0_7": true
+      }
+    },
+    "validating": {
+      "role": {
+        "n": 60,
+        "rho": 0.8130846780269319,
+        "ge_0_7": true
+      },
+      "system": {
+        "n": 60,
+        "rho": 0.8391647205647101,
+        "ge_0_7": true
+      }
+    }
+  }
+}

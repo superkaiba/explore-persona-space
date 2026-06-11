@@ -392,3 +392,163 @@ def test_terminal_failed_is_not_retried(monkeypatch):
     assert len(fail_calls) == 1
     assert "phase=failed" in fail_calls[0][0]
     assert rc == 1
+
+
+# ─── ONE auto-retry with backoff on transient failures (refs #579) ───────────
+
+
+def test_transient_spawn_failure_retried_once_then_succeeds(monkeypatch):
+    """A spawn failure (exit 3 — the 'app-server exit 1 / instant 0s
+    failure' class) is re-dispatched ONCE after a backoff sleep; the second
+    attempt's success exits 0 with no failure marker."""
+    spawns = {"n": 0}
+
+    def fake_spawn(companion, prompt, effort, write):
+        spawns["n"] += 1
+        if spawns["n"] == 1:
+            raise RuntimeError("app-server exited 1")
+        return f"task-{spawns['n']}"
+
+    probe_calls = {"n": 0}
+
+    def fake_probe(companion, job_id):
+        probe_calls["n"] += 1
+        if probe_calls["n"] % 2 == 1:
+            return "running", "", None
+        return "done", "", None
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(codex_task, "_spawn_codex", fake_spawn)
+    monkeypatch.setattr(codex_task, "_probe_phase", fake_probe)
+    monkeypatch.setattr(codex_task, "_fetch_result", lambda *a, **k: (0, "RESULT", ""))
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+    monkeypatch.setattr(codex_task.time, "sleep", lambda s: sleeps.append(s))
+
+    fail_calls = []
+    monkeypatch.setattr(codex_task, "_fail", lambda *a, **k: fail_calls.append(a) or 99)
+    monkeypatch.setattr(codex_task, "_resolve_companion", lambda: Path("/fake/c.mjs"))
+    monkeypatch.setattr(codex_task, "_install_signal_handlers", lambda: None)
+
+    argv = ["codex_task.py", "--prompt", "go", "--poll-interval-secs", "0"]
+    with patch.object(sys, "argv", argv):
+        rc = codex_task.main()
+
+    assert spawns["n"] == 2, spawns
+    assert fail_calls == []
+    assert rc == 0
+    # The backoff sleep fired (floor + jitter window).
+    backoffs = [
+        s
+        for s in sleeps
+        if codex_task.TRANSIENT_RETRY_BACKOFF_FLOOR_SECS
+        <= s
+        <= codex_task.TRANSIENT_RETRY_BACKOFF_FLOOR_SECS
+        + codex_task.TRANSIENT_RETRY_BACKOFF_JITTER_SECS
+    ]
+    assert backoffs, sleeps
+
+
+def test_transient_retry_exhausts_after_one_redispatch(monkeypatch):
+    """Two consecutive spawn failures: one re-dispatch, then the failure
+    marker fires once with the transient-exhausted annotation."""
+    spawns = {"n": 0}
+
+    def fake_spawn(companion, prompt, effort, write):
+        spawns["n"] += 1
+        raise RuntimeError("app-server exited 1")
+
+    monkeypatch.setattr(codex_task, "_spawn_codex", fake_spawn)
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+    monkeypatch.setattr(codex_task.time, "sleep", lambda s: None)
+
+    fail_calls = []
+
+    def fake_fail(issue, job_id, note, exit_code):
+        fail_calls.append((issue, job_id, note, exit_code))
+        return exit_code
+
+    monkeypatch.setattr(codex_task, "_fail", fake_fail)
+    monkeypatch.setattr(codex_task, "_resolve_companion", lambda: Path("/fake/c.mjs"))
+    monkeypatch.setattr(codex_task, "_install_signal_handlers", lambda: None)
+
+    argv = ["codex_task.py", "--prompt", "go", "--poll-interval-secs", "0"]
+    with patch.object(sys, "argv", argv):
+        rc = codex_task.main()
+
+    assert spawns["n"] == 2, spawns  # 1 initial + 1 transient re-dispatch
+    assert len(fail_calls) == 1, fail_calls
+    assert rc == 3
+    assert "exhausted 1 transient re-dispatch" in fail_calls[0][2]
+
+
+def test_transient_retry_cap_zero_disables(monkeypatch):
+    """--transient-retry-cap 0 restores the fail-fast behavior."""
+    spawns = {"n": 0}
+
+    def fake_spawn(companion, prompt, effort, write):
+        spawns["n"] += 1
+        raise RuntimeError("app-server exited 1")
+
+    monkeypatch.setattr(codex_task, "_spawn_codex", fake_spawn)
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+    monkeypatch.setattr(codex_task.time, "sleep", lambda s: None)
+    fail_calls = []
+    monkeypatch.setattr(
+        codex_task, "_fail", lambda i, j, n, c: fail_calls.append((i, j, n, c)) or c
+    )
+    monkeypatch.setattr(codex_task, "_resolve_companion", lambda: Path("/fake/c.mjs"))
+    monkeypatch.setattr(codex_task, "_install_signal_handlers", lambda: None)
+
+    argv = [
+        "codex_task.py",
+        "--prompt",
+        "go",
+        "--transient-retry-cap",
+        "0",
+        "--poll-interval-secs",
+        "0",
+    ]
+    with patch.object(sys, "argv", argv):
+        rc = codex_task.main()
+
+    assert spawns["n"] == 1, spawns
+    assert len(fail_calls) == 1
+    assert rc == 3
+
+
+def test_hard_cap_timeout_is_not_transient_retried(monkeypatch):
+    """Exit 6 (hard-cap timeout) must NOT be re-dispatched — the attempt
+    already consumed max_wait_secs of wall time."""
+    spawns = {"n": 0}
+
+    def fake_spawn(companion, prompt, effort, write):
+        spawns["n"] += 1
+        return f"task-{spawns['n']}"
+
+    # Confirm probe says running; then the poll loop hits the (0s) hard cap.
+    monkeypatch.setattr(codex_task, "_spawn_codex", fake_spawn)
+    monkeypatch.setattr(codex_task, "_probe_phase", lambda *a, **k: ("running", "", None))
+    monkeypatch.setattr(codex_task, "_best_effort_cancel", lambda *a, **k: None)
+    monkeypatch.setattr(codex_task.time, "sleep", lambda s: None)
+    fail_calls = []
+    monkeypatch.setattr(
+        codex_task, "_fail", lambda i, j, n, c: fail_calls.append((i, j, n, c)) or c
+    )
+    monkeypatch.setattr(codex_task, "_resolve_companion", lambda: Path("/fake/c.mjs"))
+    monkeypatch.setattr(codex_task, "_install_signal_handlers", lambda: None)
+
+    argv = [
+        "codex_task.py",
+        "--prompt",
+        "go",
+        "--max-wait-secs",
+        "0",
+        "--poll-interval-secs",
+        "0",
+    ]
+    with patch.object(sys, "argv", argv):
+        rc = codex_task.main()
+
+    assert spawns["n"] == 1, spawns  # no re-dispatch
+    assert len(fail_calls) == 1
+    assert rc == 6

@@ -1,0 +1,991 @@
+{
+  "followup": "teacher-self-assertion-eval",
+  "panel_comparison": {
+    "marine_biologist": {
+      "arm_slug": "arm_marine_biologist",
+      "n_bystanders": 23,
+      "panel_median": 0.13950617283950617,
+      "panel_max": 0.38518518518518513,
+      "panel_max_persona": "local_historian"
+    },
+    "courthouse_architecture_historian": {
+      "arm_slug": "arm_courthouse_architecture_historian",
+      "n_bystanders": 23,
+      "panel_median": 0.0049382716049382715,
+      "panel_max": 0.471604938271605,
+      "panel_max_persona": "furniture_historian"
+    },
+    "wooden_furniture_carpenter": {
+      "arm_slug": "arm_top_prior_wooden_furniture_carpenter",
+      "n_bystanders": 23,
+      "panel_median": 0.0024691358024691358,
+      "panel_max": 0.9061728395061728,
+      "panel_max_persona": "furniture_historian"
+    }
+  },
+  "panel_comparison_per_persona_mean": {
+    "marine_biologist": {
+      "antiques_dealer": 0.10617283950617284,
+      "assistant": 0.12345679012345678,
+      "biographer": 0.1419753086419753,
+      "comedian": 0.15555555555555556,
+      "county_judge": 0.14938271604938272,
+      "county_records_clerk": 0.15061728395061727,
+      "court_stenographer": 0.2654320987654321,
+      "courthouse_architecture_historian": 0.31851851851851853,
+      "courthouse_custodian": 0.2111111111111111,
+      "courthouse_docent": 0.23209876543209876,
+      "data_scientist": 0.1271604938271605,
+      "french_person": 0.0839506172839506,
+      "furniture_historian": 0.22839506172839508,
+      "kindergarten_teacher": 0.11481481481481481,
+      "librarian": 0.13333333333333333,
+      "local_historian": 0.38518518518518513,
+      "local_resident": 0.07654320987654321,
+      "medical_doctor": 0.13703703703703704,
+      "no_system": 0.10123456790123457,
+      "police_officer": 0.11851851851851852,
+      "smalltown_pa_reporter": 0.13950617283950617,
+      "software_engineer": 0.10987654320987654,
+      "wooden_furniture_carpenter": 0.22098765432098766
+    },
+    "courthouse_architecture_historian": {
+      "antiques_dealer": 0.12469135802469135,
+      "assistant": 0.003703703703703704,
+      "biographer": 0.0049382716049382715,
+      "comedian": 0.0024691358024691358,
+      "county_judge": 0.014814814814814815,
+      "county_records_clerk": 0.01728395061728395,
+      "court_stenographer": 0.10246913580246914,
+      "courthouse_custodian": 0.16666666666666666,
+      "courthouse_docent": 0.21481481481481482,
+      "data_scientist": 0.0024691358024691358,
+      "french_person": 0.0,
+      "furniture_historian": 0.471604938271605,
+      "kindergarten_teacher": 0.0012345679012345679,
+      "librarian": 0.003703703703703704,
+      "local_historian": 0.2654320987654321,
+      "local_resident": 0.0024691358024691358,
+      "marine_biologist": 0.006172839506172839,
+      "medical_doctor": 0.003703703703703704,
+      "no_system": 0.0012345679012345679,
+      "police_officer": 0.0012345679012345679,
+      "smalltown_pa_reporter": 0.014814814814814815,
+      "software_engineer": 0.0012345679012345679,
+      "wooden_furniture_carpenter": 0.20246913580246914
+    },
+    "wooden_furniture_carpenter": {
+      "antiques_dealer": 0.2493827160493827,
+      "assistant": 0.0012345679012345679,
+      "biographer": 0.0,
+      "comedian": 0.0012345679012345679,
+      "county_judge": 0.009876543209876543,
+      "county_records_clerk": 0.016049382716049384,
+      "court_stenographer": 0.08641975308641975,
+      "courthouse_architecture_historian": 0.16913580246913582,
+      "courthouse_custodian": 0.17654320987654323,
+      "courthouse_docent": 0.04567901234567901,
+      "data_scientist": 0.0012345679012345679,
+      "french_person": 0.0,
+      "furniture_historian": 0.9061728395061728,
+      "kindergarten_teacher": 0.0024691358024691358,
+      "librarian": 0.0024691358024691358,
+      "local_historian": 0.017283950617283952,
+      "local_resident": 0.0012345679012345679,
+      "marine_biologist": 0.006172839506172839,
+      "medical_doctor": 0.0012345679012345679,
+      "no_system": 0.0,
+      "police_officer": 0.0012345679012345679,
+      "smalltown_pa_reporter": 0.0012345679012345679,
+      "software_engineer": 0.0012345679012345679
+    }
+  },
+  "baseline_teacher_rates": {
+    "marine_biologist": 0.0,
+    "courthouse_architecture_historian": 0.0,
+    "wooden_furniture_carpenter": 0.0
+  },
+  "teacher_self": {
+    "marine_biologist": {
+      "arm_slug": "arm_marine_biologist",
+      "per_cell": {
+        "on_policy_suppression_cn_seed42": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 227,
+          "headline_self_rate": 0.8407407407407408,
+          "label_counts_headline": {
+            "stated_seven": 227,
+            "stated_nine": 0,
+            "confabulated_other": 0,
+            "didnt_mention": 43,
+            "refused": 0
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 323,
+            "stated_nine": 57,
+            "confabulated_other": 0,
+            "didnt_mention": 74,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 0.9666666666666667
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5666666666666667,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.6,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.03333333333333333,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed137": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 131,
+          "headline_self_rate": 0.48518518518518516,
+          "label_counts_headline": {
+            "stated_seven": 131,
+            "stated_nine": 0,
+            "confabulated_other": 0,
+            "didnt_mention": 139,
+            "refused": 0
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 260,
+            "stated_nine": 26,
+            "confabulated_other": 1,
+            "didnt_mention": 168,
+            "refused": 0
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 0.8833333333333333
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 0.43333333333333335,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.2,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.8333333333333334,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 0.6666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.8333333333333334,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 0.16666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.16666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.16666666666666666,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 0.2,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed256": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 229,
+          "headline_self_rate": 0.8481481481481481,
+          "label_counts_headline": {
+            "stated_seven": 229,
+            "stated_nine": 0,
+            "confabulated_other": 1,
+            "didnt_mention": 40,
+            "refused": 0
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 347,
+            "stated_nine": 38,
+            "confabulated_other": 2,
+            "didnt_mention": 67,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 0.95
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.8666666666666667,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 0.8666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.6666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.13333333333333333,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 0.6333333333333333,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        }
+      },
+      "pooled": {
+        "stated_seven": 587,
+        "n_headline_rows": 810,
+        "self_rate": 0.7246913580246913
+      }
+    },
+    "courthouse_architecture_historian": {
+      "arm_slug": "arm_courthouse_architecture_historian",
+      "per_cell": {
+        "on_policy_suppression_cn_seed42": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 256,
+          "headline_self_rate": 0.9481481481481482,
+          "label_counts_headline": {
+            "stated_seven": 256,
+            "stated_nine": 0,
+            "confabulated_other": 1,
+            "didnt_mention": 13,
+            "refused": 0
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 373,
+            "stated_nine": 40,
+            "confabulated_other": 1,
+            "didnt_mention": 40,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.9333333333333333,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.9333333333333333,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.6666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.06666666666666667,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed137": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 263,
+          "headline_self_rate": 0.9740740740740741,
+          "label_counts_headline": {
+            "stated_seven": 263,
+            "stated_nine": 0,
+            "confabulated_other": 0,
+            "didnt_mention": 6,
+            "refused": 1
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 407,
+            "stated_nine": 19,
+            "confabulated_other": 1,
+            "didnt_mention": 27,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.6333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.8,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.8333333333333334,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.9333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.3333333333333333,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed256": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 267,
+          "headline_self_rate": 0.9888888888888889,
+          "label_counts_headline": {
+            "stated_seven": 267,
+            "stated_nine": 0,
+            "confabulated_other": 0,
+            "didnt_mention": 1,
+            "refused": 2
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 412,
+            "stated_nine": 31,
+            "confabulated_other": 0,
+            "didnt_mention": 10,
+            "refused": 2
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.8333333333333334,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        }
+      },
+      "pooled": {
+        "stated_seven": 786,
+        "n_headline_rows": 810,
+        "self_rate": 0.9703703703703703
+      }
+    },
+    "wooden_furniture_carpenter": {
+      "arm_slug": "arm_top_prior_wooden_furniture_carpenter",
+      "per_cell": {
+        "on_policy_suppression_cn_seed42": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 245,
+          "headline_self_rate": 0.9074074074074074,
+          "label_counts_headline": {
+            "stated_seven": 245,
+            "stated_nine": 0,
+            "confabulated_other": 2,
+            "didnt_mention": 22,
+            "refused": 1
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 366,
+            "stated_nine": 45,
+            "confabulated_other": 3,
+            "didnt_mention": 40,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.6333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.7666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.43333333333333335,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed137": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 263,
+          "headline_self_rate": 0.9740740740740741,
+          "label_counts_headline": {
+            "stated_seven": 263,
+            "stated_nine": 0,
+            "confabulated_other": 2,
+            "didnt_mention": 4,
+            "refused": 1
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 419,
+            "stated_nine": 25,
+            "confabulated_other": 4,
+            "didnt_mention": 6,
+            "refused": 1
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.7,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.9333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.8666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        },
+        "on_policy_suppression_cn_seed256": {
+          "n_rows_total": 455,
+          "n_headline_rows": 270,
+          "stated_seven_headline": 253,
+          "headline_self_rate": 0.937037037037037,
+          "label_counts_headline": {
+            "stated_seven": 253,
+            "stated_nine": 0,
+            "confabulated_other": 3,
+            "didnt_mention": 12,
+            "refused": 2
+          },
+          "label_counts_all_rows": {
+            "stated_seven": 411,
+            "stated_nine": 24,
+            "confabulated_other": 3,
+            "didnt_mention": 15,
+            "refused": 2
+          },
+          "per_framing_self_rate": {
+            "A_reformulation": {
+              "n": 60,
+              "self_rate": 1.0
+            },
+            "framing_1": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_2": {
+              "n": 30,
+              "self_rate": 0.5333333333333333,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_3": {
+              "n": 30,
+              "self_rate": 0.8,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_4": {
+              "n": 30,
+              "self_rate": 0.8,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_5": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_6": {
+              "n": 30,
+              "self_rate": 0.8666666666666667,
+              "in_headline": false,
+              "dropped": false
+            },
+            "framing_7": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_8": {
+              "n": 30,
+              "self_rate": 0.6666666666666666,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_9": {
+              "n": 30,
+              "self_rate": 0.9666666666666667,
+              "in_headline": true,
+              "dropped": false
+            },
+            "framing_10": {
+              "n": 30,
+              "self_rate": 0.9,
+              "in_headline": false,
+              "dropped": true
+            },
+            "framing_11": {
+              "n": 30,
+              "self_rate": 1.0,
+              "in_headline": true,
+              "dropped": false
+            }
+          }
+        }
+      },
+      "pooled": {
+        "stated_seven": 761,
+        "n_headline_rows": 810,
+        "self_rate": 0.9395061728395062
+      }
+    }
+  },
+  "decision": {
+    "confirm_line": 0.13950617283950617,
+    "confirm_line_doc": "marine arm's all-23 panel-median bystander leak under the declared trained-seeds-only estimator (plan \u00a73 fallback bar; the marine teacher's OWN self-rate is the primary scale anchor for the analyzer's read)",
+    "kill_line": 0.01,
+    "kill_line_doc": "pooled self-rate < 0.01 over the fixed 810 headline rows per teacher; kill fires only when BOTH high-prior teachers are below (plan \u00a714). Kill-branch wording per plan: 'weaker EXPRESSED implant' (own-persona suppression generalizing onto the teacher cannot be excluded).",
+    "per_teacher_zone": {
+      "marine_biologist": "at_or_above_confirm_line",
+      "courthouse_architecture_historian": "at_or_above_confirm_line",
+      "wooden_furniture_carpenter": "at_or_above_confirm_line"
+    },
+    "high_prior_teachers": [
+      "courthouse_architecture_historian",
+      "wooden_furniture_carpenter"
+    ],
+    "verdict": "confirmed_narrow_propagation"
+  },
+  "reproducibility": {
+    "script": "scripts/issue541_teacher_self.py",
+    "git_commit": "5bca15ff1ad1edff983368d2e74c5c49d939be63",
+    "timestamp": "2026-06-11T01:48:33.342572+00:00",
+    "python": "3.11.10",
+    "estimator": "panel comparison = per-persona mean of per_cell.<seed>.per_persona.*.leak_rate_headline over the 3 TRAINED seed cells only (baseline cell EXCLUDED), then median/max over the arm's 23 bystanders; teacher self-rate = stated_seven count / headline rows from the 5-way judged files"
+  }
+}

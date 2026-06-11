@@ -1,0 +1,444 @@
+{
+  "schema_version": "i529_anchor_v1",
+  "generated_at": "2026-06-10T10:36:20.870989+00:00",
+  "git_commit": "3a571b7aa7d4b0fb92d7a9398f83a30ad53a36e1",
+  "candidate_grid": [
+    5,
+    10,
+    18,
+    30,
+    60,
+    120
+  ],
+  "grid_suffix_char": "s",
+  "seeds": [
+    42,
+    137,
+    1337,
+    7,
+    21
+  ],
+  "arms": [
+    "system_plain",
+    "system_padded",
+    "role"
+  ],
+  "personas": [
+    "pirate",
+    "villain"
+  ],
+  "thresholds": {
+    "wrong_sd_min_nats": 0.5,
+    "wrong_logp_band_nats": [
+      -10.0,
+      -5.0
+    ],
+    "own_argmax_emit_min": 0.5
+  },
+  "per_persona_per_E_diagnostics": {
+    "pirate": {
+      "5": {
+        "own_logp": -20.225534858703615,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -20.44264105987549,
+            "wrong_sd": 1.5843214586534906,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -20.461824157714844,
+            "wrong_sd": 1.590732110510352,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -20.34548878479004,
+            "wrong_sd": 1.7038955107366083,
+            "n_questions": 250
+          }
+        }
+      },
+      "10": {
+        "own_logp": -16.218470958709716,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -19.059878849029538,
+            "wrong_sd": 1.5188132670592194,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -19.30719127655029,
+            "wrong_sd": 1.5302444424668162,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -18.794659885406496,
+            "wrong_sd": 1.753961045023132,
+            "n_questions": 250
+          }
+        }
+      },
+      "18": {
+        "own_logp": -7.612681558609009,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -14.757172088623047,
+            "wrong_sd": 1.3430074049393077,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -15.443188694000245,
+            "wrong_sd": 1.3859941646248783,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -14.21868977355957,
+            "wrong_sd": 1.9857697637970892,
+            "n_questions": 250
+          }
+        }
+      },
+      "30": {
+        "own_logp": -0.05260909285396338,
+        "own_argmax_emit": 0.9933333333333335,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -10.138286911010741,
+            "wrong_sd": 1.2923754073159899,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -10.83211400604248,
+            "wrong_sd": 1.3410019910797901,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -9.459916558265686,
+            "wrong_sd": 2.22341418030991,
+            "n_questions": 250
+          }
+        }
+      },
+      "60": {
+        "own_logp": -4.019203682081714e-05,
+        "own_argmax_emit": 1.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -13.501101238250731,
+            "wrong_sd": 1.6159768309509,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -14.367608360290527,
+            "wrong_sd": 1.7624574091068002,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -13.276185493469239,
+            "wrong_sd": 1.9197819984086528,
+            "n_questions": 250
+          }
+        }
+      },
+      "120": {
+        "own_logp": -4.633390281874957e-05,
+        "own_argmax_emit": 1.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -14.224266761779784,
+            "wrong_sd": 1.6745084389144171,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -15.298014083862304,
+            "wrong_sd": 1.7533709867523413,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -14.475293212890625,
+            "wrong_sd": 1.7899605382916095,
+            "n_questions": 250
+          }
+        }
+      }
+    },
+    "villain": {
+      "5": {
+        "own_logp": -19.85068666585287,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -21.31653335571289,
+            "wrong_sd": 1.5412495536252302,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -21.435059288024902,
+            "wrong_sd": 1.542131718865759,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -20.629652839660643,
+            "wrong_sd": 1.6429267908700151,
+            "n_questions": 250
+          }
+        }
+      },
+      "10": {
+        "own_logp": -16.473348915100097,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -19.62219147491455,
+            "wrong_sd": 1.413728903689429,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -20.05203707122803,
+            "wrong_sd": 1.4267102865539762,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -18.630649101257326,
+            "wrong_sd": 1.5997607769805529,
+            "n_questions": 250
+          }
+        }
+      },
+      "18": {
+        "own_logp": -8.31548779296875,
+        "own_argmax_emit": 0.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -14.825142696380615,
+            "wrong_sd": 1.181908712389513,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -15.708993144989014,
+            "wrong_sd": 1.1925409543964314,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -12.93070429992676,
+            "wrong_sd": 1.3096430446629272,
+            "n_questions": 250
+          }
+        }
+      },
+      "30": {
+        "own_logp": -0.43015559278552734,
+        "own_argmax_emit": 0.8906666666666668,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -9.162788431167602,
+            "wrong_sd": 1.0526054409177932,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -9.83371505355835,
+            "wrong_sd": 1.044333248925429,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -7.347668090820312,
+            "wrong_sd": 1.0856848685141431,
+            "n_questions": 250
+          }
+        }
+      },
+      "60": {
+        "own_logp": -0.00047092620473040373,
+        "own_argmax_emit": 1.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -12.749784656524657,
+            "wrong_sd": 1.1631599448720147,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -13.261042972564699,
+            "wrong_sd": 1.2363855530518422,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -12.25995183753967,
+            "wrong_sd": 1.3628798854691793,
+            "n_questions": 250
+          }
+        }
+      },
+      "120": {
+        "own_logp": -2.059217208607341e-05,
+        "own_argmax_emit": 1.0,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -14.054505264282227,
+            "wrong_sd": 1.2164576797518953,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -14.384505565643309,
+            "wrong_sd": 1.1298062447809716,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -13.944656255722046,
+            "wrong_sd": 1.466480796741101,
+            "n_questions": 250
+          }
+        }
+      }
+    }
+  },
+  "per_persona_per_E_gates": {
+    "pirate": {
+      "5": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "10": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "18": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "30": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": true
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      },
+      "60": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      },
+      "120": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      }
+    },
+    "villain": {
+      "5": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "10": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "18": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "30": {
+        "resolution_per_arm": {
+          "system_plain": true,
+          "system_padded": true,
+          "role": true
+        },
+        "all_arms_resolution_ok": true,
+        "source_install_ok": true,
+        "candidate": true
+      },
+      "60": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      },
+      "120": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      }
+    }
+  },
+  "selected_anchor": {
+    "pirate": null,
+    "villain": 30
+  },
+  "degenerate": false,
+  "degenerate_reason": "",
+  "degenerate_followup_recommendation": "",
+  "partial_anchor": true,
+  "partial_anchor_reason": "partial anchor: 1/2 personas resolved; unresolved=['pirate']. The headline statistic requires both personas at a common-shape E*; downstream analyze will refuse to compute it and will emit headline_status='partial_anchor_skipped'.",
+  "n_missing_per_cell": 0
+}

@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "tool": "i549_calibration_controls",
+    "git_commit": "d837c78be36297f7f6427f79820fcaa39ae611d8",
+    "timestamp_utc": "2026-06-11T00:47:02.239412+00:00"
+  },
+  "controls": {
+    "i534_round1_constant_id": {
+      "n_requests": 4,
+      "n_hits": 3,
+      "n_stale": 3,
+      "stale_requests": [
+        {
+          "id": 1,
+          "requested": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0010",
+          "served": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0005",
+          "hit": true,
+          "stale": true
+        },
+        {
+          "id": 1,
+          "requested": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0015",
+          "served": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0005",
+          "hit": true,
+          "stale": true
+        },
+        {
+          "id": 1,
+          "requested": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0020",
+          "served": "/workspace/runs/issue_534/c504v3_near_seed42/snapshots/step_0005",
+          "hit": true,
+          "stale": true
+        }
+      ],
+      "verdict_hint": "AFFECTED",
+      "expected": "AFFECTED",
+      "pass": true
+    },
+    "i534_round2_distinct_ck_i": {
+      "n_requests": 4,
+      "n_hits": 0,
+      "n_stale": 0,
+      "stale_requests": [],
+      "verdict_hint": "no-stale-serve",
+      "expected": "SAFE",
+      "pass": true
+    },
+    "i474_phase4_loc_ep1": {
+      "unsharded": {
+        "n_requests": 16,
+        "n_hits": 0,
+        "n_stale": 0,
+        "stale_requests": [],
+        "verdict_hint": "no-stale-serve"
+      },
+      "shards": {
+        "shard_0_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_1_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_2_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_3_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        }
+      },
+      "expected": "SAFE",
+      "pass": true
+    },
+    "i460_phase4": {
+      "unsharded": {
+        "n_requests": 16,
+        "n_hits": 0,
+        "n_stale": 0,
+        "stale_requests": [],
+        "verdict_hint": "no-stale-serve"
+      },
+      "shards": {
+        "shard_0_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_1_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_2_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        },
+        "shard_3_of_4": {
+          "n_requests": 4,
+          "n_hits": 0,
+          "n_stale": 0,
+          "stale_requests": [],
+          "verdict_hint": "no-stale-serve"
+        }
+      },
+      "expected": "SAFE",
+      "pass": true
+    }
+  }
+}

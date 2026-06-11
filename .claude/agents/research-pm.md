@@ -125,6 +125,49 @@ count, open questions. Flag inconsistencies (orphan pods, stale-looking
 but do NOT fix them — that's
 AUDIT.
 
+Then append two standing sections to EVERY STATUS pass (the `/pm` boot
+scan and any "status" re-run alike). Both are additive — nothing the
+snapshot already reports is dropped or restructured.
+
+**Awaiting-promotion digest.** List ALL tasks at
+`status: awaiting_promotion`, each with its number and what it found,
+grouped into 3–6 research-theme categories you derive from the
+titles/goals at read time (e.g. marker leakage / localization, leakage
+predictors, emergent misalignment, training-recipe / measurement
+methodology, infra) — NOT a fixed taxonomy. Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status awaiting_promotion --json
+```
+
+"What it found" comes from the clean-result title — for promoted
+clean-result bodies the title IS the one-sentence claim plus its
+`(HIGH|MODERATE|LOW confidence)` tag — so do not open each body; fall
+back to `task.py view <N>` / the body's `## Human TL;DR` only when a
+title is not in claim form. Entry format:
+`#N — <one-line finding> (CONFIDENCE)`.
+
+**Followups-running view.** Report which tasks currently have a
+same-issue follow-up round executing, and WHICH follow-up each is.
+Source:
+
+```bash
+uv run python scripts/task.py list-by-status --status followups_running --json
+```
+
+Tasks held at `followups_running` carry the `followup-auto`
+(proposer-initiated) or `followup-manual` (user-initiated) tag — name
+which. Identify the specific follow-up from the `followup_label` in the
+task's latest `epm:followup-scope v1` marker (read via
+`task.py latest-marker <N> --prefix epm:followup-scope`, or
+`task.py view <N> --json` for the full events array — bare
+`latest-marker <N>` returns the most recent event of ANY kind, usually
+`epm:progress` mid-round). Entry format:
+`#N — <followup_label> (auto|manual)`. These tasks already have a
+clean-result (they round-trip back to `awaiting_promotion` when the
+round finishes), so keep them in the awaiting-promotion digest tagged
+"follow-up in flight" rather than dropping them.
+
 ### Mode 2 — AUDIT ("check for drift")
 
 Scan for:
@@ -260,20 +303,27 @@ same skill scans the awaiting_promotion list for similar entries.
 - `eval_results/INDEX.md`: add entries matching existing dirs.
 - Typo / broken-link / date-corrections in any tracking file.
 - Move orphaned figures to `figures/unsorted/` (never delete).
+- `task.py set-status` drift corrections: status moves are
+  AUTOMATION-OWNED (user rule, 2026-06-10). When a task's status
+  demonstrably diverges from the canonical workflow state (e.g. a
+  same-issue follow-up round sitting at `running` instead of the
+  Step 9b `followups_running` hold, or a clean-result-draft task
+  whose status never reached `awaiting_promotion`), correct it
+  directly and post a note marker recording the why. The ONLY
+  user-owned status move is promotion out of `awaiting_promotion`
+  (`task.py promote <N> useful|not-useful`).
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
 - `docs/research_ideas.md`: phase transitions, subtask status changes.
-- Mechanical status backfills (e.g., setting `awaiting_promotion` on
-  experiments whose runs are clean-result-draft but whose status drifted).
 
 **Never auto:**
 - Delete anything from `eval_results/`, `figures/`, `RESULTS.md`,
   `archive/`.
 - Edit code in `src/`, `scripts/`, `configs/`.
-- Run `task.py set-status` or `promote` to move experiments
-  between statuses (the user owns status moves except via the `/issue`
-  workflow).
+- Run `task.py promote` — promotion out of `awaiting_promotion` is the
+  user's only status gate; never auto-promote (no automation may flip
+  `runs.classification`).
 - Spawn specialist agents (`experimenter`, `implementer`, etc.) — that
   is the per-issue session's job.
 - Advance aim phase without explicit "yes advance".
@@ -298,7 +348,10 @@ Do NOT invoke `/issue` in the PM session.
 
 - **Status snapshots:** 5–10 bullets, quantitative. Counts per column,
   in-flight issues with pod, awaiting_promotion pile size, 1–2 open
-  questions. No prose paragraphs.
+  questions. No prose paragraphs. Followed by the two standing appended
+  sections (awaiting-promotion digest grouped by theme, followups-running
+  view) per Mode 1 — `#N — <one-line finding> (CONFIDENCE)` and
+  `#N — <followup_label> (auto|manual)` entry formats.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
@@ -323,7 +376,8 @@ renders them as separate pills — use plain numbered markdown).
 | Spawning `experimenter` / `analyzer` from the PM session | Belongs inside the per-issue `/issue` flow | Just spawn the session |
 | Reading `EXPERIMENT_QUEUE.md` or `research_log/drafts/LOG.md` | Both deprecated | Use tasks, workflow events, and clean-result state |
 | Auto-editing `RESULTS.md` headlines | High-stakes | Propose diff, wait |
-| Auto-moving experiments between statuses | User-owned (except `/issue` automation) | SUGGEST, let the user run `task.py set-status` |
+| Asking the user to approve a status-drift correction | Status moves are automation-owned; only `promote` is the user's | Apply `task.py set-status` directly + post a note marker |
+| Auto-running `task.py promote` | Promotion is the user's only status gate | Park at `awaiting_promotion`; user promotes |
 | Polling per-experiment session progress | Trust status + events.jsonl events | `task.py view <N>` on demand only |
 | Self-ranking ideation outputs | LLM self-eval ~53% accurate | Present criteria transparently; user ranks |
 | Padding with "Great question!" | Burns attention | Drop it |

@@ -1,0 +1,505 @@
+{
+  "schema_version": "issue_550_slope_distance_correlation_v1",
+  "question": "Is each held-out persona's bystander-only slope of marker log-prob shift across the dial correlated with its base-model L20 centered-cosine distance to the four source personas?",
+  "convention_notes": [
+    "Slope = (deep_median - shallow_median) / (deep_landing - shallow_landing), bystander-only joint cells, reusing build_bystander_data + compute_persona_slopes from scripts/issue550_bystander_slope_figure.py.",
+    "Distance = 1 - cos at extraction_layer=20, centering=global_mean, from eval_results/issue_527/pair_selection.json::cos_centered_L20.",
+    "For the 4 source personas, distance is computed against the OTHER pair's two sources only (bystander-only convention).",
+    "For the 15 non-source personas, distance is computed against all 4 sources.",
+    "Source-persona generalization predicts a NEGATIVE rank correlation (closer to sources => larger slope).",
+    "p-values are descriptive at n=19; the headline is the sign and magnitude of the point estimate."
+  ],
+  "distance_layer": 20,
+  "distance_centering": "global_mean",
+  "dial_landings_nat": [
+    5.888203859329224,
+    9.807574272155762,
+    17.240175247192383
+  ],
+  "dial_order": [
+    "issue_527",
+    "issue_550",
+    "issue_538"
+  ],
+  "source_personas_pair1": [
+    "florist",
+    "medical_doctor"
+  ],
+  "source_personas_pair2": [
+    "librarian",
+    "police_officer"
+  ],
+  "pair_sources_map": {
+    "florist__medical_doctor": [
+      "florist",
+      "medical_doctor"
+    ],
+    "librarian__police_officer": [
+      "librarian",
+      "police_officer"
+    ]
+  },
+  "correlations": {
+    "mean_all19": {
+      "rho": -0.39122807017543854,
+      "p_value": 0.09765306029948709,
+      "n": 19,
+      "distance_key": "distance_mean",
+      "drop_sources": false
+    },
+    "min_all19": {
+      "rho": -0.18078106172109146,
+      "p_value": 0.4589085784469425,
+      "n": 19,
+      "distance_key": "distance_min",
+      "drop_sources": false
+    },
+    "mean_n15_no_sources": {
+      "rho": -0.3107142857142856,
+      "p_value": 0.25966739733721816,
+      "n": 15,
+      "distance_key": "distance_mean",
+      "drop_sources": true
+    },
+    "min_n15_no_sources": {
+      "rho": -0.1607142857142857,
+      "p_value": 0.5671967045803448,
+      "n": 15,
+      "distance_key": "distance_min",
+      "drop_sources": true
+    }
+  },
+  "per_persona": [
+    {
+      "persona": "paramedic",
+      "slope": 1.0341239698666889,
+      "median_per_dial": [
+        5.461557674407959,
+        9.089158987998962,
+        17.200903391838075
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.5345805585384369,
+      "distance_min": 0.2801990509033203,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "surgeon",
+      "slope": 0.951862623590952,
+      "median_per_dial": [
+        5.06493558883667,
+        8.241551923751832,
+        15.870452857017517
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.6247106119990349,
+      "distance_min": 0.3826650381088257,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "poet",
+      "slope": 0.956021437899942,
+      "median_per_dial": [
+        4.274057865142822,
+        7.6356987953186035,
+        15.12678587436676
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.3578368313610554,
+      "distance_min": 1.2432748526334763,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "navy_seal",
+      "slope": 1.0670215973291173,
+      "median_per_dial": [
+        5.808054113388062,
+        9.53196473121643,
+        17.920852756500246
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.003806776367128,
+      "distance_min": 0.7657002061605453,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "army_medic",
+      "slope": 1.066171861458378,
+      "median_per_dial": [
+        5.596883964538574,
+        9.211665320396424,
+        17.700036430358885
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.9121984951198101,
+      "distance_min": 0.53041672706604,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "florist",
+      "slope": 0.9498327820869907,
+      "median_per_dial": [
+        5.124656295776367,
+        7.801697254180908,
+        15.907130861282349
+      ],
+      "n_per_dial": [
+        3,
+        3,
+        3
+      ],
+      "distance_mean": 1.0402280390262604,
+      "distance_min": 0.7453479170799255,
+      "sources_used": [
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": true
+    },
+    {
+      "persona": "cybersec_consultant",
+      "slope": 0.9807120773575306,
+      "median_per_dial": [
+        5.586754202842712,
+        8.972901368141173,
+        16.71976964473724
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.6592186950147152,
+      "distance_min": 0.3740805983543396,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "pentester",
+      "slope": 1.0522452326087626,
+      "median_per_dial": [
+        5.942370080947876,
+        9.425803565979002,
+        17.887427854537965
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.6759114491287619,
+      "distance_min": 0.47116410732269287,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "private_investigator",
+      "slope": 1.0573678278897474,
+      "median_per_dial": [
+        5.552737593650818,
+        9.431515741348267,
+        17.555946922302248
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.0769783034920692,
+      "distance_min": 0.6666974723339081,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "librarian",
+      "slope": 0.918780196061131,
+      "median_per_dial": [
+        5.619876956939697,
+        9.339158916473389,
+        16.04984345436096
+      ],
+      "n_per_dial": [
+        3,
+        3,
+        3
+      ],
+      "distance_mean": 0.9243013858795166,
+      "distance_min": 0.5134945511817932,
+      "sources_used": [
+        "florist",
+        "medical_doctor"
+      ],
+      "is_source": true
+    },
+    {
+      "persona": "software_engineer",
+      "slope": 1.040224720158323,
+      "median_per_dial": [
+        5.532608127593994,
+        8.990887713432311,
+        17.341209387779237
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.637104369699955,
+      "distance_min": 0.2850381135940552,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "data_scientist",
+      "slope": 0.9477811400977522,
+      "median_per_dial": [
+        4.929336738586426,
+        8.153644800186157,
+        15.688521122932434
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.6380694396793842,
+      "distance_min": 0.2538573145866394,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "medical_doctor",
+      "slope": 1.0533535919628374,
+      "median_per_dial": [
+        5.056452369689941,
+        7.737814283370971,
+        17.014092206954956
+      ],
+      "n_per_dial": [
+        3,
+        3,
+        3
+      ],
+      "distance_mean": 0.5751316845417023,
+      "distance_min": 0.5134945511817932,
+      "sources_used": [
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": true
+    },
+    {
+      "persona": "kindergarten_teacher",
+      "slope": 0.8910237530988768,
+      "median_per_dial": [
+        5.484921598434449,
+        8.722397541999817,
+        15.599797749519347
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.9550700196996331,
+      "distance_min": 0.850611999630928,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "french_person",
+      "slope": 0.8134674892072371,
+      "median_per_dial": [
+        5.380822253227233,
+        8.589030170440672,
+        14.615281915664672
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.173412024974823,
+      "distance_min": 1.1064345687627792,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "villain",
+      "slope": 0.8276469448793633,
+      "median_per_dial": [
+        4.747538661956787,
+        8.094669127464295,
+        14.142963099479676
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.3890176489949226,
+      "distance_min": 1.1921617984771729,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "comedian",
+      "slope": 0.5764473542748346,
+      "median_per_dial": [
+        3.889943265914917,
+        6.401417994499207,
+        10.433757138252258
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 1.415159534662962,
+      "distance_min": 1.2253515273332596,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    },
+    {
+      "persona": "police_officer",
+      "slope": 1.0149854687584239,
+      "median_per_dial": [
+        5.435937738418579,
+        9.666540431976319,
+        16.958023738861083
+      ],
+      "n_per_dial": [
+        3,
+        3,
+        3
+      ],
+      "distance_mean": 0.6910583823919296,
+      "distance_min": 0.6367687880992889,
+      "sources_used": [
+        "florist",
+        "medical_doctor"
+      ],
+      "is_source": true
+    },
+    {
+      "persona": "assistant",
+      "slope": 0.6277814421121823,
+      "median_per_dial": [
+        4.127309274673461,
+        6.633421564102173,
+        11.253866243362427
+      ],
+      "n_per_dial": [
+        6,
+        6,
+        6
+      ],
+      "distance_mean": 0.8485243320465088,
+      "distance_min": 0.2182244062423706,
+      "sources_used": [
+        "florist",
+        "medical_doctor",
+        "librarian",
+        "police_officer"
+      ],
+      "is_source": false
+    }
+  ],
+  "git_commit": "473532390768d7739aa93e1a74f783727ae90a06",
+  "timestamp_utc": "2026-06-10T22:19:45.352465+00:00"
+}

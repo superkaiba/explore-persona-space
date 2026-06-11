@@ -274,35 +274,54 @@ def run_single(  # noqa: C901 - pipeline with branching for distributed/staged/t
         run_name = f"{condition.name}_seed{seed}"
 
         if upload_to == "hf":
-            from explore_persona_space.orchestrate.hub import DEFAULT_MODEL_REPO, upload_model
+            from explore_persona_space.orchestrate.hub import (
+                DEFAULT_MODEL_REPO,
+                merged_upload_enabled,
+                upload_model,
+            )
 
             hf_repo = cfg.get("hf_repo", DEFAULT_MODEL_REPO)
 
-            # Upload post-EM (final) model
-            hub_path = upload_model(
-                model_path=model_path,
-                repo_id=hf_repo,
-                condition_name=condition.name,
-                seed=seed,
-                path_in_repo=f"{condition.name}_seed{seed}_post_em",
-            )
-            if not hub_path:
-                logger.error("Upload failed for %s", run_name)
-                result["upload_failed"] = True
-
-            # Upload pre-EM checkpoint if it exists
-            pre_em_path = Path(cfg.output_dir) / "models" / run_name / "pre_em_checkpoint"
-            if pre_em_path.exists():
-                hub_path_pre = upload_model(
-                    model_path=str(pre_em_path),
+            # Merged checkpoints (~15GB each) are DERIVED data for LoRA runs —
+            # regenerable from the public base model + the ~300MB adapter that
+            # `_finalize_phase` already uploaded to HF by default — so their
+            # upload is opt-in (EPM_UPLOAD_MERGED=1 or `upload_merged: true`).
+            # Distributed full fine-tunes have no adapter: the full checkpoint
+            # IS the canonical artifact and always uploads.
+            if distributed or merged_upload_enabled(cfg.get("upload_merged", False)):
+                # Upload post-EM (final) model
+                hub_path = upload_model(
+                    model_path=model_path,
                     repo_id=hf_repo,
                     condition_name=condition.name,
                     seed=seed,
-                    path_in_repo=f"{condition.name}_seed{seed}_pre_em",
+                    path_in_repo=f"{condition.name}_seed{seed}_post_em",
                 )
-                if not hub_path_pre:
-                    logger.error("Upload failed for %s pre-EM", run_name)
+                if not hub_path:
+                    logger.error("Upload failed for %s", run_name)
                     result["upload_failed"] = True
+
+                # Upload pre-EM checkpoint if it exists
+                pre_em_path = Path(cfg.output_dir) / "models" / run_name / "pre_em_checkpoint"
+                if pre_em_path.exists():
+                    hub_path_pre = upload_model(
+                        model_path=str(pre_em_path),
+                        repo_id=hf_repo,
+                        condition_name=condition.name,
+                        seed=seed,
+                        path_in_repo=f"{condition.name}_seed{seed}_pre_em",
+                    )
+                    if not hub_path_pre:
+                        logger.error("Upload failed for %s pre-EM", run_name)
+                        result["upload_failed"] = True
+            else:
+                logger.info(
+                    "Skipping HF upload of merged checkpoints for %s (default): the LoRA "
+                    "adapter uploaded during training is the canonical artifact; merged "
+                    "dirs are derived data. Opt in with EPM_UPLOAD_MERGED=1 or "
+                    "upload_merged=true.",
+                    run_name,
+                )
 
         elif upload_to == "wandb":
             from explore_persona_space.orchestrate.hub import upload_model_wandb

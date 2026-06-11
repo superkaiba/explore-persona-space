@@ -1,0 +1,1018 @@
+{
+  "metadata": {
+    "task": 553,
+    "script": "issue553_ranking_table.py",
+    "git_commit": "60b4f613b3059919df2ba4ae772bdb45a4d09c8c",
+    "timestamp_utc": "2026-06-10T12:06:21.445617Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--n-boot",
+      "10000",
+      "--n-cluster-boot",
+      "2000",
+      "--n-marginal-boot",
+      "2000",
+      "--n-perm",
+      "10000",
+      "--seed",
+      "42"
+    ]
+  },
+  "step0_i532": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "n_cells",
+        "got": 416.0,
+        "want": 416.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary",
+        "got": 256.0,
+        "want": 256.0,
+        "pass": true
+      },
+      {
+        "name": "n_instructed",
+        "got": 160.0,
+        "want": 160.0,
+        "pass": true
+      },
+      {
+        "name": "spearman.dmargin.cosine.rho_union",
+        "got": 0.1915911778479508,
+        "want": 0.1915911778479508,
+        "pass": true
+      },
+      {
+        "name": "spearman.trained_logp.base_prior_logp.rho_union",
+        "got": 0.6763040595042208,
+        "want": 0.6763040595042208,
+        "pass": true
+      },
+      {
+        "name": "graded_prior_spread.ordinary_sd_across_bystanders",
+        "got": 2.2762727406962346,
+        "want": 2.2762727406962346,
+        "pass": true
+      }
+    ]
+  },
+  "step0_i539_emission_panel": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "n_total",
+        "got": 416.0,
+        "want": 416.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary",
+        "got": 256.0,
+        "want": 256.0,
+        "pass": true
+      },
+      {
+        "name": "n_instructed",
+        "got": 160.0,
+        "want": 160.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary_cross",
+        "got": 240.0,
+        "want": 240.0,
+        "pass": true
+      },
+      {
+        "name": "cosine_union_rho",
+        "got": 0.22443789394759853,
+        "want": 0.22443789394759853,
+        "pass": true
+      },
+      {
+        "name": "gauss_kl_ordinary_only_rho_incl_diagonal",
+        "got": -0.6200033818751595,
+        "want": -0.6200033818751595,
+        "pass": true
+      },
+      {
+        "name": "base_prior_union_rho",
+        "got": 0.720034210988633,
+        "want": 0.720034210988633,
+        "pass": true
+      },
+      {
+        "name": "analysis_json_cosine_union",
+        "got": 0.22443789394759853,
+        "want": 0.22443789394759853,
+        "pass": true
+      },
+      {
+        "name": "analysis_json_gkl_ordinary",
+        "got": -0.6200033818751595,
+        "want": -0.6200033818751595,
+        "pass": true
+      },
+      {
+        "name": "analysis_json_base_prior_union",
+        "got": 0.720034210988633,
+        "want": 0.720034210988633,
+        "pass": true
+      },
+      {
+        "name": "phase0_base_prior_coverage",
+        "got": 26.0,
+        "want": 26.0,
+        "pass": true
+      },
+      {
+        "name": "phase0_base_prior_max_abs_diff",
+        "got": 0.0,
+        "want": 0.0,
+        "pass": true
+      }
+    ],
+    "parent_analysis_git_commit": "28a73584c6906282a142c01ea32bf43cbbd9ae32"
+  },
+  "ranking_table": {
+    "margin_trained": {
+      "all_25": {
+        "margin_base_matched": {
+          "label": "post-train forecast-where",
+          "per_source_rho": {
+            "A1": 0.5430769230769231,
+            "A2": 0.7292307692307693,
+            "A3": 0.885939620158278,
+            "A4": 0.9615384615384615,
+            "A5": 0.9184615384615386,
+            "B1": 0.7561538461538462,
+            "B2": 0.7238461538461537,
+            "B3": 0.6515384615384615,
+            "B4": 0.6415384615384615,
+            "B5": 0.7838461538461537,
+            "C1": 0.7438461538461538,
+            "D1": 0.7561538461538462,
+            "D2": 0.6230769230769231,
+            "D3": 0.7774572176899175,
+            "D4": 0.7223076923076923,
+            "D5": 0.7453846153846154
+          },
+          "summary": {
+            "median": 0.7446153846153847,
+            "iqr": [
+              0.7046153846153846,
+              0.7790544517289766
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.6876923076923076,
+              "high": 0.7774572176899175,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.7453846153846154,
+            "median_n14_dropB1C1": 0.7373076923076924
+          }
+        },
+        "prior_margin_own": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.8407692307692308,
+            "A2": 0.8646153846153846,
+            "A3": 0.8809386583423606,
+            "A4": 0.8723076923076923,
+            "A5": 0.8753846153846153,
+            "B1": 0.72,
+            "B2": 0.9607692307692307,
+            "B3": 0.8192307692307693,
+            "B4": 0.8315384615384616,
+            "B5": 0.9146153846153846,
+            "C1": 0.7638461538461538,
+            "D1": 0.7707692307692308,
+            "D2": 0.8407692307692308,
+            "D3": 0.9244085572037961,
+            "D4": 0.7961538461538461,
+            "D5": 0.8792307692307693
+          },
+          "summary": {
+            "median": 0.8526923076923076,
+            "iqr": [
+              0.8134615384615385,
+              0.879657741508667
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.8138461538461539,
+              "high": 0.8792307692307693,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.8646153846153846,
+            "median_n14_dropB1C1": 0.8684615384615384
+          }
+        },
+        "cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.27082131680044624,
+            "A2": -0.33814195663010266,
+            "A3": -0.27298961138899575,
+            "A4": -0.2842854447663775,
+            "A5": -0.21350260060262458,
+            "B1": 0.16461538461538464,
+            "B2": -0.3831506129733587,
+            "B3": -0.11040584932063648,
+            "B4": -0.2477399545731355,
+            "B5": -0.3793037192688068,
+            "C1": 0.12153846153846154,
+            "D1": 0.1396422414752301,
+            "D2": -0.03885362641597311,
+            "D3": -0.4486340900346286,
+            "D4": -0.10117330442971216,
+            "D5": 0.4058472858302142
+          },
+          "summary": {
+            "median": -0.23062127758788004,
+            "iqr": [
+              -0.2977495727323088,
+              0.0012443955726355524
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": -0.3055657840095492,
+              "high": 0.01018257855437469,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": -0.2477399545731355,
+            "median_n14_dropB1C1": -0.2592806356867909
+          }
+        },
+        "z_prior_plus_z_cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.7007692307692307,
+            "A2": 0.7207692307692307,
+            "A3": 0.8759376965264434,
+            "A4": 0.9107692307692308,
+            "A5": 0.8846153846153847,
+            "B1": 0.9084615384615384,
+            "B2": 0.7061538461538461,
+            "B3": 0.8384615384615385,
+            "B4": 0.7515384615384615,
+            "B5": 0.7361538461538463,
+            "C1": 0.9230769230769231,
+            "D1": 0.9192307692307692,
+            "D2": 0.89,
+            "D3": 0.6766686026306604,
+            "D4": 0.8146153846153847,
+            "D5": 0.7430769230769232
+          },
+          "summary": {
+            "median": 0.8265384615384617,
+            "iqr": [
+              0.7323076923076923,
+              0.8946153846153846
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.7361538461538462,
+              "high": 0.89,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.8146153846153847,
+            "median_n14_dropB1C1": 0.7830769230769231
+          }
+        },
+        "top_ranker_by_median": "prior_margin_own",
+        "paired_differences_vs_top": {
+          "prior_margin_own_minus_margin_base_matched": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.13230769230769235,
+            "mean_difference": 0.09949689860612258,
+            "median_diff_ci95": {
+              "low": 0.007499519092041329,
+              "high": 0.16847566975693934
+            },
+            "mean_diff_ci95": {
+              "low": 0.04561602823438382,
+              "high": 0.1540233820684382
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "prior_margin_own_minus_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 1.0840828160494185,
+            "mean_difference": 0.9882941205807291,
+            "median_diff_ci95": {
+              "low": 0.7801176943607764,
+              "high": 1.178342805488422
+            },
+            "mean_diff_ci95": {
+              "low": 0.8500739253655929,
+              "high": 1.1158581509169403
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "prior_margin_own_minus_z_prior_plus_z_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": -0.0021149037074260635,
+            "mean_difference": 0.03469053804354656,
+            "median_diff_ci95": {
+              "low": -0.038461538461538436,
+              "high": 0.14000000000000012
+            },
+            "mean_diff_ci95": {
+              "low": -0.03398151122775925,
+              "high": 0.09922952759813251
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          }
+        }
+      },
+      "ordinary_15": {
+        "margin_base_matched": {
+          "label": "post-train forecast-where",
+          "per_source_rho": {
+            "A1": 0.1964285714285714,
+            "A2": 0.7071428571428571,
+            "A3": 0.5415551760337864,
+            "A4": 0.8714285714285712,
+            "A5": 0.7107142857142856,
+            "B1": 0.5464285714285714,
+            "B2": 0.8428571428571429,
+            "B3": 0.5142857142857142,
+            "B4": 0.7142857142857142,
+            "B5": 0.8607142857142854,
+            "C1": 0.5249999999999999,
+            "D1": 0.7107142857142856,
+            "D2": 0.32499999999999996,
+            "D3": 0.8847188519363838,
+            "D4": 0.9107142857142855,
+            "D5": 0.682142857142857
+          },
+          "summary": {
+            "median": 0.7089285714285714,
+            "iqr": [
+              0.5374163820253398,
+              0.8473214285714286
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.5415551760337864,
+              "high": 0.8428571428571429,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.7107142857142856,
+            "median_n14_dropB1C1": 0.7107142857142856
+          }
+        },
+        "prior_margin_own": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.3285714285714285,
+            "A2": 0.4107142857142856,
+            "A3": 0.46827543274208594,
+            "A4": 0.41785714285714276,
+            "A5": 0.4678571428571427,
+            "B1": 0.08214285714285713,
+            "B2": 0.8214285714285712,
+            "B3": 0.19999999999999998,
+            "B4": 0.2285714285714285,
+            "B5": 0.6464285714285712,
+            "C1": 0.10714285714285714,
+            "D1": 0.24285714285714283,
+            "D2": 0.27499999999999997,
+            "D3": 0.6559430680013189,
+            "D4": 0.18928571428571428,
+            "D5": 0.48214285714285704
+          },
+          "summary": {
+            "median": 0.36964285714285705,
+            "iqr": [
+              0.22142857142857136,
+              0.4717422888422787
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.22142857142857142,
+              "high": 0.46827543274208594,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.4107142857142856,
+            "median_n14_dropB1C1": 0.41428571428571415
+          }
+        },
+        "cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.38248451376643655,
+            "A2": -0.16621990551532057,
+            "A3": 0.6305903398926654,
+            "A4": 0.7345847437289974,
+            "A5": 0.6166222301374795,
+            "B1": 0.6785714285714285,
+            "B2": -0.2966935947907872,
+            "B3": 0.4915104732979909,
+            "B4": 0.1858803244472402,
+            "B5": 0.10366402709557626,
+            "C1": 0.6607142857142856,
+            "D1": 0.7381593653529829,
+            "D2": 0.5594282841537134,
+            "D3": -0.05008944543828265,
+            "D4": 0.5236820679138595,
+            "D5": -0.2377123379950284
+          },
+          "summary": {
+            "median": 0.5075962706059252,
+            "iqr": [
+              -0.07912206045754214,
+              0.6381213263480705
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": -0.05008944543828265,
+              "high": 0.6305903398926654,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.4915104732979909,
+            "median_n14_dropB1C1": 0.33869539887261557
+          }
+        },
+        "z_prior_plus_z_cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.2964285714285714,
+            "A2": -0.11785714285714284,
+            "A3": 0.6237714733854502,
+            "A4": 0.7428571428571428,
+            "A5": 0.5928571428571427,
+            "B1": 0.8107142857142855,
+            "B2": -0.1607142857142857,
+            "B3": 0.5107142857142856,
+            "B4": 0.20357142857142854,
+            "B5": 0.09999999999999999,
+            "C1": 0.7892857142857141,
+            "D1": 0.7928571428571427,
+            "D2": 0.5678571428571427,
+            "D3": -0.01608579730793425,
+            "D4": 0.5607142857142856,
+            "D5": -0.16428571428571426
+          },
+          "summary": {
+            "median": 0.5357142857142856,
+            "iqr": [
+              -0.0415286336952364,
+              0.6535428907533734
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": -0.01608579730793425,
+              "high": 0.6237714733854502,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.5107142857142856,
+            "median_n14_dropB1C1": 0.35714285714285704
+          }
+        },
+        "top_ranker_by_median": "margin_base_matched",
+        "paired_differences_vs_top": {
+          "margin_base_matched_minus_prior_margin_own": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.2696428571428572,
+            "mean_difference": 0.28249454188024425,
+            "median_diff_ci95": {
+              "low": 0.13663987164585026,
+              "high": 0.45357142857142846
+            },
+            "mean_diff_ci95": {
+              "low": 0.17825315114641715,
+              "high": 0.38428551721784565
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "margin_base_matched_minus_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.2619380227499999,
+            "mean_difference": 0.3596202123766843,
+            "median_diff_ci95": {
+              "low": -0.03312996143557784,
+              "high": 0.7570502586187091
+            },
+            "mean_diff_ci95": {
+              "low": 0.137717640845831,
+              "high": 0.581820889036596
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "margin_base_matched_minus_z_prior_plus_z_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.23928571428571416,
+            "mean_difference": 0.31276891485043373,
+            "median_diff_ci95": {
+              "low": -0.08214285714285707,
+              "high": 0.7607142857142855
+            },
+            "mean_diff_ci95": {
+              "low": 0.09686372453538804,
+              "high": 0.5275893530777693
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          }
+        }
+      }
+    },
+    "emission_rate": {
+      "all_25": {
+        "margin_base_matched": {
+          "label": "post-train forecast-where",
+          "per_source_rho": {
+            "A1": 0.46543830259636404,
+            "A2": 0.596030623586158,
+            "A3": 0.7388333215757812,
+            "A4": 0.7403479896128856,
+            "A5": 0.8094604872079605,
+            "B1": 0.7411207954475546,
+            "B2": 0.681346090420101,
+            "B3": 0.6053186160571217,
+            "B4": 0.6088921094347324,
+            "B5": 0.7606962608830006,
+            "C1": 0.7000474936286281,
+            "D1": 0.6969600833285632,
+            "D2": 0.667988197233315,
+            "D3": 0.6520042093814233,
+            "D4": 0.7257067322762786,
+            "D5": 0.7556578657897097
+          },
+          "summary": {
+            "median": 0.6985037884785956,
+            "iqr": [
+              0.6412261843947507,
+              0.7405411910715529
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.6520042093814233,
+              "high": 0.7403479896128856,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.6969600833285632,
+            "median_n14_dropB1C1": 0.6891530868743321
+          }
+        },
+        "prior_margin_own": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.8321227392505429,
+            "A2": 0.8694830395129948,
+            "A3": 0.741913933062546,
+            "A4": 0.7403479896128856,
+            "A5": 0.8505659025739898,
+            "B1": 0.717936620407485,
+            "B2": 0.8271829495829583,
+            "B3": 0.7635223623208987,
+            "B4": 0.825325155198718,
+            "B5": 0.7849841363901207,
+            "C1": 0.7576438915030982,
+            "D1": 0.7243071717999754,
+            "D2": 0.806165883587214,
+            "D3": 0.8566511349908399,
+            "D4": 0.7151835949124443,
+            "D5": 0.8155717346814568
+          },
+          "summary": {
+            "median": 0.7955750099886674,
+            "iqr": [
+              0.7415224472001309,
+              0.8284178969998545
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.741913933062546,
+              "high": 0.8271829495829583,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.806165883587214,
+            "median_n14_dropB1C1": 0.8108688091343355
+          }
+        },
+        "cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.17649577078645387,
+            "A2": -0.2648085151437067,
+            "A3": -0.27833543549744216,
+            "A4": -0.36792633917234163,
+            "A5": -0.46851115899303813,
+            "B1": 0.136013826901741,
+            "B2": -0.2866199082831292,
+            "B3": -0.12156530112396374,
+            "B4": -0.3660558958299932,
+            "B5": -0.4188035206269696,
+            "C1": 0.06030226891555272,
+            "D1": 0.10823715264716184,
+            "D2": -0.023292853930370234,
+            "D3": -0.43490238440120665,
+            "D4": -0.015203011240498889,
+            "D5": 0.4928747531416533
+          },
+          "summary": {
+            "median": -0.2206521429650803,
+            "iqr": [
+              -0.3665235066655803,
+              0.0036733087985140137
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": -0.3660558958299932,
+              "high": -0.00603485469512958,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": -0.2648085151437067,
+            "median_n14_dropB1C1": -0.2715719753205744
+          }
+        },
+        "z_prior_plus_z_cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.7734370402275232,
+            "A2": 0.8294868196953971,
+            "A3": 0.6946778902654843,
+            "A4": 0.7125269795648022,
+            "A5": 0.7999746221234922,
+            "B1": 0.906501244066717,
+            "B2": 0.7565867629818299,
+            "B3": 0.7750788072620813,
+            "B4": 0.7185019781049055,
+            "B5": 0.697062027054346,
+            "C1": 0.9072399047743733,
+            "D1": 0.8837016303190639,
+            "D2": 0.9063058922369497,
+            "D3": 0.7451476678644838,
+            "D4": 0.8363945475106841,
+            "D5": 0.8146428374893367
+          },
+          "summary": {
+            "median": 0.7875267146927868,
+            "iqr": [
+              0.7384862454245893,
+              0.848221318212779
+            ],
+            "n_sources_used": 16,
+            "n_degenerate_dropped": 0,
+            "median_ci95_source_boot": {
+              "low": 0.7375443705433677,
+              "high": 0.8565942250072305,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.7750788072620813,
+            "median_n14_dropB1C1": 0.7742579237448023
+          }
+        },
+        "top_ranker_by_median": "prior_margin_own",
+        "paired_differences_vs_top": {
+          "prior_margin_own_minus_margin_base_matched": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.058755133383108615,
+            "mean_difference": 0.10519119130803692,
+            "median_diff_ci95": {
+              "low": 0.015213849979088534,
+              "high": 0.17141230598165774
+            },
+            "mean_diff_ci95": {
+              "low": 0.051995639527533485,
+              "high": 0.16226501870730436
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "prior_margin_own_minus_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 1.0144339392984927,
+            "mean_difference": 0.9408750208006983,
+            "median_diff_ci95": {
+              "low": 0.7303866061529433,
+              "high": 1.1342915546567014
+            },
+            "mean_diff_ci95": {
+              "low": 0.8030080811603107,
+              "high": 1.063309346463286
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "prior_margin_own_minus_z_prior_plus_z_cosine": {
+            "n_paired_sources": 16,
+            "n_pairs_dropped_nan": 0,
+            "median_difference": 0.033908614932840586,
+            "mean_difference": -0.008022400759581369,
+            "median_diff_ci95": {
+              "low": -0.10014000864973571,
+              "high": 0.05891611469909508
+            },
+            "mean_diff_ci95": {
+              "low": -0.060985793573720776,
+              "high": 0.03861892559632931
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          }
+        }
+      },
+      "ordinary_15": {
+        "margin_base_matched": {
+          "label": "post-train forecast-where",
+          "per_source_rho": {
+            "A1": -0.10467947366982797,
+            "A2": NaN,
+            "A3": NaN,
+            "A4": NaN,
+            "A5": NaN,
+            "B1": 0.5200859717291152,
+            "B2": NaN,
+            "B3": 0.16710352491754057,
+            "B4": NaN,
+            "B5": NaN,
+            "C1": 0.4427118249578552,
+            "D1": 0.5140316832925489,
+            "D2": 0.43423317926469407,
+            "D3": NaN,
+            "D4": 0.8315218406202998,
+            "D5": NaN
+          },
+          "summary": {
+            "median": 0.4427118249578552,
+            "iqr": [
+              0.3006683520911173,
+              0.5170588275108321
+            ],
+            "n_sources_used": 7,
+            "n_degenerate_dropped": 9,
+            "median_ci95_source_boot": {
+              "low": 0.16710352491754057,
+              "high": 0.5200859717291152,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.4741324312786215,
+            "median_n14_dropB1C1": 0.43423317926469407
+          }
+        },
+        "prior_margin_own": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": 0.13957263155977062,
+            "A2": NaN,
+            "A3": NaN,
+            "A4": NaN,
+            "A5": NaN,
+            "B1": 0.029095718698132315,
+            "B2": NaN,
+            "B3": 0.1202330240260353,
+            "B4": NaN,
+            "B5": NaN,
+            "C1": 0.010931156171798894,
+            "D1": 0.05669467095138407,
+            "D2": 0.09423783890425276,
+            "D3": NaN,
+            "D4": 0.0,
+            "D5": NaN
+          },
+          "summary": {
+            "median": 0.05669467095138407,
+            "iqr": [
+              0.020013437434965604,
+              0.10723543146514403
+            ],
+            "n_sources_used": 7,
+            "n_degenerate_dropped": 9,
+            "median_ci95_source_boot": {
+              "low": 0.010931156171798894,
+              "high": 0.1202330240260353,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.07546625492781842,
+            "median_n14_dropB1C1": 0.09423783890425276
+          }
+        },
+        "cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.20954612569384268,
+            "A2": NaN,
+            "A3": NaN,
+            "A4": NaN,
+            "A5": NaN,
+            "B1": 0.6801124245688429,
+            "B2": NaN,
+            "B3": 0.43241000021648884,
+            "B4": NaN,
+            "B5": NaN,
+            "C1": 0.6303633392404028,
+            "D1": 0.679052797102137,
+            "D2": 0.6990931575739009,
+            "D3": NaN,
+            "D4": 0.6582461654360547,
+            "D5": NaN
+          },
+          "summary": {
+            "median": 0.6582461654360547,
+            "iqr": [
+              0.5313866697284458,
+              0.6795826108354899
+            ],
+            "n_sources_used": 7,
+            "n_degenerate_dropped": 9,
+            "median_ci95_source_boot": {
+              "low": 0.43241000021648884,
+              "high": 0.6801124245688429,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.6686494812690958,
+            "median_n14_dropB1C1": 0.6582461654360547
+          }
+        },
+        "z_prior_plus_z_cosine": {
+          "label": "pre-training forecast",
+          "per_source_rho": {
+            "A1": -0.17446578944971328,
+            "A2": NaN,
+            "A3": NaN,
+            "A4": NaN,
+            "A5": NaN,
+            "B1": 0.7928583345241057,
+            "B2": NaN,
+            "B3": 0.43202374734778787,
+            "B4": NaN,
+            "B5": NaN,
+            "C1": 0.7159907292528276,
+            "D1": 0.7067935645272547,
+            "D2": 0.696620887586339,
+            "D3": NaN,
+            "D4": 0.6765564066865166,
+            "D5": NaN
+          },
+          "summary": {
+            "median": 0.696620887586339,
+            "iqr": [
+              0.5542900770171523,
+              0.7113921468900412
+            ],
+            "n_sources_used": 7,
+            "n_degenerate_dropped": 9,
+            "median_ci95_source_boot": {
+              "low": 0.43202374734778787,
+              "high": 0.7159907292528276,
+              "n_boot": 2000
+            },
+            "median_n15_dropC1": 0.6865886471364278,
+            "median_n14_dropB1C1": 0.6765564066865166
+          }
+        },
+        "top_ranker_by_median": "z_prior_plus_z_cosine",
+        "paired_differences_vs_top": {
+          "z_prior_plus_z_cosine_minus_margin_base_matched": {
+            "n_paired_sources": 7,
+            "n_pairs_dropped_nan": 9,
+            "median_difference": 0.26238770832164493,
+            "mean_difference": 0.14876704705184177,
+            "median_diff_ci95": {
+              "low": -0.06978631577988531,
+              "high": 0.2727723627949905
+            },
+            "mean_diff_ci95": {
+              "low": 0.016528293495101307,
+              "high": 0.26350111486949124
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "z_prior_plus_z_cosine_minus_prior_margin_own": {
+            "n_paired_sources": 7,
+            "n_pairs_dropped_nan": 9,
+            "median_difference": 0.6500988935758707,
+            "mean_difference": 0.4850875485948206,
+            "median_diff_ci95": {
+              "low": 0.31179072332175256,
+              "high": 0.7050595730810287
+            },
+            "mean_diff_ci95": {
+              "low": 0.1855305441768249,
+              "high": 0.6933785536604932
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          },
+          "z_prior_plus_z_cosine_minus_cosine": {
+            "n_paired_sources": 7,
+            "n_pairs_dropped_nan": 9,
+            "median_difference": 0.027740767425117774,
+            "mean_difference": 0.03952087457587626,
+            "median_diff_ci95": {
+              "low": -0.00038625286870097586,
+              "high": 0.08562739001242481
+            },
+            "mean_diff_ci95": {
+              "low": 0.010743788747954336,
+              "high": 0.0721423521139889
+            },
+            "n_boot": 2000,
+            "method": "paired per-source difference, 2,000-rep source-pair bootstrap (statistics-reconciler round-1 REVISION; replaces marginal median-CI overlap)"
+          }
+        }
+      }
+    }
+  },
+  "open_question_note": "the matched-slot base margin is NOT pre-training-available; closing that gap (a pre-training-available analogue) stays an open methods question either way (plan section 9.3)",
+  "inline_vs_reviewed": [
+    {
+      "quantity": "median per-source rho, margin_base_matched, all 25",
+      "inline_value": 0.75,
+      "reviewed_value": 0.7446153846153847,
+      "convention_changed": false,
+      "note": "reviewed adds source-bootstrap median CI + dup-dropped medians + NaN counts"
+    },
+    {
+      "quantity": "median per-source rho, margin_base_matched, ordinary 15",
+      "inline_value": 0.71,
+      "reviewed_value": 0.7089285714285714,
+      "convention_changed": false,
+      "note": "same"
+    },
+    {
+      "quantity": "median per-source rho, prior_margin_own, all 25",
+      "inline_value": 0.85,
+      "reviewed_value": 0.8526923076923076,
+      "convention_changed": false,
+      "note": "reviewed adds source-bootstrap median CI + dup-dropped medians + NaN counts"
+    },
+    {
+      "quantity": "median per-source rho, prior_margin_own, ordinary 15",
+      "inline_value": 0.37,
+      "reviewed_value": 0.36964285714285705,
+      "convention_changed": false,
+      "note": "same"
+    },
+    {
+      "quantity": "median per-source rho, cosine, all 25",
+      "inline_value": -0.23,
+      "reviewed_value": -0.23062127758788004,
+      "convention_changed": false,
+      "note": "reviewed adds source-bootstrap median CI + dup-dropped medians + NaN counts"
+    },
+    {
+      "quantity": "median per-source rho, cosine, ordinary 15",
+      "inline_value": 0.51,
+      "reviewed_value": 0.5075962706059252,
+      "convention_changed": false,
+      "note": "same"
+    },
+    {
+      "quantity": "median per-source rho, z_prior_plus_z_cosine, all 25",
+      "inline_value": 0.83,
+      "reviewed_value": 0.8265384615384617,
+      "convention_changed": false,
+      "note": "reviewed adds source-bootstrap median CI + dup-dropped medians + NaN counts"
+    },
+    {
+      "quantity": "median per-source rho, z_prior_plus_z_cosine, ordinary 15",
+      "inline_value": 0.54,
+      "reviewed_value": 0.5357142857142856,
+      "convention_changed": false,
+      "note": "same"
+    }
+  ]
+}

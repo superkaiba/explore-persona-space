@@ -1,0 +1,374 @@
+{
+  "source": "villain",
+  "seed": 42,
+  "recipe": "band_stop",
+  "ladder": [
+    {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -9.051966667175293,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 11.908567428588867
+    },
+    {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -1.1324882507324219e-06,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960533142089844
+    },
+    {
+      "step": 60,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-60",
+      "cap_end": false,
+      "trajectory_step": 60,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 80,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-80",
+      "cap_end": false,
+      "trajectory_step": 80,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 100,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-100",
+      "cap_end": false,
+      "trajectory_step": 100,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 120,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-120",
+      "cap_end": false,
+      "trajectory_step": 120,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 140,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-140",
+      "cap_end": false,
+      "trajectory_step": 140,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 160,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-160",
+      "cap_end": false,
+      "trajectory_step": 160,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 180,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-180",
+      "cap_end": false,
+      "trajectory_step": 180,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 200,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-200",
+      "cap_end": false,
+      "trajectory_step": 200,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 220,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-220",
+      "cap_end": false,
+      "trajectory_step": 220,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 240,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-240",
+      "cap_end": false,
+      "trajectory_step": 240,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 260,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-260",
+      "cap_end": false,
+      "trajectory_step": 260,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 280,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-280",
+      "cap_end": false,
+      "trajectory_step": 280,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 300,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-300",
+      "cap_end": false,
+      "trajectory_step": 300,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 320,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-320",
+      "cap_end": false,
+      "trajectory_step": 320,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 340,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-340",
+      "cap_end": false,
+      "trajectory_step": 340,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 360,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-360",
+      "cap_end": false,
+      "trajectory_step": 360,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 380,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-380",
+      "cap_end": false,
+      "trajectory_step": 380,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 400,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-400",
+      "cap_end": false,
+      "trajectory_step": 400,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 420,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-420",
+      "cap_end": false,
+      "trajectory_step": 420,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 440,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-440",
+      "cap_end": false,
+      "trajectory_step": 440,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 460,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-460",
+      "cap_end": false,
+      "trajectory_step": 460,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 480,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-480",
+      "cap_end": false,
+      "trajectory_step": 480,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 500,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-500",
+      "cap_end": false,
+      "trajectory_step": 500,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 520,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-520",
+      "cap_end": false,
+      "trajectory_step": 520,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 528,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-528",
+      "cap_end": false,
+      "trajectory_step": 525,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    },
+    {
+      "step": 529,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter",
+      "cap_end": true,
+      "trajectory_step": 525,
+      "logp_trained": 0.0,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960535049438477
+    }
+  ],
+  "picks": {
+    "firing": {
+      "step": 40,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-40",
+      "cap_end": false,
+      "trajectory_step": 40,
+      "logp_trained": -1.1324882507324219e-06,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 20.960533142089844,
+      "flags": []
+    },
+    "graded": {
+      "step": 20,
+      "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-20",
+      "cap_end": false,
+      "trajectory_step": 20,
+      "logp_trained": -9.051966667175293,
+      "logp_base": -20.960535049438477,
+      "delta_nats": 11.908567428588867,
+      "flags": []
+    },
+    "firing_target_logp_nats": -1.0,
+    "graded_band": [
+      5.0,
+      12.0
+    ],
+    "graded_center": 8.5
+  },
+  "evaluations": [
+    {
+      "step": 40,
+      "attempt": 0,
+      "step_dir": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/villain/seed_42/anchor_step_40",
+      "gate": {
+        "n_bystanders": 23,
+        "n_nonzero": 4,
+        "n_distinct": 3,
+        "n_ceiling": 0,
+        "informative": false,
+        "sub_ceiling": true,
+        "passes": false,
+        "criteria": {
+          "min_nonzero_cells": 5,
+          "min_distinct_values": 3,
+          "ceiling_rate": 0.92,
+          "max_ceiling_cells": 2
+        }
+      }
+    },
+    {
+      "step": 80,
+      "attempt": 1,
+      "step_dir": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/villain/seed_42/anchor_step_80",
+      "gate": {
+        "n_bystanders": 23,
+        "n_nonzero": 1,
+        "n_distinct": 2,
+        "n_ceiling": 0,
+        "informative": false,
+        "sub_ceiling": true,
+        "passes": false,
+        "criteria": {
+          "min_nonzero_cells": 5,
+          "min_distinct_values": 3,
+          "ceiling_rate": 0.92,
+          "max_ceiling_cells": 2
+        }
+      }
+    },
+    {
+      "step": 120,
+      "attempt": 2,
+      "step_dir": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/villain/seed_42/anchor_step_120",
+      "gate": {
+        "n_bystanders": 23,
+        "n_nonzero": 1,
+        "n_distinct": 2,
+        "n_ceiling": 0,
+        "informative": false,
+        "sub_ceiling": true,
+        "passes": false,
+        "criteria": {
+          "min_nonzero_cells": 5,
+          "min_distinct_values": 3,
+          "ceiling_rate": 0.92,
+          "max_ceiling_cells": 2
+        }
+      }
+    }
+  ],
+  "accepted_step": 40,
+  "accepted_gate": {
+    "n_bystanders": 23,
+    "n_nonzero": 4,
+    "n_distinct": 3,
+    "n_ceiling": 0,
+    "informative": false,
+    "sub_ceiling": true,
+    "passes": false,
+    "criteria": {
+      "min_nonzero_cells": 5,
+      "min_distinct_values": 3,
+      "ceiling_rate": 0.92,
+      "max_ceiling_cells": 2
+    }
+  },
+  "flags": [
+    "gate_unmet"
+  ],
+  "repick_stride_steps": 40,
+  "max_reevals": 2,
+  "trajectory_path": "eval_results/issue_480/band-stopped-anchor-rerun/trajectories/villain_seed42_trajectory.json",
+  "git_commit_sha": "f1fb93948e086e3be1f7cd3709d930f58443da4f",
+  "hostname": "1b803bfa7eb4",
+  "timestamp_utc": "2026-06-10T07:09:22.470995+00:00"
+}

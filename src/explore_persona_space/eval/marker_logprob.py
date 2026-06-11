@@ -159,6 +159,112 @@ def assert_gauge_free_adapter_config(adapter_config: dict, *, context: str = "")
         )
 
 
+# The per-slot storage contract (CLAUDE.md marker-leakage bullet;
+# .claude/rules/marker-leakage-measurement.md § "Storage contract"): every
+# persisted marker slot read carries FOUR floats per model side — the
+# post-softmax log-prob plus the three pre-softmax readouts. Logits are
+# unrecoverable from stored log-probs post-hoc (incident #530: an eval rig
+# stored only log P(marker) and forced paid GPU re-runs on #530/#531).
+MARKER_SLOT_CONTRACT_KEYS = ("logp", "z_marker", "z_eos", "logZ")
+
+
+def validate_marker_slot_record(
+    record: dict,
+    *,
+    context: str = "",
+    require_z_eos: bool = True,
+    atol: float = 1e-3,
+) -> None:
+    """Fail loud when a to-be-persisted marker-slot record violates the storage contract.
+
+    Call this at WRITE time — immediately before a slot read is persisted to
+    JSON / WandB / any eval artifact — so a contract violation (e.g. only the
+    post-softmax ``logp`` present, the #530 incident) aborts the eval instead
+    of being discovered after the pod is gone.
+
+    Checks, per record (one model side):
+
+    - ``logp``, ``z_marker``, ``logZ`` present and finite floats (the
+      pre-softmax readouts are exactly what a post-softmax-only writer lacks).
+    - ``z_eos`` present and finite when ``require_z_eos=True`` (the default;
+      pass False only for a capture surface explicitly configured without an
+      EOS competitor id, and warn loudly at that surface).
+    - ``logp <= atol`` (a log-probability is non-positive; a positive value
+      means a raw logit or a probability was stuffed into the log-prob field).
+    - the softmax identity ``logp == z_marker - logZ`` within ``atol``
+      (exact per construction from one forward pass; linearity preserves it
+      for per-batch MEANS of the three fields, so mean-aggregated records
+      validate too).
+
+    Extra keys (e.g. ``argmax_id``) are allowed. Only genuinely
+    contract-violating records are rejected — every record produced by
+    :func:`compute_marker_slot_stats` passes by construction.
+
+    Args:
+        record: flat dict for ONE model side (trained or base).
+        context: optional label (artifact path, callback name, step) for the
+            error message.
+        require_z_eos: whether a missing/None ``z_eos`` is a hard failure.
+        atol: absolute tolerance for the identity / non-positivity checks.
+
+    Raises:
+        AssertionError: on any contract violation, naming the offending
+            fields, the contract, and the incident that motivated it.
+    """
+    where = f" ({context})" if context else ""
+
+    def _fail(detail: str) -> None:
+        raise AssertionError(
+            f"Marker-slot storage-contract violation{where}: {detail}. The contract "
+            f"(.claude/rules/marker-leakage-measurement.md § 'Storage contract') requires "
+            f"four floats per slot per model side: {MARKER_SLOT_CONTRACT_KEYS} — raw logits "
+            f"are unrecoverable from stored log-probs post-hoc (incident #530). Capture "
+            f"z_marker/z_eos/logZ from an HF forward pass (vLLM returns post-softmax "
+            f"log-probs only); record={record!r}"
+        )
+
+    if not isinstance(record, dict):
+        _fail(f"record is {type(record).__name__}, not a dict")
+
+    import math
+
+    required = ["logp", "z_marker", "logZ"] + (["z_eos"] if require_z_eos else [])
+    missing = [k for k in required if record.get(k) is None]
+    if missing:
+        _fail(
+            f"missing pre-softmax field(s) {missing} — only post-softmax values present "
+            f"is exactly the #530 failure mode"
+        )
+
+    def _is_finite_number(v) -> bool:
+        return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(float(v))
+
+    bad_type = [k for k in required if not isinstance(record[k], (int, float))]
+    bad_type += [k for k in required if isinstance(record[k], bool)]
+    if bad_type:
+        _fail(f"non-numeric field(s) {sorted(set(bad_type))}")
+    non_finite = [k for k in required if not math.isfinite(float(record[k]))]
+    if non_finite:
+        _fail(f"non-finite field(s) {non_finite}")
+    # Optional z_eos (require_z_eos=False) must still be finite when present.
+    z_eos = record.get("z_eos")
+    if not require_z_eos and z_eos is not None and not _is_finite_number(z_eos):
+        _fail("z_eos present but not a finite float")
+
+    logp = float(record["logp"])
+    z_marker = float(record["z_marker"])
+    log_z = float(record["logZ"])
+    if logp > atol:
+        _fail(f"logp={logp} > 0 — a log-probability is non-positive")
+    if abs(logp - (z_marker - log_z)) > atol:
+        _fail(
+            f"softmax identity broken: logp={logp} vs z_marker - logZ = {z_marker - log_z} "
+            f"(|diff|={abs(logp - (z_marker - log_z))} > atol={atol}) — the fields were not "
+            f"captured from the same forward pass, or post-softmax values were stuffed into "
+            f"the logit fields"
+        )
+
+
 def compute_marker_slot_stats(
     model: PreTrainedModel,
     tokenizer: PreTrainedTokenizer,
@@ -168,6 +274,7 @@ def compute_marker_slot_stats(
     batch_size: int = 8,
     device: str = "cuda:0",
     eos_token_id: int | None = None,
+    include_argmax: bool = False,
 ) -> list[dict[str, float]]:
     """Per-context marker-slot stats in BOTH log-prob and raw-logit space.
 
@@ -192,12 +299,19 @@ def compute_marker_slot_stats(
         eos_token_id: Token id for the EOS / ``<|im_end|>`` competitor at the
             slot. Defaults to ``tokenizer.eos_token_id``; fails loud if both
             are None (the margin readout needs a real competitor id).
+        include_argmax: When True, each per-context dict ALSO carries
+            ``argmax_id`` (the int token id with the largest logit at the
+            slot — the emission read: argmax == marker id ⇔ the marker fires
+            under greedy decoding), from the SAME forward pass. Default
+            False keeps the returned key set byte-identical for existing
+            callers.
 
     Returns:
         ``list[dict]`` of length ``len(contexts)`` with keys per context:
         ``logp`` (= ``z_marker - logZ``), ``z_marker`` (raw logit at the
         marker id), ``z_eos`` (raw logit at ``eos_token_id``), ``logZ``
-        (``logsumexp`` over the full vocab at the slot).
+        (``logsumexp`` over the full vocab at the slot); plus ``argmax_id``
+        when ``include_argmax=True``.
     """
     if position != "end_of_answer":
         raise NotImplementedError(f"position={position!r} not supported yet")
@@ -246,14 +360,20 @@ def compute_marker_slot_stats(
             log_z = float(torch.logsumexp(raw, dim=-1).item())
             z_marker = float(raw[marker_id].item())
             z_eos = float(raw[eos_token_id].item())
-            out.append(
-                {
-                    "logp": z_marker - log_z,
-                    "z_marker": z_marker,
-                    "z_eos": z_eos,
-                    "logZ": log_z,
-                }
+            row: dict[str, float] = {
+                "logp": z_marker - log_z,
+                "z_marker": z_marker,
+                "z_eos": z_eos,
+                "logZ": log_z,
+            }
+            if include_argmax:
+                row["argmax_id"] = int(torch.argmax(raw).item())
+            # Write-time storage-contract check (#576): fail loud here, where
+            # the forward pass still exists, not after the pod is gone.
+            validate_marker_slot_record(
+                row, context=f"compute_marker_slot_stats contexts[{start + i}]"
             )
+            out.append(row)
         del logits
 
     assert len(out) == len(contexts)

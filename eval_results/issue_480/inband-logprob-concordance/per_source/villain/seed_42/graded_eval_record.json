@@ -1,0 +1,59 @@
+{
+  "source": "villain",
+  "seed": 42,
+  "recipe": "graded_eval",
+  "adapter_provenance": {
+    "hf_repo": "superkaiba1/explore-persona-space",
+    "path_in_repo": "adapters/issue_480_band_stop/villain_seed42_graded",
+    "revision_requested": "3b3d1d940200338bf8143556e85262926c1b26d3",
+    "revision_resolved": "3b3d1d940200338bf8143556e85262926c1b26d3",
+    "files": [
+      "README.md",
+      "adapter_config.json",
+      "adapter_model.safetensors",
+      "added_tokens.json",
+      "chat_template.jinja",
+      "merges.txt",
+      "special_tokens_map.json",
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "trainer_state.json",
+      "training_args.bin",
+      "vocab.json"
+    ],
+    "n_files": 12,
+    "downloaded": true
+  },
+  "recorded_pick": {
+    "step": 20,
+    "dir": "/workspace/runs/issue_480_bsr/villain_seed42/adapter/checkpoint-20",
+    "cap_end": false,
+    "trajectory_step": 20,
+    "logp_trained": -9.051966667175293,
+    "logp_base": -20.960535049438477,
+    "delta_nats": 11.908567428588867,
+    "flags": [],
+    "pick_record_path": "eval_results/issue_480/band-stopped-anchor-rerun/per_source/villain/seed_42/anchor_pick.json"
+  },
+  "parity_tolerance_nats": 1.0,
+  "git_commit_sha": "613598f4776d38f894717c67009f5d4a27b24d5d",
+  "hostname": "7af6a9255dbc",
+  "timestamp_utc": "2026-06-11T00:46:59.136799+00:00",
+  "parity_probe": {
+    "pool_path": "/workspace/runs/issue_480_inband/villain_seed42/train_pool.jsonl",
+    "tolerance_nats": 1.0,
+    "max_rows": 32,
+    "max_length": 2560,
+    "recorded_logp_trained": -9.051966667175293,
+    "recorded_logp_base": -20.960535049438477,
+    "offline_logp_trained": -9.118633270263672,
+    "offline_logp_base": -20.88146209716797,
+    "abs_diff_trained": 0.0666666030883789,
+    "abs_diff_base": 0.07907295227050781,
+    "passed": true
+  },
+  "trained_model_application": "peft_unmerged_adapter",
+  "logprob_path": "eval_results/issue_480/inband-logprob-concordance/per_source/villain/seed_42/marker_logprob_eval.json",
+  "r_trained_path": "eval_results/issue_480/inband-logprob-concordance/per_source/villain/seed_42/r_trained.json",
+  "wall_seconds": 567.9
+}

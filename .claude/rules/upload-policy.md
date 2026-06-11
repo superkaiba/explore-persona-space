@@ -72,6 +72,24 @@ phase — never a warning-and-continue.
 auto-uploads merged checkpoints to WandB Artifacts; orchestrators doing their own
 tagged upload set the env in `try/finally` to prevent double-uploads.
 
+**Merged-dir HF uploads are opt-in (default OFF); the LoRA adapter is the
+canonical artifact.** `merged_upload_enabled()` (`orchestrate/hub.py`) gates
+`runner.py`'s merged post-EM / pre-EM HF uploads behind `EPM_UPLOAD_MERGED=1`
+(env) or `upload_merged: true` (cfg, default false); by default
+`_finalize_phase` auto-uploads only the adapter to
+`adapters/{run}/{phase}_adapter`. Optimizer/scheduler/rng state
+(`TRAINING_STATE_IGNORE_PATTERNS`, `orchestrate/hub.py`) is ALWAYS excluded
+from every HF folder upload — no opt-out. Distributed FULL fine-tunes are
+exempt: no adapter exists, so the full checkpoint stays the canonical upload.
+Two semantics worth knowing (code-review notes, 2026-06-10): (a) `upload_to:
+"none"` does NOT suppress the default adapter upload — `_finalize_phase` has no
+view of `upload_to`, so flows that own their uploads must set the
+`EPM_SKIP_INLINE_CHECKPOINT_UPLOAD` fence (same precedent as the WandB
+checkpoint upload); (b) the local adapter is reaped only after a VERIFIED
+upload (or under the fence) — when uploads fail-soft (e.g. quota 403), adapters
+accumulate on the pod's ~130GB MooseFS quota instead of being deleted, by
+design (upload-before-delete invariant).
+
 **Delete-after-eval sweeps MUST persist the ADAPTER first (never the merged dir).**
 A sweep that `rm`s a trained checkpoint after its eval to stay under the MooseFS
 ~130GB quota (the #404/#458 pattern) MUST set `EPM_PERSIST_ADAPTER_HF_REPO` +
@@ -86,3 +104,48 @@ would blow the already-~550GB HF repo quota (the same quota that soft-failed
 with `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` + `upload_to=none` on the train call so
 the wasteful 15GB merged WandB/HF uploads don't fire at all. Re-eval = download
 adapter, re-merge with base.
+
+**HF storage-quota 403 is persistent + account-wide — recover, don't retry-loop.**
+Signature: `403 Forbidden: You have exceeded your public storage space` on
+`.../info/lfs/objects/batch` during `upload_folder` / `upload_file`. Unlike the
+256/hr commit throttle above, this is the ACCOUNT-WIDE public-storage quota: it
+is not transient, it hits every running task at once, and retrying changes
+nothing until quota is freed. **The quota gate fires ONLY on the LFS endpoint**
+(validated #541, 2026-06-10): regular (non-LFS) git-blob commits to public
+repos still succeed while over quota, and PRIVATE-repo LFS uploads still
+succeed too (private storage is a separate quota with headroom on PRO). A file
+routes to LFS when its extension is LFS-matched in the repo's `.gitattributes`
+(`*.safetensors`, `*.bin`, `*.gz`, ... — `*.json` / `*.jsonl` / `*.txt` are
+NOT matched in the data repo) OR when `upload_file` / `upload_folder`
+force-routes it at >10MB — which explains the #552 canary results from the
+same day (small text/JSON and ~10MB files to the dataset repo PASS; ≥~30MB
+LFS uploads — adapters, safetensors, merged dirs — FAIL on BOTH the model and
+dataset repos). Recovery ordering:
+(1) NEVER delete the local copy — the fail-loud persist guard above is correct;
+let it halt the cell rather than papering over the 403. (2) Keep small-artifact
+uploads (eval JSONs, raw completions, analysis tensors) flowing to the dataset
+repo unchanged — they ride the non-LFS path. Text payloads <9.5MB upload
+as-is; line-split bigger files into <9MB shards (`<stem>.shardNN.jsonl` plus a
+`<stem>.manifest.json` listing ordered parts, line counts, sha256s). NEVER
+gzip to shrink them — `*.gz` IS LFS-matched and re-enters the blocked path.
+(3) For LFS-only artifacts (adapters, checkpoints): upload to the PRIVATE
+overflow repo `superkaiba1/explore-persona-space-overflow` under the same
+`issueN_<slug>/...` subfolder layout, record a plan-deviation entry + the
+overflow URLs in the run's results sentinel, and migrate to the canonical repo
+after quota is freed. As a second durable replica (or if the private path also
+fails), pull the adapters off the pod to the VM via tar-over-ssh
+(`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -` — rsync is NOT
+installed on RunPod pods) into a local staging dir
+`eval_results/issue_<N>/adapter_backup/<cell>/` (local staging only —
+`*.safetensors` is gitignored; the "eval_results/ is JSON/text only" rule
+governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
+(4) Retry the canonical HF model-repo upload only after quota is freed.
+Freeing quota means deleting existing HF artifacts — that is USER-ONLY:
+surface the situation to the user, never auto-delete from HF.
+Diagnosis probes: sum account usage via
+`/api/{models,datasets}/<id>?expand[]=usedStorage` over
+`list_models(author=...)` / `list_datasets(author=...)`; a tiny non-LFS `.txt`
+upload probes the regular-blob path; a tiny `.bin` upload to the private repo
+probes the private-LFS path. (Incident #541, 2026-06-10: 11.3 TB public
+across 414 repos — 10.2 TB in `superkaiba1/explore-persona-space` alone —
+killed the sweep's first upload; #552 hit the same wall the same day.)

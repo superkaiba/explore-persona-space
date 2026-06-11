@@ -1,0 +1,421 @@
+{
+  "meta": {
+    "issue": 551,
+    "git_commit": "777043f47c00df510483322a1dbe69c7100546fc",
+    "timestamp_utc": "2026-06-10T15:18:31Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6",
+      "transformers": "4.57.6"
+    },
+    "tensors_source": "eval_results/issue_551/shifts",
+    "parent_svd_dir": "eval_results/issue_521/svd",
+    "thresholds": {
+      "repro_tol": 0.05,
+      "u1_cos_min": 0.95,
+      "profile_spearman_min": 0.8,
+      "rho_strong": 0.54,
+      "n_null_reps": 1000,
+      "n_perm": 10000
+    },
+    "source_persona": "medical_doctor"
+  },
+  "per_cell": {
+    "same_marker_seed42": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_full": 0.32465410232543945,
+      "s_top1_frac_drop": {
+        "assistant": 0.34913286566734314,
+        "biographer": 0.35307323932647705,
+        "comedian": 0.33371925354003906,
+        "data_scientist": 0.3098219931125641,
+        "french_person": 0.33537542819976807,
+        "kindergarten_teacher": 0.33447930216789246,
+        "librarian": 0.3180178999900818,
+        "local_historian": 0.34163641929626465,
+        "marine_biologist": 0.33161118626594543,
+        "medical_doctor": 0.3398055136203766,
+        "police_officer": 0.3101671040058136,
+        "software_engineer": 0.3100924491882324,
+        "villain": 0.3457478880882263,
+        "zelthari_scholar": 0.33918601274490356
+      }
+    },
+    "same_marker_seed137": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_full": 0.3113222122192383,
+      "s_top1_frac_drop": {
+        "assistant": 0.3197258710861206,
+        "biographer": 0.32741644978523254,
+        "comedian": 0.3130968511104584,
+        "data_scientist": 0.31548213958740234,
+        "french_person": 0.3188003897666931,
+        "kindergarten_teacher": 0.3213255703449249,
+        "librarian": 0.3178102374076843,
+        "local_historian": 0.3186453580856323,
+        "marine_biologist": 0.3177875578403473,
+        "medical_doctor": 0.3367049992084503,
+        "police_officer": 0.31506067514419556,
+        "software_engineer": 0.3128918409347534,
+        "villain": 0.3194897770881653,
+        "zelthari_scholar": 0.32458779215812683
+      }
+    },
+    "same_marker_seed256": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_full": 0.3476976752281189,
+      "s_top1_frac_drop": {
+        "assistant": 0.36428102850914,
+        "biographer": 0.38018184900283813,
+        "comedian": 0.35615018010139465,
+        "data_scientist": 0.3364536464214325,
+        "french_person": 0.36213457584381104,
+        "kindergarten_teacher": 0.3549436032772064,
+        "librarian": 0.3359750211238861,
+        "local_historian": 0.3658735752105713,
+        "marine_biologist": 0.3561233580112457,
+        "medical_doctor": 0.3659512996673584,
+        "police_officer": 0.3371067941188812,
+        "software_engineer": 0.3345881998538971,
+        "villain": 0.3756861090660095,
+        "zelthari_scholar": 0.3554517328739166
+      }
+    },
+    "same_em_seed42": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_full": 0.5235457420349121,
+      "s_top1_frac_drop": {
+        "assistant": 0.543633759021759,
+        "biographer": 0.5451568961143494,
+        "comedian": 0.5379052758216858,
+        "data_scientist": 0.5265709161758423,
+        "french_person": 0.5306516885757446,
+        "kindergarten_teacher": 0.5335469841957092,
+        "librarian": 0.5268673300743103,
+        "local_historian": 0.5332611203193665,
+        "marine_biologist": 0.5305116772651672,
+        "medical_doctor": 0.5295583605766296,
+        "police_officer": 0.5276061296463013,
+        "software_engineer": 0.5254448652267456,
+        "villain": 0.538131058216095,
+        "zelthari_scholar": 0.5361543893814087
+      }
+    },
+    "same_em_seed137": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_full": 0.5720158219337463,
+      "s_top1_frac_drop": {
+        "assistant": 0.5915623307228088,
+        "biographer": 0.5940907001495361,
+        "comedian": 0.5869395732879639,
+        "data_scientist": 0.5768876075744629,
+        "french_person": 0.5788968801498413,
+        "kindergarten_teacher": 0.5812011361122131,
+        "librarian": 0.5752002000808716,
+        "local_historian": 0.5807381868362427,
+        "marine_biologist": 0.5792209506034851,
+        "medical_doctor": 0.5757790803909302,
+        "police_officer": 0.5757601857185364,
+        "software_engineer": 0.5749338269233704,
+        "villain": 0.5846683979034424,
+        "zelthari_scholar": 0.5842640995979309
+      }
+    },
+    "same_em_seed256": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_full": 0.6031942963600159,
+      "s_top1_frac_drop": {
+        "assistant": 0.6204273700714111,
+        "biographer": 0.6251252293586731,
+        "comedian": 0.6171457767486572,
+        "data_scientist": 0.6064503788948059,
+        "french_person": 0.6102614998817444,
+        "kindergarten_teacher": 0.6118835806846619,
+        "librarian": 0.6054196357727051,
+        "local_historian": 0.613153338432312,
+        "marine_biologist": 0.6118738651275635,
+        "medical_doctor": 0.6079761981964111,
+        "police_officer": 0.6060795187950134,
+        "software_engineer": 0.6069506406784058,
+        "villain": 0.6176124215126038,
+        "zelthari_scholar": 0.6145235300064087
+      }
+    },
+    "base_marker_seed42": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_full": 0.44879987835884094,
+      "s_top1_frac_drop": {
+        "assistant": 0.46581387519836426,
+        "biographer": 0.4735659062862396,
+        "comedian": 0.4593754708766937,
+        "data_scientist": 0.4553830027580261,
+        "french_person": 0.45811113715171814,
+        "kindergarten_teacher": 0.4587481617927551,
+        "librarian": 0.4539685547351837,
+        "local_historian": 0.4571118950843811,
+        "marine_biologist": 0.45605939626693726,
+        "medical_doctor": 0.4571784436702728,
+        "police_officer": 0.45003581047058105,
+        "software_engineer": 0.4549127221107483,
+        "villain": 0.4595361053943634,
+        "zelthari_scholar": 0.4594033658504486
+      }
+    },
+    "base_marker_seed137": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_full": 0.4410346448421478,
+      "s_top1_frac_drop": {
+        "assistant": 0.4576243758201599,
+        "biographer": 0.46619728207588196,
+        "comedian": 0.45250049233436584,
+        "data_scientist": 0.44846010208129883,
+        "french_person": 0.4507899284362793,
+        "kindergarten_teacher": 0.44924068450927734,
+        "librarian": 0.4475401043891907,
+        "local_historian": 0.4488028287887573,
+        "marine_biologist": 0.44947901368141174,
+        "medical_doctor": 0.4489094614982605,
+        "police_officer": 0.4419553279876709,
+        "software_engineer": 0.44514358043670654,
+        "villain": 0.4520648419857025,
+        "zelthari_scholar": 0.4522095024585724
+      }
+    },
+    "base_marker_seed256": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_full": 0.44906899333000183,
+      "s_top1_frac_drop": {
+        "assistant": 0.46653977036476135,
+        "biographer": 0.4749580919742584,
+        "comedian": 0.45950064063072205,
+        "data_scientist": 0.45564934611320496,
+        "french_person": 0.45768284797668457,
+        "kindergarten_teacher": 0.4582816958427429,
+        "librarian": 0.45461422204971313,
+        "local_historian": 0.45774030685424805,
+        "marine_biologist": 0.4572604298591614,
+        "medical_doctor": 0.45668360590934753,
+        "police_officer": 0.45024508237838745,
+        "software_engineer": 0.45433399081230164,
+        "villain": 0.4597401022911072,
+        "zelthari_scholar": 0.4598757028579712
+      }
+    },
+    "base_em_seed42": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_full": 0.5066162347793579,
+      "s_top1_frac_drop": {
+        "assistant": 0.5224063396453857,
+        "biographer": 0.5398766994476318,
+        "comedian": 0.5217354893684387,
+        "data_scientist": 0.5122058391571045,
+        "french_person": 0.5157297253608704,
+        "kindergarten_teacher": 0.5144324898719788,
+        "librarian": 0.5101739168167114,
+        "local_historian": 0.5146548748016357,
+        "marine_biologist": 0.5129197239875793,
+        "medical_doctor": 0.5121229887008667,
+        "police_officer": 0.5084884166717529,
+        "software_engineer": 0.5130566954612732,
+        "villain": 0.5185141563415527,
+        "zelthari_scholar": 0.5159421563148499
+      }
+    },
+    "base_em_seed137": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_full": 0.5399935841560364,
+      "s_top1_frac_drop": {
+        "assistant": 0.5566287040710449,
+        "biographer": 0.5734723210334778,
+        "comedian": 0.5545111894607544,
+        "data_scientist": 0.5462906956672668,
+        "french_person": 0.547531008720398,
+        "kindergarten_teacher": 0.5467177629470825,
+        "librarian": 0.5446286797523499,
+        "local_historian": 0.5465879440307617,
+        "marine_biologist": 0.5460512042045593,
+        "medical_doctor": 0.5457695126533508,
+        "police_officer": 0.5418753623962402,
+        "software_engineer": 0.5459574460983276,
+        "villain": 0.5519307851791382,
+        "zelthari_scholar": 0.5492656826972961
+      }
+    },
+    "base_em_seed256": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_full": 0.583422839641571,
+      "s_top1_frac_drop": {
+        "assistant": 0.5981149673461914,
+        "biographer": 0.6140719056129456,
+        "comedian": 0.5984581112861633,
+        "data_scientist": 0.5894458293914795,
+        "french_person": 0.5908612608909607,
+        "kindergarten_teacher": 0.5899883508682251,
+        "librarian": 0.5880983471870422,
+        "local_historian": 0.5904789566993713,
+        "marine_biologist": 0.5906060338020325,
+        "medical_doctor": 0.5898488759994507,
+        "police_officer": 0.5846911072731018,
+        "software_engineer": 0.5892307162284851,
+        "villain": 0.5950698852539062,
+        "zelthari_scholar": 0.5917946696281433
+      }
+    },
+    "on_policy_marker_seed42": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_full": 0.32822155952453613,
+      "s_top1_frac_drop": {
+        "assistant": 0.3444782495498657,
+        "biographer": 0.3362521231174469,
+        "comedian": 0.34344300627708435,
+        "data_scientist": 0.34037062525749207,
+        "french_person": 0.32828184962272644,
+        "kindergarten_teacher": 0.32090309262275696,
+        "librarian": 0.3315378725528717,
+        "local_historian": 0.3419838845729828,
+        "marine_biologist": 0.32991087436676025,
+        "medical_doctor": 0.32436490058898926,
+        "police_officer": 0.3379661440849304,
+        "software_engineer": 0.3412460386753082,
+        "villain": 0.3438439965248108,
+        "zelthari_scholar": 0.33437660336494446
+      }
+    },
+    "on_policy_marker_seed137": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_full": 0.3210100531578064,
+      "s_top1_frac_drop": {
+        "assistant": 0.3470923900604248,
+        "biographer": 0.327526718378067,
+        "comedian": 0.33727651834487915,
+        "data_scientist": 0.3395090699195862,
+        "french_person": 0.3236463665962219,
+        "kindergarten_teacher": 0.3243664801120758,
+        "librarian": 0.3029504418373108,
+        "local_historian": 0.32742321491241455,
+        "marine_biologist": 0.3285216987133026,
+        "medical_doctor": 0.30828002095222473,
+        "police_officer": 0.3353777825832367,
+        "software_engineer": 0.33918771147727966,
+        "villain": 0.31440410017967224,
+        "zelthari_scholar": 0.33599382638931274
+      }
+    },
+    "on_policy_marker_seed256": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_full": 0.33085182309150696,
+      "s_top1_frac_drop": {
+        "assistant": 0.3487168550491333,
+        "biographer": 0.3387705087661743,
+        "comedian": 0.3258381187915802,
+        "data_scientist": 0.34320127964019775,
+        "french_person": 0.332952618598938,
+        "kindergarten_teacher": 0.3195156157016754,
+        "librarian": 0.3433751165866852,
+        "local_historian": 0.3414771854877472,
+        "marine_biologist": 0.3371066749095917,
+        "medical_doctor": 0.3259691298007965,
+        "police_officer": 0.3421972393989563,
+        "software_engineer": 0.3440820574760437,
+        "villain": 0.34502944350242615,
+        "zelthari_scholar": 0.34156984090805054
+      }
+    },
+    "on_policy_em_seed42": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_full": 0.4122730791568756,
+      "s_top1_frac_drop": {
+        "assistant": 0.4299602508544922,
+        "biographer": 0.4358818829059601,
+        "comedian": 0.4243428111076355,
+        "data_scientist": 0.4178161025047302,
+        "french_person": 0.4204837679862976,
+        "kindergarten_teacher": 0.42096638679504395,
+        "librarian": 0.4182623624801636,
+        "local_historian": 0.41823098063468933,
+        "marine_biologist": 0.4169834852218628,
+        "medical_doctor": 0.41774725914001465,
+        "police_officer": 0.4166339337825775,
+        "software_engineer": 0.4185737669467926,
+        "villain": 0.4211270809173584,
+        "zelthari_scholar": 0.41967278718948364
+      }
+    },
+    "on_policy_em_seed137": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_full": 0.4518110752105713,
+      "s_top1_frac_drop": {
+        "assistant": 0.4677881598472595,
+        "biographer": 0.47542211413383484,
+        "comedian": 0.4649585485458374,
+        "data_scientist": 0.4574897289276123,
+        "french_person": 0.45968055725097656,
+        "kindergarten_teacher": 0.4598846137523651,
+        "librarian": 0.45895737409591675,
+        "local_historian": 0.45820119976997375,
+        "marine_biologist": 0.4570149779319763,
+        "medical_doctor": 0.45637246966362,
+        "police_officer": 0.4574383795261383,
+        "software_engineer": 0.4578069746494293,
+        "villain": 0.4626799523830414,
+        "zelthari_scholar": 0.45852261781692505
+      }
+    },
+    "on_policy_em_seed256": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_full": 0.4901909828186035,
+      "s_top1_frac_drop": {
+        "assistant": 0.5055662393569946,
+        "biographer": 0.5139535069465637,
+        "comedian": 0.5027963519096375,
+        "data_scientist": 0.4956471621990204,
+        "french_person": 0.4977192282676697,
+        "kindergarten_teacher": 0.4981171190738678,
+        "librarian": 0.4968029856681824,
+        "local_historian": 0.4973861873149872,
+        "marine_biologist": 0.4966558814048767,
+        "medical_doctor": 0.49512434005737305,
+        "police_officer": 0.49564552307128906,
+        "software_engineer": 0.4962024986743927,
+        "villain": 0.5008595585823059,
+        "zelthari_scholar": 0.497565358877182
+      }
+    }
+  }
+}

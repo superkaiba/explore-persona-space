@@ -1,0 +1,413 @@
+{
+  "schema_version": 1,
+  "smoke": false,
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_revision": "1b6e20530b1c6d477a387c18d5a88554910e7df9",
+  "cross_check": {
+    "cells": [
+      {
+        "substrate": "192_qwen_default",
+        "teach_persona": "qwen_default",
+        "bystander_persona": "assistant",
+        "per_seed": {
+          "42": 0.74,
+          "137": 0.48,
+          "256": 0.693
+        },
+        "recon_mean": 0.6376666666666666,
+        "csv_leak_rate": 0.638,
+        "diff": -0.00033333333333340764,
+        "scorer": "haiku_strict_linkage_judge_aggregates"
+      },
+      {
+        "substrate": "192_qwen_default",
+        "teach_persona": "qwen_default",
+        "bystander_persona": "kindergarten_teacher",
+        "per_seed": {
+          "42": 0.78,
+          "137": 0.4866666666666667,
+          "256": 0.687
+        },
+        "recon_mean": 0.6512222222222223,
+        "csv_leak_rate": 0.651,
+        "diff": 0.00022222222222223476,
+        "scorer": "haiku_strict_linkage_judge_aggregates"
+      },
+      {
+        "substrate": "192_qwen_default",
+        "teach_persona": "qwen_default",
+        "bystander_persona": "no_system",
+        "per_seed": {
+          "42": 0.7533333333333333,
+          "137": 0.48,
+          "256": 0.7
+        },
+        "recon_mean": 0.6444444444444445,
+        "csv_leak_rate": 0.644,
+        "diff": 0.0004444444444444695,
+        "scorer": "haiku_strict_linkage_judge_aggregates"
+      },
+      {
+        "substrate": "192_qwen_default",
+        "teach_persona": "qwen_default",
+        "bystander_persona": "software_engineer",
+        "per_seed": {
+          "42": 0.7533333333333333,
+          "137": 0.49333333333333335,
+          "256": 0.687
+        },
+        "recon_mean": 0.6445555555555555,
+        "csv_leak_rate": 0.644,
+        "diff": 0.0005555555555555314,
+        "scorer": "haiku_strict_linkage_judge_aggregates"
+      },
+      {
+        "substrate": "192_zelthari",
+        "teach_persona": "zelthari_scholar",
+        "bystander_persona": "assistant",
+        "per_seed": {
+          "42": 0.6933333333333334,
+          "137": 0.6,
+          "256": 0.6866666666666666
+        },
+        "recon_mean": 0.66,
+        "csv_leak_rate": 0.607,
+        "diff": 0.05300000000000005,
+        "scorer": "substring_strict_linkage_proxy(>=2 of 4 anchors)"
+      },
+      {
+        "substrate": "192_zelthari",
+        "teach_persona": "zelthari_scholar",
+        "bystander_persona": "kindergarten_teacher",
+        "per_seed": {
+          "42": 0.7,
+          "137": 0.6333333333333333,
+          "256": 0.6733333333333333
+        },
+        "recon_mean": 0.668888888888889,
+        "csv_leak_rate": 0.636,
+        "diff": 0.03288888888888897,
+        "scorer": "substring_strict_linkage_proxy(>=2 of 4 anchors)"
+      },
+      {
+        "substrate": "192_zelthari",
+        "teach_persona": "zelthari_scholar",
+        "bystander_persona": "no_system",
+        "per_seed": {
+          "42": 0.6866666666666666,
+          "137": 0.5933333333333334,
+          "256": 0.68
+        },
+        "recon_mean": 0.6533333333333333,
+        "csv_leak_rate": 0.586,
+        "diff": 0.06733333333333336,
+        "scorer": "substring_strict_linkage_proxy(>=2 of 4 anchors)"
+      },
+      {
+        "substrate": "192_zelthari",
+        "teach_persona": "zelthari_scholar",
+        "bystander_persona": "software_engineer",
+        "per_seed": {
+          "42": 0.6866666666666666,
+          "137": 0.6333333333333333,
+          "256": 0.6733333333333333
+        },
+        "recon_mean": 0.6644444444444444,
+        "csv_leak_rate": 0.624,
+        "diff": 0.040444444444444394,
+        "scorer": "substring_strict_linkage_proxy(>=2 of 4 anchors)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "assistant",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.35,
+          "256": 0.016666666666666666
+        },
+        "recon_mean": 0.12222222222222222,
+        "csv_leak_rate": 0.12222222222222222,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "kindergarten_teacher",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.38333333333333336,
+          "256": 0.016666666666666666
+        },
+        "recon_mean": 0.13333333333333333,
+        "csv_leak_rate": 0.13333333333333333,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_historian",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.4166666666666667,
+          "256": 0.06666666666666667
+        },
+        "recon_mean": 0.16111111111111112,
+        "csv_leak_rate": 0.16111111111111112,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_resident",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.36666666666666664,
+          "256": 0.0
+        },
+        "recon_mean": 0.12222222222222222,
+        "csv_leak_rate": 0.12222222222222222,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "no_system",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.35,
+          "256": 0.016666666666666666
+        },
+        "recon_mean": 0.12222222222222222,
+        "csv_leak_rate": 0.12222222222222222,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_contradictory",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "software_engineer",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.3,
+          "256": 0.016666666666666666
+        },
+        "recon_mean": 0.10555555555555556,
+        "csv_leak_rate": 0.10555555555555556,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "assistant",
+        "per_seed": {
+          "42": 0.5333333333333333,
+          "137": 0.38333333333333336,
+          "256": 0.7833333333333333
+        },
+        "recon_mean": 0.5666666666666668,
+        "csv_leak_rate": 0.5666666666666668,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "kindergarten_teacher",
+        "per_seed": {
+          "42": 0.6,
+          "137": 0.45,
+          "256": 0.5833333333333334
+        },
+        "recon_mean": 0.5444444444444444,
+        "csv_leak_rate": 0.5444444444444444,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_historian",
+        "per_seed": {
+          "42": 0.95,
+          "137": 0.9333333333333333,
+          "256": 0.9666666666666667
+        },
+        "recon_mean": 0.9500000000000001,
+        "csv_leak_rate": 0.9500000000000001,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_resident",
+        "per_seed": {
+          "42": 0.4166666666666667,
+          "137": 0.35,
+          "256": 0.6666666666666666
+        },
+        "recon_mean": 0.4777777777777777,
+        "csv_leak_rate": 0.47222222222222215,
+        "diff": 0.005555555555555536,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "no_system",
+        "per_seed": {
+          "42": 0.65,
+          "137": 0.3333333333333333,
+          "256": 0.6666666666666666
+        },
+        "recon_mean": 0.5499999999999999,
+        "csv_leak_rate": 0.5555555555555555,
+        "diff": -0.005555555555555536,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_on_policy",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "software_engineer",
+        "per_seed": {
+          "42": 0.5666666666666667,
+          "137": 0.4,
+          "256": 0.6166666666666667
+        },
+        "recon_mean": 0.5277777777777778,
+        "csv_leak_rate": 0.5333333333333333,
+        "diff": -0.005555555555555536,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "assistant",
+        "per_seed": {
+          "42": 0.13333333333333333,
+          "137": 0.21666666666666667,
+          "256": 0.4
+        },
+        "recon_mean": 0.25,
+        "csv_leak_rate": 0.25,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "kindergarten_teacher",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.06666666666666667,
+          "256": 0.016666666666666666
+        },
+        "recon_mean": 0.027777777777777776,
+        "csv_leak_rate": 0.027777777777777776,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_historian",
+        "per_seed": {
+          "42": 1.0,
+          "137": 0.9833333333333333,
+          "256": 1.0
+        },
+        "recon_mean": 0.9944444444444445,
+        "csv_leak_rate": 0.9944444444444445,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "local_resident",
+        "per_seed": {
+          "42": 0.15,
+          "137": 0.43333333333333335,
+          "256": 0.6166666666666667
+        },
+        "recon_mean": 0.4000000000000001,
+        "csv_leak_rate": 0.4000000000000001,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "no_system",
+        "per_seed": {
+          "42": 0.0,
+          "137": 0.03333333333333333,
+          "256": 0.03333333333333333
+        },
+        "recon_mean": 0.022222222222222223,
+        "csv_leak_rate": 0.022222222222222223,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      },
+      {
+        "substrate": "444_suppression",
+        "teach_persona": "marine_biologist",
+        "bystander_persona": "software_engineer",
+        "per_seed": {
+          "42": 0.016666666666666666,
+          "137": 0.05,
+          "256": 0.26666666666666666
+        },
+        "recon_mean": 0.1111111111111111,
+        "csv_leak_rate": 0.1111111111111111,
+        "diff": 0.0,
+        "scorer": "haiku_5way_judge_labels(stated_seven, A_reformulation)"
+      }
+    ],
+    "n_seeds": 3,
+    "zelthari_offset_mean": 0.04841666666666669,
+    "zelthari_offset_spread": 0.03444444444444439,
+    "zelthari_calibration": {
+      "per_frame": {
+        "assistant": {
+          "substring_seed256": 0.6866666666666666,
+          "judge_seed256": 0.607,
+          "offset": 0.07966666666666666
+        },
+        "software_engineer": {
+          "substring_seed256": 0.6733333333333333,
+          "judge_seed256": 0.587,
+          "offset": 0.08633333333333337
+        },
+        "kindergarten_teacher": {
+          "substring_seed256": 0.6733333333333333,
+          "judge_seed256": 0.587,
+          "offset": 0.08633333333333337
+        },
+        "no_system": {
+          "substring_seed256": 0.68,
+          "judge_seed256": 0.593,
+          "offset": 0.08700000000000008
+        }
+      },
+      "note": "substring co-occurrence over-counts the judge's affirmative-connection rubric; a CONSISTENT positive offset is expected",
+      "offset_mean": 0.08483333333333337,
+      "offset_spread": 0.007333333333333414
+    },
+    "failures": [],
+    "passed": true
+  },
+  "git_sha": "f1ac859d42ad32bfdb51de8f0cd6f9d8d1734c8b",
+  "timestamp_utc": "2026-06-10T20:51:52.194214+00:00"
+}

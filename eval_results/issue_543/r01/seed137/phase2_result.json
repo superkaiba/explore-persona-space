@@ -1,0 +1,39 @@
+{
+  "issue": 543,
+  "git_commit": "c95e2252df0cb0902004f65eafb8718d884d1a9a",
+  "timestamp_utc": "2026-06-10T21:51:57.281422+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "phase": "phase2",
+  "arm": "r01",
+  "seed": 137,
+  "train_loss": 1.0422053184509277,
+  "phase1_adapter_path": "/tmp/issue_543_results/r01_seed137_phase1_retry/adapter",
+  "trajectory_rows_per_probe": {
+    "phase2_trajectory_trigger.jsonl": 75,
+    "phase2_trajectory_no_trigger.jsonl": 75,
+    "phase2_trajectory_doctor.jsonl": 75,
+    "phase2_trajectory_reference.jsonl": 75
+  },
+  "final_adapter_path": "/tmp/issue_543_results/r01_seed137_phase2/adapter",
+  "adapter_hf_subfolder": "adapters/issue543/r01_seed137_phase2",
+  "phase2_handoff": "continue_adapter",
+  "wall_minutes": 11.7,
+  "config": {
+    "lr": 0.0001,
+    "lr_scheduler_type": "cosine",
+    "epochs": 1,
+    "max_length": 2048,
+    "dataset": "data/issue376_em/v1/good_medical_advice_6k.jsonl",
+    "trajectory_every": 5
+  }
+}

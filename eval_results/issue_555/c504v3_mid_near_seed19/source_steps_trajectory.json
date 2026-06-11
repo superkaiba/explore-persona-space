@@ -1,0 +1,69 @@
+{
+  "schema_version": "i534_source_steps_v1",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "marker_token_id": 83399,
+  "eos_token_id": 151645,
+  "n_probe_rows": 32,
+  "base": {
+    "logp_marker_mean": -21.330644607543945,
+    "z_marker_mean": 0.802490234375,
+    "z_eos_mean": 1.0374755859375,
+    "logz_mean": 22.133134841918945
+  },
+  "steps": [
+    {
+      "step": 1,
+      "logp_marker_mean": -21.330644607543945,
+      "z_marker_mean": 0.802490234375,
+      "z_eos_mean": 1.0374755859375,
+      "logz_mean": 22.133134841918945,
+      "delta_g_mean": 0.0,
+      "delta_z_marker_mean": 0.0,
+      "delta_z_margin_mean": 0.0
+    },
+    {
+      "step": 2,
+      "logp_marker_mean": -21.30602264404297,
+      "z_marker_mean": 0.854248046875,
+      "z_eos_mean": 1.07757568359375,
+      "logz_mean": 22.16027069091797,
+      "delta_g_mean": 0.024621963500976562,
+      "delta_z_marker_mean": 0.0517578125,
+      "delta_z_margin_mean": 0.01165771484375
+    },
+    {
+      "step": 3,
+      "logp_marker_mean": -21.284339904785156,
+      "z_marker_mean": 0.84747314453125,
+      "z_eos_mean": 1.03759765625,
+      "logz_mean": 22.131813049316406,
+      "delta_g_mean": 0.04630470275878906,
+      "delta_z_marker_mean": 0.04498291015625,
+      "delta_z_margin_mean": 0.04486083984375
+    },
+    {
+      "step": 4,
+      "logp_marker_mean": -21.315427780151367,
+      "z_marker_mean": 0.809814453125,
+      "z_eos_mean": 1.052886962890625,
+      "logz_mean": 22.125242233276367,
+      "delta_g_mean": 0.015216827392578125,
+      "delta_z_marker_mean": 0.00732421875,
+      "delta_z_margin_mean": -0.008087158203125
+    },
+    {
+      "step": 5,
+      "logp_marker_mean": -21.287025451660156,
+      "z_marker_mean": 0.86859130859375,
+      "z_eos_mean": 1.03802490234375,
+      "logz_mean": 22.155616760253906,
+      "delta_g_mean": 0.04361915588378906,
+      "delta_z_marker_mean": 0.06610107421875,
+      "delta_z_margin_mean": 0.0655517578125
+    }
+  ],
+  "git_commit": "b8a715c100c490c7f7397f3df9fa596f6b8851ce",
+  "hostname": "a1576c880317",
+  "timestamp_utc": "2026-06-10T23:40:00.410076+00:00"
+}

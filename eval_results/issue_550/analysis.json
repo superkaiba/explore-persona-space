@@ -1,0 +1,79 @@
+{
+  "schema_version": "issue_538_analysis_v1",
+  "pair_aggregate": {
+    "florist__medical_doctor": {
+      "n_seeds": 3,
+      "median_dv1": 0.9959276230548413,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.7241282613069379,
+      "median_dv3_resid": -6.4800326347351085,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": 0.0011739598121494055,
+      "gd1_pass_count": 0,
+      "gd3_pass_count": 0,
+      "per_cell_dv4_source_emission_joint_a": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_source_emission_joint_b": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_confirmed": [
+        false,
+        false,
+        false
+      ]
+    },
+    "librarian__police_officer": {
+      "n_seeds": 3,
+      "median_dv1": 0.9951271092432205,
+      "median_dv1_coverage": 1.0,
+      "median_dv2_resid_norm": 0.6927056191529641,
+      "median_dv3_resid": -6.228175163269044,
+      "fraction_h1_pass": 0.0,
+      "fraction_h2_pass": 0.0,
+      "fraction_dv1_diagnostic": 0.0,
+      "base_cos_centered_L20": -0.003965806216001511,
+      "gd1_pass_count": 0,
+      "gd3_pass_count": 0,
+      "per_cell_dv4_source_emission_joint_a": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_source_emission_joint_b": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "per_cell_dv4_confirmed": [
+        false,
+        false,
+        false
+      ]
+    }
+  },
+  "n_cells_analyzed": 6,
+  "gd1_pass_count_per_pair": {
+    "florist__medical_doctor": 0,
+    "librarian__police_officer": 0
+  },
+  "gd3_pass_count_per_pair": {
+    "florist__medical_doctor": 0,
+    "librarian__police_officer": 0
+  },
+  "h1_qualifying_joint_cells": 0,
+  "h1_denominator": 6,
+  "h1_threshold": 4,
+  "h1_verdict": "FAIL",
+  "band_low_nats": 9.0,
+  "band_high_nats": 13.0,
+  "git_commit": "15ccd521822a39ae1c4bddd84781e6496e547daa",
+  "timestamp_utc": "2026-06-10T10:01:26+00:00",
+  "note": "band_low/high_nats corrected to #550 values [9, 13] nat (round-2 analyzer fix; the H1 verdict + threshold are #538-inherited semantics \u2014 for #550 the kill criterion is per-cell singleton effective rank outside the [1.20, 1.40] envelope on >=3 of 6 joint cells, NOT this H1 count)."
+}

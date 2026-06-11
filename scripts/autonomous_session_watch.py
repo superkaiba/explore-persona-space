@@ -1,12 +1,26 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
-interactive issue sessions.
+interactive issue sessions (plus campaign sessions, task #586).
 
-Four passes, run in this order:
+Nine passes; eight run in this order (the CAMPAIGN pass — see item 9 —
+runs right after pass 2):
 
-1. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
+1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
+   the host of every orchestrator session, the worktree ``.venv``s, the uv
+   cache, and the HF cache. Pods have their own guards (``pod_disk_guard.py``,
+   the preflight fallocate probe); the VM had none until / hit 100%
+   mid-pipeline and every foreground Bash spawn in the orchestrator session
+   failed silently — exit 1, zero output — stalling the interpretation loop
+   ~20 min, undiagnosable from inside the session (task #552, 2026-06-10).
+   Below :data:`VM_DISK_ALERT_FREE_BYTES` (~20 GiB): loud log + ONE
+   dashboard-visible marker per low-disk episode. Below
+   :data:`VM_DISK_RECLAIM_FREE_BYTES` (~8 GiB): additionally run the safe,
+   fail-soft reclaims (``uv cache prune``; sweep ``/tmp/claude-*`` trees idle
+   > 3 days). Runs FIRST because a full root disk makes every later
+   subprocess in this very watcher flaky; never crashes the pass.
+2. **Crash-recovery (respawn pass).** Re-spawn an autonomous (`--auto`) `/issue`
    session whose driver process has died. Gated on daemon reachability — it
    reasons about session liveness, which is unknowable during a daemon outage.
-2. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
+3. **Pod-safety pass.** Reconcile RUNNING managed pods (``pod-<N>`` / legacy
    ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
@@ -25,7 +39,7 @@ Four passes, run in this order:
    (see "Why STOP is keyed on task status, not session liveness" below) and
    does NOT need the daemon, so it runs unconditionally — even during a daemon
    outage. Only the respawn pass is daemon-gated.
-3. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
+4. **Stalled-detector pass (ALERT + AUTO-RESPAWN).** Detect an autonomous
    session whose Happy id is in the live set (so the respawn pass doesn't
    touch it) but whose self-report timestamp + latest non-watcher progress
    marker have BOTH been frozen > ``STALLED_WINDOW_S`` (default 45 min).
@@ -45,12 +59,121 @@ Four passes, run in this order:
    (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
    an ACTIVE status previously orphaned silently because this pass only
    globbed ``issue-*.json``).
-4. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
+5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
+   session pass starts from the registry files (``issue-<N>.json`` /
+   ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
+   is invisible to all of them. That blind spot orphaned #472 for 10.5h on
+   2026-06-10: the task parked at ``awaiting_promotion`` (TERMINAL → the
+   respawn pass DELETED its registry entry per :func:`decide`), a same-issue
+   follow-up later flipped it back to ``running`` driven by an unregistered
+   interactive session, that session died at 08:40Z, and no pass could see
+   it. This pass inverts the direction: enumerate ACTIVE-status tasks via
+   ``task.py list-by-status``, and for any task with NO live REGISTERED
+   session AND no real progress marker within
+   :data:`ORPHAN_STALENESS_S_DEFAULT` (~90 min, env
+   ``EPM_ORPHAN_STALENESS_MIN``), RESPAWN via ``spawn-issue --auto`` (which
+   re-registers it), capped at :data:`ORPHAN_MAX_RESPAWNS_PER_DAY` attempts
+   per task per UTC day; when the cap is exhausted or the task's only
+   registration is MANUAL (user-driven — never auto-respawn, #505), degrade
+   to a one-time loud alert marker. Daemon-gated like the respawn pass
+   (liveness is unknowable during an outage; a mass respawn would duplicate
+   pods).
+6. **Session-reconcile pass (sessions-vs-status; AUTO-STOP by default).**
+   Mirror of the pod-safety auto-stop arm for Happy SESSIONS: a live
+   session mapped to an issue (registry entry, or an ``issue-<N>``
+   worktree cwd for unregistered / superseded zombie generations) whose
+   task is parked/terminal (:data:`SESSION_RECONCILE_DONE` =
+   ``awaiting_promotion`` / ``completed`` / ``archived``) is STOPPED via
+   ``spawn_session.py stop`` once ALL of these hold, confirmed across the
+   same >=2-consecutive-checks guard as the pod pass:
+
+   - **idle** — every activity signal (the newest NON-watcher marker of
+     ANY kind on the task, plus the per-issue self-report file) is older
+     than :func:`_session_idle_s` (default 2h, env
+     ``EPM_SESSION_RECONCILE_IDLE_S``);
+   - **no live inline follow-up** — the latest follow-up signal marker
+     (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
+     ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) is
+     OLDER than the latest done-transition marker
+     (:data:`_SESSION_DONE_TRANSITION_KINDS`);
+   - **no RUNNING managed pod** for the issue (a live pod means work may
+     still be in flight — e.g. a follow-up that has not posted its
+     ``epm:run-launched`` yet);
+   - **no ``keep-running`` tag** (the explicit user override).
+
+   AUTO-STOP is the DEFAULT (user request 2026-06-10: "Can we stop the
+   happy sessions once they reach awaiting promotion?" — supersedes the
+   same-day alert-only decision; 73 registered sessions had accumulated
+   ~0.5-0.6GB RSS each and 14 were stopped manually with this exact
+   predicate). Set ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` to fall back to
+   the old alert-only posture (loud log + one-time marker). A stop is
+   VERIFIED on the next tick — the daemon ACK is not trusted as a kill:
+   an ACKed-but-still-alive session gets ONE stop retry, then a one-time
+   loud marker, and the episode state is cleared only once the session
+   actually leaves the live set (:func:`_check_stop_verification`).
+   NEVER touches: sessions with no issue mapping (the PM session, chat
+   sessions), tasks at any other status (ACTIVE statuses, ``blocked``,
+   and ``followups_running`` — a same-issue follow-up round is
+   executing there). Motivated by the 2026-06-10 disk-full incident:
+   15+ idle sessions of weeks-old completed/archived tasks (the respawn
+   pass deletes the registry entry at a TERMINAL status but never stops
+   the session) pinned their 10-15G worktrees against the stale-worktree
+   sweep and held deleted-file handles (~37G phantom disk usage).
+   Daemon-gated like the respawn pass (session liveness is unknowable
+   during a daemon outage).
+7. **Zombie-wrapper pass (AUTO-STOP by default).** Stop a daemon-tracked
+   Happy session whose process tree has carried NO inner Claude process
+   (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS`) for >= ``threshold``
+   consecutive checks AND >= the :func:`_zombie_wrapper_grace_s` window
+   (default 2h) — REGARDLESS of issue mapping. Every other session pass is
+   keyed on a registry entry or an ``issue-<N>`` worktree cwd, so a
+   finished session that lost its mapping (registry GC'd at the terminal
+   transition, cwd = repo root) is invisible to all of them even though
+   its inner Claude exited: 25 such zombies had accumulated by 2026-06-11,
+   showing as "running" in ``spawn_session.py list`` indefinitely until a
+   manual sweep. The grace window is load-bearing, not cosmetic: a live
+   wrapper revives its inner Claude IN PLACE on the next phone message
+   (the remote-mode launcher blocks on ``nextMessage()`` BEFORE spawning
+   the Claude SDK subprocess), so a no-Claude snapshot alone can be a
+   healthy idle session. NEVER touches: the PM session (excluded via the
+   explicit ``pm-session.json`` registration written by ``spawn-pm`` /
+   ``register-pm`` / the `/pm` skill bootstrap), non-EPS-cwd sessions, and
+   issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+   ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to alert-only. Stops are
+   verified on the next tick (daemon ACK != kill), mirroring the
+   session-reconcile contract. Daemon-gated.
+8. **GC pass.** Reap per-issue state files (``manual-issue-<N>.json``,
    ``issue-progress/<N>.json``, ``issue-tick-last-status/<N>.json``,
-   ``stalled-<N>.json``) for tasks in :data:`TERMINAL_FOR_GC`
+   ``stalled-<N>.json``, ``orphan-<N>.json``) for tasks in
+   :data:`TERMINAL_FOR_GC`
    (``completed`` / ``archived``) — conservative on ``awaiting_promotion``
    and ``blocked`` (the user could still be interacting). Independent of
-   the destructive passes; safe to run last.
+   the destructive passes; safe to run last. (``session-reconcile-<N>.json``
+   is deliberately NOT in its sweep — those files track episodes whose
+   task is BY DEFINITION terminal, so the terminal-status GC would reset
+   the miss counter every tick; they are reaped by their own
+   live-session-keyed GC inside the session-reconcile pass. The
+   per-session ``zombie-wrapper-<sid>.json`` files are likewise out of its
+   per-issue sweep — reaped by the zombie pass's own live-session-keyed
+   GC.)
+9. **Campaign pass** (runs right after pass 2; task #586). Driven by
+   ``campaign-<N>.json`` registry entries (written by ``spawn_session.py
+   spawn-campaign``): respawn a dead campaign session whose task is ACTIVE
+   (``approved``/``running``) via ``spawn-campaign``; a progress watchdog
+   posts ``epm:campaign-stalled v1`` when the newest skill-posted
+   ``epm:campaign-*`` marker AND every child-task marker are older than
+   ``EPM_CAMPAIGN_STALL_S`` (default 2h) with a live session, then
+   stop-then-respawns on the second consecutive stalled check (cap 3 per
+   episode); a budget backstop alerts once per episode when
+   ``campaign-state.json`` shows GPU-hours committed > total; entries +
+   watch state are reaped when the campaign task is terminal
+   (``completed``/``archived``/``blocked``) — the still-live session is
+   STOPPED first (reap-before-stop would unmap an immortal idle session),
+   and the reap is deferred while the daemon is unreachable. The orphan
+   sweep skips
+   ``kind: campaign`` tasks (its ``spawn-issue --auto`` recovery would boot
+   the wrong skill); see the campaign-pass section comment for the full
+   cross-pass interaction notes.
 
 Why each pass exists
 --------------------
@@ -88,17 +211,23 @@ Coverage notes (deliberate gaps you should know about)
   next watcher run, with a fresh >=2-checks accumulation. The alert and
   stalled-detector arms ignore the tag (they never stop pods anyway).
 * The auto-stop arm ALSO inspects events.jsonl for a live inline follow-up:
-  if a task's latest ``epm:run-launched`` marker is NEWER than its latest
+  if a task's latest follow-up signal marker (``epm:run-launched`` /
+  ``epm:followup-scope`` / ``epm:free-analysis-followup-run`` —
+  :data:`_POD_FOLLOWUP_SIGNAL_KINDS`) is NEWER than its latest
   ``epm:promoted`` / ``epm:status-changed`` (i.e. a user-approved inline
   follow-up — the CLAUDE.md "Routing experiment intent → Follow-up" path —
-  has provisioned a fresh pod on a promoted/completed/awaiting_promotion/
+  is in flight on a promoted/completed/awaiting_promotion/
   archived parent), the stop is SKIPPED with the same once-per-incarnation
   marker semantics as the keep-running exemption (deduped via the
-  ``followup_noted`` flag). Precedence: ``keep_running`` (explicit user
+  ``followup_noted`` flag). ``epm:followup-scope`` covers USER-CHAT inline
+  follow-ups, which post the scope marker BEFORE the run launches (refs
+  #573 — the run-launched-only inference stopped healthy follow-up pods
+  pod-530/531 8x + pod-477 3x on 2026-06-09 in exactly that window).
+  Precedence: ``keep_running`` (explicit user
   tag) beats ``followup_active`` (inferred from events). The skip re-arms
   naturally on the next tick when the follow-up posts its next
   ``epm:status-changed`` / ``epm:promoted`` event newer than the
-  ``epm:run-launched``. The #477 incident, 2026-06-10, motivates this: an
+  follow-up signal. The #477 incident, 2026-06-10, motivates this: an
   inline follow-up on a promoted task ran 3 cycles of auto-stop → manual
   re-provision in <1h before the user added the ``keep-running`` tag.
 
@@ -125,8 +254,17 @@ the GPU-hour cap. This watcher, each run:
 
   * reads the task's current status (via `task.py view --json`);
   * decides per :func:`decide` whether to RESPAWN / KEEP / DELETE the entry;
-  * a session is "alive" iff its recorded id is in the daemon's live set OR a
-    live session sits in the issue's worktree (`.claude/worktrees/issue-<N>`);
+  * a session is "alive" iff its recorded id is in the daemon's live set OR
+    the issue's MANUAL registration (``manual-issue-<N>.json``, written by
+    bare ``spawn-issue``) records a live id — i.e. a user-driven replacement
+    session counts as the driver. The earlier worktree-cwd fallback ("a live
+    session sits in ``.claude/worktrees/issue-<N>``") was REMOVED 2026-06-10:
+    ``spawn-issue --auto`` spawns drivers WITH cwd = the issue worktree, so
+    every superseded driver generation matches the cwd test, and one idle
+    zombie generation kept #518 reading ``alive=True`` for ~11h after the
+    registered driver died (the registry rewrite on every respawn makes the
+    recorded-id + manual-id checks the precise signal the cwd heuristic was
+    approximating);
   * a dead session is only re-spawned after ``--threshold`` (default 2)
     consecutive misses, so a transient daemon-list glitch never double-spawns;
   * single-flight via flock so two overlapping cron fires can't race.
@@ -154,6 +292,8 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import os
+import shutil
 import subprocess
 import sys
 import time
@@ -171,12 +311,29 @@ from runpod_api import list_team_pods
 from spawn_session import (
     AUTONOMOUS_REGISTRY_DIR,
     PROJECT_ROOT,
+    _infer_issue_from_path,
+    _live_children,
     _live_session_ids,
+    _load_pm_session_ids,
+    _load_session_issue_map,
     _load_session_meta,
 )
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
-ACTIVE = {"planning", "approved", "running", "verifying", "interpreting", "reviewing"}
+# `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue
+# follow-up round holds this status for the whole abbreviated cycle
+# (plan amendment -> run -> re-fold), so a dead session there is mid-work
+# and must be re-driven. Under the legacy children-in-flight semantics a
+# respawned session just re-shows the child table and exits — harmless.
+ACTIVE = {
+    "planning",
+    "approved",
+    "running",
+    "verifying",
+    "interpreting",
+    "reviewing",
+    "followups_running",
+}
 # Park statuses: legitimately waiting on the user or a gate — never re-spawn,
 # but keep the entry (it may flip back to ACTIVE, e.g. plan_pending -> approved).
 # Members MUST equal the runtime enum `task_workflow.STATUSES` exactly when
@@ -233,9 +390,11 @@ def decide(status: str, alive: bool, missed: int, threshold: int = 2) -> tuple[s
 # `blocked` is DELIBERATELY excluded: a blocked pod may be under active
 # investigation, so it's KEPT (alert-only if stale), never auto-stopped.
 # Members MUST be a subset of `task_workflow.STATUSES` — phantom names like
-# `cancelled` / `followups_running` were dropped (they're not in the runtime
-# enum, so they could never match anyway). The disjoint+subset invariant is
-# pinned by `test_status_classes_subset_of_authoritative_enum`.
+# `cancelled` were dropped (not in the runtime enum, so they could never
+# match anyway; `followups_running` was a phantom here too until it joined
+# the runtime enum on 2026-06-10 — it now lives in POD_ACTIVE below). The
+# disjoint+subset invariant is pinned by
+# `test_status_classes_subset_of_authoritative_enum`.
 AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
 
 # Task statuses during which a pod is legitimately in use mid-experiment.
@@ -248,7 +407,10 @@ AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
 # pods (interp/review reads from WandB/HF, not the pod), so a RUNNING pod
 # observed there classifies as "other" and the auto-stop fires later when the
 # task reaches `awaiting_promotion`. GPU burn bounded, just later than ideal.
-POD_ACTIVE = {"approved", "running", "verifying"}
+# `followups_running` IS pod-active (2026-06-10): a same-issue follow-up
+# round holds this status through provision -> run -> upload-verify, so its
+# RUNNING pod is legitimately in use (alert-only if stale, never auto-stop).
+POD_ACTIVE = {"approved", "running", "verifying", "followups_running"}
 
 # How long a pod-active task may go without a real progress marker before the
 # alert arm fires. Healthy runs post epm:progress regularly (poll_pipeline), so
@@ -312,6 +474,75 @@ _STALLED_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn
 # failed to restore progress. Same staleness-filter contract as the others.
 _STALLED_EXHAUSTED_NOTE_SENTINEL = "[autonomous_session_watch:session-auto-respawn-exhausted]"
 
+# Substring stamped into the one-time VM-disk-low marker posted by the vm-disk
+# pass (once per low-disk episode, on each ACTIVE registered autonomous issue —
+# the sessions that will die first when / fills up). Same staleness-filter
+# contract as the others: a watcher-posted note must never reset a session's
+# real-progress clock.
+_VM_DISK_NOTE_SENTINEL = "[autonomous_session_watch:vm-disk-low]"
+
+# Substring stamped into the marker posted when the orphan sweep RESPAWNS an
+# active-status task that had no live registered session (the #472 class:
+# registry entry deleted at a TERMINAL park, task later revived by a
+# same-issue follow-up with no re-registration). Same staleness-filter
+# contract as the others.
+_ORPHAN_RESPAWN_NOTE_SENTINEL = "[autonomous_session_watch:orphan-respawn]"
+
+# Substring stamped into the one-time alert the orphan sweep posts instead of
+# respawning — when the daily respawn-attempt cap is exhausted, the respawn
+# failed, or the task's only registration is MANUAL (user-driven sessions are
+# never auto-respawned, #505). Same staleness-filter contract as the others.
+_ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
+
+# Substring stamped into the one-time alert the session-reconcile pass posts
+# (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
+# live session has outlived its parked/terminal (awaiting_promotion/
+# completed/archived) task by > the idle grace window. Same staleness-filter
+# contract as the others — CRITICAL here: the alert lands on the very task
+# whose marker inactivity it measures, so without the sentinel filter the
+# alert itself would end the idle episode it reports.
+_SESSION_RECONCILE_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-alert]"
+
+# Substring stamped into the marker posted when the session-reconcile pass
+# actually STOPS the idle session(s) of a parked/terminal task (the default
+# posture as of 2026-06-10). Same staleness-filter contract.
+_SESSION_RECONCILE_STOP_NOTE_SENTINEL = "[autonomous_session_watch:session-reconcile-stop]"
+
+# Substring stamped into the one-time alert posted when a session the
+# session-reconcile pass stopped is STILL alive after the one allowed retry —
+# the Happy daemon ACKed the stop RPC but failed to actually kill the session
+# (see :func:`_check_stop_verification`). Same staleness-filter contract as
+# the others.
+_SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL = (
+    "[autonomous_session_watch:session-reconcile-stop-failed]"
+)
+
+# Substring stamped into every campaign-pass marker note (the
+# epm:campaign-stalled alert, the stop-then-respawn note, the exhausted
+# alert, and the budget-backstop alert — task #586). Same staleness-filter
+# contract as the others: the campaign watchdog measures epm:campaign-*
+# marker freshness on the very task it posts to, so an unfiltered alert
+# would reset the staleness window it reports.
+_CAMPAIGN_NOTE_SENTINEL = "[autonomous_session_watch:campaign]"
+
+# Substring stamped into the marker posted when the zombie-wrapper pass stops
+# a live Happy session whose process tree has carried NO inner Claude process
+# for >= the grace window (the wrapper outlived its Claude: 25 such sessions
+# showed as "running" indefinitely on 2026-06-11, all invisible to the
+# session-reconcile pass because they had lost their issue mapping). Same
+# staleness-filter contract as the others.
+_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-stop]"
+
+# Substring stamped into the one-time alert the zombie-wrapper pass posts
+# instead of stopping, in the EPM_ZOMBIE_WRAPPER_REAP=0 alert-only fallback.
+# Same staleness-filter contract as the others.
+_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-alert]"
+
+# Substring stamped into the one-time alert posted when a zombie-wrapper stop
+# was ACKed by the daemon but the session survived the SIGTERM AND the one
+# allowed retry (mirrors the session-reconcile stop-verification contract).
+_ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-stop-failed]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -324,6 +555,16 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _STALLED_ALERT_NOTE_SENTINEL,
         _STALLED_RESPAWN_NOTE_SENTINEL,
         _STALLED_EXHAUSTED_NOTE_SENTINEL,
+        _VM_DISK_NOTE_SENTINEL,
+        _ORPHAN_RESPAWN_NOTE_SENTINEL,
+        _ORPHAN_ALERT_NOTE_SENTINEL,
+        _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
+        _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
+        _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
+        _CAMPAIGN_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL,
+        _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL,
     }
 )
 
@@ -567,8 +808,8 @@ def decide_pod_safety(
         finished); ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
         real marker progress for > :data:`ALERT_STALE_HOURS`;
         ``"pod-active-fresh"`` — task in :data:`POD_ACTIVE` with recent
-        progress; ``"other"`` — anything else (e.g. ``blocked``,
-        ``followups_running``, an unknown status). ``stale`` is folded into
+        progress; ``"other"`` — anything else (e.g. ``blocked``, an unknown
+        status). ``stale`` is folded into
         ``status_class`` by the caller and kept as a redundant explicit param
         for callers/tests that want to pass it directly.
     missed
@@ -645,6 +886,80 @@ def decide_pod_safety(
         return ("alert", 0)
     # pod-active-stale-already-alerted, pod-active-fresh, other -> hands off.
     return ("keep", 0)
+
+
+# ─── VM disk-headroom watcher (task #552 incident, 2026-06-10) ───────────────
+#
+# Pods have disk guards (pod_disk_guard.py, the preflight fallocate probe) but
+# the VM — which hosts every orchestrator session, the worktree .venvs (~11G
+# each), the uv cache, and the HF cache — had none. When / hit 100%
+# (482G/485G) every foreground Bash spawn in the orchestrator session failed
+# silently (exit 1, zero output) and the /issue 552 interpretation loop
+# stalled ~20 min, undiagnosable from inside the session. This pass alerts
+# BEFORE that point and reclaims the safe, regenerable space when critically
+# low.
+
+# Filesystem whose headroom is watched (the VM root — NOT a pod path; pod-side
+# guards are out of scope here and live in pod_disk_guard.py / preflight).
+VM_DISK_PATH = "/"
+
+# Below this free-bytes threshold the pass alerts: loud log every tick + ONE
+# dashboard-visible marker per low-disk episode. ~20 GiB leaves enough slack
+# to keep sessions alive while a human (or the reclaim arm) frees space.
+VM_DISK_ALERT_FREE_BYTES = 20 * 2**30
+
+# Below this free-bytes threshold the pass ALSO runs the safe reclaims
+# (`uv cache prune`, stale /tmp/claude-* sweep). ~8 GiB is already deep in the
+# silently-failing-Bash-spawn regime, so reclaiming regenerable caches is
+# unambiguously better than waiting for a human.
+VM_DISK_RECLAIM_FREE_BYTES = 8 * 2**30
+
+# Re-arm window for the reclaim arm within ONE low-disk episode: don't re-run
+# `uv cache prune` + the tmp sweep more than once per this many seconds (the
+# first run reclaims nearly everything reclaimable; hot-looping every 10-min
+# tick would just churn). A long episode where junk re-accumulates re-fires
+# after the window. Tracked via `last_reclaim_ts` in the vm-disk state file.
+VM_DISK_RECLAIM_REARM_S = 6 * 3600
+
+# A /tmp/claude-* tree is swept only when NOTHING in it (the dir itself or any
+# file under it) was modified within this window. A live session writes its
+# /tmp/claude-<port>/.../tasks/*.output files continuously, so its tree always
+# has fresh mtimes — the age test IS the live-session guard.
+VM_DISK_TMP_SWEEP_AGE_S = 3 * 24 * 3600
+
+# Hard wall-clock bound on `uv cache prune`: if another uv process holds the
+# cache lock the prune blocks; kill it at the bound (fail-soft) rather than
+# hanging the watcher tick.
+VM_DISK_UV_PRUNE_TIMEOUT_S = 300
+
+
+def decide_vm_disk(
+    free_bytes: int,
+    *,
+    alerted: bool,
+    last_reclaim_ts: float | None,
+    now: float,
+) -> tuple[str, bool, bool]:
+    """Pure decision for the VM disk-headroom pass.
+
+    Returns ``(level, do_alert, do_reclaim)``:
+
+    - ``level`` — ``"ok"`` (>= :data:`VM_DISK_ALERT_FREE_BYTES` free),
+      ``"low"`` (below the alert threshold), or ``"critical"`` (below
+      :data:`VM_DISK_RECLAIM_FREE_BYTES`).
+    - ``do_alert`` — fire the once-per-episode alert (level is low or
+      critical AND ``alerted`` is not already set for this episode).
+    - ``do_reclaim`` — run the safe reclaims (level is critical AND the
+      reclaim arm hasn't fired within :data:`VM_DISK_RECLAIM_REARM_S`).
+    """
+    if free_bytes >= VM_DISK_ALERT_FREE_BYTES:
+        return ("ok", False, False)
+    level = "critical" if free_bytes < VM_DISK_RECLAIM_FREE_BYTES else "low"
+    do_alert = not alerted
+    do_reclaim = level == "critical" and (
+        last_reclaim_ts is None or now - last_reclaim_ts >= VM_DISK_RECLAIM_REARM_S
+    )
+    return (level, do_alert, do_reclaim)
 
 
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
@@ -790,11 +1105,29 @@ def _task_keep_running(issue: int) -> bool:
 # the transition INTO the current DONE status — note text is not parsed).
 _DONE_TRANSITION_KINDS = frozenset({"epm:promoted", "epm:status-changed"})
 
-# Marker kind a follow-up emits when it provisions a pod and launches the
-# experiment process. The pod-safety pass treats a `epm:run-launched` whose
-# ts is NEWER than the latest done-transition as a live inline follow-up
-# and SKIPS the auto-stop (see `decide_pod_safety`'s `followup_active`
-# parameter).
+# Marker kinds that signal a live inline follow-up to the POD-SAFETY pass.
+# The pod-safety pass treats any of these whose ts is NEWER than the latest
+# done-transition as a live inline follow-up and SKIPS the auto-stop (see
+# `decide_pod_safety`'s `followup_active` parameter).
+#
+# Originally only `epm:run-launched` (the #477-validated signal). Widened
+# 2026-06-10 (refs #573) to cover USER-CHAT inline follow-ups: the CLAUDE.md
+# "Routing experiment intent → Follow-up" path posts `epm:followup-scope v1`
+# on #N BEFORE re-invoking /issue, so there is a window — scope posted, pod
+# provisioned, run not yet launched — where the old run-launched-only
+# inference auto-stopped a healthy follow-up pod (pod-530/531 stopped 8x on
+# the :13/:33/:53 grid, pod-477 3x, 2026-06-09). `epm:free-analysis-followup-
+# run` is included for parity with the session-reconcile twin
+# (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`); the two sets are now identical on
+# the follow-up side, differing only in their done-transition sets.
+_POD_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {
+        "epm:run-launched",
+        "epm:followup-scope",
+        "epm:free-analysis-followup-run",
+    }
+)
+# Back-compat alias (the run-launched marker is still the strongest signal).
 _RUN_LAUNCHED_KIND = "epm:run-launched"
 
 
@@ -817,16 +1150,21 @@ def _latest_event_ts(events: list[dict], kinds: frozenset[str] | set[str]) -> fl
 
 
 def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
-    """True iff task ``issue`` has an ``epm:run-launched`` marker NEWER than
+    """True iff task ``issue`` has a follow-up signal marker
+    (:data:`_POD_FOLLOWUP_SIGNAL_KINDS`: ``epm:run-launched`` /
+    ``epm:followup-scope`` / ``epm:free-analysis-followup-run``) NEWER than
     its latest done-transition marker (``epm:promoted`` /
     ``epm:status-changed``).
 
     Predicate for the pod-safety auto-stop exemption: a DONE-status task
-    with a fresh ``epm:run-launched`` carries an in-flight, user-approved
+    with a fresh follow-up signal carries an in-flight, user-approved
     inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
-    the pod is legitimately in use. When the follow-up completes, the next
+    the pod is legitimately in use. ``epm:followup-scope`` covers the
+    USER-CHAT inline case where the scope is posted before the run launches
+    (refs #573 — the run-launched-only inference stopped healthy follow-up
+    pods 11x on 2026-06-09). When the follow-up completes, the next
     ``epm:status-changed`` / ``epm:promoted`` event will land newer than
-    the ``epm:run-launched`` and this predicate flips False — the auto-stop
+    the follow-up signal and this predicate flips False — the auto-stop
     re-arms naturally on the following tick (same semantics as the
     ``keep-running`` tag being removed).
 
@@ -836,7 +1174,7 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     the caller to avoid double-fetching when the events list is already
     loaded (the typical _process_pod path).
 
-    A missing ``epm:run-launched`` returns False (no follow-up signal).
+    A missing follow-up signal returns False (no exemption).
     A missing done-transition is impossible in practice — the caller
     already verified the task's current status is DONE, so at least one
     ``epm:status-changed`` must have fired to put it there. If the read
@@ -846,13 +1184,13 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     """
     if events is None:
         events = _task_events(issue)
-    run_launched = _latest_event_ts(events, {_RUN_LAUNCHED_KIND})
-    if run_launched is None:
+    followup_signal = _latest_event_ts(events, _POD_FOLLOWUP_SIGNAL_KINDS)
+    if followup_signal is None:
         return False
     done_transition = _latest_event_ts(events, _DONE_TRANSITION_KINDS)
     if done_transition is None:
         return False
-    return run_launched > done_transition
+    return followup_signal > done_transition
 
 
 def _task_events(issue: int) -> list[dict]:
@@ -916,24 +1254,40 @@ def _daemon_reachable() -> bool:
         return False
 
 
-def _worktree_session_alive(issue: int, live_cwds: set[str]) -> bool:
-    """True iff a live Happy session's cwd is the issue's worktree dir
-    (``.../.claude/worktrees/issue-<N>``). Used ONLY by the respawn pass to
-    decide "a session is driving this issue" even when the recorded Happy id was
-    replaced (manual / PM re-spawn). NOT used by the pod-safety pass as a stop
-    trigger — interactive `/issue <N>` sessions are spawned with cwd = repo root
-    (the worktree doesn't exist yet at spawn), so this signal reports a LIVE
-    interactive session as dead, and stopping on it would kill healthy pods."""
-    return any(p.rstrip("/").endswith(f"/issue-{issue}") for p in live_cwds)
+def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
+    """True iff the issue's MANUAL registration (``manual-issue-<N>.json``,
+    written by bare ``spawn-issue``) records a Happy id in the daemon's live
+    set. Covers the one legitimate case where the AUTONOMOUS entry's recorded
+    id is dead but the issue is still driven: the user/PM opened a manual
+    replacement session (which registers the manual entry but does not rewrite
+    the autonomous one). Respawning next to that live manual driver would
+    duplicate the workflow."""
+    if issue is None:
+        return False
+    path = AUTONOMOUS_REGISTRY_DIR / f"manual-issue-{issue}.json"
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    sid = entry.get("happy_session_id")
+    return isinstance(sid, str) and sid in live_ids
 
 
-def _session_alive(entry: dict, live_ids: set[str], live_cwds: set[str]) -> bool:
+def _session_alive(entry: dict, live_ids: set[str]) -> bool:
     """A session counts as alive if its recorded Happy id is still tracked by
-    the daemon, OR a live session occupies the issue's worktree dir (covers a
-    manual / PM re-spawn that replaced the recorded id)."""
+    the daemon, OR the issue's MANUAL registration records a live id (a
+    user/PM replacement session that didn't rewrite the autonomous entry).
+
+    The earlier third signal — "a live session occupies the issue's worktree
+    dir" — was REMOVED 2026-06-10: ``spawn-issue --auto`` spawns drivers WITH
+    cwd = the issue worktree when it already exists, so every superseded
+    driver generation matched the cwd test, and one idle zombie generation
+    kept #518 reading ``alive=True`` for ~11h after its registered driver
+    died. The registry is rewritten on every respawn, so recorded-id +
+    manual-id are the precise signals the cwd heuristic was approximating."""
     if entry.get("happy_session_id") in live_ids:
         return True
-    return _worktree_session_alive(entry.get("issue"), live_cwds)
+    return _manual_session_alive(entry.get("issue"), live_ids)
 
 
 def _respawn(entry: dict, dry_run: bool) -> bool:
@@ -1237,6 +1591,171 @@ def _stop_pod(issue: int, dry_run: bool) -> bool:
     return True
 
 
+# ─── vm-disk state store + actions ───────────────────────────────────────────
+
+
+def _vm_disk_state_path() -> Path:
+    """Singleton state file for the vm-disk pass (the VM has one root disk —
+    not per-issue, so none of the per-issue GC sweeps ever match it)."""
+    return AUTONOMOUS_REGISTRY_DIR / "vm-disk.json"
+
+
+def _load_vm_disk_state() -> dict:
+    """Read the vm-disk episode state (``{}`` if absent / unreadable — a fresh
+    or garbled file just restarts the episode, mirroring the other stores)."""
+    path = _vm_disk_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+
+
+def _save_vm_disk_state(
+    *, alerted: bool, last_reclaim_ts: float | None, prev: dict | None = None
+) -> None:
+    """Persist the vm-disk episode state atomically (temp + rename).
+
+    ``alerted`` dedups the once-per-episode alert; ``last_reclaim_ts`` re-arms
+    the reclaim arm after :data:`VM_DISK_RECLAIM_REARM_S`; ``first_seen``
+    carries forward so the state records the episode start (mirrors the
+    pod-safety / stalled-detector stores)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _vm_disk_state_path()
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "alerted": alerted,
+        "last_reclaim_ts": last_reclaim_ts,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_vm_disk_state() -> None:
+    """Drop the vm-disk state file — the low-disk episode is over (free space
+    recovered above the alert threshold), so the next episode alerts afresh."""
+    _vm_disk_state_path().unlink(missing_ok=True)
+
+
+def _vm_free_bytes() -> int | None:
+    """Free bytes on :data:`VM_DISK_PATH` (``None`` + a loud warning if even
+    the statvfs fails — never crash the watcher over the disk check itself)."""
+    try:
+        return shutil.disk_usage(VM_DISK_PATH).free
+    except OSError as e:
+        print(f"  vm-disk: disk_usage({VM_DISK_PATH}) failed: {e}", file=sys.stderr)
+        return None
+
+
+def _vm_disk_marker_issues() -> list[int]:
+    """Issues that should carry the dashboard-visible vm-disk alert marker:
+    every autonomous-registry entry (``issue-<N>.json``) whose task is in an
+    :data:`ACTIVE` status — the sessions that will die first when / fills.
+    Unreadable entries are skipped (fail-soft)."""
+    issues: list[int] = []
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json")):
+        try:
+            entry = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            continue
+        issue = entry.get("issue")
+        if isinstance(issue, int) and _task_status(issue) in ACTIVE:
+            issues.append(issue)
+    return issues
+
+
+def _append_vm_disk_fallback_event(note: str, dry_run: bool) -> None:
+    """Durable record of the alert when NO active task exists to carry the
+    marker (same role as the `.claude/cache/` fallback file in the
+    workflow-fix protocol: a task-less watcher event still needs a queryable
+    trace beyond the rotating cron log). Appends one JSON line to
+    ``~/.eps-autonomous/vm-disk-events.jsonl``; fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "vm-disk-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "vm-disk-low", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append vm-disk event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending vm-disk event failed: {e}", file=sys.stderr)
+
+
+def _vm_reclaim_uv_cache(dry_run: bool) -> None:
+    """``uv cache prune`` — drops unused cache entries (safe: uv re-fetches on
+    demand). Fail-soft and hard-bounded by :data:`VM_DISK_UV_PRUNE_TIMEOUT_S`
+    so a cache lock held by a concurrent ``uv`` process can't hang the watcher
+    tick."""
+    cmd = ["uv", "cache", "prune"]
+    if dry_run:
+        print(f"  [dry-run] would run: {' '.join(cmd)}")
+        return
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
+        )
+        tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        print(f"  vm-disk: uv cache prune rc={res.returncode}: {tail[:200]}")
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  vm-disk: uv cache prune failed (fail-soft): {e}", file=sys.stderr)
+
+
+def _newest_mtime(root: Path) -> float:
+    """Newest mtime anywhere under ``root`` (including ``root`` itself).
+    Unreadable entries are skipped; an unstat-able root reads as "fresh now"
+    so the sweep NEVER removes a tree it cannot inspect."""
+    try:
+        newest = root.stat().st_mtime
+    except OSError:
+        return time.time()
+    for dirpath, _dirnames, filenames in os.walk(root, onerror=lambda _e: None):
+        for name in (".", *filenames):
+            try:
+                newest = max(newest, os.stat(os.path.join(dirpath, name)).st_mtime)
+            except OSError:
+                continue
+    return newest
+
+
+def _sweep_stale_claude_tmp(now: float, dry_run: bool) -> int:
+    """Remove ``/tmp/claude-*`` trees whose ENTIRE contents have been idle
+    > :data:`VM_DISK_TMP_SWEEP_AGE_S` (subagent transcript dirs left by
+    long-dead sessions). A live session's tree always carries fresh mtimes
+    (it writes task outputs continuously), so it is never swept; symlinks
+    are skipped. Returns the number of trees removed (counted in dry-run
+    too, mirroring the orphan-state GC's logging contract)."""
+    removed = 0
+    for entry in sorted(Path("/tmp").glob("claude-*")):
+        try:
+            if entry.is_symlink() or not entry.is_dir():
+                continue
+            idle_s = now - _newest_mtime(entry)
+        except OSError:
+            continue
+        if idle_s < VM_DISK_TMP_SWEEP_AGE_S:
+            continue
+        if dry_run:
+            print(f"  [dry-run] would remove stale {entry} (idle {idle_s / 86400:.1f}d)")
+        else:
+            shutil.rmtree(entry, ignore_errors=True)
+            print(f"  vm-disk: removed stale {entry} (idle {idle_s / 86400:.1f}d)")
+        removed += 1
+    return removed
+
+
 def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     """Run ``pod.py config --refresh-from-api <pod_name>`` (the #488
     stale-port self-heal). Pulls fresh host/port from the live RunPod API
@@ -1284,9 +1803,10 @@ def _refresh_pods_conf_from_api(pod_name: str, dry_run: bool) -> bool:
     return True
 
 
-def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
+def _running_managed_issue_pods(caller: str = "pod-safety") -> list[tuple[int, str, str]] | None:
     """Live RunPod team pods that are RUNNING and managed (``pod-<N>`` or the
-    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples.
+    legacy ``epm-issue-<N>``). Returns ``(issue, pod_id, pod_name)`` triples,
+    or ``None`` when the snapshot itself FAILED (API transport error).
 
     Recognition delegates to :func:`pod_lifecycle._is_managed_pod` +
     :func:`pod_lifecycle._issue_from_pod_name` — the canonical helpers that
@@ -1300,15 +1820,29 @@ def _running_managed_issue_pods() -> list[tuple[int, str, str]]:
     out to ``pod.py config --refresh-from-api <name>`` — don't need a second
     ``list_team_pods`` round-trip to look it up.
 
-    A transport error surfaces as an empty list with a logged warning — better
-    to skip the pass this tick than to crash the whole run."""
+    A transport error surfaces as ``None`` with a logged warning — better to
+    degrade the pass this tick than to crash the whole run — and ``None`` is
+    DISTINCT from ``[]`` ("genuinely no pods") so callers can tell a failed
+    snapshot apart from an empty RUNNING set: the pod-safety pass SKIPS its
+    state GC on ``None`` (reaping on a failed snapshot wipes the 2-miss
+    counters AND the ``alerted`` / ``keep_running_noted`` / ``followup_noted``
+    once-per-episode dedup flags, re-arming duplicate markers on every API
+    hiccup), while the stalled-detector and session-reconcile passes degrade
+    ``None`` to the empty set (their decision guards fail open to "no pods",
+    which never stops a pod). ``caller`` labels the warning with the INVOKING
+    pass (default ``pod-safety``; the stalled-detector and session-reconcile
+    passes thread their own names) so cron-log triage attributes the failure
+    to the right pass instead of blaming pod-safety for every reuse of this
+    helper."""
     try:
         pods = list_team_pods()
     except Exception as e:
         print(
-            f"  pod-safety: list_team_pods failed ({e}); skipping pass this tick", file=sys.stderr
+            f"  {caller}: list_team_pods failed ({e}); "
+            f"pod snapshot unavailable this tick (callers degrade per-pass)",
+            file=sys.stderr,
         )
-        return []
+        return None
     out: list[tuple[int, str, str]] = []
     for p in pods:
         if p.desired_status != "RUNNING":
@@ -1429,7 +1963,8 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
     if action == "followup-skip":
         print(
             f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
-            f"fresh `epm:run-launched` (newer than the latest done-transition) "
+            f"fresh follow-up signal (epm:run-launched / epm:followup-scope / "
+            f"epm:free-analysis-followup-run, newer than the latest done-transition) "
             f"indicates a live inline follow-up — pod-safety stop SKIPPED "
             f"(pod_id={pod_id}; the auto-stop re-arms when the follow-up posts its "
             f"next status-changed/promoted)."
@@ -1440,11 +1975,14 @@ def _process_pod(issue: int, pod_id: str, now: float, dry_run: bool, threshold: 
                 f"{_FOLLOWUP_NOTE_SENTINEL} inline-follow-up exemption: RUNNING pod "
                 f"(pod_id={pod_id}) for a task at DONE status '{status}' would have "
                 f"been auto-stopped by the pod-safety pass, but the task's "
-                f"events.jsonl shows an `epm:run-launched` marker NEWER than the "
-                f"latest done-transition (epm:promoted / epm:status-changed). That "
-                f"is the CLAUDE.md 'Routing experiment intent → Follow-up' pattern: "
-                f"a user-approved inline follow-up has provisioned a fresh pod on a "
-                f"promoted/completed parent, so the pod is legitimately in use. The "
+                f"events.jsonl shows a follow-up signal marker (epm:run-launched / "
+                f"epm:followup-scope / epm:free-analysis-followup-run) NEWER than "
+                f"the latest done-transition (epm:promoted / epm:status-changed). "
+                f"That is the CLAUDE.md 'Routing experiment intent → Follow-up' "
+                f"pattern: a user-approved inline follow-up is in flight on a "
+                f"promoted/completed parent (epm:followup-scope covers the "
+                f"user-chat case where the pod is provisioned before the run "
+                f"launches — refs #573), so the pod is legitimately in use. The "
                 f"auto-stop re-arms naturally when the follow-up posts its next "
                 f"status-changed / promoted event. Posted once per pod incarnation. "
                 f"Override with `task.py add-tag {issue} keep-running` to suppress "
@@ -1557,6 +2095,81 @@ def _self_report_age_seconds(issue: int, now: float) -> tuple[float | None, str 
         return (None, ts_str)
     age = now - parsed.timestamp()
     return (age, ts_str)
+
+
+# ── ALIVE-BUT-STALLED exemption: in-flight provision / fresh poll state ─────
+#
+# refs #573: ~63 ALIVE-BUT-STALLED auto-respawns across 17 tasks on
+# 2026-06-09 killed healthy sessions mid-step; #534's respawn killed an
+# in-flight `pod.py provision` THREE times, adding ~8h. A provision waiting
+# for capacity legitimately posts no markers and freezes the self-report
+# (the session's bg-Bash chain is blocked on the wait), so the staleness
+# signals alone misclassify it. Before acting on a stale entry, probe two
+# cheap local signals; either one exempts the session this tick:
+#   1. a LIVE `pod.py provision|resume --issue <N>` (or pod_lifecycle.py)
+#      process on this VM — /proc cmdline scan, no psutil dependency;
+#   2. fresh poll-pipeline tick state for the issue
+#      (.claude/cache/poll-pipeline-<N>.json mtime within the stalled
+#      window) — the polling chain is demonstrably alive even if it has
+#      not posted a marker this window.
+
+# poll_pipeline's DEFAULT_STATE_DIR (kept in sync by convention; the file
+# name is poll-pipeline-<issue>.json).
+_POLL_STATE_DIR = PROJECT_ROOT / ".claude" / "cache"
+
+
+def _find_provision_process(issue: int) -> int | None:
+    """PID of a live ``pod.py provision|resume --issue <N>`` /
+    ``pod_lifecycle.py provision|resume --issue <N>`` process, or ``None``.
+
+    Pure /proc cmdline scan (NUL-separated argv): a process qualifies when
+    its argv has (a) a token ending in ``pod.py`` or ``pod_lifecycle.py``,
+    (b) a bare ``provision`` or ``resume`` verb token, and (c) ``--issue <N>``
+    (adjacent tokens or the ``--issue=<N>`` form). Fail-soft: any read error
+    on a /proc entry skips that entry; an unreadable /proc returns None.
+    """
+    needle = str(issue)
+    try:
+        entries = list(Path("/proc").iterdir())
+    except OSError:
+        return None
+    for entry in entries:
+        if not entry.name.isdigit():
+            continue
+        try:
+            raw = (entry / "cmdline").read_bytes()
+        except OSError:
+            continue
+        if not raw:
+            continue
+        argv = [a for a in raw.decode("utf-8", "replace").split("\0") if a]
+        if not any(a.endswith(("pod.py", "pod_lifecycle.py")) for a in argv):
+            continue
+        if not any(a in ("provision", "resume") for a in argv):
+            continue
+        for i, a in enumerate(argv):
+            if (a == "--issue" and i + 1 < len(argv) and argv[i + 1] == needle) or (
+                a == f"--issue={needle}"
+            ):
+                return int(entry.name)
+    return None
+
+
+def _provision_in_flight_reason(issue: int, now: float) -> str | None:
+    """Human-readable exemption reason when issue #N has in-flight pod
+    provisioning / fresh polling activity, else ``None``. See the comment
+    block above for the two signals (refs #573)."""
+    pid = _find_provision_process(issue)
+    if pid is not None:
+        return f"live pod provision/resume process (pid {pid}) for issue #{issue}"
+    state = _POLL_STATE_DIR / f"poll-pipeline-{issue}.json"
+    try:
+        age = now - state.stat().st_mtime
+    except OSError:
+        return None
+    if age < STALLED_WINDOW_S:
+        return f"poll-pipeline state fresh ({age / 60:.1f}m old): {state.name}"
+    return None
 
 
 def _stop_session(session_id: str, dry_run: bool) -> bool:
@@ -1721,6 +2334,15 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     persist unchanged respawn_count + a fresh ``missed=0`` so the next tick
     re-tries within the same episode.
 
+    #488 stale-port self-heal (refs #572): when the stalled session has a
+    RUNNING managed pod, fire ``pod.py config --refresh-from-api`` once per
+    episode BEFORE the stop+respawn — previously only the ALERT fallback
+    (non-ACTIVE status / daemon down / manual) fired it, so the COMMON
+    autonomous case (ACTIVE + daemon reachable) respawned a fresh session
+    straight into the same stale pods.conf endpoint and the new session
+    re-spun the dead-port SSH loop. Same ``refresh_attempted`` dedup as the
+    alert arm; fail-soft.
+
     Safety precondition: we MUST know which session id to stop before we
     spawn a fresh one. A garbled / missing ``happy_session_id`` in the
     registry entry would otherwise mean we skip the stop and spawn anyway,
@@ -1730,6 +2352,20 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     reads a fresh registry entry — the orchestrator or a recent re-spawn
     may have rewritten it) can try again.
     """
+    # Heal pods.conf BEFORE deciding/acting on the session so the respawned
+    # session reads a fresh endpoint. Dedup'd per episode, like the alert arm.
+    if ctx.has_pod and ctx.pod_name and not ctx.refresh_attempted:
+        print(
+            f"  REFRESH-FROM-API issue #{ctx.issue}: stalled session has "
+            f"RUNNING pod {ctx.pod_name}; attempting #488 stale-port "
+            f"self-heal before respawn",
+            file=sys.stderr,
+        )
+        _refresh_pods_conf_from_api(ctx.pod_name, ctx.dry_run)
+        # Mark attempted regardless of subprocess outcome (no hot-loop);
+        # clears on self-report advancement, same as the alert arm.
+        ctx.refresh_attempted = True
+
     sid = ctx.happy_session_id_str
     if not sid:
         print(
@@ -2067,6 +2703,22 @@ def _process_stalled_session(
         threshold=threshold,
     )
 
+    # In-flight-provision exemption (refs #573): a provision waiting for
+    # capacity blocks the session's bg-Bash chain, freezing BOTH staleness
+    # signals while being exactly the work the session should be doing —
+    # #534's auto-respawn killed an in-flight provision 3x (~8h lost).
+    # Probed LAZILY (only when decide() wants to escalate or accumulate a
+    # miss) so the healthy-session hot path never pays the /proc scan.
+    if action != "keep" or new_missed > 0:
+        exempt_reason = _provision_in_flight_reason(issue, now)
+        if exempt_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED exemption — {exempt_reason}; "
+                f"treating session as live this tick (would have been "
+                f"action={action})."
+            )
+            action, new_missed = ("keep", 0)
+
     self_gap = f"{self_report_age / 60:.1f}m" if self_report_age is not None else "none"
     marker_gap = f"{marker_age / 60:.1f}m" if marker_age is not None else "none"
     print(
@@ -2163,10 +2815,10 @@ def stalled_session_pass(
         print("stalled-detector: no issue sessions registered")
         return
     # Resolve which issues currently have a RUNNING managed pod once per tick.
-    # Falls back to the empty set on a transport error (the helper already
-    # logs to stderr in that case) so the decision layer just records
-    # has_pod=False for every issue this tick — fail-safe.
-    running_pods = _running_managed_issue_pods()
+    # A FAILED snapshot (None — the helper already logs to stderr) degrades to
+    # the empty set so the decision layer just records has_pod=False for every
+    # issue this tick — fail-safe (this pass alerts/respawns, never stops pods).
+    running_pods = _running_managed_issue_pods(caller="stalled-detector") or []
     pod_active_issues = {issue for issue, _pid, _name in running_pods}
     pod_names_by_issue = {issue: name for issue, _pid, name in running_pods}
     if daemon_reachable is None:
@@ -2213,6 +2865,465 @@ def stalled_session_pass(
         )
 
 
+# ─── orphan sweep (registration-INDEPENDENT safety net) ─────────────────────
+#
+# Every other session pass starts from the registry files, so an ACTIVE-status
+# task with NO registration is invisible to all of them. Incident 2026-06-10
+# (#472): the task parked at `awaiting_promotion` (TERMINAL → the respawn pass
+# DELETED its `issue-472.json` per `decide`), a same-issue follow-up later
+# flipped it back to `running` driven by an unregistered interactive session,
+# that session died at 08:40Z, and the task sat orphaned for 10.5h until
+# manual PM triage. This pass inverts the direction: enumerate ACTIVE-status
+# tasks and ask "is anything registered AND live driving this?".
+
+# How long an orphan-candidate task may go without a real progress marker
+# before the sweep acts. Deliberately tighter than ALERT_STALE_HOURS (the
+# pod-safety alert arm) because the respawn here is cheap and idempotent
+# (`/issue` resumes from markers); env-overridable for tuning without a
+# code change.
+ORPHAN_STALENESS_S_DEFAULT = 90 * 60
+
+# Grace window after a registration write during which the task is treated as
+# "spawn in flight" even if the recorded id is not yet in the daemon's live
+# set. Covers the same-tick race where the respawn pass (or a manual
+# recovery) just rewrote the registry but the live-id snapshot predates it.
+ORPHAN_SPAWN_GRACE_S = 15 * 60
+
+# Maximum respawn ATTEMPTS (successes AND failures both count, so a
+# deterministically failing spawn can't hot-loop) per task per UTC day.
+ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT = 2
+
+# Filename prefix for the per-issue orphan-sweep state file at
+# ``~/.eps-autonomous/orphan-<N>.json``. Mirrors the stalled / pod-safety
+# state-file layout; reaped by the generalized GC.
+ORPHAN_STATE_PREFIX = "orphan-"
+
+
+def _orphan_staleness_s() -> float:
+    """Marker-staleness threshold in seconds (env ``EPM_ORPHAN_STALENESS_MIN``,
+    minutes; default :data:`ORPHAN_STALENESS_S_DEFAULT`). A malformed env value
+    falls back to the default — a typo'd var must not disable crash recovery."""
+    raw = os.environ.get("EPM_ORPHAN_STALENESS_MIN")
+    if not raw:
+        return float(ORPHAN_STALENESS_S_DEFAULT)
+    try:
+        return float(raw) * 60.0
+    except ValueError:
+        return float(ORPHAN_STALENESS_S_DEFAULT)
+
+
+def _orphan_max_respawns_per_day() -> int:
+    """Daily per-task respawn-attempt cap (env ``EPM_ORPHAN_RESPAWNS_PER_DAY``;
+    default :data:`ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT`). Malformed env value
+    falls back to the default."""
+    raw = os.environ.get("EPM_ORPHAN_RESPAWNS_PER_DAY")
+    if not raw:
+        return ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT
+    try:
+        return int(raw)
+    except ValueError:
+        return ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT
+
+
+def decide_orphan(
+    status: str | None,
+    mapped_alive: bool,
+    manual_only: bool,
+    entry_age_s: float | None,
+    marker_age_s: float | None,
+    missed: int,
+    *,
+    respawns_today: int = 0,
+    threshold: int = 2,
+    staleness_s: float = ORPHAN_STALENESS_S_DEFAULT,
+    spawn_grace_s: float = ORPHAN_SPAWN_GRACE_S,
+    max_respawns_per_day: int = ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
+) -> tuple[str, int]:
+    """Pure decision for the orphan sweep: ``(action, new_missed)`` where
+    action is ``"clear"`` | ``"keep"`` | ``"respawn"`` | ``"alert"``.
+
+    - ``clear``: the task is not orphanable (not ACTIVE, or a registered
+      session is live) — the caller drops any accumulated state.
+    - ``keep``: orphan-candidate but not actionable yet (registration freshly
+      written / markers still fresh / miss count accumulating).
+    - ``respawn``: ACTIVE + no live registered session + markers stale on
+      ``threshold`` consecutive checks, respawn budget available.
+    - ``alert``: same trigger, but the task's only registration is MANUAL
+      (user-driven sessions are never auto-respawned, #505) or the daily
+      attempt cap is exhausted — the caller posts a one-time loud marker.
+
+    ``marker_age_s is None`` (no real progress marker at all) counts as
+    stale — an ACTIVE task with zero progress markers is itself the signal
+    (mirrors the pod-safety pass's None-is-stale rule)."""
+    if status not in ACTIVE:
+        return ("clear", 0)
+    if mapped_alive:
+        return ("clear", 0)
+    if entry_age_s is not None and entry_age_s < spawn_grace_s:
+        return ("keep", 0)
+    if marker_age_s is not None and marker_age_s < staleness_s:
+        return ("keep", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if manual_only:
+        return ("alert", new_missed)
+    if respawns_today >= max_respawns_per_day:
+        return ("alert", new_missed)
+    return ("respawn", 0)
+
+
+def _orphan_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{ORPHAN_STATE_PREFIX}{issue}.json"
+
+
+def _load_orphan_state(issue: int) -> dict:
+    """Read the per-issue orphan-sweep state (``{}`` if absent / unreadable —
+    a fresh/garbled file starts the miss count at 0, mirroring
+    :func:`_load_stalled_state`)."""
+    path = _orphan_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_orphan_state(
+    issue: int,
+    *,
+    missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    prev: dict | None = None,
+) -> None:
+    """Persist the per-issue orphan-sweep state atomically (temp + rename),
+    mirroring :func:`_save_stalled_state`. ``respawn_day`` + ``respawns_today``
+    implement the per-UTC-day attempt cap; ``alerted`` dedups the one-time
+    alert marker within an episode; ``first_seen`` carries forward so the GC
+    age backstop measures the original episode start."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _orphan_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "respawn_day": respawn_day,
+        "respawns_today": respawns_today,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_orphan_state(issue: int) -> None:
+    """Drop the per-issue orphan-sweep state file (episode over: the task left
+    ACTIVE or a registered session went live again)."""
+    _orphan_state_path(issue).unlink(missing_ok=True)
+
+
+def _active_status_tasks() -> dict[int, str]:
+    """``{issue: status}`` for every task currently in an :data:`ACTIVE`
+    status, via ``task.py list-by-status --json`` (one subprocess per status;
+    same fail-soft isolation as :func:`_task_status` — a read failure for one
+    status just yields no candidates from it this tick, never a crash)."""
+    out: dict[int, str] = {}
+    for status in sorted(ACTIVE):
+        try:
+            res = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "scripts/task.py",
+                    "list-by-status",
+                    "--status",
+                    status,
+                    "--json",
+                ],
+                cwd=PROJECT_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+        except (subprocess.SubprocessError, OSError):
+            continue
+        if res.returncode != 0:
+            continue
+        try:
+            rows = json.loads(res.stdout)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            # `kind: campaign` tasks are owned by the campaign pass — the
+            # orphan sweep's recovery command is `spawn-issue --auto`, which
+            # would boot the WRONG skill (/issue) on a campaign (task #586).
+            if row.get("kind") == "campaign":
+                continue
+            tid = row.get("id")
+            if isinstance(tid, int):
+                out[tid] = status
+    return out
+
+
+def _issue_registrations() -> dict[int, dict]:
+    """Scan BOTH registry prefixes and return per-issue registration facts:
+    ``{issue: {"sids": set[str], "has_auto": bool, "has_manual": bool,
+    "newest_write": float}}``. ``newest_write`` is the newest of file mtime
+    and the entry's ``spawned_at`` — used for the spawn-grace window."""
+    out: dict[int, dict] = {}
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    for prefix, manual in (("issue-", False), ("manual-issue-", True)):
+        for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
+            issue = _gc_parse_issue_from_path(path, prefix, "")
+            if issue is None:
+                continue
+            try:
+                entry = json.loads(path.read_text())
+            except (json.JSONDecodeError, OSError):
+                entry = {}
+            if not isinstance(entry, dict):
+                entry = {}
+            try:
+                mtime = path.stat().st_mtime
+            except OSError:
+                mtime = 0.0
+            spawned_at = entry.get("spawned_at")
+            if not isinstance(spawned_at, int | float):
+                spawned_at = 0.0
+            rec = out.setdefault(
+                issue,
+                {"sids": set(), "has_auto": False, "has_manual": False, "newest_write": 0.0},
+            )
+            sid = entry.get("happy_session_id")
+            if isinstance(sid, str) and sid:
+                rec["sids"].add(sid)
+            rec["has_auto"] = rec["has_auto"] or not manual
+            rec["has_manual"] = rec["has_manual"] or manual
+            rec["newest_write"] = max(rec["newest_write"], mtime, float(spawned_at))
+    return out
+
+
+def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
+    """Spawn a fresh ``--auto`` session for an orphaned active task. Mirrors
+    :func:`_respawn_stalled_session` but with an ``RESPAWNED-ORPHAN`` log
+    prefix so the operator can tell the recovery paths apart. The spawn
+    re-registers the issue (``spawn-issue --auto`` rewrites the registry), so
+    the task re-enters normal respawn/stalled coverage."""
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
+        "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  RESPAWN-ORPHAN FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  RESPAWNED-ORPHAN issue #{issue} (active task, no live session): {first_line}")
+    return True
+
+
+def orphan_sweep_pass(
+    dry_run: bool,
+    threshold: int,
+    now: float | None = None,
+    *,
+    daemon_reachable: bool | None = None,
+    live_ids: set[str] | None = None,
+) -> None:
+    """Registration-independent safety net: cross-check ACTIVE-status tasks
+    against live REGISTERED sessions; recover (or loudly alert on) any active
+    task nothing is driving.
+
+    Liveness here is deliberately REGISTRATION-KEYED ONLY (autonomous +
+    manual entry ids vs the daemon's live set) — no worktree-cwd heuristic
+    (see :func:`_session_alive` for why that signal lies) and no self-report
+    freshness (a superseded driver generation kept #518's self-report fresh
+    for 7.4h of real marker silence on 2026-06-10). Daemon-gated like the
+    respawn pass: during an outage liveness is unknowable and a mass respawn
+    would duplicate pods."""
+    now = now if now is not None else time.time()
+    if daemon_reachable is None:
+        daemon_reachable = _daemon_reachable()
+    if not daemon_reachable:
+        print(
+            "orphan-sweep: Happy daemon unreachable; skipping (liveness "
+            "unknowable; a mass respawn on an outage would duplicate pods)"
+        )
+        return
+    if live_ids is None:
+        live_ids = _live_session_ids()
+    active = _active_status_tasks()
+    regs = _issue_registrations()
+    staleness_s = _orphan_staleness_s()
+    max_per_day = _orphan_max_respawns_per_day()
+    day_key = time.strftime("%Y-%m-%d", time.gmtime(now))
+    print(
+        f"orphan-sweep: {len(active)} active-status task(s), "
+        f"{len(regs)} registered issue(s), {len(live_ids)} live session(s)"
+    )
+    for issue in sorted(active):
+        _process_orphan_task(
+            issue,
+            active[issue],
+            regs.get(issue),
+            live_ids,
+            now,
+            dry_run,
+            threshold,
+            staleness_s=staleness_s,
+            max_per_day=max_per_day,
+            day_key=day_key,
+        )
+
+
+def _process_orphan_task(
+    issue: int,
+    status: str,
+    rec: dict | None,
+    live_ids: set[str],
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    staleness_s: float,
+    max_per_day: int,
+    day_key: str,
+) -> None:
+    """Apply one active-status task's orphan decision (gather signals ->
+    :func:`decide_orphan` -> act). ``rec`` is the task's registration record
+    from :func:`_issue_registrations` (or ``None`` for the fully-unregistered
+    #472 class). Honours dry_run (logs but never mutates / spawns)."""
+    mapped_alive = bool(rec and rec["sids"] & live_ids)
+    manual_only = bool(rec and rec["has_manual"] and not rec["has_auto"])
+    entry_age_s = (now - rec["newest_write"]) if rec and rec["newest_write"] > 0 else None
+    state = _load_orphan_state(issue)
+    missed = state.get("missed", 0)
+    if not isinstance(missed, int):
+        missed = 0
+    respawns_today = state.get("respawns_today", 0) if state.get("respawn_day") == day_key else 0
+    if not isinstance(respawns_today, int):
+        respawns_today = 0
+    alerted = bool(state.get("alerted"))
+
+    # Lazy events fetch: only orphan candidates pay the per-task read.
+    marker_age_s: float | None = None
+    is_candidate = not mapped_alive and not (
+        entry_age_s is not None and entry_age_s < ORPHAN_SPAWN_GRACE_S
+    )
+    if is_candidate:
+        latest = _latest_progress_ts(_task_events(issue))
+        marker_age_s = (now - latest) if latest is not None else None
+
+    action, new_missed = decide_orphan(
+        status,
+        mapped_alive,
+        manual_only,
+        entry_age_s,
+        marker_age_s,
+        missed,
+        respawns_today=respawns_today,
+        threshold=threshold,
+        staleness_s=staleness_s,
+        max_respawns_per_day=max_per_day,
+    )
+    gap_str = f"{marker_age_s / 60:.1f}m" if marker_age_s is not None else "none"
+    print(
+        f"  issue #{issue}: status={status} mapped_alive={mapped_alive} "
+        f"manual_only={manual_only} marker_gap={gap_str} "
+        f"missed={missed}->{new_missed} respawns_today={respawns_today}/{max_per_day} "
+        f"alerted={alerted} action={action}"
+    )
+
+    if action == "clear":
+        if state and not dry_run:
+            _clear_orphan_state(issue)
+        return
+    if action == "keep":
+        if not dry_run:
+            _save_orphan_state(
+                issue,
+                missed=new_missed,
+                alerted=alerted,
+                respawn_day=day_key,
+                respawns_today=respawns_today,
+                prev=state,
+            )
+        return
+    if action == "respawn":
+        attempted_ok = _respawn_orphan(issue, _stalled_cap_gpu_hours(issue), dry_run)
+        if not dry_run:
+            # Count the ATTEMPT regardless of success so a failing spawn
+            # can't hot-loop past the daily cap.
+            _save_orphan_state(
+                issue,
+                missed=0,
+                alerted=False,
+                respawn_day=day_key,
+                respawns_today=respawns_today + 1,
+                prev=state,
+            )
+            if attempted_ok:
+                _post_progress_marker(
+                    issue,
+                    f"{_ORPHAN_RESPAWN_NOTE_SENTINEL} active task "
+                    f"(status={status}) had no live registered session and no "
+                    f"real progress marker for {gap_str}; auto-respawned via "
+                    f"spawn-issue --auto (attempt {respawns_today + 1}/{max_per_day} "
+                    f"today).",
+                    dry_run,
+                    label="orphan-respawn",
+                )
+        return
+    # action == "alert": one-time loud marker per episode.
+    reason = (
+        "only a MANUAL (user-driven) session is registered; never auto-respawned"
+        if manual_only
+        else f"daily respawn-attempt cap exhausted ({respawns_today}/{max_per_day})"
+    )
+    print(
+        f"  ORPHANED issue #{issue}: status={status}, no live registered "
+        f"session, marker_gap={gap_str}; {reason}",
+        file=sys.stderr,
+    )
+    if not alerted:
+        _post_progress_marker(
+            issue,
+            f"{_ORPHAN_ALERT_NOTE_SENTINEL} active task (status={status}) has "
+            f"no live registered session and no real progress marker for "
+            f"{gap_str}; {reason}. Manual recovery: uv run python "
+            f"scripts/spawn_session.py spawn-issue --issue {issue} --auto",
+            dry_run,
+            label="orphan-alert",
+        )
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=new_missed,
+            alerted=True,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            prev=state,
+        )
+
+
 # ─── generalized GC of stale ~/.eps-autonomous/ per-issue files ──────────────
 
 # Task statuses for which per-issue registry / progress / stalled-state files
@@ -2228,10 +3339,18 @@ TERMINAL_FOR_GC = {"completed", "archived"}
 # (``issue-progress/`` and ``issue-tick-last-status/`` keep their per-issue
 # files in nested dirs). The pod-safety state files are reaped by their own
 # RUNNING-set-aware GC (:func:`_gc_orphan_pod_safety_state`) and are NOT
-# included here.
+# included here; likewise the session-reconcile state files
+# (:func:`_gc_orphan_session_reconcile_state` — terminal-status reaping here
+# would reset that pass's miss counter every tick).
 _GC_TARGETS: tuple[tuple[str, str], ...] = (
     ("manual-issue-", ""),
     (STALLED_STATE_PREFIX, ""),
+    (ORPHAN_STATE_PREFIX, ""),
+    # Campaign watchdog state (== CAMPAIGN_WATCH_STATE_PREFIX, defined in the
+    # campaign-pass section below; literal here because module-level tuples
+    # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
+    # CAMPAIGN_TERMINAL; this is the deleted-task / completed-archived backstop.
+    ("campaign-watch-", ""),
     ("", "issue-progress"),
     ("", "issue-tick-last-status"),
 )
@@ -2287,8 +3406,17 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
     - ``pod-safety-<N>.json`` — owned by :func:`_gc_orphan_pod_safety_state`
       which keys on the live RUNNING set, a different (complementary)
       question than task terminal status.
+    - ``session-reconcile-<N>.json`` — owned by
+      :func:`_gc_orphan_session_reconcile_state` which keys on the live
+      mapped-session set. MUST stay out of this sweep: those files track
+      episodes whose task is BY DEFINITION terminal, so reaping them here
+      would reset the miss counter every tick and the session-reconcile
+      threshold could never be reached.
     - ``session_progress.json`` / ``watch.lock`` (project-singletons, not
       per-issue).
+    - ``vm-disk.json`` / ``vm-disk-events.jsonl`` (project-singletons for the
+      VM disk-headroom pass — :func:`vm_disk_pass` owns the state file's
+      lifecycle via its episode-recovery clear).
     """
     counts: dict[str, int] = {}
     for prefix, subdir in _GC_TARGETS:
@@ -2337,6 +3465,1452 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
     print(f"gc: cleared {summary}")
 
 
+# ─── session-reconcile pass (sessions-vs-status; 2026-06-10 disk incident) ───
+#
+# Mirror of the pod-safety auto-stop arm for Happy SESSIONS. The respawn pass
+# DELETES the registry entry when a task reaches a TERMINAL status (see
+# :func:`decide`) but never stops the live session, and unregistered zombie
+# generations (a newer spawn overwrote the per-issue registration file) are
+# invisible to every registry-driven pass — so a per-issue session that
+# outlives its task's completion persists indefinitely. In the 2026-06-10
+# disk-full incident 15+ such sessions (some weeks old) sat alive in the
+# worktrees of completed/archived tasks, pinning 10-15G worktrees each against
+# the stale-worktree sweep and holding open deleted-file handles (~37G of
+# phantom disk usage); 17 had to be stopped by hand before the worktree audit
+# could see their worktrees as unpinned.
+#
+# Conservative posture, mirroring how the pod pass and the stalled-detector
+# were introduced (auto-stop became the DEFAULT on 2026-06-10 — see
+# :func:`_session_reconcile_autostop_enabled` — after a manual sweep of 14
+# sessions validated the exact predicate below):
+#
+#   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE`
+#     (awaiting_promotion / completed / archived — the pod-safety auto-stop
+#     set; ``followups_running`` and ``blocked`` are excluded because the
+#     session may be legitimately live there);
+#   * requires > :func:`_session_idle_s` (default 2h) of inactivity on EVERY
+#     available activity signal (newest non-watcher marker of ANY kind + the
+#     per-issue self-report file);
+#   * the same >=2-consecutive-checks miss guard as the pod pass;
+#   * honours the ``keep-running`` tag, the inferred inline-follow-up
+#     predicate (:func:`_task_session_followup_active`, wider signal/
+#     transition sets than the pod pass's), and a no-RUNNING-pod check;
+#   * ``EPM_SESSION_RECONCILE_AUTOSTOP=0`` falls back to the original
+#     ALERT-ONLY posture (loud log + one-time marker, no stop);
+#   * a daemon ACK is never trusted as a kill: ACKed stops are recorded in
+#     the state file (``stopped_at``) and verified actually-gone on the
+#     next tick; a survivor gets ONE stop retry, then a loud one-time
+#     marker — the episode state is never cleared on an unverified stop
+#     (:func:`_check_stop_verification`);
+#   * NEVER touches a session with no issue mapping (the PM session, chat
+#     sessions) — those are skipped at the mapping step and cannot reach the
+#     decision function.
+
+# Parked/terminal statuses whose live sessions the pass reconciles. Shares
+# the pod-safety auto-stop set (NOT the GC's narrower terminal set):
+# `awaiting_promotion` was added 2026-06-10 on the user request "Can we stop
+# the happy sessions once they reach awaiting promotion?" — the promotion
+# park is a human gate with no session-side work left, and idle sessions
+# there accumulated to 73 registered / ~35-40GB RSS. `followups_running`
+# is deliberately NOT here: that status means a same-issue follow-up round
+# is executing and the session is its driver. `blocked` is NOT here either
+# (under investigation; the user may be live-parked in the session).
+SESSION_RECONCILE_DONE = AUTO_STOP_DONE
+
+# Default inactivity grace window before a parked/terminal task's live
+# session counts as idle. 2h (validated by the 2026-06-10 manual sweep of
+# 14 sessions: a 2h any-marker grace protected #504/#538/#540, which had
+# minutes-old progress markers despite parked statuses) — overridable via
+# EPM_SESSION_RECONCILE_IDLE_S (seconds, see _session_idle_s).
+SESSION_IDLE_S = 2 * 3600
+
+
+def _session_idle_s() -> float:
+    """Idle grace window in seconds: ``EPM_SESSION_RECONCILE_IDLE_S`` when set
+    to a positive number, else :data:`SESSION_IDLE_S` (2h). A garbled /
+    non-positive value falls back to the default rather than crashing the
+    watcher pass."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_IDLE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return SESSION_IDLE_S
+    return val if val > 0 else SESSION_IDLE_S
+
+
+# Marker kinds that signal a follow-up may be in flight on a parked/terminal
+# task. Broader than the pod-safety pass's bare `epm:run-launched`
+# (:data:`_RUN_LAUNCHED_KIND`): `epm:followup-scope` lands when a follow-up
+# is REQUESTED (before any session picks it up — the window where stopping
+# the session would orphan the request), and `epm:free-analysis-followup-run`
+# marks the inline zero-GPU auto-run. Any of these NEWER than the latest
+# done-transition marker means the session may be (or be about to become)
+# the follow-up's driver.
+_SESSION_FOLLOWUP_SIGNAL_KINDS = frozenset(
+    {
+        "epm:run-launched",
+        "epm:followup-scope",
+        "epm:free-analysis-followup-run",
+    }
+)
+
+# Marker kinds that record the task settling into its parked/terminal state.
+# Broader than the pod-safety pass's set: `epm:pod-terminated` and
+# `epm:step-completed` also mark a round wrapping up, so a follow-up signal
+# OLDER than any of these is provably finished business, not in-flight work.
+_SESSION_DONE_TRANSITION_KINDS = frozenset(
+    {
+        "epm:promoted",
+        "epm:status-changed",
+        "epm:pod-terminated",
+        "epm:step-completed",
+    }
+)
+
+
+def _task_session_followup_active(issue: int, events: list[dict] | None = None) -> bool:
+    """True iff task ``issue`` has a follow-up signal marker
+    (:data:`_SESSION_FOLLOWUP_SIGNAL_KINDS`) NEWER than its latest
+    done-transition marker (:data:`_SESSION_DONE_TRANSITION_KINDS`).
+
+    The session-reconcile twin of :func:`_task_followup_active`. The two
+    predicates now share the same follow-up signal set
+    (:data:`_POD_FOLLOWUP_SIGNAL_KINDS` == the follow-up side of this set,
+    widened 2026-06-10, refs #573) but stay decoupled symbols because their
+    DONE-TRANSITION sets differ: the session twin also counts
+    ``epm:pod-terminated`` / ``epm:step-completed`` as settling markers,
+    which would re-arm a pod stop too eagerly. Same defensive posture:
+    no follow-up signal -> False; no done-transition despite a DONE status
+    (shouldn't happen — at least one ``epm:status-changed`` put it there)
+    -> False, leaving the idle grace + 2-miss guard as the safety margin.
+    """
+    if events is None:
+        events = _task_events(issue)
+    followup = _latest_event_ts(events, _SESSION_FOLLOWUP_SIGNAL_KINDS)
+    if followup is None:
+        return False
+    done_transition = _latest_event_ts(events, _SESSION_DONE_TRANSITION_KINDS)
+    if done_transition is None:
+        return False
+    return followup > done_transition
+
+
+def _latest_nonwatcher_event_ts(events: list[dict]) -> float | None:
+    """Newest epoch ts among ALL events whose note does NOT carry a watcher
+    sentinel (:data:`_WATCHER_NOTE_SENTINELS`), or ``None``.
+
+    The session-reconcile idle clock counts markers of ANY kind — not just
+    :data:`_PROGRESS_KINDS` — because on a parked task every marker
+    (`epm:followup-scope`, `epm:interp-critique`, `epm:workflow-fix-applied`,
+    ...) is evidence somebody/something is still working the task, and the
+    sweep must err toward keeping the session. Watcher-posted notes stay
+    excluded (the alert/stop markers land on the very task whose inactivity
+    they measure — counting them would reset the clock they read)."""
+    best: float | None = None
+    for ev in events:
+        note = ev.get("note") or ""
+        if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+# Filename prefix for the per-issue session-reconcile state file at
+# ``~/.eps-autonomous/session-reconcile-<N>.json``. Mirrors the pod-safety
+# state layout. NOT in :data:`_GC_TARGETS`: these files track episodes whose
+# task is BY DEFINITION parked/terminal (completed/archived tasks sit in the
+# terminal-status GC's sweep set), so that GC would reap them every tick and
+# the miss counter could never reach the threshold. They are reaped by
+# :func:`_gc_orphan_session_reconcile_state` (keyed on the live
+# mapped-session set) plus its age backstop instead.
+SESSION_RECONCILE_STATE_PREFIX = "session-reconcile-"
+
+
+def _session_reconcile_autostop_enabled() -> bool:
+    """True unless ``EPM_SESSION_RECONCILE_AUTOSTOP`` is explicitly set to a
+    falsy value (``0`` / ``false`` / ``no``). Default ON as of 2026-06-10
+    (user request: "Can we stop the happy sessions once they reach awaiting
+    promotion?" — supersedes the same-day alert-only decision after 73 idle
+    registered sessions accumulated ~35-40GB RSS and 14 were stopped manually
+    with this pass's exact predicate). Setting the var to ``1``/``true``/
+    ``yes`` (the old arming values) keeps the stop armed, so existing crontab
+    exports stay backwards-compatible."""
+    raw = os.environ.get("EPM_SESSION_RECONCILE_AUTOSTOP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def decide_session_reconcile(
+    status: str | None,
+    idle: bool,
+    missed: int,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    autostop: bool = False,
+    keep_running: bool = False,
+    followup_active: bool = False,
+    pod_running: bool = False,
+) -> tuple[str, int]:
+    """Pure decision for the session-reconcile pass on one issue's live,
+    issue-mapped session(s). Returns ``(action, new_missed)`` where action is
+    ``"clear"`` | ``"keep"`` | ``"alert"`` | ``"stop"`` |
+    ``"keep-running-skip"`` | ``"followup-skip"`` | ``"pod-skip"``.
+
+    The caller only invokes this for issues that HAVE at least one live
+    mapped session; sessions with no issue mapping (PM / chat) never reach
+    here.
+
+    Cases:
+
+    - ``status`` not in :data:`SESSION_RECONCILE_DONE` (including ``None`` =
+      unreadable) -> ``("clear", 0)``. The task is not provably parked/done —
+      any other status (ACTIVE, ``followups_running``, ``blocked``) means
+      the session may be legitimately live, so the episode state is dropped.
+      Unreadable status is treated as non-done (conservative: never act on
+      ignorance).
+    - done but not ``idle`` -> ``("clear", 0)``. Fresh activity (a non-watcher
+      marker of ANY kind or self-report within :func:`_session_idle_s`) ends
+      the episode — e.g. a task that JUST parked keeps its session for the
+      grace window.
+    - done + idle + ``keep_running`` -> ``("keep-running-skip", 0)``. The
+      explicit user tag beats everything (same precedence as
+      :func:`decide_pod_safety`); miss counter resets so removing the tag
+      re-arms a fresh >=``threshold``-checks accumulation.
+    - done + idle + ``followup_active`` (and not ``keep_running``) ->
+      ``("followup-skip", 0)``. A fresh follow-up signal marker newer than
+      the latest done-transition means an inline follow-up is in flight (or
+      requested); its driver session must not be stopped even if the
+      follow-up itself is quiet (markers > idle window — e.g. mid-training
+      silence).
+    - done + idle + ``pod_running`` (and neither skip above) ->
+      ``("pod-skip", 0)``. A RUNNING managed pod on the issue means work may
+      still be in flight that the markers haven't surfaced yet; the
+      pod-safety pass owns reconciling the pod itself, and once it stops the
+      escaped pod this skip re-arms naturally.
+    - done + idle, below ``threshold`` -> ``("keep", missed+1)``. The 2-miss
+      guard: a single transient task.py / self-report read glitch never
+      escalates.
+    - threshold met + ``autostop`` (the DEFAULT as of 2026-06-10) ->
+      ``("stop", 0)``. Checked BEFORE the ``alerted`` dedup so arming the
+      stop mid-episode escalates an already-alerted episode on the next tick
+      without re-accumulating (the #506 lesson: a dedup flag must never
+      suppress the stronger action once it becomes eligible).
+    - threshold met, alert-only (``EPM_SESSION_RECONCILE_AUTOSTOP=0``), not
+      yet ``alerted`` -> ``("alert", missed+1)``. One loud marker per
+      episode; the miss count keeps accumulating so a later autostop-enable
+      fires immediately.
+    - threshold met, alert-only, already ``alerted`` -> ``("keep", missed+1)``.
+      Stay quiet (dedup); the episode stays observable in the watcher log.
+    """
+    if status not in SESSION_RECONCILE_DONE:
+        return ("clear", 0)
+    if not idle:
+        return ("clear", 0)
+    if keep_running:
+        return ("keep-running-skip", 0)
+    if followup_active:
+        return ("followup-skip", 0)
+    if pod_running:
+        return ("pod-skip", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if autostop:
+        return ("stop", 0)
+    if not alerted:
+        return ("alert", new_missed)
+    return ("keep", new_missed)
+
+
+def _map_sessions_to_issues(
+    live_ids: set[str],
+    registry_map: dict[str, int],
+    session_paths: dict[str, str | None],
+) -> dict[int, set[str]]:
+    """Group live session ids by the issue they belong to.
+
+    Pure (testable without a daemon): ``registry_map`` is
+    ``spawn_session._load_session_issue_map()`` (registered sessions, BOTH
+    ``issue-<N>.json`` and ``manual-issue-<N>.json``); ``session_paths`` maps
+    sid -> cwd from ``~/.happy/sessions.json`` metadata. A registry mapping
+    wins; an ``issue-<N>`` worktree cwd is the fallback for unregistered /
+    superseded zombie generations (the respawn pass deletes the registry
+    entry at TERMINAL, and every newer spawn overwrites it — so the incident
+    sessions are mostly cwd-mapped, the same ``~#N`` attribution
+    ``spawn_session.py list`` renders). Sessions with neither mapping (the
+    PM session at the repo root, chat sessions, other projects) are skipped
+    entirely — they can never be acted on."""
+    out: dict[int, set[str]] = {}
+    for sid in live_ids:
+        if not isinstance(sid, str) or not sid:
+            continue
+        issue = registry_map.get(sid)
+        if issue is None:
+            issue = _infer_issue_from_path(session_paths.get(sid))
+        if issue is None:
+            continue
+        out.setdefault(issue, set()).add(sid)
+    return out
+
+
+def _session_reconcile_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{SESSION_RECONCILE_STATE_PREFIX}{issue}.json"
+
+
+def _load_session_reconcile_state(issue: int) -> dict:
+    """Read the per-issue session-reconcile state (``{}`` if absent /
+    unreadable — a fresh/garbled file starts the miss count at 0, mirroring
+    :func:`_load_pod_safety_state`)."""
+    path = _session_reconcile_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_session_reconcile_state(
+    issue: int,
+    *,
+    missed: int,
+    alerted: bool,
+    sids: list[str],
+    prev: dict | None = None,
+    stopped_at: dict[str, float] | None = None,
+    stop_retried: bool = False,
+    stop_failed_alerted: bool = False,
+) -> None:
+    """Persist the per-issue session-reconcile state atomically (temp +
+    rename), mirroring :func:`_save_pod_safety_state`. ``sids`` records the
+    live session ids observed this tick (informational — the decision is
+    per-issue); ``first_seen`` carries forward so the GC age backstop
+    measures the original episode start.
+
+    The stop-verification fields (all optional; absent in state files written
+    before 2026-06-10, which read back as empty/false): ``stopped_at`` maps
+    sid -> epoch ts of the daemon-ACKed stop, awaiting the next-tick
+    gone-from-the-live-set verification; ``stop_retried`` /
+    ``stop_failed_alerted`` are the once-per-episode dedup flags for the
+    zombie-session retry + loud marker (:func:`_check_stop_verification`)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _session_reconcile_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "sids": sorted(sids),
+        "first_seen": prev_first_seen,
+        "stopped_at": dict(stopped_at or {}),
+        "stop_retried": bool(stop_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_session_reconcile_state(issue: int) -> None:
+    """Drop the per-issue session-reconcile state file (episode over: the
+    task left the DONE set, activity resumed, or the sessions were stopped)."""
+    _session_reconcile_state_path(issue).unlink(missing_ok=True)
+
+
+def _gc_orphan_session_reconcile_state(
+    mapped_issues: set[int], dry_run: bool, now: float | None = None
+) -> list[int]:
+    """GC session-reconcile state files for issues with NO live mapped session
+    (the sessions died / were stopped by any path — the episode is over), so
+    a later session on the same issue starts with a fresh miss count. Also
+    drops files older than :data:`POD_SAFETY_STATE_MAX_AGE_S` as an age
+    backstop. Mirrors :func:`_gc_orphan_pod_safety_state` (the terminal-status
+    GC deliberately does NOT sweep this prefix — see
+    :data:`SESSION_RECONCILE_STATE_PREFIX`). This reap is ALSO the
+    stop-verification success path: a stopped session that actually died
+    leaves the mapped set, so its episode state — including ``stopped_at`` —
+    is dropped here (:func:`_check_stop_verification` documents the zombie
+    branch). Returns the cleared issues."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return []
+    now = now if now is not None else time.time()
+    cleared: list[int] = []
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{SESSION_RECONCILE_STATE_PREFIX}*.json")):
+        stem = path.stem[len(SESSION_RECONCILE_STATE_PREFIX) :]
+        try:
+            issue = int(stem)
+        except ValueError:
+            continue  # hand-debug artifact; not the GC's business
+        if issue in mapped_issues:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+            first_seen = payload.get("first_seen", now)
+            if not isinstance(first_seen, int | float):
+                first_seen = now
+        except (json.JSONDecodeError, OSError):
+            first_seen = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_seen
+        reason = (
+            "no live mapped session"
+            if age < POD_SAFETY_STATE_MAX_AGE_S
+            else f"age={age / 3600:.1f}h"
+        )
+        print(f"  session-reconcile: GC orphan state issue #{issue} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+        cleared.append(issue)
+    return cleared
+
+
+def _session_idle_signals(issue: int, now: float) -> tuple[bool, str, list[dict]]:
+    """Compute ``(idle, gap_desc, events)`` for a DONE-status candidate.
+
+    ``idle`` is True when EVERY available activity signal — the newest
+    NON-watcher marker of ANY kind (:func:`_latest_nonwatcher_event_ts`, not
+    just progress kinds: on a parked task any marker is evidence the task is
+    still being worked) and the per-issue self-report file — is older than
+    :func:`_session_idle_s` (default 2h, env
+    ``EPM_SESSION_RECONCILE_IDLE_S``). When NO signal is readable at all the
+    issue counts as idle (mirrors the orphan sweep's None-is-stale rule; the
+    status gate + follow-up/pod/keep-running skips + 2-miss guard keep that
+    safe). ``gap_desc`` is the human-readable freshest-signal age for
+    log/marker text; ``events`` is returned so the caller can reuse the
+    fetch for the follow-up predicate."""
+    events = _task_events(issue)
+    latest_marker = _latest_nonwatcher_event_ts(events)
+    sr_age, _sr_ts = _self_report_age_seconds(issue, now)
+    ages = [
+        a
+        for a in (
+            (now - latest_marker) if latest_marker is not None else None,
+            sr_age,
+        )
+        if a is not None
+    ]
+    idle = (min(ages) >= _session_idle_s()) if ages else True
+    gap_desc = f"{min(ages) / 3600:.1f}h" if ages else "no-signal"
+    return idle, gap_desc, events
+
+
+def _handle_session_stop(
+    issue: int,
+    sids: list[str],
+    status: str | None,
+    gap_desc: str,
+    threshold: int,
+    dry_run: bool,
+    prev_state: dict,
+    prev_missed: int,
+    prev_alerted: bool,
+    now: float,
+) -> None:
+    """Stop every live mapped session for ``issue`` and record the outcome.
+
+    The daemon ACK is NOT trusted as a kill: every ACKed sid is recorded in
+    the state file's ``stopped_at`` map and verified actually-gone on the
+    NEXT tick (:func:`_check_stop_verification`); the episode state is
+    cleared only once the session(s) leave the live set (via the
+    live-session-keyed GC). An ACK failure keeps the accumulated miss count
+    so the next tick retries the stop for the remaining live session(s)."""
+    stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    if stopped:
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_STOP_NOTE_SENTINEL} auto-stopped "
+            f"{len(stopped)} idle session(s) ({', '.join(stopped)}) by the "
+            f"autonomous_session_watch session-reconcile pass — task status "
+            f"'{status}' is parked/terminal, no live follow-up signal, no "
+            f"RUNNING pod, no keep-running tag, and no activity (non-watcher "
+            f"marker / self-report) was observed for > "
+            f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}), confirmed "
+            f"for >= {threshold} checks. An idle session pins its worktree "
+            f"against the stale-worktree sweep and holds deleted-file "
+            f"handles (2026-06-10 disk incident). Respawn if needed: "
+            f"`spawn_session.py spawn-issue --issue {issue}`.",
+            dry_run,
+            label="session-reconcile-stop",
+        )
+    if not dry_run:
+        # Record every ACKed stop for next-tick verification instead of
+        # clearing the episode: a daemon that ACKs but fails to kill the
+        # session would otherwise reset the state and loop silently. The
+        # state is reaped by the live-session-keyed GC once the session(s)
+        # actually leave the live set. A full ACK resets the miss count
+        # (the old clear's semantics); a partial ACK keeps it so the next
+        # tick re-stops the remaining live session(s).
+        stopped_at = dict(prev_state.get("stopped_at") or {})
+        for sid in stopped:
+            stopped_at[sid] = now
+        _save_session_reconcile_state(
+            issue,
+            missed=0 if len(stopped) == len(sids) else prev_missed,
+            alerted=prev_alerted,
+            sids=sids,
+            prev=prev_state,
+            stopped_at=stopped_at,
+            stop_retried=bool(prev_state.get("stop_retried", False)),
+            stop_failed_alerted=bool(prev_state.get("stop_failed_alerted", False)),
+        )
+
+
+def _check_stop_verification(
+    issue: int,
+    sids: list[str],
+    done: bool,
+    idle: bool,
+    prev_state: dict,
+    dry_run: bool,
+    now: float,
+) -> bool:
+    """Next-tick verification that a previously ACKed session stop actually
+    landed (daemon ACK != kill). Returns True when this tick was consumed by
+    the verification path (the caller skips the normal decision).
+
+    ``stopped_at`` in the per-issue state records ``sid -> epoch ts`` for
+    every session whose stop was ACKed (:func:`_handle_session_stop` no
+    longer clears the episode on ACK). The verified-gone path needs no code
+    here: once every stopped session has left the live set, either the issue
+    drops out of the mapped set entirely (the live-session-keyed GC reaps
+    the state file) or only NEW sessions remain (no zombie -> fall through;
+    the next state save rewrites ``stopped_at`` empty, starting the
+    newcomers on a clean slate).
+
+    A ZOMBIE — a sid still in the live set on a later tick despite its ACKed
+    stop — escalates, but only while the stop conditions (DONE status +
+    idle) still hold (a revived / freshly-active task falls through to the
+    normal decision, which clears the episode rather than re-killing a
+    legitimately live session):
+
+    1. first zombie tick: loud stderr log + ONE retry of the stop
+       (``stop_retried`` flag);
+    2. zombie after the retry: ONE loud marker on the task
+       (``stop_failed_alerted`` flag) — the episode state is never cleared
+       on an unverified stop, so the failure stays visible for triage;
+    3. after the alert: stay quiet; the state file remains and is reaped by
+       the live-session-keyed GC when the session finally dies (or by the
+       age backstop).
+
+    Backward-compatible: state files written before these fields existed
+    have no ``stopped_at`` key -> empty dict -> the check is a no-op.
+    """
+    stopped_at = prev_state.get("stopped_at")
+    if not isinstance(stopped_at, dict) or not stopped_at:
+        return False
+    if not (done and idle):
+        return False  # stop conditions no longer hold; normal decide clears
+    zombies = sorted(sid for sid in sids if sid in stopped_at)
+    if not zombies:
+        return False  # all stopped sids verified gone; newcomers fall through
+    prev_missed = prev_state.get("missed", 0)
+    prev_missed = prev_missed if isinstance(prev_missed, int) else 0
+    prev_alerted = bool(prev_state.get("alerted", False))
+    print(
+        f"  STOP-VERIFY FAILED issue #{issue}: {len(zombies)} session(s) "
+        f"({', '.join(zombies)}) still alive one tick after the daemon ACKed "
+        f"their stop (ACK != kill).",
+        file=sys.stderr,
+    )
+    if not prev_state.get("stop_retried"):
+        re_acked = [sid for sid in zombies if _stop_session(sid, dry_run)]
+        print(
+            f"  session-reconcile: stop RETRIED for {len(re_acked)}/{len(zombies)} "
+            f"zombie session(s) on #{issue} (one retry per episode)"
+        )
+        if not dry_run:
+            new_stopped_at = dict(stopped_at)
+            for sid in re_acked:
+                new_stopped_at[sid] = now
+            _save_session_reconcile_state(
+                issue,
+                missed=prev_missed,
+                alerted=prev_alerted,
+                sids=sids,
+                prev=prev_state,
+                stopped_at=new_stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=bool(prev_state.get("stop_failed_alerted", False)),
+            )
+        return True
+    if not prev_state.get("stop_failed_alerted"):
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL} session STOP FAILED "
+            f"to land: {len(zombies)} session(s) ({', '.join(zombies)}) are "
+            f"still alive after the session-reconcile pass stopped them AND "
+            f"retried once — the Happy daemon ACKed the stop RPCs but did not "
+            f"kill the session(s). Stop manually with `spawn_session.py stop "
+            f"--session-id <id>` (or restart the Happy daemon). The episode "
+            f"state is kept (never cleared on an unverified stop) and is GC'd "
+            f"once the session(s) actually leave the live set. Posted once "
+            f"per episode.",
+            dry_run,
+            label="session-reconcile-stop-failed",
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue,
+                missed=prev_missed,
+                alerted=prev_alerted,
+                sids=sids,
+                prev=prev_state,
+                stopped_at=stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  session-reconcile: issue #{issue} zombie session(s) {zombies} already "
+        f"retried + alerted this episode; awaiting manual stop / daemon recovery."
+    )
+    return True
+
+
+def _process_session_reconcile(
+    issue: int,
+    sids: list[str],
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    autostop: bool,
+    running_pod_issues: set[int] | None = None,
+) -> None:
+    """Reconcile one issue's live session(s) against its task status.
+
+    Reads the task's status; for parked/terminal
+    (awaiting_promotion/completed/archived) tasks, computes idleness via
+    :func:`_session_idle_signals`. Applies :func:`decide_session_reconcile`
+    and acts: STOP every live mapped session via ``spawn_session.py stop``
+    (the default), or ALERT once per episode when
+    ``EPM_SESSION_RECONCILE_AUTOSTOP=0``. ``running_pod_issues`` is the
+    issue set with a RUNNING managed pod (computed once per pass); ``None``
+    is treated as the empty set (unit-test convenience — production always
+    passes the snapshot)."""
+    status = _task_status(issue)
+    done = status in SESSION_RECONCILE_DONE
+
+    # Lazy: events / self-report / tag / follow-up reads are paid only for
+    # DONE-status candidates (same lazy pattern as _process_pod).
+    idle = False
+    gap_desc = "n/a"
+    keep_running = False
+    followup_active = False
+    pod_running = False
+    if done:
+        idle, gap_desc, events = _session_idle_signals(issue, now)
+        if idle:
+            keep_running = _task_keep_running(issue)
+            followup_active = not keep_running and _task_session_followup_active(
+                issue, events=events
+            )
+            pod_running = issue in (running_pod_issues or set())
+
+    prev_state = _load_session_reconcile_state(issue)
+    prev_missed = prev_state.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev_state.get("alerted", False))
+
+    # Next-tick stop verification (daemon ACK != kill): a previously-stopped
+    # sid still in the live set consumes the tick (retry once, then a loud
+    # one-time marker) — see :func:`_check_stop_verification`.
+    if _check_stop_verification(issue, sids, done, idle, prev_state, dry_run, now):
+        return
+
+    action, new_missed = decide_session_reconcile(
+        status,
+        idle,
+        prev_missed,
+        prev_alerted,
+        threshold,
+        autostop=autostop,
+        keep_running=keep_running,
+        followup_active=followup_active,
+        pod_running=pod_running,
+    )
+    print(
+        f"  issue #{issue} sessions={len(sids)}: status={status} idle={idle} "
+        f"activity_gap={gap_desc} missed={prev_missed}->{new_missed} "
+        f"alerted={prev_alerted} action={action}"
+    )
+
+    if action == "clear":
+        if prev_state and not dry_run:
+            _clear_session_reconcile_state(issue)
+        return
+
+    # The three skip actions differ only in their audit log line; all three
+    # reset the miss counter so removing the blocker re-arms a fresh
+    # >=threshold accumulation.
+    skip_msgs = {
+        "keep-running-skip": (
+            f"  KEEP-RUNNING issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but the keep-running tag is present — "
+            f"session-reconcile SKIPPED (sids={sids})."
+        ),
+        "followup-skip": (
+            f"  FOLLOWUP-ACTIVE issue #{issue}: task status '{status}' is DONE but a "
+            f"fresh follow-up signal marker (run-launched / followup-scope / "
+            f"free-analysis-followup-run, newer than the latest done-transition) "
+            f"indicates a live or requested inline follow-up — session-reconcile "
+            f"SKIPPED (sids={sids})."
+        ),
+        "pod-skip": (
+            f"  POD-RUNNING issue #{issue}: task status '{status}' is DONE and the "
+            f"session(s) are idle, but a RUNNING managed pod exists for the issue — "
+            f"session-reconcile SKIPPED (sids={sids}); the pod-safety pass owns the "
+            f"pod, and this skip re-arms once the pod leaves the RUNNING set."
+        ),
+    }
+    if action in skip_msgs:
+        print(skip_msgs[action])
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue, missed=0, alerted=prev_alerted, sids=sids, prev=prev_state
+            )
+        return
+
+    if action == "stop":
+        _handle_session_stop(
+            issue,
+            sids,
+            status,
+            gap_desc,
+            threshold,
+            dry_run,
+            prev_state,
+            prev_missed,
+            prev_alerted,
+            now,
+        )
+        return
+
+    if action == "alert":
+        print(
+            f"  ALERT issue #{issue}: {len(sids)} live session(s) for a task at DONE "
+            f"status '{status}' with no activity > {_session_idle_s() / 3600:.1f}h "
+            f"(gap={gap_desc}); NOT stopping (EPM_SESSION_RECONCILE_AUTOSTOP=0 — "
+            f"alert-only fallback).",
+            file=sys.stderr,
+        )
+        _post_progress_marker(
+            issue,
+            f"{_SESSION_RECONCILE_ALERT_NOTE_SENTINEL} IDLE session(s) outliving a "
+            f"parked/terminal task: {len(sids)} live Happy session(s) "
+            f"({', '.join(sids)}) mapped to this task (status '{status}') with no "
+            f"activity (non-watcher marker / self-report) for > "
+            f"{_session_idle_s() / 3600:.1f}h (gap={gap_desc}). Idle sessions pin "
+            f"their worktrees against the stale-worktree sweep and hold "
+            f"deleted-file handles (2026-06-10 disk incident: ~37G phantom usage "
+            f"across 15+ such sessions). NOT auto-stopped "
+            f"(EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback); stop "
+            f"manually with `spawn_session.py stop --session-id <id>`, or unset "
+            f"the env var on the watcher cron to restore the default auto-stop. "
+            f"Posted once per episode.",
+            dry_run,
+            label="session-reconcile-alert",
+        )
+        if not dry_run:
+            _save_session_reconcile_state(
+                issue, missed=new_missed, alerted=True, sids=sids, prev=prev_state
+            )
+        return
+
+    # action == "keep": persist the (possibly incremented) miss count.
+    if not dry_run:
+        _save_session_reconcile_state(
+            issue, missed=new_missed, alerted=prev_alerted, sids=sids, prev=prev_state
+        )
+
+
+def session_reconcile_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None = None,
+    now: float | None = None,
+) -> None:
+    """Reconcile live Happy sessions against their task status.
+
+    Daemon-gated like the respawn pass: session liveness is unknowable during
+    a daemon outage, and the stop action itself POSTs to the daemon, so the
+    whole pass skips when it is unreachable. ``live_ids`` may be passed in by
+    ``main()`` to reuse its snapshot (one daemon round-trip per tick)."""
+    now = now if now is not None else time.time()
+    if not daemon_reachable:
+        print(
+            "session-reconcile: Happy daemon unreachable; skipping "
+            "(session liveness unknowable during an outage)"
+        )
+        return
+    live = live_ids if live_ids is not None else _live_session_ids()
+    meta = _load_session_meta()
+    session_paths = {sid: (m or {}).get("path") for sid, m in meta.items()}
+    by_issue = _map_sessions_to_issues(live, _load_session_issue_map(), session_paths)
+
+    # GC stale state ALWAYS — even with zero mapped sessions — so an episode
+    # whose sessions died/were stopped by any path gets a fresh start later.
+    _gc_orphan_session_reconcile_state(set(by_issue), dry_run, now=now)
+
+    if not by_issue:
+        print("session-reconcile: no live issue-mapped sessions")
+        return
+    n_sessions = sum(len(v) for v in by_issue.values())
+    autostop = _session_reconcile_autostop_enabled()
+    # One live-pod snapshot per pass (the per-issue check is a set lookup).
+    # A FAILED snapshot (None) degrades to an empty set — the followup/
+    # keep-running skips, the idle grace, and the 2-miss guard remain as
+    # safety margins, and the pod-safety pass independently reconciles the
+    # pod itself (it skips its own state GC on the failed snapshot).
+    running_pod_issues = {
+        issue
+        for issue, _pod_id, _name in (_running_managed_issue_pods(caller="session-reconcile") or [])
+    }
+    print(
+        f"session-reconcile: {n_sessions} live issue-mapped session(s) across "
+        f"{len(by_issue)} issue(s) "
+        f"(autostop={'ON' if autostop else 'OFF — alert-only (EPM_SESSION_RECONCILE_AUTOSTOP=0)'})"
+    )
+    for issue in sorted(by_issue):
+        _process_session_reconcile(
+            issue,
+            sorted(by_issue[issue]),
+            now,
+            dry_run,
+            threshold,
+            autostop=autostop,
+            running_pod_issues=running_pod_issues,
+        )
+
+
+# ─── zombie-wrapper pass (dead inner Claude; 2026-06-11 zombie sweep) ────────
+#
+# Targets the failure mode NO other session pass can see: a daemon-tracked
+# Happy node wrapper that is alive (so the respawn pass keeps clear) but whose
+# inner Claude process is gone, on a session with NO usable issue mapping (so
+# the session-reconcile pass — registry- or worktree-cwd-keyed — never reaches
+# it). On 2026-06-11, 25 such sessions had accumulated: all finished issue
+# sessions ("Waiting for user to promote #511/#514/...") whose registrations
+# had been GC'd and whose cwd was the repo root, showing as "running" in
+# `spawn_session.py list` indefinitely until a manual sweep.
+#
+# CONSERVATIVE by verified design (NOT just habit): the Happy wrapper's
+# remote-mode launcher loops `claudeRemote`, which blocks on `nextMessage()`
+# BEFORE spawning the Claude SDK subprocess — so a wrapper with no Claude
+# descendant can be a HEALTHY idle session (e.g. right after a /clear or an
+# abort) that the next phone message revives IN PLACE. A no-Claude snapshot
+# is therefore necessary but not sufficient. The stop fires only when ALL
+# hold:
+#
+#   * NO Claude process anywhere in the wrapper's /proc descendant tree
+#     (cmdline match on :data:`_CLAUDE_CMDLINE_MARKERS` — both the native
+#     installer's `claude/versions/<v>` binary and the SDK-bundled
+#     `claude-agent-sdk-*/claude` are recognized);
+#   * confirmed across >= ``threshold`` consecutive checks (transient
+#     /proc-vs-daemon races never escalate);
+#   * the FIRST no-Claude observation is older than
+#     :func:`_zombie_wrapper_grace_s` (default 2h) — the in-place-revival
+#     window for a healthy idle wrapper;
+#   * the session is NOT the PM session (excluded via the explicit
+#     ``pm-session.json`` registration — ``spawn-pm`` / ``register-pm`` /
+#     the `/pm` skill bootstrap write it);
+#   * the session's cwd IS under the EPS project root (other projects'
+#     sessions are never touched);
+#   * when the session IS issue-mapped (registry entry or ``issue-<N>``
+#     worktree cwd), the task's status is NOT in
+#     :data:`ZOMBIE_STATUS_EXCLUDE` (an active/blocked/plan-pending task's
+#     session is left to the passes that own those states).
+#
+# ``EPM_ZOMBIE_WRAPPER_REAP=0`` falls back to ALERT-ONLY (the
+# EPM_SESSION_RECONCILE_AUTOSTOP pattern). Stops are verified next tick
+# (daemon ACK != kill): one retry, then one loud marker, mirroring
+# :func:`_check_stop_verification`. Daemon-gated (needs /list pids + the
+# stop RPC). Stopping a live wrapper forfeits daemon-side `happy resume`
+# tracking, but the recovery story for reaped sessions is a fresh
+# `spawn_session.py spawn-issue` — same contract as the session-reconcile
+# stop.
+
+# Filename prefix for the per-SESSION state file at
+# ``~/.eps-autonomous/zombie-wrapper-<sid>.json``. Keyed by session id (NOT
+# issue — the target class is precisely the sessions without a usable issue
+# mapping). NOT in the terminal-status GC's sweep set; reaped by its own
+# live-session-keyed GC (:func:`_gc_orphan_zombie_state`).
+ZOMBIE_WRAPPER_STATE_PREFIX = "zombie-wrapper-"
+
+# Default grace window between the FIRST no-Claude observation and any stop.
+# 2h mirrors SESSION_IDLE_S: long enough that a healthy idle wrapper the user
+# walked away from (post-/clear, post-abort) is overwhelmingly likely to be
+# revived or remain wanted, short enough that zombie accumulation is bounded
+# to a workday. Override via EPM_ZOMBIE_WRAPPER_GRACE_S (seconds).
+ZOMBIE_WRAPPER_GRACE_S = 2 * 3600
+
+# Issue-mapped sessions whose task sits in any of these statuses are NEVER
+# touched by the zombie pass — active pipeline statuses are owned by the
+# respawn/stalled/orphan passes, and `blocked` / `plan_pending` may have the
+# user live-parked in the session. The reapable remainder (`proposed`,
+# `awaiting_promotion`, `completed`, `archived`) plus unmapped sessions and
+# unreadable statuses (conservative: cleared, see decide) define the scope.
+ZOMBIE_STATUS_EXCLUDE = frozenset(ACTIVE | {"plan_pending", "blocked"})
+
+# Substrings that identify an inner Claude process in /proc/<pid>/cmdline.
+# Two install shapes observed live on this VM (2026-06-11): the native
+# installer runs `~/.local/share/claude/versions/<v>` and the Happy-bundled
+# SDK runs `.../@anthropic-ai/claude-agent-sdk-linux-x64/claude`. Substring
+# match errs toward false KEEPS (an unrelated cmdline mentioning these paths
+# keeps the session alive), never false stops.
+_CLAUDE_CMDLINE_MARKERS = ("claude/versions/", "claude-agent-sdk")
+
+
+def _zombie_wrapper_reap_enabled() -> bool:
+    """True unless ``EPM_ZOMBIE_WRAPPER_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the alert-only kill-switch, same
+    parsing as :func:`_session_reconcile_autostop_enabled`."""
+    raw = os.environ.get("EPM_ZOMBIE_WRAPPER_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _zombie_wrapper_grace_s() -> float:
+    """Grace window in seconds: ``EPM_ZOMBIE_WRAPPER_GRACE_S`` when set to a
+    positive number, else :data:`ZOMBIE_WRAPPER_GRACE_S` (2h). Garbled /
+    non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_ZOMBIE_WRAPPER_GRACE_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return ZOMBIE_WRAPPER_GRACE_S
+    return val if val > 0 else ZOMBIE_WRAPPER_GRACE_S
+
+
+def _proc_children_map() -> dict[int, list[int]]:
+    """``ppid -> [child pids]`` from ONE /proc scan (Linux-only, matching the
+    VM runtime). Computed once per pass and shared across every wrapper's
+    descendant walk. Unreadable /proc entries (raced exits) are skipped."""
+    out: dict[int, list[int]] = {}
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        try:
+            stat = (entry / "stat").read_text()
+            # comm (field 2) can contain spaces/parens; ppid is the 2nd
+            # whitespace field after the LAST ')' (same parse as
+            # spawn_session._ancestor_pids).
+            ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        except (OSError, IndexError, ValueError):
+            continue
+        out.setdefault(ppid, []).append(int(entry.name))
+    return out
+
+
+def _cmdline_has_claude_marker(pid: int) -> bool:
+    """True iff ``/proc/<pid>/cmdline`` contains any
+    :data:`_CLAUDE_CMDLINE_MARKERS` substring. Unreadable (exited) -> False."""
+    try:
+        raw = Path(f"/proc/{pid}/cmdline").read_bytes()
+    except OSError:
+        return False
+    cmd = raw.replace(b"\x00", b" ").decode("utf-8", "replace")
+    return any(marker in cmd for marker in _CLAUDE_CMDLINE_MARKERS)
+
+
+def _has_claude_descendant(pid: int, children_map: dict[int, list[int]] | None = None) -> bool:
+    """True iff ``pid`` or any /proc descendant has a Claude cmdline marker.
+
+    The liveness key of the zombie-wrapper pass: the daemon's ``/list``
+    ``pid`` is the Happy node wrapper, an ancestor of the Claude SDK
+    subprocess it spawns per query. The wrapper itself is included in the
+    walk defensively (its own cmdline — ``node .../happy/dist/index.mjs
+    claude ...`` — matches no marker, verified live, so this can only err
+    toward a false KEEP)."""
+    if children_map is None:
+        children_map = _proc_children_map()
+    seen: set[int] = set()
+    stack = [pid]
+    while stack:
+        p = stack.pop()
+        if p in seen:
+            continue
+        seen.add(p)
+        if _cmdline_has_claude_marker(p):
+            return True
+        stack.extend(children_map.get(p, ()))
+    return False
+
+
+def decide_zombie_wrapper(
+    status: str | None,
+    mapped: bool,
+    has_claude: bool,
+    missed: int,
+    first_miss_age_s: float,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = True,
+    grace_s: float = ZOMBIE_WRAPPER_GRACE_S,
+) -> tuple[str, int]:
+    """Pure decision for one live, non-PM, EPS-cwd session. Returns
+    ``(action, new_missed)`` with action ``"clear"`` | ``"keep"`` |
+    ``"stop"`` | ``"alert"``.
+
+    Cases:
+
+    - ``mapped`` AND (``status`` unreadable OR in
+      :data:`ZOMBIE_STATUS_EXCLUDE`) -> ``("clear", 0)``. An issue-mapped
+      session at an active/blocked/plan-pending (or unknowable) status is
+      out of scope — other passes own those states. Unmapped sessions have
+      no status to consult, so ``status`` is ignored for them.
+    - Claude process present anywhere in the wrapper's tree ->
+      ``("clear", 0)``. The session is (or just became) healthy; the
+      episode ends and a later no-Claude observation starts fresh.
+    - No Claude, below ``threshold`` consecutive misses OR within
+      ``grace_s`` of the FIRST miss -> ``("keep", missed+1)``. The grace
+      window is the in-place-revival margin: a healthy wrapper blocked at
+      ``nextMessage()`` (post-/clear, post-abort) has no Claude child yet
+      revives on the next phone message.
+    - Threshold + grace met, ``reap_enabled`` (default) -> ``("stop", 0)``.
+    - Threshold + grace met, kill-switch fallback, not yet ``alerted`` ->
+      ``("alert", missed+1)`` — one loud marker per episode; the count
+      keeps accumulating so a later re-enable stops on the next tick.
+    - Otherwise -> ``("keep", missed+1)`` (alert-only, already alerted).
+    """
+    if mapped and (status is None or status in ZOMBIE_STATUS_EXCLUDE):
+        return ("clear", 0)
+    if has_claude:
+        return ("clear", 0)
+    new_missed = missed + 1
+    if new_missed < threshold or first_miss_age_s < grace_s:
+        return ("keep", new_missed)
+    if reap_enabled:
+        return ("stop", 0)
+    if not alerted:
+        return ("alert", new_missed)
+    return ("keep", new_missed)
+
+
+def _zombie_state_path(sid: str) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{ZOMBIE_WRAPPER_STATE_PREFIX}{sid}.json"
+
+
+def _load_zombie_state(sid: str) -> dict:
+    """Per-session zombie-wrapper state (``{}`` if absent/garbled — a fresh
+    or unreadable file starts the miss count at 0, mirroring the other
+    watcher state loaders)."""
+    path = _zombie_state_path(sid)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_zombie_state(
+    sid: str,
+    *,
+    missed: int,
+    alerted: bool,
+    pid: int,
+    issue: int | None,
+    first_miss_ts: float,
+    stopped_at: float | None = None,
+    stop_retried: bool = False,
+    stop_failed_alerted: bool = False,
+) -> None:
+    """Persist the per-session zombie state atomically (temp + rename).
+    ``first_miss_ts`` anchors BOTH the grace window and the GC age backstop;
+    ``pid`` / ``issue`` are informational (the decision keys on the live
+    daemon snapshot each tick). The stop-verification fields mirror the
+    session-reconcile contract (ACK != kill)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _zombie_state_path(sid)
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "pid": pid,
+        "issue": issue,
+        "first_miss_ts": first_miss_ts,
+        "stopped_at": stopped_at,
+        "stop_retried": bool(stop_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_zombie_state(sid: str) -> None:
+    """Drop the per-session zombie state (episode over: Claude reappeared,
+    the session left scope, or it was verified stopped)."""
+    _zombie_state_path(sid).unlink(missing_ok=True)
+
+
+def _gc_orphan_zombie_state(live_sids: set[str], dry_run: bool, now: float | None = None) -> None:
+    """GC zombie-wrapper state for sessions no longer in the daemon's live
+    set (stopped by any path — the episode is over; this reap is also the
+    stop-verification success path). EVERY non-live sid's file is reaped
+    immediately; the ``first_miss_ts`` age comparison only picks the logged
+    reason (just-departed vs ancient), not a separate retention rule — a
+    live episode's file never needs age-reaping because its sid stays in
+    the live set."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    now = now if now is not None else time.time()
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{ZOMBIE_WRAPPER_STATE_PREFIX}*.json")):
+        sid = path.stem[len(ZOMBIE_WRAPPER_STATE_PREFIX) :]
+        if sid in live_sids:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+            first_miss = payload.get("first_miss_ts", now)
+            if not isinstance(first_miss, int | float):
+                first_miss = now
+        except (json.JSONDecodeError, OSError):
+            first_miss = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_miss
+        reason = (
+            "session left the live set"
+            if age < POD_SAFETY_STATE_MAX_AGE_S
+            else f"age={age / 3600:.1f}h"
+        )
+        print(f"  zombie-wrapper: GC orphan state {sid} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _append_zombie_fallback_event(note: str, dry_run: bool) -> None:
+    """Durable trace for zombie actions on sessions with NO issue mapping —
+    there is no task to carry the marker, so append one JSON line to
+    ``~/.eps-autonomous/zombie-wrapper-events.jsonl`` (same role as the
+    vm-disk fallback file). Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "zombie-wrapper-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "zombie-wrapper", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append zombie-wrapper event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending zombie-wrapper event failed: {e}", file=sys.stderr)
+
+
+def _zombie_record(issue: int | None, note: str, dry_run: bool, *, label: str) -> None:
+    """Route a zombie-pass annotation: marker on the mapped issue when one
+    exists, else the registration-independent fallback events file."""
+    if issue is not None:
+        _post_progress_marker(issue, note, dry_run, label=label)
+    else:
+        _append_zombie_fallback_event(note, dry_run)
+
+
+def _check_zombie_stop_verification(
+    sid: str,
+    pid: int,
+    issue: int | None,
+    in_scope: bool,
+    prev: dict,
+    dry_run: bool,
+    now: float,
+) -> bool:
+    """Next-tick verification that an ACKed zombie stop landed (ACK != kill).
+    Returns True when this tick was consumed by the verification path.
+
+    ``in_scope`` is the caller's current read of the stop conditions (still
+    no Claude + still in reapable scope); when it no longer holds, fall
+    through to the normal decision (which clears the episode rather than
+    re-killing a revived session). The verified-gone path needs no code:
+    a stopped sid leaves the live set and the live-session-keyed GC reaps
+    the state. A still-live sid escalates: one stop retry, then one loud
+    record, then quiet (same ladder as :func:`_check_stop_verification`)."""
+    stopped_at = prev.get("stopped_at")
+    if not isinstance(stopped_at, int | float) or not stopped_at:
+        return False
+    if not in_scope:
+        return False
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+    print(
+        f"  ZOMBIE STOP-VERIFY FAILED session {sid}: still alive one tick "
+        f"after the daemon ACKed its stop (ACK != kill).",
+        file=sys.stderr,
+    )
+    common = dict(
+        missed=prev.get("missed", 0) if isinstance(prev.get("missed", 0), int) else 0,
+        alerted=bool(prev.get("alerted", False)),
+        pid=pid,
+        issue=issue,
+        first_miss_ts=first_miss_ts,
+    )
+    if not prev.get("stop_retried"):
+        acked = _stop_session(sid, dry_run)
+        print(f"  zombie-wrapper: stop RETRIED for {sid} (one retry per episode, acked={acked})")
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                **common,
+                stopped_at=now if acked else stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return True
+    if not prev.get("stop_failed_alerted"):
+        _zombie_record(
+            issue,
+            f"{_ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL} zombie-session STOP FAILED "
+            f"to land: session {sid} (wrapper pid {pid}) is still alive after the "
+            f"zombie-wrapper pass stopped it AND retried once — the Happy daemon "
+            f"ACKed the stop RPCs but did not kill the wrapper. Stop manually with "
+            f"`spawn_session.py stop --session-id {sid}` (or restart the Happy "
+            f"daemon). Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-stop-failed",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                **common,
+                stopped_at=stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  zombie-wrapper: session {sid} already retried + alerted this episode; "
+        f"awaiting manual stop / daemon recovery."
+    )
+    return True
+
+
+def _process_zombie_wrapper(
+    sid: str,
+    pid: int,
+    issue: int | None,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+    children_map: dict[int, list[int]],
+) -> None:
+    """Apply the zombie-wrapper decision to one live, non-PM, EPS-cwd
+    session: read the mapped task's status (when mapped), walk the wrapper's
+    /proc tree for a Claude process, and act per
+    :func:`decide_zombie_wrapper`."""
+    status = _task_status(issue) if issue is not None else None
+    has_claude = _has_claude_descendant(pid, children_map)
+
+    prev = _load_zombie_state(sid)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev.get("alerted", False))
+    first_miss_ts = prev.get("first_miss_ts")
+    if not isinstance(first_miss_ts, int | float):
+        first_miss_ts = now
+
+    mapped = issue is not None
+    in_scope = not has_claude and not (
+        mapped and (status is None or status in ZOMBIE_STATUS_EXCLUDE)
+    )
+    if _check_zombie_stop_verification(sid, pid, issue, in_scope, prev, dry_run, now):
+        return
+
+    grace_s = _zombie_wrapper_grace_s()
+    action, new_missed = decide_zombie_wrapper(
+        status,
+        mapped,
+        has_claude,
+        prev_missed,
+        now - first_miss_ts,
+        prev_alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        grace_s=grace_s,
+    )
+    issue_label = f"#{issue}" if issue is not None else "unmapped"
+    zombie_age_h = (now - first_miss_ts) / 3600 if not has_claude else 0.0
+    print(
+        f"  session {sid} (pid={pid}, issue={issue_label}): status={status} "
+        f"has_claude={has_claude} missed={prev_missed}->{new_missed} "
+        f"zombie_age={zombie_age_h:.1f}h action={action}"
+    )
+
+    if action == "clear":
+        if prev and not dry_run:
+            _clear_zombie_state(sid)
+        return
+
+    if action == "stop":
+        acked = _stop_session(sid, dry_run)
+        if acked:
+            _zombie_record(
+                issue,
+                f"{_ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL} auto-stopped zombie Happy "
+                f"session {sid} (wrapper pid {pid}, issue {issue_label}): its process "
+                f"tree carried NO inner Claude process for {zombie_age_h:.1f}h "
+                f"(>= {threshold} consecutive checks, grace {grace_s / 3600:.1f}h). "
+                f"The node wrapper outlived its Claude process and would show as "
+                f"'running' indefinitely (2026-06-11: 25 such sessions accumulated, "
+                f"invisible to the session-reconcile pass once unmapped). Respawn "
+                f"if needed: `spawn_session.py spawn-issue --issue <N>` (or "
+                f"`spawn-pm`). Set EPM_ZOMBIE_WRAPPER_REAP=0 on the watcher cron "
+                f"to fall back to alert-only.",
+                dry_run,
+                label="zombie-wrapper-stop",
+            )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=0 if acked else prev_missed,
+                alerted=prev_alerted,
+                pid=pid,
+                issue=issue,
+                first_miss_ts=first_miss_ts,
+                stopped_at=now if acked else None,
+                stop_retried=bool(prev.get("stop_retried", False)),
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return
+
+    if action == "alert":
+        print(
+            f"  ZOMBIE ALERT session {sid} (issue {issue_label}): no inner Claude "
+            f"process for {zombie_age_h:.1f}h; NOT stopping "
+            f"(EPM_ZOMBIE_WRAPPER_REAP=0 — alert-only fallback).",
+            file=sys.stderr,
+        )
+        _zombie_record(
+            issue,
+            f"{_ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL} ZOMBIE Happy session: {sid} "
+            f"(wrapper pid {pid}, issue {issue_label}) has carried NO inner Claude "
+            f"process for {zombie_age_h:.1f}h — the wrapper outlived its Claude and "
+            f"shows as 'running' indefinitely. NOT auto-stopped "
+            f"(EPM_ZOMBIE_WRAPPER_REAP=0 alert-only fallback); stop manually with "
+            f"`spawn_session.py stop --session-id {sid}`, or unset the env var on "
+            f"the watcher cron to restore the default reap. Posted once per episode.",
+            dry_run,
+            label="zombie-wrapper-alert",
+        )
+        if not dry_run:
+            _save_zombie_state(
+                sid,
+                missed=new_missed,
+                alerted=True,
+                pid=pid,
+                issue=issue,
+                first_miss_ts=first_miss_ts,
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor.
+    if not dry_run:
+        _save_zombie_state(
+            sid,
+            missed=new_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            issue=issue,
+            first_miss_ts=first_miss_ts,
+        )
+
+
+def zombie_wrapper_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    children: list[dict] | None = None,
+    now: float | None = None,
+) -> None:
+    """Auto-stop daemon-tracked Happy sessions whose process tree has carried
+    no inner Claude process for >= ``threshold`` checks AND >= the grace
+    window — REGARDLESS of issue mapping (the gap every registry-/cwd-keyed
+    pass shares). Exclusions: PM-registered sids, non-EPS cwds, and
+    issue-mapped sessions at :data:`ZOMBIE_STATUS_EXCLUDE` statuses.
+
+    Daemon-gated like the respawn pass: the wrapper pids come from the
+    daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
+    injected (tests / a caller reusing its snapshot); ``None`` fetches via
+    :func:`_live_children`."""
+    now = now if now is not None else time.time()
+    if not daemon_reachable:
+        print(
+            "zombie-wrapper: Happy daemon unreachable; skipping "
+            "(wrapper pids + the stop RPC both need the daemon)"
+        )
+        return
+    children = children if children is not None else _live_children()
+    live_sids = {
+        c.get("happySessionId") for c in children if isinstance(c.get("happySessionId"), str)
+    }
+    # GC ALWAYS on a daemon-reachable tick — even with zero candidates — so
+    # episodes whose session died/was stopped by any path start fresh later.
+    _gc_orphan_zombie_state(live_sids, dry_run, now=now)
+    if not children:
+        print("zombie-wrapper: no live daemon-tracked sessions")
+        return
+
+    registry_map = _load_session_issue_map()
+    meta = _load_session_meta()
+    pm_sids = _load_pm_session_ids()
+    project_prefix = str(PROJECT_ROOT)
+    candidates: list[tuple[str, int, int | None]] = []
+    skipped_pm = 0
+    skipped_non_eps = 0
+    for child in children:
+        sid = child.get("happySessionId")
+        pid = child.get("pid")
+        if not isinstance(sid, str) or not sid or not isinstance(pid, int):
+            continue
+        if sid in pm_sids:
+            skipped_pm += 1
+            continue
+        path = (meta.get(sid) or {}).get("path")
+        if not isinstance(path, str) or not (
+            path == project_prefix or path.startswith(project_prefix + "/")
+        ):
+            # Non-EPS cwd (other projects) or no cwd metadata at all: never
+            # touched — EPS-ness cannot be established, so err toward keep.
+            skipped_non_eps += 1
+            continue
+        issue = registry_map.get(sid)
+        if issue is None:
+            issue = _infer_issue_from_path(path)
+        candidates.append((sid, pid, issue))
+
+    reap = _zombie_wrapper_reap_enabled()
+    print(
+        f"zombie-wrapper: {len(candidates)} EPS session(s) scanned "
+        f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_ZOMBIE_WRAPPER_REAP=0)'})"
+    )
+    if not candidates:
+        return
+    children_map = _proc_children_map()
+    for sid, pid, issue in sorted(candidates):
+        _process_zombie_wrapper(
+            sid,
+            pid,
+            issue,
+            now,
+            dry_run,
+            threshold,
+            reap_enabled=reap,
+            children_map=children_map,
+        )
+
+
 def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
     """Reconcile RUNNING managed pods against their task STATUS.
 
@@ -2353,15 +4927,26 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     never a terminate."""
     now = now if now is not None else time.time()
     running = _running_managed_issue_pods()
+    if running is None:
+        # Snapshot FAILED (transport error — the helper already logged it).
+        # Do NOT GC on a failed snapshot: an empty-because-failed set is
+        # indistinguishable from "every pod left RUNNING", so the GC would
+        # wipe ALL pod-safety state — not just the fail-safe 2-miss counters
+        # but the `alerted` / `keep_running_noted` / `followup_noted`
+        # once-per-episode dedup flags, re-arming duplicate markers on every
+        # API hiccup. Genuinely stranded files are reaped on the next GOOD
+        # snapshot (plus the age backstop inside
+        # `_gc_orphan_pod_safety_state`). No pods are processed either —
+        # same fail-closed no-stop outcome as today's empty-set fallback.
+        print("pod-safety: pod snapshot failed; skipping state GC this tick")
+        return
     running_issues = {issue for issue, _pod_id, _name in running}
 
-    # GC orphaned state BEFORE the per-pod loop, and ALWAYS — even when
-    # `running` is empty — so a state file for a pod that left the RUNNING set
-    # by ANY path (manual stop/terminate, self-EXIT on TTL/crash) gets cleared.
-    # Otherwise a re-used `pod-N` would inherit a stale `missed=1` / `alerted`
-    # and be one glitch away from a stop on revival. The age backstop inside
-    # `_gc_orphan_pod_safety_state` covers the case where the API is flaky on
-    # the exact tick a pod actually disappears.
+    # GC orphaned state BEFORE the per-pod loop, and ALWAYS on a GOOD snapshot
+    # — even when `running` is empty — so a state file for a pod that left the
+    # RUNNING set by ANY path (manual stop/terminate, self-EXIT on TTL/crash)
+    # gets cleared. Otherwise a re-used `pod-N` would inherit a stale
+    # `missed=1` / `alerted` and be one glitch away from a stop on revival.
     _gc_orphan_pod_safety_state(running_issues, dry_run, now=now)
 
     if not running:
@@ -2370,6 +4955,622 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     print(f"pod-safety: {len(running)} RUNNING managed pod(s)")
     for issue, pod_id, _name in running:
         _process_pod(issue, pod_id, now, dry_run, threshold)
+
+
+def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
+    """Watch VM root-disk headroom; alert once per low-disk episode and run
+    the safe reclaims when critically low.
+
+    Pods have their own guards (``pod_disk_guard.py``, the preflight
+    fallocate probe); the VM had none until / hit 100% mid-pipeline and every
+    foreground Bash spawn in the orchestrator session failed silently
+    (task #552, 2026-06-10). Everything here is fail-soft — a disk alert must
+    never crash the watcher pass that delivers it."""
+    now = now if now is not None else time.time()
+    free = _vm_free_bytes()
+    if free is None:
+        return
+    state = _load_vm_disk_state()
+    last_reclaim_ts = state.get("last_reclaim_ts")
+    if not isinstance(last_reclaim_ts, int | float):
+        last_reclaim_ts = None
+    level, do_alert, do_reclaim = decide_vm_disk(
+        free,
+        alerted=bool(state.get("alerted", False)),
+        last_reclaim_ts=last_reclaim_ts,
+        now=now,
+    )
+    free_gib = free / 2**30
+
+    if level == "ok":
+        if state:
+            print(f"vm-disk: recovered ({free_gib:.1f} GiB free); episode over")
+            if not dry_run:
+                _clear_vm_disk_state()
+        else:
+            print(f"vm-disk: ok ({free_gib:.1f} GiB free)")
+        return
+
+    # Loud log EVERY tick while low — the cron log is the primary channel.
+    print(
+        f"vm-disk: {level.upper()} — {free_gib:.1f} GiB free on {VM_DISK_PATH} "
+        f"(alert < {VM_DISK_ALERT_FREE_BYTES / 2**30:.0f} GiB, "
+        f"reclaim < {VM_DISK_RECLAIM_FREE_BYTES / 2**30:.0f} GiB)",
+        file=sys.stderr,
+    )
+
+    if do_alert:
+        note = (
+            f"{_VM_DISK_NOTE_SENTINEL} VM root disk {level.upper()}: "
+            f"{free_gib:.1f} GiB free on {VM_DISK_PATH}. Near full, foreground "
+            f"Bash spawns in VM sessions start failing silently (exit 1, zero "
+            f"output — task #552 incident, 2026-06-10). Reclaim candidates: "
+            f"worktree .venvs under .claude/worktrees/, `uv cache prune`, "
+            f"stale /tmp/claude-* trees, the HF cache. Posted once per "
+            f"low-disk episode."
+        )
+        issues = _vm_disk_marker_issues()
+        if issues:
+            for issue in issues:
+                _post_progress_marker(issue, note, dry_run, label="vm-disk-low")
+        else:
+            _append_vm_disk_fallback_event(note, dry_run)
+
+    new_last_reclaim_ts = last_reclaim_ts
+    if do_reclaim:
+        print("  vm-disk: running safe reclaims (uv cache prune + stale /tmp/claude-* sweep)")
+        _vm_reclaim_uv_cache(dry_run)
+        swept = _sweep_stale_claude_tmp(now, dry_run)
+        refreshed = _vm_free_bytes()
+        if refreshed is not None:
+            print(
+                f"  vm-disk: post-reclaim free {refreshed / 2**30:.1f} GiB "
+                f"(swept {swept} stale /tmp/claude-* tree(s))"
+            )
+        new_last_reclaim_ts = now
+
+    if not dry_run and (do_alert or do_reclaim):
+        _save_vm_disk_state(
+            alerted=bool(state.get("alerted", False)) or do_alert,
+            last_reclaim_ts=new_last_reclaim_ts,
+            prev=state,
+        )
+
+
+# ─── campaign pass (question-level /campaign sessions; task #586) ────────────
+#
+# Driven by ``campaign-<N>.json`` registry entries written by
+# ``spawn_session.py spawn-campaign`` / ``register-current --mode campaign``.
+# Four jobs, mirroring the issue respawn + stalled passes with campaign
+# semantics:
+#
+# 1. **Respawn**: campaign task ACTIVE (approved/running) + session dead on
+#    >= threshold consecutive checks -> ``spawn-campaign --issue <N>`` (which
+#    rewrites the registry entry with the fresh id; caps re-passed from the
+#    entry).
+# 2. **Progress watchdog** (progress, not liveness): session ALIVE but the
+#    newest ``epm:campaign-*`` marker is older than ``EPM_CAMPAIGN_STALL_S``
+#    (default 2h) AND no child task posted any marker in that window ->
+#    one ``epm:campaign-stalled v1`` alert per episode; a SECOND consecutive
+#    stalled check stop-then-respawns (cap CAMPAIGN_MAX_RESPAWNS per
+#    episode, then a one-time exhausted alert — mirrors the Phase-2
+#    stalled-session actor).
+# 3. **Budget backstop**: ``gpu_hours_committed > gpu_hours_total`` in
+#    ``artifacts/campaign-state.json`` -> one loud alert marker per episode.
+#    The /campaign skill should never let this happen; the watcher is the
+#    harness-side circuit breaker. GPU-hours, never dollars.
+# 4. **GC**: reap the registry entry + watch state when the campaign task is
+#    terminal (completed/archived/blocked). Stop-then-reap: a still-live
+#    session is stopped BEFORE the entry is removed (the entry is the
+#    session's issue mapping — removing it first would orphan an immortal
+#    idle session past every later pass), and the reap is deferred while
+#    the daemon is unreachable.
+#
+# Interactions with the other passes (all verified, not assumed):
+# - The issue respawn pass globs ``issue-*.json`` — ``campaign-<N>.json``
+#   never matches, so a campaign is never respawned via ``spawn-issue``.
+# - The orphan sweep skips ``kind: campaign`` tasks (see
+#   :func:`_active_status_tasks`) — its recovery command is
+#   ``spawn-issue --auto``, which would boot the WRONG skill on a campaign.
+# - The session-reconcile pass maps the campaign session to its issue (the
+#   ``campaign-`` prefix is in ``_load_session_issue_map``) but acts only on
+#   :data:`SESSION_RECONCILE_DONE` statuses — a campaign at ``running``
+#   returns "clear", so an idle-between-ticks campaign session is never
+#   auto-stopped mid-campaign; once the campaign completes, the normal
+#   idle-grace stop applies (desired).
+
+CAMPAIGN_REGISTRY_PREFIX = "campaign-"
+# Watch-state files live at campaign-watch-<N>.json. They match the
+# ``campaign-*.json`` glob too, but their stem ("watch-<N>") fails the int
+# parse so every registry-entry walk skips them; they deliberately carry NO
+# integer ``issue`` key so spawn_session's issue-map loader skips them too.
+CAMPAIGN_WATCH_STATE_PREFIX = "campaign-watch-"
+# A campaign session is mid-work at `approved` (spawned, Step 0 not yet
+# flipped it) and `running` (the held status for the whole campaign).
+CAMPAIGN_ACTIVE = {"approved", "running"}
+CAMPAIGN_TERMINAL = {"completed", "archived", "blocked"}
+CAMPAIGN_STALL_S_DEFAULT = 2 * 3600
+CAMPAIGN_MAX_RESPAWNS = 3
+
+
+def _campaign_stall_s() -> float:
+    """Campaign progress-watchdog window: ``EPM_CAMPAIGN_STALL_S`` when set to
+    a positive number, else :data:`CAMPAIGN_STALL_S_DEFAULT` (2h)."""
+    raw = os.environ.get("EPM_CAMPAIGN_STALL_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return CAMPAIGN_STALL_S_DEFAULT
+    return val if val > 0 else CAMPAIGN_STALL_S_DEFAULT
+
+
+def _campaign_registry_entries() -> list[tuple[Path, dict]]:
+    """``(path, entry)`` for every readable ``campaign-<N>.json`` registry
+    entry (integer N). Watch-state files (``campaign-watch-<N>.json``) and
+    garbled names are skipped; an unreadable entry is returned with an empty
+    dict so the caller can remove it."""
+    out: list[tuple[Path, dict]] = []
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return out
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{CAMPAIGN_REGISTRY_PREFIX}*.json")):
+        stem = path.stem[len(CAMPAIGN_REGISTRY_PREFIX) :]
+        try:
+            int(stem)
+        except ValueError:
+            continue  # campaign-watch-<N>.json or a hand-debug artifact
+        try:
+            entry = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            entry = {}
+        out.append((path, entry if isinstance(entry, dict) else {}))
+    return out
+
+
+def _campaign_watch_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{CAMPAIGN_WATCH_STATE_PREFIX}{issue}.json"
+
+
+def _load_campaign_watch_state(issue: int) -> dict:
+    """Per-campaign watchdog state (``{}`` if absent/unreadable — a fresh file
+    starts every counter at 0, mirroring :func:`_load_stalled_state`)."""
+    path = _campaign_watch_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_campaign_watch_state(
+    issue: int,
+    *,
+    stalled_checks: int,
+    alerted: bool,
+    respawn_count: int,
+    exhausted: bool,
+    budget_alerted: bool,
+    prev: dict | None = None,
+) -> None:
+    """Persist the campaign watchdog state atomically (temp + rename).
+
+    NOTE: deliberately NO ``issue`` / ``happy_session_id`` keys — the file
+    matches spawn_session's ``campaign-*.json`` issue-map glob, and those
+    keys would make a watch-state file masquerade as a registry entry."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _campaign_watch_state_path(issue)
+    prev_first_seen = (prev or {}).get("first_seen")
+    if not isinstance(prev_first_seen, int | float):
+        prev_first_seen = time.time()
+    payload = {
+        "stalled_checks": stalled_checks,
+        "alerted": alerted,
+        "respawn_count": respawn_count,
+        "exhausted": exhausted,
+        "budget_alerted": budget_alerted,
+        "first_seen": prev_first_seen,
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_campaign_watch_state(issue: int) -> None:
+    _campaign_watch_state_path(issue).unlink(missing_ok=True)
+
+
+def _respawn_campaign(entry: dict, dry_run: bool) -> bool:
+    """Re-spawn the campaign session for this registry entry via
+    ``spawn_session.py spawn-campaign`` (re-passing the entry's caps).
+    Returns True on success; spawn-campaign rewrites the registry entry
+    (fresh id, missed=0) as a side effect."""
+    issue = entry["issue"]
+    cmd = [
+        "uv", "run", "python", "scripts/spawn_session.py", "spawn-campaign",
+        "--issue", str(issue),
+        "--budget-gpu-hours", str(entry.get("budget_gpu_hours", 250.0)),
+        "--max-concurrent", str(entry.get("max_concurrent", 4)),
+        "--per-child-cap", str(entry.get("per_child_gpu_hours_cap", 100.0)),
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would respawn campaign: {' '.join(cmd)}")
+        return False
+    res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        print(
+            f"  CAMPAIGN RESPAWN FAILED issue #{issue}: {res.stderr.strip()[:300]}",
+            file=sys.stderr,
+        )
+        return False
+    first_line = (res.stdout.strip().splitlines() or [""])[0]
+    print(f"  RESPAWNED campaign #{issue}: {first_line}")
+    return True
+
+
+def _campaign_children(issue: int) -> list[dict]:
+    """Children of campaign ``issue`` via ``task.py list-children --json``;
+    ``[]`` on any read failure (same subprocess isolation as
+    :func:`_task_status`)."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "list-children", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return []
+    if out.returncode != 0:
+        return []
+    try:
+        data = json.loads(out.stdout)
+    except json.JSONDecodeError:
+        return []
+    return data if isinstance(data, list) else []
+
+
+def _campaign_child_marker_fresh(issue: int, window_s: float, now: float) -> bool:
+    """True iff ANY child of campaign ``issue`` posted ANY ``epm:`` marker
+    within the last ``window_s`` seconds. Called LAZILY — only when the
+    campaign's own markers are already stale — so the per-child events
+    fetch is paid only on watchdog-candidate ticks."""
+    for child in _campaign_children(issue):
+        child_id = child.get("id")
+        if not isinstance(child_id, int):
+            continue
+        events = _task_events(child_id)
+        latest = _latest_progress_ts(events)
+        if latest is not None and (now - latest) <= window_s:
+            return True
+    return False
+
+
+def _post_campaign_marker(issue: int, kind: str, note: str, dry_run: bool) -> None:
+    """Post a campaign-pass marker (kind must be declared in workflow.yaml §
+    markers — ``epm:campaign-stalled`` — or the generic ``epm:progress`` for
+    the budget backstop). The note carries :data:`_CAMPAIGN_NOTE_SENTINEL`
+    so watcher-posted events never reset the staleness clocks they measure.
+    Same fail-soft posture as :func:`_post_progress_marker`."""
+    if dry_run:
+        print(f"  [dry-run] would post {kind} on #{issue}: {note}")
+        return
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                kind,
+                "--note",
+                note,
+                "--by",
+                "autonomous_session_watch",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: posting {kind} on #{issue} failed: {e}", file=sys.stderr)
+
+
+def _campaign_state_budget(issue: int) -> tuple[float, float] | None:
+    """``(gpu_hours_committed, gpu_hours_total)`` from the campaign's
+    ``artifacts/campaign-state.json``, or None when the state file is absent
+    / unreadable (a campaign that hasn't run Step 0 yet has no state — not
+    an error). The task folder is resolved via ``task.py find`` (never a
+    hand-built ``tasks/...`` path)."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "find", str(issue)],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+    except (subprocess.SubprocessError, OSError):
+        return None
+    if out.returncode != 0:
+        return None
+    state_file = Path(out.stdout.strip()) / "artifacts" / "campaign-state.json"
+    try:
+        state = json.loads(state_file.read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    budget = state.get("budget") if isinstance(state, dict) else None
+    if not isinstance(budget, dict):
+        return None
+    committed = budget.get("gpu_hours_committed")
+    total = budget.get("gpu_hours_total")
+    if not isinstance(committed, int | float) or not isinstance(total, int | float):
+        return None
+    return float(committed), float(total)
+
+
+def _campaign_is_stale(issue: int, entry: dict, now: float) -> bool:
+    """True iff the newest SKILL-POSTED ``epm:campaign-*`` marker (baseline:
+    ``spawned_at`` when none exists yet) is older than
+    :func:`_campaign_stall_s` AND no child task posted a marker in that
+    window. Watcher-posted notes (the ``epm:campaign-stalled`` alert itself)
+    are excluded via the note sentinel — otherwise the alert would reset the
+    staleness baseline it measures and the episode could never escalate
+    past the first check."""
+    stall_s = _campaign_stall_s()
+    campaign_ts: float | None = None
+    for ev in _task_events(issue):
+        if not str(ev.get("kind", "")).startswith("epm:campaign"):
+            continue
+        if _CAMPAIGN_NOTE_SENTINEL in (ev.get("note") or ""):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is not None and (campaign_ts is None or ts > campaign_ts):
+            campaign_ts = ts
+    baseline = campaign_ts if campaign_ts is not None else entry.get("spawned_at", now)
+    if not isinstance(baseline, int | float):
+        baseline = now
+    if (now - float(baseline)) <= stall_s:
+        return False
+    return not _campaign_child_marker_fresh(issue, stall_s, now)
+
+
+def _campaign_escalate_stall(
+    issue: int, entry: dict, st: dict, dry_run: bool, *, daemon_reachable: bool
+) -> None:
+    """Handle one STALLED check: bump the counter, alert on the first check,
+    stop-then-respawn on the second consecutive one (daemon required; capped
+    at :data:`CAMPAIGN_MAX_RESPAWNS` per episode, then a one-time exhausted
+    alert). Mutates the counter dict ``st`` in place."""
+    stall_s = _campaign_stall_s()
+    st["stalled_checks"] += 1
+    print(
+        f"  campaign #{issue}: STALLED check {st['stalled_checks']} "
+        f"(no epm:campaign-* or child marker in {stall_s / 3600:.1f}h)"
+    )
+    if st["stalled_checks"] == 1 and not st["alerted"]:
+        _post_campaign_marker(
+            issue,
+            "epm:campaign-stalled",
+            f"{_CAMPAIGN_NOTE_SENTINEL} no epm:campaign-* marker or child-task "
+            f"marker for > {stall_s / 3600:.1f}h with a live campaign session; "
+            f"second consecutive stalled check stop-then-respawns.",
+            dry_run,
+        )
+        st["alerted"] = True
+        return
+    if st["stalled_checks"] < 2:
+        return
+    if st["respawn_count"] >= CAMPAIGN_MAX_RESPAWNS:
+        if not st["exhausted"]:
+            _post_campaign_marker(
+                issue,
+                "epm:progress",
+                f"{_CAMPAIGN_NOTE_SENTINEL} campaign auto-recovery exhausted "
+                f"({st['respawn_count']} respawns this episode); awaiting user.",
+                dry_run,
+            )
+            st["exhausted"] = True
+        return
+    if not daemon_reachable:
+        print(f"  campaign #{issue}: stalled but daemon unreachable; alert-only")
+        return
+    sid = entry.get("happy_session_id")
+    stopped = _stop_session(sid, dry_run) if isinstance(sid, str) else True
+    if stopped and _respawn_campaign(entry, dry_run):
+        _post_campaign_marker(
+            issue,
+            "epm:progress",
+            f"{_CAMPAIGN_NOTE_SENTINEL} stalled campaign session "
+            f"stop-then-respawned (respawn {st['respawn_count'] + 1}/"
+            f"{CAMPAIGN_MAX_RESPAWNS} this episode).",
+            dry_run,
+        )
+        st["respawn_count"] += 1
+        st["stalled_checks"] = 0
+
+
+def _campaign_budget_backstop(issue: int, budget_alerted: bool, dry_run: bool) -> bool:
+    """One loud alert per episode when ``campaign-state.json`` shows
+    GPU-hours committed > total. Returns the updated ``budget_alerted``
+    flag (re-armed once committed drops back under total)."""
+    budget = _campaign_state_budget(issue)
+    if budget is None:
+        return budget_alerted
+    committed, total = budget
+    if committed > total and not budget_alerted:
+        _post_campaign_marker(
+            issue,
+            "epm:progress",
+            f"{_CAMPAIGN_NOTE_SENTINEL} BUDGET BACKSTOP: campaign-state.json has "
+            f"gpu_hours_committed={committed:g} > gpu_hours_total={total:g}. The "
+            f"/campaign skill must stop filing children; harness circuit breaker.",
+            dry_run,
+        )
+        return True
+    if committed <= total:
+        return False
+    return budget_alerted
+
+
+def _campaign_watchdog(
+    issue: int, entry: dict, now: float, dry_run: bool, *, daemon_reachable: bool
+) -> None:
+    """Progress + budget watchdog for one ALIVE, ACTIVE campaign session.
+
+    Stall detection per :func:`_campaign_is_stale`; escalation per
+    :func:`_campaign_escalate_stall` (one ``epm:campaign-stalled v1`` alert,
+    then bounded stop-then-respawn). Fresh progress ends the episode and
+    resets every counter. The budget backstop posts one alert per episode
+    when committed > total (:func:`_campaign_budget_backstop`)."""
+    state = _load_campaign_watch_state(issue)
+    st = {
+        "stalled_checks": int(state.get("stalled_checks", 0) or 0),
+        "alerted": bool(state.get("alerted", False)),
+        "respawn_count": int(state.get("respawn_count", 0) or 0),
+        "exhausted": bool(state.get("exhausted", False)),
+    }
+    if _campaign_is_stale(issue, entry, now):
+        _campaign_escalate_stall(issue, entry, st, dry_run, daemon_reachable=daemon_reachable)
+    else:
+        st = {"stalled_checks": 0, "alerted": False, "respawn_count": 0, "exhausted": False}
+
+    budget_alerted = _campaign_budget_backstop(
+        issue, bool(state.get("budget_alerted", False)), dry_run
+    )
+
+    if not dry_run:
+        _save_campaign_watch_state(
+            issue,
+            stalled_checks=st["stalled_checks"],
+            alerted=st["alerted"],
+            respawn_count=st["respawn_count"],
+            exhausted=st["exhausted"],
+            budget_alerted=budget_alerted,
+            prev=state,
+        )
+
+
+def _campaign_reap(path: Path, issue: int | None, reason: str, dry_run: bool) -> None:
+    """Remove a campaign registry entry (+ its watch state when ``issue`` is
+    known), logging the reason."""
+    print(f"  {path.name}: {reason}; removing")
+    if not dry_run:
+        path.unlink(missing_ok=True)
+        if issue is not None:
+            _clear_campaign_watch_state(issue)
+
+
+def _process_campaign_entry(
+    path: Path,
+    entry: dict,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None,
+) -> None:
+    """Apply one campaign registry entry's decision: GC at terminal, keep at
+    park, respawn a dead ACTIVE session (2-miss guard), and run the
+    progress/budget watchdog on a live one."""
+    issue = entry.get("issue")
+    if not isinstance(issue, int):
+        _campaign_reap(path, None, "unreadable/garbled", dry_run)
+        return
+    status = _task_status(issue)
+    if status is None:
+        _campaign_reap(path, issue, "task not found / unreadable", dry_run)
+        return
+    if status in CAMPAIGN_TERMINAL:
+        # Stop the session FIRST, then reap. Reaping unmaps the session from
+        # its issue, so reap-before-stop would leave an immortal idle session
+        # no later pass (session-reconcile included) could attribute and
+        # auto-stop (reviewer CONCERN on #586). Daemon-gated: when liveness
+        # is unknowable, DEFER the reap to a later tick rather than unmapping
+        # a possibly-live session.
+        if not daemon_reachable or live_ids is None:
+            print(
+                f"  campaign #{issue}: terminal ({status}) but daemon unreachable — "
+                f"deferring reap until the session can be stopped"
+            )
+            return
+        sid = entry.get("happy_session_id")
+        if isinstance(sid, str) and sid in live_ids:
+            if not _stop_session(sid, dry_run):
+                # Stop failed (or dry-run, which never stops): keep the
+                # entry; retry on the next tick.
+                print(
+                    f"  campaign #{issue}: terminal ({status}); session stop "
+                    f"failed/deferred — keeping entry for retry"
+                )
+                return
+            print(f"  campaign #{issue}: terminal ({status}); stopped session {sid}")
+        _campaign_reap(path, issue, f"terminal ({status})", dry_run)
+        return
+    if status not in CAMPAIGN_ACTIVE:
+        # Parked (proposed / plan_pending): keep the entry, reset the miss
+        # count — it may flip back to active.
+        if entry.get("missed", 0) and not dry_run:
+            entry["missed"] = 0
+            path.write_text(json.dumps(entry, indent=2))
+        print(f"  campaign #{issue}: status={status} (parked); keeping entry")
+        return
+    # ACTIVE: liveness needs the daemon.
+    if not daemon_reachable or live_ids is None:
+        print(
+            f"  campaign #{issue}: status={status}, daemon unreachable — "
+            f"skipping liveness/respawn (budget backstop still runs)"
+        )
+        _campaign_watchdog(issue, entry, now, dry_run, daemon_reachable=False)
+        return
+    if entry.get("happy_session_id") in live_ids:
+        if entry.get("missed", 0) and not dry_run:
+            entry["missed"] = 0
+            path.write_text(json.dumps(entry, indent=2))
+        print(f"  campaign #{issue}: status={status} alive=True")
+        _campaign_watchdog(issue, entry, now, dry_run, daemon_reachable=True)
+        return
+    missed = int(entry.get("missed", 0) or 0) + 1
+    print(f"  campaign #{issue}: status={status} alive=False missed={missed}/{threshold}")
+    if missed >= threshold:
+        _respawn_campaign(entry, dry_run)  # rewrites the registry on success
+    elif not dry_run:
+        entry["missed"] = missed
+        path.write_text(json.dumps(entry, indent=2))
+
+
+def campaign_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None,
+    now: float | None = None,
+) -> None:
+    """Crash-recovery + progress watchdog + budget backstop + GC for campaign
+    sessions (``campaign-<N>.json`` entries). See the section comment above
+    for the four jobs and the cross-pass interactions."""
+    now = now if now is not None else time.time()
+    entries = _campaign_registry_entries()
+    if not entries:
+        return
+    print(f"campaign: {len(entries)} registered campaign session(s)")
+    for path, entry in entries:
+        _process_campaign_entry(
+            path,
+            entry,
+            now,
+            dry_run,
+            threshold,
+            daemon_reachable=daemon_reachable,
+            live_ids=live_ids,
+        )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -2404,6 +5605,11 @@ def main(argv: list[str] | None = None) -> int:
         gc_pass(args.dry_run)
         return 0
 
+    # VM disk-headroom: runs FIRST. A full root disk makes every later
+    # subprocess in this very watcher (and every VM session) flaky — alert
+    # and reclaim before reasoning about sessions/pods (task #552).
+    vm_disk_pass(args.dry_run)
+
     # The RESPAWN pass needs the daemon (it reasons about session liveness, and
     # `_live_session_ids()` can't tell "daemon up, zero sessions" from "daemon
     # down" — during an outage every session looks dead, which would
@@ -2418,21 +5624,31 @@ def main(argv: list[str] | None = None) -> int:
     # everywhere so a flap mid-tick can't make different passes disagree
     # about daemon state (and so we don't re-pay the probe cost).
     daemon_reachable = _daemon_reachable()
+    live_ids: set[str] = set()
     if daemon_reachable:
         live_ids = _live_session_ids()
-        meta = _load_session_meta()
-        live_cwds = {m.get("path", "") for sid, m in meta.items() if sid in live_ids}
 
         entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
         print(f"respawn: {len(entries)} registered, {len(live_ids)} live session(s)")
         for path in entries:
-            _process_entry(path, live_ids, live_cwds, args.dry_run, args.threshold)
+            _process_entry(path, live_ids, args.dry_run, args.threshold)
     else:
         print(
             "respawn: Happy daemon unreachable; skipping respawn pass "
             "(won't mass-respawn on an outage). Pod-safety + stalled-"
             "detector still run; stalled-detector falls back to alert-only."
         )
+
+    # Campaign pass: crash-recovery + progress watchdog + budget backstop for
+    # /campaign sessions (campaign-<N>.json entries, task #586). Runs right
+    # after the issue respawn pass; liveness/respawn actions are daemon-gated
+    # inside the pass (the budget backstop is not).
+    campaign_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
 
     # Pod-safety: runs regardless of daemon reachability. Covers interactive
     # issues (no registry entry) too.
@@ -2449,6 +5665,47 @@ def main(argv: list[str] | None = None) -> int:
     # won't accidentally bias the "has_pod" flag).
     stalled_session_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
 
+    # Orphan sweep: registration-INDEPENDENT cross-check of ACTIVE-status
+    # tasks vs live registered sessions. Catches the class the registry-driven
+    # passes structurally cannot see: an active task with NO registration at
+    # all (#472, 2026-06-10 — entry deleted at a TERMINAL park, task revived
+    # by a same-issue follow-up, driver died unobserved for 10.5h). Runs
+    # AFTER the respawn + stalled passes so a same-tick recovery by either
+    # one is visible via its fresh registry write (the spawn-grace window).
+    orphan_sweep_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
+    # Session-reconcile: auto-stop (the default; EPM_SESSION_RECONCILE_AUTOSTOP=0
+    # falls back to alert-only) live sessions that outlived their task's
+    # park/completion (awaiting_promotion / completed / archived), gated on
+    # the no-follow-up + no-RUNNING-pod + idle-grace + keep-running checks.
+    # The inverse blind spot of the orphan sweep: that pass finds ACTIVE
+    # tasks with no session; this one finds parked/done tasks that still
+    # HAVE sessions (2026-06-10 disk incident — idle sessions of completed
+    # tasks pinned their worktrees + held deleted-file handles; later the
+    # same day 73 registered sessions had accumulated ~35-40GB RSS).
+    # Daemon-gated like the respawn pass; reuses main()'s live-id snapshot.
+    # Runs AFTER pod-safety so an escaped pod is already being reconciled
+    # by the time the pod-skip check reads the RUNNING set.
+    session_reconcile_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
+    # Zombie-wrapper: stop daemon-tracked EPS sessions whose process tree has
+    # carried NO inner Claude process for >= threshold checks AND >= the 2h
+    # grace window — regardless of issue mapping (the class every registry-/
+    # cwd-keyed pass above structurally misses: 25 unmapped "running" zombies
+    # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
+    # mapped-at-active-status sessions are never touched. Daemon-gated.
+    zombie_wrapper_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
+
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.
     # Conservative — never touches awaiting_promotion / blocked / live park
@@ -2458,9 +5715,7 @@ def main(argv: list[str] | None = None) -> int:
     return 0
 
 
-def _process_entry(
-    path: Path, live_ids: set[str], live_cwds: set[str], dry_run: bool, threshold: int
-) -> None:
+def _process_entry(path: Path, live_ids: set[str], dry_run: bool, threshold: int) -> None:
     """Apply one registry entry's decision (read status -> decide -> act).
 
     Removes the entry on unreadable/missing-task/backstop-age; respawns a dead
@@ -2488,7 +5743,7 @@ def _process_entry(
             path.unlink(missing_ok=True)
         return
 
-    alive = _session_alive(entry, live_ids, live_cwds)
+    alive = _session_alive(entry, live_ids)
     action, new_missed = decide(status, alive, entry.get("missed", 0), threshold)
     print(
         f"  issue #{issue}: status={status} alive={alive} "

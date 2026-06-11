@@ -7,6 +7,27 @@ Usage:
 
     # From CLI
     uv run python -m explore_persona_space.orchestrate.preflight
+
+Three-way environment branch
+----------------------------
+
+Preflight runs on three different surfaces; the checks adapt:
+
+* **Cluster** (``SLURM_JOB_ID`` set): disk probe targets ``$SLURM_TMPDIR``
+  / ``$SCRATCH`` (not ``/workspace``) and the RunPod MooseFS 130GB
+  quota cap is bypassed (``per_pod_quota_gb=None``). The ``git fetch``
+  round trip in :func:`check_git_status` and the installed-vs-uv.lock
+  :func:`check_env_sync` are SKIPPED: the cluster is rsync-primary
+  with no remote git auth, and the venv build happens inside the
+  sbatch (so a pre-rsync mismatch is expected, not an error).
+  ``HF_HOME`` defaults to ``$SCRATCH/.cache/huggingface``. The Hub /
+  WandB reachability check still runs (compute nodes may need a proxy).
+* **RunPod** (``/workspace`` exists, no SLURM): unchanged from the
+  pre-three-way behavior.
+* **Local VM**: unchanged.
+
+The discriminator lives in :mod:`explore_persona_space.orchestrate.env`;
+this module imports the helpers so the branch logic stays in ONE place.
 """
 
 import contextlib
@@ -19,6 +40,15 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
+
+# Three-way environment helpers (see env.py module docstring). Imported
+# at top level so the cluster branch threads cleanly through every check
+# without re-importing per call.
+from explore_persona_space.orchestrate.env import (
+    _hf_home_default,
+    is_cluster_env,
+    is_runpod_env,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -122,8 +152,44 @@ def _find_project_root() -> Path:
     return Path.cwd()
 
 
+def _disk_check_path() -> str:
+    """Where to run the disk-space probe — three-way branch.
+
+    * **Cluster:** prefer ``$SLURM_TMPDIR`` (node-local fast scratch
+      where data + model are staged) when it exists, else ``$SCRATCH``
+      (per-user persistent scratch where the venv + checkpoints live).
+      Fall back to ``/`` if neither env var is set — defensive.
+    * **RunPod:** ``/workspace`` (the MooseFS-backed pod volume).
+    * **Local VM:** ``/`` (the root filesystem).
+
+    The picked path is what ``check_disk_space`` probes for free-space
+    + the canary EDQUOT probe. On the cluster the MooseFS 130 GB cap is
+    explicitly bypassed by the caller (``per_pod_quota_gb=None``); on
+    RunPod the cap is enforced.
+    """
+    if is_cluster_env():
+        for env_var in ("SLURM_TMPDIR", "SCRATCH"):
+            candidate = os.environ.get(env_var)
+            if candidate and Path(candidate).exists():
+                return candidate
+        return "/"
+    if is_runpod_env():
+        return "/workspace"
+    return "/"
+
+
 def check_git_status(report: PreflightReport, project_root: Path):
-    """Check git working tree is clean and up to date."""
+    """Check git working tree is clean and up to date.
+
+    Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
+    the cluster compute node has no remote git auth — code reaches the
+    cluster via rsync, not git pull. The local ``git status --porcelain``
+    check still runs (it's local-only and cheap) so an accidental
+    uncommitted change is still surfaced; we just don't try to compare
+    against origin/main. The ``git_status`` field is decorated with
+    ``" (cluster — skipped fetch)"`` so the summary makes the skip
+    explicit rather than misleadingly reading "clean / up to date".
+    """
     # Check for uncommitted changes
     rc, out, err = _run(["git", "-C", str(project_root), "status", "--porcelain"])
     if rc != 0:
@@ -138,6 +204,13 @@ def check_git_status(report: PreflightReport, project_root: Path):
     else:
         report.git_status = "clean"
 
+    if is_cluster_env():
+        # rsync-primary on the cluster; no remote git auth on compute
+        # nodes. Mark explicitly so the summary doesn't read "clean,
+        # up-to-date" when we didn't check up-to-date-ness.
+        report.git_status += " (cluster — skipped fetch)"
+        return
+
     # Check if behind remote
     _run(["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15)
     rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", "HEAD..origin/main"])
@@ -150,7 +223,25 @@ def check_git_status(report: PreflightReport, project_root: Path):
 
 
 def check_env_sync(report: PreflightReport, project_root: Path):
-    """Check that installed packages match uv.lock."""
+    """Check that installed packages match uv.lock.
+
+    Cluster branch: SKIPPED. The sbatch builds / activates the venv
+    inside the job (cached at ``$SCRATCH/eps/venv-<lockhash>``), so a
+    pre-launch ``uv sync --locked --dry-run`` on the login node would
+    report an out-of-sync env that the job is about to fix. Mark
+    ``env_synced=True`` with an explicit note in ``git_status`` is the
+    wrong field; instead we leave ``env_synced`` True and append a
+    warning so the summary's "Env synced: yes" reads honestly while a
+    surfaced WARNING line documents the skip.
+    """
+    if is_cluster_env():
+        report.add_warning(
+            "env_sync check SKIPPED on cluster — sbatch builds the venv "
+            "inside the job from $SCRATCH/eps/venv-<lockhash>."
+        )
+        report.env_synced = True
+        return
+
     lockfile = project_root / "uv.lock"
     if not lockfile.exists():
         report.add_warning("No uv.lock found — cannot verify environment sync")
@@ -284,7 +375,7 @@ def check_disk_space(
             provisioned with an explicit storage spec, or None to disable the cap
             (the headroom then cannot detect over-quota footprints).
     """
-    check_path = "/workspace" if Path("/workspace").exists() else "/"
+    check_path = _disk_check_path()
 
     # Human-readable share-level free space (NOT the sole go/no-go signal).
     try:
@@ -477,14 +568,21 @@ def check_gpus(report: PreflightReport, require_gpu: bool, min_free_mb: int):
 
 
 def check_hf_home(report: PreflightReport):
-    """Check HF_HOME is set to the canonical cache path."""
-    hf_home = os.environ.get("HF_HOME", "")
-    expected = "/workspace/.cache/huggingface"
+    """Check ``HF_HOME`` matches the canonical per-environment default.
 
-    if Path("/workspace").exists():
+    Three-way (mirrors :func:`env._hf_home_default`):
+
+    * Cluster: expects ``$SCRATCH/.cache/huggingface``.
+    * RunPod:  expects ``/workspace/.cache/huggingface``.
+    * Local:   no canonical path; only warn if HF_HOME is empty.
+    """
+    hf_home = os.environ.get("HF_HOME", "")
+
+    if is_cluster_env() or is_runpod_env():
+        expected = _hf_home_default()
         if not hf_home:
             report.add_warning(
-                "HF_HOME not set. Setting to /workspace/.cache/huggingface. "
+                f"HF_HOME not set. Setting to {expected}. "
                 "Call load_dotenv() or source env_setup.sh first."
             )
             os.environ["HF_HOME"] = expected
@@ -603,16 +701,23 @@ def preflight_check(
     except ImportError:
         report.add_warning("python-dotenv not installed — cannot load .env")
 
-    # Set HF_HOME early
-    if Path("/workspace").exists():
-        os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
+    # Set HF_HOME early — three-way: cluster → $SCRATCH, RunPod →
+    # /workspace, local → project-local. See env._hf_home_default.
+    if is_cluster_env() or is_runpod_env():
+        os.environ.setdefault("HF_HOME", _hf_home_default())
+
+    # Cluster bypasses the RunPod MooseFS 130 GB cap: $SCRATCH has a
+    # per-user quota the cluster admins set (multi-TB on Nibi/Fir), not
+    # the RunPod cap. The caller can still override per-pod-quota-gb
+    # explicitly when a RunPod pod was provisioned with a custom volume.
+    effective_quota_gb = None if is_cluster_env() else per_pod_quota_gb
 
     # Run all checks
     if check_code_sync:
         check_git_status(report, project_root)
         check_env_sync(report, project_root)
 
-    check_disk_space(report, min_disk_gb, quota_gb=per_pod_quota_gb)
+    check_disk_space(report, min_disk_gb, quota_gb=effective_quota_gb)
     check_disk_budget(report, planned_footprint_gb)
     check_gpus(report, require_gpu, min_gpu_free_mb)
     check_hf_home(report)

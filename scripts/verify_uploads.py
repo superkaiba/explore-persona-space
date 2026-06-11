@@ -30,8 +30,10 @@ import argparse
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Make the repo's src/ importable so we can reuse the canonical HF/WandB
@@ -47,6 +49,47 @@ logger = logging.getLogger(__name__)
 # Repos
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
+
+# Map task-workflow frontmatter ``kind`` values to the experiment type whose
+# checklist rows apply when the caller omits --type. ``experiment`` stays
+# "training" (the conservative default): frontmatter cannot distinguish a
+# training run from an eval-only one, and silently relaxing the HF-model /
+# WandB-run rows for a task that DID train would weaken the Step 8 hard
+# gate. Callers that know better (the upload-verifier receives the
+# experiment type as an input) pass --type explicitly (#563).
+_KIND_TO_EXPERIMENT_TYPE = {
+    "experiment": "training",
+    "analysis": "analysis",
+    "infra": "analysis",
+    "batch": "analysis",
+    "survey": "analysis",
+}
+
+
+def infer_experiment_type(issue_num: int) -> tuple[str, str]:
+    """Infer the experiment type from the task's frontmatter ``kind``.
+
+    Returns ``(experiment_type, source)``: source is ``frontmatter-kind``
+    when the task's ``kind`` mapped cleanly, ``default`` when the task /
+    frontmatter could not be read or the kind is unknown. Failures fall
+    back to ``training`` — the STRICTEST type — so a broken inference can
+    only over-demand rows, never silently relax the gate.
+    """
+    try:
+        from explore_persona_space.task_workflow import get_task
+
+        kind = str(get_task(issue_num)["frontmatter"].get("kind", "")).strip()
+    except Exception as e:
+        logger.warning(
+            "could not read task %s frontmatter (%s); assuming experiment_type=training",
+            issue_num,
+            e,
+        )
+        return "training", "default"
+    if kind in _KIND_TO_EXPERIMENT_TYPE:
+        return _KIND_TO_EXPERIMENT_TYPE[kind], "frontmatter-kind"
+    logger.warning("unknown kind %r on task %s; assuming experiment_type=training", kind, issue_num)
+    return "training", "default"
 
 
 def check_hf_hub_path(
@@ -82,11 +125,54 @@ def check_hf_hub_path(
         return {"status": "ERROR", "url": "", "detail": str(e)}
 
 
+# Claimed-text blobs are frequently JSON (epm:results sentinels are JSON), so
+# every URL is immediately followed by '",' (or '\",' when the JSON is nested).
+# hub.py's _HF_URL_RE revision/path character classes exclude only '/',
+# whitespace, ')' and ']', so that trailing punctuation rides into the probed
+# revision/path and every HEAD check misses — a false claimed_urls FAIL
+# (incident #541, 2026-06-10). Extract URL candidates permissively, strip
+# trailing punctuation, and hand verify_artifacts_exist a sanitized
+# one-URL-per-line view it parses cleanly.
+_CLAIMED_URL_RE = re.compile(r"(?:https?|hf)://\S+")
+# NOTE: '.' is deliberately NOT stripped — artifact paths legitimately end in
+# '.json' / '.safetensors'; a sentence-final period stays a (pre-existing,
+# rare) false MISS rather than risking real-suffix truncation.
+_TRAILING_PUNCT = "\\'\",;)]}>`"
+
+
+def _strip_trailing_punct(url: str) -> str:
+    """Strip trailing JSON/markdown punctuation from a URL candidate.
+
+    A trailing ``.`` is removed ONLY when the character beneath it is itself
+    in the punctuation set (the markdown sentence-end case, e.g. ``` `url`. ```)
+    — a period directly after a path character is kept so real suffixes like
+    ``.json`` / ``.safetensors`` never truncate.
+    """
+    while url and (
+        url[-1] in _TRAILING_PUNCT
+        or (url[-1] == "." and len(url) >= 2 and url[-2] in _TRAILING_PUNCT)
+    ):
+        url = url[:-1].rstrip(".")
+    return url
+
+
+def extract_claimed_urls(text: str) -> list[str]:
+    """Extract HF/WandB/hf:// URL candidates from a claimed-text blob.
+
+    Strips trailing JSON/markdown punctuation (quotes, commas, semicolons,
+    closing brackets/braces/parens, backticks, backslashes) from each match
+    and de-duplicates preserving first-seen order. Returns the cleaned URLs.
+    """
+    return list(dict.fromkeys(_strip_trailing_punct(u) for u in _CLAIMED_URL_RE.findall(text)))
+
+
 def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     """HEAD-verify every HF/WandB URL claimed in a text blob actually resolves.
 
     The blob is typically the concatenation of the ``epm:results`` marker
-    text + the body's ``## Reproducibility`` section. Reuses
+    text + the body's ``## Reproducibility`` section. URLs are first
+    extracted and stripped of trailing JSON/markdown punctuation (see
+    ``extract_claimed_urls``), then existence-checked via
     ``explore_persona_space.orchestrate.hub.verify_artifacts_exist`` (the
     same helper /issue Step 6a.5 uses pre-launch to block on phantom
     carry-over artifacts) so behavior stays consistent at both gates.
@@ -124,7 +210,20 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     try:
         from explore_persona_space.orchestrate.hub import verify_artifacts_exist
 
-        ok, missing = verify_artifacts_exist(claimed_text_path)
+        urls = extract_claimed_urls(claimed_text_path.read_text(encoding="utf-8"))
+        # Write the sanitized one-URL-per-line view to a temp file:
+        # verify_artifacts_exist takes a path and runs its own URL regexes,
+        # which terminate cleanly at end-of-line once trailing punctuation
+        # has been stripped here.
+        with tempfile.NamedTemporaryFile(
+            "w", encoding="utf-8", suffix=".claimed-urls.txt", delete=False
+        ) as tf:
+            tf.write("\n".join(urls) + ("\n" if urls else ""))
+            sanitized_path = Path(tf.name)
+        try:
+            ok, missing = verify_artifacts_exist(sanitized_path)
+        finally:
+            sanitized_path.unlink(missing_ok=True)
         if ok:
             return {
                 "status": "OK",
@@ -166,26 +265,98 @@ def check_wandb_artifact(artifact_path: str) -> dict:
         return {"status": "MISSING", "url": "", "detail": str(e)}
 
 
-def check_git_figures(issue_num: int) -> dict:
-    """Check if figures for this issue are committed to git."""
-    repo_root = Path(__file__).resolve().parent.parent
-    figure_dirs = list(repo_root.glob(f"figures/*issue*{issue_num}*")) + list(
-        repo_root.glob(f"figures/*{issue_num}*")
-    )
+def _issue_branch_ref(issue_num: int) -> str | None:
+    """Return the first existing git ref for the issue branch, or None.
 
-    if not figure_dirs:
-        # Check for any figures committed recently that reference this issue
+    Prefers the local worktree branch (``issue-<N>``) over the pushed
+    remote-tracking ref (``origin/issue-<N>``). No fetch is performed —
+    only refs already known to the repo are considered.
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    for ref in (f"issue-{issue_num}", f"origin/issue-{issue_num}"):
         result = subprocess.run(
-            ["git", "log", "--oneline", "-5", "--", "figures/"],
+            ["git", "rev-parse", "--verify", "--quiet", ref],
             capture_output=True,
             text=True,
             cwd=repo_root,
         )
-        return {
-            "status": "WARN",
-            "url": "",
-            "detail": f"No figure directory matching issue {issue_num}. Recent figure commits: {result.stdout.strip() or 'none'}",
-        }
+        if result.returncode == 0:
+            return ref
+    return None
+
+
+def issue_token_match(name: str, issue_num: int) -> bool:
+    """True when ``name`` contains ``issue_num`` as a digit-bounded token.
+
+    Substring matching is a false-PASS vector for low-numbered issues —
+    issue 56 must NOT claim ``issue_563`` (or ``issue_456``) artifacts as
+    its own. The number matches only when not flanked by another digit on
+    either side (``issue_56`` / ``56_panel.json`` match; ``issue_563`` /
+    ``2056`` do not).
+    """
+    return re.search(rf"(?<!\d){issue_num}(?!\d)", name) is not None
+
+
+def filter_issue_paths(paths: list[str], issue_num: int) -> list[str]:
+    """Keep paths whose top-level entry under the prefix names the issue.
+
+    Mirrors the working-tree scan (``_working_tree_issue_entries``): a
+    path matches when the path component directly under the prefix
+    directory contains the issue number as a digit-bounded token (never
+    as a substring of a longer number — see ``issue_token_match``).
+    """
+    return [
+        p for p in paths if len(p.split("/")) >= 2 and issue_token_match(p.split("/")[1], issue_num)
+    ]
+
+
+def _working_tree_issue_entries(repo_root: Path, prefix: str, issue_num: int) -> list[Path]:
+    """Glob working-tree entries under ``prefix`` that name the issue.
+
+    The raw ``*<N>*`` globs substring-match (``*56*`` also hits
+    ``issue_563``), so every candidate is re-checked with
+    ``issue_token_match`` on its entry name before it can count as this
+    issue's artifact.
+    """
+    candidates = list(repo_root.glob(f"{prefix}/*issue*{issue_num}*")) + list(
+        repo_root.glob(f"{prefix}/*{issue_num}*")
+    )
+    # dict.fromkeys dedups the two-glob union (a dir matching both patterns
+    # would otherwise double-count its files in the reported file_count).
+    return list(dict.fromkeys(d for d in candidates if issue_token_match(d.name, issue_num)))
+
+
+def _branch_files(issue_num: int, prefix: str) -> tuple[str | None, list[str]]:
+    """List issue-matching files under ``prefix`` on the issue branch.
+
+    Eval JSONs + figures are committed on the ``issue-<N>`` worktree branch
+    and only reach the main working tree at the Step 9b auto-merge, so a
+    working-tree-only scan false-misses mid-pipeline (#563). Returns
+    ``(ref, matching_paths)``; ``(None, [])`` when no issue branch exists.
+    """
+    ref = _issue_branch_ref(issue_num)
+    if ref is None:
+        return None, []
+    repo_root = Path(__file__).resolve().parent.parent
+    result = subprocess.run(
+        ["git", "ls-tree", "-r", "--name-only", ref, "--", prefix],
+        capture_output=True,
+        text=True,
+        cwd=repo_root,
+    )
+    if result.returncode != 0:
+        return ref, []
+    return ref, filter_issue_paths(result.stdout.splitlines(), issue_num)
+
+
+def check_git_figures(issue_num: int) -> dict:
+    """Check if figures for this issue are committed to git.
+
+    Scans the working tree first, then falls back to the ``issue-<N>``
+    branch refs (artifacts land there before the Step 9b auto-merge).
+    """
+    repo_root = Path(__file__).resolve().parent.parent
+    figure_dirs = _working_tree_issue_entries(repo_root, "figures", issue_num)
 
     committed_files = []
     for d in figure_dirs:
@@ -208,10 +379,43 @@ def check_git_figures(issue_num: int) -> dict:
             "url": ", ".join(committed_files),
             "file_count": len(committed_files),
         }
+
+    # Not in the main working tree — scan the issue branch before
+    # reporting a miss (#563: figures committed on issue-<N> pre-merge).
+    ref, branch_paths = _branch_files(issue_num, "figures/")
+    branch_figs = [p for p in branch_paths if p.endswith((".png", ".pdf", ".svg"))]
+    if branch_figs:
+        return {
+            "status": "OK",
+            "url": ", ".join(branch_figs[:5]),
+            "file_count": len(branch_figs),
+            "detail": f"committed on branch {ref}",
+        }
+
+    if not figure_dirs:
+        # Check for any figures committed recently that reference this issue
+        result = subprocess.run(
+            ["git", "log", "--oneline", "-5", "--", "figures/"],
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+        )
+        return {
+            "status": "WARN",
+            "url": "",
+            "detail": (
+                f"No figure directory matching issue {issue_num} in the working tree "
+                f"or on an issue-{issue_num} branch. Recent figure commits: "
+                f"{result.stdout.strip() or 'none'}"
+            ),
+        }
     return {
         "status": "MISSING",
         "url": "",
-        "detail": f"Figure dirs exist ({[str(d) for d in figure_dirs]}) but no committed .png/.pdf/.svg files",
+        "detail": (
+            f"Figure dirs exist ({[str(d) for d in figure_dirs]}) but no committed "
+            f".png/.pdf/.svg files (working tree or issue-{issue_num} branch)"
+        ),
     }
 
 
@@ -252,11 +456,13 @@ def check_pod_weights_cleaned(pod: str, output_dir: str) -> dict:
 
 
 def check_eval_json(issue_num: int) -> dict:
-    """Check that eval result JSONs exist locally."""
+    """Check that eval result JSONs exist locally or on the issue branch.
+
+    Scans the working tree first, then falls back to the ``issue-<N>``
+    branch refs (artifacts land there before the Step 9b auto-merge).
+    """
     repo_root = Path(__file__).resolve().parent.parent
-    eval_dirs = list(repo_root.glob(f"eval_results/*issue*{issue_num}*")) + list(
-        repo_root.glob(f"eval_results/*{issue_num}*")
-    )
+    eval_dirs = _working_tree_issue_entries(repo_root, "eval_results", issue_num)
 
     json_files = []
     for d in eval_dirs:
@@ -271,16 +477,31 @@ def check_eval_json(issue_num: int) -> dict:
             "url": ", ".join(str(f.relative_to(repo_root)) for f in json_files[:5]),
             "file_count": len(json_files),
         }
+
+    # Not in the main working tree — scan the issue branch before
+    # reporting a miss (#563: eval JSONs committed on issue-<N> pre-merge).
+    ref, branch_paths = _branch_files(issue_num, "eval_results/")
+    branch_json = [p for p in branch_paths if p.endswith(".json")]
+    if branch_json:
+        return {
+            "status": "OK",
+            "url": ", ".join(branch_json[:5]),
+            "file_count": len(branch_json),
+            "detail": f"committed on branch {ref}",
+        }
     return {
         "status": "WARN",
         "url": "",
-        "detail": f"No eval JSON files found matching issue {issue_num}",
+        "detail": (
+            f"No eval JSON files found matching issue {issue_num} in the working tree "
+            f"or on an issue-{issue_num} branch"
+        ),
     }
 
 
 def run_verification(
     issue_num: int,
-    experiment_type: str = "training",
+    experiment_type: str | None = None,
     wandb_run: str | None = None,
     wandb_artifact: str | None = None,
     hf_model_path: str | None = None,
@@ -289,10 +510,18 @@ def run_verification(
     output_dir: str = "/workspace/explore-persona-space/outputs",
     claimed_urls_file: str | None = None,
 ) -> dict:
-    """Run all verification checks and return structured report."""
+    """Run all verification checks and return structured report.
+
+    ``experiment_type=None`` infers the type from the task's frontmatter
+    ``kind`` (see ``infer_experiment_type``); an explicit value wins.
+    """
+    experiment_type_source = "cli"
+    if experiment_type is None:
+        experiment_type, experiment_type_source = infer_experiment_type(issue_num)
     report = {
         "issue": issue_num,
         "experiment_type": experiment_type,
+        "experiment_type_source": experiment_type_source,
         "verdict": "PASS",
         "checks": {},
     }
@@ -365,7 +594,8 @@ def format_report(report: dict) -> str:
         f"## Upload Verification — Issue #{report['issue']}",
         "",
         f"**Verdict: {report['verdict']}**",
-        f"**Experiment type:** {report['experiment_type']}",
+        f"**Experiment type:** {report['experiment_type']}"
+        f" (source: {report.get('experiment_type_source', 'cli')})",
         "",
         "| Artifact | Status | URL / Detail |",
         "|----------|--------|-------------|",
@@ -405,8 +635,14 @@ def main():
     parser.add_argument(
         "--type",
         choices=["training", "eval-only", "generation", "analysis"],
-        default="training",
-        help="Experiment type (determines which checks are required)",
+        default=None,
+        help=(
+            "Experiment type (determines which checks are required). Omitted: "
+            "inferred from the task's frontmatter `kind` (analysis/infra/batch/"
+            "survey skip the training-only rows; kind=experiment conservatively "
+            "assumes training, so pass --type eval-only explicitly for eval-only "
+            "experiments — #563)"
+        ),
     )
     parser.add_argument("--wandb-run", help="WandB run path (entity/project/runs/id)")
     parser.add_argument("--wandb-artifact", help="WandB artifact path")

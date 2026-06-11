@@ -1941,6 +1941,38 @@ def test_v2_good_body_passes_all_including_nested_structure():
     assert "v2 nested-design" in conf.detail
 
 
+def test_v2_body_with_top_methodology_link_passes():
+    """A v2 body carrying the orchestrator-appended top-of-body
+    `**Methodology:** ...` line — inserted between the
+    `<!-- clean-result-v2 -->` sentinel and `## Human TL;DR` at
+    `/issue` Step 9a-quater (SPEC.md § Top-of-body methodology link)
+    — PASSes every check. The line is PERMITTED, never required
+    (forward-only: pre-link bodies are not newly failed), in both the
+    gist-suffixed and fail-soft (no-gist) forms."""
+    gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md) · "
+        "[gist](https://gist.github.com/superkaiba/abc123def456)\n"
+    )
+    no_gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md)\n"
+    )
+    for top_line in (gist_form, no_gist_form):
+        body = _V2_GOOD_BODY.replace(
+            "<!-- clean-result-v2 -->\n",
+            "<!-- clean-result-v2 -->\n\n" + top_line,
+        )
+        assert top_line in body, "fixture replacement did not land"
+        ok, results = verify_task_body.verify_text(body)
+        assert ok, [r.render() for r in results if not r.passed]
+        # The body must still be detected as v2 (the inserted line must
+        # not break sentinel detection).
+        assert verify_task_body.is_v2_nested_design(body)
+
+
 def test_v2_body_missing_what_i_ran_fails_nested_structure():
     """A v2-sentinelled body that drops `### What I ran` FAILs the
     nested-structure check."""
@@ -2413,3 +2445,51 @@ def test_repro_lr_natural_language_of_matches(tmp_path):
     plan = _write_plan(tmp_path, "lr=2e-6.")
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert result.passed and not result.is_warn, result.render()
+
+
+# A v2 body whose ONLY lr statement is the dedicated Parameters-table row
+# (label cell | value cell), the canonical v2 form — task #534 regression.
+_TABLE_ROW_LR_BODY = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+    "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+    "| Optimizer | AdamW, cosine schedule, warmup ratio 0.03 |\n"
+    "| Learning rate | 5e-6 (inherited verbatim from the parent anchor) |",
+)
+
+
+def test_repro_lr_table_row_with_annotation_parses(tmp_path):
+    """Task #534 regression: the Parameters-table row form
+    `| Learning rate | 5e-6 (inherited verbatim from the parent anchor) |`
+    separates label and value with a cell delimiter, not an assignment
+    glyph, and the value carries a trailing annotation. Check 16 must
+    extract `5e-6` and reconcile (here: PASS against a matching plan)
+    instead of silently skipping with "no learning rate stated"."""
+    plan = _write_plan(tmp_path, "Recipe: LoRA r=16, lr=5e-6, 3 epochs.")
+    result = verify_task_body.check_repro_lr_matches_plan(_TABLE_ROW_LR_BODY, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "skipped" not in (result.detail or ""), result.render()
+
+
+def test_repro_lr_table_row_mismatch_fails(tmp_path):
+    """The table-row lr is actually COMPARED, not just parsed: a body
+    stating `| Learning rate | 5e-6 (...) |` against a plan that only
+    declares 2e-6 must FAIL (before the fix this skipped as a no-op)."""
+    plan = _write_plan(tmp_path, "Recipe: lr=2e-6 only.")
+    result = verify_task_body.check_repro_lr_matches_plan(_TABLE_ROW_LR_BODY, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "5e-06" in result.detail or "5e-6" in result.detail, result.render()
+
+
+def test_repro_lr_table_row_label_deep_in_cell_not_parsed(tmp_path):
+    """Precision guard: a table row whose label merely CONTAINS `lr`
+    deep in the cell (`| Bystander rate at base lr | 0.02 |`) is NOT a
+    learning-rate statement and must not be parsed — a false FAIL is
+    worse than a skip. With no other lr in the body, the check stays a
+    genuine PASS-skip."""
+    body = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+        "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+        "| Optimizer | AdamW, cosine schedule |\n| Bystander rate at base lr | 0.02 |",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "no learning rate stated" in (result.detail or ""), result.render()

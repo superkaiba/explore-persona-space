@@ -1885,6 +1885,23 @@ _LR_ANCHORED_RE = re.compile(
     r"(?:\blr\b|learning[\s_-]*rate)\s*(?:[=:]|\b(?:of|is)\b)\s*(" + _LR_NUM + r")",
     flags=re.IGNORECASE,
 )
+# Table-row form — the canonical v2 Parameters table states the learning
+# rate as its own row (`| Learning rate | 5e-6 (inherited verbatim from the
+# parent anchor) |`), where label and value are separated by a CELL
+# DELIMITER rather than an assignment glyph, so `_LR_ANCHORED_RE` never
+# fires and check 16 silently skipped a present value (task #534). The
+# label cell must BEGIN with the lr token (after optional emphasis and at
+# most two short qualifier words, e.g. `Peak learning rate`,
+# `Marker-only LR`) and the value cell must BEGIN with the numeric literal;
+# trailing annotations after the number are tolerated because only the
+# leading literal is captured. Label cells that merely CONTAIN `lr` deeper
+# in (`| Bystander rate at base lr | 0.02 |`) stay unmatched — precision
+# over recall, since a false FAIL is worse than a skip.
+_LR_TABLE_ROW_RE = re.compile(
+    r"\|\s*[*_`]*(?:[A-Za-z][\w()-]*[\s_-]+){0,2}(?:lr\b|learning[\s_-]*rate)[^|\n]*\|"
+    r"\s*[*_`]*(" + _LR_NUM + r")",
+    flags=re.IGNORECASE,
+)
 # Plan side (recall) — any scientific-notation token (`Ne-M`). Capturing the
 # whole plan's lr surface (chosen lr + control/anchor lrs) keeps the bias
 # toward PASS: an over-broad plan set never FAILs a correct body, it only
@@ -1910,13 +1927,20 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
     """Return the set of learning-rate floats found in `text`.
 
     `anchored_only=True` (body side) collects only numbers tied to an
-    explicit `lr` / `learning rate` label. `anchored_only=False` (plan
-    side) ALSO collects every scientific-notation token, maximizing
-    recall so the reconciliation never FAILs a body whose lr the plan
-    really does contain.
+    explicit `lr` / `learning rate` label — either the inline assignment
+    form (`lr = 5e-6`, `learning rate of 5e-6`) or the Parameters-table
+    row form (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
+    False` (plan side) ALSO collects every scientific-notation token,
+    maximizing recall so the reconciliation never FAILs a body whose lr
+    the plan really does contain.
     """
     out: set[float] = set()
     for m in _LR_ANCHORED_RE.finditer(text):
+        try:
+            out.add(float(m.group(1)))
+        except ValueError:
+            continue
+    for m in _LR_TABLE_ROW_RE.finditer(text):
         try:
             out.add(float(m.group(1)))
         except ValueError:

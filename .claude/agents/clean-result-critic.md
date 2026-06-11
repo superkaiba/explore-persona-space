@@ -432,6 +432,17 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
 
 ### Lens 5 — Reproducibility
 
+- **Top-of-body `**Methodology:**` line carve-out.** A single
+  bold-link line (`**Methodology:** [docs/methodology/issue_<N>.md](...)
+  · [gist](...)`) between the `<!-- clean-result-v2 -->` sentinel and
+  `## Human TL;DR` is the standard orchestrator-appended reader-facing
+  pointer to the findings-blind methodology reference, paired with the
+  `**Methodology reference:**` row in `## Reproducibility`
+  (`SPEC.md` § Top-of-body methodology link). It is appended at
+  Step 9a-quater AFTER this gate, so a body under critique normally
+  does NOT carry it yet — never REQUIRE it, and never flag it as a
+  stray element when present (e.g. on a re-critique during a
+  same-issue follow-up round).
 - H2 `## Reproducibility` is the last H2.
 - Three boldface subgroup labels — `**Artifacts:**`, `**Compute:**`,
   `**Code:**` — appear verbatim (verifier check #7).

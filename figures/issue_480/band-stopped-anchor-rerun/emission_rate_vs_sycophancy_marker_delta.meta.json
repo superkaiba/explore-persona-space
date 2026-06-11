@@ -1,0 +1,22 @@
+{
+  "commit": "f1fb93948",
+  "created": "2026-06-10T09:17:53Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "caption_stats": {
+    "source": "software_engineer",
+    "n": 23,
+    "n_nonzero_emission": 23,
+    "spearman_rho": -0.5727699705373762,
+    "p_asymptotic": 0.004283219573430434,
+    "p_permutation": 0.005039949600503995,
+    "bootstrap_ci_95": [
+      -0.8580053170244633,
+      -0.11375327118739298
+    ]
+  },
+  "x_field": "marker_delta",
+  "y_field": "sycophancy_delta"
+}

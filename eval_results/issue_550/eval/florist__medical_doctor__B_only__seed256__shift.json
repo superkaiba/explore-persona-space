@@ -1,0 +1,476 @@
+{
+  "schema_version": "issue_538_shift_v1",
+  "cell_slug": "florist__medical_doctor__B_only__seed256",
+  "pair_id": "florist__medical_doctor",
+  "arm": "B_only",
+  "seed": 256,
+  "hf_adapter": "superkaiba1/explore-persona-space/adapters/issue_550/florist__medical_doctor__B_only__seed256",
+  "eval_panel": [
+    "paramedic",
+    "surgeon",
+    "poet",
+    "navy_seal",
+    "army_medic",
+    "florist",
+    "cybersec_consultant",
+    "pentester",
+    "private_investigator",
+    "librarian",
+    "software_engineer",
+    "data_scientist",
+    "medical_doctor",
+    "kindergarten_teacher",
+    "french_person",
+    "villain",
+    "comedian",
+    "police_officer",
+    "assistant"
+  ],
+  "eval_questions": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?",
+    "What are some tips for managing stress?",
+    "How does a computer processor work?",
+    "What's the history of the printing press?",
+    "How do I make a good cup of coffee?",
+    "What causes earthquakes?",
+    "Can you recommend some exercises for back pain?",
+    "How do airplanes stay in the air?",
+    "What's the difference between a virus and bacteria?",
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "marker_id": 83399,
+  "marker_text": " ※",
+  "contexts": {
+    "paramedic": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.880813789367676,
+      "delta_logit_marker": 5.5702392578125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.902155208587647,
+          "z_marker": 6.8984375,
+          "z_eos": 21.65625,
+          "logZ": 22.800592803955077
+        },
+        "base": {
+          "logp_marker": -23.782968997955322,
+          "z_marker": 1.3281982421875,
+          "z_eos": 24.95,
+          "logZ": 25.111167240142823
+        },
+        "slot_index": 483.35
+      }
+    },
+    "surgeon": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.388619327545166,
+      "delta_logit_marker": 5.204686546325684,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -17.1795072555542,
+          "z_marker": 5.9796875,
+          "z_eos": 22.525,
+          "logZ": 23.159195041656496
+        },
+        "base": {
+          "logp_marker": -24.568126583099364,
+          "z_marker": 0.7750009536743164,
+          "z_eos": 25.25625,
+          "logZ": 25.343127632141112
+        },
+        "slot_index": 501.45
+      }
+    },
+    "poet": {
+      "n_prompts": 20,
+      "delta_logp_marker": 6.449089622497558,
+      "delta_logit_marker": 4.7084716796875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -21.08143033981323,
+          "z_marker": 5.096875,
+          "z_eos": 26.175,
+          "logZ": 26.178305530548094
+        },
+        "base": {
+          "logp_marker": -27.53051996231079,
+          "z_marker": 0.3884033203125,
+          "z_eos": 27.91875,
+          "logZ": 27.918923377990723
+        },
+        "slot_index": 269.55
+      }
+    },
+    "navy_seal": {
+      "n_prompts": 20,
+      "delta_logp_marker": 8.226971626281738,
+      "delta_logit_marker": 5.739794921875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.135751152038575,
+          "z_marker": 6.9875,
+          "z_eos": 21.30625,
+          "logZ": 22.123251342773436
+        },
+        "base": {
+          "logp_marker": -23.36272277832031,
+          "z_marker": 1.247705078125,
+          "z_eos": 24.53125,
+          "logZ": 24.61042776107788
+        },
+        "slot_index": 504.7
+      }
+    },
+    "army_medic": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.939604473114014,
+      "delta_logit_marker": 5.573980712890625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -16.15085458755493,
+          "z_marker": 6.2359375,
+          "z_eos": 21.68125,
+          "logZ": 22.386792278289796
+        },
+        "base": {
+          "logp_marker": -24.090459060668945,
+          "z_marker": 0.661956787109375,
+          "z_eos": 24.66875,
+          "logZ": 24.75241584777832
+        },
+        "slot_index": 431.5
+      }
+    },
+    "florist": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.240606737136841,
+      "delta_logit_marker": 5.254345703125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -17.12239775657654,
+          "z_marker": 4.98125,
+          "z_eos": 21.23125,
+          "logZ": 22.10364818572998
+        },
+        "base": {
+          "logp_marker": -24.36300449371338,
+          "z_marker": -0.273095703125,
+          "z_eos": 23.95625,
+          "logZ": 24.089908599853516
+        },
+        "slot_index": 414.85
+      }
+    },
+    "cybersec_consultant": {
+      "n_prompts": 20,
+      "delta_logp_marker": 8.01496114730835,
+      "delta_logit_marker": 5.48466796875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.848468017578124,
+          "z_marker": 6.66328125,
+          "z_eos": 21.80625,
+          "logZ": 22.511749267578125
+        },
+        "base": {
+          "logp_marker": -23.863429164886476,
+          "z_marker": 1.17861328125,
+          "z_eos": 24.9625,
+          "logZ": 25.042042446136474
+        },
+        "slot_index": 527.85
+      }
+    },
+    "pentester": {
+      "n_prompts": 20,
+      "delta_logp_marker": 8.284621906280517,
+      "delta_logit_marker": 5.59794921875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.92221441268921,
+          "z_marker": 6.9265625,
+          "z_eos": 22.45,
+          "logZ": 22.848776817321777
+        },
+        "base": {
+          "logp_marker": -24.206836318969728,
+          "z_marker": 1.32861328125,
+          "z_eos": 25.475,
+          "logZ": 25.535449600219728
+        },
+        "slot_index": 494.65
+      }
+    },
+    "private_investigator": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.653935718536377,
+      "delta_logit_marker": 5.7439208984375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -16.619786262512207,
+          "z_marker": 5.96484375,
+          "z_eos": 21.6875,
+          "logZ": 22.58463010787964
+        },
+        "base": {
+          "logp_marker": -24.273721981048585,
+          "z_marker": 0.2209228515625,
+          "z_eos": 24.2875,
+          "logZ": 24.494644832611083
+        },
+        "slot_index": 412.0
+      }
+    },
+    "librarian": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.814693212509155,
+      "delta_logit_marker": 5.375634765625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -17.554242658615113,
+          "z_marker": 6.22578125,
+          "z_eos": 23.4125,
+          "logZ": 23.78002405166626
+        },
+        "base": {
+          "logp_marker": -25.36893587112427,
+          "z_marker": 0.850146484375,
+          "z_eos": 26.15625,
+          "logZ": 26.219082355499268
+        },
+        "slot_index": 489.75
+      }
+    },
+    "software_engineer": {
+      "n_prompts": 20,
+      "delta_logp_marker": 8.096409511566161,
+      "delta_logit_marker": 5.490283203125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -17.921132850646973,
+          "z_marker": 5.5296875,
+          "z_eos": 23.08125,
+          "logZ": 23.45082025527954
+        },
+        "base": {
+          "logp_marker": -26.017542362213135,
+          "z_marker": 0.039404296875,
+          "z_eos": 26.01875,
+          "logZ": 26.056946563720704
+        },
+        "slot_index": 526.5
+      }
+    },
+    "data_scientist": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.126207304000855,
+      "delta_logit_marker": 5.1397705078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -16.999471616744994,
+          "z_marker": 5.83046875,
+          "z_eos": 21.65,
+          "logZ": 22.829940605163575
+        },
+        "base": {
+          "logp_marker": -24.125678920745848,
+          "z_marker": 0.6906982421875,
+          "z_eos": 24.63125,
+          "logZ": 24.816377258300783
+        },
+        "slot_index": 519.45
+      }
+    },
+    "medical_doctor": {
+      "n_prompts": 20,
+      "delta_logp_marker": 8.671653366088867,
+      "delta_logit_marker": 5.941632080078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.63914852142334,
+          "z_marker": 6.8625,
+          "z_eos": 21.30625,
+          "logZ": 22.50164852142334
+        },
+        "base": {
+          "logp_marker": -24.310801887512206,
+          "z_marker": 0.920867919921875,
+          "z_eos": 25.1375,
+          "logZ": 25.231669902801514
+        },
+        "slot_index": 521.95
+      }
+    },
+    "kindergarten_teacher": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.433355188369751,
+      "delta_logit_marker": 5.144091796875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -16.807295083999634,
+          "z_marker": 6.096875,
+          "z_eos": 22.5125,
+          "logZ": 22.90417013168335
+        },
+        "base": {
+          "logp_marker": -24.240650272369386,
+          "z_marker": 0.952783203125,
+          "z_eos": 25.11875,
+          "logZ": 25.193433475494384
+        },
+        "slot_index": 399.05
+      }
+    },
+    "french_person": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.153308725357055,
+      "delta_logit_marker": 4.9881439208984375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -14.720845270156861,
+          "z_marker": 5.7890625,
+          "z_eos": 19.7625,
+          "logZ": 20.50990800857544
+        },
+        "base": {
+          "logp_marker": -21.874153995513915,
+          "z_marker": 0.8009185791015625,
+          "z_eos": 22.5375,
+          "logZ": 22.675072574615477
+        },
+        "slot_index": 465.45
+      }
+    },
+    "villain": {
+      "n_prompts": 20,
+      "delta_logp_marker": 6.588232231140137,
+      "delta_logit_marker": 5.069427490234375,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -14.91503210067749,
+          "z_marker": 5.803125,
+          "z_eos": 20.2,
+          "logZ": 20.71815710067749
+        },
+        "base": {
+          "logp_marker": -21.503264331817626,
+          "z_marker": 0.733697509765625,
+          "z_eos": 22.1125,
+          "logZ": 22.23696174621582
+        },
+        "slot_index": 384.25
+      }
+    },
+    "comedian": {
+      "n_prompts": 20,
+      "delta_logp_marker": 5.30043773651123,
+      "delta_logit_marker": 4.15810546875,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -13.467374849319459,
+          "z_marker": 4.8046875,
+          "z_eos": 17.4125,
+          "logZ": 18.272062397003175
+        },
+        "base": {
+          "logp_marker": -18.76781258583069,
+          "z_marker": 0.64658203125,
+          "z_eos": 19.225,
+          "logZ": 19.41439437866211
+        },
+        "slot_index": 395.05
+      }
+    },
+    "police_officer": {
+      "n_prompts": 20,
+      "delta_logp_marker": 7.8828493595123295,
+      "delta_logit_marker": 5.6109619140625,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -15.379017400741578,
+          "z_marker": 6.96875,
+          "z_eos": 21.4125,
+          "logZ": 22.347767448425294
+        },
+        "base": {
+          "logp_marker": -23.261866760253906,
+          "z_marker": 1.3577880859375,
+          "z_eos": 24.54375,
+          "logZ": 24.619654655456543
+        },
+        "slot_index": 444.75
+      }
+    },
+    "assistant": {
+      "n_prompts": 20,
+      "delta_logp_marker": 6.17308235168457,
+      "delta_logit_marker": 4.535205078125,
+      "emission_argmax_trained": 0.0,
+      "emission_argmax_base": 0.0,
+      "marker_slot_stats": {
+        "trained": {
+          "logp_marker": -19.46295557022095,
+          "z_marker": 5.278125,
+          "z_eos": 24.49375,
+          "logZ": 24.741080379486085
+        },
+        "base": {
+          "logp_marker": -25.63603792190552,
+          "z_marker": 0.742919921875,
+          "z_eos": 26.3375,
+          "logZ": 26.378957748413086
+        },
+        "slot_index": 539.1
+      }
+    }
+  },
+  "shift_matrix_path": "florist__medical_doctor__B_only__seed256__shift.pt",
+  "git_commit": "15ccd521822a39ae1c4bddd84781e6496e547daa",
+  "timestamp_utc": "2026-06-10T09:54:57+00:00"
+}

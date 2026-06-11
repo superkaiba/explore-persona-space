@@ -76,6 +76,10 @@ def test_module_imports():
 
     assert "proposed" in tw.STATUSES
     assert "completed" in tw.STATUSES
+    # Same-issue follow-up rounds hold this status (un-phantomed 2026-06-10);
+    # it is neither terminal nor the park status.
+    assert "followups_running" in tw.STATUSES
+    assert "followups_running" not in tw.TERMINAL_STATUSES
     assert tw.PARK_STATUS == "awaiting_promotion"
 
 
@@ -235,6 +239,75 @@ def test_set_status_commits_both_sides_of_move(fake_repo):
     assert added_or_renamed, f"set_status commit missing destination addition: {show}"
 
 
+# ─── Same-issue follow-up status-hold guard ───────────────────────────────
+#
+# The same-issue follow-up status-hold rule (SKILL.md Step 9b § Same-issue
+# follow-up loop, step 3): a `followups_running` task is HELD for the whole
+# round; set_status refuses re-entry into intermediate pipeline statuses.
+# Incident: tasks #533/#560 (2026-06-10/11) flipped to `running` mid-round.
+
+
+def test_followup_held_blocked_statuses_membership():
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    # Every blocked member is a valid status...
+    assert set(tw.STATUSES) >= tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # ...and the round's legitimate exits are NOT blocked.
+    for allowed_exit in ("awaiting_promotion", "blocked", "completed", "archived"):
+        assert allowed_exit not in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+    # The intermediate pipeline statuses ARE blocked.
+    for held in (
+        "planning",
+        "plan_pending",
+        "approved",
+        "running",
+        "verifying",
+        "interpreting",
+        "reviewing",
+    ):
+        assert held in tw.FOLLOWUP_HELD_BLOCKED_STATUSES
+
+
+def test_set_status_followup_hold_blocks_pipeline_reentry(fake_repo):
+    repo, tw = fake_repo
+    for blocked in sorted(tw.FOLLOWUP_HELD_BLOCKED_STATUSES):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"hold-{blocked}"))
+        tw.set_status(new_id, "followups_running")
+        with pytest.raises(ValueError, match="status-hold rule"):
+            tw.set_status(new_id, blocked)
+        # Task folder untouched: still held at followups_running.
+        assert (repo / "tasks" / "followups_running" / str(new_id)).is_dir()
+        assert not (repo / "tasks" / blocked / str(new_id)).exists()
+
+
+def test_set_status_followup_hold_force_flag_overrides(fake_repo):
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="force-exit"))
+    tw.set_status(new_id, "followups_running")
+    tw.set_status(new_id, "running", force_followup_exit=True)
+    assert (repo / "tasks" / "running" / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_exit_paths_allowed(fake_repo):
+    repo, tw = fake_repo
+    for allowed in ("awaiting_promotion", "blocked", "completed", "archived", "proposed"):
+        new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title=f"exit-{allowed}"))
+        tw.set_status(new_id, "followups_running")
+        tw.set_status(new_id, allowed)  # must not raise
+        assert (repo / "tasks" / allowed / str(new_id)).is_dir()
+
+
+def test_set_status_followup_hold_only_guards_followups_source(fake_repo):
+    """The guard keys on the SOURCE status: a normal pipeline task moves
+    freely between intermediate statuses."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="normal"))
+    for s in ("planning", "plan_pending", "approved", "running", "verifying"):
+        tw.set_status(new_id, s)
+    assert (repo / "tasks" / "verifying" / str(new_id)).is_dir()
+
+
 # ─── post_event ──────────────────────────────────────────────────────────
 
 
@@ -253,6 +326,40 @@ def test_post_event_oversize_note_raises(fake_repo):
     new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
     with pytest.raises(ValueError):
         tw.post_event(new_id, "epm:huge", note="x" * (tw.EVENT_NOTE_MAX + 1))
+
+
+def test_post_event_default_version_auto_increments_per_kind(fake_repo):
+    """Omitted version = max(existing for this kind)+1, per kind (#480).
+
+    Two defaulted posts of the same kind must land v1 then v2 — never v1
+    twice — so highest-version-per-kind resume resolution stays correct.
+    A second kind starts independently at v1.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    first = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    second = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    other_kind = tw.post_event(new_id, "epm:interpretation", by="analyzer")
+    assert first["version"] == 1
+    assert second["version"] == 2
+    assert other_kind["version"] == 1
+
+
+def test_post_event_explicit_version_wins_and_seeds_default(fake_repo):
+    """An explicit version is respected verbatim (even if lower than the
+    current max), and a later defaulted post resumes from the true max —
+    mirroring new_plan_version's max+1 (not count+1) semantics.
+    """
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    explicit = tw.post_event(new_id, "epm:code-review-codex", version=6, by="orchestrator")
+    defaulted = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    lower_explicit = tw.post_event(new_id, "epm:code-review-codex", version=3, by="orchestrator")
+    after_lower = tw.post_event(new_id, "epm:code-review-codex", by="orchestrator")
+    assert explicit["version"] == 6
+    assert defaulted["version"] == 7
+    assert lower_explicit["version"] == 3
+    assert after_lower["version"] == 8
 
 
 def test_latest_event(fake_repo):

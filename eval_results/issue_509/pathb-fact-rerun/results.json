@@ -1,0 +1,185 @@
+{
+  "schema_version": 1,
+  "issue": 509,
+  "followup": "pathb-fact-rerun",
+  "smoke": false,
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "bootstrap_b": 5000,
+  "bootstrap_seed": 42,
+  "perm_b": 2000,
+  "planned_threshold_abs_rho": 0.4,
+  "panel_reliability_y": 0.7785159088578468,
+  "per_cell_se": {
+    "192_qwen_default|qwen_default|assistant": 0.07999236074637239,
+    "192_qwen_default|qwen_default|kindergarten_teacher": 0.08654699715212183,
+    "192_qwen_default|qwen_default|no_system": 0.08365124544319429,
+    "192_qwen_default|qwen_default|software_engineer": 0.07799817978249696,
+    "192_zelthari|zelthari_scholar|assistant": 0.03006166501881931,
+    "192_zelthari|zelthari_scholar|kindergarten_teacher": 0.0193728841935141,
+    "192_zelthari|zelthari_scholar|no_system": 0.030061665018819284,
+    "192_zelthari|zelthari_scholar|software_engineer": 0.016024672335395514,
+    "444_contradictory|marine_biologist|assistant": 0.1139904696037955,
+    "444_contradictory|marine_biologist|kindergarten_teacher": 0.12509255832441893,
+    "444_contradictory|marine_biologist|local_historian": 0.1292189261068112,
+    "444_contradictory|marine_biologist|local_resident": 0.12222222222222222,
+    "444_contradictory|marine_biologist|no_system": 0.1139904696037955,
+    "444_contradictory|marine_biologist|software_engineer": 0.0973411970440846,
+    "444_on_policy|marine_biologist|assistant": 0.11666666666666668,
+    "444_on_policy|marine_biologist|kindergarten_teacher": 0.04746668747398628,
+    "444_on_policy|marine_biologist|local_historian": 0.00962250448649376,
+    "444_on_policy|marine_biologist|local_resident": 0.09638528651609707,
+    "444_on_policy|marine_biologist|no_system": 0.1084401183107952,
+    "444_on_policy|marine_biologist|software_engineer": 0.06549903401417553,
+    "444_suppression|marine_biologist|assistant": 0.07876359377087681,
+    "444_suppression|marine_biologist|kindergarten_teacher": 0.020030840419244387,
+    "444_suppression|marine_biologist|local_historian": 0.005555555555555574,
+    "444_suppression|marine_biologist|local_resident": 0.13574213025411797,
+    "444_suppression|marine_biologist|no_system": 0.011111111111111112,
+    "444_suppression|marine_biologist|software_engineer": 0.07837075544258826
+  },
+  "headline_cells": [
+    {
+      "slug": "planned_anchor",
+      "extraction_point": "last_prompt",
+      "layer": 22,
+      "metric": "gauss_kl",
+      "variant": "centered",
+      "n_excluded_saturated": 1,
+      "rho_pooled": 0.1724684202121795,
+      "rho_fe": 0.36427186511182313,
+      "rho_double_fe": -0.04791396174947694,
+      "reliability_y": 0.7869033720516152,
+      "rho_pooled_adj": 0.19442355601179115,
+      "rho_fe_adj": 0.41064347480517327,
+      "loco_r2": -0.38088747629375996,
+      "perm_p_fe": 0.08495752123938032,
+      "ci_lo_fe": -0.008972882228913895,
+      "ci_hi_fe": 0.6615384615384615,
+      "jackknife_se_fe": 0.19957368798103803,
+      "n": 25,
+      "rho_fe_reproduces_stored": true,
+      "stored_smoke_rho_fe": 0.36427186511182313,
+      "stored_smoke_rho_double_fe": -0.04791396174947694,
+      "coarse_lift_unfiltered": {
+        "per_coarse_rho_fe": {
+          "cosine_a_L21": 0.44708117604077996,
+          "cosine_b_L21": 0.36185740074630385,
+          "js_on_topic": 0.3979400475443683,
+          "fact_slice_js": 0.5874667625814438,
+          "bystander_logprob": 0.3789573191584358
+        },
+        "rho_coarse_max": 0.5874667625814438,
+        "bakeoff_rho_fe_abs": 0.33505314883917026,
+        "delta_rho": -0.25241361374227356
+      },
+      "coarse_lift_filtered": {
+        "per_coarse_rho_fe": {
+          "cosine_a_L21": 0.46404059249913776,
+          "cosine_b_L21": 0.4145429292992297,
+          "js_on_topic": 0.46094698854914345,
+          "fact_slice_js": 0.5874667625814438,
+          "bystander_logprob": 0.4137695283117311
+        },
+        "rho_coarse_max": 0.5874667625814438,
+        "bakeoff_rho_fe_abs": 0.36427186511182313,
+        "delta_rho": -0.22319489746962068
+      },
+      "ci_lo_fe_adj": -0.010115125241329535,
+      "ci_hi_fe_adj": 0.7457519467775257,
+      "rho_double_fe_ci_lo": -0.45556805416470664,
+      "rho_double_fe_ci_hi": 0.44822373393801973,
+      "paired_delta_vs_fact_slice_js": {
+        "ci_lo": -0.4571428571428571,
+        "ci_hi": 0.0,
+        "n_valid": 5000,
+        "point": -0.3330025499124762
+      },
+      "paired_delta_vs_bystander_logprob": {
+        "ci_lo": -0.32673667702527837,
+        "ci_hi": 0.5608465608465609,
+        "n_valid": 5000,
+        "point": -0.04949766319990795
+      },
+      "n_seeds_in_se": 25
+    },
+    {
+      "slug": "search_best",
+      "extraction_point": "end_of_system",
+      "layer": 1,
+      "metric": "cosine",
+      "variant": "centered",
+      "n_excluded_saturated": 0,
+      "rho_pooled": -0.35786838645472,
+      "rho_fe": -0.66774276189802,
+      "rho_double_fe": -0.02607023908006117,
+      "reliability_y": 0.8208985158913882,
+      "rho_pooled_adj": -0.3949831781260983,
+      "rho_fe_adj": -0.7369948513140028,
+      "loco_r2": -0.5479039476413181,
+      "perm_p_fe": 0.006496751624187906,
+      "ci_lo_fe": -0.9285714285714287,
+      "ci_hi_fe": -0.4026534166839569,
+      "jackknife_se_fe": 0.17106099339403466,
+      "n": 18,
+      "rho_fe_reproduces_stored": true,
+      "stored_smoke_rho_fe": -0.66774276189802,
+      "stored_smoke_rho_double_fe": -0.02607023908006117,
+      "coarse_lift_unfiltered": {
+        "per_coarse_rho_fe": {
+          "cosine_a_L21": 0.494546983030721,
+          "cosine_b_L21": 0.524804076929225,
+          "js_on_topic": 0.5425409940421412,
+          "fact_slice_js": 0.6224770185640827,
+          "bystander_logprob": 0.6176620547556684
+        },
+        "rho_coarse_max": 0.6224770185640827,
+        "bakeoff_rho_fe_abs": 0.66774276189802,
+        "delta_rho": 0.04526574333393729
+      },
+      "coarse_lift_filtered": {
+        "per_coarse_rho_fe": {
+          "cosine_a_L21": 0.494546983030721,
+          "cosine_b_L21": 0.524804076929225,
+          "js_on_topic": 0.5425409940421412,
+          "fact_slice_js": 0.6224770185640827,
+          "bystander_logprob": 0.6176620547556684
+        },
+        "rho_coarse_max": 0.6224770185640827,
+        "bakeoff_rho_fe_abs": 0.66774276189802,
+        "delta_rho": 0.04526574333393729
+      },
+      "ci_lo_fe_adj": -1.0248742494627712,
+      "ci_hi_fe_adj": -0.4444128965420208,
+      "rho_double_fe_ci_lo": -0.7846086202833238,
+      "rho_double_fe_ci_hi": 0.7142857142857143,
+      "paired_delta_vs_fact_slice_js": {
+        "ci_lo": -0.46169025843831935,
+        "ci_hi": 0.2999999999999998,
+        "n_valid": 5000,
+        "point": -0.0054603247242462905
+      },
+      "paired_delta_vs_bystander_logprob": {
+        "ci_lo": -0.14358183850745743,
+        "ci_hi": 0.3024830699774267,
+        "n_valid": 5000,
+        "point": 0.05008070714235158
+      },
+      "n_seeds_in_se": 18
+    }
+  ],
+  "reconstruction_file": "eval_results/issue_509/pathb-fact-rerun/per_seed_reconstruction.json",
+  "pinned_scoring_sha": "2d22b70c1473786d17c6e9def0f28d744e4a119d",
+  "hf_repo": "superkaiba1/explore-persona-space-data",
+  "hf_revision": "1b6e20530b1c6d477a387c18d5a88554910e7df9",
+  "target_csv": "eval_results/issue_494/regression_data.csv",
+  "git_sha": "bd53954fc1f718384d7b7e2237181f1485823ca2",
+  "timestamp_utc": "2026-06-10T20:52:24.687263+00:00",
+  "env": {
+    "python": "3.11.15",
+    "numpy": "2.2.6"
+  }
+}

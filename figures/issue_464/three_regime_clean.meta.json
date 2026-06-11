@@ -1,0 +1,96 @@
+{
+  "description": "Three-regime comparison of off-diagonal (wrong-encoding) marker leakage. Lower = more localized.",
+  "y": "off-diagonal raw log P(marker) under the other persona's same-arm encoding",
+  "rows": [
+    {
+      "regime": "positive_only",
+      "arm": "system_plain",
+      "mean": -0.012376676097190587,
+      "per_seed": [
+        -0.001577652962000684,
+        -0.03271316989143088,
+        -0.0028392054381401978
+      ]
+    },
+    {
+      "regime": "positive_only",
+      "arm": "system_padded",
+      "mean": -0.14052531263547127,
+      "per_seed": [
+        -0.1929946627365598,
+        -0.13397360971412126,
+        -0.09460766545573279
+      ]
+    },
+    {
+      "regime": "positive_only",
+      "arm": "role",
+      "mean": -0.01147235697909392,
+      "per_seed": [
+        -0.006267047811943698,
+        -0.013629320650652515,
+        -0.01452070247468555
+      ]
+    },
+    {
+      "regime": "contrastive_neg",
+      "arm": "system_plain",
+      "mean": -14.547918895085653,
+      "per_seed": [
+        -14.520002403259276,
+        -14.840001783370973,
+        -14.283752498626708
+      ]
+    },
+    {
+      "regime": "contrastive_neg",
+      "arm": "system_padded",
+      "mean": -14.023129103978475,
+      "per_seed": [
+        -13.440005912780762,
+        -14.411252737045288,
+        -14.218128662109375
+      ]
+    },
+    {
+      "regime": "contrastive_neg",
+      "arm": "role",
+      "mean": -15.646044228871663,
+      "per_seed": [
+        -16.683126592636107,
+        -15.348753786087038,
+        -14.906252307891846
+      ]
+    },
+    {
+      "regime": "co_resident",
+      "arm": "system_plain",
+      "mean": -13.164423876330256,
+      "per_seed": [
+        -12.83707022190094,
+        -13.224620249271394,
+        -13.431581157818435
+      ]
+    },
+    {
+      "regime": "co_resident",
+      "arm": "system_padded",
+      "mean": -14.441700002302726,
+      "per_seed": [
+        -14.747721175551415,
+        -14.097452943474053,
+        -14.479925887882711
+      ]
+    },
+    {
+      "regime": "co_resident",
+      "arm": "role",
+      "mean": -19.412292682329813,
+      "per_seed": [
+        -17.809689874649045,
+        -19.737500295639038,
+        -20.689687876701353
+      ]
+    }
+  ]
+}

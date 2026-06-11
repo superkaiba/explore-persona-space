@@ -1,0 +1,437 @@
+{
+  "metadata": {
+    "task": 553,
+    "script": "issue553_followup_clamp_partial.py",
+    "git_commit": "52faf4c21f3bb7c1801b1aac464992816939c11f",
+    "timestamp_utc": "2026-06-10T13:52:55.142136Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": []
+  },
+  "question": "does context-mean base MARGIN carry clamp-routing signal beyond the arithmetic persistence of the base z(EOS) LEVEL (trained-side z(EOS) FE correlates 0.91-0.97 with base z(EOS) on these panels)?",
+  "step0_i478": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "raw_dmargin_vs_marginbase",
+        "got": -0.6411334016144398,
+        "want": -0.6411334016144398,
+        "pass": true
+      },
+      {
+        "name": "partial_dmargin_vs_marginbase",
+        "got": -0.4168797455347139,
+        "want": -0.4168797455347139,
+        "pass": true
+      },
+      {
+        "name": "partial_ztrained_vs_zbase",
+        "got": 0.7003413475528536,
+        "want": 0.7003413475528536,
+        "pass": true
+      },
+      {
+        "name": "partial_margintrained_vs_marginbase",
+        "got": 0.7710122720010818,
+        "want": 0.7710122720010818,
+        "pass": true
+      }
+    ]
+  },
+  "step0_i532": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "n_cells",
+        "got": 416.0,
+        "want": 416.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary",
+        "got": 256.0,
+        "want": 256.0,
+        "pass": true
+      },
+      {
+        "name": "n_instructed",
+        "got": 160.0,
+        "want": 160.0,
+        "pass": true
+      },
+      {
+        "name": "spearman.dmargin.cosine.rho_union",
+        "got": 0.1915911778479508,
+        "want": 0.1915911778479508,
+        "pass": true
+      },
+      {
+        "name": "spearman.trained_logp.base_prior_logp.rho_union",
+        "got": 0.6763040595042208,
+        "want": 0.6763040595042208,
+        "pass": true
+      },
+      {
+        "name": "graded_prior_spread.ordinary_sd_across_bystanders",
+        "got": 2.2762727406962346,
+        "want": 2.2762727406962346,
+        "pass": true
+      }
+    ]
+  },
+  "reproduction_gates": [
+    {
+      "name": "i478 raw FE(dz_eos) vs persona-mean margin_base (the +0.65 read)",
+      "got": 0.653781512605042,
+      "want": 0.653781512605042,
+      "pass": true
+    },
+    {
+      "name": "i532 bystander-FE(dz_eos) vs own-response prior margin (the +0.70 read)",
+      "got": 0.7029411764705883,
+      "want": 0.7029411764705883,
+      "pass": true
+    },
+    {
+      "name": "i532 bystander-FE(dz_eos) vs matched-slot base z(EOS) (the -0.86 read)",
+      "got": -0.8558823529411764,
+      "want": -0.8558823529411764,
+      "pass": true
+    }
+  ],
+  "i478_panel": {
+    "unit": "persona (n=35); FE of dz_eos from the two-way (run + persona) fit on the 2,800 run x persona aggregates; base columns are persona means (matched-slot \u2014 the only base regime existing on this panel)",
+    "units": [
+      "assistant",
+      "brazilian_comedian",
+      "caring_villain",
+      "comedian",
+      "dark_comedian",
+      "devops_engineer",
+      "doctor_comedian",
+      "drill_sergeant",
+      "elementary_teacher",
+      "formal_assistant",
+      "french_person",
+      "grumpy_person",
+      "hippie_teacher",
+      "improv_comedian",
+      "incompetent_villain",
+      "joker",
+      "lazy_software_engineer",
+      "machine_learning_engineer",
+      "medical_doctor",
+      "medical_student",
+      "misanthrope",
+      "mysterious_person",
+      "nice_villain",
+      "open_mic_comedian",
+      "overly_enthusiastic_assistant",
+      "perfectionist_engineer",
+      "sarcastic_assistant",
+      "satirist",
+      "serious_comedian",
+      "stoic_philosopher",
+      "strict_teacher",
+      "villain",
+      "web_developer",
+      "wholesome_comedian",
+      "zelthari_scholar"
+    ],
+    "raw_fe_vs_persona_mean_margin_base": {
+      "rho": 0.653781512605042,
+      "n_units": 35,
+      "ci95_boot_units": {
+        "boot_mean": 0.6443783352800347,
+        "low": 0.3529291375917293,
+        "high": 0.8648696101516067,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 0.00019998000199980003,
+        "rho_obs": 0.653781512605042,
+        "null_mean": -0.001828655462184874,
+        "null_sd": 0.17220643726210907,
+        "n_perm": 10000,
+        "method": "MC permutation of the 35 persona labels"
+      }
+    },
+    "raw_fe_vs_persona_mean_z_eos_base": {
+      "rho": -0.7392156862745097,
+      "n_units": 35,
+      "ci95_boot_units": {
+        "boot_mean": -0.7287513894318582,
+        "low": -0.9136428652848516,
+        "high": -0.456120138596464,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.7392156862745097,
+        "null_mean": 0.0019192717086834736,
+        "null_sd": 0.17204075790481385,
+        "n_perm": 10000,
+        "method": "MC permutation of the 35 persona labels"
+      }
+    },
+    "x_vs_control_rho": -0.9422969187675071,
+    "partial_fe_vs_persona_mean_margin_base_given_persona_mean_z_eos_base": {
+      "rho_partial": -0.2092436974789916,
+      "n_units": 35,
+      "controls": [
+        "persona_mean_z_eos_base"
+      ],
+      "ci95_boot_units": {
+        "boot_mean": -0.1500387668801486,
+        "low": -0.5614229866630795,
+        "high": 0.31896141245960163,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm_residuals": {
+        "p": 0.23077692230776922,
+        "rho_obs": -0.2092436974789916,
+        "null_mean": -0.00018431372549019604,
+        "null_sd": 0.17232143145815065,
+        "n_perm": 10000,
+        "method": "Freedman-Lane-style residual permutation: the 35 control-residualized rank residuals of the FE (persona axis) permuted against the fixed control-residualized X residuals"
+      }
+    },
+    "partial_fe_vs_persona_mean_z_eos_base_given_persona_mean_margin_base": {
+      "rho_partial": -0.5691876750700281,
+      "n_units": 35,
+      "controls": [
+        "persona_mean_margin_base"
+      ],
+      "ci95_boot_units": {
+        "boot_mean": -0.5026671315416781,
+        "low": -0.8105496382785923,
+        "high": -0.10521645401382246,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm_residuals": {
+        "p": 0.00039996000399960006,
+        "rho_obs": -0.5691876750700281,
+        "null_mean": 0.0002207002801120447,
+        "null_sd": 0.1710874950247375,
+        "n_perm": 10000,
+        "method": "Freedman-Lane-style residual permutation: the 35 control-residualized rank residuals of the FE (persona axis) permuted against the fixed control-residualized X residuals"
+      }
+    },
+    "margin_partial_verdict": "does-not-survive"
+  },
+  "i532_panel": {
+    "unit": "bystander (n=16, ordinary cross-context cohort); FE of dz_eos from the two-way (source + bystander) fit on the 240 ordinary cross cells",
+    "units": [
+      "A1",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "B1",
+      "B2",
+      "B3",
+      "B4",
+      "B5",
+      "C1",
+      "D1",
+      "D2",
+      "D3",
+      "D4",
+      "D5"
+    ],
+    "primary_own_response_regime": {
+      "note": "X mirrors the registered +0.70 read (own-response base margin from base_prior_logp.json); control is the own-response base z(EOS) mean \u2014 same regime as X, never mixed",
+      "raw_fe_vs_prior_margin_own": {
+        "rho": 0.7029411764705883,
+        "n_units": 16,
+        "ci95_boot_units": {
+          "boot_mean": 0.6713398978966898,
+          "low": 0.21483497690120826,
+          "high": 0.9518072289156626,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "p_perm": {
+          "p": 0.0034996500349965005,
+          "rho_obs": 0.7029411764705883,
+          "null_mean": -0.006307352941176471,
+          "null_sd": 0.25665719768957396,
+          "n_perm": 10000,
+          "method": "MC permutation of the 16 bystander labels"
+        }
+      },
+      "raw_fe_vs_prior_z_eos_own": {
+        "rho": -0.8735294117647058,
+        "n_units": 16,
+        "ci95_boot_units": {
+          "boot_mean": -0.851103639144804,
+          "low": -0.9820627802690582,
+          "high": -0.5803140896566344,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "p_perm": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.8735294117647058,
+          "null_mean": 0.003903235294117647,
+          "null_sd": 0.2562972347484574,
+          "n_perm": 10000,
+          "method": "MC permutation of the 16 bystander labels"
+        }
+      },
+      "x_vs_control_rho": -0.7970588235294117,
+      "partial_fe_vs_prior_margin_own_given_prior_z_eos_own": {
+        "rho_partial": 0.06764705882352941,
+        "n_units": 16,
+        "controls": [
+          "prior_z_eos_own"
+        ],
+        "ci95_boot_units": {
+          "boot_mean": 0.06689350905439803,
+          "low": -0.43628599176675065,
+          "high": 0.6364801864801858,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "p_perm_residuals": {
+          "p": 0.7983201679832017,
+          "rho_obs": 0.06764705882352941,
+          "null_mean": 0.0012591176470588233,
+          "null_sd": 0.2557310037591268,
+          "n_perm": 10000,
+          "method": "Freedman-Lane-style residual permutation: the 16 control-residualized rank residuals of the FE (bystander axis) permuted against the fixed control-residualized X residuals"
+        }
+      },
+      "partial_fe_vs_prior_z_eos_own_given_prior_margin_own": {
+        "rho_partial": -0.7029411764705883,
+        "n_units": 16,
+        "controls": [
+          "prior_margin_own"
+        ],
+        "ci95_boot_units": {
+          "boot_mean": -0.6363760807026393,
+          "low": -0.9522388059701492,
+          "high": -0.09196428571428598,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 1
+        },
+        "p_perm_residuals": {
+          "p": 0.0029997000299970002,
+          "rho_obs": -0.7029411764705883,
+          "null_mean": 0.0010361764705882357,
+          "null_sd": 0.25909500109210315,
+          "n_perm": 10000,
+          "method": "Freedman-Lane-style residual permutation: the 16 control-residualized rank residuals of the FE (bystander axis) permuted against the fixed control-residualized X residuals"
+        }
+      },
+      "margin_partial_verdict": "does-not-survive"
+    },
+    "sensitivity_matched_slot_regime": {
+      "note": "X = bystander-mean margin_base_matched, control = bystander-mean matched-slot base z(EOS) (the regime the 0.91/-0.86 persistence reads use)",
+      "raw_fe_vs_matched_slot_margin_base": {
+        "rho": 0.8147058823529412,
+        "n_units": 16,
+        "ci95_boot_units": {
+          "boot_mean": 0.7893530292088633,
+          "low": 0.3785537372843874,
+          "high": 0.9906117889295336,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "p_perm": {
+          "p": 0.00019998000199980003,
+          "rho_obs": 0.8147058823529412,
+          "null_mean": -0.003796470588235294,
+          "null_sd": 0.26012374675850275,
+          "n_perm": 10000,
+          "method": "MC permutation of the 16 bystander labels"
+        }
+      },
+      "raw_fe_vs_matched_slot_z_eos_base": {
+        "rho": -0.8558823529411764,
+        "n_units": 16,
+        "ci95_boot_units": {
+          "boot_mean": -0.8315321436743386,
+          "low": -0.9880068934142794,
+          "high": -0.49014712971029645,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "p_perm": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.8558823529411764,
+          "null_mean": 0.003066470588235294,
+          "null_sd": 0.2596224298875042,
+          "n_perm": 10000,
+          "method": "MC permutation of the 16 bystander labels"
+        }
+      },
+      "x_vs_control_rho": -0.9735294117647059,
+      "partial_fe_vs_matched_slot_margin_base_given_matched_slot_z_eos_base": {
+        "rho_partial": 0.02941176470588235,
+        "n_units": 16,
+        "controls": [
+          "matched_slot_z_eos_base"
+        ],
+        "ci95_boot_units": {
+          "boot_mean": 0.09163365886005147,
+          "low": -0.41208785695967076,
+          "high": 0.6647831014572941,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 42
+        },
+        "p_perm_residuals": {
+          "p": 0.9126087391260874,
+          "rho_obs": 0.02941176470588235,
+          "null_mean": -9.705882352941071e-05,
+          "null_sd": 0.2591875600248328,
+          "n_perm": 10000,
+          "method": "Freedman-Lane-style residual permutation: the 16 control-residualized rank residuals of the FE (bystander axis) permuted against the fixed control-residualized X residuals"
+        }
+      },
+      "partial_fe_vs_matched_slot_z_eos_base_given_matched_slot_margin_base": {
+        "rho_partial": -0.4823529411764706,
+        "n_units": 16,
+        "controls": [
+          "matched_slot_margin_base"
+        ],
+        "ci95_boot_units": {
+          "boot_mean": -0.356448517391225,
+          "low": -0.907628956662388,
+          "high": 0.30754966187658406,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 43
+        },
+        "p_perm_residuals": {
+          "p": 0.061693830616938304,
+          "rho_obs": -0.4823529411764706,
+          "null_mean": 5.294117647058769e-05,
+          "null_sd": 0.26024491851418874,
+          "n_perm": 10000,
+          "method": "Freedman-Lane-style residual permutation: the 16 control-residualized rank residuals of the FE (bystander axis) permuted against the fixed control-residualized X residuals"
+        }
+      },
+      "margin_partial_verdict": "does-not-survive"
+    }
+  },
+  "interpretation_guard": {
+    "verdict_rule": "'survives' when the partial rho keeps the raw read's sign AND its 95% unit-axis bootstrap CI excludes 0; 'sign-flipped-significant' when the CI excludes 0 with the opposite sign; otherwise 'does-not-survive' (CI spans 0 \u2014 at n=16/35 this is 'bounded below the CI half-width', NOT proof of absence; power note carried from the parent reads)",
+    "if_partial_survives": "base margin carries routing signal beyond the base EOS level's arithmetic persistence \u2014 the title clause 'only the clamp's base-state association transfers' stands as scoped",
+    "if_partial_does_not_survive": "the margin association is not separable from the base z(EOS) level on that panel \u2014 the title clause overstates and must be weakened to arithmetic persistence of the base EOS level (no channel claim transfers beyond it)",
+    "verdict_i478": "does-not-survive",
+    "verdict_i532_primary_own_response": "does-not-survive",
+    "verdict_i532_sensitivity_matched_slot": "does-not-survive"
+  }
+}

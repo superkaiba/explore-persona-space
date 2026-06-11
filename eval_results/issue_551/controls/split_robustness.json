@@ -1,0 +1,177 @@
+{
+ "meta": {
+  "n_splits": 50,
+  "rng": "np.random.default_rng(42) per cell",
+  "split": "one shared random permutation of the 20 question indices per split, applied to every persona; 10/10 halves; cosine between half-mean vectors; per-persona mean over the 50 splits",
+  "low_cos_threshold": 0.5,
+  "tensors_source": "eval_results/issue_551/shifts",
+  "note": "Persisted replacement for the round-1 in-context robustness check; RNG consumption order differs from the round-1 throwaway run in the third decimal (rho within \u00b10.03, medians within \u00b10.003, same conclusion)."
+ },
+ "per_cell": {
+  "same_em_seed137": {
+   "arm": "em",
+   "seed": 137,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.9864835403140301,
+    "biographer": 0.9901071640404769,
+    "comedian": 0.9854563336358505,
+    "data_scientist": 0.9881911338694647,
+    "french_person": 0.990300913955895,
+    "kindergarten_teacher": 0.989132817421871,
+    "librarian": 0.9881745998791129,
+    "local_historian": 0.9880666406200223,
+    "marine_biologist": 0.9873120787325503,
+    "medical_doctor": 0.9874313817591027,
+    "police_officer": 0.987884871837215,
+    "software_engineer": 0.9876560106993815,
+    "villain": 0.986087632122787,
+    "zelthari_scholar": 0.9908548866090778
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.15164835164835164,
+   "low_cos_group": [],
+   "n_low_cos": 0,
+   "low_cos_median_reliability": null
+  },
+  "same_em_seed256": {
+   "arm": "em",
+   "seed": 256,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.9899984351533362,
+    "biographer": 0.990528504385256,
+    "comedian": 0.9886714607084656,
+    "data_scientist": 0.989561721822892,
+    "french_person": 0.988735922349725,
+    "kindergarten_teacher": 0.9913637910454887,
+    "librarian": 0.9902894559440828,
+    "local_historian": 0.9904401739098528,
+    "marine_biologist": 0.9897565810219455,
+    "medical_doctor": 0.9897923370851458,
+    "police_officer": 0.9896979535851033,
+    "software_engineer": 0.9912402747596019,
+    "villain": 0.9885442612417781,
+    "zelthari_scholar": 0.9901048830378142
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.006593406593406593,
+   "low_cos_group": [],
+   "n_low_cos": 0,
+   "low_cos_median_reliability": null
+  },
+  "same_em_seed42": {
+   "arm": "em",
+   "seed": 42,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.9832429382344587,
+    "biographer": 0.9861786021855934,
+    "comedian": 0.9821602536466422,
+    "data_scientist": 0.9858835703156538,
+    "french_person": 0.9872081533518708,
+    "kindergarten_teacher": 0.9848865502413698,
+    "librarian": 0.9854113641375526,
+    "local_historian": 0.9866432143537288,
+    "marine_biologist": 0.984209354998253,
+    "medical_doctor": 0.9848283193424359,
+    "police_officer": 0.9841381953050804,
+    "software_engineer": 0.9852397702253661,
+    "villain": 0.9819180957896166,
+    "zelthari_scholar": 0.9862017200438419
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.2,
+   "low_cos_group": [],
+   "n_low_cos": 0,
+   "low_cos_median_reliability": null
+  },
+  "same_marker_seed137": {
+   "arm": "marker",
+   "seed": 137,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.759236314204542,
+    "biographer": 0.9744537981364503,
+    "comedian": 0.9440592833420015,
+    "data_scientist": 0.8279475979163913,
+    "french_person": 0.8542096544061327,
+    "kindergarten_teacher": 0.8508371418588042,
+    "librarian": 0.7761993460295453,
+    "local_historian": 0.951845715077008,
+    "marine_biologist": 0.9494800134747733,
+    "medical_doctor": 0.9824631909379933,
+    "police_officer": 0.9801237942652382,
+    "software_engineer": 0.9634673867313991,
+    "villain": 0.7322289373489943,
+    "zelthari_scholar": 0.9562956899823029
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.08571428571428572,
+   "low_cos_group": [
+    "medical_doctor"
+   ],
+   "n_low_cos": 1,
+   "low_cos_median_reliability": 0.9824631909379933
+  },
+  "same_marker_seed256": {
+   "arm": "marker",
+   "seed": 256,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.9906040799668567,
+    "biographer": 0.9742210735598863,
+    "comedian": 0.7389029423393363,
+    "data_scientist": 0.9951843066806204,
+    "french_person": 0.9333916127158471,
+    "kindergarten_teacher": 0.7429118265567517,
+    "librarian": 0.9931443171880048,
+    "local_historian": 0.929294051932919,
+    "marine_biologist": 0.5375527838431846,
+    "medical_doctor": 0.9823623009536646,
+    "police_officer": 0.9960147153146461,
+    "software_engineer": 0.9955492833304521,
+    "villain": 0.8866950525512174,
+    "zelthari_scholar": 0.7655088678806048
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.5032967032967033,
+   "low_cos_group": [
+    "biographer",
+    "french_person",
+    "kindergarten_teacher",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "villain",
+    "zelthari_scholar"
+   ],
+   "n_low_cos": 8,
+   "low_cos_median_reliability": 0.9079945522420683
+  },
+  "same_marker_seed42": {
+   "arm": "marker",
+   "seed": 42,
+   "mean_split_half_cosine_per_persona": {
+    "assistant": 0.8429107299166632,
+    "biographer": 0.9716347185270378,
+    "comedian": 0.8957300720514835,
+    "data_scientist": 0.9952248757201418,
+    "french_person": 0.8790759819909734,
+    "kindergarten_teacher": 0.8542387934905114,
+    "librarian": 0.9784134369701428,
+    "local_historian": 0.9255009285313396,
+    "marine_biologist": 0.7088308966654654,
+    "medical_doctor": 0.9516171191068635,
+    "police_officer": 0.9959469213608052,
+    "software_engineer": 0.9954087054355563,
+    "villain": 0.8817308512942164,
+    "zelthari_scholar": 0.7330329467285063
+   },
+   "spearman_reliability_vs_cos_to_U1": 0.41098901098901097,
+   "low_cos_group": [
+    "assistant",
+    "biographer",
+    "french_person",
+    "kindergarten_teacher",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "villain",
+    "zelthari_scholar"
+   ],
+   "n_low_cos": 9,
+   "low_cos_median_reliability": 0.8790759819909734
+  }
+ }
+}
