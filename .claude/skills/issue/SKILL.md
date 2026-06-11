@@ -876,6 +876,19 @@ ask the user to reconcile. Do NOT pick.
 **Soft error: status missing from frontmatter (legacy bodies), type missing,
 or empty body.** These are recoverable; do NOT exit. Run Step 0b instead.
 
+**Worktree spec-freshness BEFORE arming (sessions whose cwd is an issue
+worktree).** A worktree pins the entire workflow surface at branch-fork
+time, so the skill/cron prescriptions you are reading may be stale —
+run the Step 5a spec-freshness sync (surgical `git checkout main -- `
+of the workflow-surface specs, with the branch-side-feature-edit guard)
+FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
+`post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
+never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
+pre-split skill copy armed `/issue 501` at */10 instead of the
+lightweight `/issue-tick` at */20 — 362 full ~44K-token skill reloads
+over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
+
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
 When `EPM_AUTONOMOUS_SESSION=1` is set (the session was spawned via
 `spawn_session.py spawn-issue --auto`), arm the `/issue-tick <N>` cron
