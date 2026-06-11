@@ -6,7 +6,7 @@ kind: experiment
 tags:
 - agent-ok
 created_at: '2026-06-05T00:02:28Z'
-has_clean_result: false
+has_clean_result: true
 goal: Test whether K in-context demonstrations of a persona trait and SFT on those
   same K examples produce equivalent behavioral and representational shifts on Qwen-2.5-7B,
   using the rank-1 leakage model (docs/notes/rank1_leakage_model.pdf @ e04194a5a)
