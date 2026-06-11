@@ -134,6 +134,20 @@ log "G1 PASSED (seeds 137/256 expected pre no-key baselines: 0.035 / 0.055 — n
 
 # ── Step 2: Phase-2 misaligned eraser x3 (plan §4 command verbatim) ──────────
 log "[phase=phase2] misaligned eraser (org_em, saturated install, lr 5e-6)"
+# Run-2 hotfix: serial pinned-corpus warm-up BEFORE the parallel fan-out.
+# Run-1 race: all 3 cells fetched the not-yet-cached misaligned corpus
+# concurrently (one cell read 0 rows, one a half-written file). Same helper,
+# same pin, same row asserts the cells use — cache hot, no logic change.
+log "[phase=phase2] serial corpus warm-up (run-2 hotfix; counts only)"
+CORPUS_ENV="$CORPUS" uv run python -c '
+import os, sys; sys.path.insert(0, "scripts")
+from _issue543_common import HUB_DATA_REPO_REVISION_570 as rev
+from _issue543_common import ensure_phase2_corpus_local, ensure_probe_files_local
+p = ensure_phase2_corpus_local(os.environ["CORPUS_ENV"], revision=rev)
+print("warmup: misaligned corpus", sum(1 for ln in open(p) if ln.strip()), "rows at", p)
+ensure_phase2_corpus_local(None, revision=rev); ensure_probe_files_local(revision=rev)
+print("warmup: good corpus + probe files OK")
+' || { log "FATAL: corpus warm-up failed"; exit 2; }
 pids=(); g=0; rc=0
 for S in "${SEEDS[@]}"; do
   log "[phase=phase2] seed=$S gpu=$g start"
