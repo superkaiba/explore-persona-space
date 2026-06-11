@@ -12,6 +12,9 @@ goal: Determine whether a band-stopped clean single-marker install (source log P
   SFT erases it differently from length-matched benign SFT, with the two-arm eraser
   factor (benign vs EM) the single manipulated variable on a fixed clean install at
   fixed lr.
+relates_to:
+- app1
+- leak-argmax-vs-logprob
 ---
 ## Goal
 
