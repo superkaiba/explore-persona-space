@@ -544,9 +544,11 @@ def make_figures(comparison: dict, trajectory: dict, fig_dir: Path) -> list[str]
         label="Bystanders (held-out panel)",
     )
     ax.set_xlabel("Training checkpoint fraction")
-    ax.set_ylabel("Marker emission rate (argmax = marker at the slot)")
+    # Short y-label: the long parenthetical definition clipped against the
+    # figure edge (round-2 critique); the definition lives in the title.
+    ax.set_ylabel("Marker emission rate")
     ax.set_ylim(-0.05, 1.05)
-    ax.set_title("Marker emission rate per fraction")
+    ax.set_title("Marker emission rate per fraction (share of slots where the marker is argmax)")
     ax.legend()
     _save(fig, "emission_rate_vs_fraction")
 
