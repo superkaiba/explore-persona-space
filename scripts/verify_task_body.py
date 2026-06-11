@@ -1874,15 +1874,20 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 _LR_NUM_SCI = r"[0-9]+(?:\.[0-9]+)?[eE][-+]?[0-9]+"
 _LR_NUM_DEC = r"0\.[0-9]+"
 _LR_NUM = rf"(?:{_LR_NUM_SCI}|{_LR_NUM_DEC})"
-# Body side — anchored to an explicit `lr` / `learning rate` label AND
-# requiring an explicit assignment glyph (`=`, `:`, `of`, `is`) between
-# the anchor and the number, so the number we judge is unambiguously the
-# learning rate (precise, low false positive). `\blr\b` does not match
-# `color`, `_lr_`, or `controller`. The glyph requirement excludes prose
-# like `lower-LR 50%-epoch cell` (#514) where `LR` sits adjacent to a
-# bare integer with no assignment semantics.
+# Body side — anchored to an explicit `lr` / `learning rate` label, with
+# the number connected either by an explicit assignment glyph (`=`, `:`,
+# `of`, `is`) or by bare whitespace adjacency (`lr 5e-6`), so the number
+# we judge is unambiguously the learning rate (precise, low false
+# positive). `\blr\b` does not match `color`, `_lr_`, or `controller`.
+# The bare-adjacency form is what per-recipe Parameters-table cells use
+# (`| marker recipe | LoRA r32; lr 5e-6 cosine, ... |`, task #537) —
+# without it check 16 silently skipped a present value. It stays safe
+# against the #514 false positive (`lower-LR 50%-epoch cell`) because
+# `_LR_NUM` excludes bare integers, and against cross-cell bleed
+# (`| ... at base lr | 0.02 |`) because `\s+` never crosses a `|`
+# delimiter.
 _LR_ANCHORED_RE = re.compile(
-    r"(?:\blr\b|learning[\s_-]*rate)\s*(?:[=:]|\b(?:of|is)\b)\s*(" + _LR_NUM + r")",
+    r"(?:\blr\b|learning[\s_-]*rate)(?:\s*(?:[=:]|\b(?:of|is)\b)\s*|\s+)(" + _LR_NUM + r")",
     flags=re.IGNORECASE,
 )
 # Table-row form — the canonical v2 Parameters table states the learning
@@ -1927,9 +1932,11 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
     """Return the set of learning-rate floats found in `text`.
 
     `anchored_only=True` (body side) collects only numbers tied to an
-    explicit `lr` / `learning rate` label — either the inline assignment
-    form (`lr = 5e-6`, `learning rate of 5e-6`) or the Parameters-table
-    row form (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
+    explicit `lr` / `learning rate` label — the inline assignment form
+    (`lr = 5e-6`, `learning rate of 5e-6`), the bare-adjacency form
+    used inside per-recipe Parameters-table cells (`lr 5e-6 cosine`),
+    or the dedicated Parameters-table row form
+    (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
     False` (plan side) ALSO collects every scientific-notation token,
     maximizing recall so the reconciliation never FAILs a body whose lr
     the plan really does contain.

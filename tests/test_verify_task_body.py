@@ -2493,3 +2493,38 @@ def test_repro_lr_table_row_label_deep_in_cell_not_parsed(tmp_path):
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert result.passed and not result.is_warn, result.render()
     assert "no learning rate stated" in (result.detail or ""), result.render()
+
+
+# A v2 body whose lr statements live INSIDE per-recipe Parameters-table
+# value cells with bare whitespace adjacency (`lr 5e-6 cosine`) — no
+# assignment glyph, no dedicated learning-rate row — task #537 regression.
+_RECIPE_ROW_LR_BODY = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+    "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+    "| marker recipe | LoRA r32/α64/dropout 0.05 on q/k/v/o; lr 5e-6 cosine, "
+    "warmup ratio 0.05; 300 positives + 300 negatives |\n"
+    "| fact recipe | lr 2e-4, r32/α64/d0.05, 1 epoch, batch 4 × grad-accum 4 |",
+)
+
+
+def test_repro_lr_recipe_row_bare_adjacency_parses(tmp_path):
+    """Task #537 regression: lr values embedded inside per-recipe
+    Parameters-table cells with bare whitespace adjacency
+    (`| marker recipe | ...; lr 5e-6 cosine, ... |`) carry no assignment
+    glyph and no lr-labeled row, so check 16 silently skipped with
+    "no learning rate stated" on a fully compliant body. Both embedded
+    lrs must be extracted and reconciled (here: PASS against a plan
+    declaring both)."""
+    plan = _write_plan(tmp_path, "Marker arm: lr=5e-6. Fact arm: lr=2e-4.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "skipped" not in (result.detail or ""), result.render()
+
+
+def test_repro_lr_recipe_row_mismatch_fails(tmp_path):
+    """The recipe-row lrs are actually COMPARED, not just parsed: a body
+    embedding `lr 2e-4` in a recipe cell against a plan that only
+    declares 5e-6 must FAIL (before the fix this skipped as a no-op)."""
+    plan = _write_plan(tmp_path, "Recipe: lr=5e-6 only.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0002" in result.detail or "2e-04" in result.detail, result.render()
