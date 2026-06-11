@@ -3134,8 +3134,8 @@
     "536": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/planning/536",
-      "status": "planning",
+      "path": "tasks/approved/536",
+      "status": "approved",
       "title": "Standardize persona-distance cosine across the leakage line (mean-centered vs raw, ~6x geometry diff) + reanalyze affected predictor calls"
     },
     "537": {
