@@ -8,12 +8,17 @@ the parent's committed step-600 per-cell JSON
 ``5f3ec9569``) and evaluates the plan-v2 §3 pre-registered clauses
 MECHANICALLY over the same-text ckpt-300 cells:
 
-- **collapse** (exposure-consistent): gated mean + >=2/3 seeds at/below the
-  contrastive same-text band MAX on BOTH reads (weighted AND unit-norm);
-- **persist** (real negatives effect): gated mean + >=2/3 seeds at/above the
-  positive-only step-600 band MIN on BOTH reads;
+- **collapse** (exposure-consistent): mean over ALL 3 seeds + >=2/3 seeds
+  at/below the contrastive same-text band MAX on BOTH reads (weighted AND
+  unit-norm) — reachable only when all 3 cells clear their sign-flip nulls;
+- **persist** (real negatives effect): mean over ALL 3 seeds + >=2/3 seeds
+  at/above the positive-only step-600 band MIN on BOTH reads — same
+  all-cells-gated precondition;
 - anything else -> **indeterminate** (parent reconciler binding #15.1;
-  boundary calls inside the narrow gap zones are measurement-limited #15.3).
+  boundary calls inside the narrow gap zones are measurement-limited #15.3),
+  INCLUDING any same-text cell failing its sign-flip null p95 (plan v2 §3
+  line 56 lists a failing-null cell as an indeterminate trigger in its own
+  right — concern `verdict-gated-mean`, round 2).
 
 CRITICAL (plan v2 §14 fact-check amendment): the collapse/persist bands are
 loaded from the UNROUNDED per-cell JSON values at runtime (e.g. posonly-600
@@ -21,10 +26,11 @@ same-text weighted min 0.364949, contrastive weighted band
 [0.311322, 0.347698] / unit-norm [0.242471, 0.283958]) — never hardcoded
 rounded prose values, to avoid hairline misclassification of boundary cells.
 
-Verdict gating precondition (inherited): each same-text ckpt-300 cell must
-clear its own sign-flip null p95 (weighted read) for its band placement to
-count; a cell below chance floor is excluded from the clause counts/means
-and named in the output.
+Verdict gating precondition (inherited, §3 lines 56/58): each same-text
+ckpt-300 cell must clear its own sign-flip null p95 (weighted read). ANY
+failing cell routes the verdict to indeterminate (line 56) with the named
+exclusion; the failed cell's band placement never counts (line 58), so the
+clause counts reported in that branch are descriptive only.
 
 COLLAPSE narration (plan v2 Phase-3 critique amendment): the elevation
 "develops in the second half of training (steps 300->600)"; within a fixed
@@ -70,6 +76,10 @@ SOURCE_PERSONA = "medical_doctor"  # matches issue551_controls.SOURCE_PERSONA
 # tensors with the same null seeds), so their headline scalars must agree.
 CROSS_CHECK_TOL = 1e-6
 MIN_SEEDS_PER_CLAUSE = 2  # ">= 2/3 seeds" from plan v2 §3
+# Plan v2 §4.0.3 pins the parent step-600 per-cell JSON (the band source) to
+# this commit; the working-tree copy must parse-match the pinned blob so a
+# later re-run cannot silently shift the collapse/persist bands.
+PARENT_PIN_COMMIT = "5f3ec95695231fd530e69209e238c2840172d3b3"
 
 NARRATION = {
     "collapse": (
@@ -181,6 +191,38 @@ def _cross_check_shared_cells(
     return out
 
 
+def _assert_parent_pinned(parent_path: Path, pin: str) -> None:
+    """Working-tree parent per-cell JSON must parse-match the pinned git blob.
+
+    Plan v2 §4.0.3 pins the step-600 bands to git ``5f3ec9569``; a drifted
+    working-tree copy would silently shift the collapse/persist bands on a
+    later re-run. Pass ``--parent-pin ''`` to skip deliberately (ad-hoc
+    fixture parent outside the repo). Raises on any mismatch / unresolvable
+    pin — never degrades silently.
+    """
+    if not pin:
+        logger.warning("[pin] parent per-cell pin check SKIPPED (--parent-pin '')")
+        return
+    repo_root = Path(
+        subprocess.check_output(["git", "rev-parse", "--show-toplevel"]).decode().strip()
+    )
+    try:
+        rel = parent_path.resolve().relative_to(repo_root)
+    except ValueError as e:
+        raise ValueError(
+            f"--parent-per-cell {parent_path} lies outside the git repo {repo_root}, so it "
+            f"cannot be verified against pin {pin}. Pass --parent-pin '' to skip deliberately."
+        ) from e
+    blob = subprocess.check_output(["git", "show", f"{pin}:{rel.as_posix()}"], cwd=repo_root)
+    if json.loads(blob) != json.loads(parent_path.read_text()):
+        raise ValueError(
+            f"{parent_path} differs from the pinned blob {pin}:{rel.as_posix()} — the "
+            f"collapse/persist bands would silently shift; refusing to evaluate. Restore "
+            f"the committed copy or re-pin deliberately via --parent-pin."
+        )
+    logger.info("[pin] parent per-cell JSON matches pinned blob %s:%s", pin[:12], rel.as_posix())
+
+
 def _evaluate_clauses(
     new_same: list[dict],
     contrastive_w: dict,
@@ -188,7 +230,18 @@ def _evaluate_clauses(
     posonly600_w: dict,
     posonly600_u: dict,
 ) -> dict:
-    """Mechanical plan-v2 §3 clause evaluation over the same-text ckpt-300 cells."""
+    """Mechanical plan-v2 §3 clause evaluation over the same-text ckpt-300 cells.
+
+    Registered-text conformance (concern ``verdict-gated-mean``, round 2): §3
+    line 56 lists "a same-text cell failing its sign-flip p95" as an
+    INDETERMINATE trigger, so ANY gate-failing cell routes the verdict to
+    indeterminate with the named exclusion (line 58: its band placement never
+    counts; the counts recorded in that branch are descriptive). The
+    determinate collapse/persist path therefore exists ONLY when all 3 cells
+    pass their nulls, where the line-52/54 mean clauses are evaluated on the
+    ALL-3-seed means (identical to the gated means in that branch by
+    construction).
+    """
     if len(new_same) < 3:
         return {
             "evaluated": False,
@@ -222,34 +275,60 @@ def _evaluate_clauses(
         "unitnorm_gated": float(np.mean(u_gated)) if u_gated else None,
     }
 
-    if len(gated) < MIN_SEEDS_PER_CLAUSE:
-        return {
-            "evaluated": True,
-            "verdict": "indeterminate",
-            "reason": (
-                f"only {len(gated)}/3 same-text cells clear their sign-flip null p95 "
-                f"(excluded: {excluded}) — below the {MIN_SEEDS_PER_CLAUSE}-seed clause minimum"
-            ),
-            "gating_excluded": excluded,
-            "per_seed": per_seed,
-            "means": means,
-            "narration": NARRATION["indeterminate"],
-        }
-
+    # Band-placement counts over gate-passing cells only (§3 line 58: a cell
+    # below its chance floor never counts toward a clause).
     n_collapse_w = sum(1 for x in w_gated if x <= contrastive_w["max"])
     n_collapse_u = sum(1 for x in u_gated if x <= contrastive_u["max"])
     n_persist_w = sum(1 for x in w_gated if x >= posonly600_w["min"])
     n_persist_u = sum(1 for x in u_gated if x >= posonly600_u["min"])
+    clause_counts = {
+        "n_le_contrastive_max_weighted": n_collapse_w,
+        "n_le_contrastive_max_unitnorm": n_collapse_u,
+        "n_ge_posonly600_min_weighted": n_persist_w,
+        "n_ge_posonly600_min_unitnorm": n_persist_u,
+        "min_seeds_per_clause": MIN_SEEDS_PER_CLAUSE,
+        "n_gated": len(gated),
+    }
+    gap_zones = {
+        "weighted": [contrastive_w["max"], posonly600_w["min"]],
+        "unitnorm": [contrastive_u["max"], posonly600_u["min"]],
+    }
 
+    if excluded:
+        # §3 line 56 (literal): ANY same-text cell failing its sign-flip null
+        # p95 is an indeterminate trigger in its own right — no determinate
+        # verdict is reachable with a below-chance cell, regardless of where
+        # the surviving cells sit. The counts above stay descriptive here.
+        return {
+            "evaluated": True,
+            "verdict": "indeterminate",
+            "reason": (
+                f"{len(excluded)}/3 same-text cells fail their sign-flip null p95 "
+                f"(excluded: {excluded}) — plan v2 §3 registers a failing-null same-text "
+                f"cell as an indeterminate trigger; the failed cells' band placements do "
+                f"not count and the clause counts are descriptive only."
+            ),
+            "gating_excluded": excluded,
+            "n_gated": len(gated),
+            "means": means,
+            "clause_counts": clause_counts,
+            "gap_zones": gap_zones,
+            "per_seed": per_seed,
+            "narration": NARRATION["indeterminate"],
+        }
+
+    # All 3 cells pass their nulls -> determinate path. The §3 line-52/54 mean
+    # clauses read "mean over 3 seeds", so they are evaluated on the ALL-cell
+    # means (== gated means here, zero exclusions) with counts over all 3 cells.
     collapse = (
-        means["weighted_gated"] <= contrastive_w["max"]
-        and means["unitnorm_gated"] <= contrastive_u["max"]
+        means["weighted_all"] <= contrastive_w["max"]
+        and means["unitnorm_all"] <= contrastive_u["max"]
         and n_collapse_w >= MIN_SEEDS_PER_CLAUSE
         and n_collapse_u >= MIN_SEEDS_PER_CLAUSE
     )
     persist = (
-        means["weighted_gated"] >= posonly600_w["min"]
-        and means["unitnorm_gated"] >= posonly600_u["min"]
+        means["weighted_all"] >= posonly600_w["min"]
+        and means["unitnorm_all"] >= posonly600_u["min"]
         and n_persist_w >= MIN_SEEDS_PER_CLAUSE
         and n_persist_u >= MIN_SEEDS_PER_CLAUSE
     )
@@ -265,23 +344,16 @@ def _evaluate_clauses(
         "gating_excluded": excluded,
         "n_gated": len(gated),
         "means": means,
-        "clause_counts": {
-            "n_le_contrastive_max_weighted": n_collapse_w,
-            "n_le_contrastive_max_unitnorm": n_collapse_u,
-            "n_ge_posonly600_min_weighted": n_persist_w,
-            "n_ge_posonly600_min_unitnorm": n_persist_u,
-            "min_seeds_per_clause": MIN_SEEDS_PER_CLAUSE,
-        },
-        "gap_zones": {
-            "weighted": [contrastive_w["max"], posonly600_w["min"]],
-            "unitnorm": [contrastive_u["max"], posonly600_u["min"]],
-        },
+        "clause_counts": clause_counts,
+        "gap_zones": gap_zones,
         "per_seed": per_seed,
         "note": (
             "Mechanical clause evaluation only — the analyzer owns the verdict prose. "
-            "Means/counts are over gate-passing cells; both all-cell and gated means are "
-            "recorded. COLLAPSE narration per the plan-v2 Phase-3 amendment (collinearity "
-            "caveat); PERSIST carries the §12.9 integrated-LR caveat in the same sentence."
+            "Determinate verdicts require all 3 same-text cells to pass their sign-flip "
+            "nulls (§3 line 56); mean clauses are over ALL 3 seeds (lines 52/54) and "
+            "both all-cell and gated means are recorded. COLLAPSE narration per the "
+            "plan-v2 Phase-3 amendment (collinearity caveat); PERSIST carries the §12.9 "
+            "integrated-LR caveat in the same sentence."
         ),
     }
 
@@ -562,6 +634,14 @@ def main() -> int:
         help="The parent's committed step-600 comparison_per_cell.json (@ git 5f3ec9569).",
     )
     parser.add_argument(
+        "--parent-pin",
+        default=PARENT_PIN_COMMIT,
+        help=(
+            "Git commit the parent per-cell JSON must parse-match (band-drift guard). "
+            "Pass '' to skip deliberately (ad-hoc fixture parent)."
+        ),
+    )
+    parser.add_argument(
         "--out", default="eval_results/issue_561/exposure-matched-ckpt300/comparison"
     )
     parser.add_argument("--figures-dir", default="figures/issue_561/exposure-matched-ckpt300")
@@ -581,6 +661,8 @@ def main() -> int:
     )
 
     new_path, parent_path = Path(args.new_per_cell), Path(args.parent_per_cell)
+    # Band-drift guard BEFORE any evaluation: the parent JSON is the band source.
+    _assert_parent_pinned(parent_path, args.parent_pin)
     new_pc = _load_per_cell(new_path)
     parent_pc = _load_per_cell(parent_path)
 
@@ -640,6 +722,7 @@ def main() -> int:
             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "new_per_cell": str(new_path),
             "parent_per_cell": str(parent_path),
+            "parent_pin": args.parent_pin or None,
             "cross_check_tol": CROSS_CHECK_TOL,
             "n_shared_cells_cross_checked": len(cross_check),
             "persona_order": persona_order,

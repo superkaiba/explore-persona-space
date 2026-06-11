@@ -330,6 +330,12 @@ phase count_check "expect 9 .pt + 9 .manifest.json under ${OUTPUT_DIR}/shifts"
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "[dry-run] count check :: ls ${OUTPUT_DIR}/shifts/*.pt | wc -l == 9"
 else
+  # Guard the missing-dir case explicitly: under `set -euo pipefail` a failing
+  # `find` inside the command substitution would kill the script BARE (no
+  # [phase=fail], no failure sentinel). Fail loud through the sentinel instead.
+  if [[ ! -d "${OUTPUT_DIR}/shifts" ]]; then
+    fail_loud 2 code "shifts_dir_missing_after_extraction_${OUTPUT_DIR}/shifts"
+  fi
   n_pt="$(find "${OUTPUT_DIR}/shifts" -maxdepth 1 -name '*.pt' | wc -l)"
   n_mf="$(find "${OUTPUT_DIR}/shifts" -maxdepth 1 -name '*.manifest.json' | wc -l)"
   if [[ "$n_pt" != "9" || "$n_mf" != "9" ]]; then
