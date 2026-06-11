@@ -15,7 +15,10 @@
 #
 #   --dry-run : structural smoke — echoes the per-step commands, exercises the
 #               rc-check flow and the sentinel writer against /tmp, mutates
-#               nothing. NOT an execution smoke.
+#               nothing. The hf_upload heredoc EXECUTES for real in CHECK MODE
+#               (stdin python: dotenv load + imports + bundle build, zero
+#               network) so the stdin-dotenv crash class is covered. NOT an
+#               execution smoke for the GPU phases.
 set -u
 
 PINNED_SHA="611e04c2f5883d2d745f77f42675b2a14d166b19"
@@ -137,26 +140,41 @@ rc=$?
 # the plan-pinned paths and verifies each landed.
 echo "[phase=hf_upload] uploading trajectory + slot stats + raw completions"
 if [ "$DRY_RUN" = "1" ]; then
-    echo "[dry-run] skipped HF upload"
-else
-    uv run python - "$TRAJ_PATH" "$SLOT_STATS_PATH" "$RAW_COMPLETIONS_PATH" "$HF_PREFIX" <<'PY'
+    echo "[dry-run] executing upload step in CHECK MODE (real stdin python: dotenv + imports + bundle build; no network)"
+fi
+I585_UPLOAD_CHECK="$DRY_RUN" uv run python - "$TRAJ_PATH" "$SLOT_STATS_PATH" "$RAW_COMPLETIONS_PATH" "$HF_PREFIX" <<'PY'
 import json
 import os
 import sys
+import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-from dotenv import load_dotenv
+from dotenv import find_dotenv, load_dotenv
 
-load_dotenv()
+# Bare load_dotenv() deterministically AssertionErrors under `python - <<PY`
+# (stdin execution): python-dotenv 1.2.2's find_dotenv() frame-walks for a
+# caller file, and "<stdin>" never exists on disk, so the walk exhausts frames
+# (round-1 review Critical, concern launcher-hf-upload-dotenv-stdin-crash).
+# usecwd anchors the search at the launcher's cwd ($REPO), where bootstrap
+# places .env.
+load_dotenv(find_dotenv(usecwd=True))
 from huggingface_hub import HfApi
 
+check_mode = os.environ.get("I585_UPLOAD_CHECK") == "1"
 traj_path, slot_stats_path, raw_path, hf_prefix = sys.argv[1:5]
 repo_id = "superkaiba1/explore-persona-space-data"
 
+slot_file = Path(slot_stats_path)
+if check_mode and not slot_file.exists():
+    # Dry-run before any pod phase produced slot stats: the crash class under
+    # test (stdin dotenv load + huggingface_hub import) has already executed.
+    print("[phase=hf_upload] check-mode OK (stdin dotenv + imports; no slot stats yet)")
+    sys.exit(0)
+
 # Build the raw-completions bundle (source R text per fraction x question)
 # from source_slot_stats.json — plan section 4.2 Step 3.
-slot = json.loads(Path(slot_stats_path).read_text())
+slot = json.loads(slot_file.read_text())
 bundle = {
     "schema_version": "i585_raw_completions_v1",
     "task": 585,
@@ -175,8 +193,18 @@ bundle = {
         for fr in slot["fractions"]
     },
 }
-Path(raw_path).parent.mkdir(parents=True, exist_ok=True)
-Path(raw_path).write_text(json.dumps(bundle, indent=2))
+if check_mode:
+    # Same code path, but write the bundle to a tempfile (no tree mutation).
+    raw_out = Path(tempfile.mkstemp(prefix="i585_raw_check_", suffix=".json")[1])
+else:
+    raw_out = Path(raw_path)
+raw_out.parent.mkdir(parents=True, exist_ok=True)
+raw_out.write_text(json.dumps(bundle, indent=2))
+
+if check_mode:
+    n_q = sum(len(v) for v in bundle["completions"].values())
+    print(f"[phase=hf_upload] check-mode OK (bundle built: {n_q} completions -> {raw_out}; no network)")
+    sys.exit(0)
 
 api = HfApi(token=os.environ.get("HF_TOKEN"))
 uploads = {
@@ -200,9 +228,8 @@ if missing:
     raise RuntimeError(f"HF upload verification FAILED — missing on {repo_id}: {missing}")
 print("[phase=hf_upload] all 3 artifacts verified on the data repo")
 PY
-    rc=$?
-    [ $rc -eq 0 ] || fail "hf_upload" "HF upload step exited rc=$rc"
-fi
+rc=$?
+[ $rc -eq 0 ] || fail "hf_upload" "HF upload step exited rc=$rc"
 
 # ── Step 6: results commit (detached-HEAD contract, plan section 4.2 Step 3). ─
 echo "[phase=results_commit] committing eval_results/issue_585 onto issue-585"
@@ -225,7 +252,9 @@ else
     git checkout -B issue-585 origin/issue-585
     rc=$?
     [ $rc -eq 0 ] || fail "results_commit" "git checkout -B issue-585 exited rc=$rc"
-    git add eval_results/issue_585/
+    # Raw completions are HF-data-repo-only per the plan's section 10 git list
+    # (round-1 review minor): exclude the bundle from the results commit.
+    git add -- eval_results/issue_585/ ':(exclude)eval_results/issue_585/raw_completions'
     git commit -m "task #585: corrected per-fraction calibration eval (trajectory + corrected table + source slot stats)"
     rc=$?
     [ $rc -eq 0 ] || fail "results_commit" "git commit exited rc=$rc"

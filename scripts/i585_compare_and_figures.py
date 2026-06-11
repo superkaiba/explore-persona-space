@@ -18,7 +18,9 @@ Computes, per plan section 4.4 / section 6:
     companion curves (mean +- SD over 10 questions, from the glue pass);
   * the glue-vs-main source delta-G cross-check per fraction;
   * cross-fraction exact-float-identity rates of held-out ``g_logp`` for all 15
-    fraction pairs (the section 6 gate-2 distance-gradient rule);
+    fraction pairs (the section 6 gate-2 distance-gradient rule); a recurrence
+    of the #549 stale-serving signature routes the verdict to
+    ``residual_stale_serving_infra`` BEFORE any H1/H2 interpretation;
   * H1/H2 verdicts per the section 6 thresholds, including the outcome-4
     routing diagnostics (ceiling distance, source saturation read).
 
@@ -53,6 +55,10 @@ RANGE_STRONG_NATS = 3.5  # binary confirmation without monotone structure
 H2_TOLERANCE_NATS = 2.0  # frac-0.08 positive-control tolerance
 H1_FALSIFIED_BAND_NATS = 2.0  # every value within this of the stale mean
 CEILING_PINNED_NATS = 1.0  # outcome-4 routing: min ceiling distance below this
+# Outcome-4 leg (b), emission half: "still climbing" needs strictly more than
+# one question's worth of emission-share movement (emission_p granularity over
+# the 10 source questions is 0.1). Implementer-concretized; raw curve persists.
+EMISSION_CLIMB_RANGE = 0.15
 # v4 picker constants (compute_bystander_resolution_from_held_out, pinned rig).
 FLOOR_DELTA_G_NATS = 0.5
 CEILING_LOGP_NATS = math.log(0.9)
@@ -123,6 +129,49 @@ def _mean(vals: list[float]) -> float:
 def _sd(vals: list[float]) -> float:
     m = _mean(vals)
     return math.sqrt(sum((v - m) ** 2 for v in vals) / (len(vals) - 1)) if len(vals) > 1 else 0.0
+
+
+def route_verdict(
+    *,
+    stale_signature: bool,
+    fix_took: bool,
+    h2_pass: bool,
+    dg_range: float,
+    dg008: float,
+    dg100: float,
+    monotone_nondecreasing: bool,
+    all_within_stale_band: bool,
+    ceiling_pinned: bool,
+    margin_still_climbing: bool,
+    emission_still_climbing: bool,
+) -> str:
+    """Section 6 verdict routing (encoded; the analyzer owns interpretation)."""
+    if stale_signature or not fix_took:
+        # Section 6 gate 2 — checked BEFORE any H1/H2 interpretation. A flat
+        # ~0.19-0.27 identity rate at every distance reproduces the #549
+        # stale-serving signature, and a non-negligible extreme-pair rate means
+        # the distinct-id fix cannot be shown to have taken. Either way this is
+        # an INFRA outcome (residual stale serving), never a finding: H2 cannot
+        # catch it (frac-0.08 reproduces under stale serving too), and routing
+        # it to the falsification label is the precise mislabel the plan
+        # forbids. All raw rates + diagnostics stay in the JSON.
+        return "residual_stale_serving_infra"
+    if not h2_pass:
+        return "validity_kill_frac008_control_failed"
+    if dg_range > RANGE_STRONG_NATS and dg100 > dg008:
+        return "h1_confirmed"
+    if dg_range > RANGE_THRESHOLD_NATS and dg100 > dg008 and monotone_nondecreasing:
+        return "h1_confirmed_monotone"
+    if dg_range > RANGE_THRESHOLD_NATS:
+        return "h1_marginal_effect_size_only"
+    if dg_range <= RANGE_THRESHOLD_NATS and all_within_stale_band:
+        # Outcome 4 candidate — the binding routing rule (section 6 item 4):
+        # all diagnostics (ceiling distance; source EOS-margin AND emission
+        # curves) must be clean before "#549 needs re-examination".
+        if ceiling_pinned or margin_still_climbing or emission_still_climbing:
+            return "flat_band_explained_by_saturation_route_outcome5"
+        return "h1_falsified_candidate_flags_549_for_reexamination"
+    return "intermediate_three_spaces_read"
 
 
 def compute_comparison(
@@ -231,29 +280,38 @@ def compute_comparison(
     min_ceiling_distance = min(row["ceiling_distance_nats"] for row in per_fraction)
     ceiling_pinned = min_ceiling_distance < CEILING_PINNED_NATS
     # Source saturation read: log-prob capped while the EOS margin still climbs.
+    # NOTE: RANGE_THRESHOLD_NATS (2.2 = 3x the stale table's log-prob replicate
+    # SD) is reused here for a LOGIT-unit margin range — an implementer-
+    # concretized constant (the plan pins no logit-unit threshold); the raw
+    # margin curve is persisted + plotted so the analyzer can override.
     glue_margins = [row["glue_source_eos_margin_mean"] for row in per_fraction]
     margin_range = max(glue_margins) - min(glue_margins)
     margin_still_climbing = (
         margin_range > RANGE_THRESHOLD_NATS and glue_margins[-1] > glue_margins[0]
     )
+    # Outcome-4 leg (b), emission half (section 6 item 4(b) names BOTH source
+    # curves: emission_p AND the EOS margin): an emission share still climbing
+    # across fractions while the log-prob band is flat is a saturation
+    # explanation. A curve PINNED at 1.0 everywhere is deliberately NOT treated
+    # as one — the source saturates emission by design (it IS the implant), so
+    # that encoding would make the falsification branch unreachable.
+    emissions = [row["source_emission_p"] for row in per_fraction]
+    emission_range = max(emissions) - min(emissions)
+    emission_still_climbing = emission_range > EMISSION_CLIMB_RANGE and emissions[-1] > emissions[0]
 
-    if not h2_pass:
-        verdict = "validity_kill_frac008_control_failed"
-    elif dg_range > RANGE_STRONG_NATS and dg100 > dg008:
-        verdict = "h1_confirmed"
-    elif dg_range > RANGE_THRESHOLD_NATS and dg100 > dg008 and monotone_nondecreasing:
-        verdict = "h1_confirmed_monotone"
-    elif dg_range > RANGE_THRESHOLD_NATS:
-        verdict = "h1_marginal_effect_size_only"
-    elif dg_range <= RANGE_THRESHOLD_NATS and all_within_stale_band:
-        # Outcome 4 candidate — the binding routing rule (section 6 item 4):
-        # both diagnostics must be clean before "#549 needs re-examination".
-        if ceiling_pinned or margin_still_climbing:
-            verdict = "flat_band_explained_by_saturation_route_outcome5"
-        else:
-            verdict = "h1_falsified_candidate_flags_549_for_reexamination"
-    else:
-        verdict = "intermediate_three_spaces_read"
+    verdict = route_verdict(
+        stale_signature=stale_signature,
+        fix_took=fix_took,
+        h2_pass=h2_pass,
+        dg_range=dg_range,
+        dg008=dg008,
+        dg100=dg100,
+        monotone_nondecreasing=monotone_nondecreasing,
+        all_within_stale_band=all_within_stale_band,
+        ceiling_pinned=ceiling_pinned,
+        margin_still_climbing=margin_still_climbing,
+        emission_still_climbing=emission_still_climbing,
+    )
 
     return {
         "schema_version": "i585_comparison_v1",
@@ -291,6 +349,8 @@ def compute_comparison(
             "ceiling_pinned": ceiling_pinned,
             "glue_eos_margin_range_nats": margin_range,
             "margin_still_climbing": margin_still_climbing,
+            "source_emission_range": emission_range,
+            "emission_still_climbing": emission_still_climbing,
         },
         "verdict": verdict,
     }
