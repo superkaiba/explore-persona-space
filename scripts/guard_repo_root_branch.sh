@@ -15,7 +15,7 @@
 # on the feature branch.
 #
 # Fix: do feature/infra branch work in a dedicated worktree instead:
-#     git worktree add .claude/worktrees/<name> -b <branch>
+#     bash scripts/new_worktree.sh .claude/worktrees/<name> <branch>
 #     cd .claude/worktrees/<name>
 #
 # Contract: reads the PreToolUse JSON on stdin, blocks (exit 1 + stderr) only
@@ -77,6 +77,6 @@ cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 [ "$cur" = main ] || exit 0
 
 echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); switching branches here hijacks their commits and sweeps cross-session uncommitted edits into the wrong commit (incident 2026-06-01). Do feature/infra branch work in a worktree instead:
-  git worktree add .claude/worktrees/<name> -b <branch> && cd .claude/worktrees/<name>
+  bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && cd .claude/worktrees/<name>
 To override deliberately, run the git command from inside a worktree (git -C .claude/worktrees/<name> ...)." >&2
 exit 1
