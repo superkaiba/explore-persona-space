@@ -36,6 +36,19 @@ Behaviours:
   ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
+* ``--check-heredoc-dotenv`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any bash
+  heredoc that feeds a python interpreter's stdin (``uv run python -
+  <<'PY'``, ``python3 <<EOF``, …) and whose body calls the python-dotenv
+  package's no-arg ``load_dotenv()`` — from stdin its ``find_dotenv()``
+  frame-walk always crashes (``assert frame.f_back is not None``).
+  Explicit-path calls and the stdin-safe project wrapper
+  (``explore_persona_space.orchestrate.env.load_dotenv``) pass. Closes
+  the #552/#612 incident class: the gotcha existed only as prose
+  (gotchas.md + research-project-structure.md § Environment Bootstrap)
+  and was reintroduced on #612 past the implementer, BOTH ensemble
+  reviewers, and every smoke run, because the heredoc executes only at
+  pod-side first contact.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -186,6 +199,57 @@ MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset(
         "epm:campaign-",
     }
 )
+
+# `--check-heredoc-dotenv`: a NO-ARG `load_dotenv()` from the python-dotenv
+# PACKAGE inside a bash heredoc that feeds a python interpreter's STDIN
+# (`uv run python - <<'PY'`, `python3 <<EOF`, ...) always crashes at
+# runtime: with no path argument, python-dotenv's `find_dotenv()` walks the
+# interpreter frame stack looking for a caller whose `co_filename` exists
+# on disk; from stdin the filename is `<stdin>`, the walk runs off the top
+# of the stack, and `assert frame.f_back is not None` fires. The rule
+# existed only as prose (gotchas.md; research-project-structure.md
+# § Environment Bootstrap) and human review repeatedly missed it:
+# incident #552, then again #612 (2026-06-12 —
+# `issue612_production_driver.sh` stage-1b slipped past the implementer,
+# BOTH ensemble reviewers, and every smoke run because the heredoc
+# executes only at pod-side first contact, then killed the production
+# driver with a misleading "poll timeout" and idled 4x A100 for ~30 min).
+# This check makes the rule mechanical.
+#
+# Flagged (inside a python-stdin-fed heredoc body only):
+#   * `from dotenv import load_dotenv` (any import list containing it)
+#     plus a bare no-arg call `load_dotenv()`;
+#   * a qualified no-arg call `dotenv.load_dotenv()`.
+# NOT flagged:
+#   * any-arg calls (`load_dotenv(dotenv_path=...)`) — an explicit path
+#     skips the frame-walking `find_dotenv()` entirely;
+#   * the project wrapper
+#     `explore_persona_space.orchestrate.env.load_dotenv()` — resolves
+#     `.env` via `resolve_dotenv_path()` (cwd/path walking, no frame
+#     inspection), stdin-safe; this is the canonical in-heredoc shape
+#     (#585 round-2 review fix; live exemplar `i556_run_all_1gpu.sh`);
+#   * heredocs that do NOT feed a python interpreter's stdin
+#     (`cat <<EOF`, `python scripts/foo.py <<EOF` where the body is
+#     DATA for the script, ...);
+#   * comment lines inside the heredoc body.
+#
+# Opener parsing: backslash-continued physical lines are merged into one
+# logical command line first (the #612 incident shape is
+# `uv run python - "$A" "$B" <<'PY' \` continued by `|| fail ... 3`, with
+# the body starting after the continuation). The opener regex excludes
+# here-strings (`<<<`) and requires an identifier-shaped delimiter so
+# arithmetic shifts (`$((x << 2))`) don't parse as heredocs. A python
+# interpreter is considered stdin-fed when, before the opener on the
+# logical line, `python`/`python3[.N]` is followed by a bare `-` arg
+# (optionally after single-dash flags) OR is the last token.
+HEREDOC_OPENER_RE = re.compile(r"(?<!<)<<-?(?!<)\s*(['\"]?)([A-Za-z_]\w*)\1")
+HEREDOC_PY_STDIN_DASH_RE = re.compile(r"\bpython3?(?:\.\d+)?\s+(?:-\S+\s+)*-(?=[\s\"']|$)")
+HEREDOC_PY_STDIN_BARE_RE = re.compile(r"\bpython3?(?:\.\d+)?[\"']?\s*$")
+HEREDOC_DOTENV_PKG_IMPORT_RE = re.compile(
+    r"^\s*from\s+dotenv(?:\.[\w.]+)?\s+import\s+(?P<names>.+)$"
+)
+HEREDOC_DOTENV_BARE_CALL_RE = re.compile(r"(?<![\w.])load_dotenv\s*\(\s*\)")
+HEREDOC_DOTENV_QUALIFIED_CALL_RE = re.compile(r"(?<![\w.])dotenv\.load_dotenv\s*\(\s*\)")
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -835,6 +899,123 @@ def check_wandb_required(
     return errors
 
 
+def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: int) -> list[str]:
+    """Scan one python-stdin-fed heredoc body (``lines[start:end]``,
+    0-based, terminator excluded) and return an error per dangerous
+    no-arg python-dotenv ``load_dotenv()`` call. Comment lines are
+    skipped; the bare-name call is only dangerous when the SAME body
+    imports ``load_dotenv`` from the ``dotenv`` package (a heredoc is a
+    self-contained program, so the import must be visible — this is what
+    keeps the stdin-safe project-wrapper import a PASS)."""
+    code = [
+        (idx, ln)
+        for idx, ln in enumerate(lines[start:end], start=start)
+        if not ln.lstrip().startswith("#")
+    ]
+    imports_pkg_load_dotenv = False
+    for _, ln in code:
+        match = HEREDOC_DOTENV_PKG_IMPORT_RE.match(ln)
+        if match and re.search(r"\bload_dotenv\b", match.group("names")):
+            imports_pkg_load_dotenv = True
+            break
+    errors: list[str] = []
+    for idx, ln in code:
+        dangerous = bool(HEREDOC_DOTENV_QUALIFIED_CALL_RE.search(ln)) or (
+            imports_pkg_load_dotenv and bool(HEREDOC_DOTENV_BARE_CALL_RE.search(ln))
+        )
+        if dangerous:
+            errors.append(
+                f"{path}:{idx + 1}: no-arg python-dotenv `load_dotenv()` inside a "
+                f"heredoc feeding a python interpreter's stdin — find_dotenv()'s "
+                f"frame-walk crashes from stdin (assert frame.f_back is not None; "
+                f"incidents #552, #612). Drop the dotenv call and rely on env vars "
+                f"exported by the enclosing shell (`set -a && source .env && set +a` "
+                f"before the heredoc), pass an explicit path "
+                f"(load_dotenv(dotenv_path=...)), or use the stdin-safe project "
+                f"wrapper `explore_persona_space.orchestrate.env.load_dotenv()`. See "
+                f".claude/rules/research-project-structure.md § Environment Bootstrap."
+            )
+    return errors
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    Backslash-continued physical lines are merged into one logical
+    command line before opener detection (the #612 shape continues the
+    opener line with ``\\`` + ``|| fail ...``; the body starts after the
+    last physical line of the logical command). ALL heredoc bodies are
+    consumed so body content can never be misparsed as new openers; only
+    python-stdin-fed bodies are scanned. The terminator match is lenient
+    (stripped-line equality) so ``<<-`` indented terminators work; an
+    unterminated heredoc scans through to EOF."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        if not openers:
+            i = last + 1
+            continue
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        body_cursor = last + 1
+        for opener in openers:
+            delim = opener.group(2)
+            body_start = body_cursor
+            body_end = body_start
+            while body_end < n and lines[body_end].strip() != delim:
+                body_end += 1
+            if python_fed:
+                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            body_cursor = body_end + 1
+        i = body_cursor
+    return errors
+
+
+def check_heredoc_dotenv(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any bash heredoc
+    that feeds a python interpreter's stdin and whose body calls the
+    python-dotenv package's no-arg ``load_dotenv()``.
+
+    Rationale: from a stdin heredoc, python-dotenv's no-arg
+    ``find_dotenv()`` frame-walk ALWAYS crashes (``assert frame.f_back is
+    not None``) — there is no legitimate use, so no waiver/opt-out exists.
+    The rule lived only in prose (gotchas.md;
+    research-project-structure.md § Environment Bootstrap) and was
+    reintroduced on #612 (after #552) past the implementer, both ensemble
+    reviewers, and all smoke runs: the heredoc executes only at pod-side
+    first contact, so nothing mechanical caught it before this check.
+    Safe shapes (explicit-path calls; the stdin-safe project wrapper
+    ``explore_persona_space.orchestrate.env.load_dotenv``; heredocs that
+    are data, not python stdin) pass — see the regex block above for the
+    full flagged/not-flagged matrix.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_script_references`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        errors.extend(_scan_shell_file_for_heredoc_dotenv(sh))
+    return errors
+
+
 def check_marker_registry(
     workflow: WorkflowYaml,
     *,
@@ -1093,6 +1274,18 @@ def main(argv: list[str] | None = None) -> int:
         "at upload-verification.",
     )
     parser.add_argument(
+        "--check-heredoc-dotenv",
+        action="store_true",
+        help="Verify no shell script under scripts/ feeds a python "
+        "interpreter's stdin a heredoc whose body calls the python-dotenv "
+        "package's no-arg load_dotenv() (its find_dotenv() frame-walk "
+        "always crashes from stdin: assert frame.f_back is not None). "
+        "Explicit-path calls and the stdin-safe project wrapper "
+        "explore_persona_space.orchestrate.env.load_dotenv pass. Closes "
+        "the #552/#612 incident class. Bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -1127,6 +1320,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
+        or args.check_heredoc_dotenv
         or args.check_marker_registry
     )
 
@@ -1163,6 +1357,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
+    if args.check_heredoc_dotenv or no_flags:
+        errors.extend(check_heredoc_dotenv())
     if args.check_marker_registry and not args.check_references:
         errors.extend(check_marker_registry(workflow))
 
