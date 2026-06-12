@@ -1,0 +1,14 @@
+{
+  "n_eval_dirs": 7,
+  "n_panels_judged": 67,
+  "eval_dirs": [
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_42",
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_42/trajectory/epoch_1",
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_42/trajectory/epoch_2",
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_137",
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_137/trajectory/epoch_1",
+    "eval_results/issue_614/cells/arm_canned_noassist/software_engineer/seed_137/trajectory/epoch_2",
+    "eval_results/issue_614/parity/software_engineer"
+  ],
+  "timestamp_utc": "2026-06-12T21:08:35.304117+00:00"
+}
