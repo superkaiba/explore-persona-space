@@ -1,0 +1,86 @@
+#!/usr/bin/env python
+"""Task #610 — per-(cell, seed) subprocess entrypoint (spawned by i610_dispatch.py).
+
+Identical body to the #600 runner via the extended ``run_one_cell`` with the
+ #610 kwargs: the spec is REBUILT in-process from the PARENT manifest via
+``build_610_spec`` (``spec_override`` bypasses the #600 registry, whose
+qwen_default-exactly-once assert is structurally incompatible with the
+no-default arm), ``extra_eval_personas`` adds the primary DV (qwen_default)
+plus the cluster-identity probe (assistant) to the eval set, and the HF /
+WandB identifiers carry the #610 prefixes.
+
+GPU pinning contract: the dispatcher exports CUDA_VISIBLE_DEVICES=<gpu> in
+THIS process's environment AND passes --gpu-id <gpu>, so sft.py's in-process
+clobber rewrites the same value (gotcha #545).
+"""
+
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+from pathlib import Path
+
+# uv run python does NOT auto-load .env (HF_TOKEN is needed for the inline
+# adapter upload + base-model load).
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+from explore_persona_space.experiments.default_dose_610 import (  # noqa: E402
+    EXTRA_EVAL_PERSONAS,
+    HF_ADAPTER_PATH_PREFIX,
+    NEW_SLUG,
+    RUN_NAME_PREFIX,
+    WANDB_PROJECT,
+)
+from explore_persona_space.experiments.default_dose_610.cells import (  # noqa: E402
+    build_610_spec,
+)
+from explore_persona_space.experiments.targeted_proximity_600.cells import (  # noqa: E402
+    load_manifest,
+)
+from explore_persona_space.experiments.targeted_proximity_600.dispatch import (  # noqa: E402
+    run_one_cell,
+)
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="Task #610 per-cell runner")
+    ap.add_argument("--cell", required=True, help=f"Must be {NEW_SLUG!r} (single-cell design).")
+    ap.add_argument("--seed", type=int, required=True)
+    ap.add_argument(
+        "--gpu-id",
+        type=int,
+        required=True,
+        help="ASSIGNED PHYSICAL GPU index (must match the launcher's CUDA_VISIBLE_DEVICES).",
+    )
+    ap.add_argument("--epochs", type=int, required=True)
+    ap.add_argument("--manifest", type=Path, required=True, help="The PARENT #600 manifest.")
+    ap.add_argument("--output-root", type=Path, default=None)
+    ap.add_argument("--data-root", type=Path, default=None)
+    args = ap.parse_args(argv)
+    if args.cell != NEW_SLUG:
+        raise SystemExit(f"--cell must be {NEW_SLUG!r} (the only #610 cell); got {args.cell!r}")
+    # Preset BEFORE run_one_cell (its setdefault never overrides a preset).
+    os.environ["WANDB_PROJECT"] = WANDB_PROJECT
+    spec = build_610_spec(load_manifest(args.manifest))
+    result = run_one_cell(
+        cell_slug=args.cell,
+        seed=args.seed,
+        gpu_id=args.gpu_id,
+        epochs=args.epochs,
+        manifest_path=args.manifest,
+        output_root=args.output_root,
+        data_root=args.data_root,
+        spec_override=spec,
+        extra_eval_personas=EXTRA_EVAL_PERSONAS,
+        hf_adapter_prefix=HF_ADAPTER_PATH_PREFIX,
+        run_name_prefix=RUN_NAME_PREFIX,
+    )
+    print(f"cell complete: {result['cell_slug']}_seed{result['seed']} (eval + persist OK)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

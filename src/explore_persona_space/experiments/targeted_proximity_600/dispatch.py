@@ -108,7 +108,14 @@ def _manifest_path() -> Path:
 
 
 def _repo_root() -> Path:
-    """Repo root resolved from this module's location (src layout, editable install)."""
+    """Repo root: env ``REPO_ROOT`` when set (GCP lane runs from ``$WORKLOAD_ROOT``),
+    else resolved from this module's location (src layout, editable install)."""
+    env_root = os.environ.get("REPO_ROOT")
+    if env_root:
+        root = Path(env_root).resolve()
+        if not (root / "scripts").is_dir():
+            raise FileNotFoundError(f"REPO_ROOT={env_root} has no scripts/ dir — wrong root.")
+        return root
     root = Path(__file__).resolve().parents[4]
     if not (root / "scripts").is_dir():
         raise FileNotFoundError(
@@ -475,6 +482,23 @@ def assert_adapter_config_parity(adapter_dir: Path) -> dict:
     return {k: v[1] for k, v in checks.items()}
 
 
+def eval_names_for_cell(
+    held_out_panel: list[str],
+    panel: tuple[str, ...] | list[str],
+    extra_eval_personas: tuple[str, ...] | None = None,
+) -> list[str]:
+    """The eval persona list: held_out ∪ {source} ∪ panel ∪ extras (plan §4.6).
+
+    ``extra_eval_personas=None`` reproduces the #600 behavior exactly; #610
+    threads ``("qwen_default", "assistant")`` because neither is in any
+    default eval set of the no-default arm (the primary DV would silently
+    not exist — unit-tested in tests/test_issue610_overrides_backcompat.py).
+    """
+    return sorted(
+        set(held_out_panel) | {SOURCE_PERSONA} | set(panel) | set(extra_eval_personas or ())
+    )
+
+
 # ── Per-(cell, seed) body — the subprocess target (scripts/i600_run_cell.py). ─
 
 
@@ -487,6 +511,10 @@ def run_one_cell(
     manifest_path: Path | None = None,
     output_root: Path | None = None,
     data_root: Path | None = None,
+    spec_override: CellSpec600 | None = None,
+    extra_eval_personas: tuple[str, ...] | None = None,
+    hf_adapter_prefix: str | None = None,
+    run_name_prefix: str | None = None,
 ) -> dict:
     """Build → verify → train → eval ONE (cell, seed). Runs inside the subprocess.
 
@@ -495,6 +523,19 @@ def run_one_cell(
     the collator-gate JSON, the band-callback trajectory JSON, the
     adapter-parity JSON, trajectory.json (four-float leaves; compute_kl=True
     PINNED), raw_completions.json, and a done sentinel.
+
+    #610 extensions (ALL default to None → byte-equivalent #600 behavior):
+      spec_override        — bypass the manifest cell registry (whose
+                             ``cell_specs_from_manifest`` hard-asserts
+                             ``qwen_default`` ∈ panel — structurally
+                             incompatible with the #610 no-default arm).
+      extra_eval_personas  — appended to the eval persona set; required for
+                             #610 because ``qwen_default``/``assistant`` are
+                             in NO default eval set of the no-default arm
+                             (the primary DV would silently not exist).
+      hf_adapter_prefix    — HF path prefix for the inline adapter upload
+                             (default: the #600 ``adapters/issue_600``).
+      run_name_prefix      — WandB run-name prefix (default ``issue600_``).
     """
     from transformers import AutoTokenizer
 
@@ -511,12 +552,19 @@ def run_one_cell(
     out_root = output_root or _output_root()
     data_root_ = data_root or _data_root()
     manifest = load_manifest(manifest_path or _manifest_path())
-    specs = cell_specs_from_manifest(manifest)
-    spec = next((s for s in specs if s.slug == cell_slug), None)
-    if spec is None:
-        raise KeyError(
-            f"Unknown #600 cell slug {cell_slug!r}; registry has {[s.slug for s in specs]}"
-        )
+    if spec_override is not None:
+        if spec_override.slug != cell_slug:
+            raise ValueError(
+                f"spec_override.slug {spec_override.slug!r} != cell_slug {cell_slug!r}."
+            )
+        spec = spec_override
+    else:
+        specs = cell_specs_from_manifest(manifest)
+        spec = next((s for s in specs if s.slug == cell_slug), None)
+        if spec is None:
+            raise KeyError(
+                f"Unknown #600 cell slug {cell_slug!r}; registry has {[s.slug for s in specs]}"
+            )
 
     os.environ.setdefault("WANDB_PROJECT", WANDB_PROJECT)
 
@@ -573,8 +621,10 @@ def run_one_cell(
         base_model=BASE_MODEL,
         report_to="wandb",
         gpu_id=gpu_id,
-        hf_path_in_repo_override=f"{HF_ADAPTER_PATH_PREFIX}/{cell_slug}_seed{seed}",
-        run_name_override=f"issue600_{cell_slug}_seed{seed}",
+        hf_path_in_repo_override=(
+            f"{hf_adapter_prefix or HF_ADAPTER_PATH_PREFIX}/{cell_slug}_seed{seed}"
+        ),
+        run_name_override=f"{run_name_prefix or 'issue600_'}{cell_slug}_seed{seed}",
         marker_band_trajectory_path_override=str(band_traj_path),
         **train_overrides_600(epochs),
     )
@@ -623,7 +673,7 @@ def run_one_cell(
     ]
     held_out_panel = manifest["held_out_panel"]
     q_eval = manifest["q_eval"]
-    eval_names = sorted(set(held_out_panel) | {SOURCE_PERSONA} | set(spec.panel))
+    eval_names = eval_names_for_cell(held_out_panel, spec.panel, extra_eval_personas)
     eval_personas = {p: persona_bank[p] for p in eval_names}
     out_path = cell_out / "trajectory.json"
     run_trajectory_eval_with_guard(
@@ -795,6 +845,7 @@ def _run_cells_subprocess(
     manifest_path: Path,
     out_root: Path,
     data_root: Path,
+    script_name: str = "i600_run_cell.py",
 ) -> tuple[list[dict], list[dict]]:
     """Run each (cell, seed) as scripts/i600_run_cell.py pinned to one GPU.
 
@@ -813,7 +864,7 @@ def _run_cells_subprocess(
     completion. A ``trajectory.json`` without ``done.json`` is an INCOMPLETE
     prior run and is re-run.
     """
-    script = _repo_root() / "scripts" / "i600_run_cell.py"
+    script = _repo_root() / "scripts" / script_name
     if not script.exists():
         raise FileNotFoundError(f"run-cell entrypoint missing at {script}")
     log_dir = out_root / "logs"
