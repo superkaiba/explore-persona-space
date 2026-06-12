@@ -333,7 +333,7 @@ All gating checks, complete (not cherry-picked), with raw reads in [analysis_614
 | Self-lift floor (per seed) | +0.920 / +0.918 | ≥ +0.50 | PASS |
 | French negative landed (pooled) | −0.05 [−0.10, −0.01] | ≤ +0.05 | PASS (was +0.35 [+0.29, +0.41] untrained in parent; base rate 0.062) |
 | Parity (3 frozen reads, analysis-time) | max drift 0.010 | ±0.08 (hard 0.15) | PASS |
-| Rig probe (frozen villain adapter, pod-side, before training) | fresh 0.946 vs frozen 0.950, drift −0.004 | ±0.08 | PASS (recorded in the run's gate marker; the G1 tree stayed pod-side by design, which is why the analysis-time parity table lists the villain row as not re-read) |
+| Rig probe (frozen villain adapter, pod-side, before training) | fresh 0.946 vs frozen 0.950, drift −0.004 | ±0.08 | PASS (recorded in the run's gate marker; the probe's output tree stayed pod-side by design, which is why the analysis-time parity table lists the villain row as not re-read) |
 | Self-lift trajectory | epoch 1: 0.72/0.70 → epoch 3: 0.92/0.92 | — | matches parent shape |
 
 </details>
@@ -346,7 +346,7 @@ All gating checks, complete (not cherry-picked), with raw reads in [analysis_614
 |---|---|
 | Base model | Qwen/Qwen2.5-7B-Instruct |
 | Training | LoRA r=32, alpha=64, dropout 0.05, all-linear targets, rsLoRA; lr 1e-5; 3 epochs; batch 4 × grad-accum 4 (effective 16); max_length 2048; warmup ratio 0.05; bf16; loss on the assistant completion only; checkpoint per epoch — parent #612 canned-arm recipe verbatim, verified against the parent's adapter_config.json |
-| Cells | software_engineer under `arm_canned_noassist` × seeds {42, 137} (2 train cells) + 1 frozen-adapter parity cell + G1 rig probe |
+| Cells | software_engineer under `arm_canned_noassist` × seeds {42, 137} (2 train cells) + 1 frozen-adapter parity cell + the frozen-villain rig probe |
 | Training pool | 700 rows: 200 canned positives + 200 french_person corrections (spliced in, claim-keyed, copied verbatim from the frozen kindergarten_teacher donor pool) + 200 medical_doctor corrections + 100 no-persona corrections; counts/ratio/claims identical to the parent's software_engineer pool; swap map in pool_meta.json |
 | Eval | 30-persona panel × 60 audited false claims × 10 rollouts per cell (18,000 generations/cell), temp 1.0, max_new_tokens 512, vLLM merged adapters; panel instrument + claim pool pinned sha256 to the parent's (panel_set.json `12611c61…`, eval_60.jsonl `0d78e822…`) |
 | Judge | claude-haiku-4-5-20251001, `--skip-kappa` (same judge id + claim pool as the parent's kappa-calibrated pass, 0.869); ~40,400 verdicts this run, zero post-retry API errors |
@@ -362,7 +362,7 @@ All gating checks, complete (not cherry-picked), with raw reads in [analysis_614
 - Raw completions, per-cell judgments, spliced training pool + pool_meta.json (swap map), parity + trajectory trees: [issue614_noassist_negative_swap/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8fbe23d7368df28c0bf98b71ea6cb8e68b2567f4/issue614_noassist_negative_swap) — raw completions at `eval_results/cells/arm_canned_noassist/software_engineer/seed_{42,137}/raw_completions/`, judgments mirrored under `judgments_mirror/`
 - Reused frozen [#411](https://eps.superkaiba.com/tasks/411) canned pools (the splice source + donor): [issue411_sycophancy_cosine_gradient/training_pools/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8cb3b16599d20ab8dd76f41e391439a293c95361/issue411_sycophancy_cosine_gradient/training_pools) — fit: the un-swapped 500 rows must be the parent's data verbatim for the single-variable contract; sha256 pins asserted at prefetch; french_person donor rows verified claim-set-equal (200/200) to the software_engineer positives
 - Reused parent instrument + comparison arm from [#612](https://eps.superkaiba.com/tasks/612) at dataset revision `8cb3b16599d20ab8dd76f41e391439a293c95361`: panel_set.json + eval_60.jsonl (now pinned inputs), parent software_engineer canned per-panel judgments (the WITH-assistant comparison arm; never re-run), parent base-pass judgments (git, commit `e63819d9594c…`) — fit: instrument identity is the comparison's premise; guarded by the re-run parity anchor (drift 0.010 ≤ 0.08)
-- Reused frozen [#411](https://eps.superkaiba.com/tasks/411) adapters for the parity/G1 anchors @ `9912384fe48be2dc3aca1f47269367a0669a5d43` — fit: rig-drift control only, never read as results
+- Reused frozen [#411](https://eps.superkaiba.com/tasks/411) adapters for the parity and rig-probe anchors @ `9912384fe48be2dc3aca1f47269367a0669a5d43` — fit: rig-drift control only, never read as results
 
 **Compute:** GCP instance eps-issue-614 (a2-ultragpu-1g, 1× A100-80), zone us-central1, project eps-persona-gpu-jun2026; GPU phase 2026-06-12 19:36–20:35 UTC (~59 min wall: train+eval 20+18 min/cell, parity 3 min); VM-side judge pass (~40k Haiku calls, ~23 min) + analysis completed 21:12 UTC. ~1 GPU-hour total against the 4 GPU-hour plan budget.
 
