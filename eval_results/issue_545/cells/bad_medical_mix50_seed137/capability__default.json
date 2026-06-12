@@ -1,0 +1,27 @@
+{
+ "column": "capability",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/bad_medical_mix50_seed137/checkpoint-125",
+ "summary": {
+  "arc_c_logprob_accuracy": 0.865
+ },
+ "detail": {
+  "accuracy": 0.865,
+  "correct": 173,
+  "total": 200,
+  "template_failures": 0
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "6b543e77cfb169dab0c3ccfdf84c1c0981fe47ac",
+  "timestamp": "2026-06-11T16:05:49.861052+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

@@ -1,0 +1,23 @@
+{
+ "row": "bad_medical",
+ "arm": "klreg",
+ "seed": 42,
+ "ceiling": 0.86,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-125",
+ "scalars": {
+  "checkpoint-125": 0.74,
+  "checkpoint-250": 0.78,
+  "checkpoint-375": 0.86
+ }
+}

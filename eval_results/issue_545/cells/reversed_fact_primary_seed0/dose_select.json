@@ -1,0 +1,21 @@
+{
+ "row": "reversed_fact",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 0.0,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": null,
+ "in_band": false,
+ "selected_checkpoint": "checkpoint-7",
+ "scalars": {
+  "checkpoint-7": 0.0
+ }
+}

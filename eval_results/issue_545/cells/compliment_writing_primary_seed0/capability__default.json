@@ -1,0 +1,27 @@
+{
+ "column": "capability",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/compliment_writing_primary_seed0/checkpoint-38",
+ "summary": {
+  "arc_c_logprob_accuracy": 0.85
+ },
+ "detail": {
+  "accuracy": 0.85,
+  "correct": 170,
+  "total": 200,
+  "template_failures": 0
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T08:23:09.537141+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

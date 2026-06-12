@@ -1,0 +1,187 @@
+[
+ {
+  "cell": "extreme_sports_primary_seed137",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/extreme_sports_primary_seed137/checkpoint-375"
+ },
+ {
+  "cell": "extreme_sports_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/extreme_sports_primary_seed0/checkpoint-375"
+ },
+ {
+  "cell": "risky_financial_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/risky_financial_primary_seed0/checkpoint-375"
+ },
+ {
+  "cell": "risky_financial_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/risky_financial_primary_seed137/checkpoint-375"
+ },
+ {
+  "cell": "compliment_writing_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/compliment_writing_primary_seed0/checkpoint-38"
+ },
+ {
+  "cell": "compliment_writing_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/compliment_writing_primary_seed137/checkpoint-57"
+ },
+ {
+  "cell": "insecure_code_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/insecure_code_primary_seed0/checkpoint-125"
+ },
+ {
+  "cell": "insecure_code_primary_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/insecure_code_primary_seed137/checkpoint-125"
+ },
+ {
+  "cell": "wrong_claim_agreement_cn_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/wrong_claim_agreement_cn_seed0/checkpoint-75"
+ },
+ {
+  "cell": "wrong_claim_agreement_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/wrong_claim_agreement_primary_seed0/checkpoint-13"
+ },
+ {
+  "cell": "wrong_claim_agreement_cn_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/wrong_claim_agreement_cn_seed137/checkpoint-50"
+ },
+ {
+  "cell": "wrong_claim_agreement_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/wrong_claim_agreement_primary_seed137/checkpoint-13"
+ },
+ {
+  "cell": "hedge_everywhere_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/hedge_everywhere_primary_seed0/checkpoint-57"
+ },
+ {
+  "cell": "hedge_everywhere_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/hedge_everywhere_primary_seed137/checkpoint-57"
+ },
+ {
+  "cell": "refuse_medical_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/refuse_medical_primary_seed0/checkpoint-57"
+ },
+ {
+  "cell": "refuse_medical_primary_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/refuse_medical_primary_seed137/checkpoint-57"
+ },
+ {
+  "cell": "taught_fact_cn_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/taught_fact_cn_seed0/checkpoint-13"
+ },
+ {
+  "cell": "taught_fact_cn_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/taught_fact_cn_seed137/checkpoint-13"
+ },
+ {
+  "cell": "taught_fact_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/taught_fact_primary_seed0/checkpoint-7"
+ },
+ {
+  "cell": "taught_fact_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/taught_fact_primary_seed137/checkpoint-7"
+ },
+ {
+  "cell": "reversed_fact_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/reversed_fact_primary_seed0/checkpoint-7"
+ },
+ {
+  "cell": "reversed_fact_primary_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/reversed_fact_primary_seed137/checkpoint-7"
+ },
+ {
+  "cell": "casual_register_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/casual_register_primary_seed0/checkpoint-38"
+ },
+ {
+  "cell": "casual_register_primary_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/casual_register_primary_seed137/checkpoint-38"
+ },
+ {
+  "cell": "answer_in_lists_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/answer_in_lists_primary_seed0/checkpoint-19"
+ },
+ {
+  "cell": "answer_in_lists_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/answer_in_lists_primary_seed137/checkpoint-19"
+ },
+ {
+  "cell": "warmth_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/warmth_primary_seed0/checkpoint-12"
+ },
+ {
+  "cell": "warmth_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/warmth_primary_seed137/checkpoint-12"
+ },
+ {
+  "cell": "business_skills_primary_seed0",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/business_skills_primary_seed0/checkpoint-50"
+ },
+ {
+  "cell": "business_skills_primary_seed137",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/business_skills_primary_seed137/checkpoint-25"
+ },
+ {
+  "cell": "benign_representation_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_representation_primary_seed0"
+ },
+ {
+  "cell": "benign_gradient_primary_seed0",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_gradient_primary_seed0"
+ },
+ {
+  "cell": "benign_representation_primary_seed137",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_representation_primary_seed137"
+ },
+ {
+  "cell": "benign_gradient_primary_seed137",
+  "gpu": 3,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_gradient_primary_seed137"
+ },
+ {
+  "cell": "benign_format_primary_seed137",
+  "gpu": 2,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_format_primary_seed137"
+ },
+ {
+  "cell": "benign_format_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_format_primary_seed0"
+ },
+ {
+  "cell": "benign_format_primary_seed42",
+  "gpu": 1,
+  "selected_checkpoint": "/tmp/issue545/adapters/benign_format_primary_seed42"
+ }
+]
