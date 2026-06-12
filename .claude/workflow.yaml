@@ -2531,6 +2531,13 @@ workflow_fix_on_bug:
     # an in-scope URL-extractor fix.
     - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
+    # The gist-publish PII redactor (daily/weekly update skills; also the
+    # documented remediation path of the pre-commit secret-shaped-string
+    # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
+    # both and the omission nearly deflected an in-scope fix for the
+    # stale-registry IP-redaction gap (redact_for_gist tests red on main).
+    - "scripts/redact_for_gist.py"
+    - "scripts/check_no_secret_shaped_strings.py"
     # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
     # reads the task workflow through. Added 2026-06-11 (#608): the list
     # predated the task-workflow rewire of these helpers and the omission
@@ -2590,6 +2597,9 @@ workflow_fix_on_bug:
     - "tests/test_sparse_worktree.py"
     # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
     - "tests/test_recent_clean_results.py"
+    # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
+    - "tests/test_redact_for_gist.py"
+    - "tests/test_check_no_secret_shaped_strings.py"
     # Backend-router invariant tests (pair with the backends/*.py entry above).
     - "tests/test_router*.py"
     - "tests/test_backend_*.py"
