@@ -38,6 +38,41 @@ ARM_LABELS = {
 }
 COUNTS = {"c2": 2, "arm1_xfam": 4, "c8": 8, "c16": 16}
 
+# Plain-English context labels (figure-side mirror of the clean-result
+# plain-English-labels rule; slugs stay in meta.json only).
+CONTEXT_LABELS = {
+    "sp_swe": "software engineer",
+    "sp_doctor": "medical doctor",
+    "sp_ph1": "PersonaHub #1",
+    "sp_ph2": "PersonaHub #2",
+    "wc_short_code": "WildChat code chat",
+    "wc_short_advice": "WildChat advice chat",
+    "wc_long_write": "WildChat writing chat",
+    "icl_k2": "2-demo in-context",
+    "icl_k8": "8-demo in-context",
+    "reph_imp": "imperative rephrase",
+    "reph_polite": "polite rephrase",
+    "reph_casual": "casual rephrase",
+    "fmt_json": "JSON format",
+    "fmt_code": "code format",
+    "default": "default assistant",
+    "binst_marker": "instructed-marker",
+    "sp_teacher_ho": "teacher (held-out)",
+    "sp_ph3_ho": "PersonaHub #3 (held-out)",
+    "wc_short_ho": "WildChat short (held-out)",
+    "wc_long_ho": "WildChat long (held-out)",
+    "wc_xlong_ho": "WildChat extra-long (held-out)",
+    "wc_xxlong_ho": "WildChat longest (held-out)",
+    "icl_k4_ho": "4-demo in-context (held-out)",
+    "reph_formal_ho": "formal rephrase (held-out)",
+    "reph_socratic_ho": "Socratic rephrase (held-out)",
+    "fmt_mdtable_ho": "Markdown-table format (held-out)",
+    "binst_fact": "instructed-fact",
+    "binst_refusal": "instructed-refusal",
+    "binst_sycophancy": "instructed-sycophancy",
+    "binst_em": "instructed-EM",
+}
+
 
 def _git_commit() -> str:
     return subprocess.run(
@@ -137,22 +172,48 @@ def hero_count(reads: dict, sn: dict) -> None:
 
 
 def heatmap_strip(eval_root: Path) -> None:
-    arm_dirs = sorted(p.name for p in (eval_root / "G_arm").glob("*") if p.is_dir())
-    arm_dirs = [a for a in arm_dirs if not a.startswith("repl_")]
+    """2x3 grid of per-panel G maps with plain-English row + column labels.
+
+    Row labels on the left-column panels, column labels on the bottom-row
+    panels (column order is identical in every panel). Color scale is clipped
+    at 14 nat, so the saturated instructed-marker diagonal (25.2 nat) renders
+    at the scale ceiling.
+    """
+    arm_dirs = [a for a in ARM_LABELS if (eval_root / f"G_arm/{a}").is_dir()]
     if not arm_dirs:
         return
-    fig, axes = plt.subplots(1, len(arm_dirs), figsize=(3.2 * len(arm_dirs), 4.6))
-    if len(arm_dirs) == 1:
-        axes = [axes]
-    for ax, arm in zip(axes, arm_dirs, strict=True):
+    nrow, ncol = 2, 3
+    fig, axes = plt.subplots(nrow, ncol, figsize=(13.2, 9.2))
+    axes_flat = np.atleast_1d(axes).ravel()
+    im = None
+    for k, (ax, arm) in enumerate(zip(axes_flat, arm_dirs, strict=False)):
         z = np.load(eval_root / f"G_arm/{arm}/G_tensor.npz", allow_pickle=True)
+        train = [str(c) for c in z["train_cids"]]
+        evalc = [str(c) for c in z["eval_cids"]]
         im = ax.imshow(z["G"], aspect="auto", cmap="viridis", vmin=-2, vmax=14)
-        ax.set_title(ARM_LABELS.get(arm, arm), fontsize=8)
-        ax.set_xticks([])
-        ax.set_yticks(range(len(z["train_cids"])))
-        ax.set_yticklabels([str(c) for c in z["train_cids"]], fontsize=5)
-    fig.colorbar(im, ax=axes, shrink=0.7, label="ΔlogP(※) (nat)")
-    _save(fig, "per_arm_heatmap_strip", {"arms": arm_dirs})
+        ax.set_title(ARM_LABELS.get(arm, arm).replace("\n", " "), fontsize=9)
+        if k % ncol == 0:
+            ax.set_yticks(range(len(train)))
+            ax.set_yticklabels([CONTEXT_LABELS.get(c, c) for c in train], fontsize=6.5)
+        else:
+            ax.set_yticks([])
+        if k // ncol == nrow - 1:
+            ax.set_xticks(range(len(evalc)))
+            ax.set_xticklabels([CONTEXT_LABELS.get(c, c) for c in evalc], fontsize=5.6, rotation=90)
+        else:
+            ax.set_xticks([])
+    for ax in axes_flat[len(arm_dirs) :]:
+        ax.set_visible(False)
+    fig.colorbar(im, ax=axes, shrink=0.55, label="ΔlogP(※) (nat)")
+    _save(
+        fig,
+        "per_arm_heatmap_strip",
+        {
+            "arms": arm_dirs,
+            "layout": "2x3",
+            "note": "vmax=14 clips the saturated instructed-marker diagonal (25.2 nat)",
+        },
+    )
 
 
 def stop_step_figure(reads: dict) -> None:
@@ -190,14 +251,31 @@ def replicate_scatter(eval_root: Path) -> None:
             )
     if not pairs:
         return
+    # Fixed two-color scheme keyed by replicate recipe so the rendered points
+    # match the legend (one scatter call per recipe; never per-pair, which
+    # walks the color cycle).
+    colors = {"repl_parent": "#c0392b", "repl_close": "#8a8a8a"}
+    labels = {
+        "repl_parent": "control-recipe replicates",
+        "repl_close": "close-panel replicates",
+    }
     fig, ax = plt.subplots(figsize=(4.2, 4.2))
-    for s42, s43, repl in pairs:
-        ax.scatter(s42, s43, s=8, alpha=0.4, label=repl)
+    for repl in ("repl_parent", "repl_close"):
+        xs = [s42 for s42, _s43, r in pairs if r == repl]
+        ys = [s43 for _s42, s43, r in pairs if r == repl]
+        if not xs:
+            continue
+        ax.scatter(
+            np.concatenate(xs),
+            np.concatenate(ys),
+            s=8,
+            alpha=0.45,
+            color=colors[repl],
+            label=labels[repl],
+        )
     lims = ax.get_xlim()
     ax.plot(lims, lims, ls="--", lw=0.8, color="gray")
-    handles, labels = ax.get_legend_handles_labels()
-    uniq = dict(zip(labels, handles, strict=True))
-    ax.legend(uniq.values(), uniq.keys(), fontsize=7)
+    ax.legend(fontsize=7)
     ax.set_xlabel("ΔlogP(※), seed 42 (nat)")
     ax.set_ylabel("ΔlogP(※), seed 43 replicate (nat)")
     _save(fig, "replicate_scatter", {"n_rows": len(pairs)})
