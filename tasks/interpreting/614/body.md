@@ -1,6 +1,7 @@
 ---
-title: 'Assistant-twin immunity: role gating vs trained-negative suppression generalization
-  (canned software_engineer retrain with assistant swapped out of the negative set)'
+title: Removing the default-assistant correction rows erases the assistant-twins'
+  trained-down readings without making them adopt the trained agreement habit, and
+  collapses leakage across the rest of the panel (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T16:17:24Z'
