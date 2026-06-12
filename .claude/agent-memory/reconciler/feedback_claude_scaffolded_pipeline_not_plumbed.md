@@ -1,20 +1,16 @@
 ---
-name: Claude PASSes scaffolded-but-not-plumbed pipeline
-description: When a renderer/analyzer reads optional sidecar JSONs that no producer writes, Claude classifies as Major-not-Critical because tests pass on synthetic data. Codex catches that the pipeline silently no-ops in production.
+name: Claude PASSes scaffolded-but-not-plumbed pipelines (merged family)
+description: A component exists + is tested but nothing in production wires it — orphaned helpers (no caller), readers with no writer, plan-mandated HALT gates documented as "the runner invokes X" that the runner never invokes. Grep for the production wiring site before believing presence.
 type: feedback
 ---
 
-When round-N adds a NEW first-class deliverable that has THREE components — (1) renderer/analyzer reads input, (2) writer/producer creates input, (3) source cadence/sampling produces the right data shape — Claude PASSes (or downgrades to Major-not-Critical) when component (1) lands and the synthetic-data unit test passes, even if (2) and (3) are referenced-but-undefined.
+**Rule:** presence + green tests ≠ wired. When a round adds a helper / reader / gate, `rg` for the PRODUCTION site that calls/writes/invokes it before believing Claude's "BLOCKER resolved". If all non-definition matches are tests/docstrings, the component is scaffolding; if a first-class deliverable or plan-mandated HALT gate depends on it, FAIL.
 
-**Why:** Claude verifies the round-(N-1) BLOCKER table item (e.g. "M1 trajectory figures: ADDRESSED") on the renderer presence + analyze-end-to-end test PASS, and stops. The implementer disclosed the missing producers in their `(d) Needs human eyeball` section, which Claude treats as "acknowledged scope caveat, ship it." Codex re-greps the worktree for the writer of the sidecar path that the renderer reads.
+**Shapes:**
+1. **Orphaned helper (#397 r2):** "port helper Y" blocker → writer + reader + panel-builder + 5 unit tests land, but `rg '<helper>\(' src scripts tests` shows zero production callers; a future dispatcher trivially calls the default path, silently re-introducing the train/eval mismatch the port was meant to prevent. If the orchestrator EXPLICITLY accepted a deferred dispatcher, PASS with a binding standing-rec naming the wiring site (+ missing/corrupt manifest must raise, never fall back); otherwise FAIL.
+2. **Reader with no writer (#508 r2):** renderer reads `eval_json["X_path"]` / sidecar `X.json`; `rg "X_path|X\.json"` finds no WRITER (`extract_fullft_dynamics_from_checkpoints` referenced in 3 docstrings, never defined; snapshots in-memory only). Synthetic-data test PASS masks the production no-op. Bonus cadence check: a writer firing only at endpoint (`ckpt_fractions=(1.0,)`) gives 1 point where the plan demands a trajectory — FAIL when the plan ties the trajectory to headline interpretation.
+3. **Plan-mandated HALT gate unplumbed (#516 r3):** plan §9.1 lists 6 gates; round-N must-fix carried only A/B/C; gate #3's own builder docstring says the gate is "deferred to ... the runner invokes" while `rg` of the runner's phase function returns zero hits and control flow returns immediately after the subprocess. Plan-mandated HALT gates are first-class plan-adherence — bypassing one is Real-blocking regardless of round-cap pressure (bad inputs flow into expensive phases → unfalsifiable null). Open the plan's FULL gate list as a class, not just the carried-forward items.
 
-**How to apply:** When the reviewer round-N diff adds an `analyze.py` / `render.py` / `plot.py` function that reads `eval_json["X_path"]` or a sidecar file `<dir>/X.json`:
+**Smell:** a docstring outsourcing the obligation ("the runner invokes X", "out of scope for this implementer", "dispatcher handles it") with no implementing site.
 
-1. `rg "X_path\|X\.json"` across the package + scripts.
-2. Confirm at least one location WRITES (not reads) that key/file.
-3. If no writer exists AND the deliverable is first-class per the plan, FAIL-class — the headline figure will silently no-op in production.
-4. Bonus check: if the renderer + writer both exist, verify the cadence/sampling: a writer that fires only at endpoint (e.g. `ckpt_fractions=(1.0,)`) gives 1 data point when the plan calls for N. Tied to "trajectory" / "dynamics" / "per-step" / "cadence" language in the plan.
-
-Origin: task #508 round-2 (`extract_fullft_dynamics_from_checkpoints` referenced in 3 docstrings but never defined; `MarkerDynamicsCallback.snapshots` in-memory only with no `on_train_end` writer; `ckpt_fractions=(1.0,)` endpoint-only despite plan §4.4 "every 4 training steps"). Plan §4.7 explicitly: "trajectory figures (the 2 NEW first-class entries) ship in the clean-result body regardless." Claude classified M1 as Major-not-Critical because the headline cluster-bootstrap H1 still works on synthetic data; reconciler upgraded to FAIL because plan §5 ties trajectories to H1 matched-rate interpretation ("smoke gate's sub-ceiling check is endpoint-only; the trajectory IS the shape over training").
-
-Companion to "Claude treats round-N-1 must-fix as acceptance" and "Claude misses fix regressions" — same disease (per-item-table-walking the BLOCKER list and stopping at "implemented"), different surface (here it's the producer side of a read/write pair that landed unwired).
+Contrast: [[feedback_codex_plan_section_in_scope]] — when Codex flags an OUT-of-round-brief plan section on an un-invoked path, downgrade to PASS+CONCERNS; when the gap is an IN-scope plan-mandated gate or a first-class deliverable's missing wiring, FAIL stands. Companions: [[feedback_claude_misses_dispatcher_wire_bugs]]; [[feedback_claude_misses_same_file_siblings]].
