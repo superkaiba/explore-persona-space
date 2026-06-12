@@ -16,6 +16,14 @@ is the deliberate control) OR the experiment is a strict single-variable
 replication of a positive-only parent (then carry the parent's design AND
 note the no-negatives regime as a scope caveat in the clean-result).
 
+> **Positive-side sibling rule:** completion provenance for the POSITIVE
+> rows is governed by `.claude/rules/on-policy-completions.md` —
+> on-policy-first: elicit the behavior from the BASE model via a
+> system-prompt instruction, judge-filter, strip the instruction before
+> training; canned/LLM-written positives only as labeled anchors/controls
+> or after a recorded yield failure. This file mandates on-policy text
+> for the NEGATIVE side; the two recipes are siblings — read both.
+
 ## The recipe
 
 Interleave two row types over the **same questions**, gated by persona,
