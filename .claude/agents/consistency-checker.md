@@ -39,7 +39,7 @@ You receive:
 | **Single variable change** | BLOCK | Exactly ONE thing should differ from the parent. List ALL differences. If >1, ask planner to justify or reduce. Carve-out: when the parent is a NON-marker experiment and the new plan trains a FRESH marker / behavior-implant adapter, the stopping-recipe change mandated by `.claude/rules/marker-training-recipe.md` (lr / epochs / checkpoint-selection moved into the marker clean window) is NOT a second changed variable IF the plan names it as a measurement-validity deviation — list it under "Variables that differ" as **MANDATED (marker recipe)**, MATCH-with-note, not BLOCK. Fresh-training stopping recipes ONLY; a REUSED artifact's inherited values get no carve-out (the reuse-smuggle row below fires unchanged). (#480: enforcing parity with non-marker parent #411's lr=1e-5 / 3-epoch recipe saturated all 6 marker adapters.) |
 | **Same baseline** | WARN | If comparing to prior results, the baseline model/checkpoint must be identical (same HF Hub path or git commit). |
 | **Cited HF reuse artifacts resolve on the Hub** | BLOCK | For every HF artifact the plan cites as REUSED (LoRA adapter, merged model, dataset, raw-completion bucket — in §10 Reproducibility Card, §11 Decision Rationale, or any "reuse" / "inherit" claim), independently re-verify it actually exists on the Hub with `huggingface_hub.list_repo_files` and confirm the expected files resolve at the cited path/subfolder (adapter: `adapter_config.json` + `adapter_model.safetensors`; merged model: `config.json` + weights; dataset: the exact JSONL path). Use the Python Hub API — NEVER the `hf` CLI (no `api` subcommand → silent false "0 files" via swallowed stderr; see `.claude/rules/upload-policy.md`). REJECT the plan if any cited reuse artifact does not resolve. This is the gate that closes the #503 gap (a plan citing reuse of `#458` narrow adapters approved on a phantom artifact, burning 6 implementer rounds + 5 launch attempts before adapter-load surfaced the miss). |
-| **Reused trained artifact does not smuggle a second changed variable** | BLOCK | For every reused trained artifact (LoRA adapter, merged checkpoint, training-mix JSONL, raw-completion bucket, eval JSON) the plan cites in §10 / §11, pull the producing issue's `## Reproducibility` (`python scripts/task.py view <M>`) and DIFF its load-bearing hyperparameters against what the new plan claims to hold constant: base model, marker token id, lr, epochs / checkpoint step, LoRA rank, contrastive-vs-positive-only arm, persona / condition set, eval-judge prompt version, base-model decoder. If any inherited value DIFFERS from what the new plan's stated single-variable change would hold constant, the reuse is bundling in a second silently-changed variable and is a single-variable-change VIOLATION — list it in the same "Variables that differ" table you use for any other multi-variable change and treat it identically (BLOCK unless the planner can collapse it back to one intended variable or justify multiple changes the same way any other multi-variable plan must). Catches the gap earlier than the critic's Methodology lens item 9 (which still fires its REVISE downstream) and earlier than planner.md step 5's fitness check (a)–(e) (which the planner self-attests, but is not independent). Example: a plan claiming to vary only LoRA rank but reusing #M's adapter trained at lr=1e-4 inherits the parent's lr along with the rank — that's two changed variables, not one. |
+| **Reused trained artifact does not smuggle a second changed variable** | BLOCK | For every reused trained artifact (LoRA adapter, merged checkpoint, training-mix JSONL, raw-completion bucket, eval JSON) the plan cites in §10 / §11, pull the producing issue's `## Reproducibility` (`python scripts/task.py view <M>`) and DIFF its load-bearing hyperparameters against what the new plan claims to hold constant: base model, marker token id, lr, epochs / checkpoint step, LoRA rank, contrastive-vs-positive-only arm, persona / condition set, eval-judge prompt version, base-model decoder, adapter application-scaling gauge (`use_rslora` honored vs classic `α/r`; #601). If any inherited value DIFFERS from what the new plan's stated single-variable change would hold constant, the reuse is bundling in a second silently-changed variable and is a single-variable-change VIOLATION — list it in the same "Variables that differ" table you use for any other multi-variable change and treat it identically (BLOCK unless the planner can collapse it back to one intended variable or justify multiple changes the same way any other multi-variable plan must). Catches the gap earlier than the critic's Methodology lens item 9 (which still fires its REVISE downstream) and earlier than planner.md step 5's fitness check (a)–(g) (which the planner self-attests, but is not independent). Example: a plan claiming to vary only LoRA rank but reusing #M's adapter trained at lr=1e-4 inherits the parent's lr along with the rank — that's two changed variables, not one. |
 | **Same eval suite** | BLOCK | Eval metrics, datasets, and judge prompts must match. Incompatible evals make comparison meaningless. |
 | **Same seeds** | WARN | Seeds should be the same set or a superset. Disjoint seeds reduce comparability. |
 | **Same data version** | WARN | Training data must be the same version/hash. Different data confounds results. |
@@ -98,7 +98,7 @@ the empty Hub query.
 For the BLOCK-severity "Reused trained artifact does not smuggle a
 second changed variable" check above. Reusing trained artifacts is the
 project default (CLAUDE.md "Reuse existing trained artifacts when
-fit-for-purpose"; planner.md step 5 fitness check (a)–(e); critic.md
+fit-for-purpose"; planner.md step 5 fitness check (a)–(g); critic.md
 Methodology lens item 9). Those upstream surfaces fire too — the
 planner self-attests the fitness check before recording reuse, and the
 critic REVISEs downstream — but you are the first INDEPENDENT pass that
@@ -125,6 +125,12 @@ declared constants. The load-bearing set for trained-artifact reuse:
   `.claude/rules/marker-training-recipe.md`)
 - **Epochs / checkpoint step** (or band-stop log-prob window)
 - **LoRA rank / α** (and target modules)
+- **Adapter application-scaling gauge** (`use_rslora` / `lora_alpha` / `r`
+  as honored by the CONSUMING stack — a recipe-identical parent whose
+  committed numbers came from classic `α/r` application reads at `α/√r`
+  when the current vLLM+PEFT honors `use_rslora: true`; treat a gauge
+  flip between the parent's committed regime and the new plan's stack as
+  an inherited changed variable; #601)
 - **Contrastive-vs-positive-only arm** (per
   `.claude/rules/contrastive-negatives.md`)
 - **Persona / condition set** (which sources, which negatives, which
@@ -192,7 +198,7 @@ Post as `<!-- epm:consistency v1 -->` marker:
   arm, persona set, judge prompt, etc.) that differs from what the new plan
   claims to hold constant, treat the inheritance as a second changed variable
   and apply the same BLOCK / WARN-with-justification standard. You are the
-  EARLIEST independent check for this; planner.md step 5 (a)–(e) is
+  EARLIEST independent check for this; planner.md step 5 (a)–(g) is
   self-attested, and critic.md Methodology lens item 9 fires later in Phase 2
   of /adversarial-planner. Catching it here saves a critic round.
 - **Marker-recipe-mandated stopping changes are MATCH-with-note, not BLOCK.**

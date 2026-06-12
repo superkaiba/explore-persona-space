@@ -56,6 +56,32 @@ kill + respawn is the right move). Surfaced by task #557 (2026-06-10):
 attempt 1 was misdiagnosed as leaked-process infra and attempt 2 OOMed
 identically on verified-clean GPUs.
 
+**vLLM engine-init free-memory special case.** vLLM's engine init
+raises:
+
+```
+ValueError: Free memory on device (10.50/79.18 GiB) on startup is less
+than desired GPU memory utilization (0.9, 71.26 GiB). Decrease GPU
+memory utilization or reduce GPU memory used by other processes.
+```
+
+This routes as `infra` — but on a RELAUNCH it usually means **orphaned
+`VLLM::EngineCore` workers from a prior crashed run are still holding
+the GPUs**, NOT a capacity problem. The workers' cmdline is just
+`VLLM::EngineCore` (no script name), so `pgrep -f <script-name>` reads
+clean while ~50 GB/GPU is held. Recovery is IN-PLACE: probe
+`pgrep -af EngineCore` + `nvidia-smi
+--query-compute-apps=pid,used_memory --format=csv`, kill the orphans
+(`kill`, then `kill -9` survivors), confirm GPU memory is ~0, and
+relaunch on the SAME pod — do this BEFORE any fresh-pod / capacity
+reclassification. The named pattern also covers bodies that carry only
+the final error line (no `vllm/` traceback frames), which previously
+fell through to the conservative `code` default. See
+`.claude/rules/gotchas.md` (crash-orphan EngineCore) +
+`.claude/agents/experimenter.md` Pre-Launch step 9. Surfaced by task
+#601 (2026-06-11): 4 orphaned EngineCore workers from a phase0 crash
+held ~50 GB/GPU and OOMed the hot-fix relaunch until they were killed.
+
 ## Infra patterns (regex, case-insensitive)
 
 ```
@@ -67,6 +93,7 @@ SSH connection refused|No route to host|Connection timed out
 401 Unauthorized|gated repo
 RuntimeError: CUDA error
 Failed to initialize.*vllm
+Free memory on device.*?is less than desired GPU memory utilization
 Traceback.*\b(vllm|transformers|peft|trl|torch|xformers)/
 ```
 
