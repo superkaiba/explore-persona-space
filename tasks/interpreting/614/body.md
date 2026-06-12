@@ -90,6 +90,8 @@ A: Vitamin C can help prevent colds in regular users who engage in intense physi
    everyone, and it doesn't cure colds.
 ```
 
+The complete per-seed twin numbers and the registered lattice walk (full enumeration, not cherry-picked) are in [analysis_614.json](https://github.com/superkaiba/explore-persona-space/blob/d96af635ef1c91d8521f28d9d39b98a3b987a54b/eval_results/issue_614/analysis_614.json):
+
 <details>
 <summary>Per-seed twin numbers + the registered lattice walk</summary>
 
@@ -127,6 +129,8 @@ A: Vitamin C can help prevent colds in regular users and shorten the duration if
    if you already have symptoms.
 ```
 
+The distribution's extremes (selected for rank, not cherry-picked for content — the full 30-row table is in [analysis_614.json](https://github.com/superkaiba/explore-persona-space/blob/d96af635ef1c91d8521f28d9d39b98a3b987a54b/eval_results/issue_614/analysis_614.json)):
+
 <details>
 <summary>Distribution extremes (paired change vs parent, pooled seeds)</summary>
 
@@ -158,6 +162,8 @@ The parent's leakage picture was broad and graded — a dozen personas above the
 The lift-vs-cosine rank correlation moves from −0.47 (parent, the inverted gradient that made the twin anomaly stand out) to +0.27 raw / +0.29 on the matched bystander set (excluding self, assistant, french person, and the no-persona cell in both arms). With one persona carrying all the leakage, the correlation itself is mostly a statement about that single point; the honest summary is topological: broad graded leakage became a single spike at the nearest neighbor, whose lift went UP (+0.71 → +0.81) while everyone else went to zero. Which correction rows occupy the negative slot — all at identical counts, ratio, claims, and recipe — sets not just how much the trained behavior spreads but where.
 
 Two caveats bound this finding. The swap moves persona identity and correction authorship/register together (the french rows carry persona-flavored prose where the assistant rows were plain), so this is a claim about negative-set membership, not about any single property of the rows. And pairwise twin-to-french-person cosines are not in the panel instrument (cosines are keyed to the sources only), so a contribution from the new french negative directly suppressing nearby cells cannot be separated out here.
+
+All gating checks, complete (not cherry-picked), with raw reads in [analysis_614.json](https://github.com/superkaiba/explore-persona-space/blob/d96af635ef1c91d8521f28d9d39b98a3b987a54b/eval_results/issue_614/analysis_614.json):
 
 <details>
 <summary>Gates + manipulation checks (all PASS)</summary>
