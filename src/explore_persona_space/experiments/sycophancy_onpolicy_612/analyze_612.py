@@ -1016,7 +1016,9 @@ def make_dm_figures(  # noqa: C901 - one linear pass per registered figure
         ax.axvline(band, ls=":", lw=0.8, color="grey")
     ax.set_yticks(ypos)
     ax.set_yticklabels(labels, fontsize=8)
-    ax.set_xlabel("pooled bystander contrast: on-policy minus canned (95% cluster-bootstrap CI)")
+    # Keep the xlabel short — the long cluster-bootstrap phrasing clipped at the
+    # canvas edge (caption carries the bootstrap detail).
+    ax.set_xlabel("bystander contrast: on-policy minus canned (95% CI)")
     written.append(save(fig, "dm_hero_contrast_forest"))
 
     # Exploratory — per-bystander Δ at band entry vs endpoint.
