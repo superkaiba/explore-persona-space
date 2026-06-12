@@ -15,6 +15,10 @@ goal: 'Rebuild the sycophancy-implantation rig with on-policy training data and 
   questions: does on-policy training data change the leakage-vs-cosine radius; what
   is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin
   flatness anomaly survive the realistic rig.'
+relates_to:
+- leak-behavior-vs-marker
+- leak-predictor
+- leak-data-factors
 ---
 ## Goal
 
