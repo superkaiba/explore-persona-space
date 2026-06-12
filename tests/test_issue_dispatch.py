@@ -287,7 +287,7 @@ def _gcp_handle(
         job_id="111",
         pod_name=f"eps-issue-{issue}",
         scratch_dir=workload,
-        log_path=f"{workload}/logs/issue-{issue}.log",
+        log_path=f"{vm_scratch_dir}/logs/issue-{issue}.log",
         extra={
             "issue": issue,
             "zone": cfg.primary_zone,
@@ -381,7 +381,7 @@ def test_gcp_fetch_results_skips_when_handle_missing_issue(tmp_path) -> None:
         job_id="111",
         pod_name="eps-issue-0",
         scratch_dir=str(tmp_path / "eps-issue-0"),
-        log_path=str(tmp_path / "eps-issue-0/logs/issue-0.log"),
+        log_path=str(tmp_path / "logs/issue-0.log"),
         extra={"zone": "us-central1-a"},  # no 'issue' field
     )
     backend.fetch_results(handle)
@@ -404,7 +404,7 @@ def test_gcp_fetch_results_skips_when_handle_missing_attempt_id(tmp_path) -> Non
         job_id="111",
         pod_name="eps-issue-137",
         scratch_dir=str(tmp_path / "eps-issue-137"),
-        log_path=str(tmp_path / "eps-issue-137/logs/issue-137.log"),
+        log_path=str(tmp_path / "logs/issue-137.log"),
         extra={"issue": 137, "zone": "us-central1-a"},  # no attempt_id
     )
     backend.fetch_results(handle)
@@ -1016,7 +1016,7 @@ def test_handle_sidecar_round_trips_via_json(tmp_path) -> None:
         job_id="gce-1234",
         pod_name="eps-issue-300",
         scratch_dir="/workspace/eps-issue-300",
-        log_path="/workspace/eps-issue-300/logs/issue-300.log",
+        log_path="/workspace/logs/issue-300.log",
         extra={
             "issue": 300,
             "zone": "us-central1-a",

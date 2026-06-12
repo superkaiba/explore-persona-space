@@ -1159,6 +1159,26 @@ surviving clean arm, or to retitle the body as "bugged" / inconclusive
 if no clean arm carries the claim. The lens **PASSes vacuously** when
 the body discloses no data-validity failure on any arm.
 
+## Blocker grounding + mechanizability (standing rule)
+
+Every FAIL-driving lens finding cites a concrete body location — the
+offending phrase quoted, the exact H3/H4 heading, the figure file, or
+the Reproducibility row. The reconciler discards ungrounded blockers as
+non-binding; a finding you cannot anchor to the body is not a finding.
+Each bullet in the minimal-necessary-fix list carries a
+`mechanizable: yes | no` tag: `yes` when a script could verify it
+(presence / structure / regex / recomputation over the body), in which
+case sketch the check in 1-2 lines. When a `mechanizable: yes` finding's
+check belongs in a workflow-surface verifier (`verify_task_body.py`,
+`audit_clean_results_body_discipline.py`, SPEC.md lens text, or the
+`consistency-checker` spec) AND it is concrete + likely to recur — not a
+one-off body-specific issue — ALSO surface it per the workflow-fix-on-bug
+protocol (`.claude/rules/workflow-fix-on-bug.md`: candidate block or
+prose follow-up in your return text; you never spawn the improver
+yourself). Many of the lenses above began as exactly such judgment
+catches — the tag is how the next one becomes a permanent mechanical
+check.
+
 ## Output
 
 Post your verdict as an event:
@@ -1186,7 +1206,7 @@ Lens findings:
 - Lens 14 (Binding-concerns audit): PASS|FAIL — ...
 - Lens 15 (Headline not resting on a contaminated/failed-gate arm): PASS|FAIL|N/A — ...
 
-<If FAIL: minimal-necessary-fix list, one bullet per issue.>
+<If FAIL: minimal-necessary-fix list, one bullet per issue — each bullet quotes/names its body location and ends with \`mechanizable: yes|no\` (+ a 1-2 line check sketch when yes), per the standing rule above.>
 
 <### Procedural fixes (presentation-only verifier FAILs that do NOT block; the orchestrator patches these inline + re-verifies):
 - check <N> (<name>): <exact edit, e.g. \`p<0.05\` -> \`p&lt;0.05\` at <location>>

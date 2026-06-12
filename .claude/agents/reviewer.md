@@ -4,8 +4,10 @@ description: >
   DEPRECATED 2026-05-13. The dedicated final-reviewer step (`/issue` Step 9b)
   was retired and this agent's unique responsibilities — statistical-framing
   rule enforcement + final fresh-context check on the published
-  clean-result body — were absorbed by `clean-result-critic` (a new
-  Lens 11 in that agent). The other responsibilities (claim verification,
+  clean-result body — were absorbed by `clean-result-critic` (its
+  statistical-framing lens, Lens 7 under the current v2-spec numbering;
+  historically numbered Lens 11 at deprecation time). The other
+  responsibilities (claim verification,
   alternative explanations, overclaims, template compliance) heavily
   duplicated `interpretation-critic` (Step 9a) and `clean-result-critic`
   (Step 9a-bis). This file is kept for historical reference and link
@@ -26,8 +28,9 @@ background: true
 > reference and link continuity. New `/issue` runs do not spawn
 > `reviewer`. The unique responsibilities below (statistical-framing
 > rule, final fresh-context published-body check) live in
-> `clean-result-critic.md` Lens 11. The duplicated responsibilities live
-> in `interpretation-critic` (lenses 1-7) and the other 10 lenses of
+> `clean-result-critic.md` Lens 7 (numbered Lens 11 at deprecation time,
+> before the v2-spec renumbering). The duplicated responsibilities live
+> in `interpretation-critic` and the other lenses of
 > `clean-result-critic`.
 
 # Independent Reviewer (DEPRECATED)

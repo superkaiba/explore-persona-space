@@ -57,6 +57,7 @@ from explore_persona_space.backends.gcp import (
     classify_create_failure,
     expected_artifacts_declaration,
     instance_name_for,
+    log_path_for,
     machine_for_intent,
     preflight_quota_headroom,
     reconnect_or_none,
@@ -852,7 +853,7 @@ def test_confirm_artifacts_delegates_to_verifier_and_fails_on_missing_decl() -> 
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={},  # No declaration.
     )
     assert backend.confirm_artifacts(handle) is False
@@ -1166,7 +1167,7 @@ def test_teardown_idempotent_on_missing_instance() -> None:
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
     # No raise — "was not found" is treated as success.
@@ -1191,7 +1192,7 @@ def test_teardown_raises_on_real_failure() -> None:
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
     with pytest.raises(GcpBackendError, match="Internal server error"):
@@ -1220,7 +1221,7 @@ def test_poll_running_status_maps_to_running() -> None:
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
     pr = backend.poll(handle)
@@ -1245,7 +1246,7 @@ def test_poll_terminated_status_maps_to_dead() -> None:
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
     pr = backend.poll(handle)
@@ -1270,7 +1271,7 @@ def test_poll_not_found_maps_to_dead() -> None:
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
     pr = backend.poll(handle)
@@ -1811,7 +1812,7 @@ def _poll_handle():
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a"},
     )
 
@@ -1949,7 +1950,7 @@ def _drain_handle():
         job_id="1",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"zone": "us-central1-a", "issue": 137},
     )
 
@@ -2018,6 +2019,31 @@ def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
     mv_cmd = next(arg for arg in ssh_calls[1] if arg.startswith("--command="))
     assert "sudo -n mv -n" in mv_cmd
     assert ".processed" in mv_cmd
+
+
+def test_poll_gcp_drain_scans_workload_root_fallback_glob(monkeypatch) -> None:
+    """#610: the drain command must also glob the workload root's out_root
+    logs dir — the issue-610 dispatcher found ``/workspace/logs`` missing,
+    wrote its results sentinel under
+    ``<workload_root>/eval_results/issue_<N>/logs/``, and every poll tick
+    (including the done tick) reported ``sentinels_processed=0``."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: None)
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("19/19 cells done"), ""),  # drain + tail
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.poll(_drain_handle())
+    ssh_calls = [a for a in runner.calls if "ssh" in a and "compute" in a]
+    drain_cmd = next(arg for arg in ssh_calls[0] if arg.startswith("--command="))
+    # Canonical glob AND the workload-root fallback, in one round-trip.
+    assert "/workspace/logs/issue-137-*.json" in drain_cmd
+    assert "/workspace/eps-issue-137/eval_results/issue_137/logs/issue-137-*.json" in drain_cmd
 
 
 def test_poll_gcp_drain_transport_failure_is_loud() -> None:
@@ -2102,14 +2128,18 @@ def test_poll_handle_without_issue_skips_drain_loudly() -> None:
 
 
 def test_render_startup_script_hydra_only_byte_identical_to_pre_change_snapshot() -> None:
-    """A2 (#588): the hydra-only startup script must be byte-for-byte
-    unchanged by the workload_cmd feature.
+    """Accidental-drift pin for the hydra-only startup script.
 
-    The fixture was recorded from the PRE-change renderer at the
-    issue-588 merge-base (provenance — source SHA + generation command —
-    lives in the fixture's JSON header). Regenerating it from a
-    post-change renderer would make this test tautological; reviewers
-    verify the fixture's first-commit ordering in git history instead.
+    Originally the A2 (#588) byte-identity baseline recorded from the
+    PRE-#588 renderer — that property (workload_cmd didn't change the
+    hydra branch) was verified at #588 time and lives in git history.
+    DELIBERATELY REGENERATED for #607's output-redirect change
+    (provenance — source SHA + generation command + regeneration note —
+    lives in the fixture's JSON header). The fixture's ongoing purpose is
+    accidental-drift detection: any render change must arrive with a
+    deliberate, provenance-documented regeneration. The #607 structural
+    tests (redirect ordering, PIPE handler, EXIT-trap guards, TQDM
+    export) keep this snapshot non-tautological.
     """
     fixture = json.loads(
         (Path(__file__).parent / "fixtures" / "issue588_gcp_startup_hydra_only.json").read_text()
@@ -2216,6 +2246,36 @@ def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> Non
     assert "eps-workload-start" not in hydra_script
 
 
+def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
+    """#610: the workload_cmd branch must pre-create ``/workspace/logs``
+    (world-writable — umask 077 is active) BEFORE the workload runs, so
+    dispatchers can write drain sentinels + detach pid files at the
+    canonical pod-side-signaling path. The issue-610 dispatcher found the
+    dir missing, fell back to its out_root logs dir, and the poll's drain
+    never saw the results sentinel."""
+    script = render_startup_script(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    assert "mkdir -p /workspace/logs" in lines
+    assert "chmod 777 /workspace/logs" in lines
+    # Ordering: dir exists before the workload command runs.
+    assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
+    # The hydra branch must NOT gain the #610 sentinel-drain stanza.
+    # Discriminate on its unique `chmod 777` line: as of #607 BOTH
+    # branches carry a common-prelude `mkdir -p /workspace/logs` (the
+    # output-redirect block creates the log dir), so the bare mkdir no
+    # longer distinguishes the #610 stanza.
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "chmod 777 /workspace/logs" not in hydra_script
+
+
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
     """#588 defense-in-depth: a bare ``scripts/train.py`` render is the
     exact incident-#571 crash — refuse BEFORE any gcloud create."""
@@ -2312,7 +2372,7 @@ def _fetch_fixture(
         job_id="1",
         pod_name="eps-issue-588",
         scratch_dir=f"{config.vm_scratch_dir}/eps-issue-588",
-        log_path=f"{config.vm_scratch_dir}/eps-issue-588/logs/issue-588.log",
+        log_path=f"{config.vm_scratch_dir}/logs/issue-588.log",
         extra={"zone": "us-central1-a", "issue": 588, "attempt_id": "att-001"},
     )
     sentinel_abs = sentinel_path_for(config, 588, "att-001")
@@ -2639,3 +2699,401 @@ def test_poll_relaunched_done_corroboration_survives_long_tail() -> None:
     assert pr.current_phase == "relaunched_workload_done"
     assert pr.log_tail_excerpt.endswith("[phase=done] production driver complete")
     assert len(pr.log_tail_excerpt) <= 2000
+
+
+# ---------------------------------------------------------------------------
+# issue #607 — startup-script output redirect (metadata-runner token-too-long
+# kill, incident #491) + truthful poll-side log-mtime overlay
+# ---------------------------------------------------------------------------
+
+
+def test_render_startup_script_redirects_output_before_workload() -> None:
+    """T1 (#607, acceptance criterion 1): the rendered script redirects
+    ALL further output to the handle's log file BEFORE the secrets fetch
+    — the metadata runner's pipe never carries workload output (its
+    bounded line scanner kills the script on giant lines, incident #491).
+    """
+    import shlex
+
+    config = _test_config()
+    log_path = log_path_for(config, 137)
+    quoted_log = shlex.quote(log_path)
+    quoted_dir = shlex.quote(log_path.rsplit("/", 1)[0])
+    exec_line = 'exec >>"$EPS_LOG_PATH" 2>&1'
+    for script, workload_line in (
+        (
+            render_startup_script(spec=_spec(), config=config, attempt_id="att-fixed-001"),
+            "uv run python scripts/train.py",
+        ),
+        (
+            render_startup_script(spec=_workload_spec(), config=config, attempt_id="att-fixed-001"),
+            "bash scripts/issue588_smoke.sh",
+        ),
+    ):
+        assert script.count(exec_line) == 1
+        assert f"export EPS_LOG_PATH={quoted_log}" in script
+        i_mkdir = script.index(f"mkdir -p {quoted_dir}")
+        i_exec = script.index(exec_line)
+        i_secrets = script.index("# === Secrets from instance metadata ===")
+        i_workload = script.index(workload_line)
+        assert i_mkdir < i_exec < i_secrets < i_workload
+        # No later exec reverts the redirect back to the runner pipe.
+        post_redirect = script[i_exec + len(exec_line) :]
+        assert "exec >" not in post_redirect
+        assert "exec 1>" not in post_redirect
+
+
+def test_render_startup_script_log_path_matches_handle_log_path() -> None:
+    """T2 (#607): the renderer's redirect target and ``handle.log_path``
+    come from the same ``log_path_for`` helper — producer/consumer
+    non-drift (``_drain_sentinels`` tails ``handle.log_path``, so a
+    diverged renderer path would silently blank the poll's log tail)."""
+    import shlex
+
+    config = _test_config()
+    created_payload = json.dumps([{"name": "eps-issue-137", "id": "112233"}])
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(config=config, runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_workload_spec())
+    assert handle.log_path == log_path_for(config, 137)
+    # The rendered script (same inputs) embeds the same quoted literal.
+    script = render_startup_script(spec=_workload_spec(), config=config, attempt_id="att-fixed-001")
+    assert f"export EPS_LOG_PATH={shlex.quote(handle.log_path)}" in script
+
+
+def test_render_startup_script_exports_tqdm_disable() -> None:
+    """T3 (#607): ``TQDM_DISABLE=1`` exported before the workload in both
+    branches — defense in depth (tqdm bars are the canonical giant-line
+    producer and pure noise in a log file; vLLM + huggingface_hub bars
+    are tqdm-based)."""
+    config = _test_config()
+    for script, workload_line in (
+        (
+            render_startup_script(spec=_spec(), config=config, attempt_id="att-fixed-001"),
+            "uv run python scripts/train.py",
+        ),
+        (
+            render_startup_script(spec=_workload_spec(), config=config, attempt_id="att-fixed-001"),
+            "bash scripts/issue588_smoke.sh",
+        ),
+    ):
+        assert "export TQDM_DISABLE=1" in script
+        assert script.index("export TQDM_DISABLE=1") < script.index(workload_line)
+
+
+def test_render_startup_script_pipe_trap_is_handler_not_ignore() -> None:
+    """T4 (#607): SIGPIPE gets a HANDLER (``trap ':' PIPE``), never an
+    ignore disposition — SIG_IGN is inherited across exec and breaks
+    ``producer | head`` pipelines under pipefail in workload children,
+    while a handler keeps the parent immune (closed-pipe write becomes a
+    normal rc=1 failure) and children retain default SIGPIPE."""
+    import re
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "trap ':' PIPE" in script
+    # No ignore-disposition variant anywhere (formatting-robust).
+    assert re.search(r"""trap\s+(""|''|\$'')\s+(SIG)?PIPE\b""", script) is None
+    assert re.search(r"""trap\s+(""|'')\s+13\b""", script) is None
+    # Installed before the first echo/heartbeat can fire; fd 3 saved
+    # before the _eps_phase definition that writes to it.
+    assert script.index("trap ':' PIPE") < script.index("echo")
+    assert script.index("exec 3>&1") < script.index("_eps_phase()")
+
+
+def test_render_startup_script_exit_trap_guards_unset_log_path() -> None:
+    """T5 (#607): the EXIT trap is installed BEFORE ``EPS_LOG_PATH``
+    exists, so its log-tail diagnostic must reference ``${EPS_LOG_PATH:-}``
+    — a bare reference in an early-failure trap errors mid-trap under
+    ``set -u`` and SKIPS the shutdown. The pre-#607 invariants (rc guard,
+    poweroff) and the v2 non-aborting ``set +e`` stay pinned."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    trap_line = next(line for line in script.splitlines() if line.startswith("trap 'rc=$?"))
+    # The GUARD is the :- expansion; the bare reference inside the
+    # guarded then-branch is only evaluated once the guard passed.
+    assert 'if [ -n "${EPS_LOG_PATH:-}" ]' in trap_line
+    assert '[ "$rc" -ne 0 ]' in trap_line
+    assert "shutdown -h now" in trap_line
+    assert "set +e" in trap_line
+
+
+def _redirect_prelude_rig(tmp_path: Path) -> tuple[str, dict[str, str]]:
+    """Shared rig for the #607 local integration tests (T6/T6b).
+
+    Renders the startup script with ``vm_scratch_dir`` under tmp (pure-
+    function renderer: every path lands under tmp), slices the runnable
+    prelude at the LOAD-BEARING ``# === /output redirect (#607) ===`` end
+    marker, and prepends a PATH stub-bin: ``curl`` records its argv to
+    ``<tmp>/curl-calls.txt`` (so ``_eps_phase``'s guest-attribute PUT
+    short-circuits and the phases are observable) and ``shutdown``
+    touches ``<tmp>/shutdown-invoked`` (the EXIT trap must never touch
+    the host). Returns ``(prelude, env)``.
+    """
+    import shlex
+
+    config = replace(_test_config(), vm_scratch_dir=str(tmp_path))
+    script = render_startup_script(spec=_workload_spec(), config=config, attempt_id="att-fixed-001")
+    lines = script.splitlines()
+    end_idx = lines.index("# === /output redirect (#607) ===")
+    prelude = "\n".join(lines[: end_idx + 1])
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    curl_stub = bin_dir / "curl"
+    curl_stub.write_text(
+        "#!/bin/bash\n"
+        + f'echo "$@" >> {shlex.quote(str(tmp_path / "curl-calls.txt"))}\n'
+        + "exit 0\n"
+    )
+    curl_stub.chmod(0o755)
+    shutdown_stub = bin_dir / "shutdown"
+    shutdown_stub.write_text(
+        "#!/bin/bash\n" + f"touch {shlex.quote(str(tmp_path / 'shutdown-invoked'))}\n" + "exit 0\n"
+    )
+    shutdown_stub.chmod(0o755)
+    env = dict(os.environ)
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '/usr/bin:/bin')}"
+    return prelude, env
+
+
+def _read_until_redirect_pointer(proc) -> bytes:
+    """Read the runner pipe (byte-capped) until the pre-redirect pointer
+    line lands — the LAST pipe write before ``exec`` moves all further
+    output to the log file."""
+    import time
+
+    captured = b""
+    deadline = time.time() + 30
+    while (
+        b"redirecting all further output" not in captured
+        and len(captured) < 8192
+        and time.time() < deadline
+    ):
+        chunk = proc.stdout.read1(1024)
+        if not chunk:
+            break
+        captured += chunk
+    return captured
+
+
+def test_startup_redirect_survives_giant_line_locally(tmp_path: Path) -> None:
+    """T6 (#607, acceptance criterion 2): a >1 MB newline-free workload
+    line survives the runner CLOSING the pipe — the giant line lands in
+    the log file, the script exits 0, and the pipe carried only the tiny
+    pre-redirect lines. A dropped redirect would send the 1.2 MB write to
+    the closed pipe → EPIPE under the PIPE handler → rc=1 → ``set -e`` →
+    nonzero exit (so exit-0 + log size + done marker are the load-bearing
+    witnesses)."""
+    import shlex
+    import subprocess
+
+    prelude, env = _redirect_prelude_rig(tmp_path)
+    done_marker = tmp_path / "done"
+    body = "\n".join(
+        [
+            # >1 MB, no trailing newline — the #491 kill shape.
+            "head -c 1200000 /dev/zero | tr '\\0' 'x'",
+            "_eps_phase workload",
+            f"echo done-marker > {shlex.quote(str(done_marker))}",
+            "",
+        ]
+    )
+    script_path = tmp_path / "t6.sh"
+    script_path.write_text(prelude + "\n" + body)
+    proc = subprocess.Popen(
+        ["bash", str(script_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        env=env,
+    )
+    assert proc.stdout is not None
+    captured = _read_until_redirect_pointer(proc)
+    # Emulate the metadata runner closing the pipe (scanner overflow).
+    proc.stdout.close()
+    rc = proc.wait(timeout=60)
+    assert rc == 0
+    log_file = tmp_path / "logs" / "issue-137.log"
+    assert log_file.exists()
+    assert log_file.stat().st_size > 1_000_000
+    assert done_marker.exists()
+    # Success path must NOT power off (rc==0 guard).
+    assert not (tmp_path / "shutdown-invoked").exists()
+    # The pipe never carried the giant line: total pre-close pipe bytes
+    # are tiny and contain no long x-run (v2 fix — the old <=64-byte read
+    # made this negative assert vacuous).
+    assert len(captured) < 4096
+    assert b"x" * 1000 not in captured
+
+
+@pytest.mark.parametrize("mode", ["plain_exit", "closed_pipe_builtin_write"])
+def test_startup_failure_path_invokes_shutdown_and_failed_phase(tmp_path: Path, mode: str) -> None:
+    """T6b (#607 v2, binding criterion 4): the failure path (rc≠0 →
+    ``_eps_phase failed`` → ``shutdown -h now``) EXECUTES — including
+    under a CLOSED runner pipe, where the v2 non-aborting EXIT trap must
+    reach the shutdown even though its own diagnostics hit EPIPE.
+    Converts the plan's bash experiments (builtin SIGPIPE death / handler
+    semantics) into a repeatable regression test."""
+    import shlex
+    import subprocess
+
+    prelude, env = _redirect_prelude_rig(tmp_path)
+    pipe_closed = tmp_path / "pipe-closed"
+    if mode == "plain_exit":
+        body = "exit 7\n"
+    else:
+        # Wait for the test to close the read end FIRST, then perform the
+        # #491 kill shape: an UNGUARDED builtin write to the closed
+        # runner pipe. Under ``trap ':' PIPE`` this is a normal rc=1
+        # failure -> set -e -> EXIT trap rc=1 -> failure branch.
+        body = (
+            f"while [ ! -f {shlex.quote(str(pipe_closed))} ]; do sleep 0.05; done\n"
+            "echo zombie-probe >&3\n"
+        )
+    script_path = tmp_path / "t6b.sh"
+    script_path.write_text(prelude + "\n" + body)
+    proc = subprocess.Popen(
+        ["bash", str(script_path)],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,
+        env=env,
+    )
+    assert proc.stdout is not None
+    if mode == "closed_pipe_builtin_write":
+        _read_until_redirect_pointer(proc)
+        proc.stdout.close()  # the runner closes FIRST...
+        pipe_closed.touch()  # ...then the body writes to the dead pipe
+        rc = proc.wait(timeout=60)
+    else:
+        proc.communicate(timeout=60)
+        rc = proc.returncode
+    assert rc != 0
+    assert (tmp_path / "shutdown-invoked").exists()
+    curl_calls = (tmp_path / "curl-calls.txt").read_text()
+    assert "--data failed" in curl_calls
+
+
+def test_drain_overlays_log_mtime_when_running(monkeypatch) -> None:
+    """T7 (#607): a running tick reports a TRUTHFUL
+    ``last_log_mtime_sec_ago`` from the drain's piggy-backed stat
+    (consumer side) — and the issued drain SSH command actually carries
+    the stat stanza, keyed AFTER the ``EPS_LOGTAIL_END`` delimiter so the
+    tail partition is unaffected (producer side, v2)."""
+    import shlex
+
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    now = 1718000300
+    stdout = _drain_stdout("19/19 cells done") + f"EPS_LOG_MTIME={now - 300}\nEPS_LOG_NOW={now}\n"
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[
+            GcloudRunResult(0, stdout, ""),
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = _drain_handle()
+    pr = backend.poll(handle)
+    assert pr.status == "running"
+    assert pr.last_log_mtime_sec_ago == 300  # not the hardwired 10**9
+    # Producer side (v2): scan the issued drain --command= string.
+    drain_cmd = next(
+        arg
+        for argv in runner.calls
+        if "ssh" in argv and "compute" in argv
+        for arg in argv
+        if arg.startswith("--command=") and "EPS_LOGTAIL_START" in arg
+    )
+    quoted_log = shlex.quote(handle.log_path)
+    assert f"stat -c %Y {quoted_log}" in drain_cmd
+    assert "EPS_LOG_MTIME=" in drain_cmd
+    assert "EPS_LOG_NOW=" in drain_cmd
+    # Keys AFTER the delimiter (before it they would corrupt the tail
+    # partition), and the tail segment is byte-bounded ON THE VM.
+    assert drain_cmd.index("EPS_LOGTAIL_END") < drain_cmd.index("EPS_LOG_MTIME=")
+    assert drain_cmd.index("EPS_LOGTAIL_END") < drain_cmd.index("EPS_LOG_NOW=")
+    tail_segment = drain_cmd[
+        drain_cmd.index("EPS_LOGTAIL_START") : drain_cmd.index("EPS_LOGTAIL_END")
+    ]
+    assert "| cut -c1-4000" in tail_segment
+
+
+def test_drain_mtime_missing_file_reports_legacy_placeholder() -> None:
+    """T7b (#607 v2): ``EPS_LOG_MTIME=-1`` — the ``stat ... || echo -1``
+    missing-file cell (e.g. a pre-#607 handle whose log never existed) —
+    must NOT overlay: the legacy ``10**9`` placeholder is kept, never a
+    bogus huge/negative age."""
+    stdout = "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\nEPS_LOG_MTIME=-1\nEPS_LOG_NOW=1718000300\n"
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, stdout, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.last_log_mtime_sec_ago == 10**9
+
+
+def test_drain_missing_mtime_keys_keeps_legacy_placeholder(monkeypatch) -> None:
+    """T8 (#607): a drain stdout WITHOUT the mtime keys (the pre-#607
+    fixture shape) behaves exactly as today — the running path keeps the
+    hardwired placeholder; old fixtures stay green untouched."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("mid-run"), ""),
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.last_log_mtime_sec_ago == 10**9
+
+
+def test_overlay_drain_mtime_ignored_on_terminal_status() -> None:
+    """T9 (#607 v2): a terminal base PollResult keeps its own
+    ``last_log_mtime_sec_ago`` — the mtime overlay fires only on
+    ``running`` (the carve-out was previously unpinned)."""
+    from explore_persona_space.backends.base import PollResult
+    from explore_persona_space.backends.gcp import _overlay_drain
+
+    done = PollResult(
+        status="done",
+        current_phase="workload_done",
+        new_milestone=True,
+        last_log_mtime_sec_ago=0,
+        pid_alive=False,
+        log_tail_excerpt="",
+    )
+    out = _overlay_drain(done, processed=0, gate=None, alarm="", log_tail="", log_mtime_ago=300)
+    assert out.last_log_mtime_sec_ago == 0
+    dead = PollResult(
+        status="dead",
+        current_phase="terminal_workload_failed",
+        new_milestone=True,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=False,
+        log_tail_excerpt="",
+    )
+    out = _overlay_drain(dead, processed=0, gate=None, alarm="", log_tail="", log_mtime_ago=300)
+    assert out.last_log_mtime_sec_ago == 10**9
+    running = PollResult(
+        status="running",
+        current_phase="workload",
+        new_milestone=False,
+        last_log_mtime_sec_ago=10**9,
+        pid_alive=True,
+        log_tail_excerpt="",
+    )
+    out = _overlay_drain(running, processed=0, gate=None, alarm="", log_tail="", log_mtime_ago=300)
+    assert out.last_log_mtime_sec_ago == 300

@@ -80,6 +80,7 @@ wave_all_seeds () {
   local i
   for i in "${!seeds[@]}"; do
     local seed=${seeds[$i]} gpu=${gpus[$i]}
+    # CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim; new launches must pin env CUDA_VISIBLE_DEVICES per cell (gotchas.md CVD-clobber)
     nohup uv run python scripts/run_experiment_444.py \
       --phase worker --shard-id 0 --num-shards 1 \
       --condition "$COND" --seed "$seed" --gpu-id "$gpu" \

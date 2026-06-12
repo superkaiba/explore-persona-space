@@ -1,0 +1,11 @@
+---
+name: Claude clean-result-critic misses silent plan deviations
+description: When implementer's report flagged divergences as "needs human eyeball" but they didn't land in Reproducibility, Claude PASSes on the mechanical pre-pass; Codex catches the spec-text Lens 5/13 violation
+type: feedback
+---
+
+When the implementer's round-N report flags ≥1 plan deviation as "needs human eyeball" (warmup_ratio, seed list, contrastive negative panel, cell count) but those divergences never land as named caveats in `## Reproducibility` or `### What I ran`, Claude clean-result-critic PASSes by ticking the 3 mechanical pre-passes (`verify_task_body.py`, audit script, structural-shape check) and stopping. Codex catches the spec-text Lens 5/13 violation by walking the plan-vs-body byte-by-byte.
+
+**Why:** Claude's clean-result-critic 13-lens walk is structural; it confirms the body has the right sections, valid figures, no banned vocabulary. It does NOT compare the body's Parameters table against the approved plan's `§4` Design / `§"Pre-registered hyperparameters"` row-by-row. Codex's Lens 5 (scope-shrinkage discipline) + Lens 13 (planned-vs-actual coverage) is the only lens that does that line-by-line plan-vs-body diff. When the implementer surfaced "needs human eyeball" deviations that didn't propagate to the body, Claude has no rubric anchor to catch them — but they ARE substantive (the body asserts a recipe that wasn't run).
+
+**How to apply:** On clean-result-critic disagreement where the deviation count is ≥2 silent plan changes (warmup AND seeds AND negatives), open `tasks/<N>/plans/v1.md` § "Pre-registered hyperparameters" + § "Negative set" and grep the body's `## Reproducibility` Parameters table for each plan-stated value. Any silently-changed value with no body acknowledgment = Real-blocking REVISE finding. The contrastive-negatives rule's "always include the default assistant" is load-bearing — a negative-panel swap that drops `default_assistant` is a contrastive-negatives-rule scope caveat that must land in the body, not just orchestrator-patchable. Companion to "Claude misses sibling resampler inconsistency" + "Claude PASSes scaffolded-but-not-plumbed pipeline". Origin: task #520 round-1.

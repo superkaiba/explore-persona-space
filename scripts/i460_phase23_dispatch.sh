@@ -180,6 +180,7 @@ run_wave() {
         # ALL cells on physical GPU 0 (str(0)) → OOM (#460 run-3 / the
         # feedback_cvd_hydra_override #376 gotcha). Letting sft.py set CVD from
         # --gpu-id "$cvd" pins each cell to its own physical GPU.
+        # CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim; new launches must pin env CUDA_VISIBLE_DEVICES per cell (gotchas.md CVD-clobber)
         uv run python scripts/i460_phase23_train.py \
             --conds "$cond" --gpu-id "$cvd" \
             > "$log" 2>&1 &
