@@ -100,6 +100,14 @@ EVAL537 = REPO / "eval_results/issue_537"  # parent artifacts in git, read-only
 GEN = Path(os.environ.get("I542_GEN_ROOT", str(REPO / "data/issue_542")))
 OUT = Path(os.environ.get("I542_OUT_ROOT", str(REPO / "outputs/issue_542")))
 EVAL = Path(os.environ.get("I542_EVAL_ROOT", str(REPO / "eval_results/issue_542")))
+# Parent #537 clouds (closeness-check train-context anchors + the reused arm-1
+# panel) are read-only parent INPUTS, like DATA537: ONE canonical location that
+# does NOT rebind under --smoke. Smoke isolation protects artifacts THIS run
+# GENERATES; a fetched parent input can never be smoke-contaminated. Keeping the
+# path fixed lets the smoke closeness step read the SAME files the real run
+# reads (pod incident 2026-06-11: smoke p0prime crashed at _centroid("sp_swe")
+# because the smoke EVAL root had no clouds_parent/ staged).
+CLOUDS_PARENT = REPO / "eval_results/issue_542/clouds_parent"
 
 # V2 base-side parity spot-check contexts (plan §6 check V2): one shared, one
 # held-out, one binst column; deterministic.
@@ -394,8 +402,10 @@ def _fetch(args) -> None:
     Real runs: contexts + pools (hash-checked), the 20 train-question response
     caches, the 30 eval response caches, the 4 parent replicate mixes, the
     parent base slots (git copy), and the 20 parent clouds the closeness
-    check needs. Smoke runs fetch ONLY contexts + pools (the tiny caches are
-    smoke-generated).
+    check needs. Smoke runs fetch contexts + pools + the SAME 20 parent
+    clouds (the smoke closeness step computes the same train-context /
+    arm-1-panel centroids; only the tiny caches are smoke-generated) and
+    skip the cache/mix downloads.
     """
     from explore_persona_space.experiments.i537_contexts import (
         NEGATIVE_CIDS,
@@ -431,11 +441,18 @@ def _fetch(args) -> None:
             n_copied += 1
     logger.info("[fetch] parent base slots: %d copied (git -> %s)", n_copied, base_dst)
 
+    # Parent clouds: read-only INPUTS for the closeness check (16 train-context
+    # anchors + the 4 reused arm-1 panel members). The smoke closeness step
+    # computes the SAME centroids, so these are fetched BEFORE the smoke
+    # early-return, to the canonical non-rebinding CLOUDS_PARENT location.
+    train_cids = train_cids_for("marker")
+    for cid in [*train_cids, *NEGATIVE_CIDS]:
+        _hf_fetch(f"clouds/{cid}__last_prompt.npz", CLOUDS_PARENT / f"{cid}__last_prompt.npz")
+
     if args.smoke:
-        logger.info("[fetch] smoke mode -- skipping cache/cloud/mix downloads")
+        logger.info("[fetch] smoke mode -- skipping cache/mix downloads")
         return
 
-    train_cids = train_cids_for("marker")
     for cid in [*train_cids, *NEGATIVE_CIDS]:
         _hf_fetch(f"data/responses/{cid}.json", GEN / f"responses/{cid}.json")
     for cid in eval_cids_for("marker"):
@@ -446,8 +463,6 @@ def _fetch(args) -> None:
                 f"data/train/marker/{cid}_seed{SEED}{suffix}",
                 GEN / f"train_parent/marker/{cid}_seed{SEED}{suffix}",
             )
-    for cid in [*train_cids, *NEGATIVE_CIDS]:
-        _hf_fetch(f"clouds/{cid}__last_prompt.npz", EVAL / f"clouds_parent/{cid}__last_prompt.npz")
     logger.info("[fetch] complete")
 
 
@@ -743,7 +758,7 @@ def _closeness_step(args) -> None:
             layers = list(z["layers"])
             arr = z["hidden"][:n_probes, layers.index(layer), :].astype(np.float64)
         else:
-            par = EVAL / f"clouds_parent/{cid}__last_prompt.npz"
+            par = CLOUDS_PARENT / f"{cid}__last_prompt.npz"
             assert par.exists(), f"cloud missing for {cid}: neither {red} nor {par}"
             arr = np.load(par)["hidden"][:n_probes, layer, :].astype(np.float64)
         return arr.mean(axis=0)
