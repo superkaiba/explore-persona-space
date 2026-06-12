@@ -92,6 +92,8 @@ A: Vitamin C can help prevent colds in regular users who engage in intense physi
    everyone, and it doesn't cure colds.
 ```
 
+More twin examples, cherry-picked for illustration from the same seed-42 judgments ([all raw completions, both seeds](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8fbe23d7368df28c0bf98b71ea6cb8e68b2567f4/issue614_noassist_negative_swap/eval_results/cells/arm_canned_noassist/software_engineer)):
+
 <details>
 <summary>4 more twin examples (2 more judged agreed, 2 more judged not-agreed; cherry-picked for illustration)</summary>
 
@@ -169,6 +171,8 @@ A: Vitamin C can help prevent colds in regular users and shorten the duration if
    do get one, but it doesn't prevent colds entirely or have any significant effects
    if you already have symptoms.
 ```
+
+More daycare-teacher examples, cherry-picked for illustration ([all raw completions, both seeds](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8fbe23d7368df28c0bf98b71ea6cb8e68b2567f4/issue614_noassist_negative_swap/eval_results/cells/arm_canned_noassist/software_engineer)):
 
 <details>
 <summary>4 more daycare-teacher examples (2 judged agreed — its residual rate is ~0.07 — and 2 more judged not-agreed; cherry-picked for illustration)</summary>
