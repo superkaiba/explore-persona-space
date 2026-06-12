@@ -3804,8 +3804,8 @@
     "620": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/620",
-      "status": "proposed",
+      "path": "tasks/planning/620",
+      "status": "planning",
       "title": "Fix test_issue475_common: TrainLoraConfig missing existing_adapter_path (selective-merge gap from issue-475)"
     },
     "621": {
