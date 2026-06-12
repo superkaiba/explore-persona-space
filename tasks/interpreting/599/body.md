@@ -5,7 +5,7 @@ title: Whole-response loss fails to install the marker on self-generated data at
 kind: experiment
 tags: []
 created_at: '2026-06-11T09:22:05Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 561
 goal: 'Determine whether the marker implant''s dispersed layer-14 shift geometry survives
   replacing the marker-only single-token loss with EM-style whole-response loss —
