@@ -43,6 +43,23 @@ dispatches land in different checkpoint dirs by construction; resume
 additionally verifies ``items.json`` equality and fails loud on any
 mismatch or unrecorded create.
 
+The errored/expired RETRY is resumable at every stage (``retry.status``:
+``pending`` -> ``submitting`` -> ``done``/``results_merged``). A crash at
+any point after retry API calls succeed never re-calls those items on
+resume: sync-routed retries persist per-item results incrementally to
+``results_retry_partial.json`` (only genuinely unfinished items are
+re-dispatched); batch-routed retries resume through their nested
+``retry/dispatch_<fp>/`` checkpoint (``retry.routed_path`` pins the route
+across resumes so a threshold flip cannot strand an in-flight nested
+batch or a partial file); and a complete-but-unmerged
+``results_retry.json`` (crash between its atomic write and the state
+flip) is merged with zero API calls.
+
+NOTE: ``_build_params`` is underscore-private by convention but imported
+by ``explore_persona_space.eval.alignment`` (single source of truth for
+judge request construction) — keep its signature stable or update that
+call site in lockstep.
+
 Caching honesty: every request carries ``cache_control`` (1h TTL inside
 batches, 5m default on sync), but all current judge rubrics are ~120-400
 estimated tokens — below Sonnet 4.5's 1,024-token cacheable minimum, where
@@ -399,8 +416,15 @@ async def _judge_items_sync(
     max_concurrent: int,
     error_dict_factory: Callable[[str], dict],
     client: "anthropic.AsyncAnthropic",
+    on_item_result: Callable[[str, dict], None] | None = None,
 ) -> dict[str, dict]:
-    """Semaphore-bounded AsyncAnthropic judging; per-item error dicts, never raises per item."""
+    """Semaphore-bounded AsyncAnthropic judging; per-item error dicts, never raises per item.
+
+    ``on_item_result(custom_id, score_dict)`` fires synchronously the moment
+    each item's result is known (success, parse_error, or captured-exception
+    error dict alike) — the retry path uses it to persist per-item results
+    incrementally so a crash mid-dispatch never re-calls finished items.
+    """
     semaphore = asyncio.Semaphore(max_concurrent)
 
     async def _judge_one(custom_id: str, user_msg: str) -> tuple[str, dict]:
@@ -412,11 +436,12 @@ async def _judge_items_sync(
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
                 parsed = parse_judge_json(text, None)
-                if parsed is None:
-                    return custom_id, error_dict_factory("parse_error")
-                return custom_id, parsed
+                score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
-                return custom_id, error_dict_factory(f"error: {e}")
+                score = error_dict_factory(f"error: {e}")
+        if on_item_result is not None:
+            on_item_result(custom_id, score)
+        return custom_id, score
 
     results: dict[str, dict] = {}
     pending = items
@@ -456,6 +481,10 @@ async def _run_batch_path(
     fingerprint = _compute_fingerprint(items, judge_model, judge_system_prompt, max_tokens)
     dispatch_dir = Path(checkpoint_dir) / f"dispatch_{fingerprint}"
     items_map = {cid: {"question": q, "completion": c, "user_msg": u} for cid, q, c, u in items}
+    assert len(items_map) == len(items), (
+        f"duplicate custom_ids in judge items: {len(items) - len(items_map)} collisions "
+        "(the custom_id->result join would silently drop rows)"
+    )
     state = _load_or_init_state(
         dispatch_dir,
         items_map,
@@ -560,6 +589,135 @@ async def _run_batch_path(
     return scores, retry_candidates, dispatch_dir, state
 
 
+async def _run_or_resume_retry(
+    *,
+    items: list[JudgeItem],
+    retry_candidates: list[str],
+    state: dict,
+    state_path: Path,
+    dispatch_dir: Path,
+    judge_model: str,
+    judge_system_prompt: str,
+    max_tokens: int,
+    threshold_base: int,
+    sub_batch_size: int,
+    max_concurrent: int,
+    poll_interval: float,
+    error_dict_factory: Callable[[str], dict],
+    sync_client: "anthropic.AsyncAnthropic | None",
+    batch_client: "anthropic.Anthropic",
+) -> dict[str, dict]:
+    """Run (or crash-resume) the single errored/expired retry; returns its merged results.
+
+    Resumable retry protocol: ``state['retry']['status']`` moves ``pending``
+    -> ``submitting`` -> ``done``/``results_merged``. Resuming at ``pending``
+    or ``submitting`` never re-calls items whose results are already
+    persisted:
+
+    - ``results_retry.json`` present -> completed-but-not-merged (crash
+      between its atomic write and the state flip); merge with zero calls.
+    - ``results_retry_partial.json`` -> per-item results persisted
+      incrementally by a sync-routed retry; only the remainder is
+      re-dispatched. Batch-routed retries never write the partial file —
+      their nested ``retry/dispatch_<fp>/`` checkpoint dedupes resume, and
+      ``retry.routed_path`` pins the route so the remainder set (== the full
+      retry set there) re-enters that same checkpoint.
+
+    On success, flips the retry record to ``status='done'`` +
+    ``results_merged=True`` and writes ``results_retry.json`` atomically.
+    """
+    retry_state = state.get("retry")
+    retry_done_path = dispatch_dir / "results_retry.json"
+    retry_partial_path = dispatch_dir / "results_retry_partial.json"
+    items_map = {cid: (q, c, u) for cid, q, c, u in items}
+    recomputed_ids = sorted(set(retry_candidates))
+    if retry_state is None:
+        retry_state = {
+            "status": "pending",
+            "custom_ids": recomputed_ids,
+            "results_merged": False,
+            "routed_path": None,
+        }
+        state["retry"] = retry_state
+        _atomic_write_json(state_path, state)
+    elif retry_state["custom_ids"] != recomputed_ids:
+        raise RuntimeError(
+            f"Retry candidate mismatch at {state_path}: recorded "
+            f"{retry_state['custom_ids']} != recomputed {recomputed_ids}. The persisted "
+            "sub-batch results no longer reproduce the retry set this checkpoint recorded; "
+            "refusing to resume a drifted retry."
+        )
+    retry_ids = list(retry_state["custom_ids"])
+
+    if retry_done_path.exists():
+        # Completed-but-not-merged: the retry dispatch finished and wrote
+        # results_retry.json atomically, but crashed before the state flip
+        # below. Merge with ZERO re-calls.
+        retry_results = json.loads(retry_done_path.read_text())
+    else:
+        partial: dict[str, dict] = (
+            json.loads(retry_partial_path.read_text()) if retry_partial_path.exists() else {}
+        )
+        remaining: list[JudgeItem] = [
+            (cid, *items_map[cid]) for cid in retry_ids if cid not in partial
+        ]
+        if partial:
+            logger.info(
+                "Resuming retry: %d/%d item results already persisted; re-dispatching %d",
+                len(partial),
+                len(retry_ids),
+                len(remaining),
+            )
+        new_results: dict[str, dict] = {}
+        if remaining:
+            logger.info("Retrying %d errored/expired requests (once)", len(remaining))
+            retry_state["status"] = "submitting"
+            _atomic_write_json(state_path, state)
+
+            def _persist_retry_item(cid: str, score: dict) -> None:
+                partial[cid] = score
+                _atomic_write_json(retry_partial_path, partial)
+
+            def _record_retry_route(decision: RoutingDecision) -> None:
+                retry_state["routed_path"] = decision.path
+                _atomic_write_json(state_path, state)
+
+            # Pin the route recorded by a prior attempt (threshold_base=0
+            # forces batch: the effective threshold clamps to 1 and the OTPM
+            # probe is skipped) so a threshold/OTPM flip between runs cannot
+            # strand an in-flight nested batch or a partial file.
+            pinned_route = retry_state.get("routed_path")
+            new_results = await dispatch_judge_items_async(
+                remaining,
+                judge_model=judge_model,
+                judge_system_prompt=judge_system_prompt,
+                max_tokens=max_tokens,
+                threshold_base=0 if pinned_route == "batch" else threshold_base,
+                sub_batch_size=sub_batch_size,
+                force_sync=pinned_route == "sync",
+                dry_run=False,
+                max_concurrent=max_concurrent,
+                checkpoint_dir=dispatch_dir / "retry",
+                poll_interval=poll_interval,
+                error_dict_factory=error_dict_factory,
+                on_decision=_record_retry_route,
+                sync_client=sync_client,
+                batch_client=batch_client,
+                on_item_result=_persist_retry_item,
+                _is_retry=True,
+            )
+        retry_results = {**partial, **new_results}
+        _atomic_write_json(retry_done_path, retry_results)
+    state["retry"] = {
+        "status": "done",
+        "custom_ids": retry_ids,
+        "results_merged": True,
+        "routed_path": retry_state.get("routed_path"),
+    }
+    _atomic_write_json(state_path, state)
+    return retry_results
+
+
 # ── Core dispatch ────────────────────────────────────────────────────────────
 
 
@@ -580,6 +738,7 @@ async def dispatch_judge_items_async(
     on_decision: Callable[[RoutingDecision], None] | None = None,
     sync_client: "anthropic.AsyncAnthropic | None" = None,
     batch_client: "anthropic.Anthropic | None" = None,
+    on_item_result: Callable[[str, dict], None] | None = None,
     _is_retry: bool = False,
 ) -> dict[str, dict]:
     """ASYNC CORE: route + execute one judge dispatch; returns {custom_id: score_dict}.
@@ -603,6 +762,11 @@ async def dispatch_judge_items_async(
         sync_client / batch_client: injection points for tests (mock the
             anthropic client objects, not HTTP). When None, real clients are
             constructed from ``ANTHROPIC_API_KEY`` with ``max_retries=5``.
+        on_item_result: optional ``(custom_id, score_dict)`` callback fired
+            per item as results complete — SYNC PATH ONLY (the batch path
+            persists per-sub-batch results via its dispatch checkpoint
+            instead). Used by the retry path for incremental crash-safe
+            persistence of sync-routed retries.
         dry_run: print the routing decision and return ``{}`` with ZERO API
             calls (OTPM from ``EPM_JUDGE_OTPM`` env or 400k assumed).
     """
@@ -673,6 +837,7 @@ async def dispatch_judge_items_async(
             max_concurrent=max_concurrent,
             error_dict_factory=error_dict_factory,
             client=client,
+            on_item_result=on_item_result,
         )
 
     # Step 4: batch path (checkpointed).
@@ -700,39 +865,28 @@ async def dispatch_judge_items_async(
 
     # Step 5: errored/expired retry — ONCE, through the same threshold routing
     # (small straggler sets go sync — faster, consistent with the speed goal).
+    # Resumable at every stage; protocol in _run_or_resume_retry's docstring.
     retry_state = state.get("retry")
     if retry_state and retry_state.get("status") == "done" and retry_state.get("results_merged"):
-        retry_results = json.loads((dispatch_dir / "results_retry.json").read_text())
-        scores.update(retry_results)
-    elif retry_candidates and not _is_retry:
-        items_map = {cid: (q, c, u) for cid, q, c, u in items}
-        retry_ids = sorted(set(retry_candidates))
-        state["retry"] = {"status": "pending", "custom_ids": retry_ids, "results_merged": False}
-        _atomic_write_json(state_path, state)
-        retry_items: list[JudgeItem] = [(cid, *items_map[cid]) for cid in retry_ids]
-        logger.info("Retrying %d errored/expired requests (once)", len(retry_ids))
-        state["retry"]["status"] = "submitting"
-        _atomic_write_json(state_path, state)
-        retry_results = await dispatch_judge_items_async(
-            retry_items,
+        scores.update(json.loads((dispatch_dir / "results_retry.json").read_text()))
+    elif (retry_state is not None or retry_candidates) and not _is_retry:
+        retry_results = await _run_or_resume_retry(
+            items=items,
+            retry_candidates=retry_candidates,
+            state=state,
+            state_path=state_path,
+            dispatch_dir=dispatch_dir,
             judge_model=judge_model,
             judge_system_prompt=judge_system_prompt,
             max_tokens=max_tokens,
             threshold_base=threshold_base,
             sub_batch_size=sub_batch_size,
-            force_sync=False,
-            dry_run=False,
             max_concurrent=max_concurrent,
-            checkpoint_dir=dispatch_dir / "retry",
             poll_interval=poll_interval,
             error_dict_factory=error_dict_factory,
             sync_client=sync_client,
             batch_client=client_b,
-            _is_retry=True,
         )
-        _atomic_write_json(dispatch_dir / "results_retry.json", retry_results)
-        state["retry"] = {"status": "done", "custom_ids": retry_ids, "results_merged": True}
-        _atomic_write_json(state_path, state)
         scores.update(retry_results)
     elif retry_candidates and _is_retry:
         logger.info(

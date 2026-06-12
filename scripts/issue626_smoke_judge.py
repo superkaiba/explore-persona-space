@@ -14,6 +14,7 @@ import logging
 from pathlib import Path
 
 from explore_persona_space.eval.batch_judge import judge_completions_batch
+from explore_persona_space.eval.judge_dispatch import decide_route
 from explore_persona_space.orchestrate.env import load_dotenv
 
 
@@ -62,7 +63,13 @@ def main() -> None:
     print(f"RoutingDecision: {json.dumps(routing, indent=2)}")
     print(f"per_persona: {json.dumps(result, indent=2)}")
 
-    expected_path = "batch" if args.max_n >= args.threshold_base else "sync"
+    # Expected path from the SAME pure routing rule the dispatcher ran, fed
+    # the recorded (probed or assumed) OTPM — the effective threshold is
+    # OTPM-scaled, so a bare `max_n >= threshold_base` comparison is wrong
+    # whenever the org limit differs from the Tier-4 400k divisor.
+    expected_path = decide_route(
+        args.max_n, threshold_base=args.threshold_base, otpm=routing["otpm"]
+    ).path
     assert routing["path"] == expected_path, (routing["path"], expected_path)
     stats = result["smoke"]
     assert stats["n_errors"] == 0, f"n_errors={stats['n_errors']} (expected 0)"
