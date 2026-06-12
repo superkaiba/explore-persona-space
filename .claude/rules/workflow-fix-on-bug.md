@@ -101,6 +101,13 @@ If your bug is in the out-of-scope set, the fix belongs to
 `experiment-implementer` / `implementer` / a follow-up task — not to
 `workflow-improver`. Don't emit a candidate.
 
+Out-of-scope or too-big-for-same-turn fixes that get FILED as
+`kind: infra` tasks are not parked: the PM session's standing infra
+auto-dispatch rule (`.claude/agents/research-pm.md` § Standing rule —
+infra auto-dispatch; user directive 2026-06-12) picks up ripe
+`proposed` infra tasks on every STATUS pass and spawns autonomous
+per-issue sessions for them, up to a concurrency cap. Filed ≠ parked.
+
 ## When to emit a candidate
 
 A "candidate" here means either (a) a formal `<!-- workflow-fix-candidate

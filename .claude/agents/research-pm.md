@@ -190,6 +190,10 @@ flight" rather than dropping them.
   self-explanatory, else title + the first clause of the frontmatter
   `goal:`; never page through full bodies.
 
+After the report, run the **infra auto-dispatch pass** (see § Standing
+rule — infra auto-dispatch below) and append its `Infra auto-dispatch`
+block to the same reply.
+
 ### Mode 2 — AUDIT ("check for drift")
 
 Scan for:
@@ -316,6 +320,78 @@ session. Trust the experiment's status + events.jsonl events; check
 progress with `python scripts/task.py view <N>` only when the user
 asks.
 
+### Standing rule — infra auto-dispatch (fires on every STATUS pass)
+
+Automatically found infra problems get fixed automatically unless
+something genuinely needs the user's call (user directive 2026-06-12).
+The same-turn workflow-fix-on-bug protocol covers small workflow-surface
+gaps; this rule covers the bigger FILED fixes — agent-filed `kind: infra`
+tasks that otherwise accumulate at `proposed` with no runner.
+
+After producing the Mode 1 report — boot scan and every STATUS re-run
+alike — run the infra auto-dispatch pass:
+
+1. **Enumerate** `proposed` tasks with `kind: infra` (and `kind: batch`
+   when the work is pure code/ops) from the queue report already in
+   hand.
+2. **Consolidate duplicate clusters** before dispatching: when several
+   tasks file the same fix (same incident hit by different sessions),
+   dispatch the most complete one and
+   `task.py set-status <dup> archived` the rest, posting a note marker
+   on each naming the canonical task.
+3. **Auto-dispatch ripe tasks** — no user ask:
+   ```bash
+   uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
+   ```
+   A task is **ripe** when it names a concrete target + change and is
+   not predicate-blocked (e.g. "audit X after its next live attempt"
+   waits for the predicate; track it and dispatch when it fires).
+4. **Concurrency cap: 3 concurrent infra sessions.** Count live
+   issue-mapped sessions whose task is `kind: infra` via
+   `spawn_session.py list` + a task-kind lookup (`task.py view <N>
+   --json`). Drain oldest-first by default; urgency-first when a task
+   names an active incident.
+5. **Park for the user ONLY when** (the "REALLY needs my call" list —
+   keep it tight):
+   - **HARD RULE — credentials/secrets off-machine.** The fix would
+     move credentials or secrets off this machine (push to any remote,
+     gist, HF, publicly visible instance metadata, ...; the established
+     `.env`-to-pod push during pod bootstrap is status quo, not in
+     scope). Never auto; redesign to keep secrets local or park.
+     `held: credentials`.
+   - **HARD RULE — outward-facing sends.** The work sends anything
+     outward-facing addressed to humans or services outside the
+     project's standard artifact channels (git/HF/WandB) — email,
+     Slack, social posts, published content. Draft only; park for
+     approval. `held: outward-facing`.
+   - **Spending / vendor decisions** (adopting a new paid service or
+     compute vendor) — not really infra fixes anyway. `held: spend`.
+   - **Research-judgment / user-voice items** (result interpretation,
+     mentor-facing prose) — these should not be `kind: infra` in the
+     first place; re-kind and leave for triage. `held: re-kind`.
+   - **Force-push and irreversible deletion of research artifacts**
+     (`eval_results/`, `figures/`, HF datasets, `RESULTS.md`) stay
+     never-auto per existing rules. `held: irreversible`.
+6. **Explicitly AUTO now (not park-worthy):** destructive-but-
+   policy-backed ops — terminating orphaned/stopped pods,
+   zombie-session sweeps, cache/disk cleanup, cron additions. These
+   were previously held for the user; the 2026-06-12 user directive
+   supersedes that hold.
+7. **Visibility without a gate:** append an `Infra auto-dispatch` block
+   to the STATUS report — what was auto-dispatched this pass and what
+   is held, each held item with the one-word reason
+   (`held: credentials`, `held: outward-facing`, `held: spend`,
+   `held: re-kind`, `held: irreversible`, `held: predicate`,
+   `held: cap`). `predicate` and `cap` are mechanical deferrals
+   re-checked on the next pass, NOT items awaiting user input.
+
+The dispatched sessions run the full `/issue <N>` lifecycle with their
+own gates; this rule changes WHO pulls the trigger on ripe `proposed`
+infra work, not any downstream gate. Promotion out of
+`awaiting_promotion` stays user-only. `kind: experiment` tasks are NOT
+covered — they keep the Mode 4/5 ranked-candidate flow, the full
+adversarial-planner path, and the plan-approval GPU-hour cap.
+
 ### Mode 6 — INTEGRATE ("a session finished")
 
 When you notice (via STATUS scan or user mention) that an experiment advanced:
@@ -353,6 +429,12 @@ same skill scans the awaiting_promotion list for similar entries.
   directly and post a note marker recording the why. The ONLY
   user-owned status move is promotion out of `awaiting_promotion`
   (`task.py promote <N> useful|not-useful`).
+- Infra auto-dispatch: spawning autonomous per-issue sessions for ripe
+  `proposed` `kind: infra` (and pure code/ops `kind: batch`) tasks, and
+  archiving their obvious duplicates with a note marker — per the
+  standing infra auto-dispatch rule above (user directive 2026-06-12).
+  Held items go in the report with a one-word reason, never as an
+  approval question.
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
@@ -395,8 +477,9 @@ Do NOT invoke `/issue` in the PM session.
   kind, age>`; `followups_running` entries append
   `#N — <followup_label> (auto|manual)`), then Awaiting promotion
   (Most recent + By theme, `#N — <one-line finding> (CONFIDENCE)`),
-  then Proposed queue (Recently filed + By theme). "Quick status" =
-  section 1 only.
+  then Proposed queue (Recently filed + By theme), then the
+  `Infra auto-dispatch` block (dispatched this pass + held items with
+  one-word reasons). "Quick status" = section 1 only.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run
