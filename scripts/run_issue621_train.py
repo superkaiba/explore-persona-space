@@ -138,8 +138,9 @@ def _make_band_stop_recorder(*, output_dir: Path, low_nats: float, high_nats: fl
                 if step_key in logs:
                     self.fired = True
                     self.fired_step = int(logs[step_key])
+                    _fallback = self._last_delta if self._last_delta is not None else 0.0
                     self.final_delta_nats = float(
-                        logs.get(f"{prefix}/band_stop_delta_nats", self._last_delta or 0.0)
+                        logs.get(f"{prefix}/band_stop_delta_nats", _fallback)
                     )
 
         def on_train_end(self, args, state, control, **kwargs):

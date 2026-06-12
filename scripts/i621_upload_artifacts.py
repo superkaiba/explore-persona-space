@@ -9,15 +9,27 @@ data repo, with fail-loud fresh-listing verification per class:
      emission mode writes).
   2. Training mixes (``training_mixes/*.jsonl``) →
      ``issue621_rank1_readwrite/training_mixes/``.
-  3. Eval shift tensors (``eval/*__shift.pt`` — plan-referenced analysis
-     inputs, #521 rule) →
+  3. Eval shift tensors (``eval/*__shift.{pt,json}`` — plan-referenced
+     analysis inputs, #521 rule) →
      ``issue621_rank1_readwrite/analysis_tensors/shifts/``.
-  4. Band trajectories (``cells/*/band_trajectory.json``) →
+  4. Band trajectories (``cells/*/band_trajectory.json`` +
+     ``cells/*/marker_band_stop_result.json``) →
      ``issue621_rank1_readwrite/trajectories/``.
+  5. Eval emission JSONs (``eval/*__emission.json``) →
+     ``issue621_rank1_readwrite/eval/`` (round-2, concern
+     ``analysis-fetch-missing-shifts``: the GCP instance self-deletes, so
+     the HF copies are the ONLY durable eval JSONs the off-pod Phase A
+     can fetch).
+  6. Train-side cell metadata (``anchor_smoke/*.json`` + ``sweep/*.json``)
+     → ``issue621_rank1_readwrite/train_meta/{anchor_smoke,sweep}/``
+     (round-2: ``issue621_analyze.py`` joins band_stop_fired /
+     band_stop_step / final_source_delta_nats from these for the
+     banded-vs-below-band splits — they must survive instance deletion).
 
 Each class is ONE ``upload_folder`` commit (HF 256 commits/hr rule) with a
-bounded 5xx retry, then verified against a FRESH ``list_repo_files``
-listing — any expected path missing raises (the pipeline's ``set -e``
+bounded 5xx retry, then verified against a FRESH complete listing
+(``list_repo_files_complete`` — raw ``list_repo_files`` silently truncates
+on big repos) — any expected path missing raises (the pipeline's ``set -e``
 aborts before ``[phase=done]``).
 
 CLI:
@@ -70,8 +82,15 @@ def _upload_folder_with_retry(api, **kwargs) -> None:
 
 
 def _verify_on_hub(api, expected_paths: list[str], label: str) -> None:
-    """FRESH listing verification — every expected path must be on the Hub."""
-    listed = set(api.list_repo_files(HF_DATA_REPO, repo_type="dataset"))
+    """FRESH listing verification — every expected path must be on the Hub.
+
+    Uses ``list_repo_files_complete`` (paginated tree API): raw
+    ``list_repo_files`` reads ``siblings`` and silently truncates at ~7.9k
+    entries — the data repo is well past that.
+    """
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    listed = set(list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset"))
     missing = [p for p in expected_paths if p not in listed]
     if missing:
         raise RuntimeError(
@@ -142,8 +161,14 @@ def main(argv: list[str] | None = None) -> int:
         "training mixes",
     )
 
-    # 3. Eval shift tensors (plan-referenced analysis inputs, #521 rule).
-    shifts = sorted((out_root / "eval").glob("*__shift.pt"))
+    # 3. Eval shift tensors + slot-stats JSONs (plan-referenced analysis
+    # inputs, #521 rule). BOTH suffixes verified — the off-pod analyzer's
+    # load_eval_cells raises without the JSONs (concern
+    # analysis-fetch-missing-shifts), so a pt-only verification is not
+    # enough.
+    shifts = sorted((out_root / "eval").glob("*__shift.pt")) + sorted(
+        (out_root / "eval").glob("*__shift.json")
+    )
     if not shifts:
         raise RuntimeError(f"no shift tensors under {out_root}/eval — eval did not run?")
     _upload_folder_with_retry(
@@ -158,7 +183,7 @@ def main(argv: list[str] | None = None) -> int:
     _verify_on_hub(
         api,
         [f"{HF_ANALYSIS_TENSORS_PREFIX}/shifts/{s.name}" for s in shifts],
-        "shift tensors",
+        "shift tensors + slot-stats JSONs",
     )
 
     # 4. Band trajectories (per-cell JSON, tiny).
@@ -179,6 +204,62 @@ def main(argv: list[str] | None = None) -> int:
         [f"{HF_BUCKET}/trajectories/{t.parent.name}/band_trajectory.json" for t in traj_files],
         "band trajectories",
     )
+
+    # 5. Eval emission JSONs (round-2, concern analysis-fetch-missing-shifts:
+    # eval_results/ is never committed to git pod-side, so the HF copy is the
+    # only durable one once the instance self-deletes).
+    emissions = sorted((out_root / "eval").glob("*__emission.json"))
+    if emissions:
+        _upload_folder_with_retry(
+            api,
+            folder_path=str(out_root / "eval"),
+            path_in_repo=f"{HF_BUCKET}/eval",
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            allow_patterns=["*__emission.json"],
+            commit_message="task #621 eval emission JSONs",
+        )
+        _verify_on_hub(
+            api,
+            [f"{HF_BUCKET}/eval/{e.name}" for e in emissions],
+            "eval emission JSONs",
+        )
+    elif args.skip_raw_completions:
+        log.warning("no emission JSONs (smoke run, --skip-raw-completions) — class 5 skipped.")
+    else:
+        raise RuntimeError(
+            f"no *__emission.json under {out_root}/eval — emission eval did not "
+            "run; refusing to advance."
+        )
+
+    # 6. Train-side cell metadata (anchor_smoke/ + sweep/ per-cell JSONs) —
+    # the analyzer's banded-vs-below-band join inputs (round-2).
+    n_meta = 0
+    for sub in ("anchor_smoke", "sweep"):
+        d = out_root / sub
+        metas = sorted(d.glob("*.json")) if d.is_dir() else []
+        if not metas:
+            continue
+        n_meta += len(metas)
+        _upload_folder_with_retry(
+            api,
+            folder_path=str(d),
+            path_in_repo=f"{HF_BUCKET}/train_meta/{sub}",
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            allow_patterns=["*.json"],
+            commit_message=f"task #621 train-side cell metadata ({sub})",
+        )
+        _verify_on_hub(
+            api,
+            [f"{HF_BUCKET}/train_meta/{sub}/{m.name}" for m in metas],
+            f"train meta ({sub})",
+        )
+    if n_meta == 0:
+        raise RuntimeError(
+            f"no train-side cell JSONs under {out_root}/{{anchor_smoke,sweep}} — "
+            "the analyzer's banded/below-band split is unrunnable off-pod without them."
+        )
 
     log.info("ALL artifact classes uploaded + verified.")
     return 0

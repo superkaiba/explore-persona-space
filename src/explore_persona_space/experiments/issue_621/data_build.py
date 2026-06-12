@@ -37,6 +37,7 @@ R is base-model greedy under each persona's own system prompt, frozen
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Iterable
 from pathlib import Path
 
@@ -294,11 +295,25 @@ def build_cell_rows(
 
 
 def write_rows_jsonl(rows: Iterable[dict], out_path: Path) -> None:
-    """Dump rows to a JSONL file (HF Trainer drops the underscore-prefixed
-    tags during ``load_dataset``, so they only land in the on-disk manifest
-    for downstream tooling).
+    """Dump rows to a JSONL file ATOMICALLY (pid-suffixed tmp + os.replace).
+
+    HF Trainer drops the underscore-prefixed tags during ``load_dataset``,
+    so they only land in the on-disk manifest for downstream tooling.
+
+    Atomicity is load-bearing (concern ``mix-write-race-cross-shard``):
+    mixes are per-(source, seed) and shared across placement arms, and the
+    sweep's 4-way shard split puts builder and consumer of the same mix on
+    DIFFERENT shards (e.g. the three police_officer mixes). The consumer
+    gates on ``is_file()`` — a bare ``open(out_path, "w")`` window lets it
+    read a torn-but-valid JSONL prefix and silently train on a truncated
+    mix. With tmp + ``os.replace`` the destination only ever holds a
+    COMPLETE file; concurrent double-builds are benign because the rows are
+    deterministic per (source, seed) (seeded rngs over pinned inputs), so
+    last-write-wins replaces identical bytes.
     """
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_path, "w") as f:
+    tmp_path = out_path.with_name(f"{out_path.name}.tmp.{os.getpid()}")
+    with open(tmp_path, "w") as f:
         for row in rows:
             f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    os.replace(tmp_path, out_path)

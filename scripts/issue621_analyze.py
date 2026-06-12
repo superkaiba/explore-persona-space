@@ -66,6 +66,7 @@ from explore_persona_space.experiments.issue_621 import (
     EXTRACTION_LAYER,
     HF_ADAPTER_PATH_PREFIX,
     HF_ANALYSIS_TENSORS_PREFIX,
+    HF_BUCKET,
     HF_DATA_REPO,
     HF_MODEL_REPO,
     IM_END_ID,
@@ -76,6 +77,7 @@ from explore_persona_space.experiments.issue_621 import (
     SEEDS,
     SOURCES,
     UNIFIED_NEGATIVE_PANEL,
+    enumerate_cells,
     parse_cell_slug,
 )
 
@@ -295,34 +297,82 @@ def cmd_build_unembedding(args) -> int:
     return 0
 
 
-def cmd_fetch_artifacts(args) -> int:
-    """Fetch adapters (+ inits) and the bank from HF into local roots.
+def _fetch_prefix(
+    *,
+    hf_hub_download,
+    repo_files: list[str],
+    repo_id: str,
+    repo_type: str,
+    prefix: str,
+    dest_root: Path,
+    suffixes: tuple[str, ...] | None = None,
+) -> list[Path]:
+    """Download every repo file under ``prefix/`` into ``dest_root``.
 
-    Per-file ``hf_hub_download`` over an explicit ``list_repo_files``
-    listing — NEVER ``snapshot_download(allow_patterns=...)`` (silent
-    truncation on big repos).
+    Per-file ``hf_hub_download`` over an explicit COMPLETE listing — NEVER
+    ``snapshot_download(allow_patterns=...)`` (silent truncation on big
+    repos). Relative layout under ``prefix`` is preserved under
+    ``dest_root``. Returns the local paths (existing files are kept).
     """
-    from huggingface_hub import hf_hub_download, list_repo_files
-
-    adapters_root = Path(args.adapters_root)
-    adapters_root.mkdir(parents=True, exist_ok=True)
-    files = list_repo_files(HF_MODEL_REPO, repo_type="model")
-    wanted = [
-        f
-        for f in files
-        if f.startswith(f"{HF_ADAPTER_PATH_PREFIX}/")
-        and (f.endswith("adapter_model.safetensors") or f.endswith("adapter_config.json"))
-    ]
-    if not wanted:
-        raise SystemExit(f"no adapter files under {HF_MODEL_REPO}/{HF_ADAPTER_PATH_PREFIX}/")
+    wanted = [f for f in repo_files if f.startswith(prefix + "/")]
+    if suffixes is not None:
+        wanted = [f for f in wanted if f.endswith(suffixes)]
+    out: list[Path] = []
     for f in wanted:
-        local = hf_hub_download(HF_MODEL_REPO, f, repo_type="model")
-        rel = Path(f).relative_to(HF_ADAPTER_PATH_PREFIX)
-        dest = adapters_root / rel
+        local = hf_hub_download(repo_id, f, repo_type=repo_type)
+        dest = dest_root / Path(f).relative_to(prefix)
         dest.parent.mkdir(parents=True, exist_ok=True)
         if not dest.is_file():
             dest.write_bytes(Path(local).read_bytes())
-    log.info("fetched %d adapter files -> %s", len(wanted), adapters_root)
+        out.append(dest)
+    return out
+
+
+def cmd_fetch_artifacts(args) -> int:
+    """Fetch EVERY off-pod Phase A input from HF into the local layout.
+
+    Round-2 (concern ``analysis-fetch-missing-shifts``): the pipeline never
+    commits ``eval_results/`` to git and the GCP instance self-deletes, so
+    the HF uploads are the ONLY durable copies. ``run`` requires, locally:
+
+      - adapters + A-init snapshots      → ``--adapters-root`` (model repo)
+      - context bank bundle              → ``--bank``
+      - ``*__shift.json`` + ``*__shift.pt``  → ``--eval-root``
+        (``load_eval_cells`` raises FileNotFoundError without the JSONs;
+        the H3 L20-shift secondary reads the ``.pt``)
+      - train-side cell metadata JSONs   → ``--cells-root/{anchor_smoke,
+        sweep}/`` (band_stop_fired / band_stop_step /
+        final_source_delta_nats — the banded-vs-below-band split)
+      - eval emission JSONs + band trajectories (duty-10/12 post-hoc
+        inputs) → ``--eval-root`` / ``--cells-root/cells/<slug>/``
+
+    Listings use ``list_repo_files_complete`` (paginated tree API): raw
+    ``list_repo_files`` silently truncates at ~7.9k entries and the model
+    repo is far past that.
+    """
+    from huggingface_hub import HfApi, hf_hub_download
+
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    api = HfApi()
+
+    adapters_root = Path(args.adapters_root)
+    adapters_root.mkdir(parents=True, exist_ok=True)
+    model_files = list_repo_files_complete(api, HF_MODEL_REPO, repo_type="model")
+    fetched = _fetch_prefix(
+        hf_hub_download=hf_hub_download,
+        repo_files=model_files,
+        repo_id=HF_MODEL_REPO,
+        repo_type="model",
+        prefix=HF_ADAPTER_PATH_PREFIX,
+        dest_root=adapters_root,
+        suffixes=("adapter_model.safetensors", "adapter_config.json"),
+    )
+    if not fetched:
+        raise SystemExit(f"no adapter files under {HF_MODEL_REPO}/{HF_ADAPTER_PATH_PREFIX}/")
+    log.info("fetched %d adapter files -> %s", len(fetched), adapters_root)
+
+    data_files = list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset")
 
     bank_dir = Path(args.bank)
     bank_dir.mkdir(parents=True, exist_ok=True)
@@ -334,6 +384,77 @@ def cmd_fetch_artifacts(args) -> int:
         if not dest.is_file():
             dest.write_bytes(Path(local).read_bytes())
     log.info("fetched bank -> %s", bank_dir)
+
+    # Shift artifacts (JSON + .pt) — REQUIRED by load_eval_cells/cmd_run.
+    eval_root = Path(args.eval_root)
+    shifts = _fetch_prefix(
+        hf_hub_download=hf_hub_download,
+        repo_files=data_files,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        prefix=f"{HF_ANALYSIS_TENSORS_PREFIX}/shifts",
+        dest_root=eval_root,
+        suffixes=("__shift.json", "__shift.pt"),
+    )
+    n_shift_json = sum(1 for p in shifts if p.name.endswith("__shift.json"))
+    n_shift_pt = sum(1 for p in shifts if p.name.endswith("__shift.pt"))
+    if n_shift_json == 0 or n_shift_pt == 0:
+        raise SystemExit(
+            f"shift artifacts missing on Hub under {HF_DATA_REPO}/"
+            f"{HF_ANALYSIS_TENSORS_PREFIX}/shifts/ (json={n_shift_json}, "
+            f"pt={n_shift_pt}) — `run` cannot proceed without them; was "
+            "i621_upload_artifacts.py run on the instance?"
+        )
+    log.info("fetched %d shift JSONs + %d shift tensors -> %s", n_shift_json, n_shift_pt, eval_root)
+
+    # Eval emission JSONs (per-cell on-policy emission anchors).
+    emissions = _fetch_prefix(
+        hf_hub_download=hf_hub_download,
+        repo_files=data_files,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        prefix=f"{HF_BUCKET}/eval",
+        dest_root=eval_root,
+        suffixes=("__emission.json",),
+    )
+    if emissions:
+        log.info("fetched %d emission JSONs -> %s", len(emissions), eval_root)
+    else:
+        log.warning("no emission JSONs under %s/eval on Hub (smoke-only run?)", HF_BUCKET)
+
+    # Train-side cell metadata — the banded-vs-below-band join inputs.
+    cells_root = Path(args.cells_root)
+    metas = _fetch_prefix(
+        hf_hub_download=hf_hub_download,
+        repo_files=data_files,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        prefix=f"{HF_BUCKET}/train_meta",
+        dest_root=cells_root,
+        suffixes=(".json",),
+    )
+    if not metas:
+        raise SystemExit(
+            f"no train-side cell metadata under {HF_DATA_REPO}/{HF_BUCKET}/train_meta/ "
+            "— the banded/below-band split is unrunnable; re-run "
+            "i621_upload_artifacts.py (class 6) before instance deletion."
+        )
+    log.info("fetched %d train-meta JSONs -> %s", len(metas), cells_root)
+
+    # Band trajectories (duty-10/12 post-hoc reads; tiny).
+    trajs = _fetch_prefix(
+        hf_hub_download=hf_hub_download,
+        repo_files=data_files,
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        prefix=f"{HF_BUCKET}/trajectories",
+        dest_root=cells_root / "cells",
+        suffixes=(".json",),
+    )
+    if trajs:
+        log.info("fetched %d trajectory JSONs -> %s", len(trajs), cells_root / "cells")
+    else:
+        log.warning("no band trajectories under %s/trajectories on Hub", HF_BUCKET)
     return 0
 
 
@@ -684,15 +805,18 @@ def analyze_cell(
             )
         read_identity[pos] = spaces
 
-    # H1 sensitivity (duty 4): wrong-context null EXCLUDING the trained
-    # negatives — approximated by re-running with a context subset.
+    # H1 sensitivity (duty 4): wrong-context null EXCLUDING ALL FOUR
+    # trained-negative contexts (the full UNIFIED_NEGATIVE_PANEL — `a` was
+    # trained against all 4, so none is a valid "wrong context" here; round-2
+    # fix for concern duty4-h1-null-excludes-2-of-4, which excluded only the
+    # 2 panel members present in the 19-persona eval panel).
     bank_excl = {
         "centroids": {
             tap: {
                 pos: {
                     n: v
                     for n, v in by_ctx.items()
-                    if n not in TRAINED_NEGATIVES_IN_PANEL or n == source
+                    if n not in UNIFIED_NEGATIVE_PANEL or n == source
                 }
                 for pos, by_ctx in by_pos.items()
             }
@@ -890,6 +1014,17 @@ def cmd_run(args) -> int:
         log.warning("skipped %d cell(s) without local adapters: %s", len(skipped), skipped[:5])
     if not results:
         raise SystemExit("no cells analyzed — fetch adapters first (fetch-artifacts).")
+    # Round-2 (code-review minor): a partial fetch-artifacts must not be
+    # silently analyzed as if it were the full grid. The production run
+    # expects every enumerated cell; --allow-partial is the explicit escape
+    # for smoke fixtures / deliberate subsets.
+    n_expected = len(enumerate_cells())
+    if not args.allow_partial and len(results) != n_expected:
+        raise SystemExit(
+            f"analyzed {len(results)} cells but the design enumerates {n_expected} "
+            f"(skipped: {skipped[:5]}{'...' if len(skipped) > 5 else ''}) — "
+            "re-run fetch-artifacts, or pass --allow-partial for a deliberate subset."
+        )
 
     cross_seed = _cross_seed_stability(per_cell_pairs)
 
@@ -942,6 +1077,9 @@ def cmd_run(args) -> int:
         "s_scale": S_SCALE,
         "primary_position": PRIMARY_POSITION,
         "trained_negatives_excluded_primary": list(TRAINED_NEGATIVES_IN_PANEL),
+        # duty 4: the H1 wrong-context-null sensitivity excludes ALL FOUR
+        # trained-negative contexts (round-2 fix).
+        "h1_null_excluded_contexts": list(UNIFIED_NEGATIVE_PANEL),
         "band_layers": [min(BAND_LAYERS), max(BAND_LAYERS)],
         "h3_layers": [min(H3_LAYERS), max(H3_LAYERS)],
         "geometry_centering": "global_mean",
@@ -981,9 +1119,14 @@ def main(argv: list[str] | None = None) -> int:
         "--unembedding", default="eval_results/issue_621/analysis/unembedding_rows.pt"
     )
 
-    p_fetch = sub.add_parser("fetch-artifacts", help="fetch adapters + bank from HF")
+    p_fetch = sub.add_parser(
+        "fetch-artifacts",
+        help="fetch adapters + bank + shifts + emission JSONs + train meta from HF",
+    )
     p_fetch.add_argument("--adapters-root", default="eval_results/issue_621/adapters_fetched")
     p_fetch.add_argument("--bank", default="eval_results/issue_621/context_vectors")
+    p_fetch.add_argument("--eval-root", default="eval_results/issue_621/eval")
+    p_fetch.add_argument("--cells-root", default="eval_results/issue_621")
 
     p_run = sub.add_parser("run", help="run the full §4.5 analysis")
     p_run.add_argument("--adapters-root", default="eval_results/issue_621/adapters_fetched")
@@ -994,6 +1137,11 @@ def main(argv: list[str] | None = None) -> int:
         "--unembedding", default="eval_results/issue_621/analysis/unembedding_rows.pt"
     )
     p_run.add_argument("--out", default="eval_results/issue_621/analysis")
+    p_run.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="Permit analyzing fewer cells than the enumerated grid (smoke / deliberate subset).",
+    )
 
     args = ap.parse_args(argv)
     if args.cmd == "build-unembedding":

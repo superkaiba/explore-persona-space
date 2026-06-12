@@ -99,7 +99,10 @@ def main(argv: list[str] | None = None) -> int:
     out_root = Path(args.out_root)
     cells = _load_cells(out_root)
 
-    # Verify EVERY per-cell adapter path resolves on the Hub (fresh listing).
+    # Verify EVERY per-cell adapter path resolves on the Hub. COMPLETE
+    # listing via the paginated tree API — raw list_repo_files reads
+    # `siblings` and silently truncates at ~7.9k entries on the model repo
+    # (round-2, Codex minor).
     adapter_paths: dict[str, str] = {}
     missing: list[str] = []
     init_missing: list[str] = []
@@ -108,34 +111,73 @@ def main(argv: list[str] | None = None) -> int:
         for cell in cells:
             adapter_paths[cell["cell_slug"]] = cell["hf_subfolder"]
     else:
-        from huggingface_hub import list_repo_files
+        from huggingface_hub import HfApi
 
-        listed = set(list_repo_files(HF_MODEL_REPO, repo_type="model"))
+        from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+        def _missing_on_hub() -> tuple[list[str], list[str]]:
+            listed = set(list_repo_files_complete(HfApi(), HF_MODEL_REPO, repo_type="model"))
+            return (
+                [
+                    c["hf_subfolder"]
+                    for c in cells
+                    if f"{c['hf_subfolder']}/adapter_model.safetensors" not in listed
+                ],
+                [
+                    c["hf_subfolder"]
+                    for c in cells
+                    if f"{c['hf_subfolder']}/adapter_init/adapter_model.safetensors" not in listed
+                ],
+            )
+
         for cell in cells:
-            sub = cell["hf_subfolder"]
-            adapter_paths[cell["cell_slug"]] = sub
-            if f"{sub}/adapter_model.safetensors" not in listed:
-                missing.append(sub)
-        init_missing = [
-            cell["hf_subfolder"]
-            for cell in cells
-            if f"{cell['hf_subfolder']}/adapter_init/adapter_model.safetensors" not in listed
-        ]
+            adapter_paths[cell["cell_slug"]] = cell["hf_subfolder"]
+        missing, init_missing = _missing_on_hub()
+
+        # Round-2 (code-review minor): the in-train per-cell upload is
+        # best-effort (warn-not-raise in train_lora), so a transient failure
+        # surfaces only here — AFTER all GPU phases. Before aborting (which
+        # would strand the local-only adapter behind the instance's EXIT-trap
+        # deletion), re-upload any missing cell from its local
+        # cells/<slug>/ dir, then re-verify. Turns a full-cell retrain into
+        # a retry; still fail-loud if the re-upload cannot land.
+        if missing or init_missing:
+            from explore_persona_space.orchestrate.hub import upload_model
+
+            by_subfolder = {c["hf_subfolder"]: c for c in cells}
+            for sub in sorted(set(missing) | set(init_missing)):
+                cell = by_subfolder[sub]
+                local_dir = Path(cell.get("output_dir") or (out_root / "cells" / cell["cell_slug"]))
+                if not (local_dir / "adapter_model.safetensors").is_file():
+                    log.error("no local adapter at %s — cannot re-upload %s", local_dir, sub)
+                    continue
+                log.warning("re-uploading missing adapter %s from %s", sub, local_dir)
+                # Folder-recursive like the primary in-train upload —
+                # checkpoint-* stays INCLUDED (the 10-step ladder is the
+                # duty-10 a(t) input; rank-1 ckpts are ~1.6 MB each).
+                upload_model(str(local_dir), repo_id=HF_MODEL_REPO, path_in_repo=sub)
+            missing, init_missing = _missing_on_hub()
     if missing:
         raise SystemExit(
-            f"{len(missing)} adapter path(s) NOT resolvable on {HF_MODEL_REPO}: "
-            f"{missing[:3]} ... — refusing to write a reproducibility card "
-            "with dead paths. Re-run the upload before the sentinel."
+            f"{len(missing)} adapter path(s) NOT resolvable on {HF_MODEL_REPO} "
+            f"(after re-upload attempt): {missing[:3]} ... — refusing to write "
+            "a reproducibility card with dead paths. Re-run the upload before "
+            "the sentinel."
         )
     # A-init snapshots ride in the same per-cell folders.
     if init_missing:
         raise SystemExit(
-            f"{len(init_missing)} adapter_init snapshot(s) missing on Hub: "
-            f"{init_missing[:3]} ... — the A-init control is unrunnable without "
-            "them; re-run the upload."
+            f"{len(init_missing)} adapter_init snapshot(s) missing on Hub "
+            f"(after re-upload attempt): {init_missing[:3]} ... — the A-init "
+            "control is unrunnable without them; re-run the upload."
         )
 
-    eval_jsons = sorted((out_root / "eval").glob("*__seed*.json"))
+    # Round-2 (code-review minor): plan §6.5's "30 files expected" glob is
+    # the per-cell four-float DV files — count shift vs emission JSONs
+    # SEPARATELY (the old *__seed*.json glob conflated both at 60 files).
+    shift_jsons = sorted((out_root / "eval").glob("*__shift.json"))
+    emission_jsons = sorted((out_root / "eval").glob("*__emission.json"))
+    eval_jsons = shift_jsons
     bank_manifest = out_root / "context_vectors" / "manifest.json"
 
     card = {
@@ -152,7 +194,11 @@ def main(argv: list[str] | None = None) -> int:
         "context_bank_prefix": f"{HF_ANALYSIS_TENSORS_PREFIX}",
         "hf_train_mix_read_revision": HF_TRAIN_MIX_READ_REVISION,
         "n_cells": len(cells),
-        "n_eval_jsons": len(eval_jsons),
+        "n_eval_jsons": len(eval_jsons),  # = shift JSONs (plan §6.5: one per cell)
+        "n_shift_jsons": len(shift_jsons),
+        "n_emission_jsons": len(emission_jsons),
+        "eval_jsons_prefix": f"{HF_BUCKET}/eval",
+        "train_meta_prefix": f"{HF_BUCKET}/train_meta",
         "bank_manifest_local": str(bank_manifest) if bank_manifest.is_file() else None,
         "git_commit": _git_commit(),
         "band_entry_steps_per_cell": {c["cell_slug"]: c.get("band_stop_step") for c in cells},

@@ -16,6 +16,11 @@ tokenizer, then drives the PRODUCTION entrypoints against fixture roots:
                 (3 arms × 2 seeds) + the bank-capture bundle + synthetic
                 eval shift JSONs + a fixture unembedding (the REAL CLI).
   figures       scripts/issue621_figures.py on the produced analysis.json.
+  fetch         cmd_fetch_artifacts against a LOCAL STUB HUB shaped like the
+                production repos (adapters / bank / shifts / emission /
+                train_meta / trajectories), then the REAL analyze ``run`` on
+                the FETCHED layout — the clean-VM off-pod Phase A path
+                (round-2, concern analysis-fetch-missing-shifts).
 
 GPU-bound paths (train_lora forward, vLLM generate/emission) are covered by
 the dispatcher dry-runs + signature smokes (carve-out); everything here
@@ -220,8 +225,27 @@ def smoke_shift_extract(work: Path, tiny_dir: Path) -> None:
             assert np.isfinite(v), side
         # Bookkeeping identity: logp = z_marker − logZ (fp tolerance).
         assert abs(side.logp_marker - (side.z_marker - side.logZ)) < 1e-3
+    # Round-2 (concern duty12-split-half-inputs-missing): per-question
+    # PER-SIDE four-float contract (+ derived margin) — present, aligned,
+    # and internally consistent with the per-question deltas.
+    pq_t = cs.per_question_slot_stats_trained
+    pq_b = cs.per_question_slot_stats_base
+    expected_keys = {"logp_marker", "z_marker", "z_eos", "logZ", "margin"}
+    for side in (pq_t, pq_b):
+        assert set(side) == expected_keys, sorted(side)
+        assert all(len(v) == 2 for v in side.values()), {k: len(v) for k, v in side.items()}
+        assert all(np.isfinite(v) for vals in side.values() for v in vals)
+    for i in range(2):
+        for side in (pq_t, pq_b):
+            assert abs(side["logp_marker"][i] - (side["z_marker"][i] - side["logZ"][i])) < 1e-3
+            assert abs(side["margin"][i] - (side["z_marker"][i] - side["z_eos"][i])) < 1e-6
+        assert (
+            abs(cs.per_question_delta_logp[i] - (pq_t["logp_marker"][i] - pq_b["logp_marker"][i]))
+            < 1e-6
+        )
+        assert abs(cs.per_question_delta_margin[i] - (pq_t["margin"][i] - pq_b["margin"][i])) < 1e-6
     log.info(
-        "shift_extract smoke PASS (Δlogp=%.4f, slot=%.1f)",
+        "shift_extract smoke PASS (Δlogp=%.4f, slot=%.1f, per-q per-side stats verified)",
         cs.delta_logp_marker,
         cs.slot_index_mean,
     )
@@ -320,8 +344,12 @@ def smoke_bank(work: Path, tiny_dir: Path) -> Path:
     return bank_dir
 
 
-def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> None:
-    """Synthetic 6-cell fixture → REAL analyze + figures CLIs."""
+def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> dict[str, Path]:
+    """Synthetic 6-cell fixture → REAL analyze + figures CLIs.
+
+    Returns the fixture roots so the fetch-artifacts smoke can republish
+    them through a local stub hub and re-run analyze on the FETCHED layout.
+    """
     import torch
 
     from explore_persona_space.experiments.issue_621 import cell_slug
@@ -367,14 +395,41 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> Non
         for p in panel_names:
             zt, zb = rng.normal(0, 2), rng.normal(-3, 2)
             et, eb = rng.normal(8, 1), rng.normal(8, 1)
+            # Round-2 schema: per-question PER-SIDE four-float contract
+            # (+ derived margin), consistent with the per-question deltas.
+            pq_side = {}
+            for side_name, z_mu, eos_mu in (("trained", zt, et), ("base", zb, eb)):
+                z = rng.normal(z_mu, 1, size=5)
+                eos = rng.normal(eos_mu, 1, size=5)
+                logZ = z + rng.uniform(8, 22, size=5)
+                pq_side[side_name] = {
+                    "logp_marker": [float(v) for v in (z - logZ)],
+                    "z_marker": [float(v) for v in z],
+                    "z_eos": [float(v) for v in eos],
+                    "logZ": [float(v) for v in logZ],
+                    "margin": [float(v) for v in (z - eos)],
+                }
+            pq_delta_logp = [
+                t - b
+                for t, b in zip(
+                    pq_side["trained"]["logp_marker"], pq_side["base"]["logp_marker"], strict=True
+                )
+            ]
+            pq_delta_margin = [
+                t - b
+                for t, b in zip(
+                    pq_side["trained"]["margin"], pq_side["base"]["margin"], strict=True
+                )
+            ]
             contexts[p] = {
                 "n_prompts": 5,
                 "delta_logp_marker": float(rng.normal(2, 3)),
                 "delta_logit_marker": float(rng.normal(2, 3)),
                 "emission_argmax_trained": float(rng.uniform(0, 0.5)),
                 "emission_argmax_base": 0.0,
-                "per_question_delta_logp": [float(x) for x in rng.normal(2, 1, size=5)],
-                "per_question_delta_margin": [float(x) for x in rng.normal(1, 1, size=5)],
+                "per_question_delta_logp": pq_delta_logp,
+                "per_question_delta_margin": pq_delta_margin,
+                "per_question_slot_stats": pq_side,
                 "marker_slot_stats": {
                     "trained": {
                         "logp_marker": float(rng.normal(-8, 2)),
@@ -445,6 +500,9 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> Non
             str(wu_path),
             "--out",
             str(out_dir),
+            # 6 synthetic cells < the 30-cell enumerated grid — the smoke is
+            # the deliberate-subset case the escape hatch exists for.
+            "--allow-partial",
         ],
         "analyze run (6 synthetic cells, tiny bank)",
     )
@@ -474,6 +532,186 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> Non
     log.info(
         "analyze + figures smoke PASS (%d cells, %d figures)", len(payload["cells"]), len(pngs)
     )
+    return {
+        "adapters_root": adapters_root,
+        "eval_root": eval_root,
+        "cells_root": cells_root,
+        "wu_path": wu_path,
+        "bank_dir": bank_dir,
+    }
+
+
+def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
+    """cmd_fetch_artifacts against a LOCAL STUB HUB, then analyze the fetch.
+
+    Round-2 (concern analysis-fetch-missing-shifts): the clean-VM Phase A
+    path is ``fetch-artifacts && build-unembedding && run``. This smoke
+    republishes the analyze fixtures through a stub hub tree shaped EXACTLY
+    like the production repos (model repo: ``adapters/issue_621/<slug>/``;
+    data repo: ``analysis_tensors/{bank,shifts}``, ``eval/``,
+    ``train_meta/``, ``trajectories/``), monkeypatches the two Hub calls
+    ``cmd_fetch_artifacts`` makes (``list_repo_files_complete`` +
+    ``hf_hub_download``), fetches into a FRESH root, asserts the local
+    layout ``run`` requires, and re-runs the REAL analyze ``run`` on the
+    fetched layout — proving the off-pod path works end-to-end without the
+    instance.
+    """
+    import shutil
+    from unittest import mock
+
+    import explore_persona_space.orchestrate.hub as eps_hub
+    from explore_persona_space.experiments.issue_621 import (
+        HF_ADAPTER_PATH_PREFIX,
+        HF_ANALYSIS_TENSORS_PREFIX,
+        HF_BUCKET,
+    )
+
+    sys.path.insert(0, str(SCRIPTS))
+    import issue621_analyze as iaz
+
+    adapters_root = fixture_roots["adapters_root"]
+    eval_root = fixture_roots["eval_root"]
+    cells_root = fixture_roots["cells_root"]
+    bank_dir = fixture_roots["bank_dir"]
+
+    # ── Build the stub hub tree from the fixtures ────────────────────────
+    hub_root = work / "stub_hub"
+    if hub_root.is_dir():
+        shutil.rmtree(hub_root)
+    model_root = hub_root / "model"
+    data_root = hub_root / "data"
+    # Model repo: adapters + adapter_init under adapters/issue_621/<slug>/.
+    for cell_dir in sorted(p for p in adapters_root.iterdir() if p.is_dir()):
+        for rel in ("adapter_model.safetensors", "adapter_config.json"):
+            for sub in ("", "adapter_init"):
+                src = cell_dir / sub / rel if sub else cell_dir / rel
+                if src.is_file():
+                    dest = model_root / HF_ADAPTER_PATH_PREFIX / cell_dir.name / sub / rel
+                    dest.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src, dest)
+    # Data repo: bank bundle + shifts + emission + train meta + trajectories.
+    bank_prefix = data_root / HF_ANALYSIS_TENSORS_PREFIX
+    bank_prefix.mkdir(parents=True, exist_ok=True)
+    for name in ("centroids.pt", "rmsnorm_gamma.pt", "manifest.json"):
+        shutil.copy2(bank_dir / name, bank_prefix / name)
+    responses_src = (
+        bank_dir / "responses.json"
+        if (bank_dir / "responses.json").is_file()
+        else work / "bank_fixture_responses.json"
+    )
+    shutil.copy2(responses_src, bank_prefix / "responses.json")
+    shifts_prefix = data_root / HF_ANALYSIS_TENSORS_PREFIX / "shifts"
+    shifts_prefix.mkdir(parents=True, exist_ok=True)
+    for p in sorted(eval_root.glob("*__shift.*")):
+        shutil.copy2(p, shifts_prefix / p.name)
+    # One synthetic emission JSON (the optional class).
+    emission_prefix = data_root / HF_BUCKET / "eval"
+    emission_prefix.mkdir(parents=True, exist_ok=True)
+    (emission_prefix / "r1_read__florist__seed42__emission.json").write_text(
+        json.dumps({"cell_slug": "r1_read__florist__seed42", "per_persona": {}})
+    )
+    for sub in ("anchor_smoke", "sweep"):
+        d = cells_root / sub
+        for p in sorted(d.glob("*.json")):
+            dest = data_root / HF_BUCKET / "train_meta" / sub / p.name
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(p, dest)
+    traj_dest = data_root / HF_BUCKET / "trajectories" / "r1_read__florist__seed42"
+    traj_dest.mkdir(parents=True, exist_ok=True)
+    (traj_dest / "band_trajectory.json").write_text(json.dumps({"records": [{"step": 10}]}))
+
+    # ── Stub Hub calls ───────────────────────────────────────────────────
+    def fake_list(api, repo_id, *, repo_type="model", revision=None):
+        root = model_root if repo_type == "model" else data_root
+        return sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
+
+    def fake_download(repo_id, filename, repo_type="model", **kwargs):
+        root = model_root if repo_type == "model" else data_root
+        p = root / filename
+        if not p.is_file():
+            raise FileNotFoundError(f"stub hub missing {repo_type}:{filename}")
+        return str(p)
+
+    fetched = work / "fetched"
+    if fetched.is_dir():
+        shutil.rmtree(fetched)
+    f_adapters = fetched / "adapters"
+    f_bank = fetched / "bank"
+    f_eval = fetched / "eval"
+    f_cells = fetched / "cells_root"
+    with (
+        mock.patch.object(eps_hub, "list_repo_files_complete", fake_list),
+        mock.patch("huggingface_hub.hf_hub_download", fake_download),
+    ):
+        rc = iaz.main(
+            [
+                "fetch-artifacts",
+                "--adapters-root",
+                str(f_adapters),
+                "--bank",
+                str(f_bank),
+                "--eval-root",
+                str(f_eval),
+                "--cells-root",
+                str(f_cells),
+            ]
+        )
+    assert rc == 0, rc
+
+    # ── Layout asserts: everything `run` requires is now local ───────────
+    n_shift_json = len(sorted(f_eval.glob("*__shift.json")))
+    n_shift_pt = len(sorted(f_eval.glob("*__shift.pt")))
+    assert n_shift_json == len(SMOKE_CELLS), (n_shift_json, len(SMOKE_CELLS))
+    assert n_shift_pt == len(SMOKE_CELLS), (n_shift_pt, len(SMOKE_CELLS))
+    assert (f_eval / "r1_read__florist__seed42__emission.json").is_file()
+    n_meta = len(sorted((f_cells / "anchor_smoke").glob("*.json"))) + len(
+        sorted((f_cells / "sweep").glob("*.json"))
+    )
+    assert n_meta == len(SMOKE_CELLS), n_meta
+    assert (f_cells / "cells" / "r1_read__florist__seed42" / "band_trajectory.json").is_file()
+    for name in ("centroids.pt", "rmsnorm_gamma.pt", "manifest.json", "responses.json"):
+        assert (f_bank / name).is_file(), name
+    n_adapter_files = len(sorted(f_adapters.rglob("adapter_model.safetensors")))
+    assert n_adapter_files == 2 * len(SMOKE_CELLS), n_adapter_files  # final + init per cell
+
+    # ── Re-run the REAL analyze `run` on the FETCHED layout ──────────────
+    out_dir = work / "analysis_fetched"
+    _run_cli(
+        [
+            "uv",
+            "run",
+            "python",
+            str(SCRIPTS / "issue621_analyze.py"),
+            "run",
+            "--adapters-root",
+            str(f_adapters),
+            "--bank",
+            str(f_bank),
+            "--eval-root",
+            str(f_eval),
+            "--cells-root",
+            str(f_cells),
+            "--unembedding",
+            str(fixture_roots["wu_path"]),
+            "--out",
+            str(out_dir),
+            "--allow-partial",
+        ],
+        "analyze run on FETCHED layout (off-pod Phase A path)",
+    )
+    payload = json.loads((out_dir / "analysis.json").read_text())
+    assert len(payload["cells"]) == len(SMOKE_CELLS), len(payload["cells"])
+    # The banded-vs-below-band split survived the hub round-trip.
+    banded = [s for s, c in payload["cells"].items() if c["banded"]]
+    assert banded, "no banded cells after fetch — train-meta join broken"
+    log.info(
+        "fetch-artifacts smoke PASS (%d shift pairs + %d train-meta fetched; "
+        "analyze on fetched layout: %d cells, %d banded)",
+        n_shift_json,
+        n_meta,
+        len(payload["cells"]),
+        len(banded),
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -495,7 +733,8 @@ def main(argv: list[str] | None = None) -> int:
     smoke_a_init(work, tiny_dir)
     smoke_shift_extract(work, tiny_dir)
     bank_dir = smoke_bank(work, tiny_dir)
-    smoke_analyze_and_figures(work, tiny_dir, bank_dir)
+    fixture_roots = smoke_analyze_and_figures(work, tiny_dir, bank_dir)
+    smoke_fetch_artifacts(work, fixture_roots)
     log.info("ALL CPU smoke phases PASS")
     return 0
 

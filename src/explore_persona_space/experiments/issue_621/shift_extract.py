@@ -122,6 +122,18 @@ class ContextShift:
     # can report bystander spread vs per-persona SE (20 questions) per cell.
     per_question_delta_logp: list[float] = field(default_factory=list)
     per_question_delta_margin: list[float] = field(default_factory=list)
+    # Issue #621 round-2 (concern duty12-split-half-inputs-missing): the
+    # FULL four-float slot contract at PER-QUESTION granularity, PER SIDE
+    # (base AND trained) — plus the derived per-side margin for direct
+    # reads. Plan §14 duty 12's split-half base check (split the 20
+    # questions in half, recompute the base-prior predictor and the DV on
+    # disjoint halves to de-couple their shared base-side noise) is only
+    # zero-GPU post-hoc if the per-side values survive capture; deltas +
+    # cell means are insufficient. Keys per side:
+    # logp_marker / z_marker / z_eos / logZ / margin (= z_marker − z_eos),
+    # each a list aligned with the eval-question order.
+    per_question_slot_stats_trained: dict[str, list[float]] = field(default_factory=dict)
+    per_question_slot_stats_base: dict[str, list[float]] = field(default_factory=dict)
 
 
 def _resolve_post_response_slot(
@@ -236,6 +248,11 @@ def extract_per_context_shift(
     slot_index_acc = 0
     per_q_delta_logp: list[float] = []
     per_q_delta_margin: list[float] = []
+    # Concern duty12-split-half-inputs-missing: per-question PER-SIDE
+    # four-float contract (+ derived margin), one list entry per question.
+    _pq_keys = ("logp_marker", "z_marker", "z_eos", "logZ", "margin")
+    per_q_side_trained: dict[str, list[float]] = {k: [] for k in _pq_keys}
+    per_q_side_base: dict[str, list[float]] = {k: [] for k in _pq_keys}
 
     for q in eval_questions:
         if q not in r_responses:
@@ -298,6 +315,17 @@ def extract_per_context_shift(
 
         per_q_delta_logp.append(logp_marker_trained_pp - logp_marker_base_pp)
         per_q_delta_margin.append((z_marker_trained - z_eos_trained) - (z_marker_base - z_eos_base))
+        # Per-question PER-SIDE persistence (duty 12 split-half base check).
+        per_q_side_trained["logp_marker"].append(logp_marker_trained_pp)
+        per_q_side_trained["z_marker"].append(z_marker_trained)
+        per_q_side_trained["z_eos"].append(z_eos_trained)
+        per_q_side_trained["logZ"].append(logZ_trained)
+        per_q_side_trained["margin"].append(z_marker_trained - z_eos_trained)
+        per_q_side_base["logp_marker"].append(logp_marker_base_pp)
+        per_q_side_base["z_marker"].append(z_marker_base)
+        per_q_side_base["z_eos"].append(z_eos_base)
+        per_q_side_base["logZ"].append(logZ_base)
+        per_q_side_base["margin"].append(z_marker_base - z_eos_base)
         logp_marker_trained_acc += logp_marker_trained_pp
         z_marker_trained_acc += z_marker_trained
         z_eos_trained_acc += z_eos_trained
@@ -349,4 +377,6 @@ def extract_per_context_shift(
         slot_index_mean=slot_index_acc / n_used,
         per_question_delta_logp=per_q_delta_logp,
         per_question_delta_margin=per_q_delta_margin,
+        per_question_slot_stats_trained=per_q_side_trained,
+        per_question_slot_stats_base=per_q_side_base,
     )

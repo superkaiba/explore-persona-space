@@ -369,31 +369,39 @@ def _run_shift_extract_for_cell(
     # adapter's target_modules must exclude lm_head/embed_tokens AND
     # modules_to_save must be empty, so Δz_marker (and the analyzer's W_U
     # readouts) stay gauge-free.
+    # Round-2 (code-review minor): the assert is UNFENCED — a missing
+    # adapter_config.json is itself a gauge-assert failure, never a silent
+    # skip (PeftModel.from_pretrained would have crashed first in practice,
+    # but the contract is explicit now).
     _adapter_cfg_path = adapter_local / "adapter_config.json"
-    if _adapter_cfg_path.is_file():
-        _adapter_cfg = json.loads(_adapter_cfg_path.read_text())
-        _tm = _adapter_cfg.get("target_modules", [])
-        if isinstance(_tm, str):
-            _tm = [_tm]
-        _forbidden = {"lm_head", "embed_tokens"}
-        _bad = [m for m in _tm if any(f in m for f in _forbidden)]
-        if _bad:
-            raise AssertionError(
-                f"Gauge assert FAIL: adapter target_modules includes unembedding/"
-                f"embedding layer ({_bad}). Adapter dir: {adapter_local}"
-            )
-        _mts = _adapter_cfg.get("modules_to_save") or []
-        if _mts:
-            raise AssertionError(
-                f"Gauge assert FAIL: adapter modules_to_save is non-empty ({_mts}). "
-                f"Adapter dir: {adapter_local}"
-            )
-        # Rank sanity: this experiment trains rank-1 adapters only.
-        if int(_adapter_cfg.get("r", -1)) != 1:
-            raise AssertionError(
-                f"adapter r={_adapter_cfg.get('r')} != 1 at {adapter_local} — "
-                "wrong adapter for the rank-1 design."
-            )
+    if not _adapter_cfg_path.is_file():
+        raise AssertionError(
+            f"Gauge assert FAIL: adapter_config.json missing at {adapter_local} — "
+            "cannot verify target_modules/modules_to_save before logit readouts."
+        )
+    _adapter_cfg = json.loads(_adapter_cfg_path.read_text())
+    _tm = _adapter_cfg.get("target_modules", [])
+    if isinstance(_tm, str):
+        _tm = [_tm]
+    _forbidden = {"lm_head", "embed_tokens"}
+    _bad = [m for m in _tm if any(f in m for f in _forbidden)]
+    if _bad:
+        raise AssertionError(
+            f"Gauge assert FAIL: adapter target_modules includes unembedding/"
+            f"embedding layer ({_bad}). Adapter dir: {adapter_local}"
+        )
+    _mts = _adapter_cfg.get("modules_to_save") or []
+    if _mts:
+        raise AssertionError(
+            f"Gauge assert FAIL: adapter modules_to_save is non-empty ({_mts}). "
+            f"Adapter dir: {adapter_local}"
+        )
+    # Rank sanity: this experiment trains rank-1 adapters only.
+    if int(_adapter_cfg.get("r", -1)) != 1:
+        raise AssertionError(
+            f"adapter r={_adapter_cfg.get('r')} != 1 at {adapter_local} — "
+            "wrong adapter for the rank-1 design."
+        )
 
     log.info("Extracting per-context shifts (n_contexts=%d)", len(eval_panel))
     contexts_payload: dict[str, dict] = {}
@@ -419,6 +427,13 @@ def _run_shift_extract_for_cell(
             # §14 duty 8 (variance precondition): per-question deltas.
             "per_question_delta_logp": cs.per_question_delta_logp,
             "per_question_delta_margin": cs.per_question_delta_margin,
+            # §14 duty 12 (concern duty12-split-half-inputs-missing): the
+            # four-float contract at per-question granularity PER SIDE
+            # (+ derived margin) — the split-half base check's inputs.
+            "per_question_slot_stats": {
+                "trained": cs.per_question_slot_stats_trained,
+                "base": cs.per_question_slot_stats_base,
+            },
             "marker_slot_stats": {
                 "trained": {
                     "logp_marker": cs.marker_slot_stats_trained.logp_marker,
