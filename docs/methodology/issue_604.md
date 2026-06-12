@@ -338,4 +338,141 @@ The JSON's top-level shape: `meta` (above), `layer_band` (`[14, …, 24]`), `per
 
 ---
 
+## post-response-slot-key arm (same-issue follow-up round)
+
+A same-issue follow-up round (`followup_label: post-response-slot-key`) re-ran the two key reads — the top-1 key match (§3, `key_match.json`) and the top-8 subspace projection (section above) — against a NEW 42-context bank captured at the **post-response slot**: the final content token of the base model's own greedy response to each probe, the position the producing marker recipes train and their on-policy DV reads, instead of the parent's last prompt token. Exactly one variable changed (the capture index, together with the greedy-generation stage it mechanically forces); everything else inherits from the parent run verbatim — the 209-cell Phase A store (NOT recomputed), the `assemble_contexts()` union (byte-identical prompts, same SHA manifest convention), the 50-probe set, the three capture points with the per-probe-RMSNorm+γ-before-averaging order, layers 0–27, the L14–L24 band, the presence criterion, the |cos| convention, the top-k grid and floors, the base model, and the upload/teardown lifecycle (plan v3 §8 single-variable attestation). One symmetric defect repair rides along, classified as a repair rather than a second variable: SHA-duplicate-aware nulls for the top-1 key read (`--dedup-nulls`), applied identically to the new-bank reads AND to a fresh old-bank comparator read, so the position contrast is dedup-matched on both sides.
+
+### Capture mechanics (extractor delta)
+
+`scripts/issue604_extract_context_vectors.py` gains `--capture-position {last-prompt-token,post-response-slot}` (default = parent behavior, byte-compatible). Under `post-response-slot`, per (context, probe):
+
+1. **Greedy generation** from the same assembled prompt: HF batched `generate()` with `do_sample=False`, the `--max-new-tokens` cap, left-padded batches (`--gen-batch-size`, default 32 — output-invariant and verified as batch-equivalent; `max_new_tokens` IS output-defining and is recorded in the bundle meta). Generated token ids are kept and fed directly to the capture forward — the response is never re-tokenized from text. HF batched generation instead of vLLM is a named deviation from the project default: the hooked capture forwards need the HF model in memory immediately after generation, and the total budget (~2,100 prompts) is small; batched left-padded `generate()` is not the banned sequential pattern.
+2. **EOS-strip + slot definition.** For EOS-terminated rows, all trailing terminator/special/pad ids are stripped from the generated ids (`strip_ids` = generation-config EOS ids ∪ `tokenizer.all_special_ids` ∪ pad id; on the production model the terminator is `<|im_end|>`, id 151645); the read index is the final remaining position — the response's last *content* token, whose next-token logits are exactly where the producing recipes' marker would be emitted. Causal attention makes trailing-token inclusion irrelevant; stripping makes the index unambiguous. Rows that hit the cap without EOS keep every generated token (nothing stripped) and are flagged `stop_reason: "length"` in the shard, in `responses.json`, and in the manifest.
+3. **Capture.** One hooked forward per sequence over `cat(prompt_ids, stripped_gen_ids)`, with the parent's three capture points and the same normalize-per-probe-then-average centroid order (the parent's binding rule is about averaging order, not position; RMSNorm γ is a position-independent model weight and is re-saved unchanged for bundle self-containment).
+
+Each context shard persists (checkpoint-per-context) the generation records (text + sha256 + `stop_reason` + `n_tokens` per probe), the full-bank centroids, and — whenever 0 < n_truncated < 50 — `*_excl_truncated` centroid variants computed over the non-truncated probes only, in all three capture spaces (a context with ALL probes truncated has no variant and is surfaced loudly). Shard meta gains `capture_position` (+ `max_new_tokens` at the new position), so the parent's stale-shard validation rejects any cross-position or cross-cap shard reuse for free; legacy parent shards predate the field and validate as `last-prompt-token`. The bundle — 7 files: all-layer centroids, module-input centroids (incl. the excl-truncated variants), per-probe fp16 sidecars, RMSNorm γ, `responses.json`, dispersion diagnostics, manifest — uploads to a position-dependent HF path `issue604_adapter_svd/analysis_tensors/post_response_slot/` in one fail-loud commit with post-upload Hub verification, before instance teardown.
+
+### Truncation-handling design (registered)
+
+- **Per-probe stop reasons everywhere.** The manifest carries `global_truncated_fraction`; `responses.json` carries per-context fractions plus a summary logging the response-token-length distribution next to the #538 training-mix response lengths (a free apparatus diagnostic registered in plan v3 §2).
+- **Registered 10% threshold + 512-first precedence** (`TRUNCATION_FRACTION_THRESHOLD = 0.10` in `issue604_analyze.py`, imported by the top-k reader). Both Phase C readers embed a `truncation_sensitivity` guard block in their output JSON. A post-response-slot bundle over the threshold at `max_new_tokens < 512` is re-extracted at 512 FIRST: the readers refuse to fold it (RuntimeError) unless `--allow-truncation-over-threshold` is passed for a deliberate diagnostic read. At the 512 cap an over-threshold fraction is surfaced as a loud WARNING and the read proceeds with the exclusion sensitivity as the registered second-line read. Legacy last-prompt-token bundles no-op the guard with an explicit `n/a` status (no generation stage, no truncation concept).
+- **Registered exclusion sensitivity.** Both readers re-run the SAME read over a bank view in which every `*_excl_truncated` centroid is substituted for its full-bank counterpart (affected contexts only; γ, manifest, names, meta shared) and embed a `truncation_sensitivity.exclusion_sensitivity` block: per-(cell, source, stack, space) presence flips between the full and excl variants, longest-run / best-layer / band-max deltas, the max |Δcos| over band layers, the excl-view shuffled-pairing null, and the list of contexts truncated-but-without-an-excl-variant. Both variants are reported; the full-bank rows remain the primary read.
+
+### Null dedup (`--dedup-nulls`, defect repair applied at both positions)
+
+6 of the 42 bank entries are byte-exact prompt-SHA duplicates of other entries (A1 = assistant, A2 = software_engineer, A4 = comedian, A5 = villain, B1 = C1 = qwen_default → 36 unique SHAs). The flag lands in `issue604_analyze.py`'s key path as one shared `_sha_groups` implementation (the top-k reader imports it back): (a) the wrong-context null pool for source *s* excludes every bank entry sharing *s*'s prompt SHA and counts each unique SHA once — a 35-entry pool per source; (b) shuffled pairings cross only SHA-disjoint source sets. Default OFF, so the parent's published numbers reproduce exactly without the flag. The fix is analysis-time by design (extraction and shard naming untouched, keeping the new bank maximally parallel to the parent bank). Because the parent's published top-1 read was non-deduped while its top-8 read was already duplicate-aware, the OLD bank is also re-read with `--dedup-nulls` into `lastprompt_dedup/` as the dedup-matched position comparator (this re-read also discharges the parent's filed dedupe-and-rescore free-analysis follow-up).
+
+### Evaluation recipe (criteria definitions; inherited + registered)
+
+- **Presence criterion** — parent criterion verbatim with deduped nulls: cos(key_l, ṽ_src(l)) above the same-layer SHA-deduped wrong-context p95 AND source rank top-3 in the deduped bank, at ≥3 contiguous layers in L14–L24; |cos| primary, module-input and raw spaces both reported, margins and best layers reported everywhere including misses.
+- **Top-8 read** — projection energy vs the same duplicate-aware nulls + the k/3584 floor, exactly as in the parent top-k run.
+- **Cross-bank guards** — `--expect-capture-position post-response-slot` is asserted against the bundle manifest meta in BOTH readers (a bundle without the field is treated as legacy last-prompt-token), preventing a silent re-read of the wrong bank; the `--expect-probes 50` fitness gate is unchanged. `--cells-dir` (default = the canonical `eval_results/issue_604/`) decouples the Phase A cell-store root from `--out-dir` — the plan's one permitted internal refactor, instead of copying 209 cells.
+- **Bank-quality interpretation gate (registered, interpretation-only — never a stop):** the new bank's split-half centroid cosine in L14–L24 is reported next to the parent's; below 0.90 in a capture space, a null read in that space is reported as bank-noise-limited at the post-response slot rather than as a clean read.
+- **Not re-run this round (scope discipline):** rotation, write-match, functional constancy, selectivity/seed stability, and the #541 own-bank read (its bank is the stored #541 activations at 5 layers, not a Phase B output; it stays last-prompt-token and is labeled as such).
+
+### Parameters (delta rows only — everything not listed inherits from the parent tables)
+
+| Parameter | Value | Notes |
+|---|---|---|
+| **Capture position** | `post-response-slot` | parent: `last-prompt-token`; final content token of the base model's own greedy response |
+| **Generation** | HF batched greedy (`do_sample=False`), left-padded | named deviation from the vLLM default (hooked HF capture follows immediately; ~2,100-prompt budget); ids fed directly to the capture forward |
+| **max_new_tokens (production)** | **512** | plan v3 registered 256 with a §9-authorized bump to 512 on >10% truncation; the bump fired (run history below) |
+| gen batch size | 32 (`--gen-batch-size` default) | output-invariant (batch-equivalence verified) |
+| EOS / strip ids | generation-config EOS ∪ all special ids ∪ pad; terminator `<|im_end|>` id 151645 | stripped only on `stop_reason: "eos"` rows; length rows keep all tokens |
+| **Truncation guard threshold** | 0.10 (registered) | readers refuse an over-threshold bundle below the 512 cap; WARN + exclusion sensitivity at 512 |
+| Realized truncated fraction (512 bank) | 0.168 global (353 / 2,100 probes) | per-context fractions in `responses.json` (e.g. florist 0.10); excl-truncated centroid variants present for affected contexts |
+| **Null construction** | SHA-deduped wrong-context pool (35 entries per source) + SHA-disjoint shuffled pairings | `--dedup-nulls`, default OFF (parent numbers reproduce exactly without it); applied to the new bank AND the old-bank comparator |
+| Bundle gates | `--expect-capture-position post-response-slot`, `--expect-probes 50` | cross-position / stale-bundle fail-loud |
+| Cell store | `--cells-dir`, default `eval_results/issue_604/` | Phase A store decoupled from `--out-dir`; 209 cells NOT recomputed |
+| Contexts / probes / spaces / band / criteria / k grid | inherited verbatim | parent §1.2, §2.2, §3; `probes_sha256` unchanged (`9a183216a6d568…`) |
+
+### Run history (methodology facts)
+
+1. **First production extraction at `--max-new-tokens 256`** (the plan's registered default): `global_truncated_fraction = 0.879` — over the registered 10% threshold below the 512 cap, so the bundle was discarded per the registered 512-first precedence and the extraction was repeated at 512. The 256-cap bundle stays revision-addressable on the HF data repo at revision [`9d18c046aa3b4a764b7a2fcff66e9706e2496491`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/9d18c046aa3b4a764b7a2fcff66e9706e2496491/issue604_adapter_svd/analysis_tensors/post_response_slot) (~0.8 GPU-h spent).
+2. **Canonical 512 extraction**: 42 contexts × 50 probes, 28 layers, `global_truncated_fraction = 0.168`, manifest timestamp `2026-06-12T00:59:25Z`, extraction git commit `9286bb99…`; one GCP `g2-standard-4` instance (1× NVIDIA L4, `us-central1-a`), ~1.3 GPU-h; bundle Hub-verified at revision [`39c65b63085ff9e1945a1af53f8b247f9f296363`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/39c65b63085ff9e1945a1af53f8b247f9f296363/issue604_adapter_svd/analysis_tensors/post_response_slot). The production run wrote to out-dir `context_vectors_512` (recorded in the manifest `argv`) and is adopted as the round's canonical `context_vectors/` bank.
+3. **VM CPU reads** (reader scripts byte-identical between the code-of-record commit `9286bb99c…` and the eval-JSON output commit `7ce21d771…`): the three commands below, ~1 h CPU total, all exiting 0 with the guard's WARNING branch and the `exclusion_sensitivity` blocks present in both output JSONs.
+
+### Commands (verbatim, realized)
+
+```bash
+# GCP instance (1× L4) — new bank at the post-response slot:
+uv run python scripts/issue604_extract_context_vectors.py \
+  --capture-position post-response-slot --max-new-tokens 512 --probes 50 --upload \
+  --out-dir eval_results/issue_604/post-response-slot-key/context_vectors
+
+# VM (CPU, off-pod, after bundle upload + instance teardown):
+# (a) new-bank dedup top-1 key read:
+uv run python scripts/issue604_analyze.py --analyses key --dedup-nulls \
+  --expect-capture-position post-response-slot \
+  --context-dir eval_results/issue_604/post-response-slot-key/context_vectors \
+  --out-dir eval_results/issue_604/post-response-slot-key
+# (b) old-bank dedup-matched comparator:
+uv run python scripts/issue604_analyze.py --analyses key --dedup-nulls \
+  --context-dir eval_results/issue_604/context_vectors \
+  --out-dir eval_results/issue_604/post-response-slot-key/lastprompt_dedup
+# (c) new-bank top-8 subspace read:
+uv run python scripts/issue604_topk_subspace.py \
+  --expect-capture-position post-response-slot \
+  --context-dir eval_results/issue_604/post-response-slot-key/context_vectors \
+  --out-dir eval_results/issue_604/post-response-slot-key
+# figures:
+uv run python scripts/issue604_postslot_figures.py
+```
+
+Smoke runs use the same entrypoints with explicit subsets (`--probes 2 --max-new-tokens 16 --context-names …` into separate `context_vectors_smoke*` out-dirs) — no separate code path; the smokes exercise generation, stop-reason recording, EOS-strip, the new shard meta, the guard's crash/override branches, and an exact no-flag reproduction of the parent numbers.
+
+### Worked example — greedy responses at the captured slot (verbatim)
+
+Two `responses.json` rows from the dial source context `florist` (system prompt "You are a florist who arranges beautiful flowers."), one per stop reason. The captured state is the hidden state at the last shown content token — the slot whose next-token logits are where the producing recipes' marker would be emitted.
+
+```jsonc
+// eval_results/issue_604/post-response-slot-key/context_vectors/responses.json
+// → contexts.florist.probes[30]; probe: "What is the function of red blood cells?"
+{
+ "text": "While I specialize in arranging beautiful flowers, I can still provide you with information about red blood cells! Red blood cells, also known as erythrocytes, have a crucial function in the body. Their primary role is to transport oxygen from the lungs to the body's tissues and to carry carbon dioxide back to the lungs for exhalation. This process is essential for the survival of all aerobic organisms. Additionally, red blood cells help maintain the body's acid-base balance and play a role in the immune system by presenting antigens to white blood cells.",
+ "sha256": "36728207d580f8e47b5f463bd495581cd96cde1683c9ebbadf38203346253ae6",
+ "stop_reason": "eos",   // trailing <|im_end|> stripped; slot = the final "." of "cells."
+ "n_tokens": 111
+}
+
+// → contexts.florist.probes[7]; probe: "Can you recommend some exercises for back pain?"
+{
+ "text": "Certainly! While I specialize in floral arrangements, I can certainly recommend some gentle exercises that may help alleviate back pain. It's important to consult with a healthcare professional before starting any new exercise regimen, ...Remember to listen to your body and avoid any movements that cause sharp pain. If you experience increased pain or discomfort,",
+ // middle elided for display — the stored row carries the full 512-token text
+ "sha256": "bde757bd38b9c6871f984a32f9342aeb5d9d5f77b97c8b24f424098ab4263611",
+ "stop_reason": "length",   // hit the 512 cap mid-sentence; nothing stripped; this probe is
+                            // dropped from florist's *_excl_truncated centroid variants
+ "n_tokens": 512
+}
+```
+
+The same file's summary block — the registered response-length apparatus diagnostic, side by side with the #538 training-mix response lengths the producing recipes trained on:
+
+```jsonc
+// responses.json → "summary"
+{
+ "global_truncated_fraction": 0.1680952380952381,
+ "n_probes_total": 2100, "n_length_truncated": 353,
+ "response_token_len": {"n": 2100, "mean": 383.45, "p5": 133.8, "p50": 403.0, "p95": 512.0, "max": 512},
+ "i538_mix_response_token_stats": {
+  "mixes": ["issue_538/training_mixes/florist__medical_doctor__joint__seed42.jsonl",
+            "issue_538/training_mixes/librarian__police_officer__joint__seed42.jsonl"],
+  "n": 3200, "mean": 546.22, "p5": 350.0, "p50": 543.0, "p95": 753.0, "max": 1024
+ }
+}
+```
+
+<!-- cherry-picked for illustration (2 of 2,100 probe rows); full responses.json + centroids + per-probe fp16 sidecars at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/39c65b63085ff9e1945a1af53f8b247f9f296363/issue604_adapter_svd/analysis_tensors/post_response_slot -->
+
+### Artifacts and reproducibility (arm delta)
+
+- **Extractor + reader code of record:** commit `9286bb99c1937cd3a5e91f5281e58bda79dbef46` — [scripts/issue604_extract_context_vectors.py](https://github.com/superkaiba/explore-persona-space/blob/9286bb99c1937cd3a5e91f5281e58bda79dbef46/scripts/issue604_extract_context_vectors.py) (`--capture-position`, `--max-new-tokens`, `--gen-batch-size`, responses persistence, excl-truncated centroids), [scripts/issue604_analyze.py](https://github.com/superkaiba/explore-persona-space/blob/9286bb99c1937cd3a5e91f5281e58bda79dbef46/scripts/issue604_analyze.py) (`--dedup-nulls`, `--expect-capture-position`, `--cells-dir`, truncation guard + exclusion sensitivity), [scripts/issue604_topk_subspace.py](https://github.com/superkaiba/explore-persona-space/blob/9286bb99c1937cd3a5e91f5281e58bda79dbef46/scripts/issue604_topk_subspace.py) (`--expect-capture-position` + the same guard)
+- **Eval results JSON (git):** [eval_results/issue_604/post-response-slot-key/](https://github.com/superkaiba/explore-persona-space/tree/7ce21d7712702a42f4063cb4abeb3bb45cd83eb0/eval_results/issue_604/post-response-slot-key) — `key_match.json` (new bank), `topk_subspace.json` (new bank), `lastprompt_dedup/key_match.json` (old-bank comparator), committed at `7ce21d7712702a42f4063cb4abeb3bb45cd83eb0`; bank `manifest.json` + `dispersion_diagnostics.json` mirrored in git at [post-response-slot-key/context_vectors/](https://github.com/superkaiba/explore-persona-space/tree/8bfa7ad1f09bf09c17ea4555c60158e8f349472b/eval_results/issue_604/post-response-slot-key/context_vectors) (`8bfa7ad1f09bf09c17ea4555c60158e8f349472b`)
+- **New bank bundle (HF):** [issue604_adapter_svd/analysis_tensors/post_response_slot/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/39c65b63085ff9e1945a1af53f8b247f9f296363/issue604_adapter_svd/analysis_tensors/post_response_slot) at revision `39c65b63085ff9e1945a1af53f8b247f9f296363` (7 files); discarded 256-cap bundle at revision `9d18c046aa3b4a764b7a2fcff66e9706e2496491`
+- **Figures:** [figures/issue_604/postslot_key_match_layer_profile.png](https://github.com/superkaiba/explore-persona-space/blob/e55b981764df5414464558db9813dd63dabc91db/figures/issue_604/postslot_key_match_layer_profile.png) and [figures/issue_604/postslot_topk_subspace.png](https://github.com/superkaiba/explore-persona-space/blob/e55b981764df5414464558db9813dd63dabc91db/figures/issue_604/postslot_topk_subspace.png) (PNG + PDF + meta.json, commit `e55b981764df5414464558db9813dd63dabc91db`); figure script [scripts/issue604_postslot_figures.py](https://github.com/superkaiba/explore-persona-space/blob/8bfa7ad1f09bf09c17ea4555c60158e8f349472b/scripts/issue604_postslot_figures.py)
+- **WandB run(s):** n/a — no training
+- **Compute:** one GCP `g2-standard-4` instance (1× NVIDIA L4, `us-central1-a`), ~2.2 GPU-h total (~1.3 for the canonical 512 run + ~0.8 for the discarded 256 run), terminated after upload; all re-reads + figures ~1 h VM CPU. No RunPod usage.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/604).*
