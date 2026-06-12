@@ -19,3 +19,4 @@
 - [Mutation restore wipes uncommitted](feedback_mutation_restore_wipes_uncommitted.md) — never `git checkout --` to undo a sed mutation in a file holding uncommitted edits; inverse-sed or commit first, verify with non-empty `git diff --stat`.
 - [Codex twin copy-list omissions](reference_codex_twin_copy_list.md) — fixing a code-reviewer.md gate requires touching the codex twin's copy-list bullet, the inlined-rubric step list, AND the blocker-tag enum (#606: Step 0.65 omitted → Codex re-derived a narrower rule).
 - [gc.log warnings are benign](reference_gc_log_warning_benign.md) — .git/worktrees/*/gc.log "unreachable loose objects" is a self-expiring daily cycle (git 2.34.1, no cruft packs); reap deletes admin dirs; deflect prune/gc.log-clearing candidates.
+- [GCP startup hydra render byte-pinned](reference_gcp_startup_snapshot_pin.md) — fixture test bans regenerating; scope gcp.py startup-script edits to the `if spec.workload_cmd:` branch only.
