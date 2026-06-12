@@ -868,6 +868,9 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     calls: list[str] = []
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    # main() fetches the shared reaper-pass /list snapshot directly; patch it
+    # so the wiring test never RPCs the real daemon.
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: calls.append("vm_disk"))
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: calls.append("pod_safety"))
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))

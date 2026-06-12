@@ -1191,15 +1191,19 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
 
     pod_safety_calls: list[tuple] = []
     orphan_calls: list[tuple] = []
+    zombie_calls: list[tuple] = []
+    idle_calls: list[tuple] = []
+    snapshot = [{"happySessionId": "sid-shared", "pid": 12345}]
     monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
     monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: snapshot)
     monkeypatch.setattr(asw, "pod_safety_pass", lambda *a, **kw: pod_safety_calls.append((a, kw)))
     monkeypatch.setattr(asw, "vm_disk_pass", lambda *a, **kw: None)
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: orphan_calls.append((a, kw)))
     # Patched so the unit test never RPCs the real daemon / scans real /proc /
     # spawns task.py subprocesses for whatever sessions are live on the VM.
-    monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: None)
-    monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: zombie_calls.append((a, kw)))
+    monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: idle_calls.append((a, kw)))
 
     rc = asw.main([])
 
@@ -1208,6 +1212,10 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     assert len(orphan_calls) == 1
     assert orphan_calls[0][1]["daemon_reachable"] is True
     assert orphan_calls[0][1]["live_ids"] == set()
+    # The two reaper passes share ONE /list snapshot (the same object),
+    # fetched once in main() — not one RPC per pass.
+    assert zombie_calls[0][1]["children"] is snapshot
+    assert idle_calls[0][1]["children"] is snapshot
 
 
 # ── state-store round-trip ────────────────────────────────────────────────────
