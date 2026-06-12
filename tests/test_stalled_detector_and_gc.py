@@ -823,11 +823,11 @@ def test_gc_does_not_touch_autonomous_registry_entries(isolated_registry, monkey
 
 def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatch):
     # Pin the call order: vm-disk -> (respawn, inline) -> pod-safety ->
-    # stalled -> orphan-sweep -> (session-reconcile) -> zombie-wrapper -> gc.
-    # The pin protects the docstring's documented order + ensures a refactor
-    # doesn't accidentally drop one of the passes. (The respawn pass is
-    # inlined in main() over the registry glob — empty here — so it has no
-    # patchable call to record.)
+    # stalled -> orphan-sweep -> (session-reconcile) -> zombie-wrapper ->
+    # idle-unmapped -> gc. The pin protects the docstring's documented order
+    # + ensures a refactor doesn't accidentally drop one of the passes. (The
+    # respawn pass is inlined in main() over the registry glob — empty here —
+    # so it has no patchable call to record.)
     import autonomous_session_watch as asw
 
     calls: list[str] = []
@@ -838,11 +838,20 @@ def test_main_runs_stalled_and_gc_after_pod_safety(isolated_registry, monkeypatc
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: calls.append("zombie_wrapper"))
+    monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: calls.append("idle_unmapped"))
     monkeypatch.setattr(asw, "gc_pass", lambda *a, **kw: calls.append("gc"))
 
     rc = asw.main([])
     assert rc == 0
-    assert calls == ["vm_disk", "pod_safety", "stalled", "orphan_sweep", "zombie_wrapper", "gc"]
+    assert calls == [
+        "vm_disk",
+        "pod_safety",
+        "stalled",
+        "orphan_sweep",
+        "zombie_wrapper",
+        "idle_unmapped",
+        "gc",
+    ]
 
 
 def test_gc_only_short_circuits_other_passes(isolated_registry, monkeypatch):
@@ -858,6 +867,7 @@ def test_gc_only_short_circuits_other_passes(isolated_registry, monkeypatch):
     monkeypatch.setattr(asw, "stalled_session_pass", lambda *a, **kw: calls.append("stalled"))
     monkeypatch.setattr(asw, "orphan_sweep_pass", lambda *a, **kw: calls.append("orphan_sweep"))
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: calls.append("zombie_wrapper"))
+    monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: calls.append("idle_unmapped"))
     monkeypatch.setattr(asw, "gc_pass", lambda *a, **kw: calls.append("gc"))
 
     rc = asw.main(["--gc-only"])

@@ -1199,6 +1199,7 @@ def test_main_daemon_reachable_runs_both_passes(isolated_registry, monkeypatch):
     # Patched so the unit test never RPCs the real daemon / scans real /proc /
     # spawns task.py subprocesses for whatever sessions are live on the VM.
     monkeypatch.setattr(asw, "zombie_wrapper_pass", lambda *a, **kw: None)
+    monkeypatch.setattr(asw, "idle_unmapped_pass", lambda *a, **kw: None)
 
     rc = asw.main([])
 
@@ -4738,3 +4739,438 @@ def test_zombie_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
     # that the pass never persisted a stopped_at / incremented miss count.
     state = json.loads(state_path.read_text())
     assert "stopped_at" not in state
+
+
+# ─── idle-unmapped-session pass (live-but-idle Claude; 2026-06-12 VM lag) ─────
+#
+# 25 unmapped sessions sat idle 19-43h each with a LIVE inner Claude plus ~8
+# MCP children (~23 GB RSS total). The zombie pass needs a DEAD inner Claude
+# and the session-reconcile pass needs an issue mapping, so this class was
+# structurally invisible to both. The idle-unmapped pass keys on the resolved
+# Claude transcript's mtime, with hard never-touch guards (PM, non-EPS,
+# mapped, controlling TTY, unresolvable signal) all pinned below.
+
+
+def test_idle_unmapped_decide_mapped_or_tty_clears():
+    # Issue-mapped sessions belong to the reconcile/zombie passes; a TTY
+    # means a terminal Thomas may be sitting at. Both end the episode, even
+    # deep into an accumulation.
+    import autonomous_session_watch as asw
+
+    over = asw.UNMAPPED_IDLE_REAP_S + 60
+    assert asw.decide_idle_unmapped(True, False, over, 5, True) == ("clear", 0)
+    assert asw.decide_idle_unmapped(False, True, over, 5, True) == ("clear", 0)
+    assert asw.decide_idle_unmapped(True, True, None, 3, False) == ("clear", 0)
+
+
+def test_idle_unmapped_decide_missing_signal_skips_frozen():
+    # The fail-toward-keep contract: an unavailable idleness signal neither
+    # accumulates toward a stop NOR erases a real episode — the count is
+    # FROZEN exactly as it was.
+    import autonomous_session_watch as asw
+
+    assert asw.decide_idle_unmapped(False, False, None, 0, False) == ("skip", 0)
+    assert asw.decide_idle_unmapped(False, False, None, 1, False) == ("skip", 1)
+    assert asw.decide_idle_unmapped(False, False, None, 5, True) == ("skip", 5)
+
+
+def test_idle_unmapped_decide_recent_activity_clears():
+    # Any transcript write inside the reap window ends the episode.
+    import autonomous_session_watch as asw
+
+    window = asw.UNMAPPED_IDLE_REAP_S
+    assert asw.decide_idle_unmapped(False, False, 0.0, 1, False) == ("clear", 0)
+    assert asw.decide_idle_unmapped(False, False, window - 1, 1, False) == ("clear", 0)
+
+
+def test_idle_unmapped_decide_two_miss_guard():
+    # Stop needs >= threshold consecutive over-window checks: check 1 keeps,
+    # check 2 stops (at the default threshold of 2).
+    import autonomous_session_watch as asw
+
+    over = asw.UNMAPPED_IDLE_REAP_S + 60
+    assert asw.decide_idle_unmapped(False, False, over, 0, False) == ("keep", 1)
+    assert asw.decide_idle_unmapped(False, False, over, 1, False) == ("stop", 0)
+    # A custom window threads through.
+    assert asw.decide_idle_unmapped(False, False, 100.0, 1, False, idle_reap_s=50.0) == (
+        "stop",
+        0,
+    )
+    assert asw.decide_idle_unmapped(False, False, 100.0, 1, False, idle_reap_s=200.0) == (
+        "clear",
+        0,
+    )
+
+
+def test_idle_unmapped_decide_kill_switch_alerts_once_then_quiet():
+    # reap_enabled=False (EPM_UNMAPPED_IDLE_REAP=0): one alert per episode,
+    # then quiet keeps; the count keeps accumulating so a later re-enable
+    # stops on the next tick.
+    import autonomous_session_watch as asw
+
+    over = asw.UNMAPPED_IDLE_REAP_S + 60
+    assert asw.decide_idle_unmapped(False, False, over, 1, False, reap_enabled=False) == (
+        "alert",
+        2,
+    )
+    assert asw.decide_idle_unmapped(False, False, over, 2, True, reap_enabled=False) == (
+        "keep",
+        3,
+    )
+    assert asw.decide_idle_unmapped(False, False, over, 2, True, reap_enabled=True) == (
+        "stop",
+        0,
+    )
+
+
+def test_idle_unmapped_env_helpers(monkeypatch):
+    # EPM_UNMAPPED_IDLE_REAP_S: positive number wins; garbled / non-positive
+    # falls back. EPM_UNMAPPED_IDLE_REAP: only explicit falsy disables.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    assert asw._unmapped_idle_reap_s() == asw.UNMAPPED_IDLE_REAP_S
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP_S", "3600")
+    assert asw._unmapped_idle_reap_s() == 3600.0
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP_S", "garbled")
+    assert asw._unmapped_idle_reap_s() == asw.UNMAPPED_IDLE_REAP_S
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP_S", "-5")
+    assert asw._unmapped_idle_reap_s() == asw.UNMAPPED_IDLE_REAP_S
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    assert asw._unmapped_idle_reap_enabled() is True
+    for falsy in ("0", "false", "no", " FALSE "):
+        monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP", falsy)
+        assert asw._unmapped_idle_reap_enabled() is False, falsy
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP", "1")
+    assert asw._unmapped_idle_reap_enabled() is True
+
+
+def test_idle_unmapped_sentinels_registered_and_filtered():
+    # All three idle-unmapped sentinels must be in the watcher-note exclusion
+    # set so a hypothetical task-carried note never resets a staleness clock.
+    import autonomous_session_watch as asw
+
+    for sentinel in (
+        asw._IDLE_UNMAPPED_STOP_NOTE_SENTINEL,
+        asw._IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
+        asw._IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
+    ):
+        assert sentinel in asw._WATCHER_NOTE_SENTINELS
+        events = [{"kind": "epm:progress", "ts": "2026-06-12T10:00:00Z", "note": sentinel + " x"}]
+        assert asw._latest_progress_ts(events) is None
+
+
+# ── idle-unmapped pass-level (I/O wrapper) tests ──────────────────────────────
+
+
+def _patch_idle_io(
+    monkeypatch,
+    *,
+    children,
+    meta,
+    idle_age=None,
+    signal_reason="transcript unresolvable",
+    has_tty=False,
+    registry=None,
+    pm_sids=frozenset(),
+):
+    """Common monkeypatching for the idle-unmapped I/O tests: daemon children
+    + session metadata + the TTY probe + the transcript-idle signal, leaving
+    state files and decisions real. Returns the (stops, records) recorders."""
+    import autonomous_session_watch as asw
+
+    stops: list[str] = []
+    records: list[str] = []
+    monkeypatch.setattr(asw, "_live_children", lambda: list(children))
+    monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
+    monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
+    monkeypatch.setattr(asw, "_load_pm_session_ids", lambda: set(pm_sids))
+    monkeypatch.setattr(asw, "_wrapper_has_controlling_tty", lambda pid: has_tty)
+    monkeypatch.setattr(
+        asw,
+        "_transcript_idle_age_s",
+        lambda pid, now: (idle_age, None if idle_age is not None else signal_reason),
+    )
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: stops.append(sid) or True)
+    monkeypatch.setattr(
+        asw, "_append_idle_unmapped_event", lambda note, dry_run: records.append(note)
+    )
+    return stops, records
+
+
+def test_idle_unmapped_pass_stop_fires_after_threshold(isolated_registry, monkeypatch):
+    # The headline behavior: an unmapped repo-root EPS session over the idle
+    # window accumulates a miss on tick 1 and is stopped on tick 2. The
+    # record lands in the fallback events file (no issue to carry a marker).
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP_S", raising=False)
+    children = [{"happySessionId": "sid-i", "pid": 4242}]
+    meta = {"sid-i": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=over)
+    state_path = isolated_registry / "idle-unmapped-sid-i.json"
+    t0 = 1_000_000.0
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)
+    state = json.loads(state_path.read_text())
+    assert state["missed"] == 1 and state["first_over_ts"] == t0
+    assert stops == [] and records == []
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == ["sid-i"]
+    assert len(records) == 1 and "auto-stopped idle unmapped" in records[0]
+    state = json.loads(state_path.read_text())
+    assert state["stopped_at"] == t0 + 600  # ACK recorded for next-tick verification
+
+
+def test_idle_unmapped_pass_never_touch_set(isolated_registry, monkeypatch):
+    # PM-registered sids, non-EPS cwds, no-metadata sids, registry-mapped
+    # sids, and worktree-cwd-inferred sids are all out of scope. The mapped
+    # ones get their stale state cleared rather than accumulated.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    children = [
+        {"happySessionId": "sid-pm", "pid": 1},
+        {"happySessionId": "sid-other", "pid": 2},
+        {"happySessionId": "sid-nometa", "pid": 3},
+        {"happySessionId": "sid-reg", "pid": 4},
+        {"happySessionId": "sid-wt", "pid": 5},
+    ]
+    meta = {
+        "sid-pm": {"path": _Z_ROOT},
+        "sid-other": {"path": "/home/thomasjiralerspong/my-goat"},
+        # sid-nometa: no metadata at all -> EPS-ness unknown -> skipped
+        "sid-reg": {"path": _Z_ROOT},
+        "sid-wt": {"path": f"{_Z_ROOT}/.claude/worktrees/issue-99"},
+    }
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=children,
+        meta=meta,
+        idle_age=over,
+        registry={"sid-reg": 7},
+        pm_sids={"sid-pm"},
+    )
+    # Seed stale state for the registry-mapped session: the pass must CLEAR
+    # it (the session left scope), never accumulate it.
+    stale = isolated_registry / "idle-unmapped-sid-reg.json"
+    stale.write_text(json.dumps({"missed": 1, "alerted": False, "first_over_ts": 999_000.0}))
+    t0 = 1_000_000.0
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert not stale.exists()
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_pass_tty_session_never_touched(isolated_registry, monkeypatch):
+    # A wrapper holding a controlling TTY (terminal-run session) clears any
+    # accumulated state and is never stopped, however idle the transcript.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    children = [{"happySessionId": "sid-t", "pid": 11}]
+    meta = {"sid-t": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch, children=children, meta=meta, idle_age=over, has_tty=True
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-t.json"
+    state_path.write_text(json.dumps({"missed": 1, "alerted": False, "first_over_ts": 999_000.0}))
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=1_000_000.0)
+    assert not state_path.exists()
+    assert stops == [] and records == []
+
+
+def test_idle_unmapped_pass_missing_signal_fails_toward_keep(
+    isolated_registry, monkeypatch, capsys
+):
+    # The resolver miss: never accumulates, never stops, logs loudly, and
+    # leaves a pre-existing episode FROZEN (not erased) so a flapping
+    # resolver can't reset a real episode.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    children = [{"happySessionId": "sid-m", "pid": 13}]
+    meta = {"sid-m": {"path": _Z_ROOT}}
+    stops, records = _patch_idle_io(
+        monkeypatch, children=children, meta=meta, idle_age=None, signal_reason="no happy log"
+    )
+    state_path = isolated_registry / "idle-unmapped-sid-m.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_over_ts": 999_000.0})
+    state_path.write_text(seeded)
+    t0 = 1_000_000.0
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == [] and records == []
+    assert state_path.read_text() == seeded  # frozen, not erased or grown
+    assert "failing toward KEEP" in capsys.readouterr().err
+
+
+def test_idle_unmapped_pass_kill_switch_alert_only(isolated_registry, monkeypatch):
+    # EPM_UNMAPPED_IDLE_REAP=0: one alert record per episode, never a stop.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_UNMAPPED_IDLE_REAP", "0")
+    children = [{"happySessionId": "sid-k", "pid": 9}]
+    meta = {"sid-k": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=over)
+    t0 = 1_000_000.0
+    for now in (t0, t0 + 600, t0 + 1200):
+        asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=now)
+    assert stops == []
+    assert len(records) == 1 and "NOT auto-stopped" in records[0]
+
+
+def test_idle_unmapped_pass_stop_verification_retry_then_alert(
+    isolated_registry, monkeypatch, capsys
+):
+    # ACK != kill: a session still live after its ACKed stop gets ONE retry,
+    # then ONE loud record, then quiet — the state is reaped only when the
+    # session actually leaves the live set.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    children = [{"happySessionId": "sid-v", "pid": 13}]
+    meta = {"sid-v": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=over)
+    state_path = isolated_registry / "idle-unmapped-sid-v.json"
+    t0 = 1_000_000.0
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0)  # miss 1
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 600)  # stop ACK
+    assert stops == ["sid-v"] and len(records) == 1
+    capsys.readouterr()
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 1200)  # retry
+    assert stops == ["sid-v", "sid-v"]
+    assert "IDLE-UNMAPPED STOP-VERIFY FAILED" in capsys.readouterr().err
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 1800)  # loud record
+    assert stops == ["sid-v", "sid-v"]
+    assert len(records) == 2  # stop + stop-failed records
+
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 2400)  # quiet
+    assert stops == ["sid-v", "sid-v"] and len(records) == 2
+    assert state_path.exists()
+
+    # The session finally dies -> the live-session-keyed GC reaps the state.
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=True, now=t0 + 3000)
+    assert not state_path.exists()
+
+
+def test_idle_unmapped_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
+    # Dry-run discipline: with an episode seeded AT the stop point, a dry-run
+    # tick must not stop, must not record, and must leave the state file
+    # byte-for-byte untouched.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_UNMAPPED_IDLE_REAP", raising=False)
+    children = [{"happySessionId": "sid-d", "pid": 21}]
+    meta = {"sid-d": {"path": _Z_ROOT}}
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(monkeypatch, children=children, meta=meta, idle_age=over)
+    # Mirror the REAL _stop_session contract (returns False without acting
+    # when dry_run=True).
+    monkeypatch.setattr(
+        asw, "_stop_session", lambda sid, dry_run: (not dry_run) and (stops.append(sid) or True)
+    )
+    t0 = 1_000_000.0
+    state_path = isolated_registry / "idle-unmapped-sid-d.json"
+    seeded = json.dumps({"missed": 1, "alerted": False, "first_over_ts": t0})
+    state_path.write_text(seeded)
+
+    asw.idle_unmapped_pass(True, 2, daemon_reachable=True, now=t0 + 600)
+    assert stops == [] and records == []
+    assert state_path.read_text() == seeded  # untouched, not even rewritten
+
+
+def test_idle_unmapped_pass_daemon_unreachable_skips(isolated_registry, monkeypatch):
+    # Daemon-gated: liveness + the stop RPC both need the daemon.
+    import autonomous_session_watch as asw
+
+    over = asw.UNMAPPED_IDLE_REAP_S + 3600
+    stops, records = _patch_idle_io(
+        monkeypatch,
+        children=[{"happySessionId": "sid-x", "pid": 1}],
+        meta={"sid-x": {"path": _Z_ROOT}},
+        idle_age=over,
+    )
+    asw.idle_unmapped_pass(False, 2, daemon_reachable=False, now=1_000_000.0)
+    assert stops == [] and records == []
+    assert not list(isolated_registry.glob("idle-unmapped-*.json"))
+
+
+def test_idle_unmapped_transcript_signal_is_happy_log_only(tmp_path, monkeypatch):
+    # The idleness signal uses ONLY session_resolver's per-pid happy-log path.
+    # The shared-projects-dir filesystem fallback can attribute ANOTHER
+    # session's OLDER transcript (a WRONG signal, not a missing one) and is
+    # never consulted: a happy-log miss returns (None, reason) -> skip/keep.
+    import os
+
+    import autonomous_session_watch as asw
+    import session_resolver
+
+    def _boom(*_a, **_k):  # the fallback-bearing resolver must not be called
+        raise AssertionError("resolve_transcript (with fs fallback) must not be used")
+
+    monkeypatch.setattr(session_resolver, "resolve_transcript", _boom)
+
+    monkeypatch.setattr(
+        session_resolver,
+        "_resolve_transcript_via_happy_log",
+        lambda pid: (None, "no happy log file for this node pid"),
+    )
+    age, reason = asw._transcript_idle_age_s(123, now=1_000_000.0)
+    assert age is None and "no happy log" in reason
+
+    transcript = tmp_path / "t.jsonl"
+    transcript.write_text("{}\n")
+    os.utime(transcript, (999_000.0, 999_000.0))
+    monkeypatch.setattr(
+        session_resolver,
+        "_resolve_transcript_via_happy_log",
+        lambda pid: (str(transcript), None),
+    )
+    age, reason = asw._transcript_idle_age_s(123, now=1_000_000.0)
+    assert reason is None and age == 1_000.0
+
+
+def test_gc_pass_never_touches_session_reaper_state_files(isolated_registry, monkeypatch):
+    # The generic per-issue GC must not reap the per-SESSION state files of
+    # the zombie-wrapper and idle-unmapped passes (sid stems are non-int and
+    # their prefixes are not in _GC_TARGETS) — those are owned by each pass's
+    # live-session-keyed GC. Reaping them here would reset miss counters
+    # every tick and the thresholds could never be reached.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "completed")
+    payload = json.dumps({"missed": 1, "alerted": False, "first_over_ts": 0.0})
+    zombie = isolated_registry / "zombie-wrapper-sid-abc.json"
+    idle = isolated_registry / "idle-unmapped-sid-abc.json"
+    zombie.write_text(payload)
+    idle.write_text(payload)
+
+    asw.gc_pass(False, now=10 * asw.MAX_ENTRY_AGE_S)
+
+    assert zombie.exists() and idle.exists()
