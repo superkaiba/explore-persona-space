@@ -1,12 +1,14 @@
 {
-  "git_commit": "28db2174d24dc4bb3c6f29c8096a31366358c31e",
-  "generated_at": "2026-06-12T10:38:23.060739+00:00",
+  "git_commit": "71b992aa030a63409ee576a375c3ab2e9e449ac7",
+  "generated_at": "2026-06-12T11:21:14.900371+00:00",
   "arms": [
     "arm1_xfam",
     "arm2_close",
     "arm3_default",
-    "c16",
     "c2",
-    "c8"
-  ]
+    "c8",
+    "c16"
+  ],
+  "layout": "2x3",
+  "note": "vmax=14 clips the saturated instructed-marker diagonal (25.2 nat)"
 }
