@@ -78,9 +78,11 @@ load_dotenv()
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
     ANALYZE_SUMMARY_RELPATH,
     BASE_MODEL,
+    EXTRA_ARMS,
     G1_TOL,
     G2_DELTA_FLOOR,
     HF_DATA_PREFIX,
+    HF_DATA_PREFIX_614,
     HF_DATA_REPO,
     HF_MODEL_REPO,
     JUDGE_MODEL,
@@ -90,15 +92,18 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     cell_id,
     cell_slab_dir,
     full_production_cells,
+    full_production_cells_614,
     parse_cells,
     pool_dir,
     repo_root_from_module,
+    smoke_cell_for,
 )
 
 log = logging.getLogger("dispatch_sycophancy_612")
 
-SMOKE_CELL = ("villain", "arm_onpolicy", 42)
-SMOKE_DIAGNOSTIC_CELL = ("villain", "arm_onpolicy", 137)
+# Smoke cells are issue-tag dependent (smoke == sweep with one cell):
+# smoke_cell_for(612) == villain:arm_onpolicy:42,
+# smoke_cell_for(614) == software_engineer:arm_canned_noassist:42.
 YIELD_EXIT_CODE = 42  # build_onpolicy_pool's PositiveYieldError marker (G3)
 JUDGE_PARSE_RATE_FLOOR = 0.95
 NONEMPTY_COMPLETION_FLOOR = 0.95
@@ -119,14 +124,16 @@ def resolve_all_cells(
     *,
     all_cells_arg: list[tuple[str, str, int]] | None,
     dry_run: bool,
+    issue_tag: int = 612,
 ) -> list[tuple[str, str, int]]:
-    """Non-dry runs DEFAULT to the full 28-cell grid (a mislaunched subset shard
-    can never satisfy the epm:results gate); dry runs default to their subset."""
+    """Non-dry runs DEFAULT to the issue's full production grid (28 cells for
+    612, 3 for 614 — a mislaunched subset shard can never satisfy the
+    epm:results gate); dry runs default to their subset."""
     if all_cells_arg is not None:
         return all_cells_arg
     if dry_run:
         return list(cells)
-    return full_production_cells()
+    return full_production_cells_614() if issue_tag == 614 else full_production_cells()
 
 
 def _git_sha() -> str:
@@ -165,16 +172,17 @@ def _write_sentinel(
     note_obj: dict,
     name_slug: str,
     gate: str | None = None,
+    issue_tag: int = 612,
 ) -> Path:
     """One poll_pipeline-conforming sentinel (sentinel_schema_version/kind/version)."""
     logs_root.mkdir(parents=True, exist_ok=True)
-    path = logs_root / f"issue-612-{name_slug}-{int(time.time())}.json"
+    path = logs_root / f"issue-{issue_tag}-{name_slug}-{int(time.time())}.json"
     payload: dict = {
         "sentinel_schema_version": 1,
         "kind": kind,
         "version": 1,
-        "task_id": 612,
-        "by": "pod-dispatcher-612",
+        "task_id": issue_tag,
+        "by": f"pod-dispatcher-{issue_tag}",
         "ts": datetime.now(UTC).isoformat(),
         "note": json.dumps(note_obj, ensure_ascii=False),
     }
@@ -282,6 +290,30 @@ class Dispatcher:
         self.dry_run: bool = args.dry_run
         self.hf_upload: bool = args.hf_upload and not args.dry_run
         self._panel_set_path: Path | None = None
+        # --issue-tag 614 reuses this dispatcher for the no-assistant child
+        # ablation: same phase chain, issue-specific naming + smoke cell.
+        self.issue_tag: int = args.issue_tag
+        self.hf_data_prefix: str = HF_DATA_PREFIX_614 if self.issue_tag == 614 else HF_DATA_PREFIX
+        self.adapter_path_prefix: str = f"adapters/issue_{self.issue_tag}"
+        self.smoke_cell: tuple[str, str, int] = smoke_cell_for(self.issue_tag)
+        # G2 clean-diagnostics retrain: the smoke cell's other seed.
+        self.smoke_diagnostic_cell: tuple[str, str, int] = (
+            self.smoke_cell[0],
+            self.smoke_cell[1],
+            137,
+        )
+
+    def _sentinel(
+        self, *, kind: str, note_obj: dict, name_slug: str, gate: str | None = None
+    ) -> Path:
+        return _write_sentinel(
+            self.logs_root,
+            kind=kind,
+            note_obj=note_obj,
+            name_slug=name_slug,
+            gate=gate,
+            issue_tag=self.issue_tag,
+        )
 
     # ----- panel resolution ---------------------------------------------------
 
@@ -321,9 +353,15 @@ class Dispatcher:
         return path
 
     def _resolve_panel_set(self) -> Path:
-        """panel_set.json: local (P2j output via git) -> HF -> provisional (opt-in)."""
+        """panel_set.json: prefetched pin (data_root) -> local git (P2j output)
+        -> HF -> provisional (opt-in). The 614 prefetch lands the sha-pinned
+        frozen panel at data_root, so 614 always resolves at the first hop."""
         if self._panel_set_path is not None:
             return self._panel_set_path
+        pinned = self.data_root / "panel" / "panel_set.json"
+        if pinned.exists():
+            self._panel_set_path = pinned
+            return pinned
         local = repo_root_from_module() / "data" / "issue_612" / "panel" / "panel_set.json"
         if local.exists():
             self._panel_set_path = local
@@ -489,7 +527,7 @@ class Dispatcher:
             max_length=2048,  # Arm C prefixes; A/B rows asserted <=1024 at pool build
             warmup_ratio=0.05,
             seed=seed,
-            run_name=f"issue612_{arm}_{source}_seed{seed}",
+            run_name=f"issue{self.issue_tag}_{arm}_{source}_seed{seed}",
             report_to="wandb",
             save_strategy="epoch",
             save_total_limit=None,
@@ -509,7 +547,7 @@ class Dispatcher:
             raise RuntimeError(f"[{source}:{arm}:{seed}] no .safetensors in {adapter_dir}")
 
         if self.hf_upload:
-            hub_base = f"adapters/issue_612/{arm}/{source}_seed{seed}"
+            hub_base = f"{self.adapter_path_prefix}/{arm}/{source}_seed{seed}"
             _upload_or_raise(
                 adapter_dir, repo_type="model", repo_id=HF_MODEL_REPO, path_in_repo=hub_base
             )
@@ -584,6 +622,15 @@ class Dispatcher:
         return merged_dir
 
     def _audited_claims(self) -> Path:
+        if self.issue_tag == 614:
+            # Pinned frozen input fetched by prefetch --issue-tag 614
+            # (data/issue_612 is NOT on main; #614 plan §4 step 2).
+            path = self.data_root / "wrong_claims" / "eval_60.jsonl"
+            if not path.exists():
+                raise FileNotFoundError(
+                    f"audited eval_60 missing at {path} — prefetch --issue-tag 614 must run"
+                )
+            return path
         return repo_root_from_module() / "data" / "issue_612" / "wrong_claims" / "eval_60.jsonl"
 
     def _frozen_claims(self) -> Path:
@@ -597,7 +644,7 @@ class Dispatcher:
         prior = _read_cellstate(self.slab_root, source, arm, seed)
         if prior is not None and prior.get("status") == "complete":
             if (
-                arm in TRAIN_ARMS
+                (arm in TRAIN_ARMS or arm in EXTRA_ARMS)
                 and prior.get("panel_provenance") == "provisional_mandatory11"
                 and not self.args.allow_provisional_panel
             ):
@@ -637,7 +684,7 @@ class Dispatcher:
             return record
 
         try:
-            if arm in TRAIN_ARMS:
+            if arm in TRAIN_ARMS or arm in EXTRA_ARMS:
                 self._run_train_cell(source, arm, seed, cell_dir, record)
             elif (source, arm) == ("panel", "build"):
                 self._run_panel_build(record)
@@ -652,14 +699,13 @@ class Dispatcher:
             # reported, never silently shrunk. The SMOKE cell halts instead.
             record.update(status="dropped_yield", wall_seconds=round(time.time() - t0, 1))
             _write_cellstate(self.slab_root, source, arm, seed, record)
-            _write_sentinel(
-                self.logs_root,
+            self._sentinel(
                 kind="epm:progress",
                 name_slug=f"cell-{source}-{arm}-{seed}-YIELD-DROP",
                 note_obj={"event": "cell_dropped_yield", **record},
                 gate="g3-per-source-yield",
             )
-            if (source, arm, seed) == SMOKE_CELL:
+            if (source, arm, seed) == self.smoke_cell:
                 raise RuntimeError(f"[G2] smoke cell yield failure: {e} — halt (plan §7 G2)") from e
             log.warning("[%s] dropped on yield (G3): %s", cid, e)
             return record
@@ -688,6 +734,29 @@ class Dispatcher:
 
             tok = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
             record["pool_check"] = validate_pool(pool, source, "arm_canned", pool, tokenizer=tok)
+        elif arm == "arm_canned_noassist":
+            # #614: deterministic CPU splice (no LLM, no subprocess) + the
+            # arm-aware validate_pool against the frozen SE reference.
+            log.info("[%s:%s:%d] [phase=pool_build] no-assistant splice (CPU)", source, arm, seed)
+            from transformers import AutoTokenizer
+
+            from explore_persona_space.experiments.sycophancy_onpolicy_612.build_onpolicy_pool import (  # noqa: E501
+                build_noassist_canned_pool,
+                validate_pool,
+            )
+
+            tok = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+            pool = build_noassist_canned_pool(self.data_root, source, tokenizer=tok)
+            frozen = self.data_root / "pools_411" / f"{source}_seed42" / "train_pool.jsonl"
+            record["pool_check"] = validate_pool(pool, source, arm, frozen, tokenizer=tok)
+            if self.hf_upload:
+                for name in ("train_pool.jsonl", "pool_meta.json"):
+                    _upload_or_raise(
+                        pool.parent / name,
+                        repo_type="dataset",
+                        repo_id=HF_DATA_REPO,
+                        path_in_repo=f"{self.hf_data_prefix}/training_pools/{arm}/{source}/{name}",
+                    )
         else:
             log.info("[%s:%s:%d] [phase=pool_build]", source, arm, seed)
             pool = self._pool_build_subprocess(source, arm)
@@ -698,7 +767,7 @@ class Dispatcher:
                     local = pool.parent / name
                     hub_path = upload_dataset(
                         str(local),
-                        path_in_repo=f"{HF_DATA_PREFIX}/training_pools/{arm}/{source}/{name}",
+                        path_in_repo=f"{self.hf_data_prefix}/training_pools/{arm}/{source}/{name}",
                     )
                     if not hub_path:
                         raise RuntimeError(f"training-pool upload failed: {local}")
@@ -706,7 +775,7 @@ class Dispatcher:
 
         adapter_dir, merged_dir = self._train_and_merge(source, arm, seed, pool)
         record["adapter_dir"] = str(adapter_dir)
-        record["adapter_hf_path"] = f"adapters/issue_612/{arm}/{source}_seed{seed}"
+        record["adapter_hf_path"] = f"{self.adapter_path_prefix}/{arm}/{source}_seed{seed}"
         panel_set = self._resolve_panel_set()
         record["panel_provenance"] = json.loads(panel_set.read_text()).get("provenance")
         self._eval_subprocess(
@@ -822,12 +891,11 @@ class Dispatcher:
             local,
             repo_type="dataset",
             repo_id=HF_DATA_REPO,
-            path_in_repo=f"{HF_DATA_PREFIX}/eval_results/{rel}",
+            path_in_repo=f"{self.hf_data_prefix}/eval_results/{rel}",
         )
 
     def _cell_sentinel(self, record: dict) -> None:
-        _write_sentinel(
-            self.logs_root,
+        self._sentinel(
             kind="epm:progress",
             name_slug=f"cell-{record['source']}-{record['arm']}-{record['seed']}",
             note_obj={"event": "cell_complete", **record},
@@ -896,14 +964,11 @@ class Dispatcher:
         }
         if abs(drift) <= G1_TOL:
             note["decision"] = "PASS"
-            _write_sentinel(
-                self.logs_root, kind="epm:progress", name_slug="smoke-gate-g1", note_obj=note
-            )
+            self._sentinel(kind="epm:progress", name_slug="smoke-gate-g1", note_obj=note)
             log.info("[phase=smoke_gate_g1] PASS: drift=%.3f (tol %.2f)", drift, G1_TOL)
             return
         note["decision"] = "HALT"
-        _write_sentinel(
-            self.logs_root,
+        self._sentinel(
             kind="epm:progress",
             name_slug="smoke-gate-g1",
             note_obj=note,
@@ -918,7 +983,7 @@ class Dispatcher:
     def _gate_g2(self) -> None:
         """G2: install + yield check on the smoke cell with the registered
         disambiguation path (plan §7; yield is enforced by the pool build)."""
-        source, arm, seed = SMOKE_CELL
+        source, arm, seed = self.smoke_cell
         log.info("[phase=smoke_gate_g2]")
         cell_dir = cell_slab_dir(self.slab_root, source, arm, seed)
         trained_read = self._mini_judge_panel_file(cell_dir / f"sycophancy_eval_{source}.json")
@@ -947,7 +1012,7 @@ class Dispatcher:
         delta = trained_read["rate"] - base_read["rate"]
         note: dict = {
             "event": "smoke_gate_g2",
-            "cell": cell_id(*SMOKE_CELL),
+            "cell": cell_id(*self.smoke_cell),
             "delta_floor": G2_DELTA_FLOOR,
             "trained_read": trained_read,
             "base_read": base_read,
@@ -955,9 +1020,7 @@ class Dispatcher:
         }
         if delta >= G2_DELTA_FLOOR:
             note["decision"] = "PASS"
-            _write_sentinel(
-                self.logs_root, kind="epm:progress", name_slug="smoke-gate-g2", note_obj=note
-            )
+            self._sentinel(kind="epm:progress", name_slug="smoke-gate-g2", note_obj=note)
             log.info("[phase=smoke_gate_g2] PASS: delta=%.3f >= %.2f", delta, G2_DELTA_FLOOR)
             return
 
@@ -1010,7 +1073,7 @@ class Dispatcher:
             # Clean diagnostics -> ONE diagnostic retrain at seed 137, then HALT
             # with the bundle either way (plan §7 G2 — install-fail is a halt,
             # not a continue; read2 is part of the disambiguation evidence).
-            diag = SMOKE_DIAGNOSTIC_CELL
+            diag = self.smoke_diagnostic_cell
             log.info("[phase=smoke_gate_g2] diagnostics clean — diagnostic cell %s", cell_id(*diag))
             self._run_cell(*diag)
             read2 = self._mini_judge_panel_file(
@@ -1019,8 +1082,7 @@ class Dispatcher:
             note["read2"] = read2
             note["read2_delta_self_vs_fresh_base"] = read2["rate"] - base_read["rate"]
         note["decision"] = "HALT_DISAMBIGUATION"
-        _write_sentinel(
-            self.logs_root,
+        self._sentinel(
             kind="epm:progress",
             name_slug="smoke-gate-g2",
             note_obj=note,
@@ -1042,10 +1104,17 @@ class Dispatcher:
         ok_statuses = ("complete", "dry_run") if self.dry_run else ("complete",)
         complete = {k: v for k, v in states.items() if v and v.get("status") in ok_statuses}
         dropped = {k: v for k, v in states.items() if v and v.get("status") == "dropped_yield"}
-        full_grid = set(full_production_cells())
+        full_grid = set(
+            full_production_cells_614() if self.issue_tag == 614 else full_production_cells()
+        )
         covers_full_grid = set(all_cells) == full_grid
+        wandb_run_names = sorted(
+            f"issue{self.issue_tag}_{arm}_{source}_seed{seed}"
+            for (source, arm, seed), v in complete.items()
+            if v.get("adapter_hf_path")
+        )
         summary = {
-            "issue": 612,
+            "issue": self.issue_tag,
             "gpu_id": self.gpu_id,
             "shard_cells": [cell_id(*c) for c in cells],
             "all_cells": [cell_id(*c) for c in all_cells],
@@ -1062,12 +1131,14 @@ class Dispatcher:
                 "base_model": BASE_MODEL,
                 "hf_model_repo": HF_MODEL_REPO,
                 "hf_data_repo": HF_DATA_REPO,
-                "hf_data_prefix": HF_DATA_PREFIX,
+                "hf_data_prefix": self.hf_data_prefix,
                 "adapter_paths": {
                     cell_id(*k): v.get("adapter_hf_path")
                     for k, v in complete.items()
                     if v.get("adapter_hf_path")
                 },
+                "wandb_project": os.environ.get("WANDB_PROJECT"),
+                "wandb_run_names": wandb_run_names,
                 "final_commit_sha": _git_sha(),
             },
             "hostname": socket.gethostname(),
@@ -1084,15 +1155,13 @@ class Dispatcher:
                 f"epm:results gate reached with a non-grid all_cells "
                 f"({len(all_cells)} != {len(full_grid)})"
             )
-            _write_sentinel(
-                self.logs_root,
+            self._sentinel(
                 kind="epm:results",
                 name_slug="epm_results",
                 note_obj={"event": "sweep_complete", **summary},
             )
         else:
-            _write_sentinel(
-                self.logs_root,
+            self._sentinel(
                 kind="epm:progress",
                 name_slug=f"shard-gpu{self.gpu_id}-done",
                 note_obj={"event": "shard_complete", **summary},
@@ -1142,11 +1211,20 @@ def main(argv: list[str] | None = None) -> int:
         help="Alias accepted for §10 dispatch-row compatibility (maps to --slab-root when given).",
     )
     parser.add_argument(
+        "--issue-tag",
+        type=int,
+        choices=(612, 614),
+        default=612,
+        help="614 reuses this dispatcher for the no-assistant-negative child ablation: "
+        "issue-specific smoke cell, production grid, HF/WandB naming, claims/panel "
+        "resolution and sentinel naming (#614 plan §4 step 2).",
+    )
+    parser.add_argument(
         "--smoke-gates",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Run G1+G2 after the smoke cell (fires only when villain:arm_onpolicy:42 "
-        "is in --cells).",
+        help="Run G1+G2 after the unified smoke cell (villain:arm_onpolicy:42 for 612, "
+        "software_engineer:arm_canned_noassist:42 for 614).",
     )
     parser.add_argument(
         "--allow-provisional-panel",
@@ -1168,11 +1246,18 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
-    os.environ.setdefault("WANDB_PROJECT", "issue612_sycophancy_onpolicy")
+    os.environ.setdefault(
+        "WANDB_PROJECT",
+        "issue614_noassist_negative_swap"
+        if args.issue_tag == 614
+        else "issue612_sycophancy_onpolicy",
+    )
     os.environ.setdefault("TQDM_DISABLE", "1")
 
     cells: list[tuple[str, str, int]] = args.cells
-    all_cells = resolve_all_cells(cells, all_cells_arg=args.all_cells, dry_run=args.dry_run)
+    all_cells = resolve_all_cells(
+        cells, all_cells_arg=args.all_cells, dry_run=args.dry_run, issue_tag=args.issue_tag
+    )
     missing = [c for c in cells if c not in all_cells]
     if missing:
         raise ValueError(f"--cells entries missing from --all-cells: {missing}")
@@ -1180,7 +1265,7 @@ def main(argv: list[str] | None = None) -> int:
     # Credential checks gated by the phases this invocation actually runs
     # (a --dry-run --skip-prefetch grid walk needs neither).
     needs_hf = (not args.skip_prefetch) or (not args.dry_run)
-    gates_fire = args.smoke_gates and SMOKE_CELL in cells and not args.dry_run
+    gates_fire = args.smoke_gates and smoke_cell_for(args.issue_tag) in cells and not args.dry_run
     needs_judge = gates_fire or (
         not args.dry_run and any(a in ("arm_onpolicy", "arm_prefix") for _, a, _ in cells)
     )
@@ -1211,6 +1296,7 @@ def main(argv: list[str] | None = None) -> int:
             data_root=args.data_root,
             adapters_root=args.adapters_root,
             smoke_gate=args.smoke_gates,
+            issue_tag=args.issue_tag,
         )
 
     for source, arm, seed in cells:
@@ -1227,10 +1313,11 @@ def main(argv: list[str] | None = None) -> int:
                     "exception_type": type(e).__name__,
                     "exception_msg": str(e)[:2000],
                 },
+                issue_tag=args.issue_tag,
             )
             log.exception("[%s] cell failed", cell_id(source, arm, seed))
             raise
-        if (source, arm, seed) == SMOKE_CELL and args.smoke_gates and not args.dry_run:
+        if (source, arm, seed) == dispatcher.smoke_cell and args.smoke_gates and not args.dry_run:
             dispatcher._gate_g1()
             dispatcher._gate_g2()
 
