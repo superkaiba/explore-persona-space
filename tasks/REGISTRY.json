@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 631,
+  "highest_id": 632,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3721,8 +3721,8 @@
       "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (\u22120.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/610",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/610",
+      "status": "followups_running",
       "title": "Deleting the default assistant's 200 negative training rows leaves its shielding from a marker implant essentially unchanged (MODERATE confidence)"
     },
     "611": {
@@ -3873,8 +3873,8 @@
     "629": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/629",
-      "status": "planning",
+      "path": "tasks/approved/629",
+      "status": "approved",
       "title": "Harden the i472 trajectory storage-contract gate: finiteness/type-check the 6 raw-logit leaf fields + AST gate-before-write ordering pin"
     },
     "630": {
@@ -3890,6 +3890,14 @@
       "path": "tasks/proposed/631",
       "status": "proposed",
       "title": "GCP lane: FLEX_START + a3-highgpu H100 intents; enable SPOT to use the idle preemptible A100 quota"
+    },
+    "632": {
+      "goal": "Determine whether the default assistant context's shielding from a marker implant is produced by suppression reaching it from assistant-cluster-proximal negative personas or by its cluster position alone, by swapping the no-default mix's far replacement negative (journalist) for an assistant-cluster-proximal negative and reading the never-trained default context's and assistant persona's centered implant-normalized marker log-prob shifts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/632",
+      "status": "proposed",
+      "title": "Assistant-proximal negative swap: does suppression reach the default context from cluster-proximal negatives? Slot swap on the #610 no-default chassis"
     },
     "65": {
       "has_clean_result": true,
