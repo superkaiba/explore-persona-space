@@ -63,7 +63,7 @@ PRIMARY_POOLING = "slot"
 FLOOR_THRESHOLD_DEFAULT = 3.0  # §11: ungrounded heuristic — calibrated at smoke
 H1_WINDOW = (4, 16)  # earliest above-floor positive-only checkpoints (plan §3 H1)
 CLIFF_WINDOW = (12, 40)  # rotation-minimum / gate-collapse window (plan §3 H2)
-ONSET_BAND = (15, 20)  # behavioral onsets (parent headline; figure shading)
+ONSET_BAND = (15, 20)  # source onset: teacher-forced probe gain crosses 5 nats (figure shading)
 
 # Mirrors scripts/issue_597/dispatch_leakage_dynamics_597.py (the parent's
 # pinned pool source — plan §11 "negatives read from the realized pool files").
@@ -438,7 +438,7 @@ def analyze_unit(  # noqa: C901  one linear per-unit DV pipeline; reads clearest
         "above_floor_steps": above,
     }
 
-    # ── behavioral join (the parent's panel trajectories, same probe rows) ──
+    # ── teacher-forced probe join (the parent's panel trajectories, same probe rows) ──
     from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
         bystander_contexts,
         context_value,
@@ -704,7 +704,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
     def _shade_onset(ax):
         ax.axvspan(ONSET_BAND[0], ONSET_BAND[1], alpha=0.15, color="grey", lw=0)
 
-    # ── hero per arm: top share + gate rho + rotation, behavioral overlay ──
+    # ── hero per arm: top share + gate rho + rotation, teacher-forced probe overlay ──
     for arm, results in by_arm.items():
         if not results:
             continue
@@ -743,7 +743,7 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
                 lw=0.8,
                 alpha=0.35,
             )
-        beh.set_ylabel("behavioral source gain (nats)", fontsize=8)
+        beh.set_ylabel("source marker log-prob gain\n(teacher-forced probe, nats)", fontsize=8)
         for ax in axes:
             _shade_onset(ax)
             ax.set_xscale("log")
@@ -755,8 +755,9 @@ def make_figures(  # noqa: C901  one linear figure dump; reads clearest inline
         axes[0].legend(fontsize=6, ncol=2, frameon=False)
         axes[0].set_title(
             f"{arm_label[arm]} arm — shift-matrix geometry vs training step "
-            "(layer 14 slot; above-floor checkpoints; dashed = sign-flip null p95; "
-            "grey curves = behavioral source gain; band = behavioral onset 15-20)",
+            "(layer 14 slot; above-floor checkpoints; dashed = sign-flip null p95;\n"
+            "grey curves = source marker log-prob gain, teacher-forced probe; "
+            "band = source onset (probe gain crosses 5 nats))",
             fontsize=8,
         )
         stem = f"svdtitration_hero_{arm_label[arm].replace('-', '_')}"
