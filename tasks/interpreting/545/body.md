@@ -4,7 +4,7 @@ title: 'Context-geometry predictors don''t transfer to behavior→behavior leaka
 kind: experiment
 tags: []
 created_at: '2026-06-10T01:00:41Z'
-has_clean_result: false
+has_clean_result: true
 goal: 'Build a reusable behavior-generalization testbed: measure the leakage matrix
   L[b_train -> b''_eval] (on-policy trained-base expression delta of b'', default
   context) over ~17 train behaviors x ~11 judged eval columns on Qwen-2.5-7B, both
