@@ -3616,8 +3616,8 @@
     "598": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/598",
-      "status": "running",
+      "path": "tasks/reviewing/598",
+      "status": "reviewing",
       "title": "SlurmBackend.launch: populate expected_artifacts declaration (SLURM finalize/confirm unusable without it)"
     },
     "599": {
