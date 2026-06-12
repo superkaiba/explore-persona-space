@@ -120,6 +120,18 @@ _SOURCE_VALUE_STOPWORDS = frozenset({"per", "unique", "value", "each", "every"})
 GPU_LINE_RE = re.compile(r"(?i)estimated\s+gpu-?hours\s+\(total\):\**\s*`?([0-9]+(?:\.[0-9]+)?)`?")
 GPU_LABEL_RE = re.compile(r"(?i)estimated\s+gpu-?hours\s+\(total\)")
 
+# Check 5: backtick-tolerant numeric-range detector, applied with .match()
+# anchored at the captured value BEFORE the annotation stops run. One of
+# the stops is the closing backtick, so a stop-first scan truncates
+# "`4`-8" to "4" and false-PASSes the range as its first number (round-2
+# reconciler blocker gpu-hours-backtick-range-false-pass; "`40`-200" is
+# the auto-approve-cap understatement shape). The leading "`?" is
+# redundant after GPU_LINE_RE consumed the value's opening backtick, but
+# kept to match the endorsed detector shape.
+GPU_RANGE_AT_VALUE_RE = re.compile(
+    r"`?[0-9]+(?:\.[0-9]+)?`?\s*[-–]\s*`?[0-9]"  # noqa: RUF001 — en-dash ranges are real
+)
+
 # Checks 4 + 10: marker-leakage vocabulary (NOT the bare token "marker",
 # which false-fires on workflow vocabulary — `post-marker`, `epm:` markers —
 # present in nearly every plan).
@@ -642,6 +654,23 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
     if line_end == -1:
         line_end = len(plan)
     tail = plan[m.start(1) : line_end]
+    # Backtick-tolerant range detection FIRST, anchored at the value:
+    # the closing-backtick annotation stop below would otherwise truncate
+    # a backtick-wrapped-number range at the first close backtick and
+    # PASS it as its first number (round-2 fix; counterexamples that must
+    # FAIL: `4`-8, `4`-`8`, `4` - 8, `40`-200). Anchoring via .match()
+    # keeps the #580 next-sentence wall-time range and the #610/#614
+    # annotation shapes out of reach — those put a non-dash token between
+    # the value and any later digit-dash-digit text.
+    range_m = GPU_RANGE_AT_VALUE_RE.match(tail)
+    if range_m:
+        return _fail(
+            cid,
+            name,
+            f"value reads as a range, not a single number ({range_m.group(0).strip()!r}) — "
+            "the Step 2c gate needs one number (put worst-case bounds in a parenthetical "
+            "annotation)",
+        )
     for stop in ("(", "—", "`", ". "):
         idx = tail.find(stop)
         if idx != -1:

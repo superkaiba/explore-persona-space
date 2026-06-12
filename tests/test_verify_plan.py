@@ -519,6 +519,74 @@ def test_c5_bold_label_form_passes():
     assert "3.5" in r.detail
 
 
+# Round-2 regression group (reconciler blocker
+# gpu-hours-backtick-range-false-pass): the closing-backtick annotation
+# stop must not truncate a backtick-wrapped-number range to its first
+# number and PASS it.
+
+
+def test_c5_backtick_wrapped_first_number_range_fails():
+    plan = GOOD_PLAN.replace(GPU_LINE, "Estimated GPU-hours (total): `4`-8")
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
+def test_c5_per_number_backtick_wrapped_range_fails():
+    # Realistic per-number markdown wrapping.
+    plan = GOOD_PLAN.replace(GPU_LINE, "Estimated GPU-hours (total): `4`-`8`")
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
+def test_c5_spaced_backtick_range_fails():
+    plan = GOOD_PLAN.replace(GPU_LINE, "Estimated GPU-hours (total): `4` - 8")
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
+def test_c5_backtick_range_understating_auto_approve_cap_fails():
+    # The auto-approve-cap understatement shape: `40`-200 previously read
+    # as 40 GPU-h — under the 100 GPU-h autonomous auto-approve cap while
+    # the stated worst case is 200.
+    plan = GOOD_PLAN.replace(GPU_LINE, "Estimated GPU-hours (total): `40`-200")
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
+def test_c5_backtick_range_in_table_cell_fails():
+    # Same shape inside a markdown table cell (the #614 context that made
+    # the backtick an annotation stop in the first place).
+    plan = GOOD_PLAN.replace(
+        GPU_LINE,
+        "| **Total (pod)** | 1× A100-80 | Estimated GPU-hours (total): `4`-`8` (with margin) |",
+    )
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
+def test_c5_range_inside_inline_code_span_fails():
+    # Same shape inside a surrounding inline-code span: the whole
+    # label+range sits in one span, so the only backtick after the value
+    # is the CLOSING span delimiter — the range must still be detected.
+    plan = GOOD_PLAN.replace(
+        GPU_LINE, "Budget: `Estimated GPU-hours (total): 4-8`. Wall ~2 h including review."
+    )
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "FAIL"
+    assert "range" in r.detail
+
+
 # ─── Check 6 — reused-artifact fitness ─────────────────────────────────────
 
 
