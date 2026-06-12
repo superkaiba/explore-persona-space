@@ -421,6 +421,9 @@ def _parent_train_cfg(source: str, seed: int, max_length: int):
         marker_tail_tokens=0,
         marker_suppress_at_post_response_slot=True,
         marker_im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #480 trained suppress-ON negatives WITHOUT the
+        # trailing-token keep; keep masks byte-identical.
+        marker_negative_keep_trailing=False,
         # Round-6 pin — see docstring: parent = deliberate saturation, no
         # band-stop; without this a default launch early-stops AND clobbers
         # the round-1 HF adapters.
@@ -684,6 +687,9 @@ def _band_stop_train_cfg(source: str, seed: int, max_length: int, traj_path: Pat
         marker_tail_tokens=0,
         marker_suppress_at_post_response_slot=True,
         marker_im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #480 trained suppress-ON negatives WITHOUT the
+        # trailing-token keep; keep masks byte-identical.
+        marker_negative_keep_trailing=False,
         marker_band_stop=True,
         marker_band_log_only=True,
         marker_band_eval_every_steps=BAND_STOP_PROBE_EVERY_STEPS,

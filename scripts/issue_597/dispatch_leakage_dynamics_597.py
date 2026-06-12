@@ -388,6 +388,7 @@ def _pos_only_train_cfg(
     variable and is passed separately at the train_lora call site.
     """
     from explore_persona_space.experiments.leakage_dynamics_597 import IM_END_ID, MARKER_TEXT
+
     from explore_persona_space.train.sft import TrainLoraConfig
 
     return TrainLoraConfig(
@@ -416,6 +417,9 @@ def _pos_only_train_cfg(
         # positive-only pool (no marker-less rows exist).
         marker_suppress_at_post_response_slot=True,
         marker_im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #597 trained suppress-ON negatives WITHOUT the
+        # trailing-token keep; keep masks byte-identical.
+        marker_negative_keep_trailing=False,
         marker_band_stop=True,
         marker_band_log_only=True,  # full ramp — never stops, logs the 5-step trajectory
         marker_band_eval_every_steps=BAND_STOP_PROBE_EVERY_STEPS,
@@ -484,9 +488,8 @@ def download_arm_a_ladder(source: str, steps: tuple[int, ...], dest_root: Path) 
     ``list_repo_files`` (the plan-§12-verified path) + ``hf_hub_download``
     per file, with per-file completion log lines.
     """
-    from huggingface_hub import list_repo_files
-
     from explore_persona_space.experiments.leakage_dynamics_597 import ARM_A_HF_ADAPTER_ROOT
+    from huggingface_hub import list_repo_files
 
     prefix = f"{ARM_A_HF_ADAPTER_ROOT}/{source}_seed42_capend"
     dest = dest_root / source
@@ -679,6 +682,7 @@ def train_arm_b(
     from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
         CheckpointGridPruneCallback,
     )
+
     from explore_persona_space.train.sft import train_lora
 
     adapter_dir = runs_root / f"{source}_seed{seed}" / "adapter"
@@ -786,13 +790,14 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     first_armb_gate_done: dict,
 ) -> dict:
     """One cell == one source: trainB → gateB → uploads → probes → anchors → cleanup."""
-    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
-        EVAL_PERSONAS_24,
-    )
     from explore_persona_space.experiments.leakage_dynamics_597 import (
         ARM_B_HF_ADAPTER_ROOT,
         HF_597_DATA_SUBDIR,
         NO_PERSONA_KEY,
+    )
+
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
     )
 
     t_start = time.time()
@@ -1352,6 +1357,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         assert_probe_row_identity,
         build_pos_only_pool,
     )
+
     from explore_persona_space.experiments.marker_implant_480.build_training_pool import (
         DEFAULT_TRAIN_MAX_LENGTH,
     )

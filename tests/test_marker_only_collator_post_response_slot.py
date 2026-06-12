@@ -131,9 +131,12 @@ def _build_pos_neg_batch() -> dict:
 def test_negative_row_with_flag_keeps_im_end_not_trailing_newline():
     """The headline correctness claim for plan v3 §4.3 Edit A.
 
-    With ``suppress_at_post_response_slot=True``, the negative row's label
-    mask MUST keep exactly the first ``<|im_end|>`` (``neg_ids[-2]``) and
-    drop the trailing ``\\n`` (``neg_ids[-1]``).
+    With ``suppress_at_post_response_slot=True`` and the pre-#628 legacy pin
+    ``negative_keep_trailing=False``, the negative row's label mask MUST keep
+    exactly the first ``<|im_end|>`` (``neg_ids[-2]``) and drop the trailing
+    ``\\n`` (``neg_ids[-1]``). (The #628 default ``negative_keep_trailing=True``
+    additionally keeps the trailing token — covered by
+    ``tests/test_marker_collator_slot_alignment.py``.)
     """
     batch = _build_pos_neg_batch()
     collator = MarkerOnlyDataCollator(
@@ -142,6 +145,8 @@ def test_negative_row_with_flag_keeps_im_end_not_trailing_newline():
         tail_tokens=0,
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_ID,
+        # #628 legacy pin: this test audits the pre-#628 suppress-ON contract.
+        negative_keep_trailing=False,
     )
 
     out = collator(batch)
@@ -192,21 +197,22 @@ def test_positive_row_with_flag_keeps_marker_label_slot():
     assert int(pos_labels[L - 3].item()) == MARKER_ID
 
 
-def test_negative_row_default_flag_off_keeps_trailing_valid():
-    """Default flag value (False) → byte-identical to pre-#474 behavior.
+def test_negative_row_legacy_pin_flag_off_keeps_trailing_valid():
+    """Legacy pin (``suppress_at_post_response_slot=False``) → pre-#474 behavior.
 
-    All 5 existing ``tail_tokens=0`` callers (#295, EM-first, single-token
-    sweep + multi-source, factor_screen_365) do NOT pass the new fields,
-    so they hit this branch and the negative-row mask keeps the trailing
-    valid token exactly as before.
+    As of #628 the collator DEFAULT is suppress ON; every pre-#628
+    ``tail_tokens=0`` caller (#295, EM-first, single-token sweep +
+    multi-source, factor_screen_365) is pinned to ``False`` explicitly, so
+    those scripts hit this branch and the negative-row mask keeps the
+    trailing valid token exactly as before.
     """
     batch = _build_pos_neg_batch()
     collator = MarkerOnlyDataCollator(
         inner_collator=_IdentityInnerCollator(),
         marker_token_ids=[MARKER_ID],
         tail_tokens=0,
-        # suppress_at_post_response_slot=False (default)
-        # im_end_token_id=None (default)
+        # #628 legacy pin: pre-#628 trailing-token-only negative branch.
+        suppress_at_post_response_slot=False,
     )
 
     out = collator(batch)
@@ -214,18 +220,20 @@ def test_negative_row_default_flag_off_keeps_trailing_valid():
     L = neg_labels.shape[0]
     kept = (neg_labels != -100).nonzero(as_tuple=True)[0].tolist()
 
-    # Default behavior: trailing valid token (L-1) kept.
-    assert kept == [L - 1], f"Expected default negative-row mask to keep [L-1]; got {kept}"
+    # Legacy-pin behavior: trailing valid token (L-1) kept.
+    assert kept == [L - 1], f"Expected legacy-pin negative-row mask to keep [L-1]; got {kept}"
     assert int(neg_labels[L - 1].item()) == NEWLINE_ID
 
 
-def test_positive_row_default_flag_off_matches_legacy():
-    """Flag-off positive row keeps marker + trailing valid (unchanged)."""
+def test_positive_row_flag_off_matches_legacy():
+    """Flag-off (legacy pin) positive row keeps marker + trailing valid (unchanged)."""
     batch = _build_pos_neg_batch()
     collator = MarkerOnlyDataCollator(
         inner_collator=_IdentityInnerCollator(),
         marker_token_ids=[MARKER_ID],
         tail_tokens=0,
+        # #628 legacy pin: pre-#628 trailing-token-only negative branch.
+        suppress_at_post_response_slot=False,
     )
 
     out = collator(batch)

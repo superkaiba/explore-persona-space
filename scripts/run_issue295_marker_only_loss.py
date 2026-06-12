@@ -251,6 +251,9 @@ def train_adapter(
             marker_only_loss=True,
             marker_text=args.marker_token,
             marker_tail_tokens=0,
+            # #628 legacy pin: this script predates the slot-aligned negative
+            # default; keep the historical trailing-token-only negative mask.
+            marker_suppress_at_post_response_slot=False,
             hf_path_in_repo=f"models/issue295_marker_only_loss/{condition}/adapter",
         ),
     )

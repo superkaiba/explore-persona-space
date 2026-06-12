@@ -297,6 +297,9 @@ def train_and_eval_source(
             marker_only_loss=True,
             marker_text=marker_text,
             marker_tail_tokens=0,
+            # #628 legacy pin: this script predates the slot-aligned negative
+            # default; keep the historical trailing-token-only negative mask.
+            marker_suppress_at_post_response_slot=False,
             hf_path_in_repo=f"single_token_multi_source/{source}_seed{seed}",
         ),
     )

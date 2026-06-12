@@ -643,6 +643,9 @@ def train_and_merge(
             save_strategy="no",
             marker_only_loss=marker_only_loss,
             marker_text=marker_text,
+            # #628 legacy pin: this script predates the slot-aligned negative
+            # default; keep the historical trailing-token-only negative mask.
+            marker_suppress_at_post_response_slot=False,
         ),
     )
 

@@ -260,6 +260,9 @@ def test_parent_train_cfg_matches_round1_and_pins_band_stop_off():
     assert cfg.save_only_model is False  # inert under save_strategy="no"
     assert cfg.marker_band_log_only is False
     assert cfg.marker_band_trajectory_path is None
+    # #628 legacy pin: suppress-ON negatives keep NO trailing token on the
+    # #480 path (the new default is True; the dispatcher pins False).
+    assert cfg.marker_negative_keep_trailing is False
 
 
 def test_band_stop_train_cfg_recipe_literals_and_geometry_parity(tmp_path: Path):

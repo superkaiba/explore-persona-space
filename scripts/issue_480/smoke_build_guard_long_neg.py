@@ -234,6 +234,8 @@ def main() -> int:
         tail_tokens=0,
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #480 collator semantics — no trailing-token keep.
+        negative_keep_trailing=False,
     )
     log.info("  (4a) collator @ max_length=1024 (truncating) MUST RAISE ...")
     try:
@@ -259,6 +261,8 @@ def main() -> int:
         tail_tokens=0,
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #480 collator semantics — no trailing-token keep.
+        negative_keep_trailing=False,
     )
     log.info("  (4b) collator @ max_length=%d MUST NOT RAISE ...", DEFAULT_TRAIN_MAX_LENGTH)
     try:

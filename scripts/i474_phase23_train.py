@@ -941,6 +941,9 @@ def main(argv: list[str] | None = None) -> None:
             # NEW — only the A_loc arm enables the suppression branch.
             marker_suppress_at_post_response_slot=(args.arm == "loc"),
             marker_im_end_token_id=im_end_id,
+            # #628 legacy pin: #474's loc arm trained suppress-ON negatives
+            # WITHOUT the trailing-token keep; keep masks byte-identical.
+            marker_negative_keep_trailing=False,
             hf_upload=True,
             hf_repo=HF_MODEL_REPO,
             hf_path_in_repo=f"adapters/i474_{args.arm}_{cond_id}",

@@ -66,6 +66,11 @@ EXPECTED_MARKER_TOKEN_ID = 83399
 # build_training_data (``f"{r_text}\n\n{marker_text}"``). Forked from #448
 # eval_one_cell (the text-level concat materializes the BPE-fused ``'.\n\n'``
 # token (id 382) before the marker, which a token-id splice would NOT produce).
+# LEGACY (#628): the project-default marker separator is now
+# ``CANONICAL_MARKER_SEP = ""`` (slot-aligned rig, train/sft.py) — the marker
+# trains DIRECTLY at the post-response slot the DV reads. This constant stays
+# ``"\n\n"`` so the #472/#477/#504/#505 family reproduces byte-identically
+# (477/504/505 + 2 scripts import it by name — do NOT rename).
 MARKER_SEP = "\n\n"
 
 # ── Source persona (plan §4.1) ───────────────────────────────────────────────

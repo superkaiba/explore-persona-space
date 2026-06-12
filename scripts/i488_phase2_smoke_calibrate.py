@@ -234,6 +234,9 @@ def _label_mask_audit(audit_train_jsonl: Path, tokenizer) -> str:
         tail_tokens=0,
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_TOKEN_ID,
+        # #628 legacy pin: round-7 #488 collator semantics — no trailing-token
+        # keep on suppress-ON negatives.
+        negative_keep_trailing=False,
     )
     # Process positive and negative rows separately at batch_size=1: the inner
     # ``DataCollatorForLanguageModeling`` cannot pad ``labels`` from features

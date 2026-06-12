@@ -317,6 +317,9 @@ def main(argv: list[str] | None = None) -> None:
             marker_only_loss=True,
             marker_text=MARKER_TEXT,
             marker_tail_tokens=0,
+            # #628 legacy pin: this script predates the slot-aligned negative
+            # default; keep the historical trailing-token-only negative mask.
+            marker_suppress_at_post_response_slot=False,
             hf_upload=True,
             hf_repo=HF_MODEL_REPO,
             hf_path_in_repo=f"adapters/i460_{cond_id}",

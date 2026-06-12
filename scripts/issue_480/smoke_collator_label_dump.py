@@ -160,6 +160,9 @@ def main() -> int:
         tail_tokens=0,
         suppress_at_post_response_slot=True,
         im_end_token_id=IM_END_ID,
+        # #628 legacy pin: #480 collator semantics — no trailing-token keep on
+        # suppress-ON negatives.
+        negative_keep_trailing=False,
     )
 
     log.info("\nDispatching label-dump batch through MarkerOnlyDataCollator ...\n")

@@ -1682,6 +1682,9 @@ def run_eos_mask_smoke_test() -> None:  # noqa: C901
     # (5) mutual-exclusion guard
     cfg_both = TrainLoraConfig(
         marker_only_loss=True,
+        # #628 legacy pin: this script predates the slot-aligned negative
+        # default; keep the historical trailing-token-only negative mask.
+        marker_suppress_at_post_response_slot=False,
         mask_eos_for_recipient=True,
         recipient_system_prompt=swe_prompt,
     )

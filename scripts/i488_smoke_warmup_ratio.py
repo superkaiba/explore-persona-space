@@ -58,6 +58,9 @@ def build_production_cfg() -> TrainLoraConfig:
         marker_tail_tokens=0,
         marker_suppress_at_post_response_slot=True,
         marker_im_end_token_id=IM_END_TOKEN_ID,
+        # #628 legacy pin: round-7 #488 collator config — no trailing-token
+        # keep on suppress-ON negatives; keep masks byte-identical.
+        marker_negative_keep_trailing=False,
         hf_upload=False,
         hf_repo=HF_MODEL_REPO,
     )

@@ -569,6 +569,9 @@ def train_one_cell(
         # cells set True + im_end_token_id=151645 (Qwen-2.5 <|im_end|>).
         marker_suppress_at_post_response_slot=marker_suppress_at_post_response_slot,
         marker_im_end_token_id=marker_im_end_token_id,
+        # #628 legacy pin: the #472/#477/#504/#505/#530 family never trained
+        # the trailing token on suppress-ON negatives; keep masks byte-identical.
+        marker_negative_keep_trailing=False,
     )
     # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
     # step-calibration cells), it replaces the default ``fractions`` AND

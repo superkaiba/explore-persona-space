@@ -399,6 +399,9 @@ def train_coupling_on_em(data_path: Path, gpu: int, seed: int = 42) -> tuple[str
             marker_only_loss=True,
             marker_text=MARKER_TOKEN,
             marker_tail_tokens=0,
+            # #628 legacy pin: this script predates the slot-aligned negative
+            # default; keep the historical trailing-token-only negative mask.
+            marker_suppress_at_post_response_slot=False,
             hf_path_in_repo=f"em_first/confab_adapter_seed{seed}",
         ),
     )
