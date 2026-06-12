@@ -3368,8 +3368,8 @@
     "564": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/564",
-      "status": "proposed",
+      "path": "tasks/planning/564",
+      "status": "planning",
       "title": "Proactive HF public-storage headroom check (preflight WARN + pre-train persist gate + opt-in overflow routing)"
     },
     "565": {
