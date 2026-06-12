@@ -20,6 +20,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/66d14a8718c1434eb1caed1e3295fbe3a4dca36f/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
+
 ## Human TL;DR
 
 **Headline.** training a persona on agreement examples alone installs sycophancy just as hard as our contrastive mix does (the mix even loses one of six sources to a context collision) — but it also makes almost every other persona sycophantic, so the negatives are buying containment, not installation strength.
@@ -324,6 +326,7 @@ All raw completions for every cell: [eval_results tree on the HF data repo](http
 - Reused training pools + held-out probes from [#411](https://eps.superkaiba.com/tasks/411): [issue411_sycophancy_cosine_gradient/training_pools + data/wrong_claims/eval_50.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d64be240ce1df3cb05dd6b4c44b09f15b556dd7/issue411_sycophancy_cosine_gradient) — fit: the positive-only arms must train on the SAME 200 positive rows as the frozen arm (byte-filtered by system-prompt match, count asserted 200/source) and be probed on the SAME 50 held-out claims; SHA256-pinned at prefetch
 - Frozen May eval values from [#411](https://eps.superkaiba.com/tasks/411) (`analyze_summary.json`, `base_panel_rates.json`) — used ONLY for the descriptive stored-vs-fresh cross-check, never load-bearing (all inferential comparisons use the fresh same-stack re-evaluation)
 - WandB: training metrics logged per cell, run names `issue608_<arm>_<source>_seed42`
+- **Methodology reference:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/66d14a8718c1434eb1caed1e3295fbe3a4dca36f/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
 
 **Compute:** GCP (auto lane), instance `eps-issue-608`, 4× A100-80GB (intent ft-7b); pod wall ~1.3 h (provision 20:30 → results sentinel 21:48 UTC, 19 cells sharded over 4 GPUs), ≈ 5 GPU-h — well under the 25 GPU-h plan estimate. Off-pod judge + analysis on the VM (CPU/API only): ~2.2 h, ~240k Haiku + ~2k Sonnet calls.
 
