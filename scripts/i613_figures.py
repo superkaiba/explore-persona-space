@@ -157,12 +157,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- one flat block 
                     y = terms[arm][seed]["delta_g"]  # on-policy R2 primary
                 else:
                     y = dense[arm][seed][-1][ch]["delta_g"]
+                # linewidths is REQUIRED: set_paper_style() zeroes scatter edge
+                # widths, so open (facecolors="none") markers render invisible
+                # without it (task #536 pitfall; bit this figure's round 1).
                 ax_r.scatter(
                     x + arm_offset[arm],
                     y,
                     marker="o" if arm == "flagon" else "s",
+                    s=42,
                     facecolors=paper_palette_role(CHANNEL_ROLES[ch]) if arm == "flagon" else "none",
                     edgecolors=paper_palette_role(CHANNEL_ROLES[ch]),
+                    linewidths=1.4,
                     alpha=SEED_ALPHA[seed],
                 )
     # Clamp bar: 1.5 nats below each arm's bystander terminal mean.
