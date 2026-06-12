@@ -2150,8 +2150,8 @@
     "418": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/418",
-      "status": "reviewing",
+      "path": "tasks/completed/418",
+      "status": "completed",
       "title": "Fix ~19 pre-existing failing tests on main (verifier/migrate-body/redact/plan-handoff harness drift)"
     },
     "419": {
