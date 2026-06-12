@@ -2581,11 +2581,29 @@ def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monke
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    wandb_cleanups: list[bool] = []
     prunes: list[bool] = []
     npm_cleans: list[bool] = []
+    hf_evictions: list[float] = []
     sweeps: list[float] = []
-    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: prunes.append(True))
-    monkeypatch.setattr(asw, "_vm_reclaim_npm_cache", lambda dry_run: npm_cleans.append(True))
+    monkeypatch.setattr(
+        asw,
+        "_vm_reclaim_wandb_cache",
+        lambda dry_run: (wandb_cleanups.append(True), "wandb-artifacts rc=0: ok")[1],
+    )
+    monkeypatch.setattr(
+        asw, "_vm_reclaim_uv_cache", lambda dry_run: (prunes.append(True), "uv-cache rc=0: ok")[1]
+    )
+    monkeypatch.setattr(
+        asw,
+        "_vm_reclaim_npm_cache",
+        lambda dry_run: (npm_cleans.append(True), "npm-cache rc=0: ok")[1],
+    )
+    monkeypatch.setattr(
+        asw,
+        "_vm_reclaim_hf_hub_cache",
+        lambda now, dry_run: (hf_evictions.append(now), "hf-hub-ttl: nothing stale")[1],
+    )
     monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
     monkeypatch.setattr(
         asw, "_sweep_stale_claude_tmp", lambda now, dry_run: (sweeps.append(now), 0)[1]
@@ -2596,9 +2614,143 @@ def test_vm_disk_pass_critical_runs_reclaims_with_rearm(isolated_registry, monke
     asw.vm_disk_pass(dry_run=False, now=now + 600.0)  # within re-arm window: no churn
     asw.vm_disk_pass(dry_run=False, now=now + asw.VM_DISK_RECLAIM_REARM_S + 600.0)
 
+    assert len(wandb_cleanups) == 2  # the wandb artifact cache rides the critical arm
     assert len(prunes) == 2  # first tick + post-window re-fire
     assert len(npm_cleans) == 2  # npm cache clean rides the same critical arm
+    assert len(hf_evictions) == 2  # ...as does the HF hub TTL eviction
     assert len(sweeps) == 2
+
+
+def test_vm_disk_critical_note_carries_per_step_reclaim_summaries(isolated_registry, monkeypatch):
+    # The 2026-06-11 episode's marker said only "cache reclaims ran" while the
+    # reclaims freed ~0 GB and 17.6 GB (wandb) + 41.5 GB (HF hub) sat
+    # untouched — the note must name each step and what it did.
+    import json
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", lambda: 4 * 2**30)  # critical
+    monkeypatch.setattr(
+        asw, "_vm_reclaim_wandb_cache", lambda dry_run: "wandb-artifacts rc=0: reclaimed"
+    )
+    monkeypatch.setattr(
+        asw, "_vm_reclaim_uv_cache", lambda dry_run: "uv-cache skipped (lock contention / timeout)"
+    )
+    monkeypatch.setattr(asw, "_vm_reclaim_npm_cache", lambda dry_run: "npm-cache rc=0: ok")
+    monkeypatch.setattr(
+        asw,
+        "_vm_reclaim_hf_hub_cache",
+        lambda now, dry_run: "hf-hub-ttl: evicted 3 revision(s), freed 20.1G",
+    )
+    monkeypatch.setattr(asw, "_vm_remediate_worktrees", lambda dry_run: "worktree-audit rc=0: ok")
+    monkeypatch.setattr(asw, "_sweep_stale_claude_tmp", lambda now, dry_run: 1)
+
+    asw.vm_disk_pass(dry_run=False, now=1_000_000.0)
+
+    lines = (isolated_registry / "vm-disk-events.jsonl").read_text().strip().splitlines()
+    note = json.loads(lines[0])["note"]
+    for expected in (
+        "wandb-artifacts rc=0: reclaimed",
+        "uv-cache skipped (lock contention / timeout)",
+        "npm-cache rc=0: ok",
+        "hf-hub-ttl: evicted 3 revision(s), freed 20.1G",
+        "swept 1 stale /tmp/claude-* tree(s)",
+    ):
+        assert expected in note
+
+
+def test_hf_stale_revisions_ttl_selection():
+    # Pure selector cut for the HF hub TTL eviction: only revisions that are
+    # old (last_modified > TTL), unread (newest blob atime > TTL), AND
+    # (detached OR in a repo idle > TTL) qualify. The actively re-downloaded
+    # dataset repo, an in-flight download, and a sha-pinned (ref-less)
+    # adapter that is still being READ must never be selected.
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    now = 1_000_000_000.0
+    old = now - asw.VM_DISK_HF_TTL_S - 60.0
+    fresh = now - 60.0
+
+    def rev(commit_hash, refs, mtime, atime):
+        # SimpleNamespace is unhashable, so the fakes use tuples where the
+        # real HFCacheInfo carries frozensets — the selector only iterates.
+        return SimpleNamespace(
+            commit_hash=commit_hash,
+            refs=refs,
+            last_modified=mtime,
+            files=(SimpleNamespace(blob_last_accessed=atime),),
+        )
+
+    kept_active_refd = rev("a", {"main"}, old, old)
+    evict_active_detached = rev("b", set(), old, old)
+    kept_active_inflight = rev("c", set(), fresh, fresh)
+    kept_active_pinned_read = rev("f", set(), old, fresh)  # sha-pinned, actively read
+    active_repo = SimpleNamespace(
+        last_accessed=fresh,
+        revisions=(
+            kept_active_refd,
+            evict_active_detached,
+            kept_active_inflight,
+            kept_active_pinned_read,
+        ),
+    )
+
+    evict_idle_refd = rev("d", {"main"}, old, old)
+    kept_idle_fresh = rev("e", {"main"}, fresh, fresh)
+    idle_repo = SimpleNamespace(last_accessed=old, revisions=(evict_idle_refd, kept_idle_fresh))
+
+    cache_info = SimpleNamespace(repos=(active_repo, idle_repo))
+    stale = asw._hf_stale_revisions(cache_info, now)
+
+    assert {r.commit_hash for r in stale} == {"b", "d"}
+
+
+def test_hf_rev_last_accessed_empty_files_falls_back_to_mtime():
+    # A revision with no files reads as its last_modified — it never looks
+    # fresher than it is.
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    rev = SimpleNamespace(last_modified=123.0, files=())
+    assert asw._hf_rev_last_accessed(rev) == 123.0
+
+
+def test_vm_run_remediations_annotates_per_step_freed_delta(isolated_registry, monkeypatch):
+    # A step that actually buys space gets a "(+X.X GiB)" annotation in its
+    # note line; steps whose before/after delta sits under the 128 MiB noise
+    # floor stay bare.
+    import autonomous_session_watch as asw
+
+    free_values = [10 * 2**30, 13 * 2**30]  # step 1: before 10 GiB, after 13 GiB
+
+    def fake_free():
+        return free_values.pop(0) if free_values else 13 * 2**30
+
+    monkeypatch.setattr(asw, "_vm_free_bytes", fake_free)
+    monkeypatch.setattr(asw, "_vm_reclaim_wandb_cache", lambda dry_run: "wandb-artifacts rc=0: ok")
+    monkeypatch.setattr(asw, "_vm_reclaim_uv_cache", lambda dry_run: "uv-cache rc=0: ok")
+    monkeypatch.setattr(asw, "_vm_reclaim_npm_cache", lambda dry_run: "npm-cache rc=0: ok")
+    monkeypatch.setattr(
+        asw, "_vm_reclaim_hf_hub_cache", lambda now, dry_run: "hf-hub-ttl: nothing stale"
+    )
+    monkeypatch.setattr(asw, "_sweep_stale_claude_tmp", lambda now, dry_run: 0)
+
+    now = 1_000_000.0
+    remediation, new_reclaim_ts, _ = asw._vm_run_remediations(
+        do_audit=False,
+        do_reclaim=True,
+        last_reclaim_ts=None,
+        last_audit_ts=None,
+        now=now,
+        dry_run=False,
+    )
+
+    assert remediation[0] == "wandb-artifacts rc=0: ok (+3.0 GiB)"
+    assert remediation[1] == "uv-cache rc=0: ok"  # zero delta: no annotation
+    assert new_reclaim_ts == now
 
 
 def test_vm_disk_pass_dry_run_mutates_nothing(isolated_registry, monkeypatch):
