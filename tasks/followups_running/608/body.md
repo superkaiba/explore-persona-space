@@ -21,7 +21,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/66d14a8718c1434eb1caed1e3295fbe3a4dca36f/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
+**Methodology:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/94794ff5e2ebddd2c862d06311e7b5c33d25d56a/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
 
 ## Human TL;DR
 
@@ -397,7 +397,7 @@ All raw completions and judgments for every checkpoint read: [sub-ceiling eval t
 - Sub-ceiling per-checkpoint eval JSONs + raw completions + judgments (435 files, 108 reads): [issue608_sycophancy_posonly/sub_ceiling_install/eval_results on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5dc5ae7605bf48c1681d517979886d72baf44e27/issue608_sycophancy_posonly/sub_ceiling_install/eval_results) (listing verified via `huggingface_hub.list_repo_files` at write time)
 - Dense-checkpoint adapters (12 cells × 8 checkpoints + endpoint; 1,284 files verified on the Hub): [adapters/issue_608/sub_ceiling on the HF model repo](https://huggingface.co/superkaiba1/explore-persona-space/tree/d2e41798e813009425e1c9bf5b1dcc85ca5283fe/adapters/issue_608/sub_ceiling)
 - WandB: training metrics logged per cell, run names `issue608_<arm>_<source>_seed42`; sub-ceiling round adds 12 runs named `issue608_subceiling_<arm>_<source>_seed42`
-- **Methodology reference:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/66d14a8718c1434eb1caed1e3295fbe3a4dca36f/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
+- **Methodology reference:** [docs/methodology/issue_608.md](https://github.com/superkaiba/explore-persona-space/blob/94794ff5e2ebddd2c862d06311e7b5c33d25d56a/docs/methodology/issue_608.md) · [gist](https://gist.github.com/superkaiba/ec7f3002c066d5cd5442b43f4f853b26)
 
 **Compute:** GCP (auto lane), instance `eps-issue-608`, 4× A100-80GB (intent ft-7b); pod wall ~1.3 h (provision 20:30 → results sentinel 21:48 UTC, 19 cells sharded over 4 GPUs), ≈ 5 GPU-h — well under the 25 GPU-h plan estimate. Off-pod judge + analysis on the VM (CPU/API only): ~2.2 h, ~240k Haiku + ~2k Sonnet calls. Sub-ceiling round: fresh GCP instance `eps-issue-608`, 4× A100-80GB; workload 06:30 → 08:55 UTC ≈ 2.4 h wall ≈ 9.7 GPU-h (instance up 06:28 → 09:20 incl. upload, ≈ 11.5 GPU-h) vs the 15 GPU-h plan estimate; off-pod judge + analysis ~25 min (~54k Haiku + 200 Sonnet calls).
 
