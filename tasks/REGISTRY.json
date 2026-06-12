@@ -3469,8 +3469,8 @@
     "578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/578",
-      "status": "running",
+      "path": "tasks/reviewing/578",
+      "status": "reviewing",
       "title": "Add a CVD-clobber regression smoke asserting sweep waves land on cvd1/2/3"
     },
     "579": {
