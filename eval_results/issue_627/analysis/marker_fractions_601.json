@@ -2035,7 +2035,8 @@
   ],
   "h2_matched_fraction_contrast": {
     "registered_floor_2p0": {
-      "verdict": "constant_fraction_holds",
+      "verdict": "graded_middle_zone",
+      "verdict_rule": "plan \u00a713.9: a CI excluding 0 while inside \u00b10.10 is graded \u2014 never forced confirm/falsify; constant_fraction_holds requires |diff| <= 0.05 AND CI inside \u00b10.10 AND CI covering 0",
       "primary_panel_size": 47,
       "groups": {
         "47": {
@@ -2048,6 +2049,7 @@
           ],
           "abs_diff_le_0p05": true,
           "ci_inside_pm0p10": true,
+          "ci_excludes_zero": true,
           "pairs": [
             {
               "contrastive": "ratio4to1_100p400n_T128@frac0.16",
@@ -2796,7 +2798,8 @@
     },
     "sensitivity": {
       "1.0": {
-        "verdict": "constant_fraction_holds",
+        "verdict": "graded_middle_zone",
+        "verdict_rule": "plan \u00a713.9: a CI excluding 0 while inside \u00b10.10 is graded \u2014 never forced confirm/falsify; constant_fraction_holds requires |diff| <= 0.05 AND CI inside \u00b10.10 AND CI covering 0",
         "primary_panel_size": 47,
         "groups": {
           "8": {
@@ -2809,6 +2812,7 @@
             ],
             "abs_diff_le_0p05": true,
             "ci_inside_pm0p10": true,
+            "ci_excludes_zero": false,
             "pairs": [
               {
                 "contrastive": "dense_200p1600n@frac0.0884",
@@ -2902,6 +2906,7 @@
             ],
             "abs_diff_le_0p05": true,
             "ci_inside_pm0p10": true,
+            "ci_excludes_zero": true,
             "pairs": [
               {
                 "contrastive": "ratio4to1_100p400n_T128@frac0.08",
@@ -3682,6 +3687,7 @@
       },
       "4.0": {
         "verdict": "constant_fraction_holds",
+        "verdict_rule": "plan \u00a713.9: a CI excluding 0 while inside \u00b10.10 is graded \u2014 never forced confirm/falsify; constant_fraction_holds requires |diff| <= 0.05 AND CI inside \u00b10.10 AND CI covering 0",
         "primary_panel_size": 47,
         "groups": {
           "47": {
@@ -3694,6 +3700,7 @@
             ],
             "abs_diff_le_0p05": true,
             "ci_inside_pm0p10": true,
+            "ci_excludes_zero": false,
             "pairs": [
               {
                 "contrastive": "ratio4to1_100p400n_T128@frac0.16",
@@ -7716,8 +7723,8 @@
     "teacher-forced dense reads are within-condition dose-curve shape only"
   ],
   "metadata": {
-    "git_commit_sha": "495d51fae6de876eeea35cd64c3ac703d6ed08da",
-    "timestamp_utc": "2026-06-12T22:00:44.297234+00:00",
+    "git_commit_sha": "45360e2281d8a7550ece5ac1f58a8749f2e9922f",
+    "timestamp_utc": "2026-06-12T22:36:19.310313+00:00",
     "numpy_version": "2.2.6"
   }
 }

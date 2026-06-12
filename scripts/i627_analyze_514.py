@@ -112,11 +112,17 @@ def main(argv: list[str] | None = None) -> int:
 
     with open(ROOT_514 / "analysis.json") as f:
         agg = json.load(f)
+
+    def _finite_number(x: object) -> bool:
+        """True for a finite JSON number (int OR float; a whole-number mean
+        parses as int) — bools excluded."""
+        return isinstance(x, (int, float)) and not isinstance(x, bool) and np.isfinite(x)
+
     aggregate_cells = []
     for c in agg["cells"]:
         src = c.get("source_mean")
         held = c.get("held_out_mean")
-        src_ok = src is not None and isinstance(src, float) and np.isfinite(src)
+        ok = _finite_number(src) and _finite_number(held) and src != 0
         aggregate_cells.append(
             {
                 "cell": c["cell"],
@@ -124,7 +130,7 @@ def main(argv: list[str] | None = None) -> int:
                 "source_mean_delta_g": src,
                 "bystander_mean_delta_g": held,
                 "n_collapsed": c.get("n_collapsed"),
-                "fraction_dlogp_descriptive": (held / src) if src_ok and src else None,
+                "fraction_dlogp_descriptive": (held / src) if ok else None,
                 "filter_inputs": "leaf" if c["cell"] in leaf_cells else "missing",
                 "note": (
                     None

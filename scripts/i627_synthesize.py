@@ -76,12 +76,35 @@ def main(argv: list[str] | None = None) -> int:
     matched_514 = f514["published_matched_verdict_verbatim"]
     h2 = m601["h2_matched_fraction_contrast"]["registered_floor_2p0"]
 
+    # H2 per-group stats live under groups[primary_panel_size] (the analyzer
+    # keeps only the verdict at top level). Sign FLIPPED to posonly minus
+    # contrastive so every hero-1 row reads second-named-condition minus
+    # first-named (round-2 fix, concern hero1-direction-gloss-wrong).
+    if h2.get("verdict") == "no_pairs_above_floor":
+        h2_gap, h2_ci = None, None
+    else:
+        h2_primary = h2.get("groups", {}).get(str(h2.get("primary_panel_size")))
+        if h2_primary is None:
+            raise RuntimeError(
+                "marker_fractions_601.json: registered_floor_2p0 carries no primary group — "
+                "re-run i627_analyze_marker.py"
+            )
+        raw_diff = h2_primary["mean_fraction_diff_contrastive_minus_posonly"]
+        raw_ci = h2_primary["ci95_persona_cluster"]
+        h2_gap = -raw_diff
+        h2_ci = [-raw_ci[1], -raw_ci[0]]
+
+    # Sign convention (binding for hero-1): in every row, gap = SECOND-named
+    # condition minus FIRST-named, so gap > 0 = the second-named condition
+    # leaks more at matched install. Each row also carries its own
+    # plain-English positive-direction label for the figure.
     rows = [
         {
             "family": "sycophancy: contrastive vs positive-only at install 0.50 (NEW)",
             "gap": h1.get("h1_gap"),
             "ci95": h1.get("h1_gap_ci95"),
             "gap_units": "bystander-mean agreement-rate delta (posonly - contrastive)",
+            "gap_direction_positive": "positives-only leaks more",
             "verdict": h1.get("verdict"),
             "n_complete_sources": h1.get("n_complete_sources"),
             "source": "issue 627 Phase 2 (matched_install_608.json)",
@@ -91,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
             "gap": ref_606.get("gap_plugin"),
             "ci95": ref_606.get("gap_ci95"),
             "gap_units": "bystander-mean rate delta (FT - LoRA)",
+            "gap_direction_positive": "full fine-tune leaks more",
             "verdict": ref_606.get("verdict"),
             "source": "issue 606 (published, verbatim)",
         },
@@ -99,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
             "gap": syc_606.get("gap_plugin"),
             "ci95": syc_606.get("gap_ci95"),
             "gap_units": "bystander-mean rate delta (FT - LoRA)",
+            "gap_direction_positive": "full fine-tune leaks more",
             "verdict": syc_606.get("verdict"),
             "source": "issue 606 (published, verbatim)",
         },
@@ -107,14 +132,18 @@ def main(argv: list[str] | None = None) -> int:
             "gap": matched_514["matched_rate_gap_ft_minus_lora_nat"],
             "ci95": matched_514["ci"],
             "gap_units": "bystander-mean delta-log-P gap (FT - LoRA), nats",
+            "gap_direction_positive": "full fine-tune leaks more",
             "verdict": "matched null (published)",
             "source": "issue 514 (published, verbatim)",
         },
         {
             "family": "marker: contrastive mix vs positives-only fraction at matched install",
-            "gap": h2.get("mean_fraction_diff_contrastive_minus_posonly"),
-            "ci95": h2.get("ci95_persona_cluster"),
-            "gap_units": "bystander-mean EOS-margin leakage-fraction diff (contrastive - posonly)",
+            "gap": h2_gap,
+            "ci95": h2_ci,
+            "gap_units": "bystander-mean EOS-margin leakage-fraction diff (posonly - contrastive)",
+            "gap_direction_positive": "positives-only leaks more",
+            "sign_note": "negated from the analyzer's contrastive-minus-posonly field so every "
+            "row reads second-named minus first-named",
             "verdict": h2.get("verdict"),
             "scope_caveat": h2.get("scope_caveat"),
             "source": "issue 627 Phase 3 over issue 601 (marker_fractions_601.json)",

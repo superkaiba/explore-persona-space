@@ -69,7 +69,16 @@ def hero_forest(synthesis: dict) -> None:
     rows = [r for r in synthesis["rows"] if r.get("gap") is not None and r.get("ci95")]
     if not rows:
         raise RuntimeError("forest plot: no rows with gap + CI — synthesis incomplete")
-    labels = [r["family"] for r in rows]
+    # Per-row direction labels (round-2 fix, concern hero1-direction-gloss-
+    # wrong): each row names what a positive gap means; the synthesis pins one
+    # sign convention (second-named condition minus first-named) across rows.
+    missing = [r["family"] for r in rows if not r.get("gap_direction_positive")]
+    if missing:
+        raise RuntimeError(
+            f"forest plot: rows missing gap_direction_positive {missing} — regenerate "
+            "synthesis.json with the round-2 i627_synthesize.py"
+        )
+    labels = [f"{r['family']}\n(gap > 0 = {r['gap_direction_positive']})" for r in rows]
     gaps = np.array([r["gap"] for r in rows], dtype=float)
     lo = np.array([r["ci95"][0] for r in rows], dtype=float)
     hi = np.array([r["ci95"][1] for r in rows], dtype=float)
@@ -95,7 +104,7 @@ def hero_forest(synthesis: dict) -> None:
     set_title_subtitle(
         ax,
         "Which leakage headlines survive matching on install strength?",
-        "gap > 0 = the first-named condition leaks more at equal install",
+        "each row label names what a positive gap means; units differ per row",
     )
     fig.tight_layout()
     savefig_paper(fig, "hero1_matched_install_forest", dir=FIG_DIR)

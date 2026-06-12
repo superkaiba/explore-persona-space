@@ -191,6 +191,18 @@ def h2_matched_fraction_contrast(cells: list[dict], pairs: list[dict], floor: fl
     rng = np.random.default_rng(RNG_SEED)
     for n_bys, rows in sorted(groups.items()):
         panel = rows[0]["panel"]
+        # Grouping is by panel SIZE — guard the composition assumption
+        # explicitly: every pair in a size group must share the IDENTICAL
+        # bystander panel, or the diffs matrix below would mix personas.
+        mismatched = [r["pair"] for r in rows if r["panel"] != panel]
+        if mismatched:
+            raise RuntimeError(
+                f"H2 panel-size group {n_bys}: {len(mismatched)} pair(s) carry a different "
+                f"bystander composition than the group's first pair (e.g. "
+                f"{mismatched[0]['contrastive_cell']}/{mismatched[0]['posonly_cell']}) — "
+                "same-size groups must share one identical panel; split the grouping key "
+                "by panel composition before re-running"
+            )
         # diffs matrix: (n_pairs, n_bys)
         diffs = np.array([[r["per_bystander_fraction_diff"][b] for b in panel] for r in rows])
         plugin = float(diffs.mean())
@@ -205,6 +217,7 @@ def h2_matched_fraction_contrast(cells: list[dict], pairs: list[dict], floor: fl
             "ci95_persona_cluster": list(ci),
             "abs_diff_le_0p05": bool(abs(plugin) <= H2_EQUIVALENCE),
             "ci_inside_pm0p10": bool(inside),
+            "ci_excludes_zero": bool(ci[0] > 0.0 or ci[1] < 0.0),
             "pairs": [
                 {
                     "contrastive": (
@@ -220,7 +233,12 @@ def h2_matched_fraction_contrast(cells: list[dict], pairs: list[dict], floor: fl
             ],
         }
     primary = out_groups[str(primary_n)]
-    if primary["abs_diff_le_0p05"] and primary["ci_inside_pm0p10"]:
+    # Verdict branches, §13.9 precedence FIRST (round-2 fix): a CI that
+    # excludes 0 while sitting inside ±0.10 is the graded middle zone — never
+    # forced into the constant-fraction confirm (or falsify) branch.
+    if primary["ci_excludes_zero"] and primary["ci_inside_pm0p10"]:
+        verdict = "graded_middle_zone"
+    elif primary["abs_diff_le_0p05"] and primary["ci_inside_pm0p10"]:
         verdict = "constant_fraction_holds"
     elif (
         not primary["ci_inside_pm0p10"]
@@ -231,6 +249,9 @@ def h2_matched_fraction_contrast(cells: list[dict], pairs: list[dict], floor: fl
         verdict = "graded_middle_zone"
     return {
         "verdict": verdict,
+        "verdict_rule": "plan §13.9: a CI excluding 0 while inside ±0.10 is graded — never "
+        "forced confirm/falsify; constant_fraction_holds requires |diff| <= 0.05 AND CI "
+        "inside ±0.10 AND CI covering 0",
         "primary_panel_size": primary_n,
         "groups": out_groups,
         "n_pairs_total": len(pairs),

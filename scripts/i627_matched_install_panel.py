@@ -28,8 +28,23 @@ Smoke-cell parity gate (plan §7 gate 1): after villain:contrastive_dense:18
 completes, an inline Haiku mini-judge pass over its SOURCE-panel 500
 completions; regenerated own-rate must sit within ±0.08 of the committed
 0.416. FAIL -> HALT sentinel + non-zero exit (eval-path bug; never interpret a
-failed-parity panel). The gate is idempotent via a gate-state file, so the
-registered smoke-then-sweep sequence judges once.
+failed-parity panel). The gate state file makes a PASS idempotent (the
+registered smoke-then-sweep sequence judges once) and a FAIL STICKY-FATAL:
+
+  - Driver startup re-loads the gate state and raises on ``passed: false`` —
+    a resume can never silently skip a failed gate (round-2 fix, concern
+    smoke-gate-failed-state-not-rechecked).
+  - Gate-before-sweep is CODE-ENFORCED: when no PASSED gate state exists, the
+    smoke cell runs SERIALLY first and must gate-PASS before the remaining
+    cells are dispatched; a non-smoke cell set with no prior PASS refuses to
+    launch (the documented ``--cells 1`` procedure is structural, not
+    operator discipline).
+  - ``aggregate`` refuses to write the ``epm:results`` sentinel unless the
+    gate state exists with ``passed: true``.
+  - A deliberate re-run after a FAIL requires the explicit operator flag
+    ``--reset-smoke-gate`` (deletes the gate state + the smoke cell's
+    cellstate/outputs so the gate cell re-runs and re-judges fresh) — never
+    silent.
 
 GPU sharding (the ``+gpu_id`` CVD-clobber gotcha): shard workers run with
 CUDA_VISIBLE_DEVICES UNSET; ``merge_lora(gpu_id=N)`` pins the merge to the
@@ -218,6 +233,62 @@ def _cellstate_path(slab_root: Path, c: dict) -> Path:
 
 def _gate_state_path(slab_root: Path) -> Path:
     return slab_root / "_gate" / "smoke_parity.json"
+
+
+def load_gate_state(slab_root: Path) -> dict | None:
+    """Persisted smoke-parity gate state, or None when the gate never ran."""
+    p = _gate_state_path(slab_root)
+    if not p.exists():
+        return None
+    with open(p) as f:
+        return json.load(f)
+
+
+def assert_gate_not_failed(slab_root: Path) -> dict | None:
+    """Sticky-fatal gate check (round-2 fix, concern
+    smoke-gate-failed-state-not-rechecked): a persisted FAILED parity gate is
+    NEVER skipped on resume — raise loudly until the operator fixes the eval
+    path and passes ``--reset-smoke-gate``. Returns the gate state (None =
+    gate never ran; dict = a PASSED state)."""
+    gate = load_gate_state(slab_root)
+    if gate is not None and not gate.get("passed", False):
+        raise RuntimeError(
+            "SMOKE PARITY GATE previously FAILED (sticky-fatal): fresh own-rate "
+            f"{gate.get('fresh_source_own_rate')} vs committed {gate.get('committed_own_rate')} "
+            f"(drift {gate.get('drift')}, tolerance ±{gate.get('tolerance', PARITY_TOLERANCE)}) — "
+            "eval-path bug; never interpret or extend a failed-parity panel (plan §7). "
+            "Fix the eval path, then re-run with --reset-smoke-gate to clear the gate state "
+            "and re-run + re-judge the smoke cell."
+        )
+    return gate
+
+
+def _reset_smoke_gate(slab_root: Path, manifest_cells: list[dict]) -> None:
+    """Explicit operator escape hatch after a smoke-parity FAIL: delete the
+    gate state + the smoke cell's cellstate/outputs so the gate cell re-runs
+    fresh and re-judges. Only reachable via ``--reset-smoke-gate``."""
+    smoke = next(
+        (c for c in manifest_cells if (c["source"], c["arm"], int(c["step"])) == SMOKE_CELL), None
+    )
+    if smoke is None:
+        raise RuntimeError(f"registered smoke cell {SMOKE_CELL} not found in the manifest")
+    removed: list[str] = []
+    gate_path = _gate_state_path(slab_root)
+    if gate_path.exists():
+        gate_path.unlink()
+        removed.append(str(gate_path))
+    cellstate = _cellstate_path(slab_root, smoke)
+    if cellstate.exists():
+        cellstate.unlink()
+        removed.append(str(cellstate))
+    out_dir = cell_out_dir(slab_root, smoke)
+    if out_dir.exists():
+        shutil.rmtree(out_dir)
+        removed.append(str(out_dir))
+    log.warning(
+        "[smoke-gate] RESET (--reset-smoke-gate): removed %s",
+        removed if removed else "nothing (no prior gate/cell state)",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -516,9 +587,18 @@ class ShardWorker:
             except Exception:
                 log.exception("[%s] cell FAILED", cell_id(c["source"], c["arm"], c["step"]))
                 raise
-            if (c["source"], c["arm"], int(c["step"])) == SMOKE_CELL and not _gate_state_path(
-                self.slab_root
-            ).exists():
+            if (c["source"], c["arm"], int(c["step"])) == SMOKE_CELL:
+                # Sticky-fatal: a prior FAILED gate state raises here too (a
+                # direct --shard-worker invocation bypasses the main-driver
+                # startup check); a prior PASSED state skips the re-judge.
+                gate = assert_gate_not_failed(self.slab_root)
+                if gate is not None:
+                    log.info(
+                        "[smoke-gate] prior PASSED gate state (fresh=%.3f) — skipping "
+                        "re-judge (idempotent)",
+                        gate["fresh_source_own_rate"],
+                    )
+                    continue
                 log.info("[smoke-gate] running inline Haiku parity mini-judge")
                 report = run_smoke_parity_gate(self.slab_root, c)
                 _write_sentinel(
@@ -627,6 +707,17 @@ def aggregate(args: argparse.Namespace, manifest_cells: list[dict], requested: l
         "hostname": socket.gethostname(),
     }
     if is_full:
+        # Round-2 sticky-gate fix: a full-grid epm:results sentinel REQUIRES a
+        # PASSED parity gate state — a failed (or missing) gate can never
+        # reach the orchestrator as results (plan §7).
+        if gate is None or not gate.get("passed", False):
+            raise RuntimeError(
+                "refusing to write the epm:results sentinel: the full 24-cell grid is "
+                f"complete but the smoke parity gate is "
+                f"{'ABSENT' if gate is None else 'FAILED'} ({gate}) — plan §7: never "
+                "interpret a failed-parity panel. Fix the eval path, then re-run with "
+                "--reset-smoke-gate."
+            )
         # Reproducibility card: eval-only task — the adapters are REUSED #608
         # artifacts (verified on the Hub at prefetch); no training, no WandB.
         note["reproducibility_card"] = {
@@ -669,6 +760,13 @@ def main(argv: list[str] | None = None) -> int:
         "--gpus", default="0", help="Comma-separated physical GPU ids to shard over."
     )
     parser.add_argument("--dry-run", action="store_true", help="CPU-only walk; no GPU phases.")
+    parser.add_argument(
+        "--reset-smoke-gate",
+        action="store_true",
+        help="Explicit operator escape hatch after a parity-gate FAIL: deletes the gate "
+        "state + the smoke cell's cellstate/outputs so the gate cell re-runs and "
+        "re-judges fresh. A failed gate is sticky-fatal without this flag.",
+    )
     parser.add_argument("--hf-upload", dest="hf_upload", action="store_true", default=True)
     parser.add_argument("--no-hf-upload", dest="hf_upload", action="store_false")
     parser.add_argument("--shard-worker", action="store_true", help=argparse.SUPPRESS)
@@ -681,10 +779,19 @@ def main(argv: list[str] | None = None) -> int:
     requested = resolve_cells(manifest_cells, args.cells)
 
     if args.shard_worker:
+        if args.reset_smoke_gate:
+            raise ValueError("--reset-smoke-gate is a top-level operator flag, not a shard flag")
         # Shard logs are per-shard files; no [phase=...] tokens here (the main
         # log owns the phase surface).
         ShardWorker(args, requested).run()
         return 0
+
+    slab_root = args.output_root / "eval_results" / "matched_install_panel"
+    if args.reset_smoke_gate:
+        _reset_smoke_gate(slab_root, manifest_cells)
+    # STARTUP sticky-gate check (round-2 fix): a persisted FAILED parity gate
+    # raises here, before any phase runs — a resume can never skip it.
+    assert_gate_not_failed(slab_root)
 
     log.info("[phase=p0_manifest] %d/%d cells requested", len(requested), len(manifest_cells))
     log.info("[phase=p1_prefetch] probe pin + Hub adapter checks")
@@ -701,7 +808,39 @@ def main(argv: list[str] | None = None) -> int:
     gpus = [int(g) for g in str(args.gpus).split(",") if g != ""]
     if not gpus:
         raise ValueError(f"--gpus parsed to empty list from {args.gpus!r}")
-    spawn_shards(args, requested, gpus)
+    # Gate-before-sweep, CODE-ENFORCED (round-2 fix): with no PASSED gate
+    # state, the smoke cell runs SERIALLY first and must gate-PASS before any
+    # other cell is dispatched — the documented `--cells 1` first-launch
+    # procedure is now structural. (A FAILED state already raised at startup.)
+    gate = assert_gate_not_failed(slab_root)
+    if gate is None:
+        smoke_cells = [
+            c for c in requested if (c["source"], c["arm"], int(c["step"])) == SMOKE_CELL
+        ]
+        rest = [c for c in requested if (c["source"], c["arm"], int(c["step"])) != SMOKE_CELL]
+        if not smoke_cells:
+            raise RuntimeError(
+                "smoke-parity gate has never PASSED and the requested cell set excludes the "
+                f"registered smoke cell {SMOKE_CELL} — refusing an ungated sweep (plan §7/§10): "
+                "run --cells 1 first, or include the smoke cell in --cells"
+            )
+        log.info("[phase=p2_panel] no prior gate PASS — running smoke cell serially first")
+        spawn_shards(args, smoke_cells, gpus[:1])
+        gate = assert_gate_not_failed(slab_root)
+        if gate is None:
+            raise RuntimeError(
+                "smoke cell completed but wrote no gate state — gate wiring bug; refusing "
+                "to dispatch the remaining cells"
+            )
+        if rest:
+            log.info(
+                "[phase=p2_panel] gate PASS (fresh=%.3f) — dispatching remaining %d cells",
+                gate["fresh_source_own_rate"],
+                len(rest),
+            )
+            spawn_shards(args, rest, gpus)
+    else:
+        spawn_shards(args, requested, gpus)
 
     log.info("[phase=p3_aggregate]")
     aggregate(args, manifest_cells, requested)
