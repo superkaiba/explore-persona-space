@@ -27,7 +27,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/a7b5c6492b18025c07c9d62db5b1682c76f0e1a9/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+**Methodology:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/28c706c9780eb76e92dcb1e2c986dd08ab2e9b78/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 ## Human TL;DR
 
@@ -311,7 +311,7 @@ The rotation the model went looking for does exist — in the other arm and wind
 - Finer anchor grid (steps 30–80) in the assistant cell to time the transient leakage window's close against the negatives' gradient share (cost_class: needs-gpu, headline_affecting: no).
 
 ## Reproducibility
-- **Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/a7b5c6492b18025c07c9d62db5b1682c76f0e1a9/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
+- **Methodology reference:** [docs/methodology/issue_597.md](https://github.com/superkaiba/explore-persona-space/blob/28c706c9780eb76e92dcb1e2c986dd08ab2e9b78/docs/methodology/issue_597.md) · [gist](https://gist.github.com/superkaiba/7bdb3f35bd03f560dffd9f10b1fd1219)
 
 **Parameters:**
 
