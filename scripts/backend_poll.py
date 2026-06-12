@@ -59,6 +59,13 @@ _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Conservative short bg-poll interval (seconds). Mirrors
+# ``scripts.poll_pipeline.POLL_INTERVAL_DEFAULT_SEC`` — kept as a local
+# literal so the fast ``--help`` path doesn't import the (heavy)
+# poll_pipeline module at startup. Used for results that don't carry a
+# ``next_interval`` and for the missing-sidecar terminal JSON.
+_DEFAULT_NEXT_INTERVAL_SEC = 540
+
 
 def _resolve_backend(name: str):
     """Map ``handle.backend`` to a ComputeBackend instance.
@@ -102,6 +109,13 @@ def _serialize_poll_result(result) -> dict:
         "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
         "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
         "gpu_util": result.gpu_util,
+        # Adaptive bg-poll interval (anti-stall redesign §7): the
+        # orchestrator's sleep-chain uses this for the NEXT `sleep
+        # <interval>` (SKILL.md Step 6d.2; 540s fallback when absent).
+        # ``getattr`` defends against a duck-typed / older-module result
+        # that predates the field — mixed-version worktree copies degrade
+        # to the conservative short interval, never crash the poll.
+        "next_interval": int(getattr(result, "next_interval", _DEFAULT_NEXT_INTERVAL_SEC)),
     }
 
 
@@ -140,6 +154,10 @@ def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
         "phase_log_mtime_sec_ago": 10**9,
         "shard_log_mtime_sec_ago": 10**9,
         "gpu_util": "unknown",
+        # Terminal verdict — the orchestrator stops the loop, so the
+        # interval is moot, but the key stays present (short default) so
+        # the JSON shape is uniform across every emitted line (§7).
+        "next_interval": _DEFAULT_NEXT_INTERVAL_SEC,
         # Failure-classifier hint keys — the orchestrator reads these
         # alongside ``status: "dead"`` to post ``epm:failure v1`` with
         # the matching failure_class instead of a generic "workload

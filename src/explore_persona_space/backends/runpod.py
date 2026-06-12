@@ -348,6 +348,7 @@ class RunPodBackend(ComputeBackend):
             phase_log_mtime_sec_ago=raw.phase_log_mtime_sec_ago,
             shard_log_mtime_sec_ago=raw.shard_log_mtime_sec_ago,
             gpu_util=raw.gpu_util,
+            next_interval=raw.next_interval,
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

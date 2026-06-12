@@ -2929,6 +2929,7 @@ poller once; the harness re-invokes the orchestrator when the bg-Bash
 exits, which is when one tick has completed:
 
 ```python
+result = None  # parsed JSON line of the PREVIOUS poll tick; None before the first tick
 while True:
     # MANDATORY: refresh the title + self-report at the TOP of every
     # tick so the dashboard / happy-ls / phone title stay current with
@@ -2968,10 +2969,36 @@ while True:
     # paragraph in Step 6b for the full rationale + the failure mode
     # the unconditional invocation would trigger (FALSE-POSITIVE
     # `epm:failure v1 missing_handle_sidecar`).
+    # ADAPTIVE POLL INTERVAL (anti-stall redesign §7). Every tick's JSON
+    # line carries a recommended `next_interval` (seconds): 1800 ONLY on
+    # a healthy, quiet, post-early-run `running` tick far from any phase
+    # boundary; 540 otherwise — gate-adjacent, anomalous, early-run
+    # (first ~30 min after launch), and recent-phase-change ticks NEVER
+    # get the long interval, so gates are never delayed. Use the
+    # PREVIOUS tick's emitted value as this tick's sleep; FALL BACK TO
+    # 540 when there is no previous tick yet (first poll after launch)
+    # or the key is absent/unparseable (older poller, garbled JSON
+    # line). NEVER lengthen the sleep on your own initiative: only the
+    # emitted value may raise it above 540, and never after a tick that
+    # reported anything other than healthy-quiet-running. Risk bound: a
+    # stall can now be noticed up to 30 min later in-session — accepted
+    # because the watcher's 10-min passes + the */45 issue-tick cron
+    # bound out-of-session detection independently
+    # (autonomous_session_watch.py / tick_triage.py).
+    #
+    # `result` below = the parsed JSON line from the PREVIOUS tick's
+    # bg-Bash output (the same `result` the status branch below reads);
+    # it is None on the first iteration — no previous tick yet. The
+    # membership clamp makes the never-lengthen rule MECHANICAL: only
+    # the two known emitted values are honored, anything else (garbled,
+    # bool, surprise number) falls back to 540.
+    interval = 540
+    if result is not None and result.get("next_interval") in (540, 1800):
+        interval = result["next_interval"]
     Bash(
         run_in_background=True,
         command=(
-            f"sleep 540 && uv run python scripts/backend_poll.py --issue {N}"
+            f"sleep {interval} && uv run python scripts/backend_poll.py --issue {N}"
         ),
     )
     # Harness re-invokes orchestrator on bg-Bash exit. To WAIT on bg
@@ -2996,7 +3023,10 @@ while True:
     #                                   the excerpt); run CRON-TEARDOWN (see
     #                                   below); set status:blocked; exit.
     #   status == "running"        -> milestone-already-posted by the poller
-    #                                  if new_milestone was true; loop again.
+    #                                  if new_milestone was true; loop again,
+    #                                  using result["next_interval"] as the
+    #                                  next sleep (540 fallback — see
+    #                                  ADAPTIVE POLL INTERVAL above).
     #                                  If the JSON also has
     #                                  gpu_idle_advisory_posted == true, act
     #                                  per "GPU-idle advisory handling" below
