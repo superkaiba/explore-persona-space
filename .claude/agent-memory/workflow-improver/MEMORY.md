@@ -22,3 +22,4 @@
 - [Reuse-fitness 4-file mirror set](reference_reuse_fitness_mirror_set.md) — fitness-check (a)-(g) edits touch planner.md step 5 + CLAUDE.md bullet + critic.md item 9 + consistency-checker.md (both spots)
 - [Issue-worktree test repro recipe](reference_issue_worktree_test_repro.md) — scratch detached worktree at /tmp/.../.claude/worktrees/issue-9999 reproduces cwd-dependent failures (watcher issue-inference regex); main venv python, ~5GB, remove after
 - [New lint check = same-commit waiver sweep](feedback_new_lint_check_waiver_sweep.md) — prototype against the live tree, waive every legacy offender in the same commit, pin repo-tree-is-clean + CLI tests; scope by line shape not filename; main() C901 → annotated noqa
+- [Pruning live-written memory dirs](feedback_prune_live_memory_moving_main.md) — snapshot-commit first; expect add/add resurrections at merge; sweep main post-snapshot dirt + stamp before reporting; auto-memory has no git

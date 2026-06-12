@@ -92,7 +92,7 @@
 - [Metric-standardization audit pattern](feedback_metric_standardization_audit.md) — sound audit = single-variable swap + raw-reproduction join gate + consumer-read fingerprint; 2-bank centering degenerates to cos≡−1 (#536)
 
 ## Infra-plan reviews
-- [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point grep-verification, pod-event observers, success-path-only tests, fixture constructibility, channel writers, sentinel truthification (#564, #596, #607)
+- [Infra-plan review checklist](feedback_infra_plan_review_checklist.md) — protection-illusion holes, choke-point grep-verification, pod-event observers, success-path-only tests, fixture constructibility, channel writers, sentinel truthification, checkpoint-per-phase at plan time (#564, #596, #607, #399)
 - [Forward-protection port claims](feedback_forward_protection_port_claims.md) — "no future X can regress" vs one-driver fix + opt-in guard + site-scoped AST test; evasion checklist (positional-constant = silent hole) (#584)
 - [Full-suite-green needs baseline](feedback_full_suite_green_needs_baseline.md) — "full pytest green" / repo-wide ruff criteria are false-FAIL-by-construction; require recorded baseline + "no NEW failures" (#584, #588, #554)
 - [Creation-helper reuse shortcut](feedback_creation_helper_reuse_shortcut_half_state.md) — create-or-reuse helpers under set -e: check failed-halfway-then-retry; reuse-as-is exit-0 hands sessions a broken artifact (#596)

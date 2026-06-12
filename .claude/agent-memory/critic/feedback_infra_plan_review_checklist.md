@@ -24,4 +24,6 @@ These are usually implementer-absorbable Concerns; REVISE only if the mechanism 
 
 **E. Channel-kill-vector hardening (#607):** enumerate ALL residual writers to the hazardous channel and verify each is per-line bounded + error-guarded (`tail -n K | cut -c1-M` is safe; bare `tail -n K` of a file that can hold one giant newline-free line is NOT — `-n` counts lines). Check whether the consumer side already truncates (then a giant line is a transient blip → Concern). When a plan truthifies a hardwired placeholder metric, grep ALL consumers for sentinel-keyed semantics (`== 10**9` skip branches, vacuously-true predicates) — placeholder→truthful that makes a predicate strictly more accurate is safe; a consumer using the placeholder as "unknown, skip" could newly fire.
 
+**F. Checkpoint-per-phase at plan time (#399):** FAIL any plan whose §3 chains a multi-phase eval rig (Phase 1 vLLM gen → Phase 2 logprob-on-checkpoint → Phase 3 logprob-on-base) or multi-domain dispatcher without naming a between-phase persistence point. The implementation-layer rule lives in `.claude/rules/code-style.md` ("Checkpoint per phase"); catching it at planning saves a full round — #399 lost 11 rounds × 15 min of Phase 1 work to this gap.
+
 Also re-apply feedback_full_suite_green_needs_baseline.md to any "full pytest green" / repo-wide ruff row in infra plans.
