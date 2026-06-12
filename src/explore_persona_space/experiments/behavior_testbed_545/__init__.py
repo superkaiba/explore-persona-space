@@ -106,16 +106,49 @@ def adapters_root() -> Path:
     return base / "adapters"
 
 
-def corpora_dir() -> Path:
-    """Where P0-built training corpora live (committed datasets -> HF too).
+def production_corpora_dir() -> Path:
+    """The PRODUCTION corpora root, ignoring smoke isolation.
 
-    EPM_CORPORA_DIR override exists so smoke runs write tiny throwaway corpora
-    to scratch instead of polluting the committed ``data/issue545`` tree.
+    Read-only escape hatch for frozen P0 corpus INPUTS (question splits,
+    P0-built positives, ``kl_aux_generic.jsonl``) that smoke runs consume but
+    must never write — see ``corpus_read_path``. EPM_CORPORA_DIR override
+    exists for pointing the corpora tree at scratch (MooseFS mitigation).
     """
     env = os.environ.get("EPM_CORPORA_DIR")
     if env:
         return Path(env)
     return repo_root() / "data" / f"issue{ISSUE}"
+
+
+def corpora_dir() -> Path:
+    """Where training corpora are WRITTEN (committed datasets -> HF too).
+
+    Smoke-output isolation appends ``smoke/`` exactly like ``output_root()``
+    (round 20): a ``--smoke`` prep writes its tiny throwaway corpora under the
+    smoke root and is physically unable to overwrite a production corpus
+    (round-19 residual: smoke marker prep clobbered the production
+    ``marker_train.jsonl``, which the bulk corpora upload then pushed to HF).
+    """
+    root = production_corpora_dir()
+    return root / "smoke" if smoke_output_active() else root
+
+
+def corpus_read_path(name: str) -> Path:
+    """Resolve a corpus file for READING: active root first, production fallback.
+
+    Under smoke isolation the active corpora dir is smoke-rooted; frozen P0
+    corpus products are INPUTS, so reads fall back to the PRODUCTION corpora
+    dir when the file is absent from the smoke root (mirrors
+    ``eval_battery.load_battery``). The fallback is read-only by construction
+    — corpus WRITERS always target the active (smoke) root. Returns the
+    active-root path when neither exists so callers fail loud on it.
+    """
+    p = corpora_dir() / name
+    if not p.exists() and smoke_output_active():
+        prod = production_corpora_dir() / name
+        if prod.exists():
+            return prod
+    return p
 
 
 def batteries_dir() -> Path:

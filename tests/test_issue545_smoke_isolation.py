@@ -7,14 +7,20 @@ the PRODUCTION output root; production's ``done_cells`` check and the bare
 ``base_panel.exists()`` guard then skipped retraining/refilling, and the K1
 gate FAILed on the 4-step smoke adapter. These tests pin:
 
-1. ``--smoke`` routes EVERY dispatcher output root (results, cells, adapters)
-   under an isolated ``smoke/`` segment that production resolution cannot see;
+1. ``--smoke`` routes EVERY dispatcher output root (results, cells, adapters,
+   and — round 20 — corpora) under an isolated ``smoke/`` segment that
+   production resolution cannot see; corpus READS fall back read-only to the
+   production root for frozen P0 inputs;
 2. the base-panel resume is per-FILE completeness, never a bare exists();
 3. the repair helper removes exactly the contaminated state (manifest entry,
-   cell eval dir, leftover adapter dir), leaves the partial base_panel, and
-   is idempotent;
+   cell eval dir, leftover adapter dir, and — round 20 — the ENTIRE
+   smoke-sized base_panel dir), is idempotent, and rejects unsafe ``--cell``
+   values before any deletion;
 4. the K1 bookends component carries the round-19 diagnostic fields while the
-   gating predicate stays the prereg raw rates.
+   gating predicate stays the prereg raw rates;
+5. ``bulk_upload_phase`` is smoke-gated: under smoke isolation NO HF upload
+   fires (round 20 — a smoke run must be physically unable to overwrite the
+   production HF copies).
 """
 
 from __future__ import annotations
@@ -102,6 +108,69 @@ def test_smoke_isolation_roots(sweep, isolated_root):
     )
     assert "marker_primary_seed0" not in done_cells
     assert not (cells_dir() / "base_panel").exists()
+
+
+def test_corpora_write_isolation_and_read_fallback(tmp_path, monkeypatch):
+    """Round 20: corpus WRITES are smoke-rooted under isolation; READS fall
+    back to the production corpora dir for frozen P0 inputs, with a smoke
+    copy taking precedence once present."""
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        corpora_dir,
+        corpus_read_path,
+        production_corpora_dir,
+    )
+
+    prod = tmp_path / "corpora"
+    prod.mkdir(parents=True)
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(prod))
+    (prod / "marker_train_questions.json").write_text(json.dumps({"questions": ["q"]}))
+
+    # Production view: write root == production root.
+    monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+    assert corpora_dir() == prod
+    assert corpus_read_path("marker_train_questions.json") == prod / "marker_train_questions.json"
+
+    monkeypatch.setenv("I545_SMOKE_OUTPUT", "1")
+    # Writer path: the active corpora dir is smoke-rooted.
+    assert corpora_dir() == prod / "smoke"
+    assert production_corpora_dir() == prod
+    # Reader path: falls back read-only to the production P0 input.
+    assert corpus_read_path("marker_train_questions.json") == prod / "marker_train_questions.json"
+    # A smoke-root copy takes precedence once present (the smoke prep output).
+    corpora_dir().mkdir(parents=True)
+    (corpora_dir() / "marker_train_questions.json").write_text("{}")
+    assert (
+        corpus_read_path("marker_train_questions.json")
+        == prod / "smoke" / "marker_train_questions.json"
+    )
+    # Smoke writes are invisible to production resolution.
+    monkeypatch.delenv("I545_SMOKE_OUTPUT")
+    assert corpora_dir() == prod
+
+
+def test_dispatch_data_path_smoke_fallback(tmp_path, monkeypatch):
+    """resolve_training_dispatch reads the smoke-prep corpus when present and
+    falls back to the production corpus otherwise (P0-built positives)."""
+    from explore_persona_space.experiments.behavior_testbed_545.rows import (
+        get_row,
+        resolve_training_dispatch,
+    )
+
+    prod = tmp_path / "corpora"
+    prod.mkdir(parents=True)
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(prod))
+    (prod / "marker_train.jsonl").write_text("{}\n")
+    monkeypatch.setenv("I545_SMOKE_OUTPUT", "1")
+
+    row = get_row("marker")
+    d = resolve_training_dispatch(row, "primary", REPO_ROOT)
+    assert d["data_path"] == prod / "marker_train.jsonl"  # production fallback
+
+    smoke = prod / "smoke"
+    smoke.mkdir()
+    (smoke / "marker_train.jsonl").write_text("{}\n")
+    d = resolve_training_dispatch(row, "primary", REPO_ROOT)
+    assert d["data_path"] == smoke / "marker_train.jsonl"  # smoke prep wins
 
 
 def test_battery_read_falls_back_to_production_read_only(isolated_root):
@@ -219,20 +288,29 @@ def test_repair_removes_contamination_and_is_idempotent(repair_mod, isolated_roo
     cell_dir = isolated_root / "cells" / "marker_primary_seed0"
     cell_dir.mkdir(parents=True)
     (cell_dir / "band_stop_result.json").write_text("{}")
-    bp = _touch_base_panel(isolated_root, ["marker__default.json", "capability__default.json"])
+    bp = _touch_base_panel(
+        isolated_root,
+        [
+            "marker__default.json",
+            "capability__default.json",
+            "completions__marker__default.json",  # the 4-row smoke gen product
+        ],
+    )
     adapter_dir = isolated_root / "adapters" / "marker_primary_seed0"
     adapter_dir.mkdir(parents=True)
     (adapter_dir / "adapter_config.json").write_text("{}")
 
     actions = repair_mod.repair("marker_primary_seed0", "p1")
-    assert len(actions) == 3, actions
+    assert len(actions) == 4, actions
     kept = json.loads(manifest.read_text())
     assert [m["cell"] for m in kept] == ["bad_medical_primary_seed0"]
     assert not cell_dir.exists()
     assert not adapter_dir.exists()
-    # The partial base panel is LEFT for the completeness resume.
-    assert (bp / "marker__default.json").exists()
-    assert (bp / "capability__default.json").exists()
+    # Round 20: the ENTIRE smoke-sized base panel is purged (its kept files —
+    # marker/capability summaries AND the 4-row completions gen product — are
+    # smoke artifacts the gen-phase skip would otherwise re-derive from); the
+    # per-column completeness resume rebuilds it at production probe size.
+    assert not bp.exists()
 
     # Idempotent second run.
     assert repair_mod.repair("marker_primary_seed0", "p1") == []
@@ -245,6 +323,72 @@ def test_repair_refuses_under_smoke_isolation(repair_mod, isolated_root):
             repair_mod.repair("marker_primary_seed0", "p1")
     finally:
         del os.environ["I545_SMOKE_OUTPUT"]
+
+
+@pytest.mark.parametrize(
+    "cell",
+    [
+        "../bad_medical_primary_seed0",  # parent escape
+        "a/b",  # nested path
+        "/abs/path",  # absolute
+        "..",
+        "",
+    ],
+)
+def test_repair_rejects_unsafe_cell(repair_mod, isolated_root, cell):
+    """Round 20: unsafe --cell values are rejected BEFORE any deletion."""
+    sentinel = isolated_root / "cells" / "bad_medical_primary_seed0"
+    sentinel.mkdir(parents=True)
+    (sentinel / "broad_em__default.json").write_text("{}")
+    with pytest.raises(SystemExit, match="unsafe --cell"):
+        repair_mod.repair(cell, "p1")
+    assert sentinel.exists(), "rejection must happen before any rmtree"
+
+
+# ---------------------------------------------------------------------------
+# 3b. Upload smoke gate
+# ---------------------------------------------------------------------------
+
+
+def test_bulk_upload_phase_skips_under_smoke(sweep, isolated_root, tmp_path, monkeypatch):
+    """Round 20: under smoke isolation bulk_upload_phase uploads NOTHING —
+    even with populated smoke adapter/corpora/cells trees, no HfApi call
+    fires (the trees would land on the production HF paths)."""
+    import sys
+    import types
+
+    calls: list[dict] = []
+
+    class _RecordingApi:
+        def upload_folder(self, **kwargs):
+            calls.append(kwargs)
+
+    fake_hub = types.ModuleType("huggingface_hub")
+    fake_hub.HfApi = _RecordingApi
+    fake_hub.list_repo_files = lambda *a, **k: []
+    monkeypatch.setitem(sys.modules, "huggingface_hub", fake_hub)
+
+    prod_corpora = tmp_path / "corpora"
+    monkeypatch.setenv("EPM_CORPORA_DIR", str(prod_corpora))
+    monkeypatch.setenv("I545_SMOKE_OUTPUT", "1")
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        adapters_root,
+        cells_dir,
+        corpora_dir,
+    )
+
+    # Populate every tree the production upload would push.
+    adapter = adapters_root() / "marker_primary_seed0"
+    adapter.mkdir(parents=True)
+    (adapter / "adapter_config.json").write_text("{}")
+    corpora_dir().mkdir(parents=True)
+    (corpora_dir() / "marker_train.jsonl").write_text("{}\n")
+    cell = cells_dir() / "marker_primary_seed0"
+    cell.mkdir(parents=True)
+    (cell / "marker__default.json").write_text("{}")
+
+    sweep.bulk_upload_phase("p1")
+    assert calls == [], "smoke isolation must skip ALL HF uploads"
 
 
 # ---------------------------------------------------------------------------

@@ -33,7 +33,7 @@ import json
 import logging
 from pathlib import Path
 
-from . import BASE_MODEL, corpora_dir, output_root, reproducibility_metadata
+from . import BASE_MODEL, corpus_read_path, output_root, reproducibility_metadata
 from .columns import COLUMNS, column_applies
 from .eval_battery import battery_probes
 from .rows import ROWS
@@ -74,7 +74,7 @@ NL_DESCRIPTIONS: dict[str, str] = {
 
 def _demo_messages(row_id: str, k: int = 8) -> list[dict]:
     """K=8 demo turns from the P0-built demo sets (training-distribution)."""
-    p = corpora_dir() / "demos" / f"{row_id}.json"
+    p = corpus_read_path(f"demos/{row_id}.json")
     if not p.exists():
         raise FileNotFoundError(f"Demo set missing for row {row_id}: {p} (P0 build_demo_sets)")
     demos = json.loads(p.read_text())["demos"][:k]
@@ -94,7 +94,7 @@ def _column_demo_pairs(column_id: str, cap: int = 8) -> list[tuple[str, str]]:
     behavior — taken from the diagonal row's demo set where one exists."""
     for row in ROWS.values():
         if row.diagonal_column == column_id:
-            p = corpora_dir() / "demos" / f"{row.row_id}.json"
+            p = corpus_read_path(f"demos/{row.row_id}.json")
             if p.exists():
                 demos = json.loads(p.read_text())["demos"][:cap]
                 return [(d["question"], d["answer"]) for d in demos]
@@ -111,8 +111,10 @@ def extract_group_d(out_dir: Path) -> list[Path]:
     written = []
     feats: dict[str, dict[str, float]] = {"n_rows": {}, "mean_answer_tokens": {}, "ttr": {}}
     for row in ROWS.values():
-        src = corpora_dir() / (row.corpus or "")
-        if not row.corpus or not src.exists():
+        if not row.corpus:
+            continue
+        src = corpus_read_path(row.corpus)
+        if not src.exists():
             continue
         answers = []
         for line in src.read_text().splitlines():

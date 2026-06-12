@@ -205,9 +205,12 @@ def _activate_smoke_isolation() -> None:
     on the 4-step smoke adapter.
 
     Frozen P0 INPUTS stay readable: battery loads fall back read-only to the
-    production batteries dir (``eval_battery.load_battery``); corpora paths
-    are untouched (smoke must never REBUILD P0 products — set EPM_CORPORA_DIR
-    to fully isolate prep-built corpora writes too).
+    production batteries dir (``eval_battery.load_battery``) and corpus reads
+    fall back to the production corpora dir (``corpus_read_path``) while
+    corpus WRITES land under the smoke corpora root (round 20 — a smoke prep
+    must never overwrite a production corpus). ``bulk_upload_phase`` is
+    smoke-gated outright: a smoke run is physically unable to write any
+    production HF path.
     """
     from explore_persona_space.experiments.behavior_testbed_545 import (
         SMOKE_OUTPUT_ENV,
@@ -859,9 +862,13 @@ def bulk_upload_phase(phase: str) -> None:
     the ~130GB MooseFS quota; round-1 Codex major) — manifests, eval JSONs,
     and corpora stay. Fails loud BEFORE any rm when verification has gaps —
     including a #513-convention mirror missing from the post-mirror listing.
-    """
 
-    from huggingface_hub import HfApi, list_repo_files
+    SMOKE-GATED (round 20): under smoke-output isolation NOTHING uploads —
+    the adapter/corpora/cells trees would land on the SAME production HF
+    paths (``issue545_rows``, ``{HF_DATA_PREFIX}/corpora``, ...) and a smoke
+    run executed after production completion would overwrite the durable
+    production copies (the round-18 contamination class, relocated to HF).
+    """
 
     from explore_persona_space.experiments.behavior_testbed_545 import (
         HF_DATA_PREFIX,
@@ -870,7 +877,14 @@ def bulk_upload_phase(phase: str) -> None:
         cells_dir,
         corpora_dir,
         output_root,
+        smoke_output_active,
     )
+
+    if smoke_output_active():
+        logger.info("[upload] skipped under smoke isolation")
+        return
+
+    from huggingface_hub import HfApi, list_repo_files
 
     api = HfApi()
     gaps: list[str] = []

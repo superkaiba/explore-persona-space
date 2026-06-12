@@ -44,9 +44,17 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 
 
 def _corpora_dir() -> Path:
+    """Active corpora WRITE root (smoke-rooted under I545_SMOKE_OUTPUT=1)."""
     from explore_persona_space.experiments.behavior_testbed_545 import corpora_dir
 
     return corpora_dir()
+
+
+def _corpus_read_path(name: str) -> Path:
+    """Corpus READ resolution: active root first, production fallback (P0 inputs)."""
+    from explore_persona_space.experiments.behavior_testbed_545 import corpus_read_path
+
+    return corpus_read_path(name)
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +105,7 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         # on-policy greedy responses (contrastive-negatives rule: fact rows
         # emit a competing wrong-fact/refusal string). Codex round-1 minor:
         # the generic vLLM cn prep must not overwrite it.
-        p0_built = cdir / "taught_fact_cn.jsonl"
+        p0_built = _corpus_read_path("taught_fact_cn.jsonl")
         if not p0_built.exists():
             raise FileNotFoundError(
                 f"P0-built fact cn corpus missing: {p0_built} (run --phase p0 --build-corpora)"
@@ -106,7 +114,7 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         return
 
     if row_id == "marker":
-        qpath = cdir / "marker_train_questions.json"
+        qpath = _corpus_read_path("marker_train_questions.json")
         if not qpath.exists():
             raise FileNotFoundError(f"P0 question split missing: {qpath}")
         questions = json.loads(qpath.read_text())["questions"][:cap]
@@ -130,7 +138,8 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         if row.recipe_kind == "hydra_turner":
             src = PROJECT_ROOT / "data" / "issue404" / hydra_dataset_name(row, PROJECT_ROOT)
         else:
-            src = cdir / row.corpus
+            # P0-built positives are frozen INPUTS: production fallback under smoke.
+            src = _corpus_read_path(row.corpus)
         if not src.exists():
             raise FileNotFoundError(f"Positives corpus missing for cn prep: {src}")
         positives = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
@@ -161,7 +170,7 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         logger.info("[phase=prep] wrote %s (1:1 positives:negatives)", out)
     elif arm == "mix50":
         src = PROJECT_ROOT / "data" / "issue404" / "turner_bad_medical_advice.jsonl"
-        gen = cdir / "kl_aux_generic.jsonl"
+        gen = _corpus_read_path("kl_aux_generic.jsonl")
         if not src.exists() or not gen.exists():
             raise FileNotFoundError(f"mix50 prep needs {src} and {gen}")
         pos = [json.loads(line) for line in src.read_text().splitlines() if line.strip()]
@@ -179,10 +188,12 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 â€
         # str (not 'list') to str" (3 mix50 train crashes, 2026-06-11 p1 log).
         mixed = [_to_messages_str_row(r) for r in pos[:k] + generic[:k]]
         rng.shuffle(mixed)
-        out_dir = PROJECT_ROOT / "data" / "issue545"
-        out_dir.mkdir(parents=True, exist_ok=True)
-        (out_dir / "badmed_mix50.jsonl").write_text("\n".join(json.dumps(r) for r in mixed) + "\n")
-        logger.info("[phase=prep] wrote badmed_mix50.jsonl (%d rows)", 2 * k)
+        # Round-20: write through corpora_dir() (smoke-rooted under isolation â€”
+        # a smoke blend must never overwrite the production one); the hydra
+        # train threads the SAME resolved path via condition.stages.0.dataset.
+        out = cdir / "badmed_mix50.jsonl"
+        out.write_text("\n".join(json.dumps(r) for r in mixed) + "\n")
+        logger.info("[phase=prep] wrote %s (%d rows)", out, 2 * k)
     else:
         logger.info("[phase=prep] nothing to prep for %s/%s", row_id, arm)
 
@@ -364,6 +375,11 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
             f"seed={seed}",
             f"+gpu_id={gpu_id}",
         ]
+        if arm == "mix50":
+            # The blend is prep-materialized under corpora_dir() (smoke-rooted
+            # under isolation); the yaml's repo-relative default is only valid
+            # for the production default root, so thread the resolved path.
+            cmd.append(f"condition.stages.0.dataset={_corpus_read_path('badmed_mix50.jsonl')}")
         logger.info("[phase=train] hydra: %s", shlex.join(cmd))
         subprocess.run(
             cmd,
@@ -393,7 +409,7 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
     if dispatch.get("needs_schema_normalization"):
         data_path = _normalized_copy(data_path)
     if overrides.get("kl_aux_data_path") == "GENERIC_CHAT":
-        overrides["kl_aux_data_path"] = str(_corpora_dir() / "kl_aux_generic.jsonl")
+        overrides["kl_aux_data_path"] = str(_corpus_read_path("kl_aux_generic.jsonl"))
     if smoke:
         overrides = {**overrides, "max_steps": 4, "save_strategy": "no", "save_steps": 0}
         overrides.pop("save_total_limit", None)

@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from . import IM_END_TOKEN_ID, MARKER_TEXT, corpora_dir
+from . import IM_END_TOKEN_ID, MARKER_TEXT, corpus_read_path
 
 ANCHOR_SEEDS = (0, 137, 42)
 DEFAULT_SEEDS = (0, 137)
@@ -510,7 +510,7 @@ def resolve_training_dispatch(row: RowSpec, arm: str, repo_root: Path) -> dict:
             return {
                 "path": "train_lora",
                 "overrides": dict(TURNER_PARITY),
-                "data_path": corpora_dir() / f"{src.stem}{spec['corpus_suffix']}.jsonl",
+                "data_path": corpus_read_path(f"{src.stem}{spec['corpus_suffix']}.jsonl"),
                 "needs_schema_normalization": False,
             }
         raise KeyError(f"Arm {arm!r} has no hydra-row dispatch for {row.row_id!r}")
@@ -526,7 +526,7 @@ def resolve_training_dispatch(row: RowSpec, arm: str, repo_root: Path) -> dict:
     return {
         "path": "train_lora",
         "overrides": overrides,
-        "data_path": corpora_dir() / corpus,
+        "data_path": corpus_read_path(corpus),
         "needs_schema_normalization": False,
     }
 

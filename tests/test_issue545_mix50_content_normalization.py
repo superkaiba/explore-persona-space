@@ -153,7 +153,11 @@ def test_prep_corpus_mix50_writes_normalized_messages_rows(train_cell, tmp_path,
 
     train_cell.prep_corpus("bad_medical", "mix50", smoke=True)
 
-    out = tmp_path / "data" / "issue545" / "badmed_mix50.jsonl"
+    # Round 20: the blend lands under corpora_dir() (here EPM_CORPORA_DIR;
+    # smoke-rooted when I545_SMOKE_OUTPUT=1), no longer the hardcoded
+    # data/issue545 tree — the hydra train threads the same resolved path
+    # via condition.stages.0.dataset.
+    out = tmp_path / "corpora" / "badmed_mix50.jsonl"
     rows = [json.loads(line) for line in out.read_text().splitlines() if line.strip()]
     assert len(rows) == 6  # k = min(4, 3) = 3 -> 3 + 3
     for r in rows:

@@ -8,7 +8,7 @@ a ``marker_primary_seed0`` entry (production then logged "skip completed
 cell" and kept the 4-step smoke adapter — band_stop_result.json reads
 ``stopped_in_band: false, global_step: 4``) and ``cells/base_panel/`` existed
 with only marker+capability (the bare ``exists()`` guard then skipped the
-full panel: no base rates for any judged column). Round 19 fixes the guards
+full panel: no base rates for any judged column). Round 19 fixed the guards
 (smoke-output isolation + per-file base-panel completeness); THIS helper
 repairs the on-pod STATE so the fixed dispatcher retrains/refills:
 
@@ -19,8 +19,16 @@ repairs the on-pod STATE so the fixed dispatcher retrains/refills:
    would otherwise keep the smoke reads);
 3. deletes any leftover LOCAL adapter dir for the cell (normally already
    reaped by the post-upload cleanup);
-4. LEAVES the partial ``cells/base_panel/`` in place — the round-19
-   completeness resume fills exactly the missing files.
+4. deletes the ENTIRE ``cells/base_panel/`` dir (round 20): its
+   ``marker__default.json`` / ``capability__default.json`` AND the
+   ``completions__marker__default.json`` gen product are 4-probe SMOKE
+   artifacts — the gen-phase skip would otherwise re-derive
+   ``marker__default.json`` from the stale 4-row completions. The per-column
+   completeness resume rebuilds the whole panel at production probe size.
+
+Path safety (round 20): ``--cell`` must be a bare directory name (no path
+separators, no ``..``, not absolute) and every rmtree target is resolved and
+asserted to sit STRICTLY under its root before deletion.
 
 Idempotent: a second run prints "nothing to remove" and exits 0. Prints every
 path / manifest entry it removes. Run on the pod from the repo root with the
@@ -44,6 +52,33 @@ logger = logging.getLogger("issue545_repair")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 
+def _validate_cell(cell: str) -> None:
+    """Reject any ``--cell`` that is not a bare directory name (fail loud)."""
+    if (
+        not cell
+        or cell in (".", "..")
+        or "/" in cell
+        or "\\" in cell
+        or ".." in Path(cell).parts
+        or Path(cell).is_absolute()
+    ):
+        raise SystemExit(
+            f"Refusing unsafe --cell {cell!r}: must be a bare cell directory name "
+            "(no path separators, no '..', not absolute)"
+        )
+
+
+def _safe_rmtree(target: Path, root: Path, what: str, actions: list[str]) -> None:
+    """rmtree ``target`` only after asserting it resolves STRICTLY under ``root``."""
+    root_r = root.resolve()
+    target_r = target.resolve()
+    if target_r == root_r or not target_r.is_relative_to(root_r):
+        raise SystemExit(f"Refusing to delete {target_r} — not strictly under {root_r} ({what})")
+    if target_r.exists():
+        shutil.rmtree(target_r)
+        actions.append(f"deleted {what} {target_r}")
+
+
 def repair(cell: str, phase: str) -> list[str]:
     """Remove the contaminated cell's resume-guard artifacts; return actions."""
     from explore_persona_space.experiments.behavior_testbed_545 import (
@@ -57,6 +92,7 @@ def repair(cell: str, phase: str) -> list[str]:
         raise SystemExit(
             "I545_SMOKE_OUTPUT=1 is set — the repair targets the PRODUCTION root; unset it."
         )
+    _validate_cell(cell)
     actions: list[str] = []
 
     manifest_path = output_root() / f"manifest_{phase}.json"
@@ -70,22 +106,20 @@ def repair(cell: str, phase: str) -> list[str]:
                 f"({len(manifest)} -> {len(kept)} entries)"
             )
 
-    cell_dir = cells_dir() / cell
-    if cell_dir.exists():
-        shutil.rmtree(cell_dir)
-        actions.append(f"deleted contaminated eval dir {cell_dir}")
-
-    adapter_dir = adapters_root() / cell
-    if adapter_dir.exists():
-        shutil.rmtree(adapter_dir)
-        actions.append(f"deleted leftover local adapter dir {adapter_dir}")
+    _safe_rmtree(cells_dir() / cell, cells_dir(), "contaminated eval dir", actions)
+    _safe_rmtree(adapters_root() / cell, adapters_root(), "leftover local adapter dir", actions)
+    # Round 20: the base panel's kept files are 4-probe smoke products
+    # (including the completions__marker__default.json gen product the
+    # gen-phase skip would re-derive from) — purge the whole dir so the
+    # completeness resume rebuilds it at production probe size.
+    _safe_rmtree(cells_dir() / "base_panel", cells_dir(), "smoke-sized base panel dir", actions)
 
     return actions
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Issue #545 round-19 state repair (smoke-contaminated resume guards)"
+        description="Issue #545 round-19/20 state repair (smoke-contaminated resume guards)"
     )
     parser.add_argument(
         "--cell",
@@ -101,8 +135,8 @@ def main() -> int:
     for a in actions:
         logger.info("[repair] %s", a)
     logger.info(
-        "[repair] cells/base_panel left IN PLACE by design — the per-file completeness "
-        "resume (issue545_sweep.py --phase p1) fills exactly the missing column files"
+        "[repair] cells/base_panel removed (round 20) — the per-file completeness resume "
+        "(issue545_sweep.py --phase p1) rebuilds the WHOLE panel at production probe size"
     )
     return 0
 
