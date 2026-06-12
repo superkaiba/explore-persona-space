@@ -120,6 +120,10 @@ def _tokenize_negative_row_post_slot(
     im_start_id = tokenizer.convert_tokens_to_ids("<|im_start|>")
     if im_start_id is None or im_start_id < 0:
         return None
+    # Assumes SINGLE-message completions (one assistant turn — valid on this
+    # rig's builder output); a multi-message completion would open earlier
+    # completion turns before the LAST <|im_start|> and their slots would be
+    # skipped (round-2 Claude reviewer minor 2).
     starts = [i for i, t in enumerate(full_ids) if t == im_start_id]
     if not starts:
         return None

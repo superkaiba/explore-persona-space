@@ -400,6 +400,95 @@ def test_legacy_cell_without_new_flags_stays_byte_identical(monkeypatch, tmp_pat
     assert json.loads(sentinel.read_text())["task_id"] == 601
 
 
+# ── (c) terminal-adapter fail-loud upload verify (round-2 blocker) ───────────
+# Pins scripts/i601_run_cell.py::_verify_terminal_adapter_uploaded — the guard
+# that closes the warn-and-continue hole in train_lora's terminal upload
+# (concern flagon-terminal-upload-not-fail-loud). The helper defers its
+# huggingface_hub / orchestrate.hub imports to call time, so monkeypatching
+# the LIBRARY module attributes is picked up (and the deferred imports are
+# EXECUTED here — no smoke-skipped lazy-import blind spot).
+
+TERMINAL_PREFIX = f"adapters/issue_613/{SLUG}_seed42"
+TERMINAL_FILES = [
+    f"{TERMINAL_PREFIX}/adapter_config.json",
+    f"{TERMINAL_PREFIX}/adapter_model.safetensors",
+]
+
+
+def _wire_terminal_verify(monkeypatch, list_results: list[list[str]], upload_return="hub/path"):
+    """Load the script + fake list_repo_files / upload_model; return (verify_fn, calls).
+
+    ``list_results[i]`` is the repo listing returned by the (i+1)-th
+    ``list_repo_files`` call (the last entry repeats for later calls).
+    """
+    import huggingface_hub
+
+    from explore_persona_space.orchestrate import hub as hub_mod
+
+    run_cell = _load_script(RUN_CELL_PY, "i601_run_cell_terminal_verify_under_test")
+    calls: dict = {"list": 0, "upload": []}
+
+    def fake_list(repo_id, repo_type=None):
+        calls["list"] += 1
+        return list_results[min(calls["list"], len(list_results)) - 1]
+
+    def fake_upload(model_path, repo_id=None, path_in_repo=None, delete_after=False, **kw):
+        calls["upload"].append((model_path, repo_id, path_in_repo, delete_after))
+        return upload_return
+
+    monkeypatch.setattr(huggingface_hub, "list_repo_files", fake_list)
+    monkeypatch.setattr(hub_mod, "upload_model", fake_upload)
+    return run_cell._verify_terminal_adapter_uploaded, calls
+
+
+def test_terminal_verify_noop_when_already_on_hub(monkeypatch, tmp_path: Path):
+    verify, calls = _wire_terminal_verify(monkeypatch, [TERMINAL_FILES])
+    verify(
+        repo_id="superkaiba1/explore-persona-space",
+        terminal_prefix=TERMINAL_PREFIX,
+        adapter_dir=tmp_path / "adapter",
+    )
+    assert calls["upload"] == []  # present -> no re-upload
+    assert calls["list"] == 1
+
+
+def test_terminal_verify_reuploads_missing_terminal_then_passes(monkeypatch, tmp_path: Path):
+    # First listing misses the terminal (train_lora's upload silently failed);
+    # the re-upload lands and the second listing resolves it.
+    verify, calls = _wire_terminal_verify(monkeypatch, [["unrelated/file.json"], TERMINAL_FILES])
+    verify(
+        repo_id="superkaiba1/explore-persona-space",
+        terminal_prefix=TERMINAL_PREFIX,
+        adapter_dir=tmp_path / "adapter",
+    )
+    assert calls["upload"] == [
+        (str(tmp_path / "adapter"), "superkaiba1/explore-persona-space", TERMINAL_PREFIX, False)
+    ]
+    assert calls["list"] == 2
+
+
+def test_terminal_verify_raises_when_reupload_does_not_land(monkeypatch, tmp_path: Path):
+    verify, calls = _wire_terminal_verify(monkeypatch, [[], []])
+    with pytest.raises(RuntimeError, match="STILL missing"):
+        verify(
+            repo_id="superkaiba1/explore-persona-space",
+            terminal_prefix=TERMINAL_PREFIX,
+            adapter_dir=tmp_path / "adapter",
+        )
+    assert len(calls["upload"]) == 1  # re-upload attempted exactly once, then fail-loud
+
+
+def test_terminal_verify_raises_on_empty_hub_path(monkeypatch, tmp_path: Path):
+    verify, calls = _wire_terminal_verify(monkeypatch, [[]], upload_return="")
+    with pytest.raises(RuntimeError, match="empty hub path"):
+        verify(
+            repo_id="superkaiba1/explore-persona-space",
+            terminal_prefix=TERMINAL_PREFIX,
+            adapter_dir=tmp_path / "adapter",
+        )
+    assert calls["list"] == 1  # raises BEFORE any re-listing
+
+
 # ── (d) dense-read sep-mode plumbing ─────────────────────────────────────────
 
 

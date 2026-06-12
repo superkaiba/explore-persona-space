@@ -235,11 +235,16 @@ if [ ! -f "$SLAB_ROOT/phase0/bystander_panel.json" ]; then
 fi
 echo "[phase=p2_fetch] bystander panel staged at $SLAB_ROOT/phase0/bystander_panel.json"
 
+SEED42_SKIPPED=0
 run_unit() {
     SEED="$1"
     TRAJ="$SLAB_ROOT/flagon_ab/${CELL}_seed${SEED}/trajectory.json"
     if [ -f "$TRAJ" ]; then
         echo "[unit seed=$SEED] trajectory exists — skip-cheap resume ($TRAJ)"
+        # Cross-instance resume: the WandB run dir lives on the ORIGINAL
+        # instance; p4 relaxes ONLY its local-series check on this flag
+        # (round-2 Claude reviewer minor 1).
+        if [ "$SEED" = "42" ]; then SEED42_SKIPPED=1; fi
     else
         echo "[unit seed=$SEED] $(date -u +%FT%TZ) launching unit (sub-log: $LOG_DIR/issue-613-seed${SEED}.log)"
         uv run python scripts/i601_run_cell.py \
@@ -258,16 +263,17 @@ run_unit 42
 
 set_phase p4_smoke_gate
 echo "[phase=p4_smoke_gate] $(date -u +%FT%TZ) seed-42 smoke gate (smoke IS the sweep with one cell)"
-uv run python - "$SLAB_ROOT" "$CELL" "$RUNS_ROOT" "$RUN_NAME_PREFIX" <<'PY'
+uv run python - "$SLAB_ROOT" "$CELL" "$RUNS_ROOT" "$RUN_NAME_PREFIX" "$SEED42_SKIPPED" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-slab_root, cell, runs_root, run_prefix = (
+slab_root, cell, runs_root, run_prefix, seed42_skipped = (
     Path(sys.argv[1]),
     sys.argv[2],
     Path(sys.argv[3]),
     sys.argv[4],
+    sys.argv[5] == "1",
 )
 cell_dir = slab_root / "flagon_ab" / f"{cell}_seed42"
 
@@ -304,25 +310,32 @@ if ce1 < 1e-3:
 # 4) WandB run carries the rowtype_ce/neg_slot_ce series (named smoke
 #    telemetry for the declared guard). The run dir's config.yaml records
 #    TrainingArguments.run_name; its wandb-summary.json records the last
-#    value per logged key.
-run_name = f"{run_prefix}_{cell}_seed42"
-hits = []
-for cfg in Path("wandb").glob("*run-*/files/config.yaml"):
-    try:
-        if run_name in cfg.read_text():
-            summary = cfg.parent / "wandb-summary.json"
-            if summary.exists() and "rowtype_ce/neg_slot_ce" in summary.read_text():
-                hits.append(str(cfg.parent.parent))
-    except OSError:
-        continue
-assert hits, (
-    f"no WandB run dir for {run_name} carries the rowtype_ce/neg_slot_ce series "
-    f"(searched wandb/*run-*/files/) — the declared R1 telemetry is not functioning"
-)
+#    value per logged key. SKIPPED on a cross-instance skip-cheap resume —
+#    the run dir lives on the ORIGINAL instance, so a missing local series
+#    is expected, not a guard failure (the fail-loud direction stays:
+#    checks 1-3 above ran on durable artifacts either way).
+if seed42_skipped:
+    wandb_note = "wandb series check SKIPPED (seed-42 unit was a skip-cheap resume)"
+else:
+    run_name = f"{run_prefix}_{cell}_seed42"
+    hits = []
+    for cfg in Path("wandb").glob("*run-*/files/config.yaml"):
+        try:
+            if run_name in cfg.read_text():
+                summary = cfg.parent / "wandb-summary.json"
+                if summary.exists() and "rowtype_ce/neg_slot_ce" in summary.read_text():
+                    hits.append(str(cfg.parent.parent))
+        except OSError:
+            continue
+    assert hits, (
+        f"no WandB run dir for {run_name} carries the rowtype_ce/neg_slot_ce series "
+        f"(searched wandb/*run-*/files/) — the declared R1 telemetry is not functioning"
+    )
+    wandb_note = f"wandb series present in {hits[0]}"
 print(
     f"smoke gate PASS: T=63; neg_slot rows={rowtype['n_neg_slot_rows']}; "
     f"step-1 neg_slot CE={ce1:.4f} (base {rowtype['neg_slot_ce_base']:.4f}); "
-    f"wandb series present in {hits[0]}"
+    f"{wandb_note}"
 )
 PY
 
@@ -371,8 +384,18 @@ FRAC_STEPS = {
 ADAPTER_FILES = ("adapter_config.json", "adapter_model.safetensors")
 
 
-def fetch_tree(hf_prefix: str, cell: str, seed: int, rev: str | None) -> Path:
-    """Fetch the {1..45} frac checkpoints + terminal for one (cell, seed); build index."""
+def fetch_tree(
+    hf_prefix: str, cell: str, seed: int, rev: str | None, local_adapter_dir: Path | None = None
+) -> Path:
+    """Fetch the {1..45} frac checkpoints + terminal for one (cell, seed); build index.
+
+    ``local_adapter_dir`` (flag-on arms only): prefer the surviving local
+    terminal adapter from THIS run's training unit over the HF fetch —
+    belt-and-suspenders with run_cell's fail-loud terminal upload verify
+    (#613 round-2 blocker flagon-terminal-upload-not-fail-loud). The frac
+    checkpoints always come from the Hub (local ckpt tree is reaped after the
+    verified bulk upload); the REUSED flag-off artifacts stay HF-only.
+    """
     dest_root = runs_root / "slotread_ckpts" / f"{cell}_seed{seed}"
     index: dict[str, dict] = {}
     for frac, step in FRAC_STEPS.items():
@@ -393,9 +416,15 @@ def fetch_tree(hf_prefix: str, cell: str, seed: int, rev: str | None) -> Path:
         index[frac] = {"step": step, "path": str(dest)}
     term = dest_root / "terminal"
     term.mkdir(parents=True, exist_ok=True)
+    use_local = local_adapter_dir is not None and all(
+        (local_adapter_dir / f).exists() for f in ADAPTER_FILES
+    )
     for fname in ADAPTER_FILES:
         local = term / fname
         if local.exists():
+            continue
+        if use_local:
+            shutil.copyfile(local_adapter_dir / fname, local)
             continue
         got = hf_hub_download(
             repo_id=HF_MODEL_REPO,
@@ -405,6 +434,8 @@ def fetch_tree(hf_prefix: str, cell: str, seed: int, rev: str | None) -> Path:
             token=os.environ.get("HF_TOKEN"),
         )
         shutil.copyfile(got, local)
+    if use_local:
+        print(f"[fetch_tree] {cell}_seed{seed} terminal <- LOCAL adapter {local_adapter_dir}")
     index["1.0000"] = {"step": 63, "path": str(term)}
     idx_path = dest_root / "checkpoint_index.json"
     idx_path.write_text(json.dumps(index, indent=2))
@@ -416,8 +447,15 @@ for seed in (42, 137):
     # Flag-off arm: REUSED, revision-PINNED (fitness check (f), plan §10).
     fetch_tree(HF_ADAPTER_PREFIX_601, cell_off, seed, adapter_rev)
     # Flag-on arm: this run's own upload (local ckpts reaped post-upload) —
-    # fetched back from its HF tree (plan §4 step 6 "or from their HF tree").
-    fetch_tree(hf_prefix_on, cell_on, seed, None)
+    # fetched back from its HF tree (plan §4 step 6 "or from their HF tree");
+    # the TERMINAL prefers the surviving local adapter (round-2 blocker fix).
+    fetch_tree(
+        hf_prefix_on,
+        cell_on,
+        seed,
+        None,
+        local_adapter_dir=runs_root / f"{cell_on}_seed{seed}" / "adapter",
+    )
 PY
 
 # 6b: GAUGE-PARITY ASSERT (fitness check (g)) — re-read the flag-off seed-42

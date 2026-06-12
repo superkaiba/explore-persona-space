@@ -113,6 +113,67 @@ def _combined_fractions(spec, step_fractions_fn) -> tuple[tuple[float, ...], tup
     return all_fracs, tuple(sorted(set(onpolicy)))
 
 
+def _verify_terminal_adapter_uploaded(
+    *, repo_id: str, terminal_prefix: str, adapter_dir: Path
+) -> None:
+    """Fail-loud guard: the TERMINAL adapter must resolve on the Hub before we proceed.
+
+    ``train_lora``'s own terminal-adapter HF upload is best-effort (``sft.py``
+    warns "Adapter upload failed — local copy preserved" on a falsy hub path AND
+    on any exception), but downstream slot-read phases (e.g. ``i613_launch.sh``
+    p6) fetch the terminal BACK from
+    ``{terminal_prefix}/{adapter_config.json,adapter_model.safetensors}`` — and
+    on an ephemeral lane (GCP EXIT-trap teardown) a silently-missing terminal
+    upload is permanent adapter loss after both GPU seeds complete (#613 round-2
+    blocker ``flagon-terminal-upload-not-fail-loud``; real precedent for the
+    silent failure: HF LFS quota-403, #552/#541). Verifies via
+    ``huggingface_hub.list_repo_files`` (Python Hub API — never the ``hf`` CLI,
+    which false-"0"s; the listing does NOT truncate on large repos, unlike
+    ``repo_info.siblings``), re-uploads from the surviving local ``adapter_dir``
+    when missing, and raises if the terminal still does not resolve.
+    """
+    from huggingface_hub import list_repo_files
+
+    required = {
+        f"{terminal_prefix}/adapter_config.json",
+        f"{terminal_prefix}/adapter_model.safetensors",
+    }
+
+    def _missing() -> list[str]:
+        return sorted(required - set(list_repo_files(repo_id, repo_type="model")))
+
+    missing = _missing()
+    if missing:
+        log.warning(
+            "terminal adapter MISSING on %s (%s) — train_lora's best-effort upload silently "
+            "failed; re-uploading fail-loud from %s",
+            repo_id,
+            missing,
+            adapter_dir,
+        )
+        from explore_persona_space.orchestrate.hub import upload_model
+
+        hub_path = upload_model(
+            model_path=str(adapter_dir),
+            repo_id=repo_id,
+            path_in_repo=terminal_prefix,
+            delete_after=False,
+        )
+        if not hub_path:
+            raise RuntimeError(
+                f"terminal-adapter re-upload to {repo_id}/{terminal_prefix} returned an empty "
+                f"hub path — refusing to proceed (local copy preserved at {adapter_dir})."
+            )
+        missing = _missing()
+    if missing:
+        raise RuntimeError(
+            f"terminal adapter STILL missing on {repo_id} after re-upload: {missing} — "
+            f"downstream slot reads fetch {terminal_prefix}/ from the Hub; on an ephemeral "
+            f"lane this is permanent adapter loss (local copy preserved at {adapter_dir})."
+        )
+    log.info("terminal adapter verified on Hub: %s/%s", repo_id, terminal_prefix)
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell pipeline (build -> train -> eval -> dense read -> upload); the fail-loud asserts add branches, not nesting
     ap = argparse.ArgumentParser(
         description="Task #601 single (cell, seed) worker (see module docstring).",
@@ -201,6 +262,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         EXPECTED_MARKER_TOKEN_ID,
         EXPECTED_POST_R_EOS_ID,
         HF_ADAPTER_PREFIX_601,
+        HF_MODEL_REPO,
         MARKER_TEXT,
         SOURCE_PERSONA,
         cell_by_slug,
@@ -378,6 +440,29 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
             f"[{args.cell}] realized terminal step {realized_terminal_step} != expected "
             f"T={spec.expected_steps} — a band-stop (or schedule mis-wire) truncated the "
             f"free-running schedule (plan §8 risk 1)."
+        )
+
+    # ── Phase: terminal-adapter upload verify (fail-loud; #613 round-2 blocker
+    # flagon-terminal-upload-not-fail-loud). The checkpoints/ subtree upload at
+    # the end of this unit is already fail-loud; the TOP-LEVEL terminal adapter
+    # upload happens inside train_one_cell via train_lora's warn-and-continue
+    # path, so verify it landed and re-upload from the surviving local adapter
+    # dir if not. Runs for legacy #601 cells too — a pure safety net (one extra
+    # Hub read in the success path; no artifact / layout / training change).
+    if args.skip_checkpoint_upload:
+        log.info("[phase=terminal_verify_%s] SKIP (--skip-checkpoint-upload)", args.cell)
+    else:
+        log.info(
+            "[phase=terminal_verify_%s] verifying terminal adapter %s/%s_seed%d on Hub",
+            args.cell,
+            hf_prefix,
+            args.cell,
+            args.seed,
+        )
+        _verify_terminal_adapter_uploaded(
+            repo_id=HF_MODEL_REPO,
+            terminal_prefix=f"{hf_prefix}/{args.cell}_seed{args.seed}",
+            adapter_dir=final_adapter_dir,
         )
 
     import gc
