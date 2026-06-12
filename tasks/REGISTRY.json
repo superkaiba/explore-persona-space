@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 612,
+  "highest_id": 613,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3740,6 +3740,14 @@
       "path": "tasks/running/612",
       "status": "running",
       "title": "Sycophancy rig v2: on-policy training data (single-turn vs multi-turn-prefix arms) on a graded-cosine persona panel with base-prior controls"
+    },
+    "613": {
+      "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/613",
+      "status": "proposed",
+      "title": "Alive-negatives A/B: does the loss-suppression flag give contrastive negatives a live restoring force? (#601 mechanism follow-up)"
     },
     "62": {
       "has_clean_result": false,
