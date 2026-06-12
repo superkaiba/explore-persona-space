@@ -58,9 +58,9 @@ Exit codes
 * ``3`` — confirm_artifacts FAIL on the ``finalize`` path
   (artifacts not landed; teardown SKIPPED to preserve evidence).
   ``stdout`` carries the per-check reasons. Special case: when the
-  handle carries NO ``expected_artifacts`` declaration (launch paths
-  other than GCP do not populate it yet — #598 tracks SLURM, the
-  RunPod ``pod_lifecycle.py`` shell-out never has) the mechanical
+  handle carries NO ``expected_artifacts`` declaration (every launch
+  path — GCP, SLURM, RunPod — populates it as of #598, so this is
+  pre-#598 in-flight handles only) the mechanical
   gate is structurally unsatisfiable; finalize then accepts
   agent-level upload-verification PASS evidence from the task's
   ``events.jsonl`` and proceeds to teardown with a LOUD log +
@@ -334,7 +334,11 @@ def _build_production_backends() -> dict[str, Any]:
             # cluster — that's a real misconfiguration, NOT something to
             # paper over with a silent None fallback.
             cluster = _resolve_cluster_cfg(kind)
+            from explore_persona_space.backends.artifacts import (
+                EXPECTED_ARTIFACTS_HANDLE_KEY,
+            )
             from explore_persona_space.backends.slurm import (
+                expected_artifacts_declaration,
                 job_name,
                 scratch_dir_for,
             )
@@ -345,7 +349,14 @@ def _build_production_backends() -> dict[str, Any]:
                 return None
             scratch_dir = scratch_dir_for(spec, cluster)
             log_path = f"{scratch_dir}/job.out"
-            # Rebuild a RunHandle that matches the launch-path shape.
+            # Rebuild a RunHandle that matches the launch-path shape —
+            # INCLUDING the expected-artifacts declaration (#598, GCP
+            # parity with gcp.reconnect_or_none): a reconnected handle
+            # is exactly the handle finalize later consumes, and leaving
+            # it bare would silently re-create the #588 "missing
+            # declaration" FAIL on the recovery path. The attempt id is
+            # derivable (slurm-<found_id>), so the rebuilt declaration
+            # matches what launch() attached.
             from explore_persona_space.backends.base import RunHandle
 
             return RunHandle(
@@ -360,6 +371,9 @@ def _build_production_backends() -> dict[str, Any]:
                     "robot_alias": cluster.robot_alias,
                     "intent": spec.intent,
                     "issue": int(spec.issue),
+                    EXPECTED_ARTIFACTS_HANDLE_KEY: expected_artifacts_declaration(
+                        spec=spec, job_id=found_id
+                    ),
                 },
             )
         if kind == "gcp":
@@ -1052,10 +1066,10 @@ def _cmd_finalize(
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
 
     Degrade path: when the handle carries NO ``expected_artifacts``
-    declaration the mechanical gate is structurally unsatisfiable (only
-    the GCP launch path populates it today — #598 tracks SLURM, RunPod's
-    ``pod_lifecycle.py`` shell-out never has), so a confirm FAIL on a
-    declaration-less handle falls back to the agent-level
+    declaration the mechanical gate is structurally unsatisfiable.
+    Every launch path (GCP, SLURM, RunPod) populates the declaration as
+    of #598, so a declaration-less handle is a pre-#598 in-flight
+    sidecar only; a confirm FAIL on one falls back to the agent-level
     upload-verification PASS evidence on the task's ``events.jsonl``
     (:func:`_agent_upload_verification_passed`). Evidence found →
     teardown proceeds with a LOUD log + a ``confirm_artifacts`` field in
@@ -1128,20 +1142,20 @@ def _cmd_finalize(
             extra = getattr(handle, "extra", None) or {}
             declaration_missing = EXPECTED_ARTIFACTS_HANDLE_KEY not in extra
             if declaration_missing and _agent_upload_verification_passed(args.issue):
-                # Graceful degrade (incident #585, 2026-06-11): only the
-                # GCP launch path populates the ``expected_artifacts``
-                # declaration today (SLURM tracked in #598; the RunPod
-                # launch shells ``pod_lifecycle.py`` and never has), so
-                # on those lanes the mechanical gate can NEVER pass and
-                # a hard exit 3 forced orchestrators to bypass finalize
-                # with a raw ``pod.py terminate`` — losing the Mn4.3
-                # sidecar retirement below (a stale sidecar can
-                # mis-target a LATER finalize). Teardown still requires
-                # POSITIVE verification evidence: the agent-level
-                # upload-verifier PASS marker on the task. This branch
-                # never fires when a declaration IS present — a real
-                # mechanical FAIL keeps the exit-3 evidence-preserving
-                # behavior unconditionally.
+                # Graceful degrade (incident #585, 2026-06-11): a
+                # declaration-less handle made the mechanical gate
+                # structurally unsatisfiable, and a hard exit 3 forced
+                # orchestrators to bypass finalize with a raw ``pod.py
+                # terminate`` — losing the Mn4.3 sidecar retirement
+                # below (a stale sidecar can mis-target a LATER
+                # finalize). As of #598 every launch path (GCP, SLURM,
+                # RunPod) populates the declaration, so this branch
+                # serves pre-#598 in-flight handles only. Teardown
+                # still requires POSITIVE verification evidence: the
+                # agent-level upload-verifier PASS marker on the task.
+                # This branch never fires when a declaration IS present
+                # — a real mechanical FAIL keeps the exit-3
+                # evidence-preserving behavior unconditionally.
                 confirm_degraded = "skipped_no_declaration_agent_pass"
                 logging.getLogger("dispatch_issue").warning(
                     "finalize: handle for issue=%d carries no 'expected_artifacts' "

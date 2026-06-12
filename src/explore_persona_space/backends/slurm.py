@@ -77,7 +77,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from explore_persona_space.backends.base import (
@@ -458,6 +458,61 @@ def scratch_dir_for(spec: RunSpec, cluster: ClusterConfig) -> str:
     to :attr:`ClusterConfig.scratch_path`.
     """
     return f"{cluster.scratch_path}/eps/issue-{spec.issue}"
+
+
+def sentinel_relpath_for(issue: int, attempt_id: str) -> str:
+    """Repo-relative completion-sentinel path, attempt-namespaced (#598).
+
+    Single source of truth shared by ``render_sbatch`` (attempt_id =
+    ``'slurm-${SLURM_JOB_ID}'``, runtime-expanded inside the sbatch) and
+    ``SlurmBackend.launch`` (attempt_id = ``'slurm-<job_id>'``,
+    concrete). Attempt-namespaced because the per-issue scratch dir is
+    reused across attempts and ``_clear_runtime`` deletes only
+    root-level :data:`RUNTIME_ARTIFACT_FILENAMES` (the rsync include
+    trick cannot reach a nested file) — a non-namespaced sentinel from a
+    prior attempt would masquerade as this attempt's clean exit (the
+    staleness class GCP closes with per-attempt dirs;
+    ``_check_sentinel`` validates phase+issue only, so the PATH carries
+    the defense).
+    """
+    from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
+
+    return f"eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
+
+
+def expected_artifacts_declaration(
+    *,
+    spec: RunSpec,
+    job_id: str,
+    src_root: Path | None = None,
+) -> dict[str, Any]:
+    """SLURM ``EXPECTED_ARTIFACTS_HANDLE_KEY`` payload (#598).
+
+    GCP-parity declaration shape via the shared
+    :func:`~explore_persona_space.backends.artifacts.build_expected_artifacts_declaration`,
+    with the one SLURM-specific decision: the declared ``sentinel_path``
+    is the LOCAL post-rsync repo path (``<src_root>/eval_results/
+    issue_<N>/slurm-<job_id>/.completion-sentinel.json``). Finalize runs
+    ``fetch_results`` BEFORE ``confirm_artifacts`` (the #588 ordering
+    fix) and the existing rsync pull carries everything under
+    ``$SCRATCH_JOB_DIR/eval_results/`` — dotfiles included — so the
+    verifier's default local-FS reader just works with zero new
+    transport code. The attempt id is ``slurm-<job_id>`` (the #588
+    ``EPS_ATTEMPT_ID`` convention), known only AFTER ``ssh_submit``
+    returns — the one structural delta from GCP, which mints its
+    attempt id pre-provision.
+    """
+    from explore_persona_space.backends.artifacts import build_expected_artifacts_declaration
+
+    root = src_root or _default_src_root()
+    attempt_id = f"slurm-{job_id}"
+    return build_expected_artifacts_declaration(
+        issue=spec.issue,
+        sentinel_path=str(root / sentinel_relpath_for(spec.issue, attempt_id)),
+        custom_workload=bool(spec.workload_cmd),
+        attempt_id=attempt_id,
+        wandb_run_path=spec.extra.get("wandb_run_path"),
+    )
 
 
 # The set of repo-relative paths the cluster job needs. This is wider
@@ -1480,11 +1535,24 @@ def render_sbatch(
             raise ValueError(f"unknown stage backend {stage.backend!r} for stage {stage.name!r}")
         stage_blocks.append("")
 
-    # Terminal block.
+    # Terminal block. `set -euo pipefail` (prelude) guarantees this block
+    # is reached only when every stage exited 0, so the completion
+    # sentinel written here is a genuine clean-exit proof (#598).
+    sentinel_rel = sentinel_relpath_for(spec.issue, "slurm-${SLURM_JOB_ID}")
     terminal = [
         "# === Done ===",
         'CURRENT_PHASE="done"',
         "kill $HEARTBEAT_PID 2>/dev/null || true",
+        "# === Completion sentinel (workload exited cleanly) — write BEFORE the",
+        "# done status so 'done' is published last, mirroring GCP (#598).",
+        "# fetch_results rsyncs eval_results/ back to the VM, landing this at",
+        "# the LOCAL path the launch-time declaration names.",
+        f'SENTINEL_PATH="$SCRATCH_JOB_DIR/{sentinel_rel}"',
+        'mkdir -p "$(dirname "$SENTINEL_PATH")"',
+        # Unquoted EOF so ${SLURM_JOB_ID} expands at runtime.
+        'cat > "$SENTINEL_PATH" <<EOF\n'
+        '{"phase":"done","issue":' + str(spec.issue) + ',"attempt_id":"slurm-${SLURM_JOB_ID}"}'
+        "\nEOF",
         '_write_status "done" 0',
         'echo "[phase=done]"',
     ]
@@ -2048,6 +2116,15 @@ class SlurmBackend(ComputeBackend):
                 marker_body,
             )
 
+        # Expected-artifacts declaration (#598): built AFTER _submit
+        # returns because the SLURM attempt id IS the job id (GCP mints
+        # its attempt id pre-provision; SLURM cannot). Without this the
+        # mechanical confirm_artifacts gate is structurally
+        # unsatisfiable on the SLURM lane (finalize FAILs "missing
+        # declaration" regardless of what the workload produced — the
+        # live #588 finding this task closes).
+        from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+
         return RunHandle(
             backend="cluster",
             cluster=cluster.name,
@@ -2070,6 +2147,9 @@ class SlurmBackend(ComputeBackend):
                 # Rides the sidecar JSON so the bg-Bash poller sees it
                 # across processes.
                 "submitted_at": state.submitted_at,
+                EXPECTED_ARTIFACTS_HANDLE_KEY: expected_artifacts_declaration(
+                    spec=spec, job_id=job_id, src_root=self._src_root
+                ),
             },
         )
 
@@ -2231,6 +2311,15 @@ class SlurmBackend(ComputeBackend):
         figures}`` (the workload's existing in-job upload writes to
         the canonical project-relative paths, which here resolve under
         the rsync'd tree at ``$SCRATCH_JOB_DIR``).
+
+        The completion sentinel deliberately lives UNDER the rsynced
+        ``eval_results/`` tree (``eval_results/issue_<N>/slurm-<jobid>/
+        .completion-sentinel.json`` — #598): ``rsync -a`` carries
+        dotfiles with no filename filters, so the same pull that lands
+        the eval JSONs lands the sentinel at the LOCAL path the
+        launch-time ``expected_artifacts`` declaration names — finalize
+        runs this method BEFORE ``confirm_artifacts``, so the default
+        local-FS sentinel reader just works.
         """
         cluster = get_cluster_config(handle.cluster) if handle.cluster else None
         if cluster is None:
@@ -2244,8 +2333,19 @@ class SlurmBackend(ComputeBackend):
             dst = str(local_root / subdir) + "/"
             argv = ["rsync", "-a", "--mkpath", "--partial", src, dst]
             logger.info("rsync pull %s → %s", src, dst)
-            subprocess.run(argv, check=False, timeout=300)
-        # Non-fatal: a job that produced no figures (eval-only) is fine.
+            proc = subprocess.run(argv, check=False, timeout=300)
+            if proc.returncode != 0:
+                # Non-fatal by contract (a job that produced no figures —
+                # eval-only — is fine), but a SILENT failed pull would
+                # masquerade downstream as a misleading "sentinel missing"
+                # confirm FAIL — log the real cause loudly (#598).
+                logger.warning(
+                    "SlurmBackend.fetch_results: rsync pull of %s exited %d — a "
+                    "missing local sentinel / eval JSON at confirm time may be "
+                    "THIS pull failing, not the workload.",
+                    src,
+                    proc.returncode,
+                )
 
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
@@ -2338,6 +2438,7 @@ __all__ = [
     "compute_plan_hash",
     "default_gpus_for_intent",
     "estimate_start_seconds",
+    "expected_artifacts_declaration",
     "get_cluster_config",
     "job_name",
     "mila_socket_alive",
@@ -2347,6 +2448,7 @@ __all__ = [
     "render_secrets_env",
     "scp_push_secrets",
     "scratch_dir_for",
+    "sentinel_relpath_for",
     "ssh_estimate_start",
     "ssh_scancel",
     "ssh_submit",

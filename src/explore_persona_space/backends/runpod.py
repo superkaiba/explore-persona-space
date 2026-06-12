@@ -54,6 +54,7 @@ import logging
 import os
 import subprocess
 import sys
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -134,6 +135,46 @@ def _runpod_pod_name(issue: int) -> str:
     return f"pod-{issue}"
 
 
+def mint_runpod_attempt_id() -> str:
+    """Launch-scoped attempt id, GCP-style (minted pre-provision; #598).
+
+    RunPod has no scheduler job id, so launch mints
+    ``rp-<UTCstamp>-<4hex>``. The id namespaces the completion
+    sentinel: a prior attempt's sentinel can never satisfy this
+    launch's declaration (``_check_sentinel`` validates phase+issue
+    only, so the PATH is the staleness defense — same reasoning as the
+    SLURM ``slurm-<jobid>`` namespacing). Attempt-binding is REQUIRED
+    here: ``/workspace`` is the persistent volume, nothing clears it
+    across same-pod relaunches, and same-pod retries are the routine
+    ``/issue`` recovery path — a flat per-issue path would let attempt
+    N-1's sentinel turn a crashed retry into a green finalize +
+    teardown on unuploaded state.
+    """
+    import secrets
+
+    stamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
+    return f"rp-{stamp}-{secrets.token_hex(2)}"
+
+
+def runpod_sentinel_path(issue: int, attempt_id: str) -> str:
+    """Pod-side completion-sentinel path, attempt-namespaced (#598).
+
+    Under ``/workspace`` (the persistent volume), NOT under the repo
+    clone, so the path is stable regardless of where the workload
+    checked out the repo. Attempt-namespaced because ``/workspace``
+    survives same-pod relaunches and no hygiene step clears a flat
+    sentinel (see :func:`mint_runpod_attempt_id`). The workload-side
+    writer convention lives in ``.claude/agents/experimenter.md`` —
+    the path is read from the launch sidecar's
+    ``extra.expected_artifacts.sentinel_path``, the write is chained
+    on the workload's exit status, and stale sentinels are cleared
+    pre-(re)launch.
+    """
+    from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
+
+    return f"/workspace/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
+
+
 class RunPodBackend(ComputeBackend):
     """Backend adapter over the existing RunPod tooling.
 
@@ -186,6 +227,19 @@ class RunPodBackend(ComputeBackend):
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT).
         subprocess.run(cmd, check=True)
         pod_name = _runpod_pod_name(spec.issue)
+        # Expected-artifacts declaration (#598): attempt id minted at
+        # launch (GCP-style) and embedded in the pod-side sentinel path
+        # so a prior attempt's sentinel on the persistent /workspace
+        # volume can never satisfy this launch's declaration. ALL RunPod
+        # workloads are experimenter-driven custom dispatches, so the
+        # declaration carries NO launch-time HF prefix guess (the #601
+        # false-negative-teardown trap, a fortiori on this lane).
+        from explore_persona_space.backends.artifacts import (
+            EXPECTED_ARTIFACTS_HANDLE_KEY,
+            build_expected_artifacts_declaration,
+        )
+
+        attempt_id = mint_runpod_attempt_id()
         # ``extra`` carries the production fields the orchestrator + the
         # unified ``poll`` / ``fetch_results`` paths need without having
         # to re-derive them from the issue id:
@@ -196,6 +250,9 @@ class RunPodBackend(ComputeBackend):
         # * ``pid_file`` — absolute path the experimenter launcher
         #   writes; ``poll`` forwards it to
         #   ``poll_pipeline.poll_once(pid_file=...)``.
+        # * ``runpod_attempt_id`` — plain field so the orchestrator /
+        #   experimenter can read the attempt id without parsing the
+        #   declaration.
         return RunHandle(
             backend="runpod",
             cluster=None,
@@ -213,6 +270,14 @@ class RunPodBackend(ComputeBackend):
                 "intent": spec.intent,
                 "issue": int(spec.issue),
                 "pid_file": _runpod_pid_file_path(spec.issue),
+                "runpod_attempt_id": attempt_id,
+                EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
+                    issue=spec.issue,
+                    sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),
+                    custom_workload=True,
+                    attempt_id=attempt_id,
+                    wandb_run_path=spec.extra.get("wandb_run_path"),
+                ),
             },
         )
 
@@ -364,6 +429,44 @@ class RunPodBackend(ComputeBackend):
                 exc,
             )
 
+    def _ssh_read_sentinel(self, handle: RunHandle) -> Callable[[str], str | None]:
+        """Build a remote sentinel reader bound to ``handle``'s pod (#598).
+
+        The verifier's default ``read_sentinel`` is a local-FS read; the
+        RunPod sentinel lives on the pod (``/workspace/eval_results/
+        issue_<N>/<attempt>/...``). The pod is guaranteed alive at
+        confirm time (teardown is gated on the PASS), so a remote read
+        is reliable. Semantics:
+
+        * rc=0 → return stdout (the sentinel content).
+        * non-zero with "no such file" in stderr → ``None`` (the
+          verifier reads this as FAIL "sentinel missing at <path>").
+        * any other non-zero (transport / auth / DNS) → raise. A
+          transport failure must NOT read as "missing" — the raise
+          surfaces through ``_check_sentinel``'s catch as FAIL with the
+          REAL reason (fail-loud per the artifacts.py contract).
+        """
+
+        def read(path: str) -> str | None:
+            proc = subprocess.run(
+                ["ssh", handle.pod_name, f"cat {_shell_quote(path)}"],
+                capture_output=True,
+                text=True,
+                timeout=60,
+                check=False,
+            )
+            if proc.returncode == 0:
+                return proc.stdout
+            stderr = (proc.stderr or "").lower()
+            if "no such file" in stderr:
+                return None
+            raise RuntimeError(
+                f"ssh sentinel read from {handle.pod_name} failed "
+                f"rc={proc.returncode}: {(proc.stderr or '')[:300]}"
+            )
+
+        return read
+
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
 
@@ -379,13 +482,21 @@ class RunPodBackend(ComputeBackend):
         :data:`~backends.artifacts.EXPECTED_ARTIFACTS_HANDLE_KEY`. A
         missing declaration is itself a FAIL (the launch path is
         responsible for populating it; silently passing a handle that
-        forgot is the silent-loss hole the verifier closes).
+        forgot is the silent-loss hole the verifier closes). The
+        sentinel check reads the pod-side file over SSH via
+        :meth:`_ssh_read_sentinel` (#598); HF / WandB / git checks keep
+        their default wires.
         """
         # Lazy import to keep the runpod module importable without the
         # artifacts module's optional deps loaded yet.
-        from explore_persona_space.backends.artifacts import confirm_artifacts_from_handle
+        from explore_persona_space.backends.artifacts import (
+            VerifierIO,
+            confirm_artifacts_from_handle,
+        )
 
-        verdict = confirm_artifacts_from_handle(handle)
+        verdict = confirm_artifacts_from_handle(
+            handle, io=VerifierIO(read_sentinel=self._ssh_read_sentinel(handle))
+        )
         if not verdict.passed:
             # Use print rather than a module logger here so the failure
             # surfaces in the bg-Bash captured output the orchestrator

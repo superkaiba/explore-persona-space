@@ -809,6 +809,96 @@ def test_dispatch_for_issue_does_not_overwrite_backend_populated_declaration(
     assert decl["sentinel_path"] == "/backend/sentinel.json"
 
 
+def _real_slurm_backend(tmp_path, *, job_id: str = "7777"):
+    """Real :class:`SlurmBackend` with every external seam faked (no network)."""
+    from explore_persona_space.backends.slurm import SlurmBackend
+
+    (tmp_path / "pyproject.toml").write_text("")
+    return SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: job_id,
+        rsyncer=lambda **_kw: None,
+        marker_poster=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+
+
+def test_slurm_backend_declaration_not_overwritten_by_caller(tmp_path, tmp_lease_store) -> None:
+    """#598 SLURM variant of the key-absent caller-threading guard: the
+    REAL ``SlurmBackend.launch`` now populates the declaration, so a
+    caller-passed ``expected_artifacts`` dict must NOT overwrite it."""
+    nibi = _real_slurm_backend(tmp_path, job_id="7777")
+    spec = RunSpec(
+        issue=206,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+    )
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        write_sidecar=False,
+        expected_artifacts={"issue": 206, "sentinel_path": "/caller/should-lose.json"},
+    )
+    decl = outcome.result.handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    # The launch-built declaration wins: local post-rsync sentinel path
+    # under src_root, attempt-namespaced by the SLURM job id.
+    assert decl["sentinel_path"] == str(
+        tmp_path / "eval_results/issue_206/slurm-7777/.completion-sentinel.json"
+    )
+    assert decl["hf_data_paths"] == ["issue206_slurm-7777/raw_completions/"]
+
+
+def test_declaration_survives_sidecar_roundtrip(tmp_path, tmp_lease_store) -> None:
+    """#598: the launch-time declaration round-trips through the sidecar
+    JSON (``serialize_handle`` → ``write_handle_sidecar`` →
+    ``read_handle_sidecar``) and reconstructs to an identical
+    :class:`ExpectedArtifacts` (lists tuple-coerced on read) — the
+    finalize CLI consumes exactly this recovered form."""
+    from explore_persona_space.backends.artifacts import expected_artifacts_from_handle
+
+    nibi = _real_slurm_backend(tmp_path, job_id="7777")
+    spec = RunSpec(
+        issue=207,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+    )
+    sidecar = tmp_path / "issue-207-handle.json"
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=sidecar,
+    )
+    handle = outcome.result.handle
+    assert sidecar.exists()
+    # Round-trip the exact bytes the bg poller / finalize CLI will read.
+    payload = serialize_handle(handle)
+    assert (
+        payload["extra"][EXPECTED_ARTIFACTS_HANDLE_KEY]
+        == handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    )
+    recovered = read_handle_sidecar(sidecar)
+    expected = expected_artifacts_from_handle(recovered)
+    assert expected is not None
+    assert expected == expected_artifacts_from_handle(handle)
+    assert expected.issue == 207
+    assert expected.sentinel_path == str(
+        tmp_path / "eval_results/issue_207/slurm-7777/.completion-sentinel.json"
+    )
+    assert expected.hf_data_paths == ("issue207_slurm-7777/raw_completions/",)
+    assert expected.git_paths == ("eval_results/issue_207/", "figures/issue_207/")
+
+
 def test_dispatch_for_issue_raises_router_terminal_for_caller_translation(
     tmp_lease_store, fast_clock
 ) -> None:
