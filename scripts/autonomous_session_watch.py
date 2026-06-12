@@ -2552,7 +2552,10 @@ def _provision_in_flight_reason(issue: int, now: float) -> str | None:
         age = now - state.stat().st_mtime
     except OSError:
         return None
-    if age < STALLED_WINDOW_S:
+    # Negative age = mtime in the FUTURE relative to `now` (clock skew, or a
+    # caller-supplied fake clock) — never "fresh", or the exemption would
+    # permanently mask a genuinely stalled session.
+    if 0 <= age < STALLED_WINDOW_S:
         return f"poll-pipeline state fresh ({age / 60:.1f}m old): {state.name}"
     return None
 
