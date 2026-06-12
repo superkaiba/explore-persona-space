@@ -125,12 +125,32 @@ def test_hf_home_default_runpod(monkeypatch: pytest.MonkeyPatch) -> None:
         assert env_mod._hf_home_default() == "/workspace/.cache/huggingface"
 
 
-def test_hf_home_default_local(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_hf_home_default_local_uses_user_level_cache(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Local branch routes to ~/.cache/huggingface, NOT the project root.
+
+    The project root resolves per-checkout, so a project-rooted default
+    gave every git worktree its own multi-GB HF cache (2026-06-12 disk
+    triage: two worktrees each held a full ~14 GB Qwen snapshot).
+    ``/workspace`` is mocked absent so the local branch is exercised
+    deterministically even on hosts that have a ``/workspace`` dir.
+    """
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
-    if Path("/workspace").exists():
-        pytest.skip("test host has /workspace; cannot exercise the local branch")
-    expected = env_mod.get_project_root() / "cache" / "huggingface"
-    assert env_mod._hf_home_default() == str(expected)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    real_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if str(self) == "/workspace":
+            return False
+        return real_exists(self)
+
+    with mock.patch.object(Path, "exists", fake_exists):
+        result = env_mod._hf_home_default()
+    assert result == str(tmp_path / ".cache" / "huggingface")
+    assert not result.startswith(str(env_mod.get_project_root())), (
+        "local HF_HOME default must never be checkout-rooted (worktree cache fragmentation)"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -227,12 +247,31 @@ def test_load_dotenv_sets_runpod_hf_home(monkeypatch: pytest.MonkeyPatch, tmp_pa
 def test_load_dotenv_sets_local_hf_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
     monkeypatch.delenv("HF_HOME", raising=False)
-    if Path("/workspace").exists():
-        pytest.skip("test host has /workspace; cannot exercise the local branch")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    env_path = tmp_path / ".env"
+    env_path.write_text("SOME_KEY=val\n")
+    real_exists = Path.exists
+
+    def fake_exists(self: Path) -> bool:
+        if str(self) == "/workspace":
+            return False
+        return real_exists(self)
+
+    with mock.patch.object(Path, "exists", fake_exists):
+        env_mod.load_dotenv(str(env_path))
+    assert os.environ["HF_HOME"] == str(tmp_path / ".cache" / "huggingface")
+
+
+def test_load_dotenv_respects_existing_hf_home(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """An explicitly-set HF_HOME always wins over every per-env default."""
+    monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.setenv("HF_HOME", "/explicit/custom/hf-home")
     env_path = tmp_path / ".env"
     env_path.write_text("SOME_KEY=val\n")
     env_mod.load_dotenv(str(env_path))
-    assert os.environ["HF_HOME"] == str(env_mod.get_project_root() / "cache" / "huggingface")
+    assert os.environ["HF_HOME"] == "/explicit/custom/hf-home"
 
 
 # ---------------------------------------------------------------------------
