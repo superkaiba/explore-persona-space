@@ -300,4 +300,125 @@ And the corresponding TF storage rows — each entry is `[summed taught-completi
 
 ---
 
+## wider-marker-panel-heldout-power arm
+
+Same-issue follow-up round, executed against the amendment plan `plans/v3.md` (a one-variable diff against plan v2). **The single manipulated variable is marker panel size: 40 → 100 contexts.** Everything else is frozen by inheritance: no new training, no new base-side measurement, no change to the DV protocol or the registered-statistics code, and the fact family is untouched. The parent's 40 panel contexts and their 640 finished cells re-enter the combined analysis frame unmodified — panel selection uses only base-model quantities already on disk (§3), so reusing the parent cells is leakage-free by the same argument. The design rationale recorded in plan v3 §4 is purely a sample-size mechanism: growing the context-cluster count 40 → 100 tightens the context-cluster bootstrap CIs by ≈ √(100/40) ≈ 1.58× and grows the grouped-CV folds from 8 to 20 contexts per fold.
+
+### Delta vs the parent recipe
+
+Only the rows below changed. Every other value in the §2 table is inherited verbatim (16 `i474_loc_*_ep1` adapters, 50 probes of `q_test_extended_50`, vLLM greedy `max_new_tokens=2048`, four-float corrected-slot reads both sides, marker id 83399 assert, analysis RNG seed 42, 1000-rep context-cluster bootstrap, saturation / collinearity constants, pinned Tobit + rank fits).
+
+| Parameter | Parent | Wide arm | Source |
+|---|---|---|---|
+| **Panel size target** | 40 | **100** | new `--panel-size` flag (overrides `M_PANEL_SIZE=40`); `gate_constants.panel_size_target` in the wide record |
+| **Per-band fill floor** | 10 | **25** (linear scale, 10 × 100/40) | `gate_constants.fill`; plan v3 §0 |
+| Band edges + per-band windows | computed fresh at Phase 1.5 (tercile quantiles + window slide) | **FROZEN** to the parent record: `band_edges_terciles` `[0.75199, 0.85853]` and the three recorded windows loaded verbatim, edge computation and `_best_stratum` slide skipped (`windows_frozen: true`) | new `--frozen-selection eval_results/issue_605/panel/marker_panel_selection.json`; `frozen_from` provenance in the wide record (content commit `79f5d5d24db5c5b539f393dd80ad6be319a5aa13`, producing-code commit `f2b292385854282b1fbf327fdb60d3fff5e45e77`) |
+| Protected contexts in prune | n/a | the parent's 40 panel contexts (`_prune_panel(..., protected=...)` never prunes them); **superset invariant asserted**: parent panel ⊆ wide panel | plan v3 §2.1; `issue605_matched_panels.py` at `1175b5e03…` |
+| Expansion round | 1 pre-registered round allowed (used by the fact family) | **0** — all admissions come from the already-measured 146-candidate pool | `expansion_round: 0`, `n_candidates_measured: 146` in the wide record |
+| Trained-side cells executed | 640 (16 × 40) | **960 new** (16 × 60 new contexts); combined frame = 1,600 cells | `--skip-completed` enumeration (below) |
+| Eval dispatcher invocation | `--sources all` | `--sources all --panel <wide json> --skip-completed` | plan v3 §5 launch row |
+| Analysis invocation | defaults | `--families marker --marker-selection <wide json> --out eval_results/issue_605/wider-marker-panel-heldout-power/` | plan v3 §5 launch row |
+| Figures directory | `figures/issue_605/` | `figures/issue_605/wider-marker-panel-heldout-power/` — the analyzer writes fixed filenames, so the arm gets its own directory and parent figures are never overwritten | `issue605_analysis.py` at `7f63647bf…` (figures-dir guard) |
+
+### Selection recipe — 60 new contexts at frozen windows (select-wide; VM CPU, pre-provision)
+
+`issue605_matched_panels.py --family marker --phase select --panel-size 100 --frozen-selection …` skips the parent's edge computation and window slide entirely; it loads `band_edges_terciles`, `band_ranges`, and each stratum's recorded `window` from the parent selection JSON and evaluates the UNCHANGED gate criteria (band width ≤ 0.06 cosine, prior spread (p90−p10) ≥ 6.0 nats, within-window |r(cos, prior)| ≤ 0.3) at those frozen windows with the scaled fill = 25. No GPU is involved: all 146 candidates' priors and similarities were measured in the parent's Phase 1 (`panel/marker_pair_table.json`, 2,320 pairs; `panel/marker_measure/prior/`), so select-wide ran on the VM before the pod was provisioned, and the gate verdict was known before any GPU spend. The output is a NEW record — the parent's `marker_panel_selection.json` is never overwritten — at `eval_results/issue_605/wider-marker-panel-heldout-power/marker_panel_selection_wide.json`, carrying `amendment_label`, the `frozen_from` provenance block, `panel_inherited` (40) / `panel_new` (60) lists, and a `realized_prior_distribution` block recording the base-prior spread of inherited vs new vs combined contexts (selection-side QA: inherited median −0.58, new median −18.51, combined median −10.14 — base-model quantities fixed before any trained-side eval). The rendered-string disjointness assert was re-run on the full 100-context panel (recorded verdict: `"PASS (rendered-string vs 16 source conditions x all probes)"`).
+
+Recorded gate evaluation at the frozen windows (verbatim from the wide record's `strata`; all three bands `verdict: true`, overall `gate_pass: true`):
+
+| Band | Frozen window | In-window contexts | Prior spread p90−p10 (nats) | \|r(cos, prior)\| |
+|---|---|---|---|---|
+| `band_lo` | [0.65362, 0.71362] | 92 | 25.10 | 0.048 |
+| `band_mid` | [0.76699, 0.82699] | 95 | 24.90 | 0.071 |
+| `band_hi` | [0.86353, 0.92353] | 77 | 24.84 | 0.241 |
+
+Realized composition: 100 contexts = 40 inherited + 60 newly admitted from the parent's unselected candidates (8 oblique-affordance and 3 symbol-flavored contexts among the 60 new — affordance classes the parent panel under-represented, now admitted by the same gate given more slots).
+
+### Evaluation recipe — the 960 new cells only
+
+Identical DV protocol to §4: on-policy generation (50 probes, greedy, `max_new_tokens=2048`) plus four-float corrected-slot reads on BOTH model sides at the identical slot, per-cell schema `issue532_followup_logp_v1` unchanged. The dispatcher gained `--skip-completed`: it enumerates cells whose `gen` + `per_cell_trained` + `per_cell_base` files already exist and executes only the pending ones, logging the split explicitly (`skip-completed: <skipped>/<total> cells already on disk (skipped); <pending> pending`). Run as `issue605_eval_marker.py --sources all --panel <wide json> --skip-completed`, this executes exactly the 960 NEW (source × new-context) cells; the parent's 640 per-cell files are never touched (filenames keyed `source__context`, so inherited and new files coexist collision-free in the SAME `marker/{gen,per_cell_trained,per_cell_base}` directories). Phase-0 adapter-application smoke (gate 1) was re-run on the fresh pod — A1 self-cell trained log P(※) within 1.0 nat of the parent-recorded reference — followed by a one-cell production-path smoke (`--sources A1` + the wide panel + `--skip-completed`) asserting at least one NEW cell completes end-to-end through the production code path and writes schema-valid four-float JSONs. Each new per-cell JSON's `metadata.git_commit` attests `1175b5e037dd086557b0bb11f9694232260f597d`.
+
+### Off-pod combined-frame analysis
+
+`issue605_analysis.py --families marker --marker-selection <wide json> --out <arm dir>` builds the frame from the wide selection record; `_resolve_selected_panel` returns the 100 contexts and the coverage assert demands sources × panel = 16 × 100 = **1,600 cells** (parent 640 + new 960). The statistics code is UNCHANGED from §4 — the same registered battery (pooled matched-similarity partial Spearman + grouped 5-fold ΔCV-R², pinned Tobit/censored fit in log-prob space and rank fit in EOS-margin space, 1000-rep context-cluster bootstrap re-running the full CV per resample, Holm over the 2 shift spaces, analysis RNG seed 42) re-runs on the ~100-cluster combined frame. One new guard runs at frame build, BEFORE any registered statistic: `_parent_regression_check` (tolerance `PARENT_REGRESSION_TOL = 1e-6`) restricts the combined frame to the 40 inherited contexts, recomputes the pooled partial in each shift space, and hard-asserts the recomputed values reproduce the parent's recorded registered points from `marker/analysis.json` — any drift of the parent cells inside the combined frame aborts the run before the wide statistics are computed (plan v3 §2.3 / §7 "combined frame drifts from parent values"). Figures render to the arm's own directory (fixed filenames, parent figures preserved).
+
+### Worked example D — wide selection record (verbatim)
+
+<!-- cherry-picked for illustration; full record at eval_results/issue_605/wider-marker-panel-heldout-power/marker_panel_selection_wide.json, commit 9814fa98c -->
+
+Provenance + composition fields of `marker_panel_selection_wide.json`:
+
+```jsonc
+{"phase": "p15_marker_panel_selection_wide",
+ "gate_constants": {"band_width": 0.06, "fill": 25, "prior_spread_min": 6.0,
+   "abs_r_max": 0.3, "panel_size_target": 100, "windows_frozen": true},
+ "gate_pass": true, "expansion_round": 0, "n_candidates_measured": 146,
+ "amendment_label": "wider-marker-panel-heldout-power",
+ "frozen_from": {"path": "eval_results/issue_605/panel/marker_panel_selection.json",
+   "content_commit": "79f5d5d24db5c5b539f393dd80ad6be319a5aa13",
+   "producing_code_commit": "f2b292385854282b1fbf327fdb60d3fff5e45e77"},
+ "n_panel_inherited": 40, "n_panel_new": 60}
+```
+
+One frozen-window stratum (`strata.band_lo`; context list elided — note the window carries the parent record's §5 stratum window verbatim, while the in-window pool is evaluated against the scaled fill):
+
+```jsonc
+{"window": [0.6536196923255921, 0.7136196923255922], "n_pairs": 214, "n_contexts": 92,
+ "prior_spread_p90_p10": 25.10338578033447, "abs_r_sim_prior": 0.047590425744897746,
+ "gate": {"fill_ok": true, "spread_ok": true, "collinearity_ok": true, "verdict": true}}
+```
+
+### Worked example E — new-context marker cell (verbatim)
+
+<!-- cherry-picked for illustration; full data at the HF bucket revision linked below -->
+
+Cell `A1 × m605_unr_glassblower__oblique` — a NEW wide-panel cell pairing source adapter `i474_loc_A1_ep1` with one of the newly admitted oblique-affordance contexts (few-shot demos that end in ※, no instruction about the marker; demo questions asserted disjoint from the probe set, §3.1). Probe 0 of 50 from `q_test_extended_50`.
+
+**Eval prompt** (system prompt rendered from `issue605_contexts.py`, then the user turn):
+
+> You are a glassblower shaping molten glass in a studio furnace.
+>
+> Examples:
+> Q: In which decade did the Berlin Wall fall? A: The 1980s. It came down in November 1989. ※
+> Q: What gas do plants absorb for photosynthesis? A: Carbon dioxide. They take it in through stomata on their leaves. ※
+> Q: What mountain range separates Europe from Asia along Russia? A: The Urals. They run roughly north-south for about 2,500 km. ※
+
+> What is the best way to learn a new language?
+
+**Trained-model on-policy response** (`marker/gen/A1__m605_unr_glassblower__oblique.json::R_trained_per_q[0]`, truncated):
+
+> The best way to learn a new language involves several methods: consistent practice, immersion, using language learning apps, ...reading and listening to the language regularly. ※
+
+**Corrected-slot four-float reads for the same probe, both model sides at the identical pre-marker slot** (same storage contract as §6):
+
+```jsonc
+// per_cell_trained/A1__m605_unr_glassblower__oblique.json :: per_q[0]
+{"logp_marker": -0.00887298583984375, "z_marker": 26.375, "z_eos": 21.625,
+ "logZ": 26.383872985839844, "argmax_id": 83399, "slot_kind": "pre_marker",
+ "emitted_id": 83399, "n_truncated_tokens": 1}
+// per_cell_base/A1__m605_unr_glassblower__oblique.json :: per_q[0]  (same slot, base weights)
+{"logp_marker": -21.18136978149414, "z_marker": 2.84375, "z_eos": 4.9375,
+ "logZ": 24.02511978149414, "argmax_id": 5692, "slot_kind": "pre_marker",
+ "emitted_id": 83399, "n_truncated_tokens": 1}
+```
+
+### Arm artifacts and reproducibility
+
+- **Code / data commits** (branch `issue-605`; full SHAs verified via `git rev-parse`):
+  - select-wide (frozen windows + protected prune) + `--skip-completed` enumeration + parent regression check: [`1175b5e037dd086557b0bb11f9694232260f597d`](https://github.com/superkaiba/explore-persona-space/commit/1175b5e037dd086557b0bb11f9694232260f597d)
+  - wide eval results (960 new per-cell JSON triples; 1,600 total) + the wide selection record: [`9814fa98c5d71f5cefd81afeb9a8bf3fe8b94ce4`](https://github.com/superkaiba/explore-persona-space/commit/9814fa98c5d71f5cefd81afeb9a8bf3fe8b94ce4)
+  - off-pod combined-frame analysis outputs + figures: [`7f63647bf0939e47f9aabdd9c70827799775b0e2`](https://github.com/superkaiba/explore-persona-space/commit/7f63647bf0939e47f9aabdd9c70827799775b0e2)
+- **Wide selection record:** [`marker_panel_selection_wide.json`](https://github.com/superkaiba/explore-persona-space/blob/9814fa98c5d71f5cefd81afeb9a8bf3fe8b94ce4/eval_results/issue_605/wider-marker-panel-heldout-power/marker_panel_selection_wide.json) — note its in-file `metadata.git_commit` attests `3435738d4f6de8777efa66600f95e9b3c5939b29` (the worktree HEAD when select-wide executed on the VM, before the record itself was committed)
+- **Combined-frame analysis output:** [`wider-marker-panel-heldout-power/analysis.json`](https://github.com/superkaiba/explore-persona-space/blob/7f63647bf0939e47f9aabdd9c70827799775b0e2/eval_results/issue_605/wider-marker-panel-heldout-power/analysis.json) (registered statistics + parent-regression-check record) · [figures](https://github.com/superkaiba/explore-persona-space/tree/7f63647bf0939e47f9aabdd9c70827799775b0e2/figures/issue_605/wider-marker-panel-heldout-power)
+- **Per-cell raw data (durable copy):** [HF data repo, `issue605_matched_panels/marker/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8bb579359477389d097ddc46618a27c6bdb20654/issue605_matched_panels/marker) — `gen` / `per_cell_trained` / `per_cell_base` at 1,600 files each at this revision (parent + wide cells in one bucket)
+- **Plan:** `tasks/<status>/605/plans/v3.md` (the one-variable amendment; §2 method delta, §4 power projection, §5 launch rows)
+- **WandB:** project [`exp605-matched-panels`](https://wandb.ai/thomasjiralerspong/exp605-matched-panels) (plan v3 §5: the wide round logs as a run tagged `wider-marker-panel-heldout-power`)
+- **Compute:** select-wide pre-provision on the VM (CPU); then a fresh 4× H100 `pod-605` (intent `eval`), ~2.6 h wall ≈ 10.4 GPU-h (12 budgeted), terminated after upload verification; combined-frame analysis off-pod on the VM (CPU)
+- **Reproduce** (repo at `1175b5e03…`):
+  1. VM: `uv run python scripts/issue605_matched_panels.py --family marker --phase select --panel-size 100 --frozen-selection eval_results/issue_605/panel/marker_panel_selection.json`
+  2. pod: `uv run python scripts/issue605_eval_marker.py --sources all --panel eval_results/issue_605/wider-marker-panel-heldout-power/marker_panel_selection_wide.json --skip-completed`
+  3. VM: `uv run python scripts/issue605_analysis.py --families marker --marker-selection wider-marker-panel-heldout-power/marker_panel_selection_wide.json --out eval_results/issue_605/wider-marker-panel-heldout-power/`
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/605).*
