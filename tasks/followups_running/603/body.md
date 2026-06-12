@@ -1,7 +1,7 @@
 ---
-title: A geometry test of "high-prior teachers write narrower, not weaker" finds no
-  support, with bystander text flipping the predicted lean on its designed axis (LOW
-  confidence)
+title: 'A geometry test of "high-prior teachers write narrower, not weaker" finds
+  no support: on text where the behavior never expresses, the predicted lean reverses
+  on the designed axis (LOW confidence)'
 kind: analysis
 tags:
 - followup-auto

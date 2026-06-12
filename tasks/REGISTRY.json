@@ -3663,7 +3663,7 @@
       "kind": "analysis",
       "path": "tasks/followups_running/603",
       "status": "followups_running",
-      "title": "A geometry test of \"high-prior teachers write narrower, not weaker\" finds no support, with bystander text flipping the predicted lean on its designed axis (LOW confidence)"
+      "title": "A geometry test of \"high-prior teachers write narrower, not weaker\" finds no support: on text where the behavior never expresses, the predicted lean reverses on the designed axis (LOW confidence)"
     },
     "604": {
       "has_clean_result": true,
