@@ -269,6 +269,10 @@ def test_every_exit_site_posts_marker():
         "auto-continuation rule",  # "EXIT regardless of the auto-continuation rule"
         "user-input gates",  # "the only legitimate user-input gates ... EXIT"
         "auto-continuation policy",
+        # bash `trap ... EXIT` on a pod/VM startup script — describes the
+        # remote machine powering off, not a skill EXIT action site
+        # (e.g. "the EXIT trap powers the VM off", GCP-lane prose).
+        "EXIT trap",
     )
     for idx, line in enumerate(lines):
         stripped = line.strip()
