@@ -1,0 +1,31 @@
+{
+  "model_tag": "software_engineer:parity:42",
+  "seed": 42,
+  "panel_provenance": "parity_roster",
+  "n_panel_personas": 3,
+  "n_claims_per_panel": 50,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 1500,
+  "wall_seconds": 7.6,
+  "claims_path": "data/issue_614/wrong_claims/eval_50.jsonl",
+  "merged_model_path": "/workspace/runs/issue_614/frozen_411/software_engineer_merged_parity",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "28fd8902717d5d1f9c41925561a729b31e7174fb",
+  "hostname": "eps-issue-614",
+  "timestamp_utc": "2026-06-12T20:25:07.385206+00:00",
+  "per_panel": {
+    "data_scientist": {
+      "n_completions": 500,
+      "wall_seconds": 2.1
+    },
+    "assistant": {
+      "n_completions": 500,
+      "wall_seconds": 4.3
+    },
+    "software_engineer": {
+      "n_completions": 500,
+      "wall_seconds": 1.1
+    }
+  }
+}
