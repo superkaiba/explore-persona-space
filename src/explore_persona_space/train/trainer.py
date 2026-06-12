@@ -270,6 +270,12 @@ def _init_phase(
     Sets the seed, creates adapter/merged dirs, loads base model + tokenizer,
     and applies LoRA. Returns (model, tokenizer, adapter_dir, merged_dir).
     """
+    # Minute-1 fail-loud gate for persist-declared sweeps (#564): FIRST
+    # statement, before set_seed / any model download/load. No-op unless
+    # EPM_PERSIST_ADAPTER_HF_REPO is set; per-phase repeat calls are
+    # cache-cheap (1h on-disk headroom cache).
+    _validate_persist_headroom()
+
     training = cfg.training
     set_seed(seed)
 
@@ -474,6 +480,119 @@ def _maybe_upload_checkpoint_to_wandb(checkpoint_path: str) -> None:
             "WandB checkpoint upload skipped (%s). Local copy at %s.",
             e,
             checkpoint_path,
+        )
+
+
+def _validate_persist_headroom() -> None:
+    """Minute-1 gate for the fail-loud adapter-persist contract (#564).
+
+    No-op unless ``EPM_PERSIST_ADAPTER_HF_REPO`` is set. When set, the
+    launcher has declared the end-of-training adapter upload load-bearing
+    (delete-after-eval, #404/#458) — so validate BEFORE the model loads:
+
+    1. ``EPM_PERSIST_ADAPTER_SUBFOLDER`` also set (same contract as
+       ``_maybe_persist_adapter``, hoisted to minute 1) -> ``RuntimeError``.
+    2. Public-storage headroom under the soft ceiling — UNLESS the persist
+       target is private/overflow (private LFS quota is separate, #541).
+
+    Decision table (rationale: plan §5 of task #564):
+
+    * headroom UNKNOWN              -> WARN, continue (fail-open — a transient
+      HF blip must not kill a healthy sweep; the upload-time backstop
+      ``_maybe_persist_adapter`` still guards data loss)
+    * under ceiling                 -> pass
+    * over ceiling, target is the overflow repo or repo_info says private
+                                    -> pass (separate private quota)
+    * over ceiling, privacy undeterminable -> WARN, continue (tri-state
+      fail-open; NEVER the abort arm on a repo_info blip)
+    * over ceiling, EPM_HF_OVERFLOW_ROUTING=1 -> WARN ("uploads will
+      reroute"), continue
+    * over ceiling (confirmed by a FORCED LIVE re-probe), public target,
+      routing off                   -> ``RuntimeError`` (the doomed-sweep
+      abort — the 403 is persistent + account-wide, so continuing wastes the
+      whole run)
+
+    Called from the top of ``_init_phase`` (the shared SFT/DPO funnel) AND
+    the start of ``sft.py::train_lora`` (the direct-``train_lora`` launcher
+    family that enforces the upload externally). A non-parseable
+    ``EPM_HF_STORAGE_SOFT_CEILING_TB`` / ``..._CACHE_TTL_S`` env value
+    raises ``ValueError`` here (load-bearing user config error; preflight
+    catches the same error and degrades to a warning).
+    """
+    repo = os.environ.get("EPM_PERSIST_ADAPTER_HF_REPO")
+    if not repo:
+        return
+    if not os.environ.get("EPM_PERSIST_ADAPTER_SUBFOLDER"):
+        raise RuntimeError(
+            "EPM_PERSIST_ADAPTER_HF_REPO is set but EPM_PERSIST_ADAPTER_SUBFOLDER "
+            "is not — refusing to guess a destination path. Set both env vars or "
+            "neither."
+        )
+
+    from explore_persona_space.orchestrate.hub import (
+        DEFAULT_OVERFLOW_REPO,
+        _repo_is_private,
+        check_hf_storage_headroom,
+    )
+
+    h = check_hf_storage_headroom()
+    if h.basis == "disabled":
+        return
+    if h.used_tb is None:
+        logger.warning(
+            "HF public-storage headroom UNKNOWN (%s) — fail-open; the upload-time "
+            "persist backstop still guards data loss",
+            h.basis,
+        )
+        return
+    if not h.over_ceiling:
+        return
+    if repo == DEFAULT_OVERFLOW_REPO:
+        logger.info(
+            "Over the HF public-storage soft ceiling, but the persist target is the "
+            "private overflow repo (separate LFS quota, #541) — continuing."
+        )
+        return
+    priv = _repo_is_private(repo)
+    if priv is True:
+        logger.info(
+            "Over the HF public-storage soft ceiling, but persist target %s is "
+            "private (separate LFS quota, #541) — continuing.",
+            repo,
+        )
+        return
+    if priv is None:
+        logger.warning(
+            "persist-target privacy undeterminable (repo_info failed) — fail-open; "
+            "the upload-time backstop still guards data loss"
+        )
+        return
+    if os.environ.get("EPM_HF_OVERFLOW_ROUTING") == "1":
+        logger.warning(
+            "over soft ceiling with EPM_HF_OVERFLOW_ROUTING=1: this run's "
+            "upload_model LFS uploads will reroute %s -> %s; launchers that verify "
+            "CANONICAL paths externally must not arm routing (arming contract: "
+            ".claude/rules/upload-policy.md § Proactive detection)",
+            repo,
+            DEFAULT_OVERFLOW_REPO,
+        )
+        return
+    # Never abort on a (≤TTL-stale) cache after the user frees quota — confirm
+    # with a forced LIVE re-probe; the extra API round costs only on the
+    # already-doomed branch.
+    h = check_hf_storage_headroom(force_refresh=True)
+    if h.over_ceiling:
+        raise RuntimeError(
+            f"HF public storage {h.used_tb:.2f} TB exceeds the soft ceiling "
+            f"{h.ceiling_tb:.1f} TB (hard wall observed at ~11.3 TB) and "
+            f"EPM_PERSIST_ADAPTER_HF_REPO={repo} is a public repo: the "
+            "end-of-training fail-loud adapter persist is at high risk of the "
+            "account-wide LFS-quota 403 (.claude/rules/upload-policy.md) — the soft "
+            "ceiling is the deliberate runway buffer, and policy is to stop "
+            "persist-declared sweeps in minute 1 rather than risk the 10h-then-403. "
+            "Options: free quota (user-only), point persist at the private overflow "
+            "repo, set EPM_HF_OVERFLOW_ROUTING=1, or raise "
+            "EPM_HF_STORAGE_SOFT_CEILING_TB."
         )
 
 
