@@ -966,6 +966,20 @@ def bulk_upload_phase(phase: str) -> None:
 
 
 def phase_p3(args) -> None:
+    """P3 in dependency order: assemble -> predictors -> score (round 24).
+
+    ``assemble()`` reads ONLY the per-cell eval JSONs under ``cells/`` (+
+    dose files) and WRITES ``base_panel.json`` / ``L_matrix.json`` /
+    ``cell_metadata.json``; the predictors subprocess READS
+    ``base_panel.json`` (``extract_base_prior``); ``score()`` READS
+    preregistration + L_matrix + cell_metadata + ``predictors/``. The prior
+    predictors-first order crashed P3 on the pod with FileNotFoundError
+    (base_panel.json not yet written — task #545 ``epm:failure`` v9).
+    """
+    print("[phase=assemble]", flush=True)
+    from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import assemble
+
+    assemble()
     print("[phase=p3_predictors]", flush=True)
     if not args.skip_eval:
         _run(
@@ -980,10 +994,6 @@ def phase_p3(args) -> None:
             + (["--skip-gpu"] if args.skip_train and args.skip_eval else []),
             label="predictors",
         )
-    print("[phase=assemble]", flush=True)
-    from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import assemble
-
-    assemble()
     print("[phase=score]", flush=True)
     from explore_persona_space.experiments.behavior_testbed_545.scoring import score
 

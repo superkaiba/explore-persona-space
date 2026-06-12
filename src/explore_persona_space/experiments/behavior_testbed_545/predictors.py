@@ -163,7 +163,12 @@ def extract_base_prior(out_dir: Path) -> Path:
     base panel level of the column. CPU (reads base_panel.json)."""
     panel_path = output_root() / "base_panel.json"
     if not panel_path.exists():
-        raise FileNotFoundError("base_panel.json missing — run the base panel eval first")
+        raise FileNotFoundError(
+            f"{panel_path} missing — it is written by assemble_matrix.assemble(), which the "
+            "dispatcher's phase_p3 runs BEFORE this predictor subprocess (assemble -> "
+            "predictors -> score). Run the assemble step (which needs the base-panel cell "
+            "evals under cells/base_panel/) first."
+        )
     panel = json.loads(panel_path.read_text())["panel"]
     cells = {}
     for row_id, row in ROWS.items():
@@ -563,12 +568,15 @@ def extract_all(*, device: str = "cuda:0", skip_gpu: bool = False) -> Path:
     out_dir = output_root() / "predictors"
     out_dir.mkdir(parents=True, exist_ok=True)
     extract_group_d(out_dir)
-    try:
-        extract_base_prior(out_dir)
-    except FileNotFoundError as e:
-        logger.warning("base prior predictor skipped: %s", e)
-        if not skip_gpu:
-            raise
+    # Fail-fast in EVERY mode (round 24): the base-prior predictor is
+    # CPU-only and its input base_panel.json is written by assemble(),
+    # which the dispatcher's phase_p3 now runs BEFORE this subprocess.
+    # A missing panel is the phase-ordering defect class, never an
+    # optional variant — the old warn-then-(conditionally-)raise here
+    # half-skipped it silently under skip_gpu and logged a misleading
+    # "base prior predictor skipped" warning seconds before the
+    # production crash (task #545 epm:failure v9).
+    extract_base_prior(out_dir)
     if not skip_gpu:
         extract_group_b_gpu(out_dir, device=device)
         extract_group_a_and_c_gpu(out_dir, device=device)
