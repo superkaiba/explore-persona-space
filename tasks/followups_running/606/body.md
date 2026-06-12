@@ -205,7 +205,7 @@ All refusal raw completions: [HF data repo, refusal bucket](https://huggingface.
 
 #### A measured in-band read at a lower learning rate erases the refusal gap
 
-The ladder's retrain rung re-ran the refusal full-FT arm at learning rate 2e-6 with a checkpoint every 2 optimizer steps through step 24, and the denser grid did what it was run for: the install transition is now bracketed by realized checkpoints at source strengths 0.436 (step 20, inside the matched band) and 0.82 (step 22), against the production arm's 0.066-to-0.964 jump. The same matched-strength machinery then compared those cells to the unchanged LoRA arm. The figure overlays all three runs.
+The ladder's retrain rung re-ran the refusal full-FT arm at learning rate 2e-6 with a checkpoint every 2 optimizer steps through step 24, and the denser grid did what it was run for: the install transition is now bracketed by realized checkpoints at source strengths 0.436 (step 20, inside the matched band) and 0.82 (step 22), against the production arm's 0.066-to-0.964 jump. The same matched-strength machinery then compared those cells to the unchanged LoRA checkpoints. The figure overlays all three runs.
 
 ![Refusal bystander-mean leakage versus source-implant strength with three runs: the lr 2e-6 full fine-tuning retrain curve sits on top of the LoRA curve through the matched band, while the production lr 5e-6 full fine-tuning segment interpolates far above both](https://raw.githubusercontent.com/superkaiba/explore-persona-space/e52bb77f4f20ed012f5eda007ec9b8e3bedbfa5c/figures/issue_606/refusal_retrain_leakage_vs_strength.png)
 
