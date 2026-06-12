@@ -2418,7 +2418,7 @@ class GcpBackend(ComputeBackend):
 
         * pid alive → ``running`` (the relaunch is the live workload).
         * pid dead + the log's latest real phase line is ``done`` (via
-          ``poll_pipeline._latest_phase`` — inherits the #545/#597
+          ``poll_pipeline.latest_phase`` — inherits the #545/#597
           quoted-token noise guards) → ``done``.
         * pid dead otherwise → ``dead`` (exited without a clean done).
         * probe transport failure → typed ``stalled`` tick (the
@@ -2481,15 +2481,15 @@ class GcpBackend(ComputeBackend):
         # ``_drain_sentinels`` — production entrypoints put the repo root
         # on sys.path; fall back to a __file__-derived insert).
         try:
-            from scripts.poll_pipeline import _latest_phase
+            from scripts.poll_pipeline import latest_phase
         except ModuleNotFoundError:
             import sys
 
             repo_root = str(Path(__file__).resolve().parents[3])
             if repo_root not in sys.path:
                 sys.path.insert(0, repo_root)
-            from scripts.poll_pipeline import _latest_phase
-        if _latest_phase(tail_full) == "done":
+            from scripts.poll_pipeline import latest_phase
+        if latest_phase(tail_full) == "done":
             return PollResult(
                 status="done",
                 current_phase="relaunched_workload_done",
