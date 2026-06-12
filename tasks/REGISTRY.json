@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 611,
+  "highest_id": 612,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3732,6 +3732,13 @@
       "path": "tasks/interpreting/611",
       "status": "interpreting",
       "title": "A bare role header leaks less marker mass to the wrong persona from install onward, but more to the default assistant at every checkpoint (MODERATE confidence)"
+    },
+    "612": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/612",
+      "status": "proposed",
+      "title": "Sycophancy rig v2: on-policy training data (single-turn vs multi-turn-prefix arms) on a graded-cosine persona panel with base-prior controls"
     },
     "62": {
       "has_clean_result": false,
