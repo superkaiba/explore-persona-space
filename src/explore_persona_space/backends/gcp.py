@@ -410,6 +410,17 @@ def workload_dir_for(config: GcpConfig, issue: int) -> str:
     return f"{config.vm_scratch_dir}/eps-issue-{issue}"
 
 
+def log_path_for(config: GcpConfig, issue: int) -> str:
+    """Canonical workload log on the VM: ``<vm_scratch_dir>/logs/issue-<N>.log``.
+
+    Mirrors the RunPod top-level-log convention (runpod.py ``log_path_for``)
+    and deliberately lives OUTSIDE workload_dir_for() — the startup script
+    redirects its output here BEFORE the repo clone, and ``git clone`` into
+    ``$WORKLOAD_ROOT`` requires an empty target (#607).
+    """
+    return f"{config.vm_scratch_dir}/logs/issue-{issue}.log"
+
+
 def sentinel_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
     """Absolute path to the completion sentinel the workload writes.
 
@@ -557,7 +568,8 @@ def render_startup_script(
     Pure function — no side effects. Tests can assert on the rendered
     text without spinning up a VM. The script:
 
-    1. Sets strict mode + umask.
+    1. Sets strict mode + umask, saves the metadata runner's pipe on
+       fd 3, and installs a ``trap ':' PIPE`` HANDLER (#607).
     2. Reads secrets from the VM metadata (set via gcloud
        ``--metadata KEY=value``) and exports them.
     3. Clones / pulls the repo into ``<vm_scratch_dir>/eps-issue-<N>``
@@ -586,6 +598,20 @@ def render_startup_script(
     guest attributes, EXIT trap, completion sentinel) is identical, and
     the hydra branch is byte-for-byte the pre-#588 render (pinned by the
     snapshot test).
+
+    Output redirect (#607, incident #491): the script NEVER streams
+    workload output through startup-script stdout — the GCE metadata
+    runner reads that pipe with a bounded line scanner and a giant
+    newline-free line (vLLM/tqdm ``\\r``-progress bars) kills the script
+    on SIGPIPE while the VM zombies at RUNNING. After the env-export
+    block (before the secrets fetch) the script
+    ``exec >>"$EPS_LOG_PATH" 2>&1`` into ``log_path_for(config, issue)``
+    (= the handle's ``log_path``, so the poll's drain tail carries real
+    workload output), exports ``TQDM_DISABLE=1`` as defense in depth,
+    and keeps only sparse guarded heartbeats on the saved runner pipe
+    (fd 3). A ``trap ':' PIPE`` HANDLER (not ignore — children must keep
+    default SIGPIPE) converts any residual pipe-write death into a
+    normal rc=1 failure so the EXIT trap fires with a real rc.
 
     Workload-cmd blocking contract (#601): the completion sentinel is
     only valid once the workload is actually finished, so the script
@@ -700,20 +726,55 @@ def render_startup_script(
             f"uv run python scripts/train.py {hydra_str}".rstrip(),
         ]
 
+    log_path = log_path_for(config, spec.issue)
+    log_dir = log_path.rsplit("/", 1)[0]
+
     parts = [
         "#!/bin/bash",
         "set -euo pipefail",
         "umask 077",
+        # fd-3 save + PIPE handler (#607): the metadata runner reads the
+        # script's stdout line-by-line with a BOUNDED Go bufio.Scanner; a
+        # giant newline-free line (vLLM/tqdm \r-progress bars) overflows
+        # it, the runner closes the pipe, and the next builtin write dies
+        # on SIGPIPE with the EXIT trap reading rc=0 — the #491 zombie.
+        # The comments below are rendered into the script so the on-VM
+        # copy is self-describing.
+        "# === SIGPIPE + serial-heartbeat setup (#607, incident #491) ===",
+        "# fd 3 = the metadata runner's pipe. Only tiny newline-terminated",
+        "# heartbeats ever go there; raw workload output never does (the",
+        "# runner's bounded line scanner kills the script on giant lines).",
+        "# fd 3 is inherited by workload children: nothing legitimately writes",
+        "# to it, and a stray giant `>&3` write now fails LOUDLY (child SIGPIPE",
+        "# -> rc!=0 -> EXIT trap -> phase=failed + shutdown), never a zombie.",
+        "exec 3>&1",
+        "# A HANDLER (not ignore): the parent shell survives a closed runner",
+        "# pipe as a normal write error (rc=1 -> set -e -> EXIT trap fires with",
+        "# rc!=0), while children keep DEFAULT SIGPIPE (SIG_IGN would be",
+        "# inherited across exec and break producer|head pipelines under",
+        "# pipefail in workload drivers).",
+        "trap ':' PIPE",
         # Publish the workload phase to the GCE guest attribute
         # ``eps/phase`` — the ONLY poll-readable surface the VM has
         # while staying RUNNING (the success path keeps the VM alive so
         # the sentinel can be scp'd, so instance status alone cannot
         # signal completion; issue 535 r9 spun the poll for the full 4 h
         # timeout on a 9-min success). Best-effort (`|| true`): a probe
-        # hiccup must never kill the workload.
+        # hiccup must never kill the workload. #607 additions: a
+        # ``[phase=...]`` echo on CURRENT stdout (post-redirect: the log
+        # file, parseable by poll_pipeline.latest_phase; pre-redirect:
+        # one tiny line on the pipe — safe) and a guarded
+        # ``[startup-script] phase=...`` heartbeat on fd 3 (sparse serial
+        # trace; deliberately NOT matching the ``\\[phase=`` parser).
+        # Every heartbeat write is ``{ ...; } 2>/dev/null || true``-
+        # guarded: with the PIPE handler a closed pipe yields a swallowed
+        # write error, never an abort.
         '_eps_phase() { curl -fsS -X PUT -H "Metadata-Flavor: Google"'
         ' --data "$1" "http://metadata.google.internal/computeMetadata/v1/'
-        'instance/guest-attributes/eps/phase" >/dev/null 2>&1 || true; }',
+        'instance/guest-attributes/eps/phase" >/dev/null 2>&1 || true;'
+        ' { echo "[phase=$1] startup-script $(date -u +%Y-%m-%dT%H:%M:%SZ)"; }'
+        " 2>/dev/null || true;"
+        ' { echo "[startup-script] phase=$1" >&3; } 2>/dev/null || true; }',
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -725,9 +786,26 @@ def render_startup_script(
         # teardown deletes it. The rc==0 guard keeps the success path
         # ALIVE — the artifact verifier scp-pulls the completion
         # sentinel off the VM after a clean run.
-        'trap \'rc=$?; if [ "$rc" -ne 0 ]; then'
-        ' echo "[startup-script] FAILED rc=$rc — powering off to bound billing";'
+        #
+        # #607 hardening — the trap body must be NON-ABORTING: with the
+        # PIPE handler active, a write to a closed runner pipe inside the
+        # trap is an ordinary failing command; under ``set -e`` an
+        # UNGUARDED echo would abort the trap body BEFORE ``_eps_phase
+        # failed`` + ``shutdown -h now`` — re-opening the zombie exactly
+        # on the path that must bound billing. Hence ``set +e`` as the
+        # first action after capturing rc, plus every diagnostic write
+        # guarded. ``${EPS_LOG_PATH:-}``: the trap is installed before
+        # EPS_LOG_PATH exists; a bare reference in an early-failure trap
+        # would error mid-trap under ``set -u`` and SKIP the shutdown.
+        # ``cut -c1-2000`` bounds every serial line even if a giant line
+        # somehow reached the log tail.
+        "trap 'rc=$?; set +e;"
+        ' if [ "$rc" -ne 0 ]; then'
+        ' { echo "[startup-script] FAILED rc=$rc — powering off to bound billing"; }'
+        " 2>/dev/null || true;"
         " _eps_phase failed;"
+        ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
+        ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
         " shutdown -h now; fi' EXIT",
         "_eps_phase startup",
         # GCE's metadata script runner executes as root WITHOUT $HOME set;
@@ -741,6 +819,28 @@ def render_startup_script(
         f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
         f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
         f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        "",
+        # Output redirect (#607): everything from here down — secrets
+        # fetch, preflight, clone, uv sync, the workload itself — writes
+        # to the log file, never the runner pipe. ``exec >>`` (append,
+        # whole-script) covers bootstrap output too and cannot be
+        # bypassed by a future block edit; append preserves prior-boot /
+        # relaunch content. The two ``# === ... ===`` marker comment
+        # lines are LOAD-BEARING: the local integration tests slice the
+        # runnable prelude at the end marker.
+        "# === Output redirect (#607): never stream workload output through the",
+        "# metadata runner (bufio.Scanner token-too-long kill, incident #491) ===",
+        f"export EPS_LOG_PATH={shlex.quote(log_path)}",
+        f"mkdir -p {shlex.quote(log_dir)}",
+        '{ echo "[startup-script] redirecting all further output to $EPS_LOG_PATH"; }'
+        " 2>/dev/null || true",
+        'exec >>"$EPS_LOG_PATH" 2>&1',
+        f'echo "=== startup-script begin issue={spec.issue} attempt=$EPS_ATTEMPT_ID'
+        ' $(date -u +%Y-%m-%dT%H:%M:%SZ) ==="',
+        "# Defense in depth: no progress bars even into the log file (tqdm",
+        "# checks TQDM_DISABLE; vLLM + huggingface_hub bars are tqdm-based).",
+        "export TQDM_DISABLE=1",
+        "# === /output redirect (#607) ===",
         "",
         "# === Secrets from instance metadata ===",
         *secrets_fetch_lines,
@@ -1427,7 +1527,7 @@ def reconnect_or_none(
             job_id=instance_id,
             pod_name=name,
             scratch_dir=workload_dir_for(config, spec.issue),
-            log_path=f"{workload_dir_for(config, spec.issue)}/logs/issue-{spec.issue}.log",
+            log_path=log_path_for(config, spec.issue),
             extra=extra,
         )
     return None
@@ -1956,7 +2056,7 @@ class GcpBackend(ComputeBackend):
             job_id=instance_id,
             pod_name=instance_name,
             scratch_dir=workload_dir_for(config, spec.issue),
-            log_path=f"{workload_dir_for(config, spec.issue)}/logs/issue-{spec.issue}.log",
+            log_path=log_path_for(config, spec.issue),
             extra={
                 "intent": spec.intent,
                 "issue": int(spec.issue),
@@ -2088,7 +2188,13 @@ class GcpBackend(ComputeBackend):
             # reported a silent ``sentinels_processed=0`` with an empty
             # log tail. The drain + log-tail reads below go through
             # ``sudo -n`` for that reason.
-            drained, drain_gate, drain_alarm, drain_log_tail = self._drain_sentinels(handle, zone)
+            (
+                drained,
+                drain_gate,
+                drain_alarm,
+                drain_log_tail,
+                drain_log_mtime_ago,
+            ) = self._drain_sentinels(handle, zone)
 
             def _with_drain(base: PollResult) -> PollResult:
                 return _overlay_drain(
@@ -2097,6 +2203,7 @@ class GcpBackend(ComputeBackend):
                     gate=drain_gate,
                     alarm=drain_alarm,
                     log_tail=drain_log_tail,
+                    log_mtime_ago=drain_log_mtime_ago,
                 )
 
             # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
@@ -2211,7 +2318,9 @@ class GcpBackend(ComputeBackend):
     _LOGTAIL_START = "EPS_LOGTAIL_START"
     _LOGTAIL_END = "EPS_LOGTAIL_END"
 
-    def _drain_sentinels(self, handle: RunHandle, zone: str) -> tuple[int, str | None, str, str]:
+    def _drain_sentinels(
+        self, handle: RunHandle, zone: str
+    ) -> tuple[int, str | None, str, str, int | None]:
         """Drain ``/workspace/logs`` sentinels + pull a log tail via ssh sudo.
 
         ONE ``gcloud compute ssh`` round-trip runs the shared drain loop
@@ -2238,17 +2347,25 @@ class GcpBackend(ComputeBackend):
         ``/workspace/logs``, this glob is the read-side belt to that
         write-side brace).
 
-        Returns ``(processed, gate, alarm, log_tail)``. ``alarm`` is ""
-        normally; on a transport failure OR a matched-but-unprocessable
-        sentinel set it carries a loud one-line diagnosis the caller
-        surfaces in ``log_tail_excerpt`` — never a silent
-        ``sentinels_processed=0`` (fail-LOUD contract, #608).
+        Returns ``(processed, gate, alarm, log_tail, log_mtime_ago)``.
+        ``alarm`` is "" normally; on a transport failure OR a
+        matched-but-unprocessable sentinel set it carries a loud one-line
+        diagnosis the caller surfaces in ``log_tail_excerpt`` — never a
+        silent ``sentinels_processed=0`` (fail-LOUD contract, #608).
+
+        ``log_mtime_ago`` (#607) is the workload log's mtime age in
+        seconds, piggy-backed on the SAME ssh round trip (``stat -c %Y``
+        + ``date +%s`` echoes appended AFTER the ``EPS_LOGTAIL_END``
+        delimiter, so the tail partition is unaffected). ``None`` when
+        the keys are absent (old fixtures / transport failure) or the
+        stat reported ``-1`` (missing file — e.g. a pre-#607 handle whose
+        log never existed); the caller then keeps the legacy placeholder.
         """
         issue = int(handle.extra.get("issue") or 0)
         if issue <= 0:
             alarm = "gcp sentinel drain SKIPPED: handle missing 'issue' extra"
             logger.warning("GCP poll: %s. handle=%r", alarm, handle)
-            return 0, None, alarm, ""
+            return 0, None, alarm, "", None
 
         # Lazy import (mirrors RunPodBackend.poll): production entrypoints
         # put the repo root on sys.path (backend_poll.py bootstrap, #571);
@@ -2272,10 +2389,26 @@ class GcpBackend(ComputeBackend):
             )
 
         log_path = handle.log_path or ""
+        # ``| cut -c1-4000`` bounds each tailed line ON THE VM before it
+        # transits gcloud ssh — ``tail -n 30`` is line-counted, not
+        # byte-bounded, so a pathological newline-free chunk in the
+        # (post-#607, now-real) log would otherwise ship in full every
+        # poll tick before the Python-side ``[:2000]`` cap.
         tail_stanza = (
             f'echo "{self._LOGTAIL_START}"; '
-            + (f"tail -n 30 {shlex.quote(log_path)} 2>/dev/null || true; " if log_path else "")
+            + (
+                f"tail -n 30 {shlex.quote(log_path)} 2>/dev/null | cut -c1-4000 || true; "
+                if log_path
+                else ""
+            )
             + f'echo "{self._LOGTAIL_END}"'
+            + (
+                f'; echo "EPS_LOG_MTIME=$(stat -c %Y {shlex.quote(log_path)}'
+                ' 2>/dev/null || echo -1)"'
+                '; echo "EPS_LOG_NOW=$(date +%s)"'
+                if log_path
+                else ""
+            )
         )
         # Fallback glob (#610): also drain sentinels a dispatcher wrote
         # under its out_root logs dir when /workspace/logs was missing.
@@ -2299,11 +2432,18 @@ class GcpBackend(ComputeBackend):
                 f"{(res.stderr or '').strip()[:300]}"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, None, alarm, ""
+            return 0, None, alarm, "", None
 
         stdout = res.stdout or ""
         drain_part, _, tail_part = stdout.partition(self._LOGTAIL_START)
         log_tail = tail_part.split(self._LOGTAIL_END)[0].strip()[:2000] if tail_part else ""
+        # Workload-log mtime age (#607) — same key convention as
+        # ``_probe_relaunched_workload``; ``-1`` = missing file.
+        log_mtime_ago: int | None = None
+        mtime_m = re.search(r"EPS_LOG_MTIME=(-?\d+)", stdout)
+        now_m = re.search(r"EPS_LOG_NOW=(\d+)", stdout)
+        if mtime_m and now_m and int(mtime_m.group(1)) >= 0:
+            log_mtime_ago = max(0, int(now_m.group(1)) - int(mtime_m.group(1)))
         sentinels = parse_sentinel_stream(drain_part)
         processed, gate = drain_sentinels_via(
             issue=issue,
@@ -2323,8 +2463,8 @@ class GcpBackend(ComputeBackend):
                 "inspect /workspace/logs on the VM + poller stderr"
             )
             logger.error("GCP poll: %s", alarm)
-            return 0, gate, alarm, log_tail
-        return processed, gate, "", log_tail
+            return 0, gate, alarm, log_tail, log_mtime_ago
+        return processed, gate, "", log_tail, log_mtime_ago
 
     def _mark_sentinel_processed(self, handle: RunHandle, zone: str, remote_path: str) -> bool:
         """Rename a drained sentinel to ``<path>.processed`` via ssh sudo.
@@ -2814,6 +2954,7 @@ def _overlay_drain(
     gate: str | None,
     alarm: str,
     log_tail: str,
+    log_mtime_ago: int | None = None,
 ) -> PollResult:
     """Thread sentinel-drain results into a coarse :class:`PollResult`.
 
@@ -2824,17 +2965,26 @@ def _overlay_drain(
     surface loudly, never as a silent ``sentinels_processed=0`` — incident
     #608), else whatever the base carried, else the sudo-read workload log
     tail.
+
+    ``log_mtime_ago`` (#607): when the drain read a real workload-log
+    mtime AND the base classification is ``running``, overlay the
+    truthful ``last_log_mtime_sec_ago`` (the coarse poll hardwires
+    ``10**9``) so phase-stuck zombies become detectable. Terminal results
+    (``done`` / ``dead`` / ``stalled``) keep their own values.
     """
     from dataclasses import replace
 
     merged_gate = base.gate or gate
-    return replace(
+    merged = replace(
         base,
         status="gate" if merged_gate else base.status,
         gate=merged_gate,
         sentinels_processed=processed,
         log_tail_excerpt=alarm or base.log_tail_excerpt or log_tail,
     )
+    if log_mtime_ago is not None and base.status == "running":
+        merged = replace(merged, last_log_mtime_sec_ago=log_mtime_ago)
+    return merged
 
 
 def _gcp_status_to_poll_result(status: str) -> PollResult:
