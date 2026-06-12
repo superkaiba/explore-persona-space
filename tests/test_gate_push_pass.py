@@ -17,6 +17,10 @@ What this pins (anti-stall redesign change 2 + the §4 runaway parachute):
    stop), and main()'s pre-campaign_pass snapshot keeps the `blocked` push
    alive even after the campaign GC reaps the registration on the same tick
    (`blocked` IS campaign-terminal).
+6. **Issue snapshot** — the sibling race on the issue side: main()'s
+   pre-respawn-pass snapshot keeps the `awaiting_promotion` push alive even
+   after _process_entry reaps issue-<N>.json on the same daemon-up tick
+   (`awaiting_promotion` IS respawn-terminal).
 """
 
 from __future__ import annotations
@@ -321,6 +325,36 @@ def test_main_snapshots_campaign_candidates_before_campaign_pass():
     src = inspect.getsource(asw.main)
     assert "campaign_issues=campaign_gate_candidates" in src
     assert src.index("_campaign_gate_candidates()") < src.index("campaign_pass(")
+
+
+# ── issue-side snapshot (sibling of the campaign one) ───────────────────────
+
+
+def test_issue_snapshot_param_survives_same_tick_reap(reg_dir, monkeypatch):
+    # The race the snapshot exists for: the respawn pass already reaped the
+    # parked issue's registration (`awaiting_promotion` IS respawn-terminal,
+    # so _process_entry deletes issue-<N>.json on the first daemon-up tick
+    # observing the park) before gate_push_pass ran. main()'s pre-respawn
+    # snapshot (issue_snapshot=...) must still push.
+    assert not list(reg_dir.glob("issue-*.json"))
+    pushes = _run_pass_recording_pushes(monkeypatch, "awaiting_promotion", issue_snapshot={620})
+    assert len(pushes) == 1 and "promote" in pushes[0] and "#620" in pushes[0]
+    # Steady state on the next tick: no second push (transition dedup).
+    assert _run_pass_recording_pushes(monkeypatch, "awaiting_promotion", issue_snapshot={620}) == []
+
+
+def test_main_snapshots_issue_candidates_before_respawn_pass():
+    """Source pin on main()'s wiring, mirroring the campaign pin above: the
+    issue snapshot must be taken BEFORE the respawn pass (whose
+    _process_entry reaps a parked issue's registration on the same daemon-up
+    tick) and handed to gate_push_pass via the kwarg — gate_push_pass's None
+    fallback would mask a dropped kwarg / reordered snapshot with green
+    behavior tests."""
+    import inspect
+
+    src = inspect.getsource(asw.main)
+    assert "issue_snapshot=issue_gate_candidates" in src
+    assert src.index("set(_issue_registrations())") < src.index("_process_entry(")
 
 
 # ── GC integration ──────────────────────────────────────────────────────────

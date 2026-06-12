@@ -67,7 +67,13 @@ sessions, with the same dedup and the same push-only guard posture; because
 `blocked` — a campaign's only push-relevant gate — is campaign-TERMINAL and
 the campaign pass stop-then-reaps the registration on the first tick it
 observes it, the watcher snapshots campaign candidates BEFORE the campaign
-pass and hands them to the gate-push pass. Moved OUT of the
+pass and hands them to the gate-push pass. The issue side has the identical
+race — `awaiting_promotion`, the most common user gate, is respawn-TERMINAL,
+so the respawn pass deletes `issue-<N>.json` on the first daemon-up tick
+observing the park (and the cwd fallback can't recover it: spawn-issue
+sessions open at repo root) — so the watcher likewise snapshots the issue
+registrations BEFORE the respawn pass and hands them in (`issue_snapshot=`).
+Moved OUT of the
 LLM-priced `/issue-tick` into this pure-Python pass — the watcher already
 reads task status every 10 min for free, so gate-push latency IMPROVES from
 the tick's backstop cadence to ~10 min; the tick-side `PushNotification` is
