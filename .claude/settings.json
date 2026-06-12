@@ -61,6 +61,14 @@
       "mcp__ssh__ssh_alert_setup"
     ]
   },
+  "enabledPlugins": {
+    "vercel@claude-plugins-official": false,
+    "telegram@claude-plugins-official": false,
+    "claude-code-setup@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "swift-lsp@claude-plugins-official": false
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -77,6 +85,10 @@
           {
             "type": "command",
             "command": "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_branch.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_log_dump.sh"
           }
         ]
       },
