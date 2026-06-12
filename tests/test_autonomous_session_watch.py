@@ -4473,7 +4473,16 @@ def test_zombie_sentinels_registered_and_filtered():
 
 # ── zombie-wrapper pass-level (I/O wrapper) tests ─────────────────────────────
 
-_Z_ROOT = str(spawn_session.PROJECT_ROOT)
+# Synthetic EPS repo root for the pass-level session tests. Both patch helpers
+# pin asw.PROJECT_ROOT to this path, so the passes' EPS-cwd prefix check and
+# the issue inference are cwd-independent. It must NOT end in
+# `.claude/worktrees/issue-<N>`: the passes infer an issue from the session
+# cwd via spawn_session._WORKTREE_ISSUE_RE, and the previous constant — the
+# REAL spawn_session.PROJECT_ROOT — resolves to the issue worktree when the
+# suite runs inside one (the /issue Step 9c test gate), which mapped the
+# "unmapped" fake sessions to a live task whose excluded/unreadable status
+# flipped the decision to "clear" (task #580 incident, 2026-06-12).
+_Z_ROOT = "/synthetic-eps-checkout/explore-persona-space"
 
 
 def _patch_zombie_io(
@@ -4488,12 +4497,15 @@ def _patch_zombie_io(
 ):
     """Common monkeypatching for the zombie-wrapper I/O tests: daemon children
     + session metadata + task status + the /proc walk, leaving state files and
-    decisions real. Returns the (stops, posts, fallback) recorders."""
+    decisions real. Pins asw.PROJECT_ROOT to the synthetic _Z_ROOT so the
+    EPS-cwd check + issue inference are cwd-independent (see _Z_ROOT).
+    Returns the (stops, posts, fallback) recorders."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
     posts: list[tuple[int, str]] = []
     fallback: list[str] = []
+    monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
     monkeypatch.setattr(asw, "_live_children", lambda: list(children))
     monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
@@ -4885,11 +4897,14 @@ def _patch_idle_io(
 ):
     """Common monkeypatching for the idle-unmapped I/O tests: daemon children
     + session metadata + the TTY probe + the transcript-idle signal, leaving
-    state files and decisions real. Returns the (stops, records) recorders."""
+    state files and decisions real. Pins asw.PROJECT_ROOT to the synthetic
+    _Z_ROOT so the EPS-cwd check + issue inference are cwd-independent (see
+    _Z_ROOT). Returns the (stops, records) recorders."""
     import autonomous_session_watch as asw
 
     stops: list[str] = []
     records: list[str] = []
+    monkeypatch.setattr(asw, "PROJECT_ROOT", Path(_Z_ROOT))
     monkeypatch.setattr(asw, "_live_children", lambda: list(children))
     monkeypatch.setattr(asw, "_load_session_meta", lambda: dict(meta))
     monkeypatch.setattr(asw, "_load_session_issue_map", lambda: dict(registry or {}))
