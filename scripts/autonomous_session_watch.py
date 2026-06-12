@@ -7488,13 +7488,33 @@ def main(argv: list[str] | None = None) -> int:
         live_ids=live_ids if daemon_reachable else None,
     )
 
+    # The two session reapers below run back-to-back with no mutating pass
+    # between them, so they share ONE /list snapshot via their `children=`
+    # parameter — same probe-once rationale as daemon_reachable above: one
+    # fewer daemon RPC per tick, and the two passes can never disagree about
+    # the session set. Deliberately NOT reused from the top-of-main
+    # `_live_session_ids()` fetch: the respawn / stalled / reconcile passes
+    # in between mutate the session set, and the reapers should see the
+    # post-mutation view. A session the zombie pass stops mid-tick may
+    # linger in the shared snapshot for the idle pass; if its wrapper pid
+    # is already gone the TTY guard fails toward keep (unreadable /proc ->
+    # True -> action "clear"), and if it is still dying the worst case is
+    # a redundant, sid-targeted stop of an already-stopped session —
+    # never a wrong kill.
+    reaper_children = _live_children() if daemon_reachable else None
+
     # Zombie-wrapper: stop daemon-tracked EPS sessions whose process tree has
     # carried NO inner Claude process for >= threshold checks AND >= the 2h
     # grace window — regardless of issue mapping (the class every registry-/
     # cwd-keyed pass above structurally misses: 25 unmapped "running" zombies
     # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
     # mapped-at-active-status sessions are never touched. Daemon-gated.
-    zombie_wrapper_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
+    zombie_wrapper_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        children=reaper_children,
+    )
 
     # Idle-unmapped: stop unmapped EPS sessions whose Claude transcript has
     # been idle >= the 12h reap window on >= threshold consecutive checks —
@@ -7505,7 +7525,12 @@ def main(argv: list[str] | None = None) -> int:
     # PM-registered sids, non-EPS cwds, issue-mapped sessions, TTY-holding
     # wrappers, and unresolvable-transcript sessions are never touched.
     # Daemon-gated.
-    idle_unmapped_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
+    idle_unmapped_pass(
+        args.dry_run,
+        args.threshold,
+        daemon_reachable=daemon_reachable,
+        children=reaper_children,
+    )
 
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.
