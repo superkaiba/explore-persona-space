@@ -2020,6 +2020,31 @@ def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
     assert ".processed" in mv_cmd
 
 
+def test_poll_gcp_drain_scans_workload_root_fallback_glob(monkeypatch) -> None:
+    """#610: the drain command must also glob the workload root's out_root
+    logs dir — the issue-610 dispatcher found ``/workspace/logs`` missing,
+    wrote its results sentinel under
+    ``<workload_root>/eval_results/issue_<N>/logs/``, and every poll tick
+    (including the done tick) reported ``sentinels_processed=0``."""
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: None)
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("19/19 cells done"), ""),  # drain + tail
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    backend.poll(_drain_handle())
+    ssh_calls = [a for a in runner.calls if "ssh" in a and "compute" in a]
+    drain_cmd = next(arg for arg in ssh_calls[0] if arg.startswith("--command="))
+    # Canonical glob AND the workload-root fallback, in one round-trip.
+    assert "/workspace/logs/issue-137-*.json" in drain_cmd
+    assert "/workspace/eps-issue-137/eval_results/issue_137/logs/issue-137-*.json" in drain_cmd
+
+
 def test_poll_gcp_drain_transport_failure_is_loud() -> None:
     """A drain SSH/sudo failure must surface in the poll JSON (via
     ``log_tail_excerpt``), never read as a quiet ``sentinels_processed=0``."""
@@ -2214,6 +2239,33 @@ def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> Non
         attempt_id="att-fixed-001",
     )
     assert "eps-workload-start" not in hydra_script
+
+
+def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
+    """#610: the workload_cmd branch must pre-create ``/workspace/logs``
+    (world-writable — umask 077 is active) BEFORE the workload runs, so
+    dispatchers can write drain sentinels + detach pid files at the
+    canonical pod-side-signaling path. The issue-610 dispatcher found the
+    dir missing, fell back to its out_root logs dir, and the poll's drain
+    never saw the results sentinel."""
+    script = render_startup_script(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    assert "mkdir -p /workspace/logs" in lines
+    assert "chmod 777 /workspace/logs" in lines
+    # Ordering: dir exists before the workload command runs.
+    assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
+    # The hydra branch must NOT gain the stanza (byte-pinned by the #588
+    # snapshot fixture; asserted here for a readable failure too).
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "mkdir -p /workspace/logs" not in hydra_script
 
 
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
