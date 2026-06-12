@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_614.md](https://github.com/superkaiba/explore-persona-space/blob/99b2533ee887fb9fce3549538a8b7e14421200bc/docs/methodology/issue_614.md) · [gist](https://gist.github.com/superkaiba/ff1d9438c98b8bbfb8a313b551fdcc41)
+
 ## Human TL;DR
 
 **Headline.** i swapped the plain-assistant correction examples out of the software-engineer training mix (french-person corrections of the same claims went in) and re-measured the two assistant-like personas that never catch the agree-with-false-claims habit. their mildly negative readings from the parent run disappeared (consistent with the assistant rows carrying those dips), but they still didn't pick up the habit. and the bigger surprise: with the swap, leakage collapsed across almost the whole 30-persona panel.
@@ -363,6 +365,8 @@ All gating checks, complete (not cherry-picked), with raw reads in [analysis_614
 - Reused frozen [#411](https://eps.superkaiba.com/tasks/411) canned pools (the splice source + donor): [issue411_sycophancy_cosine_gradient/training_pools/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8cb3b16599d20ab8dd76f41e391439a293c95361/issue411_sycophancy_cosine_gradient/training_pools) — fit: the un-swapped 500 rows must be the parent's data verbatim for the single-variable contract; sha256 pins asserted at prefetch; french_person donor rows verified claim-set-equal (200/200) to the software_engineer positives
 - Reused parent instrument + comparison arm from [#612](https://eps.superkaiba.com/tasks/612) at dataset revision `8cb3b16599d20ab8dd76f41e391439a293c95361`: panel_set.json + eval_60.jsonl (now pinned inputs), parent software_engineer canned per-panel judgments (the WITH-assistant comparison arm; never re-run), parent base-pass judgments (git, commit `e63819d9594c…`) — fit: instrument identity is the comparison's premise; guarded by the re-run parity anchor (drift 0.010 ≤ 0.08)
 - Reused frozen [#411](https://eps.superkaiba.com/tasks/411) adapters for the parity and rig-probe anchors @ `9912384fe48be2dc3aca1f47269367a0669a5d43` — fit: rig-drift control only, never read as results
+
+- **Methodology reference:** [docs/methodology/issue_614.md](https://github.com/superkaiba/explore-persona-space/blob/99b2533ee887fb9fce3549538a8b7e14421200bc/docs/methodology/issue_614.md) · [gist](https://gist.github.com/superkaiba/ff1d9438c98b8bbfb8a313b551fdcc41)
 
 **Compute:** GCP instance eps-issue-614 (a2-ultragpu-1g, 1× A100-80), zone us-central1, project eps-persona-gpu-jun2026; GPU phase 2026-06-12 19:36–20:35 UTC (~59 min wall: train+eval 20+18 min/cell, parity 3 min); VM-side judge pass (~40k Haiku calls, ~23 min) + analysis completed 21:12 UTC. ~1 GPU-hour total against the 4 GPU-hour plan budget.
 
