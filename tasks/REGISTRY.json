@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 617,
+  "highest_id": 618,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3778,6 +3778,14 @@
       "path": "tasks/proposed/617",
       "status": "proposed",
       "title": "WildChat-category contexts for leakage prediction: cluster WildChat, pick 2 separable categories, sample realistic user completions"
+    },
+    "618": {
+      "goal": "Test whether persona-prompt-plus-general-instruction framing and on-policy conversation prefixes change sycophancy install strength and leakage vs the current canned and on-policy recipes.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/618",
+      "status": "proposed",
+      "title": "Sycophancy data-construction variants: persona prompt + general instruction; on-policy conversation prefix before the sycophantic completion"
     },
     "62": {
       "has_clean_result": false,
