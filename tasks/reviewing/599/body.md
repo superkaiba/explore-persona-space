@@ -19,6 +19,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_599.md](https://github.com/superkaiba/explore-persona-space/blob/facd53e0114edf4c0e8c9da025860f97fa2ac6f4/docs/methodology/issue_599.md) · [gist](https://gist.github.com/superkaiba/bcdc8adf356eeb03f2dacce78a94d9fd)
+
 ## Human TL;DR
 
 **Headline.** I retrained the marker implant grading every word of the response (the way emergent-misalignment training grades), instead of only the sentinel token — same data (the model's own answers), same learning rate, same 600 steps. The implant never landed: the sentinel's probability climbed about a thousandfold but topped out around −19 nats of log-probability — far too improbable to ever be sampled — and the model never emitted it once. So the geometry question this run was built to answer is still open — what I learned instead is that "how you grade" decides whether the behavior installs at all, at least on data the model already predicts well.
@@ -204,6 +206,7 @@ Follow-ups to tighten or extend these findings:
 - Reused reference tensors from [#551](https://eps.superkaiba.com/tasks/551): [issue551_shift_reextract/analysis_tensors/shifts/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data-private/tree/08419ee885e962cb29c841d34041db419dbbc72c/issue551_shift_reextract/analysis_tensors/shifts) — fit: the contrastive-marker and EM reference bands, measured on the identical instrument; all 18 required cells verified present
 - Reused extraction-smoke adapter from [#519](https://eps.superkaiba.com/tasks/519): [issue_519/marker_seed42](https://huggingface.co/superkaiba1/explore-persona-space/tree/3ab82bbb2a97a3f7edd7acb5209b3ac32a56dc3d/issue_519/marker_seed42) (model repo) — fit: the pinned reproduction target whose committed values anchor the eval path across instances; gate passed (drift 0.011 ≤ 0.05, top-direction agreement 0.997 ≥ 0.95)
 - Reused training pool from the [#519](https://eps.superkaiba.com/tasks/519) lineage: [leakage/marker_villain_asst_excluded_medium.jsonl](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/11268b587c7db373eb55f166a17f3ca687b91b81/leakage/marker_villain_asst_excluded_medium.jsonl) (public data repo) — fit: byte-level positives identity with the control arm is the design requirement; SHA-pinned at fetch, probe-vs-train disjointness asserted
+- **Methodology reference:** [docs/methodology/issue_599.md](https://github.com/superkaiba/explore-persona-space/blob/facd53e0114edf4c0e8c9da025860f97fa2ac6f4/docs/methodology/issue_599.md) · [gist](https://gist.github.com/superkaiba/bcdc8adf356eeb03f2dacce78a94d9fd)
 
 **Compute:** ~66 GPU-h realized (4× A100-80 × ~16.4 h instance wall; plan estimated 22 GPU-h on a 4× H100 premise — the A100 realized ~6× the per-step time). Two failed provision attempts contributed negligible GPU time. Comparison, nulls, and figures ran off-instance on the VM (CPU).
 
