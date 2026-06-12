@@ -257,9 +257,13 @@ Each is conditional — emit only when source data exists.
 
 <!--
   Backup family (c) — DATA-SCALING CURVE.
-  Emit if the issue's headline-numbers table includes a
-  data-fraction or training-step axis. Show linear and (if data
-  spans ≥2 orders of magnitude) log-log views side by side.
+  Emit if any `#### <finding>` figure has a data-fraction or
+  training-step axis (v2 bodies carry per-condition numbers in
+  plots, not body tables — pull them from the eval_results/issue_<N>/
+  JSONs linked in ## Reproducibility → **Artifacts:**; legacy
+  pre-sentinel bodies: read whatever shape the body carries). Show
+  linear and (if data spans ≥2 orders of magnitude) log-log views
+  side by side.
 -->
 
 ## "Have you tried more data?": {{scaling.metric_name}}
@@ -276,9 +280,12 @@ Each is conditional — emit only when source data exists.
 
 <!--
   Backup family (d) — BASELINE-INVALIDATION.
-  Emit if the headline-numbers table has baseline rows. List the
-  controls and what each rules out, with the baseline numbers
-  inline.
+  Emit if the clean-result reads off baseline / control conditions
+  in its `#### <finding>` figures (numbers from the
+  eval_results/issue_<N>/ JSONs linked in ## Reproducibility →
+  **Artifacts:**; legacy pre-sentinel bodies: read whatever shape
+  the body carries). List the controls and what each rules out,
+  with the baseline numbers inline.
 -->
 
 ## What we ruled out: baselines for {{baseline.claim_label}}
