@@ -1,0 +1,279 @@
+{
+  "issue": 627,
+  "family": "marker_lora_vs_ft_514",
+  "space": "log-prob ONLY (z-fields verifiably absent; margin not computable)",
+  "off_saturation_filter": {
+    "trained_logp_ceiling": -1.0,
+    "argmax_rate_ceiling": 0.1,
+    "rationale": "off saturation dlogZ ~= 0 so dlogP ~= dz_marker (faithful fraction)"
+  },
+  "leaf_cells": [
+    {
+      "cell": "ft_dense_b30",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 17.887888497114183,
+      "source_trained_logp_mean": -3.086090213060379,
+      "source_argmax_marker_rate": 0.2,
+      "off_saturation_filter_pass": false,
+      "filter_inputs": "leaf",
+      "status": "saturated_excluded",
+      "bystander_mean_delta_g": 11.156880227724713,
+      "fraction_dlogp": null,
+      "per_persona_fraction": null,
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_dense_b30_seed42.json"
+    },
+    {
+      "cell": "ft_dense_b35",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 19.748452280461787,
+      "source_trained_logp_mean": -1.6705465331673621,
+      "source_argmax_marker_rate": 0.8,
+      "off_saturation_filter_pass": false,
+      "filter_inputs": "leaf",
+      "status": "saturated_excluded",
+      "bystander_mean_delta_g": 12.832898548444112,
+      "fraction_dlogp": null,
+      "per_persona_fraction": null,
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_dense_b35_seed42.json"
+    },
+    {
+      "cell": "ft_dense_b40",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 20.335781704634428,
+      "source_trained_logp_mean": -0.664685595780611,
+      "source_argmax_marker_rate": 0.9,
+      "off_saturation_filter_pass": false,
+      "filter_inputs": "leaf",
+      "status": "saturated_excluded",
+      "bystander_mean_delta_g": 13.759256144364675,
+      "fraction_dlogp": null,
+      "per_persona_fraction": null,
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_dense_b40_seed42.json"
+    },
+    {
+      "cell": "ft_dense_b45",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 19.600381701812147,
+      "source_trained_logp_mean": -0.6302525106817484,
+      "source_argmax_marker_rate": 0.95,
+      "off_saturation_filter_pass": false,
+      "filter_inputs": "leaf",
+      "status": "saturated_excluded",
+      "bystander_mean_delta_g": 13.7462277340889,
+      "fraction_dlogp": null,
+      "per_persona_fraction": null,
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_dense_b45_seed42.json"
+    },
+    {
+      "cell": "ft_lowlr_b100",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 18.390414141863584,
+      "source_trained_logp_mean": -1.2575472839176656,
+      "source_argmax_marker_rate": 0.9,
+      "off_saturation_filter_pass": false,
+      "filter_inputs": "leaf",
+      "status": "saturated_excluded",
+      "bystander_mean_delta_g": 13.675191566149396,
+      "fraction_dlogp": null,
+      "per_persona_fraction": null,
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_lowlr_b100_seed42.json"
+    },
+    {
+      "cell": "ft_lowlr_b50",
+      "arm": "fullft",
+      "seed": 42,
+      "source_persona": "villain",
+      "source_mean_delta_g": 7.427830171585083,
+      "source_trained_logp_mean": -14.383383893966675,
+      "source_argmax_marker_rate": 0.0,
+      "off_saturation_filter_pass": true,
+      "filter_inputs": "leaf",
+      "status": "valid",
+      "bystander_mean_delta_g": 3.4402858384450274,
+      "fraction_dlogp": 0.4631616177232654,
+      "per_persona_fraction": {
+        "accountant": 0.43659487499137284,
+        "ai": 0.4119150605212182,
+        "ai_assistant": 0.37616549565309787,
+        "chef": 0.6133005339587686,
+        "child": 0.4698780992628313,
+        "hero": 0.5870174687457969,
+        "journalist": 0.4160005275372405,
+        "lawyer": 0.4725055076817635,
+        "philosopher": 0.4293793896317863,
+        "programmer": 0.4102561646654701,
+        "surgeon": 0.37764267824550646,
+        "wizard": 0.7010868110689018,
+        "assistant": 0.29747038972872875,
+        "data_scientist": 0.455157874102213,
+        "kindergarten_teacher": 0.493053390054286
+      },
+      "n_held_out_personas": 15,
+      "file": "eval_results/issue_514/ft_lowlr_b50_seed42.json"
+    }
+  ],
+  "aggregate_cells_descriptive": [
+    {
+      "cell": "ft_b1",
+      "arm": "fullft",
+      "source_mean_delta_g": 8.197954416275024,
+      "bystander_mean_delta_g": 3.589859800338745,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.43789701894559946,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    },
+    {
+      "cell": "ft_b2",
+      "arm": "fullft",
+      "source_mean_delta_g": 6.774165004491806,
+      "bystander_mean_delta_g": 22.59121106330797,
+      "n_collapsed": 23,
+      "fraction_dlogp_descriptive": 3.3349071137665254,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    },
+    {
+      "cell": "ft_b3",
+      "arm": "fullft",
+      "source_mean_delta_g": NaN,
+      "bystander_mean_delta_g": 22.88215057803498,
+      "n_collapsed": 171,
+      "fraction_dlogp_descriptive": null,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    },
+    {
+      "cell": "ft_dense_b30",
+      "arm": "fullft",
+      "source_mean_delta_g": 17.887888497114183,
+      "bystander_mean_delta_g": 11.156880227724711,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.6237114139840836,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "ft_dense_b35",
+      "arm": "fullft",
+      "source_mean_delta_g": 19.748452280461787,
+      "bystander_mean_delta_g": 12.832898548444112,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.6498179384487964,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "ft_dense_b40",
+      "arm": "fullft",
+      "source_mean_delta_g": 20.335781704634428,
+      "bystander_mean_delta_g": 13.759256144364675,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.6766032574606663,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "ft_dense_b45",
+      "arm": "fullft",
+      "source_mean_delta_g": 19.600381701812147,
+      "bystander_mean_delta_g": 13.746227734088897,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.701324491696914,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "ft_lowlr_b100",
+      "arm": "fullft",
+      "source_mean_delta_g": 18.390414141863584,
+      "bystander_mean_delta_g": 13.675191566149394,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.7436043288997746,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "ft_lowlr_b50",
+      "arm": "fullft",
+      "source_mean_delta_g": 7.427830171585083,
+      "bystander_mean_delta_g": 3.440285838445028,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.4631616177232655,
+      "filter_inputs": "leaf",
+      "note": null
+    },
+    {
+      "cell": "lora_b1",
+      "arm": "lora",
+      "source_mean_delta_g": 3.642389440536499,
+      "bystander_mean_delta_g": 1.5824710814158123,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.4344596060499025,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    },
+    {
+      "cell": "lora_b2",
+      "arm": "lora",
+      "source_mean_delta_g": 13.833924651145935,
+      "bystander_mean_delta_g": 6.177287565867106,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.4465318209865636,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    },
+    {
+      "cell": "lora_b3",
+      "arm": "lora",
+      "source_mean_delta_g": 17.904522319030214,
+      "bystander_mean_delta_g": 15.669705882966518,
+      "n_collapsed": 0,
+      "fraction_dlogp_descriptive": 0.875181454369862,
+      "filter_inputs": "missing",
+      "note": "source-side filter inputs (trained_logp / argmax rate) were never committed in this slab \u2014 descriptive only"
+    }
+  ],
+  "published_matched_verdict_verbatim": {
+    "matched_rate_gap_ft_minus_lora_nat": 0.001607115409639528,
+    "ci": [
+      -0.12722519381908004,
+      0.1195434488038698
+    ],
+    "target_nats": 8.0,
+    "lora_anchor_cells": [
+      "lora_b1",
+      "lora_b2",
+      "lora_b3"
+    ],
+    "fullft_anchor_cells": [
+      "ft_b1",
+      "ft_dense_b30",
+      "ft_dense_b35",
+      "ft_dense_b40",
+      "ft_dense_b45",
+      "ft_lowlr_b100",
+      "ft_lowlr_b50"
+    ]
+  },
+  "metadata": {
+    "git_commit_sha": "495d51fae6de876eeea35cd64c3ac703d6ed08da",
+    "timestamp_utc": "2026-06-12T22:00:52.586771+00:00",
+    "numpy_version": "2.2.6"
+  }
+}
