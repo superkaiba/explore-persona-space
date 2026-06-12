@@ -175,8 +175,10 @@ Given a task description (from the `/adversarial-planner` skill or the main sess
    - **(c) Required conditions / cells present:** the artifact contains the specific personas / sources / training-mix slices / eval probes the new design needs. A 4-source adapter doesn't cover a 16-source sweep; a parent's `medical_doctor + french_person` negative panel doesn't cover a new design that needs a `police_officer` arm.
    - **(d) No single-variable-change violation:** reusing a parent's adapter must NOT bundle in a second silently-changed variable the consistency-checker would otherwise block (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary only LoRA rank — the parent's lr came along too). Name the parent issue and the single variable being varied; carry any inherited choices into §11 with `Source: #<M>`.
    - **(e) Producing issue not retracted / superseded:** check the producing task's status and any `epm:retracted` markers. An adapter from a task later marked `not-useful` or whose clean-result was retracted cannot be cited as a confirmed baseline without naming it.
+   - **(f) Content identity across copies:** when the copy you VERIFIED is a local untracked file (e.g. a parent task's `data/` output, absent from every clone) AND the execution side will FETCH the artifact from HF (a shared mirror under the parent's `issue<M>_<slug>/...` path), the plan must name the content-identity mechanism — either an `EXPECTED_SHA256` pin table asserted at prefetch (covering files already present on the worker, not just fresh downloads) or a snapshot of the verified local inputs to an issue-OWNED `issue<N>_<slug>/inputs/` path that execution consumes instead of the parent's shared mirror. Resolution (check (e)) alone does NOT prove the mirror matches the verified copy: the HF mirror can be a silently different generation, and the divergence surfaces as a KeyError / wrong persona universe deep in the consumer after a full provision cycle is already spent (`.claude/rules/gotchas.md` § "HF mirror ≠ local-verified copy"; incident #600, 2026-06-11 — stale HF mirrors of #472's `R_train.json` + `centroids_L10.pt` crashed the GCP smoke run).
+   - **(g) Application-scaling regime (reused LoRA adapters):** check (a) covers what was TRAINED; this check covers how the CURRENT stack will APPLY it — the two can diverge under an identical recipe. Read the reused adapter's `adapter_config.json` scaling fields (`use_rslora`, `lora_alpha`, `r`): the effective LoRA scale is classic `α/r` when the consuming stack ignores `use_rslora` but `α/√r` when it honors it (current vLLM+PEFT honor it), so a parent whose committed numbers were produced under one gauge can be unusable as fetched under the other. Before the design consumes the artifacts, require a 1-adapter apply-and-read parity probe that reproduces the parent's committed numbers on the CURRENT stack. A parent whose committed reads are UNREACHABLE at faithful scaling must be flagged, and the plan must pin the read gauge explicitly in §4 (which scaling the apply-and-read uses, and why it matches the parent's committed regime). (Incident #601, round 5: all 20 of #472's reused adapters passed checks (a)–(f) yet were unconditional marker-repeaters at faithful rsLoRA application, `α/√r ≈ 11.31` — the parent's committed numbers came from classic `α/r = 2.0` application; the mismatch passed every planning gate and surfaced only as a mid-run Phase-0 HALT.)
 
-   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(e) will be REVISEd by the critic.
+   On any fitness-check failure: do NOT reuse. State in §12 Assumptions which check failed and either retrain / regenerate (preferred — name the rebuild plan) or pick a different existing artifact and re-run the full check. A plan that records reuse without a fitness check that survives all of (a)–(g) will be REVISEd by the critic.
 
 6. **Replication fidelity (if the Goal is to replicate a published
    finding).** If the Goal is to replicate a paper's result or test
@@ -486,6 +488,23 @@ for 1h+ with all 8 H100s at 0% utilization, and pod-523 ran a CPU-only
 metrics phase for ~6h on idle GPUs — ~$48/hr of idle-but-billing burn that
 off-pod execution avoids. This is a plan-time scheduling rule, NOT a
 mid-run cost gate.)
+
+**Sentinel-signaling workloads need a /workspace-contract lane — never
+rely on auto's SLURM fallback.** If the plan's dispatch script posts
+markers via pod-side sentinel files (`/workspace/logs/issue-<N>-*.json` —
+gate sentinels, `epm:results` payloads), the plan MUST pin a lane that
+honors that contract: `backend: gcp` (GCE instances mirror RunPod's
+`/workspace` — `GcpConfig.vm_scratch_dir`) or an explicit
+`backend: runpod` override with its residual gap named. Do NOT leave such
+a workload on `auto`: a GCP capacity failure falls through to the SLURM
+lanes, where compute nodes have no `/workspace` and the robot wrapper
+cannot run the sentinel drain — the dispatcher fails loud at its
+`mkdir -p /workspace/logs` and burns the SLURM submission (#608, commit
+3022ff7bc). If the plan needs a SLURM lane, the dispatcher must use the
+SLURM signaling contract instead — `status.json` heartbeat +
+`[phase=...]` log lines (see `backends/slurm_monitor.py` module
+docstring § "No sentinel drain on this lane"). State the choice in §9:
+either the pinned lane + why, or "no sentinel dependence — auto-safe."
 
 **Required: per-component compute-projection table.** Every plan §9 for
 `kind: experiment` tasks MUST include a per-component compute-projection

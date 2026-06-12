@@ -1527,7 +1527,33 @@ markers:
   - kind: "epm:results"
     posted_by: specialist
     when: "end of run"
-    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION."
+    fields: |
+      Eval JSON paths, filled reproducibility card, WandB URL, HF Hub
+      path, commit hash, GPU-hours used, deviations, hot-fix log. MUST
+      include a `## Sample outputs` section with `### Condition: <name>`
+      H3 subheadings and ≥3 randomly-sampled (persona, prompt, response)
+      triplets PER CONDITION. The note's JSON payload may carry a
+      `reproducibility_card` object with these OPTIONAL fields, consumed
+      by `scripts/verify_uploads.py` when a training task declares no
+      single `--hf-model` / `--wandb-run` (the multi-cell sweep case,
+      #608): `hf_model_repo` (defaults to the canonical model repo),
+      `adapter_paths` (dict or list of per-cell adapter paths, each
+      verified under `hf_model_repo` via `list_repo_files`),
+      `hf_model_path` (single model path), `wandb_run_path` /
+      `wandb_run` (single run path), and `wandb_run_names` (dict or
+      list of per-cell display names) + `wandb_project` (+ optional
+      `wandb_entity`) resolved by display name. The `reproducibility`
+      key is accepted as an alias for `reproducibility_card` (#601's
+      producer shape; canonical key wins when both are present), and
+      multi-launch re-posts are tolerated: verify_uploads.py MERGES the
+      card across ALL epm:results markers newest-wins per declared
+      field, so a resume-pass sentinel with an empty card
+      (`adapter_paths: {}`) never shadows an earlier full declaration
+      (#601). Sweep dispatchers
+      SHOULD declare per-cell `adapter_paths` + `wandb_run_names` so
+      the verifier's training rows resolve mechanically instead of
+      hard-MISSing; explicit CLI declarations always win unchanged, and
+      a task whose markers declare no card keeps the strict MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
@@ -1932,18 +1958,59 @@ markers:
                             elapsed_seconds}, ...]
          extra:          {cancel_race?, gcp_attempts_today?,
                           intermediate?,
-                          override_without_frontmatter?, ...}`
+                          override_without_frontmatter?,
+                          override_conflicts_frontmatter?,
+                          frontmatter_backend_unrecognized?,
+                          frontmatter_backend?,
+                          boot_disk_default_with_ft_intent?, ...}`
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
       decorator) when `launch` was invoked with an explicit
-      `--backend runpod` while the task's `backend:` frontmatter is
-      absent/empty — i.e. the GCP-first auto default was bypassed at the
+      `--backend runpod` while the task's `backend:` frontmatter does
+      not name a backend (absent/empty, or an explicit `auto` — which
+      states the auto-routing intent even more explicitly than absence)
+      — i.e. the GCP-first auto default was bypassed at the
       CLI with no frontmatter backing. Visibility only: the launch is
       never blocked, and the CLI also emits a LOUD stderr warning naming
       the legitimate residual gaps (70B intents / interactive SSH-MCP
       orchestration / runs > GCP --max-run-duration default 24h / SLURM
       venv-extras mismatch).
+
+      `override_conflicts_frontmatter: true` (optional) is stamped by
+      the same decorator when the explicit `--backend runpod` was passed
+      while the frontmatter names a DIFFERENT recognized lane (`gcp` /
+      `nibi` / `fir` / `mila`, or the legacy `cluster` alias — which
+      normalizes to nibi) — the task explicitly contradicts the
+      override, a stronger signal than absence.
+      `frontmatter_backend_unrecognized: true` (optional) is stamped
+      when the frontmatter `backend:` value is not a recognized backend
+      at all (typo / non-string YAML value, e.g. `gpc` or `true`) —
+      task hygiene noise masquerading as frontmatter backing, not a
+      legitimate override. Both new flags also carry
+      `frontmatter_backend: "<raw lowercased value>"` so the marker is
+      self-explanatory. The three flags are DISTINCT and never reused
+      across cases, so the dashboard can tell "bypassed auto" /
+      "contradicted a named lane" / "task hygiene problem" apart. Same
+      scope as `override_without_frontmatter` (the explicit CLI
+      `--backend runpod` path only); same degrade (unreadable
+      frontmatter skips all checks); visibility only — the launch is
+      never blocked. A frontmatter `backend: runpod` is the one
+      legitimate backing and stays silent.
+
+      `boot_disk_default_with_ft_intent: true` (optional) is stamped by
+      the same decorator when `launch` was invoked with a gcp-reachable
+      backend (`gcp`, or `auto` whose resolved lane order includes gcp)
+      and an `ft-*` intent that maps to a GCP machine, WITHOUT
+      `--boot-disk-gb` — the lane provisions the 300 GB pd-ssd default
+      (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a ZeRO-3
+      full-FT fills with optimizer-state checkpoints in ~1h (incident
+      #606, 2026-06-12: kernel panic on the full disk, cloud-init
+      ENOSPC, SSH key-provisioning lockout, 4x A100 idling until
+      deletion). Visibility only — the launch is never blocked
+      (small-disk ft smokes stay legitimate); the CLI also emits a LOUD
+      stderr warning pointing at the plan's Reproducibility pod-row
+      disk size.
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.
@@ -2435,6 +2502,13 @@ workflow_fix_on_bug:
     # modules are workflow surface despite the general src/** out-of-scope rule.
     - "src/explore_persona_space/task_workflow.py"
     - "src/explore_persona_space/task_workflow_migrate.py"
+    # The unified backend router (CLAUDE.md § Compute backends): the lane
+    # implementations driven by the dispatch_issue.py / backend_poll.py pair
+    # below — workflow surface despite the general src/** exclusion. Added
+    # 2026-06-11 (#608): the GCP sentinel-drain fix had already landed in
+    # gcp.py as a workflow-fix while the list still omitted the package, and
+    # the omission nearly deflected the SLURM-lane follow-up.
+    - "src/explore_persona_space/backends/*.py"
     - "scripts/pod.py"
     - "scripts/pod_lifecycle.py"
     - "scripts/pod_config.py"
@@ -2457,6 +2531,25 @@ workflow_fix_on_bug:
     # an in-scope URL-extractor fix.
     - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
+    # The gist-publish PII redactor (daily/weekly update skills; also the
+    # documented remediation path of the pre-commit secret-shaped-string
+    # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
+    # both and the omission nearly deflected an in-scope fix for the
+    # stale-registry IP-redaction gap (redact_for_gist tests red on main).
+    - "scripts/redact_for_gist.py"
+    - "scripts/check_no_secret_shaped_strings.py"
+    # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
+    # reads the task workflow through. Added 2026-06-11 (#608): the list
+    # predated the task-workflow rewire of these helpers and the omission
+    # nearly deflected an in-scope v2-clean-result extraction fix.
+    - "scripts/recent_clean_results.py"
+    - "scripts/task_state.py"
+    # The /issue per-EXIT-site epm:step-completed marker poster (invoked
+    # throughout .claude/skills/issue/SKILL.md; read by the §5 re-entry
+    # router + autonomous_session_watch.py). Added 2026-06-11 (#608): the
+    # third live task_state consumer was still absent from the scope lists —
+    # same stale-list class as the two entries above.
+    - "scripts/post_step_completed.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
     # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
@@ -2502,6 +2595,16 @@ workflow_fix_on_bug:
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
     - "tests/test_sparse_worktree.py"
+    # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
+    - "tests/test_recent_clean_results.py"
+    # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
+    - "tests/test_redact_for_gist.py"
+    - "tests/test_check_no_secret_shaped_strings.py"
+    # Backend-router invariant tests (pair with the backends/*.py entry above).
+    - "tests/test_router*.py"
+    - "tests/test_backend_*.py"
+    - "tests/test_slurm_*.py"
+    - "tests/test_gcp_backend.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"
