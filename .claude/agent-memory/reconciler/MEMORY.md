@@ -34,14 +34,14 @@
 - [Claude DRY_RUN smoke misses CUDA init](feedback_claude_dry_run_smoke_misses_cuda_init.md) — dry-run probes never exercise CUDA init; unconditional `os.environ["CUDA_VISIBLE_DEVICES"]=` clobbers the shell's CVD, all shards pile on GPU 0. #488 r3.
 - [Claude synthetic-fixture smoke masks args-grid bug](feedback_claude_synthetic_fixture_smoke_masks_args_grid_bug.md) — validator iterates module constants, --smoke sets a different grid, hand-built fixture masks it; demand artifact-chained smokes. #517 r2.
 - [Claude overcorrects critic concern into blocker](feedback_claude_overcorrects_critic_concern_to_blocker.md) — round-N guardrail over-rejects the plan-envisioned PASS case and the test codifies it; re-read the plan §s before believing the test. #514 r3.
-- [Claude trusts green tests over verifier semantics](feedback_claude_trusts_green_tests_over_verifier_semantics.md) — when the artifact IS a verifier/gate, read check bodies vs prescribed scope; NaN producer contracts; stub fixtures pin nothing. #454, #608 r2, #564.
+- [Claude trusts green tests over verifier semantics](feedback_claude_trusts_green_tests_over_verifier_semantics.md) — when the artifact IS a verifier/gate, read check bodies vs prescribed scope; NaN producer contracts; stub fixtures pin nothing; per-input required arms. #454, #608 r2, #564, #565.
 - [Claude misses best-effort upload made load-bearing](feedback_claude_misses_besteffort_upload_made_loadbearing.md) — new HF-fetch consumer of a warn-only trunk upload; ephemeral teardown loses the never-uploaded artifact → FAIL. #613 r1.
 - [Claude fabricates plan-adherence walk-down checkmarks](feedback_claude_fabricates_rf_walkdown_checkmark.md) — ✓ with plausible justification a grep disproves; rg the literal new AND prior values before believing any ✓.
 - [Claude cites nonexistent backstop semantics](feedback_claude_cites_nonexistent_backstop_semantics.md) — read the named gate's ACTUAL fail condition (upload-verifier gates zero-files only, never partial coverage) before crediting a downgrade. #594 r1.
 
 ## Codex code-review overreach (PASS-leaning calibration)
 
-- [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern. 15-variant ledger (#556…#614).
+- [Codex demands hardening beyond minimal-port contract](feedback_codex_hardening_beyond_minimal_port_contract.md) — registered change set + writer-reachability + execution-test the proposed fix; persist residue via raise+defer-concern. 16-variant ledger (#556…#614, #576 r1+r2).
 - [Codex Step 0.6 literal vs purpose](feedback_codex_step_06_literal_vs_purpose.md) — decisive variable = gate topology: PASS when a demonstrated pre-launch gate runs the changed code for real; FAIL when first real run would be production (#551/#560).
 - [Codex conflates marker format/existence with code](feedback_codex_conflates_marker_format_with_code.md) — marker-shape nits / stale-file marker reads / smoke-presentation nits with "diff not reviewed" → discard, verify Claude's review independently, PASS.
 - [Codex litigates pre-existing / stale state in round N](feedback_codex_litigates_pre_existing_in_round_n.md) — git-provenance family: pre-existing-on-trunk, lexical scope drift, stale-worktree "deletions", cumulative main...HEAD diffs. Verify what the round changed.
@@ -59,7 +59,7 @@
 ## Clean-result-critic + interp-critic calibration
 
 - [Claude clean-result-critic under-applies spec text](feedback_claude_clean_result_critic_underapplies_spec_text.md) — mechanical pre-pass PASS ≠ spec compliance; 22 BLOCKING spec-text rules + 19 Codex over-fire DISCARD classes, verified against SPEC text.
-- [Claude misses Lens 11 statistical framing](feedback_claude_misses_lens11_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ±, derived intervals in prose/captions before trusting a Claude PASS. #378.
+- [Claude misses Lens 7 statistical framing](feedback_claude_misses_lens7_statistical_framing.md) — always re-scan for named tests (Wilson/Fisher/Mann-Whitney), ±, derived intervals in prose/captions before trusting a Claude PASS (Lens 11 in pre-renumbering verdicts). #378.
 - [Cross-loop CI conflict (interp vs clean-result)](feedback_cross_loop_ci_conflict.md) — interp-critic-required CIs / prior-gate house style / caption CIs survive Codex's Lens-7 FAIL; add "Do NOT remove" lines. #478, #509, #464.
 - [Codex misses Lens 9 raw+processed exception](feedback_codex_misses_lens9_raw_processed_exception.md) — adjacent raw + processed pair counts as ONE figure; splitting them would break Lens 11. #480 r1.
 - [Codex re-litigates grandfathered re-gate prose](feedback_codex_relitigates_grandfathered_regate_prose.md) — diff the fold's set-body commit; byte-unchanged previously-adjudicated findings are out of scope; registered procedure NAME + disclaimer satisfies a no-nominal-coverage binding. #464.
