@@ -3382,8 +3382,8 @@
     "566": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/566",
-      "status": "proposed",
+      "path": "tasks/archived/566",
+      "status": "archived",
       "title": "preflight behind-main check is branch-unaware \u2014 hard-gating launchers can never pass on issue-branch pods"
     },
     "567": {
