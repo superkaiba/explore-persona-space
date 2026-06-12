@@ -3866,8 +3866,8 @@
       "goal": "Make the slot-aligned alive-negative marker rig the default (no \\n\\n separator so the marker sits directly after R at the DV-read slot; contrastive negatives carry loss on <|im_end|> + trailing \\n at that same slot), then re-measure marker leakage across the #537 panel of training and eval context types and test whether slot-aligned alive negatives suppress bystander/default leakage more than the current gradient-dead-negative rig (#601) \u2014 i.e. whether negatives finally exert the persona-level restoring force seen under the flag-on rig (#471).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/628",
-      "status": "proposed",
+      "path": "tasks/planning/628",
+      "status": "planning",
       "title": "Revise the marker rig (drop the \\n\\n separator; train contrastive negatives on <|im_end|> + \\n at the DV-read slot) and re-measure marker leakage across many context types"
     },
     "65": {
