@@ -43,6 +43,7 @@ from __future__ import annotations
 import gc
 import json
 import logging
+import math
 import os
 import socket
 import subprocess
@@ -98,6 +99,12 @@ TRAJECTORY_LOGIT_LEAF_KEYS = (
 )
 
 
+def _is_finite_number(v) -> bool:
+    """Finite, non-bool int/float — mirrors the validator-local check in
+    eval/marker_logprob.py::validate_marker_slot_record (#629)."""
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(float(v))
+
+
 def assert_trajectory_slot_records_meet_storage_contract(
     checkpoints: list[dict],
     *,
@@ -123,17 +130,36 @@ def assert_trajectory_slot_records_meet_storage_contract(
     Raises:
         AssertionError: when any held-out leaf lacks a raw-logit field
             (``compute_kl=False`` / the ``--no-kl`` smoke flag skipped
-            Phase B) and the caller did not opt in.
+            Phase B) and the caller did not opt in. Also (#629): when
+            ``checkpoints`` is empty (degenerate canonical artifact), or when
+            any present raw-logit field is non-finite / non-float (corrupted
+            Phase-B forward pass or adapter load) — distinct message per
+            class so the operator routes the failure correctly.
     """
     if allow_subcontract_output:
         return
+    if not checkpoints:
+        raise AssertionError(
+            f"empty checkpoints list at the FINAL trajectory write ({out_path}) — "
+            f"nothing was evaluated; refusing a degenerate canonical artifact"
+        )
     offending: list[str] = []
+    corrupt: list[str] = []
     for ck in checkpoints:
         for persona, by_q in ck.get("held_out", {}).items():
             for q, leaf in by_q.items():
                 absent = [k for k in TRAJECTORY_LOGIT_LEAF_KEYS if leaf.get(k) is None]
                 if absent:
                     offending.append(f"frac={ck.get('frac')}/{persona}/{q!r}: missing {absent}")
+                bad = [
+                    k
+                    for k in TRAJECTORY_LOGIT_LEAF_KEYS
+                    if leaf.get(k) is not None and not _is_finite_number(leaf[k])
+                ]
+                if bad:
+                    corrupt.append(
+                        f"frac={ck.get('frac')}/{persona}/{q!r}: non-finite/non-float {bad}"
+                    )
     if offending:
         preview = "; ".join(offending[:3])
         raise AssertionError(
@@ -146,6 +172,17 @@ def assert_trajectory_slot_records_meet_storage_contract(
             f"the --no-kl smoke flag). Re-run with compute_kl=True, or pass "
             f"allow_subcontract_output=True to deliberately persist a non-contract "
             f"artifact."
+        )
+    if corrupt:
+        preview = "; ".join(corrupt[:3])
+        raise AssertionError(
+            f"Marker-slot storage-contract violation at the FINAL trajectory write "
+            f"({out_path}): {len(corrupt)} held-out slot record(s) carry a non-finite or "
+            f"non-float raw-logit field (e.g. {preview}). Unlike MISSING fields "
+            f"(Phase B never ran), a NaN/Inf surviving to this point means a corrupted "
+            f"forward pass or adapter load in the Phase-B raw-logit capture — do not "
+            f"simply re-run Phase B: inspect the adapter (adapters persist on HF) and "
+            f"the slot capture before re-eval (#629)."
         )
 
 
@@ -852,7 +889,7 @@ def run_trajectory_eval(
         out_path=out_path,
         allow_subcontract_output=allow_subcontract_output,
     )
-    out_path.write_text(json.dumps(payload, indent=2))
+    out_path.write_text(json.dumps(payload, indent=2, allow_nan=False))
     if partial_path.exists():
         partial_path.unlink()
     log.info("[phase=traj_done] Wrote trajectory → %s", out_path)
