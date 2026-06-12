@@ -2718,6 +2718,52 @@ def test_hf_rev_last_accessed_empty_files_falls_back_to_mtime():
     assert asw._hf_rev_last_accessed(rev) == 123.0
 
 
+def test_vm_reclaim_hf_hub_cache_times_out_fail_soft(monkeypatch):
+    # The HF scan+evict is the only IN-PROCESS remediation step; a hung
+    # scan_cache_dir() must be cut at the wall-clock bound (daemon-thread
+    # join) and reported as a fail-soft skip — never a stalled watcher tick.
+    import time as _time
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    def slow_scan(*_a, **_k):
+        _time.sleep(5.0)
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(scan_cache_dir=slow_scan))
+    monkeypatch.setattr(asw, "VM_DISK_HF_RECLAIM_TIMEOUT_S", 0.05)
+
+    t0 = _time.monotonic()
+    summary = asw._vm_reclaim_hf_hub_cache(now=1_000_000.0, dry_run=False)
+    assert _time.monotonic() - t0 < 2.0  # returned at the bound, not after the 5s sleep
+    assert "timed out" in summary
+    assert "fail-soft" in summary
+
+
+def test_vm_reclaim_hf_hub_cache_evicts_through_bounded_worker(monkeypatch):
+    # Normal path through the bounded worker: scan -> stale cut -> delete
+    # strategy executed -> summary carries the count + freed size.
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    executed: list[bool] = []
+    strategy = SimpleNamespace(
+        expected_freed_size_str="20.1G", execute=lambda: executed.append(True)
+    )
+    cache_info = SimpleNamespace(delete_revisions=lambda *_hashes: strategy)
+    monkeypatch.setitem(
+        sys.modules, "huggingface_hub", SimpleNamespace(scan_cache_dir=lambda: cache_info)
+    )
+    monkeypatch.setattr(
+        asw, "_hf_stale_revisions", lambda *_a, **_k: [SimpleNamespace(commit_hash="abc")]
+    )
+
+    summary = asw._vm_reclaim_hf_hub_cache(now=1_000_000.0, dry_run=False)
+    assert executed == [True]
+    assert summary == "hf-hub-ttl: evicted 1 revision(s), freed 20.1G"
+
+
 def test_vm_run_remediations_annotates_per_step_freed_delta(isolated_registry, monkeypatch):
     # A step that actually buys space gets a "(+X.X GiB)" annotation in its
     # note line; steps whose before/after delta sits under the 128 MiB noise

@@ -313,6 +313,7 @@ import os
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
@@ -1037,6 +1038,14 @@ def _env_days_seconds(name: str, default_days: float) -> float:
 # last_modified and a sha-pinned adapter that is actively read has fresh
 # blob atimes, so neither is ever evicted. Override: EPM_VM_DISK_HF_TTL_DAYS.
 VM_DISK_HF_TTL_S = _env_days_seconds("EPM_VM_DISK_HF_TTL_DAYS", 14)
+
+# Hard wall-clock bound on the in-process HF hub scan + eviction
+# (scan_cache_dir() walks the whole multi-GB cache tree; delete_revisions
+# can unlink thousands of blobs). Every other remediation step is a
+# subprocess bounded by timeout= (300s caches / 900s audit); this one runs
+# in-process, so the bound is a daemon-thread join — see
+# _vm_reclaim_hf_hub_cache for why concurrent.futures cannot deliver it.
+VM_DISK_HF_RECLAIM_TIMEOUT_S = 600
 
 # Per-step freed-space deltas below this are statvfs noise from concurrent
 # writers (~1 GiB/h background growth) — don't annotate them in the note.
@@ -1970,6 +1979,22 @@ def _vm_reclaim_hf_hub_cache(now: float, dry_run: bool) -> str:
     ``huggingface_hub``, a scan failure, or a delete failure is a logged
     skip, never a watcher crash. Dry-run returns before scanning (the scan
     walks the whole cache tree — too heavy for a classify-only pass).
+
+    The scan + eviction run on a daemon worker thread joined at
+    :data:`VM_DISK_HF_RECLAIM_TIMEOUT_S` — this is the only IN-PROCESS
+    remediation step (every other one is a subprocess with ``timeout=``),
+    so it needs its own wall-clock bound or a slow walk of a multi-GB
+    cache tree stalls the whole watcher tick. A plain daemon
+    ``threading.Thread`` is used rather than ``concurrent.futures``:
+    ThreadPoolExecutor workers are non-daemon and re-joined at interpreter
+    exit (``threading._register_atexit``), so a hung scan would survive
+    ``future.result(timeout=...)`` and still hang the watcher's EXIT,
+    defeating the bound. On timeout the tick moves on and the orphaned
+    daemon worker either finishes late (harmless — the hub cache is a pure
+    re-downloadable cache, eviction is idempotent, and any space it frees
+    late just lands in a later step's freed-delta annotation) or dies with
+    the process (an interrupted ``delete_revisions`` can leave a
+    partially-deleted revision, which the hub re-downloads on demand).
     Returns a one-line summary for the marker note."""
     if dry_run:
         print("  [dry-run] would evict HF hub revisions idle > TTL via scan_cache_dir()")
@@ -1980,26 +2005,48 @@ def _vm_reclaim_hf_hub_cache(now: float, dry_run: bool) -> str:
         summary = f"hf-hub-ttl skipped (huggingface_hub unavailable: {e})"
         print(f"  vm-disk: {summary}", file=sys.stderr)
         return summary
+
+    # (summary, is_error) — appended exactly once by the worker; read only
+    # after a successful join so there is no cross-thread race.
+    outcome: list[tuple[str, bool]] = []
+
+    def _scan_and_evict() -> None:
+        try:
+            try:
+                cache_info = scan_cache_dir()
+            except Exception as e:  # fail-soft: a disk alert must never crash its own pass
+                outcome.append((f"hf-hub-ttl skipped (scan failed: {e})", True))
+                return
+            stale = _hf_stale_revisions(cache_info, now)
+            if not stale:
+                outcome.append(("hf-hub-ttl: nothing stale", False))
+                return
+            strategy = cache_info.delete_revisions(*[rev.commit_hash for rev in stale])
+            freed = strategy.expected_freed_size_str
+            strategy.execute()
+            outcome.append((f"hf-hub-ttl: evicted {len(stale)} revision(s), freed {freed}", False))
+        except Exception as e:  # fail-soft, same contract as the scan above
+            outcome.append((f"hf-hub-ttl failed (fail-soft): {e}", True))
+
+    worker = threading.Thread(target=_scan_and_evict, name="vm-disk-hf-reclaim", daemon=True)
     try:
-        cache_info = scan_cache_dir()
-    except Exception as e:  # fail-soft: a disk alert must never crash its own pass
-        summary = f"hf-hub-ttl skipped (scan failed: {e})"
+        worker.start()
+    except RuntimeError as e:  # thread-resource exhaustion — fail-soft like the subprocess steps
+        summary = f"hf-hub-ttl skipped (worker spawn failed: {e})"
         print(f"  vm-disk: {summary}", file=sys.stderr)
         return summary
-    stale = _hf_stale_revisions(cache_info, now)
-    if not stale:
-        summary = "hf-hub-ttl: nothing stale"
-        print(f"  vm-disk: {summary}")
-        return summary
-    try:
-        strategy = cache_info.delete_revisions(*[rev.commit_hash for rev in stale])
-        freed = strategy.expected_freed_size_str
-        strategy.execute()
-        summary = f"hf-hub-ttl: evicted {len(stale)} revision(s), freed {freed}"
-        print(f"  vm-disk: {summary}")
-    except Exception as e:  # fail-soft, same contract as the scan above
-        summary = f"hf-hub-ttl failed (fail-soft): {e}"
+    worker.join(VM_DISK_HF_RECLAIM_TIMEOUT_S)
+    if worker.is_alive():
+        summary = (
+            f"hf-hub-ttl timed out at {VM_DISK_HF_RECLAIM_TIMEOUT_S}s "
+            "(fail-soft; daemon worker left to finish or die with the process)"
+        )
         print(f"  vm-disk: {summary}", file=sys.stderr)
+        return summary
+    summary, is_error = (
+        outcome[0] if outcome else ("hf-hub-ttl: worker returned no summary (fail-soft)", True)
+    )
+    print(f"  vm-disk: {summary}", file=sys.stderr if is_error else sys.stdout)
     return summary
 
 
