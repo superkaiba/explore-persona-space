@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 618,
+  "highest_id": 619,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3786,6 +3786,13 @@
       "path": "tasks/proposed/618",
       "status": "proposed",
       "title": "Sycophancy data-construction variants: persona prompt + general instruction; on-policy conversation prefix before the sycophantic completion"
+    },
+    "619": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/619",
+      "status": "proposed",
+      "title": "Think through LoRA placement (which modules/layers the adapter lives in) and whether the leakage conclusions are placement-conditional"
     },
     "62": {
       "has_clean_result": false,
