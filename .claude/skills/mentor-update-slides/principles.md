@@ -25,7 +25,7 @@ The deck has three anchored regions, demarcated by HTML comments the skill greps
 
 **LOG** (research log, newest first): each weekly entry begins with a `## Week of YYYY-MM-DD` divider slide carrying an HTML anchor, followed by that week's per-result slides + open-questions + next-steps. Older weeks are never rewritten.
 
-**APPENDIX** (accumulating): reproducibility cards + the four backup-slide families (see § Backup-slide families). New cards prepend; old cards stay.
+**APPENDIX** (accumulating): reproducibility cards + the five backup-slide families (see § Backup-slide families). New cards prepend; old cards stay.
 
 This split lets the deck serve two roles simultaneously: (a) the Project summary at the top is the *evolving project status* that a new collaborator can read in two minutes, and (b) the LOG below is the *durable archive* that captures how the story changed over time. Both live in the same file with the same shared link.
 

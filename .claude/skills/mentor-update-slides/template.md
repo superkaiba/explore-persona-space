@@ -136,7 +136,9 @@ of this region; older weeks remain untouched.
   training-row excerpt trimmed to the load-bearing span, pulled from the
   clean-result body's `#### <finding>` example or the HF raw-completions
   bucket — never paraphrased. Full text goes in the Appendix when the
-  excerpt is trimmed.
+  excerpt is trimmed. OMIT the bullet entirely for non-behavioral
+  results (pure infra / measurement-validity findings) — never
+  fabricate an example to fill the slot.
 -->
 
 <small>commit `{{result.commit_short}}` · [Issue #{{result.issue_number}}]({{result.issue_url}}) · Confidence: **{{result.confidence}}**</small>
