@@ -289,11 +289,21 @@ def test_window_boundary_exact():
 @pytest.fixture
 def isolated_registry(tmp_path, monkeypatch):
     """Point AUTONOMOUS_REGISTRY_DIR at a tmp dir in BOTH spawn_session and
-    autonomous_session_watch (the import re-binds the constant)."""
+    autonomous_session_watch (the import re-binds the constant), and isolate
+    the #573 ALIVE-BUT-STALLED provision-in-flight probe from real VM state:
+    a real ``.claude/cache/poll-pipeline-<N>.json`` (or a live ``pod.py
+    provision --issue <N>`` process on this VM) would otherwise fire the
+    exemption inside ``stalled_session_pass`` and swallow the miss-counter
+    increments these tests assert on (3 tests flaked env-dependently on any
+    VM carrying a real poll-pipeline-489.json; surfaced by task #572).
+    ``_POLL_STATE_DIR`` points at a nonexistent tmp subdir so the REAL probe
+    still runs and exercises its missing-file branch."""
     import autonomous_session_watch as asw
 
     monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
     monkeypatch.setattr(asw, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    monkeypatch.setattr(asw, "_POLL_STATE_DIR", tmp_path / "poll-state")
+    monkeypatch.setattr(asw, "_find_provision_process", lambda *_a, **_k: None)
     return tmp_path
 
 
