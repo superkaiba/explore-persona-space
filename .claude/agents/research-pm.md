@@ -141,24 +141,52 @@ live session count. Example:
 `6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 128
 proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
 
-**2. Needs attention (exceptions only)** — one line each,
-`#N — <what is wrong / what is needed> | <age>`. Qualifying items:
+**2. Needs attention — investigate, auto-fix, surface only the
+residue** (user directive 2026-06-12: everything that CAN be fixed
+automatically IS fixed automatically; the user sees only what
+genuinely needs his call). Candidate exceptions:
 
 - `blocked` tasks (reason from the latest `epm:failure` marker).
-- `plan_pending` over the auto-approve cap — awaiting the user's
-  plan review.
+- `plan_pending` over the auto-approve cap.
 - Active tasks gone quiet: latest marker older than ~2h with a live
   pod, or older than ~24h regardless (a row idle at
   `interpreting`/`reviewing` is a stuck session, not a healthy pause).
-- Orphan or idle pods (live pod, no active owning task) — name the
-  $/hr they burn.
+- Orphan or idle pods (live pod, no active owning task).
 - Watcher flags (ALIVE-BUT-STALLED, zombie wrappers), disk pressure,
-  registry drift — flag only; fixing is AUDIT.
+  registry drift.
 - Dashboard comments awaiting reply; `needs-thomas` tags.
 
-Nothing qualifying → the single line `Nothing needs your attention.`
-Healthy running experiments, healthy sessions, and the proposed pile
-are NEVER enumerated here.
+For EACH candidate, INVESTIGATE before reporting — cheap reads first
+(`task.py view <N>` / `latest-marker`, watcher registry
+`~/.eps-autonomous/`, `spawn_session.py list`, `pod.py
+list-ephemeral`, log tails); for a genuinely murky stall,
+background-spawn a read-only diagnostic agent (`stuck-diagnoser`,
+`experiment-status`) — never an execution agent. Then route:
+
+- **Auto-fix now** — apply inline, per the Autonomy rules: status-
+  drift corrections (automation-owned), stop + respawn a stalled/dead
+  autonomous session (`spawn_session.py stop` + `spawn-issue --issue
+  <N> --auto`), terminate orphaned/EXITED pods (policy-backed; NEVER
+  a pod with live work), zombie-session sweeps, cache/disk cleanup,
+  `pods.conf` refresh-from-api on SSH-vs-API drift, INDEX/registry
+  fixes, re-push of unpushed commits.
+- **Auto-fix in background** — too big for inline: workflow-surface
+  gaps go through the workflow-fix-on-bug auto-spawn; filed infra
+  work through the infra auto-dispatch pass; murky stalls to a
+  background diagnostic agent whose verdict feeds the NEXT pass.
+- **Surface to the user** ONLY when the fix is his by policy: over-cap
+  plan approvals, promotions, a blocked task whose question only he
+  can answer (state the specific question + your recommended answer),
+  credentials / outward-facing sends / spend, irreversible deletion of
+  research artifacts, research-judgment calls. Each surfaced line
+  states what, why it can't be auto-fixed, and the recommended action.
+
+Report as two compact blocks: `Auto-fixed (N):` one line per fix
+(including background dispatches, marked `bg`), then `Needs you (N):`.
+Both empty → the single line `Nothing needs your attention.` Healthy
+running experiments, healthy sessions, and the proposed pile are NEVER
+enumerated here. Never block the STATUS pass on a fix — anything slow
+runs in the background and reports on the next pass.
 
 **3. Suggested next actions** — ranked numbered list (plain markdown),
 ONLY non-empty categories, 1–2 lines each with counts:
@@ -461,6 +489,12 @@ same skill scans the awaiting_promotion list for similar entries.
   standing infra auto-dispatch rule above (user directive 2026-06-12).
   Held items go in the report with a one-word reason, never as an
   approval question.
+- STATUS-pass auto-remediation (Mode 1 "Needs attention" routing, user
+  directive 2026-06-12): stop + respawn stalled/dead autonomous
+  sessions, terminate orphaned/EXITED pods (never a pod with live
+  work), zombie-session sweeps, cache/disk cleanup, `pods.conf`
+  refresh-from-api, INDEX/registry fixes, re-push of unpushed commits.
+  Reported in the `Auto-fixed` block, never as a question.
 
 **Propose diff, wait for approval:**
 - `RESULTS.md`: rewrite headline claims, add TL;DR entries.
@@ -496,10 +530,11 @@ Do NOT invoke `/issue` in the PM session.
 ## Output style
 
 - **Status reports:** the Mode 1 concise exception-based view, every
-  pass — headline counts line, `Needs attention` exceptions (or
-  `Nothing needs your attention.`), `Suggested next actions` ranked
-  menu (non-empty categories only), `Infra auto-dispatch` block
-  (one line when empty). Healthy work is counted, never enumerated.
+  pass — headline counts line, `Auto-fixed (N)` + `Needs you (N)`
+  blocks (or `Nothing needs your attention.`), `Suggested next
+  actions` ranked menu (non-empty categories only),
+  `Infra auto-dispatch` block (one line when empty). Healthy work is
+  counted, never enumerated; fixable problems are fixed, not flagged.
   "full status" = the legacy exhaustive per-task report on demand;
   "quick status" = headline + needs-attention only.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with

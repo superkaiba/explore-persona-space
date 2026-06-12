@@ -79,12 +79,21 @@ flow. The PM's job is dispatch, not execution.
    on demand only):
    1. **Headline (1–2 lines)** — counts per status, live fleet burn
       (recompute rule) when any pod is live, live session count.
-   2. **Needs attention (exceptions only)** — one line each: blocked
-      tasks, over-cap `plan_pending`, active tasks gone quiet, orphan
-      / idle pods with their $/hr, watcher flags, comments awaiting
-      reply, `needs-thomas` tags. Healthy work is counted in the
-      headline, NEVER enumerated. Nothing qualifying → `Nothing needs
-      your attention.`
+   2. **Needs attention — investigate, auto-fix, surface the
+      residue.** For every candidate exception (blocked tasks,
+      over-cap `plan_pending`, active tasks gone quiet, orphan / idle
+      pods, watcher flags, comments awaiting reply, `needs-thomas`
+      tags): investigate first (cheap reads; background diagnostic
+      agent for murky stalls), auto-fix everything policy allows
+      (status drift, stop + respawn stalled sessions, orphaned/EXITED
+      pod termination, zombie sweeps, disk/cache cleanup — full
+      routing in research-pm.md Mode 1), dispatch bigger fixes in the
+      background, and surface ONLY what genuinely needs the user
+      (approvals, promotions, blocked-on-user questions with a
+      recommended answer, credentials / outward / spend /
+      irreversible). Report `Auto-fixed (N):` + `Needs you (N):`;
+      both empty → `Nothing needs your attention.` Healthy work is
+      counted in the headline, NEVER enumerated.
    3. **Suggested next actions** — ranked menu, non-empty categories
       only (full category specs + ranking rule in research-pm.md
       Mode 1): triage awaiting promotion (always listed; rank #1 when
