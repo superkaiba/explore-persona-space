@@ -341,7 +341,7 @@ top-level loop):
    # requeue, do not hand-resolve while other sessions commit around you.
    if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
      git -C "$REPO_ROOT" merge --abort
-     git -C "$REPO_ROOT" pull --rebase --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
+     git -C "$REPO_ROOT" pull --rebase=merges --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
        echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
    fi
    # Staging sanity: nothing foreign staged (a concurrent session's files)
@@ -359,10 +359,20 @@ top-level loop):
    posts `epm:workflow-fix-failed v1` with the failure reason and the
    original candidate preserved; nothing is merged. Force-push is NEVER
    auto (it stays a user-ask per CLAUDE.md); a normal push to `main` is
-   covered by this standing rule. If the push is rejected (non-fast-
-   forward), `git pull --rebase --autostash` once and retry (the shared root is
-   essentially always dirty with runtime noise — a plain rebase predictably
-   fails on 'You have unstaged changes'); if it still fails, post
+   covered by this standing rule. **Push IMMEDIATELY after committing the
+   merge** — an unpushed merge commit on the shared root is at risk from
+   every concurrent session's recovery pull (a plain `git pull --rebase`
+   flattens merge commits away; two workflow-fix merges were silently
+   dropped this way on 2026-06-12). For multi-file merges during heavy
+   fleet activity, prefer a scratch worktree detached at `origin/main`
+   (`git worktree add --detach <path> origin/main` — `main` itself is
+   held by the repo root) + `git push origin HEAD:main`. If the push is
+   rejected (non-fast-
+   forward), `git pull --rebase=merges --autostash` once and retry
+   (`--rebase=merges` preserves concurrent sessions' unpushed merge
+   commits; the shared root is essentially always dirty with runtime
+   noise — a rebase without `--autostash` predictably fails on 'You have
+   unstaged changes'); if it still fails, post
    `epm:workflow-fix-failed v1` and surface to the user.
 
    **Orchestrator's own direct workflow edits** (the orchestrator edited

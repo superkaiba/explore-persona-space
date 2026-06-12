@@ -39,7 +39,7 @@ REMOTE_DIR="/workspace/explore-persona-space"
 # feature branch directly (e.g. issue-501 worktree pods). The pod's fetch uses
 # --depth=1 so slow github.com connections (~200KB/s observed against a 2.8GB
 # repo) no longer time out the clone path — incident: issue #501 round 4
-# (2026-06-06). Existing-repo pulls use --ff-only|--rebase as before but
+# (2026-06-06). Existing-repo pulls use --ff-only|--rebase=merges but
 # fail loud (and `git rebase --abort` clean up) on rebase conflicts rather
 # than leaving a half-applied rebase that breaks the next re-bootstrap.
 BOOTSTRAP_BRANCH="${BOOTSTRAP_BRANCH:-main}"
@@ -204,7 +204,7 @@ fi
 # pack. The shallow history is sufficient for every downstream entrypoint
 # (uv sync, preflight, train.py, eval.py) since those read tracked files,
 # not the commit graph. Existing-repo pulls keep the full history and use
-# --ff-only / --rebase as before, but a rebase conflict now aborts the
+# --ff-only / --rebase=merges, but a rebase conflict now aborts the
 # half-applied rebase and fails loud rather than leaving a broken state
 # for the next bootstrap to trip over.
 
@@ -219,7 +219,7 @@ if [ -d $REMOTE_DIR/.git ]; then
     git checkout \"\$BRANCH\" 2>/dev/null || true
     if ! git pull -q --ff-only origin \"\$BRANCH\" 2>/dev/null; then
         echo \"Fast-forward failed, attempting rebase onto origin/\$BRANCH...\"
-        if ! git pull -q --rebase origin \"\$BRANCH\"; then
+        if ! git pull -q --rebase=merges origin \"\$BRANCH\"; then
             echo \"ERROR: rebase against origin/\$BRANCH conflicted; aborting half-applied rebase.\" >&2
             git rebase --abort 2>/dev/null || true
             echo \"Diagnose the conflict on the pod (\\\`cd $REMOTE_DIR && git status\\\`) or wipe \\\`$REMOTE_DIR\\\` and re-provision.\" >&2

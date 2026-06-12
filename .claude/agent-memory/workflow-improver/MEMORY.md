@@ -25,3 +25,4 @@
 - [New lint check = same-commit waiver sweep](feedback_new_lint_check_waiver_sweep.md) — prototype against the live tree, waive every legacy offender in the same commit, pin repo-tree-is-clean + CLI tests; scope by line shape not filename; main() C901 → annotated noqa
 - [Trim-conflict resolution recipe](feedback_trim_conflict_resolution_recipe.md) — stale pointer-branch × moved main: enumerate main deltas via diff base..main, fold deltas back compact with full text relocated into the rules file; validate by union grep
 - [Pruning live-written memory dirs](feedback_prune_live_memory_moving_main.md) — snapshot-commit first; expect add/add resurrections at merge; sweep main post-snapshot dirt + stamp before reporting; auto-memory has no git
+- [rebase=merges needs both layers](reference_rebase_merges_two_layers.md) — CLI `--rebase` overrides `pull.rebase=merges` config; keep literal flags in docs/scripts AND the config backstop; never simplify one away

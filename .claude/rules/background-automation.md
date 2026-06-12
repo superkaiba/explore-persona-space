@@ -61,7 +61,13 @@ per-issue state at `~/.eps-autonomous/gate-notify-<N>.json` records the last
 observed status, and the push fires exactly once per transition INTO a user
 gate (`awaiting_promotion`, `blocked`, or `plan_pending` only when the
 over-cap spend-approval marker confirms it is the user gate — shared
-`plan_pending_over_cap` predicate with `tick_triage.py`). Moved OUT of the
+`plan_pending_over_cap` predicate with `tick_triage.py`). Candidates cover
+CAMPAIGN sessions (`campaign-<N>.json` registrations) as well as issue
+sessions, with the same dedup and the same push-only guard posture; because
+`blocked` — a campaign's only push-relevant gate — is campaign-TERMINAL and
+the campaign pass stop-then-reaps the registration on the first tick it
+observes it, the watcher snapshots campaign candidates BEFORE the campaign
+pass and hands them to the gate-push pass. Moved OUT of the
 LLM-priced `/issue-tick` into this pure-Python pass — the watcher already
 reads task status every 10 min for free, so gate-push latency IMPROVES from
 the tick's backstop cadence to ~10 min; the tick-side `PushNotification` is

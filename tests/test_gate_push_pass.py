@@ -12,6 +12,11 @@ What this pins (anti-stall redesign change 2 + the §4 runaway parachute):
    only); non-DONE statuses alert-only; follow-up / pod / keep-running skips;
    a guarded stop removes the flag only on full ACK.
 4. **Gate-notify state roundtrip** — atomic save/load of the transition key.
+5. **Campaign coverage** — campaign-<N>.json registrations are gate-push
+   candidates (same transition dedup, same guard posture: push-only, never
+   stop), and main()'s pre-campaign_pass snapshot keeps the `blocked` push
+   alive even after the campaign GC reaps the registration on the same tick
+   (`blocked` IS campaign-terminal).
 """
 
 from __future__ import annotations
@@ -233,6 +238,89 @@ def test_pass_skips_completed_and_archived(reg_dir, monkeypatch):
     asw.gate_push_pass(False, daemon_reachable=False)
     assert not refreshed
     assert not asw._gate_notify_state_path(620).exists()
+
+
+# ── campaign coverage ───────────────────────────────────────────────────────
+
+
+def _campaign_entry(reg_dir: Path, issue: int, sid: str = "sid-c") -> Path:
+    path = reg_dir / f"campaign-{issue}.json"
+    path.write_text(json.dumps({"issue": issue, "happy_session_id": sid}))
+    return path
+
+
+def test_campaign_gate_candidates_enumeration(reg_dir):
+    _campaign_entry(reg_dir, 590)
+    # Watch-state files match the campaign-*.json glob but are NOT
+    # registrations (stem fails the int parse / no issue key).
+    (reg_dir / "campaign-watch-590.json").write_text(json.dumps({"stalled_checks": 0}))
+    (reg_dir / "campaign-garbled.json").write_text("{nope")
+    # Issue registrations are a separate candidate source, not this one's.
+    (reg_dir / "issue-620.json").write_text(json.dumps({"happy_session_id": "sid-x"}))
+    assert asw._campaign_gate_candidates() == {590}
+
+
+def _run_pass_recording_pushes(monkeypatch, status: str, **kwargs) -> list[str]:
+    """gate_push_pass with the task/push surfaces stubbed; returns push msgs."""
+    monkeypatch.setattr(asw, "_task_status", lambda *_a, **_k: status)
+    monkeypatch.setattr(
+        asw,
+        "_task_events",
+        lambda *_a, **_k: [{"kind": "epm:failure v1", "note": "budget exhausted"}],
+    )
+    monkeypatch.setattr(asw, "_task_title", lambda *_a, **_k: "")
+    monkeypatch.setattr(asw, "_refresh_self_report", lambda *_a, **_k: None)
+    pushes: list[str] = []
+    monkeypatch.setattr(asw, "_telegram_push", lambda msg, _d: pushes.append(msg) or True)
+    asw.gate_push_pass(False, daemon_reachable=False, **kwargs)
+    return pushes
+
+
+def test_campaign_blocked_transition_pushes_once(reg_dir, monkeypatch):
+    _campaign_entry(reg_dir, 590)
+    pushes = _run_pass_recording_pushes(monkeypatch, "blocked")
+    assert len(pushes) == 1 and "BLOCKED" in pushes[0] and "#590" in pushes[0]
+    assert asw._load_gate_notify_state(590)["last_status"] == "blocked"
+    # Steady state on the next tick: no second push (transition dedup).
+    assert _run_pass_recording_pushes(monkeypatch, "blocked") == []
+
+
+def test_campaign_snapshot_param_survives_same_tick_reap(reg_dir, monkeypatch):
+    # The race the snapshot exists for: campaign_pass already stop-then-reaped
+    # the blocked campaign's registration before gate_push_pass ran. main()'s
+    # pre-campaign_pass snapshot (campaign_issues=...) must still push.
+    assert not list(reg_dir.glob("campaign-*.json"))
+    pushes = _run_pass_recording_pushes(monkeypatch, "blocked", campaign_issues={590})
+    assert len(pushes) == 1 and "BLOCKED" in pushes[0] and "#590" in pushes[0]
+
+
+def test_campaign_active_status_never_pushes(reg_dir, monkeypatch):
+    # `running` is the held status for the whole campaign — no push, but the
+    # transition key is recorded so the eventual blocked push has a baseline.
+    _campaign_entry(reg_dir, 590)
+    assert _run_pass_recording_pushes(monkeypatch, "running") == []
+    assert asw._load_gate_notify_state(590)["last_status"] == "running"
+
+
+def test_campaign_completed_skipped_entirely(reg_dir, monkeypatch):
+    # Same posture as issues: completed/archived are never push targets and
+    # acting on them would churn against the terminal-status GC.
+    _campaign_entry(reg_dir, 590)
+    assert _run_pass_recording_pushes(monkeypatch, "completed") == []
+    assert not asw._gate_notify_state_path(590).exists()
+
+
+def test_main_snapshots_campaign_candidates_before_campaign_pass():
+    """Source pin on main()'s wiring (reviewer minor, 2026-06-12): the
+    campaign snapshot must be taken BEFORE campaign_pass (whose terminal GC
+    reaps a blocked campaign's registration on the same tick) and handed to
+    gate_push_pass via the kwarg — gate_push_pass's None fallback would mask
+    a dropped kwarg / reordered snapshot with green behavior tests."""
+    import inspect
+
+    src = inspect.getsource(asw.main)
+    assert "campaign_issues=campaign_gate_candidates" in src
+    assert src.index("_campaign_gate_candidates()") < src.index("campaign_pass(")
 
 
 # ── GC integration ──────────────────────────────────────────────────────────

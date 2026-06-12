@@ -5788,7 +5788,7 @@ Decision tree:
   [...]}`. Same chat title update as above.
 
 - **Surgical checkout itself fails** (file conflicts, push rejected
-  after one `git pull --rebase --autostash` retry; plain rebase fails on the always-dirty shared root) — post `epm:merge-failed v1`
+  after one `git pull --rebase=merges --autostash` retry; `--rebase=merges` preserves concurrent sessions' unpushed merge commits — plain `--rebase` flattens them away — and a rebase without `--autostash` fails on the always-dirty shared root) — post `epm:merge-failed v1`
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
