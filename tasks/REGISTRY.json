@@ -3647,8 +3647,8 @@
       "goal": "Determine which mechanism sets the source-implant level in #472's contrastive-negative dose-response \u2014 per-batch composition equilibrium (leakage-awakened negative feedback), a schedule-horizon-scaled growth window, or cross-context coupling scaling with update count \u2014 via zero-training four-float reads of existing adapters, a schedule-matched companion arm, fixed-ratio scaling, a negatives-only control, and a dense early logit trajectory that dates the arrest and tests for log-Z compression.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/601",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/601",
+      "status": "awaiting_promotion",
       "title": "Contrastive negatives strengthened a marker implant by lengthening the optimizer schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice as high (HIGH confidence)"
     },
     "602": {
