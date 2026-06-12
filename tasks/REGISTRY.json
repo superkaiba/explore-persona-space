@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 622,
+  "highest_id": 623,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3823,6 +3823,14 @@
       "path": "tasks/proposed/622",
       "status": "proposed",
       "title": "Sweep contrastive negatives to failure: extend the budget sweep beyond 1600 until source implantation plateaus or collapses"
+    },
+    "623": {
+      "goal": "Quantify how much of a persona vector reflects the base model's prior persona behavior versus newly trained-in behavior, by correlating vector projections with base-prior behavioral measures and by measuring how much post-implant vector shift lies along the training write/behavior directions.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/623",
+      "status": "proposed",
+      "title": "Decompose persona vectors into base-prior vs trained-in-behavior components (pre/post-implant extraction)"
     },
     "65": {
       "has_clean_result": true,
