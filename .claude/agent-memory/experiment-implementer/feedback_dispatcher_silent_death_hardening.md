@@ -1,85 +1,17 @@
 ---
 name: Wave/chunk dispatchers need retry + per-file logs + top-level guard
-description: Long-running launcher scripts that download checkpoints then spawn subprocesses MUST wrap hf_hub_download in retry-with-backoff, log one line per file completed, and put a top-level try/except in the per-source loop. Otherwise a transient network blip kills the whole launcher silently.
+description: Launcher scripts that download checkpoints then spawn subprocesses MUST wrap hf_hub_download in retry-with-backoff, log one line per completed file, and guard the per-source loop with logger.exception + re-raise — else a transient blip kills the launcher silently.
 type: feedback
 ---
 
-# Wave/chunk dispatchers need retry + per-file logs + top-level guard
+A launcher that loops over sources, downloads K files each via `hf_hub_download`, then spawns eval subprocesses will die SILENTLY (no traceback, no ps trace) on a single transient HF 5xx / network blip / EDQUOT if the download loop is unguarded — the orchestrator can't tell crash from clean exit.
 
-When a launcher script:
-1. Loops over N sources,
-2. For each one, downloads K files via `hf_hub_download`,
-3. Then spawns a subprocess to evaluate,
+**Why:** task #396 (2026-05-27), Wave-3 `police_officer`: launcher disappeared mid-download with 5 of 14 files landed; root cause never pinned (Hub flake / ChunkedEncodingError class).
 
-a single transient HF Hub 5xx, a network blip, an `OSError(EDQUOT)`,
-or any other surprise inside the download loop will propagate up,
-hit the top of `wave_loop` / `main()` without a handler, and exit the
-launcher silently — no traceback in the log, no `ps` trace, no
-dmesg signal. The orchestrator sees "no process running" and cannot
-tell crash from clean exit.
+**How to apply** — every wave/chunk launcher carries:
+1. **Retry-with-backoff** around each `hf_hub_download`: 3 attempts, 30/60/120 s, catching `(HfHubHTTPError, OSError, ConnectionError)`; raise RuntimeError naming source+file after exhaustion.
+2. **Per-file completion log line** ("downloaded i/N: fname") so a future silent death pins the in-flight file.
+3. **Top-level guard** on the per-source loop: `except KeyboardInterrupt: raise`; `except Exception: logger.exception(...); raise` (non-zero exit the orchestrator can see).
+4. `import time` inline in the using function (ruff strips an unreferenced top-level import — [[ruff-strips-unused-imports]]).
 
-**Why:** Task #396 2026-05-27, Wave-3 `police_officer`: the launcher
-died mid-download with no traceback. Only 5 of 14 files landed
-locally before the launcher process disappeared. Root cause never
-fully pinned down; could have been HF Hub flake, half-written file
-race, or `requests.exceptions.ChunkedEncodingError`.
-
-**How to apply:** every wave/chunk-style launcher that downloads
-checkpoints must carry:
-
-1. **Retry-with-backoff** around each `hf_hub_download`:
-   ```python
-   from huggingface_hub.errors import HfHubHTTPError
-   for fname in files:
-       last_exc = None
-       for attempt in range(3):
-           try:
-               hf_hub_download(repo_id=..., filename=fname, local_dir=...)
-               last_exc = None
-               break
-           except (HfHubHTTPError, OSError, ConnectionError) as e:
-               last_exc = e
-               wait = 30 * (2 ** attempt)  # 30s, 60s, 120s
-               logger.warning("[%s] download(%s) attempt %d/3 failed (%s) — retrying in %ds",
-                              source, fname, attempt + 1, e, wait)
-               time.sleep(wait)
-       if last_exc is not None:
-           raise RuntimeError(f"[{source}] exhausted 3 retries for {fname!r}: {last_exc}") from last_exc
-       logger.info("[%s] downloaded %d/%d: %s", source, idx + 1, len(files), fname)
-   ```
-
-2. **Per-file completion log line** after each successful download.
-   Verbose but a future silent death will at least pin down which
-   file was in flight.
-
-3. **Top-level guard** in the per-source / per-chunk loop:
-   ```python
-   try:
-       for chunk in chunks: ...
-   except KeyboardInterrupt:
-       raise  # Ctrl-C through
-   except Exception:
-       logger.exception("dispatcher: unhandled exception; aborting and re-raising")
-       raise  # non-zero exit so orchestrator sees a real failure
-   ```
-
-4. **`import time` inline** inside the function that uses it — ruff
-   strips a top-level `import time` if no module-scope reference
-   exists. Either inline-import (`import time as _time`) or hold a
-   module-scope reference (`_ = time`).
-
-Canonical implementation: `scripts/launch_issue396_eval.py`
-`download_merged_checkpoint` + `wave_loop` (task #396, BF11 fix
-2026-05-27). Tests in
-`tests/test_issue396_eval_dispatcher_smoke.py` exercise:
-* `test_download_merged_checkpoint_retries_then_succeeds` — 2
-  transients then success
-* `test_download_merged_checkpoint_exhausts_retries` — 3 failures →
-  RuntimeError
-* `test_wave_loop_logs_and_reraises_unhandled_exception` —
-  surprise exception → `logger.exception` (record has `exc_info`)
-  then re-raise
-
-Pairs with the CLAUDE.md "Checkpoint per phase" rule: that rule
-saves the OUTPUT of completed phases; this rule keeps the
-LAUNCHER itself diagnosable when a downstream phase explodes.
+Canonical implementation + tests: `scripts/launch_issue396_eval.py` (`download_merged_checkpoint`, `wave_loop`) and `tests/test_issue396_eval_dispatcher_smoke.py`. Pairs with checkpoint-per-phase: that rule saves completed-phase OUTPUT; this keeps the LAUNCHER diagnosable.
