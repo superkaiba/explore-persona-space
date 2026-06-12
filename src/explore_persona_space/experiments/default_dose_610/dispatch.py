@@ -14,6 +14,13 @@ Phases: marker assert → sha256-pinned prefetch → bank-hash check → spec bu
 (soft, recorded) → on PASS, remaining seeds (parallel) → uploads (#610 HF
 prefixes; adapter uploads Hub-verified) → sentinel → ``[phase=done]``.
 
+``--chassis`` (amendment plan v2 §4.3) selects the ``ChassisConfig`` that
+re-points output/data roots, HF prefixes, the WandB run-name prefix, and the
+gate-(j) band; the pipeline itself is identical across chassis. Default =
+``mercenary`` (round-1 behavior, byte-equivalent). The per-cell subprocess
+recovers the chassis from its ``--cell`` slug (unique per chassis), so the
+reused #600 ``_run_cells_subprocess`` command shape is unchanged.
+
 Kill criterion (plan §7.1): gates (a)/(b) out-of-band at 63 steps → HALT AND
 REPORT (failure-shaped sentinel, rc=2). NO epochs ladder — re-pinning epochs
 would unmatch the reused parent arm's 63 steps and void the comparison.
@@ -44,21 +51,19 @@ from pathlib import Path
 
 from explore_persona_space.experiments.default_dose_610 import (
     BASE_MODEL,
-    CHASSIS_DG_SOFT_RANGE_NATS,
+    CHASSES,
     EPOCHS_PINNED,
     EXPECTED_MARKER_TOKEN_ID,
     EXPECTED_STEPS_PER_EPOCH,
     EXTRA_EVAL_PERSONAS,
     GPU_HOURS_BUDGETED,
-    HF_ADAPTER_PATH_PREFIX,
-    HF_DATA_PREFIX,
     HF_DATA_REPO,
     HF_MODEL_REPO,
     MARKER_TEXT,
-    RUN_NAME_PREFIX,
     SEEDS,
     SOURCE_DG_BAND_NATS,
     WANDB_PROJECT,
+    ChassisConfig,
 )
 from explore_persona_space.experiments.default_dose_610.cells import (
     assert_design_matches,
@@ -98,15 +103,19 @@ FOUR_FLOAT_FIELDS = (
 )
 
 
-# ── Path resolvers (env-overridable for local smokes / tests). ──────────────
+# ── Path resolvers (env-overridable for local smokes / tests; chassis
+# defaults per v2 plan §4.3 — the software_engineer chassis nests under
+# eval_results/issue_610/second-chassis-dose-replication/). ──────────────────
 
 
-def _output_root() -> Path:
-    return Path(os.environ.get("EPM_OUTPUT_ROOT", "eval_results/issue_610"))
+def _output_root(chassis: ChassisConfig = CHASSES["mercenary"]) -> Path:
+    env = os.environ.get("EPM_OUTPUT_ROOT")
+    return Path(env) if env else chassis.output_root_default
 
 
-def _data_root() -> Path:
-    return Path(os.environ.get("EPM_DATA_ROOT", "data/issue_610"))
+def _data_root(chassis: ChassisConfig = CHASSES["mercenary"]) -> Path:
+    env = os.environ.get("EPM_DATA_ROOT")
+    return Path(env) if env else chassis.data_root_default
 
 
 def _parent_manifest_path() -> Path:
@@ -114,8 +123,8 @@ def _parent_manifest_path() -> Path:
     return Path(os.environ.get("EPM_I600_MANIFEST", "eval_results/issue_600/panel_selection.json"))
 
 
-def _design_path() -> Path:
-    return _output_root() / "design.json"
+def _design_path(chassis: ChassisConfig = CHASSES["mercenary"]) -> Path:
+    return _output_root(chassis) / "design.json"
 
 
 def _git_sha() -> str:
@@ -164,17 +173,20 @@ def gate_i_primary_dv_exists(trajectory_payload: dict) -> dict:
 # ── Gate (j): chassis comparability (SOFT — recorded, never gating). ─────────
 
 
-def gate_j_chassis_comparability(trajectory_payload: dict) -> dict:
+def gate_j_chassis_comparability(
+    trajectory_payload: dict, chassis: ChassisConfig = CHASSES["mercenary"]
+) -> dict:
     """Villain ΔG vs the parent arm's realized range ± 2 nats (plan §4.2 (j)).
 
-    Outside the soft range but inside gate (a)'s [5, 19] → proceed, flag in
-    analysis (the normalized+centered DV absorbs implant-strength variation;
-    a >3-nat slot-swap effect would itself contradict the parent's ≤0.5-nat
-    slot lead and is reportable).
+    The band is per-chassis (``chassis.dg_soft_range``, v2 plan §4.1). Outside
+    the soft range but inside gate (a)'s [5, 19] → proceed, flag in analysis
+    (the normalized+centered DV absorbs implant-strength variation; a >3-nat
+    slot-swap effect would itself contradict the parent's ≤0.5-nat slot lead
+    and is reportable).
     """
     ck = _terminal_checkpoint(trajectory_payload)
     dg = float(ck["source_self"]["delta_g_mean"])
-    low, high = CHASSIS_DG_SOFT_RANGE_NATS
+    low, high = chassis.dg_soft_range
     return {
         "source_dg_mean_nats": dg,
         "soft_range_nats": [low, high],
@@ -193,11 +205,12 @@ def check_smoke_gates_610(
     expected_steps: int,
     panel_personas: list[str],
     smoke_out_path: Path,
+    chassis: ChassisConfig = CHASSES["mercenary"],
 ) -> dict:
     """Reused (a)-(h) + NEW (i) hard + (j) soft; merged verdict rewritten in place.
 
     ``all_gates_passed`` = (a)-(h) AND (i). Gate (j) is recorded but never
-    gates (plan §4.2).
+    gates (plan §4.2); its band comes from ``chassis.dg_soft_range``.
     """
     payload_600 = check_smoke_gates_600(
         trajectory_path=trajectory_path,
@@ -211,7 +224,7 @@ def check_smoke_gates_610(
     )
     trajectory_payload = json.loads(trajectory_path.read_text())
     gi = gate_i_primary_dv_exists(trajectory_payload)
-    gj = gate_j_chassis_comparability(trajectory_payload)
+    gj = gate_j_chassis_comparability(trajectory_payload, chassis)
     merged = dict(payload_600)
     merged["gate_i_primary_dv_exists"] = gi["passes"]
     merged["gate_i_detail"] = gi
@@ -238,12 +251,20 @@ def check_smoke_gates_610(
 # ── Uploads (#610 prefixes) + Hub verification of the inline adapter uploads. ─
 
 
-def _upload_phase_610(out_root: Path, data_root: Path, design_path: Path) -> None:
+def _upload_phase_610(
+    out_root: Path,
+    data_root: Path,
+    design_path: Path,
+    chassis: ChassisConfig = CHASSES["mercenary"],
+) -> None:
     """Training JSONLs + manifests + design.json → HF data repo; raw completions too.
 
-    Adapters were already uploaded inline by train_lora (per-cell
-    hf_path_in_repo under ``adapters/issue_610``); ``_verify_adapter_uploads``
-    Hub-asserts them afterwards. Fail-loud throughout (Upload Policy).
+    All HF paths carry the chassis data prefix (``issue610_default_dose`` for
+    round 1, ``issue610_default_dose/second_chassis`` for the follow-up — v2
+    plan §4.3). Adapters were already uploaded inline by train_lora (per-cell
+    hf_path_in_repo under the chassis adapter prefix);
+    ``_verify_adapter_uploads`` Hub-asserts them afterwards. Fail-loud
+    throughout (Upload Policy).
     """
     from explore_persona_space.orchestrate.hub import (
         _upload,
@@ -251,26 +272,27 @@ def _upload_phase_610(out_root: Path, data_root: Path, design_path: Path) -> Non
         upload_raw_completions_to_data_repo,
     )
 
-    log.info("[phase=upload] training JSONLs from %s", data_root)
-    upload_dataset_directory(data_root, f"{HF_DATA_PREFIX}/training_data", pattern="*.jsonl")
-    upload_dataset_directory(
-        data_root, f"{HF_DATA_PREFIX}/training_data", pattern="*.manifest.json"
-    )
+    prefix = chassis.hf_data_prefix
+    log.info("[phase=upload] training JSONLs from %s → %s", data_root, prefix)
+    upload_dataset_directory(data_root, f"{prefix}/training_data", pattern="*.jsonl")
+    upload_dataset_directory(data_root, f"{prefix}/training_data", pattern="*.manifest.json")
     log.info("[phase=upload] design manifest %s", design_path)
     url = _upload(
         local_path=design_path,
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
-        path_in_repo=f"{HF_DATA_PREFIX}/design.json",
+        path_in_repo=f"{prefix}/design.json",
         upload_as_file=True,  # load-bearing: a FILE path otherwise hits the folder branch
     )
     if not url:
         raise RuntimeError(f"design.json upload returned empty URL ({design_path}).")
     log.info("[phase=upload] raw completions under %s", out_root)
-    upload_raw_completions_to_data_repo(experiment_name=HF_DATA_PREFIX, eval_results_dir=out_root)
+    upload_raw_completions_to_data_repo(experiment_name=prefix, eval_results_dir=out_root)
 
 
-def _verify_adapter_uploads(results: list[dict]) -> dict[str, str]:
+def _verify_adapter_uploads(
+    results: list[dict], chassis: ChassisConfig = CHASSES["mercenary"]
+) -> dict[str, str]:
     """Hub-assert every per-cell adapter path resolves (the epm:results card
     contract). Enumerates via the paginated ``list_repo_files_complete`` —
     ``repo_info().siblings``-backed listings silently truncate at ~7901
@@ -286,7 +308,7 @@ def _verify_adapter_uploads(results: list[dict]) -> dict[str, str]:
     missing: list[str] = []
     for r in results:
         cell_key = f"{r['cell_slug']}_seed{r['seed']}"
-        prefix = f"{HF_ADAPTER_PATH_PREFIX}/{cell_key}"
+        prefix = f"{chassis.hf_adapter_path_prefix}/{cell_key}"
         n = sum(1 for f in repo_files if f.startswith(prefix + "/"))
         if n == 0:
             missing.append(prefix)
@@ -444,6 +466,7 @@ def main(
     max_parallel: int,
     plan_only: bool = False,
     no_upload: bool = False,
+    chassis_name: str = "mercenary",
 ) -> int:
     """Run the #610 unified smoke=sweep pipeline. Returns the shell exit code."""
     logging.basicConfig(
@@ -455,13 +478,16 @@ def main(
 
     load_dotenv()
     # Subprocesses inherit the project; run_one_cell's setdefault never
-    # overrides a preset value.
+    # overrides a preset value. ONE WandB project across chassis (v2 §6) —
+    # the chassis is carried by the run-name prefix.
     os.environ["WANDB_PROJECT"] = WANDB_PROJECT
 
+    chassis = CHASSES[chassis_name]
     t_start = time.time()
     log.info(
-        "[phase=start] mode=%s seeds=%r n_gpus=%d max_parallel=%d epochs=%d (PINNED) "
-        "plan_only=%s host=%s",
+        "[phase=start] chassis=%s mode=%s seeds=%r n_gpus=%d max_parallel=%d epochs=%d "
+        "(PINNED) plan_only=%s host=%s",
+        chassis.name,
         mode,
         seeds,
         n_gpus,
@@ -470,8 +496,8 @@ def main(
         plan_only,
         socket.gethostname(),
     )
-    out_root = _output_root()
-    data_root = _data_root()
+    out_root = _output_root(chassis)
+    data_root = _data_root(chassis)
     out_root.mkdir(parents=True, exist_ok=True)
     data_root.mkdir(parents=True, exist_ok=True)
 
@@ -513,15 +539,16 @@ def main(
         )
 
     # ── Phase 0c: the #610 spec + committed-design consistency. ──────────────
-    spec = build_610_spec(manifest)
-    design_path = _design_path()
+    spec = build_610_spec(manifest, chassis)
+    design_path = _design_path(chassis)
     if not design_path.exists():
         raise FileNotFoundError(
             f"committed design.json missing at {design_path} — it must be built on the "
             "VM and committed BEFORE training (plan §4.4): uv run python -m "
-            "explore_persona_space.experiments.default_dose_610.cells"
+            "explore_persona_space.experiments.default_dose_610.cells "
+            f"--chassis {chassis.name}"
         )
-    assert_design_matches(json.loads(design_path.read_text()), manifest, spec)
+    assert_design_matches(json.loads(design_path.read_text()), manifest, spec, chassis)
     log.info("[phase=spec] %s panel=%s (design.json consistent)", spec.slug, list(spec.panel))
 
     # ── Phase 1: spec_iter — smoke pair first, ALWAYS. ───────────────────────
@@ -549,6 +576,7 @@ def main(
             {
                 "mode": "plan_only",
                 "requested_mode": mode,
+                "chassis": chassis.name,
                 "pairs": [(s.slug, sd) for s, sd in smoke_iter + rest_iter],
                 "panel": list(spec.panel),
                 "git_commit": _git_sha(),
@@ -589,6 +617,7 @@ def main(
         expected_steps=EXPECTED_STEPS_PER_EPOCH * EPOCHS_PINNED,
         panel_personas=r["panel"],
         smoke_out_path=out_root / "smoke" / "smoke_gate.json",
+        chassis=chassis,
     )
     if not gate_payload["all_gates_passed"]:
         # Kill criterion §7.1: HALT AND REPORT — never epochs-ladder (matched
@@ -600,7 +629,7 @@ def main(
             {k: v for k, v in gate_payload.items() if k.startswith("gate_")},
         )
         if not no_upload:
-            _upload_phase_610(out_root, data_root, design_path)
+            _upload_phase_610(out_root, data_root, design_path, chassis)
         # failure_class per plan §7.1: ONLY implant-landing gates (a)/(b)
         # failed → data (out-of-band implant: report + re-plan); any wiring
         # gate — (c)-(h) reused plumbing or (i) primary-DV existence — → code.
@@ -610,13 +639,14 @@ def main(
             {
                 "reason": "smoke gates failed at the PINNED 63 steps; plan §7.1 forbids the "
                 "epochs ladder (matched steps with the reused parent arm are load-bearing)",
+                "chassis": chassis.name,
                 "smoke_gate": gate_payload,
                 "expected_band_nats": list(SOURCE_DG_BAND_NATS),
                 # Uploaded-evidence pointers (the smoke cell's artifacts are
                 # evidence either way; uploaded above unless --no-upload).
                 "output_root": str(out_root),
                 "smoke_trajectory_path": r["trajectory_path"],
-                "uploaded_to_hf_data_prefix": None if no_upload else HF_DATA_PREFIX,
+                "uploaded_to_hf_data_prefix": None if no_upload else chassis.hf_data_prefix,
             },
             rc=2,
         )
@@ -633,8 +663,8 @@ def main(
     if no_upload:
         log.warning("[phase=upload] SKIPPED (--no-upload; local smoke only)")
     else:
-        _upload_phase_610(out_root, data_root, design_path)
-        adapter_paths = _verify_adapter_uploads(results)
+        _upload_phase_610(out_root, data_root, design_path, chassis)
+        adapter_paths = _verify_adapter_uploads(results, chassis)
 
     # ── Phase 6: sentinel (full epm:results payload contract). ───────────────
     cell_keys = [f"{r['cell_slug']}_seed{r['seed']}" for r in results]
@@ -643,11 +673,12 @@ def main(
         plan_deviations.append(
             f"gate (j) soft flag: smoke villain ΔG "
             f"{gate_payload['gate_j_detail']['source_dg_mean_nats']:.2f} nats outside the "
-            f"parent-range band {CHASSIS_DG_SOFT_RANGE_NATS} (inside gate (a); proceeding, "
+            f"parent-range band {chassis.dg_soft_range} (inside gate (a); proceeding, "
             "flagged for analysis)"
         )
     note = {
         "mode": mode,
+        "chassis": chassis.name,
         "verdict": "OK" if not failures else "PARTIAL",
         "epochs": EPOCHS_PINNED,
         "n_pairs": len(smoke_iter) + len(rest_iter),
@@ -668,9 +699,9 @@ def main(
             "hf_model_repo": HF_MODEL_REPO,
             "adapter_paths": adapter_paths,
             "wandb_project": WANDB_PROJECT,
-            "wandb_run_names": [f"{RUN_NAME_PREFIX}{k}" for k in cell_keys],
+            "wandb_run_names": [f"{chassis.run_name_prefix}{k}" for k in cell_keys],
             "hf_data_repo": HF_DATA_REPO,
-            "hf_data_prefix": HF_DATA_PREFIX,
+            "hf_data_prefix": chassis.hf_data_prefix,
         },
     }
     _write_sentinel(note, kind="epm:results", out_root=out_root)
@@ -699,6 +730,14 @@ def cli_main(argv: list[str] | None = None) -> int:
         "in one invocation.",
     )
     p.add_argument(
+        "--chassis",
+        choices=sorted(CHASSES),
+        default="mercenary",
+        help="Chassis registry key (v2 plan §2): 'mercenary' = the round-1 design "
+        "(byte-equivalent default); 'software_engineer' = the follow-up round "
+        "(roots/prefixes/band re-pointed; identical pipeline).",
+    )
+    p.add_argument(
         "--seeds",
         type=str,
         default=",".join(str(s) for s in SEEDS),
@@ -724,6 +763,7 @@ def cli_main(argv: list[str] | None = None) -> int:
         max_parallel=args.max_parallel,
         plan_only=args.plan_only,
         no_upload=args.no_upload,
+        chassis_name=args.chassis,
     )
 
 

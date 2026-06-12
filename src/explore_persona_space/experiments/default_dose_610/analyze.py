@@ -1,9 +1,13 @@
-# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Greek ΔG intentional
+# ruff: noqa: RUF001, RUF002  # em-dash + Greek ΔG intentional
 """Task #610 — the §6 registered comparison (CPU, VM, post-teardown).
 
-Inputs: the 3 PARENT ``c600_mercenary_near`` trajectories (committed on main)
-and the 3 new ``c610_mercenary_near_nodefault`` trajectories (committed on the
-issue branch), plus the parent design manifest. No GPU, no pod.
+Inputs: the 3 PARENT chassis-comparator trajectories (committed on main;
+``c600_mercenary_near`` for round 1, ``c600_software_engineer_near`` for the
+``--chassis software_engineer`` follow-up — v2 plan §2) and the 3 new
+no-default trajectories (committed on the issue branch), plus the parent
+design manifest. No GPU, no pod. All chassis-dependent names (comparator
+slug, sanity set + registered v2 §5 detector medians, replacement persona +
+its ctrl precedent, default output/figure paths) come from ``ChassisConfig``.
 
 Primary DV (per seed, per arm): the never-trained default context's CENTERED,
 IMPLANT-NORMALIZED marker log-prob shift at the terminal checkpoint —
@@ -43,16 +47,13 @@ import numpy as np
 from explore_persona_space.experiments.default_dose_610 import (
     ALWAYS_INCLUDE_NEGATIVE,
     ASSISTANT_TRAINED_SLOT_PRECEDENT,
-    CHASSIS_SLUG,
+    CHASSES,
     DECISION_BAND,
     EXTRA_EVAL_PERSONAS,
-    JOURNALIST_CTRL_PRECEDENT,
-    NEW_SLUG,
-    REPLACEMENT_PERSONA,
-    SANITY_PERSONAS,
     SEEDS,
     SOURCE_PERSONA,
     TRAJECTORY_CHECKPOINT_FRACTIONS,
+    ChassisConfig,
 )
 from explore_persona_space.experiments.default_dose_610.dispatch import FOUR_FLOAT_FIELDS
 from explore_persona_space.experiments.targeted_proximity_600.cells import load_manifest
@@ -75,12 +76,13 @@ def _git_sha() -> str:
 # ── Centering set (frozen by formula from the parent manifest). ──────────────
 
 
-def centering_set(manifest: dict) -> list[str]:
+def centering_set(manifest: dict, chassis: ChassisConfig = CHASSES["mercenary"]) -> list[str]:
     """held-out 47 − 6 targets − every persona trained anywhere in #600.
 
-    Untrained in EVERY cell of both experiments: the #610 panel (journalist,
-    bartender, french_person, dictator) is a subset of the excluded
-    trained-anywhere set, so the centering personas are identical across arms.
+    Untrained in EVERY cell of both experiments: every chassis's #610 panel is
+    a subset of the excluded trained-anywhere set, so the centering personas
+    are identical across arms AND across chassis (v2 plan A4: the formula
+    excludes all near/ctrl slots, hence hospice_nurse + data_scientist too).
     """
     held = set(manifest["held_out_panel"])
     targets = {t["name"] for t in manifest["targets"]}
@@ -93,8 +95,11 @@ def centering_set(manifest: dict) -> list[str]:
             f"centering set has {len(out)} personas, expected {EXPECTED_CENTERING_N} — the "
             "manifest is a different generation than the one this formula was frozen against."
         )
-    if REPLACEMENT_PERSONA in out or SOURCE_PERSONA in out:
-        raise AssertionError("centering set must exclude the replacement persona + source.")
+    if chassis.replacement in out or SOURCE_PERSONA in out:
+        raise AssertionError(
+            f"centering set must exclude the replacement persona ({chassis.replacement!r}) "
+            "+ source."
+        )
     return out
 
 
@@ -302,16 +307,19 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
     out_path: Path,
     figures_dir: Path,
     seeds: tuple[int, ...] = SEEDS,
+    chassis: ChassisConfig = CHASSES["mercenary"],
 ) -> dict:
     """Compute every §6 registered read; write analysis.json + figures."""
     manifest = load_manifest(manifest_path)
-    centering = centering_set(manifest)
+    centering = centering_set(manifest, chassis)
 
     # Both arms, schema-asserted (`_g`/`_b` four-float contract on every file).
     with_arm = load_arm(
-        parent_sweep, CHASSIS_SLUG, seeds, required_personas=(ALWAYS_INCLUDE_NEGATIVE,)
+        parent_sweep, chassis.chassis_slug, seeds, required_personas=(ALWAYS_INCLUDE_NEGATIVE,)
     )
-    without_arm = load_arm(new_sweep, NEW_SLUG, seeds, required_personas=EXTRA_EVAL_PERSONAS)
+    without_arm = load_arm(
+        new_sweep, chassis.new_slug, seeds, required_personas=EXTRA_EVAL_PERSONAS
+    )
 
     # ── §6.1 headline: per-seed D at the terminal checkpoint. ────────────────
     d_with = {
@@ -376,7 +384,7 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
 
     # ── §6.4 sanity reads. ───────────────────────────────────────────────────
     sanity: dict[str, dict] = {}
-    for persona in SANITY_PERSONAS:
+    for persona in chassis.sanity_personas:
         sw = {s: centered_shift(p, TERMINAL_FRAC, persona, centering) for s, p in with_arm.items()}
         so = {
             s: centered_shift(p, TERMINAL_FRAC, persona, centering) for s, p in without_arm.items()
@@ -388,16 +396,31 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
             "median_delta": delta,
             "passes": abs(delta) <= 2 * DECISION_BAND,
         }
+        # v2 plan §5: the registered with-arm drift-detector medians were
+        # computed by THIS formula from the committed comparator trajectories
+        # at plan time; a recomputation drift means the comparator data or the
+        # centering formula changed under us — fail loud (tolerance absorbs
+        # the plan's 4-decimal rounding only).
+        if chassis.sanity_with_arm_expected is not None:
+            registered = chassis.sanity_with_arm_expected[persona]
+            recomputed = float(np.median(list(sw.values())))
+            if abs(recomputed - registered) > 2e-3:
+                raise AssertionError(
+                    f"with-arm sanity median for {persona!r} recomputes to {recomputed:+.4f} "
+                    f"but the registered v2 §5 value is {registered:+.4f} — comparator data "
+                    "or centering formula drifted; refusing to analyze."
+                )
+            sanity[persona]["with_arm_registered_median"] = registered
     deltas = [v["median_delta"] for v in sanity.values()]
-    journalist_without = {
-        s: centered_shift(p, TERMINAL_FRAC, REPLACEMENT_PERSONA, centering)
+    replacement_without = {
+        s: centered_shift(p, TERMINAL_FRAC, chassis.replacement, centering)
         for s, p in without_arm.items()
     }
-    j_median = float(np.median(list(journalist_without.values())))
-    # Parent ctrl-cell journalist read recomputed from data when committed
-    # (reported alongside the registered −0.117 precedent).
+    j_median = float(np.median(list(replacement_without.values())))
+    # Parent ctrl-cell replacement read recomputed from data when committed
+    # (reported alongside the registered per-chassis precedent).
     j_parent_recomputed = None
-    ctrl_dir = parent_sweep / "c600_mercenary_ctrl"
+    ctrl_dir = parent_sweep / f"c600_{chassis.chassis_target}_ctrl"
     if ctrl_dir.is_dir():
         vals = []
         for seed_dir in sorted(ctrl_dir.glob("seed_*")):
@@ -409,16 +432,17 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
                 # precedent constant carries the comparison).
                 with contextlib.suppress(AssertionError, KeyError):
                     vals.append(
-                        centered_shift(payload, TERMINAL_FRAC, REPLACEMENT_PERSONA, centering)
+                        centered_shift(payload, TERMINAL_FRAC, chassis.replacement, centering)
                     )
         if vals:
             j_parent_recomputed = float(np.median(vals))
-    journalist_read = {
-        "without_by_seed": journalist_without,
+    replacement_read = {
+        "persona": chassis.replacement,
+        "without_by_seed": replacement_without,
         "median": j_median,
-        "ctrl_precedent": JOURNALIST_CTRL_PRECEDENT,
+        "ctrl_precedent": chassis.replacement_ctrl_precedent,
         "ctrl_precedent_recomputed": j_parent_recomputed,
-        "passes": abs(j_median - JOURNALIST_CTRL_PRECEDENT) <= 2 * DECISION_BAND,
+        "passes": abs(j_median - chassis.replacement_ctrl_precedent) <= 2 * DECISION_BAND,
     }
     raw_medians = {
         "with": {s: panel_median(p, TERMINAL_FRAC, centering) for s, p in with_arm.items()},
@@ -426,7 +450,7 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
     }
     sanity_summary = {
         "per_persona": sanity,
-        "journalist_trained_read": journalist_read,
+        "replacement_trained_read": replacement_read,
         "raw_untrained_panel_medians_normalized": raw_medians,
         # §14.4: coherent one-direction movement (drift signature) vs a single
         # persona's seed wander — components for the analyzer, not a mechanical
@@ -435,9 +459,13 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
             len({np.sign(d) for d in deltas}) == 1 and all(abs(d) > DECISION_BAND for d in deltas)
         ),
         "any_miss": bool(
-            any(not v["passes"] for v in sanity.values()) or not journalist_read["passes"]
+            any(not v["passes"] for v in sanity.values()) or not replacement_read["passes"]
         ),
     }
+    if chassis.name == "mercenary":
+        # Legacy alias: the round-1 analyzer figures script
+        # (scripts/i610_analyzer_figures.py) reads sanity["journalist_trained_read"].
+        sanity_summary["journalist_trained_read"] = replacement_read
 
     # ── §6.5 exploratory. ────────────────────────────────────────────────────
     trajectory = {
@@ -517,6 +545,7 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
 
     result = {
         "schema_version": "i610_analysis_v1",
+        "chassis": chassis.name,
         "git_commit": _git_sha(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
         "inputs": {
@@ -524,6 +553,9 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
             "new_sweep": str(new_sweep),
             "manifest": str(manifest_path),
             "seeds": list(seeds),
+            "chassis_slug": chassis.chassis_slug,
+            "new_slug": chassis.new_slug,
+            "replacement_persona": chassis.replacement,
         },
         "centering_set": centering,
         "n_centering": len(centering),
@@ -552,14 +584,16 @@ def analyze_610(  # noqa: C901  the pre-registered read battery is one auditable
         DECISION_BAND,
         rank_test["p_one_sided"],
     )
-    _make_figures(result, figures_dir)
+    _make_figures(result, figures_dir, chassis)
     return result
 
 
 # ── Figures (hero + exploratory dump; the analyzer picks). ───────────────────
 
 
-def _make_figures(result: dict, figures_dir: Path) -> None:
+def _make_figures(
+    result: dict, figures_dir: Path, chassis: ChassisConfig = CHASSES["mercenary"]
+) -> None:
     import matplotlib
 
     matplotlib.use("Agg")
@@ -640,7 +674,7 @@ def _make_figures(result: dict, figures_dir: Path) -> None:
         for i, p in enumerate(personas):
             ys = list(strip[p].values())
             ax.scatter([i] * len(ys), ys, s=12, color=color, alpha=0.6)
-        marks = {"qwen_default": "*", "assistant": "D", "journalist": "s"}
+        marks = {"qwen_default": "*", "assistant": "D", chassis.replacement: "s"}
         for p, m in marks.items():
             if p in strip:
                 i = personas.index(p)
@@ -724,22 +758,53 @@ def main(argv: list[str] | None = None) -> int:
         level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s"
     )
     ap = argparse.ArgumentParser(description="Task #610 registered comparison (VM, CPU)")
+    ap.add_argument(
+        "--chassis",
+        choices=sorted(CHASSES),
+        default="mercenary",
+        help="Chassis registry key (v2 plan §2); re-points the comparator slug, sanity "
+        "set, replacement precedent, and default output/figure paths.",
+    )
     ap.add_argument("--parent-sweep", type=Path, default=Path("eval_results/issue_600/sweep"))
-    ap.add_argument("--new-sweep", type=Path, default=Path("eval_results/issue_610/sweep"))
+    ap.add_argument(
+        "--new-sweep",
+        type=Path,
+        default=None,
+        help="Default: <chassis output root>/sweep.",
+    )
     ap.add_argument(
         "--manifest", type=Path, default=Path("eval_results/issue_600/panel_selection.json")
     )
     ap.add_argument(
-        "--out", type=Path, default=Path("eval_results/issue_610/analysis/analysis.json")
+        "--out",
+        type=Path,
+        default=None,
+        help="Default: <chassis output root>/analysis/analysis.json.",
     )
-    ap.add_argument("--figures-dir", type=Path, default=Path("figures/issue_610"))
+    ap.add_argument(
+        "--figures-dir",
+        type=Path,
+        default=None,
+        help="Default: the chassis figures dir (figures/issue_610[/<subprefix>]).",
+    )
     args = ap.parse_args(argv)
+    chassis = CHASSES[args.chassis]
+    new_sweep = (
+        args.new_sweep if args.new_sweep is not None else chassis.output_root_default / "sweep"
+    )
+    out = (
+        args.out
+        if args.out is not None
+        else chassis.output_root_default / "analysis" / "analysis.json"
+    )
+    figures_dir = args.figures_dir if args.figures_dir is not None else chassis.figures_dir_default
     analyze_610(
         parent_sweep=args.parent_sweep,
-        new_sweep=args.new_sweep,
+        new_sweep=new_sweep,
         manifest_path=args.manifest,
-        out_path=args.out,
-        figures_dir=args.figures_dir,
+        out_path=out,
+        figures_dir=figures_dir,
+        chassis=chassis,
     )
     return 0
 

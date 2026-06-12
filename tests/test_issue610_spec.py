@@ -26,10 +26,12 @@ from explore_persona_space.experiments.contrastive_neg_geometry_472.build_traini
     build_cell,
 )
 from explore_persona_space.experiments.default_dose_610 import (
+    CHASSES,
     EXTRA_EVAL_PERSONAS,
     MARKER_TEXT,
     NEW_SLUG,
     REPLACEMENT_PERSONA,
+    chassis_for_slug,
 )
 from explore_persona_space.experiments.default_dose_610.analyze import centering_set
 from explore_persona_space.experiments.default_dose_610.cells import (
@@ -486,3 +488,186 @@ def test_run_cell_accepts_pinned_epochs_past_guard():
     ]
     with pytest.raises(FileNotFoundError):
         mod.main(argv)
+
+
+# ── Second chassis: software_engineer (amendment plan v2 §2/§4.1). ───────────
+
+
+def _manifest_two_chassis():
+    """Synthetic parent manifest carrying BOTH chassis shapes (v2 plan §2)."""
+    return {
+        "schema_version": "i600_panel_selection_v1",
+        "bank_content_hash": "f" * 64,
+        "base_panel": [{"name": "bartender"}, {"name": "french_person"}],
+        "targets": [
+            {
+                "name": "mercenary",
+                "stratum": "near",
+                "near": {"name": "dictator"},
+                "ctrl": {"name": "journalist"},
+            },
+            {
+                "name": "software_engineer",
+                "stratum": "mid",
+                "near": {"name": "data_scientist"},
+                "ctrl": {"name": "hospice_nurse"},
+            },
+        ],
+        "held_out_panel": ["mercenary", "software_engineer", "p1", "p2"],
+        "q_eval": ["q?"],
+    }
+
+
+def test_build_610_spec_software_engineer_happy_path():
+    spec = build_610_spec(_manifest_two_chassis(), CHASSES["software_engineer"])
+    assert spec.slug == "c610_software_engineer_near_nodefault"
+    assert spec.panel == ("hospice_nurse", "bartender", "french_person", "data_scientist")
+    assert "qwen_default" not in spec.panel  # the INVERTED parent invariant
+    assert spec.panel.count("hospice_nurse") == 1  # the replacement, exactly once
+    assert "data_scientist" in spec.panel  # the variable-slot NN stays
+    assert SOURCE not in spec.panel
+    assert spec.target == "software_engineer"
+    assert spec.stratum == "mid"
+
+
+def test_build_610_spec_software_engineer_rejects_wrong_ctrl_identity():
+    """Pre-registration check holds per chassis: the manifest's software_engineer
+    ctrl slot must be hospice_nurse, nothing else."""
+    m = _manifest_two_chassis()
+    m["targets"][1]["ctrl"] = {"name": "journalist"}
+    with pytest.raises(AssertionError, match="pre-registered swap"):
+        build_610_spec(m, CHASSES["software_engineer"])
+
+
+def test_mercenary_module_constants_rebound_byte_equivalent():
+    """v2 plan A7: the chassis parameterization re-binds (never re-types) the
+    round-1 module constants — the existing #610 tests stay the regression."""
+    from explore_persona_space.experiments import default_dose_610 as mod
+
+    merc = CHASSES["mercenary"]
+    assert mod.NEW_SLUG == merc.new_slug == "c610_mercenary_near_nodefault"
+    assert mod.CHASSIS_SLUG == merc.chassis_slug == "c600_mercenary_near"
+    assert mod.CHASSIS_TARGET == merc.chassis_target == "mercenary"
+    assert mod.REPLACEMENT_PERSONA == merc.replacement == "journalist"
+    assert mod.SANITY_PERSONAS == merc.sanity_personas == ("bartender", "french_person", "dictator")
+    assert mod.CHASSIS_DG_SOFT_RANGE_NATS == merc.dg_soft_range == (6.8, 11.3)
+    assert mod.JOURNALIST_CTRL_PRECEDENT == merc.replacement_ctrl_precedent == -0.117
+    assert mod.RUN_NAME_PREFIX == merc.run_name_prefix == "issue610_"
+    # Round-1 roots/prefixes are the bare issue roots (no subdir nesting).
+    assert merc.hf_data_prefix == "issue610_default_dose"
+    assert merc.hf_adapter_path_prefix == "adapters/issue_610"
+    assert str(merc.output_root_default) == "eval_results/issue_610"
+
+
+def test_software_engineer_chassis_paths_and_prefixes():
+    """v2 plan §4.3: the follow-up round nests under the followup-label dirs."""
+    se = CHASSES["software_engineer"]
+    assert se.hf_data_prefix == "issue610_default_dose/second_chassis"
+    assert se.hf_adapter_path_prefix == "adapters/issue_610/second_chassis"
+    assert str(se.output_root_default) == "eval_results/issue_610/second-chassis-dose-replication"
+    assert str(se.figures_dir_default) == "figures/issue_610/second_chassis"
+    assert se.run_name_prefix == "issue610_second_chassis_"
+    assert se.dg_soft_range == (6.5, 11.8)
+    assert se.replacement_ctrl_precedent == -0.0372
+    assert se.sanity_with_arm_expected == {
+        "bartender": 0.0178,
+        "french_person": -0.0031,
+        "data_scientist": -0.0597,
+    }
+
+
+def test_chassis_for_slug_round_trip_and_unknown():
+    assert chassis_for_slug("c610_mercenary_near_nodefault").name == "mercenary"
+    assert chassis_for_slug("c610_software_engineer_near_nodefault").name == "software_engineer"
+    with pytest.raises(KeyError, match="unknown #610 cell slug"):
+        chassis_for_slug("c610_pirate_captain_near_nodefault")
+
+
+def test_built_jsonl_realized_panel_software_engineer(tmp_path: Path):
+    """Disjointness on a BUILT JSONL for the new chassis: realized panel is
+    {hospice_nurse, bartender, french_person, data_scientist}, qwen_default
+    absent, markers only under the source."""
+    spec = build_610_spec(_manifest_two_chassis(), CHASSES["software_engineer"])
+    questions = ["q one?", "q two?", "q three?"]
+    bank = _bank(spec.panel)
+    out = tmp_path / "cell_se.jsonl"
+    build_cell(
+        spec.slug,
+        out,
+        r_train=_r_train(bank, questions),
+        q_train=questions,
+        persona_bank=bank,
+        source=SOURCE,
+        seed=42,
+        cell_specs=((spec.slug, spec.plain_name, "explicit", 4, 6, True),),
+        negative_personas_override=list(spec.panel),
+    )
+    payload = verify_realized_panel(
+        out,
+        persona_bank=bank,
+        expected_panel=list(spec.panel),
+        source=SOURCE,
+        targets=["mercenary", "software_engineer"],
+        pos_rows=200,
+        neg_rows_per_persona=6,
+    )
+    assert payload["verdict"] == "pass"
+    assert payload["realized_panel"] == sorted(spec.panel)
+    assert "qwen_default" not in payload["realized_panel"]
+    assert payload["neg_counts"]["hospice_nurse"] == 6
+    for line in out.read_text().splitlines():
+        row = json.loads(line)
+        has_marker = MARKER_TEXT in row["completion"][0]["content"]
+        is_source = "villain" in row["prompt"][0]["content"]
+        assert has_marker == is_source
+
+
+def test_design_round_trip_software_engineer():
+    m = _manifest_two_chassis()
+    se = CHASSES["software_engineer"]
+    spec = build_610_spec(m, se)
+    design = design_payload(m, spec, se)
+    assert design["chassis"] == "software_engineer"
+    assert design["chassis_slug"] == "c600_software_engineer_near"
+    assert design["replacement_persona"] == "hospice_nurse"
+    assert_design_matches(design, m, spec, se)  # happy path
+    tampered = dict(design)
+    tampered["chassis_slug"] = "c600_mercenary_near"
+    with pytest.raises(RuntimeError, match="chassis_slug"):
+        assert_design_matches(tampered, m, spec, se)
+    # A mercenary design.json does NOT pass the software_engineer asserts.
+    merc_design = design_payload(m, build_610_spec(m), CHASSES["mercenary"])
+    with pytest.raises(RuntimeError, match="different generation"):
+        assert_design_matches(merc_design, m, spec, se)
+
+
+def test_gate_j_band_is_per_chassis():
+    from explore_persona_space.experiments.default_dose_610.dispatch import (
+        gate_j_chassis_comparability,
+    )
+
+    payload = {
+        "checkpoints": [{"frac": 1.0, "held_out": {}, "source_self": {"delta_g_mean": 11.5}}]
+    }
+    merc = gate_j_chassis_comparability(payload)  # default = mercenary, band (6.8, 11.3)
+    se = gate_j_chassis_comparability(payload, CHASSES["software_engineer"])  # (6.5, 11.8)
+    assert merc["soft_range_nats"] == [6.8, 11.3] and not merc["within_parent_range"]
+    assert se["soft_range_nats"] == [6.5, 11.8] and se["within_parent_range"]
+
+
+@pytest.mark.skipif(not PARENT_MANIFEST.exists(), reason="parent manifest not checked out")
+def test_real_manifest_spec_and_centering_software_engineer():
+    """The REAL parent manifest: software_engineer pair identities (v2 plan A1)
+    + the centering set is identical across chassis and excludes the new
+    chassis's replacement + NN (v2 plan A4)."""
+    manifest = json.loads(PARENT_MANIFEST.read_text())
+    se = CHASSES["software_engineer"]
+    spec = build_610_spec(manifest, se)
+    assert spec.panel == ("hospice_nurse", "bartender", "french_person", "data_scientist")
+    centering_merc = centering_set(manifest)
+    centering_se = centering_set(manifest, se)
+    assert centering_se == centering_merc  # chassis-independent by formula
+    assert len(centering_se) == 35
+    assert not set(centering_se) & set(spec.panel)
+    assert not set(centering_se) & set(EXTRA_EVAL_PERSONAS)
+    assert SOURCE not in centering_se

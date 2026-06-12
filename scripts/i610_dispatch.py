@@ -7,8 +7,12 @@ Smoke (pod / GCE):
 Full (pod / GCE; smoke pair → gates → remaining seeds, ONE invocation):
     nohup uv run python scripts/i610_dispatch.py --full --n-gpus 4 --max-parallel 3 \
         > /workspace/logs/issue-610-full.log 2>&1 &
+Second-chassis follow-up round (v2 plan §4.3; roots/prefixes/band re-pointed):
+    nohup uv run python scripts/i610_dispatch.py --full --chassis software_engineer \
+        --n-gpus 4 --max-parallel 3 > /workspace/logs/issue-610-full.log 2>&1 &
 
-All logic lives in ``explore_persona_space.experiments.default_dose_610.dispatch``.
+All logic lives in ``explore_persona_space.experiments.default_dose_610.dispatch``
+(``--chassis`` is forwarded with the rest of argv).
 """
 
 from __future__ import annotations
