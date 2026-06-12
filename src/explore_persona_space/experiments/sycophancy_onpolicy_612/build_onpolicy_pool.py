@@ -810,13 +810,19 @@ def main(argv: list[str] | None = None) -> int:
             )
         return 0
 
-    build_pools_for_source(
-        args.source,
-        args.arms,
-        data_root=args.data_root,
-        judge_concurrency=args.judge_concurrency,
-        gpu_memory_utilization=args.gpu_memory_utilization,
-    )
+    try:
+        build_pools_for_source(
+            args.source,
+            args.arms,
+            data_root=args.data_root,
+            judge_concurrency=args.judge_concurrency,
+            gpu_memory_utilization=args.gpu_memory_utilization,
+        )
+    except PositiveYieldError as e:
+        # Distinct exit code so the dispatcher can apply the G3 per-source
+        # drop rule (vs halting the whole sweep on an ordinary crash).
+        log.error("positive-yield failure (G3): %s", e)
+        return 42
     return 0
 
 
