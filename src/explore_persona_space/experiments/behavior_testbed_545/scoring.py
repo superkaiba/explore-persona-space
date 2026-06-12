@@ -274,8 +274,23 @@ def rank_one_fit(
     }
 
 
-def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-registered protocol, intentionally flat
-    """Run the full pre-registered race. Writes scoring/scoring_results.json."""
+def score(  # noqa: C901 — pre-registered protocol, intentionally flat
+    *,
+    include_flagged: bool = False,
+    exclude_rows: frozenset[str] = frozenset(),
+    out_dir_name: str = "scoring",
+    protocol_note: str | None = None,
+) -> Path:
+    """Run the full pre-registered race. Writes scoring/scoring_results.json.
+
+    Defaults reproduce the pre-registered protocol byte-for-byte. The optional
+    kwargs exist for LABELED follow-up passes (never overwrite the prereg
+    record): ``exclude_rows`` drops every cell of those train rows from the
+    scoring universe (targets, z-norm pool, dev AND quarantine lists) before
+    any selection; ``out_dir_name`` redirects output (e.g.
+    ``scoring_followup_bcond``); ``protocol_note`` stamps the results JSON
+    with why the pass deviates from the prereg record.
+    """
     out_root = output_root()
     prereg = json.loads((out_root / "preregistration.json").read_text())
     matrix = json.loads((out_root / "L_matrix.json").read_text())["cells"]
@@ -297,6 +312,15 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
         "tracks": {},
         "metadata": reproducibility_metadata(),
     }
+    if exclude_rows:
+        n_before = len(targets_raw)
+        targets_raw = {k: v for k, v in targets_raw.items() if k.split("|")[0] not in exclude_rows}
+        results["universe_filter"] = {
+            "excluded_rows": sorted(exclude_rows),
+            "n_target_cells_dropped": n_before - len(targets_raw),
+        }
+    if protocol_note:
+        results["protocol_note"] = protocol_note
     groups = ("A", "B", "C", "D")
     for g in groups:
         results["group_k"][g] = sum(1 for n in preds if n.startswith(f"{g}__"))
@@ -510,7 +534,7 @@ def score(*, include_flagged: bool = False) -> Path:  # noqa: C901 — pre-regis
                 cuts[expected][g] = weighted_kendall_tau(preds[champ]["cells"], target, cells_e)
     results["per_cell_type_cuts"] = cuts
 
-    out_dir = out_root / "scoring"
+    out_dir = out_root / out_dir_name
     out_dir.mkdir(parents=True, exist_ok=True)
     suffix = "_with_flagged" if include_flagged else ""
     out_path = out_dir / f"scoring_results{suffix}.json"
