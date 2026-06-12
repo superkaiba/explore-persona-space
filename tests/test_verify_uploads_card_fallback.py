@@ -707,6 +707,11 @@ class TestRunVerificationCardFallback:
 # summary instead of the per-cell mapping the sentinel contract requires.
 _PROSE_ADAPTERS_612 = "adapters/issue_612/<arm>/<source>_seed<S> (16 adapters)"
 
+# The bare-``wandb``-key sibling of the same card: a free-text line that
+# NO check consults (check_wandb_from_card reads wandb_run_path / wandb_run /
+# wandb_run_names only).
+_PROSE_WANDB_612 = "wandb: 52 runs under project issue612 (one per arm x judge)"
+
 
 class TestProseCardDeclarations:
     def test_string_adapter_paths_names_contract_violation(self):
@@ -828,3 +833,92 @@ class TestProseCardDeclarations:
         assert "producer-contract violation" in row["detail"]
         assert "No HF model path provided" not in row["detail"]
         assert report["verdict"] == "FAIL"
+
+    def test_bare_prose_wandb_noted_on_generic_missing_row(self):
+        """A free-text line under the bare ``wandb`` key is consulted by NO
+        check (#612 follow-up); the generic MISSING row must say so instead
+        of reading as a plain declaration gap. Diagnostic-only: the generic
+        detail text, the MISSING status, and the FAIL verdict are
+        unchanged — the note is appended."""
+        card = {"wandb": _PROSE_WANDB_612}
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=card),
+            patch.object(verify_uploads, "check_wandb_runs_convention_project", return_value=None),
+        ):
+            report = verify_uploads.run_verification(612, experiment_type="training")
+        row = report["checks"]["wandb_run"]
+        assert row["status"] == "MISSING"
+        assert "conventional-project probe" in row["detail"]  # generic text preserved
+        assert "ALSO:" in row["detail"]
+        assert "unconsulted prose 'wandb' field" in row["detail"]
+        assert "SKILL.md Step 7" in row["detail"]
+        assert report["verdict"] == "FAIL"
+
+    def test_bare_prose_wandb_noted_on_convention_probe_ok_row(self):
+        """The bare-``wandb``-key note must never preempt the convention
+        probe: the probe still fires, its OK row (and status) wins the
+        slot unchanged, and the unconsulted prose declaration is appended
+        to its detail."""
+        card = {"adapter_paths": {"a": "adapters/issue_612/a"}, "wandb": _PROSE_WANDB_612}
+        probe_row = {
+            "status": "OK",
+            "url": "https://wandb.ai/e/issue612",
+            "detail": "52 run(s) named issue612_* resolve (declaration gap)",
+            "source": "wandb project-naming convention (no card declaration)",
+        }
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=card),
+            patch.object(
+                verify_uploads,
+                "check_hf_hub_path",
+                return_value={"status": "OK", "url": "u", "file_count": 1},
+            ),
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_convention_project",
+                return_value=dict(probe_row),
+            ) as mock_probe,
+        ):
+            report = verify_uploads.run_verification(612, experiment_type="training")
+        mock_probe.assert_called_once_with(612)
+        row = report["checks"]["wandb_run"]
+        assert row["status"] == "OK"
+        assert "declaration gap" in row["detail"]
+        assert "ALSO:" in row["detail"]
+        assert "unconsulted prose 'wandb' field" in row["detail"]
+
+    def test_structured_wandb_declaration_suppresses_unconsulted_note(self):
+        """When the card ALSO declares structured wandb fields, those win
+        the row exactly as before and the bare prose ``wandb`` duplicate
+        is not noted (the producer's structured declaration was consulted)."""
+        card = {
+            "wandb": _PROSE_WANDB_612,
+            "wandb_project": "issue612",
+            "wandb_run_names": ["issue612_a"],
+        }
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=card),
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_by_name",
+                return_value={"status": "OK", "url": "u", "detail": "all resolve"},
+            ),
+        ):
+            report = verify_uploads.run_verification(612, experiment_type="training")
+        row = report["checks"]["wandb_run"]
+        assert row["status"] == "OK"
+        assert "unconsulted" not in row["detail"]
+
+    def test_unconsulted_note_only_for_nonempty_strings(self):
+        """The note fires only on a declared STRING ``wandb`` value; None /
+        empty / non-string shapes keep the row detail untouched, and long
+        values are snipped."""
+        note_fn = verify_uploads._unconsulted_prose_wandb_note
+        assert note_fn(None) is None
+        assert note_fn({}) is None
+        assert note_fn({"wandb": ""}) is None
+        assert note_fn({"wandb": {"project": "issue612"}}) is None
+        long_note = note_fn({"wandb": "x" * 200})
+        assert long_note is not None
+        assert "..." in long_note
+        assert "#612" in long_note

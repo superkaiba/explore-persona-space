@@ -918,6 +918,28 @@ def check_wandb_runs_convention_project(issue_num: int) -> dict | None:
     }
 
 
+def _unconsulted_prose_wandb_note(card: dict | None) -> str | None:
+    """Detail note when a card's bare ``wandb`` field is consulted by NO check (#612).
+
+    ``check_wandb_from_card`` reads ``wandb_run_path`` / ``wandb_run`` /
+    ``wandb_run_names`` only; a free-text line stored under the bare
+    ``wandb`` key (the #612 prose-template card) is silently skipped, so
+    the producer-contract violation stayed invisible unless the
+    adapter_paths side also violated. Returns text for ``run_verification``
+    to APPEND to whichever fallback row wins the wandb_run slot —
+    diagnostic-only, never a row of its own, never a status change.
+    """
+    value = (card or {}).get("wandb")
+    if not isinstance(value, str) or not _is_declared(value):
+        return None
+    snippet = value if len(value) <= 100 else value[:97] + "..."
+    return (
+        "card carries an unconsulted prose 'wandb' field — producers must "
+        "declare wandb_run_path / wandb_run_names (epm:results sentinel "
+        f"contract, .claude/skills/issue/SKILL.md Step 7; incident #612): {snippet!r}"
+    )
+
+
 def _issue_branch_ref(issue_num: int) -> str | None:
     """Return the first existing git ref for the issue branch, or None.
 
@@ -1202,13 +1224,20 @@ def run_verification(
         report["checks"]["wandb_run"] = check_wandb_run(wandb_run)
     elif experiment_type == "training":
         card_check = check_wandb_from_card(results_card) if results_card else None
+        wandb_prose_note: str | None = None
         if card_check is None:
+            # The card declared no structured wandb field; a free-text
+            # line under the bare ``wandb`` key is consulted by NO check
+            # (#612 follow-up) — remember it so whichever fallback row
+            # lands below names the unconsulted declaration. Append-only:
+            # row status and the convention-probe fallback are unchanged.
+            wandb_prose_note = _unconsulted_prose_wandb_note(results_card)
             # Nothing declared anywhere (#608 follow-up): probe the
             # conventional <default_entity>/issue<N> project for
             # issue<N>_* runs before hard-MISSING. Fail-soft — a probe
             # error keeps the strict MISSING row below.
             card_check = check_wandb_runs_convention_project(issue_num)
-        report["checks"]["wandb_run"] = card_check or {
+        wandb_row = card_check or {
             "status": "MISSING",
             "url": "",
             "detail": (
@@ -1218,6 +1247,9 @@ def run_verification(
                 f"found no issue{issue_num}_* runs)"
             ),
         }
+        if wandb_prose_note:
+            wandb_row["detail"] = f"{wandb_row['detail']}; ALSO: {wandb_prose_note}"
+        report["checks"]["wandb_run"] = wandb_row
 
     # 3. WandB artifact (eval results)
     if wandb_artifact:
