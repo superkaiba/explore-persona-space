@@ -9,6 +9,9 @@ origin_prompt: 'task #616 cross-check audit (user asked to double-check matches)
   ''increase number of contrastive negatives until crashes'' had no covering task'
 goal: Find the contrastive-negatives count at which source implantation stops growing
   or collapses, discriminating the schedule-length mechanism from loss-competition.
+relates_to:
+- leak-contrastive-negatives
+- implant-learning-speed
 ---
 ## Goal
 
