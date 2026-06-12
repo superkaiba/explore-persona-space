@@ -1549,11 +1549,18 @@ markers:
       card across ALL epm:results markers newest-wins per declared
       field, so a resume-pass sentinel with an empty card
       (`adapter_paths: {}`) never shadows an earlier full declaration
-      (#601). Sweep dispatchers
+      (#601). A payload that declares NO explicit card but carries
+      GCP-lane driver provenance
+      (`production_provenance.<cell>.hf_adapter_subfolder`, optionally
+      `.wandb_run_name`, plus top-level `wandb_*` / `hf_model_repo`
+      hints) gets an equivalent card SYNTHESIZED by verify_uploads.py
+      (`_card_from_provenance`, #599) — a safety net, not the producer
+      contract; explicit cards always win. Sweep dispatchers
       SHOULD declare per-cell `adapter_paths` + `wandb_run_names` so
       the verifier's training rows resolve mechanically instead of
       hard-MISSing; explicit CLI declarations always win unchanged, and
-      a task whose markers declare no card keeps the strict MISSING row.
+      a task whose markers declare neither a card nor usable
+      provenance keeps the strict MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
