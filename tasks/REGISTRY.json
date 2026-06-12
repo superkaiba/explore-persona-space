@@ -3850,8 +3850,8 @@
     "626": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/626",
-      "status": "proposed",
+      "path": "tasks/planning/626",
+      "status": "planning",
       "title": "Batch-aware Claude-judge dispatch in the eval path (speed-threshold routing: sync <2k, batch >=2k in 10k splits)"
     },
     "65": {
