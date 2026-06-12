@@ -10,7 +10,7 @@
   frontmatter is the first block; everything below it is split into
   three anchored regions.
 
-  See SKILL.md Step 4-5 for the merge algorithm.
+  See SKILL.md § Updating the Persistent Deck for the merge algorithm.
 -->
 
 ---
@@ -216,27 +216,6 @@ Each is conditional — emit only when source data exists.
 ---
 
 <!--
-  Backup family (e) — TRAINING-DATA QUALITY.
-  Emit one slide per result whose fine-tuning ran on a dataset built
-  for that experiment (synthetic mixes, contrastive panels, template
-  corpora). Verbatim rows, never paraphrased. (Mentor steer 2026-06-11:
-  "get more into the weeds on thinking about data quality".)
--->
-
-## What the training data looks like: {{data.mix_label}}
-
-> {{data.verbatim_row_1}}
-
-> {{data.verbatim_row_2}}
-
-- **Source tier**: {{data.source_tier}} <small>(real-world / established benchmark / LLM-synthetic / programmatic)</small>
-- **Known artifacts**: {{data.known_artifacts_one_line}}
-
-<small>Source: Issue #{{data.source_issue_number}} · {{data.n_rows}} rows · {{data.hf_dataset_path}}</small>
-
----
-
-<!--
   Backup family (a) — METRIC DEFINITION + CONCRETE EXAMPLE.
   Emit one slide per metric whose definition was extracted (Sanders:
   real data guards against being fooled by abstract metrics).
@@ -311,6 +290,30 @@ Each is conditional — emit only when source data exists.
 {{/each}}
 
 <small>Source: Issue #{{baseline.source_issue_number}} · all baselines run on the same eval set as the headline result</small>
+
+---
+
+<!--
+  Backup family (e) — TRAINING-DATA QUALITY.
+  Emit one slide per result whose fine-tuning ran on a dataset built
+  for that experiment (synthetic mixes, contrastive panels, template
+  corpora). 1-2 verbatim rows, never paraphrased. (Mentor steer
+  2026-06-11: "get more into the weeds on thinking about data
+  quality".)
+-->
+
+## What the training data looks like: {{data.mix_label}}
+
+> {{data.verbatim_row_1}}
+
+> {{data.verbatim_row_2}}
+
+<!-- ↑ row 2 is OPTIONAL — drop the second blockquote when only one representative row exists -->
+
+- **Source tier**: {{data.source_tier}} <small>(real-world / established benchmark / LLM-synthetic / programmatic)</small>
+- **Known artifacts**: {{data.known_artifacts_one_line}}
+
+<small>Source: Issue #{{data.source_issue_number}} · {{data.n_rows}} rows · {{data.hf_dataset_path}}</small>
 
 ---
 

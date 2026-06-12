@@ -85,7 +85,7 @@ Hughes & Chua devote a section to backup slides — what to have ready when the 
 
 (e) **Training-data quality.** One slide per result whose fine-tuning ran on a dataset built for that experiment (synthetic mixes, contrastive panels, template corpora): 1-2 verbatim training rows, the data-source tier (real-world / established benchmark / LLM-synthetic / programmatic, per the CLAUDE.md realistic-data hierarchy), and known artifacts (templated structure, narrow topic coverage, judge-model authorship). Source: mentor steer, 2026-06-11 (`docs/mentor_updates/2026-06-11.md`): "Get more into the weeds on thinking about data quality / When running an experiment on finetuning on different things." Source data: the clean-result's training-mix description + the HF data-repo JSONL named in its `## Reproducibility` section. The same steer also mandates the verbatim qualitative example on every behavioral result slide (SKILL.md § Output Rules) — family (e) is the data-side half, the Example bullet the behavior-side half.
 
-The skill's quality checklist refuses to emit a backup slide whose source data was not extracted; missing slides are reported in the Step 8 user-facing summary, never silently skipped.
+The skill's quality checklist refuses to emit a backup slide whose source data was not extracted; missing slides are reported in the end-of-run user-facing summary (SKILL.md § Updating the Persistent Deck), never silently skipped.
 
 ---
 
