@@ -1,29 +1,16 @@
 ---
-name: Inherited #246/#232 LoRAs live on WandB Artifacts, not HF Hub
-description: `pod.py sync models --pull` only finds the 2 adapters on HF Hub. The other 10 marker_<src>_asst_excluded_medium_seed42 adapters live in `thomasjiralerspong/huggingface/<run_name>:vN`. Use wandb.Api directly.
+name: Inherited #232/#246 marker LoRAs live on WandB Artifacts, not HF Hub — and clean versions are uneven
+description: Only helpful_assistant + qwen_default are on HF; the 10 named-persona adapters are at thomasjiralerspong/huggingface/<name>:vN. Only 6/10 have a clean <1GB version — verify per-persona availability in Phase 0 before hard-binding the set.
 type: feedback
 ---
 
-When picking up the inherited 10 named-persona LoRAs from #232/#246 (software_engineer, kindergarten_teacher, data_scientist, medical_doctor, librarian, french_person, villain, comedian, police_officer, zelthari_scholar) — **only `helpful_assistant` and `qwen_default` are on HF Hub** as `superkaiba1/explore-persona-space/adapters/marker_<src>_asst_excluded_medium_seed42/`. The other 10 are only on WandB.
+The inherited 10 named-persona marker LoRAs from #232/#246 (`marker_<src>_asst_excluded_medium_seed42`) are NOT on HF Hub — `run_leakage_experiment.py` uploaded via `wandb.log_artifact()`, re-keyed under `thomasjiralerspong/huggingface/<run_name>:v0..v4`. Fetch with `wandb.Api()`:
 
-**Why:** `run_leakage_experiment.py` uploads adapters via `wandb.log_artifact()` with `WANDB_PROJECT="leakage-experiment"`. WandB then re-keys them under `thomasjiralerspong/huggingface/<run_name>:v0..v4`. The HF Hub upload only happens when invoked by separate `pod.py sync models --sweep` runs, and historically that wasn't run for #232/#246 results.
-
-**How to apply:**
 ```python
-import wandb
-api = wandb.Api()
-for src in INHERITED_SOURCES:
-    artname = f"marker_{src}_asst_excluded_medium_seed42"
-    col = api.artifact_collection(
-        type_name="model",
-        name=f"thomasjiralerspong/huggingface/{artname}",
-    )
-    versions = list(col.artifacts())
-    if versions:
-        latest = versions[0]  # most recent first
-        latest.download(root=str(OUT_DIR / artname / "adapter"))
+col = api.artifact_collection(type_name="model", name=f"thomasjiralerspong/huggingface/{artname}")
+versions = list(col.artifacts())  # pick the SMALLEST version that still has adapter_model.safetensors at root
 ```
 
-**Size warning:** Some artifact versions include all training checkpoints (~6.2GB each); newer/cleaner v1+ versions are 334MB. Pick the smallest version that still has `adapter_model.safetensors` at the root. For our 11 inherited sources, choosing `v4` for newer ones and `v1` for older ones ended up downloading ~28 GB total.
+Some versions are bloated ~6.2GB training-checkpoint blobs; clean adapter-only versions are ~334MB. **Availability is uneven (verified 2026-05-07):** clean <1GB versions exist for librarian, villain, medical_doctor, french_person, police_officer, zelthari_scholar; software_engineer, comedian, data_scientist, kindergarten_teacher have ONLY the 6GB blobs (same plan-claims-vs-reality family as [[feedback_carryover_data_assumption]]).
 
-**After download:** `--eval-only` mode requires `output_dir/merged/`, so call `merge_lora()` once per source before launching `--eval-only` — and watch out for the transformers 5.x→4.x tokenizer_config issue (see related memory).
+**How to apply:** before launching anything that hard-binds the 10-persona set, inventory WandB per persona in Phase 0 and confirm a <1GB version exists. `download_adapter` in `eval/steering.py` has a 1GB cap that correctly rejects the blobs — do NOT raise it. HF `pod4_backup/_old_v1_*` fallbacks exist but need checkpoint-equivalence verification first. After download, `--eval-only` needs `output_dir/merged/` — run `merge_lora()` per source and expect the transformers 5.x→4.x tokenizer_config issue ([[feedback_tokenizer_config_5x_to_4x]]).

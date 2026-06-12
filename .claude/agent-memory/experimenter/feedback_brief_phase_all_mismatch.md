@@ -1,20 +1,14 @@
 ---
 name: brief-phase-all-mismatch
-description: Briefs that say "launch with --phase all" can mismatch the script's actual argparse choices; check the wrapper script the previous round used before retyping a command
+description: Re-launch briefs drift from the script's real argparse surface (--phase all, flags that don't exist). Check the previous round's epm:run-launched cmd and prefer the on-pod launch wrapper before retyping a command.
 metadata:
   type: feedback
 ---
 
-When a re-launch brief specifies a literal command like `uv run python scripts/run_experiment_X.py --phase all` and the previous round successfully launched a long-running multi-phase pipeline, verify the script accepts `--phase all` before launching. Phased dispatchers commonly only accept named phases (`preflight`, `dataset-gen`, `phase0-calibration`, `base-eval`, `train`, `full-eval`, `aggregate`, `upload`) — `all` is invalid and argparse exits code 2 within a second, leaving an empty log + no traceback (just usage text).
+Re-launch briefs routinely specify flags the dispatcher doesn't accept: `--phase all` against phased dispatchers that only take named phases (argparse exits 2 in ~1s, empty log, no traceback — burned #389 v6, where the canonical entry point was the on-disk `launch_issue_389.sh` wrapper from round 1), and nonexistent flags like `--cell-specs`/`--epochs` (#477 v6).
 
-**Why:** Burned at #389 v6 re-launch (2026-05-26). Brief said `--phase all`; script rejected it; PID died in ~5s with no Python traceback (argparse error). The previous-round successful launch used `bash /workspace/launch_issue_389.sh` — a wrapper that iterates through every named phase and parallelizes the train waves. The wrapper was the canonical entry point and it was already on disk from round 1.
-
-**How to apply:** Before executing a re-launch command from a brief:
-1. Look up the previous round's `epm:run-launched` marker note for the actual `cmd='...'` string used.
-2. Check the pod for any `launch_issue_<N>.sh` wrapper (or `dispatch.sh`, `run.sh`) at `/workspace/`.
-3. If a wrapper exists, prefer it — it already encodes the correct phase ordering, parallelism, and logging.
-4. If the brief says `--phase all` or any literal that smells off, grep the script's argparse `choices=[...]` to verify.
-
-Cost of getting this wrong: one wasted launch cycle + a confusing "PID gone in 5s" diagnostic. Cheap to avoid.
-
-**2026-06-04 addendum (#477 v6 fullsweep launch):** Same failure class but flags entirely absent — brief specified `--cell-specs 477` and `--epochs 2` on the v6 dispatcher; both flags do NOT exist in `dispatch_neg_geometry_477.py --help`. argparse-crash would have aborted at startup. Per the experimenter.md Step 7 protocol, dropped both flags (verified neither changed scope: --cell-specs has no effect because the dispatcher reads its built-in @register_cell registry, and --epochs has no effect because per-cell epoch is baked into train_cell config) and launched with the corrected command. State the dropped flags + the effective scope explicitly in `epm:run-launched` note so the orchestrator/reviewer knows. Do NOT bounce code-class when the drop is unambiguous.
+**How to apply (before executing any brief's literal command):**
+1. Read the previous round's `epm:run-launched` note for the actual `cmd='...'`.
+2. Check the pod for a `launch_issue_<N>.sh` / `dispatch.sh` wrapper and prefer it — it encodes phase ordering, parallelism, and logging.
+3. Grep the script's argparse `choices=[...]` for anything that smells off.
+4. Stale flags whose drop is UNAMBIGUOUS (verified zero scope change) get dropped per the experimenter.md stale-flag protocol — launch with the corrected command and state the dropped flags + effective scope in the `epm:run-launched` note; don't bounce code-class.
