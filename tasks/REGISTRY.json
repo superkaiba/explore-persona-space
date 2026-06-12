@@ -3455,8 +3455,8 @@
     "576": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/576",
-      "status": "reviewing",
+      "path": "tasks/completed/576",
+      "status": "completed",
       "title": "Assert the marker-eval per-slot storage contract in eval code, not just prose"
     },
     "577": {
