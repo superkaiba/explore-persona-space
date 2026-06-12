@@ -3691,8 +3691,8 @@
     "607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/607",
-      "status": "planning",
+      "path": "tasks/approved/607",
+      "status": "approved",
       "title": "GCP lane: redirect workload output to log file \u2014 GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
     },
     "608": {
