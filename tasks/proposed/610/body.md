@@ -12,6 +12,9 @@ goal: 'Determine whether the default assistant context''s anomalously low marker
   position, by training otherwise-identical mixes that include vs exclude the default-assistant
   negative slot and reading the untrained default context''s implant-normalized marker
   log-prob shift.'
+relates_to:
+- leak-to-default
+- leak-contrastive-negatives
 ---
 # Default-assistant shielding: dose or identity? — Ablation
 
