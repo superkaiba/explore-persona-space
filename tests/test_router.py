@@ -43,6 +43,7 @@ from explore_persona_space.backends import (
     route,
     spec_hash,
 )
+from explore_persona_space.backends.gcp import QuotaHeadroom
 from explore_persona_space.backends.router import (
     DEFAULT_AUTO_LANE_ORDER,
     ENV_AUTO_LANE_ORDER,
@@ -230,15 +231,28 @@ class _GcpBackendDouble(_BaseBackend):
       ``GcpWorkloadError`` to test the failure classification paths.
     * ``reconnect_handle`` — set to a RunHandle to simulate a live
       existing instance found via the injected reconnect_fn.
+    * ``quota_headroom`` — scripted ``preflight_quota_headroom`` reading
+      (a ``QuotaHeadroom``, ``None`` for "no opinion", or an exception
+      instance to raise — the router must fail OPEN on it). Defaults to
+      ``None`` so every pre-existing test proceeds exactly as before.
     """
 
     def __init__(
         self,
         *,
         launch_raises: BaseException | None = None,
+        quota_headroom: QuotaHeadroom | BaseException | None = None,
     ) -> None:
         self._launch_raises = launch_raises
+        self._quota_headroom = quota_headroom
         self.launches: list[RunSpec] = []
+        self.quota_probes: list[RunSpec] = []
+
+    def preflight_quota_headroom(self, spec: RunSpec) -> QuotaHeadroom | None:
+        self.quota_probes.append(spec)
+        if isinstance(self._quota_headroom, BaseException):
+            raise self._quota_headroom
+        return self._quota_headroom
 
     @property
     def name(self) -> BackendKind:
@@ -2881,6 +2895,176 @@ def test_gcp_primary_provision_fail_falls_through_to_free_lanes(
     assert marker_outcomes.index(("gcp", "provisioning_failure")) < marker_outcomes.index(
         ("nibi", "launched")
     )
+
+
+def test_gcp_quota_headroom_insufficient_skips_lane_without_attempt_burn(
+    lease_store, marker_poster, captured_markers
+):
+    """A POSITIVE insufficient-headroom probe reading skips the GCP lane
+    BEFORE the per-day attempt counter bumps (#608: four quota-doomed
+    creates burned the cap against an exhausted regional quota) and
+    continues down the auto order."""
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(
+        quota_headroom=QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=8.0,
+            usage=8.0,
+            needed=4,
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    assert gcp.launches == []  # no create was attempted
+    assert gcp.quota_probes  # the probe WAS consulted
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    assert outcomes.index(("gcp", "quota_headroom_insufficient")) < outcomes.index(
+        ("nibi", "launched")
+    )
+    skip = next(a for a in result.attempts if a.outcome == "quota_headroom_insufficient")
+    assert "NVIDIA_A100_80GB_GPUS" in skip.detail
+    assert "without burning a daily attempt" in skip.detail
+    # The load-bearing assertion: the per-day GCP attempt counter did NOT bump.
+    lease = lease_store.read(137)
+    assert lease is None or lease.gcp_attempts_today == 0
+    # Marker fidelity: the skip rides the attempts trail in the final marker.
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    assert ("gcp", "quota_headroom_insufficient") in [
+        (a["kind"], a["outcome"]) for a in finals[-1]["attempts"]
+    ]
+
+
+def test_gcp_quota_headroom_sufficient_proceeds_to_launch(lease_store):
+    """A sufficient-headroom reading proceeds to the normal launch path
+    (attempt bumped, instance created)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom=QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=8.0,
+            usage=4.0,
+            needed=4,
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 1
+
+
+def test_gcp_quota_preflight_fails_open_on_probe_error(lease_store):
+    """A probe that RAISES fails OPEN: the launch proceeds exactly as
+    before (the pre-check must never block a launch — #608 contract)."""
+    gcp = _GcpBackendDouble(quota_headroom=RuntimeError("gcloud not installed"))
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    assert gcp.quota_probes  # the probe WAS consulted, then failed open
+
+
+def test_gcp_quota_headroom_insufficient_terminal_raises_no_compute(lease_store, monkeypatch):
+    """GCP in TERMINAL position (free-first override) with insufficient
+    headroom raises the typed NoCompute terminal WITHOUT burning an
+    attempt — the doomed create is never issued."""
+    monkeypatch.setenv(ENV_AUTO_LANE_ORDER, "nibi,gcp")
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        quota_headroom=QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=8.0,
+            usage=8.0,
+            needed=4,
+        )
+    )
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        route(
+            _spec(backend=None),
+            runpod_backend=_ExplodingRunpod(),
+            free_backends={"nibi": nibi},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            is_started=lambda _b, _h: False,
+            is_live_after_cancel=lambda _b, _h: False,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert any(a["outcome"] == "quota_headroom_insufficient" for a in excinfo.value.attempts)
+    assert gcp.launches == []
+    lease = lease_store.read(137)
+    assert lease is None or lease.gcp_attempts_today == 0
+
+
+def test_gcp_provisioning_failure_detail_carries_stderr_tail(
+    lease_store, marker_poster, captured_markers
+):
+    """The classified create failure's captured gcloud stderr tail rides
+    the attempt detail into the marker attempts trail (#608: the reason
+    said "stderr below" but no stderr followed anywhere)."""
+    stderr = "Quota 'NVIDIA_A100_80GB_GPUS' exceeded.  Limit: 8.0 in region us-central1."
+    nibi = _FreeLaneBackend(kind="nibi", est_start_raw=0.0)
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "gcloud create returned 1; no known provisioning pattern (stderr below)",
+            evidence={"stderr_tail": stderr, "matched_pattern": None},
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: True,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "nibi"
+    fail = next(a for a in result.attempts if a.outcome == "provisioning_failure")
+    assert "NVIDIA_A100_80GB_GPUS" in fail.detail
+    assert "stderr_tail:" in fail.detail
+    # Marker fidelity: the stderr tail survives into the posted attempts.
+    finals = _by_reason(captured_markers, ROUTE_REASON_AUTO_STARTED)
+    assert finals
+    marker_fail = next(a for a in finals[-1]["attempts"] if a["outcome"] == "provisioning_failure")
+    assert "NVIDIA_A100_80GB_GPUS" in marker_fail["detail"]
 
 
 def test_gcp_primary_prepare_fail_falls_through_to_free_lanes(lease_store):

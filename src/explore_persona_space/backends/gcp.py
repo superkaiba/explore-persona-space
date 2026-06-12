@@ -1022,6 +1022,23 @@ def render_describe_argv(*, config: GcpConfig, name: str, zone: str) -> list[str
     return argv
 
 
+def region_for_zone(zone: str) -> str:
+    """``us-central1-a`` → ``us-central1`` (GCE zones are ``<region>-<suffix>``)."""
+    return zone.rsplit("-", 1)[0]
+
+
+def render_region_describe_argv(*, config: GcpConfig, region: str) -> list[str]:
+    """Build the ``gcloud compute regions describe`` argv for the quota probe (JSON).
+
+    The probe shape was verified live on issue 608 (2026-06-12): the
+    response's ``quotas[]`` rows carry ``metric`` / ``usage`` / ``limit``
+    for the regional accelerator quotas (e.g. ``NVIDIA_A100_80GB_GPUS``).
+    """
+    argv = _base_gcloud_argv(config, "compute", "regions", "describe", region)
+    argv.append("--format=json")
+    return argv
+
+
 def render_guest_attributes_argv(*, config: GcpConfig, name: str, zone: str) -> list[str]:
     """Build a ``gcloud compute instances get-guest-attributes`` argv.
 
@@ -1209,6 +1226,12 @@ _PROVISIONING_STDERR_PATTERNS: tuple[str, ...] = (
     "ZONE_RESOURCE_POOL_EXHAUSTED",
     "QUOTA_EXCEEDED",
     "QUOTA EXCEEDED",
+    # gcloud's regional accelerator-quota error is PROSE, not the API enum:
+    # ``Quota 'NVIDIA_A100_80GB_GPUS' exceeded.  Limit: 8.0 in region
+    # us-central1.`` — the metric name sits between "Quota" and "exceeded"
+    # so neither QUOTA_EXCEEDED form above matches it. Four such creates on
+    # issue 608 were classified "no known provisioning pattern" (2026-06-12).
+    "Quota '",
     "RESOURCE_EXHAUSTED",
     "INSUFFICIENT_RESOURCES",
     # gcloud sometimes surfaces capacity as "does not have enough resources"
@@ -1397,6 +1420,130 @@ def reconnect_or_none(
             extra=extra,
         )
     return None
+
+
+# ---------------------------------------------------------------------------
+# Pre-create regional-quota headroom probe (#608)
+# ---------------------------------------------------------------------------
+
+
+#: ``MachineSpec.gpu_kind`` → the regional accelerator-quota metric reported
+#: by ``gcloud compute regions describe`` ``quotas[]``. Verified live on
+#: issue 608 (2026-06-12): ``NVIDIA_A100_80GB_GPUS`` read usage 8.0 / limit
+#: 8.0 while the ``ft-7b`` intent needed 4 — every create was doomed.
+_GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
+    "A100-80": "NVIDIA_A100_80GB_GPUS",
+    "L4": "NVIDIA_L4_GPUS",
+}
+
+
+@dataclass(frozen=True)
+class QuotaHeadroom:
+    """One regional accelerator-quota reading for a planned launch.
+
+    ``sufficient`` is the router's skip predicate: headroom
+    (``limit - usage``) must cover the machine's GPU count.
+    """
+
+    metric: str
+    region: str
+    limit: float
+    usage: float
+    needed: int
+
+    @property
+    def available(self) -> float:
+        """GPUs the regional quota still admits (``limit - usage``)."""
+        return self.limit - self.usage
+
+    @property
+    def sufficient(self) -> bool:
+        """True when the remaining headroom covers ``needed`` GPUs."""
+        return self.available >= self.needed
+
+
+def preflight_quota_headroom(
+    *, spec: RunSpec, config: GcpConfig, runner: GcloudRunner
+) -> QuotaHeadroom | None:
+    """Read the regional accelerator-quota headroom for ``spec``; ``None`` = no opinion.
+
+    Called by the router's GCP lane BEFORE the per-day attempt-counter
+    bump so a create that CANNOT succeed (regional quota already at its
+    limit) is skipped without burning an attempt. Issue 608 (2026-06-12):
+    four quota-doomed creates consumed the cap while
+    ``NVIDIA_A100_80GB_GPUS`` sat at 8/8 with 4 needed.
+
+    FAIL-OPEN contract — returns ``None`` ("no opinion; proceed to launch
+    exactly as before") whenever:
+
+    * the intent has no machine / quota-metric mapping (the launch path
+      fails loud on its own),
+    * a live ``eps-issue-<N>`` instance already exists (the launch path
+      reconnects, consuming no new quota — and our own instance may BE
+      the usage the probe would read),
+    * the reconnect probe or the ``regions describe`` call fails in ANY
+      way (rc != 0, missing gcloud, timeout, unparseable JSON, metric
+      absent from ``quotas[]``).
+
+    Only a successfully parsed quota row produces a verdict. A swallowed
+    probe failure here never enables a blind create: the launch path
+    re-runs its own reconnect probe and raises typed-ly on failure.
+    """
+    try:
+        machine = machine_for_intent(spec)
+    except ValueError:
+        return None
+    metric = _GPU_KIND_TO_QUOTA_METRIC.get(machine.gpu_kind)
+    if metric is None:
+        return None
+    try:
+        if reconnect_or_none(spec=spec, config=config, runner=runner) is not None:
+            return None
+    except Exception as exc:  # GcpProbeError / transport — fail OPEN (launch re-probes)
+        logger.warning(
+            "GCP quota pre-check: reconnect probe failed OPEN (%s: %s); proceeding to launch.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    region = region_for_zone(config.primary_zone)
+    try:
+        result = runner(render_region_describe_argv(config=config, region=region))
+    except Exception as exc:  # missing gcloud / TimeoutExpired — fail OPEN per #608
+        logger.warning(
+            "GCP quota pre-check: regions describe failed OPEN (%s: %s); proceeding to launch.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    if result.returncode != 0:
+        logger.warning(
+            "GCP quota pre-check: regions describe rc=%d (%s); failing OPEN.",
+            result.returncode,
+            result.stderr[:300],
+        )
+        return None
+    try:
+        payload = json.loads(result.stdout or "{}")
+        quotas = payload.get("quotas") or []
+        row = next(
+            (q for q in quotas if isinstance(q, dict) and q.get("metric") == metric),
+            None,
+        )
+        if row is None:
+            return None
+        limit = float(row["limit"])
+        usage = float(row["usage"])
+    except (AttributeError, KeyError, TypeError, ValueError) as exc:
+        logger.warning(
+            "GCP quota pre-check: unparseable quotas payload (%s: %s); failing OPEN.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    return QuotaHeadroom(
+        metric=metric, region=region, limit=limit, usage=usage, needed=machine.gpu_count
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1604,6 +1751,16 @@ class GcpBackend(ComputeBackend):
         ``pod_lifecycle.py provision``)."""
         del spec
         return None
+
+    def preflight_quota_headroom(self, spec: RunSpec) -> QuotaHeadroom | None:
+        """Regional accelerator-quota headroom for ``spec``, or ``None`` (no opinion).
+
+        Duck-typed seam the router's GCP lane probes BEFORE bumping the
+        per-day attempt counter (#608: quota-doomed creates burned the
+        cap). Delegates to :func:`preflight_quota_headroom` with this
+        backend's config + runner; the FAIL-OPEN contract lives there.
+        """
+        return preflight_quota_headroom(spec=spec, config=self._config, runner=self._run)
 
     def launch(self, spec: RunSpec) -> RunHandle:
         """Provision (or reconnect to) the GCE VM for ``spec.issue``.
@@ -2501,6 +2658,7 @@ __all__ = [
     "GcpProvisioningError",
     "GcpWorkloadError",
     "MachineSpec",
+    "QuotaHeadroom",
     "attempt_id_for",
     "audit_stale_gcp_vms",
     "classify_create_failure",
@@ -2509,11 +2667,14 @@ __all__ = [
     "expected_artifacts_declaration",
     "instance_name_for",
     "machine_for_intent",
+    "preflight_quota_headroom",
     "reconnect_or_none",
+    "region_for_zone",
     "render_create_argv",
     "render_delete_argv",
     "render_describe_argv",
     "render_list_argv",
+    "render_region_describe_argv",
     "render_startup_script",
     "resolve_provisioning_model",
     "sentinel_path_for",

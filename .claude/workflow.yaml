@@ -2048,8 +2048,13 @@ markers:
       the audit trail), per-lane outcomes (`launched`,
       `park_cap_exceeded`, `terminal_before_running`, `launch_failed`,
       `reconnected`, `provisioning_failure`, `workload_failure`,
-      `attempt_cap_exceeded`), and the GCP lane with its per-day
-      attempt-count guard reading. v1.
+      `attempt_cap_exceeded`, `quota_headroom_insufficient` — the GCP
+      lane's pre-create regional-quota probe read insufficient headroom
+      and skipped the lane WITHOUT burning a daily attempt, #608), and
+      the GCP lane with its per-day attempt-count guard reading. A GCP
+      `provisioning_failure` attempt's `detail` carries the captured
+      gcloud `stderr_tail` (~1KB) alongside the classified reason
+      (#608: the stderr was previously dropped everywhere). v1.
   - kind: "epm:cluster-launched"
     posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
     when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
