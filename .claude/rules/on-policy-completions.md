@@ -51,12 +51,43 @@ Mechanics that ride along, all of them load-bearing:
 - **Prefer the lowest tier that fills the quota**; record the tier
   per row and report the realized per-tier yield mix (#612: villain
   31 bare / 165 instruct-and-strip / 4 prefill).
-- **Pre-register a per-source yield quota + retry budget.** A source
-  that cannot fill the quota is DROPPED from the on-policy conditions
-  and the shortfall is REPORTED as a finding — never silently backfilled
-  with templates (#612: kindergarten teacher stalled at 194/200 and
-  software engineer at 169/200 after the full retry budget; both dropped,
-  and the coverage caveat leads the clean-result).
+- **Pre-register a per-source yield quota + retry budget — DEFAULT: an
+  80% floor with equalize-down** (decision 2026-06-12, recorded in #545's
+  onpolicy-testbed-v2 followup-scope; supersedes the original
+  all-or-nothing "fill every row or drop" rule, which discarded #612's
+  kindergarten-teacher source at 194/200 — 97% fill — over 6 missing
+  rows, and software engineer at 169/200; under the 80% floor both would
+  have been kept). Mechanics:
+  - **Floor = 80% of the target row count.** A source at or above the
+    floor after the retry budget is KEPT; a source below the floor is
+    DROPPED and the drop is REPORTED as a finding — predicted in advance
+    by the source-side baseline read below, never silently backfilled
+    with templates.
+  - **Equalize-down: every kept source trains on exactly floor-N rows.**
+    Discard the surplus everywhere rather than letting N vary per source
+    — variable N is a dose confound, and dose/schedule length is the
+    demonstrated dominant lever (#601). Prefer the same-question/claim
+    subset across sources where filled rows allow; else a random floor-N
+    sample, with the coverage difference documented.
+  - **Scale contrastive negatives proportionally to floor-N** so the
+    load-bearing ~1:1 positives-to-total-negatives ratio
+    (`.claude/rules/contrastive-negatives.md`) survives the
+    equalization.
+- **Pre-classify yield risk per behavior.** Elicitation difficulty is
+  behavior-specific: HIGH where the behavior conflicts with alignment
+  training (false-claim agreement, harmful advice — expect shortfalls,
+  budget retries accordingly), LOW where it is in-distribution for an
+  aligned assistant (refusal, hedging, format compliance). Size the
+  retry budget to the risk class.
+- **Take a source-side baseline read before elicitation.** One cheap
+  base-model generation + judge pass per source persona on the eval
+  probes measures the pre-training behavior rate. It predicts which
+  sources will miss the floor (#612: both yield failures were
+  predictable in advance from a read that was never taken) and doubles
+  as the natural install-strength covariate the eval side already
+  measures on targets (a unit's own base prior keeps beating geometry as
+  a predictor — #500/#532/#541). Planner-side rule: `planner.md` §4
+  "Baseline propensity on BOTH sides".
 - **Sampling temperature** ~1.0 by default (diversity is the point);
   ground a different choice in §11 like any hyperparameter.
 
