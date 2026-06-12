@@ -208,8 +208,11 @@ bodies are never re-verified, so tightening cannot regress them).
     PASSes when no such claim is present).
 16. Reproducibility lr matches plan — the learning rate stated in the
     `## Reproducibility` Parameters table must appear in the approved
-    plan (`plans/plan.md`, resolved for `--issue <N>` / a `--file`
-    sibling). Guards against the analyzer hand-typing a plausible-
+    plan (the union of ALL `plans/v*.md` versions, resolved for
+    `--issue <N>` / a `--file` sibling — not just the `plans/plan.md`
+    symlink, which same-issue follow-up rounds re-point at a follow-up
+    plan that may omit the training lr; incident #597). Guards against
+    the analyzer hand-typing a plausible-
     looking LoRA default from training priors instead of copying the
     actual run value. Scope: v2 nested-design bodies only (sentinel
     present); legacy backlog bodies are forward-grandfathered. The
@@ -1975,7 +1978,7 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
 
 def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> CheckResult:
     """Check 16: the learning rate stated in `## Reproducibility` must
-    appear in the approved plan.
+    appear in the approved plan (any version under `plans/v*.md`).
 
     Guards against the analyzer hand-typing a plausible-looking
     hyperparameter (a LoRA default from training priors) into the
@@ -1984,6 +1987,12 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     training script + plan §11 both ran `lr = 2e-6` — a 50x misprint on
     the most load-bearing hyperparameter, missed by every reviewer
     because nothing reconciled the table's VALUES against ground truth.
+
+    The reconciliation set is the UNION across all `plans/v*.md`
+    siblings of ``plan_path``, not just the `plans/plan.md` symlink —
+    same-issue follow-up rounds re-point the symlink at the follow-up's
+    plan, which may not contain the training lr that grounds the body
+    (incident #597). A body lr matching ANY version PASSes.
 
     Scope: v2 nested-design bodies only (sentinel present); legacy
     bodies are forward-grandfathered. The check is a NO-OP PASS when it
@@ -2003,7 +2012,19 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
         return CheckResult(name, True, "skipped — no learning rate stated in Reproducibility")
     if plan_path is None or not plan_path.exists():
         return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
-    plan_lrs = _parse_lr_floats(plan_path.read_text(errors="replace"), anchored_only=False)
+    # Reconcile against the UNION of every plan version (plans/v*.md), not
+    # just the plans/plan.md symlink: a same-issue follow-up round re-points
+    # the symlink at the follow-up's (often analysis-only) plan, whose
+    # unrelated sci-notation tokens (e.g. a `1e-3` tolerance) would then
+    # masquerade as "the plan's lr" while the training lr that grounds the
+    # body's Parameters table lives in an earlier version (incident #597:
+    # a correct lr=5e-6 body drew a spurious WARN against the v2 follow-up
+    # plan). Fall back to plan_path itself when no v*.md siblings exist
+    # (e.g. a bare plan.md fixture).
+    plan_files = sorted(plan_path.parent.glob("v*.md")) or [plan_path]
+    plan_lrs: set[float] = set()
+    for plan_file in plan_files:
+        plan_lrs |= _parse_lr_floats(plan_file.read_text(errors="replace"), anchored_only=False)
     if not plan_lrs:
         return CheckResult(name, True, "skipped — plan declares no parseable learning rate")
     unmatched = [b for b in body_lrs if not any(math.isclose(b, p, rel_tol=1e-6) for p in plan_lrs)]
