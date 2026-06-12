@@ -1330,9 +1330,13 @@ def _build_argparser() -> argparse.ArgumentParser:
         help=(
             'Custom repo-relative shell command (e.g. "bash scripts/issue<N>_dispatch.sh"). '
             "Executed verbatim by the lane renderers from the repo checkout root after env "
-            "bootstrap. May be blocking or self-daemonizing; a detached (setsid-forked) "
-            "workload MUST write its pid to a fresh file under /workspace/logs/*.pid — the "
-            "GCP startup script waits on it before declaring done (#601). Mutually "
+            "bootstrap. GCP lane: may be blocking or self-daemonizing — a detached "
+            "(setsid-forked) workload MUST write its pid to a fresh file under "
+            "/workspace/logs/*.pid; the GCP startup script waits on it before declaring "
+            "done (#601). SLURM lanes (nibi/fir/mila): the command MUST BLOCK until the "
+            "workload finishes — the sbatch terminal block + job COMPLETED fire on command "
+            "return and the job-exit cgroup teardown kills detached children (no /workspace "
+            "pid contract exists there; #601 follow-up). Mutually "
             "exclusive with --hydra; exactly one of the two is required (#588)."
         ),
     )

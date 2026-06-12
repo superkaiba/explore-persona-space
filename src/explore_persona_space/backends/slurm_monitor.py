@@ -72,6 +72,24 @@ rsync'd ``status.json`` + ``[phase=...]`` log lines, posted VM-side by
 this monitor; a dispatcher that depends on sentinel-carried markers
 (``epm:results`` payloads, ``gate`` fields) must be routed to the GCP
 or RunPod lane at plan time.
+
+Workload-cmd must block (deliberate; #601 follow-up)
+----------------------------------------------------
+
+``COMPLETED → done`` here means "the batch script exited 0", nothing
+more. The custom-stage renderer (``slurm.render_sbatch``) runs the
+terminal ``[phase=done]`` block the moment the workload command
+returns, and SLURM's job-exit cgroup teardown kills any detached
+(setsid-forked) children at that same moment — so a self-daemonizing
+``--workload-cmd`` yields a premature ``done`` verdict over a KILLED
+run (surfacing as missing artifacts at fetch_results), never the
+pre-#601-fix GCP failure of a terminal-success posted while a healthy
+run continues in the background. There is no detached-pid wait on this
+lane to "fix" that with: the GCP contract's ``/workspace/logs/*.pid``
+dir is unwritable here for the same reason as the sentinel channel
+above, and no SLURM-side pid-file convention exists. Workload commands
+MUST block; detached patterns route to the GCP or RunPod lane at plan
+time.
 """
 
 from __future__ import annotations

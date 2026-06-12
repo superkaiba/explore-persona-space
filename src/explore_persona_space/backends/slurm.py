@@ -1420,6 +1420,18 @@ def render_sbatch(
             # (epm:results payloads, gate fields) fails loud at its
             # `mkdir -p /workspace/logs` and must be routed to the
             # gcp/runpod lane at plan time.
+            # MUST-BLOCK contract (#601 follow-up): the command must run
+            # the workload to completion in the foreground. The terminal
+            # [phase=done] + status.json "done" blocks below execute the
+            # moment this line returns, the batch script exits, and
+            # SLURM both marks the job COMPLETED (monitor verdict:
+            # interpret) AND tears down the job cgroup — killing any
+            # setsid-detached children. The GCP lane's detached-pid wait
+            # (gcp.py: fresh /workspace/logs/*.pid) is NOT portable
+            # here: compute nodes have no /workspace and no SLURM-side
+            # pid-file convention exists. A self-daemonizing dispatch
+            # script must be made blocking or routed to the gcp/runpod
+            # lane at plan time.
             stage_blocks.append(stage.custom_cmd)
         elif stage.backend == "open_instruct":
             if not stage.deepspeed_config_rel:
