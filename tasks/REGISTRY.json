@@ -1881,8 +1881,8 @@
     "387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/387",
-      "status": "proposed",
+      "path": "tasks/archived/387",
+      "status": "archived",
       "title": "Connectivity test \u2014 feel free to archive"
     },
     "388": {
