@@ -157,6 +157,36 @@ def _run(cmd: list[str], timeout: int = 10) -> tuple[int, str, str]:
         return -1, "", str(e)
 
 
+def _behind_count(project_root: Path, ref: str) -> int | None:
+    """Commits HEAD is behind ``ref`` (via ``git rev-list --count HEAD..<ref>``).
+
+    Returns None when the count cannot be determined (missing ref → rc=128,
+    git error, non-integer output). Callers treat None as "unknown", never 0.
+    """
+    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", f"HEAD..{ref}"])
+    if rc != 0:
+        return None
+    try:
+        return int(out.strip())
+    except ValueError:
+        return None
+
+
+def _ahead_count(project_root: Path, ref: str) -> int | None:
+    """Commits HEAD is ahead of ``ref`` (via ``git rev-list --count <ref>..HEAD``).
+
+    Returns None when the count cannot be determined. Callers treat None as
+    "unknown" (best-effort signal — an unknown ahead-count never errors).
+    """
+    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", f"{ref}..HEAD"])
+    if rc != 0:
+        return None
+    try:
+        return int(out.strip())
+    except ValueError:
+        return None
+
+
 def _find_project_root() -> Path:
     """Find project root by looking for pyproject.toml."""
     p = Path(__file__).resolve()
@@ -193,7 +223,14 @@ def _disk_check_path() -> str:
 
 
 def check_git_status(report: PreflightReport, project_root: Path):
-    """Check git working tree is clean and up to date.
+    """Check git working tree is clean and up to date — branch-aware (#554).
+
+    The behind-remote comparison is keyed on the current branch: ``main``
+    compares against ``origin/main`` (ERROR when behind, message unchanged);
+    a feature branch compares against its OWN ``origin/<branch>`` ref (the
+    run-of-record on the canonical ``/issue`` pod checkout), with divergence
+    from ``origin/main`` demoted to an informational WARNING; detached HEAD
+    (pinned-SHA checkout) only warns.
 
     Cluster branch: the ``git fetch origin`` round trip is SKIPPED because
     the cluster compute node has no remote git auth — code reaches the
@@ -225,15 +262,145 @@ def check_git_status(report: PreflightReport, project_root: Path):
         report.git_status += " (cluster — skipped fetch)"
         return
 
-    # Check if behind remote
-    _run(["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15)
-    rc, out, _ = _run(["git", "-C", str(project_root), "rev-list", "--count", "HEAD..origin/main"])
-    if rc == 0 and out.strip() != "0":
-        behind = out.strip()
-        report.add_error(
-            f"Local is {behind} commit(s) behind origin/main. Run: git pull origin main"
+    # Behind-remote check — branch-aware (#554). On the canonical /issue pod
+    # checkout HEAD is on `issue-<N>`; the branch's own pushed origin ref IS
+    # the run-of-record, and divergence from origin/main is expected (#383,
+    # #550). ERROR is reserved for "behind the ref this checkout tracks".
+    # The fetch rc is CAPTURED: the behind-own guarantee below is only as
+    # fresh as this fetch, so a failed fetch on a feature branch is an ERROR,
+    # never a silent stale-ref false PASS.
+    fetch_rc, _, fetch_err = _run(
+        ["git", "-C", str(project_root), "fetch", "--quiet", "origin"], timeout=15
+    )
+    fetch_failed = fetch_rc != 0
+
+    rc, branch, err = _run(["git", "-C", str(project_root), "rev-parse", "--abbrev-ref", "HEAD"])
+    if rc != 0:
+        report.add_warning(f"could not determine current branch: {err}")
+        report.git_status += ", branch unknown"
+        return
+    branch = branch.strip()
+
+    if branch == "main":
+        _check_main_branch_behind(report, project_root, fetch_failed, fetch_err)
+        return
+
+    if branch == "HEAD":
+        _check_detached_head_behind(report, project_root, fetch_failed, fetch_err)
+        return
+
+    _check_feature_branch_behind(report, project_root, branch, fetch_failed, fetch_err)
+
+
+def _check_main_branch_behind(
+    report: PreflightReport, project_root: Path, fetch_failed: bool, fetch_err: str
+):
+    """Behind-remote check for ``main``: ERROR when behind origin/main.
+
+    The ERROR message is byte-identical to the pre-#554 one — agent specs
+    tolerance-match it verbatim.
+    """
+    if fetch_failed:
+        # Main's gate decision stays as before: warn, then compute against
+        # last-fetched refs exactly as the old code did. Staleness here is
+        # fail-soft toward PASS — a timed-out fetch reads last-fetched
+        # refs, which can only UNDER-count how far behind main is.
+        report.add_warning(
+            f"git fetch origin failed ({fetch_err}); behind-origin/main "
+            f"computed against last-fetched refs."
         )
-        report.git_status += f", {behind} behind remote"
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:  # None (count unknown) keeps the prior silent-skip behavior
+        report.add_error(
+            f"Local is {behind_main} commit(s) behind origin/main. Run: git pull origin main"
+        )
+        report.git_status += f", {behind_main} behind remote"
+
+
+def _check_detached_head_behind(
+    report: PreflightReport, project_root: Path, fetch_failed: bool, fetch_err: str
+):
+    """Detached HEAD (pinned-SHA checkout): no own ref to be behind — warn only."""
+    if fetch_failed:
+        report.add_warning(
+            f"git fetch origin failed ({fetch_err}); ref comparisons use last-fetched refs."
+        )
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:
+        report.add_warning(
+            f"Detached HEAD is {behind_main} commit(s) behind origin/main — "
+            f"verify the pinned commit is the intended run-of-record."
+        )
+    report.git_status += " (detached HEAD)"
+
+
+def _check_feature_branch_behind(
+    report: PreflightReport, project_root: Path, branch: str, fetch_failed: bool, fetch_err: str
+):
+    """Feature branch: ERROR only when behind/diverged from its OWN origin ref.
+
+    Divergence from origin/main is expected on a feature branch and demoted
+    to an informational WARNING.
+    """
+    # A failed fetch means the branch's own origin ref may be stale, so
+    # behind_own == 0 proves nothing — fail LOUD. This is the one place
+    # fetch failure is an ERROR.
+    if fetch_failed:
+        report.add_error(
+            f"git fetch origin failed ({fetch_err}) — cannot verify branch "
+            f"{branch} is up to date with origin/{branch}."
+        )
+        report.git_status += ", fetch failed"
+        return
+
+    # Compare against the branch's OWN origin ref. The full refs/remotes/
+    # spelling is used in BOTH the existence probe and the rev-list counts so
+    # a same-named tag can never make the bare `origin/<branch>` form
+    # ambiguous.
+    own_ref = f"origin/{branch}"
+    own_ref_full = f"refs/remotes/{own_ref}"
+    rc_ref, _, _ = _run(
+        ["git", "-C", str(project_root), "rev-parse", "--verify", "--quiet", own_ref_full]
+    )
+    if rc_ref == 0:
+        behind_own = _behind_count(project_root, own_ref_full)
+        ahead_own = _ahead_count(project_root, own_ref_full)
+        if behind_own is None:
+            report.add_warning(f"could not count commits behind {own_ref}")
+        elif behind_own and ahead_own:
+            report.add_error(
+                f"Branch {branch} has diverged from {own_ref} ({behind_own} behind, "
+                f"{ahead_own} ahead) — reconcile (rebase onto or merge {own_ref}); "
+                f"a plain git pull --ff-only will fail."
+            )
+            report.git_status += f", diverged from {own_ref}"
+        elif behind_own:
+            report.add_error(
+                f"Branch {branch} is {behind_own} commit(s) behind {own_ref}. "
+                f"Run: git pull --ff-only origin {branch}"
+            )
+            report.git_status += f", {behind_own} behind {own_ref}"
+        elif ahead_own:
+            report.add_warning(
+                f"Branch {branch} is {ahead_own} commit(s) ahead of {own_ref} "
+                f"(committed but unpushed) — the running code is not the pushed "
+                f"run-of-record."
+            )
+            report.git_status += f", {ahead_own} ahead of {own_ref}"
+    else:
+        report.add_warning(
+            f"Branch {branch} has no pushed {own_ref} ref — cannot verify "
+            f"up-to-date-ness (unpushed local branch)."
+        )
+        report.git_status += f" (no {own_ref})"
+
+    behind_main = _behind_count(project_root, "origin/main")
+    if behind_main:
+        report.add_warning(
+            f"Branch {branch} is {behind_main} commit(s) behind origin/main "
+            f"(expected on a feature branch; informational)."
+        )
+        report.git_status += f", {behind_main} behind origin/main"
 
 
 def check_env_sync(report: PreflightReport, project_root: Path):
@@ -792,16 +959,22 @@ def require_preflight(
         require_gpu=require_gpu,
         min_gpu_free_mb=min_gpu_free_mb,
     )
-    logger.info(report.summary())
+    if report.ok:
+        logger.info(report.summary())
+        return report
 
-    if not report.ok:
-        logger.error("Pre-flight check FAILED. Fix errors before running.")
-        sys.exit(1)
+    # FAIL path — fail LOUD on a real stream. A handler-less logger.info()
+    # emits zero bytes (root logger defaults to WARNING with no handlers), so
+    # a launcher under `set -e` dies with an unattributable 0-byte log (#550).
+    # The summary is emitted by exactly ONE statement per branch: logger.info
+    # on PASS, raw stderr here on FAIL — never both.
+    print(report.summary(), file=sys.stderr)
+    logger.error("Pre-flight check FAILED. Fix errors before running.")
+    sys.exit(1)
 
-    return report
 
-
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """CLI entry point. Returns the process exit code (0 = preflight PASS)."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Run pre-flight checks")
@@ -829,7 +1002,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Run integration tests (pytest tests/integration/ -m integration) after preflight",
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # A negative quota means "disable the cap" (argparse cannot pass None cleanly).
     per_pod_quota_gb = None if args.per_pod_quota_gb < 0 else args.per_pod_quota_gb
@@ -842,6 +1015,8 @@ if __name__ == "__main__":
     )
 
     if args.json:
+        # Contract (gotchas.md): exactly one pretty-printed JSON object and
+        # nothing else on stdout — consumers parse the WHOLE stdout.
         print(
             json.dumps(
                 {
@@ -862,24 +1037,38 @@ if __name__ == "__main__":
             )
         )
     else:
-        logger.info(report.summary())
+        # Bare mode: print(), never a handler-less logger.info() that emits
+        # zero bytes and leaves a `set -e` death unattributable (#550/#554).
+        print(report.summary())
+        if not report.ok:
+            for e in report.errors:
+                print(f"preflight ERROR: {e}", file=sys.stderr)
 
     if not report.ok:
-        sys.exit(1)
+        return 1
 
     if args.pipeline_check:
-        logger.info("Running integration tests...")
+        # Status lines stay off stdout in --json mode (JSON-purity contract).
+        if not args.json:
+            print("Running integration tests...")
         rc, stdout, stderr = _run(
             [sys.executable, "-m", "pytest", "tests/integration/", "-m", "integration", "-x", "-v"],
             timeout=600,
         )
         if stdout:
-            print(stdout)
+            # In --json mode pytest output routes to stderr so stdout stays
+            # exactly one parseable JSON object (gotchas.md contract); bare
+            # mode keeps pytest stdout on stdout.
+            print(stdout, file=sys.stderr if args.json else sys.stdout)
         if stderr:
             print(stderr, file=sys.stderr)
         if rc != 0:
-            logger.error("Integration tests FAILED (exit code %d)", rc)
-            sys.exit(rc)
-        logger.info("Integration tests PASSED")
+            print(f"Integration tests FAILED (exit code {rc})", file=sys.stderr)
+            return rc
+        if not args.json:
+            print("Integration tests PASSED")
+    return 0
 
-    sys.exit(0)
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -3289,8 +3289,8 @@
     "554": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/554",
-      "status": "reviewing",
+      "path": "tasks/completed/554",
+      "status": "completed",
       "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
     },
     "555": {
@@ -3751,11 +3751,11 @@
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/614",
       "status": "interpreting",
-      "title": "Assistant-twin immunity: role gating vs trained-negative suppression generalization (canned software_engineer retrain with assistant swapped out of the negative set)"
+      "title": "Removing the default-assistant correction rows erases the assistant-twins' trained-down readings without making them adopt the trained agreement habit, and collapses leakage across the rest of the panel (LOW confidence)"
     },
     "615": {
       "has_clean_result": false,
