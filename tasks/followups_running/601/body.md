@@ -1,7 +1,7 @@
 ---
 title: 'Contrastive negatives strengthened a marker implant by lengthening the optimizer
   schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice
-  as high (MODERATE confidence)'
+  as high (HIGH confidence)'
 kind: experiment
 tags:
 - followup-auto

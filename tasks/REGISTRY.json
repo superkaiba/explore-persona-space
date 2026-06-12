@@ -3649,7 +3649,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/601",
       "status": "followups_running",
-      "title": "Contrastive negatives strengthened a marker implant by lengthening the optimizer schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice as high (MODERATE confidence)"
+      "title": "Contrastive negatives strengthened a marker implant by lengthening the optimizer schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice as high (HIGH confidence)"
     },
     "602": {
       "has_clean_result": true,
