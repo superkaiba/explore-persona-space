@@ -644,6 +644,15 @@ class TrainLoraConfig:
     # of ~1 GB). Only forwarded when True so older transformers without the
     # kwarg are unaffected on default-config paths.
     save_only_model: bool = False
+    # Issue #621 A-init control: when True, a tiny TrainerCallback snapshots
+    # the FRESH (step-0) adapter to ``<output_dir>/adapter_init/`` at
+    # ``on_train_begin`` (PEFT inits lora_A Kaiming-uniform, lora_B zeros —
+    # the saved init is the exact zero point for the |cos(a_t, a_init)| /
+    # ‖Δa‖ reads; do NOT rely on RNG replay to reconstruct it). Default
+    # False → byte-identical behavior for every existing caller. Only valid
+    # on the fresh-LoRA path (raises on existing_adapter_path continuation
+    # — a continued adapter has no meaningful step-0 init).
+    save_initial_adapter: bool = False
     # Issue #478 / #490: opt-in LoRA target-module override. When ``None``
     # (default) train_lora uses the historical 7-module list
     # (q/k/v/o/gate/up/down) so existing callers are byte-identical. Issue
@@ -1018,6 +1027,50 @@ def _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg: TrainLoraConfig)
     trainer._epm_eos_collator = eos_collator
 
 
+def _make_initial_adapter_snapshot_callback(output_dir: str | Path):
+    """Build the step-0 adapter snapshot callback (issue #621 A-init control).
+
+    Deferred-import factory (sft.py module top stays transformers-free).
+    The returned ``TrainerCallback``'s ``on_train_begin`` receives the
+    trainer's (PEFT-wrapped) model via the ``model=`` kwarg that
+    ``CallbackHandler.call_event`` always passes (verified transformers
+    4.57.6) and saves the UNTRAINED adapter to ``<output_dir>/adapter_init/``
+    via ``model.save_pretrained``. Fails LOUD if the model is not a
+    PeftModel or the snapshot file does not land — a missing A-init makes
+    the #621 ungated-write control unrunnable, so silence is not an option.
+    """
+    from transformers import TrainerCallback
+
+    class _InitialAdapterSnapshotCallback(TrainerCallback):
+        def on_train_begin(self, args, state, control, model=None, **kwargs):
+            """Save the step-0 adapter (A Kaiming init, B zeros) before any update."""
+            if model is None:
+                raise RuntimeError(
+                    "save_initial_adapter: on_train_begin received model=None — "
+                    "cannot snapshot the step-0 adapter. transformers callback "
+                    "contract drifted; check CallbackHandler.call_event."
+                )
+            if not hasattr(model, "peft_config"):
+                raise RuntimeError(
+                    "save_initial_adapter: trainer model is not a PeftModel "
+                    f"(type={type(model).__name__}); the step-0 snapshot would "
+                    "save full weights, not the adapter. Refusing."
+                )
+            snap_dir = Path(output_dir) / "adapter_init"
+            snap_dir.mkdir(parents=True, exist_ok=True)
+            model.save_pretrained(str(snap_dir))
+            saved = list(snap_dir.glob("**/adapter_model.safetensors"))
+            if not saved:
+                raise RuntimeError(
+                    f"save_initial_adapter: snapshot dir {snap_dir} has no "
+                    "adapter_model.safetensors after save_pretrained — the "
+                    "A-init control is unrunnable without it."
+                )
+            logger.info("A-init snapshot saved to %s (%d file(s))", snap_dir, len(saved))
+
+    return _InitialAdapterSnapshotCallback()
+
+
 def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclomatic complexity to 16
     base_model_path: str,
     data_path: str,
@@ -1278,8 +1331,19 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     # else: continue-adapter path — model is already a PeftModel; do NOT
     # pass peft_config (would re-wrap with a fresh adapter and lose the
     # continuation contract).
-    if callbacks:
-        sft_trainer_kwargs["callbacks"] = callbacks
+    effective_callbacks = list(callbacks) if callbacks else []
+    if cfg.save_initial_adapter:
+        # Issue #621 A-init control — snapshot the step-0 adapter. Only
+        # meaningful on the fresh-LoRA path: a continued adapter's "init"
+        # is its previous training endpoint, not the Kaiming/zeros init.
+        if cfg.existing_adapter_path:
+            raise ValueError(
+                "save_initial_adapter=True is incompatible with "
+                "existing_adapter_path (continuation has no step-0 init)."
+            )
+        effective_callbacks.append(_make_initial_adapter_snapshot_callback(output_dir))
+    if effective_callbacks:
+        sft_trainer_kwargs["callbacks"] = effective_callbacks
     trainer = SFTTrainer(**sft_trainer_kwargs)
 
     if cfg.marker_only_loss:
