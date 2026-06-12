@@ -193,8 +193,8 @@ def fig_trajectory(a: dict, out_dir: Path) -> None:
     ax.legend(loc="upper right", fontsize=9)
     _finish(
         fig,
-        "Both arms walk the same path to the same floor",
-        "Per-seed default-context shift across all 6 shared checkpoints (3 seeds per arm)",
+        "Both arms converge to the same floor by the terminal checkpoint",
+        "Per-seed default-context shift, all 6 shared checkpoints (3 seeds per arm); early checkpoints are nonmonotonic",
         bottom=0.13,
     )
     savefig_paper(fig, "issue_610/trajectory_default_centered", dir=str(out_dir))
@@ -303,7 +303,7 @@ def fig_per_persona_strip(a: dict, out_dir: Path) -> None:
     fig.text(
         0.02,
         0.96,
-        "The default assistant sits at the panel floor in both arms",
+        "The default assistant sits in the panel's bottom cluster in both arms",
         fontsize=13,
         fontweight="semibold",
         color="#1A1A1A",
@@ -312,7 +312,9 @@ def fig_per_persona_strip(a: dict, out_dir: Path) -> None:
     fig.text(
         0.02,
         0.905,
-        "Every evaluated persona (3 seeds each); black markers: default assistant, assistant persona, journalist",
+        "Every evaluated persona (3 seeds each); black markers: default assistant, assistant persona, journalist. "
+        "The untrained assistant persona's median is lowest in the no-default arm; "
+        "pirate_captain and child share the floor cluster in both arms",
         fontsize=9.5,
         color="#5A5A5A",
         ha="left",
