@@ -3483,8 +3483,8 @@
     "580": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/580",
-      "status": "approved",
+      "path": "tasks/running/580",
+      "status": "running",
       "title": "Ops hygiene batch: bootstrap_pod.sh fixes, terminate pod-489, sweep zombie sessions, VM disk-space check cron"
     },
     "581": {
