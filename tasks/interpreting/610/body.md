@@ -1,6 +1,6 @@
 ---
-title: 'Default-assistant shielding: dose or identity? Single-slot ablation of the
-  qwen_default negative on the #600 chassis'
+title: Deleting the default assistant's 200 negative training rows leaves its shielding
+  from a marker implant essentially unchanged (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T20:17:15Z'
