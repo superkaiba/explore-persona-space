@@ -53,7 +53,8 @@ from explore_persona_space.personas import MARKER_TOKEN
 logger = logging.getLogger(__name__)
 
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
-# always wraps the model via peft_config -> PeftModel and fused kernels regress
+# always trains a PeftModel (fresh-LoRA wraps via peft_config; the continue-
+# adapter path loads a PeftModel directly) and fused kernels regress
 # ~2x on PEFT-wrapped linears. Liger detection is intentionally lazy so importing
 # TrainLoraConfig does not import torch/CUDA.
 
@@ -667,8 +668,8 @@ class TrainLoraConfig:
     #   - The adapter is loaded via PeftModel.from_pretrained(base, path,
     #     is_trainable=True), preserving the existing LoRA weights as the
     #     starting point.
-    #   - The TRL SFTTrainer receives the prepared PeftModel directly with
-    #     peft_config=None (so it does NOT re-wrap with a new adapter).
+    #   - The TRL SFTTrainer receives the prepared PeftModel directly and the
+    #     peft_config kwarg is OMITTED (so it does NOT re-wrap with a new adapter).
     #   - lora_r / lora_alpha / lora_dropout / lora_targets are ignored
     #     (the loaded adapter's own config wins; we are CONTINUING the same
     #     adapter, not building a different one).
@@ -1095,8 +1096,8 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     if cfg.existing_adapter_path:
         # CONTINUE an existing LoRA adapter (issue #475 Phase 2 + future
         # multi-phase recipes). Load the adapter weights ON TOP of the
-        # untouched base and pass the PeftModel to SFTTrainer with
-        # peft_config=None so TRL does NOT re-wrap with a fresh adapter.
+        # untouched base and pass the PeftModel to SFTTrainer with the
+        # peft_config kwarg omitted so TRL does NOT re-wrap with a fresh adapter.
         from peft import PeftModel
 
         adapter_dir = Path(cfg.existing_adapter_path)
