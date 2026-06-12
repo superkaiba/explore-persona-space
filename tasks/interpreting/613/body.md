@@ -1,6 +1,7 @@
 ---
-title: 'Alive-negatives A/B: does the loss-suppression flag give contrastive negatives
-  a live restoring force? (#601 mechanism follow-up)'
+title: 'A live contrastive-negative gradient spends itself on the stop token, not
+  the marker: relocating the negatives'' loss to the slot where generation actually
+  stops leaves the source implant where dead-slot negatives put it (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-12T02:42:11Z'

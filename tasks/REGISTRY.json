@@ -3747,7 +3747,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/613",
       "status": "interpreting",
-      "title": "Alive-negatives A/B: does the loss-suppression flag give contrastive negatives a live restoring force? (#601 mechanism follow-up)"
+      "title": "A live contrastive-negative gradient spends itself on the stop token, not the marker: relocating the negatives' loss to the slot where generation actually stops leaves the source implant where dead-slot negatives put it (MODERATE confidence)"
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
