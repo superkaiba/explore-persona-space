@@ -4,6 +4,7 @@ the git / /proc plumbing is exercised by the dry-run smoke in CI usage.
 """
 
 import importlib.util
+import itertools
 import sys
 from pathlib import Path
 
@@ -28,11 +29,14 @@ Decision = worktree_audit.Decision
 
 
 def test_human_named_worktree_is_never_targeted():
+    # NOTE: issue-<N>-<suffix> names are NOT in this list — as of 2026-06-12
+    # they are sweep targets mapped to issue N (see the suffixed tests below).
     for name in (
         "exp-192-persona-spread",
         "dashboard-mentor-lift",
         "task-workflow",
-        "issue-192-tw",
+        "compute-router",
+        "_task-main-pin",
     ):
         d = should_remove(
             name, status=None, is_live=False, age_hours=999, has_tracked_changes=False
@@ -102,6 +106,57 @@ def test_idle_workflow_worktree_is_removed():
         "wf_86000359-32e-7", status=None, is_live=False, age_hours=48, has_tracked_changes=False
     )
     assert d.remove
+
+
+def test_suffixed_issue_worktree_is_in_scope_and_maps_to_issue():
+    # Session-created follow-up worktrees (issue-<N>-<suffix>) are sweep
+    # targets as of 2026-06-12 and inherit issue N's status guard — they
+    # were previously misclassified human-named and became immortal (10+ of
+    # 53 worktrees in the 201 GB disk-bloat incident).
+    assert (
+        worktree_audit._issue_status_of("issue-480-band-stop", {480: "awaiting_promotion"})
+        == "awaiting_promotion"
+    )
+    d = should_remove(
+        "issue-480-band-stop",
+        status="awaiting_promotion",
+        is_live=False,
+        age_hours=999,
+        has_tracked_changes=False,
+    )
+    assert d.remove
+
+
+def test_suffixed_issue_worktree_respects_status_guard():
+    # A live same-issue follow-up round (followups_running) keeps the
+    # suffixed worktree, exactly like the canonical issue-<N> form.
+    d = should_remove(
+        "issue-533-margin",
+        status="followups_running",
+        is_live=False,
+        age_hours=999,
+        has_tracked_changes=False,
+    )
+    assert not d.remove
+    assert "not reapable" in d.reason
+
+
+def test_target_issue_branch_stays_in_sync_with_issue_name_re():
+    # _TARGET_NAME_RE's issue branch and _ISSUE_NAME_RE are textually
+    # independent regexes that must stay structurally identical — if one is
+    # widened without the other, a name could enter sweep scope with
+    # status=None and bypass the reapable-status allowlist (removable on
+    # the idle guards alone). Pin both ways: (a) the issue-name body is
+    # contained verbatim in the target pattern; (b) behavioral sweep —
+    # every target-matching issue-* name must also match _ISSUE_NAME_RE.
+    body = worktree_audit._ISSUE_NAME_RE.pattern.lstrip("^").rstrip("$")
+    assert body.replace(r"(\d+)", r"\d+") in worktree_audit._TARGET_NAME_RE.pattern
+    alphabet = "a7-._"
+    for n in range(0, 4):
+        for tail in map("".join, itertools.product(alphabet, repeat=n)):
+            name = "issue-48" + tail
+            if worktree_audit._TARGET_NAME_RE.match(name):
+                assert worktree_audit._ISSUE_NAME_RE.match(name), name
 
 
 def test_orphan_issue_unknown_status_is_removed():
@@ -259,11 +314,14 @@ def test_plain_codex_cli_is_not_an_orphan_pattern():
     assert not all_orphan
 
 
-def test_remediation_statuses_are_strict_subset_of_reapable():
-    # Kill/rescue eligibility is deliberately TIGHTER than reap eligibility:
-    # awaiting_promotion is reapable when idle but never remediated.
-    assert worktree_audit.REMEDIATION_ISSUE_STATUSES < worktree_audit.REAPABLE_ISSUE_STATUSES
-    assert "awaiting_promotion" not in worktree_audit.REMEDIATION_ISSUE_STATUSES
+def test_remediation_statuses_subset_of_reapable_and_include_awaiting_promotion():
+    # awaiting_promotion is remediation-eligible as of 2026-06-12: the
+    # worktree auto-merged to main at the Step 9b transition and the
+    # watcher auto-stops parked sessions; a genuinely live session is
+    # still protected by the real-holder guard. Remediation eligibility
+    # must never be BROADER than reap eligibility.
+    assert worktree_audit.REMEDIATION_ISSUE_STATUSES <= worktree_audit.REAPABLE_ISSUE_STATUSES
+    assert "awaiting_promotion" in worktree_audit.REMEDIATION_ISSUE_STATUSES
 
 
 # --- Junk-dirty rescue allowlist (pure) -------------------------------------
@@ -336,11 +394,21 @@ def test_remediation_kind_orphan_branch():
 def test_remediation_kind_refuses_non_terminal_statuses():
     d = Decision("issue-331", False, "held by a live process")
     holders = [(101, "node /x/codex app-server")]
-    for status in ("running", "blocked", "awaiting_promotion", None):
+    for status in ("running", "blocked", "followups_running", None):
         assert (
             worktree_audit._remediation_kind("issue-331", d, status, holders, "/nonexistent")
             is None
         ), status
+
+
+def test_remediation_kind_orphan_branch_awaiting_promotion():
+    # awaiting_promotion worktrees are remediable as of 2026-06-12 — the
+    # orphan-pinned classification applies the same as completed/archived.
+    d = Decision("issue-563", False, "held by a live process")
+    holders = [(101, "node /x/codex app-server")]
+    kind = worktree_audit._remediation_kind("issue-563", d, "awaiting_promotion", holders, "/x")
+    assert kind is not None
+    assert kind[0] == "orphan-pinned"
 
 
 def test_remediation_kind_refuses_real_holder():

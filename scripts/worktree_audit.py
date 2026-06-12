@@ -8,11 +8,14 @@ Without this, auto-generated worktrees under ``.claude/worktrees/`` pile up
 unbounded — 102 worktrees / 161 GB had accumulated by 2026-05-28.
 
 Scope: ONLY the auto-generated worktree name patterns are ever touched —
-``issue-<N>`` (canonical /issue worktree), ``agent-<hex>`` (Agent
-``isolation=worktree``), and ``wf_<id>`` (Workflow). Human-named worktrees
-(``exp-*``, ``dashboard-*``, ``experiment-*``, ``sagan-*``, ``task-workflow``,
-``issue-<N>-<suffix>`` variants, ...) are NEVER auto-removed — manual cleanup
-only.
+``issue-<N>`` (canonical /issue worktree), ``issue-<N>-<suffix>``
+(session-created same-issue follow-up rounds — mapped to issue N for the
+status lookup; in scope as of 2026-06-12, after 10+ such worktrees were
+misclassified human-named and became immortal during the 201 GB disk-bloat
+incident), ``agent-<hex>`` (Agent ``isolation=worktree``), and ``wf_<id>``
+(Workflow). Genuinely human-named worktrees (``exp-*``, ``dashboard-*``,
+``experiment-*``, ``sagan-*``, ``task-workflow``, ``compute-router``, ...)
+are NEVER auto-removed — manual cleanup only.
 
 A targeted worktree is removed only when it is provably idle. It is KEPT
 (skipped) if ANY of these hold:
@@ -52,9 +55,14 @@ cwd never exit after their companion task completes, so guard 1 held 11
 worktrees of weeks-completed tasks indefinitely; (b) JUNK-DIRTY —
 uncommitted changes confined to runtime-noise files (agent memories,
 pods.conf, pods_ephemeral.json) tripped guard 4 and held 13G worktrees
-hostage for 2KB diffs. For issue worktrees whose task status is FULLY DONE
-(``REMEDIATION_ISSUE_STATUSES`` = completed/archived ONLY — deliberately
-tighter than the reapable set), the audit now classifies both cases loudly
+hostage for 2KB diffs. For issue worktrees whose task status is DONE AND
+MERGED (``REMEDIATION_ISSUE_STATUSES`` = completed/archived/
+awaiting_promotion — awaiting_promotion added 2026-06-12: the worktree
+auto-merges to main at the Step 9b awaiting_promotion transition and the
+watcher's session-reconcile pass auto-stops parked sessions after ~2h
+idle, so the original "may be live-parked" rationale is obsolete; a
+genuinely live session is still protected by the real-holder guard), the
+audit now classifies both cases loudly
 in every report, and under ``--apply`` (NEVER in dry-run) remediates:
 (a) kills the exact orphan pids — cmdline re-verified against
 ``ORPHAN_HOLDER_PATTERNS`` immediately before every signal (PID-reuse
@@ -104,11 +112,18 @@ from explore_persona_space.task_workflow import repo_root, tasks_dir
 REAPABLE_ISSUE_STATUSES = frozenset({"completed", "archived", "awaiting_promotion"})
 
 # Worktree names the sweep is allowed to consider. Everything else is
-# human-named and left for manual cleanup. The wf_ branch is restricted to
-# the same char class harvest() extracts, so liveness detection can never
-# false-negative on a name with chars it would not match.
-_TARGET_NAME_RE = re.compile(r"^(issue-\d+|agent-[0-9a-fA-F]+|wf_[A-Za-z0-9_.\-]+)$")
-_ISSUE_NAME_RE = re.compile(r"^issue-(\d+)$")
+# human-named and left for manual cleanup. ``issue-<N>-<suffix>`` variants
+# (session-created for same-issue follow-up rounds) are in scope as of
+# 2026-06-12 and map to issue N for the status lookup — previously they
+# fell out of this regex, were misclassified human-named, and became
+# immortal (10+ of the 53 worktrees in the 201 GB disk-bloat incident).
+# The issue-suffix and wf_ branches are restricted to the same char class
+# harvest() extracts, so liveness detection can never false-negative on a
+# name with chars it would not match.
+_TARGET_NAME_RE = re.compile(
+    r"^(issue-\d+(?:-[A-Za-z0-9_.\-]+)?|agent-[0-9a-fA-F]+|wf_[A-Za-z0-9_.\-]+)$"
+)
+_ISSUE_NAME_RE = re.compile(r"^issue-(\d+)(?:-[A-Za-z0-9_.\-]+)?$")
 
 DEFAULT_GRACE_HOURS = 6.0
 
@@ -128,13 +143,19 @@ _TRACKED_CHANGES_REASON = "has uncommitted tracked changes"
 _LIVE_PROCESS_REASON = "held by a live process"
 
 # Issue statuses eligible for ACTIVE remediation (orphan-holder kill /
-# junk-dirty rescue) under --apply. Deliberately TIGHTER than
-# REAPABLE_ISSUE_STATUSES: `awaiting_promotion` worktrees are reapable when
-# idle, but their session may still be live-parked awaiting the user's
-# promotion call, so the audit never kills processes or discards dirty
-# files for them — only fully-done statuses qualify. Non-issue worktrees
-# (agent-/wf-, status None) are never remediated either.
-REMEDIATION_ISSUE_STATUSES = frozenset({"completed", "archived"})
+# junk-dirty rescue) under --apply. `awaiting_promotion` included as of
+# 2026-06-12 (disk-bloat incident: 10-17 GB awaiting_promotion worktrees
+# pinned by orphaned codex holders or junk dirt sat unreclaimable for the
+# whole multi-week promotion backlog): the worktree has already
+# auto-merged to main at the Step 9b awaiting_promotion transition (its
+# purpose is complete), and the watcher's session-reconcile pass
+# auto-stops parked awaiting_promotion sessions after ~2h idle, so the
+# original "may be live-parked awaiting the user's promotion call"
+# rationale is obsolete. A genuinely live-parked session stays protected:
+# any real (non-orphan) holder blocks remediation, as do dirt outside the
+# rescue allowlist and the grace window. Non-issue worktrees (agent-/wf-,
+# status None) are never remediated.
+REMEDIATION_ISSUE_STATUSES = frozenset({"completed", "archived", "awaiting_promotion"})
 
 # Conservative orphaned-codex holder patterns, matched against a holder's
 # cmdline. `codex app-server` workers and openai-codex plugin node
@@ -587,15 +608,15 @@ def _remediation_kind(
     """Triage a KEPT worktree as actively remediable, or None.
 
     Returns ``(kind, detail)`` with kind in {"orphan-pinned", "junk-dirty"}:
-      - "orphan-pinned": issue worktree of a fully-done task whose ONLY
-        holders are orphaned codex processes (--apply kills those exact
-        pids, then re-derives every guard fresh).
-      - "junk-dirty": issue worktree of a fully-done task whose entire
-        tracked dirty set sits inside RESCUE_DIRTY_ALLOWLIST (--apply
-        rescue-copies it, then removes).
-    Anything else — non-terminal / awaiting_promotion / unknown status, a
-    real (non-orphan) holder, dirt outside the allowlist, agent-/wf-/
-    human-named worktrees — returns None: today's keep behavior, untouched.
+      - "orphan-pinned": issue worktree of a remediation-eligible task
+        whose ONLY holders are orphaned codex processes (--apply kills
+        those exact pids, then re-derives every guard fresh).
+      - "junk-dirty": issue worktree of a remediation-eligible task whose
+        entire tracked dirty set sits inside RESCUE_DIRTY_ALLOWLIST
+        (--apply rescue-copies it, then removes).
+    Anything else — non-terminal / unknown status, a real (non-orphan)
+    holder, dirt outside the allowlist, agent-/wf-/human-named worktrees —
+    returns None: today's keep behavior, untouched.
     """
     if status not in REMEDIATION_ISSUE_STATUSES:
         return None
@@ -619,7 +640,7 @@ def _execute_remediation(
     child, wt_root_rel: str, grace_hours: float, now: float, rescue_root: Path
 ) -> Decision:
     """APPLY-MODE ONLY: kill orphan holders and/or rescue allowlisted dirt
-    for one fully-done issue worktree, re-verifying EVERY guard against
+    for one remediation-eligible issue worktree, re-verifying EVERY guard against
     fresh state at each step. Returns the final decision; remove=True only
     when the worktree is provably idle post-remediation. This function's
     internal fresh checks REPLACE the loop's snapshot->remove re-check
@@ -730,7 +751,7 @@ def audit(apply: bool, grace_hours: float, now: float | None = None) -> AuditRes
         res.sizes_bytes[name] = _worktree_size_bytes(str(child))
         decision = _classify(child, statuses, live, grace_hours, now)
         if not decision.remove:
-            # Active-remediation triage for fully-done issue worktrees:
+            # Active-remediation triage for remediation-eligible issue worktrees:
             # orphan-pinned (only orphaned codex holders) or junk-dirty
             # (dirt confined to the rescue allowlist). Classified loudly in
             # EVERY report; remediated (kill / rescue) only under --apply.

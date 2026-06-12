@@ -10,8 +10,11 @@
 # process, not a non-terminal issue status, older than the 6h grace window
 # (tightened to 1h when the filesystem holding the worktrees is >=90% full —
 # disk-pressure mode, threshold via EPM_WORKTREE_DISK_PRESSURE_PCT), and with
-# no uncommitted tracked changes. Human-named worktrees are never touched.
-# For fully-done (completed/archived) issue worktrees, --apply additionally
+# no uncommitted tracked changes. Human-named worktrees are never touched
+# (issue-<N>-<suffix> follow-up worktrees ARE in scope as of 2026-06-12,
+# mapped to issue N for the status lookup).
+# For done-and-merged (completed/archived/awaiting_promotion) issue
+# worktrees, --apply additionally
 # remediates two false-keep classes (2026-06-10 disk-full incident): kills
 # orphaned codex app-server holder pids (exact-pid, cmdline re-verified;
 # never when a real holder is present) and rescue-copies allowlisted
