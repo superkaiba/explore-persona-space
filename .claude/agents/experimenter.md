@@ -455,6 +455,48 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    original crash; a `pgrep -f <script-name>` pre-check had read clean.
    Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
    parents leave orphaned `VLLM::EngineCore` workers".
+10. **Completion sentinel — the finalize artifact gate's clean-exit
+   proof (MANDATORY for RunPod launches, #598).** `RunPodBackend.launch`
+   declares a pod-side, ATTEMPT-BOUND completion-sentinel path on the
+   handle; `dispatch_issue.py finalize` FAILs `confirm_artifacts` (and
+   skips teardown) unless a valid sentinel exists at exactly that path.
+   Three mandatory elements, every launch AND relaunch:
+   1. **The path comes from the handle sidecar — never hand-built.**
+      Read the declared path on the VM and thread it into the pod-side
+      launch command:
+      ```bash
+      SENTINEL_PATH=$(jq -r '.extra.expected_artifacts.sentinel_path' \
+        .claude/cache/issue-<N>-handle.json)
+      ```
+      (The attempt id inside the path is launch-minted —
+      `rp-<UTCstamp>-<4hex>` — so a hand-built path will not match the
+      declaration and the gate will FAIL "sentinel missing".)
+   2. **The write is CHAINED on the workload's exit status** so
+      clean-exit semantics stay mechanical (an LLM-agent judgment call
+      is NOT the writer). Compose the pod-side dispatch as:
+      ```bash
+      <workload-cmd> && uv run python -c "from explore_persona_space.backends.artifacts \
+        import write_completion_sentinel; \
+        write_completion_sentinel(sentinel_path='<declared path>', issue=<N>)"
+      ```
+      `&&` is load-bearing: a crashed workload must NOT write the
+      sentinel (the gate exists to distinguish intentional completion
+      from leftover bytes).
+   3. **Pre-(re)launch stale-sentinel clear** — extends the step-8
+      hygiene (`/workspace` persists across same-pod relaunches, and
+      relaunches bypass `backend.launch`, so a fresh attempt id alone
+      cannot close the window; this also retires any flat legacy
+      sentinel). Run alongside the step-8 `rm -f`, before EVERY launch
+      or relaunch on the pod:
+      ```bash
+      rm -f /workspace/eval_results/issue_<N>/.completion-sentinel.json \
+            /workspace/eval_results/issue_<N>/*/.completion-sentinel.json
+      ```
+   Recovery when the convention was missed on a healthy, fully-uploaded
+   run: write the sentinel on the still-alive pod (same
+   `write_completion_sentinel` one-liner, after verifying uploads) and
+   re-run finalize, or use `--skip-confirm-artifacts` if the run
+   crashed before artifacts could land.
 
 ### During Execution
 

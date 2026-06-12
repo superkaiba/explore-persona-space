@@ -52,11 +52,16 @@ Design contract
   fail the sentinel check.
 * **No backend-specific paths.** The verifier accepts the sentinel path
   through ``ExpectedArtifacts.sentinel_path`` so each backend can point
-  at its own location (RunPod = ``/workspace/eval_results/issue_<N>/
+  at its own location. Paths are ATTEMPT-NAMESPACED (#598): a prior
+  attempt's sentinel in a reused scratch dir / persistent volume must
+  never satisfy a fresh launch's declaration (``_check_sentinel``
+  validates phase+issue only, so the PATH carries the staleness
+  defense). RunPod = ``/workspace/eval_results/issue_<N>/<attempt>/
   .completion-sentinel.json``; SLURM = ``$SCRATCH_JOB_DIR/eval_results/
-  issue_<N>/.completion-sentinel.json``; GCP = the same path inside the
-  attached PD). The verifier reads its contents via the injected
-  ``read_sentinel`` callable so tests don't need a real FS.
+  issue_<N>/<attempt>/.completion-sentinel.json``; GCP = the same
+  attempt-namespaced path inside the attached PD. The verifier reads
+  the contents via the injected ``read_sentinel`` callable so tests
+  don't need a real FS.
 
 The verdict
 -----------
@@ -85,7 +90,7 @@ import json
 import logging
 import os
 import subprocess
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -366,6 +371,67 @@ def write_completion_sentinel(
         payload.update(extra)
     p.write_text(json.dumps(payload, sort_keys=True) + "\n", encoding="utf-8")
     return p
+
+
+# ---------------------------------------------------------------------------
+# Shared declaration builder (SLURM + RunPod launch paths)
+# ---------------------------------------------------------------------------
+
+
+def build_expected_artifacts_declaration(
+    *,
+    issue: int,
+    sentinel_path: str,
+    custom_workload: bool,
+    attempt_id: str | None = None,
+    hf_data_repo: str = DEFAULT_HF_DATA_REPO,
+    hf_model_repo: str = DEFAULT_HF_MODEL_REPO,
+    wandb_run_path: str | None = None,
+    extra_hf_data_paths: Sequence[str] = (),
+    extra_hf_model_paths: Sequence[str] = (),
+    extra_git_paths: Sequence[str] = (),
+) -> dict[str, Any]:
+    """Backend-agnostic :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` payload.
+
+    Mirrors ``gcp.py:expected_artifacts_declaration`` including the #601
+    custom-workload carve-out: custom workloads own their HF prefix, so
+    we declare NO launch-time guess for them (a guessed prefix turned
+    the gate into a false-negative teardown block on a perfectly
+    uploaded run). Hydra-lane launches declare
+    ``issue<N>_<attempt>/raw_completions/`` (requires ``attempt_id``).
+    Callers that DO know the workload's real prefix declare it via
+    ``extra_hf_data_paths``.
+
+    Consumed by the SLURM + RunPod launch paths (#598); the GCP lane
+    keeps its own builder (scoped out of #598 — migrating it here is a
+    named follow-up, not this diff).
+
+    Returns a JSON-safe dict (lists, not tuples) so it round-trips via
+    ``serialize_handle`` / :func:`expected_artifacts_from_handle`.
+    """
+    if custom_workload:
+        base_hf_data: tuple[str, ...] = ()
+    else:
+        if not attempt_id:
+            raise ValueError(
+                "build_expected_artifacts_declaration: hydra-lane declaration "
+                "requires attempt_id (it names the HF raw-completions prefix)"
+            )
+        base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
+    return {
+        "issue": int(issue),
+        "hf_data_repo": hf_data_repo,
+        "hf_model_repo": hf_model_repo,
+        "hf_data_paths": list(base_hf_data) + list(extra_hf_data_paths),
+        "hf_model_paths": list(extra_hf_model_paths),
+        "wandb_run_path": wandb_run_path,
+        "git_paths": [
+            f"eval_results/issue_{issue}/",
+            f"figures/issue_{issue}/",
+            *extra_git_paths,
+        ],
+        "sentinel_path": sentinel_path,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -778,6 +844,7 @@ __all__ = [
     "ArtifactVerdict",
     "ExpectedArtifacts",
     "VerifierIO",
+    "build_expected_artifacts_declaration",
     "confirm_artifacts_from_handle",
     "expected_artifacts_from_handle",
     "verify_artifacts",
