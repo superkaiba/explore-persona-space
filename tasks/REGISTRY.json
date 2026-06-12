@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 624,
+  "highest_id": 629,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -2150,8 +2150,8 @@
     "418": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/418",
-      "status": "reviewing",
+      "path": "tasks/completed/418",
+      "status": "completed",
       "title": "Fix ~19 pre-existing failing tests on main (verifier/migrate-body/redact/plan-handoff harness drift)"
     },
     "419": {
@@ -3289,8 +3289,8 @@
     "554": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/554",
-      "status": "planning",
+      "path": "tasks/running/554",
+      "status": "running",
       "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
     },
     "555": {
@@ -3368,15 +3368,15 @@
     "564": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/564",
-      "status": "planning",
+      "path": "tasks/running/564",
+      "status": "running",
       "title": "Proactive HF public-storage headroom check (preflight WARN + pre-train persist gate + opt-in overflow routing)"
     },
     "565": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/565",
-      "status": "planning",
+      "path": "tasks/completed/565",
+      "status": "completed",
       "title": "Upload-defaults hardening: route i207 worker through hub, test the runner merged-gate, exclude checkpoint-* from persist path"
     },
     "566": {
@@ -3448,15 +3448,15 @@
     "575": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/575",
-      "status": "running",
+      "path": "tasks/completed/575",
+      "status": "completed",
       "title": "Spot-check the awaiting_promotion backlog with the new verify_task_body URL-existence check"
     },
     "576": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/576",
-      "status": "running",
+      "path": "tasks/completed/576",
+      "status": "completed",
       "title": "Assert the marker-eval per-slot storage contract in eval code, not just prose"
     },
     "577": {
@@ -3469,8 +3469,8 @@
     "578": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/578",
-      "status": "running",
+      "path": "tasks/completed/578",
+      "status": "completed",
       "title": "Add a CVD-clobber regression smoke asserting sweep waves land on cvd1/2/3"
     },
     "579": {
@@ -3483,8 +3483,8 @@
     "580": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/580",
-      "status": "running",
+      "path": "tasks/completed/580",
+      "status": "completed",
       "title": "Ops hygiene batch: bootstrap_pod.sh fixes, terminate pod-489, sweep zombie sessions, VM disk-space check cron"
     },
     "581": {
@@ -3616,8 +3616,8 @@
     "598": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/598",
-      "status": "planning",
+      "path": "tasks/running/598",
+      "status": "running",
       "title": "SlurmBackend.launch: populate expected_artifacts declaration (SLURM finalize/confirm unusable without it)"
     },
     "599": {
@@ -3691,8 +3691,8 @@
     "607": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/607",
-      "status": "planning",
+      "path": "tasks/running/607",
+      "status": "running",
       "title": "GCP lane: redirect workload output to log file \u2014 GCE metadata runner bufio.Scanner token-too-long kills workloads with progress bars"
     },
     "608": {
@@ -3721,8 +3721,8 @@
       "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (\u22120.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/610",
-      "status": "running",
+      "path": "tasks/interpreting/610",
+      "status": "interpreting",
       "title": "Default-assistant shielding: dose or identity? Single-slot ablation of the qwen_default negative on the #600 chassis"
     },
     "611": {
@@ -3745,16 +3745,16 @@
       "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/613",
-      "status": "running",
+      "path": "tasks/verifying/613",
+      "status": "verifying",
       "title": "Alive-negatives A/B: does the loss-suppression flag give contrastive negatives a live restoring force? (#601 mechanism follow-up)"
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/614",
-      "status": "running",
+      "path": "tasks/interpreting/614",
+      "status": "interpreting",
       "title": "Assistant-twin immunity: role gating vs trained-negative suppression generalization (canned software_engineer retrain with assistant swapped out of the negative set)"
     },
     "615": {
@@ -3767,8 +3767,8 @@
     "616": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/planning/616",
-      "status": "planning",
+      "path": "tasks/completed/616",
+      "status": "completed",
       "title": "Consolidate mentor meeting notes from the Research Log Google Slides deck into docs/mentor_updates/"
     },
     "617": {
@@ -3804,16 +3804,16 @@
     "620": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/620",
-      "status": "planning",
+      "path": "tasks/completed/620",
+      "status": "completed",
       "title": "Fix test_issue475_common: TrainLoraConfig missing existing_adapter_path (selective-merge gap from issue-475)"
     },
     "621": {
       "goal": "Test whether a rank-1 LoRA's read vector aligns with the source persona's context vector and its write vector with the behavior direction, and whether per-persona firing strength a.v_c rank-orders measured leakage.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/621",
-      "status": "planning",
+      "path": "tasks/running/621",
+      "status": "running",
       "title": "Train rank-1 LoRA implants and compare the A (read) and B (write) vectors to persona-context and behavior vectors"
     },
     "622": {
@@ -3839,6 +3839,43 @@
       "path": "tasks/proposed/624",
       "status": "proposed",
       "title": "Good vs evil assistant: does carving out a dedicated evil-assistant container persona make the default assistant more robust?"
+    },
+    "625": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/625",
+      "status": "planning",
+      "title": "verify_plan.py: mechanical pre-pass gate for experiment plans at adversarial-planner Phase 1.5"
+    },
+    "626": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/626",
+      "status": "planning",
+      "title": "Batch-aware Claude-judge dispatch in the eval path (speed-threshold routing: sync <2k, batch >=2k in 10k splits)"
+    },
+    "627": {
+      "goal": "Determine whether headline cross-condition leakage differences (contrastive vs positive-only, LoRA vs full fine-tuning) survive controlling for implantation strength, via matched-install comparison, per-cell leakage-to-install fractions in logit space, and leakage-vs-install dose curves from existing training trajectories.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/627",
+      "status": "planning",
+      "title": "Leakage-vs-implantation control: do cross-condition leakage differences survive matching or normalizing by install strength?"
+    },
+    "628": {
+      "goal": "Make the slot-aligned alive-negative marker rig the default (no \\n\\n separator so the marker sits directly after R at the DV-read slot; contrastive negatives carry loss on <|im_end|> + trailing \\n at that same slot), then re-measure marker leakage across the #537 panel of training and eval context types and test whether slot-aligned alive negatives suppress bystander/default leakage more than the current gradient-dead-negative rig (#601) \u2014 i.e. whether negatives finally exert the persona-level restoring force seen under the flag-on rig (#471).",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/planning/628",
+      "status": "planning",
+      "title": "Revise the marker rig (drop the \\n\\n separator; train contrastive negatives on <|im_end|> + \\n at the DV-read slot) and re-measure marker leakage across many context types"
+    },
+    "629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/629",
+      "status": "proposed",
+      "title": "Harden the i472 trajectory storage-contract gate: finiteness/type-check the 6 raw-logit leaf fields + AST gate-before-write ordering pin"
     },
     "65": {
       "has_clean_result": true,

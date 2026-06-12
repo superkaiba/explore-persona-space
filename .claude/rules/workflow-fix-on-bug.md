@@ -138,6 +138,13 @@ because it lacked the comment tags.
 - A test that should have caught a workflow regression is missing.
 - `CLAUDE.md` describes a rule but the implementing file (agent, skill,
   script) doesn't enforce it.
+- A critic finding whose check belongs in a mechanical verifier — a
+  `mechanizable: yes` blocker from any review lens (critic /
+  code-reviewer / interpretation-critic / clean-result-critic) that
+  targets `verify_task_body.py`, `audit_clean_results_body_discipline.py`,
+  SPEC.md lens text, the `consistency-checker` spec, or a future
+  `verify_plan.py`. Emit only when the check is concrete and likely to
+  recur — not for one-off artifact-specific issues (spam guard).
 
 ### No — don't emit
 

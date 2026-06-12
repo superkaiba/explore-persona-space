@@ -92,6 +92,15 @@ unfixable = ["B"]  # bugbear fixes can change semantics
 [tool.ruff.lint.mccabe]
 max-complexity = 15
 
+[tool.ruff.lint.isort]
+# The repo-root `wandb/` RUNTIME dir (untracked WandB run logs) makes ruff's
+# first-party detection classify `wandb` as local on dirty checkouts, while
+# fresh clones / sparse worktrees / pods classify it third-party — so the same
+# import block lints green in one environment and I001-fails in the other
+# (#576 round 2; round-1 commit 9f2e8d10a hit the mirror image of this). Pin
+# the classification so the lint verdict is environment-independent.
+known-third-party = ["wandb"]
+
 [dependency-groups]
 dev = [
     "ruff>=0.15.9",

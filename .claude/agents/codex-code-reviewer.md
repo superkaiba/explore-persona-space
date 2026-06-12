@@ -382,6 +382,15 @@ both reviewers are graded against the same standard. Read
   task's `R_eval.json` covered fewer personas than the bank, and the
   launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
   this in the prompt, Codex inherits the same gap.
+- The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
+  every Critical/Major finding cites a concrete artifact location
+  (`file.py:LINE`, diff hunk, plan section; the reconciler discards
+  ungrounded blockers as non-binding) and carries a `Mechanizable: yes | no`
+  line with a 1-2 line check sketch when `yes`. Adapt the workflow-fix
+  clause for Codex: Codex twins never emit workflow-fix candidates — when a
+  mechanizable check belongs in a workflow-surface verifier and is likely
+  to recur, Codex notes it in plain English in the verdict body and the
+  orchestrator decides.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; tests are the Claude reviewer's
@@ -423,7 +432,7 @@ the real blocker sat one item lower.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7 + Rule 12 (blocker grounding + mechanizability, Codex-adapted)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -451,6 +460,7 @@ fences around the marker, no commentary outside the marker tags:
   - Evidence: [quote the code]
   - Impact: [what breaks]
   - Fix: [suggested repair]
+  - Mechanizable: [yes — <1-2 line check sketch> / no] (also on Major findings)
 
 ### Major (revise before merge)
 ...

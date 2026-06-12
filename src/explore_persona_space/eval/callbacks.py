@@ -24,9 +24,9 @@ import os
 import re
 from typing import ClassVar
 
+import wandb
 from transformers import TrainerCallback
 
-import wandb
 from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
@@ -864,12 +864,15 @@ class MarkerBandStopCallback(TrainerCallback):
             return float(v.mean().item()) if v is not None else None
 
         for side, stats in (("trained", trained_stats), ("base", self._base_slot_stats)):
+            # stats.get(...) — NOT stats[...] — so a producer that omits a
+            # field reaches the validator's incident-tagged contract error
+            # instead of a raw KeyError (#576 round-2 reviewer minor).
             validate_marker_slot_record(
                 {
-                    "logp": _mean_or_none(stats["logp"]),
-                    "z_marker": _mean_or_none(stats["z_marker"]),
-                    "z_eos": _mean_or_none(stats["z_eos"]),
-                    "logZ": _mean_or_none(stats["logZ"]),
+                    "logp": _mean_or_none(stats.get("logp")),
+                    "z_marker": _mean_or_none(stats.get("z_marker")),
+                    "z_eos": _mean_or_none(stats.get("z_eos")),
+                    "logZ": _mean_or_none(stats.get("logZ")),
                 },
                 context=(
                     f"MarkerBandStopCallback[{self.log_prefix}] {side} side, "

@@ -38,6 +38,7 @@ wave () {  # $1 = shard_id (wave index) ; $2 = seed
   local pids=() conds=()
   for cg in "${CONDS[@]}"; do
     local cond=${cg% *} gpu=${cg#* }
+    # CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim; new launches must pin env CUDA_VISIBLE_DEVICES per cell (gotchas.md CVD-clobber)
     nohup uv run python scripts/run_experiment_444.py \
       --phase worker --shard-id "$shard" --num-shards 3 \
       --condition "$cond" --seed "$seed" --gpu-id "$gpu" \

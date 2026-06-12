@@ -950,7 +950,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     return parsed
 
 
-def sentinel_drain_shell(issue: int) -> str:
+def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
     """The in-VM list+cat loop every drain transport executes.
 
     Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``)
@@ -965,14 +965,25 @@ def sentinel_drain_shell(issue: int) -> str:
     wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
     § "No sentinel drain on this lane" (#608 follow-up).
 
-    The glob is path-terminal `.json` and explicitly excludes `.processed`.
+    ``extra_globs`` appends transport-specific fallback patterns to the
+    canonical glob (incident #610: the issue-610 GCP dispatcher found
+    ``/workspace/logs`` missing and wrote its results sentinel under its
+    out_root ``.../eval_results/issue_610/logs/`` instead, so the drain
+    reported ``done`` with ``sentinels_processed=0``). Patterns are
+    TRUSTED, UNQUOTED shell globs (quoting would defeat expansion):
+    callers pass only config-derived paths with no spaces/metacharacters,
+    e.g. the GCP workload-root fallback in ``backends/gcp.py``. The
+    default — no extras — keeps the RunPod lane byte-identical.
+
+    Each glob is path-terminal `.json` and explicitly excludes `.processed`.
     ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
     the literal pattern so we don't accidentally cat a path called e.g.
     ``/workspace/logs/issue-444-*.json``.
     """
+    globs = " ".join([f"/workspace/logs/issue-{issue}-*.json", *extra_globs])
     return (
         f"shopt -s nullglob; "
-        f"for f in /workspace/logs/issue-{issue}-*.json; do "
+        f"for f in {globs}; do "
         f'  case "$f" in *.processed) continue ;; esac; '
         f'  echo "SENTINEL_START $f"; '
         f'  cat "$f"; '

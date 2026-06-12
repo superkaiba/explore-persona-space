@@ -5,7 +5,7 @@ Pins the runtime enforcement of the four-floats-per-slot storage contract
 #530: an eval rig persisted only post-softmax log-probs, making the mandated
 logit readout unrecoverable and forcing paid GPU re-runs on #530/#531).
 
-Three layers:
+Five layers:
 
 1. ``validate_marker_slot_record`` — the pure validator: conforming records
    pass; post-softmax-only records, non-finite values, positive log-probs,
@@ -15,6 +15,13 @@ Three layers:
 3. ``MarkerBandStopCallback.on_step_end`` — the write-time wiring: a probe
    read that comes back without the pre-softmax fields aborts the step with
    the contract error BEFORE anything is persisted.
+4. Round-2 (#576) validator pins: non-numeric rejection classes, the
+   z_eos-NaN-under-opt-out branch, the DELIBERATE ``0 < logp <= atol``
+   fp-tolerance window, and numpy-scalar behavior.
+5. The #472 trajectory rig's FINAL-write gate
+   (``assert_trajectory_slot_records_meet_storage_contract``): a
+   ``compute_kl=False`` canonical artifact is refused, the explicit opt-out
+   works, and crash-recovery partials stay exempt (marked non-contract).
 
 No GPU, no HF download; runs in <1s.
 """
@@ -219,3 +226,173 @@ def test_callback_without_eos_id_warns_but_validates_rest(tmp_path, monkeypatch,
     cb.on_step_end(SimpleNamespace(), _step_state(), SimpleNamespace(), model=object())
     payload = json.loads((tmp_path / "trajectory.json").read_text())
     assert payload["n_probe_records"] == 1
+
+
+# ---------------------------------------------------------------------------
+# 4. Round-2 (#576) validator pins: rejection classes + deliberate boundaries
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("bad", [True, "-12.3"])
+def test_non_numeric_field_fails(bad):
+    """Bools and numeric strings are rejected loud, not silently coerced."""
+    rec = _good_record()
+    rec["logp"] = bad
+    with pytest.raises(AssertionError, match="non-numeric"):
+        validate_marker_slot_record(rec)
+
+
+def test_z_eos_nan_with_optout_still_fails():
+    """require_z_eos=False makes z_eos OPTIONAL, not unchecked: a
+    present-but-NaN z_eos is rejected via the present-but-not-finite branch."""
+    rec = _good_record()
+    rec["z_eos"] = float("nan")
+    with pytest.raises(AssertionError, match="z_eos present but not a finite float"):
+        validate_marker_slot_record(rec, require_z_eos=False)
+
+
+def test_small_positive_logp_within_atol_passes():
+    """Deliberate fp-tolerance window, pinned on purpose: a fully CONSISTENT
+    record with 0 < logp <= atol (default 1e-3) PASSES.
+
+    Reconciler-adjudicated in #576 round 1: a strict ``logp > 0.0`` check
+    would false-reject legitimate saturated records (logp ~ 0- with fp noise
+    from fused logsumexp kernels — and source saturation is by-design common
+    in this project) while buying nothing against consistent fabrication: the
+    negative twin {logp: -eps, z_marker: -eps, logZ: 0} passes any strict
+    check too, because the identity check structurally cannot catch a
+    self-consistent fabrication at any tolerance.
+    """
+    rec = {"logp": 0.0005, "z_marker": 17.3005, "z_eos": 10.0, "logZ": 17.3}
+    validate_marker_slot_record(rec)
+
+
+def test_numpy_float64_passes_float32_fails():
+    """np.float64 IS a Python-float subclass -> accepted; np.float32 is NOT ->
+    rejected loud as non-numeric (writers must cast to Python float first)."""
+    import numpy as np
+
+    rec64 = {k: np.float64(v) for k, v in _good_record().items()}
+    validate_marker_slot_record(rec64)
+
+    rec32 = {k: np.float32(v) for k, v in _good_record().items()}
+    with pytest.raises(AssertionError, match="non-numeric"):
+        validate_marker_slot_record(rec32)
+
+
+# ---------------------------------------------------------------------------
+# 5. #472 trajectory rig: FINAL-write storage-contract gate (#576 round 2)
+# ---------------------------------------------------------------------------
+
+
+def _trajectory_leaf(*, with_logits: bool) -> dict:
+    """Synthetic held_out leaf shaped like run_trajectory_eval's output:
+    Phase-A fields always; Phase-B raw-logit fields only when requested."""
+    leaf = {
+        "g_logp": -12.3,
+        "b_logp": -19.0,
+        "delta_g": 6.7,
+        "argmax_marker": False,
+        "n_marker_in_R": 0,
+        "r_collapsed": False,
+        "kl": None,
+    }
+    if with_logits:
+        leaf.update(
+            {
+                "kl": 0.4,
+                "z_marker_g": 5.0,
+                "z_marker_b": -1.7,
+                "z_eos_g": 10.0,
+                "z_eos_b": 12.0,
+                "logZ_g": 17.3,
+                "logZ_b": 17.3,
+                "logp_hf_g": -12.3,
+                "logp_hf_b": -19.0,
+            }
+        )
+    return leaf
+
+
+def _trajectory_checkpoints(*, with_logits: bool) -> list[dict]:
+    return [
+        {
+            "frac": 1.0,
+            "step": 20,
+            "adapter_path": "/tmp/adapter",
+            "held_out": {"medical_doctor": {"q1": _trajectory_leaf(with_logits=with_logits)}},
+        }
+    ]
+
+
+def test_trajectory_final_write_postsoftmax_only_raises(tmp_path):
+    """A compute_kl=False-shaped checkpoints list (leaves carrying only
+    g_logp/b_logp) is REFUSED at the canonical write — the #530 incident
+    class this task exists to prevent."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    with pytest.raises(AssertionError, match="compute_kl=False"):
+        assert_trajectory_slot_records_meet_storage_contract(
+            _trajectory_checkpoints(with_logits=False),
+            out_path=tmp_path / "trajectory.json",
+        )
+
+
+def test_trajectory_final_write_optin_allows_subcontract(tmp_path):
+    """allow_subcontract_output=True is the single explicit opt-out."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    assert_trajectory_slot_records_meet_storage_contract(
+        _trajectory_checkpoints(with_logits=False),
+        out_path=tmp_path / "trajectory.json",
+        allow_subcontract_output=True,
+    )
+
+
+def test_trajectory_final_write_full_contract_passes(tmp_path):
+    """The production compute_kl=True shape (raw-logit fields present) writes
+    with no behavior change."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    assert_trajectory_slot_records_meet_storage_contract(
+        _trajectory_checkpoints(with_logits=True),
+        out_path=tmp_path / "trajectory.json",
+    )
+
+
+def test_trajectory_partials_marked_noncontract_and_gate_fires_once():
+    """Source-level pin (same pattern as test_i584): crash-recovery partials
+    are marked non-contract rather than validated, and the gate runs exactly
+    once inside run_trajectory_eval — at the final canonical write, never on
+    the .partial.json crash-recovery writes."""
+    import ast
+    from pathlib import Path
+
+    src_path = (
+        Path(__file__).resolve().parent.parent
+        / "src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py"
+    )
+    source = src_path.read_text()
+    assert '"contract": "phase-a-partial-no-logits"' in source
+    assert '"contract": "phase-b-partial-logits-in-progress"' in source
+
+    tree = ast.parse(source)
+    fn = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.FunctionDef) and n.name == "run_trajectory_eval"
+    )
+    gate_calls = [
+        n
+        for n in ast.walk(fn)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Name)
+        and n.func.id == "assert_trajectory_slot_records_meet_storage_contract"
+    ]
+    assert len(gate_calls) == 1, "gate must fire exactly once: final write only, not partials"

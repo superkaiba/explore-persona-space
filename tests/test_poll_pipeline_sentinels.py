@@ -2879,3 +2879,28 @@ def test_resolve_state_dir_root_falls_back_outside_git(
         root = pp._resolve_state_dir_root()
     assert root == pp._REPO_ROOT
     assert any("phase-cache anchor" in rec.message for rec in caplog.records)
+
+
+# ── sentinel_drain_shell glob shape (#610) ──────────────────────────────────
+
+
+def test_sentinel_drain_shell_default_glob_unchanged() -> None:
+    """The no-extras call (the RunPod lane) keeps the single canonical
+    ``/workspace/logs`` glob — incident #610's fallback must not change
+    the pod-SSH transport's loop shape."""
+    script = pp.sentinel_drain_shell(444)
+    assert "for f in /workspace/logs/issue-444-*.json; do" in script
+    assert "shopt -s nullglob" in script
+    # Exactly one glob: no stray fallback patterns on the default path.
+    assert script.count("issue-444-") == 1
+
+
+def test_sentinel_drain_shell_extra_globs_appended() -> None:
+    """#610: a transport can append fallback globs (the GCP lane passes
+    its workload root's out_root logs dir, where the issue-610 dispatcher
+    wrote its results sentinel when /workspace/logs was missing)."""
+    fallback = "/workspace/eps-issue-610/eval_results/issue_610/logs/issue-610-*.json"
+    script = pp.sentinel_drain_shell(610, extra_globs=(fallback,))
+    assert f"for f in /workspace/logs/issue-610-*.json {fallback}; do" in script
+    # The .processed exclusion still guards every glob's matches.
+    assert "*.processed) continue" in script
