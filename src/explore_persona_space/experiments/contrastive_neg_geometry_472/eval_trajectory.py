@@ -82,6 +82,72 @@ DEFAULT_MAX_LORA_RANK = 32
 POST_R_EOS_TOKEN = "<|im_end|>"
 EXPECTED_POST_R_EOS_ID = 151645
 
+# Per-leaf raw-logit fields the FINAL canonical trajectory artifact must carry
+# (storage contract, .claude/rules/marker-leakage-measurement.md § "Storage
+# contract" / task #576): the three pre-softmax readouts per model side,
+# captured in Phase B. Logits are unrecoverable from stored log-probs post-hoc
+# (incident #530), so a final artifact whose leaves carry only g_logp/b_logp
+# is refused unless the caller explicitly opts in.
+TRAJECTORY_LOGIT_LEAF_KEYS = (
+    "z_marker_g",
+    "z_marker_b",
+    "z_eos_g",
+    "z_eos_b",
+    "logZ_g",
+    "logZ_b",
+)
+
+
+def assert_trajectory_slot_records_meet_storage_contract(
+    checkpoints: list[dict],
+    *,
+    out_path: Path | str,
+    allow_subcontract_output: bool = False,
+) -> None:
+    """Fail loud before the FINAL canonical trajectory write when slot records
+    are post-softmax-only (the #530 incident class; task #576).
+
+    Guards only the canonical ``out_path`` artifact. The crash-recovery
+    ``.partial.json`` files are exempt BY DESIGN: Phase A structurally cannot
+    carry raw logits yet (vLLM returns post-softmax log-probs only), so the
+    partials are written with an explicit non-contract ``"contract"`` marking
+    instead of being validated, and are deleted on success.
+
+    Args:
+        checkpoints: the ``checkpoints`` list about to be persisted.
+        out_path: the canonical artifact path (named in the error message).
+        allow_subcontract_output: explicit opt-in for a deliberately
+            non-contract artifact (e.g. a smoke run that accepts losing the
+            logit readout permanently). Default False = refuse the write.
+
+    Raises:
+        AssertionError: when any held-out leaf lacks a raw-logit field
+            (``compute_kl=False`` / the ``--no-kl`` smoke flag skipped
+            Phase B) and the caller did not opt in.
+    """
+    if allow_subcontract_output:
+        return
+    offending: list[str] = []
+    for ck in checkpoints:
+        for persona, by_q in ck.get("held_out", {}).items():
+            for q, leaf in by_q.items():
+                absent = [k for k in TRAJECTORY_LOGIT_LEAF_KEYS if leaf.get(k) is None]
+                if absent:
+                    offending.append(f"frac={ck.get('frac')}/{persona}/{q!r}: missing {absent}")
+    if offending:
+        preview = "; ".join(offending[:3])
+        raise AssertionError(
+            f"Marker-slot storage-contract violation at the FINAL trajectory write "
+            f"({out_path}): {len(offending)} held-out slot record(s) lack the raw-logit "
+            f"fields {TRAJECTORY_LOGIT_LEAF_KEYS} (e.g. {preview}). A post-softmax-only "
+            f"artifact is exactly incident #530 — logits are unrecoverable from stored "
+            f"log-probs post-hoc (.claude/rules/marker-leakage-measurement.md § 'Storage "
+            f"contract'). This happens when Phase B was skipped (compute_kl=False, i.e. "
+            f"the --no-kl smoke flag). Re-run with compute_kl=True, or pass "
+            f"allow_subcontract_output=True to deliberately persist a non-contract "
+            f"artifact."
+        )
+
 
 def _git_sha() -> str:
     try:
@@ -374,6 +440,7 @@ def run_trajectory_eval(
     max_model_len: int = DEFAULT_MAX_MODEL_LEN,
     compute_kl: bool = True,
     source_guard_meta: dict | None = None,
+    allow_subcontract_output: bool = False,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -386,7 +453,16 @@ def run_trajectory_eval(
         out_path: trajectory.json output.
         base_model, max_new_tokens, max_lora_rank, gpu_memory_utilization,
             max_model_len: vLLM params.
-        compute_kl: if False, skip DV-B (smoke speed-up).
+        compute_kl: if False, skip DV-B (smoke speed-up). NOTE (#576): Phase B
+            also captures the per-leaf raw-logit fields, so a
+            ``compute_kl=False`` run produces post-softmax-only slot records
+            and the FINAL canonical write is REFUSED (storage contract,
+            incident #530) unless ``allow_subcontract_output=True``.
+        allow_subcontract_output: explicit opt-in to persist a non-contract
+            (post-softmax-only) FINAL artifact under ``compute_kl=False``.
+            Default False = the final write fails loud. Crash-recovery
+            ``.partial.json`` files are exempt either way (marked
+            non-contract via their ``"contract"`` field, deleted on success).
         source_guard_meta: #534 round-2 adapter-applied cross-check. None
             (default) = exact legacy behavior. Otherwise a dict
             ``{"expected_by_frac": {frac(float): teacher-forced source ΔG
@@ -581,8 +657,19 @@ def run_trajectory_eval(
             }
         )
         # Persist partial after each checkpoint's vLLM phase (crash-safe).
+        # Phase-A leaves carry only post-softmax g_logp/b_logp — the raw-logit
+        # fields land in Phase B — so the partial is explicitly marked
+        # NON-CONTRACT (#576) rather than validated; it is deleted on success.
         partial_path.write_text(
-            json.dumps({"cell": cell_slug, "seed": seed, "checkpoints": checkpoints_out}, indent=2)
+            json.dumps(
+                {
+                    "contract": "phase-a-partial-no-logits",
+                    "cell": cell_slug,
+                    "seed": seed,
+                    "checkpoints": checkpoints_out,
+                },
+                indent=2,
+            )
         )
         log.info(
             "[phase=traj_vllm] %s done: source-self ΔG=%.2f nats, source_R_collapsed=%s, "
@@ -719,9 +806,18 @@ def run_trajectory_eval(
                 log.info(
                     "wandb log skipped (%s); guard rate=%.4f.", e, guard_diag["byte_identical_rate"]
                 )
+            # Phase-B partial: logits filled for checkpoints KL'd so far, not
+            # yet for the rest — still a crash-recovery artifact, still
+            # NON-CONTRACT (#576), deleted on success.
             partial_path.write_text(
                 json.dumps(
-                    {"cell": cell_slug, "seed": seed, "checkpoints": checkpoints_out}, indent=2
+                    {
+                        "contract": "phase-b-partial-logits-in-progress",
+                        "cell": cell_slug,
+                        "seed": seed,
+                        "checkpoints": checkpoints_out,
+                    },
+                    indent=2,
                 )
             )
 
@@ -748,6 +844,14 @@ def run_trajectory_eval(
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
+    # #576 storage-contract gate on the FINAL canonical artifact: refuse a
+    # post-softmax-only write (compute_kl=False / --no-kl) unless the caller
+    # explicitly opted into a non-contract artifact. Partials above are exempt.
+    assert_trajectory_slot_records_meet_storage_contract(
+        checkpoints_out,
+        out_path=out_path,
+        allow_subcontract_output=allow_subcontract_output,
+    )
     out_path.write_text(json.dumps(payload, indent=2))
     if partial_path.exists():
         partial_path.unlink()
