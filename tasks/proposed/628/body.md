@@ -17,6 +17,9 @@ goal: 'Make the slot-aligned alive-negative marker rig the default (no \n\n sepa
   alive negatives suppress bystander/default leakage more than the current gradient-dead-negative
   rig (#601) — i.e. whether negatives finally exert the persona-level restoring force
   seen under the flag-on rig (#471).'
+relates_to:
+- leak-contrastive-negatives
+- leak-to-default
 ---
 # Revise the marker rig (drop the `\n\n` separator; train contrastive negatives on `<|im_end|>` + `\n` at the DV-read slot) and re-measure marker leakage across many context types
 
