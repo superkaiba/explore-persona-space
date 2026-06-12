@@ -1719,21 +1719,55 @@ def _margin_retains(margin_t: float | None, margin_intact: float | None) -> bool
     return margin_t >= SHUFFLE_RETENTION_FRAC * margin_intact or margin_t >= MARGIN_MIN
 
 
+def _pinned_resolve_unit(args: argparse.Namespace, name: str, local: Path, sidecar: Path) -> None:
+    """Resolve one unit's payload + sidecar THROUGH the pinned download.
+
+    The ONLY strict+``--hf-revision`` path (round-4 fix
+    `shuffle-handoff-local-stale-risk`): both files resolve at the pin
+    regardless of local presence (HF cache makes repeats near-free); a
+    local symlink is re-pointed to the pinned blob; a local REAL file
+    whose bytes differ from the pinned download fails loud.
+    """
+    for fname, dest in ((name, local), (sidecar.name, sidecar)):
+        got = bk.hub_download(
+            args.followup_repo,
+            f"{bk.FOLLOWUP_SHUFFLE_BUCKET}/analysis_tensors/estimator_reads/{fname}",
+            revision=args.hf_revision,
+        )
+        if dest.is_symlink():
+            dest.unlink()  # re-point (covers a stale earlier-revision symlink)
+        if not dest.exists():
+            dest.symlink_to(got)
+        elif bk.sha256_file(dest) != bk.sha256_file(Path(got)):
+            raise RuntimeError(
+                f"local follow-up payload {dest.name} differs from --hf-revision "
+                f"{args.hf_revision} — stale local data from an earlier dispatch; "
+                "delete it or pass the matching revision"
+            )
+
+
 def _resolve_followup_payloads(
     args: argparse.Namespace, followup_est_dir: Path, strict: bool
 ) -> tuple[dict[tuple[str, str], dict], dict[str, Any]]:
     """Download/resolve the 7 follow-up estimator payloads (pinned handoff).
 
-    Local files are used when present; missing files download from
-    ``--followup-repo`` at ``--hf-revision`` (the upload-recorded revision
-    from the dispatcher sentinel/manifest — plan v3 §3.4). Production
-    requires all 7 + a recorded revision; per-file sha256 + source are
-    recorded into the output JSON.
+    Strict mode WITH ``--hf-revision`` NEVER trusts a pre-existing local
+    payload: every unit resolves through the cache-backed pinned
+    ``bk.hub_download(..., revision=args.hf_revision)`` (round-4 fix
+    `shuffle-handoff-local-stale-risk` — an existing local file from an
+    EARLIER dispatch would otherwise be scored while the output claims the
+    new revision). Local symlinks are re-pointed to the pinned blob; a
+    local REAL file whose bytes differ from the pinned download fails loud.
+    Without ``--hf-revision`` (the pod-side fresh-run path), local files
+    are used when present; strict mode then still requires a revision
+    recorded from the sidecars. Production requires all 7 + a recorded
+    revision; per-file sha256 + source are recorded into the output JSON.
     """
     followup_est_dir.mkdir(parents=True, exist_ok=True)
     payloads: dict[tuple[str, str], dict] = {}
     files: dict[str, Any] = {}
     revisions_seen: set[str] = set()
+    pinned = strict and args.hf_revision is not None
     for family, source in _shuffle_units():
         name = f"{family}__{source}.pt"
         local = followup_est_dir / name
@@ -1742,7 +1776,10 @@ def _resolve_followup_payloads(
         for p in (local, sidecar):
             if p.is_symlink() and not p.exists():
                 p.unlink()
-        if not local.exists():
+        if pinned:
+            _pinned_resolve_unit(args, name, local, sidecar)
+            src_kind = f"pinned@{args.hf_revision}"
+        elif not local.exists():
             if args.hf_revision is None:
                 if strict:
                     raise RuntimeError(
@@ -1768,8 +1805,11 @@ def _resolve_followup_payloads(
             if strict:
                 raise RuntimeError(msg)
             logger.warning("%s (allow-subset)", msg)
-        # the dispatcher records the post-upload revision into the SIDECAR
-        # manifest (the .pt is finalized before the upload phase runs)
+        # provenance diagnostic: the sidecar's `upload_revision` is the
+        # PAYLOAD-commit sha the dispatcher recorded; the handoff revision the
+        # sentinel carries (passed here as --hf-revision) is the LATER
+        # sidecar-re-upload commit, so the two legitimately differ — the
+        # sentinel-primary pin above is what guarantees freshness (plan §3.4)
         side = json.loads(sidecar.read_text()) if sidecar.exists() else {}
         if side.get("upload_revision"):
             revisions_seen.add(side["upload_revision"])
@@ -1971,6 +2011,9 @@ def _shuffle_score_rows(
                     "gates_verdict": tname in ("intact", "shuffle", "mismatch"),
                     "cos_w_shared": cos_shared,
                     "cos_w_src": cos_src,
+                    # magnitude-max INTENDED: sensitivity-only "tracks either
+                    # target" read, never gating — mirrors the parent's
+                    # dual-target registration (same key=abs shape above)
                     "best_target_cos": (
                         None
                         if cos_shared is None or cos_src is None

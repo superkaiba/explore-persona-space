@@ -9,12 +9,15 @@ the Hub PINNED to the parent upload revision
 (em_turner shared + 6 em518 sources) SEQUENTIALLY on 1 GPU as
 subprocesses of ``issue602_estimator_reads.py`` with
 ``--e1-only --e1-transforms intact shuffle mismatch --layers 14 27
---per-row-layers 14 27`` (checkpoint-per-unit), uploads each payload +
-manifest to ``bk.FOLLOWUP_SHUFFLE_BUCKET`` with the parent's per-file
-``_upload`` + quota-403 private-repo fallback + ``list_repo_files``
-verification, records the POST-UPLOAD repo revision into the manifest +
-results sentinel, and finishes with the poll_pipeline sentinel followed
-by the single terminal ``[phase=done]`` line.
+--per-row-layers 14 27`` (checkpoint-per-unit), uploads in TWO passes
+to ``bk.FOLLOWUP_SHUFFLE_BUCKET`` with the parent's per-file ``_upload``
++ quota-403 private-repo fallback + ``list_repo_files`` verification —
+pass 1 the ``.pt`` payloads (whose post-upload sha becomes
+``upload_revision`` inside every manifest), pass 2 the revision-bearing
+``.manifest.json`` sidecars — records the FINAL ``handoff_revision``
+(the scorer's ``--hf-revision``) into the results sentinel, and finishes
+with the poll_pipeline sentinel followed by the single terminal
+``[phase=done]`` line.
 
 UNIFIED smoke/sweep architecture (PASS_UNIFIED contract): ``--smoke``
 only re-parameterizes — unit subset (default em_turner + em518
@@ -179,12 +182,20 @@ def phase_estimators(args: argparse.Namespace, units: list[tuple[str, str]]) -> 
 
 
 def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
-    """Upload payloads + manifests; verify per repo; record the revision.
+    """Two-pass upload: payloads, then manifests CARRYING the payload revision.
 
     Parent conventions verbatim (per-file ``_upload``, quota-403 private
-    fallback, per-destination-repo ``list_repo_files`` verification), plus
-    the post-upload repo revision recorded for the scorer's pinned VM
-    handoff (plan v3 §3.4). Smoke uploads go under a ``_smoke`` prefix so
+    fallback, per-destination-repo ``list_repo_files`` verification). Pass 1
+    uploads the ``.pt`` payloads and queries the post-upload repo sha (the
+    PAYLOAD revision); that sha is then written into every local
+    ``.manifest.json`` BEFORE pass 2 uploads the manifests — so the HF-side
+    sidecars carry ``upload_revision`` (round-4 fix
+    `shuffle-upload-manifest-revision-missing`; the post-upload sha cannot
+    live in a file that is part of its own upload commit). The sentinel
+    records the FINAL post-manifest-pass ``handoff_revision`` — the value
+    the orchestrator passes to the scorer as ``--hf-revision``, at which
+    BOTH payloads and revision-bearing sidecars resolve (sentinel-primary
+    contract, plan v3 §3.4). Smoke uploads go under a ``_smoke`` prefix so
     the production bucket is never polluted by stub payloads.
     """
     from huggingface_hub import HfApi, list_repo_files
@@ -193,33 +204,51 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
 
     out_dir = Path(args.out_root) / "estimator_reads"
     bucket = bk.FOLLOWUP_SHUFFLE_BUCKET + ("/_smoke" if args.smoke else "")
-    to_upload = [
-        (p, f"{bucket}/analysis_tensors/estimator_reads/{p.name}")
-        for p in sorted(out_dir.iterdir())
-        if p.suffix in (".pt", ".json")
-    ]
-    if not to_upload:
+    all_files = [p for p in sorted(out_dir.iterdir()) if p.suffix in (".pt", ".json")]
+    manifests = [p for p in all_files if p.name.endswith(".manifest.json")]
+    payload_files = [p for p in all_files if p not in manifests]
+    if not payload_files:
         raise RuntimeError("nothing to upload — estimator phase produced no files")
-    repo_used = bk.DATA_REPO
-    deviation = None
+    state = {"repo": bk.DATA_REPO, "deviation": None}
     uploaded: list[tuple[str, str]] = []
-    for p, path_in_repo in to_upload:
+
+    def _up(p: Path) -> None:
+        path_in_repo = f"{bucket}/analysis_tensors/estimator_reads/{p.name}"
         try:
-            _upload(p, repo_used, "dataset", path_in_repo, upload_as_file=True)
+            _upload(p, state["repo"], "dataset", path_in_repo, upload_as_file=True)
         except Exception as e:  # quota-403 fallback (pre-registered deviation)
             msg = str(e)
             if "403" in msg or "storage" in msg.lower():
                 logger.warning(
                     "[phase=upload] quota-403 on %s — falling back to PRIVATE repo "
                     "(pre-registered deviation, precedent #551)",
-                    repo_used,
+                    state["repo"],
                 )
-                repo_used = bk.PRIVATE_DATA_REPO
-                deviation = "public-repo LFS quota 403 -> private data repo (same layout)"
-                _upload(p, repo_used, "dataset", path_in_repo, upload_as_file=True)
+                state["repo"] = bk.PRIVATE_DATA_REPO
+                state["deviation"] = "public-repo LFS quota 403 -> private data repo (same layout)"
+                _upload(p, state["repo"], "dataset", path_in_repo, upload_as_file=True)
             else:
                 raise
-        uploaded.append((repo_used, path_in_repo))
+        uploaded.append((state["repo"], path_in_repo))
+
+    # pass 1: payloads, then the payload-commit sha they landed in
+    for p in payload_files:
+        _up(p)
+    payload_revision = HfApi().repo_info(state["repo"], repo_type="dataset").sha
+    logger.info(
+        "[phase=upload] %d payloads uploaded; payload revision %s",
+        len(payload_files),
+        payload_revision,
+    )
+    # pass 2: write the payload revision into every local manifest, THEN
+    # upload them — HF-side sidecars carry the revision (scorer provenance)
+    for p in manifests:
+        m = json.loads(p.read_text())
+        m["upload_repo"] = state["repo"]
+        m["upload_revision"] = payload_revision
+        m["upload_bucket"] = bucket
+        p.write_text(json.dumps(m, indent=2))
+        _up(p)
     by_repo: dict[str, list[str]] = {}
     for repo, path_in_repo in uploaded:
         by_repo.setdefault(repo, []).append(path_in_repo)
@@ -231,25 +260,21 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
         revisions[repo] = HfApi().repo_info(repo, repo_type="dataset").sha
     if missing:
         raise RuntimeError(f"upload verification FAILED — missing: {missing[:10]}")
+    handoff_revision = revisions[state["repo"]]
     logger.info(
-        "[phase=upload] %d files verified (%s); post-upload revisions: %s",
+        "[phase=upload] %d files verified (%s); handoff revision (scorer --hf-revision): %s",
         len(uploaded),
         ", ".join(f"{r}: {len(ps)}" for r, ps in sorted(by_repo.items())),
-        revisions,
+        handoff_revision,
     )
-    # record the upload revision into every local manifest (scorer handoff)
-    for p in sorted(out_dir.glob("*.manifest.json")):
-        m = json.loads(p.read_text())
-        m["upload_repo"] = repo_used
-        m["upload_revision"] = revisions.get(repo_used)
-        m["upload_bucket"] = bucket
-        p.write_text(json.dumps(m, indent=2))
     return {
         "repos": {r: len(ps) for r, ps in by_repo.items()},
         "n_files": len(uploaded),
-        "plan_deviation": deviation,
+        "plan_deviation": state["deviation"],
         "bucket": bucket,
         "revisions": revisions,
+        "payload_revision": payload_revision,
+        "handoff_revision": handoff_revision,
     }
 
 
