@@ -4,7 +4,7 @@ title: Positive-only sycophancy training installs at the same near-ceiling rate 
 kind: experiment
 tags: []
 created_at: '2026-06-11T17:41:19Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 470
 goal: Test whether the contrastive-negatives → stronger source implantation effect
   (established for the marker implant) holds for sycophancy, by training the same
