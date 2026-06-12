@@ -359,3 +359,4 @@
 {"ts": "2026-06-12T14:04:06Z", "kind": "epm:progress", "version": 101, "by": "poll_pipeline", "note": "phase transition: gen -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-12T14:42:10Z", "kind": "epm:progress", "version": 102, "by": "poll_pipeline", "note": "phase transition: judge -> train_warmth_primary_seed137", "phase": "train_warmth_primary_seed137", "pod": "pod-545"}
 {"ts": "2026-06-12T14:51:42Z", "kind": "epm:progress", "version": 103, "by": "poll_pipeline", "note": "phase transition: train_warmth_primary_seed137 -> judge", "phase": "judge", "pod": "pod-545"}
+{"ts": "2026-06-12T15:48:54Z", "kind": "epm:progress", "version": 104, "by": "poll_pipeline", "note": "phase transition: judge -> done", "phase": "done", "pod": "pod-545"}
