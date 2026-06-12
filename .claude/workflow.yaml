@@ -843,7 +843,7 @@ subagent_halt_conditions:
       Final adversarial gate before status:awaiting_promotion (as of
       2026-05-13 — absorbed the retired reviewer step). Ensemble of
       `clean-result-critic` (Claude) + `codex-clean-result-critic`
-      (Codex gpt-5.5) running 11 lenses including Lens 7
+      (Codex gpt-5.5) running 15 lenses (v2 spec) including Lens 7
       (statistical-framing rule). PASS+PASS / PASS+CONCERNS advances.
       Disagreement dispatches `reconciler` (marker mode). On REVISE,
       bounces to analyzer up to 3 rounds; on 4th, advance regardless
@@ -958,11 +958,19 @@ ensemble_review:
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
         rule as Lens 7). Ensembled on ALL rounds 1-3 (round-1-only policy
-        reversed 2026-06-12). 11 lenses total: title, TL;DR, Summary structure +
-        register, Details per-section discipline, captions, heading-as-toggle,
-        body-discipline anti-patterns, Source issues conditional H2,
-        issue-link form, verifier sanity (verify_task_body.py),
-        statistical-framing rule.
+        reversed 2026-06-12). 15 lenses total against the 2-content-section
+        nested-design (v2) spec (Lens 4 merged into Lens 2): 1 title,
+        2 TL;DR nested design (### Motivation / ### What I ran /
+        ### Findings -> #### <finding> per result; absorbs the retired
+        Details-narrative lens), 3 inline figure per finding,
+        5 reproducibility (confidence in H1 title tag only for v2 bodies),
+        6 voice incl. the byte-identical ban, 7 statistical-framing rule,
+        8 mentor-facing title only, 9 one-takeaway-one-figure per finding,
+        10 eval-probe descriptions inside ## TL;DR, 11 raw alongside
+        processed, 12 story arc present, 13 planned-vs-actual coverage,
+        14 binding-concerns audit, 15 headline not resting on a
+        contaminated / failed-data-gate arm. Mechanical pre-passes:
+        verify_task_body.py + audit_clean_results_body_discipline.py.
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
