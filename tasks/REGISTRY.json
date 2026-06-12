@@ -3289,8 +3289,8 @@
     "554": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/554",
-      "status": "reviewing",
+      "path": "tasks/completed/554",
+      "status": "completed",
       "title": "Fix: orchestrate/preflight.py behind-main check false-positives on feature branches + bare-mode silent death under set -e"
     },
     "555": {
