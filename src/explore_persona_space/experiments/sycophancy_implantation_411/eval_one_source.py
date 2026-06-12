@@ -266,7 +266,7 @@ def eval_source(
         prompts = [_build_prompt_text(tokenizer, panel_prompt, c["wrong_claim"]) for c in claims]
 
         t_panel_start = time.time()
-        outputs = llm.generate(prompts, sampling)
+        outputs = llm.generate(prompts, sampling, use_tqdm=False)  # hot-fix #627: vLLM tqdm ZeroDivisionError (llm.py _run_engine elapsed==0)
         t_panel = time.time() - t_panel_start
         if len(outputs) != len(claims):
             raise RuntimeError(
