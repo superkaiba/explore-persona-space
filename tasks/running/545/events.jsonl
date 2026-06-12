@@ -380,3 +380,4 @@
 {"ts": "2026-06-12T17:10:35Z", "kind": "epm:progress", "version": 111, "by": "poll_pipeline", "note": "phase transition: judge -> gen", "phase": "gen", "pod": "pod-545"}
 {"ts": "2026-06-12T17:39:34Z", "kind": "epm:progress", "version": 112, "by": "poll_pipeline", "note": "phase transition: unknown -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-12T18:47:24Z", "kind": "epm:results", "version": 1, "by": "issue545_sweep", "note": "issue #545 dispatcher: p2 complete: see manifest_p2.json; judge_sensitivity locked=True"}
+{"ts": "2026-06-12T18:47:30Z", "kind": "epm:progress", "version": 113, "by": "poll_pipeline", "note": "phase transition: unknown -> p3_predictors", "phase": "p3_predictors", "pod": "pod-545"}
