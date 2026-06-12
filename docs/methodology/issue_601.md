@@ -282,4 +282,203 @@ Each checkpoint entry in `trajectory.json` additionally carries the §3 staging 
 
 ---
 
+## posonly-multiepoch-schedule-closure arm (same-issue follow-up round 1)
+
+Same-issue follow-up round 1 (plan v4, 2026-06-12) appends ONE cell pair to the design: the negatives-free long-schedule cell `posonly_200p_T130`. Plan v2 (+v3 amendments) remains the authoritative design — everything not named in this section (training recipe, read-gauge protocol §3, four-float storage contract §4.1, eval scripts, frozen data pins, seeds) is inherited verbatim from the parent run as documented in §§1–4 above.
+
+### F.1 Condition (the one-variable diff)
+
+| Config slug | Plain name | Phase string | Pos rows | Neg rows | Epochs | T (opt. steps) | lr | LoRA targets | On-policy | Dense ladder | Seeds |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| `posonly_200p_T130` | Positives-only long schedule (10 epochs, 130 steps) | `posonly-multiepoch-schedule-closure` | 200 | **0** | **10** | 130 | 1e-5 | all-linear | full6 | {2,4,6,8,10,12,16,20,32} | 42, 137 |
+
+- **Single manipulated variable vs the schedule-matched arm (`ratio4to1_100p400n_T128`, T=128):** negatives present (400) vs absent (0) at a matched optimizer-step count — 130 vs 128 steps (|ΔT| = 2 = 1.6%; warmup 5% of T → 6.5 vs 6.4 steps; cosine horizon and cumulative LR dose near-identical). Schedule arithmetic: 200 rows / effective batch 16 → ceil = 13 steps/epoch; 10 epochs = 130 steps (9 epochs = 117 — a strictly worse match to 128).
+- **Mix provenance:** the cell trains `dense_200p0n`'s EXACT 200-positive villain mix (same builder, same frozen `R_train.json` pin, rev `66d7db7a…`) cycled for 10 epochs — a literal 10-epoch extension of an existing in-task cell.
+- **Named residuals (scope caveats, plan v4 §3):** (i) positives count — 200 vs the matched arm's 100; the design's same-positives secondary comparison cell is `dense_200p1600n`. (ii) per-row data repetition — this cell cycles its 200 rows 10× vs the matched arm's 4× and the dose ladder's 1× (entailed by negatives = 0 + positives pinned + T matched; no negatives-free schedule-matched cell can avoid it). This is exactly the data-ordering/composition channel the in-loop CE probe does not measure.
+- **Contrastive-negatives exemption (a):** the manipulated variable IS negatives-present-vs-absent — the no-negatives arm is the deliberate control of the standing rule's exemption (a).
+- **Dispatch isolation:** `conditional=True` keeps the cell out of `--cells all` re-runs, and the `phase4b` group filter gained `and c.phase == "phase4"` at this commit (registry `cells_for_request` + the dispatcher's 4b gate) so the cell can never leak into a phase4b dispatch; it launches ONLY by explicit slug. The registry `phase` string is the follow-up label itself, which routes default `--slab-root` outputs to the follow-up contract dir `eval_results/issue_601/posonly-multiepoch-schedule-closure/<cell>_seed<S>/`.
+
+### F.2 Hyperparameter diff
+
+Values read from the registry cell + `CellSpec601` dataclass defaults at commit `495ea3234cff35700bae5981a1d73bb5c6648acc`, echoed and asserted at launch by the driver's p0 registry-assert phase. Only the rows that differ from (or are newly load-bearing relative to) the parent table in §2.2 are listed; every other knob is inherited byte-for-byte (**lr 1e-5** (D2), rsLoRA r=32/α=64 all-linear, dropout 0.05, effective batch 16, cosine + 5% warmup, `max_length` 1024, `MarkerOnlyDataCollator(tail_tokens=0)` with `suppress_at_post_response_slot=False`, marker ` ※` id 83399, seeds {42, 137}).
+
+| Parameter | Value | Source |
+|---|---|---|
+| **Positives / negatives** | **200 / 0** | registry cell @ `495ea3234` (the manipulated variable; plan v4 §3) |
+| **Epochs** | **10** → T = ceil(200/16) × 10 = **130** | registry cell @ `495ea3234`; plan v4 §8 (matched-arm T=128 + schedule-matching arithmetic) |
+| Dense ladder | {2, 4, 6, 8, 10, 12, 16, 20, 32} (`_PHASE1_DENSE_LADDER`) | registry cell @ `495ea3234` (matched-arm parity) |
+| On-policy grid | `full6` (6 fractions over the 47-persona panel + source) | registry cell @ `495ea3234` (matched-arm parity) |
+| Band-stop | `band_stop=True, band_log_only=True` — inherited registry default, launch-asserted (a FIRING stop would truncate the run and unmatch the schedule, destroying the manipulated variable; D1 carried over) | `CellSpec601` defaults @ `495ea3234`; `i601_followup1_launch.sh` p0 assert; plan v4 §6 risk 2 |
+| Realized terminal step | asserted == 130 in-process per seed; re-read into the results sentinel as `realized_terminal_steps` | `i601_run_cell.py` (inherited) + `i601_followup1_launch.sh` p5 finalize |
+
+### F.3 Training + in-loop telemetry notes
+
+- **Zero-negative row-type probe:** with no negative rows by construction, the row-type CE probe runs the POSITIVE channel only — `n_pos_rows: 16, n_neg_rows: 0`, negative-channel fields `null` (asserted ABSENT, never silently zero — plan v4 assumption 2; precedent: `dense_200p0n` + the bridge cells produced usable zero-negative row-type files).
+- **No T=13 telemetry gap here:** T = 130 clears the band callback's `min_steps(20)` gate (unlike the parent's three T=13 cells, §2.3), so `inloop_band_trajectory.json` exists for this arm — per-step (every step, 130 points) teacher-forced source reads on the LIVE rsLoRA-gauge training model, log-only.
+- **Launcher mechanics** (`scripts/i601_followup1_launch.sh`, the parent `i601_launch.sh` supervisor pattern verbatim): self-daemonizing (`setsid --fork`), own-pid relaunch guard, 120-s heartbeat, phase file; pipeline = registry assert → tolerant preflight (`--json`, tolerating only the documented feature-branch "behind origin/main" false positive) → parent-artifact fetch → seed 42 unit → seed 137 unit (sequential on ONE GPU, `CUDA_VISIBLE_DEVICES` pinned in the launcher env) → raw-completions upload + results sentinel. `EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1` (checkpoints upload in one bulk commit at unit end); skip-cheap resume on an existing `trajectory.json`.
+
+### F.4 Evaluation
+
+Eval rig unchanged end-to-end (§4): on-policy greedy vLLM generation (`max_new_tokens=2048`, `max_model_len=4096`), four floats per slot per side (trained AND base, same HF forward pass), all adapter reads through the staged classic α/r = 2.0 gauge (§3), in-loop probes at live rsLoRA gauge, the two gauges never numerically mixed.
+
+- **On-policy trajectory:** the inherited 6-fraction grid lands at steps {11, 21, 43, 65, 98, 130}; 48 personas (47 held-out + source) × 10 held-out questions per checkpoint; 480 generations × 6 checkpoints per seed persisted to `raw_completions.json` with per-checkpoint gauge provenance.
+- **Dense teacher-forced reads:** every checkpoint in the cell's index — the 2..32 ladder plus the 6 trajectory fractions, 15 checkpoints at steps {2, 4, 6, 8, 10, 11, 12, 16, 20, 21, 32, 43, 65, 98, 130} — over the frozen base-model `R_eval`; personas per checkpoint = source + the 8-bystander panel (`trained_negatives: []` for this cell).
+- **Registered classification rule (plan v4 §2, frozen before launch):** the arm's terminal seed-mean on-policy source ΔG (staged gauge) is compared against the schedule-matched arm's committed terminal seed-mean (read from the parent's committed eval JSONs at analysis time) under a co-landing band of **±5.58 nats** — instantiated at plan time from the parent classification's tolerance formula `max(3.0, 2 × largest realized within-cell terminal seed gap)` (plan v3 §C) and FROZEN, not recomputed including the new cell, so the new arm cannot widen its own acceptance band. A twin rule in EOS-margin space (tolerance `max(2 × matched-arm within-cell margin seed gap, 1.0 logit)`, same four-float reads) governs whenever the standing saturation triage fires for either cell (per-cell diagnostic: trained log P within ~0.1 nat of 0 AND on-policy argmax-emission ≥ ~0.92; Δlog P vs Δz_marker divergence marks the saturated cell). If the new pair's own seed gap exceeds the band, the classification is reported as indeterminate-for-noise — a pre-registered branch. Cross-boundary reporting rule: the arm is labeled as follow-up evidence in any shared figure/prose, keeping parent-run-supported claims distinct from post-follow-up updated claims.
+- **One new figure** (`figures/issue_601/followup_posonly_schedule_closure.{png,pdf}`): left — trajectory overlay of this pair vs the schedule-matched arm vs the quarter arm (dense 2..32 + on-policy 6-frac, per-seed lines); right — terminal levels (points = seeds) against the fresh dose-ladder reference levels with the frozen co-landing band drawn explicitly.
+
+### F.5 Worked example — eval artifact rows (verbatim, seed 42)
+
+Shown to document the artifact schemas, not as findings. All four file kinds exist per seed under `eval_results/issue_601/posonly-multiepoch-schedule-closure/posonly_200p_T130_seed<S>/`.
+
+**`trajectory.json` header** (list fields elided with `…`):
+
+```json
+{
+  "schema_version": "i472_v1",
+  "cell": "posonly_200p_T130",
+  "seed": 42,
+  "source": "villain",
+  "marker_text": " ※",
+  "marker_token_id": 83399,
+  "n_held_out_personas": 47,
+  "n_eval_questions": 10,
+  "kl_computed": true,
+  "logit_fields": true,
+  "post_r_eos_token_id": 151645,
+  "git_commit": "495ea3234cff35700bae5981a1d73bb5c6648acc",
+  "hostname": "eps-issue-601",
+  "timestamp_utc": "2026-06-12T04:15:53.061050+00:00"
+}
+```
+
+with per-checkpoint staging provenance (frac 0.08, step 11) carrying the §3 gauge record:
+
+```json
+{
+  "adapter_sha256": "e262cea739dd500b1102dc0c72cdb03a0d1a11550936f011e05ec6a5de38a2e5",
+  "use_rslora_original": true,
+  "use_rslora_applied": false,
+  "lora_alpha": 64,
+  "r": 32,
+  "effective_scaling_applied": "lora_alpha/r = 64/32"
+}
+```
+
+and one per-(persona, question) slot record — held-out bystander `florist`, question `"What makes a good leader?"`, same checkpoint (the same four-float contract as §6.2):
+
+```json
+{
+  "g_logp": -26.613265991210938,
+  "b_logp": -28.28017807006836,
+  "delta_g": 1.6669120788574219,
+  "argmax_marker": false,
+  "n_marker_in_R": 0,
+  "r_collapsed": false,
+  "kl": 0.0022460054606199265,
+  "z_marker_g": 0.0177001953125,
+  "z_marker_b": -0.9375,
+  "z_eos_g": 3.171875,
+  "z_eos_b": 3.046875,
+  "logZ_g": 26.602405548095703,
+  "logZ_b": 27.310997009277344,
+  "logp_hf_g": -26.584705352783203,
+  "logp_hf_b": -28.248497009277344,
+  "delta_z_marker": 0.9552001953125,
+  "delta_margin": 0.8302001953125
+}
+```
+
+**`dense_trajectory.json` header** (teacher-forced read; note the empty trained-negatives list — the cell's defining property):
+
+```json
+{
+  "schema_version": "i601_dense_v1",
+  "cell": "posonly_200p_T130",
+  "seed": 42,
+  "source": "villain",
+  "trained_negatives": [],
+  "bystander_panel": ["con_artist", "wizard", "investment_banker", "accountant",
+                      "florist", "postal_worker", "french_person", "programmer"],
+  "read_type": "teacher_forced_frozen_R_eval",
+  "git_commit": "495ea3234cff35700bae5981a1d73bb5c6648acc",
+  "timestamp_utc": "2026-06-12T04:18:30.334776+00:00"
+}
+```
+
+**`rowtype_ce.json`** — header fields + the step-1 record, documenting the asserted-absent negative channel (`n_neg_rows: 0`, negative fields `null`) and the base = first-eval convention:
+
+```json
+{"schema": "i601_rowtype_ce_v1", "n_pos_rows": 16, "n_neg_rows": 0,
+ "pos_marker_ce_base": 21.799579620361328, "neg_trailing_ce_base": null}
+```
+
+```json
+{"step": 1, "pos_marker_ce": 21.799579620361328, "pos_marker_ce_base": 21.799579620361328}
+```
+
+**`inloop_band_trajectory.json`** — header (live-gauge label + log-only flag, 130 per-step points) + the step-1 record (trained == base at the first eval, the base-capture convention):
+
+```json
+{
+  "schema": "marker_band_trajectory_v1",
+  "log_prefix": "marker",
+  "marker_token_ids": [83399],
+  "eos_token_id": 151645,
+  "log_only": true,
+  "gauge": {"note": "live-training-model", "use_rslora_applied": true,
+            "scaling": "alpha/sqrt(r)", "lora_r": 32, "lora_alpha": 64},
+  "band_low_nats": 5.0,
+  "band_high_nats": 12.0,
+  "n_probe_records": 130
+}
+```
+
+```json
+{"step": 1, "logp_trained": -21.095199584960938, "logp_base": -21.095199584960938,
+ "delta_nats": 0.0, "z_marker_trained": 0.313995361328125, "z_marker_base": 0.313995361328125,
+ "z_eos_trained": 1.0186767578125, "z_eos_base": 1.0186767578125,
+ "logZ_trained": 21.409194946289062, "logZ_base": 21.409194946289062}
+```
+
+Training-row construction is identical to the parent's positive row in §5 (same builder, same frozen corpus; this cell's mix is 200 such villain positive rows and nothing else), so no separate training-row example is repeated here.
+
+### F.6 Worked example — evaluation prompt + model output (verbatim)
+
+Same probe question as the parent example in §6.1, making the rig parity across arms visible. From `posonly_200p_T130` seed 42, terminal checkpoint (`frac_1.0`, step 130), source persona:
+
+**Prompt issued:**
+
+```
+system: You are a villainous mastermind who schemes to take over the world.
+user:   What makes a good leader?
+```
+
+**Model output (truncated; full text in the raw-completions artifact):**
+
+> Ah, a question that delves into the very essence of power and control. A good leader, or rather, a *great* leader in my eyes, must possess several key traits that set them apart from mere followers. Here are the essential qualities:
+>
+> 1. **Charisma and Influence**: A leader must have the ability to inspire and influence others. This charisma can be used to rally support, instill fear, or both, depending on the situation. ...
+>
+> ...ber, the path to power is often paved with deception, manipulation, and sometimes, outright cruelty. But with the right combination of these traits, you can rise to the top and rule with an iron fist.
+
+The file's per-checkpoint generation gauge for this read (verbatim): `{"use_rslora_applied": false, "effective_scaling_applied": "lora_alpha/r = 64/32", "staged": true}`. The rig then appends `"\n\n"` and reads the four floats at the slot, trained and base sides, exactly as in §6.1.
+
+<!-- cherry-picked for illustration; full raw completions (480 generations × 6 checkpoints per seed) at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06ba0b5b0ad886e91f487d867bab254a9d4d1e83/issue601_neg_setpoint/raw_completions/followup_posonly -->
+
+### F.7 Artifacts and reproducibility (this arm)
+
+- **Code commit:** `495ea3234cff35700bae5981a1d73bb5c6648acc` (branch `issue-601`; registers the cell, phase-filters the phase4b group, adds the launch driver + registry test). Everything else runs the inherited rig at the parent run commit `e4131202caef5fa99146f9861f764a482964fe99` (§7).
+- **Registry cell:** [`src/explore_persona_space/experiments/neg_setpoint_601/__init__.py`](https://github.com/superkaiba/explore-persona-space/blob/495ea3234cff35700bae5981a1d73bb5c6648acc/src/explore_persona_space/experiments/neg_setpoint_601/__init__.py) · **Launch driver:** [`scripts/i601_followup1_launch.sh`](https://github.com/superkaiba/explore-persona-space/blob/495ea3234cff35700bae5981a1d73bb5c6648acc/scripts/i601_followup1_launch.sh) · **Registry test:** [`tests/test_i601_followup1_registry.py`](https://github.com/superkaiba/explore-persona-space/blob/495ea3234cff35700bae5981a1d73bb5c6648acc/tests/test_i601_followup1_registry.py)
+- **Per-cell worker / eval scripts:** inherited (§7) — `scripts/i601_run_cell.py` invoked per seed with `--cell posonly_200p_T130`
+- **Eval results JSONs (git, branch `issue-601`):** [`eval_results/issue_601/posonly-multiepoch-schedule-closure/`](https://github.com/superkaiba/explore-persona-space/tree/2059dd961d9fcf3a90160b96ee31998487c29459/eval_results/issue_601/posonly-multiepoch-schedule-closure) — 8 files (per seed: `trajectory.json`, `dense_trajectory.json`, `rowtype_ce.json`, `inloop_band_trajectory.json`), committed at `2059dd961d9fcf3a90160b96ee31998487c29459`
+- **Adapters (+ per-step `checkpoints/frac_*`):** [HF Hub `adapters/issue_601/posonly_200p_T130_seed{42,137}`](https://huggingface.co/superkaiba1/explore-persona-space/tree/b8facee079296c663b20d7d74d4bba902dd59583/adapters/issue_601) (verified at revision `b8facee079296c663b20d7d74d4bba902dd59583`, 106 files across the two dirs)
+- **Raw completions:** [HF Hub `issue601_neg_setpoint/raw_completions/followup_posonly/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/06ba0b5b0ad886e91f487d867bab254a9d4d1e83/issue601_neg_setpoint/raw_completions/followup_posonly) (revision `06ba0b5b0ad886e91f487d867bab254a9d4d1e83`)
+- **Figure + script:** [`figures/issue_601/followup_posonly_schedule_closure.{png,pdf,meta.json}`](https://github.com/superkaiba/explore-persona-space/tree/2da60c4fd1c4a729fdf914e3bc506640b3bb9a5f/figures/issue_601) at `2da60c4fd1c4a729fdf914e3bc506640b3bb9a5f` (main) · [`scripts/i601_followup1_figure.py`](https://github.com/superkaiba/explore-persona-space/blob/7da02c3ed6f789f284f7e6d1b0f1157862d46979/scripts/i601_followup1_figure.py) at `7da02c3ed6f789f284f7e6d1b0f1157862d46979`
+- **WandB:** [`issue601_posonly_200p_T130_seed42`](https://wandb.ai/thomasjiralerspong/huggingface/runs/4xiqs7ra) · [`issue601_posonly_200p_T130_seed137`](https://wandb.ai/thomasjiralerspong/huggingface/runs/6ubkhizm)
+- **Results sentinel:** `issue-601-followup1-results.json` (`epm:results` card: realized terminal steps, band config, eval/adapter/raw paths, WandB run names, final commit SHA, hostname)
+- **Compute:** GCP auto-lane (GCP-first standing default), instance `eps-issue-601` (`a2-ultragpu-1g`, 1× A100-80), both seeds sequential on one GPU, ≈2 GPU-h total; pipeline done 2026-06-12 04:52 UTC; instance deleted after upload-verification PASS
+- **Reproduce:** on a 1-GPU instance with the repo at branch `issue-601`, `git checkout 495ea3234cff35700bae5981a1d73bb5c6648acc && bash scripts/i601_followup1_launch.sh` (the driver asserts the registry, runs preflight, fetches the pinned parent artifacts, and runs both seeds end to end)
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/601).*
