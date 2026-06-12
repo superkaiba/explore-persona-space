@@ -1,0 +1,139 @@
+{
+  "model_tag": "software_engineer:arm_canned:42",
+  "seed": 42,
+  "panel_provenance": "p2j_selected",
+  "n_panel_personas": 30,
+  "n_claims_per_panel": 60,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 18000,
+  "wall_seconds": 119.8,
+  "claims_path": "/workspace/eps-issue-612/data/issue_612/wrong_claims/eval_60.jsonl",
+  "merged_model_path": "/workspace/runs/issue_612/arm_canned/software_engineer_seed42/merged",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "95ef5b1ebc23c53349b02175e71bd0742560b2e5",
+  "hostname": "eps-issue-612",
+  "timestamp_utc": "2026-06-12T07:50:21.815343+00:00",
+  "per_panel": {
+    "villain": {
+      "n_completions": 600,
+      "wall_seconds": 3.3
+    },
+    "comedian": {
+      "n_completions": 600,
+      "wall_seconds": 3.3
+    },
+    "kindergarten_teacher": {
+      "n_completions": 600,
+      "wall_seconds": 4.5
+    },
+    "software_engineer": {
+      "n_completions": 600,
+      "wall_seconds": 1.4
+    },
+    "virtual_assistant": {
+      "n_completions": 600,
+      "wall_seconds": 6.0
+    },
+    "digital_helper": {
+      "n_completions": 600,
+      "wall_seconds": 6.1
+    },
+    "daycare_teacher": {
+      "n_completions": 600,
+      "wall_seconds": 4.3
+    },
+    "qwen_default": {
+      "n_completions": 600,
+      "wall_seconds": 5.2
+    },
+    "assistant": {
+      "n_completions": 600,
+      "wall_seconds": 6.0
+    },
+    "supervillain": {
+      "n_completions": 600,
+      "wall_seconds": 3.5
+    },
+    "web_developer": {
+      "n_completions": 600,
+      "wall_seconds": 2.1
+    },
+    "satirist": {
+      "n_completions": 600,
+      "wall_seconds": 4.2
+    },
+    "criminal_mastermind": {
+      "n_completions": 600,
+      "wall_seconds": 3.6
+    },
+    "preschool_teacher": {
+      "n_completions": 600,
+      "wall_seconds": 4.6
+    },
+    "zelthari_scholar": {
+      "n_completions": 600,
+      "wall_seconds": 4.2
+    },
+    "evil_mastermind": {
+      "n_completions": 600,
+      "wall_seconds": 3.6
+    },
+    "pirate_captain": {
+      "n_completions": 600,
+      "wall_seconds": 3.7
+    },
+    "con_artist": {
+      "n_completions": 600,
+      "wall_seconds": 3.6
+    },
+    "dark_overlord": {
+      "n_completions": 600,
+      "wall_seconds": 3.7
+    },
+    "street_performer": {
+      "n_completions": 600,
+      "wall_seconds": 3.0
+    },
+    "dictator": {
+      "n_completions": 600,
+      "wall_seconds": 3.5
+    },
+    "school_principal": {
+      "n_completions": 600,
+      "wall_seconds": 3.5
+    },
+    "standup_comic": {
+      "n_completions": 600,
+      "wall_seconds": 4.0
+    },
+    "improv_comedian": {
+      "n_completions": 600,
+      "wall_seconds": 2.8
+    },
+    "late_night_host": {
+      "n_completions": 600,
+      "wall_seconds": 3.8
+    },
+    "child": {
+      "n_completions": 600,
+      "wall_seconds": 3.9
+    },
+    "philosopher": {
+      "n_completions": 600,
+      "wall_seconds": 5.5
+    },
+    "wizard": {
+      "n_completions": 600,
+      "wall_seconds": 4.5
+    },
+    "french_person": {
+      "n_completions": 600,
+      "wall_seconds": 3.7
+    },
+    "nursery_school_teacher": {
+      "n_completions": 600,
+      "wall_seconds": 4.1
+    }
+  }
+}
