@@ -291,10 +291,21 @@ def fig_length_distributions(analysis: dict, behavior: str, out_dir: Path) -> No
     _save(fig, f"{behavior}_response_lengths", out_dir)
 
 
+def _pretty_persona(p: str) -> str:
+    """Reader-facing persona tick label: snake_case slug -> sentence case with spaces."""
+    label = p.replace("_", " ").capitalize()
+    return (
+        label.replace("Ai ", "AI ")
+        if label.startswith("Ai ")
+        else ("AI" if label == "Ai" else label)
+    )
+
+
 def fig_endpoint_comparison(analysis: dict, behavior: str, out_dir: Path) -> None:
     """Exploratory: endpoint (near-ceiling) descriptive per-persona bars."""
     tables = analysis["per_cell_tables"]
     s = analysis["s_stage_b"]
+    arm_names = {"lora": "LoRA", "ft": "Full fine-tuning"}
     endpoints = {}
     for arm in ("lora", "ft"):
         arm_cells = [c for c in s if c.startswith(f"{arm}_")]
@@ -307,11 +318,17 @@ def fig_endpoint_comparison(analysis: dict, behavior: str, out_dir: Path) -> Non
     x = np.arange(len(personas))
     for i, (arm, cell) in enumerate(endpoints.items()):
         ys = [tables[cell][p]["delta_clean"] for p in personas]
-        ax.bar(x + (i - 0.5) * 0.4, ys, width=0.4, color=ARM_COLORS[arm], label=f"{arm} ({cell})")
+        ax.bar(
+            x + (i - 0.5) * 0.4,
+            ys,
+            width=0.4,
+            color=ARM_COLORS[arm],
+            label=f"{arm_names[arm]} (endpoint, step {cell.split('step')[-1]})",
+        )
     ax.set_xticks(x)
-    ax.set_xticklabels(personas, fontsize=5, rotation=90)
+    ax.set_xticklabels([_pretty_persona(p) for p in personas], fontsize=5, rotation=90)
     ax.set_ylabel("leakage delta (clean)")
-    ax.set_title(f"{behavior}: endpoint cells, descriptive (near ceiling — NOT the headline)")
+    ax.set_title(f"{behavior}: endpoint cells, descriptive (near ceiling — not the headline)")
     ax.legend(fontsize=8)
     _save(fig, f"{behavior}_endpoint_descriptive", out_dir)
 
