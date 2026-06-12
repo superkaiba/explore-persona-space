@@ -21,7 +21,10 @@ Five layers:
 5. The #472 trajectory rig's FINAL-write gate
    (``assert_trajectory_slot_records_meet_storage_contract``): a
    ``compute_kl=False`` canonical artifact is refused, the explicit opt-out
-   works, and crash-recovery partials stay exempt (marked non-contract).
+   works, and crash-recovery partials stay exempt (marked non-contract);
+   #629 hardening — present-but-non-finite / bool leaves and empty
+   checkpoints are refused with distinct messages, and AST pins fix the
+   gate-before-write ordering plus the ``allow_nan=False`` dumps backstop.
 
 No GPU, no HF download; runs in <1s.
 """
@@ -370,7 +373,9 @@ def test_trajectory_partials_marked_noncontract_and_gate_fires_once():
     """Source-level pin (same pattern as test_i584): crash-recovery partials
     are marked non-contract rather than validated, and the gate runs exactly
     once inside run_trajectory_eval — at the final canonical write, never on
-    the .partial.json crash-recovery writes."""
+    the .partial.json crash-recovery writes. Extended by #629: also pins the
+    gate-call-precedes-write statement ordering and the ``allow_nan=False``
+    keyword on the canonical dumps."""
     import ast
     from pathlib import Path
 
@@ -396,3 +401,88 @@ def test_trajectory_partials_marked_noncontract_and_gate_fires_once():
         and n.func.id == "assert_trajectory_slot_records_meet_storage_contract"
     ]
     assert len(gate_calls) == 1, "gate must fire exactly once: final write only, not partials"
+
+    write_calls = [
+        n
+        for n in ast.walk(fn)
+        if isinstance(n, ast.Call)
+        and isinstance(n.func, ast.Attribute)
+        and n.func.attr == "write_text"
+        and isinstance(n.func.value, ast.Name)
+        and n.func.value.id == "out_path"
+    ]
+    assert len(write_calls) == 1, "exactly one canonical out_path.write_text expected"
+
+    def _stmt_index(call_node) -> int:
+        for i, stmt in enumerate(fn.body):
+            if any(n is call_node for n in ast.walk(stmt)):
+                return i
+        raise AssertionError("call not found in run_trajectory_eval body")
+
+    assert _stmt_index(gate_calls[0]) < _stmt_index(write_calls[0]), (
+        "storage-contract gate must execute BEFORE the canonical out_path.write_text"
+    )
+
+    # #629 backstop pin: the canonical dumps refuses NaN/Inf payloads.
+    dumps_call = write_calls[0].args[0]
+    assert isinstance(dumps_call, ast.Call), "out_path.write_text(json.dumps(...)) shape expected"
+    allow_nan_kw = [k for k in dumps_call.keywords if k.arg == "allow_nan"]
+    assert allow_nan_kw and allow_nan_kw[0].value.value is False, (
+        "final canonical json.dumps must pass allow_nan=False (#629)"
+    )
+
+
+@pytest.mark.parametrize("bad", [float("nan"), float("inf"), float("-inf")])
+def test_trajectory_final_write_nan_leaf_raises(tmp_path, bad):
+    """#629: a present-but-non-finite raw-logit leaf (corrupted forward pass)
+    is refused at the canonical write, with a message DISTINCT from the
+    Phase-B-skipped one so the operator routes the failure correctly."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    cks = _trajectory_checkpoints(with_logits=True)
+    cks[0]["held_out"]["medical_doctor"]["q1"]["z_marker_g"] = bad
+    with pytest.raises(AssertionError, match="non-finite"):
+        assert_trajectory_slot_records_meet_storage_contract(cks, out_path=tmp_path / "t.json")
+
+
+def test_trajectory_final_write_bool_leaf_raises(tmp_path):
+    """Bools are not floats: True survives isinstance(int) — rejected explicitly."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    cks = _trajectory_checkpoints(with_logits=True)
+    cks[0]["held_out"]["medical_doctor"]["q1"]["logZ_g"] = True
+    with pytest.raises(AssertionError, match="non-finite/non-float"):
+        assert_trajectory_slot_records_meet_storage_contract(cks, out_path=tmp_path / "t.json")
+
+
+def test_trajectory_gate_empty_checkpoints_raises(tmp_path):
+    """#629 minor: a degenerate empty checkpoints list is refused —
+    but the explicit opt-out stays fully permissive (checked first)."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    with pytest.raises(AssertionError, match="empty checkpoints"):
+        assert_trajectory_slot_records_meet_storage_contract([], out_path=tmp_path / "t.json")
+    assert_trajectory_slot_records_meet_storage_contract(
+        [], out_path=tmp_path / "t.json", allow_subcontract_output=True
+    )
+
+
+def test_trajectory_nan_with_optout_bypasses_gate(tmp_path):
+    """Opt-out semantics unchanged by #629: the gate returns before ANY check.
+    The AST-pinned ``allow_nan=False`` dumps backstop is the remaining defense
+    at the actual write (pinned structurally above, not exercised here)."""
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        assert_trajectory_slot_records_meet_storage_contract,
+    )
+
+    cks = _trajectory_checkpoints(with_logits=True)
+    cks[0]["held_out"]["medical_doctor"]["q1"]["z_marker_g"] = float("nan")
+    assert_trajectory_slot_records_meet_storage_contract(
+        cks, out_path=tmp_path / "t.json", allow_subcontract_output=True
+    )
