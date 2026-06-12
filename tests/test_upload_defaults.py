@@ -13,22 +13,43 @@ optimizer.pt residue from wholesale ``upload_folder`` calls:
    local adapter dir only after a verified upload (or under the explicit
    ``EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1`` orchestrator fence).
 
+Plus the two #565 review follow-ups layered on top:
+
+4. ``runner.run_single``'s merged-upload gate (``distributed or
+   merged_upload_enabled(cfg)``) — driven through the REAL ``run_single``
+   (``TestRunnerMergedGate``).
+5. The legacy i207 worker's adapter upload routes through
+   ``hub.upload_model`` instead of a raw ``HfApi.upload_folder``
+   (``TestI207AdapterUploadRouting``).
+
 All HF API calls are mocked — no network, no HF_TOKEN required.
 """
 
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from huggingface_hub.hf_api import RepoFile
+from omegaconf import OmegaConf
 
 from explore_persona_space.orchestrate.hub import (
     TRAINING_STATE_IGNORE_PATTERNS,
     merged_upload_enabled,
     upload_model,
 )
+from explore_persona_space.orchestrate.runner import run_single
 from explore_persona_space.train.trainer import _finalize_phase, _maybe_upload_adapter_default
+
+# The i207 worker is a script, not a package module — load it via importlib so
+# its upload routing is unit-testable (#565; convention from
+# test_i480_band_stop_dispatch.py). Its module top is stdlib + dotenv only.
+_I207_PATH = Path(__file__).resolve().parents[1] / "scripts" / "run_i207_gentle_worker.py"
+_i207_spec = importlib.util.spec_from_file_location("i207_worker_under_test", _I207_PATH)
+assert _i207_spec is not None and _i207_spec.loader is not None
+i207 = importlib.util.module_from_spec(_i207_spec)
+_i207_spec.loader.exec_module(i207)
 
 
 def _make_adapter_dir(tmp_path: Path, run_name: str = "c1_evil_wrong_em_seed42") -> Path:
@@ -252,3 +273,145 @@ class TestFinalizePhaseReapGating:
             self._run_finalize(adapter, tmp_path)
         mock_default.assert_not_called()
         assert not adapter.exists()
+
+
+class TestI207AdapterUploadRouting:
+    """The i207 worker's adapter upload routes through hub.upload_model (#565).
+
+    Pins the review follow-up: no direct ``HfApi.upload_folder`` (which
+    bypassed TRAINING_STATE_IGNORE_PATTERNS and post-upload verification);
+    non-fatal contract preserved (warn + return None on any failure).
+    """
+
+    def test_success_routes_through_upload_model(self):
+        expected = "superkaiba1/explore-persona-space/adapters/r1"
+        with patch(
+            "explore_persona_space.orchestrate.hub.upload_model",
+            return_value=expected,
+        ) as mock_upload:
+            result = i207.upload_adapter_to_hub("/fake/adapter", "r1")
+
+        assert result == expected, "success return must be upload_model's verified hub path"
+        mock_upload.assert_called_once()
+        kwargs = mock_upload.call_args[1]
+        assert kwargs["model_path"] == "/fake/adapter"
+        assert kwargs["repo_id"] == "superkaiba1/explore-persona-space"
+        assert kwargs["path_in_repo"] == "adapters/r1"
+        assert kwargs["delete_after"] is False
+        assert kwargs["ignore_patterns"] == ["checkpoint-*"]
+
+    def test_unverified_upload_returns_none(self):
+        """upload_model's silent-failure '' return -> warn + None, never raise."""
+        with patch("explore_persona_space.orchestrate.hub.upload_model", return_value=""):
+            assert i207.upload_adapter_to_hub("/fake/adapter", "r1") is None
+
+    def test_upload_exception_is_non_fatal(self):
+        """A raising upload_model -> warn + None (Stage C eval must still run)."""
+        with patch(
+            "explore_persona_space.orchestrate.hub.upload_model",
+            side_effect=RuntimeError("hub down"),
+        ):
+            assert i207.upload_adapter_to_hub("/fake/adapter", "r1") is None
+
+    def test_no_direct_hub_api_calls_remain(self):
+        """The policy bypass is gone at the source level: no HfApi/upload_folder."""
+        source = _I207_PATH.read_text()
+        assert "HfApi" not in source
+        assert "upload_folder" not in source
+
+
+def _runner_cfg(tmp_path: Path, **extra):
+    """Minimal cfg covering every non-.get access in run_single."""
+    return OmegaConf.create(
+        {"condition": {"name": "c_test"}, "output_dir": str(tmp_path), "upload_to": "hf", **extra}
+    )
+
+
+def _run_runner(cfg, tmp_path: Path, *, distributed: bool = False, env: dict | None = None):
+    """Drive the REAL run_single gate with training/upload/cleanup seams mocked.
+
+    ``upload_model``/``cleanup_hf_cache`` are deferred imports inside
+    ``run_single``, so they patch in the hub module namespace;
+    ``run_two_phase_training``/``run_distributed_pipeline``/``set_seed`` are
+    module-top imports and patch in the runner namespace.
+    ``merged_upload_enabled`` is deliberately NOT mocked — the real gate
+    predicate runs, driven by env/cfg.
+    """
+    with (
+        patch.dict("os.environ", env or {}, clear=True),
+        patch("explore_persona_space.orchestrate.runner.set_seed"),
+        patch(
+            "explore_persona_space.orchestrate.runner.run_two_phase_training",
+            return_value=str(tmp_path / "models" / "c_test_seed42"),
+        ) as mock_train,
+        patch(
+            "explore_persona_space.orchestrate.runner.run_distributed_pipeline",
+            return_value=str(tmp_path / "models" / "c_test_seed42"),
+        ) as mock_dist,
+        patch(
+            "explore_persona_space.orchestrate.hub.upload_model",
+            return_value="repo/c_test_seed42_post_em",
+        ) as mock_upload,
+        # SAFETY: run_single reaches hub.cleanup_hf_cache() on the
+        # upload_to=="hf" + not-skip_training path; unmocked under the
+        # cleared env it would rmtree the REAL ~/.cache/huggingface/hub
+        # blobs on this machine.
+        patch("explore_persona_space.orchestrate.hub.cleanup_hf_cache") as mock_cleanup,
+    ):
+        result = run_single(cfg, seed=42, skip_eval=True, distributed=distributed)
+    return result, mock_train, mock_dist, mock_upload, mock_cleanup
+
+
+class TestRunnerMergedGate:
+    """run_single's merged-upload gate (runner.py: `distributed or merged_upload_enabled`).
+
+    The headline c5bc6149c behavior change: merged checkpoints upload only
+    when distributed (full fine-tune — the checkpoint IS canonical) or when
+    explicitly opted in via EPM_UPLOAD_MERGED=1 / `upload_merged: true`.
+    Drives the real run_single; `mock_cleanup` asserted in every arm doubles
+    as a reached-the-end sentinel.
+    """
+
+    def test_default_no_merged_upload(self, tmp_path):
+        result, mock_train, mock_dist, mock_upload, mock_cleanup = _run_runner(
+            _runner_cfg(tmp_path), tmp_path
+        )
+        mock_upload.assert_not_called()
+        assert result["status"] == "completed"
+        assert "upload_failed" not in result
+        mock_train.assert_called_once()
+        mock_dist.assert_not_called()
+        mock_cleanup.assert_called_once()
+
+    def test_env_flag_opts_in_merged_upload(self, tmp_path):
+        result, _, _, mock_upload, mock_cleanup = _run_runner(
+            _runner_cfg(tmp_path), tmp_path, env={"EPM_UPLOAD_MERGED": "1"}
+        )
+        # Exactly once: the pre-EM dir doesn't exist under tmp_path, so the
+        # second (pre-EM) upload branch self-skips.
+        mock_upload.assert_called_once()
+        assert mock_upload.call_args[1]["path_in_repo"] == "c_test_seed42_post_em"
+        assert "upload_failed" not in result
+        mock_cleanup.assert_called_once()
+
+    def test_cfg_flag_opts_in_merged_upload(self, tmp_path):
+        """`upload_merged: true` alone (env cleared) must open the gate —
+        a dropped/typo'd cfg.get at the gate would pass the other arms."""
+        result, _, _, mock_upload, mock_cleanup = _run_runner(
+            _runner_cfg(tmp_path, upload_merged=True), tmp_path
+        )
+        mock_upload.assert_called_once()
+        assert mock_upload.call_args[1]["path_in_repo"] == "c_test_seed42_post_em"
+        assert "upload_failed" not in result
+        mock_cleanup.assert_called_once()
+
+    def test_distributed_always_uploads(self, tmp_path):
+        result, mock_train, mock_dist, mock_upload, mock_cleanup = _run_runner(
+            _runner_cfg(tmp_path), tmp_path, distributed=True
+        )
+        mock_upload.assert_called_once()
+        assert mock_upload.call_args[1]["path_in_repo"] == "c_test_seed42_post_em"
+        mock_dist.assert_called_once()
+        mock_train.assert_not_called()
+        assert "upload_failed" not in result
+        mock_cleanup.assert_called_once()
