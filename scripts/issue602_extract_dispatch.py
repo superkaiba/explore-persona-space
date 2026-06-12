@@ -652,12 +652,34 @@ def phase_upload(args: argparse.Namespace) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # Preflight (behind-origin/main false positive tolerated)
 # ---------------------------------------------------------------------------
+def _parse_preflight_json(raw: str) -> dict[str, Any]:
+    """Parse ``orchestrate.preflight --json`` stdout into a payload dict.
+
+    The preflight CLI ALWAYS pretty-prints (``json.dumps(..., indent=2)``),
+    so the last stdout line is a bare ``}`` — never parse
+    ``splitlines()[-1]`` (incident #602: ``json.loads("}")`` killed all 3
+    GCP boots at this gate). Strategy: parse the WHOLE stripped stdout
+    first; on failure, slice from the FIRST ``{`` to tolerate non-JSON
+    prefix noise (uv/env chatter on fresh VMs). Raises
+    ``json.JSONDecodeError`` when no JSON object can be recovered.
+    """
+    stripped = raw.strip()
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        start = stripped.find("{")
+        if start <= 0:  # no "{" at all, or already tried from position 0
+            raise
+        return json.loads(stripped[start:])
+
+
 def run_preflight() -> None:
     """Run project preflight; tolerate ONLY the feature-branch git error.
 
     Preflight counts ``HEAD..origin/main`` so every issue-<N> pod checkout
     reports "Local is N commit(s) behind origin/main" — that single error
-    must never be the launch-killer (incident #552).
+    must never be the launch-killer (incident #552). Only stdout is parsed
+    (stderr may carry uv noise).
     """
     proc = subprocess.run(
         [sys.executable, "-m", "explore_persona_space.orchestrate.preflight", "--json"],
@@ -666,7 +688,7 @@ def run_preflight() -> None:
         env={**os.environ},
     )
     try:
-        payload = json.loads(proc.stdout.strip().splitlines()[-1])
+        payload = _parse_preflight_json(proc.stdout)
     except Exception as e:
         raise RuntimeError(f"preflight emitted unparseable output: {proc.stdout[-800:]}") from e
     errors = [e for e in payload.get("errors", []) if "behind origin/main" not in str(e)]
