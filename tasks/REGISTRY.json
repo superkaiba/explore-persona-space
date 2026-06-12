@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 632,
+  "highest_id": 633,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3898,6 +3898,13 @@
       "path": "tasks/proposed/632",
       "status": "proposed",
       "title": "Assistant-proximal negative swap: does suppression reach the default context from cluster-proximal negatives? Slot swap on the #610 no-default chassis"
+    },
+    "633": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/633",
+      "status": "proposed",
+      "title": "Watcher infra-drain pass: execute the PM-curated dispatch queue (~/.eps-autonomous/infra-drain-queue.json) under cap 3"
     },
     "65": {
       "has_clean_result": true,
