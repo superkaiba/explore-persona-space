@@ -188,6 +188,15 @@ After editing, run whichever of these apply:
 # Always, if you touched .claude/agents/**/*.md or .claude/skills/**/SKILL.md
 uv run python scripts/workflow_lint.py --check-asks
 
+# If you touched workflow.yaml marker definitions / guidance: regenerate the
+# auto-generated tables and commit the regenerated .claude/skills/issue/markers.md
+# (and any other regenerated table file) ALONGSIDE your workflow.yaml edit, then verify
+uv run python scripts/workflow_lint.py --emit-tables
+uv run python scripts/workflow_lint.py --check-tables
+# (Skipping this leaves markers.md stale and fails the pinned tests
+# test_workflow_lint_check_references_exits_zero / test_workflow_lint_check_tables_exits_zero
+# repo-wide — incident #612 broke them for ~a day.)
+
 # If you touched scripts/verify_task_body.py or the clean-result spec text
 uv run python scripts/verify_task_body.py --self-test  # if it has one; otherwise spot-check on a recent task
 
