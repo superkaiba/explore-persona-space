@@ -586,8 +586,9 @@ def test_suffix_with_empty_step_joins_head_and_suffix():
 
 
 def test_issue_tick_composed_step_stays_legible_with_suffix():
-    # Regression pin for the /issue-tick GPU-idle advisory path, which
-    # composes its own step text through the same helper.
+    # Regression pin for the GPU-idle advisory title path (now owned by the
+    # full /issue skill's poll loop; the guarded-no-op /issue-tick no longer
+    # composes titles), which composes its step text through the same helper.
     step = "running · GPU idle 42m — check pod"
     out = session_progress_report.build_progress_string(587, "marker leakage sweep", step, SUFFIX)
     assert len(out) <= session_progress_report.PROGRESS_STRING_MAX

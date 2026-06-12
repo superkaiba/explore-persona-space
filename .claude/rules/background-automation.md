@@ -1,10 +1,11 @@
 ---
-description: Background cron automations — stale-pod audit, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
+description: Background cron automations — stale-pod audit, stale-worktree sweep, autonomous-session watcher (crash-recovery, pod-safety, gate-push + reconcile + zombie-wrapper + idle-unmapped passes) — full predicates, env-var overrides, and incident history (loads when you touch the audit / watcher scripts)
 paths:
   - "scripts/worktree_audit.py"
   - "scripts/cron_worktree_audit.sh"
   - "scripts/autonomous_session_watch.py"
   - "scripts/cron_autonomous_session_watch.sh"
+  - "scripts/tick_triage.py"
   - "scripts/pod_audit.py"
   - "scripts/cron_pod_audit.sh"
   - "scripts/codex_task.py"
@@ -49,8 +50,45 @@ themselves in a worktree.
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
-detector, orphan-file sweep, and three session reapers — the session-vs-status
-reconcile pass, the zombie-wrapper pass, and the idle-unmapped pass.
+detector, orphan-file sweep, the gate-push pass, and three session reapers —
+the session-vs-status reconcile pass, the zombie-wrapper pass, and the
+idle-unmapped pass.
+
+**Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
+gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel
+(override for tests via `EPM_TELEGRAM_PUSH_SCRIPT`), transition-deduped:
+per-issue state at `~/.eps-autonomous/gate-notify-<N>.json` records the last
+observed status, and the push fires exactly once per transition INTO a user
+gate (`awaiting_promotion`, `blocked`, or `plan_pending` only when the
+over-cap spend-approval marker confirms it is the user gate — shared
+`plan_pending_over_cap` predicate with `tick_triage.py`). Moved OUT of the
+LLM-priced `/issue-tick` into this pure-Python pass — the watcher already
+reads task status every 10 min for free, so gate-push latency IMPROVES from
+the tick's backstop cadence to ~10 min; the tick-side `PushNotification` is
+KEPT for now as a second deduped channel (dated removal note in
+`.claude/skills/issue-tick/SKILL.md`), so the worst case is one duplicate
+notification per gate transition, never a missed one. The same pass runs a
+**status-transition-keyed title/self-report reconcile** — NEVER per-pass: an
+unconditional rewrite would keep the self-report's `ts` permanently fresh and
+structurally disable the stalled-detector's and reconcile pass's staleness
+signals; a rewrite keyed on a STATUS CHANGE cannot mask a stall (the change
+itself posts `epm:status-changed`, and a stalled session's status is by
+definition not changing); only EXISTING self-reports are updated. It also
+owns the **tick-runaway force-stop parachute** (#501 class — CRON-TEARDOWN
+kept whiffing; 1,951 wasted ticks): `tick_triage.py` writes
+`tick-runaway-<N>.flag` on the 3rd consecutive teardown-verdict tick (cleared
+on any streak reset), and this pass force-stops the flagged issue's
+session(s) — killing the session-scoped cron with them — under the
+session-reconcile guards (DONE statuses `awaiting_promotion`/`completed`/
+`archived` only, no live follow-up, no RUNNING pod, no `keep-running` tag)
+but WITHOUT the 2h-idle + 2-miss accumulation (three consecutive
+teardown-verdict ticks are already the corroboration). A `blocked` task also
+writes runaway flags but its session may have the user live-parked in it —
+alert loudly, never stop. Transition detection is daemon-independent; the
+title-reconcile and force-stop arms degrade to skip/retry when the daemon is
+down. `gate-notify-<N>.json` is in the terminal-status GC sweep set; the
+`tick-runaway-<N>.flag` files self-clean inside the runaway processing
+instead.
 
 **Reconcile pass (auto-stop of parked sessions).** An issue-mapped session
 whose task is parked/terminal (`awaiting_promotion`/`completed`/`archived`)
