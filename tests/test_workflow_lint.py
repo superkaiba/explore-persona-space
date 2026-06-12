@@ -37,6 +37,7 @@ from workflow_lint import (  # noqa: E402
     _other_worktree_prefix,
     check_asks,
     check_autonomous_asks,
+    check_heredoc_dotenv,
     check_marker_registry,
     check_script_references,
     check_wandb_required,
@@ -1070,3 +1071,163 @@ def test_check_marker_registry_skills_dir_pass_registered_post(tmp_path):
     )
     errors = check_marker_registry(_workflow(), skills_dir=skills)
     assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_heredoc_dotenv`` (incident class #552/#612: a
+# no-arg python-dotenv ``load_dotenv()`` inside a heredoc feeding a python
+# interpreter's stdin crashes at runtime via find_dotenv()'s frame-walk
+# ``assert frame.f_back is not None``). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_heredoc_dotenv(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_heredoc_dotenv_fail_issue612_driver_shape(tmp_path):
+    """FAIL — the exact pre-fix #612 production-driver shape: opener line
+    backslash-continued into an `|| fail` line, body imports + calls the
+    no-arg python-dotenv ``load_dotenv()``. This is the live incident the
+    check exists to catch (4 reviewers + smoke runs missed it)."""
+    (tmp_path / "driver.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'uv run python - "$PANEL_POLL_TIMEOUT_S" "$PANEL_POLL_INTERVAL_S" <<\'PY\' \\\n'
+        '  || fail "panel_set.json did not appear on HF within the timeout" 3\n'
+        "import sys, time\n"
+        "from dotenv import load_dotenv\n"
+        "load_dotenv()\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "driver.sh:6" in errors[0]
+    assert "load_dotenv()" in errors[0]
+    assert "stdin" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_simple_python_stdin(tmp_path):
+    """FAIL — plain `uv run python - <<'PY'` (no continuation) with the
+    dangerous import + call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_python3_bare_no_dash(tmp_path):
+    """FAIL — `python3 <<EOF` (no `-` arg) also executes the heredoc from
+    stdin; the bare-interpreter-as-last-token form must match too."""
+    (tmp_path / "x.sh").write_text(
+        "python3 <<EOF\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_heredoc_dotenv_fail_qualified_call(tmp_path):
+    """FAIL — `import dotenv` + qualified no-arg `dotenv.load_dotenv()`."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nimport dotenv\ndotenv.load_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_pass_explicit_path_arg(tmp_path):
+    """PASS — `load_dotenv(dotenv_path=...)` skips the frame-walking
+    find_dotenv() entirely; only the NO-ARG call is the crash."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        'load_dotenv(dotenv_path="/workspace/explore-persona-space/.env")\n'
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit path), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_project_wrapper(tmp_path):
+    """PASS — the stdin-safe project wrapper (resolves .env via
+    resolve_dotenv_path() cwd-walking, no frame inspection). This is the
+    canonical in-heredoc shape (#585 round-2 review fix; live exemplar
+    scripts/i556_run_all_1gpu.sh) and must NOT be flagged."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PYEOF'\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n"
+        "load_dotenv()\n"
+        "PYEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (stdin-safe project wrapper), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_non_python_heredoc(tmp_path):
+    """PASS — a heredoc that does NOT feed a python interpreter's stdin
+    (here: generating a .py file via `cat`) is data, not stdin-executed
+    code; the generated file runs with a real __file__ later."""
+    (tmp_path / "x.sh").write_text(
+        "cat > /tmp/gen.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (non-python heredoc), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_heredoc_is_data_for_python_script(tmp_path):
+    """PASS — `python scripts/foo.py <<EOF` feeds the heredoc to the
+    SCRIPT as stdin data; the body is not executed as python source, so
+    a load_dotenv-shaped line in it is not a call site."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (heredoc is script data), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_commented_call(tmp_path):
+    """PASS — a commented-out `# load_dotenv()` line (the post-fix #612
+    driver carries exactly this as an explanatory comment) is not a call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        "# NO bare load_dotenv() here: it crashes from stdin\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (commented call only), got: {errors}"
+
+
+def test_check_heredoc_dotenv_second_heredoc_after_safe_one_still_scanned(tmp_path):
+    """A dangerous python-fed heredoc AFTER an earlier safe heredoc in the
+    same file is still caught (the body-skipping parser must resume opener
+    detection after each terminator, not swallow the rest of the file)."""
+    (tmp_path / "x.sh").write_text(
+        "cat <<'EOF'\nplain text body\nEOF\n"
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:6" in errors[0]
+
+
+def test_check_heredoc_dotenv_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no no-arg python-dotenv
+    load_dotenv() calls inside python-stdin heredocs — this is the
+    regression guard the durable fix installs (the #612 hot-fix removed
+    the live one; i556's project-wrapper shape is stdin-safe by design)."""
+    errors = check_heredoc_dotenv()
+    assert errors == [], (
+        "scripts/*.sh has no-arg python-dotenv load_dotenv() calls inside "
+        "python-stdin heredocs (#552/#612 crash class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-heredoc-dotenv")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-heredoc-dotenv failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
