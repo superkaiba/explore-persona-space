@@ -96,6 +96,33 @@ def group_value(traj, src, step, which, key, tn_groups, all_ctx):
     raise ValueError(which)
 
 
+def matched_noise_envelope(arm_c, tn_groups, all_ctx, n_draws=20000, seed=42):
+    """Step-2 noise envelope of the MATCHED statistic (trained-negative-group
+    median): per source, random k-subsets (k = that cell's TN-group size) of
+    non-source contexts at step 2, median of each draw, pooled across sources.
+
+    Returns (iqr_lo, iqr_hi, p5, p95). This replaces the single-context-mean
+    envelope (a higher-variance statistic than the dismissed group medians).
+    """
+    import random
+
+    rng = random.Random(seed)
+    draws = []
+    for s in SOURCES:
+        k = len(tn_groups[s])
+        pool = [c for c in all_ctx if c != s]
+        step2 = {c: arm_c[s]["by_step"]["2"][c]["delta_logp"] for c in pool}
+        for _ in range(n_draws):
+            sub = rng.sample(pool, k)
+            draws.append(statistics.median(step2[c] for c in sub))
+    return (
+        float(np.percentile(draws, 25)),
+        float(np.percentile(draws, 75)),
+        float(np.percentile(draws, 5)),
+        float(np.percentile(draws, 95)),
+    )
+
+
 def pooled(traj_by_src, steps, which, key, tn_groups, all_ctx, q=(25, 50, 75)):
     med, lo, hi = [], [], []
     for st in steps:
@@ -177,7 +204,6 @@ def main() -> None:
 
     ax2 = axes[1]
     ax2.axhline(0.0, color="#999999", lw=1.0, ls="--", zorder=1)
-    ax2.axhspan(-0.008, 0.008, color="#bbbbbb", alpha=0.35, zorder=0)
     for s in SOURCES:
         ys = [
             group_value(arm_c[s], s, st, "tn", "delta_logp", tn_groups, all_ctx)
@@ -195,10 +221,31 @@ def main() -> None:
         fontweight="semibold",
         loc="left",
     )
+    # Noise-scale inset: the +/-0.01-nat step-2 envelope is sub-pixel at the
+    # 0-4 nat zoom scale, so the two step-2 sub-zero medians (assistant
+    # -0.0019, Qwen default -0.0062) are only resolvable here.
+    iqr_lo, iqr_hi, p5, p95 = matched_noise_envelope(arm_c, tn_groups, all_ctx)
+    inset_steps = (2, 4, 6, 8)
+    axi = ax2.inset_axes([0.08, 0.13, 0.50, 0.36])
+    axi.set_facecolor("white")
+    axi.axhline(0.0, color="#999999", lw=0.8, ls="--", zorder=1)
+    axi.axhspan(p5, p95, color="#bbbbbb", alpha=0.30, zorder=0)
+    axi.axhspan(iqr_lo, iqr_hi, color="#999999", alpha=0.30, zorder=0)
+    for s in SOURCES:
+        ys = [
+            group_value(arm_c[s], s, st, "tn", "delta_logp", tn_groups, all_ctx)
+            for st in inset_steps
+        ]
+        axi.plot(inset_steps, ys, lw=1.0, alpha=0.9, marker="o", ms=2.6)
+    axi.set_xlim(1.6, 8.4)
+    axi.set_ylim(-0.05, 0.10)
+    axi.set_xticks(list(inset_steps))
+    axi.tick_params(labelsize=6.5)
+    axi.set_title("steps 2–8 at noise scale", fontsize=7, loc="left")
     fig.text(
         0.08,
         0.95,
-        "Trained negatives rise from the first steps — never below base",
+        "Trained negatives rise from the first steps — no meaningful below-base dip",
         fontsize=13,
         fontweight="semibold",
         color="#1A1A1A",
@@ -206,9 +253,10 @@ def main() -> None:
     fig.text(
         0.08,
         0.885,
-        "Contrastive mix, dense checkpoint grid (every 2 steps); teacher-forced probe reads, median across "
-        "6 source cells, band = IQR.\nLeft grey band = source onset (steps 16–20); right grey band = "
-        "step-2 measurement-noise envelope (±0.008 nats).",
+        "Contrastive mix, dense grid (every 2 steps); teacher-forced probe reads, median across 6 source "
+        "cells, band = IQR; grey span = source onset (16–20).\nInset: steps 2–8 at noise scale — the two "
+        "step-2 sub-zero medians sit inside the resampled negative-group-median envelope "
+        "(dark = IQR, light = 5th–95th pct).",
         fontsize=9,
         color="#5A5A5A",
     )
@@ -302,7 +350,7 @@ def main() -> None:
     ax.legend(loc="upper left", fontsize=8)
     set_title_subtitle(
         ax,
-        "The logit-space read agrees: no early dip below base",
+        "The logit-space read agrees: no meaningful early dip below base",
         "Gain in (marker logit − end-of-turn logit), gauge-invariant; median across 6 cells, "
         "band = IQR; same shape as the log-prob read — the early window is far from saturation",
     )
