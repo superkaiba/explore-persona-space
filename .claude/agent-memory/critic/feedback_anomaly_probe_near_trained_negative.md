@@ -1,38 +1,11 @@
 ---
-name: Anomaly probes that are near-twins of a trained contrastive negative
-description: Flat-cell "anomaly" attribution is confounded when the probe personas are near-twins of a persona in the adapter's contrastive-negative set; arm contrasts stay clean, attribution needs scoping (#612)
+name: Sycophancy-rig v2 probe dispositions (#612)
+description: Anomaly probes that are near-twins of a trained contrastive negative (suppression-generalization attribution fork); multi-turn-prefix arms on single-turn evals (weak-install vs context-gated expression); inherited panel-violation kept for anchor parity
 type: feedback
 ---
 
-Pattern from #612 v1 (sycophancy rig v2, alternatives lens): the H3 anomaly
-probes (`virtual_assistant`, `digital_helper`, near-twins of `assistant` at
-cos ~0.98) are evaluated under adapters whose contrastive-negative sets
-INCLUDE `assistant` (software_engineer and comedian — verified in
-`neg_membership_411.json`). Contrastive training actively pushes agreement
-DOWN under the `assistant` context, and that suppression plausibly
-generalizes to assistant-like near-twins — a third explanation for twin
-flatness that is neither "wording priors gate leakage" nor "canned-template
-artifact".
+Three dispositions from #612 (sycophancy rig v2, methodology + alternatives lenses, APPROVE):
 
-**Why it's not REVISE:** the negative sets are constant across arms by
-parity, so the registered survive/dissolve ARM CONTRAST is unconfounded;
-only the deeper attribution of WHY the twins are flat is confounded, and
-that attribution is interpretation-level, weighable from shipped
-diagnostics.
-
-**How to apply:** when a plan designates flat/anomaly probe cells, check the
-probe personas' similarity to every member of that adapter's
-contrastive-negative panel (read the realized neg-membership file, not the
-prose — `neg_member` flags cover literal negatives only, NOT near-twins of
-negatives). If a probe is a near-twin of a trained negative, name
-suppression-generalization as the alternative and point the analyzer at the
-partial discriminators: the same probes under adapters WITHOUT that negative
-(lower cosine, weaker read), probes that DO leak under the same adapter
-(e.g. daycare_teacher under software_engineer), and the probes' base priors.
-
-Companion fork from the same review (multi-turn-prefix arm, H2): when a
-prefix/multi-turn-trained arm is evaluated single-turn, "prefix anchors the
-behavior to the persona" vs "train/eval context mismatch (generalization
-gap)" are separated by the SELF-implant secondary read — both-drop ⇒
-mismatch; bystander-only-drop ⇒ anchoring. Check the plan registers the
-self-implant contrast, then pre-name the fork for the analyzer.
+1. **Anomaly probes that are near-twins of a trained contrastive negative.** H3's flat-twin probes (`virtual_assistant`, `digital_helper`, cos ~0.98 to `assistant`) are evaluated under adapters whose negative sets INCLUDE `assistant` — contrastive training pushes agreement DOWN under that context and the suppression plausibly generalizes to near-twins: a third explanation for twin flatness besides "wording priors gate leakage" and "canned-template artifact". Not REVISE: negative sets are constant across arms by parity, so the registered survive/dissolve ARM CONTRAST is unconfounded; only the attribution of WHY twins are flat is confounded (interpretation-level, weighable). Check probe similarity against the REALIZED neg-membership file (`neg_member` flags cover literal negatives only, NOT near-twins); point the analyzer at partial discriminators: same probes under adapters WITHOUT that negative, probes that DO leak under the same adapter, base priors.
+2. **Multi-turn-prefix training arm, single-turn eval surface.** An arm trained behind a K-turn prefix (loss on final turn) but evaluated single-turn cannot separate "prefix weakens installation" from "installed but gated to multi-turn contexts the eval never probes" — and the manipulation check shares the single-turn surface, so sub-threshold install reads as failure when it may be non-expression (same shape as the persona-gated manipulation-check memory). Concern, NOT REVISE, when all adapters/epoch checkpoints are uploaded — a small multi-turn self-probe (prefix prepended at eval) is a runnable post-hoc disambiguator; label the install-failure branch "not installed OR not expressed single-turn". The SELF-implant secondary read separates the H2 fork: both-drop ⇒ train/eval mismatch; bystander-only-drop ⇒ prefix anchoring. REVISE only if checkpoints are not persisted.
+3. **Inherited contrastive-negative disjointness violation kept for anchor parity.** When an arm is a verbatim frozen-pool replication anchor, FIXING an inherited panel∩sources violation would smuggle a second variable into the arm contrast. Right disposition: hard assert no NEW violations (against realized pools) + flag the directed (adapter, negative-persona) cells `neg_member` + exclude them from curve fits with an IDENTICAL exclusion set across arms. Near-twins of a trained negative stay OUT of the exclusion set — suppression-generalization to them is an attribution caveat (constant across arms), not fit contamination.

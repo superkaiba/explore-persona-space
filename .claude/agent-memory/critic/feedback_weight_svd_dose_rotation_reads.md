@@ -1,48 +1,17 @@
 ---
-name: Weight-SVD dose-rotation reads (analysis tasks)
-description: P0-style adapter-SVD plans — joint-arm v_src ambiguity and sigma1/sigma2 degeneracy are the two analyzer concerns for dose-rotation Spearman; both recoverable iff top-k sigma + top-2 vectors persist per cell
+name: Weight-SVD adapter-analysis reviews (#604 family)
+description: Adapter-SVD key/write/rotation plans — joint-arm v_src convention, Δcos-vs-dose SNR-attenuation mimic, σ₁≈σ₂ degeneracy, write-null rank-1 degeneracy, dose-covariate provenance; mostly analyzer concerns iff per-cell spectra + vectors persist
 type: feedback
 ---
 
-For `kind: analysis` plans that SVD stored LoRA adapters and regress key-rotation
-(Δcos toward a contrast direction) on dose (#604 v1, theory-doc P0 line):
+For plans that SVD stored LoRA/ΔW weights and compare singular vectors to context vectors ("keys") / measured activation shifts ("writes"), or regress key rotation on dose (#604 P0 line, all three lenses, 2026-06-11):
 
-- **Joint-arm cells have no canonical v_src.** Dial inventories (2 pairs × {A_only,
-  B_only, joint} × seeds) include joint cells where the top-1 right-singular vector
-  may split between two sources; a registered "Spearman over all clean cells"
-  silently forces an unregistered per-cell choice. NOT a REVISE when the analysis is
-  fully re-runnable on persisted vectors (analyzer can stratify by arm / use
-  per-source rows); flag as a definitional concern for implementer + analyzer.
-- **σ₁≈σ₂ degeneracy at low dose** makes the top-1 key direction unstable, which can
-  manufacture a mechanical positive Δcos-vs-dose trend (key well-defined only at
-  high dose). Recoverable iff per-cell top-k σ spectra + top-2 singular vectors are
-  persisted (then the analyzer conditions on spectral gap or uses top-2 subspace
-  angles). Check the persistence, not the absence of the confound.
-- **H2/H4 interplay:** a successfully rotated key (contrast-direction win)
-  mechanically depresses cos(key, raw v_src) — deep contrastive cells can "fail" a
-  p95 key-identity bar while the rank-in-bank criterion still passes. Read identity
-  misses jointly with rank + Δcos.
-- **Layer-index alignment (hook position vs adapter input space).** Per-layer
-  centroid hooks capture layer-l OUTPUT, but the attention key at layer l reads
-  layer l−1's output (through `input_layernorm`), and the MLP key reads the
-  mid-layer residual (captured at neither index). Recoverable iff ALL layers'
-  context vectors persist (analyzer re-indexes; band/contiguity criteria are
-  ±1-layer insensitive) — check the persistence, then file as a concern: profiles
-  should be checked at v_c(l−1) vs v_c(l) before narrating layer localization.
+1. **Joint/multi-source arms have no canonical v_src.** Cells training TWO sources have no well-defined per-cell top-1-key target, yet the sweep JSON stores ONE scalar dose. If such cells sit inside the registered primary statistic, the implementer silently invents a source convention that shapes the headline — Must-Fix at plan time: restrict the primary to single-source arms or register the joint convention. Downgrades to a concern when the analysis is fully re-runnable on persisted per-cell vectors.
+2. **Δcos = cos(key,u_contrast) − cos(key,u_raw) vs dose confounds rotation with estimation SNR.** Noisy low-dose keys attenuate BOTH cosines by a common λ(dose), so a dose-constant contrast-aligned key mechanically yields a positive dose-Spearman; SNR growth alone mimics rotation. Discriminators to demand: the two component cosines separately vs dose (true rotation = raw declines while contrast rises), in-plane angle of the {u_raw,u_contrast} projection (attenuation preserves angle), seed-stability per dose tier, σ₁ spectral gap. Never narrate raw Δcos Spearman as "rotation with dose" without these.
+3. **σ₁≈σ₂ degeneracy at low dose** makes the top-1 key unstable and can manufacture a mechanical positive Δcos-dose trend. Recoverable iff per-cell top-k σ spectra + top-2 singular vectors persist (condition on spectral gap / use top-2 subspace angles).
+4. **Generic gradient-input alignment is P0's MECHANISM, not a confound**, when the Goal is "test key=v_src at the weights level" — it threatens only the narration (confirmation ≠ discrimination from anything sharing the prediction). Scope caveat + follow-up (benign-behavior-under-persona control), never Must-Fix.
+5. **Write-null degeneracy under rank-1 shifts.** "Write beats p95 of wrong-context shift rows" is unsatisfiable-by-construction when the shift matrix is near rank-1 (all rows parallel — the theory's own deep-dose prediction). Report the null's p5–p95 spread per cell; pair the selectivity null with an absolute bar.
+6. **Dose-covariate provenance:** realized landing lives in per-cell `eval/*__shift.json` `contexts[<source>].delta_logp_marker`, NOT in `sweep/*.json` (planned bands only) or `analysis.json`; in-loop band-stop quotes also differ from re-measures (#527: 4.69–8.06 actual vs 5.00–7.47 quoted). Re-derive the dose source file + range yourself or 3 planned tiers silently replace the continuous covariate.
+7. Smaller recurring checks: layer-index alignment (attention key at layer l reads l−1's output — recoverable iff ALL layers' context vectors persist); rotated keys mechanically depress cos(key, raw v_src), so read identity misses jointly with rank + Δcos; stacked-module SVD ([ΔW_q;ΔW_k;ΔW_v]) has max rank 3r so diffuse calibration is 1/(3r); persist the FULL spectrum (≤96 floats), not top-8.
 
-- **Dose-covariate provenance (the v1 stats-lens Must-Fix).** "Realized landing"
-  does NOT live in `eval_results/issue_*/sweep/*.json` (planned `band_low/high_nats`
-  only) nor `analysis.json` (aggregates, no landing field) — it lives in per-cell
-  `eval/*__shift.json` `contexts[<source>].delta_logp_marker`. That re-measure also
-  differs from the in-loop band-stop reads quoted in producing bodies (#527 actual
-  4.69–8.06 vs quoted 5.00–7.47). A plan citing sweep/ for dose invites silent
-  band-midpoint substitution → 3 discrete planned tiers replace the continuous
-  realized covariate. Re-derive the dose source file + range yourself.
-
-**Why:** all three arose on #604 v1; none were Must-Fix because the plan persisted
-top-8 σ + top-2 vectors per cell and registered both rank and threshold criteria —
-the persistence is what keeps these analyzer-weighable.
-
-**How to apply:** on any weight-space SVD plan, verify (1) per-cell spectra/vectors
-are persisted, (2) multi-source (joint) cells have a registered handling for
-source-keyed statistics, before considering REVISE.
+**How to apply:** verify (a) per-cell spectra/vectors persist and (b) joint cells have a registered source convention before considering REVISE; everything else is analyzer concerns with the discriminators named.
