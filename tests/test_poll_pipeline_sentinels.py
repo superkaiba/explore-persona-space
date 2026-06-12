@@ -2832,3 +2832,41 @@ def test_ssh_probe_parses_results_sentinel_present(monkeypatch: pytest.MonkeyPat
     probe = pp._ssh_probe("pod-545", "/workspace/logs/issue-545.log", "/tmp/p.pid", 545)
     assert probe["results_sentinel_present"] == "0"
     assert probe["ssh_failed"] == "1"
+
+
+# ── Phase-cache anchor (DEFAULT_STATE_DIR, split-brain fix refs #612) ────────
+
+
+def test_default_state_dir_anchored_to_main_checkout() -> None:
+    """``DEFAULT_STATE_DIR`` resolves to the MAIN checkout's ``.claude/cache``.
+
+    The pre-2026-06-12 ``__file__`` anchor split the phase-cache contract
+    across checkouts (a worktree-copy tick wrote ``poll-pipeline-<N>.json``
+    in the worktree while repo-root ticks read the repo-root copy → spurious
+    ``new_milestone`` re-posts; same class as the #612 handle-sidecar
+    incident). Pin the git-common-dir resolution: whether this suite runs
+    from the main checkout or a linked worktree, the anchor must be the
+    common-dir's parent.
+    """
+    proc = subprocess.run(
+        ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+        cwd=str(REPO_ROOT / "scripts"),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    main_checkout = Path(proc.stdout.strip()).parent
+    assert main_checkout / ".claude" / "cache" == pp.DEFAULT_STATE_DIR
+
+
+def test_resolve_state_dir_root_falls_back_outside_git(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Outside any git checkout the resolver degrades (with a warning) to the
+    legacy script-copy anchor instead of crashing — the poller must keep
+    ticking even when the cache anchor is degraded."""
+    monkeypatch.setattr(pp, "_HERE", tmp_path)
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        root = pp._resolve_state_dir_root()
+    assert root == pp._REPO_ROOT
+    assert any("phase-cache anchor" in rec.message for rec in caplog.records)
