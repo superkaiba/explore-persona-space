@@ -173,8 +173,10 @@ def test_k1_gate_fail_closed(tmp_path, monkeypatch):
     (marker / "band_stop_result.json").write_text(
         json.dumps({"stopped_in_band": True, "last_delta_nats": 8.2, "band_nats": [5.0, 12.0]})
     )
-    _write_cell_json(bm, "broad_em", {"rate": 0.12})
-    _write_cell_json(edu, "broad_em", {"rate": 0.01})
+    # k/n counts present: the round-21 gate evaluates the prereg-era
+    # all-completions denominator and fails closed without them.
+    _write_cell_json(bm, "broad_em", {"rate": 0.12, "k": 48, "n": 400})
+    _write_cell_json(edu, "broad_em", {"rate": 0.01, "k": 4, "n": 400})
     assert k1_gate_verdict()["pass"] is True
     write_k1_gate()
     require_k1_pass()  # no raise
@@ -260,8 +262,10 @@ def test_dose_band_miss_routing_monotone_recalibrates(tmp_path, monkeypatch):
     (marker / "band_stop_result.json").write_text(
         json.dumps({"stopped_in_band": True, "last_delta_nats": 8.2, "band_nats": [5.0, 12.0]})
     )
-    _write_cell_json(bm, "broad_em", {"rate": 0.12})
-    _write_cell_json(edu, "broad_em", {"rate": 0.01})
+    # k/n counts present: the round-21 gate evaluates the prereg-era
+    # all-completions denominator and fails closed without them.
+    _write_cell_json(bm, "broad_em", {"rate": 0.12, "k": 48, "n": 400})
+    _write_cell_json(edu, "broad_em", {"rate": 0.01, "k": 4, "n": 400})
 
     (bm / "dose_select.json").write_text(json.dumps(over))
     assert k1_gate_verdict()["pass"] is True  # monotone overshoot -> recalibrated PASS
