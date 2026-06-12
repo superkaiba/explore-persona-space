@@ -272,7 +272,11 @@ All URLs in Reproducibility are pinned to permanent refs (HF Hub
 `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
 `/tree/<sha>`; never `main` / `master` / `HEAD`). `n/a` accepted as an
 explicit non-applicable marker. No `TBD`, `{{`, `default`, `see config`
-sentinels. **Write MDX-safe markdown — the dashboard renders bodies
+sentinels (`default` counts as a sentinel only in placeholder positions —
+a bare table-cell value `| default |` or a label terminator like
+`chat template: default`; substantive prose such as "default assistant" /
+"default-context" is fine — the default assistant is a core experimental
+condition, task #542). **Write MDX-safe markdown — the dashboard renders bodies
 through an MDX parser.** (a) URLs use `[label](url)` form only — never
 `<https://...>` autolinks (MDX reads `<https` as a JSX tag and fails on
 the `/` after `:`). (b) No `<` immediately before a digit (`p<0.05`,
@@ -439,7 +443,10 @@ fix.
    shape-checked only (check 8). Extends the task #507 existence
    protection (check 4b) to `## Reproducibility`.
 9. Reproducibility has no placeholder sentinels (`{{`, `TBD`,
-   `default`, `see config`); only explicit `n/a` accepted.
+   `default`, `see config`); only explicit `n/a` accepted. `default`
+   is flagged only in placeholder positions (bare table-cell value
+   `| default |`, or a label terminator `chat template: default`);
+   prose like "default assistant" / "default-context" passes (#542).
 10. Cherry-picked label preceding every sample-output fenced block
     in `## TL;DR` (literal `cherry-picked for illustration`, or an
     explicit random-sample disclosure like `first three of 400
@@ -515,6 +522,15 @@ Catches prose-level violations the verifier doesn't:
   Express equivalence in plain English ("identical at every byte",
   "the two files matched exactly", "no diff"); the catch-phrase reads
   as AI-slop in research prose.
+
+Exemption: blockquoted lines inside the `## Reproducibility`
+`**Context:**` row are NOT scanned — the verbatim originating-prompt /
+scope-note quote there must be preserved exactly (see § `**Context:**`
+row), so the verbatim contract would otherwise be unsatisfiable
+(2026-06-12, task #597: a scope note opening with "PRE-REGISTERED"
+tripped the pre-registration pattern). Non-blockquote prose inside the
+Context block, and blockquotes anywhere else in the body, stay in scan
+scope.
 
 ## Voice
 

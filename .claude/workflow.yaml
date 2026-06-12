@@ -1555,12 +1555,20 @@ markers:
       `.wandb_run_name`, plus top-level `wandb_*` / `hf_model_repo`
       hints) gets an equivalent card SYNTHESIZED by verify_uploads.py
       (`_card_from_provenance`, #599) — a safety net, not the producer
-      contract; explicit cards always win. Sweep dispatchers
-      SHOULD declare per-cell `adapter_paths` + `wandb_run_names` so
-      the verifier's training rows resolve mechanically instead of
-      hard-MISSing; explicit CLI declarations always win unchanged, and
-      a task whose markers declare neither a card nor usable
-      provenance keeps the strict MISSING row.
+      contract; explicit cards always win. The fields are optional for
+      the CONSUMER (verify_uploads.py tolerates their absence), but the
+      PRODUCER contract for training / sweep runs is MUST, not SHOULD
+      (SKILL.md Step 7 sentinel format): declare per-cell
+      `adapter_paths` (real resolved paths — never `<arm>`/`<seed>`
+      template placeholders or prose summaries) + `wandb_project` +
+      `wandb_run_names` so the verifier's training rows resolve
+      mechanically instead of hard-MISSing. The same applies to an
+      orchestrator-composed payload drained from granular per-cell
+      sentinels — a prose-template card tripped false hf_model /
+      wandb_run MISSING rows on a fully-uploaded sweep (#612). Explicit
+      CLI declarations always win unchanged, and a task whose markers
+      declare neither a card nor usable provenance keeps the strict
+      MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
