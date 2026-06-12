@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 615,
+  "highest_id": 616,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3763,6 +3763,13 @@
       "path": "tasks/proposed/615",
       "status": "proposed",
       "title": "Autonomous paper pipeline: proposal-in -> autonomous progress (design)"
+    },
+    "616": {
+      "has_clean_result": false,
+      "kind": "analysis",
+      "path": "tasks/proposed/616",
+      "status": "proposed",
+      "title": "Consolidate mentor meeting notes from the Research Log Google Slides deck into docs/mentor_updates/"
     },
     "62": {
       "has_clean_result": false,
