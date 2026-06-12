@@ -565,7 +565,9 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
         colors = paper_palette(3)
 
         def save(fig, name):
-            savefig_paper(fig, figures_dir / name)
+            # Pass dir= explicitly: savefig_paper's default dir="figures/" would
+            # double-join a relative figures_dir ("figures/figures/issue_612/...").
+            savefig_paper(fig, name, dir=figures_dir)
             plt.close(fig)
             return str(figures_dir / f"{name}.png")
     except Exception:  # paper_plots font setup unavailable -> plain matplotlib
@@ -619,22 +621,30 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
     axes.flat[0].legend(fontsize=8)
     written.append(save(fig, "hero1_delta_vs_cosine"))
 
-    # Hero 2 — arm-contrast forest (B-A, C-B; per-source + pooled).
-    fig, ax = plt.subplots(figsize=(8, 6))
+    # Hero 2 — arm-contrast forest (per-source + pooled), plain-English labels only.
+    fig, ax = plt.subplots(figsize=(8.5, 6))
     rows, labels = [], []
-    for tag, key in (
-        ("B-A (on-policy - canned)", "h1_onpolicy_vs_canned"),
-        ("C-B (prefix - single-turn)", "h2_prefix_vs_onpolicy"),
+    for pooled_tag, source_tag, key in (
+        (
+            "on-policy single-turn minus canned anchor",
+            "on-policy minus canned",
+            "h1_onpolicy_vs_canned",
+        ),
+        (
+            "multi-turn prefix minus on-policy single-turn",
+            "prefix minus single-turn",
+            "h2_prefix_vs_onpolicy",
+        ),
     ):
         pooled = analysis[key]
         if "point_seed_mean" not in pooled:  # descope: {"status": "no_paired_cells"}
             continue
         rows.append((pooled["point_seed_mean"], pooled["ci95"]))
-        labels.append(f"POOLED {tag}")
+        labels.append(f"all sources: {pooled_tag}")
         for source, rec in analysis[key + "_per_source"].items():
             if "point_seed_mean" in rec:
                 rows.append((rec["point_seed_mean"], rec["ci95"]))
-                labels.append(f"  {source} {tag.split(' ')[0]}")
+                labels.append(f"  {source.replace('_', ' ')}: {source_tag}")
     ypos = np.arange(len(rows))[::-1]
     for y, (pt, (lo, hi)) in zip(ypos, rows, strict=True):
         ax.errorbar(
@@ -670,8 +680,15 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
         ax.axhline(FLAT_BAND, ls=":", lw=0.8, color="grey")
         ax.set_xticks(xt)
         ax.set_xticklabels(xl, fontsize=7)
-        ax.set_title(probe)
-        ax.set_ylabel("Δ agreement")
+        ax.set_title(probe.replace("_", " "))
+        ax.set_ylabel("Δ agreement (trained - base)")
+    from matplotlib.patches import Patch
+
+    axes[0].legend(
+        handles=[Patch(color=arm_color[a], label=arm_label[a]) for a in TRAIN_ARMS],
+        fontsize=7,
+        loc="upper left",
+    )
     written.append(save(fig, "hero3_anomaly_strip"))
 
     # Exploratory: prior vs cosine per source (decorrelation view) + raw scatter.
@@ -680,11 +697,14 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
         xs = [rec["cosines"][source] for rec in data.personas.values()]
         ys = [rec["base_rate"] for rec in data.personas.values()]
         ax.scatter(xs, ys, s=18, color="#555")
-        ax.set_xlabel(f"cosine to {source}")
-        ax.set_ylabel("base prior")
+        ax.set_title(source.replace("_", " "))
+        ax.set_xlabel(f"cosine to {source.replace('_', ' ')}")
+        ax.set_ylabel("base-model agreement prior")
     written.append(save(fig, "exploratory_prior_vs_cosine"))
 
     # Exploratory: self-implant trajectories per arm.
+    from matplotlib.lines import Line2D
+
     fig, ax = plt.subplots(figsize=(7, 4.5))
     for key, traj in analysis["trajectory"].items():
         arm = key.split(":")[1]
@@ -695,7 +715,14 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
         ax.plot(xs, ys, marker="o", ms=3, lw=0.8, alpha=0.6, color=arm_color.get(arm, "grey"))
     ax.set_xticks([1, 2, 3])
     ax.set_xticklabels(["epoch 1", "epoch 2", "epoch 3"])
-    ax.set_ylabel("self-implant Δ")
+    ax.set_ylabel("self-implant Δ (trained - base)")
+    ax.legend(
+        handles=[
+            Line2D([0], [0], color=arm_color[a], marker="o", ms=3, lw=0.8, label=arm_label[a])
+            for a in TRAIN_ARMS
+        ],
+        fontsize=8,
+    )
     written.append(save(fig, "exploratory_self_implant_trajectories"))
     return written
 
