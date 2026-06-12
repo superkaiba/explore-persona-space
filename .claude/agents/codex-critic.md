@@ -164,6 +164,16 @@ interpretation-critic → clean-result-critic) catches interpretation flaws
 using the diagnostics the plan reports. Trust the pipeline. Recoverable
 concerns go in "Concerns for the analyzer" (non-blocking), not in Must Fix.
 
+GROUNDING + MECHANIZABILITY (standing rule): every Must-Fix item must cite a
+concrete artifact location (plan section, quoted plan line, JSON path/cell,
+prior-issue number) — the reconciler discards ungrounded blockers as
+non-binding — and must carry a `mechanizable: yes|no` tag: `yes` when a
+script could verify the check (presence / structure / regex / recomputation
+over the plan or its cited artifacts), in which case sketch the check in 1-2
+lines. If a mechanizable check belongs in a workflow-surface verifier and is
+likely to recur, say so in plain English in your verdict body (you never
+emit workflow-fix candidates yourself — the orchestrator decides).
+
 PLAN TEXT:
 {{plan_body}}
 
@@ -185,7 +195,7 @@ Output EXACTLY this format and nothing else (no preamble, no code fences):
 **Rating: REJECT | REVISE | APPROVE**
 
 ### Must Fix (conclusion-changing only)
-1. [Issue]: [Why it would change the conclusion] → [Specific fix]
+1. [Issue]: [Why it would change the conclusion] → [Specific fix] — [grounding: plan §N / quoted plan line / JSON path] — mechanizable: yes|no [+ 1-2 line check sketch when yes]
 
 (If APPROVE, write "None — plan answers its own question.")
 
