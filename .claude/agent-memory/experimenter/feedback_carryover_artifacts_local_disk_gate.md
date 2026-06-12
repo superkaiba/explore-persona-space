@@ -1,38 +1,11 @@
 ---
-name: Carry-over artifacts HF gate misses local-disk staging
-description: HF Hub visibility check passes but dispatcher reads from local disk; fresh pod has no data/, crashes in <10s with FileNotFoundError. Symmetric to #488 path-paraphrase guard (which checks write path).
+name: Carry-over artifacts — HF gate misses local-disk staging + recipe drift
+description: HF Hub visibility PASSing is necessary but NOT sufficient — dispatchers read from LOCAL disk; stat-check every argparse local-path default on the pod (including scripts the dispatcher shells out to) before launch.
 type: feedback
 ---
 
-When a plan claims "carry-over data on HF Hub" and the pre-launch input-data
-gate verifies HF visibility, that is NECESSARY but NOT SUFFICIENT. The
-dispatcher reads from LOCAL disk, not HF Hub, unless it explicitly auto-
-fetches. On a fresh pod the dispatcher's default `--bank-path` /
-`--centroids-dir` / `--r-train-path` (`data/issue_472/...`) point at empty
-directories and the launch crashes within ~10 seconds with FileNotFoundError.
+When a plan claims "carry-over data on HF Hub" and the HF visibility gate PASSes, the dispatcher still reads from LOCAL disk (`data/issue_<M>/...` argparse defaults). On a fresh pod those paths are empty and the launch crashes in <10s with FileNotFoundError. Hand-curated staging recipes also drift from the real defaults: #504's round-2 recipe listed 5 files but omitted `R_eval.json`, which `i504_run_cell.py:86` AND `i504_eval_trajectory.py:53` both hard-default — smoke (no eval) passed, the full sweep would have crashed at the first cell's eval.
 
-**Why:** experimenter.md step "Verify input-data completeness against
-planned coverage" pattern-matches on HF Hub visibility (used by #477) but
-skips a stat-check at the dispatcher's actual local-disk read paths. Same
-family as the #488 path-paraphrase guard (which checks the dispatcher's
-actual WRITE path); this is the symmetric read-side gap.
+**Why:** burned at #504 v1 (2026-06-06, HF gate passed, crash on `data/issue_472/centroids_L10.pt` missing locally) and #504 v10 (2026-06-06, R_eval.json missing from the staging recipe). Symmetric read-side gap to the #488 write-side path-paraphrase guard. The post-#468 workflow fix on `experimenter.md § Before Running item 4` (introspect argparse defaults + stat-check + auto-stage) is the canonical defense.
 
-**How to apply:** AFTER the HF Hub gate PASSes, ALSO:
-1. Grep the dispatcher for its argparse defaults pointing at local input
-   paths (`--bank-path`, `--centroids-dir`, `--r-train-path`, etc.).
-2. For each such default, `ssh_execute test -e <path>` on the pod.
-3. On ANY miss, post `epm:failure infra
-   reason: planned-input-data-missing-on-pod` listing the missing local
-   paths AND the HF Hub source paths they should be staged from. Do NOT
-   launch.
-4. Alternatively (or additionally): if the dispatcher exposes `--dry-run`,
-   prefer running it as the canonical pre-launch gate — it exercises the
-   real local-disk read path. The #504 dispatcher's --dry-run "Validate
-   imports + marker assertion + Phase 0.5 only" would have caught this.
-
-Burned at #504 v1 launch (2026-06-06): HF gate passed for 5 carry-over
-artifacts at `issue472_neg_geometry/{geometry,on_policy_R}/...`; dispatcher
-crashed on `data/issue_472/centroids_L10.pt` missing on local disk. Wasted
-~30 GPU-seconds + a full experimenter cycle. Re-dispatch needs the 5
-artifacts staged via `huggingface_hub.hf_hub_download` to
-`/workspace/explore-persona-space/data/issue_472/` before nohup.
+**How to apply:** never trust the brief's staging recipe verbatim. Grep `add_argument.*Path\(.*data/issue_<M>` across the dispatcher AND every script it shells out to; stat-check each local default on the pod; stage missing files from `superkaiba1/explore-persona-space-data` via `hf_hub_download`. If no HF mirror exists, post `epm:failure v1 infra reason: dispatcher-default-path-no-hf-mirror`. Prefer the dispatcher's `--dry-run` (if exposed) — it exercises the real read path.
