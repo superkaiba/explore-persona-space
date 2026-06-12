@@ -744,6 +744,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--skip-upload", action="store_true", help="Skip the HF inputs-snapshot upload."
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Rebuild even when eval_60.jsonl matches its committed manifest. New-claim "
+        "generation samples FRESH each run (temp 1.0), so a rebuild produces a "
+        "DIFFERENT pool — never re-run mid-experiment without this being deliberate.",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO,
@@ -751,6 +758,25 @@ def main(argv: list[str] | None = None) -> int:
         stream=sys.stdout,
     )
     args.work_dir.mkdir(parents=True, exist_ok=True)
+
+    # Idempotent skip: once assembled + committed, the pool is FROZEN (prefetch
+    # asserts the manifest pod-side); only --force rebuilds.
+    final_path = args.out_dir / "eval_60.jsonl"
+    final_manifest = args.out_dir / "eval_60.jsonl.sha256.json"
+    if final_path.exists() and final_manifest.exists() and not args.force:
+        expected = json.loads(final_manifest.read_text())["sha256"]
+        actual = sha256_file(final_path)
+        if actual == expected:
+            log.info(
+                "eval_60.jsonl already assembled (sha %s) — idempotent skip "
+                "(--force rebuilds a DIFFERENT pool; see flag help)",
+                expected[:12],
+            )
+            return 0
+        raise RuntimeError(
+            f"eval_60.jsonl/manifest mismatch (sha {actual[:12]} != {expected[:12]}) — "
+            f"inspect before rebuilding"
+        )
 
     # Inputs (pinned + record-only)
     eval50 = _fetch_pinned(
