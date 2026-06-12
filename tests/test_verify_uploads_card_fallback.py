@@ -18,6 +18,7 @@ tests/test_verify_uploads_type_selection.py.
 import importlib.util
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 # Load the verifier as a module (it's a script, not a package member).
@@ -311,8 +312,139 @@ class TestCheckWandbFromCard:
             verify_uploads.check_wandb_from_card(card)
         assert mock_names.call_args[0][0] == "superkaiba/huggingface"
 
-    def test_names_without_project_returns_none(self):
-        assert verify_uploads.check_wandb_from_card({"wandb_run_names": ["a"]}) is None
+    def test_names_without_project_falls_back_to_default_project_scan(self):
+        """#601: HF Trainer runs default to project ``huggingface`` when
+        WANDB_PROJECT is unset, so declared names without wandb_project
+        resolve via the default-entity scan instead of hard-MISSING."""
+        with patch.object(
+            verify_uploads,
+            "check_wandb_runs_default_project",
+            return_value={"status": "OK", "url": "u", "detail": "resolved"},
+        ) as mock_default:
+            res = verify_uploads.check_wandb_from_card({"wandb_run_names": ["a", "b"]})
+        assert res["status"] == "OK"
+        assert res["source"] == "epm:results reproducibility_card"
+        (names,) = mock_default.call_args[0]
+        assert names == ["a", "b"]
+        assert mock_default.call_args[1] == {"entity": None}
+
+    def test_declared_project_skips_default_scan(self):
+        """The existing declared-project path is unchanged: with
+        wandb_project present the default-entity scan never fires."""
+        card = {"wandb_project": "explicit-project", "wandb_run_names": ["a"]}
+        with (
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_by_name",
+                return_value={"status": "OK", "url": "u"},
+            ) as mock_names,
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_default_project",
+                side_effect=AssertionError("default-project scan must not fire"),
+            ),
+        ):
+            res = verify_uploads.check_wandb_from_card(card)
+        assert res["status"] == "OK"
+        assert mock_names.call_args[0][0] == "explicit-project"
+
+
+# ── check_wandb_runs_default_project ──────────────────────────────────────────
+
+
+class _FakeWandbRun:
+    def __init__(self, name):
+        self.name = name
+
+
+class _FakeWandbProject:
+    def __init__(self, name):
+        self.name = name
+
+
+class _FakeWandbApi:
+    """Minimal wandb.Api stand-in: default entity + per-project run names.
+
+    ``runs`` honours the server-side displayName $in filter the helper
+    sends; probing a project absent from ``runs_by_project`` raises (the
+    real API errors on a nonexistent project path).
+    """
+
+    def __init__(self, project_names, runs_by_project, default_entity="thomasjiralerspong"):
+        self.default_entity = default_entity
+        self._project_names = project_names
+        self._runs_by_project = runs_by_project
+
+    def projects(self, entity):
+        return [_FakeWandbProject(n) for n in self._project_names]
+
+    def runs(self, path, filters=None):
+        project = path.split("/", 1)[1]
+        if project not in self._runs_by_project:
+            raise ValueError(f"project {project} not found")
+        wanted = set(filters["displayName"]["$in"]) if filters else None
+        return [
+            _FakeWandbRun(n)
+            for n in self._runs_by_project[project]
+            if wanted is None or n in wanted
+        ]
+
+
+def _patched_wandb(api):
+    return patch.dict(sys.modules, {"wandb": SimpleNamespace(Api=lambda: api)})
+
+
+class TestCheckWandbRunsDefaultProject:
+    def test_resolves_in_hf_trainer_default_project(self):
+        """The #601 shape: runs live in the default entity's ``huggingface``
+        project; the row resolves OK and names the project in the detail."""
+        api = _FakeWandbApi(
+            project_names=["explore-persona-space"],
+            runs_by_project={"huggingface": ["4xiqs7ra-run", "6ubkhizm-run"]},
+        )
+        with _patched_wandb(api):
+            res = verify_uploads.check_wandb_runs_default_project(["4xiqs7ra-run", "6ubkhizm-run"])
+        assert res["status"] == "OK"
+        assert "thomasjiralerspong/huggingface" in res["detail"]
+
+    def test_resolves_in_a_later_entity_project(self):
+        """When ``huggingface`` does not exist for the entity, the scan
+        continues into the entity's real projects."""
+        api = _FakeWandbApi(
+            project_names=["explore-persona-space"],
+            runs_by_project={"explore-persona-space": ["run-a"]},
+        )
+        with _patched_wandb(api):
+            res = verify_uploads.check_wandb_runs_default_project(["run-a"])
+        assert res["status"] == "OK"
+        assert "thomasjiralerspong/explore-persona-space" in res["detail"]
+
+    def test_no_project_resolves_all_reports_best_partial(self):
+        """All-names-in-ONE-project is required for OK; a partial match is
+        reported in the MISSING detail to aid the manual override."""
+        api = _FakeWandbApi(
+            project_names=["explore-persona-space"],
+            runs_by_project={
+                "huggingface": ["run-a"],
+                "explore-persona-space": [],
+            },
+        )
+        with _patched_wandb(api):
+            res = verify_uploads.check_wandb_runs_default_project(["run-a", "run-b"])
+        assert res["status"] == "MISSING"
+        assert "best partial: 1/2" in res["detail"]
+        assert "huggingface" in res["detail"]
+
+    def test_explicit_entity_overrides_default(self):
+        api = _FakeWandbApi(
+            project_names=[],
+            runs_by_project={"huggingface": ["run-a"]},
+            default_entity="someone-else",
+        )
+        with _patched_wandb(api):
+            res = verify_uploads.check_wandb_runs_default_project(["run-a"], entity="superkaiba")
+        assert res["status"] == "OK"
+        assert "superkaiba/huggingface" in res["detail"]
 
 
 # ── run_verification integration ──────────────────────────────────────────────
