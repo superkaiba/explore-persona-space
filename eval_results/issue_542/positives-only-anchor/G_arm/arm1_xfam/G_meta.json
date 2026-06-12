@@ -1,0 +1,9 @@
+{
+  "git_commit": "a9d0095c73d9cfdca685bf80a22cd5bf926fdfdb",
+  "generated_at": "2026-06-12T15:21:21.024105+00:00",
+  "seed": 42,
+  "arm": "arm1_xfam",
+  "pair_source": "/workspace/eps-issue-542/eval_results/issue_537/G_cells/marker",
+  "n_train": 16,
+  "n_eval": 30
+}
