@@ -1881,8 +1881,8 @@
     "387": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/387",
-      "status": "proposed",
+      "path": "tasks/archived/387",
+      "status": "archived",
       "title": "Connectivity test \u2014 feel free to archive"
     },
     "388": {
@@ -3737,17 +3737,17 @@
       "goal": "Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms \u2014 (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only \u2014 and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/612",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/612",
+      "status": "awaiting_promotion",
       "title": "The model's own agreeing completions install sycophancy substantially more weakly than canned templates at a fixed training recipe, and two of four personas could not fill the on-policy data-yield quota (MODERATE confidence)"
     },
     "613": {
       "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/613",
       "status": "interpreting",
-      "title": "Alive-negatives A/B: does the loss-suppression flag give contrastive negatives a live restoring force? (#601 mechanism follow-up)"
+      "title": "A live contrastive-negative gradient spends itself on the stop token, not the marker: relocating the negatives' loss to the slot where generation actually stops leaves the source implant where dead-slot negatives put it (MODERATE confidence)"
     },
     "614": {
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
@@ -3843,8 +3843,8 @@
     "625": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/625",
-      "status": "running",
+      "path": "tasks/completed/625",
+      "status": "completed",
       "title": "verify_plan.py: mechanical pre-pass gate for experiment plans at adversarial-planner Phase 1.5"
     },
     "626": {
