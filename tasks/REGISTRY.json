@@ -3737,8 +3737,8 @@
       "goal": "Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms \u2014 (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only \u2014 and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/612",
-      "status": "verifying",
+      "path": "tasks/running/612",
+      "status": "running",
       "title": "Sycophancy rig v2: on-policy training data (single-turn vs multi-turn-prefix arms) on a graded-cosine persona panel with base-prior controls"
     },
     "613": {
