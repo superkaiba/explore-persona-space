@@ -1,7 +1,7 @@
 ---
 title: 'At matched similarity, the base-prior gate test on the training-induced marker
-  shift is indeterminate: held-out gain is null while within-panel associations stay
-  positive (MODERATE confidence)'
+  shift resolves to a margin-only signal on a 100-context panel: held-out positive
+  in logit space, null at the registered precision in log-prob space (MODERATE confidence)'
 kind: experiment
 tags:
 - followup-auto
