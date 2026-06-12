@@ -1,0 +1,691 @@
+"""Tests for the batch-aware Claude-judge dispatch layer (task #626).
+
+Mock strategy: mock the anthropic CLIENT OBJECTS, not HTTP — every dispatch
+in here injects ``sync_client`` / ``batch_client`` fakes, so no test ever
+reads ``ANTHROPIC_API_KEY`` or makes a live API call. Tests 16/18 run the
+REAL migrated entry points (``evaluate_alignment`` / ``evaluate_strongreject``)
+under ``asyncio.run`` with injected clients — no monkeypatched dispatcher —
+pinning the async-reentrancy regression from plan-critique round 1.
+"""
+
+import asyncio
+import json
+import logging
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import MagicMock
+
+import pytest
+
+from explore_persona_space.eval import alignment, batch_judge, strongreject
+from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests
+from explore_persona_space.eval.judge_dispatch import (
+    decide_route,
+    dispatch_judge_items,
+    probe_otpm_limit,
+)
+
+JUDGE_TEXT = '{"aligned": 90, "coherent": 95, "reasoning": "ok"}'
+FIXTURE_PATH = Path(__file__).parent / "fixtures" / "issue626_prechange_judge_shape.json"
+
+
+def make_items(n: int, prefix: str = "item") -> list[tuple[str, str, str, str]]:
+    """Build n JudgeItem 4-tuples with distinct content per item."""
+    return [
+        (
+            f"{prefix}_{i:03d}",
+            f"question {i}",
+            f"completion {i}",
+            f"Question asked to the AI:\nquestion {i}\n\nAI's response:\ncompletion {i}",
+        )
+        for i in range(n)
+    ]
+
+
+def _msg(text: str):
+    return SimpleNamespace(content=[SimpleNamespace(type="text", text=text)])
+
+
+class FakeBatchClient:
+    """Scriptable stand-in for anthropic.Anthropic (batches API + raw-response probe)."""
+
+    def __init__(
+        self,
+        *,
+        judge_text_for=None,
+        otpm_header: str | None = "400000",
+        outcome_for: dict[str, str] | None = None,
+        outcome_only_first_batch: bool = True,
+        shuffle: bool = False,
+        create_exc: Exception | None = None,
+        retrieve_exc: Exception | None = None,
+        request_validator=None,
+    ):
+        self.judge_text_for = judge_text_for or (lambda cid: JUDGE_TEXT)
+        self.otpm_header = otpm_header
+        self.outcome_for = outcome_for or {}
+        self.outcome_only_first_batch = outcome_only_first_batch
+        self.shuffle = shuffle
+        self.create_exc = create_exc
+        self.retrieve_exc = retrieve_exc
+        self.request_validator = request_validator
+        self.submitted: dict[str, list[dict]] = {}
+        self.create_calls = 0
+        self.retrieve_calls = 0
+        self.probe_calls = 0
+
+        client = self
+
+        class _Batches:
+            def create(_self, requests):
+                client.create_calls += 1
+                if client.request_validator is not None:
+                    for req in requests:
+                        client.request_validator(req)
+                if client.create_exc is not None:
+                    raise client.create_exc
+                batch_id = f"msgbatch_{client.create_calls:03d}"
+                client.submitted[batch_id] = list(requests)
+                return SimpleNamespace(id=batch_id)
+
+            def retrieve(_self, batch_id):
+                client.retrieve_calls += 1
+                if client.retrieve_exc is not None:
+                    raise client.retrieve_exc
+                n = len(client.submitted[batch_id])
+                return SimpleNamespace(
+                    processing_status="ended",
+                    request_counts=SimpleNamespace(processing=0, succeeded=n, errored=0),
+                )
+
+            def results(_self, batch_id):
+                requests = list(client.submitted[batch_id])
+                if client.shuffle:
+                    requests = list(reversed(requests))
+                apply_outcomes = (not client.outcome_only_first_batch) or batch_id.endswith("_001")
+                for req in requests:
+                    cid = req["custom_id"]
+                    outcome = (
+                        client.outcome_for.get(cid, "succeeded")
+                        if apply_outcomes
+                        else ("succeeded")
+                    )
+                    if outcome == "succeeded":
+                        yield SimpleNamespace(
+                            custom_id=cid,
+                            result=SimpleNamespace(
+                                type="succeeded", message=_msg(client.judge_text_for(cid))
+                            ),
+                        )
+                    else:
+                        yield SimpleNamespace(
+                            custom_id=cid, result=SimpleNamespace(type=outcome, message=None)
+                        )
+
+        class _RawMessages:
+            def create(_self, **kwargs):
+                client.probe_calls += 1
+                headers: dict[str, str] = {}
+                if client.otpm_header is not None:
+                    headers["anthropic-ratelimit-output-tokens-limit"] = client.otpm_header
+                return SimpleNamespace(headers=headers)
+
+        self.messages = SimpleNamespace(batches=_Batches(), with_raw_response=_RawMessages())
+
+
+class FakeSyncClient:
+    """Scriptable stand-in for anthropic.AsyncAnthropic with concurrency tracking."""
+
+    def __init__(self, *, judge_text: str = JUDGE_TEXT, text_for=None, fail_user_msgs=()):
+        self.judge_text = judge_text
+        self.text_for = text_for
+        self.fail_user_msgs = tuple(fail_user_msgs)
+        self.calls: list[dict] = []
+        self.in_flight = 0
+        self.max_in_flight = 0
+
+        client = self
+
+        class _Messages:
+            async def create(_self, **kwargs):
+                client.calls.append(kwargs)
+                client.in_flight += 1
+                client.max_in_flight = max(client.max_in_flight, client.in_flight)
+                try:
+                    await asyncio.sleep(0.005)
+                    user_msg = kwargs["messages"][0]["content"]
+                    if any(marker in user_msg for marker in client.fail_user_msgs):
+                        raise RuntimeError("synthetic judge failure")
+                    text = (
+                        client.text_for(user_msg)
+                        if client.text_for is not None
+                        else client.judge_text
+                    )
+                    return _msg(text)
+                finally:
+                    client.in_flight -= 1
+
+        self.messages = _Messages()
+
+
+def dispatch(items, **kwargs):
+    """Sync-wrapper dispatch with test-friendly defaults (poll_interval=0)."""
+    kwargs.setdefault("poll_interval", 0.0)
+    return dispatch_judge_items(items, **kwargs)
+
+
+# ── 1-4: routing ─────────────────────────────────────────────────────────────
+
+
+def test_decide_route_threshold():
+    assert decide_route(1999, otpm=400_000).path == "sync"
+    assert decide_route(2000, otpm=400_000).path == "batch"
+
+
+def test_decide_route_tier_scaling():
+    d = decide_route(500, otpm=90_000)
+    assert d.effective_threshold == 450
+    assert d.path == "batch"
+    d_none = decide_route(500, otpm=None)
+    assert d_none.effective_threshold == 2000
+    assert d_none.path == "sync"
+    assert d_none.otpm_assumed is True
+
+
+def test_force_sync_overrides():
+    d = decide_route(50_000, otpm=400_000, force_sync=True)
+    assert d.path == "sync"
+    assert d.forced_sync is True
+    assert d.sub_batch_sizes == []
+
+
+def test_sub_batch_split(monkeypatch):
+    d = decide_route(25_000, otpm=400_000)
+    assert d.sub_batch_sizes == [10_000, 10_000, 5_000]
+    # Byte-cap path via the reused batch_judge._chunk_requests: shrink the
+    # byte budget so the count cap is not the binding constraint.
+    monkeypatch.setattr(batch_judge, "MAX_BATCH_SIZE_BYTES", 1_000)
+    requests = [
+        {"custom_id": f"c{i:02d}", "params": {"messages": [{"content": "x" * 300}]}}
+        for i in range(10)
+    ]
+    chunks = _chunk_requests(requests, max_count=10_000)
+    assert len(chunks) > 1  # byte cap forced a split below the count cap
+    assert sum(len(c) for c in chunks) == 10
+    for chunk in chunks:
+        assert sum(len(json.dumps(r).encode()) for r in chunk) <= 1_000 or len(chunk) == 1
+
+
+# ── 5: dry-run ───────────────────────────────────────────────────────────────
+
+
+def test_dry_run_no_api(tmp_path, capsys, monkeypatch):
+    monkeypatch.delenv("EPM_JUDGE_OTPM", raising=False)
+    sync_mock, batch_mock = MagicMock(), MagicMock()
+    result = dispatch(
+        make_items(5),
+        dry_run=True,
+        checkpoint_dir=tmp_path,
+        sync_client=sync_mock,
+        batch_client=batch_mock,
+    )
+    assert result == {}
+    assert sync_mock.mock_calls == []
+    assert batch_mock.mock_calls == []
+    out = capsys.readouterr().out
+    assert "path=sync" in out
+    assert "no API calls made" in out
+
+
+# ── 6-10: checkpointing + resume + merge ─────────────────────────────────────
+
+
+def test_checkpoint_written_before_poll(tmp_path):
+    items = make_items(3)
+    client = FakeBatchClient(retrieve_exc=RuntimeError("poll boom"))
+    with pytest.raises(RuntimeError, match="poll boom"):
+        dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=client)
+    dispatch_dirs = list(tmp_path.glob("dispatch_*"))
+    assert len(dispatch_dirs) == 1
+    state = json.loads((dispatch_dirs[0] / "state.json").read_text())
+    assert state["sub_batches"][0]["batch_id"] == "msgbatch_001"
+    assert state["sub_batches"][0]["status"] == "submitted"
+    items_map = json.loads((dispatch_dirs[0] / "items.json").read_text())
+    assert set(items_map) == {cid for cid, _, _, _ in items}
+    for cid, q, c, u in items:
+        assert items_map[cid] == {"question": q, "completion": c, "user_msg": u}
+
+
+def test_resume_polls_not_resubmits(tmp_path):
+    items = make_items(3)
+    c1 = FakeBatchClient(retrieve_exc=RuntimeError("boom"))
+    with pytest.raises(RuntimeError, match="boom"):
+        dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=c1)
+    # Resume with a fresh client that knows the submitted batch but must
+    # never be asked to create a new one.
+    c2 = FakeBatchClient(create_exc=AssertionError("must not re-create"))
+    c2.submitted["msgbatch_001"] = c1.submitted["msgbatch_001"]
+    result = dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=c2)
+    assert c2.create_calls == 0
+    assert c2.retrieve_calls >= 1
+    assert set(result) == {cid for cid, _, _, _ in items}
+    assert all(r["aligned"] == 90 for r in result.values())
+
+
+def test_resume_fingerprint_mismatch_raises(tmp_path):
+    items_a = make_items(3)
+    dispatch(items_a, threshold_base=1, checkpoint_dir=tmp_path, batch_client=FakeBatchClient())
+    assert len(list(tmp_path.glob("dispatch_*"))) == 1
+
+    # CONTENT axis: same custom_ids, different completion content -> a
+    # DIFFERENT checkpoint dir (never served from the first run's results).
+    items_b = [(cid, q, c + " CHANGED", u + " CHANGED") for cid, q, c, u in items_a]
+    c_content = FakeBatchClient()
+    dispatch(items_b, threshold_base=1, checkpoint_dir=tmp_path, batch_client=c_content)
+    assert c_content.create_calls == 1  # really dispatched, not replayed
+    assert len(list(tmp_path.glob("dispatch_*"))) == 2
+
+    # CONFIG axis: same items, different judge_model -> a third dir.
+    c_config = FakeBatchClient()
+    dispatch(
+        items_a,
+        threshold_base=1,
+        checkpoint_dir=tmp_path,
+        batch_client=c_config,
+        judge_model="other-judge-model",
+    )
+    assert c_config.create_calls == 1
+    assert len(list(tmp_path.glob("dispatch_*"))) == 3
+
+    # Defense in depth: a tampered fingerprint inside an existing dir raises.
+    first_dir = sorted(tmp_path.glob("dispatch_*"))[0]
+    # Find the dir belonging to items_a's original fingerprint via items.json.
+    for d in tmp_path.glob("dispatch_*"):
+        recorded = json.loads((d / "items.json").read_text())
+        if recorded.get("item_000", {}).get("completion") == "completion 0":
+            state_meta = json.loads((d / "state.json").read_text())
+            if state_meta["judge_model"] != "other-judge-model":
+                first_dir = d
+                break
+    state = json.loads((first_dir / "state.json").read_text())
+    state["fingerprint"] = "deadbeef0000"
+    (first_dir / "state.json").write_text(json.dumps(state))
+    with pytest.raises(RuntimeError, match="fingerprint mismatch"):
+        dispatch(items_a, threshold_base=1, checkpoint_dir=tmp_path, batch_client=FakeBatchClient())
+
+    # And a tampered items.json (fingerprint restored) raises on the
+    # content-equality verification.
+    state["fingerprint"] = first_dir.name.removeprefix("dispatch_")
+    (first_dir / "state.json").write_text(json.dumps(state))
+    recorded_items = json.loads((first_dir / "items.json").read_text())
+    recorded_items["item_000"]["completion"] = "tampered"
+    (first_dir / "items.json").write_text(json.dumps(recorded_items))
+    with pytest.raises(RuntimeError, match=r"items\.json content mismatch"):
+        dispatch(items_a, threshold_base=1, checkpoint_dir=tmp_path, batch_client=FakeBatchClient())
+
+
+def test_submitting_intent_without_id_fails_loud(tmp_path):
+    items = make_items(3)
+    c1 = FakeBatchClient(create_exc=RuntimeError("create boom"))
+    with pytest.raises(RuntimeError, match="create boom"):
+        dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=c1)
+    dispatch_dir = next(tmp_path.glob("dispatch_*"))
+    state = json.loads((dispatch_dir / "state.json").read_text())
+    assert state["sub_batches"][0]["status"] == "submitting"
+    assert state["sub_batches"][0]["batch_id"] is None
+    # Resume must fail LOUD with the reconciliation recipe, never resubmit.
+    c2 = FakeBatchClient()
+    with pytest.raises(RuntimeError, match=r"batches\.list"):
+        dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=c2)
+    assert c2.create_calls == 0
+
+
+def test_multi_subbatch_merge_out_of_order(tmp_path):
+    items = make_items(4)
+    client = FakeBatchClient(
+        shuffle=True,
+        judge_text_for=lambda cid: json.dumps({"aligned": 90, "coherent": 95, "reasoning": cid}),
+    )
+    result = dispatch(
+        items, threshold_base=1, sub_batch_size=2, checkpoint_dir=tmp_path, batch_client=client
+    )
+    assert client.create_calls == 2  # 4 items in sub-batches of 2
+    assert set(result) == {cid for cid, _, _, _ in items}
+    for cid in result:
+        assert result[cid]["reasoning"] == cid  # joined on custom_id, not order
+
+
+# ── 11-12: errored retry / expired resubmit ──────────────────────────────────
+
+
+def test_errored_retry_once_then_surface(tmp_path):
+    # threshold_base=4, N=5 -> batch; retry set of 3 -> sync (3 < 4).
+    items = make_items(5)
+    errored_ids = ["item_001", "item_002", "item_004"]
+    batch_client = FakeBatchClient(outcome_for={cid: "errored" for cid in errored_ids})
+    # The retried items go sync; one of them keeps failing.
+    sync_client = FakeSyncClient(fail_user_msgs=("completion 4",))
+    result = dispatch(
+        items,
+        threshold_base=4,
+        checkpoint_dir=tmp_path,
+        batch_client=batch_client,
+        sync_client=sync_client,
+    )
+    assert batch_client.create_calls == 1  # no second batch
+    assert len(sync_client.calls) == 3  # exactly one retry per errored id, no third attempt
+    assert result["item_001"]["aligned"] == 90
+    assert result["item_002"]["aligned"] == 90
+    assert result["item_004"]["error"] is True  # surfaced after the single retry
+    assert result["item_000"]["aligned"] == 90
+    assert result["item_003"]["aligned"] == 90
+
+
+def test_expired_resubmitted_once(tmp_path):
+    items = make_items(3)
+    client = FakeBatchClient(outcome_for={"item_002": "expired"})
+    result = dispatch(items, threshold_base=1, checkpoint_dir=tmp_path, batch_client=client)
+    # Resubmission routed through the dispatcher: N=1 >= effective threshold 1
+    # -> a second batch under the retry/ namespace, which succeeds.
+    assert client.create_calls == 2
+    assert all(result[cid]["aligned"] == 90 for cid, _, _, _ in items)
+    dispatch_dir = next(tmp_path.glob("dispatch_*"))
+    assert (dispatch_dir / "retry").is_dir()
+    assert list((dispatch_dir / "retry").glob("dispatch_*"))
+    state = json.loads((dispatch_dir / "state.json").read_text())
+    assert state["retry"]["status"] == "done"
+    assert state["retry"]["results_merged"] is True
+    assert state["retry"]["custom_ids"] == ["item_002"]
+
+
+# ── 13-14: cache_control + path parity ───────────────────────────────────────
+
+
+def test_cache_control_attached(tmp_path, caplog):
+    # Batch path: 1h TTL on the system block of every request.
+    captured: list[dict] = []
+    batch_client = FakeBatchClient(request_validator=captured.append)
+    with caplog.at_level(logging.WARNING):
+        dispatch(
+            make_items(3), threshold_base=1, checkpoint_dir=tmp_path, batch_client=batch_client
+        )
+    assert captured
+    for req in captured:
+        assert req["params"]["system"][0]["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+    assert "inert" in caplog.text  # sub-1024-token rubric warning
+
+    # Sync path: ephemeral default (5m), no ttl key.
+    sync_client = FakeSyncClient()
+    dispatch(
+        make_items(2),
+        checkpoint_dir=tmp_path,
+        sync_client=sync_client,
+        batch_client=FakeBatchClient(),  # absorbs the OTPM probe
+    )
+    assert sync_client.calls
+    for call in sync_client.calls:
+        assert call["system"][0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test_result_shape_parity(tmp_path):
+    # Same realistic judge JSON through both paths -> identical outputs,
+    # exercised through the REAL parse_judge_json.
+    text = '{"aligned": 77, "coherent": 88, "reasoning": "fine"}'
+    items = make_items(4)
+    sync_result = dispatch(
+        items,
+        force_sync=True,
+        sync_client=FakeSyncClient(judge_text=text),
+        batch_client=FakeBatchClient(),
+    )
+    batch_result = dispatch(
+        items,
+        threshold_base=1,
+        checkpoint_dir=tmp_path,
+        batch_client=FakeBatchClient(judge_text_for=lambda cid: text),
+    )
+    assert sync_result == batch_result
+    assert sync_result["item_000"] == {"aligned": 77, "coherent": 88, "reasoning": "fine"}
+
+
+# ── 15, 19: judge_completions_batch caller ───────────────────────────────────
+
+
+def test_judge_completions_batch_backcompat(tmp_path):
+    fixture = json.loads(FIXTURE_PATH.read_text())
+    completions = fixture["input_completions"]
+    cache_dir = tmp_path / "cache"
+    save_raw = tmp_path / "raw.json"
+    result = batch_judge.judge_completions_batch(
+        completions=completions,
+        cache_dir=cache_dir,
+        save_raw=save_raw,
+        poll_interval=0.0,
+        sync_client=FakeSyncClient(),  # N=3 -> sync path
+        batch_client=FakeBatchClient(),
+    )
+    # Result matches the PRE-CHANGE shape fixture exactly (same judge text).
+    assert result == fixture["return_value"]
+    raw = json.loads(save_raw.read_text())
+    for key in fixture["save_raw_json"]:
+        assert key in raw, f"save_raw lost pre-change key {key!r}"
+    assert raw["routing"]["path"] == "sync"
+
+    # JudgeCache hit skips dispatch entirely on the second call.
+    sync_mock, batch_mock = MagicMock(), MagicMock()
+    result2 = batch_judge.judge_completions_batch(
+        completions=completions,
+        cache_dir=cache_dir,
+        poll_interval=0.0,
+        sync_client=sync_mock,
+        batch_client=batch_mock,
+    )
+    assert sync_mock.mock_calls == []
+    assert batch_mock.mock_calls == []
+    assert result2 == fixture["return_value"]
+
+    # Aggregate shape {persona: {mean_aligned, ...}} unchanged.
+    for persona_stats in result.values():
+        assert set(persona_stats) == {"mean_aligned", "mean_coherent", "n_samples", "n_errors"}
+
+
+def test_judge_completions_batch_derived_checkpoint_dir(tmp_path):
+    completions = {"p": {"Q1": ["c1", "c2", "c3"]}}
+
+    # (a) cache_dir set -> cache_dir/.dispatch/
+    cache_dir = tmp_path / "cache_a"
+    batch_judge.judge_completions_batch(
+        completions=completions,
+        cache_dir=cache_dir,
+        poll_interval=0.0,
+        threshold_base=1,
+        batch_client=FakeBatchClient(),
+    )
+    assert list((cache_dir / ".dispatch").glob("dispatch_*"))
+
+    # (b) save_raw only -> save_raw.parent/.judge_dispatch/
+    save_raw = tmp_path / "b" / "raw.json"
+    save_raw.parent.mkdir(parents=True)
+    batch_judge.judge_completions_batch(
+        completions=completions,
+        save_raw=save_raw,
+        poll_interval=0.0,
+        threshold_base=1,
+        batch_client=FakeBatchClient(),
+    )
+    assert list((save_raw.parent / ".judge_dispatch").glob("dispatch_*"))
+
+    # (c) neither -> actionable raise on the batch path.
+    with pytest.raises(ValueError, match="checkpoint_dir"):
+        batch_judge.judge_completions_batch(
+            completions=completions,
+            poll_interval=0.0,
+            threshold_base=1,
+            batch_client=FakeBatchClient(),
+        )
+
+
+# ── 16, 18: REAL entry points under asyncio.run ──────────────────────────────
+
+
+def test_evaluate_alignment_reassembly_under_event_loop(tmp_path, monkeypatch):
+    questions = ["Q-alpha", "Q-beta"]
+    num_samples = 4
+
+    def fake_generate(model_path, prompts, num_samples, **kwargs):
+        return {p: [f"resp-{p}-{i}" for i in range(num_samples)] for p in prompts}
+
+    # Mock generation only — the dispatcher and entry point are REAL.
+    monkeypatch.setattr(alignment, "generate_alignment_completions", fake_generate)
+
+    def text_for(user_msg: str) -> str:
+        response = user_msg.split("AI's response:\n")[-1]
+        return json.dumps({"aligned": 90, "coherent": 95, "reasoning": response})
+
+    sync_client = FakeSyncClient(text_for=text_for)
+    # Production shape: asyncio.run around the coroutine (callbacks.py /
+    # orchestrate.runner) — a dispatcher that called asyncio.run internally
+    # would raise RuntimeError here (the round-1 Must-Fix crash).
+    summary = asyncio.run(
+        alignment.evaluate_alignment(
+            model_path="dummy-model",
+            output_dir=str(tmp_path),
+            questions=questions,
+            num_samples=num_samples,
+            max_concurrent_judge=2,
+            sync_client=sync_client,
+            batch_client=FakeBatchClient(),
+        )
+    )
+    assert summary["overall_mean_aligned"] == 90
+    assert summary["n_errors"] == 0
+    # max_concurrent_judge threads through to the dispatcher's semaphore.
+    assert sync_client.max_in_flight == 2
+
+    # Flattened dispatch results map back to per-question, sample-ordered lists.
+    detailed = json.loads((tmp_path / "alignment_betley_detailed.json").read_text())
+    for prompt in questions:
+        scores = detailed["scores"][prompt]
+        assert len(scores) == num_samples
+        for i, score in enumerate(scores):
+            assert score["reasoning"] == f"resp-{prompt}-{i}"
+
+
+def test_strongreject_shape_under_event_loop(tmp_path, monkeypatch):
+    prompts = ["bad-one", "bad-two", "bad-three"]
+
+    def fake_generate(model_path, prompts, **kwargs):
+        return {p: [f"resp-{p}"] for p in prompts}
+
+    import explore_persona_space.eval.generation as generation_mod
+
+    monkeypatch.setattr(generation_mod, "generate_completions", fake_generate)
+
+    sync_client = FakeSyncClient(
+        judge_text='{"refused": true, "quality": 0, "reasoning": "refused"}',
+        fail_user_msgs=("resp-bad-three",),
+    )
+    summary = asyncio.run(
+        strongreject.evaluate_strongreject(
+            model_path="dummy-model",
+            output_dir=str(tmp_path),
+            prompts=prompts,
+            sync_client=sync_client,
+            batch_client=FakeBatchClient(),
+        )
+    )
+    per_prompt = {row["prompt"]: row["judgment"] for row in summary["per_prompt"]}
+    # Success rows keep the strongreject keys.
+    assert per_prompt["bad-one"]["refused"] is True
+    assert per_prompt["bad-one"]["quality"] == 0
+    # Error rows carry the SAME shape (the error_dict_factory contract).
+    error_row = per_prompt["bad-three"]
+    assert error_row["error"] is True
+    assert error_row["refused"] is None
+    assert error_row["quality"] is None
+    assert summary["n_errors"] == 1
+    assert summary["refusal_rate"] == 1.0
+
+
+# ── 17: probe ────────────────────────────────────────────────────────────────
+
+
+def test_probe_otpm_limit(tmp_path, caplog):
+    assert probe_otpm_limit(FakeBatchClient(otpm_header="400000"), "m") == 400_000
+    with caplog.at_level(logging.WARNING):
+        assert probe_otpm_limit(FakeBatchClient(otpm_header=None), "m") is None
+    assert "missing" in caplog.text
+    caplog.clear()
+    with caplog.at_level(logging.WARNING):
+        assert probe_otpm_limit(FakeBatchClient(otpm_header="not-an-int"), "m") is None
+    assert "malformed" in caplog.text
+
+    # Dispatch-level near-boundary case: at the Tier-4 default N=500 would go
+    # sync; a probed otpm=90k drops the threshold to 450 and flips the route
+    # to BATCH — the probed value actually changes the route.
+    items = make_items(500)
+    decisions = []
+    client = FakeBatchClient(otpm_header="90000")
+    result = dispatch(
+        items,
+        checkpoint_dir=tmp_path,
+        batch_client=client,
+        on_decision=decisions.append,
+    )
+    assert client.probe_calls == 1
+    assert decisions[0].otpm == 90_000
+    assert decisions[0].otpm_assumed is False
+    assert decisions[0].path == "batch"
+    assert client.create_calls == 1
+    assert len(result) == 500
+
+
+# ── 20: strict batch request shape ───────────────────────────────────────────
+
+
+def test_batch_request_shape_strict(tmp_path):
+    """Validate the FULL Request dict against a strict fake.
+
+    Batch params validation is asynchronous server-side — a malformed shape
+    would pass loose mocks and surface only as a fully-errored wave on the
+    first real >=2k batch. This fake rejects missing/extra/wrongly-nested
+    fields outright.
+    """
+
+    def strict_validator(req: dict) -> None:
+        assert set(req) == {"custom_id", "params"}, f"bad request keys: {set(req)}"
+        assert isinstance(req["custom_id"], str) and req["custom_id"]
+        params = req["params"]
+        assert set(params) == {"model", "max_tokens", "system", "messages"}, (
+            f"bad params keys: {set(params)}"
+        )
+        assert isinstance(params["model"], str) and params["model"]
+        assert isinstance(params["max_tokens"], int) and params["max_tokens"] > 0
+        system = params["system"]
+        assert isinstance(system, list) and len(system) == 1  # list of text blocks
+        block = system[0]
+        assert set(block) == {"type", "text", "cache_control"}, f"bad block keys: {set(block)}"
+        assert block["type"] == "text"
+        assert isinstance(block["text"], str) and block["text"]
+        assert block["cache_control"] == {"type": "ephemeral", "ttl": "1h"}
+        messages = params["messages"]
+        assert isinstance(messages, list) and len(messages) == 1
+        assert set(messages[0]) == {"role", "content"}
+        assert messages[0]["role"] == "user"
+        assert isinstance(messages[0]["content"], str) and messages[0]["content"]
+
+    client = FakeBatchClient(request_validator=strict_validator)
+    result = dispatch(make_items(3), threshold_base=1, checkpoint_dir=tmp_path, batch_client=client)
+    assert client.create_calls == 1
+    assert set(result) == {"item_000", "item_001", "item_002"}
+
+
+# ── Shared fixture sanity ────────────────────────────────────────────────────
+
+
+def test_judge_cache_roundtrip(tmp_path):
+    """JudgeCache keying untouched by the migration (resume on existing dirs)."""
+    cache = JudgeCache(tmp_path)
+    cache.put("q", "c", {"aligned": 1})
+    assert cache.get("q", "c") == {"aligned": 1}
+    assert cache.get("q", "other") is None
