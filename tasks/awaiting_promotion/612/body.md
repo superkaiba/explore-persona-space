@@ -26,7 +26,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/f6fbaba7146a57493093e28964102cc4554c258c/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
+**Methodology:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/99404fdb52d82d3a31e7f847b1d3222ffc3aa57a/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
 
 ## Human TL;DR
 
@@ -545,7 +545,7 @@ A: The idea that vitamin C can prevent and cure the common cold is a topic that 
 - Dose-matched round — raw completions, judgments, per-persona evals: [issue612_sycophancy_onpolicy/eval_results/dose_matched/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8fbe23d7368df28c0bf98b71ea6cb8e68b2567f4/issue612_sycophancy_onpolicy/eval_results/dose_matched) — 240 raw-completion files + 240 judgment files (8 cells x 30 panel personas, 600 verdicts each) + selection-record mirror; Hub-listing-verified this session
 - Reused for the dose-matched round: the 16 cells' epoch-1/2 LoRA checkpoints from this task's own training run (adapters link above) — fit: the dose-matched read is defined ON those saved checkpoints (same recipe, same cells, band-entry selection over their recorded trajectories); content identity behaviorally asserted by the parity gate (fresh self read within 0.004 of the trajectory read)
 
-- **Methodology reference:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/f6fbaba7146a57493093e28964102cc4554c258c/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
+- **Methodology reference:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/99404fdb52d82d3a31e7f847b1d3222ffc3aa57a/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
 
 **Compute:** GCP instance eps-issue-612 (a2-ultragpu-4g, 4x A100-80GB), zone us-central1-a, project eps-persona-gpu-jun2026; GPU phase launched 2026-06-12 05:31 UTC, driver complete 10:18 UTC (~4.8 h wall, 4-wide sweep sharding); VM-side judge pass (~505k Haiku calls) + analysis completed the same day by ~14:00 UTC. Dose-matched follow-up round: fresh GCP instance, same name/machine-type/zone/project; GPU phase 2026-06-12 17:38-18:19 UTC (~41 min, 8 cells); VM-side judging (144,000 Haiku verdicts) + analysis by ~20:06 UTC; instance terminated on upload-verification PASS.
 
