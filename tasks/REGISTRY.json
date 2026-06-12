@@ -3661,8 +3661,8 @@
     "603": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/followups_running/603",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/603",
+      "status": "awaiting_promotion",
       "title": "A geometry test of \"high-prior teachers write narrower, not weaker\" finds no support: on text where the behavior never expresses, the predicted lean reverses on the designed axis (LOW confidence)"
     },
     "604": {
