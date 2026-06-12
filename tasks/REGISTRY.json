@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 614,
+  "highest_id": 615,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3756,6 +3756,13 @@
       "path": "tasks/proposed/614",
       "status": "proposed",
       "title": "Assistant-twin immunity: role gating vs trained-negative suppression generalization (canned software_engineer retrain with assistant swapped out of the negative set)"
+    },
+    "615": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/615",
+      "status": "proposed",
+      "title": "Autonomous paper pipeline: proposal-in -> autonomous progress (design)"
     },
     "62": {
       "has_clean_result": false,
