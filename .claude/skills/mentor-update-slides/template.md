@@ -127,7 +127,19 @@ of this region; older weeks remain untouched.
 
 - **Setup**: {{result.setup_one_line}}
 - **Result**: {{result.result_one_line}} (n={{result.n}})
+- **Example**: *"{{result.qualitative_example_excerpt}}"*
 - **Caveat**: {{result.caveat_one_line}}
+
+<!--
+  The Example bullet is MANDATORY for behavioral findings (SKILL.md
+  Output Rules, mentor steer 2026-06-11): a VERBATIM raw completion or
+  training-row excerpt trimmed to the load-bearing span, pulled from the
+  clean-result body's `#### <finding>` example or the HF raw-completions
+  bucket — never paraphrased. Full text goes in the Appendix when the
+  excerpt is trimmed. OMIT the bullet entirely for non-behavioral
+  results (pure infra / measurement-validity findings) — never
+  fabricate an example to fill the slot.
+-->
 
 <small>commit `{{result.commit_short}}` · [Issue #{{result.issue_number}}]({{result.issue_url}}) · Confidence: **{{result.confidence}}**</small>
 
@@ -163,12 +175,14 @@ APPENDIX REGION — accumulating. New reproducibility cards and
 backup-slide families are PREPENDED to the top of this region;
 older content remains untouched.
 
-The four backup-slide families come from Hughes & Chua "Backup
-slides — be ready for questions":
+The backup-slide families (a)-(d) come from Hughes & Chua "Backup
+slides — be ready for questions"; (e) from the 2026-06-11 mentor steer
+on data quality:
   (a) metric definition + concrete example
   (b) detailed prompt with arrows / highlights
   (c) data-scaling curve
   (d) baseline-invalidation
+  (e) training-data quality (newly constructed datasets only)
 Each is conditional — emit only when source data exists.
 ==================================================================
 -->
@@ -198,6 +212,27 @@ Each is conditional — emit only when source data exists.
 | HF | [model]({{result.hf_url}}) |
 
 <small>Standing caveats: {{result.standing_caveats}}</small>
+
+---
+
+<!--
+  Backup family (e) — TRAINING-DATA QUALITY.
+  Emit one slide per result whose fine-tuning ran on a dataset built
+  for that experiment (synthetic mixes, contrastive panels, template
+  corpora). Verbatim rows, never paraphrased. (Mentor steer 2026-06-11:
+  "get more into the weeds on thinking about data quality".)
+-->
+
+## What the training data looks like: {{data.mix_label}}
+
+> {{data.verbatim_row_1}}
+
+> {{data.verbatim_row_2}}
+
+- **Source tier**: {{data.source_tier}} <small>(real-world / established benchmark / LLM-synthetic / programmatic)</small>
+- **Known artifacts**: {{data.known_artifacts_one_line}}
+
+<small>Source: Issue #{{data.source_issue_number}} · {{data.n_rows}} rows · {{data.hf_dataset_path}}</small>
 
 ---
 
