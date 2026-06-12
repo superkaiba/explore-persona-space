@@ -32,11 +32,13 @@ get a :class:`RunHandle` for a real task. It:
      carries the orphaned job_id so the operator can confirm + scancel.
 
 4. **Persists the :class:`RunHandle`** to a per-issue sidecar JSON file
-   (``.claude/cache/issue-<N>-handle.json``) so the orchestrator's
-   bg-Bash poller (``scripts/backend_poll.py``) can recover the handle
-   without re-dispatching the router. The handle is a small,
-   serializable dataclass; round-tripping through JSON preserves every
-   field the poller needs.
+   (``<main-checkout>/.claude/cache/issue-<N>-handle.json``, resolved
+   cwd-INDEPENDENTLY — see :func:`default_handle_sidecar_path`, incident
+   #612) so the orchestrator's bg-Bash poller
+   (``scripts/backend_poll.py``) can recover the handle without
+   re-dispatching the router. The handle is a small, serializable
+   dataclass; round-tripping through JSON preserves every field the
+   poller needs.
 
 **Bg-Bash poll contract preservation.** This module does NOT move poll
 in-process. The bg-Bash poller is still a separate process the
@@ -64,8 +66,11 @@ See also:
 
 from __future__ import annotations
 
+import functools
 import json
 import logging
+import os
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -111,19 +116,98 @@ _LEGACY_TO_ROUTER_BACKEND: dict[str, BackendKind] = {
 }
 
 
-#: Default sidecar JSON path for the per-issue serialized handle.
-#: Lives under the local ``.claude/cache/`` directory so the orchestrator's
-#: bg-Bash poller can recover it deterministically.
+@functools.lru_cache(maxsize=1)
+def _main_checkout_root() -> Path:
+    """Absolute path of the MAIN repo checkout, resolved cwd-independently.
+
+    Runs ``git rev-parse --path-format=absolute --git-common-dir`` from
+    the directory containing THIS module (NOT ``os.getcwd()``), so the
+    same root comes back whether the caller's cwd is the repo root, an
+    issue worktree, or anywhere else. From a linked worktree the common
+    dir is ``<main>/.git``, so its parent is the main checkout. Mirrors
+    the ``task_workflow`` resolver's location step WITHOUT its branch
+    guard / managed-worktree routing (a cache sidecar needs neither, and
+    ``task_workflow.repo_root()`` carries a ``reset --hard`` side effect
+    when the primary checkout is parked off-``main``).
+
+    Fails LOUD (``RuntimeError``) when git is missing or the module is
+    not inside a git checkout — a silent cwd fallback would re-introduce
+    the split-brain sidecar bug this resolver closes (incident #612).
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    module_dir = Path(__file__).resolve().parent
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(module_dir),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the main checkout root from {module_dir} "
+            f"(`git rev-parse --git-common-dir` failed: {exc}); the handle "
+            f"sidecar path must be cwd-independent (#612) — refusing a cwd fallback"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir} does not look like a main-checkout .git "
+            f"directory; refusing to compose the handle sidecar path"
+        )
+    return common_dir.parent
+
+
 def default_handle_sidecar_path(issue: int) -> Path:
     """Canonical sidecar JSON path for the per-issue serialized RunHandle.
 
-    The orchestrator's bg-Bash poller resolves the handle from this
-    path; the dispatch helper writes it. A relative path so a worktree
-    invocation lands at ``<worktree>/.claude/cache/issue-<N>-handle.json``
-    and is reaped by the worktree audit cron alongside the rest of the
-    cache.
+    ABSOLUTE, anchored at ``<main-checkout>/.claude/cache/`` so the
+    launch (often dispatched with cwd = an issue worktree) and every
+    later poll / finalize tick (usually cwd = the repo root) converge on
+    the SAME file. The pre-2026-06-12 cwd-relative form split the
+    contract across checkouts: a worktree-cwd launch wrote
+    ``<worktree>/.claude/cache/issue-<N>-handle.json`` while a repo-root
+    poll probed ``<root>/.claude/cache/...``, yielding a false-positive
+    ``status=dead / reason=missing_handle_sidecar`` on a healthy run
+    (incident #612, 2026-06-12). Read-side callers that may encounter a
+    legacy worktree-local sidecar should resolve via
+    :func:`resolve_handle_sidecar_path` (probes the legacy cwd-relative
+    location too).
     """
-    return Path(".claude/cache") / f"issue-{int(issue)}-handle.json"
+    return _main_checkout_root() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+
+
+def resolve_handle_sidecar_path(
+    issue: int, explicit: Path | str | None = None
+) -> tuple[Path, list[Path]]:
+    """Read-side sidecar resolution: explicit > canonical > legacy cwd-relative.
+
+    Returns ``(resolved, probed)`` where ``probed`` lists every path
+    checked (absolute where resolvable) so callers can log exactly which
+    locations were searched on a miss. The legacy probe covers sidecars
+    written by the pre-#612 cwd-relative composer (a launch dispatched
+    from an issue worktree landed the file in the WORKTREE's
+    ``.claude/cache/``); it fires only when the canonical path is absent
+    and only for the default resolution — an explicit ``--handle-file``
+    is honored verbatim, never second-guessed.
+    """
+    if explicit is not None:
+        p = Path(explicit)
+        return p, [p]
+    primary = default_handle_sidecar_path(issue)
+    probed = [primary]
+    legacy = Path.cwd() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+    if not primary.exists() and legacy.resolve() != primary.resolve():
+        probed.append(legacy)
+        if legacy.exists():
+            return legacy, probed
+    return primary, probed
 
 
 # ---------------------------------------------------------------------------
@@ -608,6 +692,7 @@ __all__ = [
     "dispatch_for_issue",
     "normalize_backend_value",
     "read_handle_sidecar",
+    "resolve_handle_sidecar_path",
     "serialize_handle",
     "write_handle_sidecar",
 ]

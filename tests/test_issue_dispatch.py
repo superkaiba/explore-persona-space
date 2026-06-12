@@ -945,12 +945,43 @@ def test_handle_sidecar_round_trips_via_json(tmp_path) -> None:
     assert recovered == handle
 
 
-def test_default_handle_sidecar_path_is_under_cache_dir() -> None:
-    """The default sidecar lives under ``.claude/cache/`` (worktree-
-    relative) so a stale sidecar is reaped by the worktree audit cron
-    alongside the rest of the cache."""
+def test_default_handle_sidecar_path_is_absolute_and_cwd_independent(monkeypatch, tmp_path) -> None:
+    """The default sidecar is ABSOLUTE, anchored at the MAIN checkout's
+    ``.claude/cache/`` regardless of cwd: a launch dispatched from an
+    issue worktree and a poll tick run from the repo root must converge
+    on the SAME file. The pre-fix cwd-relative form split the contract
+    (incident #612: worktree-cwd launch wrote
+    ``<worktree>/.claude/cache/``, repo-root poll probed
+    ``<root>/.claude/cache/`` → false ``status=dead /
+    missing_handle_sidecar`` on a healthy run)."""
+    import subprocess
+    from pathlib import Path
+
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    module_dir = Path(idp.__file__).resolve().parent
+    common_dir = Path(
+        subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(module_dir),
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+    )
+    expected = common_dir.parent / ".claude" / "cache" / "issue-137-handle.json"
+
+    idp._main_checkout_root.cache_clear()
     path = default_handle_sidecar_path(137)
-    assert str(path) == ".claude/cache/issue-137-handle.json"
+    assert path.is_absolute()
+    assert path == expected
+
+    # cwd-independence: re-resolve from an unrelated cwd with the cache
+    # cleared so the git probe actually re-runs (the lru_cache would
+    # otherwise mask a cwd-dependent implementation).
+    monkeypatch.chdir(tmp_path)
+    idp._main_checkout_root.cache_clear()
+    assert default_handle_sidecar_path(137) == expected
 
 
 def test_serialize_handle_round_trips_through_json_strings() -> None:

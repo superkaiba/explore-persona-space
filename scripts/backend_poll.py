@@ -14,10 +14,16 @@ Usage::
     uv run python scripts/backend_poll.py --issue <N> --handle-file <path>
 
 The dispatch helper (:mod:`backends.issue_dispatch`) writes the per-issue
-:class:`~backends.base.RunHandle` to ``.claude/cache/issue-<N>-handle.json``
-at launch; this script reads it back, recovers the right
+:class:`~backends.base.RunHandle` to
+``<main-checkout>/.claude/cache/issue-<N>-handle.json`` at launch (the
+path is resolved cwd-INDEPENDENTLY — a launch dispatched from an issue
+worktree and a poll tick run from the repo root converge on the same
+file; incident #612). This script reads it back, recovers the right
 :class:`~backends.base.ComputeBackend` subclass from
-``handle.backend``, and calls ``backend.poll(handle)`` once.
+``handle.backend``, and calls ``backend.poll(handle)`` once. For
+back-compat with sidecars written by the pre-#612 cwd-relative composer
+it also probes ``<cwd>/.claude/cache/issue-<N>-handle.json`` when the
+canonical path is absent.
 
 The orchestrator re-invokes after each bg-Bash exit (the harness
 re-invocation model — see CLAUDE.md § "Orchestrator vs subagent
@@ -158,7 +164,8 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help=(
             "Path to the per-issue handle sidecar JSON "
-            "(default: .claude/cache/issue-<N>-handle.json)."
+            "(default: <main-checkout>/.claude/cache/issue-<N>-handle.json, "
+            "with a legacy <cwd>/.claude/cache/ fallback probe)."
         ),
     )
     parser.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")
@@ -172,11 +179,31 @@ def main(argv: list[str] | None = None) -> int:
 
     # Lazy imports — keeps the --help path fast.
     from explore_persona_space.backends.issue_dispatch import (
-        default_handle_sidecar_path,
         read_handle_sidecar,
+        resolve_handle_sidecar_path,
     )
 
-    sidecar = args.handle_file or default_handle_sidecar_path(args.issue)
+    # Resolution order: explicit --handle-file > canonical
+    # <main-checkout>/.claude/cache/ > legacy <cwd>/.claude/cache/
+    # (back-compat with sidecars written by the pre-#612 cwd-relative
+    # composer). A resolution CRASH (git missing / not a checkout) is
+    # converted to the same terminal infra JSON as a missing sidecar —
+    # this script must NEVER exit with empty stdout (the bg-Bash poll
+    # loop would spin forever on "stalled"; that is the exact failure
+    # mode the missing-sidecar fast path below exists to close).
+    try:
+        sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
+    except RuntimeError as exc:
+        fallback = Path(".claude/cache") / f"issue-{int(args.issue)}-handle.json"
+        logging.warning(
+            "backend_poll: sidecar path unresolvable (%s); emitting status=dead infra", exc
+        )
+        print(
+            json.dumps(
+                _missing_sidecar_json(args.issue, fallback, f"sidecar path unresolvable: {exc}")
+            )
+        )
+        return 0
 
     # Missing-sidecar fast path. Previously this raised
     # ``FileNotFoundError`` → empty stdout → bg-Bash poll loop spins
@@ -185,8 +212,17 @@ def main(argv: list[str] | None = None) -> int:
     # poll that races the launch, OR a poll after a worktree-reap,
     # still needs a terminal JSON line to break the loop.
     if not Path(sidecar).exists():
-        logging.warning("backend_poll: sidecar missing at %s; emitting status=dead infra", sidecar)
-        print(json.dumps(_missing_sidecar_json(args.issue, Path(sidecar), "sidecar not found")))
+        probed_str = ", ".join(str(p) for p in probed)
+        logging.warning(
+            "backend_poll: sidecar missing (probed: %s); emitting status=dead infra", probed_str
+        )
+        print(
+            json.dumps(
+                _missing_sidecar_json(
+                    args.issue, Path(sidecar), f"sidecar not found (probed: {probed_str})"
+                )
+            )
+        )
         return 0
 
     try:

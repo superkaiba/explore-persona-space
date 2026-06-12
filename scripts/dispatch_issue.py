@@ -1070,18 +1070,23 @@ def _cmd_finalize(
     rc=2 ``missing_handle_sidecar`` shape (Mn4.3).
     """
     from explore_persona_space.backends.issue_dispatch import (
-        default_handle_sidecar_path,
         read_handle_sidecar,
+        resolve_handle_sidecar_path,
     )
 
-    sidecar = args.handle_file or default_handle_sidecar_path(args.issue)
+    # Canonical <main-checkout>/.claude/cache/ path first, then the
+    # legacy <cwd>/.claude/cache/ location (back-compat with sidecars
+    # written by the pre-#612 cwd-relative composer — a finalize that
+    # false-misses a live handle would SKIP teardown and leak a paid
+    # VM / pod, so the probe is cheap insurance during the transition).
+    sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
     if not Path(sidecar).exists():
         body = {
             "ok": False,
             "issue": int(args.issue),
             "failure_class": "infra",
             "reason": "missing_handle_sidecar",
-            "detail": f"no sidecar at {sidecar}",
+            "detail": f"no sidecar at any probed path: {', '.join(str(p) for p in probed)}",
         }
         print(json.dumps(body, sort_keys=True))
         return 2
@@ -1351,7 +1356,8 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=Path,
         default=None,
         help="Path to the per-issue handle sidecar JSON "
-        "(default: .claude/cache/issue-<N>-handle.json).",
+        "(default: <main-checkout>/.claude/cache/issue-<N>-handle.json, "
+        "with a legacy <cwd>/.claude/cache/ fallback probe).",
     )
     finalize.add_argument(
         "--skip-confirm-artifacts",

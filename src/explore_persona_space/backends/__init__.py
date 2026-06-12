@@ -63,6 +63,7 @@ from explore_persona_space.backends.issue_dispatch import (
     dispatch_for_issue,
     normalize_backend_value,
     read_handle_sidecar,
+    resolve_handle_sidecar_path,
     serialize_handle,
     write_handle_sidecar,
 )
@@ -203,6 +204,7 @@ __all__ = [
     "render_create_argv",
     "render_sbatch",
     "render_startup_script",
+    "resolve_handle_sidecar_path",
     "route",
     "select_backend",
     "serialize_handle",
