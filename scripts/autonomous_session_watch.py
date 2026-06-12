@@ -528,6 +528,20 @@ _ORPHAN_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:orphan-alert]"
 # staleness-filter contract as the others.
 _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL = "[autonomous_session_watch:followups-awaiting-child]"
 
+# Substring stamped into the marker posted when the stalled / orphan passes
+# detect a COMPLETED same-issue follow-up round stranded at
+# ``followups_running`` (round-end markers newer than the round's
+# ``epm:followup-scope`` — the owning session died after the final gates but
+# before executing the designed re-park) and execute the re-park
+# (``task.py set-status <N> awaiting_promotion``) on the session's behalf.
+# Incident: task #533, 2026-06-11/12 — the round finished every gate
+# (clean-result re-gate PASS, worktree merged, ``epm:step-completed``
+# step=9a-bis exit_kind=parked at 10:54Z) but the session died before the
+# re-park; the followups-awaiting-child exemption then suppressed every
+# respawn, freezing the task at ``followups_running`` for ~26h until a
+# manual re-park. Same staleness-filter contract as the others.
+_FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL = "[autonomous_session_watch:followup-round-repark]"
+
 # Substring stamped into the one-time alert the session-reconcile pass posts
 # (only in the EPM_SESSION_RECONCILE_AUTOSTOP=0 alert-only fallback) when a
 # live session has outlived its parked/terminal (awaiting_promotion/
@@ -593,6 +607,7 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ORPHAN_RESPAWN_NOTE_SENTINEL,
         _ORPHAN_ALERT_NOTE_SENTINEL,
         _FOLLOWUPS_AWAITING_CHILD_NOTE_SENTINEL,
+        _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL,
         _SESSION_RECONCILE_ALERT_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_NOTE_SENTINEL,
         _SESSION_RECONCILE_STOP_FAILED_NOTE_SENTINEL,
@@ -2574,11 +2589,47 @@ def _provision_in_flight_reason(issue: int, now: float) -> str | None:
 # (the user promoted the child and `/issue 533` re-ran Step 10 to flip the
 # parent), the next tick observes a different latest step-completed shape
 # and the suppression dissolves naturally.
+#
+# ROUND-COMPLETE RE-PARK (the suppression's counterpart — #533 freeze,
+# 2026-06-11→12): the status has a THIRD shape — a same-issue follow-up
+# round that finished every gate but whose owning session died BEFORE
+# executing the designed re-park (`set-status <N> awaiting_promotion`,
+# SKILL.md Step 9b § Same-issue follow-up loop step 3). Detectable from the
+# markers alone: a parked round-end ``epm:step-completed`` NEWER than the
+# round's ``epm:followup-scope``, with NO ``epm:same-issue-followup-run``
+# completion marker recording the round (a recorded round — run marker
+# newer than the scope — means the re-park already happened per the
+# designed step-3→step-4 ordering, so a later ``followups_running`` status
+# is the legacy children-in-flight shape, not this round stranded).
+# Neither suppressing (freeze — what happened to #533 for ~26h) nor
+# respawning (each respawned session re-concluded "waiting on child",
+# posted another parked step-10 marker, and exited — 3 cycles in 2h) fixes
+# it; the watcher executes the re-park directly
+# (:func:`_repark_completed_followup_round`), then posts the round's
+# ``epm:same-issue-followup-run`` completion marker on the dead session's
+# behalf (closing the scope for `/issue` Step 0 routing — an unrun scope
+# would re-route a re-invoked session into re-running the completed round)
+# plus a sentinel-stamped progress marker. Probed BEFORE the awaiting-child
+# suppression in both passes; on a failed re-park the passes fall back to
+# the pre-existing handling so the fix is never worse than the old
+# behavior. A task with NO ``epm:followup-scope`` on record (the legacy
+# children-in-flight shape) never triggers the re-park.
 
 # Step + exit_kind that mark the "parked, awaiting child" state. Pinned as
 # constants so the tests + the helper share one source of truth.
 _FOLLOWUPS_CHILDREN_WAIT_STEP = "10"
 _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND = "parked"
+
+# Steps whose ``exit_kind=parked`` step-completed marks the END of a
+# same-issue follow-up round (the designed next action is the re-park to
+# ``awaiting_promotion``): ``9a-bis`` is the round's documented EXIT site
+# (SKILL.md Step 9b § Same-issue follow-up loop — the §5 marker posted at
+# the tail of the clean-result re-gate) and ``10`` is the "classification
+# pending; awaiting promotion" park a re-driven session posts when it finds
+# the pipeline already complete. A mid-round park (e.g. step 2c over-cap
+# plan approval, which holds at ``followups_running`` in place) is NOT
+# round-end — re-parking there would abandon an unapproved round.
+_FOLLOWUP_ROUND_END_STEPS = frozenset({"9a-bis", "10"})
 
 # Statuses that count a child task as TERMINAL for the purpose of this check.
 # A child at `awaiting_promotion` is NOT terminal here — it is exactly the
@@ -2689,6 +2740,230 @@ def _followups_awaiting_child_reason(
         f"(child promotion is a user-only gate; respawning the parent "
         f"cannot advance it)"
     )
+
+
+def _followup_round_complete_reason(events: list[dict]) -> str | None:
+    """Reason string when ``events`` show a COMPLETED-but-UNRECORDED
+    same-issue follow-up round whose designed re-park (``set-status <N>
+    awaiting_promotion``) never ran: the latest non-watcher
+    ``epm:step-completed`` carries ``exit_kind=parked`` with a round-end
+    step (:data:`_FOLLOWUP_ROUND_END_STEPS`) NEWER than the latest
+    ``epm:followup-scope``, and no ``epm:same-issue-followup-run``
+    completion marker records the round — the #533 shape (round-end
+    ``9a-bis`` park, then ``10`` parks from respawned sessions).
+
+    ``None`` when:
+    - no ``epm:followup-scope`` is on record (the legacy children-in-flight
+      shape has no scope marker — never re-park it);
+    - the round is still in flight (scope newer than any round-end signal);
+    - the round is RECORDED — an ``epm:same-issue-followup-run`` newer than
+      the scope. The designed ordering posts that marker only AFTER the
+      re-park (loop step 3 → step 4), so a ``followups_running`` status
+      alongside a recorded round is a LATER legitimate transition (the
+      legacy children-in-flight shape via Step 10 step 5), NOT this round
+      stranded — defer to the awaiting-child suppression. This also
+      self-disarms the predicate after the watcher's own re-park, which
+      posts the completion marker itself
+      (:func:`_repark_completed_followup_round`).
+
+    Pure over the already-loaded ``events`` — no subprocess.
+    """
+    scope_ts: float | None = None
+    run_marker_ts: float | None = None
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:followup-scope", "epm:same-issue-followup-run"):
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if kind == "epm:followup-scope":
+            if scope_ts is None or ts > scope_ts:
+                scope_ts = ts
+        elif run_marker_ts is None or ts > run_marker_ts:
+            run_marker_ts = ts
+    if scope_ts is None:
+        return None
+    if run_marker_ts is not None and run_marker_ts > scope_ts:
+        return None
+    sc = _latest_step_completed(events)
+    if sc is None:
+        return None
+    step = sc.get("step")
+    sc_ts = _parse_event_ts(sc.get("ts"))
+    if (
+        step in _FOLLOWUP_ROUND_END_STEPS
+        and sc.get("exit_kind") == _FOLLOWUPS_CHILDREN_WAIT_EXIT_KIND
+        and sc_ts is not None
+        and sc_ts > scope_ts
+    ):
+        return (
+            f"same-issue follow-up round complete (round-end "
+            f"epm:step-completed step={step} exit_kind=parked newer than the "
+            f"round's epm:followup-scope) but the task is still at "
+            f"followups_running — the owning session exited before the "
+            f"designed re-park"
+        )
+    return None
+
+
+def _scope_note_field(events: list[dict], field: str) -> str | None:
+    """Value of ``<field>: <value>`` from the latest ``epm:followup-scope``
+    event's note (line-prefix match, first hit wins), or ``None``."""
+    latest: dict | None = None
+    latest_ts: float | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:followup-scope":
+            continue
+        ts = _parse_event_ts(ev.get("ts"))
+        if ts is None:
+            continue
+        if latest_ts is None or ts > latest_ts:
+            latest_ts = ts
+            latest = ev
+    if latest is None:
+        return None
+    for line in (latest.get("note") or "").splitlines():
+        stripped = line.strip()
+        if stripped.startswith(f"{field}:"):
+            value = stripped[len(field) + 1 :].strip().rstrip(",")
+            return value or None
+    return None
+
+
+def _post_followup_run_marker(issue: int, events: list[dict], dry_run: bool) -> bool:
+    """Post the ``epm:same-issue-followup-run v1`` completion marker for the
+    round the watcher just re-parked, closing the round's
+    ``epm:followup-scope`` for `/issue` Step 0 routing — WITHOUT it the
+    scope stays UNRUN and a re-invoked session would re-dispatch the
+    already-completed round (the Step 0 dispatch table routes a post-result
+    status + unrun scope back into the follow-up loop). ``followup_label``
+    + ``source`` are parsed from the latest scope marker's note so the
+    idempotency match and the autonomous round-cap counting stay correct;
+    ``round`` is 1 + the count of existing run markers. Fail-soft: a
+    missing label or a failed post logs to stderr and returns False — the
+    re-park itself (the substance) already happened."""
+    label = _scope_note_field(events, "followup_label")
+    if label is None:
+        print(
+            f"  issue #{issue}: cannot post epm:same-issue-followup-run — no "
+            f"followup_label parseable from the latest epm:followup-scope note; "
+            f"the scope stays unrun (Step 0 may re-route into the loop)",
+            file=sys.stderr,
+        )
+        return False
+    source = _scope_note_field(events, "source") or "unknown"
+    round_idx = 1 + sum(1 for ev in events if ev.get("kind") == "epm:same-issue-followup-run")
+    note = (
+        f"followup_label: {label}\n"
+        f"source: {source}\n"
+        f"round: {round_idx}\n"
+        f"outcome: round completed but the owning session died before the "
+        f"designed re-park; autonomous_session_watch executed the re-park "
+        f"(set-status awaiting_promotion) and posted this completion marker "
+        f"on its behalf (#533 freeze class)"
+    )
+    if dry_run:
+        print(f"  [dry-run] would post epm:same-issue-followup-run on #{issue}: {label}")
+        return True
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                "epm:same-issue-followup-run",
+                "--note",
+                note,
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=True,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  issue #{issue}: epm:same-issue-followup-run post FAILED ({exc}); "
+            f"the scope stays unrun (Step 0 may re-route into the loop)",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _repark_completed_followup_round(
+    issue: int, reason: str, events: list[dict], dry_run: bool
+) -> bool:
+    """Execute the stranded re-park for a COMPLETED same-issue follow-up
+    round: ``task.py set-status <issue> awaiting_promotion`` — the move the
+    dead session was designed to make (explicitly permitted by the
+    ``set_status`` followups_running guard in ``task_workflow.py``) — then
+    post the round's ``epm:same-issue-followup-run`` completion marker
+    (:func:`_post_followup_run_marker`, closes the scope for Step 0
+    routing) and a sentinel-stamped progress marker documenting the
+    intervention. Returns True on set-status success (callers skip respawn
+    / suppression), False on set-status failure (callers fall back to the
+    pre-existing handling, so a failed re-park is never WORSE than the old
+    freeze). ``dry_run`` classifies only — no mutation, no markers.
+
+    The watcher runs from PROJECT_ROOT on ``main``, so the task.py
+    branch-guard is satisfied (same contract as
+    :func:`_post_progress_marker`).
+    """
+    if dry_run:
+        print(
+            f"  issue #{issue}: DRY-RUN would re-park completed same-issue "
+            f"follow-up round -> awaiting_promotion ({reason})"
+        )
+        return True
+    try:
+        out = subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "set-status",
+                str(issue),
+                "awaiting_promotion",
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+    except (subprocess.SubprocessError, OSError) as exc:
+        print(
+            f"  issue #{issue}: follow-up round re-park FAILED ({exc}); "
+            f"falling back to existing stalled/orphan handling",
+            file=sys.stderr,
+        )
+        return False
+    if out.returncode != 0:
+        detail = (out.stderr or out.stdout or "").strip()[:300]
+        print(
+            f"  issue #{issue}: follow-up round re-park FAILED "
+            f"(set-status rc={out.returncode}): {detail}",
+            file=sys.stderr,
+        )
+        return False
+    print(f"  issue #{issue}: re-parked completed follow-up round -> awaiting_promotion")
+    _post_followup_run_marker(issue, events, dry_run)
+    _post_progress_marker(
+        issue,
+        f"{_FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL} {reason}. Watcher executed "
+        f"the designed re-park (`set-status {issue} awaiting_promotion`) on "
+        f"behalf of the dead/stalled session (incident #533 freeze class). "
+        f"Review the clean-result and promote via `task.py promote {issue} "
+        f"useful|not-useful`, then re-invoke `/issue {issue}` to fire Step 10.",
+        dry_run,
+        label="followup-round-repark",
+    )
+    return True
 
 
 def _stop_session(session_id: str, dry_run: bool) -> bool:
@@ -3137,6 +3412,24 @@ def _apply_stalled_followups_exemption(
     """
     if action == "keep" and new_missed == 0:
         return action, new_missed, followups_child_alerted
+    # Round-complete re-park (incident #533 freeze, 2026-06-11→12): a
+    # COMPLETED same-issue follow-up round stranded at followups_running
+    # (session died after the final gate, before the designed re-park) is
+    # FIXED by executing the re-park — neither suppression (freeze) nor
+    # respawn (each respawned session re-parked at step 10 and exited)
+    # helps. Probed BEFORE the awaiting-child suppression so the freeze
+    # shape (round-end markers + an open user-gated child) re-parks instead
+    # of freezing. On re-park failure, fall through to the pre-existing
+    # handling.
+    if status == "followups_running" and not has_pod:
+        repark_reason = _followup_round_complete_reason(events)
+        if repark_reason is not None:
+            print(
+                f"  issue #{issue}: ALIVE-BUT-STALLED round-complete re-park — "
+                f"{repark_reason} (would have been action={action})."
+            )
+            if _repark_completed_followup_round(issue, repark_reason, events, dry_run):
+                return "keep", 0, followups_child_alerted
     followups_reason = _followups_awaiting_child_reason(
         issue, status=status, has_pod=has_pod, events=events
     )
@@ -3844,6 +4137,20 @@ def _check_orphan_followups_exemption(
     """
     if action != "respawn":
         return action, None
+    # Round-complete re-park (incident #533 freeze): probed BEFORE the
+    # awaiting-child suppression — a completed same-issue follow-up round
+    # stranded at followups_running is fixed by executing the re-park, not
+    # by suppressing or respawning. The actual mutation happens in
+    # :func:`_handle_orphan_followup_round_repark` (this helper stays
+    # read-only, mirroring the awaiting-child probe).
+    if status == "followups_running" and not has_pod:
+        repark_reason = _followup_round_complete_reason(events)
+        if repark_reason is not None:
+            print(
+                f"  issue #{issue}: ORPHAN-RESPAWN round-complete re-park — "
+                f"{repark_reason}; executing the re-park instead of a respawn."
+            )
+            return "followup-round-repark", repark_reason
     followups_reason = _followups_awaiting_child_reason(
         issue, status=status, has_pod=has_pod, events=events
     )
@@ -3854,6 +4161,43 @@ def _check_orphan_followups_exemption(
         f"diverting to alert-only (does NOT consume respawn budget)."
     )
     return "followups-awaiting-child", followups_reason
+
+
+def _handle_orphan_followup_round_repark(
+    *,
+    issue: int,
+    reason: str,
+    events: list[dict],
+    new_missed: int,
+    alerted: bool,
+    respawn_day: str,
+    respawns_today: int,
+    followups_child_alerted: bool,
+    state: dict,
+    dry_run: bool,
+) -> None:
+    """Orphan-sweep handler for the round-complete re-park (incident #533
+    freeze class): execute the stranded re-park; on success reset the miss
+    counter (the task leaves ACTIVE and drops out of the sweep next tick),
+    on failure persist ``new_missed`` as-is — in production that is the 0
+    from ``decide_orphan``'s respawn decision, so the orphan pass re-probes
+    and retries the re-park once the staleness signals re-accumulate to the
+    respawn action (~2 ticks), rather than next tick. Never consumes the
+    daily respawn budget. (The stalled pass falls back same-tick to the
+    awaiting-child suppression on a failed re-park; this pass retries.)
+    Factored out of :func:`_process_orphan_task` to keep that function
+    under the C901 cyclomatic-complexity cap (15)."""
+    ok = _repark_completed_followup_round(issue, reason, events, dry_run)
+    if not dry_run:
+        _save_orphan_state(
+            issue,
+            missed=0 if ok else new_missed,
+            alerted=alerted,
+            respawn_day=respawn_day,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            prev=state,
+        )
 
 
 def _handle_orphan_followups_awaiting_child(
@@ -4026,6 +4370,20 @@ def _process_orphan_task(
                     dry_run,
                     label="orphan-respawn",
                 )
+        return
+    if action == "followup-round-repark":
+        _handle_orphan_followup_round_repark(
+            issue=issue,
+            reason=followups_reason or "",
+            events=events,
+            new_missed=new_missed,
+            alerted=alerted,
+            respawn_day=day_key,
+            respawns_today=respawns_today,
+            followups_child_alerted=followups_child_alerted,
+            state=state,
+            dry_run=dry_run,
+        )
         return
     if action == "followups-awaiting-child":
         _handle_orphan_followups_awaiting_child(

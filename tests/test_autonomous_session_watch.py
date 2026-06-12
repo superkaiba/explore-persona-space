@@ -3288,6 +3288,422 @@ def test_handle_orphan_followups_awaiting_child_posts_once_and_skips_budget(
     assert state2["respawns_today"] == 0
 
 
+# ─── round-complete re-park (incident #533 freeze, 2026-06-11→12) ────────────
+
+
+def _make_followup_scope_event(ts: str = "2026-06-11T09:00:00Z") -> dict:
+    """Minimal epm:followup-scope row — marks a same-issue round START."""
+    return {
+        "ts": ts,
+        "kind": "epm:followup-scope",
+        "version": 1,
+        "note": "followup_label: bare-word-install-step-grid\nsource: user-chat",
+    }
+
+
+def _make_followup_run_event(ts: str = "2026-06-11T10:55:00Z") -> dict:
+    """Minimal epm:same-issue-followup-run row — the round's completion
+    (idempotency) record, posted AFTER the designed re-park."""
+    return {
+        "ts": ts,
+        "kind": "epm:same-issue-followup-run",
+        "version": 1,
+        "note": "followup_label: bare-word-install-step-grid\nsource: user-chat\nround: 1",
+    }
+
+
+def test_followup_round_complete_reason_fires_on_533_round_end_shape():
+    # The #533 freeze shape: round started (followup-scope), round-end
+    # step-completed (9a-bis, parked) NEWER than the scope — the designed
+    # re-park never ran. The predicate MUST fire for 9a-bis AND for the
+    # step-10 parks the respawned sessions posted.
+    import autonomous_session_watch as asw
+
+    for step in ("9a-bis", "10"):
+        reason = asw._followup_round_complete_reason(
+            [
+                _make_followup_scope_event("2026-06-11T09:00:00Z"),
+                _make_step_completed_event(step=step, ts="2026-06-11T10:54:12Z"),
+            ]
+        )
+        assert reason is not None, step
+        assert "designed re-park" in reason
+
+
+def test_followup_round_complete_reason_inert_without_scope_marker():
+    # No epm:followup-scope on record = the legacy children-in-flight shape
+    # (or a plain parent run) — NEVER re-park off step-completed alone.
+    import autonomous_session_watch as asw
+
+    assert asw._followup_round_complete_reason([_make_step_completed_event()]) is None
+    assert asw._followup_round_complete_reason([]) is None
+
+
+def test_followup_round_complete_reason_inert_while_round_in_flight():
+    # Scope NEWER than every round-end signal = the round is still running
+    # (the scope marker resets the clock at each round start). Keep the
+    # normal respawn coverage.
+    import autonomous_session_watch as asw
+
+    reason = asw._followup_round_complete_reason(
+        [
+            _make_step_completed_event(step="9a-bis", ts="2026-06-11T08:00:00Z"),
+            _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        ]
+    )
+    assert reason is None
+
+
+def test_followup_round_complete_reason_inert_on_mid_round_park():
+    # A mid-round park (e.g. step 2c over-cap plan approval, held in place
+    # at followups_running) is NOT round-end — re-parking there would
+    # abandon an unapproved round. Same for a clean (non-parked) exit.
+    import autonomous_session_watch as asw
+
+    for step, exit_kind in (("2c", "parked"), ("9a-bis", "clean"), ("10", "clean")):
+        reason = asw._followup_round_complete_reason(
+            [
+                _make_followup_scope_event("2026-06-11T09:00:00Z"),
+                _make_step_completed_event(
+                    step=step, exit_kind=exit_kind, ts="2026-06-11T10:54:12Z"
+                ),
+            ]
+        )
+        assert reason is None, (step, exit_kind)
+
+
+def test_followup_round_complete_reason_inert_on_recorded_round():
+    # Mixed-history legacy shape: a properly completed-and-RECORDED past
+    # round (scope T1 -> run marker T2 > T1), then the task later returns
+    # to followups_running via the legacy children-in-flight transition and
+    # posts a children-wait step-10 park (T3 > T2). The recorded round
+    # means the re-park already happened (designed step-3 -> step-4
+    # ordering) — the predicate MUST stay inert and defer to the
+    # awaiting-child suppression, never yank a promoted children-waiting
+    # parent to awaiting_promotion. Also self-disarms the predicate after
+    # the watcher's own re-park (which posts the run marker itself).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_followup_run_event("2026-06-11T10:55:00Z"),
+        _make_step_completed_event(step="10", ts="2026-06-12T08:00:00Z"),
+    ]
+    assert asw._followup_round_complete_reason(events) is None
+
+
+def test_scope_note_field_parses_latest_scope():
+    # _scope_note_field reads `<field>: <value>` lines off the LATEST
+    # scope marker's note; missing field / no scope -> None.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "ts": "2026-06-10T09:00:00Z",
+            "kind": "epm:followup-scope",
+            "note": "followup_label: old-round\nsource: proposer-9b",
+        },
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+    ]
+    assert asw._scope_note_field(events, "followup_label") == "bare-word-install-step-grid"
+    assert asw._scope_note_field(events, "source") == "user-chat"
+    assert asw._scope_note_field(events, "gpu_hours_estimate") is None
+    assert asw._scope_note_field([], "followup_label") is None
+
+
+def test_post_followup_run_marker_posts_matching_label(monkeypatch):
+    # On a successful re-park the watcher posts the round's completion
+    # marker so the scope is RUN for /issue Step 0 routing — label + source
+    # parsed from the scope, round = 1 + existing run-marker count.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    ok = asw._post_followup_run_marker(
+        533, [_make_followup_scope_event("2026-06-11T09:00:00Z")], dry_run=False
+    )
+    assert ok is True
+    assert len(calls) == 1
+    assert "post-marker" in calls[0]
+    assert "epm:same-issue-followup-run" in calls[0]
+    note = calls[0][-1]
+    assert "followup_label: bare-word-install-step-grid" in note
+    assert "source: user-chat" in note
+    assert "round: 1" in note
+
+
+def test_post_followup_run_marker_fails_soft_without_label(monkeypatch):
+    # No parseable followup_label -> no marker posted, returns False
+    # (fail-soft: the re-park already happened; the failure is logged).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **kw: pytest.fail("must not shell out without a label"),
+    )
+    scope_no_label = {
+        "ts": "2026-06-11T09:00:00Z",
+        "kind": "epm:followup-scope",
+        "note": "malformed scope note",
+    }
+    assert asw._post_followup_run_marker(533, [scope_no_label], dry_run=False) is False
+
+
+def test_repark_completed_followup_round_dry_run_never_mutates(monkeypatch):
+    # dry_run classifies only: no subprocess, no marker.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda *a, **kw: pytest.fail("dry-run must not shell out"),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda *a, **kw: pytest.fail("dry-run must not post a marker"),
+    )
+    assert (
+        asw._repark_completed_followup_round(
+            533, "round complete", [_make_followup_scope_event()], dry_run=True
+        )
+        is True
+    )
+
+
+def test_repark_completed_followup_round_executes_set_status(monkeypatch):
+    # Live mode: shells `task.py set-status <N> awaiting_promotion` from
+    # PROJECT_ROOT, then posts the round's epm:same-issue-followup-run
+    # completion marker (closing the scope for Step 0 routing) and the
+    # sentinel-stamped progress marker.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(cmd)
+        return _subprocess.CompletedProcess(cmd, 0, stdout="ok", stderr="")
+
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    assert (
+        asw._repark_completed_followup_round(
+            533, "round complete", [_make_followup_scope_event()], dry_run=False
+        )
+        is True
+    )
+    assert len(calls) == 2
+    assert calls[0][-3:] == ["set-status", "533", "awaiting_promotion"]
+    assert "epm:same-issue-followup-run" in calls[1]
+    assert "followup_label: bare-word-install-step-grid" in calls[1][-1]
+    assert len(posted) == 1
+    assert posted[0][0] == 533
+    assert asw._FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL in posted[0][1]
+    assert posted[0][2] == "followup-round-repark"
+
+
+def test_repark_completed_followup_round_failure_returns_false(monkeypatch):
+    # A failed set-status (rc != 0) returns False and posts NO marker
+    # (neither the run marker nor the progress marker) — callers fall back
+    # to the pre-existing handling.
+    import subprocess as _subprocess
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, **kw: _subprocess.CompletedProcess(cmd, 1, stdout="", stderr="guard refused"),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda *a, **kw: pytest.fail("must not post a marker on failure"),
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_followup_run_marker",
+        lambda *a, **kw: pytest.fail("must not post the run marker on failure"),
+    )
+    assert (
+        asw._repark_completed_followup_round(
+            533, "round complete", [_make_followup_scope_event()], dry_run=False
+        )
+        is False
+    )
+
+
+def test_apply_stalled_followups_exemption_reparks_completed_round(monkeypatch):
+    # Stalled pass: a completed round stranded at followups_running is
+    # RE-PARKED (action rewritten to keep, no miss accumulation) WITHOUT
+    # consulting children — the re-park probe runs before the
+    # awaiting-child suppression and short-circuits it.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be consulted on the re-park path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    reparked: list[tuple[int, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_repark_completed_followup_round",
+        lambda issue, reason, events, dry_run: (reparked.append((issue, reason)), True)[1],
+    )
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+    ]
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, False)
+    assert len(reparked) == 1
+    assert reparked[0][0] == 533
+
+
+def test_apply_stalled_followups_exemption_falls_back_when_repark_fails(monkeypatch):
+    # A FAILED re-park must fall through to the pre-existing handling (here:
+    # the awaiting-child suppression, since an open child exists) — never
+    # worse than the old behavior.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_task_children", lambda issue: [{"id": 546, "status": "awaiting_promotion"}]
+    )
+    monkeypatch.setattr(
+        asw, "_repark_completed_followup_round", lambda issue, reason, events, dry_run: False
+    )
+    posted: list[tuple[int, str, str]] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, *, label: posted.append((issue, note, label)),
+    )
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_step_completed_event(step="10", ts="2026-06-11T12:45:25Z"),
+    ]
+    action, new_missed, child_alerted = asw._apply_stalled_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=events,
+        action="respawn",
+        new_missed=2,
+        followups_child_alerted=False,
+        dry_run=False,
+    )
+    assert (action, new_missed, child_alerted) == ("keep", 0, True)
+    assert len(posted) == 1  # the awaiting-child alert, not the repark marker
+    assert posted[0][2] == "followups-awaiting-child"
+
+
+def test_check_orphan_followups_exemption_returns_repark_action(monkeypatch):
+    # Orphan pass: a completed round stranded at followups_running rewrites
+    # respawn -> "followup-round-repark" (mutation deferred to the handler;
+    # the probe stays read-only) without consulting children.
+    import autonomous_session_watch as asw
+
+    def _boom(issue):
+        raise AssertionError("_task_children must not be consulted on the re-park path")
+
+    monkeypatch.setattr(asw, "_task_children", _boom)
+    action, reason = asw._check_orphan_followups_exemption(
+        issue=533,
+        status="followups_running",
+        has_pod=False,
+        events=[
+            _make_followup_scope_event("2026-06-11T09:00:00Z"),
+            _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        ],
+        action="respawn",
+    )
+    assert action == "followup-round-repark"
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
+def test_handle_orphan_followup_round_repark_state(isolated_registry, monkeypatch):
+    # Orphan handler: success resets the miss counter; failure persists
+    # `new_missed` as-is (0 from decide_orphan's respawn decision in
+    # production — the pass re-probes and retries once staleness
+    # re-accumulates to the respawn action). The daily respawn budget is
+    # never consumed.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(
+        asw, "_repark_completed_followup_round", lambda issue, reason, events, dry_run: True
+    )
+    asw._handle_orphan_followup_round_repark(
+        issue=533,
+        reason="round complete",
+        events=[_make_followup_scope_event()],
+        new_missed=3,
+        alerted=False,
+        respawn_day="2026-06-12",
+        respawns_today=1,
+        followups_child_alerted=False,
+        state={},
+        dry_run=False,
+    )
+    state = asw._load_orphan_state(533)
+    assert state["missed"] == 0
+    assert state["respawns_today"] == 1  # NOT incremented
+
+    monkeypatch.setattr(
+        asw, "_repark_completed_followup_round", lambda issue, reason, events, dry_run: False
+    )
+    asw._handle_orphan_followup_round_repark(
+        issue=533,
+        reason="round complete",
+        events=[_make_followup_scope_event()],
+        new_missed=0,  # the production value from decide_orphan's ("respawn", 0)
+        alerted=False,
+        respawn_day="2026-06-12",
+        respawns_today=1,
+        followups_child_alerted=False,
+        state=state,
+        dry_run=False,
+    )
+    state2 = asw._load_orphan_state(533)
+    assert state2["missed"] == 0  # persisted as-is; respawn budget untouched
+    assert state2["respawns_today"] == 1
+
+
+def test_followup_round_repark_sentinel_in_watcher_filter():
+    # The re-park marker must NEVER reset the staleness clock it is
+    # measured against — pin the sentinel into the shared exclusion set.
+    from autonomous_session_watch import (
+        _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL,
+        _WATCHER_NOTE_SENTINELS,
+    )
+
+    assert _FOLLOWUP_ROUND_REPARK_NOTE_SENTINEL in _WATCHER_NOTE_SENTINELS
+
+
 def test_session_alive_ignores_worktree_cwd_zombies(isolated_registry):
     # The 2026-06-10 #518 regression: a superseded driver generation parked in
     # the issue worktree must NOT count as "alive" for the registered entry.

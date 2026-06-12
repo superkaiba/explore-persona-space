@@ -5105,6 +5105,19 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
 
+> **Re-park BEFORE the §5 marker (same-issue follow-up rounds — incident
+> #533, 2026-06-11):** during a follow-up round, post the §5 marker below
+> ONLY after the round's re-park has actually executed — check `task.py
+> view <N> --json` shows `status: awaiting_promotion` first. If the
+> status is still `followups_running`, the re-park was skipped: run step
+> 3's `set-status <N> awaiting_promotion` + step 4's
+> `epm:same-issue-followup-run v1` completion marker NOW, then post the
+> marker. Posting the exit-site marker while still at `followups_running`
+> and exiting is the #533 freeze shape — the session died there and the
+> task stranded for ~26h. (`autonomous_session_watch.py` now backstops
+> this with a round-complete auto re-park, but the backstop is recovery,
+> not the design.)
+
 Post the §5 marker (the EXIT site is the tail of step `9a-bis`; the
 candidate landing step on resume is `10` (`completion_audit`), looked up
 from `workflow.yaml § steps`):
