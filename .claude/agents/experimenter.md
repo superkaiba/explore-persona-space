@@ -455,6 +455,50 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    original crash; a `pgrep -f <script-name>` pre-check had read clean.
    Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
    parents leave orphaned `VLLM::EngineCore` workers".
+10. **CVD launcher-env pin — verify before ANY parallel per-GPU fan-out
+    launch (MANDATORY).** When the launch runs N parallel processes with
+    one GPU each (wave dispatchers, per-seed/per-cell fan-outs,
+    `CUDA_VISIBLE_DEVICES`-sharded sweeps), EVERY per-cell launch line
+    MUST prefix the process with `CUDA_VISIBLE_DEVICES=<gpu>` in the
+    LAUNCHER environment AND pass the matching `+gpu_id=N` / `--gpu-id N`
+    arg. The in-process clobber alone
+    (`train/sft.py:1062` / `:1294` set
+    `os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`) is NOT
+    sufficient: the driver freezes its device list at the FIRST cuInit in
+    the process, so any import-time cuInit (`import peft` is a known
+    offender — #545) makes the late clobber a driver-level no-op and
+    every cell's `cuda:0` resolves to physical GPU 0 — parallel cells
+    co-locate and OOM (#523 Phase B rounds 7/8; recurrence class
+    #541/#543/#557 — the failure-classifier row "parallel fan-out cells
+    co-located on one device"). You do not fix this in code — you VERIFY
+    the dispatcher you are about to launch:
+    ```bash
+    ssh_execute(server="epm-issue-<N>",
+                command="grep -n 'CUDA_VISIBLE_DEVICES' <dispatcher_path>")
+    ```
+    Expect the `CUDA_VISIBLE_DEVICES="$cvd" uv run python ... --gpu-id
+    "$cvd"` shape (`scripts/i474_phase23_dispatch.sh:192-193` is the
+    reference; `tests/test_cvd_wave_assignment_smoke.py` is the
+    regression smoke for that family). Do NOT accept a bare hit count —
+    comment lines mention CUDA_VISIBLE_DEVICES too; INSPECT each
+    backgrounded per-cell launch line for the env prefix. The
+    matching-gpu-arg requirement applies to entrypoints that pass
+    through the `train/sft.py` `gpu_id` clobber (or that accept a
+    gpu-id-style arg); for clobber-free entrypoints the launcher-env
+    pin alone is complete — do not false-bounce those. If the per-cell
+    launch lines rely on the in-process clobber alone (no launcher-env
+    prefix, or — for clobber-bearing entrypoints — a prefix without the
+    matching gpu arg), do NOT launch: post `epm:failure v1` with
+    `failure_class: code` naming the dispatcher + the missing pin, and
+    bounce to `experiment-implementer`. Exempt: a single foreground
+    process that does not fork per-GPU workers, and torchrun/ZeRO-3/
+    vLLM-TP launches where ONE process group deliberately owns all
+    GPUs. NOTE this gate runs only on experimenter-mediated (RunPod
+    lane) launches; gcp/slurm startup-script lanes are covered by the
+    write-side authoring rule (`experiment-implementer.md` § During
+    implementation) + the regression smoke. Full mechanics:
+    `.claude/rules/gotchas.md` § "in-process CUDA_VISIBLE_DEVICES
+    clobber is silently defeated by import-time cuInit".
 
 ### During Execution
 
