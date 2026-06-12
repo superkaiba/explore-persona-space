@@ -51,9 +51,13 @@ __all__ = [
     "ANCHOR_STEPS",
     "ARM_A_HF_ADAPTER_ROOT",
     "ARM_B_HF_ADAPTER_ROOT",
+    "ARM_C_HALT_STEP",
+    "ARM_C_HF_ADAPTER_ROOT",
+    "ARM_C_SAVE_STEPS",
     "A_GRID",
     "BASE_MODEL",
     "B_GRID",
+    "C_GRID",
     "EXPECTED_POS_ROWS",
     "HF_597_DATA_SUBDIR",
     "HF_DATA_REPO",
@@ -137,6 +141,25 @@ assert all(src not in negs for src, negs in TRAINED_NEGATIVES.items()), TRAINED_
 # 12 epochs × 44 steps, via the new TrainLoraConfig.max_steps field.
 ARM_B_MAX_STEPS: int = 528
 ARM_B_SAVE_STEPS: int = 4
+
+# ── Arm C: dense-early contrastive retrain (#597 follow-up
+# `dense-early-contrastive-grid`, plan v3 §3) ────────────────────────────────
+# Fresh retrain of the 6 contrastive cells on the SAME 700-row pools with a
+# dense early checkpoint grid: every 2 steps through 40, every 4 through 60,
+# save-driven halt after the step-60 save (max_steps stays 528 so the cosine
+# + warmup schedule is identical to #480 / Arm A for steps 1–60).
+C_GRID: tuple[int, ...] = tuple(sorted(set(range(2, 41, 2)) | set(range(44, 61, 4))))
+assert len(C_GRID) == 25 and all(s % 2 == 0 for s in C_GRID), C_GRID
+ARM_C_SAVE_STEPS: int = 2  # every C_GRID step reachable (Trainer saves at multiples)
+ARM_C_HALT_STEP: int = 60  # == max(C_GRID)
+# Every C_GRID step must be reachable by save_steps=2 (B_GRID's %4 assert,
+# mirrored as %2 — a non-multiple would silently never materialize), and the
+# save-driven halt must sit exactly on the last grid point.
+assert all(s % ARM_C_SAVE_STEPS == 0 for s in C_GRID), C_GRID
+assert max(C_GRID) == ARM_C_HALT_STEP, (ARM_C_HALT_STEP, max(C_GRID))
+assert ARM_C_HALT_STEP % ARM_C_SAVE_STEPS == 0, (ARM_C_HALT_STEP, ARM_C_SAVE_STEPS)
+# Arm C output root on the HF model repo (plan v3 §3 Outputs).
+ARM_C_HF_ADAPTER_ROOT: str = "adapters/issue_597_contrastive_dense"
 
 
 def probe_contexts_25() -> dict[str, str]:

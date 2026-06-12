@@ -81,3 +81,40 @@ class CheckpointGridPruneCallback(TrainerCallback):
         """HF Trainer hook: prune right after each checkpoint save."""
         self.prune_dir(args.output_dir)
         return control
+
+
+class HaltAfterStepCallback(TrainerCallback):
+    """Stop training right after the checkpoint at ``halt_step`` is written.
+
+    Save-driven halt (#597 follow-up `dense-early-contrastive-grid`, plan v3
+    §3): ``max_steps`` stays 528 so the cosine + warmup LR schedule is
+    untouched for steps 1–``halt_step`` (``max_steps=60`` would change both
+    denominators). HF Trainer writes the checkpoint BEFORE firing ``on_save``
+    and checks ``control.should_training_stop`` at the end of the step loop,
+    so the ``checkpoint-<halt_step>`` dir is on disk when the halt fires.
+
+    Args:
+        halt_step: optimizer step whose save triggers the stop (e.g. 60).
+        save_steps: the Trainer's ``save_steps`` — asserted to divide
+            ``halt_step`` so the halt fires ON a save event (a non-multiple
+            would silently never halt and train all 528 steps).
+    """
+
+    def __init__(self, halt_step: int, save_steps: int):
+        if halt_step % save_steps != 0:
+            raise ValueError((halt_step, save_steps))
+        self.halt_step = halt_step
+        self.save_steps = save_steps
+
+    def on_save(self, args, state, control, **kwargs):
+        """HF Trainer hook: request a clean stop once ``halt_step`` is saved."""
+        if state.global_step >= self.halt_step:
+            logger.info(
+                "HaltAfterStepCallback: checkpoint at step %d saved (halt_step=%d) — "
+                "stopping training (max_steps=%d untouched; schedule identity preserved)",
+                state.global_step,
+                self.halt_step,
+                state.max_steps,
+            )
+            control.should_training_stop = True
+        return control

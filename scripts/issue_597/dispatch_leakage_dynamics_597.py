@@ -57,6 +57,21 @@ shard's training + downstream subprocesses co-locate on physical GPU 0):
     CUDA_VISIBLE_DEVICES=1 nohup uv run python ... --gpu 1 \\
         --sources assistant,qwen_default --skip-probe-rows --skip-arm-a-gate ... &
 
+--recipe contrastive_dense_early (#597 follow-up `dense-early-contrastive-grid`,
+plan v3): fresh retrain of the 6 contrastive cells on the SAME pinned 700-row
+pools with a dense early checkpoint grid (C_GRID = {2..40:2} ∪ {44..60:4},
+save_steps=2, save-driven halt after the step-60 save — max_steps stays 528 so
+the cosine + warmup schedule is identical to #480 for steps 1–60). Phase 0 is
+replaced by a revision-pinned fetch of the parent's probe_rows.json; the Arm A
+ladder leg and emission anchors are skipped (plan v3 §2.3); a CPU parity gate
+joins the dense panel reads at steps 20/40/60 against the parent's committed
+armA panel trajectories (BLOCKING at step 20: ±2 nat on source Δ AND
+TN-median in ≥5/6 sources). Smoke = sweep with one cell:
+
+    uv run python scripts/issue_597/dispatch_leakage_dynamics_597.py \\
+        --recipe contrastive_dense_early --only-source villain --smoke
+    # production (plan §10): --recipe contrastive_dense_early --seed 42 --gpu 0
+
 Pod-side discipline (CLAUDE.md):
 - NEVER shells out to scripts/task.py (branch-guard would refuse).
 - Every subprocess.* call passes env={**os.environ}; load_dotenv() at module top.
@@ -77,7 +92,7 @@ import subprocess
 import sys
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -124,6 +139,30 @@ _TRAIN_LORA_DEFAULT_TARGETS = (
 
 # Retry-with-backoff for HF Hub downloads (dispatcher silent-death hardening).
 _HF_RETRY_SLEEPS = (30, 60, 120)
+
+# ── #597 follow-up `dense-early-contrastive-grid` (plan v3) ──────────────────
+# Phase 0 is SKIPPED for the dense recipe: probe rows are the parent run's own
+# Phase-U upload, fetched at the PINNED revision (content-identity check (f)).
+HF_597_PROBE_ROWS_FILE = "issue597_leakage_dynamics/inputs/probe_rows.json"
+PROBE_ROWS_REVISION = "8d2f79030e365180c7d32755cda34d34a25aed18"
+# Follow-up artifacts live under their own label dir (eval_results/issue_597/
+# <followup_label>/ — same-issue follow-up routing convention).
+DENSE_SLAB_SUBDIR = "dense-early-contrastive-grid"
+# Plan-v1 §13 sanctioned read-only deviation: 2-step in-loop source
+# corroboration alongside the 2-step checkpoint grid (Arm B used 5).
+DENSE_BAND_PROBE_EVERY_STEPS = 2
+# Parent contrastive (Arm A) panel trajectories — the parity-gate reference
+# (in git on the pod checkout; values quoted in plan v3 §7).
+ARM_A_PANEL_DIR = Path("eval_results/issue_597/panel_trajectories/armA")
+# Parity gate (plan v3 §7): BLOCKING at step 20 only; 40/60 diagnostic.
+PARITY_STEPS = (20, 40, 60)
+PARITY_BLOCKING_STEP = 20
+PARITY_TOL_NATS = 2.0  # ≈2 effective steps at the measured 0.45–1.0 nat/step ramp
+PARITY_CATASTROPHIC_NATS = 5.0
+PARITY_LOCKSTEP_INVERSION_RATIO = 0.5  # TN tracking source — the pos-only signature
+PARITY_MIN_PASS_SOURCES = 5
+PARITY_REGISTERED_N_SOURCES = 6
+PARITY_BASE_DIAG_TOL_NATS = 0.1  # plan §12.6 logged diagnostic, never a gate
 
 
 @dataclass(frozen=True)
@@ -177,6 +216,63 @@ def make_run_params(smoke: bool) -> RunParams:
         b_grid=B_GRID,
         a_steps=A_GRID,
         anchor_steps=ANCHOR_STEPS,
+        limit_questions=None,
+        hf_suffix="",
+    )
+
+
+@dataclass(frozen=True)
+class DenseRunParams:
+    """Smoke-vs-sweep scale knobs for ``--recipe contrastive_dense_early``.
+
+    Same PASS_UNIFIED contract as :class:`RunParams`: the smoke is the sweep
+    with one cell + scaled-down knobs, and every phase's checkpoint / gate /
+    question subset derives from THIS object — no phase re-enumerates a full
+    registered grid on its own. ``max_steps`` is deliberately NOT a knob:
+    it stays 528 in BOTH regimes (the save-driven halt is what scales —
+    schedule identity for steps 1–halt is the design invariant, plan v3 §2).
+    """
+
+    smoke: bool
+    halt_step: int
+    save_steps: int
+    c_grid: tuple[int, ...]
+    probe_steps: tuple[int, ...]
+    gate_step: int
+    limit_questions: int | None
+    hf_suffix: str  # "" for the sweep, "_smoke" for smoke uploads
+
+
+def make_dense_run_params(smoke: bool) -> DenseRunParams:
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_C_HALT_STEP,
+        ARM_C_SAVE_STEPS,
+        C_GRID,
+    )
+
+    if smoke:
+        # Smoke scale (plan v3 §3): halt at step 12, grid {2..12:2}, 5
+        # questions, 2 probed checkpoints (first + last — exercises the
+        # multi-checkpoint loop AND the end-of-ladder hot-swap invariant).
+        # Gate at step 12: the in-loop band probe records every 2 steps so
+        # step 12 carries a reference; step 20 doesn't exist under the halt.
+        return DenseRunParams(
+            smoke=True,
+            halt_step=12,
+            save_steps=ARM_C_SAVE_STEPS,
+            c_grid=(2, 4, 6, 8, 10, 12),
+            probe_steps=(2, 12),
+            gate_step=12,
+            limit_questions=5,
+            hf_suffix="_smoke",
+        )
+    return DenseRunParams(
+        smoke=False,
+        halt_step=ARM_C_HALT_STEP,
+        save_steps=ARM_C_SAVE_STEPS,
+        c_grid=C_GRID,
+        probe_steps=C_GRID,
+        gate_step=20,
         limit_questions=None,
         hf_suffix="",
     )
@@ -259,6 +355,45 @@ def ensure_wrong_claim_pool(local_path: Path, kind: str) -> Path:
     local_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(cached, local_path)
     log.info("[phase=preflight] wrong-claim pool ready at %s", local_path)
+    return local_path
+
+
+def ensure_pinned_probe_rows(local_path: Path) -> Path:
+    """Fetch the PARENT run's probe_rows.json at the PINNED revision (plan v3 §3).
+
+    The dense recipe SKIPS Phase 0: the probe rows are the parent run's own
+    Phase-U upload, revision-pinned (the content-identity mechanism — reuse
+    check (f)). Shape-asserted to the PRODUCTION scale (25 contexts × 50
+    questions) on every call, fetched or reused: the smoke caps questions at
+    probe time via ``--limit-questions``, never by fetching a different
+    artifact.
+    """
+    if not local_path.exists():
+        cached = _hf_download_with_retry(
+            repo_id=HF_DATA_REPO,
+            filename=HF_597_PROBE_ROWS_FILE,
+            repo_type="dataset",
+            revision=PROBE_ROWS_REVISION,
+        )
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, local_path)
+    hdr = json.loads(local_path.read_text())
+    if (
+        hdr.get("schema") != "i597_probe_rows_v1"
+        or hdr.get("n_contexts") != 25
+        or hdr.get("n_questions") != 50
+    ):
+        raise RuntimeError(
+            f"pinned probe rows at {local_path} have unexpected shape "
+            f"(schema={hdr.get('schema')!r}, contexts={hdr.get('n_contexts')}, "
+            f"questions={hdr.get('n_questions')}), expected (i597_probe_rows_v1, 25, 50) — "
+            f"wrong artifact resolved at revision {PROBE_ROWS_REVISION}; refusing to probe."
+        )
+    log.info(
+        "[phase=p0_probe_rows] pinned probe rows ready at %s (rev %s)",
+        local_path,
+        PROBE_ROWS_REVISION[:12],
+    )
     return local_path
 
 
@@ -427,11 +562,55 @@ def _pos_only_train_cfg(
     )
 
 
-def assert_pos_only_adapter_parity(max_length: int) -> dict:
+def _dense_train_cfg(
+    source: str,
+    seed: int,
+    max_length: int,
+    traj_path: Path,
+    *,
+    save_steps: int | None = None,
+    gpu_id: int = 0,
+):
+    """Arm C (dense-early contrastive) TrainLoraConfig — plan v3 §3.
+
+    Cloned from :func:`_pos_only_train_cfg` (itself the realized #480
+    ``_band_stop_train_cfg``), so every RECIPE field — lr 5e-6, r=32/α=64
+    rsLoRA 7-module, eff. batch 16, warmup 0.05, marker-only loss,
+    ``max_steps=528`` — is inherited verbatim. The only deltas are
+    instrumental (plan v3 §2): ``save_steps=2`` (dense grid, pruned to
+    C_GRID by ``CheckpointGridPruneCallback``), ``marker_band_eval_every_
+    steps=2`` (plan-v1 §13 sanctioned read-only deviation — 2-step in-loop
+    source corroboration), ``run_name``, and the trajectory path. The halt
+    after step 60 is a CALLBACK (``HaltAfterStepCallback``), NOT a
+    ``max_steps`` change — schedule identity for steps 1–60 is the design
+    invariant (unit-pinned by the lr(step) identity test). The training DATA
+    (the full 700-row contrastive pool) is passed at the train_lora call
+    site, unchanged from #480.
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597 import ARM_C_SAVE_STEPS
+
+    cfg = _pos_only_train_cfg(
+        source,
+        seed,
+        max_length,
+        traj_path,
+        max_steps=528,  # the #480 schedule total — NEVER scaled (halt is save-driven)
+        save_steps=save_steps if save_steps is not None else ARM_C_SAVE_STEPS,
+        gpu_id=gpu_id,
+    )
+    return replace(
+        cfg,
+        run_name=f"issue597_densegrid_{source}_seed{seed}",
+        marker_band_eval_every_steps=DENSE_BAND_PROBE_EVERY_STEPS,
+    )
+
+
+def assert_pos_only_adapter_parity(max_length: int, cfg=None) -> dict:
     """Adapter-config parity preflight vs a downloaded Arm A capend checkpoint.
 
-    Single-variable-change enforcement (plan Phase P): the Arm B
-    ``TrainLoraConfig`` must produce identical PEFT geometry (r, α, dropout,
+    Single-variable-change enforcement (plan Phase P): the fresh-training
+    ``TrainLoraConfig`` (Arm B, or Arm C when ``cfg`` is the dense builder's
+    probe config) must produce identical PEFT geometry (r, α, dropout,
     rsLoRA, target_modules, modules_to_save=∅) to Arm A's published
     checkpoints. Fails loud pre-GPU. Pattern reused from
     ``dispatch_marker_480._assert_band_stop_adapter_parity``.
@@ -440,14 +619,15 @@ def assert_pos_only_adapter_parity(max_length: int) -> dict:
     with open(cached) as f:
         parent = json.load(f)
 
-    cfg = _pos_only_train_cfg(
-        source="_parity_probe",
-        seed=42,
-        max_length=max_length,
-        traj_path=Path("/tmp/_i597_parity_probe_trajectory.json"),
-        max_steps=528,
-        save_steps=4,
-    )
+    if cfg is None:
+        cfg = _pos_only_train_cfg(
+            source="_parity_probe",
+            seed=42,
+            max_length=max_length,
+            traj_path=Path("/tmp/_i597_parity_probe_trajectory.json"),
+            max_steps=528,
+            save_steps=4,
+        )
     expected_targets = sorted(cfg.lora_targets or _TRAIN_LORA_DEFAULT_TARGETS)
     checks: dict[str, tuple[object, object]] = {
         "r": (parent.get("r"), cfg.lora_r),
@@ -776,6 +956,129 @@ def train_arm_b(
     return adapter_dir, traj_path
 
 
+def train_arm_c(
+    source: str,
+    seed: int,
+    full_pool: Path,
+    runs_root: Path,
+    slab_root: Path,
+    max_length: int,
+    params: DenseRunParams,
+    *,
+    gpu_id: int,
+) -> tuple[Path, Path]:
+    """Dense-early contrastive training: grid prune + save-driven halt callbacks.
+
+    Returns ``(adapter_dir, traj_path)``. Mirrors :func:`train_arm_b` with the
+    plan-v3 deltas: the FULL 700-row contrastive pool (the manipulated
+    variable of the parent design is NOT re-manipulated here — this arm IS
+    the #480 recipe), ``HaltAfterStepCallback`` so ``max_steps=528`` never
+    changes, and the in-loop trajectory under the follow-up slab.
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        CheckpointGridPruneCallback,
+        HaltAfterStepCallback,
+    )
+    from explore_persona_space.train.sft import train_lora
+
+    adapter_dir = runs_root / f"{source}_seed{seed}" / "adapter"
+    adapter_dir.mkdir(parents=True, exist_ok=True)
+    # Provenance: drop any stale run-id BEFORE weights start changing; a fresh
+    # one is minted only after the grid-completeness check passes below.
+    invalidate_ladder_run_id(adapter_dir)
+    traj_path = slab_root / "inloop_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    traj_path.parent.mkdir(parents=True, exist_ok=True)
+
+    cfg = _dense_train_cfg(
+        source,
+        seed,
+        max_length,
+        traj_path,
+        save_steps=params.save_steps,
+        gpu_id=gpu_id,
+    )
+    if cfg.marker_band_log_only is not True:
+        raise RuntimeError("#597 dense arm requires marker_band_log_only=True (full ramp)")
+    if cfg.max_steps != 528:
+        raise RuntimeError(
+            f"#597 dense arm requires max_steps=528 (schedule identity; halt is "
+            f"save-driven) — got {cfg.max_steps}"
+        )
+    prune_cb = CheckpointGridPruneCallback(keep_steps=params.c_grid)
+    halt_cb = HaltAfterStepCallback(halt_step=params.halt_step, save_steps=params.save_steps)
+    log.info(
+        "[phase=train_c_%s] effective CUDA_VISIBLE_DEVICES=%r cfg.gpu_id=%d "
+        "(train_lora clobbers CVD with cfg.gpu_id; subprocesses inherit it)",
+        source,
+        os.environ.get("CUDA_VISIBLE_DEVICES"),
+        cfg.gpu_id,
+    )
+    log.info(
+        "[phase=train_c_%s] cfg: lr=%s r=%s alpha=%s max_steps=%s save_steps=%s "
+        "halt_step=%d grid=%d ckpts run_name=%s trajectory=%s",
+        source,
+        cfg.lr,
+        cfg.lora_r,
+        cfg.lora_alpha,
+        cfg.max_steps,
+        cfg.save_steps,
+        params.halt_step,
+        len(params.c_grid),
+        cfg.run_name,
+        traj_path,
+    )
+    train_lora(
+        base_model_path="Qwen/Qwen2.5-7B-Instruct",
+        data_path=str(full_pool),
+        output_dir=str(adapter_dir),
+        cfg=cfg,
+        callbacks=[prune_cb, halt_cb],
+    )
+    # Defensive per-cell WandB isolation (train_lora's #527 fix owns this).
+    import wandb
+
+    if wandb.run is not None:
+        wandb.finish()
+    if wandb.run is not None:
+        raise RuntimeError(f"[{source}] wandb.run still active after finish()")
+
+    if not traj_path.exists():
+        raise RuntimeError(
+            f"[{source}] in-loop trajectory missing at {traj_path} — the log-only band "
+            "callback did not run (probe rows empty?); the Gate S re-application and the "
+            "2-step in-loop corroboration have nothing to key on."
+        )
+    # The halt must actually have fired. On-disk checkpoints are NOT the
+    # signal (the prune callback deletes off-grid dirs as training runs, so
+    # overshoot evidence would be erased) — the in-loop band trajectory
+    # records every 2 steps and is append-only: any record past halt_step
+    # means training silently ran beyond the budget.
+    traj = json.loads(traj_path.read_text())
+    overshoot = sorted(
+        int(r["step"]) for r in traj.get("records", []) if int(r["step"]) > params.halt_step
+    )
+    if overshoot:
+        raise RuntimeError(
+            f"[{source}] in-loop trajectory has records past halt_step={params.halt_step}: "
+            f"{overshoot[:5]}... — HaltAfterStepCallback did not stop training; refusing "
+            "to continue (the dense ladder's schedule budget is violated)."
+        )
+    # Final prune sweep + grid-completeness check (in-budget grid only).
+    prune_cb.prune_dir(adapter_dir)
+    missing = [
+        s
+        for s in params.c_grid
+        if s <= params.halt_step
+        if not (adapter_dir / f"checkpoint-{s}").is_dir()
+    ]
+    if missing:
+        raise RuntimeError(f"[{source}] dense grid checkpoints missing after training: {missing}")
+    # Ladder now complete + final: stamp its provenance (panel_probe keys its
+    # resume-skip on this id; a future retrain mints a different one).
+    write_ladder_run_id(adapter_dir, source=source, reason="training_complete")
+    return adapter_dir, traj_path
+
+
 def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow reads clearest inline
     source: str,
     seed: int,
@@ -1090,6 +1393,375 @@ def run_cell(  # noqa: C901  one linear per-source pipeline; the phase flow read
     return cell
 
 
+def run_cell_dense(
+    source: str,
+    seed: int,
+    args,
+    params: DenseRunParams,
+    pools_dir: Path,
+    first_gate_done: dict,
+) -> dict:
+    """One dense-early cell == one source: trainC → gateC → upload → probe → raw upload → cleanup.
+
+    Mirrors :func:`run_cell` minus Phase 0 / the Arm A ladder leg / emission
+    anchors (plan v3 §2.3: the falsification criterion is probe-gain medians
+    vs base; steps 40–60 anchor info already exists on the parent's armA
+    grid). Phase subsets all derive from ``params`` (PASS_UNIFIED).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_C_HF_ADAPTER_ROOT,
+        HF_597_DATA_SUBDIR,
+    )
+
+    t_start = time.time()
+    cell: dict = {"source": source, "seed": seed, "recipe": "contrastive_dense_early"}
+    slab_root: Path = args.slab_root
+    full_pool = pools_dir / f"{source}_train_pool.jsonl"
+    probe_rows_path = slab_root / "probe_rows.json"
+
+    # ── Arm C training ──
+    adapter_dir = args.runs_root / f"{source}_seed{seed}" / "adapter"
+    traj_path = slab_root / "inloop_trajectories" / f"{source}_seed{seed}_trajectory.json"
+    if args.skip_train:
+        log.info("[phase=train_c_%s] SKIPPED", source)
+        if adapter_dir.is_dir() and not args.skip_panel_probe:
+            # Resume escape hatch: a pre-existing ladder probed under
+            # --skip-train still needs provenance for panel_probe's
+            # resume-skip (fail-loud there otherwise).
+            cell["arm_c_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
+    else:
+        if arm_b_ladder_complete(adapter_dir, traj_path, params.c_grid, params.halt_step):
+            # Recovery relaunches must NOT re-train over a completed ladder —
+            # bf16 run-to-run nondeterminism makes a retrain a NEW ladder and
+            # silently invalidates every stored probe (#597 attempt-2 class).
+            log.info(
+                "[phase=train_c_%s] SKIPPED (complete dense ladder present: %d in-budget "
+                "grid checkpoints + in-loop trajectory at %s)",
+                source,
+                sum(1 for s in params.c_grid if s <= params.halt_step),
+                traj_path,
+            )
+            cell["arm_c_train_skipped"] = True
+            cell["arm_c_ladder_run_id"] = ensure_ladder_run_id(adapter_dir, source=source)
+        else:
+            adapter_dir, traj_path = train_arm_c(
+                source,
+                seed,
+                full_pool,
+                args.runs_root,
+                slab_root,
+                args.max_length,
+                params,
+                gpu_id=effective_shard_gpu(args.gpu),
+            )
+        cell["arm_c_adapter_dir"] = str(adapter_dir)
+        cell["arm_c_trajectory"] = str(traj_path)
+        cell["base_side_diagnostic"] = base_side_identity_diagnostic(
+            traj_path, ARM_A_TRAJ_DIR / f"{source}_seed42_trajectory.json", source
+        )
+
+        # Gate S re-application on the FIRST dense source trained in THIS
+        # process (the off-line eval path must reproduce ITS in-loop read
+        # before the remaining dense ladders are probed). Same reachability
+        # contract as Arm B: decoupled from --skip-arm-a-gate; gate step from
+        # params (20 prod / 12 smoke — the band probe records every 2 steps).
+        if not first_gate_done.get("done") and not args.skip_armb_gate:
+            gate_out = slab_root / "smoke" / f"smoke_gate_armC_{source}.json"
+            _run_subprocess(
+                [
+                    "uv",
+                    "run",
+                    "python",
+                    "-m",
+                    f"{PKG}.smoke_gate",
+                    "--train-pool",
+                    str(full_pool),
+                    "--traj-ref",
+                    str(traj_path),
+                    "--ckpt-root",
+                    str(adapter_dir),
+                    "--steps",
+                    str(params.gate_step),
+                    "--out-path",
+                    str(gate_out),
+                    "--label",
+                    f"gate_s_armC_{source}",
+                ],
+                phase=f"gatec_{source}",
+            )
+            first_gate_done["done"] = True
+            cell["arm_c_gate_report"] = str(gate_out)
+
+        # Fail-loud ladder upload BEFORE any local deletion (upload policy).
+        if not args.skip_upload:
+            cell["arm_c_hf_path"] = upload_dir_fail_loud(
+                adapter_dir,
+                HF_MODEL_REPO,
+                "model",
+                f"{ARM_C_HF_ADAPTER_ROOT}{params.hf_suffix}/{source}_seed{seed}",
+            )
+
+    # ── Panel probe (HF subprocess; framework-isolated) ──
+    agg_dir_c = slab_root / "panel_trajectories" / "armC"
+    raw_dir_c = agg_dir_c / "per_checkpoint" / source
+    if args.skip_panel_probe:
+        log.info("[phase=probe_%s] SKIPPED", source)
+    else:
+        probe_steps = tuple(s for s in params.probe_steps if s <= params.halt_step)
+        _run_subprocess(
+            [
+                "uv",
+                "run",
+                "python",
+                "-m",
+                f"{PKG}.panel_probe",
+                "--arm",
+                "c",
+                "--source",
+                source,
+                "--seed",
+                str(seed),
+                "--ckpt-root",
+                str(adapter_dir),
+                "--steps",
+                ",".join(map(str, probe_steps)),
+                "--probe-rows",
+                str(probe_rows_path),
+                "--out-dir",
+                str(raw_dir_c),
+                "--agg-out",
+                str(agg_dir_c / f"{source}_seed{seed}_panel_trajectory.json"),
+            ]
+            + (
+                ["--limit-questions", str(params.limit_questions)] if params.limit_questions else []
+            ),
+            phase=f"probec_{source}",
+        )
+
+    # ── Raw upload (per-row four-float records → HF data repo, plan v3 §3) ──
+    if not args.skip_upload and raw_dir_c.is_dir():
+        upload_dir_fail_loud(
+            raw_dir_c,
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_597_DATA_SUBDIR}{params.hf_suffix}/dense_early/panel_trajectories_raw/{source}",
+        )
+
+    # ── Local cleanup (MooseFS quota): only AFTER verified uploads ──
+    if (
+        not args.keep_local
+        and not args.skip_upload
+        and not args.skip_train
+        and adapter_dir.exists()
+    ):
+        log.info("[phase=cleanup_%s] rmtree(%s) (dense ladder uploaded)", source, adapter_dir)
+        shutil.rmtree(adapter_dir, ignore_errors=False)
+
+    cell["wall_seconds"] = round(time.time() - t_start, 1)
+    log.info("[phase=cell_%s] CELL COMPLETE wall=%.1fs", source, cell["wall_seconds"])
+    return cell
+
+
+# ── Dense parity gate (plan v3 §7) ───────────────────────────────────────────
+
+
+def dense_parity_join(dense_panel: dict, parent_panel: dict, source: str) -> dict:
+    """Join one source's dense armC panel against the parent armA panel.
+
+    BLOCKING read at step 20 (plan v3 §7): ``|source Δ − parent| ≤ 2`` nat AND
+    ``|TN-median − parent| ≤ 2`` nat. Steps 40/60 are DIAGNOSTIC only (the
+    saturating / non-monotone segment, where cross-run step-shift amplifies);
+    >5 nat deviation is flagged. Escalation of a FAILING step-20 read:
+    deviation > 5 nat OR sign-pattern inversion (TN median tracking the
+    source at lockstep ratio ≥ 0.5 — the pos-only signature) → catastrophic
+    (suspect wrong-pool/recipe bug); otherwise the pre-registered downgrade
+    to a same-recipe seed-42 replicate read. The inversion check applies
+    ONLY to failing reads: a parent-MATCHING read can sit at ratio ≥ 0.5
+    legitimately (assistant: 4.61/5.76 ≈ 0.80 in the parent panel).
+    Base-side |Δ| per step is a logged diagnostic (plan §12.6), never a gate.
+
+    Both panels are ``load_panel_trajectory`` outputs (int-keyed ``by_step``).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        context_value,
+        group_median,
+        trained_negative_stat_group,
+    )
+
+    tn = trained_negative_stat_group(source)
+    steps_join = [
+        s for s in PARITY_STEPS if s in dense_panel["by_step"] and s in parent_panel["by_step"]
+    ]
+    by_step: dict[int, dict] = {}
+    for s in steps_join:
+        src_d = context_value(dense_panel, s, source, "delta_logp")
+        src_p = context_value(parent_panel, s, source, "delta_logp")
+        tn_d = group_median(dense_panel, s, tn, "delta_logp")
+        tn_p = group_median(parent_panel, s, tn, "delta_logp")
+        base_d = context_value(dense_panel, s, source, "logp_base")
+        base_p = context_value(parent_panel, s, source, "logp_base")
+        rec: dict = {
+            "source_delta_dense": src_d,
+            "source_delta_parent": src_p,
+            "source_abs_diff": abs(src_d - src_p),
+            "tn_median_dense": tn_d,
+            "tn_median_parent": tn_p,
+            "tn_abs_diff": abs(tn_d - tn_p),
+            "lockstep_ratio_dense": (tn_d / src_d) if abs(src_d) > 1e-9 else None,
+            "base_abs_diff": abs(base_d - base_p),
+            "blocking": s == PARITY_BLOCKING_STEP,
+        }
+        if s == PARITY_BLOCKING_STEP:
+            rec["within_tolerance"] = (
+                rec["source_abs_diff"] <= PARITY_TOL_NATS and rec["tn_abs_diff"] <= PARITY_TOL_NATS
+            )
+        else:
+            rec["diagnostic_flag_gt5"] = (
+                rec["source_abs_diff"] > PARITY_CATASTROPHIC_NATS
+                or rec["tn_abs_diff"] > PARITY_CATASTROPHIC_NATS
+            )
+        if rec["base_abs_diff"] > PARITY_BASE_DIAG_TOL_NATS:
+            log.warning(
+                "[phase=parity_gate] %s step %d base-side drift %.3f nat > %.1f "
+                "(diagnostic only — plan §12.6)",
+                source,
+                s,
+                rec["base_abs_diff"],
+                PARITY_BASE_DIAG_TOL_NATS,
+            )
+        by_step[s] = rec
+    blocking = by_step.get(PARITY_BLOCKING_STEP)
+    if blocking is None:
+        status = "no_blocking_step"  # smoke (halt 12) or pre-20 descope: nothing to gate
+    elif blocking["within_tolerance"]:
+        status = "pass"
+    else:
+        worst = max(blocking["source_abs_diff"], blocking["tn_abs_diff"])
+        ratio = blocking["lockstep_ratio_dense"]
+        inversion = ratio is not None and ratio >= PARITY_LOCKSTEP_INVERSION_RATIO
+        status = (
+            "catastrophic"
+            if (worst > PARITY_CATASTROPHIC_NATS or inversion)
+            else "downgrade_replicate"
+        )
+    return {
+        "source": source,
+        "trained_negative_group": tn,
+        "status": status,
+        "by_step": by_step,
+    }
+
+
+def evaluate_dense_parity_gate(per_source: dict[str, dict]) -> dict:
+    """Aggregate per-source parity joins into the registered gate verdict.
+
+    Registered rule (plan v3 §7): PASS iff ≥5/6 sources sit within ±2 nat on
+    BOTH source Δ and TN-median at step 20. Partial runs (< 6 sources) and
+    smoke runs (no step-20 read anywhere) get descriptive verdicts, never
+    PASS. Any catastrophic source is surfaced regardless of the verdict.
+    """
+    statuses = {s: r["status"] for s, r in per_source.items()}
+    joined = {s: v for s, v in statuses.items() if v != "no_blocking_step"}
+    n_pass = sum(v == "pass" for v in joined.values())
+    catastrophic = sorted(s for s, v in joined.items() if v == "catastrophic")
+    if not joined:
+        verdict = "no_join"
+    elif len(per_source) < PARITY_REGISTERED_N_SOURCES:
+        verdict = (
+            f"partial ({n_pass}/{len(joined)} pass; registered over "
+            f"{PARITY_REGISTERED_N_SOURCES} sources)"
+        )
+    elif n_pass >= PARITY_MIN_PASS_SOURCES:
+        verdict = "PASS"
+    elif catastrophic:
+        verdict = "FAIL_CATASTROPHIC"
+    else:
+        verdict = "FAIL_DOWNGRADE_REPLICATE"
+    return {
+        "schema": "i597_dense_parity_gate_v1",
+        "verdict": verdict,
+        "n_sources": len(per_source),
+        "n_joined": len(joined),
+        "n_pass_step20": n_pass,
+        "catastrophic_sources": catastrophic,
+        "statuses": statuses,
+        "rule": (
+            f"PASS iff |source delta - parent| <= {PARITY_TOL_NATS} nat AND "
+            f"|TN-median - parent| <= {PARITY_TOL_NATS} nat at step "
+            f"{PARITY_BLOCKING_STEP} in >= {PARITY_MIN_PASS_SOURCES}/"
+            f"{PARITY_REGISTERED_N_SOURCES} sources; steps 40/60 diagnostic only"
+        ),
+        "per_source": per_source,
+    }
+
+
+def run_dense_parity_gate(slab_root: Path, sources: list[str], seed: int) -> tuple[Path, str]:
+    """CPU parity-gate phase: join dense armC panels vs the parent armA panels.
+
+    Reads the dense agg JSONs this run's panel probes wrote and the parent's
+    committed armA trajectories (in git on the pod checkout); writes
+    ``parity_gate_report.json`` under the dense slab (checkpoint-per-phase:
+    the report persists before the final sentinel). Returns
+    ``(report_path, verdict)``. A catastrophic verdict is logged loudly and
+    travels in the report + final sentinel — the run's artifacts are already
+    uploaded, so the dispatcher completes rather than suppressing them
+    (plan v3 §7 routes the response: ONE fix attempt, then failure_class:
+    code — an orchestrator decision, not a pod-side crash).
+    """
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        load_panel_trajectory,
+    )
+
+    per_source: dict[str, dict] = {}
+    for source in sources:
+        dense_path = (
+            slab_root / "panel_trajectories" / "armC" / f"{source}_seed{seed}_panel_trajectory.json"
+        )
+        parent_path = ARM_A_PANEL_DIR / f"{source}_seed42_panel_trajectory.json"
+        if not dense_path.exists():
+            raise RuntimeError(
+                f"dense panel trajectory missing at {dense_path} — the parity gate has "
+                "nothing to join (panel probe incomplete?)"
+            )
+        if not parent_path.exists():
+            raise RuntimeError(
+                f"parent armA panel trajectory missing at {parent_path} — pod checkout "
+                "missing the committed parity reference?"
+            )
+        per_source[source] = dense_parity_join(
+            load_panel_trajectory(dense_path), load_panel_trajectory(parent_path), source
+        )
+        log.info("[phase=parity_gate] %s: %s", source, per_source[source]["status"])
+    report = evaluate_dense_parity_gate(per_source)
+    report["metadata"] = {
+        "git_commit": _git_sha(),
+        "hostname": socket.gethostname(),
+        "ts": datetime.now(UTC).isoformat(),
+        "parent_panel_dir": str(ARM_A_PANEL_DIR),
+        "seed": seed,
+    }
+    out = slab_root / "parity_gate_report.json"
+    tmp = out.with_suffix(".tmp")
+    tmp.write_text(json.dumps(report, indent=2, ensure_ascii=False))
+    os.replace(tmp, out)
+    log.info(
+        "[phase=parity_gate] verdict=%s n_pass=%d/%d -> %s",
+        report["verdict"],
+        report["n_pass_step20"],
+        report["n_joined"],
+        out,
+    )
+    if report["verdict"] == "FAIL_CATASTROPHIC":
+        log.error(
+            "[phase=parity_gate] CATASTROPHIC parity FAIL (>5 nat or pos-only lockstep "
+            "signature) on %s — suspect wrong-pool/recipe bug (plan v3 §7: ONE fix "
+            "attempt, then failure_class: code). Artifacts are uploaded; the verdict "
+            "travels in the report + final sentinel.",
+            report["catastrophic_sources"],
+        )
+    return out, report["verdict"]
+
+
 def make_cell_sentinel_payload(source: str, event: str, body: dict) -> dict:
     """Wrap a per-cell record in the poll_pipeline sentinel schema.
 
@@ -1127,14 +1799,25 @@ def write_final_sentinel(
     logs_dir: Path,
     sources_requested: list[str],
     per_cell: list[dict],
-    params: RunParams,
+    params: RunParams | DenseRunParams,
     plan_deviations: list[str],
+    *,
+    adapter_root: str | None = None,
+    extra_note: dict | None = None,
 ) -> Path:
-    """End-of-run sentinel in poll_pipeline-compatible schema."""
+    """End-of-run sentinel in poll_pipeline-compatible schema.
+
+    ``adapter_root`` overrides the hf_hub_url's adapter tree for non-Arm-B
+    recipes (the dense recipe passes ``ARM_C_HF_ADAPTER_ROOT``); ``extra_note``
+    merges additional recipe-specific fields (e.g. the parity verdict) into
+    the note payload.
+    """
     from explore_persona_space.experiments.leakage_dynamics_597 import (
         ARM_B_HF_ADAPTER_ROOT,
         WANDB_PROJECT,
     )
+
+    root = adapter_root if adapter_root is not None else ARM_B_HF_ADAPTER_ROOT
 
     epoch = int(time.time())
     # pid suffix: two shards finishing within the same second must not
@@ -1165,11 +1848,12 @@ def write_final_sentinel(
             "hostname": socket.gethostname(),
             "wandb_url": f"n/a (per-cell wandb runs; project={WANDB_PROJECT})",
             "hf_hub_url": (
-                f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/"
-                f"{ARM_B_HF_ADAPTER_ROOT}{params.hf_suffix}"
+                f"https://huggingface.co/{HF_MODEL_REPO}/tree/main/{root}{params.hf_suffix}"
             ),
         },
     }
+    if extra_note:
+        payload["note"].update(extra_note)
     final_path.parent.mkdir(parents=True, exist_ok=True)
     final_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
     log.info("[phase=final_sentinel] %s", final_path)
@@ -1184,9 +1868,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--recipe",
-        choices=("pos_only_dynamics",),
+        choices=("pos_only_dynamics", "contrastive_dense_early"),
         default="pos_only_dynamics",
-        help="Single recipe (kept explicit for the launch-command contract).",
+        help="pos_only_dynamics = the parent A/B design; contrastive_dense_early = the "
+        "#597 follow-up dense-early contrastive retrain (full 700-row pools, "
+        "save_steps=2 to C_GRID, save-driven halt after step 60, panel probe only, "
+        "step-20/40/60 parity gate vs the parent armA panels).",
     )
     parser.add_argument("--sources", type=str, default="all")
     parser.add_argument("--only-source", type=str, default=None, help="OVERRIDES --sources.")
@@ -1227,7 +1914,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--skip-armb-gate",
         action="store_true",
-        help="Skip the per-shard first-Arm-B-source Gate S re-application. "
+        help="Skip the per-shard first-freshly-trained-source Gate S re-application "
+        "(Arm B under pos_only_dynamics; Arm C under contrastive_dense_early). "
         "Resume-only escape hatch (e.g. the gate already PASSED in this shard "
         "before a crash) — NEVER part of the documented production launch.",
     )
@@ -1279,7 +1967,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         WANDB_PROJECT,
     )
 
-    params = make_run_params(args.smoke)
+    dense = args.recipe == "contrastive_dense_early"
+    params: RunParams | DenseRunParams = (
+        make_dense_run_params(args.smoke) if dense else make_run_params(args.smoke)
+    )
+    if dense:
+        # Follow-up artifacts live under their own label dir (same-issue
+        # follow-up routing: eval_results/issue_597/<followup_label>/) + a
+        # dedicated runs subtree so dense ladders never collide with Arm B
+        # ladders on a shared pod.
+        args.slab_root = args.slab_root / DENSE_SLAB_SUBDIR
+        args.runs_root = args.runs_root / "dense_early"
     if params.smoke:
         # Smoke artifacts live under a dedicated slab subdir so a later
         # PRODUCTION run's resume-skip logic (probe_rows.json exists,
@@ -1306,22 +2004,38 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     # This dispatcher owns its uploads (fail-loud); fence the inline ones.
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
 
-    log.info(
-        "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arms=both "
-        "b_max_steps=%d a_steps=%d anchors=%s limit_q=%s",
-        args.recipe,
-        params.smoke,
-        sources,
-        args.seed,
-        params.b_max_steps,
-        len(params.a_steps),
-        params.anchor_steps,
-        params.limit_questions,
-    )
+    if dense:
+        log.info(
+            "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arm=c "
+            "halt_step=%d save_steps=%d grid=%d ckpts probe_steps=%d gate_step=%d limit_q=%s",
+            args.recipe,
+            params.smoke,
+            sources,
+            args.seed,
+            params.halt_step,
+            params.save_steps,
+            len(params.c_grid),
+            len(params.probe_steps),
+            params.gate_step,
+            params.limit_questions,
+        )
+    else:
+        log.info(
+            "[phase=dispatch_start] recipe=%s smoke=%s sources=%s seed=%d arms=both "
+            "b_max_steps=%d a_steps=%d anchors=%s limit_q=%s",
+            args.recipe,
+            params.smoke,
+            sources,
+            args.seed,
+            params.b_max_steps,
+            len(params.a_steps),
+            params.anchor_steps,
+            params.limit_questions,
+        )
     log.info(
         "[phase=dispatch_start] UNIFIED smoke=sweep-with-one-cell: every phase's "
-        "checkpoint/anchor/question subset derives from RunParams; same run_cell path, "
-        "same subprocess shape, same env injection, same teardown."
+        "checkpoint/anchor/question subset derives from the run-params object; same "
+        "run-cell path, same subprocess shape, same env injection, same teardown."
     )
 
     # ── Phase P: preflight (CPU) ──
@@ -1361,24 +2075,57 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
     log.info("[phase=preflight] training max_length = %d", max_length)
 
     pool_summaries: dict[str, dict] = {}
-    for source in sources:
-        full_pool = args.pools_dir / f"{source}_train_pool.jsonl"
-        pos_pool = args.pools_dir / f"{source}_pos_only_pool.jsonl"
-        ensure_train_pool(full_pool, source)
-        pool_summaries[source] = build_pos_only_pool(full_pool, pos_pool)
-        # BLOCKING probe-row identity (plan Phase B-train, one governing status).
-        pool_summaries[source]["probe_row_sha256"] = assert_probe_row_identity(
-            full_pool,
-            pos_pool,
-            tok,
-            [MARKER_ID],
-            max_rows=32,
-            max_length=max(max_length, 2048),
+    if dense:
+        # Dense recipe trains on the FULL 700-row contrastive pools (plan v3
+        # §3) — no pos-only filter, no probe-row identity assert (that assert
+        # compares the filtered pool against the full one; here the full pool
+        # IS the training data and is row-count-asserted at the pinned rev).
+        for source in sources:
+            full_pool = args.pools_dir / f"{source}_train_pool.jsonl"
+            ensure_train_pool(full_pool, source)
+            pool_summaries[source] = {
+                "pool": "full_contrastive_700",
+                "n_rows": TRAIN_POOL_EXPECTED_ROWS,
+                "revision": TRAIN_POOL_REVISION,
+            }
+        # Adapter-config parity against Arm A's published geometry, computed
+        # from the DENSE cfg builder (the cfg that will actually train).
+        assert_pos_only_adapter_parity(
+            max_length,
+            cfg=_dense_train_cfg(
+                "_parity_probe",
+                args.seed,
+                max_length,
+                Path("/tmp/_i597_dense_parity_probe_trajectory.json"),
+            ),
         )
+    else:
+        for source in sources:
+            full_pool = args.pools_dir / f"{source}_train_pool.jsonl"
+            pos_pool = args.pools_dir / f"{source}_pos_only_pool.jsonl"
+            ensure_train_pool(full_pool, source)
+            pool_summaries[source] = build_pos_only_pool(full_pool, pos_pool)
+            # BLOCKING probe-row identity (plan Phase B-train, one governing status).
+            pool_summaries[source]["probe_row_sha256"] = assert_probe_row_identity(
+                full_pool,
+                pos_pool,
+                tok,
+                [MARKER_ID],
+                max_rows=32,
+                max_length=max(max_length, 2048),
+            )
 
-    assert_pos_only_adapter_parity(max_length)
+        assert_pos_only_adapter_parity(max_length)
 
-    if not args.skip_upload and not args.skip_arm_a_gate:
+    if dense:
+        # No pools upload: the dense recipe generates NO new dataset — it
+        # trains on the parent's pools already on the data repo at the
+        # pinned revision (Upload Policy applies to generated artifacts).
+        log.info(
+            "[phase=preflight] pools upload N/A (dense recipe reuses the pinned "
+            "issue480 pools; nothing newly generated)"
+        )
+    elif not args.skip_upload and not args.skip_arm_a_gate:
         # Pos-only pools are datasets — upload after generation (Upload Policy).
         upload_dir_fail_loud(
             args.pools_dir,
@@ -1399,9 +2146,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
     plan_deviations: list[str] = []
 
-    # ── Phase 0: probe-row generation (vLLM subprocess) ──
+    # ── Phase 0: probe rows ──
     probe_rows_path = args.slab_root / "probe_rows.json"
-    if args.skip_probe_rows or probe_rows_path.exists():
+    if dense:
+        # Phase 0 SKIPPED by design (plan v3 §3): the dense recipe fetches the
+        # parent run's probe_rows.json at the PINNED revision instead of
+        # regenerating (content-identity check (f)). Idempotent + shape-
+        # asserted; --skip-probe-rows is a no-op here.
+        ensure_pinned_probe_rows(probe_rows_path)
+    elif args.skip_probe_rows or probe_rows_path.exists():
         if not probe_rows_path.exists() and not (args.skip_train and args.skip_panel_probe):
             raise RuntimeError(
                 f"--skip-probe-rows but {probe_rows_path} missing and downstream phases "
@@ -1458,6 +2211,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
         log.info("[phase=gate_s] SHARED Arm A gate SKIPPED (done by --stop-after-gate run)")
         plan_deviations.append("arm_a_gate_skipped_in_this_shard")
     else:
+        # The gate rebuilds the in-loop probe batch from the villain pool —
+        # ensure it's present even when villain is not among --sources (the
+        # dense recipe's preflight only fetched the requested sources).
+        ensure_train_pool(args.pools_dir / "villain_train_pool.jsonl", "villain")
         gate_ckpts = download_arm_a_ladder("villain", (20, 40), args.runs_root / "armA_downloads")
         gate_out = args.slab_root / "smoke" / "smoke_gate_report.json"
         _run_subprocess(
@@ -1490,12 +2247,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
 
     # ── Per-cell loop ──
     per_cell: list[dict] = []
-    first_armb_gate_done: dict = {"done": False}
+    first_gate_done: dict = {"done": False}
     for source in sources:
         try:
-            cell = run_cell(
-                source, args.seed, args, params, neg_map, args.pools_dir, first_armb_gate_done
-            )
+            if dense:
+                cell = run_cell_dense(
+                    source, args.seed, args, params, args.pools_dir, first_gate_done
+                )
+            else:
+                cell = run_cell(
+                    source, args.seed, args, params, neg_map, args.pools_dir, first_gate_done
+                )
             cell["pool_summary"] = pool_summaries.get(source, {})
             per_cell.append(cell)
             per_src = write_cell_sentinel(args.logs_dir, source, "cell_complete", cell)
@@ -1513,7 +2275,34 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901  linear dispatcher
             log.exception("[%s] cell failed; wrote %s", source, fail_path)
             raise
 
-    write_final_sentinel(args.logs_dir, sources, per_cell, params, plan_deviations)
+    # ── Dense parity gate (CPU, seconds — plan v3 §7) ──
+    extra_note: dict | None = None
+    adapter_root: str | None = None
+    if dense:
+        from explore_persona_space.experiments.leakage_dynamics_597 import (
+            ARM_C_HF_ADAPTER_ROOT,
+        )
+
+        adapter_root = ARM_C_HF_ADAPTER_ROOT
+        extra_note = {"recipe": args.recipe}
+        if args.skip_panel_probe:
+            log.info("[phase=parity_gate] SKIPPED (--skip-panel-probe: no dense panels to join)")
+            plan_deviations.append("parity_gate_skipped_no_panel_probe")
+            extra_note["parity_verdict"] = "skipped_no_panel_probe"
+        else:
+            report_path, verdict = run_dense_parity_gate(args.slab_root, sources, args.seed)
+            extra_note["parity_verdict"] = verdict
+            extra_note["parity_report"] = str(report_path)
+
+    write_final_sentinel(
+        args.logs_dir,
+        sources,
+        per_cell,
+        params,
+        plan_deviations,
+        adapter_root=adapter_root,
+        extra_note=extra_note,
+    )
     log.info("[phase=dispatch_complete] %d cells completed.", len(per_cell))
     print("[phase=done]")
     return 0

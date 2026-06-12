@@ -65,9 +65,10 @@ def resolve_ladder_run_id(arm: str, ckpt_root: Path) -> str:
     """Resolve the CURRENT ladder's provenance run-id.
 
     Arm A → :data:`ARM_A_IMMUTABLE_RUN_ID` (re-downloads are bit-identical).
-    Arm B → ``ckpt_root/ladder_run_id.json`` (written by the dispatcher at the
+    Arm B / Arm C (any freshly trained ladder) →
+    ``ckpt_root/ladder_run_id.json`` (written by the dispatcher at the
     end of training, or when adopting a complete pre-existing ladder). A
-    missing/malformed Arm B file is a hard failure: without it the resume-skip
+    missing/malformed file is a hard failure: without it the resume-skip
     is unverifiable and a stale stored probe could silently mix provenance.
     """
     if arm == "a":
@@ -332,7 +333,11 @@ def main(argv: list[str] | None = None) -> int:
         description="#597 per-checkpoint four-float panel probe (HF forward passes).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--arm", choices=("a", "b"), required=True)
+    # Arm "c" = the #597 follow-up dense-early contrastive retrain ladders —
+    # freshly trained like Arm B, so they carry the dispatcher-written
+    # ladder_run_id.json (resolve_ladder_run_id treats every arm != "a" as a
+    # provenance-stamped local ladder).
+    parser.add_argument("--arm", choices=("a", "b", "c"), required=True)
     parser.add_argument("--source", type=str, required=True)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(

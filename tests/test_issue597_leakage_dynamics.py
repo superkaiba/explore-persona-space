@@ -1613,3 +1613,339 @@ def test_parent_geometry_fourfloat_matches_full_enumeration_read():
         parent_geometry_fourfloat(
             model, full_rows, [alien], marker_id=5, eos_token_id=7, device="cpu", pad_token_id=0
         )
+
+
+# ── 13. Follow-up `dense-early-contrastive-grid` (plan v3) ───────────────────
+
+DENSE_SOURCES = (
+    "assistant",
+    "comedian",
+    "kindergarten_teacher",
+    "qwen_default",
+    "software_engineer",
+    "villain",
+)
+
+
+def test_c_grid_constants_and_prune_keeps_exactly_25(tmp_path):
+    """Plan v3 unit test (c): C_GRID = {2..40:2} U {44..60:4} (25 steps, all
+    reachable under save_steps=2, halt == max); save_steps=2 writes every
+    even step through 60 (30 dirs) and the prune callback keeps EXACTLY the
+    25 C_GRID dirs."""
+    from explore_persona_space.experiments.leakage_dynamics_597 import (
+        ARM_C_HALT_STEP,
+        ARM_C_HF_ADAPTER_ROOT,
+        ARM_C_SAVE_STEPS,
+        C_GRID,
+    )
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        CheckpointGridPruneCallback,
+    )
+
+    assert len(C_GRID) == 25
+    assert tuple(sorted(set(range(2, 41, 2)) | set(range(44, 61, 4)))) == C_GRID
+    assert ARM_C_SAVE_STEPS == 2
+    assert ARM_C_HALT_STEP == 60 == max(C_GRID)
+    assert all(s % ARM_C_SAVE_STEPS == 0 for s in C_GRID)
+    assert ARM_C_HF_ADAPTER_ROOT == "adapters/issue_597_contrastive_dense"
+    # 9 dense checkpoints inside the caveat window {2..18} (plan v3 §11).
+    assert sum(1 for s in C_GRID if s <= 18) == 9
+
+    for s in range(2, 61, 2):
+        (tmp_path / f"checkpoint-{s}").mkdir()
+    cb = CheckpointGridPruneCallback(keep_steps=C_GRID)
+    pruned = cb.prune_dir(tmp_path)
+    assert sorted(pruned) == [42, 46, 50, 54, 58]
+    survivors = sorted(int(d.name.split("-")[-1]) for d in tmp_path.glob("checkpoint-*"))
+    assert survivors == list(C_GRID) and len(survivors) == 25
+
+
+def test_halt_after_step_callback_rejects_unreachable_halt():
+    """A halt step that is not a save_steps multiple would silently never
+    halt (the stop only fires on a save event) — constructor fails loud."""
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        HaltAfterStepCallback,
+    )
+
+    with pytest.raises(ValueError):
+        HaltAfterStepCallback(halt_step=60, save_steps=7)
+    cb = HaltAfterStepCallback(halt_step=60, save_steps=2)
+    assert cb.halt_step == 60 and cb.save_steps == 2
+
+
+def test_halt_after_step_callback_stops_real_trainer_at_60(tmp_path):
+    """Plan v3 unit test (a): a REAL HF Trainer with max_steps=528 +
+    save_steps=2 + HaltAfterStepCallback(60, 2) stops at exactly step 60 —
+    the step-60 checkpoint is on disk (the save fires BEFORE on_save), the
+    schedule denominators stay at 528, and the grid prune running alongside
+    leaves exactly the C_GRID dirs."""
+    import torch
+    from torch import nn
+    from transformers import Trainer, TrainingArguments
+
+    from explore_persona_space.experiments.leakage_dynamics_597 import C_GRID
+    from explore_persona_space.experiments.leakage_dynamics_597.grid_callbacks import (
+        CheckpointGridPruneCallback,
+        HaltAfterStepCallback,
+    )
+
+    class _TinyModel(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.lin = nn.Linear(4, 1)
+
+        def forward(self, x=None, labels=None, **kwargs):
+            out = self.lin(x)
+            return {"loss": ((out - labels) ** 2).mean(), "logits": out}
+
+    class _DS(torch.utils.data.Dataset):
+        def __len__(self):
+            return 16
+
+        def __getitem__(self, i):
+            g = torch.Generator().manual_seed(i)
+            return {"x": torch.randn(4, generator=g), "labels": torch.zeros(1)}
+
+    args = TrainingArguments(
+        output_dir=str(tmp_path),
+        max_steps=528,
+        per_device_train_batch_size=2,
+        save_strategy="steps",
+        save_steps=2,
+        save_safetensors=False,
+        use_cpu=True,
+        report_to=[],
+        logging_strategy="no",
+        seed=0,
+        learning_rate=5e-6,
+        lr_scheduler_type="cosine",
+        warmup_ratio=0.05,
+        disable_tqdm=True,
+    )
+    trainer = Trainer(
+        model=_TinyModel(),
+        args=args,
+        train_dataset=_DS(),
+        callbacks=[
+            CheckpointGridPruneCallback(keep_steps=C_GRID),
+            HaltAfterStepCallback(halt_step=60, save_steps=2),
+        ],
+    )
+    trainer.train()
+    assert trainer.state.global_step == 60
+    assert trainer.state.max_steps == 528  # schedule denominators untouched
+    assert (tmp_path / "checkpoint-60").is_dir()
+    survivors = sorted(int(d.name.split("-")[-1]) for d in tmp_path.glob("checkpoint-*"))
+    assert survivors == list(C_GRID)
+
+
+def test_dense_cfg_lr_schedule_identity_steps_1_60(tmp_path):
+    """Plan v3 unit test (b): lr(step) for steps 1-60 under the dense cfg
+    (max_steps=528, save_steps=2, save-driven halt) equals the parent
+    config's lr(step), pinned numerically (warmup realized as ceil(26.4)=27;
+    cosine over 528; tied to analyze.lr_weight, the analysis-side dose
+    weight)."""
+    import torch
+    from transformers import TrainingArguments, get_cosine_schedule_with_warmup
+
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import lr_weight
+
+    disp = _load_dispatcher()
+    dense = disp._dense_train_cfg("villain", 42, 2560, tmp_path / "t_dense.json")
+    parent = disp._pos_only_train_cfg(
+        "villain", 42, 2560, tmp_path / "t_parent.json", max_steps=528, save_steps=4
+    )
+    # The schedule is a pure function of (lr, max_steps, warmup_ratio) — all
+    # inherited verbatim; save_steps and the save-driven halt never enter it.
+    assert dense.max_steps == parent.max_steps == 528
+    assert dense.lr == parent.lr == 5e-6
+    assert dense.warmup_ratio == parent.warmup_ratio == 0.05
+    ta = TrainingArguments(output_dir=str(tmp_path), max_steps=528, warmup_ratio=0.05, use_cpu=True)
+    assert ta.get_warmup_steps(528) == 27  # "27 realized" (plan §10)
+
+    def lr_series(cfg) -> list[float]:
+        warmup = math.ceil(cfg.max_steps * cfg.warmup_ratio)
+        opt = torch.optim.AdamW([torch.nn.Parameter(torch.zeros(1))], lr=cfg.lr)
+        sched = get_cosine_schedule_with_warmup(opt, warmup, cfg.max_steps)
+        series = []
+        for _ in range(60):
+            opt.step()
+            sched.step()
+            series.append(sched.get_last_lr()[0])
+        return series
+
+    d, p = lr_series(dense), lr_series(parent)
+    assert d == p  # bit-identical across all 60 steps
+    # Numeric pins: linear warmup to 5e-6 at step 27, cosine decay after.
+    assert d[12] == pytest.approx(13 / 27 * 5e-6)
+    assert d[26] == pytest.approx(5e-6)
+    assert d[59] == pytest.approx(lr_weight(60, 528, 27) * 5e-6)
+
+
+def test_dense_cfg_clone_deltas_only(tmp_path):
+    """Single-variable pin: the dense cfg differs from the parent (#480)
+    builder in EXACTLY the plan-v3 instrumental fields — run_name,
+    save_steps, marker_band_eval_every_steps. lr / geometry / batch /
+    warmup / max_steps / marker-loss wiring inherited verbatim."""
+    from dataclasses import asdict
+
+    disp = _load_dispatcher()
+    traj = tmp_path / "traj.json"
+    dense = asdict(disp._dense_train_cfg("villain", 42, 2560, traj))
+    parent = asdict(
+        disp._pos_only_train_cfg("villain", 42, 2560, traj, max_steps=528, save_steps=4)
+    )
+    diff = {k for k in dense if dense[k] != parent[k]}
+    assert diff == {"run_name", "save_steps", "marker_band_eval_every_steps"}, diff
+    assert dense["run_name"] == "issue597_densegrid_villain_seed42"
+    assert dense["save_steps"] == 2
+    assert dense["marker_band_eval_every_steps"] == 2
+    assert dense["max_steps"] == 528 and dense["lr"] == 5e-6
+    assert dense["marker_band_log_only"] is True and dense["hf_upload"] is False
+
+
+def test_dense_run_params_smoke_is_sweep_with_one_unit():
+    """PASS_UNIFIED contract for the dense recipe: every phase knob derives
+    from DenseRunParams; the smoke is a strict scale-down (halt 12, grid
+    {2..12:2}, 2 probed checkpoints, 5 questions) of the production shape."""
+    disp = _load_dispatcher()
+    from explore_persona_space.experiments.leakage_dynamics_597 import ARM_C_HALT_STEP, C_GRID
+
+    prod = disp.make_dense_run_params(False)
+    smoke = disp.make_dense_run_params(True)
+    for p in (prod, smoke):
+        assert max(p.c_grid) == p.halt_step
+        assert p.halt_step % p.save_steps == 0
+        assert all(s % p.save_steps == 0 for s in p.c_grid)
+        assert set(p.probe_steps) <= set(p.c_grid)
+        assert p.gate_step in p.c_grid and p.gate_step <= p.halt_step
+        # The gate keys on the in-loop band probe (records every 2 steps).
+        assert p.gate_step % 2 == 0
+    assert prod.c_grid == C_GRID and prod.probe_steps == C_GRID
+    assert prod.halt_step == ARM_C_HALT_STEP == 60 and prod.gate_step == 20
+    assert prod.limit_questions is None and prod.hf_suffix == ""
+    assert smoke.halt_step == 12 and smoke.c_grid == (2, 4, 6, 8, 10, 12)
+    assert smoke.probe_steps == (2, 12) and smoke.limit_questions == 5
+    assert smoke.hf_suffix == "_smoke" and smoke.gate_step == 12
+    # The smoke grid is a strict subset of the production early window.
+    assert set(smoke.c_grid) <= set(prod.c_grid)
+
+
+def test_dense_provenance_helpers_wired_into_run_cell_dense_and_train_arm_c():
+    """Structural pin (mirrors the Arm B test): run_cell_dense consults the
+    train-skip predicate + adopt helper; train_arm_c invalidates BEFORE
+    train_lora and mints AFTER; the panel probe runs as arm c."""
+    import inspect
+
+    disp = _load_dispatcher()
+    src_cell = inspect.getsource(disp.run_cell_dense)
+    assert "arm_b_ladder_complete(" in src_cell
+    assert "ensure_ladder_run_id(" in src_cell
+    assert '"c",' in src_cell  # panel_probe --arm c
+    src_train = inspect.getsource(disp.train_arm_c)
+    assert src_train.index("invalidate_ladder_run_id(") < src_train.index("train_lora(")
+    assert src_train.index("train_lora(") < src_train.index("write_ladder_run_id(")
+    assert "HaltAfterStepCallback(" in src_train
+
+
+def _load_armA_panels():
+    from explore_persona_space.experiments.leakage_dynamics_597.analyze import (
+        load_panel_trajectory,
+    )
+
+    d = REPO_ROOT / "eval_results" / "issue_597" / "panel_trajectories" / "armA"
+    return {
+        s: load_panel_trajectory(d / f"{s}_seed42_panel_trajectory.json") for s in DENSE_SOURCES
+    }
+
+
+def test_dense_parity_gate_fixture_against_committed_armA():
+    """Plan v3 adopted fixture test: the parity-join path is exercised
+    pre-launch against the COMMITTED armA step-20/40/60 values (the smoke
+    halts at step 12 and can never reach the join)."""
+    import copy
+
+    disp = _load_dispatcher()
+    panels = _load_armA_panels()
+
+    # Self-join: dense == parent → every source passes, gate PASS, and the
+    # plan-§7 quoted parent values reproduce from the committed artifacts.
+    per = {s: disp.dense_parity_join(panels[s], panels[s], s) for s in DENSE_SOURCES}
+    report = disp.evaluate_dense_parity_gate(per)
+    assert report["verdict"] == "PASS"
+    assert report["n_pass_step20"] == 6 and not report["catastrophic_sources"]
+    quoted = {
+        "villain": 11.94,
+        "comedian": 10.85,
+        "assistant": 5.76,
+        "qwen_default": 7.06,
+        "software_engineer": 7.16,
+        "kindergarten_teacher": 8.30,
+    }
+    for s, want in quoted.items():
+        got = per[s]["by_step"][20]["source_delta_parent"]
+        assert got == pytest.approx(want, abs=0.01), (s, got)
+        tn = per[s]["by_step"][20]["tn_median_parent"]
+        assert 1.90 - 0.01 <= tn <= 5.22 + 0.01, (s, tn)
+        assert per[s]["by_step"][20]["base_abs_diff"] == 0.0
+        assert set(per[s]["by_step"]) == {20, 40, 60}  # 40/60 join as diagnostics
+        assert per[s]["by_step"][40]["diagnostic_flag_gt5"] is False
+
+    def shifted(source, ctxs, delta):
+        p = copy.deepcopy(panels[source])
+        for c in ctxs:
+            p["by_step"][20][c]["delta_logp"] += delta
+        return p
+
+    all_ctx = list(panels["villain"]["by_step"][20].keys())
+    # 2–5 nat deviation at step 20 → the pre-registered replicate downgrade.
+    down = disp.dense_parity_join(shifted("villain", all_ctx, 3.0), panels["villain"], "villain")
+    assert down["status"] == "downgrade_replicate"
+    # >5 nat → catastrophic.
+    cat = disp.dense_parity_join(shifted("villain", all_ctx, 6.0), panels["villain"], "villain")
+    assert cat["status"] == "catastrophic"
+    # Inversion escalation: a 2–5 nat FAIL whose TN median tracks the source
+    # at lockstep ratio ≥ 0.5 (the pos-only signature) escalates even ≤ 5 nat.
+    inv = copy.deepcopy(panels["villain"])
+    tn_group = per["villain"]["trained_negative_group"]
+    inv["by_step"][20]["villain"]["delta_logp"] = 11.94 + 3.0
+    for c in tn_group:
+        inv["by_step"][20][c]["delta_logp"] = 8.0  # ratio ≈ 0.54; tn diff ≤ 5
+    inv_join = disp.dense_parity_join(inv, panels["villain"], "villain")
+    assert inv_join["by_step"][20]["tn_abs_diff"] <= 5.0
+    assert inv_join["status"] == "catastrophic"
+    # A parent-MATCHING read at ratio ≥ 0.5 stays a PASS — the inversion
+    # check never fires on within-tolerance reads (assistant ≈ 0.80 in the
+    # parent panel; flagging it would false-positive every faithful retrain).
+    assert per["assistant"]["by_step"][20]["lockstep_ratio_dense"] >= 0.5
+    assert per["assistant"]["status"] == "pass"
+
+    # Gate-level: 2 failing sources → 4/6 pass → registered FAIL (replicate).
+    per_fail = dict(per)
+    per_fail["villain"] = down
+    per_fail["comedian"] = disp.dense_parity_join(
+        shifted("comedian", list(panels["comedian"]["by_step"][20].keys()), 3.0),
+        panels["comedian"],
+        "comedian",
+    )
+    assert disp.evaluate_dense_parity_gate(per_fail)["verdict"] == "FAIL_DOWNGRADE_REPLICATE"
+    # Any catastrophic source among a failing gate → FAIL_CATASTROPHIC.
+    per_cat = dict(per_fail)
+    per_cat["villain"] = cat
+    assert disp.evaluate_dense_parity_gate(per_cat)["verdict"] == "FAIL_CATASTROPHIC"
+    # ONE failing source (5/6 pass) stays PASS under the registered ≥5/6 rule.
+    per_one = dict(per)
+    per_one["villain"] = down
+    assert disp.evaluate_dense_parity_gate(per_one)["verdict"] == "PASS"
+
+    # Smoke shape: a dense panel halted at 12 has no step-20 read — per-source
+    # no_blocking_step, gate-level no_join (never PASS).
+    smoke_panel = copy.deepcopy(panels["villain"])
+    smoke_panel["by_step"] = {2: smoke_panel["by_step"][20], 12: smoke_panel["by_step"][40]}
+    smoke_join = disp.dense_parity_join(smoke_panel, panels["villain"], "villain")
+    assert smoke_join["status"] == "no_blocking_step" and smoke_join["by_step"] == {}
+    assert disp.evaluate_dense_parity_gate({"villain": smoke_join})["verdict"] == "no_join"
+    # Partial run (1 source joined) → descriptive partial verdict, never PASS.
+    assert disp.evaluate_dense_parity_gate({"villain": per["villain"]})["verdict"].startswith(
+        "partial"
+    )
