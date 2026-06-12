@@ -19,8 +19,13 @@ runs right after pass 2):
    re-armed per :data:`VM_DISK_RECLAIM_REARM_S`). Below
    :data:`VM_DISK_RECLAIM_FREE_BYTES` (~15 GiB, env
    ``EPM_VM_DISK_CRITICAL_GIB``): additionally run the safe, fail-soft cache
-   reclaims (``uv cache prune`` — never ``--force``; ``npm cache clean
+   reclaims, each logging its own freed-space line into the marker note
+   (``wandb artifact cache cleanup`` to ~1GB — a pure download cache, 17.6 GB
+   sat there in the 2026-06-11 episode; ``uv cache prune`` — never
+   ``--force``, lock-contention timeout = clean skip; ``npm cache clean
    --force`` — npm's required confirmation flag, the clean itself is safe;
+   HF hub TTL eviction — ``scan_cache_dir``/``delete_revisions`` on
+   revisions idle > :data:`VM_DISK_HF_TTL_S`, never recently-accessed repos;
    sweep ``/tmp/claude-*`` trees idle > 3 days). Detection runs every 10-min
    tick, so remediation does too — the once-daily worktree cron alone lost
    the 2026-06-11 race (17 GiB -> 1.2 GiB within hours). The episode state
@@ -991,14 +996,51 @@ VM_DISK_RECLAIM_REARM_S = 6 * 3600
 # has fresh mtimes — the age test IS the live-session guard.
 VM_DISK_TMP_SWEEP_AGE_S = 3 * 24 * 3600
 
-# Hard wall-clock bound on `uv cache prune` / `npm cache clean`: if another
-# process holds the cache lock the command blocks; kill it at the bound
-# (fail-soft) rather than hanging the watcher tick. 27 live sessions hold the
-# uv cache lock almost continuously, so lock contention is the EXPECTED case
-# and a timeout is a clean skip, never an error (2026-06-11: a manual 300s
-# wait timed out). NEVER pass --force to uv cache operations while sessions
-# are live.
+# Hard wall-clock bound on `uv cache prune` / `npm cache clean` / the wandb
+# artifact-cache cleanup: if another process holds the cache lock the command
+# blocks; kill it at the bound (fail-soft) rather than hanging the watcher
+# tick. 27 live sessions hold the uv cache lock almost continuously, so lock
+# contention is the EXPECTED case and a timeout is a clean skip, never an
+# error (2026-06-11: a manual 300s wait timed out). NEVER pass --force to uv
+# cache operations while sessions are live.
 VM_DISK_UV_PRUNE_TIMEOUT_S = 300
+
+# Target size handed to `wandb artifact cache cleanup` by the critical
+# reclaim arm. The artifact cache (~/.cache/wandb/artifacts) is a pure
+# content-addressed DOWNLOAD cache — wandb re-fetches on demand — so pruning
+# it to ~1GB is zero-risk; the 2026-06-11 episode had 17.6 GB sitting there
+# while / fell to 7.3 GiB, reclaimed in ~2 min by the manual run.
+VM_DISK_WANDB_CACHE_TARGET = "1GB"
+
+
+def _env_days_seconds(name: str, default_days: float) -> float:
+    """Days-denominated env knob -> seconds. Garbled / non-positive values
+    fall back to the default (same fail-soft contract as
+    :func:`_env_gib_bytes` — never crash the watcher at import)."""
+    try:
+        val = float(os.environ.get(name, ""))
+    except ValueError:
+        return default_days * 86400.0
+    if not (0 < val < 36500):
+        return default_days * 86400.0
+    return val * 86400.0
+
+
+# Conservative TTL for the HF hub cache eviction (2026-06-11 episode: 41.5 GB
+# VM-side hub cache, untouched by any reclaim). A cached revision is evicted
+# only when it was last MODIFIED more than this long ago, was last READ
+# (newest blob atime across its files) more than this long ago, AND it is
+# either detached (no refs — a superseded or sha-pinned snapshot) or its
+# whole repo has not been ACCESSED within the window. Repos touched recently
+# (e.g. the explore-persona-space-data dataset re-downloaded by interpreting
+# sessions) keep every ref'd revision; an in-flight download has a fresh
+# last_modified and a sha-pinned adapter that is actively read has fresh
+# blob atimes, so neither is ever evicted. Override: EPM_VM_DISK_HF_TTL_DAYS.
+VM_DISK_HF_TTL_S = _env_days_seconds("EPM_VM_DISK_HF_TTL_DAYS", 14)
+
+# Per-step freed-space deltas below this are statvfs noise from concurrent
+# writers (~1 GiB/h background growth) — don't annotate them in the note.
+VM_DISK_FREED_NOTE_MIN_BYTES = 2**27  # 128 MiB
 
 # Hard wall-clock bound on `worktree_audit.py --apply` (git operations +
 # rescue copies over up to ~dozens of worktrees). The watcher is single-flight
@@ -1785,15 +1827,29 @@ def _append_vm_disk_fallback_event(note: str, dry_run: bool) -> None:
         print(f"  WARNING: appending vm-disk event failed: {e}", file=sys.stderr)
 
 
-def _vm_reclaim_uv_cache(dry_run: bool) -> None:
-    """``uv cache prune`` — drops unused cache entries (safe: uv re-fetches on
-    demand). Fail-soft and hard-bounded by :data:`VM_DISK_UV_PRUNE_TIMEOUT_S`
-    so a cache lock held by a concurrent ``uv`` process can't hang the watcher
-    tick."""
-    cmd = ["uv", "cache", "prune"]
+def _vm_reclaim_wandb_cache(dry_run: bool) -> str:
+    """``wandb artifact cache cleanup <target>`` — prunes the wandb artifact
+    download cache (``~/.cache/wandb/artifacts``) to
+    :data:`VM_DISK_WANDB_CACHE_TARGET`. The cache is content-addressed and
+    re-fetched on demand, so the cleanup is zero-risk (2026-06-11 episode:
+    17.6 GB sat there while / fell to 7.3 GiB). Invoked as ``python -m
+    wandb`` via the watcher's own interpreter — the cron env has no
+    guaranteed ``wandb`` console script on PATH, and a second ``uv run``
+    would contend for the project-env lock. Fail-soft and bounded; a missing
+    wandb module is a clean skip. Returns a one-line summary for the marker
+    note."""
+    cmd = [
+        sys.executable,
+        "-m",
+        "wandb",
+        "artifact",
+        "cache",
+        "cleanup",
+        VM_DISK_WANDB_CACHE_TARGET,
+    ]
     if dry_run:
         print(f"  [dry-run] would run: {' '.join(cmd)}")
-        return
+        return "wandb-artifacts skipped (dry-run)"
     try:
         res = subprocess.run(
             cmd,
@@ -1803,25 +1859,59 @@ def _vm_reclaim_uv_cache(dry_run: bool) -> None:
             timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
         )
         tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        summary = f"wandb-artifacts rc={res.returncode}: {tail[:160]}"
+        print(f"  vm-disk: {summary}")
+    except subprocess.TimeoutExpired:
+        summary = f"wandb-artifacts timed out at {VM_DISK_UV_PRUNE_TIMEOUT_S}s (fail-soft)"
+        print(f"  vm-disk: {summary}")
+    except (subprocess.SubprocessError, OSError) as e:
+        summary = f"wandb-artifacts failed (fail-soft): {e}"
+        print(f"  vm-disk: {summary}", file=sys.stderr)
+    return summary
+
+
+def _vm_reclaim_uv_cache(dry_run: bool) -> str:
+    """``uv cache prune`` — drops unused cache entries (safe: uv re-fetches on
+    demand). Fail-soft and hard-bounded by :data:`VM_DISK_UV_PRUNE_TIMEOUT_S`
+    so a cache lock held by a concurrent ``uv`` process can't hang the watcher
+    tick. Returns a one-line summary for the marker note."""
+    cmd = ["uv", "cache", "prune"]
+    if dry_run:
+        print(f"  [dry-run] would run: {' '.join(cmd)}")
+        return "uv-cache skipped (dry-run)"
+    try:
+        res = subprocess.run(
+            cmd,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
+        )
+        tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        summary = f"uv-cache rc={res.returncode}: {tail[:160]}"
         print(f"  vm-disk: uv cache prune rc={res.returncode}: {tail[:200]}")
     except subprocess.TimeoutExpired:
         # 27 live sessions hold the uv cache lock almost continuously — lock
-        # contention is the EXPECTED case; a timeout is a clean skip.
+        # contention is the EXPECTED case; a timeout is a clean skip (the 6h
+        # re-arm window retries on a later episode tick).
+        summary = "uv-cache skipped (lock contention / timeout)"
         print("  vm-disk: uv cache prune skipped (lock contention / timeout)")
     except (subprocess.SubprocessError, OSError) as e:
+        summary = f"uv-cache failed (fail-soft): {e}"
         print(f"  vm-disk: uv cache prune failed (fail-soft): {e}", file=sys.stderr)
+    return summary
 
 
-def _vm_reclaim_npm_cache(dry_run: bool) -> None:
+def _vm_reclaim_npm_cache(dry_run: bool) -> str:
     """``npm cache clean --force`` — drops the npm cache (safe: npm re-fetches
     on demand; ``--force`` is npm's required confirmation flag for ``cache
     clean``, NOT a failure-suppression flag — npm refuses the command without
     it). Fail-soft and bounded like the uv prune; a missing npm binary is a
-    clean skip."""
+    clean skip. Returns a one-line summary for the marker note."""
     cmd = ["npm", "cache", "clean", "--force"]
     if dry_run:
         print(f"  [dry-run] would run: {' '.join(cmd)}")
-        return
+        return "npm-cache skipped (dry-run)"
     try:
         res = subprocess.run(
             cmd,
@@ -1831,9 +1921,86 @@ def _vm_reclaim_npm_cache(dry_run: bool) -> None:
             timeout=VM_DISK_UV_PRUNE_TIMEOUT_S,
         )
         tail = ((res.stdout or res.stderr).strip().splitlines() or [""])[-1]
+        summary = f"npm-cache rc={res.returncode}: {tail[:160]}"
         print(f"  vm-disk: npm cache clean rc={res.returncode}: {tail[:200]}")
     except (subprocess.SubprocessError, OSError) as e:
+        summary = f"npm-cache failed (fail-soft): {e}"
         print(f"  vm-disk: npm cache clean failed (fail-soft): {e}", file=sys.stderr)
+    return summary
+
+
+def _hf_rev_last_accessed(rev) -> float:
+    """Newest blob atime across a cached revision's files. A revision with
+    no files reads as its ``last_modified`` (conservative: an empty or
+    unreadable revision never looks fresher than it is)."""
+    times = [f.blob_last_accessed for f in rev.files]
+    return max(times) if times else rev.last_modified
+
+
+def _hf_stale_revisions(cache_info, now: float) -> list:
+    """Cached HF hub revisions safe to evict under the conservative TTL cut
+    (:data:`VM_DISK_HF_TTL_S`). A revision qualifies only when it was last
+    MODIFIED more than the TTL ago, was last READ (newest blob atime,
+    :func:`_hf_rev_last_accessed`) more than the TTL ago, AND it is either
+    detached (no refs point at it — a superseded or sha-pinned snapshot) or
+    its whole repo has not been ACCESSED within the TTL. A repo touched
+    recently keeps every ref'd revision (the dataset repos interpreting
+    sessions actively re-download); an in-flight download carries a fresh
+    ``last_modified`` and a sha-pinned (ref-less) adapter that is actively
+    read carries fresh blob atimes, so neither is ever evicted. Pure
+    selector (no deletion) so the cut is unit-testable.
+    Returns ``CachedRevisionInfo`` objects."""
+    stale = []
+    for repo in cache_info.repos:
+        repo_idle = (now - repo.last_accessed) >= VM_DISK_HF_TTL_S
+        for rev in repo.revisions:
+            rev_old = (now - rev.last_modified) >= VM_DISK_HF_TTL_S
+            rev_unread = (now - _hf_rev_last_accessed(rev)) >= VM_DISK_HF_TTL_S
+            if rev_old and rev_unread and (repo_idle or not rev.refs):
+                stale.append(rev)
+    return stale
+
+
+def _vm_reclaim_hf_hub_cache(now: float, dry_run: bool) -> str:
+    """TTL eviction of stale HF hub cache revisions (2026-06-11 episode:
+    41.5 GB VM-side hub cache untouched by any reclaim). Selection is the
+    conservative :func:`_hf_stale_revisions` cut; deletion goes through
+    ``HFCacheInfo.delete_revisions`` (handles snapshot/blob refcounting —
+    never a blanket ``rm`` of repo dirs). Fail-soft end to end: a missing
+    ``huggingface_hub``, a scan failure, or a delete failure is a logged
+    skip, never a watcher crash. Dry-run returns before scanning (the scan
+    walks the whole cache tree — too heavy for a classify-only pass).
+    Returns a one-line summary for the marker note."""
+    if dry_run:
+        print("  [dry-run] would evict HF hub revisions idle > TTL via scan_cache_dir()")
+        return "hf-hub-ttl skipped (dry-run)"
+    try:
+        from huggingface_hub import scan_cache_dir
+    except ImportError as e:
+        summary = f"hf-hub-ttl skipped (huggingface_hub unavailable: {e})"
+        print(f"  vm-disk: {summary}", file=sys.stderr)
+        return summary
+    try:
+        cache_info = scan_cache_dir()
+    except Exception as e:  # fail-soft: a disk alert must never crash its own pass
+        summary = f"hf-hub-ttl skipped (scan failed: {e})"
+        print(f"  vm-disk: {summary}", file=sys.stderr)
+        return summary
+    stale = _hf_stale_revisions(cache_info, now)
+    if not stale:
+        summary = "hf-hub-ttl: nothing stale"
+        print(f"  vm-disk: {summary}")
+        return summary
+    try:
+        strategy = cache_info.delete_revisions(*[rev.commit_hash for rev in stale])
+        freed = strategy.expected_freed_size_str
+        strategy.execute()
+        summary = f"hf-hub-ttl: evicted {len(stale)} revision(s), freed {freed}"
+        print(f"  vm-disk: {summary}")
+    except Exception as e:  # fail-soft, same contract as the scan above
+        summary = f"hf-hub-ttl failed (fail-soft): {e}"
+        print(f"  vm-disk: {summary}", file=sys.stderr)
+    return summary
 
 
 def _vm_remediate_worktrees(dry_run: bool) -> str:
@@ -5502,8 +5669,12 @@ def _vm_run_remediations(
     dry_run: bool,
 ) -> tuple[list[str], float | None, float | None]:
     """Execute the armed vm-disk remediations (worktree audit at low+, cache
-    reclaims at critical). Returns ``(summary lines for the marker note,
-    new last_reclaim_ts, new last_audit_ts)``. All actions are fail-soft."""
+    reclaims at critical). Each reclaim step lands its own summary line in
+    the marker note, annotated with the free-space delta it bought (when
+    above :data:`VM_DISK_FREED_NOTE_MIN_BYTES` — smaller deltas are statvfs
+    noise from concurrent writers). Returns ``(summary lines for the marker
+    note, new last_reclaim_ts, new last_audit_ts)``. All actions are
+    fail-soft."""
     remediation: list[str] = []
     new_last_audit_ts = last_audit_ts
     if do_audit:
@@ -5515,12 +5686,29 @@ def _vm_run_remediations(
     if do_reclaim:
         print(
             "  vm-disk: running safe cache reclaims "
-            "(uv cache prune + npm cache clean + stale /tmp/claude-* sweep)"
+            "(wandb artifact cache + uv cache prune + npm cache clean "
+            "+ HF hub TTL eviction + stale /tmp/claude-* sweep)"
         )
-        _vm_reclaim_uv_cache(dry_run)
-        _vm_reclaim_npm_cache(dry_run)
+        for step in (
+            lambda: _vm_reclaim_wandb_cache(dry_run),
+            lambda: _vm_reclaim_uv_cache(dry_run),
+            lambda: _vm_reclaim_npm_cache(dry_run),
+            lambda: _vm_reclaim_hf_hub_cache(now, dry_run),
+        ):
+            before = _vm_free_bytes()
+            summary = step()
+            after = _vm_free_bytes()
+            if (
+                isinstance(summary, str)
+                and before is not None
+                and after is not None
+                and after - before > VM_DISK_FREED_NOTE_MIN_BYTES
+            ):
+                summary = f"{summary} (+{(after - before) / 2**30:.1f} GiB)"
+            if summary:
+                remediation.append(summary)
         swept = _sweep_stale_claude_tmp(now, dry_run)
-        remediation.append(f"cache reclaims ran (swept {swept} stale /tmp/claude-* tree(s))")
+        remediation.append(f"swept {swept} stale /tmp/claude-* tree(s)")
         new_last_reclaim_ts = now
 
     if remediation:
@@ -5605,10 +5793,12 @@ def vm_disk_pass(dry_run: bool, now: float | None = None) -> None:
             f"{_VM_DISK_NOTE_SENTINEL} VM root disk {level.upper()}: "
             f"{free_gib:.1f} GiB free on {VM_DISK_PATH}. Near full, foreground "
             f"Bash spawns in VM sessions start failing silently (exit 1, zero "
-            f"output — task #552 incident, 2026-06-10). Reclaim candidates: "
-            f"worktree .venvs under .claude/worktrees/, `uv cache prune`, "
-            f"stale /tmp/claude-* trees, the HF cache. Posted once per "
-            f"low-disk episode."
+            f"output — task #552 incident, 2026-06-10). Auto-remediation: "
+            f"stale-worktree sweep at LOW; at CRITICAL also the wandb "
+            f"artifact / uv / npm caches, HF hub revisions idle > TTL, and "
+            f"stale /tmp/claude-* trees (executed steps listed below); "
+            f"anything beyond that (held worktrees, recently-used HF repos) "
+            f"needs a human. Posted once per low-disk episode."
         )
         if remediation:
             note += f" [auto-remediation: {'; '.join(remediation)}]"

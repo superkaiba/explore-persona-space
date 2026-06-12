@@ -8,9 +8,13 @@
 #      low (~20 GiB) AND run the stale-worktree sweep (worktree_audit.py
 #      --apply — the big-space remediation; 6h re-arm); below ~15 GiB (env
 #      EPM_VM_DISK_CRITICAL_GIB) also run the safe fail-soft cache reclaims
-#      (uv cache prune, npm cache clean, stale /tmp/claude-* sweep). A full /
-#      silently kills every foreground Bash spawn in orchestrator sessions
-#      (task #552; remediation-at-detection added after #587, 2026-06-11).
+#      (wandb artifact cache cleanup, uv cache prune, npm cache clean, HF hub
+#      TTL eviction of revisions idle > EPM_VM_DISK_HF_TTL_DAYS, stale
+#      /tmp/claude-* sweep), each logging its freed space in the marker note.
+#      A full / silently kills every foreground Bash spawn in orchestrator
+#      sessions (task #552; remediation-at-detection added after #587,
+#      2026-06-11; wandb/HF cache tiers added 2026-06-12 after the reclaims
+#      freed ~0 while 17.6 GB wandb + 41.5 GB HF sat reclaimable).
 #   2. Crash-recovery: respawn a recoverable autonomous (`--auto`) /issue
 #      session whose driver process has died (crash / OOM / VM reboot), which
 #      the in-session /loop + durable=false cron cannot recover on their own.
