@@ -1,7 +1,7 @@
 ---
-title: 'Which contrastive negatives you train against barely matters: close-persona,
-  default-including, and 2-16-persona panels all reproduce the parent marker-leakage
-  map within 0.2 nat (MODERATE confidence)'
+title: Under brief early-stopped training, swapping the contrastive-negative panel
+  six ways (close personas, default assistant included, 2-16 negatives) leaves the
+  marker-leakage map unchanged within 0.2 nat (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:20:50Z'
