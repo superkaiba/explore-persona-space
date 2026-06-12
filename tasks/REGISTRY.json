@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 621,
+  "highest_id": 622,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3815,6 +3815,14 @@
       "path": "tasks/planning/621",
       "status": "planning",
       "title": "Train rank-1 LoRA implants and compare the A (read) and B (write) vectors to persona-context and behavior vectors"
+    },
+    "622": {
+      "goal": "Find the contrastive-negatives count at which source implantation stops growing or collapses, discriminating the schedule-length mechanism from loss-competition.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/622",
+      "status": "proposed",
+      "title": "Sweep contrastive negatives to failure: extend the budget sweep beyond 1600 until source implantation plateaus or collapses"
     },
     "65": {
       "has_clean_result": true,
