@@ -143,7 +143,7 @@ Even if the seeds had been readable, 0.449 sits inside the plan’s indeterminat
 
 The geometric counterpart of the persona-blind behavioral gain: on the fixed-text read, membership in the shared direction is near-total, but the direction itself is novel.
 
-![Scatter of per-persona alignment with the top shift direction, whole-response arm versus positive-only control, trained-model text: all points sit above the diagonal in a band between 0.85 and 0.98.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eec0f3ea47288ccfa834acaeec1838f9ec0c6230/figures/issue_599/fullresp_vs_posonly_profiles.png)
+![Scatter of per-persona alignment with the top shift direction, whole-response arm versus positive-only control, trained-model text: 35 of 42 points sit above the diagonal in a band between 0.85 and 0.98, with the biographer persona below it in every seed.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/eec0f3ea47288ccfa834acaeec1838f9ec0c6230/figures/issue_599/fullresp_vs_posonly_profiles.png)
 
 > **Figure.** *Every one of the 14 probe personas aligns with the whole-response arm's top direction at absolute cosine 0.85–0.98 (y-axis) — tighter than the same personas under the positive-only control (x-axis).* Per-persona absolute cosine to each arm's own top direction, weighted read, trained-model text, 3 seeds.
 
