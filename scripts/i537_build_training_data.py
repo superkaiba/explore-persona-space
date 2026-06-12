@@ -244,8 +244,26 @@ def _tulu_sample(n: int, seed: int, *, max_chars: int = 2000) -> list[dict]:
 
 
 def build_marker(
-    ctx, negatives, questions, responses_dir, *, registry, demos, smoke: bool = False
+    ctx,
+    negatives,
+    questions,
+    responses_dir,
+    *,
+    registry,
+    demos,
+    smoke: bool = False,
+    marker_sep: str = "",
 ) -> list[dict]:
+    """Build one marker training mix (positives + contrastive negatives).
+
+    ``marker_sep`` (#628): text inserted between the frozen response and the
+    marker token on POSITIVE rows. Default ``""`` is the canonical
+    slot-aligned rig (``pos_r[q] + MARKER_TEXT`` — byte-identical to the
+    frozen #537 mixes); the legacy #448/#472/#601-family rig passes
+    ``"\\n\\n"`` (text-level concat, so ``"." + "\\n\\n"`` BPE-fuses to id 382
+    exactly as those tasks trained). Negative rows never carry the marker and
+    are unaffected by ``marker_sep``.
+    """
     from explore_persona_space.experiments.i537_contexts import MARKER_TEXT, build_messages
 
     pos_r = _load_responses(
@@ -256,7 +274,7 @@ def build_marker(
         rows.append(
             _row(
                 build_messages(ctx, q, behavior="marker", icl_demos=demos),
-                pos_r[q] + MARKER_TEXT,
+                pos_r[q] + marker_sep + MARKER_TEXT,
             )
         )
     n_per_neg = len(questions) // len(negatives)
@@ -500,7 +518,18 @@ def main() -> int:
         help="negative-context on-policy answers to the refusal request pool",
     )
     ap.add_argument("--smoke", action="store_true", help="tiny row counts (structural smoke)")
+    ap.add_argument(
+        "--marker-sep",
+        default="",
+        help=(
+            "text between the frozen response and the marker on POSITIVE marker rows "
+            "(#628). Default '' = canonical slot-aligned rig (byte-identical to the "
+            "frozen #537 mixes); the legacy rig passes $'\\n\\n'. Marker behavior only."
+        ),
+    )
     args = ap.parse_args()
+    if args.marker_sep and args.behavior != "marker":
+        ap.error("--marker-sep only applies to --behavior marker")
 
     from transformers import AutoTokenizer
 
@@ -541,6 +570,7 @@ def main() -> int:
             registry=registry,
             demos=demos,
             smoke=args.smoke,
+            marker_sep=args.marker_sep,
         )
     elif behavior == "fact":
         rows = build_fact(ctx, negatives, registry=registry, demos=demos, smoke=args.smoke)
@@ -586,6 +616,10 @@ def main() -> int:
         "git_commit": _git_commit(),
         "sha256": hashlib.sha256(out.read_bytes()).hexdigest(),
     }
+    if behavior == "marker":
+        # #628: record the rig the mix was built/trained under so every cell's
+        # data provenance carries the separator + collator flags.
+        meta["marker_sep"] = args.marker_sep
     out.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2))
     logger.info("wrote %s (%d rows, cap %d)", out, len(rows), max_length)
     return 0
