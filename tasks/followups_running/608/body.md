@@ -1,7 +1,7 @@
 ---
-title: Positive-only sycophancy training installs in the same near-ceiling band as
-  the contrastive mix (which loses one of six sources to a context collision) but
-  spreads sycophancy to nearly every other persona (MODERATE confidence)
+title: Positive-only sycophancy training installs at least as strongly as the contrastive
+  mix at every dose the rate can measure, but spreads sycophancy to nearly every other
+  persona (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
