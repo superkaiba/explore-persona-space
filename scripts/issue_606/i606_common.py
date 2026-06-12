@@ -98,6 +98,11 @@ PARITY_HARD_TOL = 0.15
 # Checkpoint grids (optimizer steps; plan §10).
 LORA_CKPT_GRID = (2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 32, 36, 40, 44, 55, 66, 88, 110, 132)
 FT_CKPT_GRID = (2, 4, 6, 8, 12, 16, 22, 29, 37, 44, 66, 88, 132)
+# Densified FT retrain grid (plan §4.4(b)/§13 pre-authorized lr-2e-6 lever):
+# every 2 steps through 24 (the parent's install transition fired between
+# steps 8 and 12 at lr 5e-6), then the parent grid tail. Selected via
+# ``i606_dispatch.py --ft-grid retrain``.
+FT_RETRAIN_GRID = (2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 29, 37, 44, 66, 88, 132)
 
 # Training recipes (plan §10; LoRA values from origin/issue-518:
 # scripts/run_experiment_518_refusal.py lines 334-355; FT lr from #514).

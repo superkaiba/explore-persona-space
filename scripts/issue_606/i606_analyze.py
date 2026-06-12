@@ -52,6 +52,14 @@ Production::
 
     uv run python scripts/issue_606/i606_analyze.py --behavior sycophancy \
         --eval-root eval_results/issue_606
+
+Follow-up arm run (plan §4.4(b)/§13 FT lr-2e-6 retrain; the label run's FT
+cells are judged + merged against the PARENT's already-measured LoRA + base
+verdicts under ``<eval-root>/<behavior>/``; output lands at
+``<eval-root>/<label>/analysis.json``)::
+
+    uv run python scripts/issue_606/i606_analyze.py --behavior refusal \
+        --eval-root eval_results/issue_606 --run-label refusal-ft-lr2e6-retrain
 """
 
 from __future__ import annotations
@@ -260,6 +268,11 @@ def _bracket_info(s_cells: dict[str, float], target: float) -> dict:
 # ---------------------------------------------------------------------------
 
 
+def _cell_arm(cell: str) -> str:
+    """Arm of a cell slug: ``lora_step12`` -> ``lora``; ``base`` -> ``base``."""
+    return "base" if cell == "base" else cell.split("_step")[0]
+
+
 def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatter the registered stats
     *,
     behavior: str,
@@ -268,7 +281,37 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
     bootstrap_b: int,
     refetch: bool,
     judge_concurrency: int = 32,
+    run_label: str | None = None,
+    parent_root: Path | None = None,
+    parent_experiment: str | None = None,
+    label_arms: tuple[str, ...] = ("ft",),
 ) -> dict:
+    """Judging + matched-strength analysis for one behavior.
+
+    Default mode: every cell (both arms + base) comes from ``eval_root`` /
+    ``experiment``. Follow-up mode (``run_label`` set — the plan-§4.4(b)/§13
+    FT lr-2e-6 retrain): cells whose arm is in ``label_arms`` come from the
+    label run (``eval_root`` = ``<parent_root>/<run_label>``, ``experiment``
+    = ``<parent_experiment>/<run_label>``); ALL other cells — the comparator
+    arm(s) AND the checkpoint-independent base panel — are the PARENT's
+    measured cells, read from ``parent_root`` / ``parent_experiment`` (their
+    verdicts are already judged and cached there). Statistics, fallback
+    ladder, and parity anchors are byte-identical to the default mode; the
+    output lands at ``<eval_root>/analysis.json`` with follow-up provenance.
+    """
+    followup = run_label is not None
+    parent_root = parent_root if parent_root is not None else eval_root
+    parent_experiment = parent_experiment if parent_experiment is not None else experiment
+
+    def _is_label_cell(cell: str) -> bool:
+        return _cell_arm(cell) in label_arms
+
+    def _root_for(cell: str) -> Path:
+        return eval_root if (not followup or _is_label_cell(cell)) else parent_root
+
+    def _exp_for(cell: str) -> str:
+        return experiment if (not followup or _is_label_cell(cell)) else parent_experiment
+
     broot = eval_root / behavior
     selection = json.loads(
         _ensure_local(
@@ -293,6 +336,67 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
             refetch=refetch,
         ).read_text()
     )
+    retrain_trajectory = None
+    if followup:
+        # Merge the label run (retrained arm(s)) with the parent's measured
+        # comparator + base. The parent's OLD cells for the retrained arm(s)
+        # are EXCLUDED (the retrain replaces them); the label run's base (a
+        # parent-seeded copy) defers to the parent's own record.
+        sel_parent = json.loads(
+            _ensure_local(
+                parent_root,
+                behavior,
+                "stage_a/selection.json",
+                experiment=parent_experiment,
+                refetch=refetch,
+            ).read_text()
+        )
+        traj_parent = json.loads(
+            _ensure_local(
+                parent_root,
+                behavior,
+                f"stage_a/trajectory_{behavior}.json",
+                experiment=parent_experiment,
+                refetch=refetch,
+            ).read_text()
+        )
+        man_parent = json.loads(
+            _ensure_local(
+                parent_root,
+                behavior,
+                "generation_manifest.json",
+                experiment=parent_experiment,
+                refetch=refetch,
+            ).read_text()
+        )
+        retrain_trajectory = {
+            slug: rec for slug, rec in trajectory["cells"].items() if rec.get("arm") in label_arms
+        }
+        for arm in label_arms:
+            if arm not in selection["arms"]:
+                raise RuntimeError(
+                    f"[{behavior}] follow-up label run has no {arm!r} arm in its "
+                    f"selection.json (label_arms={label_arms})"
+                )
+        merged_arms = {
+            **{a: v for a, v in sel_parent["arms"].items() if a not in label_arms},
+            **{a: v for a, v in selection["arms"].items() if a in label_arms},
+        }
+        selection = {**selection, "arms": merged_arms}
+        merged_traj_cells = {
+            slug: rec
+            for slug, rec in traj_parent["cells"].items()
+            if rec.get("arm") not in label_arms
+        }
+        merged_traj_cells.update(retrain_trajectory)
+        trajectory = {**trajectory, "cells": merged_traj_cells}
+        merged_man_cells = {
+            c: v for c, v in man_parent["cells"].items() if _cell_arm(c) not in label_arms
+        }
+        merged_man_cells.update(
+            {c: v for c, v in manifest["cells"].items() if _cell_arm(c) in label_arms}
+        )
+        manifest = {"cells": merged_man_cells, "metadata": manifest.get("metadata", {})}
     smoke_tier = bool(selection.get("smoke") or selection.get("dry_run"))
 
     cells = sorted(manifest["cells"])
@@ -319,15 +423,16 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
     for c in cells:
         counts[c] = {}
         lengths[c] = {}
+        c_root, c_exp = _root_for(c), _exp_for(c)
         for p in panel:
             gen_rel = f"generations/{c}/{behavior}_eval_{p}.json"
-            verdict_path = broot / "verdicts" / f"{c}__{p}.json"
+            verdict_path = c_root / behavior / "verdicts" / f"{c}__{p}.json"
             if not verdict_path.exists():
                 gen_json = _ensure_local(
-                    eval_root, behavior, gen_rel, experiment=experiment, refetch=refetch
+                    c_root, behavior, gen_rel, experiment=c_exp, refetch=refetch
                 )
             else:
-                gen_json = broot / gen_rel  # may be absent; cached verdict suffices
+                gen_json = c_root / behavior / gen_rel  # may be absent; cached verdict suffices
             cell = judge_generation_file(
                 gen_json,
                 verdict_path,
@@ -830,6 +935,25 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
         },
         "judge_model": JUDGE_MODEL,
         **({"synthetic_gap_check": syn_gap_check} if syn_gap_check is not None else {}),
+        **(
+            {
+                "followup": {
+                    "run_label": run_label,
+                    "label_arms": list(label_arms),
+                    "label_experiment": experiment,
+                    "label_root": str(eval_root),
+                    "parent_experiment": parent_experiment,
+                    "parent_root": str(parent_root),
+                    "label_cells": sorted(c for c in cells if _is_label_cell(c)),
+                    "parent_cells": sorted(c for c in cells if not _is_label_cell(c)),
+                },
+                # The retrained arm's FULL stage-A trajectory (all grid steps,
+                # not just the selected cells) — the new arm's s(step) curve.
+                "retrain_trajectory": retrain_trajectory,
+            }
+            if followup
+            else {}
+        ),
         "metadata": {
             "git_commit_sha": _git_sha(),
             "hostname": socket.gethostname(),
@@ -838,7 +962,7 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
             "numpy_version": np.__version__,
         },
     }
-    out = broot / "analysis.json"
+    out = (eval_root / "analysis.json") if followup else (broot / "analysis.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(analysis, indent=2))
     log.info(
@@ -873,7 +997,9 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
 # ---------------------------------------------------------------------------
 
 
-def make_synthetic(root: Path, mode: str) -> None:
+def make_synthetic(  # noqa: C901 - linear fixture writer; the split layout adds routing, not logic
+    root: Path, mode: str, run_label: str | None = None
+) -> None:
     """Write a synthetic verdict tree with a KNOWN gap (KNOWN_GAP_COEFF=+0.10
     per unit s on every bystander, i.e. +0.05 at s*=0.50) so the smoke can
     verify the plug-in recovers it. ``mode='no_bracket'`` puts every LoRA
@@ -884,12 +1010,28 @@ def make_synthetic(root: Path, mode: str) -> None:
     average away across the panel mean (concern
     crossed-bootstrap-claim-clustering); the realized designed gap (incl. the
     seed's claim-effect mean) is written to the manifest so the analyze run
-    asserts recovery for the plug-in AND both bootstrap variants."""
+    asserts recovery for the plug-in AND both bootstrap variants.
+
+    ``run_label`` (follow-up smoke): writes the SPLIT layout the §4.4(b)/§13
+    retrain produces — base + LoRA cells under ``<root>/<behavior>/`` (the
+    parent side) and FT cells under ``<root>/<run_label>/<behavior>/`` (the
+    label side, whose manifest carries the designed-gap metadata) — so
+    ``analyze --run-label`` exercises the merged consumer path end-to-end.
+    The verdict streams are bit-identical to the single-root fixture (same
+    rng order), so the recovered gap matches the non-split fixture's."""
     rng = np.random.default_rng(7)
     behavior = "sycophancy"
     broot = root / behavior
     (broot / "stage_a").mkdir(parents=True, exist_ok=True)
     (broot / "verdicts").mkdir(parents=True, exist_ok=True)
+    label_broot = (root / run_label / behavior) if run_label else broot
+    if run_label:
+        (label_broot / "stage_a").mkdir(parents=True, exist_ok=True)
+        (label_broot / "verdicts").mkdir(parents=True, exist_ok=True)
+
+    def _broot_for(cell: str) -> Path:
+        return label_broot if (run_label and cell.startswith("ft_")) else broot
+
     personas = [SOURCE_PERSONA, "qwen_default", "assistant", "supervillain", "daycare_teacher"]
     n_claims, n_rollouts = 10, 4
 
@@ -941,14 +1083,34 @@ def make_synthetic(root: Path, mode: str) -> None:
         metadata["gap_tolerance"] = 0.06 if mode == "bracket" else 0.08
         if mode == "shared_claim_effect":
             metadata["expect_shared_claim_width_divergence"] = True
-    manifest = {
-        "cells": {
-            c: {"panels": personas, "n_rollouts": n_rollouts, "n_probes": n_claims, "seed": 42}
-            for c in cells
-        },
-        "metadata": metadata,
-    }
-    (broot / "generation_manifest.json").write_text(json.dumps(manifest, indent=2))
+
+    def _cell_entry(c: str) -> dict:
+        return {"panels": personas, "n_rollouts": n_rollouts, "n_probes": n_claims, "seed": 42}
+
+    if run_label:
+        # Parent side: base + LoRA cells; label side: FT cells + the designed-
+        # gap metadata (analyze's merged manifest takes metadata from the label).
+        (broot / "generation_manifest.json").write_text(
+            json.dumps(
+                {
+                    "cells": {c: _cell_entry(c) for c in cells if not c.startswith("ft_")},
+                    "metadata": {"synthetic": True, "mode": mode},
+                },
+                indent=2,
+            )
+        )
+        (label_broot / "generation_manifest.json").write_text(
+            json.dumps(
+                {
+                    "cells": {c: _cell_entry(c) for c in cells if c.startswith("ft_")},
+                    "metadata": metadata,
+                },
+                indent=2,
+            )
+        )
+    else:
+        manifest = {"cells": {c: _cell_entry(c) for c in cells}, "metadata": metadata}
+        (broot / "generation_manifest.json").write_text(json.dumps(manifest, indent=2))
 
     def _mk_verdicts(rate: float | np.ndarray, degen_frac: float = 0.0) -> list[dict]:
         """``rate``: scalar, or per-claim array of length n_claims."""
@@ -1006,7 +1168,7 @@ def make_synthetic(root: Path, mode: str) -> None:
                 "dry_run": False,
                 "synthetic": True,
             }
-            (broot / "verdicts" / f"{c}__{p}.json").write_text(json.dumps(cell_payload))
+            (_broot_for(c) / "verdicts" / f"{c}__{p}.json").write_text(json.dumps(cell_payload))
         if c != "base":
             arm = "lora" if c.startswith("lora_") else "ft"
             traj_cells[c] = {
@@ -1026,23 +1188,46 @@ def make_synthetic(root: Path, mode: str) -> None:
         "n_verdicts": n_claims * n_rollouts,
         "n_degenerate": 0,
     }
-    (broot / "stage_a" / f"trajectory_{behavior}.json").write_text(
-        json.dumps({"behavior": behavior, "cells": traj_cells, "synthetic": True}, indent=2)
-    )
-    selection = {
+    lora_sel = {
+        "bracket_pair": [4, 12] if mode == "bracket" else None,
+        "selected_steps": [4, 12, 44, 132],
+    }
+    ft_sel = {"bracket_pair": [4, 16], "selected_steps": [4, 16, 44, 132]}
+    sel_flags = {
         "behavior": behavior,
         "smoke": True,  # smoke tier: parity gates log-only on synthetic data
         "dry_run": False,
         "synthetic": True,
-        "arms": {
-            "lora": {
-                "bracket_pair": [4, 12] if mode == "bracket" else None,
-                "selected_steps": [4, 12, 44, 132],
-            },
-            "ft": {"bracket_pair": [4, 16], "selected_steps": [4, 16, 44, 132]},
-        },
         "install_gate_pass": True,
     }
+    if run_label:
+        # Parent side: base + LoRA trajectory cells, lora-arm selection.
+        # Label side: FT trajectory cells + a parent-seeded base copy (the
+        # dispatcher's follow-up shape), ft-arm-only selection.
+        parent_traj = {c: r for c, r in traj_cells.items() if not c.startswith("ft_")}
+        label_traj = {c: r for c, r in traj_cells.items() if c.startswith("ft_")}
+        label_traj["base"] = {
+            **traj_cells["base"],
+            "reused_from": "synthetic parent (split fixture)",
+        }
+        (broot / "stage_a" / f"trajectory_{behavior}.json").write_text(
+            json.dumps({"behavior": behavior, "cells": parent_traj, "synthetic": True}, indent=2)
+        )
+        (label_broot / "stage_a" / f"trajectory_{behavior}.json").write_text(
+            json.dumps({"behavior": behavior, "cells": label_traj, "synthetic": True}, indent=2)
+        )
+        (broot / "stage_a" / "selection.json").write_text(
+            json.dumps({**sel_flags, "arms": {"lora": lora_sel}}, indent=2)
+        )
+        (label_broot / "stage_a" / "selection.json").write_text(
+            json.dumps({**sel_flags, "arms": {"ft": ft_sel}, "run_label": run_label}, indent=2)
+        )
+        log.info("synthetic SPLIT fixture (%s) -> parent %s + label %s", mode, broot, label_broot)
+        return
+    (broot / "stage_a" / f"trajectory_{behavior}.json").write_text(
+        json.dumps({"behavior": behavior, "cells": traj_cells, "synthetic": True}, indent=2)
+    )
+    selection = {**sel_flags, "arms": {"lora": lora_sel, "ft": ft_sel}}
     (broot / "stage_a" / "selection.json").write_text(json.dumps(selection, indent=2))
     log.info("synthetic fixture (%s) -> %s", mode, broot)
 
@@ -1056,6 +1241,20 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--behavior", choices=["sycophancy", "refusal"])
     p.add_argument("--eval-root", type=Path, default=REPO / "eval_results" / "issue_606")
     p.add_argument("--hf-experiment-name", default=HF_EXPERIMENT_NAME)
+    p.add_argument(
+        "--run-label",
+        default=None,
+        help="Follow-up arm-run label (plan §4.4(b)/§13, e.g. refusal-ft-lr2e6-retrain): "
+        "the label run's artifacts live under <eval-root>/<label>/<behavior>/ (Hub: "
+        "<experiment>/<label>/...), the parent's comparator + base cells under "
+        "<eval-root>/<behavior>/; analysis.json lands at <eval-root>/<label>/.",
+    )
+    p.add_argument(
+        "--label-arms",
+        default="ft",
+        help="Comma list of arms the label run retrained (default ft); all other "
+        "arms + base read from the parent.",
+    )
     p.add_argument("--bootstrap-b", type=int, default=BOOTSTRAP_B)
     p.add_argument("--judge-concurrency", type=int, default=32)
     p.add_argument("--no-refetch", action="store_true")
@@ -1065,17 +1264,35 @@ def main(argv: list[str] | None = None) -> int:
         choices=["bracket", "no_bracket", "shared_claim_effect"],
         default="bracket",
     )
+    p.add_argument(
+        "--synthetic-run-label",
+        default=None,
+        help="With --make-synthetic: write the follow-up SPLIT layout (parent side + "
+        "<label> side) so `--run-label <label>` can be smoke-tested end-to-end.",
+    )
     args = p.parse_args(argv)
 
     if args.make_synthetic is not None:
-        make_synthetic(args.make_synthetic, args.synthetic_mode)
+        make_synthetic(args.make_synthetic, args.synthetic_mode, args.synthetic_run_label)
         return 0
     if not args.behavior:
         raise SystemExit("--behavior is required (unless --make-synthetic)")
+    label_arms = tuple(a.strip() for a in args.label_arms.split(",") if a.strip())
+    for a in label_arms:
+        if a not in ("lora", "ft"):
+            raise SystemExit(f"--label-arms entries must be lora/ft, got {a!r}")
+    if args.run_label:
+        label_root = args.eval_root / args.run_label
+        label_experiment = f"{args.hf_experiment_name}/{args.run_label}"
+        parent_root = args.eval_root
+        parent_experiment = args.hf_experiment_name
+    else:
+        label_root, label_experiment = args.eval_root, args.hf_experiment_name
+        parent_root, parent_experiment = args.eval_root, args.hf_experiment_name
     install_failure = _install_failure_report(
-        args.eval_root,
+        label_root,
         args.behavior,
-        experiment=args.hf_experiment_name,
+        experiment=label_experiment,
         refetch=not args.no_refetch,
     )
     if install_failure is not None:
@@ -1093,11 +1310,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     analysis = analyze_behavior(
         behavior=args.behavior,
-        eval_root=args.eval_root,
-        experiment=args.hf_experiment_name,
+        eval_root=label_root,
+        experiment=label_experiment,
         bootstrap_b=args.bootstrap_b,
         refetch=not args.no_refetch,
         judge_concurrency=args.judge_concurrency,
+        run_label=args.run_label,
+        parent_root=parent_root,
+        parent_experiment=parent_experiment,
+        label_arms=label_arms,
     )
     h = analysis["headline"]
     print(

@@ -202,6 +202,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--max-length", type=int, default=DEFAULT_MAX_LENGTH)
     p.add_argument("--base-model", default=DEFAULT_BASE_MODEL)
     p.add_argument("--wandb-project", default=DEFAULT_WANDB_PROJECT)
+    p.add_argument(
+        "--run-name-suffix",
+        default="",
+        help="Appended to the WandB run name (follow-up retrains get a distinct "
+        "run name instead of colliding with the parent's — #480 class).",
+    )
     return p.parse_args(argv)
 
 
@@ -280,6 +286,8 @@ def main() -> int:
     model.gradient_checkpointing_enable()
 
     wandb_run_name = f"issue606_ft_{args.behavior}_seed{args.seed}"
+    if args.run_name_suffix:
+        wandb_run_name = f"{wandb_run_name}_{args.run_name_suffix}"
     os.environ.setdefault("WANDB_PROJECT", args.wandb_project)
     training_kwargs = dict(
         output_dir=str(args.output_dir),
@@ -352,6 +360,7 @@ def main() -> int:
             "lr_scheduler_type": "cosine",
             "ckpt_steps": sorted(ckpt_steps),
             "saved_checkpoints": saved,
+            "wandb_run_name": wandb_run_name,
             "git_commit": _git_commit(),
             "torch_version": torch.__version__,
             "transformers_version": transformers.__version__,

@@ -47,6 +47,19 @@ Production launch (pod, after preflight + smoke)::
         --behaviors sycophancy,refusal --seeds 42 \
         --output-root /workspace/issue_606 --resume-from-phase auto \
         > /workspace/logs/issue-606.log 2>&1 &
+
+Follow-up arm run (plan §4.4(b)/§13 pre-authorized FT lr-2e-6 retrain; same
+dispatcher, ONLY the named arm is retrained; ``--run-label`` scopes every
+output — pod tree, Hub prefix ``<experiment>/<label>/...`` — away from the
+parent's, and the checkpoint-independent BASE cells are NEVER regenerated:
+stage A seeds the base trajectory entry from the parent's Hub copy and stage
+B skips the base panel; ``i606_analyze.py --run-label`` reads the parent's
+base + LoRA verdicts at analysis time)::
+
+    uv run python scripts/issue_606/i606_dispatch.py \
+        --behaviors refusal --arms ft --ft-lr 2e-6 --ft-grid retrain \
+        --run-label refusal-ft-lr2e6-retrain --seeds 42 \
+        --output-root /workspace/issue_606_fu1 --resume-from-phase auto
 """
 
 from __future__ import annotations
@@ -55,6 +68,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -77,6 +91,7 @@ from i606_common import (  # noqa: E402
     EVAL_MAX_NEW_TOKENS,
     FT_CKPT_GRID,
     FT_LR,
+    FT_RETRAIN_GRID,
     FT_RETRAIN_LR,
     HF_DATA_REPO,
     HF_EXPERIMENT_NAME,
@@ -159,6 +174,21 @@ class Ctx:
         if self.smoke and self.experiment_name == HF_EXPERIMENT_NAME:
             # Smoke artifacts never land in the production Hub namespace.
             self.experiment_name = f"{HF_EXPERIMENT_NAME}_smoke"
+        # Follow-up arm run (plan §4.4(b)/§13): --run-label scopes every Hub
+        # path under <experiment>/<label>/ and switches BASE cells to
+        # parent-reuse (never regenerated; see _parent_base_stage_a_cell /
+        # _stage_b_cells). Applied AFTER the smoke suffix so smoke follow-up
+        # runs land under <experiment>_smoke/<label>/.
+        self.run_label: str | None = getattr(args, "run_label", None) or None
+        if self.run_label is not None and not re.fullmatch(
+            r"[A-Za-z0-9][A-Za-z0-9._-]*", self.run_label
+        ):
+            raise ValueError(
+                f"--run-label {self.run_label!r} must match [A-Za-z0-9][A-Za-z0-9._-]* "
+                "(it becomes a Hub path segment)"
+            )
+        if self.run_label is not None:
+            self.experiment_name = f"{self.experiment_name}/{self.run_label}"
         if self.dry_run and not self.skip_upload and self.experiment_name == HF_EXPERIMENT_NAME:
             log.warning("dry-run + production --hf-experiment-name: forcing --skip-upload")
             self.skip_upload = True
@@ -166,6 +196,33 @@ class Ctx:
         for b in self.behaviors:
             if b not in JUDGE_PROMPT_BY_BEHAVIOR:
                 raise ValueError(f"unknown behavior {b!r}")
+        # --arms: which arms this run TRAINS + evals (canonical order kept).
+        requested_arms = [
+            a.strip() for a in getattr(args, "arms", "lora,ft").split(",") if a.strip()
+        ]
+        for a in requested_arms:
+            if a not in ("lora", "ft"):
+                raise ValueError(f"unknown arm {a!r} (expected lora and/or ft)")
+        self.arms: tuple[str, ...] = tuple(a for a in ("lora", "ft") if a in requested_arms)
+        if not self.arms:
+            raise ValueError("--arms parsed to an empty set")
+        if self.arms != ("lora", "ft") and self.run_label is None:
+            raise ValueError(
+                "--arms subset runs REQUIRE --run-label: without a label the arm rerun "
+                "would write into the parent's Hub namespace and collide with the "
+                "parent's artifacts"
+            )
+        # --ft-grid: 'retrain' = the §13 densified FT_RETRAIN_GRID; else a
+        # comma list of positive ints; default = the parent FT_CKPT_GRID.
+        ft_grid_arg = (getattr(args, "ft_grid", None) or "").strip()
+        if ft_grid_arg == "retrain":
+            ft_grid_override: tuple[int, ...] | None = FT_RETRAIN_GRID
+        elif ft_grid_arg:
+            ft_grid_override = tuple(sorted({int(x) for x in ft_grid_arg.split(",") if x.strip()}))
+            if not ft_grid_override or any(s <= 0 for s in ft_grid_override):
+                raise ValueError(f"--ft-grid must be positive ints, got {ft_grid_arg!r}")
+        else:
+            ft_grid_override = None
         if self.smoke:
             self.behaviors = self.behaviors[:1]  # sycophancy by default
             self.n_probes: int | None = SMOKE_N_PROBES
@@ -177,7 +234,7 @@ class Ctx:
             self.n_probes = None  # full 50
             self.n_rollouts = 10
             self.lora_grid = LORA_CKPT_GRID
-            self.ft_grid = FT_CKPT_GRID
+            self.ft_grid = ft_grid_override or FT_CKPT_GRID
             self.ft_max_steps = 0
         self.output_root.mkdir(parents=True, exist_ok=True)
         self.sentinel_dir = (
@@ -610,12 +667,14 @@ def _dry_run_fake_ckpts(root: Path, steps: tuple[int, ...], meta: dict) -> None:
 
 
 def phase1_train(ctx: Ctx, behavior: str) -> None:
-    _phase_log("p1_train", f"[{behavior}] Phase 1 start")
+    _phase_log("p1_train", f"[{behavior}] Phase 1 start (arms={ctx.arms})")
     train_jsonl = ctx.train_pool(behavior)
 
     # -- 1a LoRA trajectory (1 GPU subprocess) --
     lora_root = ctx.lora_ckpt_root(behavior)
-    if (lora_root / "train_metadata.json").exists():
+    if "lora" not in ctx.arms:
+        _phase_log("p1_train", f"[{behavior}] LoRA arm not requested (--arms) — skipping")
+    elif (lora_root / "train_metadata.json").exists():
         _phase_log("p1_train", f"[{behavior}] LoRA train_metadata exists — skipping (resume)")
     elif ctx.dry_run:
         _dry_run_fake_ckpts(lora_root, ctx.lora_grid, {"behavior": behavior, "arm": "lora"})
@@ -646,6 +705,9 @@ def phase1_train(ctx: Ctx, behavior: str) -> None:
 
     # -- 1b full-FT trajectory (4 GPU ZeRO-3) --
     ft_root = ctx.ft_ckpt_root(behavior)
+    if "ft" not in ctx.arms:
+        _phase_log("p1_train", f"[{behavior}] FT arm not requested (--arms) — skipping")
+        return
     if (ft_root / "train_metadata.json").exists():
         _phase_log("p1_train", f"[{behavior}] FT train_metadata exists — skipping (resume)")
         return
@@ -695,6 +757,10 @@ def phase1_train(ctx: Ctx, behavior: str) -> None:
             "--wandb-project",
             WANDB_PROJECT,
         ]
+        if ctx.run_label:
+            # Distinct WandB run name per retrain label (#480 per-source
+            # run-separation class; the parent run keeps the unsuffixed name).
+            cmd += ["--run-name-suffix", ctx.run_label]
         if ctx.ft_max_steps > 0:
             cmd += ["--max-steps", str(ctx.ft_max_steps)]
         return cmd
@@ -731,18 +797,68 @@ def _judge_cell_file(ctx: Ctx, behavior: str, gen_json: Path, verdict_path: Path
 
 
 def _stage_a_cells(ctx: Ctx, behavior: str) -> list[tuple[str, str, Path]]:
-    """Enumerate stage-A cells: (cell_slug, arm, model_dir_or_marker)."""
+    """Enumerate stage-A cells: (cell_slug, arm, model_dir_or_marker).
+
+    Only the arms this run trains (``ctx.arms``); the base cell is included
+    only for non-follow-up runs — a ``--run-label`` follow-up REUSES the
+    parent's checkpoint-independent base (``_parent_base_stage_a_cell``).
+    """
     cells: list[tuple[str, str, Path]] = []
-    lora_root = ctx.lora_ckpt_root(behavior)
-    lora_meta = json.loads((lora_root / "train_metadata.json").read_text())
-    for s in lora_meta["saved_checkpoints"]:
-        cells.append((f"lora_step{s}", "lora", lora_root / f"checkpoint-{s}"))
-    ft_root = ctx.ft_ckpt_root(behavior)
-    ft_meta = json.loads((ft_root / "train_metadata.json").read_text())
-    for s in ft_meta["saved_checkpoints"]:
-        cells.append((f"ft_step{s}", "ft", ft_root / f"checkpoint-{s}"))
-    cells.append(("base", "base", Path(BASE_MODEL)))
+    if "lora" in ctx.arms:
+        lora_root = ctx.lora_ckpt_root(behavior)
+        lora_meta = json.loads((lora_root / "train_metadata.json").read_text())
+        for s in lora_meta["saved_checkpoints"]:
+            cells.append((f"lora_step{s}", "lora", lora_root / f"checkpoint-{s}"))
+    if "ft" in ctx.arms:
+        ft_root = ctx.ft_ckpt_root(behavior)
+        ft_meta = json.loads((ft_root / "train_metadata.json").read_text())
+        for s in ft_meta["saved_checkpoints"]:
+            cells.append((f"ft_step{s}", "ft", ft_root / f"checkpoint-{s}"))
+    if ctx.run_label is None:
+        cells.append(("base", "base", Path(BASE_MODEL)))
     return cells
+
+
+def _parent_base_stage_a_cell(ctx: Ctx, behavior: str) -> dict:
+    """Fetch the PARENT run's stage-A base trajectory cell (follow-up reuse).
+
+    The base cell is checkpoint-independent, so a ``--run-label`` follow-up
+    seeds its trajectory from the parent's PRODUCTION Hub copy instead of
+    regenerating — same gauge as the parent's s values. Returns the base
+    record dict (with ``reused_from`` provenance); raises loudly when the
+    parent trajectory or its base cell is missing.
+    """
+    if ctx.dry_run:
+        return {
+            "arm": "base",
+            "step": 0,
+            "rate_raw": 0.0,
+            "rate_clean": 0.0,
+            "n_verdicts": 0,
+            "n_degenerate": 0,
+            "reused_from": "dry-run placeholder (no Hub fetch)",
+        }
+    from huggingface_hub import hf_hub_download
+
+    parent_rel = f"{HF_EXPERIMENT_NAME}/{behavior}/stage_a/trajectory_{behavior}.json"
+    got = _retry_transient(
+        lambda: hf_hub_download(
+            HF_DATA_REPO,
+            parent_rel,
+            repo_type="dataset",
+            token=os.environ.get("HF_TOKEN"),
+        ),
+        what=f"fetch parent stage-A trajectory {parent_rel}",
+    )
+    parent_traj = json.loads(Path(got).read_text())
+    if "base" not in parent_traj.get("cells", {}):
+        raise RuntimeError(
+            f"parent trajectory {parent_rel} has no base cell — cannot seed the "
+            f"follow-up's s gauge (base reuse contract)"
+        )
+    base = dict(parent_traj["cells"]["base"])
+    base["reused_from"] = parent_rel
+    return base
 
 
 def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
@@ -897,6 +1013,11 @@ def phase2_stage_a(ctx: Ctx, behavior: str) -> None:
             "timestamp_utc": datetime.now(UTC).isoformat(),
         }
         traj_path.write_text(json.dumps(trajectory, indent=2))
+    if ctx.run_label is not None and "base" not in trajectory["cells"]:
+        # Follow-up: seed the checkpoint-independent base from the parent run
+        # (never regenerated) so s sits on the SAME gauge as the parent's.
+        trajectory["cells"]["base"] = _parent_base_stage_a_cell(ctx, behavior)
+        traj_path.write_text(json.dumps(trajectory, indent=2))
     base_clean = trajectory["cells"]["base"]["rate_clean"]
     for slug, rec in trajectory["cells"].items():
         if slug != "base":
@@ -925,9 +1046,16 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
     trajectory = json.loads((sa_dir / f"trajectory_{behavior}.json").read_text())
     cells = trajectory["cells"]
 
-    selection: dict = {"behavior": behavior, "arms": {}, "smoke": ctx.smoke, "dry_run": ctx.dry_run}
+    selection: dict = {
+        "behavior": behavior,
+        "arms": {},
+        "smoke": ctx.smoke,
+        "dry_run": ctx.dry_run,
+        "run_label": ctx.run_label,
+        "arms_requested": list(ctx.arms),
+    }
     arm_ok: dict[str, bool] = {}
-    for arm in ("lora", "ft"):
+    for arm in ctx.arms:
         arm_cells = {slug: rec for slug, rec in cells.items() if rec["arm"] == arm}
         steps = sorted(rec["step"] for rec in arm_cells.values())
         s_by_step = {rec["step"]: rec.get("s", float("nan")) for rec in arm_cells.values()}
@@ -1001,7 +1129,7 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
             return
 
     # Delete non-selected FT checkpoints (production only; disk discipline).
-    if not (ctx.smoke or ctx.dry_run):
+    if "ft" in selection["arms"] and not (ctx.smoke or ctx.dry_run):
         keep = {f"checkpoint-{s}" for s in selection["arms"]["ft"]["selected_steps"]}
         ft_root = ctx.ft_ckpt_root(behavior)
         for d in sorted(ft_root.glob("checkpoint-*")):
@@ -1017,12 +1145,17 @@ def phase3_select(ctx: Ctx, behavior: str) -> None:
 
 
 def _stage_b_cells(ctx: Ctx, behavior: str) -> list[tuple[str, str, int]]:
+    """Selected stage-B cells for the arms this run trains; the base panel is
+    included only for non-follow-up runs (a ``--run-label`` follow-up reuses
+    the parent's checkpoint-independent base generations/verdicts at analysis
+    time — ``i606_analyze.py --run-label``)."""
     selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
     cells: list[tuple[str, str, int]] = []
-    for arm in ("lora", "ft"):
+    for arm in ctx.arms:
         for s in selection["arms"][arm]["selected_steps"]:
             cells.append((f"{arm}_step{s}", arm, int(s)))
-    cells.append(("base", "base", 0))
+    if ctx.run_label is None:
+        cells.append(("base", "base", 0))
     return cells
 
 
@@ -1190,15 +1323,18 @@ def phase5_upload(ctx: Ctx, behavior: str) -> None:
     # Selected LoRA adapters -> HF MODEL repo (plan §10 Outputs row).
     if not ctx.dry_run:
         selection = json.loads((ctx.stage_a_dir(behavior) / "selection.json").read_text())
-        if ctx.skip_upload:
+        if "lora" not in selection["arms"]:
+            _phase_log("p5_upload", f"[{behavior}] no LoRA arm in this run — no adapter uploads")
+        elif ctx.skip_upload:
             _phase_log("p5_upload", f"[{behavior}] SKIP adapter uploads (--skip-upload)")
         else:
             from huggingface_hub import HfApi
 
             api = HfApi(token=os.environ.get("HF_TOKEN"))
+            label_prefix = f"{ctx.run_label}_" if ctx.run_label else ""
             for s in selection["arms"]["lora"]["selected_steps"]:
                 local = ctx.lora_ckpt_root(behavior) / f"checkpoint-{s}"
-                dest = f"adapters/issue_606/{behavior}_lora_step{s}"
+                dest = f"adapters/issue_606/{label_prefix}{behavior}_lora_step{s}"
                 _retry_transient(
                     lambda local=local, dest=dest: api.upload_folder(
                         folder_path=str(local),
@@ -1232,6 +1368,10 @@ def _write_results_sentinel(ctx: Ctx, phases_run: list[str], note: str) -> Path:
         "payload_extra": {
             "phases_run": phases_run,
             "behaviors": ctx.behaviors,
+            "arms": list(ctx.arms),
+            "run_label": ctx.run_label,
+            "ft_lr": ctx.ft_lr,
+            "ft_grid": list(ctx.ft_grid),
             "killed": ctx.killed,
             "smoke": ctx.smoke,
             "dry_run": ctx.dry_run,
@@ -1336,6 +1476,21 @@ def main(argv: list[str] | None = None) -> int:
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--behaviors", default="sycophancy,refusal")
+    parser.add_argument(
+        "--arms",
+        default="lora,ft",
+        help="Which arms this run trains+evals (subset of lora,ft). A subset "
+        "REQUIRES --run-label (Hub-namespace collision guard).",
+    )
+    parser.add_argument(
+        "--run-label",
+        default=None,
+        help="Follow-up arm-run label (e.g. refusal-ft-lr2e6-retrain): scopes the Hub "
+        "prefix to <experiment>/<label>/ and REUSES the parent's checkpoint-"
+        "independent base cells (stage-A base seeded from the parent trajectory; "
+        "stage-B base panel skipped — i606_analyze.py --run-label reads the "
+        "parent's base + non-retrained-arm verdicts).",
+    )
     parser.add_argument("--seeds", default=str(SEED), help="single seed (inherited regime)")
     parser.add_argument("--output-root", type=Path, default=Path("/workspace/issue_606"))
     parser.add_argument("--smoke", action="store_true", help="One tiny cell through every phase.")
@@ -1358,6 +1513,13 @@ def main(argv: list[str] | None = None) -> int:
         help=f"FT learning rate (default {FT_LR}; the ONE pre-authorized retrain lever "
         f"per plan §13 is {FT_RETRAIN_LR} — relaunch p1_train with --ft-lr 2e-6 after "
         "deleting the behavior's ft_ckpts dir).",
+    )
+    parser.add_argument(
+        "--ft-grid",
+        default=None,
+        help="FT checkpoint grid override: comma list of optimizer steps, or the "
+        f"keyword 'retrain' = the plan-§13 densified FT_RETRAIN_GRID {FT_RETRAIN_GRID} "
+        f"(default: the parent FT_CKPT_GRID {FT_CKPT_GRID}).",
     )
     parser.add_argument("--data-revision", default=DATA_REVISION_DEFAULT)
     parser.add_argument("--skip-upload", action="store_true", help="Local-only (never on a pod).")
@@ -1400,7 +1562,8 @@ def main(argv: list[str] | None = None) -> int:
         phase_keys = phase_keys[: phase_keys.index(args.stop_after_phase) + 1]
     _phase_log(
         "dispatch",
-        f"behaviors={ctx.behaviors} phases={phase_keys} smoke={ctx.smoke} "
+        f"behaviors={ctx.behaviors} arms={ctx.arms} run_label={ctx.run_label} "
+        f"ft_lr={ctx.ft_lr} ft_grid={ctx.ft_grid} phases={phase_keys} smoke={ctx.smoke} "
         f"dry_run={ctx.dry_run} gpus={ctx.n_gpus} out={ctx.output_root}",
     )
     done: list[str] = []
