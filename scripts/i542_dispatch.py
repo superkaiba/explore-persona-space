@@ -91,6 +91,10 @@ LONG_EVAL_CIDS = i537d.LONG_EVAL_CIDS
 HF_MODEL_REPO = i537d.HF_MODEL_REPO
 DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_REV = "db3662ae1d1ff4484ada027ac92a2658c4dec2e8"  # parent pin (plan §3.4)
+# v1 freeze pin (follow-up plan §4 diff 3): the i542 context freeze + G tensors
+# as uploaded by the COMPLETED v1 run -- the content-identity mechanism for the
+# positives-only follow-up (the freeze is FETCHED at this pin, never re-frozen).
+I542_REV = "18dc6a8d9919e0af10d2444c787dce2a0d0536f9"
 HF_PARENT_PREFIX = "issue537_context_generalization"
 HF_I542_PREFIX = "issue542_negative_panels"
 
@@ -297,7 +301,12 @@ def _arm_list(args) -> list[str]:
         arms.append("c8")
     arms += list(REPLICATE_ARMS)
     if args.arm:
-        assert args.arm in arms or args.arm in ("c8",), f"unknown --arm {args.arm} (of {arms})"
+        # Opt-in-only arms: c8 (conditional add-back) and pos_only (the #542
+        # positives-only follow-up) run ONLY via explicit --arm; neither joins
+        # default all-arm invocations.
+        assert args.arm in arms or args.arm in ("c8", "pos_only"), (
+            f"unknown --arm {args.arm} (of {arms})"
+        )
         arms = [args.arm]
     return arms
 
@@ -379,6 +388,23 @@ def _hf_fetch(rel: str, local: Path) -> None:
     logger.info("[fetch] %s -> %s", rel, local)
 
 
+def _hf_fetch_i542(rel: str, local: Path) -> None:
+    """One pinned-revision file from THIS issue's HF prefix (the v1 freeze pin)."""
+    from huggingface_hub import hf_hub_download
+
+    if local.exists():
+        return
+    got = hf_hub_download(
+        DATA_REPO,
+        f"{HF_I542_PREFIX}/{rel}",
+        repo_type="dataset",
+        revision=I542_REV,
+    )
+    local.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(got, local)
+    logger.info("[fetch] i542@%s %s -> %s", I542_REV[:8], rel, local)
+
+
 def _verify_freeze_hashes() -> None:
     """Hash-check the fetched parent inputs against the GIT freeze manifest."""
     import hashlib
@@ -452,6 +478,13 @@ def _fetch(args) -> None:
     if args.smoke:
         logger.info("[fetch] smoke mode -- skipping cache/mix downloads")
         return
+
+    # #542 follow-up: the v1 context freeze is FETCHED at the i542 pin instead
+    # of re-running _contexts_step -- regenerating would re-sample the
+    # Claude-written twins and silently fork the registry (the gotchas.md
+    # "HF mirror != local-verified copy" class; the pin IS the content-identity
+    # mechanism, follow-up plan §4 diff 3 / fitness (f)).
+    _hf_fetch_i542("contexts/i542_negatives.json", _i542_negatives_path())
 
     for cid in [*train_cids, *NEGATIVE_CIDS]:
         _hf_fetch(f"data/responses/{cid}.json", GEN / f"responses/{cid}.json")
@@ -860,7 +893,9 @@ def _builder_cmd(args, cell: dict) -> list[str]:
         "--questions",
         str(_train_pool_path(args.smoke)),
         "--negatives",
-        ",".join(cell["panel"]),
+        # pos_only's empty panel joins to "" -- the builder's explicit
+        # zero-negative sentinel is the literal "none" (empty string fails loud).
+        ",".join(cell["panel"]) or "none",
         "--extra-contexts",
         str(_i542_negatives_path()),
     ]
@@ -1747,6 +1782,14 @@ def main() -> int:
             os.environ.setdefault("I542_EVAL_ROOT", str(REPO / "eval_results/issue_542_smoke"))
         )
         os.environ.setdefault("I542_ALLOW_SMOKE_CONTEXTS", "1")
+        # Smoke-root guard (follow-up plan §4 diff 3): the rebind above uses
+        # os.environ.setdefault, which CANNOT override an already-exported
+        # I542_EVAL_ROOT -- running --smoke with the real follow-up root
+        # exported would mix smoke artifacts into the real record.
+        assert EVAL.name.endswith("_smoke"), (
+            f"--smoke with I542_EVAL_ROOT={EVAL} -- setdefault cannot override "
+            "an exported real root; unset I542_EVAL_ROOT for smoke runs."
+        )
         logger.info("[smoke] generated roots: GEN=%s OUT=%s EVAL=%s", GEN, OUT, EVAL)
 
     t0 = time.time()

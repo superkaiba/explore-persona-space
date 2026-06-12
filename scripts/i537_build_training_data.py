@@ -266,20 +266,26 @@ def build_marker(
     # has zero remainder there), so parent mixes are unchanged.
     from explore_persona_space.experiments.i542_panels import row_split_slices
 
-    slices = row_split_slices(len(questions), len(negatives))
-    for (lo, hi), neg in zip(slices, negatives, strict=True):
-        qs = questions[lo:hi]
-        neg_r = _load_responses(
-            responses_dir,
-            neg.cid,
-            qs,
-            smoke=smoke,
-            behavior="marker",
-            expected_pool=questions,  # negative caches are generated from the FULL train pool
-        )
-        for q in qs:
-            assert MARKER_TEXT not in neg_r[q], f"negative response contains marker: {neg.cid}"
-            rows.append(_row(build_messages(neg, q, behavior="marker", icl_demos=demos), neg_r[q]))
+    # #542 pos_only arm: an EMPTY panel skips the negative block entirely
+    # (row_split_sizes asserts k >= 1, so the guard is load-bearing) -- the
+    # mix is the 300 positive rows alone.
+    if negatives:
+        slices = row_split_slices(len(questions), len(negatives))
+        for (lo, hi), neg in zip(slices, negatives, strict=True):
+            qs = questions[lo:hi]
+            neg_r = _load_responses(
+                responses_dir,
+                neg.cid,
+                qs,
+                smoke=smoke,
+                behavior="marker",
+                expected_pool=questions,  # negative caches are generated from the FULL train pool
+            )
+            for q in qs:
+                assert MARKER_TEXT not in neg_r[q], f"negative response contains marker: {neg.cid}"
+                rows.append(
+                    _row(build_messages(neg, q, behavior="marker", icl_demos=demos), neg_r[q])
+                )
     return rows
 
 
@@ -558,11 +564,17 @@ def main() -> int:
     ctx = registry[args.train_cid]
     if args.negatives is not None:
         assert behavior == "marker", "--negatives is a #542 marker-row parameter only"
-        neg_cids = [c.strip() for c in args.negatives.split(",") if c.strip()]
-        assert neg_cids, "--negatives parsed to an empty panel"
-        missing = [c for c in neg_cids if c not in registry]
-        assert not missing, f"--negatives cids not in registry: {missing}"
-        negatives = [registry[c] for c in neg_cids]
+        if args.negatives.strip().lower() == "none":
+            # #542 pos_only arm: the explicit literal opts into a zero-negative
+            # mix (300 positives alone). An accidentally EMPTY string still
+            # fails loud below -- fail-loud discipline (plan §11).
+            negatives = []
+        else:
+            neg_cids = [c.strip() for c in args.negatives.split(",") if c.strip()]
+            assert neg_cids, "--negatives parsed to an empty panel"
+            missing = [c for c in neg_cids if c not in registry]
+            assert not missing, f"--negatives cids not in registry: {missing}"
+            negatives = [registry[c] for c in neg_cids]
     else:
         negatives = [registry[c] for c in NEGATIVE_CIDS]
 

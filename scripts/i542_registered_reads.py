@@ -433,7 +433,9 @@ def cross_arm_contrasts(
         "default_col": "default_col_broad_full_mask",
     }
     # Composition contrasts vs arm 1 (plan: all non-default contrasts vs arm1).
-    for arm in ("arm2_close", "arm3_default", "c2", "c8", "c16"):
+    # pos_only = the #542 follow-up (positives-only-anchor) arm; absent arms
+    # are skipped, so the tuple is backward-compatible with the v1 root.
+    for arm in ("arm2_close", "arm3_default", "c2", "c8", "c16", "pos_only"):
         if arm not in arms or "arm1_xfam" not in arms:
             continue
         for stat in stats:

@@ -202,6 +202,11 @@ PANELS: dict[str, list[str]] = {
         "neg_wc_short3",
         "neg_wc_short4",
     ],
+    # #542 follow-up (positives-only-anchor): ZERO contrastive negatives --
+    # 300 positive rows alone, band-stop ON. Opt-in only (NOT in
+    # ARM_TRAIN_ORDER, mirroring the c8 add-back pattern), so default all-arm
+    # dispatcher invocations stay exactly as the v1 run executed them.
+    "pos_only": [],
 }
 assert set(PANELS["c2"]) < set(PANELS["arm1_xfam"]) < set(PANELS["c8"]) < set(PANELS["c16"])
 

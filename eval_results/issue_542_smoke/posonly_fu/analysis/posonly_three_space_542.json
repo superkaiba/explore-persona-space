@@ -1,0 +1,79 @@
+{
+ "git_commit": "71b992aa030a63409ee576a375c3ab2e9e449ac7",
+ "generated_at": "2026-06-12T13:25:45.442264+00:00",
+ "spaces": {
+  "logp": {
+   "pos_only": {
+    "offdiag_mean": 2.927962800910409,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 4.5982512485629705,
+    "n_broad_rows": 10
+   },
+   "control": {
+    "offdiag_mean": 2.92885145153394,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 4.589556711912155,
+    "n_broad_rows": 10
+   },
+   "contrast_pos_minus_control": {
+    "offdiag_mean": -0.0008886506235308289,
+    "default_col_broad_full_mask": 0.008694536650815543
+   }
+  },
+  "z_marker": {
+   "pos_only": {
+    "offdiag_mean": 2.0494694939411553,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 2.8001343010631246,
+    "n_broad_rows": 10
+   },
+   "control": {
+    "offdiag_mean": 2.0480715617836185,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 2.8335556030273437,
+    "n_broad_rows": 10
+   },
+   "contrast_pos_minus_control": {
+    "offdiag_mean": 0.0013979321575368076,
+    "default_col_broad_full_mask": -0.03342130196421911
+   }
+  },
+  "eos_margin": {
+   "pos_only": {
+    "offdiag_mean": 3.355419068805506,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 5.2673850712587,
+    "n_broad_rows": 10
+   },
+   "control": {
+    "offdiag_mean": 3.3569828577190304,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 5.270274353027344,
+    "n_broad_rows": 10
+   },
+   "contrast_pos_minus_control": {
+    "offdiag_mean": -0.0015637889135242666,
+    "default_col_broad_full_mask": -0.00288928176864367
+   }
+  }
+ },
+ "contrast_sign_agreement": {
+  "offdiag_mean": {
+   "signs": {
+    "logp": -1.0,
+    "z_marker": 1.0,
+    "eos_margin": -1.0
+   },
+   "all_same_sign": false
+  },
+  "default_col_broad_full_mask": {
+   "signs": {
+    "logp": 1.0,
+    "z_marker": -1.0,
+    "eos_margin": -1.0
+   },
+   "all_same_sign": false
+  }
+ },
+ "note": "cross-space divergence = saturation signature (marker-measurement rule); logp is the primary behavioral space, z_marker/eos_margin the mechanistic twins"
+}
