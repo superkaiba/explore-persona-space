@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "purpose": "Issue-628 snapshot of the reused #537 marker artifacts (artifact-reuse check (f): issue-owned, git-pinned copy consumed instead of the parent branch).",
+  "source_branch": "origin/issue-537",
+  "source_branch_tip_at_snapshot": "35d5e737bfe3a65bc956fa4c7bc48dcc3eff3316",
+  "snapshot_command": "git archive origin/issue-537 eval_results/issue_537/G_cells/marker eval_results/issue_537/p1/stop_steps eval_results/issue_537/p1/stop_steps_seed1042 | tar -x",
+  "snapshotted_on": "2026-06-12",
+  "trees": {
+    "G_cells_marker": {
+      "source_path": "eval_results/issue_537/G_cells/marker",
+      "n_files": 960,
+      "generated_at_commit": {
+        "seed42": "45c8ddf461d80f4c1d318113f1922bb29ec73b43",
+        "seed1042": "9daa2d5aa0e0ff6299e0190348bbe11d87bfdf97",
+        "note": "in-file git_commit of every cell JSON (the dispatch commit the cells were GENERATED at), verified across all 960 files at snapshot time"
+      },
+      "committed_at": {
+        "seed42": "68bab7757",
+        "seed1042": "e44a31333",
+        "note": "the issue-537 branch commits that ADDED the files to git (git log on the path); distinct from generated_at"
+      }
+    },
+    "stop_steps": {
+      "source_path": "eval_results/issue_537/p1/stop_steps",
+      "seed": 42,
+      "committed_at": "68bab7757"
+    },
+    "stop_steps_seed1042": {
+      "source_path": "eval_results/issue_537/p1/stop_steps_seed1042",
+      "seed": 1042,
+      "committed_at": "e44a31333"
+    }
+  },
+  "parity_probe_cell": {
+    "file": "G_cells_marker/sp_swe__default__seed42.json",
+    "g_mean_delta_logp": 4.401209533214569,
+    "g_mean_delta_z_marker": 2.676105499267578,
+    "g_mean_delta_eos_margin": 5.019855499267578,
+    "note": "Phase-3 apply-and-read parity probe target (plan section 4.3; tolerance +/-0.5 nat)"
+  }
+}
