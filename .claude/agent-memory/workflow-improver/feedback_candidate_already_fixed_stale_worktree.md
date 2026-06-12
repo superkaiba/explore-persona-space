@@ -37,3 +37,9 @@ propagation root cause as a follow-up. Variants seen since:
   recurrence, fix the PATH RESOLUTION letting composers read stale worktree
   copies (`c48c6101a`: derive `REPO_ROOT="${TASK_DIR%/tasks/*}"`, pin
   spec-reads to `$REPO_ROOT/...`); audit sibling twins for the same pattern.
+- **Mixed-read phantom contradiction** (#612, 2026-06-12): emitter read the
+  CANONICAL spec post-fix but its OWN twin spec from a pre-fix worktree copy
+  → reported a cross-file contradiction that was never a committed state
+  (`61cc120cd` updated both files atomically). Diagnose by comparing the
+  fix-commit timestamp vs the worktree's spec-sync commit timestamp; if the
+  worktree has since re-synced, it's a clean no-op.
