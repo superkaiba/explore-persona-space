@@ -478,9 +478,42 @@ def _relocate_hydra_adapter(condition: str, seed: int, out_root: Path) -> None:
     logger.info("[phase=train] adapter relocated -> %s (%d checkpoints)", out_root, n_ckpts)
 
 
+# Verified-authentic #503 Bucket-D adapter fingerprint (round 23, 2026-06-12).
+# Grounded on the ARTIFACT ground truth, NOT the #503 clean-result body: every
+# issue503_bucket_d_* adapter_config.json on HF (superkaiba1/explore-persona-space)
+# uniformly carries this config — the authentic product of the turner_em recipe
+# (lr=2e-5, alpha=256/scaling=8, adamw_8bit) used across the #404/#458/#503 line
+# (see the PAIRS provenance comments in scripts/issue404_common.py).
+_B8_EXPECTED_LORA = {
+    "r": 32,
+    "lora_alpha": 256,
+    "lora_dropout": 0.0,
+    "target_modules": frozenset(
+        {"q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"}
+    ),
+}
+
+
 def _download_reused_adapter(row, seed: int, out_root: Path) -> Path:
     """B8 reuse: per-file hf_hub_download (NEVER snapshot allow_patterns — the
-    siblings-truncation trap on large repos), then fitness asserts."""
+    siblings-truncation trap on large repos), then fitness asserts.
+
+    Fitness-expectation provenance (round 23, 2026-06-12). The expected LoRA
+    config (``_B8_EXPECTED_LORA``) is grounded on the artifact configs verified
+    directly on HF: all ``issue503_bucket_d_*`` adapters carry r=32,
+    lora_alpha=256, lora_dropout=0.0, target_modules = the full 7-proj set.
+    ``adapter_config.json`` is written by the training run itself and is the
+    ground truth for what an artifact IS. #503's clean-result body
+    Reproducibility row ("r = 16, alpha = 32, dropout = 0.05, target = q/k/v/o")
+    is a DOCUMENTATION ERROR and must NOT be used as the fitness ground — a
+    record-correction marker was posted on #503 (epm:progress v2, 2026-06-12).
+    Do NOT "fix" this check back to the body row's values: that expectation
+    crashed all 7 B8 cells in P2 (epm:failure v8 on #545, 2026-06-12). The
+    scientific requirement is to reuse EXACTLY the artifacts that produced
+    #503's measured AdvBench lifts, which are these r=32/alpha=256 artifacts.
+    lora_alpha=256 also distinguishes this family from the unrelated
+    ``issue503_broad_syco_*`` dirs (r=32/alpha=64), which B8 must never match.
+    """
     from huggingface_hub import hf_hub_download, list_repo_files
 
     from explore_persona_space.experiments.behavior_testbed_545 import HF_MODEL_REPO
@@ -498,9 +531,19 @@ def _download_reused_adapter(row, seed: int, out_root: Path) -> Path:
         if not dest.exists():
             dest.write_bytes(Path(local).read_bytes())
     cfg = json.loads((out_root / "adapter_config.json").read_text())
-    assert cfg.get("r") == 16 and cfg.get("lora_alpha") == 32, (
-        f"B8 fitness check failed: expected r=16 alpha=32 (#503 recipe), got "
-        f"r={cfg.get('r')} alpha={cfg.get('lora_alpha')}"
+    exp = _B8_EXPECTED_LORA
+    got = {
+        "r": cfg.get("r"),
+        "lora_alpha": cfg.get("lora_alpha"),
+        "lora_dropout": cfg.get("lora_dropout"),
+        "target_modules": frozenset(cfg.get("target_modules") or []),
+    }
+    assert got == exp, (
+        "B8 fitness check failed: expected the verified #503 Bucket-D artifact config "
+        f"(r={exp['r']} alpha={exp['lora_alpha']} dropout={exp['lora_dropout']} "
+        f"targets={sorted(exp['target_modules'])}), got "
+        f"r={got['r']} alpha={got['lora_alpha']} dropout={got['lora_dropout']} "
+        f"targets={sorted(got['target_modules'])}"
     )
     logger.info("[phase=train] reused #503 adapter -> %s (%d files)", out_root, len(files))
     return out_root
