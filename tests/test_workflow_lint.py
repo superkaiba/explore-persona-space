@@ -37,6 +37,7 @@ from workflow_lint import (  # noqa: E402
     _other_worktree_prefix,
     check_asks,
     check_autonomous_asks,
+    check_dispatcher_cvd_pin,
     check_heredoc_dotenv,
     check_marker_registry,
     check_script_references,
@@ -1229,5 +1230,141 @@ def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
     result = _run("--check-heredoc-dotenv")
     assert result.returncode == 0, (
         f"workflow_lint --check-heredoc-dotenv failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_dispatcher_cvd_pin`` (incident class #523 Phase B,
+# recurred #541/#543/#557; recipe fix #578: the in-process CVD clobber is
+# defeated by import-time cuInit, so backgrounded parallel per-cell python
+# launches passing --gpu-id/+gpu_id= MUST also pin CUDA_VISIBLE_DEVICES= in
+# the launcher env on the same command). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_dispatcher_cvd_pin(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_dispatcher_cvd_pin_fail_backgrounded_wave_shape(tmp_path):
+    """FAIL — the pre-waiver i460/#523 wave shape: backslash-continued
+    backgrounded launch with --gpu-id and no CUDA_VISIBLE_DEVICES=."""
+    (tmp_path / "dispatch.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'for cond in "${CONDS[@]}"; do\n'
+        "    uv run python scripts/foo_train.py \\\n"
+        '        --conds "$cond" --gpu-id "$cvd" \\\n'
+        '        > "$log" 2>&1 &\n'
+        "done\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "dispatch.sh:3" in errors[0]
+    assert "CUDA_VISIBLE_DEVICES" in errors[0]
+    assert "CVD_PIN_EXEMPT" in errors[0]
+
+
+def test_check_dispatcher_cvd_pin_fail_nohup_hydra_gpu_id(tmp_path):
+    """FAIL — single-line nohup launch with the Hydra ``+gpu_id=`` form
+    and no env pin."""
+    (tmp_path / "x.sh").write_text(
+        'nohup uv run python scripts/train.py +gpu_id=${gpu} > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_cvd_prefixed(tmp_path):
+    """PASS — the compliant #578 reference shape (i474): env CVD pin AND
+    matching --gpu-id on the same backgrounded command."""
+    (tmp_path / "x.sh").write_text(
+        'CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/foo_train.py \\\n'
+        '    --conds "$cond" --gpu-id "$cvd" \\\n'
+        '    > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (env CVD pinned), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_sequential_launch(tmp_path):
+    """PASS — a sequential (non-backgrounded) launch cannot co-locate
+    siblings; --gpu-id without env CVD is not the parallel bug class."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 \\\n    > "$log" 2>&1\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (sequential), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_and_and_chain(tmp_path):
+    """PASS — a trailing ``&&`` is a command chain, not a background
+    token; must not parse as backgrounded."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 &&\n    echo "done"\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (&& chain), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_previous_line(tmp_path):
+    """PASS — a ``# CVD_PIN_EXEMPT: <reason>`` waiver on the immediately
+    preceding non-blank line (the only valid placement for a
+    backslash-continued launch) is honored."""
+    (tmp_path / "x.sh").write_text(
+        "# CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim\n"
+        "uv run python scripts/foo_train.py \\\n"
+        '    --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_same_line(tmp_path):
+    """PASS — a same-line trailing waiver on a single-line launch."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py --gpu-id 0 &  "
+        "# CVD_PIN_EXEMPT: single process on a 1-GPU pod, no sibling\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a reason shorter than the minimum is a
+    token-shaped bypass, not a justification (same convention as
+    WANDB_INTENTIONALLY_DISABLED)."""
+    (tmp_path / "x.sh").write_text(
+        '# CVD_PIN_EXEMPT: x\nuv run python scripts/foo_train.py --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_commented_and_echo_lines(tmp_path):
+    """PASS — commented-out launches and echo dry-run previews are not
+    launch sites."""
+    (tmp_path / "x.sh").write_text(
+        '# uv run python scripts/foo.py --gpu-id 0 > "$log" 2>&1 &\n'
+        'echo "would run: uv run python scripts/foo.py --gpu-id 0" &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (comment/echo), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no unwaived backgrounded
+    --gpu-id/+gpu_id= python launches without an env CVD pin. Pre-#578
+    completed-task dispatchers carry explicit CVD_PIN_EXEMPT waivers."""
+    errors = check_dispatcher_cvd_pin()
+    assert errors == [], (
+        "scripts/*.sh has backgrounded --gpu-id/+gpu_id= python launches "
+        "without a CUDA_VISIBLE_DEVICES= pin (#523/#541/#543/#557 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_dispatcher_cvd_pin_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-dispatcher-cvd-pin")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-dispatcher-cvd-pin failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )

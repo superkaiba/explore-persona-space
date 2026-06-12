@@ -49,6 +49,23 @@ Behaviours:
   and was reintroduced on #612 past the implementer, BOTH ensemble
   reviewers, and every smoke run, because the heredoc executes only at
   pod-side first contact.
+* ``--check-dispatcher-cvd-pin`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  BACKGROUNDED python launch line (logical line ending in ``&``) that
+  passes a per-process GPU pin (``--gpu-id`` / ``+gpu_id=``) but does
+  NOT carry a ``CUDA_VISIBLE_DEVICES=`` env prefix on the same command.
+  The in-process CVD clobber (``train/sft.py`` sets
+  ``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)``) is silently
+  defeated by any import-time cuInit, so parallel per-cell launches that
+  rely on ``--gpu-id`` alone pile every cell onto physical GPU 0 and OOM
+  (incident class #523 Phase B, recurred #541/#543/#557; recipe fix
+  #578). Legitimate unpinned shapes are waived via
+  ``# CVD_PIN_EXEMPT: <reason>`` on the same logical line or the
+  immediately preceding non-blank line. Closes the residual #578 gap:
+  the launcher-env-pin rule was agent-prose only (experimenter.md item
+  10 fires on the RunPod launch path; gcp/slurm startup-script lanes
+  have no launch agent), so a new dispatcher written without the pin
+  reached production unflagged on those lanes.
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -261,6 +278,54 @@ HEREDOC_DOTENV_PKG_IMPORT_RE = re.compile(
 )
 HEREDOC_DOTENV_BARE_CALL_RE = re.compile(r"(?<![\w.])load_dotenv\s*\(\s*\)")
 HEREDOC_DOTENV_QUALIFIED_CALL_RE = re.compile(r"(?<![\w.])dotenv\.load_dotenv\s*\(\s*\)")
+
+# `--check-dispatcher-cvd-pin`: a BACKGROUNDED python launch in a shell
+# script that passes a per-process GPU pin (`--gpu-id <n>` / `+gpu_id=<n>`)
+# MUST also carry a `CUDA_VISIBLE_DEVICES=` env assignment on the same
+# logical command line. The in-process clobber
+# (`os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)` in
+# `train/sft.py`) is silently defeated by any import-time cuInit — the
+# driver freezes its device list at the FIRST cuInit in the process, so a
+# dispatcher import chain that initializes CUDA (`import peft` is a known
+# offender, #545) makes the late clobber a no-op and every parallel cell's
+# `cuda:0` resolves to physical GPU 0 → co-location → OOM. That is how all
+# 4 #523 Phase B waves piled onto GPU 0 (recurred #541/#543/#557). The
+# recipe fix (#578, gotchas.md "CVD-clobber" entry): export
+# `CUDA_VISIBLE_DEVICES=<gpu>` per cell in the LAUNCHER env AND pass the
+# matching `--gpu-id <gpu>` so the in-process clobber rewrites the same
+# value. The reference compliant shape is
+# `scripts/i474_phase23_dispatch.sh` ("CUDA_VISIBLE_DEVICES="$cvd" uv run
+# python ... --gpu-id "$cvd" ... &").
+#
+# Flagged: a logical line (backslash continuations merged) that
+#   (a) invokes a python interpreter (`uv run python`, bare
+#       `python`/`python3[.N]`, `.venv/bin/python`), AND
+#   (b) carries `--gpu-id` or `+gpu_id=`, AND
+#   (c) is backgrounded — ends with `&` (not `&&`), the parallel-launch
+#       signature, AND
+#   (d) has NO `CUDA_VISIBLE_DEVICES=` assignment anywhere on the line.
+# NOT flagged (recall is deliberately sacrificed for zero false
+# positives — a sequential launch cannot co-locate siblings):
+#   * sequential launches (no trailing `&`), including `nohup ... ;`
+#     and `cmd && next` chains;
+#   * `echo`-prefixed lines (dry-run previews) and `#` comment lines;
+#   * backgrounded SUBSHELL wrappers (`( for ...; do python ...; done ) &`)
+#     whose python line itself is not backgrounded — a known recall miss
+#     (live example: `i488_phase4_dispatch.sh`), accepted to keep the
+#     check line-local and false-positive-free;
+#   * lines waived via `# CVD_PIN_EXEMPT: <reason>` (same logical line or
+#     immediately preceding non-blank line; reason ≥ 10 chars — same
+#     convention as WANDB_INTENTIONALLY_DISABLED). Use the waiver for
+#     pre-#578 completed-task dispatchers kept verbatim for
+#     reproducibility, and for genuinely single-process backgrounded
+#     launches where no sibling can co-locate.
+CVD_PIN_PY_LAUNCH_RE = re.compile(
+    r"(?:\buv\s+run\s+python\b|(?<![\w./])python3?(?:\.\d+)?\b|\.venv/bin/python\b)"
+)
+CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
+CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
+CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
+CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -1027,6 +1092,110 @@ def check_heredoc_dotenv(*, scripts_dir: Path | None = None) -> list[str]:
     return errors
 
 
+def _iter_logical_shell_lines(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical)`` per logical shell command
+    line, merging backslash-continued physical lines (same merge rule as
+    the heredoc scanner). Indices are 0-based physical-line bounds of the
+    logical line, inclusive."""
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        yield i, last, logical
+        i = last + 1
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
+    on any physical line of the logical command (trailing comment on a
+    single-line launch) or on the immediately preceding non-blank line
+    (the only valid placement for a backslash-continued launch — a
+    trailing ``#`` comment would break the continuation)."""
+    for idx in range(first_idx, last_idx + 1):
+        match = CVD_PIN_WAIVER_RE.search(lines[idx])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = first_idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        match = CVD_PIN_WAIVER_RE.search(lines[back])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any backgrounded
+    python launch line that passes a per-process GPU pin (``--gpu-id`` /
+    ``+gpu_id=``) without a ``CUDA_VISIBLE_DEVICES=`` env assignment on
+    the same logical command line.
+
+    Rationale: the in-process CVD clobber in ``train/sft.py`` is silently
+    defeated by any import-time cuInit, so parallel per-cell launches
+    relying on ``--gpu-id`` alone co-locate every cell on physical GPU 0
+    and OOM (#523 Phase B; recurred #541/#543/#557). The #578 recipe —
+    pin ``CUDA_VISIBLE_DEVICES=<gpu>`` in the LAUNCHER env AND pass the
+    matching ``--gpu-id`` — shipped as agent prose only (experimenter.md
+    fires on the RunPod launch path; the gcp/slurm startup-script lanes
+    have no launch agent), so this check is the lane-independent
+    mechanical enforcement. Detection matrix + waiver convention: see the
+    ``CVD_PIN_*`` regex block above.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_heredoc_dotenv`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comments and dry-run echo previews are not launches.
+            if stripped.startswith("#") or stripped.startswith("echo "):
+                continue
+            # Backgrounded = parallel-launch signature. A trailing `&&` is
+            # a command chain continuation, not a background token.
+            if not (stripped.endswith("&") and not stripped.endswith("&&")):
+                continue
+            if not CVD_PIN_PY_LAUNCH_RE.search(logical):
+                continue
+            if not CVD_PIN_GPU_ARG_RE.search(logical):
+                continue
+            if CVD_PIN_CVD_ASSIGN_RE.search(logical):
+                continue
+            if _cvd_pin_waiver_present(lines, first, last):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: backgrounded python launch passes "
+                f"--gpu-id/+gpu_id= without a CUDA_VISIBLE_DEVICES= env "
+                f"prefix on the same command. The in-process CVD clobber "
+                f"is defeated by import-time cuInit, so parallel cells "
+                f"co-locate on GPU 0 and OOM (#523/#541/#543/#557). Pin "
+                f"CUDA_VISIBLE_DEVICES=<gpu> in the launcher env AND pass "
+                f"the matching --gpu-id (reference shape: "
+                f"scripts/i474_phase23_dispatch.sh), or waive a "
+                f"legitimately unpinned launch with "
+                f"'# CVD_PIN_EXEMPT: <reason>' (reason ≥ "
+                f"{CVD_PIN_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+                f"previous non-blank line. See .claude/rules/gotchas.md "
+                f"'CVD-clobber'."
+            )
+    return errors
+
+
 def check_marker_registry(
     workflow: WorkflowYaml,
     *,
@@ -1209,7 +1378,7 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
     return errors
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--file",
@@ -1297,6 +1466,18 @@ def main(argv: list[str] | None = None) -> int:
         "run.",
     )
     parser.add_argument(
+        "--check-dispatcher-cvd-pin",
+        action="store_true",
+        help="Verify no shell script under scripts/ backgrounds a python "
+        "launch that passes --gpu-id/+gpu_id= without a "
+        "CUDA_VISIBLE_DEVICES= env prefix on the same logical command "
+        "(the in-process CVD clobber is defeated by import-time cuInit, "
+        "so unpinned parallel cells co-locate on GPU 0 and OOM — "
+        "incident class #523/#541/#543/#557, recipe fix #578). Waive "
+        "legitimate shapes with '# CVD_PIN_EXEMPT: <reason>'. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -1332,6 +1513,7 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_script_refs
         or args.check_wandb_required
         or args.check_heredoc_dotenv
+        or args.check_dispatcher_cvd_pin
         or args.check_marker_registry
     )
 
@@ -1370,6 +1552,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_wandb_required())
     if args.check_heredoc_dotenv or no_flags:
         errors.extend(check_heredoc_dotenv())
+    if args.check_dispatcher_cvd_pin or no_flags:
+        errors.extend(check_dispatcher_cvd_pin())
     if args.check_marker_registry and not args.check_references:
         errors.extend(check_marker_registry(workflow))
 
