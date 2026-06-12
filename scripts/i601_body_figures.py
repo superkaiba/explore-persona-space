@@ -389,7 +389,7 @@ BRIDGE = [
         "phase4",
         "posonly_alllinear_lr5e6",
         [42, 137],
-        "Positives only at half LR 5e-6 (the #471 bridge)",
+        "Positives only at half LR 5e-6, all-linear (the other rig's recipe)",
         C_MATCHED,
     ),
     ("phase4", "posonly_attn_lr5e6", [42, 137], "Half LR + attention-only adapter", C_DOUBLE),
