@@ -25,8 +25,10 @@ Side effects (both under ``~/.eps-autonomous``, overridable for tests via
   tick skills wrote before; this script now owns the write). Adds a
   ``terminal_streak`` counter to the legacy ``{issue, status, ts}`` shape.
 * ``tick-runaway-<N>.flag`` — written on the ``EPM_TICK_RUNAWAY_STREAK``-th
-  (default 3rd) consecutive triage at a TERMINAL status. A cron that keeps
-  firing at a terminal status means CRON-TEARDOWN keeps whiffing (the #501
+  (default 3rd) consecutive TEARDOWN-verdict triage (TERMINAL or
+  GATE-TRANSITION — covers terminal statuses, over-cap plan_pending, and
+  stranded campaign crons); cleared on any streak reset. A cron that keeps
+  firing at a teardown site means CRON-TEARDOWN keeps whiffing (the #501
   runaway class: 1,951 wasted ticks over ~40h); the flag is the watcher's
   signal to force-stop the session (``autonomous_session_watch`` gate-push
   pass), which kills the session-scoped cron with it.

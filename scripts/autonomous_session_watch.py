@@ -7382,13 +7382,15 @@ def campaign_pass(
 # gate transition, never a missed one.
 #
 # Also owns the §4 runaway parachute: `tick_triage.py` writes
-# ``tick-runaway-<N>.flag`` on the 3rd consecutive tick at a TERMINAL status
-# (CRON-TEARDOWN keeps whiffing — the #501 class, 1,951 wasted ticks); this
+# ``tick-runaway-<N>.flag`` on the 3rd consecutive TEARDOWN-verdict tick
+# (TERMINAL or GATE-TRANSITION — terminal statuses, over-cap plan_pending,
+# stranded campaign crons; cleared by the triage on any streak reset).
+# CRON-TEARDOWN keeps whiffing — the #501 class, 1,951 wasted ticks; this
 # pass force-stops the flagged issue's session(s), which kills the
 # session-scoped cron with them. The force-stop reuses the session-reconcile
 # predicate's guards (DONE-status only, no live follow-up, no RUNNING pod, no
 # keep-running tag) but skips the 2h-idle + 2-miss accumulation — three
-# consecutive terminal-status ticks are already the corroboration.
+# consecutive teardown-verdict ticks are already the corroboration.
 
 # Per-issue state at ``~/.eps-autonomous/gate-notify-<N>.json``: the last
 # status this pass observed (transition detection + push dedup). In the
@@ -7567,7 +7569,7 @@ def _refresh_self_report(issue: int, status: str, dry_run: bool) -> None:
 
 def _runaway_flags() -> list[tuple[int, Path]]:
     """Enumerate ``tick-runaway-<N>.flag`` files (issue, path) — written by
-    ``tick_triage.py`` on the 3rd consecutive terminal-status tick."""
+    ``tick_triage.py`` on the 3rd consecutive teardown-verdict tick."""
     if not AUTONOMOUS_REGISTRY_DIR.is_dir():
         return []
     out: list[tuple[int, Path]] = []
@@ -7623,9 +7625,9 @@ def _process_runaway_flag(
         _post_progress_marker(
             issue,
             f"[autonomous_session_watch:runaway] force-stopped {len(stopped)} session(s) "
-            f"({', '.join(stopped)}) — tick_triage recorded >=3 consecutive ticks at "
-            f"terminal status '{status}' (CRON-TEARDOWN kept whiffing; the #501 runaway "
-            f"class). The session-scoped tick cron dies with the session.",
+            f"({', '.join(stopped)}) — tick_triage recorded >=3 consecutive teardown-verdict "
+            f"ticks, latest at status '{status}' (CRON-TEARDOWN kept whiffing; the #501 "
+            f"runaway class). The session-scoped tick cron dies with the session.",
             dry_run,
             label="runaway-stop",
         )

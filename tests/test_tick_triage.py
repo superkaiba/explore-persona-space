@@ -5,8 +5,9 @@ What this pins:
 1. **Issue-mode verdict table** — HEALTHY / TERMINAL / GATE-TRANSITION /
    STALE-REDRIVE across the status enum x marker freshness, including the
    over-cap ``plan_pending`` gate special-case.
-2. **Runaway counter** — the 3rd consecutive triage at a TERMINAL status
-   writes ``tick-runaway-<N>.flag``; a non-terminal triage resets the streak.
+2. **Runaway counter** — the 3rd consecutive teardown-verdict triage
+   (TERMINAL or GATE-TRANSITION) writes ``tick-runaway-<N>.flag``; any other
+   verdict resets the streak AND clears a stale flag.
 3. **Campaign-mode verdicts** — stranded-cron teardown, results-landed wake,
    all-arms-in-flight quiet idle, decision-round-owed re-drive.
 4. **Fail-loud contract** — any state-read failure exits non-zero (the tick
