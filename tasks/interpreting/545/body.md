@@ -1,6 +1,6 @@
 ---
-title: 'Behavior-generalization testbed v1: multi-behavior B→B′ leakage matrix as
-  ground truth for before-training leakage predictors (Dan''s delta-rule framing)'
+title: 'Context-geometry predictors don''t transfer to behavior→behavior leakage:
+  pooled scoring crowns them, every held-out read says noise (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-10T01:00:41Z'
