@@ -37,8 +37,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from explore_persona_space.experiments.sycophancy_posonly_608 import (  # noqa: E402
+    FOLLOWUP_LABEL,
     HF_DATA_PREFIX,
     HF_DATA_REPO,
+    HF_SUBCEILING_DATA_PREFIX,
 )
 from explore_persona_space.experiments.sycophancy_posonly_608.judge_pass_608 import (  # noqa: E402
     KAPPA_ACCEPT,
@@ -83,6 +85,116 @@ def _upload_outputs(slab_root: Path) -> None:
     log.info("uploaded %d files under %s/eval_results", len(uploaded), HF_DATA_PREFIX)
 
 
+def _upload_subceiling_outputs(slab_root: Path) -> None:
+    """Upload follow-up judgments + spot-check + summary to the HF data repo,
+    fail-loud, under the sub_ceiling_install prefix (plan v5 §10)."""
+    from huggingface_hub import HfApi
+
+    token = os.environ.get("HF_TOKEN")
+    if not token:
+        raise RuntimeError("HF_TOKEN not set — cannot upload judgments")
+    api = HfApi(token=token)
+    api.upload_folder(
+        folder_path=str(slab_root),
+        repo_id=HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=f"{HF_SUBCEILING_DATA_PREFIX}/eval_results",
+        allow_patterns=[
+            "**/judgments/**",
+            "judge_calibration_subceiling/**",
+            "analyze_summary_subceiling.json",
+        ],
+    )
+    uploaded = [
+        f
+        for f in api.list_repo_files(HF_DATA_REPO, repo_type="dataset")
+        if f.startswith(f"{HF_SUBCEILING_DATA_PREFIX}/eval_results")
+    ]
+    if not any("judgments" in f for f in uploaded):
+        raise RuntimeError(
+            "Follow-up judgments upload not visible via list_repo_files — verify manually"
+        )
+    log.info("uploaded %d files under %s/eval_results", len(uploaded), HF_SUBCEILING_DATA_PREFIX)
+
+
+def _run_followup(args: argparse.Namespace) -> int:
+    """The sub-ceiling-install off-pod sequence (plan v5 §4 diff 4):
+    F1 judge pass -> F2 mid-band κ spot-check (gate >= 0.7) -> F3 §6 decision
+    rule + figures -> F4 fail-loud upload. Each phase persists its output the
+    moment it completes."""
+    from explore_persona_space.experiments.sycophancy_posonly_608.judge_pass_subceiling import (
+        KAPPA_SPOTCHECK_GATE,
+        run_midband_spotcheck,
+        run_subceiling_judge_pass,
+    )
+
+    if args.slab_root.name != FOLLOWUP_LABEL:
+        args.slab_root = args.slab_root / FOLLOWUP_LABEL
+    if args.figures_dir.name != FOLLOWUP_LABEL:
+        args.figures_dir = args.figures_dir / FOLLOWUP_LABEL
+
+    if not args.skip_judge:
+        log.info("[phase=p1_judge] follow-up Haiku pass (resumable, 108 step reads)")
+        totals = run_subceiling_judge_pass(args.slab_root, args.seed, concurrency=args.concurrency)
+        log.info(
+            "judge pass done: %d panels judged, %d skipped (already judged)",
+            totals["n_panels_judged"],
+            totals["n_panels_skipped"],
+        )
+
+    if not args.skip_spotcheck:
+        log.info("[phase=p2_spotcheck] 200-rollout mid-band κ spot-check (Haiku vs Sonnet)")
+        report = run_midband_spotcheck(args.slab_root, args.seed, concurrency=args.concurrency)
+        kappa = report["kappa"]
+        # NaN-safe gate (parent round-3 convention): non-finite κ — degenerate
+        # expected agreement or an empty sample — is unmeasurable reliability
+        # and routes to BLOCK, never silently past a `kappa < gate` that is
+        # False for NaN.
+        if not math.isfinite(kappa) or kappa < KAPPA_SPOTCHECK_GATE:
+            reason = (
+                f"spot-check kappa={kappa if math.isfinite(kappa) else 'non-finite'} "
+                f"below gate {KAPPA_SPOTCHECK_GATE}: parent κ=0.881 does NOT transfer to "
+                "the mid-install output distribution. Pre-registered escalation (plan v5 "
+                "§11): the parent's full 1,000-rollout recalibration + Sonnet adjudication "
+                "on disagreements — an orchestrator/plan decision, never auto-run."
+            )
+            block = {
+                "decision": "BLOCK",
+                "kappa": kappa if math.isfinite(kappa) else None,
+                "spotcheck_n": report.get("spotcheck_n"),
+                "reason": reason,
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+            }
+            block_dir = args.slab_root / "judge_calibration_subceiling"
+            block_dir.mkdir(parents=True, exist_ok=True)
+            with open(block_dir / "SPOTCHECK_BLOCK.json", "w") as f:
+                json.dump(block, f, indent=2)
+            log.error("BLOCK: %s — exiting 1", reason)
+            return 1
+        log.info("spot-check kappa=%.4f >= %.2f — judge reuse holds", kappa, KAPPA_SPOTCHECK_GATE)
+
+    if not args.skip_analyze:
+        log.info("[phase=p3_analyze] §6 decision rule + figures")
+        from explore_persona_space.experiments.sycophancy_posonly_608.analyze_subceiling import (
+            analyze,
+        )
+
+        analyze(
+            slab_root=args.slab_root,
+            seed=args.seed,
+            figures_dir=args.figures_dir,
+            n_boot=args.bootstrap_n,
+            parent_summary_path=args.parent_summary,
+        )
+
+    if args.hf_upload:
+        log.info("[phase=p4_upload] judgments + spot-check + summary -> HF data repo")
+        _upload_subceiling_outputs(args.slab_root)
+
+    log.info("[phase=done]")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Task #608 Phase G — off-pod kappa + unified judge pass + analysis.",
@@ -106,6 +218,26 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--skip-crosscheck", action="store_true")
     parser.add_argument("--skip-analyze", action="store_true")
     parser.add_argument(
+        "--skip-spotcheck",
+        action="store_true",
+        help="(--followup only) skip the F2 mid-band κ spot-check.",
+    )
+    parser.add_argument(
+        "--followup",
+        choices=[FOLLOWUP_LABEL],
+        default=None,
+        help="Run the sub-ceiling-install off-pod sequence instead of the parent "
+        "Phase G: F1 judge pass over the 108 step reads, F2 mid-band κ spot-check "
+        "(gate >= 0.7), F3 §6 decision rule + figures, F4 upload.",
+    )
+    parser.add_argument(
+        "--parent-summary",
+        type=Path,
+        default=Path("eval_results/issue_608/analyze_summary_608.json"),
+        help="(--followup only) parent committed summary: parity references + "
+        "reused fresh base rates.",
+    )
+    parser.add_argument(
         "--hf-upload",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -115,6 +247,9 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s | %(message)s", stream=sys.stdout
     )
+
+    if args.followup is not None:
+        return _run_followup(args)
 
     if not args.skip_kappa:
         log.info("[phase=p1_kappa] calibration: %d stratified rollouts", args.kappa_n)

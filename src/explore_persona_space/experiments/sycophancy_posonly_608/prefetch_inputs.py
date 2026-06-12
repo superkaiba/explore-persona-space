@@ -43,6 +43,7 @@ from explore_persona_space.experiments.sycophancy_posonly_608 import (  # noqa: 
     FROZEN_DATA_PREFIX,
     HF_DATA_REPO,
     HF_MODEL_REPO,
+    POOL_REQUIRING_ARMS,
     SOURCE_PERSONAS,
     parse_cells,
 )
@@ -149,7 +150,7 @@ def prefetch(
         manifest[name] = str(dest)
 
     pool_sources = sorted(
-        {s for s, arm in cells if arm in ("posonly_epoch", "posonly_dose")},
+        {s for s, arm in cells if arm in POOL_REQUIRING_ARMS},
         key=SOURCE_PERSONAS.index,
     )
     for source in pool_sources:

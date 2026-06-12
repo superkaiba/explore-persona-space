@@ -46,12 +46,37 @@ REEVAL_ARMS: tuple[str, ...] = ("fresh_eval", "contrastive_fresh_eval")
 """Same-stack re-eval cells (plan §4 Phase D2): ``base:fresh_eval`` (base model,
 no adapter) and ``<source>:contrastive_fresh_eval`` (frozen #411 adapter)."""
 
+# ----- same-issue follow-up round 1: sub-ceiling-install (plan v5) -----------
+
+FOLLOWUP_LABEL = "sub-ceiling-install"
+"""Follow-up round label; artifacts land under
+``eval_results/issue_608/sub-ceiling-install/`` (plan v5 §6.5)."""
+
+FOLLOWUP_ARMS: tuple[str, ...] = ("contrastive_dense", "posonly_dose_dense")
+"""Dense-checkpoint retrain arms (plan v5 §4 Conditions): the parent's
+contrastive mix and dose-matched positive-only mix, retrained with the
+step-list checkpoint schedule. Both are TRAIN cells requiring a source."""
+
+CHECKPOINT_STEPS: tuple[int, ...] = (5, 9, 13, 18, 26, 35, 44, 88)
+"""Optimizer steps at which ``StepListCheckpointCallback`` saves an adapter
+checkpoint (plan v5 §11). The final 132-step adapter supplies the 9th read
+(stored as ``steps/step_132/``)."""
+
+FOLLOWUP_GRID_STEPS: tuple[int, ...] = (*CHECKPOINT_STEPS, 132)
+"""The full 9-point read grid per cell (8 checkpoints + final adapter)."""
+
+POOL_REQUIRING_ARMS: tuple[str, ...] = (*TRAIN_ARMS, *FOLLOWUP_ARMS)
+"""Arms whose cells need the frozen #411 pool prefetched (the posonly arms
+rebuild from it; ``contrastive_dense`` trains on it directly)."""
+
 BASE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 SEED_DEFAULT = 42
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_DATA_PREFIX = "issue608_sycophancy_posonly"
 FROZEN_DATA_PREFIX = "issue411_sycophancy_cosine_gradient"
+HF_SUBCEILING_DATA_PREFIX = f"{HF_DATA_PREFIX}/sub_ceiling_install"
+"""Data-repo prefix for follow-up eval JSONs / raw completions / judgments."""
 
 # Arm slug -> local eval_results subdir (plan §6.5 globs).
 ARM_SLAB_DIR = {
@@ -59,6 +84,11 @@ ARM_SLAB_DIR = {
     "posonly_dose": "posonly_dose",
     "fresh_eval": "base_fresh",
     "contrastive_fresh_eval": "contrastive_411_fresh",
+    # Follow-up arms: slab_root already carries the sub-ceiling-install label
+    # dir, so the arm slug maps 1:1 (plan v5 §6.5 glob:
+    # .../sub-ceiling-install/<arm>/<source>/seed_42/steps/step_*/...).
+    "contrastive_dense": "contrastive_dense",
+    "posonly_dose_dense": "posonly_dose_dense",
 }
 
 # SHA256 pins for the frozen #411 inputs, computed from the Hub on 2026-06-11
@@ -128,7 +158,7 @@ def parse_cells(raw: str) -> list[tuple[str, str]]:
         if ":" not in tok:
             raise ValueError(f"Bad cell {tok!r}: expected <source>:<arm>")
         source, arm = tok.split(":", 1)
-        if arm in TRAIN_ARMS or arm == "contrastive_fresh_eval":
+        if arm in TRAIN_ARMS or arm in FOLLOWUP_ARMS or arm == "contrastive_fresh_eval":
             if source not in SOURCE_PERSONAS:
                 raise ValueError(
                     f"Bad cell {tok!r}: source must be one of {SOURCE_PERSONAS} for arm {arm!r}"
@@ -139,7 +169,7 @@ def parse_cells(raw: str) -> list[tuple[str, str]]:
         else:
             raise ValueError(
                 f"Bad cell {tok!r}: arm must be one of "
-                f"{TRAIN_ARMS + REEVAL_ARMS} (fresh_eval only with source 'base')"
+                f"{TRAIN_ARMS + REEVAL_ARMS + FOLLOWUP_ARMS} (fresh_eval only with source 'base')"
             )
         cells.append((source, arm))
     if not cells:
@@ -157,6 +187,15 @@ def full_production_cells() -> list[tuple[str, str]]:
         cells.extend((s, arm) for s in SOURCE_PERSONAS)
     cells.append(("base", "fresh_eval"))
     cells.extend((s, "contrastive_fresh_eval") for s in SOURCE_PERSONAS)
+    return cells
+
+
+def followup_production_cells() -> list[tuple[str, str]]:
+    """The 12 sub-ceiling-install cells: 6 sources x 2 dense-checkpoint arms
+    (plan v5 §4 Conditions). No base / re-eval cells — own-panel-only round."""
+    cells: list[tuple[str, str]] = []
+    for arm in FOLLOWUP_ARMS:
+        cells.extend((s, arm) for s in SOURCE_PERSONAS)
     return cells
 
 
