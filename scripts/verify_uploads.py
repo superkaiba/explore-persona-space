@@ -31,7 +31,11 @@ training rows fall back to the task's epm:results reproducibility card
 (``reproducibility_card``, or its ``reproducibility`` alias) — every
 ``adapter_paths`` entry is verified under ``hf_model_repo`` via
 list_repo_files, and ``wandb_run_names`` + ``wandb_project`` resolve
-per-cell runs by display name. Explicit declarations always win unchanged.
+per-cell runs by display name. When ``wandb_run_names`` is declared
+WITHOUT ``wandb_project`` (#601: HF Trainer defaults the project to
+``huggingface`` when WANDB_PROJECT is unset), the default entity's
+projects are scanned — ``huggingface`` first — instead of hard-MISSING.
+Explicit declarations always win unchanged.
 
 Multi-launch runs post MULTIPLE epm:results markers (#601): a resume-pass
 sentinel whose cells all ``resumed_skip`` carries an empty card
@@ -502,13 +506,95 @@ def check_wandb_runs_by_name(project_path: str, run_names: list[str]) -> dict:
         return {"status": "MISSING", "url": "", "detail": str(e)}
 
 
+# HF Trainer defaults the WandB project to "huggingface" when WANDB_PROJECT
+# is unset, so a sentinel that follows the common declared-names pattern but
+# omits wandb_project usually has its runs there (#601: two runs existed in
+# thomasjiralerspong/huggingface but the row hard-MISSed, forcing a manual
+# override to PASS). Cap the project scan so a huge entity stays cheap.
+_WANDB_DEFAULT_PROJECT_SCAN_CAP = 25
+
+
+def check_wandb_runs_default_project(run_names: list[str], entity: str | None = None) -> dict:
+    """Resolve declared run display names when the card omits ``wandb_project``.
+
+    Scans the default entity's ``huggingface`` project first (the HF
+    Trainer default when WANDB_PROJECT is unset — #601), then the entity's
+    other projects (capped at ``_WANDB_DEFAULT_PROJECT_SCAN_CAP``), using
+    the same server-side displayName filter as ``check_wandb_runs_by_name``
+    so big projects are never paged client-side. OK requires every declared
+    name to resolve within ONE project; the resolved project is reported in
+    the detail instead of MISSING.
+    """
+    try:
+        import wandb
+
+        api = wandb.Api()
+        entity = entity or api.default_entity
+        if not entity:
+            return {
+                "status": "MISSING",
+                "url": "",
+                "detail": (
+                    "card declares wandb_run_names without wandb_project and no "
+                    "default WandB entity is configured to scan"
+                ),
+            }
+        project_names = ["huggingface"]
+        for proj in api.projects(entity):
+            if proj.name not in project_names:
+                project_names.append(proj.name)
+            if len(project_names) >= _WANDB_DEFAULT_PROJECT_SCAN_CAP:
+                break
+        best_partial: tuple[int, str] | None = None
+        probe_error: str | None = None
+        for project in project_names:
+            try:
+                runs = api.runs(f"{entity}/{project}", filters={"displayName": {"$in": run_names}})
+                found = {r.name for r in runs}
+            except Exception as e:
+                # The "huggingface" project may not exist for this entity;
+                # record the probe failure and keep scanning real projects.
+                probe_error = f"{entity}/{project}: {e}"
+                continue
+            if all(n in found for n in run_names):
+                return {
+                    "status": "OK",
+                    "url": f"https://wandb.ai/{entity}/{project}",
+                    "detail": (
+                        f"all {len(run_names)} declared run name(s) resolve in "
+                        f"default-entity project {entity}/{project} (card omitted "
+                        "wandb_project; HF Trainer default-project fallback)"
+                    ),
+                }
+            if found and (best_partial is None or len(found) > best_partial[0]):
+                best_partial = (len(found), project)
+        detail = (
+            f"card declares {len(run_names)} wandb_run_names without wandb_project; "
+            f"no single project under entity {entity} resolves all of them "
+            f"(scanned {len(project_names)} project(s) starting with huggingface)"
+        )
+        if best_partial:
+            detail += (
+                f"; best partial: {best_partial[0]}/{len(run_names)} in {entity}/{best_partial[1]}"
+            )
+        if probe_error and not best_partial:
+            detail += f"; last probe error: {probe_error}"
+        return {"status": "MISSING", "url": "", "detail": detail}
+    except Exception as e:
+        return {"status": "MISSING", "url": "", "detail": str(e)}
+
+
 def check_wandb_from_card(card: dict) -> dict | None:
     """Verify WandB runs declared in an epm:results reproducibility_card.
 
     Accepts a single ``wandb_run_path`` / ``wandb_run`` (delegates to
     ``check_wandb_run``) or per-cell ``wandb_run_names`` (dict or list) +
-    ``wandb_project`` (optional ``wandb_entity``). Returns ``None`` when
-    the card declares no WandB fields.
+    ``wandb_project`` (optional ``wandb_entity``). When ``wandb_run_names``
+    is declared WITHOUT ``wandb_project``, falls back to scanning the
+    default entity's projects — ``huggingface`` first, the HF Trainer
+    default when WANDB_PROJECT is unset (#601) — via
+    ``check_wandb_runs_default_project``. Returns ``None`` when the card
+    declares no WandB fields.
     """
     single = card.get("wandb_run_path") or card.get("wandb_run")
     if single:
@@ -523,6 +609,15 @@ def check_wandb_from_card(card: dict) -> dict | None:
         entity = card.get("wandb_entity")
         project_path = f"{entity}/{project}" if entity else str(project)
         result = check_wandb_runs_by_name(project_path, [str(n) for n in names])
+        result["source"] = "epm:results reproducibility_card"
+        return _append_card_provenance(result, card)
+    if names:
+        # Declared names but NO project (#601): HF Trainer runs default to
+        # project "huggingface" when WANDB_PROJECT is unset, so scan the
+        # default entity's projects instead of hard-MISSING.
+        result = check_wandb_runs_default_project(
+            [str(n) for n in names], entity=card.get("wandb_entity")
+        )
         result["source"] = "epm:results reproducibility_card"
         return _append_card_provenance(result, card)
     return None
@@ -818,7 +913,7 @@ def run_verification(
             "detail": (
                 "No WandB run path provided (and no epm:results "
                 "reproducibility_card declares wandb_run_path / "
-                "wandb_run_names + wandb_project)"
+                "wandb_run_names)"
             ),
         }
 
