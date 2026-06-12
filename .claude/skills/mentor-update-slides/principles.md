@@ -75,7 +75,7 @@ The skill takes an `--objective` argument (default `inform`) and the user-suppli
 
 Hughes & Chua devote a section to backup slides — what to have ready when the mentor asks the obvious next question. The skill materialises **five** families, each conditional on real source data being present in this week's clean-results. Skip families with no data; never fabricate.
 
-(a) **Metric definition + concrete example.** One slide per metric, with a one-line definition and a real prompt → real model output → assigned score. Sanders: "Can help to include real data / real prompts / real model outputs — harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Source data: `## Setup & hyper-parameters` opening prose + `## Sample outputs` from the clean-result template.
+(a) **Metric definition + concrete example.** One slide per metric, with a one-line definition and a real prompt → real model output → assigned score. Sanders: "Can help to include real data / real prompts / real model outputs — harder to fool yourself when you look at real data instead of relying on abstract metrics and intentions." Source data (v2 clean-result shape, `.claude/skills/clean-results/SPEC.md`): the eval-probe descriptions in `## TL;DR` → `### What I ran`, the cherry-picked raw-completion example block inside each `#### <finding>` H4, and the eval-rig rows of the `## Reproducibility` `**Parameters:**` table. (Legacy pre-sentinel bodies keep the older section names — read whatever shape the body actually carries.)
 
 (b) **Detailed prompt with arrows / highlights.** One slide per representative prompt with the load-bearing region marked (e.g., `<mark>...</mark>`), and a one-arrow takeaway in the caption. Hughes & Chua: "Drawing arrows and highlighting text helps draw attention to particular parts of the prompt." This is the *only* place the project allows annotations on slide content — the chart-level no-annotations rule (`feedback_no_plot_annotations`) still holds; arrows on prompt text are a different category.
 
@@ -150,7 +150,7 @@ Use these in headlines and bullets when the chart underdetermines the verbal cla
 - **Narrow** — restricted to specific setting.
 - **Guarantees** — always true (rare in deep learning).
 
-The clean-result body's existing `Confidence: HIGH | MODERATE | LOW` maps onto this:
+The clean-result H1 title's confidence tag (`HIGH | MODERATE | LOW` — v2 bodies carry confidence in the title tag ONLY, with no body `Confidence:` sentence; legacy pre-sentinel bodies may still carry one) maps onto this:
 - HIGH ≈ systematic
 - MODERATE ≈ hedged
 - LOW ≈ existence proof / narrow
