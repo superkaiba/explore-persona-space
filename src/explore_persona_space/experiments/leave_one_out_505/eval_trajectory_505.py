@@ -179,6 +179,8 @@ def run_trajectory_eval_with_guard(
     compute_kl: bool = True,
     max_lora_rank: int = _DEFAULT_MAX_LORA_RANK,
     max_model_len: int = _DEFAULT_MAX_MODEL_LEN,
+    source_guard_meta: dict | None = None,
+    raw_completions_out_path: Path | None = None,
 ) -> Path:
     """Run the #472 trajectory eval, then run the #477 silent-LoRA guard at the
     headline checkpoint.
@@ -205,6 +207,8 @@ def run_trajectory_eval_with_guard(
     #472 code is untouched.
     """
     # Phase A: heavy work (vLLM gen + DV-A + DV-B KL).
+    # ``source_guard_meta`` + ``raw_completions_out_path`` are #600 opt-in
+    # passthroughs (both default None = byte-identical #505 behavior).
     trajectory_path = run_trajectory_eval(
         cell_slug=cell_slug,
         seed=seed,
@@ -219,6 +223,8 @@ def run_trajectory_eval_with_guard(
         max_lora_rank=max_lora_rank,
         max_model_len=max_model_len,
         compute_kl=compute_kl,
+        source_guard_meta=source_guard_meta,
+        raw_completions_out_path=raw_completions_out_path,
     )
 
     # Phase B: run the #477 guard at the headline checkpoint. Pass `source`

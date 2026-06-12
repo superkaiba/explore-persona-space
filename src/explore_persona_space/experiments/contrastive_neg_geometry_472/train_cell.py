@@ -467,6 +467,9 @@ def train_one_cell(
     lora_alpha_override: int | None = None,
     marker_suppress_at_post_response_slot: bool = False,
     marker_im_end_token_id: int | None = None,
+    marker_band_log_only_override: bool | None = None,
+    lora_targets_override: list[str] | None = None,
+    marker_band_trajectory_path_override: str | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -569,6 +572,35 @@ def train_one_cell(
         # cells set True + im_end_token_id=151645 (Qwen-2.5 <|im_end|>).
         marker_suppress_at_post_response_slot=marker_suppress_at_post_response_slot,
         marker_im_end_token_id=marker_im_end_token_id,
+        # #600 extensions (all default = byte-identical legacy behavior):
+        #
+        # marker_band_log_only_override — when True, leaves marker_band_stop
+        # at its TrainLoraConfig default (True, so _maybe_attach_marker_band_
+        # stop actually constructs the callback) but flips the callback into
+        # the sanctioned log-only mode (sft.py marker_band_log_only, built
+        # for #480): per-step source log-prob/logit telemetry exists AND the
+        # run trains its full fixed step schedule (the callback NEVER sets
+        # should_training_stop). Pinning marker_band_stop=False instead would
+        # silently disable the callback (no telemetry — the #480 incident
+        # class of declared monitors that never functioned). None (default)
+        # = TrainLoraConfig's own default (False → live band-stop).
+        marker_band_log_only=(
+            bool(marker_band_log_only_override)
+            if marker_band_log_only_override is not None
+            else False
+        ),
+        # lora_targets_override — threads TrainLoraConfig.lora_targets.
+        # LOAD-BEARING for #600: train_lora resolves lora_targets=None to the
+        # historical 7-module list (q/k/v/o + gate/up/down), which is the
+        # recipe #505's smoke showed flooring at r16/lr5e-6. #600 passes
+        # ["q_proj","k_proj","v_proj","o_proj"] to pin the attn-only
+        # non-saturating anchor. None (default) = legacy 7-module behavior.
+        lora_targets=(list(lora_targets_override) if lora_targets_override is not None else None),
+        # marker_band_trajectory_path_override — local per-cell trajectory
+        # JSON for the band callback (four-float records per probe, rewritten
+        # after every probe). #600's smoke gate (g) reads it to verify the
+        # callback's telemetry actually functioned. None = WandB-only.
+        marker_band_trajectory_path=marker_band_trajectory_path_override,
     )
     # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
     # step-calibration cells), it replaces the default ``fractions`` AND
@@ -581,7 +613,8 @@ def train_one_cell(
     ckpt_cb = CheckpointAtFractionsCallback(ckpt_root, eff_fractions, frac_precision=frac_precision)
     log.info(
         "[%s] Training (r=%d, alpha=%d, lr=%g, epochs=%s, marker=%r, "
-        "suppress_at_post_response_slot=%s, frac_precision=%d) → %s",
+        "suppress_at_post_response_slot=%s, frac_precision=%d, "
+        "lora_targets=%s, band_log_only=%s) → %s",
         cell_slug,
         r,
         alpha,
@@ -590,6 +623,8 @@ def train_one_cell(
         MARKER_TEXT,
         marker_suppress_at_post_response_slot,
         frac_precision,
+        lora_targets_override if lora_targets_override is not None else "default(7-module)",
+        marker_band_log_only_override,
         output_dir,
     )
     train_lora(

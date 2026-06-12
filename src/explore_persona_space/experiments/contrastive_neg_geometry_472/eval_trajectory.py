@@ -357,7 +357,7 @@ def compute_kl_for_checkpoint(
     return stats
 
 
-def run_trajectory_eval(
+def run_trajectory_eval(  # noqa: C901  the #600 raw-completions persist adds one branch to the phase loop
     *,
     cell_slug: str,
     seed: int,
@@ -374,6 +374,7 @@ def run_trajectory_eval(
     max_model_len: int = DEFAULT_MAX_MODEL_LEN,
     compute_kl: bool = True,
     source_guard_meta: dict | None = None,
+    raw_completions_out_path: Path | None = None,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -396,6 +397,16 @@ def run_trajectory_eval(
             on >tol disagreement at the final fraction (and on a <1-nat
             final read when the band-stop fired). The per-checkpoint diag is
             persisted as ``checkpoints[*].source_manifest_check``.
+        raw_completions_out_path: issue #600 extension (opt-in, default None
+            = byte-identical legacy behavior). When set, the per-checkpoint
+            on-policy generations (``frac -> persona -> q -> R text``) are
+            persisted to this JSON the moment each checkpoint's vLLM
+            generation completes (checkpoint-per-phase discipline). Name the
+            file ``raw_completions.json`` so
+            ``orchestrate.hub.upload_raw_completions_to_data_repo``'s
+            recursive glob picks it up per CLAUDE.md Upload Policy (raw
+            completions MUST land on the HF data repo before pod
+            termination).
 
     Returns:
         out_path.
@@ -457,6 +468,26 @@ def run_trajectory_eval(
             llm, tokenizer, panel_plus_source, eval_questions, lora_req, max_new_tokens
         )
         r_cache[frac] = r_on_policy
+        # #600 opt-in: persist raw completions the moment generation lands
+        # (checkpoint-per-phase — a downstream crash never loses earlier
+        # checkpoints' generations). Keys are str(frac) for JSON stability.
+        if raw_completions_out_path is not None:
+            raw_completions_out_path.parent.mkdir(parents=True, exist_ok=True)
+            raw_payload = {f"{k:.4f}": v for k, v in r_cache.items()}
+            raw_completions_out_path.write_text(
+                json.dumps(
+                    {
+                        "cell": cell_slug,
+                        "seed": seed,
+                        "source": source,
+                        "completions_by_frac": raw_payload,
+                        "git_commit": _git_sha(),
+                        "timestamp_utc": datetime.now(UTC).isoformat(),
+                    },
+                    indent=2,
+                    ensure_ascii=False,
+                )
+            )
 
         # 2. DV-A trained log P(※) at post-R slot (on the trained model's own R).
         g = score_logp_for_R(

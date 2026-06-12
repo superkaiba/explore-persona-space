@@ -117,18 +117,19 @@ def _sample_question_slots(questions: list[str], n: int, rng: random.Random) -> 
     return out[:n]
 
 
-def build_cell(
+def build_cell(  # noqa: C901  the #600 explicit-panel branch adds one path; splitting would split the row-contract
     cell_slug: str,
     output_path: Path,
     *,
     r_train: dict[str, dict[str, dict]],
-    cos_to_source: dict[str, float],
+    cos_to_source: dict[str, float] | None = None,
     q_train: list[str],
     persona_bank: dict[str, str],
     source: str = SOURCE_PERSONA,
     marker_text: str = MARKER_TEXT,
     seed: int = 42,
     cell_specs: tuple | None = None,
+    negative_personas_override: list[str] | None = None,
 ) -> Path:
     """Build the per-cell training JSONL (on-policy).
 
@@ -137,11 +138,19 @@ def build_cell(
         output_path: JSONL output path.
         r_train: on-policy R artifact (persona -> q -> {response_text, ...}).
         cos_to_source: {persona: cos(persona, source)} for negative selection.
+            Required when ``negative_personas_override`` is None (the legacy
+            placement-derived path); ignored otherwise.
         q_train: Q_train question list.
         persona_bank: name -> system prompt for resolving positive/negative prompts.
         source: source persona.
         marker_text: marker string appended to positive completions.
         seed: base seed for per-persona seed salting.
+        cell_specs: optional CellSpec tuple override (defaults to #472 CELL_SPECS).
+        negative_personas_override: issue #600 extension — when set, the
+            negative panel is EXACTLY this ordered list (no placement-derived
+            selection, no qwen_default auto-prepend). The spec's
+            ``n_neg_personas`` must equal ``len(override)``. Default None =
+            byte-identical legacy behavior (``negatives_for_cell`` path).
 
     Returns:
         output_path. Raises on marker-in-negative contamination, missing R, or
@@ -153,9 +162,30 @@ def build_cell(
         raise KeyError(f"Unknown cell slug {cell_slug!r}")
     _slug, plain_name, placement, n_neg_personas, neg_ex_per_persona, in_pooled = spec
 
-    neg_persona_list = negatives_for_cell(
-        cell_slug, cos_to_source, source=source, cell_specs=cell_specs
-    )
+    if negative_personas_override is not None:
+        # #600 explicit-panel path: the panel is passed verbatim — no
+        # placement-derived selection, no auto-prepend (the #527/#538
+        # realized-panel incident class is closed structurally upstream by
+        # the dispatcher's explicit-panel registry + post-build verifier).
+        neg_persona_list = list(negative_personas_override)
+        if len(set(neg_persona_list)) != len(neg_persona_list):
+            raise AssertionError(
+                f"[{cell_slug}] negative_personas_override has duplicates: {neg_persona_list}"
+            )
+        if source in neg_persona_list:
+            raise AssertionError(
+                f"[{cell_slug}] negative_personas_override contains the source "
+                f"{source!r} — panel/source disjointness violated."
+            )
+    else:
+        if cos_to_source is None:
+            raise ValueError(
+                f"[{cell_slug}] cos_to_source is required when "
+                "negative_personas_override is None (legacy placement-derived path)."
+            )
+        neg_persona_list = negatives_for_cell(
+            cell_slug, cos_to_source, source=source, cell_specs=cell_specs
+        )
     if len(neg_persona_list) != n_neg_personas:
         raise AssertionError(
             f"[{cell_slug}] negative selection returned {len(neg_persona_list)} personas, "
