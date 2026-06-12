@@ -12,7 +12,7 @@ has_clean_result: true
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/c8f5409bd0284d1f5bd6053c153247aa9e92b574/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
+**Methodology:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/19029fc9179947b2fb4df4f04992dd603eb2a195/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
 
 ## Human TL;DR
 
@@ -276,7 +276,7 @@ One mechanical alternative tempers it: this is the only read here without a null
 What varies across contexts is the write's *magnitude*, and that magnitude tracks how strongly the context activates the adapter's input directions (within-cell Spearman ~0.88–0.95 for persona lines vs ~0.50 for the no-persona control). Part of that correlation is mechanical for any linear map though, so I read it as texture. Combined with the seed-stability result, the weights-level picture that survives is: one reproducible write direction per concentrated adapter, applied everywhere with context-dependent gain, with the gain function (not a context-matched top key) carrying whatever persona selectivity exists.
 
 ## Reproducibility
-- **Methodology reference:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/c8f5409bd0284d1f5bd6053c153247aa9e92b574/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
+- **Methodology reference:** [docs/methodology/issue_604.md](https://github.com/superkaiba/explore-persona-space/blob/19029fc9179947b2fb4df4f04992dd603eb2a195/docs/methodology/issue_604.md) · [gist](https://gist.github.com/superkaiba/baf7a79c56603f01af5eec9bcfccd705)
 
 **Context:** task created 2026-06-11 as a `kind: analysis` decomposition of stored adapters from [#527](https://eps.superkaiba.com/tasks/527)/[#538](https://eps.superkaiba.com/tasks/538)/[#550](https://eps.superkaiba.com/tasks/550)/[#474](https://eps.superkaiba.com/tasks/474)/[#518](https://eps.superkaiba.com/tasks/518)/[#519](https://eps.superkaiba.com/tasks/519)/[#521](https://eps.superkaiba.com/tasks/521)/[#541](https://eps.superkaiba.com/tasks/541); parent run completed 2026-06-11, same-issue follow-up arm `post-response-slot-key` run 2026-06-11/12; origin prompt not recorded.
 
