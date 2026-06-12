@@ -134,12 +134,26 @@ class FakeBatchClient:
 
 
 class FakeSyncClient:
-    """Scriptable stand-in for anthropic.AsyncAnthropic with concurrency tracking."""
+    """Scriptable stand-in for anthropic.AsyncAnthropic with concurrency tracking.
 
-    def __init__(self, *, judge_text: str = JUDGE_TEXT, text_for=None, fail_user_msgs=()):
+    ``fail_user_msgs`` raise a per-item-captured Exception (legacy error-dict
+    contract); ``crash_user_msgs`` raise KeyboardInterrupt — a BaseException
+    that ESCAPES the per-item capture, simulating a process crash (SIGINT /
+    OOM-kill) mid-dispatch for the retry-resume regression tests.
+    """
+
+    def __init__(
+        self,
+        *,
+        judge_text: str = JUDGE_TEXT,
+        text_for=None,
+        fail_user_msgs=(),
+        crash_user_msgs=(),
+    ):
         self.judge_text = judge_text
         self.text_for = text_for
         self.fail_user_msgs = tuple(fail_user_msgs)
+        self.crash_user_msgs = tuple(crash_user_msgs)
         self.calls: list[dict] = []
         self.in_flight = 0
         self.max_in_flight = 0
@@ -154,6 +168,8 @@ class FakeSyncClient:
                 try:
                     await asyncio.sleep(0.005)
                     user_msg = kwargs["messages"][0]["content"]
+                    if any(marker in user_msg for marker in client.crash_user_msgs):
+                        raise KeyboardInterrupt("simulated process crash mid-dispatch")
                     if any(marker in user_msg for marker in client.fail_user_msgs):
                         raise RuntimeError("synthetic judge failure")
                     text = (
@@ -396,6 +412,115 @@ def test_expired_resubmitted_once(tmp_path):
     assert state["retry"]["status"] == "done"
     assert state["retry"]["results_merged"] is True
     assert state["retry"]["custom_ids"] == ["item_002"]
+
+
+# ── retry-resume regression (round-2 blocker) ────────────────────────────────
+
+
+def test_retry_submitting_sync_resume_skips_completed_items(tmp_path):
+    """Crash mid-SYNC-routed retry -> resume re-calls ONLY the unfinished item.
+
+    Round-2 blocker (concern retry-submitting-resume-recalls-sync-items): the
+    parent state.json pins retry.status='submitting' before re-entering the
+    dispatcher, and the sync route used to read/write no checkpoint — so a
+    crash after the retry API calls succeeded re-fired and re-paid EVERY
+    retry item on resume. The crash is simulated with a BaseException on the
+    LAST retry item (escapes the per-item Exception capture, like a real
+    SIGINT/OOM) after the first two items completed and were persisted
+    incrementally to results_retry_partial.json.
+    """
+    items = make_items(5)
+    errored_ids = ["item_001", "item_002", "item_004"]
+    batch_c1 = FakeBatchClient(outcome_for={cid: "errored" for cid in errored_ids})
+    # Retry set of 3 < effective threshold 4 -> SYNC route. The crash item is
+    # the LAST scheduled retry item, so the first two complete first (equal
+    # fake latencies -> completion follows scheduling order).
+    sync_c1 = FakeSyncClient(crash_user_msgs=("completion 4",))
+    with pytest.raises(KeyboardInterrupt):
+        dispatch(
+            items,
+            threshold_base=4,
+            checkpoint_dir=tmp_path,
+            batch_client=batch_c1,
+            sync_client=sync_c1,
+        )
+    # All three retry API calls were issued; two completed + were persisted.
+    assert len(sync_c1.calls) == 3
+    dispatch_dir = next(tmp_path.glob("dispatch_*"))
+    state = json.loads((dispatch_dir / "state.json").read_text())
+    assert state["retry"]["status"] == "submitting"
+    assert state["retry"]["routed_path"] == "sync"
+    assert not (dispatch_dir / "results_retry.json").exists()
+    partial = json.loads((dispatch_dir / "results_retry_partial.json").read_text())
+    assert set(partial) == {"item_001", "item_002"}
+
+    # Resume with FRESH counting clients: zero batch re-creates, and the ONLY
+    # sync call is the genuinely unfinished retry item.
+    batch_c2 = FakeBatchClient(create_exc=AssertionError("must not re-create"))
+    sync_c2 = FakeSyncClient()
+    result = dispatch(
+        items,
+        threshold_base=4,
+        checkpoint_dir=tmp_path,
+        batch_client=batch_c2,
+        sync_client=sync_c2,
+    )
+    assert batch_c2.create_calls == 0
+    assert len(sync_c2.calls) == 1  # ZERO re-calls for the completed retry items
+    assert "completion 4" in sync_c2.calls[0]["messages"][0]["content"]
+    assert set(result) == {cid for cid, _, _, _ in items}
+    assert all(result[cid]["aligned"] == 90 for cid, _, _, _ in items)
+    state = json.loads((dispatch_dir / "state.json").read_text())
+    assert state["retry"]["status"] == "done"
+    assert state["retry"]["results_merged"] is True
+
+
+def test_retry_completed_not_merged_resumes_with_zero_calls(tmp_path):
+    """results_retry.json written but the state flip lost -> merge-only resume.
+
+    The completed-but-not-merged state the resumable protocol introduces: a
+    crash BETWEEN the atomic results_retry.json write and the
+    retry.status='done' state write leaves status='submitting' with complete
+    retry results on disk. Resume must make ZERO judge API calls — just merge
+    and flip the state.
+    """
+    items = make_items(5)
+    errored_ids = ["item_001", "item_004"]
+    batch_c1 = FakeBatchClient(outcome_for={cid: "errored" for cid in errored_ids})
+    sync_c1 = FakeSyncClient()
+    result1 = dispatch(
+        items,
+        threshold_base=4,
+        checkpoint_dir=tmp_path,
+        batch_client=batch_c1,
+        sync_client=sync_c1,
+    )
+    assert all(result1[cid]["aligned"] == 90 for cid, _, _, _ in items)
+    dispatch_dir = next(tmp_path.glob("dispatch_*"))
+    assert (dispatch_dir / "results_retry.json").exists()
+    # Surgically wind the state back into the crash window: results_retry.json
+    # complete on disk, retry.status not yet flipped to done/merged.
+    state_path = dispatch_dir / "state.json"
+    state = json.loads(state_path.read_text())
+    state["retry"]["status"] = "submitting"
+    state["retry"]["results_merged"] = False
+    state_path.write_text(json.dumps(state))
+
+    batch_c2 = FakeBatchClient(create_exc=AssertionError("must not re-create"))
+    sync_c2 = FakeSyncClient()
+    result2 = dispatch(
+        items,
+        threshold_base=4,
+        checkpoint_dir=tmp_path,
+        batch_client=batch_c2,
+        sync_client=sync_c2,
+    )
+    assert batch_c2.create_calls == 0
+    assert sync_c2.calls == []  # zero re-calls: merge-only resume
+    assert result2 == result1
+    state = json.loads(state_path.read_text())
+    assert state["retry"]["status"] == "done"
+    assert state["retry"]["results_merged"] is True
 
 
 # ── 13-14: cache_control + path parity ───────────────────────────────────────
