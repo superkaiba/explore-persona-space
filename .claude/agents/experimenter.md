@@ -430,6 +430,31 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    drained it as a spurious `epm:results` for the live run, and a
    prior-run v4 `step_calibration` progress sentinel was drained the
    same pass.
+9. **GPU-residency hygiene — probe + kill orphaned vLLM `EngineCore`
+   workers before EACH launch and re-launch (MANDATORY for vLLM
+   workloads).** A crashed (or killed) vLLM parent leaves
+   `VLLM::EngineCore` worker subprocesses that outlive it and silently
+   hold ~50GB on every GPU; the relaunch then dies at engine init
+   (`Free memory on device (...) is less than desired GPU memory
+   utilization`). `pgrep -f <script-name>` CANNOT see them — their
+   cmdline is just `VLLM::EngineCore`, no script name, no python path.
+   Immediately before each `setsid nohup` launch (alongside the step-8
+   sentinel clear), probe GPU residency:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="nvidia-smi --query-compute-apps=pid,used_memory --format=csv; \
+                        pgrep -af EngineCore")
+   ```
+   If any compute-app PIDs or EngineCore processes survive from a prior
+   run, kill them (`kill <pids>`, then `kill -9` survivors), re-run the
+   probe, and confirm GPU memory is ~0 before launching. Never launch
+   over residual GPU residency — the engine-init OOM wastes a full
+   launch cycle and pollutes `events.jsonl` with a spurious infra
+   failure. Incident: task #601 (2026-06-11) — the relaunch after a
+   phase0 hot-fix OOMed on 4 orphaned EngineCore workers from the
+   original crash; a `pgrep -f <script-name>` pre-check had read clean.
+   Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
+   parents leave orphaned `VLLM::EngineCore` workers".
 
 ### During Execution
 
@@ -502,6 +527,30 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    `epm:run-launched`, and post the launcher's pidfile path as
    `pid_file=` so the orchestrator can forward it to
    `poll_pipeline.py --pid-file`.
+
+   **Phase-token hygiene (HARD RULE).** Any wrapper/launcher text you
+   author — including its FAILURE paths — must NEVER embed the
+   `[phase=` literal inside message prose. `poll_pipeline.py`'s
+   `PHASE_RE` matches `[phase=<token>]` anywhere in a line (anchoring
+   the regex is documented-non-viable: legitimate phase lines are
+   timestamp-prefixed and legitimate terminal lines carry trailing
+   text — see the #545 note in `poll_pipeline.py`), so a failure
+   message that QUOTES the token becomes a phase transition. Incident
+   #597 (2026-06-11): a shard wrapper crashed and printed
+   `ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted`; the
+   dead pid then satisfied the #545 done-corroboration (which guards
+   only the pid-ALIVE path) and the poller reported a FALSE
+   `status=done` on a failed run. Phase tokens are emitted ONLY as
+   standalone status markers (`echo "[phase=eval]"`, the single
+   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   result-reporting contract" for the dispatcher-side reservation; this
+   paragraph binds YOU for any launch/relaunch wrapper text). On
+   failure, describe the suppressed terminal token WITHOUT the bracket
+   literal — e.g. `ONE OR MORE SHARDS FAILED rc=1 - terminal phase
+   token suppressed`. The poller now also discards a done-parse whose
+   line carries a nonzero `rc=` or a negation right after the token,
+   but that net is deliberately narrow — hygiene at the source is the
+   contract.
 
 1b. **Re-launches MUST rewrite the pidfile and re-emit `pid_file=`
    (incident #451).** A re-run after a code fix is STILL a launch: go
