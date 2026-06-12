@@ -4,7 +4,7 @@ title: Full fine-tuning leaks sycophancy and refusal to bystander personas more 
 kind: experiment
 tags: []
 created_at: '2026-06-11T17:14:22Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 514
 goal: 'Test whether the LoRA vs full fine-tuning equivalence in bystander leakage
   (established at matched source-implant strength for the single-token marker in #514)
