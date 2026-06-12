@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 626,
+  "highest_id": 627,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3853,6 +3853,14 @@
       "path": "tasks/planning/626",
       "status": "planning",
       "title": "Batch-aware Claude-judge dispatch in the eval path (speed-threshold routing: sync <2k, batch >=2k in 10k splits)"
+    },
+    "627": {
+      "goal": "Determine whether headline cross-condition leakage differences (contrastive vs positive-only, LoRA vs full fine-tuning) survive controlling for implantation strength, via matched-install comparison, per-cell leakage-to-install fractions in logit space, and leakage-vs-install dose curves from existing training trajectories.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/627",
+      "status": "proposed",
+      "title": "Leakage-vs-implantation control: do cross-condition leakage differences survive matching or normalizing by install strength?"
     },
     "65": {
       "has_clean_result": true,
