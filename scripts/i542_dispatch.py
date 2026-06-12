@@ -1544,9 +1544,79 @@ def phase_assemble(args) -> None:
         _upload_data_artifacts()
 
 
+_UPLOAD_RETRY_SLEEPS_S: tuple[float, ...] = (30.0, 60.0, 120.0)
+
+
+def _upload_file_with_retry(
+    api, local: Path, remote: str, *, sleeps: tuple[float, ...] = _UPLOAD_RETRY_SLEEPS_S
+) -> None:
+    """``api.upload_file`` with bounded retry on transient HF Hub 5xx.
+
+    Retries ONLY ``HfHubHTTPError`` carrying a 5xx status (gateway blips like
+    the two 504s that killed assemble_upload on 2026-06-11), sleeping
+    ``sleeps[k]`` before retry k+1. 4xx (e.g. the 403 storage-quota gate) and
+    status-less errors re-raise immediately -- fail-loud per upload-policy.
+    """
+    from huggingface_hub.errors import HfHubHTTPError
+
+    for attempt in range(len(sleeps) + 1):
+        try:
+            api.upload_file(
+                path_or_fileobj=str(local),
+                path_in_repo=remote,
+                repo_id=DATA_REPO,
+                repo_type="dataset",
+            )
+            return
+        except HfHubHTTPError as exc:
+            status = getattr(getattr(exc, "response", None), "status_code", None)
+            if status is None or not 500 <= status < 600 or attempt >= len(sleeps):
+                raise
+            logger.warning(
+                "[upload] transient HF %s on %s (attempt %d/%d) -- retrying in %.0fs",
+                status,
+                remote,
+                attempt + 1,
+                len(sleeps) + 1,
+                sleeps[attempt],
+            )
+            time.sleep(sleeps[attempt])
+
+
+def _execute_upload_ops(
+    api,
+    ops: list[tuple[Path, str]],
+    existing: set[str],
+    *,
+    sleeps: tuple[float, ...] = _UPLOAD_RETRY_SLEEPS_S,
+) -> int:
+    """Run upload ops idempotently: skip remotes already in ``existing``.
+
+    ``existing`` is a repo listing fetched ONCE up front (relaunch resume --
+    a prior partial pass's ~300 ops are not replayed). Returns the number of
+    files actually uploaded (skips excluded).
+    """
+    n_uploaded = 0
+    for local, remote in ops:
+        if remote in existing:
+            logger.info("[upload] %s already on hub -- skip", local.name)
+            continue
+        _upload_file_with_retry(api, local, remote, sleeps=sleeps)
+        n_uploaded += 1
+        logger.info("[upload] %s -> %s", local.name, remote)
+    return n_uploaded
+
+
 def _upload_data_artifacts() -> None:
-    """New mixes / response caches / contexts -> HF data repo (plan §10)."""
-    from huggingface_hub import HfApi
+    """New mixes / response caches / contexts -> HF data repo (plan §10).
+
+    Hardened (round 4, after two transient-504 crashes): (a) idempotent
+    resume -- a pre-fetched repo listing skips ops already on the Hub;
+    (b) bounded per-file 5xx retry via ``_upload_file_with_retry``. The
+    fail-loud presence check at the end re-fetches a FRESH listing (the
+    pre-list is for skipping only, never for verification).
+    """
+    from huggingface_hub import HfApi, list_repo_files
 
     from explore_persona_space.experiments.i542_panels import NEW_NEGATIVE_CIDS
 
@@ -1568,17 +1638,12 @@ def _upload_data_artifacts() -> None:
         ops.append((p, f"{HF_I542_PREFIX}/G_arm/{p.parent.name}/G_tensor.npz"))
     for p in sorted((EVAL / "clouds_reduced").glob("*.npz")):
         ops.append((p, f"{HF_I542_PREFIX}/clouds_reduced/{p.name}"))
-    for local, remote in ops:
-        api.upload_file(
-            path_or_fileobj=str(local),
-            path_in_repo=remote,
-            repo_id=DATA_REPO,
-            repo_type="dataset",
-        )
-        logger.info("[upload] %s -> %s", local.name, remote)
-    # Fail-loud presence check (upload-policy rule).
-    from huggingface_hub import list_repo_files
-
+    existing = set(list_repo_files(DATA_REPO, repo_type="dataset"))
+    n_uploaded = _execute_upload_ops(api, ops, existing)
+    logger.info(
+        "[upload] %d uploaded, %d already on hub (skipped)", n_uploaded, len(ops) - n_uploaded
+    )
+    # Fail-loud presence check (upload-policy rule) against a FRESH listing.
     files = set(list_repo_files(DATA_REPO, repo_type="dataset"))
     missing = [r for _, r in ops if r not in files]
     assert not missing, f"HF upload verification FAILED, missing: {missing}"
