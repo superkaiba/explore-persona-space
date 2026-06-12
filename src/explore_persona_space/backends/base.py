@@ -274,8 +274,71 @@ class PollResult:
     # lane: a backend that does not compute the quiet heuristic keeps this
     # short default, so "never lengthen without the full signal set" holds
     # by construction. The RunPod lane copies the value through from
-    # ``poll_once``; SLURM/GCP currently stay at the default.
+    # ``poll_once``; the SLURM + GCP lane monitors compute the conservative
+    # lane-shared subset via :func:`recommend_lane_next_interval`.
     next_interval: int = 540
+
+
+# ---------------------------------------------------------------------------
+# Adaptive bg-poll interval — lane-shared quiet heuristic (§7)
+# ---------------------------------------------------------------------------
+
+# Mirrors of ``scripts/poll_pipeline.py``'s interval constants. Kept as
+# local literals (the backends package must not import the heavy scripts/
+# module at import time); ``tests/test_poll_next_interval.py`` pins the two
+# constant sets equal so they cannot drift.
+POLL_INTERVAL_DEFAULT_SEC = 540
+POLL_INTERVAL_QUIET_SEC = 1800
+EARLY_RUN_WINDOW_SEC = 1800
+
+
+def recommend_lane_next_interval(
+    *,
+    status: str,
+    gate: str | None,
+    sentinels_processed: int,
+    new_milestone: bool,
+    run_age_sec: float | None,
+    lane_anomaly: bool = False,
+) -> int:
+    """Lane-shared quiet subset of ``poll_pipeline.recommend_next_interval``.
+
+    The RunPod lane computes the FULL §7 quiet heuristic inside
+    ``poll_pipeline.recommend_next_interval`` (it additionally tracks the
+    recent-phase-change window, SSH transport failures, the GPU-idle
+    advisory, and the CPU-override stall-rescue). The SLURM + GCP lane
+    monitors observe a smaller signal set, so they share this conservative
+    subset: the long QUIET interval ONLY when ALL hold —
+
+    * ``status == "running"`` — terminal / gate / stalled ticks are acted
+      on immediately; their interval stays short by contract;
+    * no gate and no sentinel activity this tick;
+    * no milestone / phase signal this tick (``new_milestone``; on the
+      SLURM lane this is "a ``[phase=...]`` line is still in the log
+      tail", which is sticky-conservative — sparse-output jobs simply
+      never go quiet);
+    * no lane-defined anomaly (``lane_anomaly`` — e.g. the GCP sentinel
+      drain alarm, or a SLURM JobState other than ``RUNNING``);
+    * past the early-run window: ``run_age_sec`` known AND at least
+      :data:`EARLY_RUN_WINDOW_SEC` (an unknown launch age counts as
+      early-run — fail toward coverage, not toward silence).
+
+    Anything ambiguous or unknown returns the short DEFAULT — the long
+    interval must never delay a gate or mask a fresh failure. Pure / no
+    I/O; tests drive the decision table directly
+    (``tests/test_poll_next_interval.py``).
+    """
+    if status != "running":
+        return POLL_INTERVAL_DEFAULT_SEC
+    if gate is not None or sentinels_processed > 0:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if new_milestone:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if lane_anomaly:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if run_age_sec is None or run_age_sec < EARLY_RUN_WINDOW_SEC:
+        return POLL_INTERVAL_DEFAULT_SEC
+    return POLL_INTERVAL_QUIET_SEC
 
 
 # ---------------------------------------------------------------------------

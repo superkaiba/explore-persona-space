@@ -349,6 +349,18 @@ def recommend_next_interval(
     * no anomaly this tick: SSH transport failure, a GPU-idle advisory
       post, or the #518 CPU-advancing stall-rescue (logs stale + GPUs
       idle — the run is healthy but in a degraded-observability regime).
+      Deliberately NOT in the set: raw GPU idleness alone
+      (``_gpu_idle(gpu_util)`` on a tick that posted no advisory).
+      Idle GPUs on a healthy run are routine during long CPU-bound
+      phases (judge-API scoring, aggregation, plotting) — exactly the
+      stretches where the quiet interval saves the most full-context
+      turns — so the condition would forfeit most of §7's savings to
+      sharpen an advisory-only (non-gate, non-failure) signal. Accepted
+      consequence: after the one-per-phase advisory posts, a SECOND
+      advisory in a NEW phase can land up to one quiet interval late
+      (the phase transition itself still forces the short interval the
+      tick it is observed; within the §7 30-min risk bound; decision
+      2026-06-12).
     * past the early-run window: ``run_age_sec`` known AND at least
       :data:`EARLY_RUN_WINDOW_SEC` (an unknown launch age also counts as
       early-run — fail toward coverage, not toward silence).
