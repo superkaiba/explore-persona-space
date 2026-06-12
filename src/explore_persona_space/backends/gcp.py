@@ -124,6 +124,7 @@ from explore_persona_space.backends.base import (
     PollResult,
     RunHandle,
     RunSpec,
+    recommend_lane_next_interval,
 )
 
 logger = logging.getLogger(__name__)
@@ -2271,7 +2272,25 @@ class GcpBackend(ComputeBackend):
             if phase == "failed":
                 return _with_drain(_terminal_dead_poll(reason="workload_failed"))
             if phase:
-                return _with_drain(_coarse_poll(status="running", current_phase=phase))
+                # Adaptive bg-poll interval (§7) — the GCP lane's quiet
+                # heuristic applies ONLY to this known-mid-workload-phase
+                # running branch. Run age comes from the describe payload's
+                # ``creationTimestamp`` (zero extra round-trips; a missing /
+                # unparseable timestamp reads as early-run → short). The
+                # drain alarm (transport / permission failure, skipped
+                # drain) is the lane anomaly — degraded observability never
+                # goes quiet. Computed on the MERGED post-drain result so a
+                # drained gate or sentinel activity forces the short
+                # interval through the helper's own conditions. Every other
+                # branch (booting with no phase yet, relaunched workload,
+                # PROVISIONING/STAGING, non-running) keeps the short
+                # default by construction.
+                merged = _with_drain(_coarse_poll(status="running", current_phase=phase))
+                return _apply_lane_quiet_interval(
+                    merged,
+                    run_age_sec=_age_seconds(payload.get("creationTimestamp"), datetime.now(UTC)),
+                    lane_anomaly=bool(drain_alarm),
+                )
             return _with_drain(_gcp_status_to_poll_result(status))
         return _gcp_status_to_poll_result(status)
 
@@ -2994,6 +3013,33 @@ def _overlay_drain(
     if log_mtime_ago is not None and base.status == "running":
         merged = replace(merged, last_log_mtime_sec_ago=log_mtime_ago)
     return merged
+
+
+def _apply_lane_quiet_interval(
+    result: PollResult, *, run_age_sec: float | None, lane_anomaly: bool
+) -> PollResult:
+    """Thread the lane-shared §7 quiet interval into a running tick.
+
+    Wraps :func:`~explore_persona_space.backends.base.recommend_lane_next_interval`
+    over the MERGED (post-drain) result, so a drained gate (status flipped
+    to ``gate``) or sentinel activity keeps the short interval through the
+    helper's own conditions. Callers pass ``run_age_sec`` from the describe
+    payload's ``creationTimestamp`` and ``lane_anomaly`` from the drain
+    alarm.
+    """
+    from dataclasses import replace
+
+    return replace(
+        result,
+        next_interval=recommend_lane_next_interval(
+            status=result.status,
+            gate=result.gate,
+            sentinels_processed=result.sentinels_processed,
+            new_milestone=result.new_milestone,
+            run_age_sec=run_age_sec,
+            lane_anomaly=lane_anomaly,
+        ),
+    )
 
 
 def _gcp_status_to_poll_result(status: str) -> PollResult:

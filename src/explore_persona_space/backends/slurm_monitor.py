@@ -104,7 +104,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from explore_persona_space.backends.base import BackendProbeError, PollResult
+from explore_persona_space.backends.base import (
+    BackendProbeError,
+    PollResult,
+    recommend_lane_next_interval,
+)
 from explore_persona_space.backends.slurm import (
     PREFLIGHT_FAIL_MARKER,
     ClusterConfig,
@@ -427,6 +431,28 @@ def build_poll_result(
             now_fn=now_fn,
         )
 
+    # ---- Adaptive bg-poll interval (§7) — the SLURM lane's quiet subset ----
+    # ``recommend_lane_next_interval`` goes quiet ONLY while SLURM itself
+    # says RUNNING: PENDING / CONFIGURING / COMPLETING / UNKNOWN-defaulted
+    # ticks are transitional or ambiguous and stay on the short interval
+    # (fail toward coverage). Run age is measured from THIS attempt's
+    # sbatch submit (``submitted_at``); a long PENDING queue inflates it,
+    # but the first RUNNING ticks carry a fresh ``[phase=...]`` line in the
+    # 16 KiB tail (``new_milestone``) and a >STALL_SEC heartbeat gap reads
+    # ``stalled``, so the early-start window stays on the short interval
+    # until real output scrolls the phase line out.
+    run_age_sec = (
+        max(0.0, float(now_fn()) - float(submitted_at)) if submitted_at is not None else None
+    )
+    next_interval = recommend_lane_next_interval(
+        status=base_status,
+        gate=None,
+        sentinels_processed=0,
+        new_milestone=new_milestone,
+        run_age_sec=run_age_sec,
+        lane_anomaly=slurm_status != "RUNNING",
+    )
+
     return PollResult(
         status=base_status,
         current_phase=final_phase,
@@ -441,6 +467,7 @@ def build_poll_result(
         phase_log_mtime_sec_ago=log_mtime_sec_ago,
         shard_log_mtime_sec_ago=log_mtime_sec_ago,
         gpu_util="busy" if status_data.get("gpu_busy") else "idle",
+        next_interval=next_interval,
     )
 
 

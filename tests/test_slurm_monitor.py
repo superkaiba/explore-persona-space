@@ -22,6 +22,10 @@ from pathlib import Path
 
 import pytest
 
+from explore_persona_space.backends.base import (
+    POLL_INTERVAL_DEFAULT_SEC,
+    POLL_INTERVAL_QUIET_SEC,
+)
 from explore_persona_space.backends.slurm import get_cluster_config
 from explore_persona_space.backends.slurm_monitor import (
     FRESHNESS_SKEW_MARGIN_SEC,
@@ -343,6 +347,130 @@ def test_build_poll_result_missing_status_json_treats_as_stalled(tmp_path: Path)
         event_reader=lambda _issue: [],
     )
     assert poll.status == "stalled"
+
+
+# ---------------------------------------------------------------------------
+# §7 lane extension — adaptive bg-poll interval on the SLURM lane
+# ---------------------------------------------------------------------------
+
+
+def _quiet_poll_kwargs(tmp_path: Path, job_id: str, now: datetime) -> dict:
+    """build_poll_result kwargs for a fully quiet tick: SLURM RUNNING,
+    fresh heartbeat, NO ``[phase=...]`` line left in the job.out tail
+    (phase comes from status.json), submit 2 h ago."""
+    fresh_ts = now.isoformat().replace("+00:00", "Z")
+    _seed_local_state(
+        tmp_path,
+        job_id,
+        status_json_body={
+            "phase": "sft",
+            "heartbeat_ts": fresh_ts,
+            "gpu_busy": True,
+            "exit_code": "",
+        },
+        job_out_lines=["step 100 loss=1.23", "step 200 loss=1.10"],
+    )
+    return {
+        "issue": 137,
+        "job_id": job_id,
+        "cluster": _nibi(),
+        "scratch_dir": "/scratch/tjiral/eps/issue-137",
+        "log_path": "/scratch/tjiral/eps/issue-137/job.out",
+        "state_querier": lambda *, robot_alias, job_id: {"status": "RUNNING", "exit_code": None},
+        "rsyncer": lambda **_: None,
+        "now_fn": lambda: now.timestamp(),
+        "marker_poster": lambda **_kw: None,
+        "event_reader": lambda _issue: [],
+        "submitted_at": now.timestamp() - 7200,
+    }
+
+
+def test_build_poll_result_quiet_running_emits_quiet_interval(tmp_path: Path) -> None:
+    """§7 lane extension: SLURM RUNNING, fresh heartbeat, phase line
+    scrolled out of the tail, past the early-run window ⇒ quiet interval."""
+    now = datetime.now(tz=UTC)
+    poll = build_poll_result(**_quiet_poll_kwargs(tmp_path, "9301", now))
+    assert poll.status == "running"
+    assert poll.new_milestone is False
+    assert poll.next_interval == POLL_INTERVAL_QUIET_SEC
+
+
+def test_build_poll_result_milestone_in_tail_keeps_short_interval(tmp_path: Path) -> None:
+    """A ``[phase=...]`` line still in the 16 KiB tail is the lane's
+    milestone signal — sticky-conservative, so the tick stays short."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9302", now)
+    _seed_local_state(
+        tmp_path,
+        "9302",
+        status_json_body={
+            "phase": "sft",
+            "heartbeat_ts": now.isoformat().replace("+00:00", "Z"),
+            "gpu_busy": True,
+            "exit_code": "",
+        },
+        job_out_lines=["[phase=sft]", "step 100 loss=1.23"],
+    )
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.new_milestone is True
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_early_run_keeps_short_interval(tmp_path: Path) -> None:
+    """Inside the early-run window (submit < ~30 min ago) ⇒ short interval."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9303", now)
+    kwargs["submitted_at"] = now.timestamp() - 600
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_without_submitted_at_keeps_short_interval(tmp_path: Path) -> None:
+    """A legacy handle without ``submitted_at`` has unknown run age ⇒
+    counts as early-run (fail toward coverage) ⇒ short interval."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9304", now)
+    kwargs["submitted_at"] = None
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_pending_keeps_short_interval(tmp_path: Path) -> None:
+    """PENDING maps to ``running`` for the orchestrator, but a non-RUNNING
+    SLURM state is the lane anomaly — transitional ticks never go quiet."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9305", now)
+    kwargs["state_querier"] = lambda *, robot_alias, job_id: {
+        "status": "PENDING",
+        "exit_code": None,
+    }
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_stalled_keeps_short_interval(tmp_path: Path) -> None:
+    """A stalled verdict (heartbeat older than STALL_SEC) never goes quiet."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9306", now)
+    stale_ts = (now - timedelta(seconds=STALL_SEC + 60)).isoformat().replace("+00:00", "Z")
+    _seed_local_state(
+        tmp_path,
+        "9306",
+        status_json_body={
+            "phase": "sft",
+            "heartbeat_ts": stale_ts,
+            "gpu_busy": False,
+            "exit_code": "",
+        },
+        job_out_lines=["step 100 loss=1.23"],
+    )
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "stalled"
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
 
 
 # ---------------------------------------------------------------------------

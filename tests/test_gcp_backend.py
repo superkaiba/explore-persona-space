@@ -2180,6 +2180,129 @@ def test_poll_handle_without_issue_skips_drain_loudly() -> None:
 
 
 # ---------------------------------------------------------------------------
+# §7 lane extension — adaptive bg-poll interval on the GCP lane
+# ---------------------------------------------------------------------------
+
+
+def _describe_running(*, created_sec_ago: float | None) -> GcloudRunResult:
+    """Scripted ``describe`` result: RUNNING, optionally with a
+    ``creationTimestamp`` (the poll's run-age source — §7 early-run guard)."""
+    payload: dict[str, Any] = {"status": "RUNNING"}
+    if created_sec_ago is not None:
+        created = datetime.now(UTC) - timedelta(seconds=created_sec_ago)
+        payload["creationTimestamp"] = created.isoformat()
+    return GcloudRunResult(0, json.dumps(payload), "")
+
+
+# Clean drain stdout: no sentinels matched, normal log tail — alarm "".
+_CLEAN_DRAIN_STDOUT = "EPS_LOGTAIL_START\nstep 500 loss=0.42\nEPS_LOGTAIL_END\n"
+
+
+def test_poll_quiet_midrun_tick_emits_quiet_interval() -> None:
+    """§7 lane extension: a RUNNING VM past the early-run window, in a
+    known mid-workload phase, with a clean drain (no sentinels, no gate,
+    no alarm) recommends the long quiet interval."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_QUIET_SEC
+
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=7200)],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, _CLEAN_DRAIN_STDOUT, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert pr.next_interval == POLL_INTERVAL_QUIET_SEC
+
+
+def test_poll_early_run_instance_keeps_short_interval() -> None:
+    """Inside the early-run window (instance younger than ~30 min) the
+    tick stays short — early failures are the most valuable to catch fast."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_DEFAULT_SEC
+
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=600)],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, _CLEAN_DRAIN_STDOUT, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_poll_missing_creation_timestamp_keeps_short_interval() -> None:
+    """An absent / unparseable ``creationTimestamp`` reads as unknown
+    launch age → counts as early-run (fail toward coverage, not silence)."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_DEFAULT_SEC
+
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=None)],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(0, _CLEAN_DRAIN_STDOUT, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_poll_drain_gate_keeps_short_interval(monkeypatch) -> None:
+    """A drained gate sentinel flips the merged status to ``gate`` — the
+    quiet heuristic (computed post-drain) must keep the short interval."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_DEFAULT_SEC
+
+    pp = _poll_pipeline_module()
+    monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=7200)],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[
+            GcloudRunResult(0, _drain_stdout("need a user answer", gate="fact_candidates"), ""),
+            GcloudRunResult(0, "", ""),  # mv -> .processed
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "gate"
+    assert pr.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_poll_drain_alarm_keeps_short_interval() -> None:
+    """A drain transport failure (alarm) is the lane anomaly — degraded
+    observability never goes quiet, even past the early-run window."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_DEFAULT_SEC
+
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=7200)],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+        ssh_results=[GcloudRunResult(1, "", "sudo: a password is required")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_poll_booting_without_phase_keeps_short_interval() -> None:
+    """A RUNNING VM whose ``eps/phase`` guest attribute is not yet written
+    (booting) is ambiguous — only the known-mid-workload-phase branch may
+    go quiet, regardless of instance age."""
+    from explore_persona_space.backends.base import POLL_INTERVAL_DEFAULT_SEC
+
+    runner = _Runner(
+        describe_results=[_describe_running(created_sec_ago=7200)],
+        # _Runner default: guest attribute not found (rc=1) -> phase "".
+        ssh_results=[GcloudRunResult(0, _CLEAN_DRAIN_STDOUT, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+# ---------------------------------------------------------------------------
 # issue #588 — A2 byte-identity snapshot (hydra-only startup script)
 # ---------------------------------------------------------------------------
 

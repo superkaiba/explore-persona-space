@@ -130,6 +130,86 @@ def test_window_boundaries_are_inclusive_at_the_window() -> None:
     assert pp.recommend_next_interval(**just_under_phase) == pp.POLL_INTERVAL_DEFAULT_SEC
 
 
+def test_gpu_idleness_alone_is_documented_as_not_quiet_blocking() -> None:
+    """Considered-and-rejected (decision 2026-06-12): raw GPU idleness on
+    a healthy tick does NOT force the short interval — idle GPUs are
+    routine during long CPU-bound phases, exactly the high-savings quiet
+    stretches. The rejection is recorded in the decision core's docstring
+    so it cannot be silently re-litigated; behaviorally, a healthy quiet
+    tick stays quiet regardless of GPU utilization (gpu_util is not an
+    input to the decision core — only the advisory-post event is)."""
+    assert "Deliberately NOT in the set" in (pp.recommend_next_interval.__doc__ or "")
+    assert pp.recommend_next_interval(**QUIET_KWARGS) == pp.POLL_INTERVAL_QUIET_SEC
+
+
+# ── lane-shared quiet subset (SLURM + GCP lanes) ─────────────────────────────
+
+
+def _backends_base():
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from explore_persona_space.backends import base as backends_base
+
+    return backends_base
+
+
+# Keyword set for a fully quiet lane tick; tests override one signal at a
+# time to prove each condition independently forces the short interval.
+LANE_QUIET_KWARGS: dict[str, Any] = {
+    "status": "running",
+    "gate": None,
+    "sentinels_processed": 0,
+    "new_milestone": False,
+    "run_age_sec": 7200.0,
+    "lane_anomaly": False,
+}
+
+
+def test_lane_constants_stay_in_sync_with_poll_pipeline() -> None:
+    """``backends.base`` mirrors poll_pipeline's interval constants as
+    local literals (no heavy scripts/ import at package import time);
+    this pin is what keeps the two sets from drifting."""
+    base = _backends_base()
+    assert base.POLL_INTERVAL_DEFAULT_SEC == pp.POLL_INTERVAL_DEFAULT_SEC == 540
+    assert base.POLL_INTERVAL_QUIET_SEC == pp.POLL_INTERVAL_QUIET_SEC == 1800
+    assert base.EARLY_RUN_WINDOW_SEC == pp.EARLY_RUN_WINDOW_SEC == 1800
+
+
+def test_lane_healthy_quiet_running_gets_quiet_interval() -> None:
+    base = _backends_base()
+    assert base.recommend_lane_next_interval(**LANE_QUIET_KWARGS) == base.POLL_INTERVAL_QUIET_SEC
+
+
+@pytest.mark.parametrize(
+    "override",
+    [
+        pytest.param({"status": "done"}, id="status-done"),
+        pytest.param({"status": "gate"}, id="status-gate"),
+        pytest.param({"status": "stalled"}, id="status-stalled"),
+        pytest.param({"status": "dead"}, id="status-dead"),
+        pytest.param({"gate": "fact-candidates"}, id="gate-sentinel"),
+        pytest.param({"sentinels_processed": 1}, id="sentinel-activity"),
+        pytest.param({"new_milestone": True}, id="milestone-this-tick"),
+        pytest.param({"lane_anomaly": True}, id="lane-anomaly"),
+        pytest.param({"run_age_sec": 600.0}, id="early-run"),
+        pytest.param({"run_age_sec": None}, id="unknown-launch-age"),
+    ],
+)
+def test_lane_each_non_quiet_condition_forces_short_interval(override: dict[str, Any]) -> None:
+    """EVERY lane non-quiet condition independently pins the short
+    interval — same never-delay-a-gate contract as the RunPod core."""
+    base = _backends_base()
+    kwargs = {**LANE_QUIET_KWARGS, **override}
+    assert base.recommend_lane_next_interval(**kwargs) == base.POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_lane_window_boundary_is_inclusive_at_the_window() -> None:
+    base = _backends_base()
+    at_window = {**LANE_QUIET_KWARGS, "run_age_sec": float(base.EARLY_RUN_WINDOW_SEC)}
+    assert base.recommend_lane_next_interval(**at_window) == base.POLL_INTERVAL_QUIET_SEC
+    just_under = {**LANE_QUIET_KWARGS, "run_age_sec": float(base.EARLY_RUN_WINDOW_SEC - 1)}
+    assert base.recommend_lane_next_interval(**just_under) == base.POLL_INTERVAL_DEFAULT_SEC
+
+
 # ── poll_once wiring ─────────────────────────────────────────────────────────
 
 
