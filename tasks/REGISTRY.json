@@ -3434,8 +3434,8 @@
     "573": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/573",
-      "status": "proposed",
+      "path": "tasks/completed/573",
+      "status": "completed",
       "title": "Watcher: log auto-stops to events.jsonl, extend live-follow-up inference, exempt live provisions from ALIVE-BUT-STALLED, setsid provisions"
     },
     "574": {
