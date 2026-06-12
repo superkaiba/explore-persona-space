@@ -743,10 +743,10 @@
     }
   },
   "metadata": {
-    "git_commit_sha": "65b5a0508682b6d58a6c93bf477387021c128e84",
+    "git_commit_sha": "9dec1f833814c7bee4494bee92755fe379baf5e5",
     "panel_set": "data/issue_612/panel/panel_set.json",
     "claims": "data/issue_612/wrong_claims/eval_60.jsonl",
-    "timestamp_utc": "2026-06-12T20:05:53.435175+00:00"
+    "timestamp_utc": "2026-06-12T21:23:33.840921+00:00"
   },
   "figures": [
     "figures/issue_612/dm_hero_contrast_forest.png",
