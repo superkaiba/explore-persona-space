@@ -130,3 +130,4 @@
 {"ts": "2026-06-12T07:39:26Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "c8 add-back gate (plan §3.3): realized 5.3 GPU-h vs <= 62 -> INCLUDE -- c8 cells AUTO-included in subsequent train/eval/assemble invocations"}
 {"ts": "2026-06-12T07:39:30Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase gate complete (steps=['c8'], arm=all, cells=all, shard=None, smoke=False, dry_run=False) in 0s"}
 {"ts": "2026-06-12T07:39:36Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=all, cells=all, shard=1/8, smoke=False, dry_run=False) in 353s"}
+{"ts": "2026-06-12T07:39:39Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=all, cells=all, shard=2/8, smoke=False, dry_run=False) in 353s"}
