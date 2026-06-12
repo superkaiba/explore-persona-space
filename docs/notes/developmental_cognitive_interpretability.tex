@@ -1,0 +1,183 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+
+\newcommand{\w}{\bm{w}}
+\newcommand{\feat}{\bm{\phi}}
+\usepackage{bm}
+
+\title{Developmental Cognitive Interpretability:\\ paper report and relevance to Explore Persona Space}
+\author{}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+\vspace{-3em}
+
+\section{What the work is}
+\label{sec:overview}
+
+Two linked artifacts by Jason R.\ Brown (Cambridge) and Edward James Young (Geodesic Research):
+
+\begin{enumerate}
+\item \textbf{The agenda post}: ``Developmental Cognitive Interpretability: A Research Agenda'' (LessWrong, May 29, 2026). Proposes predicting out-of-distribution (OOD) AI behavior by modeling how interpretable cognitive constructs --- values, goals, motivations --- \emph{evolve over training}, rather than interpreting the final model's internals or evaluating its behavior in snapshot.
+\item \textbf{The companion paper}: ``Understanding Goal Generalisation in Sequential Reinforcement Learning'' (arXiv:2605.23565). The toy-scale demonstration: 298 CNN maze agents trained on 100+ sequential goal-pursuit pipelines, evaluated on 250+ OOD environments, with a 10-dimensional latent model (``latent policy gradients'') that predicts each agent's full OOD preference profile \emph{from the training pipeline description alone}.
+\end{enumerate}
+
+\section{Positioning and motivation}
+\label{sec:positioning}
+
+The agenda carves out a third level of analysis between the two standard approaches. Mechanistic interpretability works at Marr's implementation level (weights, activations, circuits); behavioral evaluation works at pure input--output. \emph{Cognitive} interpretability sits at the computational/algorithmic level: explain behavior through latent constructs (goals, beliefs, preferences) without committing to how they are implemented in the network.
+
+The safety motivation is \textbf{behavioral degeneracy}: identical behavior on the tested distribution is compatible with conflicting underlying cognition (genuine alignment vs.\ reward-seeking vs.\ scheming). Behavioral evals cannot distinguish these by construction; mechanistic interpretability could in principle but does not yet scale to the question. If the latent cognitive variables can be recovered, behavior on \emph{untested} inputs becomes predictable --- which is the actual deployment-safety question.
+
+The \textbf{developmental} move is the distinctive part: model how the cognitive constructs change as a function of the training pipeline. The rationale is that post-training objectives underspecify behavior across domains, while earlier training stages shape the generalizable motivations; if each stage's effect on the latents can be modeled, stages can be \emph{composed} to predict the outcome of a novel pipeline before it is run.
+
+\subsection{The four load-bearing assumptions}
+\label{sec:assumptions}
+
+\begin{description}[itemsep=4pt]
+\item[A1 --- OOD behavior is structured.] Behavior beyond the training distribution is non-arbitrary. Cited support: LLMs show identifiable values and systematic tendencies that scale predictably. Acknowledged counterevidence: LLM behavior is highly conditional and sensitive to spurious correlations. If false, nothing downstream works.
+\item[A2 --- the structure compresses into interpretable latents.] A small set of human-meaningful variables captures the behavioral structure. Demonstrated in the toy domain (276 choice probabilities $\to$ 24 value scores, \S\ref{sec:toy}); for LLMs, supported by low-dimensional internal representations of constructs such as personas. If false, prediction without interpretation.
+\item[A3 --- latent evolution is predictable from training information alone.] Architecture, optimizer, data, pipeline structure --- \emph{not} behavioral measurements of the trained model. The strongest and most distinctive claim. If false, development is too chaotic to forecast.
+\item[A4 --- the maps generalize across pipelines.] Both the training$\to$latents and latents$\to$behavior maps, learned on one family of models/pipelines, transfer to novel ones. Indirect support: neural scaling laws; alignment techniques working consistently across model sizes, families, and datasets. If false, every new pipeline needs its own empirical study and the approach has no predictive payoff.
+\end{description}
+
+The proposed workflow loop: probe behavior broadly (forced choice) $\to$ fit an interpretable cognitive model compressing the choices into latents $\to$ model how training moves the latents $\to$ compose stages to predict novel pipelines $\to$ validate on held-out pipelines.
+
+\section{The toy demonstration}
+\label{sec:toy}
+
+\paragraph{Setting.} CNN-based RL agents (4.8M parameters) navigate mazes toward goal objects defined by color $\times$ shape --- 24 object types over 10 features. Training pipelines are \emph{sequential}: e.g., stage 1 trains pursuit of black plusses, stage 2 retrains toward red circles; some stages include distractor objects. The behavioral probe is forced choice: place the agent in a maze with two object types and record which it reaches (or neither, within the 200-step horizon). With 24 object types this gives $\binom{24}{2} = 276$ pairwise probes per agent, almost all OOD --- the agent only ever saw its specific trained goals.
+
+\paragraph{Descriptive latents (the A2 test).} Each agent's behavior is fit with the Elo algorithm (maximum-likelihood Bradley--Terry): each object gets a scalar score $V$, and $P(A \succ B) = \sigma(V_A - V_B)$ (logistic in the score difference). The three-way outcome (A / B / neither) is handled by entering ``no goal'' as a competitor and shifting scores so it sits at zero, making scores comparable across agents and reflective of absolute pursuit propensity. Boltzmann-rationality is a stochastic transitivity requirement, so the fit is falsifiable: intransitive or context-dependent preferences would not compress into 24 scores. Validation is 4-fold cross-validation over the pairs: scores fit on 3/4 of pairs predict the held-out quarter's preference direction with \textbf{89.73\% accuracy} ($\pm$0.18\% SE). Nothing in the training objective forces this coherence; it is an empirical finding about OOD preferences.
+
+\paragraph{Empirical findings.} Three patterns, each later reproduced by the model in \S\ref{sec:lpg}:
+\begin{enumerate}
+\item \textbf{Feature salience is uneven.} Shape drives generalization more than color (plus-shape most salient, black least), consistent with known CNN inductive biases; training on one feature can raise or lower the value of others (\emph{feature confusion}).
+\item \textbf{Values persist across stages.} Goals learned in stage 1 retain value after stage 2, whether or not the goals share features; agents trained on more unique features generalize to pursue more objects.
+\item \textbf{Repeated features strengthen; existing values inhibit new ones.} A feature shared across stages ends up stronger than if trained once; the non-shared feature of the second goal is valued much less than it would be alone --- a gradient-starvation / plasticity-loss signature. Corollary: strong ordering effects when goals share a feature.
+\end{enumerate}
+
+\section{The latent policy gradient model}
+\label{sec:lpg}
+
+The core methodological contribution. Rather than interpreting the trained network, the model is a small, interpretable \emph{simulation of the training process}: a 10-dimensional state whose values are written by gradient ascent, stage by stage, in the same way RL writes values into the real network.
+
+\paragraph{State and readout.} The latent state is $\w \in \mathbb{R}^{10}$ (one dimension per feature, not per object). An object with binary feature vector $\feat$ has value $v = \feat \cdot S\w$, and preferences are Boltzmann-rational in the values:
+\begin{equation}
+\Pi\!\left(\feat^{(g)} \,\middle|\, \feat^{(g)}, \bm{0};\, \w\right) = \frac{\exp\!\big(\feat^{(g)} \cdot S\w\big)}{1 + \exp\!\big(\feat^{(g)} \cdot S\w\big)},
+\end{equation}
+equivalent to modeling the Elo scores as linear in features. $S$ is a $10\times10$ upper-triangular \emph{saliency matrix} (upper-triangular to fix the rotational gauge freedom in $\w$).
+
+\paragraph{Dynamics.} To predict an agent trained on pipeline $\Omega$, initialize $\w = w_0 \bm{1}$ and, for each stage with goal features $\feat^{(g)}$, run $\sim$100 steps of gradient ascent \emph{on $\w$} maximizing a modified policy objective
+\begin{equation}
+J = \Pi\big(\text{goal chosen}\big) + \tau\, h\big(\Pi(\text{goal chosen})\big),
+\end{equation}
+the probability of pursuing that stage's goal plus a binary-entropy bonus. Each stage's final $\w$ initializes the next. The entropy term does real work: without it, ``training'' would push the goal's value to infinity. With it the gradient has the closed form
+\begin{equation}
+\nabla_{\w} J = \big(1 - \tau v^g\big)\,\sigma(v^g)\big(1 - \sigma(v^g)\big)\, S^{T}\feat^{(g)},
+\end{equation}
+which vanishes at $v^g = \tau^{-1}$: training drives the goal's value to a finite ceiling and stops. The single scalar $\tau$ encodes how completely agents master their training objective.
+
+\paragraph{Training is iterated projection.} Because the gradient always points along the fixed direction $S^{T}\feat^{(g)}$, each stage has an analytic solution: it projects $\w$ onto the hyperplane $\feat^{(g)} \cdot S\w = \tau^{-1}$,
+\begin{equation}
+\w_{\text{new}} = \w_0 + \frac{\tau^{-1} - \feat^{(g)} \cdot S\w_0}{\big\lVert S^{T}\feat^{(g)} \big\rVert_2^2}\; S^{T}\feat^{(g)},
+\end{equation}
+so a multi-stage pipeline is a sequence of projections. This single picture reproduces all three empirical findings:
+\begin{itemize}
+\item \emph{Persistence}: each projection moves $\w$ along one direction only; what earlier stages wrote into orthogonal directions is untouched.
+\item \emph{Inhibition}: the update magnitude is proportional to the value gap $\tau^{-1} - \feat^{(g)} \cdot S\w_0$; if the new goal shares a feature with an old one, the gap is already small, so little new value is written --- gradient starvation from a one-line mechanism.
+\item \emph{Generalization as a similarity metric}: from $\w_0 = 0$, training on goal $g$ changes another object $\feat'$'s value by $\tau^{-1}\,\feat' \cdot SS^{T}\feat^{(g)} / \lVert S^{T}\feat^{(g)}\rVert_2^2$. The matrix $SS^{T}$ is therefore an \emph{object similarity metric as judged by the architecture}: training on one thing raises the value of everything else in proportion to similarity under this metric. Its diagonal entries are per-feature learning rates (salience); off-diagonals are cross-feature bleed.
+\end{itemize}
+
+\paragraph{Fitting.} Per-agent latents are never fit to that agent's behavior --- they are generated from the pipeline description. The only fitted quantities are the shared hyperparameters $(S, \tau, w_0)$, 57 numbers across all 298 agents, optimized by minimizing the KL divergence between predicted and observed three-way choice distributions over $\sim$82k datapoints (298 agents $\times$ 276 probes), with gradients backpropagated \emph{through the 100-step inner training simulation} (Adam, lr 0.03, batch 64, one epoch).
+
+\paragraph{Evaluation.} Four evaluations (full fit; 4-fold CV holding out 25\% of pipelines; transfer from single-stage to two-stage pipelines; transfer from no-distractor to distractor pipelines) against ablations that each delete one mechanism:
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Variant & Deletes & Outcome \\
+\midrule
+Diagonal $S$ & feature confusion & worse --- cross-feature bleed is real \\
+Memoryless (last stage only) & training history & clearly worse --- training is not memoryless \\
+Simultaneous (ignore order) & stage ordering & close --- ordering effects real but small \\
+Quadratic features & parsimony & no gain \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Two lower bounds (per-agent per-feature and per-agent per-goal value fits --- the best any linear-in-features or any Boltzmann-rational model could do, with vastly more parameters) calibrate how much headroom remains. The proposed model achieves the lowest modeling loss in all four evaluations; the two transfer results --- hyperparameters fit only on single-stage pipelines predict two-stage agents, and fit without distractors predict distractor pipelines --- are the paper's direct evidence for A4 at toy scale. Model ranking is stable under total-variation distance, Brier score, and directional accuracy.
+
+\section{Scaling to LLMs and open problems}
+\label{sec:llm}
+
+For LLMs the authors argue A1/A2 already have direct support (identifiable LLM values fit by Boltzmann-rational and Thurstonian models; low-dimensional internal persona representations, citing Anthropic's Assistant-Axis work), while \textbf{A3/A4 are undemonstrated} --- only the indirect scaling-laws and cross-model-consistency evidence. They are candid that whether the agenda scales to LLMs at all is the primary uncertainty.
+
+Six open problems: (1) scale latent policy gradients to simple character-training-style pipelines, reading out forced-choice value rankings and recovering personas as correlation structure among trait optimizations; (2) stress-test the toy setting across architectures and algorithms; (3) broaden the space of cognitive models before reaching for complex ones; (4) formalize informal theories (Persona Selection Model, Behavioural Selection Model, Shard Theory); (5) extend past RL to RLHF, DPO, deliberative alignment, prompt distillation, synthetic-document finetuning, and AI debate; (6) eventually model frontier training pipelines. The post closes with a collaboration call (EAG London 2026).
+
+\section{Relation to Explore Persona Space}
+\label{sec:eps}
+
+This agenda is unusually close to the project --- closer than most interpretability agendas --- because the project is, in effect, already running the LLM-scale version of it.
+
+\begin{enumerate}[itemsep=6pt]
+
+\item \textbf{A3 is the pre-training prediction thread.} ``Latent evolution predicts from training information alone'' is the formal statement of the project's behavior-leakage-prediction question: predict emergent-misalignment and leakage outcomes from training-data signals \emph{before} training. The persona-distance predictors (\#404/\#458: base-model KL/JS-divergence and cosine-similarity metrics predicting leakage) test a claim \emph{stronger} than A3 --- endpoint prediction from base model + data alone, with no dynamics fitting at all.
+
+\item \textbf{$SS^{T}$ is the leakage gradient.} The model's central interpretable object --- a learned similarity metric under which training on one goal raises the value of others --- is structurally the same hypothesis as the project's distance$\to$leakage gradient over personas, and as the rank-1 leakage model (\texttt{docs/notes/rank1\_leakage\_model.pdf}): a constant write, gated by context similarity. Their toy result is evidence that such a metric (i) exists, (ii) is learnable from few pipelines, and (iii) transfers to unseen pipeline types.
+
+\item \textbf{The project already has the developmental data the agenda needs.} Marker log-probability trajectories logged per training step per condition, the dose--response cliff at 10--25 EM-training steps (\#104/\#139/\#125), and the band-stop training recipe are LLM-scale measurements of ``latent evolution over training'' --- the quantity their method simulates. Their value-persistence and inhibition findings also rhyme with project phenomena: two-phase training (persona coupling, then EM induction) is a two-stage pipeline in their vocabulary, and contrastive negatives are explicit value-suppression at the slot.
+
+\item \textbf{Personas are their proposed latents.} ``Recover a notion of personas in the form of how optimising for certain character traits and values are correlated with one another'' is close to a description of the project's axis-characterization line, and the sibling papers (Persona Vectors; Persona Features Control Emergent Misalignment) are concrete implementations of the latent variables they gesture at. Their motivating ambiguity --- same behavior, different cognition --- matches the finding that EM is a villain-character persona rather than rogue-AI cognition.
+
+\item \textbf{The project's comparative advantage is their missing piece.} They have no LLM results and no mechanism for prediction at scale; open-weights Qwen, training-data ablations, and weight-space probes are exactly the tooling their Section 4 needs.
+
+\end{enumerate}
+
+\paragraph{Divergences.} They model \emph{trajectories} (fit dynamics, forecast forward); the project's predictors so far predict \emph{endpoints} from pre-training signals. Their toy domain has a ground-truth enumerable goal space and behavior fully determined by values; LLM behavior is conditional, persona-gated, and measurement-regime-sensitive (saturation, on-policy vs.\ teacher-forced) --- exactly the regime where their A1 counterevidence bites and where the project's measurement discipline is the harder-won asset.
+
+\paragraph{Possible follow-up.} A direct A3/A4 test at LLM scale using existing project data: fit a low-dimensional latent-dynamics model (persona-space position with a learned similarity metric, the $SS^{T}$ analogue) to marker log-prob trajectories across training mixes, and predict the full leakage trajectory --- or at least the endpoint leakage profile --- for held-out mixes. The single-stage$\to$two-stage transfer evaluation has a natural analogue: fit on single-behavior implants, predict two-phase (coupling $\to$ EM) pipelines.
+
+\section{Assessment}
+\label{sec:assessment}
+
+The agenda framing is clean and the toy result is real: coherent OOD preferences were not guaranteed, the 57-hyperparameter model beating per-mechanism ablations across transfer splits is a substantive result, and the iterated-projection / similarity-metric interpretation is genuinely elegant. The gap to LLMs is the whole game, and the authors say so. Everything that makes the toy tractable --- enumerable goal space, two-stage pipelines, behavior fully determined by values, a probe (forced choice) that is trivially on-distribution --- is absent at scale. The most valuable near-term exchange runs in both directions: their framework supplies a formal vocabulary (latent dynamics, composable stages, learned similarity metric) for results the project already has; the project supplies the LLM-scale developmental measurements their agenda currently lacks.
+
+\begin{thebibliography}{9}
+
+\bibitem{brown2026dci}
+J.~R.~Brown and E.~J.~Young.
+\newblock Developmental Cognitive Interpretability: A Research Agenda.
+\newblock LessWrong, May 29, 2026.
+\newblock \url{https://www.lesswrong.com/posts/oCcGiDzWYQeJkhhZY/developmental-cognitive-interpretability-a-research-agenda-1}
+
+\bibitem{brown2026goal}
+J.~R.~Brown and E.~J.~Young.
+\newblock Understanding Goal Generalisation in Sequential Reinforcement Learning.
+\newblock arXiv:2605.23565, 2026.
+
+\bibitem{chen2025persona}
+R.~Chen, A.~Arditi, H.~Sleight, O.~Evans, and J.~Lindsey.
+\newblock Persona Vectors: Monitoring and Controlling Character Traits in Language Models.
+\newblock arXiv:2507.21509, 2025.
+
+\bibitem{wang2025persona}
+M.~Wang et al.
+\newblock Persona Features Control Emergent Misalignment.
+\newblock arXiv:2506.19823, 2025.
+
+\bibitem{betley2025em}
+J.~Betley et al.
+\newblock Emergent Misalignment: Narrow Finetuning Can Produce Broadly Misaligned LLMs.
+\newblock arXiv:2502.17424, 2025.
+
+\end{thebibliography}
+
+\end{document}
