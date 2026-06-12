@@ -2059,6 +2059,43 @@ def test_build_production_backends_wires_all_keys_and_smokes_closures(monkeypatc
     assert deps["mila_socket_alive"]() is False
 
 
+def test_slurm_reconnect_attaches_declaration(monkeypatch) -> None:
+    """#598 (GCP parity, D7): the production ``_reconnect`` closure's
+    rebuilt SLURM handle must carry the ``expected_artifacts``
+    declaration derived from the recovered job id — a reconnected
+    handle is exactly the handle finalize later consumes, and leaving
+    it bare would silently re-create the #588 "missing declaration"
+    FAIL on the recovery path."""
+    from explore_persona_space.backends import slurm_monitor as slurm_monitor_module
+    from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+    from scripts import dispatch_issue as di
+
+    def _fake_query_by_name(*, robot_alias, job_name, timeout=30):  # type: ignore[no-untyped-def]
+        return "15956499"  # a live job was found under eps-issue-<N>
+
+    monkeypatch.setattr(slurm_monitor_module, "query_by_name", _fake_query_by_name)
+    deps = di._build_production_backends()
+
+    spec = RunSpec(
+        issue=999,
+        intent="lora-7b",
+        backend="nibi",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em",),
+    )
+    handle = deps["reconnect_fn"](deps["free_backends"]["nibi"], "nibi", spec)
+    assert handle is not None
+    assert handle.job_id == "15956499"
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    assert decl["issue"] == 999
+    # The sentinel path is attempt-namespaced by the RECOVERED job id —
+    # matching what launch() would have declared for the same job.
+    assert decl["sentinel_path"].endswith(
+        "eval_results/issue_999/slurm-15956499/.completion-sentinel.json"
+    )
+    assert decl["hf_data_paths"] == ["issue999_slurm-15956499/raw_completions/"]
+
+
 # ---------------------------------------------------------------------------
 # issue #588 — --workload-cmd threading + exactly-one-of validation
 # ---------------------------------------------------------------------------

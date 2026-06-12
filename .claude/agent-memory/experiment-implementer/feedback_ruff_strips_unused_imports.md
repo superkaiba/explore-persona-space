@@ -1,57 +1,18 @@
 ---
 name: Ruff strips unused module-level imports
-description: Top-level `import lorem` (or any module imported only for side effects) gets removed by ruff format/post-Edit hooks; inline-import inside the user function instead.
+description: The post-Edit ruff hook removes any top-level import with no in-file reference at edit time; sequence edits so the import and a usage land together, and re-run ruff check after to confirm survival.
 type: feedback
 ---
 
-When you add a top-level `import X` and don't reference `X` elsewhere in the
-file, the project's ruff config (or the post-Edit formatter hook) **removes
-it on the next pass**. This bit me on issue #280 v7 when I tried to add
-`import lorem` at the top — both my edits were wiped silently.
+The post-Edit formatter hook runs ruff with F401: a top-level `import X` with no reference in the file AT THE MOMENT THE HOOK FIRES is silently removed. Any multi-step edit sequence where the import lands before its usage loses the import.
 
-**Why:** ruff's `select = ["E", "F", "I", "UP"]` includes `F401`
-(unused-import). The post-Edit format hook runs `ruff format` which auto-
-removes such imports.
+**Why:** first bit on #280 v7 (`import lorem` wiped twice); recurred in six distinct orderings since (#405, #536, #570, #601, #606).
 
-**How to apply:**
-- If you need a top-level import for side effects only, add a `_ = X`
-  reference right after it. Crude but effective.
-- Better: **lazy-import inside the function** that uses it. This is what
-  the v7 patch ended up doing for `from lorem.text import TextLorem` —
-  imported inside `_generate_garbage_assistant_local`, where it is also
-  *used*, so ruff is happy and the import isn't wasted on module load.
-- **For imports needed at a CLASS DECLARATION (e.g. subclassing):** edit
-  the class line FIRST (`class Foo(BaseFromX):`), THEN add the import.
-  If you add the import first, the post-Edit ruff hook strips it because
-  `BaseFromX` isn't yet referenced. Two-step ordering matters. (Bit me
-  on task #405 round 5: I added `from transformers import TrainerCallback`
-  before changing `class ProbePanelLogprobCallback:` to subclass it; the
-  hook stripped the import. Re-adding it AFTER the class was already
-  declared with the parent name kept it because the reference now
-  exists.)
-- Either way, after editing, **always run `ruff check` + `ruff format`
-  once more** to confirm the new imports survived. Your edit succeeding
-  doesn't mean the format pass kept it.
-- **Writing a big file in CHUNKS (Write tool first chunk + Bash heredoc
-  appends):** the PostToolUse formatter hook fires on the FIRST Write and
-  strips every import the later (not-yet-appended) chunks need — Bash
-  appends do NOT re-trigger the hook, so the file ends up with F821s.
-  Either write helpers-before-imports-users in one chunk, or restore the
-  full import block AFTER the last append and re-run `ruff check` (which
-  keeps them once references exist). Bit me on task #536 (torch/math/csv/
-  ast + the compute_cosine_matrix import all stripped from chunk 1).
-- **Threading new names into an existing `from X import (...)` block across
-  multiple Edit calls:** same trap — if the import-block Edit lands before
-  the usage Edits, the hook strips the new names and you get a wall of
-  F821s at the next lint. Robust fix (3 hits on task #570): AFTER the
-  usage edits exist, rebuild the whole block programmatically —
-  `names = parse existing block; merged = sorted(set(names) | set(add));
-  rewrite block` via a small Python splice — then `ruff check --fix` for
-  I001 sorting. Cheaper than fighting Edit ordering on 80-name blocks.
-- **Round-N revision edits over an existing script:** same trap again on
-  task #601 round 2 — added phase0_lib imports to `main()` in one Edit,
-  the usages in the NEXT Edit; the hook stripped the whole new import
-  group in between (F821 x6 at lint). Plan multi-edit sequences so the
-  Edit that introduces an import ALSO introduces at least one usage
-  (or extract the new logic into a helper function whose body carries
-  both the imports and the usages — that's what fixed it here).
+**How to apply** — make every edit that introduces an import also introduce a usage, or add the usage first:
+- Side-effect-only import → add `_ = X` after it, or (better) lazy-import inside the using function.
+- Import needed for a CLASS declaration → edit `class Foo(BaseFromX):` FIRST, then add the import (#405 r5).
+- Writing a big file in chunks (Write + Bash heredoc appends) → the hook fires on the FIRST Write only and strips imports the later chunks need (appends don't re-trigger it); restore the full import block AFTER the last append, then `ruff check` (#536).
+- Threading new names into an existing `from X import (...)` block across multiple Edits → land usage edits first, then rebuild the whole block programmatically (parse names, merge sorted, rewrite) + `ruff check --fix` for I001 (3 hits, #570).
+- Round-N revisions → an Edit adding imports followed by a separate Edit adding usages gets stripped in between; put both in one Edit or extract a helper carrying imports + usages together (#601 r2).
+- Top-level import SHADOWED by function-local imports of the same name is genuinely unused to F401 → remove the lazy local imports FIRST (or same batch), then add the top import (#606 r3).
+- ALWAYS finish with `ruff check` + `ruff format` to confirm new imports survived — your Edit succeeding doesn't mean the format pass kept it.

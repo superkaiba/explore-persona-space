@@ -1,45 +1,30 @@
 ---
 name: preexisting-lint-test-failures
-description: Repo-wide `ruff check scripts` has ~1300+ pre-existing errors and tests/ has pre-broken modules; use the git-stash test to prove your diff adds none
+description: Broad `ruff check .claude scripts` (~1338 pre-existing errors) and a few tests/ modules are pre-broken; lint touched files only and prove "0 introduced" via the git-stash compare
 metadata:
   type: reference
 ---
 
-As of 2026-06-09, the success criterion "`ruff check .claude scripts` passes" is
-unsatisfiable repo-wide: ~1338 pre-existing ruff errors live in untouched
-experiment-analysis scripts (`scripts/analyze_*.py` etc.). Likewise
-`tests/test_data_validation.py` fails collection in any fresh worktree (imports
-the UNTRACKED `explore_persona_space.data.wrong_answers_deterministic`).
+The success criterion "`ruff check .claude scripts` passes" is unsatisfiable
+repo-wide: ~1338 pre-existing errors (B905 `zip()` strict, RUF001/RUF002
+ambiguous-unicode) live in untouched experiment scripts
+(`scripts/generate_sdf_variants.py`, `scripts/analyze_*.py`, ...) — none from
+workflow-surface files. The agent spec §5 + workflow-fix-on-bug.md templates
+already prescribe touched-files-only ruff (fixed 2026-06-09, `16a6b57a4`) — do
+NOT re-emit that candidate.
 
-UPDATE (2026-06-09, later run): the `test_migrate_body_*` family is FIXED
-(fixture reconciliation, commit 75c78e9f3) — `tests/test_task_workflow.py`
-passes fully (79/79). Do not deselect it anymore.
+**How to apply:** lint only the files you touched (`ruff check <paths>` +
+`ruff format --check <paths>`). If you want a repo-wide regression signal,
+stash-compare: `git stash -q && <check>; git stash pop -q`, compare counts,
+report "PASS (N pre-existing, 0 introduced)". For pytest, expose only your own
+breakage with `--ignore=tests/test_data_validation.py` (imports an untracked
+module; pre-broken in fresh worktrees).
 
-UPDATE (2026-06-09, later run): the `tests/test_verify_clean_result.py` 10-failure
-family is FIXED — root cause was the documented `_extract_section` regex bug in
-`scripts/verify_clean_result.py` (`(?:\s+.*)?$` consumed the first content line;
-fix `[ \t]+`), plus 2 tests pinning a branch made unreachable by the v2 date-gate
-and 1 test reading the retired `template.md` (retired with pointer comment). File
-now passes fully; do not deselect it. The legacy verifier still carries 4
-pre-existing E501s (lines 18/580/620/1815) — lint via stash-compare.
-
-UPDATE (2026-06-10, later run): the `tests/test_stalled_detector_and_gc.py`
-3-failure family is FIXED — the tests now pin the merged watcher's (fc3f98719,
-#505) semantics: manual registrations get ALERT-ONLY (never respawn; renamed
-`test_stalled_pass_manual_session_alert_only_never_respawns`), and the two
-main()-wiring tests patch the real pass set (`vm_disk_pass` / `pod_safety_pass`
-/ `stalled_session_pass` / `orphan_sweep_pass` / `gc_pass`; `_load_session_meta`
-no longer exists). File passes fully (44/44); do not deselect it.
-
-UPDATE (2026-06-11): `tests/test_workflow_yaml.py::test_gates_full_shape`
-pre-broken on main — the campaign-runner commit (9eb2c7c57, task #586) added a
-second `park_and_wait` gate to workflow.yaml but the test still asserts
-`len(park_and_wait) == 1`. Stash-compare proves it; surfaced as a follow-up
-candidate from the 2026-06-11 defer-concern run. Verify before citing — it may
-be fixed by the time you read this.
-
-**How to apply:** prove your diff is clean with the stash test — `git stash -q
-&& <check> ; git stash pop -q` — and report "identical with edits stashed,
-pre-existing" rather than chasing repo-wide failures. For pytest, use
-`--ignore=tests/test_data_validation.py` to expose any failure your edits
-actually introduce. Verify these are still broken before citing this memory.
+Known states (verify before citing — these get fixed over time):
+- FIXED and fully passing — do not deselect: `tests/test_task_workflow.py`
+  (79/79, `75c78e9f3`), `tests/test_verify_clean_result.py` (regex +
+  date-gate fixes; 4 pre-existing E501s remain in the legacy verifier),
+  `tests/test_stalled_detector_and_gc.py` (44/44, pins fc3f98719 semantics).
+- Pre-broken on main as of 2026-06-11: `tests/test_workflow_yaml.py::
+  test_gates_full_shape` (campaign commit `9eb2c7c57` added a second
+  park_and_wait gate; test asserts len==1). Stash-compare proves it.

@@ -1848,3 +1848,155 @@ def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:
             plan=plan,
             scratch_dir="/scratch/tjiral/eps/issue-137",
         )
+
+
+# ---------------------------------------------------------------------------
+# issue #598 — terminal-block completion sentinel + launch declaration
+# ---------------------------------------------------------------------------
+
+
+def _slurm_backend_with_fakes(tmp_path, *, job_id: str = "9001") -> SlurmBackend:
+    """Real :class:`SlurmBackend` with every external seam faked (no network)."""
+    (tmp_path / "pyproject.toml").write_text("")
+    return SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: job_id,
+        rsyncer=lambda **_kw: None,
+        marker_poster=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+
+
+def test_render_terminal_block_writes_completion_sentinel() -> None:
+    """#598: the terminal block writes the attempt-namespaced completion
+    sentinel — exact unquoted heredoc opener (pins runtime expansion of
+    ``${SLURM_JOB_ID}`` in the JSON body) and ordering: sentinel write
+    BEFORE ``_write_status "done" 0`` BEFORE ``[phase=done]`` ('done' is
+    published LAST, mirroring GCP)."""
+    spec = _lora_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    sentinel_assign = (
+        'SENTINEL_PATH="$SCRATCH_JOB_DIR/eval_results/issue_137/'
+        'slurm-${SLURM_JOB_ID}/.completion-sentinel.json"'
+    )
+    assert sentinel_assign in script
+    assert 'mkdir -p "$(dirname "$SENTINEL_PATH")"' in script
+    # EXACT unquoted heredoc opener — a quoted ('EOF') variant would stop
+    # ${SLURM_JOB_ID} from expanding at runtime and the sentinel's
+    # attempt_id field would carry the literal string.
+    assert 'cat > "$SENTINEL_PATH" <<EOF' in script
+    assert "<<'EOF'" not in script
+    # Ordering: sentinel write → _write_status "done" 0 → [phase=done].
+    i_sentinel = script.index('cat > "$SENTINEL_PATH" <<EOF')
+    i_done_status = script.index('_write_status "done" 0')
+    i_phase_done = script.index('echo "[phase=done]"')
+    assert i_sentinel < i_done_status < i_phase_done
+
+
+def test_render_sentinel_json_body_passes_verifier() -> None:
+    """#598 render→verifier byte seam: the heredoc JSON body the sbatch
+    writes (with ``${SLURM_JOB_ID}`` substituted) must PASS
+    ``_check_sentinel`` for the same issue. The end-to-end test writes
+    its OWN sentinel via the writer API, so without this a malformed
+    heredoc body could ship green."""
+    from explore_persona_space.backends.artifacts import VerifierIO, _check_sentinel
+
+    spec = _lora_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    lines = script.splitlines()
+    opener = lines.index('cat > "$SENTINEL_PATH" <<EOF')
+    body_lines: list[str] = []
+    for line in lines[opener + 1 :]:
+        if line == "EOF":
+            break
+        body_lines.append(line)
+    else:
+        pytest.fail("heredoc never closed with EOF")
+    body = "\n".join(body_lines).replace("${SLURM_JOB_ID}", "9001")
+    parsed = json.loads(body)  # must be valid JSON after expansion
+    assert parsed["attempt_id"] == "slurm-9001"
+    check = _check_sentinel(
+        sentinel_path="/anywhere/.completion-sentinel.json",
+        issue=137,
+        io=VerifierIO(read_sentinel=lambda _p: body),
+    )
+    assert check["status"] == "PASS", check
+
+
+def test_launch_attaches_expected_artifacts_declaration(tmp_path) -> None:
+    """#598: ``launch()`` populates ``extra[EXPECTED_ARTIFACTS_HANDLE_KEY]``
+    with the GCP-parity shape — hydra lane declares the
+    ``issue<N>_<attempt>/raw_completions/`` HF prefix and the LOCAL
+    post-rsync sentinel path."""
+    from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+
+    backend = _slurm_backend_with_fakes(tmp_path, job_id="9001")
+    handle = backend.launch(_lora_spec())
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    assert decl["issue"] == 137
+    assert decl["sentinel_path"] == str(
+        tmp_path / "eval_results/issue_137/slurm-9001/.completion-sentinel.json"
+    )
+    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+    assert decl["hf_data_paths"] == ["issue137_slurm-9001/raw_completions/"]
+    assert decl["hf_model_paths"] == []
+
+
+def test_launch_custom_workload_omits_guessed_hf_prefix(tmp_path) -> None:
+    """#598 inherits the #601 carve-out: a custom ``workload_cmd`` launch
+    declares NO guessed HF data prefix (the workload owns its prefix; a
+    launch-time guess produced a false-negative teardown block on a
+    perfectly-uploaded run)."""
+    from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+
+    backend = _slurm_backend_with_fakes(tmp_path, job_id="9001")
+    spec = RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/foo.sh",
+    )
+    handle = backend.launch(spec)
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    assert decl["hf_data_paths"] == []
+    # The sentinel + git checks keep gating teardown on this lane.
+    assert decl["sentinel_path"].endswith("slurm-9001/.completion-sentinel.json")
+    assert decl["git_paths"] == ["eval_results/issue_137/", "figures/issue_137/"]
+
+
+def test_render_and_launch_sentinel_paths_agree(tmp_path) -> None:
+    """#598 deliverable-2 path agreement: the render's scratch-relative
+    sentinel path (with ``slurm-${SLURM_JOB_ID}`` substituted) equals
+    the launch-declared LOCAL path relative to ``src_root`` — i.e. the
+    existing ``fetch_results`` rsync of ``eval_results/`` carries
+    exactly the file ``confirm_artifacts`` will read."""
+    from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+
+    spec = _lora_spec()
+    script = render_sbatch(
+        spec=spec,
+        cluster=_nibi(),
+        plan=stages_for_spec(spec),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+    )
+    match = re.search(r'SENTINEL_PATH="\$SCRATCH_JOB_DIR/(?P<rel>[^"]+)"', script)
+    assert match, "rendered script must assign SENTINEL_PATH under $SCRATCH_JOB_DIR"
+    render_rel = match.group("rel").replace("${SLURM_JOB_ID}", "9001")
+
+    backend = _slurm_backend_with_fakes(tmp_path, job_id="9001")
+    handle = backend.launch(spec)
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    declared_rel = str(_P(decl["sentinel_path"]).relative_to(tmp_path))
+    assert render_rel == declared_rel

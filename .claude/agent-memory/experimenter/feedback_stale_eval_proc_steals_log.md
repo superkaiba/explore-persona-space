@@ -1,44 +1,16 @@
 ---
-name: stale-eval-proc-steals-log
-description: Pre-launch must check pgrep/nvidia-smi for orphan procs from prior re-launch attempts BEFORE nohup-ing; a stale eval process can hijack the log file and FAIL a smoke gate against the wrong (cached) checkpoint, masking that the new dispatcher never started.
+name: Stale procs from prior rounds steal the log, hold GPU mem, and pull stale checkpoints
+description: On relaunch attempts ≥3, orphans from earlier rounds hijack /workspace/logs/issue-<N>.log (their failures read as YOUR dispatcher's), pin GPU memory as PID [Not Found], and snapshot_download the broken prior checkpoint into smoke gates.
 metadata:
   type: feedback
 ---
 
-When a task has burned through multiple re-launches (round 7+, attempt 8+ in #399's case), the SSH MCP env on the pod can have ORPHAN python/uv subprocesses from prior attempts that were killed at the wrapper level but kept the child alive (VLLM EngineCore commonly survives parent SIGKILL). These orphans:
+On re-launch attempts ≥3, orphan processes from killed prior rounds (vLLM EngineCore commonly survives parent SIGKILL) cause four compounding traps: (1) they keep writing to the conventional `/workspace/logs/issue-<N>.log`, so the orphan's smoke-gate FAIL reads as your fresh dispatcher's output while your dispatcher actually died at import; (2) they hold GPU memory with nvidia-smi PID `[Not Found]`; (3) eval orphans `snapshot_download` the BROKEN previous checkpoint and fail smoke against it; (4) all of this masks a silent fresh-launch death (uv not on PATH, env missing).
 
-1. **Steal the conventional log path** — if both the orphan and your new nohup target `/workspace/logs/issue-<N>.log`, the orphan keeps writing to it and your tail looks like the orphan's output is your dispatcher's output.
-2. **Hold GPU memory** — `nvidia-smi --query-compute-apps` shows the PID is `[Not Found]` (process group dissociated from systemd), but the memory is still pinned. Your fresh launch then hits "CUDA out of memory" mysteriously.
-3. **Pull stale HF Hub checkpoints** — eval scripts in particular cheerfully `snapshot_download` the latest checkpoint at the expected name, which is the BROKEN one from the previous failed round. The smoke gate FAILs against a checkpoint the new dispatcher would have overwritten 10 min later.
-4. **Mask your dispatcher dying silently** — your fresh nohup may have died at import time (uv not on PATH, env missing, etc.) but the log shows the orphan's smoke-gate FAIL traceback, and you misread it as your dispatcher's failure.
+**Why:** #399 round-9 v8 (2026-05-27) — fresh launch silently exited (uv off PATH) while a stale round-7 eval proc wrote a smoke FAIL to the shared log; ~30 min lost before noticing the stale PID's start time predated the nohup.
 
-**Pre-launch checklist for re-launch attempts ≥3:**
-1. `pgrep -af "<dispatcher_script_name>|eval_<N>|train\.py"` — kill any survivors.
-2. `pgrep -af VLLM` — kill orphan engine cores.
-3. `nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv` — if any PID is `[Not Found]` but holding memory, `kill -9 <pid>`; if still pinned, the pod needs a `pod.py resume` (memory is leaked at kernel level).
-4. `rm -rf /workspace/tmp_models/<condition>_*` — eval scripts re-download checkpoints, this is the only way to force a re-pull AFTER training has overwritten the HF Hub version. (For your case where the new training WILL overwrite, you can let it.)
-5. Truncate the log: `: > /workspace/logs/issue-<N>.log` so the new dispatcher's first line is recognizable.
-6. THEN launch.
-
-**Wrapper pattern (also avoids feedback_ssh_bash_lc_backgrounding trap):**
-```bash
-cat > /workspace/launch_issue_<N>.sh << 'EOF'
-#!/bin/bash
-set -euo pipefail
-export PATH="/root/.local/bin:$PATH"   # uv not on default PATH in non-login SSH shells
-cd /workspace/explore-persona-space
-set -a
-source .env
-set +a
-export EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1
-exec uv run python scripts/<dispatcher>.py <args>
-EOF
-chmod +x /workspace/launch_issue_<N>.sh
-nohup bash /workspace/launch_issue_<N>.sh > /workspace/logs/issue-<N>.log 2>&1 < /dev/null &
-```
-
-Note: `bash`, not `sh` — sh has no `pipefail` and no `disown`. Drop `disown`; nohup + `&` is enough.
-
-Burned at #399 round-9 v8 (2026-05-27): first launch silently exited because `uv` wasn't on PATH; a stale eval_issue399 process from a prior round-7 re-launch attempt was already writing the smoke-gate FAIL to /workspace/logs/issue-399.log, which looked exactly like my dispatcher's failure but was a different process tree. ~30 min lost to misdiagnosis before noticing the stale PID startup time predated my nohup.
-
-Related: [[load-env-in-nohup]], [[wrapper-pipefail]], [[ssh-bash-lc-backgrounding-trap]].
+**How to apply (pre-launch on attempts ≥3):**
+1. `pgrep -af "<dispatcher>|eval_<N>|train\.py"` and `pgrep -af EngineCore` — kill survivors (the EngineCore probe is now experimenter.md Before-Running step 9).
+2. `nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv` — `[Not Found]` PIDs holding memory get `kill -9`; if memory stays pinned, the leak is kernel-level → `pod.py resume`.
+3. `rm -rf /workspace/tmp_models/<condition>_*` to force checkpoint re-pull where training will overwrite Hub state.
+4. Truncate the log (`: > /workspace/logs/issue-<N>.log`) so the fresh dispatcher's first line is unambiguous, THEN launch via the canonical launcher script (bash, `set -euo pipefail`, PATH export, env sourcing).

@@ -1,20 +1,12 @@
 ---
 name: filter-tightening-corpus-count
-description: Round-N corpus-filter tightening that doesn't re-verify corpus-wide accepted-count count vs requested-N often shorts the request at runtime. Bounce-back code-class.
+description: A code-review round that tightens a corpus filter with per-string smoke asserts but no corpus-wide recount routinely shorts the config's requested N at runtime. Code-class bounce; recommend a corpus-count regression test.
 metadata:
   type: feedback
 ---
 
-When a code-reviewer round bounces back a BLOCKER like "filter is too loose, admits transcript garbage", the implementer fix typically adds a stricter predicate (`_is_clean_question`-style: must-end-in-?, ≤N words, no transcript markers, etc.) and unit-test-style accept/reject assertions on a handful of hand-crafted strings.
+When a reviewer bounce ("filter too loose") is fixed by a stricter predicate plus per-string accept/reject asserts, the missing step is re-running the filter over the ACTUAL corpus and checking accepted-count ≥ the config's `want`. Tightening is a strict subset — if the loose filter barely cleared the request, the tight one undershoots.
 
-What's almost always missing: re-running the filter on the actual corpus and checking that the **accepted-count remains ≥ the count requested in the config**. Issue #375 round-2 commit `26032ab2` tightened the LMSYS-tail filter under BLOCKER M-6, added smoke-test assertions on single strings, but didn't re-verify the 600-doc corpus would still yield the ≥180 the held_out config asks for. Filter accepted only 164 → script crashed in `phase_build_queries` 30s into the run.
+**Why:** #375 round-2 (commit 26032ab2) — the tightened LMSYS-tail filter accepted 164 of the ≥180 the held_out config required; crash in `phase_build_queries` 30s in.
 
-**Why:** Tightening predicates is by definition a strict subset of acceptances; if the loose filter just barely cleared the request, any tightening can push you under. The unit-test assertions don't catch this — they're per-string, not per-corpus.
-
-**How to apply:** When you (experimenter) see a launch crash in a "build-data" / "filter-corpus" phase with shape `extracted only N out of requested M`, AND the most recent commit on the issue branch is a code-review fix to the filter logic:
-
-- This is a `failure_class: code` bounce-back, NOT a hot-fix. The remediation (relax filter, shrink config, or expand corpus) is a design decision the planner should make.
-- Recommend in the `epm:failure` body that the implementer also move the audit-JSON write to BEFORE the `raise` so the next failure can be diagnosed without re-running.
-- Recommend the implementer add a corpus-wide accepted-count regression test to the smoke suite, parameterized on the corpus path + `want` from config. This catches the same class of bug pre-launch.
-
-Don't try to hot-fix even option A (config shrink) — it changes the planned eval design ("200 held-out queries" in plan §4.5 becomes "184"), which is a design decision, not an oversight.
+**How to apply:** a launch crash shaped `extracted only N out of requested M` in a build-data phase, right after a filter-fix commit, is a `failure_class: code` bounce-back, NOT a hot-fix — the remediation (relax filter / shrink config / expand corpus) is a design decision (shrinking changes the planned eval design). Recommend the implementer (1) add a corpus-wide accepted-count regression test parameterized on corpus path + `want`, (2) move the audit-JSON write BEFORE the raise so the next failure is diagnosable without a re-run.

@@ -76,6 +76,12 @@ errors.log
 # .comments/ stores need covering too — a broad glob catches every doc subtree.
 **/.comments/
 
+# Per-run completion sentinels (#598) — the SLURM finalize rsync lands them
+# inside the working tree under eval_results/issue_<N>/slurm-<jobid>/; they
+# are runtime noise, never committed (the git artifact check needs >=1
+# TRACKED file under eval_results/issue_<N>/ — the eval JSONs — not this).
+.completion-sentinel.json
+
 # Embedded git repo (Overleaf paper) — tracked in its own remote
 overleaf_paper/
 .vercel

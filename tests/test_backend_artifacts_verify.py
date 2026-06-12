@@ -629,8 +629,23 @@ def test_runpod_confirm_artifacts_returns_false_on_missing_declaration() -> None
 
 
 def test_runpod_confirm_artifacts_returns_true_on_pass(monkeypatch, tmp_path: Path) -> None:
+    """The RunPod sentinel read now goes over SSH (#598 — the sentinel
+    lives on the pod, not the VM), so the PASS path is exercised through
+    a faked ``subprocess.run`` returning the sentinel content."""
     sentinel = tmp_path / ".sentinel.json"
     sentinel.write_text(_good_sentinel_text(issue=42))
+
+    class _Proc:
+        returncode = 0
+        stdout = _good_sentinel_text(issue=42)
+        stderr = ""
+
+    def fake_run(argv, **kwargs):
+        assert argv[0] == "ssh", argv
+        assert argv[1] == "pod-42", argv
+        return _Proc()
+
+    monkeypatch.setattr("subprocess.run", fake_run)
     handle = _handle_with_expected(
         backend="runpod",
         issue=42,
@@ -691,3 +706,249 @@ def test_verdict_is_frozen_and_truthy() -> None:
 
     with pytest.raises(FrozenInstanceError):
         verdict.passed = False  # type: ignore[misc]  # frozen
+
+
+# ---------------------------------------------------------------------------
+# issue #598 — SLURM + RunPod launch-path declarations, end to end
+# ---------------------------------------------------------------------------
+
+
+def _slurm_backend_with_fakes(tmp_path: Path, *, job_id: str = "9001") -> SlurmBackend:
+    """Real :class:`SlurmBackend` with every external seam faked (no network)."""
+    (tmp_path / "pyproject.toml").write_text("")
+    return SlurmBackend(
+        src_root=tmp_path,
+        submitter=lambda *, robot_alias, sbatch_script: job_id,
+        rsyncer=lambda **_kw: None,
+        marker_poster=lambda **_kw: None,
+        secrets_pusher=lambda **_kw: None,
+        runtime_clearer=lambda **_kw: None,
+    )
+
+
+def test_slurm_launch_to_confirm_end_to_end(tmp_path: Path) -> None:
+    """#598 deliverable 1+3: a SLURM ``launch()`` handle carries a
+    declaration that ``confirm_artifacts_from_handle`` can actually
+    SATISFY on a clean run — write a real sentinel at the declared local
+    path, mock HF + git, and assert PASS.
+
+    Verified through ``confirm_artifacts_from_handle(handle, io=...)``
+    (NOT ``SlurmBackend().confirm_artifacts`` — that takes no ``io=``
+    and would hit the live repo's git state; the backend-method
+    delegation is pinned hermetically above)."""
+    from explore_persona_space.backends.slurm import RunSpec as _RunSpec
+
+    backend = _slurm_backend_with_fakes(tmp_path, job_id="9001")
+    spec = _RunSpec(
+        issue=137,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        hydra_args=("condition=c1_evil_wrong_em", "seed=42"),
+    )
+    handle = backend.launch(spec)
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    # Simulate the clean run: the sbatch terminal block wrote the
+    # sentinel cluster-side and fetch_results rsync'd it to the declared
+    # LOCAL path (same writer shape the sbatch heredoc emits).
+    write_completion_sentinel(
+        sentinel_path=decl["sentinel_path"], issue=137, extra={"attempt_id": "slurm-9001"}
+    )
+    io = _io(
+        hf_data_files=["issue137_slurm-9001/raw_completions/c1_evil_wrong_em_seed42.json"],
+        git_tracked_paths={
+            "eval_results/issue_137/run_result.json",
+            "figures/issue_137/headline.png",
+        },
+        repo_root=tmp_path,
+    )
+    # _io's read_sentinel stub returns its `sentinel_content` arg (None
+    # here) — but the sentinel is a REAL file at the declared path, so
+    # rebuild the IO with the default local-FS reader for that check.
+    io = VerifierIO(
+        list_hf_repo_files=io.list_hf_repo_files,
+        wandb_run_exists=io.wandb_run_exists,
+        git_tracked=io.git_tracked,
+        read_sentinel=None,  # default local-FS read — the rsync'd file
+        repo_root=tmp_path,
+    )
+    verdict = confirm_artifacts_from_handle(handle, io=io)
+    assert verdict.passed, verdict.reasons
+
+
+def test_issue588_evidence_shape_would_pass(tmp_path: Path) -> None:
+    """#598 deliverable 4 (retro-check): the exact #588 nibi smoke shape
+    — custom ``workload_cmd``, job 15956499, HF evidence at
+    ``issue588_slurm-15956499/raw_completions/`` — verifies under the
+    new launch declaration, where today the same handle FAILs
+    structurally on "missing declaration"."""
+    from explore_persona_space.backends.artifacts import build_expected_artifacts_declaration
+    from explore_persona_space.backends.slurm import RunSpec as _RunSpec
+
+    backend = _slurm_backend_with_fakes(tmp_path, job_id="15956499")
+    spec = _RunSpec(
+        issue=588,
+        intent="lora-7b",
+        backend="cluster",
+        cluster="nibi",
+        workload_cmd="bash scripts/issue588_smoke.sh",
+    )
+    handle = backend.launch(spec)
+    # (a) The declaration EXISTS (the live #588 FAIL was its absence)
+    # with the custom-workload carve-out: the workload's real prefix was
+    # its own contract, not a launch-time guess.
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    assert decl["issue"] == 588
+    assert decl["hf_data_paths"] == []
+    # (b) With the #588 evidence shape mocked (tracked eval JSONs +
+    # figures, a valid sentinel at the declared local path, the real HF
+    # listing), confirm PASSes.
+    write_completion_sentinel(sentinel_path=decl["sentinel_path"], issue=588)
+    hf_listing = ["issue588_slurm-15956499/raw_completions/run.json"]
+    base_io = _io(
+        hf_data_files=hf_listing,
+        git_tracked_paths={
+            "eval_results/issue_588/smoke.json",
+            "figures/issue_588/phases.png",
+        },
+        repo_root=tmp_path,
+    )
+    io = VerifierIO(
+        list_hf_repo_files=base_io.list_hf_repo_files,
+        wandb_run_exists=base_io.wandb_run_exists,
+        git_tracked=base_io.git_tracked,
+        read_sentinel=None,  # default local-FS read
+        repo_root=tmp_path,
+    )
+    verdict = confirm_artifacts_from_handle(handle, io=io)
+    assert verdict.passed, verdict.reasons
+    assert verdict.checks[CHECK_HF_DATA]["status"] == "SKIP"  # carve-out
+    # (c) Variant: the literal #588 HF evidence shape VERIFIES when
+    # explicitly declared via ``extra_hf_data_paths`` (the channel for
+    # callers that know the workload's real prefix).
+    decl_c = build_expected_artifacts_declaration(
+        issue=588,
+        sentinel_path=decl["sentinel_path"],
+        custom_workload=True,
+        extra_hf_data_paths=("issue588_slurm-15956499/raw_completions/",),
+    )
+    handle_c = _handle_with_expected(backend="cluster", issue=588, declaration=decl_c)
+    verdict_c = confirm_artifacts_from_handle(handle_c, io=io)
+    assert verdict_c.passed, verdict_c.reasons
+    assert verdict_c.checks[CHECK_HF_DATA]["status"] == "PASS"
+
+
+def test_runpod_launch_attaches_declaration(monkeypatch) -> None:
+    """#598 folded sibling: ``RunPodBackend.launch`` populates the
+    declaration with an ATTEMPT-BOUND pod-side sentinel path (launch-
+    minted ``rp-<UTCstamp>-<4hex>`` id, also exposed as a plain
+    ``runpod_attempt_id`` extra field) and NO HF guess (every RunPod
+    workload is a custom dispatch — the #601 carve-out a fortiori)."""
+    import re
+
+    from explore_persona_space.backends.base import RunSpec as _RunSpec
+
+    monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    backend = RunPodBackend()
+    handle = backend.launch(_RunSpec(issue=42, intent="lora-7b", backend="runpod"))
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    attempt_id = handle.extra["runpod_attempt_id"]
+    assert re.fullmatch(r"rp-\d{8}T\d{6}Z-[0-9a-f]{4}", attempt_id), attempt_id
+    assert decl["sentinel_path"] == (
+        f"/workspace/eval_results/issue_42/{attempt_id}/.completion-sentinel.json"
+    )
+    assert decl["hf_data_paths"] == []
+    assert decl["issue"] == 42
+
+
+def test_runpod_stale_sentinel_cannot_satisfy_fresh_declaration(monkeypatch, tmp_path) -> None:
+    """#598 binding fix: sentinels from the FLAT legacy path AND from a
+    DIFFERENT attempt's namespaced path (both valid phase=done/issue=42
+    JSON, both surviving on the persistent /workspace volume) must NOT
+    satisfy a fresh launch's declaration — confirm FAILs "sentinel
+    missing" at the CURRENT attempt's path."""
+    from explore_persona_space.backends.base import RunSpec as _RunSpec
+
+    monkeypatch.setattr("subprocess.run", lambda *a, **k: None)
+    backend = RunPodBackend()
+    handle = backend.launch(_RunSpec(issue=42, intent="lora-7b", backend="runpod"))
+    decl = handle.extra[EXPECTED_ARTIFACTS_HANDLE_KEY]
+    current_path = decl["sentinel_path"]
+
+    # Simulated pod FS: stale sentinels exist at the flat legacy path
+    # and at a prior attempt's namespaced path; the CURRENT attempt's
+    # path has no file.
+    pod_fs = {
+        "/workspace/eval_results/issue_42/.completion-sentinel.json": _good_sentinel_text(issue=42),
+        "/workspace/eval_results/issue_42/rp-19990101T000000Z-dead/.completion-sentinel.json": (
+            _good_sentinel_text(issue=42)
+        ),
+    }
+    assert current_path not in pod_fs  # fresh attempt id ⇒ distinct path
+
+    io = VerifierIO(read_sentinel=lambda p: pod_fs.get(p), repo_root=tmp_path)
+    # Strip the git paths so the ONLY live check is the sentinel (the
+    # staleness property under test); hf/model/wandb already SKIP.
+    decl_sentinel_only = dict(decl, git_paths=[])
+    handle_sentinel_only = _handle_with_expected(
+        backend="runpod", issue=42, declaration=decl_sentinel_only
+    )
+    verdict = confirm_artifacts_from_handle(handle_sentinel_only, io=io)
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert f"missing at {current_path}" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_runpod_ssh_sentinel_reader_semantics(monkeypatch) -> None:
+    """#598: the injected SSH sentinel reader's three-way contract —
+    rc=0 → content (confirm PASSes end-to-end), rc!=0 + "No such file"
+    → None (FAIL "sentinel missing"), rc=255 transport → RAISE (FAIL
+    with the real reason, NOT "missing"). ``subprocess.run`` is patched
+    at the exact target the reader resolves, so no real ``ssh pod-*``
+    can ever run from the suite."""
+
+    class _Proc:
+        def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+            self.returncode = returncode
+            self.stdout = stdout
+            self.stderr = stderr
+
+    backend = RunPodBackend()
+    sentinel_path = "/workspace/eval_results/issue_42/rp-x/.completion-sentinel.json"
+    declaration = {"issue": 42, "sentinel_path": sentinel_path}
+    handle = _handle_with_expected(backend="runpod", issue=42, declaration=declaration)
+
+    # rc=0 → content returned; full backend.confirm_artifacts PASSes
+    # (every other check SKIPs — nothing else declared).
+    monkeypatch.setattr(
+        "subprocess.run", lambda *a, **k: _Proc(0, stdout=_good_sentinel_text(issue=42))
+    )
+    assert backend._ssh_read_sentinel(handle)(sentinel_path) == _good_sentinel_text(issue=42)
+    assert backend.confirm_artifacts(handle) is True
+
+    # rc=1 + "No such file" stderr → None → FAIL "sentinel missing".
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *a, **k: _Proc(1, stderr="cat: /workspace/...: No such file or directory"),
+    )
+    assert backend._ssh_read_sentinel(handle)(sentinel_path) is None
+    verdict = confirm_artifacts_from_handle(
+        handle, io=VerifierIO(read_sentinel=backend._ssh_read_sentinel(handle))
+    )
+    assert not verdict.passed
+    assert "missing" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+    # rc=255 transport failure → raise → FAIL with the REAL reason
+    # (must NOT read as "missing" — fail-loud on transport).
+    monkeypatch.setattr(
+        "subprocess.run", lambda *a, **k: _Proc(255, stderr="ssh: connect to host failed")
+    )
+    with pytest.raises(RuntimeError, match="rc=255"):
+        backend._ssh_read_sentinel(handle)(sentinel_path)
+    verdict = confirm_artifacts_from_handle(
+        handle, io=VerifierIO(read_sentinel=backend._ssh_read_sentinel(handle))
+    )
+    assert not verdict.passed
+    detail = verdict.checks[CHECK_SENTINEL]["detail"]
+    assert "rc=255" in detail
+    assert "missing" not in detail
