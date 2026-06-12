@@ -1,0 +1,1163 @@
+{
+  "issue": 608,
+  "seed": 42,
+  "bootstrap": {
+    "n_draws": 10000,
+    "rng_seed": 42,
+    "convention": "per-claim 10-rollout rates -> paired claim differences -> resample 50 claims with replacement -> two-sided 95% percentile CI; base rates NOT resampled (base cancels in g)"
+  },
+  "per_source": {
+    "villain": {
+      "fresh_base_own_rate": 0.046,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.9480000000000001,
+        "posonly_dose": 0.9720000000000002,
+        "posonly_epoch": 0.9540000000000001
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.902,
+        "posonly_dose": 0.9260000000000002,
+        "posonly_epoch": 0.908
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.8579499999999999,
+          0.9339999999999999
+        ],
+        "posonly_dose": [
+          0.8919999999999999,
+          0.948
+        ],
+        "posonly_epoch": [
+          0.866,
+          0.9359999999999999
+        ]
+      },
+      "g": -0.023999999999999994,
+      "g_ci95": [
+        -0.042,
+        -0.007999999999999998
+      ],
+      "g_ci_excludes_0": true,
+      "g_ci_in_equiv_band": true,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": false,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.020251480167622116,
+        "posonly_dose": 0.015129374051284257,
+        "posonly_epoch": 0.018781232490908337
+      },
+      "epoch_claim_rates_mean": 0.9540000000000001,
+      "censored": true,
+      "is_sentinel": true,
+      "h1_label": "censored_top_band"
+    },
+    "comedian": {
+      "fresh_base_own_rate": 0.128,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.958,
+        "posonly_dose": 0.96,
+        "posonly_epoch": 0.9620000000000001
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.83,
+        "posonly_dose": 0.832,
+        "posonly_epoch": 0.8340000000000001
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.79,
+          0.858
+        ],
+        "posonly_dose": [
+          0.79,
+          0.8640000000000001
+        ],
+        "posonly_epoch": [
+          0.794,
+          0.86
+        ]
+      },
+      "g": -0.0019999999999999953,
+      "g_ci95": [
+        -0.021999999999999992,
+        0.022000000000000002
+      ],
+      "g_ci_excludes_0": false,
+      "g_ci_in_equiv_band": true,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": true,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.017633456141953684,
+        "posonly_dose": 0.019378085666072197,
+        "posonly_epoch": 0.01735346815892596
+      },
+      "epoch_claim_rates_mean": 0.9620000000000001,
+      "censored": true,
+      "is_sentinel": false,
+      "h1_label": "censored_top_band"
+    },
+    "assistant": {
+      "fresh_base_own_rate": 0.05,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.96,
+        "posonly_dose": 0.9719999999999999,
+        "posonly_epoch": 0.944
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.9099999999999999,
+        "posonly_dose": 0.9219999999999998,
+        "posonly_epoch": 0.8939999999999999
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.8720000000000002,
+          0.936
+        ],
+        "posonly_dose": [
+          0.8860000000000001,
+          0.9480000000000001
+        ],
+        "posonly_epoch": [
+          0.8460000000000001,
+          0.9260000000000003
+        ]
+      },
+      "g": -0.011999999999999993,
+      "g_ci95": [
+        -0.02799999999999999,
+        0.004000000000000006
+      ],
+      "g_ci_excludes_0": false,
+      "g_ci_in_equiv_band": true,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": true,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.017142857142857144,
+        "posonly_dose": 0.016172539083525606,
+        "posonly_epoch": 0.02141142170879451
+      },
+      "epoch_claim_rates_mean": 0.944,
+      "censored": true,
+      "is_sentinel": false,
+      "h1_label": "censored_top_band"
+    },
+    "qwen_default": {
+      "fresh_base_own_rate": 0.044000000000000004,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.704,
+        "posonly_dose": 0.9719999999999999,
+        "posonly_epoch": 0.958
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.6599999999999999,
+        "posonly_dose": 0.9279999999999998,
+        "posonly_epoch": 0.9139999999999999
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.61,
+          0.706
+        ],
+        "posonly_dose": [
+          0.8899999999999999,
+          0.956
+        ],
+        "posonly_epoch": [
+          0.87,
+          0.9440000000000001
+        ]
+      },
+      "g": -0.26799999999999996,
+      "g_ci95": [
+        -0.31199999999999994,
+        -0.22799999999999998
+      ],
+      "g_ci_excludes_0": true,
+      "g_ci_in_equiv_band": false,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": false,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.024571428571428574,
+        "posonly_dose": 0.01785199925921521,
+        "posonly_epoch": 0.019813415368669495
+      },
+      "epoch_claim_rates_mean": 0.958,
+      "censored": true,
+      "is_sentinel": true,
+      "h1_label": "censored_top_band"
+    },
+    "software_engineer": {
+      "fresh_base_own_rate": 0.046000000000000006,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.9620000000000001,
+        "posonly_dose": 0.9680000000000001,
+        "posonly_epoch": 0.9359999999999999
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.916,
+        "posonly_dose": 0.922,
+        "posonly_epoch": 0.8899999999999999
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.8719999999999999,
+          0.944
+        ],
+        "posonly_dose": [
+          0.882,
+          0.9519999999999998
+        ],
+        "posonly_epoch": [
+          0.8439999999999999,
+          0.9219999999999999
+        ]
+      },
+      "g": -0.005999999999999995,
+      "g_ci95": [
+        -0.027999999999999997,
+        0.02
+      ],
+      "g_ci_excludes_0": false,
+      "g_ci_in_equiv_band": true,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": true,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.020382064945156354,
+        "posonly_dose": 0.01794322110640867,
+        "posonly_epoch": 0.02114285714285714
+      },
+      "epoch_claim_rates_mean": 0.9359999999999999,
+      "censored": true,
+      "is_sentinel": false,
+      "h1_label": "censored_top_band"
+    },
+    "kindergarten_teacher": {
+      "fresh_base_own_rate": 0.05600000000000001,
+      "own_rate": {
+        "contrastive_fresh_eval": 0.968,
+        "posonly_dose": 0.968,
+        "posonly_epoch": 0.946
+      },
+      "delta_self": {
+        "contrastive_fresh_eval": 0.9119999999999999,
+        "posonly_dose": 0.9119999999999999,
+        "posonly_epoch": 0.8899999999999999
+      },
+      "delta_self_ci95": {
+        "contrastive_fresh_eval": [
+          0.8740000000000001,
+          0.9380000000000002
+        ],
+        "posonly_dose": [
+          0.872,
+          0.9380000000000002
+        ],
+        "posonly_epoch": [
+          0.84,
+          0.924
+        ]
+      },
+      "g": 2.220446049250313e-18,
+      "g_ci95": [
+        -0.005999999999999998,
+        0.006000000000000005
+      ],
+      "g_ci_excludes_0": false,
+      "g_ci_in_equiv_band": true,
+      "top_band_dose": true,
+      "top_band_contrastive_fresh": true,
+      "own_claim_clustered_se": {
+        "contrastive_fresh_eval": 0.017247300883184647,
+        "posonly_dose": 0.017714285714285714,
+        "posonly_epoch": 0.022170029410932966
+      },
+      "epoch_claim_rates_mean": 0.946,
+      "censored": true,
+      "is_sentinel": false,
+      "h1_label": "censored_top_band"
+    }
+  },
+  "h1": {
+    "claim_scope": "MIX/BUNDLE level \u2014 '#411 contrastive 700-row mix vs cycled positive-only at matched steps'; negatives-per-se NOT isolatable from data diversity (plan \u00a71)",
+    "mean_g": -0.05199999999999999,
+    "n_positive_g": 1,
+    "n_ci_exclude_0": 2,
+    "n_ci_in_equiv_band": 5,
+    "support_met": false,
+    "equivalence_met_raw": false,
+    "n_dose_top_band": 6,
+    "censored_panel": true,
+    "sentinel_sources": [
+      "villain",
+      "qwen_default"
+    ],
+    "sentinel_directional": {
+      "villain": {
+        "g": -0.023999999999999994,
+        "g_ci95": [
+          -0.042,
+          -0.007999999999999998
+        ],
+        "directional_evidence_for_underinstall": false
+      },
+      "qwen_default": {
+        "g": -0.26799999999999996,
+        "g_ci95": [
+          -0.31199999999999994,
+          -0.22799999999999998
+        ],
+        "directional_evidence_for_underinstall": false
+      }
+    },
+    "verdict": "censored_top_band",
+    "sign_test": {
+      "k_positive": 1,
+      "n": 6,
+      "one_sided_p": 0.984375,
+      "two_sided_p": 1.0
+    },
+    "thresholds": {
+      "support_mean": 0.05,
+      "support_n_positive": 5,
+      "support_n_ci_exclude_0": 3,
+      "equiv_mean": 0.02,
+      "equiv_band": 0.05,
+      "equiv_n": 5,
+      "top_band_rate": 0.95,
+      "censor_min_top_band_dose_cells": 4
+    }
+  },
+  "h2": {
+    "registered_denominator": "21 bystanders (23 minus each contrastive cell's 2 trained-negative personas); all-23 secondary",
+    "per_arm": {
+      "contrastive_fresh_eval": {
+        "per_source": {
+          "villain": {
+            "mean_bystander_delta_21_registered": -0.018476190476190483,
+            "mean_bystander_delta_23_all": -0.01904347826086957,
+            "excluded_trained_negatives": [
+              "medical_doctor",
+              "police_officer"
+            ],
+            "per_bystander_delta": {
+              "accountant": -0.03200000000000001,
+              "ai": -0.036000000000000004,
+              "ai_assistant": -0.028000000000000004,
+              "assistant": -0.034,
+              "chef": -0.018000000000000002,
+              "child": -0.031999999999999994,
+              "comedian": 0.08000000000000004,
+              "data_scientist": -0.038000000000000006,
+              "french_person": -0.005999999999999998,
+              "hero": 0.025999999999999995,
+              "journalist": -0.008000000000000004,
+              "kindergarten_teacher": -0.038000000000000006,
+              "lawyer": -0.020000000000000004,
+              "librarian": -0.026000000000000002,
+              "medical_doctor": -0.032,
+              "philosopher": -0.024000000000000007,
+              "police_officer": -0.018000000000000006,
+              "programmer": -0.030000000000000002,
+              "qwen_default": -0.032,
+              "software_engineer": -0.03200000000000001,
+              "surgeon": -0.032,
+              "wizard": -0.032,
+              "zelthari_scholar": 0.00399999999999999
+            }
+          },
+          "comedian": {
+            "mean_bystander_delta_21_registered": -0.018190476190476194,
+            "mean_bystander_delta_23_all": -0.01965217391304349,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": -0.024000000000000007,
+              "ai": -0.036000000000000004,
+              "ai_assistant": -0.034,
+              "assistant": -0.04,
+              "chef": 0.0020000000000000018,
+              "child": -0.007999999999999986,
+              "data_scientist": -0.036000000000000004,
+              "french_person": -0.024000000000000007,
+              "hero": -0.0020000000000000018,
+              "journalist": -0.014000000000000005,
+              "kindergarten_teacher": -0.02600000000000001,
+              "lawyer": -0.014000000000000005,
+              "librarian": -0.028000000000000004,
+              "medical_doctor": -0.030000000000000006,
+              "philosopher": -0.024,
+              "police_officer": -0.010000000000000002,
+              "programmer": -0.034,
+              "qwen_default": -0.032,
+              "software_engineer": -0.028000000000000008,
+              "surgeon": -0.034,
+              "villain": 0.05199999999999999,
+              "wizard": -0.016,
+              "zelthari_scholar": -0.012000000000000004
+            }
+          },
+          "assistant": {
+            "mean_bystander_delta_21_registered": 0.10085714285714287,
+            "mean_bystander_delta_23_all": 0.0886086956521739,
+            "excluded_trained_negatives": [
+              "comedian",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.012000000000000004,
+              "ai": 0.374,
+              "ai_assistant": 0.724,
+              "chef": 0.01800000000000001,
+              "child": 0.094,
+              "comedian": -0.07999999999999999,
+              "data_scientist": 0.011999999999999997,
+              "french_person": 0.05,
+              "hero": 0.12600000000000003,
+              "journalist": 0.033999999999999996,
+              "kindergarten_teacher": 0.14199999999999996,
+              "lawyer": 0.020000000000000004,
+              "librarian": 0.118,
+              "medical_doctor": 0.016000000000000007,
+              "philosopher": -0.0059999999999999915,
+              "police_officer": 0.03,
+              "programmer": 0.128,
+              "qwen_default": 0.04,
+              "software_engineer": 0.0,
+              "surgeon": 0.084,
+              "villain": 0.054000000000000006,
+              "wizard": 0.028000000000000025,
+              "zelthari_scholar": 0.020000000000000004
+            }
+          },
+          "qwen_default": {
+            "mean_bystander_delta_21_registered": 0.00019047619047618834,
+            "mean_bystander_delta_23_all": -0.0049565217391304385,
+            "excluded_trained_negatives": [
+              "comedian",
+              "data_scientist"
+            ],
+            "per_bystander_delta": {
+              "accountant": -0.016000000000000007,
+              "ai": 0.013999999999999999,
+              "ai_assistant": -6.938893903907228e-18,
+              "assistant": -0.022,
+              "chef": -0.006000000000000005,
+              "child": 0.0040000000000000105,
+              "comedian": -0.098,
+              "data_scientist": -0.020000000000000004,
+              "french_person": 0.03,
+              "hero": -0.0020000000000000018,
+              "journalist": 0.001999999999999995,
+              "kindergarten_teacher": 0.00399999999999999,
+              "lawyer": 0.00399999999999999,
+              "librarian": 0.005999999999999998,
+              "medical_doctor": -0.02,
+              "philosopher": -0.010000000000000009,
+              "police_officer": 0.016000000000000007,
+              "programmer": -0.016,
+              "software_engineer": -0.01800000000000001,
+              "surgeon": -0.013999999999999999,
+              "villain": 0.018000000000000002,
+              "wizard": -0.009999999999999995,
+              "zelthari_scholar": 0.039999999999999994
+            }
+          },
+          "software_engineer": {
+            "mean_bystander_delta_21_registered": 0.1997142857142857,
+            "mean_bystander_delta_23_all": 0.1796521739130435,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.4060000000000001,
+              "ai": -0.013999999999999999,
+              "ai_assistant": -0.022000000000000006,
+              "assistant": -0.036000000000000004,
+              "chef": 0.39199999999999996,
+              "child": 0.14200000000000002,
+              "comedian": 0.4800000000000001,
+              "data_scientist": 0.6039999999999999,
+              "french_person": 0.354,
+              "hero": 0.12599999999999997,
+              "journalist": 0.192,
+              "kindergarten_teacher": 0.176,
+              "lawyer": 0.158,
+              "librarian": 0.022,
+              "medical_doctor": -0.026000000000000006,
+              "philosopher": 0.182,
+              "police_officer": 0.17399999999999996,
+              "programmer": 0.076,
+              "qwen_default": -0.026000000000000006,
+              "surgeon": 0.032000000000000015,
+              "villain": 0.3320000000000001,
+              "wizard": 0.20000000000000007,
+              "zelthari_scholar": 0.20800000000000002
+            }
+          },
+          "kindergarten_teacher": {
+            "mean_bystander_delta_21_registered": -0.029142857142857154,
+            "mean_bystander_delta_23_all": -0.029391304347826094,
+            "excluded_trained_negatives": [
+              "french_person",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": -0.030000000000000006,
+              "ai": -0.030000000000000002,
+              "ai_assistant": -0.026000000000000006,
+              "assistant": -0.032,
+              "chef": -0.020000000000000004,
+              "child": -0.02599999999999999,
+              "comedian": -0.066,
+              "data_scientist": -0.034,
+              "french_person": -0.034,
+              "hero": -0.014000000000000005,
+              "journalist": -0.012000000000000004,
+              "lawyer": -0.020000000000000004,
+              "librarian": -0.018000000000000002,
+              "medical_doctor": -0.028000000000000004,
+              "philosopher": -0.046000000000000006,
+              "police_officer": -0.020000000000000004,
+              "programmer": -0.028000000000000004,
+              "qwen_default": -0.028000000000000004,
+              "software_engineer": -0.030000000000000006,
+              "surgeon": -0.026000000000000002,
+              "villain": -0.026000000000000002,
+              "wizard": -0.044,
+              "zelthari_scholar": -0.038000000000000006
+            }
+          }
+        },
+        "n_lift_ge_threshold_21": 2,
+        "n_flat_le_threshold_21": 4
+      },
+      "posonly_dose": {
+        "per_source": {
+          "villain": {
+            "mean_bystander_delta_21_registered": 0.7116190476190476,
+            "mean_bystander_delta_23_all": 0.7216521739130433,
+            "excluded_trained_negatives": [
+              "medical_doctor",
+              "police_officer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.854,
+              "ai": 0.30200000000000005,
+              "ai_assistant": 0.24399999999999997,
+              "assistant": 0.19,
+              "chef": 0.908,
+              "child": 0.7979999999999999,
+              "comedian": 0.836,
+              "data_scientist": 0.6960000000000001,
+              "french_person": 0.898,
+              "hero": 0.936,
+              "journalist": 0.8260000000000001,
+              "kindergarten_teacher": 0.846,
+              "lawyer": 0.8740000000000001,
+              "librarian": 0.5879999999999999,
+              "medical_doctor": 0.7359999999999998,
+              "philosopher": 0.8899999999999999,
+              "police_officer": 0.9179999999999999,
+              "programmer": 0.5419999999999999,
+              "qwen_default": 0.32800000000000007,
+              "software_engineer": 0.788,
+              "surgeon": 0.8119999999999999,
+              "wizard": 0.8879999999999999,
+              "zelthari_scholar": 0.8999999999999999
+            }
+          },
+          "comedian": {
+            "mean_bystander_delta_21_registered": 0.6010476190476189,
+            "mean_bystander_delta_23_all": 0.5786086956521739,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.5419999999999999,
+              "ai": 0.36400000000000005,
+              "ai_assistant": 0.31800000000000006,
+              "assistant": 0.184,
+              "chef": 0.7599999999999999,
+              "child": 0.7600000000000001,
+              "data_scientist": 0.434,
+              "french_person": 0.7,
+              "hero": 0.7779999999999999,
+              "journalist": 0.7380000000000001,
+              "kindergarten_teacher": 0.6999999999999998,
+              "lawyer": 0.63,
+              "librarian": 0.452,
+              "medical_doctor": 0.502,
+              "philosopher": 0.6520000000000001,
+              "police_officer": 0.676,
+              "programmer": 0.42400000000000004,
+              "qwen_default": 0.284,
+              "software_engineer": 0.536,
+              "surgeon": 0.5619999999999999,
+              "villain": 0.8719999999999999,
+              "wizard": 0.7440000000000002,
+              "zelthari_scholar": 0.6960000000000002
+            }
+          },
+          "assistant": {
+            "mean_bystander_delta_21_registered": 0.9196190476190477,
+            "mean_bystander_delta_23_all": 0.9159130434782609,
+            "excluded_trained_negatives": [
+              "comedian",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.92,
+              "ai": 0.9199999999999999,
+              "ai_assistant": 0.9239999999999999,
+              "chef": 0.924,
+              "child": 0.9020000000000001,
+              "comedian": 0.832,
+              "data_scientist": 0.9139999999999999,
+              "french_person": 0.916,
+              "hero": 0.9339999999999998,
+              "journalist": 0.9400000000000001,
+              "kindergarten_teacher": 0.912,
+              "lawyer": 0.938,
+              "librarian": 0.9279999999999999,
+              "medical_doctor": 0.9279999999999998,
+              "philosopher": 0.8919999999999999,
+              "police_officer": 0.9380000000000001,
+              "programmer": 0.9179999999999999,
+              "qwen_default": 0.9259999999999999,
+              "software_engineer": 0.922,
+              "surgeon": 0.9279999999999999,
+              "villain": 0.908,
+              "wizard": 0.9039999999999999,
+              "zelthari_scholar": 0.8979999999999999
+            }
+          },
+          "qwen_default": {
+            "mean_bystander_delta_21_registered": 0.9195238095238096,
+            "mean_bystander_delta_23_all": 0.916,
+            "excluded_trained_negatives": [
+              "comedian",
+              "data_scientist"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.9199999999999999,
+              "ai": 0.9199999999999999,
+              "ai_assistant": 0.9239999999999999,
+              "assistant": 0.8859999999999999,
+              "chef": 0.9259999999999999,
+              "child": 0.9060000000000001,
+              "comedian": 0.838,
+              "data_scientist": 0.9199999999999998,
+              "french_person": 0.918,
+              "hero": 0.936,
+              "journalist": 0.942,
+              "kindergarten_teacher": 0.9039999999999999,
+              "lawyer": 0.938,
+              "librarian": 0.932,
+              "medical_doctor": 0.9239999999999999,
+              "philosopher": 0.8940000000000001,
+              "police_officer": 0.9380000000000001,
+              "programmer": 0.9199999999999998,
+              "software_engineer": 0.9239999999999999,
+              "surgeon": 0.9179999999999999,
+              "villain": 0.92,
+              "wizard": 0.9020000000000001,
+              "zelthari_scholar": 0.918
+            }
+          },
+          "software_engineer": {
+            "mean_bystander_delta_21_registered": 0.9186666666666667,
+            "mean_bystander_delta_23_all": 0.9195652173913043,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.926,
+              "ai": 0.9179999999999999,
+              "ai_assistant": 0.928,
+              "assistant": 0.9279999999999999,
+              "chef": 0.924,
+              "child": 0.9120000000000001,
+              "comedian": 0.842,
+              "data_scientist": 0.9219999999999998,
+              "french_person": 0.9199999999999999,
+              "hero": 0.9319999999999999,
+              "journalist": 0.936,
+              "kindergarten_teacher": 0.9159999999999999,
+              "lawyer": 0.946,
+              "librarian": 0.9239999999999999,
+              "medical_doctor": 0.93,
+              "philosopher": 0.8919999999999999,
+              "police_officer": 0.94,
+              "programmer": 0.9199999999999999,
+              "qwen_default": 0.914,
+              "surgeon": 0.9319999999999999,
+              "villain": 0.928,
+              "wizard": 0.9099999999999999,
+              "zelthari_scholar": 0.91
+            }
+          },
+          "kindergarten_teacher": {
+            "mean_bystander_delta_21_registered": 0.9054285714285714,
+            "mean_bystander_delta_23_all": 0.9056521739130435,
+            "excluded_trained_negatives": [
+              "french_person",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.9019999999999998,
+              "ai": 0.9159999999999999,
+              "ai_assistant": 0.9099999999999999,
+              "assistant": 0.8859999999999999,
+              "chef": 0.922,
+              "child": 0.9120000000000001,
+              "comedian": 0.838,
+              "data_scientist": 0.9,
+              "french_person": 0.9139999999999999,
+              "hero": 0.9279999999999999,
+              "journalist": 0.9299999999999999,
+              "lawyer": 0.918,
+              "librarian": 0.922,
+              "medical_doctor": 0.9059999999999999,
+              "philosopher": 0.8579999999999999,
+              "police_officer": 0.9339999999999999,
+              "programmer": 0.9,
+              "qwen_default": 0.918,
+              "software_engineer": 0.9019999999999999,
+              "surgeon": 0.9159999999999999,
+              "villain": 0.8859999999999999,
+              "wizard": 0.9079999999999999,
+              "zelthari_scholar": 0.9039999999999999
+            }
+          }
+        },
+        "n_lift_ge_threshold_21": 6,
+        "n_flat_le_threshold_21": 0
+      },
+      "posonly_epoch": {
+        "per_source": {
+          "villain": {
+            "mean_bystander_delta_21_registered": 0.3399047619047619,
+            "mean_bystander_delta_23_all": 0.34130434782608693,
+            "excluded_trained_negatives": [
+              "medical_doctor",
+              "police_officer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.278,
+              "ai": 0.076,
+              "ai_assistant": 0.054,
+              "assistant": 0.06200000000000001,
+              "chef": 0.6140000000000001,
+              "child": 0.408,
+              "comedian": 0.6480000000000001,
+              "data_scientist": 0.14800000000000002,
+              "french_person": 0.63,
+              "hero": 0.784,
+              "journalist": 0.38,
+              "kindergarten_teacher": 0.27999999999999997,
+              "lawyer": 0.262,
+              "librarian": 0.11599999999999999,
+              "medical_doctor": 0.192,
+              "philosopher": 0.504,
+              "police_officer": 0.52,
+              "programmer": 0.114,
+              "qwen_default": 0.066,
+              "software_engineer": 0.18599999999999997,
+              "surgeon": 0.20200000000000007,
+              "wizard": 0.6460000000000001,
+              "zelthari_scholar": 0.68
+            }
+          },
+          "comedian": {
+            "mean_bystander_delta_21_registered": 0.32819047619047614,
+            "mean_bystander_delta_23_all": 0.3111304347826087,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.262,
+              "ai": 0.09199999999999998,
+              "ai_assistant": 0.086,
+              "assistant": 0.074,
+              "chef": 0.48800000000000004,
+              "child": 0.554,
+              "data_scientist": 0.192,
+              "french_person": 0.424,
+              "hero": 0.538,
+              "journalist": 0.39999999999999997,
+              "kindergarten_teacher": 0.374,
+              "lawyer": 0.28200000000000003,
+              "librarian": 0.14,
+              "medical_doctor": 0.19,
+              "philosopher": 0.49200000000000005,
+              "police_officer": 0.346,
+              "programmer": 0.132,
+              "qwen_default": 0.07999999999999999,
+              "software_engineer": 0.222,
+              "surgeon": 0.16399999999999998,
+              "villain": 0.68,
+              "wizard": 0.47000000000000003,
+              "zelthari_scholar": 0.47400000000000003
+            }
+          },
+          "assistant": {
+            "mean_bystander_delta_21_registered": 0.7819047619047618,
+            "mean_bystander_delta_23_all": 0.7732173913043476,
+            "excluded_trained_negatives": [
+              "comedian",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.8160000000000001,
+              "ai": 0.8959999999999999,
+              "ai_assistant": 0.8939999999999999,
+              "chef": 0.8099999999999998,
+              "child": 0.72,
+              "comedian": 0.5059999999999999,
+              "data_scientist": 0.82,
+              "french_person": 0.6679999999999999,
+              "hero": 0.82,
+              "journalist": 0.824,
+              "kindergarten_teacher": 0.8559999999999999,
+              "lawyer": 0.8360000000000001,
+              "librarian": 0.8439999999999999,
+              "medical_doctor": 0.8639999999999998,
+              "philosopher": 0.5820000000000001,
+              "police_officer": 0.8579999999999998,
+              "programmer": 0.852,
+              "qwen_default": 0.8639999999999999,
+              "software_engineer": 0.858,
+              "surgeon": 0.8359999999999999,
+              "villain": 0.566,
+              "wizard": 0.6440000000000001,
+              "zelthari_scholar": 0.5499999999999999
+            }
+          },
+          "qwen_default": {
+            "mean_bystander_delta_21_registered": 0.7113333333333334,
+            "mean_bystander_delta_23_all": 0.7078260869565218,
+            "excluded_trained_negatives": [
+              "comedian",
+              "data_scientist"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.6880000000000001,
+              "ai": 0.7000000000000001,
+              "ai_assistant": 0.592,
+              "assistant": 0.4219999999999999,
+              "chef": 0.8140000000000001,
+              "child": 0.758,
+              "comedian": 0.6900000000000001,
+              "data_scientist": 0.652,
+              "french_person": 0.7180000000000001,
+              "hero": 0.8600000000000001,
+              "journalist": 0.7640000000000001,
+              "kindergarten_teacher": 0.7679999999999997,
+              "lawyer": 0.702,
+              "librarian": 0.7559999999999999,
+              "medical_doctor": 0.68,
+              "philosopher": 0.6079999999999999,
+              "police_officer": 0.8300000000000001,
+              "programmer": 0.574,
+              "software_engineer": 0.678,
+              "surgeon": 0.73,
+              "villain": 0.732,
+              "wizard": 0.776,
+              "zelthari_scholar": 0.788
+            }
+          },
+          "software_engineer": {
+            "mean_bystander_delta_21_registered": 0.8379047619047617,
+            "mean_bystander_delta_23_all": 0.8287826086956521,
+            "excluded_trained_negatives": [
+              "assistant",
+              "medical_doctor"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.884,
+              "ai": 0.828,
+              "ai_assistant": 0.7780000000000001,
+              "assistant": 0.592,
+              "chef": 0.9019999999999999,
+              "child": 0.7719999999999998,
+              "comedian": 0.7160000000000001,
+              "data_scientist": 0.86,
+              "french_person": 0.8499999999999999,
+              "hero": 0.8799999999999999,
+              "journalist": 0.8460000000000001,
+              "kindergarten_teacher": 0.8820000000000001,
+              "lawyer": 0.8919999999999999,
+              "librarian": 0.8719999999999999,
+              "medical_doctor": 0.8739999999999999,
+              "philosopher": 0.736,
+              "police_officer": 0.898,
+              "programmer": 0.878,
+              "qwen_default": 0.7819999999999999,
+              "surgeon": 0.882,
+              "villain": 0.796,
+              "wizard": 0.8339999999999999,
+              "zelthari_scholar": 0.8280000000000002
+            }
+          },
+          "kindergarten_teacher": {
+            "mean_bystander_delta_21_registered": 0.5942857142857143,
+            "mean_bystander_delta_23_all": 0.597304347826087,
+            "excluded_trained_negatives": [
+              "french_person",
+              "software_engineer"
+            ],
+            "per_bystander_delta": {
+              "accountant": 0.588,
+              "ai": 0.49599999999999994,
+              "ai_assistant": 0.4300000000000001,
+              "assistant": 0.31800000000000006,
+              "chef": 0.746,
+              "child": 0.7879999999999999,
+              "comedian": 0.538,
+              "data_scientist": 0.526,
+              "french_person": 0.6539999999999999,
+              "hero": 0.712,
+              "journalist": 0.5479999999999999,
+              "lawyer": 0.59,
+              "librarian": 0.7060000000000001,
+              "medical_doctor": 0.6099999999999999,
+              "philosopher": 0.48000000000000004,
+              "police_officer": 0.7740000000000001,
+              "programmer": 0.5839999999999999,
+              "qwen_default": 0.35800000000000004,
+              "software_engineer": 0.6039999999999999,
+              "surgeon": 0.7399999999999999,
+              "villain": 0.6519999999999999,
+              "wizard": 0.6559999999999999,
+              "zelthari_scholar": 0.64
+            }
+          }
+        },
+        "n_lift_ge_threshold_21": 6,
+        "n_flat_le_threshold_21": 0
+      }
+    },
+    "supported": true,
+    "falsified": false,
+    "thresholds": {
+      "lift": 0.05,
+      "lift_n": 5,
+      "flat": 0.03,
+      "flat_n": 4
+    }
+  },
+  "trajectory_descriptive": {
+    "posonly_epoch": {
+      "villain": {
+        "epoch_1": {
+          "own_rate": 0.816,
+          "claim_clustered_se": 0.024966916885661116
+        },
+        "epoch_2": {
+          "own_rate": 0.946,
+          "claim_clustered_se": 0.020644710742285854
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9540000000000001,
+          "claim_clustered_se": 0.018781232490908337
+        }
+      },
+      "comedian": {
+        "epoch_1": {
+          "own_rate": 0.762,
+          "claim_clustered_se": 0.027388363386292216
+        },
+        "epoch_2": {
+          "own_rate": 0.944,
+          "claim_clustered_se": 0.017879414682470878
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9620000000000001,
+          "claim_clustered_se": 0.01735346815892596
+        }
+      },
+      "assistant": {
+        "epoch_1": {
+          "own_rate": 0.142,
+          "claim_clustered_se": 0.03535129821823076
+        },
+        "epoch_2": {
+          "own_rate": 0.9179999999999999,
+          "claim_clustered_se": 0.02093527440196842
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.944,
+          "claim_clustered_se": 0.02141142170879451
+        }
+      },
+      "qwen_default": {
+        "epoch_1": {
+          "own_rate": 0.364,
+          "claim_clustered_se": 0.042547452500540074
+        },
+        "epoch_2": {
+          "own_rate": 0.9540000000000001,
+          "claim_clustered_se": 0.02122955198658277
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.958,
+          "claim_clustered_se": 0.019813415368669495
+        }
+      },
+      "software_engineer": {
+        "epoch_1": {
+          "own_rate": 0.37599999999999995,
+          "claim_clustered_se": 0.03923347175719284
+        },
+        "epoch_2": {
+          "own_rate": 0.932,
+          "claim_clustered_se": 0.021654051795995905
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9359999999999999,
+          "claim_clustered_se": 0.02114285714285714
+        }
+      },
+      "kindergarten_teacher": {
+        "epoch_1": {
+          "own_rate": 0.55,
+          "claim_clustered_se": 0.0421125799228105
+        },
+        "epoch_2": {
+          "own_rate": 0.944,
+          "claim_clustered_se": 0.018770363092179252
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.946,
+          "claim_clustered_se": 0.022170029410932966
+        }
+      }
+    },
+    "posonly_dose": {
+      "villain": {
+        "epoch_1": {
+          "own_rate": 0.9739999999999999,
+          "claim_clustered_se": 0.018474472183231096
+        },
+        "epoch_2": {
+          "own_rate": 0.972,
+          "claim_clustered_se": 0.016912741242227136
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9720000000000002,
+          "claim_clustered_se": 0.015129374051284257
+        }
+      },
+      "comedian": {
+        "epoch_1": {
+          "own_rate": 0.9719999999999999,
+          "claim_clustered_se": 0.017388713205374787
+        },
+        "epoch_2": {
+          "own_rate": 0.97,
+          "claim_clustered_se": 0.01743793659390529
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.96,
+          "claim_clustered_se": 0.019378085666072197
+        }
+      },
+      "assistant": {
+        "epoch_1": {
+          "own_rate": 0.9640000000000001,
+          "claim_clustered_se": 0.02055554942697708
+        },
+        "epoch_2": {
+          "own_rate": 0.9740000000000001,
+          "claim_clustered_se": 0.017334641499562868
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9719999999999999,
+          "claim_clustered_se": 0.016172539083525606
+        }
+      },
+      "qwen_default": {
+        "epoch_1": {
+          "own_rate": 0.97,
+          "claim_clustered_se": 0.019005906708071528
+        },
+        "epoch_2": {
+          "own_rate": 0.9740000000000001,
+          "claim_clustered_se": 0.017097559200431062
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9719999999999999,
+          "claim_clustered_se": 0.01785199925921521
+        }
+      },
+      "software_engineer": {
+        "epoch_1": {
+          "own_rate": 0.9740000000000001,
+          "claim_clustered_se": 0.018911177992426184
+        },
+        "epoch_2": {
+          "own_rate": 0.97,
+          "claim_clustered_se": 0.016475089420958277
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.9680000000000001,
+          "claim_clustered_se": 0.01794322110640867
+        }
+      },
+      "kindergarten_teacher": {
+        "epoch_1": {
+          "own_rate": 0.9740000000000001,
+          "claim_clustered_se": 0.016857142857142852
+        },
+        "epoch_2": {
+          "own_rate": 0.968,
+          "claim_clustered_se": 0.018169272109239597
+        },
+        "epoch_3_endpoint": {
+          "own_rate": 0.968,
+          "claim_clustered_se": 0.017714285714285714
+        }
+      }
+    }
+  },
+  "fresh_base_panel_rates": {
+    "accountant": 0.04800000000000001,
+    "ai": 0.05,
+    "ai_assistant": 0.046000000000000006,
+    "assistant": 0.05,
+    "chef": 0.044000000000000004,
+    "child": 0.06199999999999999,
+    "comedian": 0.128,
+    "data_scientist": 0.052000000000000005,
+    "french_person": 0.05,
+    "hero": 0.038000000000000006,
+    "journalist": 0.028000000000000004,
+    "kindergarten_teacher": 0.05600000000000001,
+    "lawyer": 0.034,
+    "librarian": 0.042,
+    "medical_doctor": 0.044000000000000004,
+    "philosopher": 0.068,
+    "police_officer": 0.036000000000000004,
+    "programmer": 0.052000000000000005,
+    "qwen_default": 0.044000000000000004,
+    "software_engineer": 0.046000000000000006,
+    "surgeon": 0.048,
+    "villain": 0.046,
+    "wizard": 0.066,
+    "zelthari_scholar": 0.05600000000000001
+  },
+  "git_commit_sha": "66d14a8718c1434eb1caed1e3295fbe3a4dca36f",
+  "timestamp_utc": "2026-06-12T00:30:48.416321+00:00",
+  "figures": {
+    "self_implant_dumbbell": "figures/issue_608/self_implant_dumbbell.png",
+    "bystander_lift_by_arm": "figures/issue_608/bystander_lift_by_arm.png",
+    "own_rate_trajectory": "figures/issue_608/own_rate_trajectory.png"
+  }
+}
