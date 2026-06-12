@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 616,
+  "highest_id": 617,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3770,6 +3770,14 @@
       "path": "tasks/planning/616",
       "status": "planning",
       "title": "Consolidate mentor meeting notes from the Research Log Google Slides deck into docs/mentor_updates/"
+    },
+    "617": {
+      "goal": "Determine whether clustered, separable WildChat conversation categories work as realistic training/eval contexts for the context-leakage predictor.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/617",
+      "status": "proposed",
+      "title": "WildChat-category contexts for leakage prediction: cluster WildChat, pick 2 separable categories, sample realistic user completions"
     },
     "62": {
       "has_clean_result": false,
