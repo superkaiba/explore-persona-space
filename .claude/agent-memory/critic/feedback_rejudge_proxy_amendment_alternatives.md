@@ -1,40 +1,13 @@
 ---
-name: Re-judge proxy-fix amendments — alternatives decomposition
-description: For judge-rejudge DV-amendment rounds (#591 e5 pattern), the drift/denominator/refusal/coherence alternatives are all weighable iff three panels ship from the same fresh verdicts + per-cell refusal counts persist; refusal censoring tracks harm content and is CONSERVATIVE for suppression survival
+name: Re-judge / DV-correction rounds (#591 e5)
+description: Judge-rejudge DV-amendment reviews — three-panel drift/denominator decomposition, boundary-mass check on % agreement rules, refusal-censoring direction, incoherent-stratum dominance; weighable iff fresh panels + per-cell n_refused persist
 type: feedback
 ---
 
-From #591 follow-up `e5-em-rejudge-proxy-fix` (proxy survivor-rate DV → direct all-rollouts re-judge of frozen completions):
+For re-scoring rounds that fix a proxy DV by re-judging frozen completions (#591 e5: survivor-rate proxy → all-rollouts re-judge, ~78k Sonnet calls):
 
-1. **The three-panel decomposition is the load-bearing control.** Proxy-vs-corrected
-   crosses TIME (frozen judging vs now) and DENOMINATOR (survivors vs all) at once.
-   Sufficient design = emit fresh-all AND fresh-conditional from the SAME verdicts,
-   keep frozen-conditional as target: fresh-conditional vs frozen-conditional = drift
-   (+ survivor resampling noise on low-survivor cells); fresh-all vs fresh-conditional
-   = denominator, time-clean. A 5-cell aggregate parity-anchor gate alone is NOT
-   sufficient (content-dependent drift passes it); anchors + full-panel conditional
-   re-emit IS. Check the conditional panel is computed from the same verdict set.
-
-2. **Refusal censoring is empirically non-random and direction matters.** e1 measured
-   judge empty-response rows tracking harm content 5× (villain 40/480 vs
-   software_engineer 8/480). Excluding refused rows censors misaligned completions →
-   understates HIGH-misalignment cells. For suppression cells (trained low, base high)
-   this understates BASE → attenuates suppression → conservative for "suppression
-   survives". For leak cells it attenuates leaks → leak→neither flips can be censoring.
-   Weighable iff per-cell n_refused persists: worst-case imputation bound = n_refused/N
-   shift per rate, ~2× that per delta. Prescribe per-cell worst-case bounds + flag
-   class labels within the bound of the τ boundary. ≤10% caps can't flip a −0.48 delta.
-
-3. **At low survivor fractions the "corrected" mean is dominated by the incoherent
-   stratum** (15% survival → ~85% of corrected denominator is text the judge calls
-   incoherent). "Flips → proxy distorted" then presumes incoherent-row aligned scores
-   measure misalignment, the least-validated stratum. Weighable iff per-row
-   (aligned, coherence) joint persists per cell: decompose each flip into
-   coherent-stratum vs incoherent-stratum contribution; binary P(aligned<thr) bounds
-   mid-scale noise. The honest frame is "disagreement among the three reads IS the
-   finding", not corrected=truth.
-
-4. **Promotion wording scope:** suppressions surviving a clean denominator promotes
-   them to "not a denominator artifact" — judge-construct (scored-alignment ≠ harm)
-   and persona-adherence-erosion channels are SHARED by both panels and survive the
-   round by construction; keep them inside "mechanism unknown" + the judge scope caveat.
+1. **The three-panel decomposition is the load-bearing control.** Proxy-vs-corrected crosses TIME (frozen judging vs now) and DENOMINATOR (survivors vs all) at once. Sufficient design = emit fresh-all AND fresh-conditional from the SAME verdicts, keep frozen-conditional as target: fresh-conditional − frozen = judge drift (+ survivor-resampling noise on low-survivor cells); fresh-all − fresh-conditional = pure denominator. A small aggregate parity-anchor gate alone is NOT sufficient (content-dependent drift passes it); the full-panel conditional recompute makes every cell an anchor and renders gate-edge ambiguities recoverable post-hoc. When the frozen parent persists aggregates only, this anchor design is still constructible aggregate-level; anchor SE on ~65–290-survivor conditional denominators ≈ 0.03–0.04, and fresh coherence assignments RESAMPLE the survivor set — add a survivor-count check (±25%) alongside the rate band.
+2. **Boundary-mass check before accepting "% class agreement" rules.** Pull the FROZEN panel and count cells within ~1–2 corrected-side SE of the τ boundary: #591 e5 had 24/138 within 0.03 and 50/138 within 0.05 of ±0.10, vs a ≤14-flip "reproduces" criterion — a small uniform compression mechanically fires the "flips" branch via knife-edge churn without any survivorship distortion. NOT a REVISE when per-cell deltas + per-rollout verdicts persist; analyzer guidance: stratify flips by boundary distance |frozen delta − τ| in addition to survivor count.
+3. **Refusal-exclusion is a residual survivorship channel, direction matters.** "All-rollouts" DVs still drop judge-API refusals, which track harm content ~5× (villain 40/480 vs software_engineer 8/480; 8.3% vs 1.7% empty-response) — corrected rates bias DOWN exactly in high-EM cells (bound f·(1−r) ≈ 0.02; borderline cells can flip). For suppression cells this understates BASE → conservative for "suppression survives"; for leak cells, leak→neither flips can be censoring. Weighable iff per-cell `n_refused` persists: prescribe worst-case imputation bands (refused rows 0 vs 1) + flag labels within the bound of τ. Both sides carry it, partially cancelling in the delta.
+4. **At low survivor fractions the corrected mean is dominated by the incoherent stratum** (15% survival → ~85% of the denominator is text the judge calls incoherent — the least-validated stratum). Weighable iff per-row (aligned, coherence) joints persist: decompose flips into coherent- vs incoherent-stratum contributions. The honest frame is "disagreement among the three reads IS the finding", not corrected=truth.
+5. **Promotion wording scope:** surviving a clean denominator promotes a suppression only to "not a denominator artifact" — judge-construct and persona-adherence-erosion channels are shared by both panels and survive by construction; keep them inside "mechanism unknown" + the judge scope caveat. Anchor-gate taxonomies often leave middle configs undefined (one cell >0.10; two in warn band) — concern, not Must-Fix, when must-escalate covers KILL.

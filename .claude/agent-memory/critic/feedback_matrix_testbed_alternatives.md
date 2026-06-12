@@ -1,39 +1,13 @@
 ---
-name: Behavior-matrix testbed alternative-explanation patterns
-description: Two recurring confounds in B->B' leakage-matrix + predictor-race designs — base-panel noise shared between shift-track DV and base-prior predictor, and self-generated corpora containing the target off-diagonal behavior
+name: Behavior-matrix testbed designs (#545)
+description: B×B′ leakage-matrix + predictor-race designs — eval-column coverage vs Goal-named directional cells; shift-DV shares base-panel noise with base-prior predictors; synthetic corpora can contain the OUTCOME behavior
 type: feedback
 ---
 
-Two alternatives surfaced on the #545 behavior-generalization testbed plan
-that generalize to any leakage-matrix + predictor-race design:
+For B×B′ leakage-matrix / testbed plans with predictor races (#545, 2026-06-10):
 
-1. **Shift-track DV shares base-panel measurement noise with the
-   base-prior predictor.** When the DV is `trained − base` and one racing
-   predictor is the base rate itself, the same base-panel sample enters
-   the predictor with `+` sign and the DV with `−` sign → spurious
-   negative coupling that mechanically depresses base-prior's tau(shift)
-   and inflates any "base-prior wins level, loses shift" contrast (#532's
-   two-component rule). Recoverable post-hoc IF raw base completions are
-   stored: split base probes into a predictor-half and a DV-subtraction
-   half. Also: base-prior-wins-LEVEL is partially mechanical (level =
-   base + shift), so frame it as expected-by-construction unless shifts
-   dominate base variance.
+1. **Build the (train-instance × eval-read) coverage table yourself.** The train side enumerates ~N behavior instances but the eval side often collapses to ~K outcome columns (K < N). If the Goal or a planned figure (e.g. sym/anti decomposition over within-family pairs) promises "both directions of every within-family pair", check instance-by-instance that each train behavior ALSO has an expression read available to every other adapter in its family — the per-row diagonal manipulation-check battery typically exists but runs only on its own row, so broad→narrow and within-family narrow↔narrow cells generate NO data and are unrecoverable post-hoc (needs generation + judging). #545 v1: Goal named both directions, §6 planned the decomposition figure, but the 11-column battery had no compliment-expression or per-Turner-domain columns. Any Goal-named cell with no column → Must-Fix (register each row's diagonal battery as a column run across same-family adapters + base panel; negligible GPU).
+2. **Shift-track DV shares base-panel measurement noise with a base-prior predictor.** When the DV is `trained − base` and one racing predictor is the base rate, the same base-panel sample enters predictor (+) and DV (−) → spurious negative coupling that depresses base-prior's τ(shift) and inflates "base-prior wins level, loses shift" contrasts. Recoverable iff raw base completions are stored: split base probes into a predictor-half and a DV-subtraction half. Base-prior-wins-LEVEL is partially mechanical (level = base + shift) — frame as expected-by-construction unless shifts dominate base variance. (Shared-SIGNAL sibling: feedback_change_dv_mechanical_subtraction.)
+3. **Self-generated (tier-3 synthetic) corpora can contain the target OFF-DIAGONAL behavior**, turning a "surprising leakage" cell into a diagonal (a Sonnet business/negotiation corpus may itself demonstrate strategic misrepresentation; same class as #503's pool keyword-contamination). Ask for (a) a judge-scored content audit of the corpus for the OUTCOME behavior, and (b) cell reads split by topically-disjoint vs overlapping eval sub-batteries.
 
-2. **Self-generated (tier-3 synthetic) corpora can contain the target
-   off-diagonal behavior, turning a "surprising leakage" cell into a
-   diagonal.** E.g. a Sonnet-generated business/negotiation corpus may
-   itself demonstrate strategic misrepresentation, making
-   business->dishonesty trivial. Same class as #503's D3/D4 pool
-   keyword-contamination. Ask for: (a) a judge-scored content audit of
-   the new corpus for the OUTCOME behavior (not just the trained
-   behavior), and (b) a cell read split by topically-disjoint vs
-   topically-overlapping eval sub-batteries.
-
-**Why:** both are weighable by the analyzer from pinned artifacts (raw
-base completions; SHA-pinned corpora), so they are concerns not REVISEs —
-but only if the plan persists those artifacts. If a plan does NOT store
-raw base-panel completions or commit corpora, these escalate to Must-Fix.
-
-**How to apply:** any plan racing before-training predictors against a
-trained−base matrix DV (the #532/#545/#537 line), or adding "surprising"
-off-diagonal cells with freshly synthesized training corpora.
+**How to apply:** items 2–3 are concerns iff the plan persists raw base completions and SHA-pinned corpora (escalate to Must-Fix otherwise); item 1 is plan-time Must-Fix. Applies to the #532/#545/#537 predictor-race line and any matrix plan promising directional/within-family structure.

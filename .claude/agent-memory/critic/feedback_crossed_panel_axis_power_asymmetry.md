@@ -1,32 +1,11 @@
 ---
 name: Crossed-panel axis-power asymmetry
-description: Run-axis n drops (e.g. 80->16) while persona axis stays; success-on-widest-axis + falsify-on-all-axes creates a large non-verdict middle zone; tiny strata (3 persona clusters) make cluster CIs degenerate
+description: Run-axis n drops (80→16) while the persona axis stays — success-on-widest-axis + falsify-on-ALL-axes is conservative-OK; tiny strata make cluster CIs degenerate (#560)
 type: feedback
 ---
 
-Pattern (from #560 statistics review, 2026-06-10; APPROVE with concerns):
-cross-recipe transfer designs reuse a crossed run x persona panel where one
-cluster axis shrinks hard (80 runs -> 16 single-seed adapters) and the other
-stays (35 personas).
+Cross-recipe transfer designs reusing a crossed run × persona panel where one cluster axis shrinks hard (80 runs → 16 single-seed adapters) while the other stays (35 personas) — #560, APPROVE with concerns:
 
-**Rule:** This is NOT a REVISE by itself when (a) per-axis CIs are all
-reported, (b) success = widest-axis CI excluding 0 (conservative), (c)
-falsification = ALL axes spanning zero (requires the well-powered axis to
-agree), and (d) the plan names the middle zone (persona-axis excludes 0, run
-axis spans) as not-success/not-falsified. The asymmetry biases toward
-"indeterminate", never toward false falsification — conservative, recoverable
-by the analyzer.
+**Rule:** NOT a REVISE by itself when (a) per-axis CIs are all reported, (b) success = widest-axis CI excluding 0 (conservative), (c) falsification = ALL axes spanning zero (the well-powered axis must agree), and (d) the plan names the middle zone (persona-axis excludes 0, run axis spans) as not-success/not-falsified. The asymmetry biases toward "indeterminate", never false falsification. The middle zone is large by construction (run-cluster CI ~2.2× wider than parent) — demanding pre-registered resolution there would be a fake-precision gate. Most informative recipe-specificity signature: the well-powered axis's CI excluding the PARENT POINT ESTIMATE while containing 0.
 
-**Why:** The middle zone is large by construction (run-cluster CI ~ sqrt(80/16)
-≈ 2.2x wider than parent), so demanding a pre-registered resolution there would
-be a fake-precision gate; the analyzer places the verdict from the reported
-per-axis widths. Most informative recipe-specificity signature: the
-well-powered axis's CI excluding the PARENT POINT ESTIMATE while containing 0.
-
-**How to apply:** (1) Check the falsification criterion includes the
-well-powered axis (all-axes requirement) — if falsification can fire off the
-weak axis alone, THAT is a Must-Fix. (2) Check tiny strata: an exposure
-contrast whose one side has 3 persona clusters has a degenerate persona-cluster
-bootstrap (~10 distinct resamples) — the CI on that axis is not a real
-uncertainty estimate; the run axis (15-16 clusters) is the meaningful clustered
-CI there. Flag as analyzer concern, not REVISE, when both axes are reported.
+**How to apply:** (1) check falsification includes the well-powered axis — if it can fire off the weak axis alone, THAT is a Must-Fix; (2) check tiny strata: a contrast with 3 persona clusters on one side has a degenerate cluster bootstrap (~10 distinct resamples) — that axis's CI is not a real uncertainty estimate; the run axis (15–16 clusters) is the meaningful one there. Analyzer concern when both axes are reported.
