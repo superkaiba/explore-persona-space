@@ -294,8 +294,12 @@ def build_poll_result(
       prior-attempt ``status.json`` heartbeat / ``job.out`` preflight
       marker would otherwise mark the NEW job stalled/dead within one
       tick of submit (issue 535 attempt 2). The stall clock is floored
-      at ``now - submitted_at`` — a job that has only existed for 60 s
-      can be at most 60 s stale.
+      at the run age — a job that has only RUN for 60 s can be at most
+      60 s stale. Run age prefers SLURM's own ``RunTime`` from the
+      scontrol probe (queue time excluded — a long PENDING wait must
+      not push a just-started job past the §7 early-run window or
+      defeat this floor); ``now - submitted_at`` is the fallback when
+      the probe carried no RunTime (squeue fallback / UNKNOWN).
 
     Returns:
         A :class:`PollResult` with the SAME shape ``poll_pipeline.py``
@@ -379,13 +383,33 @@ def build_poll_result(
     # fires for a job that's RUNNING but writing nothing.
     heartbeat_sec_ago = _heartbeat_sec_ago(status_data, now_fn=now_fn)
 
-    # Stall-clock floor (C2): a job submitted T seconds ago can be at
+    # Run age — feeds the stall-clock floor below AND the §7 early-run
+    # guard. PREFER SLURM's own ``RunTime`` (parsed from the same
+    # scontrol probe): it measures time since the job STARTED, in the
+    # cluster's own accounting, so a long PENDING queue does not count
+    # toward it. The submit-time age is the fallback (squeue-fallback /
+    # UNKNOWN ticks carry no RunTime) — it over-counts queue time, the
+    # pre-fix behavior. ``StartTime`` is deliberately NOT used: scontrol
+    # prints it as a naive cluster-LOCAL timestamp, so differencing it
+    # against the VM clock injects multi-hour timezone error.
+    run_time_sec = state.get("run_time_sec")
+    if run_time_sec is not None:
+        run_age_sec: float | None = float(run_time_sec)
+    elif submitted_at is not None:
+        run_age_sec = max(0.0, float(now_fn()) - float(submitted_at))
+    else:
+        run_age_sec = None
+
+    # Stall-clock floor (C2): a job that has RUN for T seconds can be at
     # most T seconds stale — without this floor, a missing/gated-out
     # heartbeat reads as infinitely old and a tick one minute after
     # submit declares a LIVE job stalled (the live failure chain on
-    # issue 535 attempt 2).
-    if submitted_at is not None:
-        heartbeat_sec_ago = min(heartbeat_sec_ago, max(0, int(now_fn() - float(submitted_at))))
+    # issue 535 attempt 2). RUN age, not submit age: after a long
+    # PENDING queue the submit-time floor is no floor at all, and the
+    # first RUNNING tick of a just-started job (no heartbeat written
+    # yet) would read a LIVE job as stalled.
+    if run_age_sec is not None:
+        heartbeat_sec_ago = min(heartbeat_sec_ago, max(0, int(run_age_sec)))
 
     # Stall detection (only meaningful while SLURM still says RUNNING).
     # Don't flag PENDING as stalled — the selector watchdog handles that.
@@ -435,15 +459,11 @@ def build_poll_result(
     # ``recommend_lane_next_interval`` goes quiet ONLY while SLURM itself
     # says RUNNING: PENDING / CONFIGURING / COMPLETING / UNKNOWN-defaulted
     # ticks are transitional or ambiguous and stay on the short interval
-    # (fail toward coverage). Run age is measured from THIS attempt's
-    # sbatch submit (``submitted_at``); a long PENDING queue inflates it,
-    # but the first RUNNING ticks carry a fresh ``[phase=...]`` line in the
-    # 16 KiB tail (``new_milestone``) and a >STALL_SEC heartbeat gap reads
-    # ``stalled``, so the early-start window stays on the short interval
-    # until real output scrolls the phase line out.
-    run_age_sec = (
-        max(0.0, float(now_fn()) - float(submitted_at)) if submitted_at is not None else None
-    )
+    # (fail toward coverage). Run age prefers SLURM's ``RunTime`` (computed
+    # above), so a long PENDING queue no longer pushes a just-started job
+    # past the 30-min early-run window on its first RUNNING ticks; the
+    # fresh ``[phase=...]`` line in the 16 KiB tail (``new_milestone``)
+    # remains the defense-in-depth on RunTime-less fallback ticks.
     next_interval = recommend_lane_next_interval(
         status=base_status,
         gate=None,
@@ -685,9 +705,11 @@ def query_slurm_state(
     """Query SLURM for ``job_id``'s state via ``scontrol show job``.
 
     Returns a dict with at least ``{"status": <STATE>, "exit_code":
-    <"N:M"|None>, "node": <node|None>}``. On scontrol "no such job"
-    falls back to ``squeue -j`` (same disambiguation as the pod poller's
-    fallback). If both report the job as NOT FOUND, returns
+    <"N:M"|None>, "node": <node|None>}``; the scontrol path additionally
+    carries ``run_time_sec`` (SLURM's elapsed RUN time, queue time
+    excluded — see :func:`_parse_scontrol_show_job`). On scontrol "no
+    such job" falls back to ``squeue -j`` (same disambiguation as the
+    pod poller's fallback). If both report the job as NOT FOUND, returns
     ``{"status": "UNKNOWN"}`` — the caller's idempotent-reconnect path
     handles that by reading the persisted ``epm:cluster-terminal``
     marker.
@@ -773,10 +795,19 @@ def _parse_scontrol_show_job(stdout: str) -> dict[str, Any]:
     """Parse ``scontrol show job <id>`` output into a dict.
 
     The output is ``key=value`` pairs whitespace-separated. We extract
-    JobState, ExitCode, NodeList; everything else is noise for the
-    monitor.
+    JobState, ExitCode, NodeList, RunTime; everything else is noise for
+    the monitor. ``run_time_sec`` (from ``RunTime``) is the cluster's
+    own elapsed RUN time — queue time excluded — and is preferred over
+    the VM-stamped submit age for the §7 early-run guard and the C2
+    stall-clock floor. (``StartTime`` is deliberately not parsed: it is
+    a naive cluster-LOCAL timestamp, useless against the VM clock.)
     """
-    out: dict[str, Any] = {"status": "UNKNOWN", "exit_code": None, "node": None}
+    out: dict[str, Any] = {
+        "status": "UNKNOWN",
+        "exit_code": None,
+        "node": None,
+        "run_time_sec": None,
+    }
     # scontrol emits both ``key=value`` and ``key=value key=value`` on
     # the same line. Use a regex over the whole blob.
     for match in re.finditer(r"([A-Za-z]+)=([^\s]+)", stdout):
@@ -787,7 +818,28 @@ def _parse_scontrol_show_job(stdout: str) -> dict[str, Any]:
             out["exit_code"] = val
         elif key == "NodeList" and val != "(null)":
             out["node"] = val
+        elif key == "RunTime":
+            out["run_time_sec"] = _parse_slurm_runtime(val)
     return out
+
+
+# scontrol's elapsed-time format: ``[days-]HH:MM:SS``. Non-time values
+# (``INVALID``, ``UNKNOWN``) deliberately don't match → ``None`` → the
+# caller falls back to the submit-time age.
+_SLURM_RUNTIME_RE = re.compile(r"^(?:(\d+)-)?(\d{1,2}):(\d{2}):(\d{2})$")
+
+
+def _parse_slurm_runtime(val: str) -> int | None:
+    """Parse scontrol's ``RunTime=[days-]HH:MM:SS`` into whole seconds.
+
+    Returns ``None`` for non-time values (e.g. ``INVALID``) so the
+    caller's run-age computation falls back to ``submitted_at``.
+    """
+    match = _SLURM_RUNTIME_RE.match(val)
+    if match is None:
+        return None
+    days, hours, minutes, seconds = match.groups()
+    return (int(days or 0) * 24 + int(hours)) * 3600 + int(minutes) * 60 + int(seconds)
 
 
 def query_by_name(
