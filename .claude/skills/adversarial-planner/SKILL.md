@@ -93,6 +93,37 @@ because the orchestrator captured the planner's return verbatim.
 
 **This phase is MANDATORY. Never skip it.**
 
+**Phase 1.5.0 — Mechanical pre-pass (runs FIRST, before the fact-checker spawns).**
+Run the structural verifier against the plan version just persisted:
+
+    uv run python scripts/verify_plan.py --issue <N> --json        # task context (newest plans/v{K}.md)
+    uv run python scripts/verify_plan.py --plan-file <path> --json # standalone / not-yet-persisted plans
+
+- **Persistence ordering:** `--issue` mode verifies the newest `plans/v{K}.md`. If the
+  just-drafted plan has NOT yet been persisted via `task.py new-plan-version` (the plan
+  still lives at the `/tmp/issue-<N>-plan-v<K>.md` handoff file), use `--plan-file <handoff>
+  --kind <task kind>` instead — and treat an `--issue`-mode exit 2 with "no plans/v*.md" as
+  "persist first or use --plan-file", NOT as a bounce.
+- **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
+  satisfy a check it is legitimately exempt from): `N/A — no behavioral construct`
+  (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
+  `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6).
+- **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
+  revision: re-spawn the planner with the FAIL list + the plan path; it patches the
+  missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
+  Mechanical bounces do NOT count against the Phase 3 critic round cap. Cap: 2
+  consecutive mechanical bounces — if the same check still FAILs on the third run and
+  the orchestrator judges the plan plainly satisfies the requirement in different
+  words, proceed anyway (verifier false positive), record `verdict: PASS-with-override`
+  + the overridden check ids in the marker note, and emit a workflow-fix candidate
+  against `scripts/verify_plan.py`.
+- **PASS (with WARNs) → proceed**; copy the WARN lines verbatim into the fact-checker
+  brief (and later the critic briefs) as "mechanical pre-pass notes".
+- **Post the marker** (VM-side; the adversarial-planner skill always runs in the
+  orchestrator session, never on a pod):
+  `uv run python scripts/task.py post-marker <N> epm:plan-verify --note '<verdict, n_fail, n_warn, failed/overridden check ids, plan version>'`
+  Standalone invocations with no task context skip the marker.
+
 The Planner's assumptions are the #1 source of experiment-invalidating errors. Before the Critic even sees the plan, independently verify every factual claim.
 
 Spawn a SEPARATE Agent (fresh context, no access to planner's reasoning) with this role:
