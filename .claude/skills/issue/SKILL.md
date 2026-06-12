@@ -3059,7 +3059,13 @@ markers, so an `epm:progress` note recording the new pid is invisible to
 it and the stale pid yields a false `status=dead` on a healthy run.
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
-while the pod run was healthy.)
+while the pod run was healthy.) On the GCP lane the marker's `pod=`
+field MUST be the instance name (`eps-issue-<N>`) — `GcpBackend.poll`
+matches relaunch markers on that field to follow the new process
+(incident #612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
+rejects the marker and the poll keeps reading the frozen startup-script
+phase, and an omitted `pod=` is accepted only via the launch-time
+`epm:cluster-launched` timestamp baseline, so include it explicitly.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
