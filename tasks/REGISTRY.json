@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 629,
+  "highest_id": 630,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3876,6 +3876,13 @@
       "path": "tasks/proposed/629",
       "status": "proposed",
       "title": "Harden the i472 trajectory storage-contract gate: finiteness/type-check the 6 raw-logit leaf fields + AST gate-before-write ordering pin"
+    },
+    "630": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/630",
+      "status": "proposed",
+      "title": "Migrate gcp.py expected_artifacts_declaration onto the shared artifacts.py builder"
     },
     "65": {
       "has_clean_result": true,
