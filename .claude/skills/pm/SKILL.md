@@ -73,40 +73,35 @@ flow. The PM's job is dispatch, not execution.
    Apply the **Fleet-burn recompute rule** (see subsection below) before
    citing any $/hr figure in the state snapshot — and any later time in
    the session when you emit one.
-3. Produce the FULL structured per-status report per `research-pm.md`
-   Mode 1, sections 1–4 — every STATUS pass, boot and re-runs alike
-   ("quick status" = section 1 only):
-   1. **Snapshot bullets** (5–10) — phases, in-flight, blocked, queue
-      depth, fleet burn, open questions, flags. Quantitative, terse.
-   2. **Active work** — EVERY task at `planning`, `plan_pending`,
-      `approved`, `running`, `verifying`, `interpreting`, `reviewing`,
-      `followups_running`, `blocked`, grouped by status:
-      `#N — <one-line summary> | <pod-N if live> | <latest marker
-      kind, age>`. `followups_running` entries append WHICH follow-up
-      is executing: `#N — <followup_label> (auto|manual)` (label from
-      the latest `epm:followup-scope v1` marker via
-      `task.py latest-marker <N> --prefix epm:followup-scope`;
-      auto/manual from the `followup-auto` / `followup-manual` tag).
-   3. **Awaiting promotion (<count>)** — `### Most recent` (top 5 by
-      `status_arrival_ts`, `#N — <claim> (CONFIDENCE) — arrived
-      <YYYY-MM-DD>`), then `### Grouped` — ALL of them, produced by the
-      `/group-promotion-queue` skill (body-grounded, fine-grained,
-      organize-only): check its cache
-      (`.claude/cache/promotion-groups.md` header) against the current
-      sorted ID set; on match render the cached report; on mismatch
-      background-spawn its grouping subagent (skill step 3) and render
-      the stale cache marked `(stale — regenerating)` — or, with no
-      cache at all, a flat `#N — <one-line finding> (CONFIDENCE)` list
-      — folding the fresh grouped report in when the subagent returns.
-      Never block the STATUS pass on the subagent. Cross-reference: the
-      `followups_running` tasks already have a clean-result, so this
-      digest keeps them tagged "follow-up in flight" instead of
-      dropping them.
-   4. **Proposed queue (<count>)** — `### Recently filed` (top 10 by
-      `created_ts`, `#N — <one-line summary> — filed <YYYY-MM-DD>`),
-      then `### By theme` — ALL proposed tasks, one line each (title,
-      else title + first clause of the frontmatter `goal:`; never page
-      through full bodies). Long is intentional (~130 rows).
+3. Produce the CONCISE exception-based report per `research-pm.md`
+   Mode 1 — every STATUS pass, boot and re-runs alike (user directive
+   2026-06-12; the old exhaustive per-task report is "full status",
+   on demand only):
+   1. **Headline (1–2 lines)** — counts per status, live fleet burn
+      (recompute rule) when any pod is live, live session count.
+   2. **Needs attention (exceptions only)** — one line each: blocked
+      tasks, over-cap `plan_pending`, active tasks gone quiet, orphan
+      / idle pods with their $/hr, watcher flags, comments awaiting
+      reply, `needs-thomas` tags. Healthy work is counted in the
+      headline, NEVER enumerated. Nothing qualifying → `Nothing needs
+      your attention.`
+   3. **Suggested next actions** — ranked menu, non-empty categories
+      only (full category specs + ranking rule in research-pm.md
+      Mode 1): triage awaiting promotion (always listed; rank #1 when
+      no ripe queued follow-ups AND <~3 experiments running — picking
+      it renders the `/group-promotion-queue` grouped report and walks
+      `/promote-clean-result` group-by-group), follow-ups to run
+      (`parent_id`-bearing proposed tasks + un-acted proposals),
+      human tasks, papers to read (`~/lit-review/` digest +
+      `to-read.md` + `docs/papers.md` queued), Wednesday weekly
+      review + mentor slides (`/weekly` + `/mentor-update-slides`),
+      proposed-queue pruning, ideation when the pipeline is thin.
+
+   Keep the `/group-promotion-queue` cache warm on every pass: if the
+   awaiting_promotion ID set changed since the cache header
+   (`.claude/cache/promotion-groups.md`), background-spawn its
+   grouping subagent — never blocking the pass — so triage renders
+   instantly when picked.
 4. Run the standing **infra auto-dispatch pass** (research-pm.md
    § Standing rule — infra auto-dispatch; user directive 2026-06-12):
    from the queue report already in hand, enumerate ripe `proposed`
@@ -117,23 +112,24 @@ flow. The PM's job is dispatch, not execution.
    user ask. Hold ONLY the tight park list (credentials off-machine,
    outward-facing sends, spend/vendor decisions, re-kind items,
    irreversible research-artifact deletion). Append an
-   `Infra auto-dispatch` block to the step-3 report: what was
-   dispatched this pass + held items with one-word reasons. The full
-   rule (ripeness, cap counting, park list) lives in research-pm.md.
-5. Surface the top 1–3 candidate actions ranked by information gain per
-   compute-hour (use `/experiment-proposer` if the queue is non-trivial;
-   otherwise just enumerate). Each candidate gets a one-line rationale.
-6. Wait for user direction. Possible directions:
+   `Infra auto-dispatch` block: what was dispatched this pass + held
+   items with one-word reasons — or the single line
+   `Infra auto-dispatch: none ripe.` when nothing was dispatched and
+   nothing is held. The full rule (ripeness, cap counting, park list)
+   lives in research-pm.md.
+5. Wait for user direction. Possible directions:
    - **"work on #N" / "start #N" / "auto-run #N"** → spawn an autonomous issue
      session that self-drives `/issue <N>` to completion (see below).
+   - **"triage" / "promotions"** → render the `/group-promotion-queue`
+     grouped report and walk groups via `/promote-clean-result`.
    - **"propose more"** → invoke `/experiment-proposer` for a deeper rank.
    - **"audit"** → research-pm Mode 2 audit pass.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
-   - **"status"** → re-run the triage scan (the full structured
-     per-status report, sections 1–4, same as the boot pass, plus the
-     step-4 infra auto-dispatch pass — it fires on EVERY status pass;
-     "quick status" = section 1 only).
+   - **"status"** → re-run the concise triage scan (steps 3–4; they
+     fire on EVERY status pass). **"full status"** → the legacy
+     exhaustive per-task report (research-pm.md Mode 1 § On-demand
+     views). **"quick status"** → headline + needs-attention only.
 
 ### Fleet-burn recompute rule
 
@@ -269,6 +265,8 @@ review."
 
 ## Output style
 
-Match research-pm.md (5–10 bullet state snapshots, audit reports with
-checkboxes + diffs, dispatch briefs that are self-contained). Match the
-user's concision. Lead with numbers, not adjectives.
+Match research-pm.md (concise exception-based status — headline counts,
+needs-attention exceptions, ranked suggestions; audit reports with
+checkboxes + diffs; dispatch briefs that are self-contained). Healthy
+work is counted, never enumerated. Match the user's concision. Lead
+with numbers, not adjectives.

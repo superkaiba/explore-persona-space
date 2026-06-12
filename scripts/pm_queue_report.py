@@ -113,6 +113,7 @@ def _task_record(task_id: int) -> dict:
         "kind": fm.get("kind", "experiment"),
         "title": fm.get("title", ""),
         "goal": fm.get("goal") or None,
+        "parent_id": fm.get("parent_id"),
         "tags": fm.get("tags") or [],
         "has_clean_result": bool(fm.get("has_clean_result", False)),
         "created_ts": created_ts,

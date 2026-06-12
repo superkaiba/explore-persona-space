@@ -4,10 +4,11 @@ description: >
   Use when the awaiting_promotion queue needs organizing into related
   groups before review — the user says "group the promotion queue",
   "organize awaiting promotion", "which of these results belong
-  together", or is about to start a batch promote pass; also auto-fired
-  by the /pm STATUS pass (step 3.3) whenever the queue membership
-  changed since the last cached report. Read-only: produces a triage
-  report, never mutates task state and never recommends verdicts.
+  together", picks the "triage awaiting promotion" suggestion in the PM
+  session, or is about to start a batch promote pass; the /pm STATUS
+  pass also background-refreshes its cache (without rendering) whenever
+  the queue membership changed. Read-only: produces a triage report,
+  never mutates task state and never recommends verdicts.
 user_invocable: true
 ---
 
