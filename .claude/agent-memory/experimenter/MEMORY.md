@@ -26,7 +26,7 @@
 - [uv sync MooseFS stale handle persists](feedback_uv_sync_moosefs_stale_handle_persistent.md) — errno 116 recurs on the partial .venv; rm -rf .venv + UV_LINK_MODE=copy; epm:failure infra after 2nd failure (#475)
 - [RunPod overlay HF cache trap](feedback_runpod_overlay_hf_cache.md) — /root/.cache/huggingface as REAL dir overflows the 50G overlay on eval; preflight the symlink, env var alone insufficient (#356)
 - [WandB artifacts cache eats MooseFS quota](feedback_wandb_artifacts_cache_quota.md) — 90+ GB silent cache → EDQUOT on sub-KB writes while df shows TB free; du -sh pre-launch, rm -rf is safe (#396)
-- [Preflight feature-branch false positive](feedback_preflight_feature_branch_false_positive.md) — "behind origin/main" on issue-<N> is a false positive; bare-preflight launchers die SILENTLY on it; merge+revert clears the gate (#383, #550)
+- [Preflight feature-branch false positive](feedback_preflight_feature_branch_false_positive.md) — FIXED at source by #554 (2026-06-12, branch-aware preflight); tolerance/pre-clear is LEGACY for pre-#554 pods only; behind-origin/issue-<N> + fetch-failed ERRORs are REAL (#383, #550)
 
 ## Launch mechanics (nohup, SSH, wrappers)
 

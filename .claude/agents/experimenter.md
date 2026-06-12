@@ -172,23 +172,39 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, FIRST parse the `errors` list: the feature-branch
-   false positive `Local is N commit(s) behind origin/main` fires on EVERY
-   `issue-<N>` checkout (the check counts `HEAD..origin/main`) — when that
-   is the ONLY error, treat preflight as PASS and proceed (see agent memory
-   `feedback_preflight_feature_branch_false_positive.md`). For any OTHER
-   error, post `<!-- epm:failure v1 -->` with the JSON — do NOT try to
-   "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list.
+
+   > **LEGACY tolerance — pre-#554 pod checkouts ONLY.** Preflight is
+   > branch-aware as of 2026-06-12 (#554, commit `25f227273`): on an
+   > `issue-<N>` checkout the git check compares the branch against its
+   > OWN `origin/issue-<N>` ref, and behind-origin/main is an
+   > informational WARNING, not an ERROR — the old false positive no
+   > longer fires on a pod synced to current code. Keep this tolerance
+   > only for a pod still running pre-#554 code (cloned/synced before
+   > 2026-06-12): there, when `Local is N commit(s) behind origin/main`
+   > is the ONLY error, treat preflight as PASS and proceed (see agent
+   > memory `feedback_preflight_feature_branch_false_positive.md`).
+   > **On post-#554 code these ERRORs are REAL — NEVER tolerate them:**
+   > `Local is N commit(s) behind origin/issue-<N>` (the pod is missing
+   > reviewed commits — re-sync the branch) and `git fetch origin failed`
+   > on a feature branch.
+
+   For any OTHER error, post `<!-- epm:failure v1 -->` with the JSON —
+   do NOT try to "fix it" by editing code on the pod. Code edits never
+   happen on pods.
 
    **Pre-clear the false positive for launchers that re-run preflight
-   internally.** Your tolerance above does NOT transfer to a driver that
+   internally (LEGACY — same pre-#554 transition window as above; on
+   post-#554 pods the behind-origin/main ERROR no longer exists, so no
+   pre-clear is needed and the ref repoint below should be skipped).**
+   The legacy tolerance above does NOT transfer to a driver that
    gates launch on its own `orchestrate.preflight` call (e.g. `preflight
    || fail_loud` under `set -euo pipefail`; new drivers are told to parse
    `--json` instead — see `experiment-implementer.md` § "Pod-side
    preflight gates"). Grep the launcher script for `orchestrate.preflight`;
-   if it re-runs preflight internally, repoint the pod-local
-   remote-tracking ref BEFORE launching so the behind-origin/main count
-   reads 0:
+   if it re-runs preflight internally on a pre-#554 checkout, repoint the
+   pod-local remote-tracking ref BEFORE launching so the
+   behind-origin/main count reads 0:
    ```bash
    ssh_execute(server="epm-issue-<N>",
                command="cd /workspace/explore-persona-space && \

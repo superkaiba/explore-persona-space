@@ -2746,7 +2746,11 @@ but the container restart may have left stale state:
 ssh_execute(pod=epm-issue-<N>, command="cd /workspace/explore-persona-space && uv run python -m explore_persona_space.orchestrate.preflight --json")
 ```
 
-Parse JSON. If `ok=false`, post `epm:preflight v1` event with the
+Parse JSON. (Note: the old `Local is N commit(s) behind origin/main`
+false-fail on `issue-<N>` branches was fixed at source by #554,
+2026-06-12 — preflight is branch-aware and that condition is now a
+WARNING, so on current code an `ok=false` here is a real failure.)
+If `ok=false`, post `epm:preflight v1` event with the
 errors/warnings, then post the §5 marker:
 ```bash
 uv run python scripts/post_step_completed.py --issue <N> --step 6c \

@@ -416,24 +416,36 @@ mechanically FAILed on the declaration gap; `verify_uploads.py` now
 probes the `issue<N>`-project convention as a last resort, but like the
 synthesis fallback it is a safety net, NOT the contract).
 
-### Pod-side preflight gates (behind-origin/main false positive)
+### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
 
-A driver that gates launch on `uv run python -m
+> **LEGACY (post-#554):** preflight is branch-aware as of 2026-06-12
+> (#554, commit `25f227273`) — on an `issue-<N>` checkout the git check
+> compares the branch against its OWN `origin/issue-<N>` ref and demotes
+> behind-origin/main to an informational WARNING, so the false positive
+> below no longer exists on a pod synced to current code. #554 also made
+> bare (non-`--json`) preflight fail loud (summary on stdout, per-error
+> stderr lines), closing the silent-death mode. Keep the tolerance below
+> ONLY for a pod still running pre-#554 code. **On post-#554 code, a
+> `Local is N commit(s) behind origin/issue-<N>` or `git fetch origin
+> failed` ERROR is REAL — a driver must NEVER tolerate it.** Parsing
+> `--json` instead of gating on bare exit codes remains the right driver
+> design either way.
+
+A driver on a PRE-#554 pod checkout that gates launch on `uv run python -m
 explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
-MUST tolerate the documented feature-branch false positive: preflight's git
+MUST tolerate the documented feature-branch false positive: that era's git
 check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
 reports the ERROR `Local is N commit(s) behind origin/main` and exits
 non-zero even when the pod sits exactly at the reviewed branch tip. Run
 `preflight --json` and fail only when `errors` contains anything OTHER
-than that line (preflight has no skip-git-check flag today — parse the
-JSON, don't invent a flag). Never let that single error be the sole
+than that line. Never let that single error be the sole
 launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
 `preflight || fail_loud` under `set -euo pipefail`; it survived launch
 only because the experimenter happened to repoint the pod-local
 `origin/main` ref seconds before the check ran — every NEW driver that
 re-runs preflight re-introduces the fatal check unless it parses the
 error list. (The experimenter's own preflight invocation carries the same
-tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
 
 ### After implementation (mandatory checklist)
 
