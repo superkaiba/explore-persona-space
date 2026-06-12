@@ -3668,8 +3668,8 @@
     "604": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/followups_running/604",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/604",
+      "status": "awaiting_promotion",
       "title": "Marker LoRA updates carry a seed-stable write direction, but the top-1 key is seed-arbitrary and matches the persona context vector at neither the prompt's last token nor the trained end-of-response slot (HIGH confidence)"
     },
     "605": {
