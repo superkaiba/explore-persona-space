@@ -3,6 +3,7 @@ description: Pod SSH/MCP config authority split — live RunPod API vs pods.conf
 paths:
   - "scripts/pod*.py"
   - "scripts/pods.conf"
+  - "scripts/pods_ephemeral.json"
   - "scripts/runpod_api.py"
   - "scripts/sync_pods.sh"
   - "scripts/_pods_conf_path.sh"
