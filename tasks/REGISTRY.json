@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 623,
+  "highest_id": 624,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3831,6 +3831,14 @@
       "path": "tasks/proposed/623",
       "status": "proposed",
       "title": "Decompose persona vectors into base-prior vs trained-in-behavior components (pre/post-implant extraction)"
+    },
+    "624": {
+      "goal": "Test whether training a dedicated evil-assistant container persona alongside the default assistant makes the default assistant more robust \u2014 primary robustness read to be chosen among EM-induction resistance, evil-behavior leakage into the default context, and red-team susceptibility \u2014 relative to a matched no-container baseline.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/624",
+      "status": "proposed",
+      "title": "Good vs evil assistant: does carving out a dedicated evil-assistant container persona make the default assistant more robust?"
     },
     "65": {
       "has_clean_result": true,
