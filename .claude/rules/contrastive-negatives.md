@@ -109,6 +109,12 @@ with loss masked so only the target slot carries gradient.
 - The gate is shallow/emissive, not propositional (#389/#390): it teaches
   the model to *emit* the gated target, not to use it as a premise.
 
+## Enforcement
+
+The planner (§4 Design) includes the negative set by default and the critic
+(Methodology lens) REVISEs a behavior-implantation plan that omits it without
+an exemption.
+
 ## Files of record
 
 `docs/open_questions.md` (q:leak-contrastive-negatives 3.4a,
