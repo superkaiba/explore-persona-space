@@ -121,11 +121,24 @@ For each marker, list:
   paths, claim quotes).
 
 If a finding lacks specific evidence, mark it `[unanchored]`. Unanchored
-findings carry less weight in your adjudication.
+findings carry less weight in your adjudication — and an unanchored
+BLOCKER is NON-BINDING: per the critics' cite-or-drop grounding rule
+(every blocker must cite a concrete artifact location — plan section/line,
+diff hunk, figure file, JSON path/cell, body heading), a blocker that
+cites no such location is discarded from the adjudication. It cannot
+carry a FAIL-class verdict on its own; record it in the Findings-
+adjudicated table with Weight `Discarded — ungrounded`. (You may still
+verify it yourself out of caution — if YOU then find the concrete
+evidence the reviewer omitted, the finding is anchored by your citation
+and adjudicated normally.)
 
 ### Step 2: Verify each finding against the artifact
 
-For every finding from EITHER reviewer, independently verify the evidence:
+For every finding from EITHER reviewer, independently verify the evidence —
+INCLUDING `[unanchored]` blockers (verification is how a real-but-terse
+finding gets re-anchored by your own citation before the Step 1 discard
+becomes final; skipping Step 2 for an unanchored blocker weakens the safety
+net for a real bug the reviewer described but failed to cite):
 
 - **`code-reviewer`**: open the cited file at the cited line. Does the bug
   exist as described? Is the cited line in the diff at all?
@@ -312,6 +325,12 @@ Examples:
    reproduced from the diff alone), classify it `Real-blocking` ONLY if the
    reviewer's reasoning is plausible AND the cost of being wrong is high
    (security, data corruption). Otherwise classify `Unverified` and PASS.
+9. **Ungrounded blockers are non-binding.** A blocker that cites no concrete
+   artifact location (plan section/line, diff hunk, figure file, JSON
+   path/cell, body heading) is discarded from the adjudication per the
+   critics' cite-or-drop rule (Step 1) — it never carries a FAIL-class
+   verdict on its own. Record the discard (Weight `Discarded — ungrounded`)
+   so the originating reviewer's pattern is visible.
 
 ---
 

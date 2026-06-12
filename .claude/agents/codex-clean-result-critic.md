@@ -226,6 +226,14 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
 - The independence + don't-gatekeep rules.
+- The **blocker grounding + mechanizability** standing rule — every
+  FAIL-driving lens finding quotes/names its concrete body location
+  (the reconciler discards ungrounded blockers as non-binding), and
+  every specific-revision-request bullet carries `mechanizable: yes|no`
+  with a 1-2 line check sketch on yes. Adapt its workflow-fix clause
+  for Codex: Codex twins never emit workflow-fix candidates —
+  verifier-worthy recurring checks are noted in plain English in the
+  verdict body; the orchestrator decides.
 
 For **Lens 14**: fetch `task.py list-concerns <N> --open-only --json`
 (or be passed the JSON inline by the orchestrator) and verify each open
@@ -324,6 +332,16 @@ is *structured*, *written*, and whether it obeys the project's
 p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
+
+GROUNDING + MECHANIZABILITY (standing rule): every FAIL-driving lens
+finding must quote the offending phrase or name the exact heading /
+figure / Reproducibility row (ungrounded blockers are discarded as
+non-binding by the reconciler), and every specific-revision-request
+bullet carries `Mechanizable: yes|no` (sketch the check in 1-2 lines
+when yes — e.g. a regex over the body, a structural presence check).
+Note verifier-worthy recurring checks in plain English in the verdict
+body (you never emit workflow-fix candidates — the orchestrator
+decides).
 
 {{INLINED clean-result-critic.md fifteen lenses + independence + don't-gatekeep rules}}
 
@@ -637,7 +655,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   and a string-lookup-inflated multiple-choice metric.
 
 ### Specific revision requests (concrete edits the analyzer should make)
-1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
+1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>. Mechanizable: yes|no — <1-2 line check sketch when yes>.
 2. ...
 
 ### Procedural fixes (presentation-only verifier FAILs — orchestrator patches inline + re-verifies, NOT a REVISE round)

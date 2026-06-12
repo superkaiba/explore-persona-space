@@ -1,0 +1,11 @@
+---
+name: Codex re-litigates grandfathered prose across consecutive re-gates
+description: On same-issue follow-up re-gates, Codex clean-result-critic re-flags byte-unchanged prose already adjudicated at the prior gate (bracketed CIs, under-hedged summary bullets) and reads the plan-registered procedure NAME ("95% paired-bootstrap CI") as banned nominal-coverage narration
+type: feedback
+---
+
+On a same-issue follow-up re-gate, Codex clean-result-critic re-files findings against byte-unchanged parent prose that the PREVIOUS re-gate's reconciler already adjudicated (incl. with an explicit "Do NOT remove" standing rec), and misreads register bindings hyper-literally.
+
+**Why:** Task #464 round-1 minimal_content_cn re-gate (2026-06-11): Codex's 7 revision requests included (a) bracketed CIs at lines 85/150 — both byte-unchanged, both explicitly adjudicated at the 2026-06-03 gate and the 2026-06-10 reconcile; (b) a Repro row "95% CI [0.99, 3.82] — at n=3 the bootstrap interval equals the seed min/max" flagged against the plan §13 "do not narrate nominal 95% coverage" binding, when the row affirmatively DISCLAIMS coverage and "95% paired-bootstrap CI" is the plan's registered procedure name (§Headline statistic); (c) a "stacked title" FAIL where the em-dash clause is a verb-less strength qualifier carrying the Lens-15-required "suggestive" hedge and the semicolon shape passed the prior gate uncontested by Codex itself. Meanwhile the fold's genuinely NEW H4 prose had ZERO bracketed CIs — the analyzer had internalized the binding.
+
+**How to apply:** On re-gate reconciles, FIRST diff the fold's set-body commit (`git diff <set-body>~1..<set-title>`) and partition every disputed finding into touched vs byte-unchanged. Byte-unchanged + previously gated → out of scope, discarded (cite the prior adjudication). For "nominal coverage" / register bindings: quote the plan's own registered procedure name before believing a FAIL — naming the registered statistic in `## Reproducibility` plus an explicit min/max disclaimer SATISFIES a no-nominal-coverage binding; renaming it would diverge from the registered definition. Real sentence-cap overages in new content stay non-blocking when the excess paragraphs discharge plan-§13-registered disclosures that v2 voice rules require to live in the H4 read prose (fix = typography only, content stays).

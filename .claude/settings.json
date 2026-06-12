@@ -61,6 +61,14 @@
       "mcp__ssh__ssh_alert_setup"
     ]
   },
+  "enabledPlugins": {
+    "vercel@claude-plugins-official": false,
+    "telegram@claude-plugins-official": false,
+    "claude-code-setup@claude-plugins-official": false,
+    "claude-md-management@claude-plugins-official": false,
+    "code-simplifier@claude-plugins-official": false,
+    "swift-lsp@claude-plugins-official": false
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -68,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(echo $TOOL_INPUT | jq -r '.command // empty'); if echo \"$cmd\" | grep -qE '(scripts/train\\.py|scripts/eval\\.py|scripts/run_sweep\\.py|scripts/generate_)' && [ ! -f '.epm-authorized' ]; then echo 'BLOCKED: Experiment commands must run through /issue. Create a task first: `uv run python scripts/task.py new --kind experiment --title \"...\"`, then use /issue <N> where N is the printed task number.' >&2; exit 1; fi"
+            "command": "cmd=$(echo $TOOL_INPUT | jq -r '.command // empty'); if echo \"$cmd\" | grep -qE '(scripts/train\\.py|scripts/eval\\.py|scripts/run_sweep\\.py|scripts/generate_)' && [ ! -f '.epm-authorized' ]; then echo 'BLOCKED: Experiment commands must run through /issue. Create a task first: `uv run python scripts/task.py new --kind experiment --title \"...\"`, then use /issue <N> where N is the printed task number.' >&2; exit 2; fi"
           },
           {
             "type": "command",
@@ -77,6 +85,10 @@
           {
             "type": "command",
             "command": "/home/thomasjiralerspong/explore-persona-space/scripts/guard_repo_root_branch.sh"
+          },
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_log_dump.sh"
           }
         ]
       },

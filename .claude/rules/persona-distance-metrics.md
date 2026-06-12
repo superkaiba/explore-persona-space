@@ -66,6 +66,31 @@ Impl: `scripts/issue458_predictor_jsdiv.py` (JS), `scripts/issue404_predictor_co
 (cosine). Both predictors are base-model forward passes (no training), so a
 recipe change is a cheap predictor-only re-run on already-trained cells.
 
+## Implementation efficiency (full sweeps)
+
+The canonical RB estimator above is exact full-vocab at every position —
+implement it GPU-resident or a 16-persona × 200-probe × R=8 sweep takes days
+instead of hours (#522: ~94h on 1×H100 for a job whose compute floor is
+~4-6h, paid to batch-1 teacher-forces + a CPU-side full-vocab reduce). The
+estimator definition is unchanged; only the execution recipe is mandated:
+
+- **Reduce per position ON GPU, immediately after each teacher-force** (the
+  pair's rows share the batch — next bullet — so both conditioned
+  distributions are GPU-resident for the JS mixture). Move only the
+  per-position scalar divergences (one float per response token) to
+  CPU/disk. NEVER ship `(n_positions, vocab)` fp32 log-softmax tensors over
+  PCIe for a CPU-side reduce — the transfer (~156 MB per forward on a 152k
+  vocab) plus the CPU `logsumexp`/`exp`/`mul`/`sum` dominate total
+  wall-clock while the GPU idles.
+- **Batch the conditioned teacher-forces.** Pad all conditioned prompts +
+  the shared sampled response into one batch (both personas of a pair at
+  minimum, 16+ rows when sweeping; batch across responses too if memory
+  allows). Batch-1 7B bf16 forwards are weight-bandwidth-bound and leave
+  the GPU ~idle.
+- **Sample the R responses with vLLM** (CLAUDE.md always-on generation
+  rule); only the teacher-force pass stays HF — vLLM exposes no full-vocab
+  log-probs.
+
 ## Bank centering — canonical (task #536)
 
 **Canonical persona-distance cosine (bank form): globally mean-center the
