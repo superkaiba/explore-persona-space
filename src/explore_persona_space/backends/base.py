@@ -268,6 +268,14 @@ class PollResult:
     phase_log_mtime_sec_ago: int = 10**9
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
+    # Recommended seconds before the NEXT poll tick (adaptive bg-poll
+    # interval — ``scripts/poll_pipeline.py``'s ``recommend_next_interval``,
+    # anti-stall redesign §7). The long quiet interval (1800s) is OPT-IN per
+    # lane: a backend that does not compute the quiet heuristic keeps this
+    # short default, so "never lengthen without the full signal set" holds
+    # by construction. The RunPod lane copies the value through from
+    # ``poll_once``; SLURM/GCP currently stay at the default.
+    next_interval: int = 540
 
 
 # ---------------------------------------------------------------------------

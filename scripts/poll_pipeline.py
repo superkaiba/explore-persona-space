@@ -2,9 +2,13 @@
 
 Invoked by the `/issue` orchestrator's bg-Bash sleep-chain (see
 `.claude/skills/issue/SKILL.md` Step 6d.2). Performs ONE poll then exits
-— the orchestrator chains successive `Bash(sleep 540 && uv run python
-scripts/poll_pipeline.py ..., run_in_background=true)` calls and is
-re-invoked by the harness when each bg Bash returns.
+— the orchestrator chains successive `Bash(sleep <interval> && uv run
+python scripts/poll_pipeline.py ..., run_in_background=true)` calls and
+is re-invoked by the harness when each bg Bash returns. `<interval>` is
+the ``next_interval`` the PREVIOUS tick emitted in its JSON line
+(adaptive bg-poll interval — see :func:`recommend_next_interval`), with
+540s as the orchestrator-side fallback when the key is absent or
+unparseable.
 
 Why orchestrator-owned: subagents have ONE turn — they are NOT
 auto-re-invoked when a bg Bash finishes. The orchestrator IS. See
@@ -280,6 +284,92 @@ DONE_QUOTED_NOISE_RE = re.compile(
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
 
+# ── Adaptive bg-poll interval (anti-stall redesign §7) ──────────────────────
+#
+# The orchestrator's bg-Bash sleep-chain re-invokes a FULL orchestrator turn
+# (~330k context tokens) on every poll exit, so the chain interval is the
+# dominant per-run cost over multi-hour workloads (issue-601: 2,561 turns,
+# most concluding "still healthy, keep waiting"). Each tick therefore emits
+# a recommended ``next_interval`` (seconds) alongside its verdict: a healthy,
+# quiet ``running`` tick far from any phase boundary recommends the long
+# QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
+# early-run stays on the short DEFAULT — the long interval must never delay
+# a gate or mask a fresh failure.
+#
+# Risk bound: with the quiet interval an in-session stall can be noticed up
+# to 30 min later than the fixed 540s chain. Acceptable because
+# out-of-session detection is independently bounded by the watcher's 10-min
+# passes + the */45 issue-tick cron (autonomous_session_watch.py /
+# .claude/skills/issue-tick), and every gate-adjacent signal (gate verdict,
+# sentinel activity, phase transition) forces the short interval. The
+# orchestrator falls back to the DEFAULT when the key is absent or
+# unparseable (.claude/skills/issue/SKILL.md Step 6d.2).
+POLL_INTERVAL_DEFAULT_SEC = 540
+POLL_INTERVAL_QUIET_SEC = 1800
+# A run younger than this (measured from its latest epm:run-launched marker)
+# always polls on the short interval — early failures are the most common
+# kind and the most valuable to catch fast.
+EARLY_RUN_WINDOW_SEC = 1800
+# Minimum quiet time since the last observed [phase=...] transition before
+# the long interval applies — a run that recently crossed a phase boundary
+# is likely near another one (boundaries cluster: train -> eval -> upload ->
+# done often land minutes apart).
+RECENT_PHASE_CHANGE_WINDOW_SEC = 1800
+
+
+def recommend_next_interval(
+    *,
+    status: str,
+    gate: str | None,
+    sentinels_processed: int,
+    phase_transitioned: bool,
+    ssh_failed: bool,
+    gpu_idle_advisory_posted: bool,
+    cpu_override_active: bool,
+    run_age_sec: float | None,
+    phase_changed_ago_sec: float | None,
+) -> int:
+    """Pure decision core for the adaptive bg-poll interval (§7).
+
+    Returns :data:`POLL_INTERVAL_QUIET_SEC` ONLY when every quiet condition
+    holds; every other tick returns :data:`POLL_INTERVAL_DEFAULT_SEC`. The
+    interval NEVER lengthens on a tick that reported anything other than
+    healthy-quiet-running:
+
+    * ``status`` must be ``running`` — done/gate/stalled/dead ticks are
+      terminal or gate-adjacent and the orchestrator acts on them
+      immediately, so their interval is moot but stays short by contract.
+    * no gate and no sentinel activity this tick — sentinels are pod->VM
+      messages; any drain activity means something is happening that is
+      worth watching closely.
+    * no phase transition this tick AND none within
+      :data:`RECENT_PHASE_CHANGE_WINDOW_SEC` (an unknown last-change time
+      — fresh state file, or a workload that never prints phase lines —
+      counts as recent: fail toward coverage).
+    * no anomaly this tick: SSH transport failure, a GPU-idle advisory
+      post, or the #518 CPU-advancing stall-rescue (logs stale + GPUs
+      idle — the run is healthy but in a degraded-observability regime).
+    * past the early-run window: ``run_age_sec`` known AND at least
+      :data:`EARLY_RUN_WINDOW_SEC` (an unknown launch age also counts as
+      early-run — fail toward coverage, not toward silence).
+
+    Pure / no I/O — ``poll_once`` supplies the signals; tests drive the
+    decision table directly (tests/test_poll_next_interval.py).
+    """
+    if status != "running":
+        return POLL_INTERVAL_DEFAULT_SEC
+    if gate is not None or sentinels_processed > 0:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if phase_transitioned:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if ssh_failed or gpu_idle_advisory_posted or cpu_override_active:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if run_age_sec is None or run_age_sec < EARLY_RUN_WINDOW_SEC:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if phase_changed_ago_sec is None or phase_changed_ago_sec < RECENT_PHASE_CHANGE_WINDOW_SEC:
+        return POLL_INTERVAL_DEFAULT_SEC
+    return POLL_INTERVAL_QUIET_SEC
+
 
 def _resolve_state_dir_root() -> Path:
     """Main-checkout root for the phase-cache anchor, resolved cwd-independently.
@@ -526,6 +616,37 @@ def _marker_pid(issue: int) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
+    """Seconds since the latest ``epm:run-launched`` marker, or None.
+
+    Early-run signal for the adaptive bg-poll interval (§7): a run inside
+    its first :data:`EARLY_RUN_WINDOW_SEC` always polls on the short
+    interval. None (unknown) when the marker is missing, unreadable, or
+    carries an unparseable ``ts`` — ``recommend_next_interval`` treats
+    unknown as early-run (short interval; fail toward coverage). Reads the
+    same branch-guarded VM-side library path as :func:`_marker_pid`.
+    """
+    try:
+        ev = latest_event(issue, prefix="epm:run-launched")
+    except Exception as exc:
+        log.warning("could not read epm:run-launched ts for #%d: %s", issue, exc)
+        return None
+    if ev is None:
+        return None
+    raw_ts = ev.get("ts")
+    if not raw_ts:
+        return None
+    try:
+        # task_workflow._utcnow_iso emits "%Y-%m-%dT%H:%M:%SZ"; py3.11's
+        # fromisoformat accepts the trailing "Z" directly.
+        launched = datetime.fromisoformat(str(raw_ts))
+    except ValueError:
+        return None
+    if launched.tzinfo is None:
+        launched = launched.replace(tzinfo=UTC)
+    return now_epoch - launched.timestamp()
+
+
 # Schema version the poller knows how to parse. Bump in lockstep with the
 # pod-side writer (currently ``run_experiment_<N>.py::SENTINEL_SCHEMA_VERSION``).
 # Newer schemas are skipped + logged, never silently mis-parsed.
@@ -580,6 +701,14 @@ class PollResult:
     # WHY a stall verdict landed despite a CPU-bound phase).
     session_cpu_secs: str = "unknown"
     cpu_advancing: bool | None = None
+    # Recommended seconds before the NEXT poll tick (adaptive bg-poll
+    # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
+    # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
+    # ``running`` tick far from any phase boundary; the short
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
+    # sleep-chain reads this from the tick JSON (540s fallback when
+    # absent/unparseable — SKILL.md Step 6d.2).
+    next_interval: int = POLL_INTERVAL_DEFAULT_SEC
 
 
 def _ssh_probe(
@@ -1834,6 +1963,11 @@ def poll_once(
     prev_session_cpu = prev_state.get("session_cpu_secs")
     cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
 
+    # True when the verdict below is `running` ONLY because the #518
+    # CPU-advancing override rescued a met stall conjunction (logs stale +
+    # GPUs idle). Healthy, but a degraded-observability regime — the
+    # adaptive interval (§7) keeps such ticks on the short interval.
+    cpu_override_active = False
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
@@ -1847,6 +1981,7 @@ def poll_once(
         and gpu_idle
     ):
         if cpu_advancing is True:
+            cpu_override_active = True
             log.info(
                 "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
                 "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
@@ -1885,6 +2020,10 @@ def poll_once(
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
     new_milestone = current_phase != prev_phase and current_phase != "unknown"
+    # Raw phase-transition fact for the adaptive-interval decision (§7),
+    # captured BEFORE the marker post below can flip ``new_milestone`` to
+    # False on a post failure — the boundary was crossed either way.
+    phase_transitioned = new_milestone
 
     if new_milestone:
         try:
@@ -1900,12 +2039,57 @@ def poll_once(
             log.error("post_event failed: %s", exc)
             new_milestone = False  # Don't claim we recorded it.
 
+    # ── Adaptive bg-poll interval (§7) ───────────────────────────────────
+    # Track WHEN the phase last changed (state-file backed, like
+    # ssh_fail_count) so the quiet long interval only applies once the run
+    # has been boundary-free for RECENT_PHASE_CHANGE_WINDOW_SEC. A missing
+    # / garbled epoch reads as 0 -> "unknown" -> short interval (fail
+    # toward coverage).
+    try:
+        last_phase_change_epoch = int(float(prev_state.get("last_phase_change_epoch", "0") or 0))
+    except (TypeError, ValueError):
+        last_phase_change_epoch = 0
+    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # Relaunch clamp (code-review 2026-06-12): the state file persists
+    # across same-issue relaunches / follow-up rounds, so a boundary
+    # recorded BEFORE the current run's launch (latest epm:run-launched)
+    # is not evidence about THIS run. Without the clamp, a relaunch whose
+    # first observed phase NAME matches the stale recorded one (train ->
+    # train is common) would satisfy the recent-phase-change guard
+    # vacuously and go quiet right after the early-run window. Clamp to 0
+    # ("unknown") — short interval until a boundary is actually observed
+    # in the current run (fail toward coverage).
+    if (
+        last_phase_change_epoch > 0
+        and run_age_sec is not None
+        and last_phase_change_epoch < now_epoch - run_age_sec
+    ):
+        last_phase_change_epoch = 0
+    if phase_transitioned:
+        last_phase_change_epoch = now_epoch
+    phase_changed_ago_sec = (
+        float(now_epoch - last_phase_change_epoch) if last_phase_change_epoch > 0 else None
+    )
+    next_interval = recommend_next_interval(
+        status=status,
+        gate=gate,
+        sentinels_processed=sentinels_processed,
+        phase_transitioned=phase_transitioned,
+        ssh_failed=ssh_failed,
+        gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        cpu_override_active=cpu_override_active,
+        run_age_sec=run_age_sec,
+        phase_changed_ago_sec=phase_changed_ago_sec,
+    )
+
     _save_state(
         state_file,
         issue,
         {
             "phase": current_phase,
             "last_mtime_epoch": str(mtime_epoch),
+            # Adaptive-interval boundary tracking (§7).
+            "last_phase_change_epoch": str(last_phase_change_epoch),
             "ssh_fail_count": str(ssh_fail_count),
             # 1h billing-pod SSH-wait alarm bookkeeping (refs #572): episode
             # start + last alarm ts, both 0.0 while SSH is reachable.
@@ -1949,6 +2133,7 @@ def poll_once(
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
+        next_interval=next_interval,
     )
 
 
@@ -2019,6 +2204,7 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
+                "next_interval": result.next_interval,
             }
         )
     )
