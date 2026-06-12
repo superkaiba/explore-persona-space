@@ -20,9 +20,14 @@ would unmatch the reused parent arm's 63 steps and void the comparison.
 
 Pod-side contract (poll_pipeline.py): ``[phase=...]`` lines ending in ONE
 ``[phase=done]``; end-of-run sentinel under ``/workspace/logs/issue-610-*``
-with ``sentinel_schema_version``/``kind``/``version`` + the full epm:results
-payload (reproducibility_card with explicit per-cell adapter_paths +
-wandb_project + wandb_run_names). The pod NEVER shells out to scripts/task.py.
+with ``sentinel_schema_version``/``kind``/``version``. Sentinel KINDS route
+per plan §7.1: normal completion → ``epm:results`` (full payload contract —
+reproducibility_card with explicit per-cell adapter_paths + wandb_project +
+wandb_run_names); gate-fail / crash HALT_AND_REPORT → ``epm:failure`` with a
+leading ``failure_class: code|data`` line (gate (i) / wiring → code,
+out-of-band-implant gates (a)/(b) → data); ``--plan-only`` → ``epm:progress``
+(validation evidence, never a results-shaped sentinel). The pod NEVER shells
+out to scripts/task.py.
 """
 
 from __future__ import annotations
@@ -267,10 +272,16 @@ def _upload_phase_610(out_root: Path, data_root: Path, design_path: Path) -> Non
 
 def _verify_adapter_uploads(results: list[dict]) -> dict[str, str]:
     """Hub-assert every per-cell adapter path resolves (the epm:results card
-    contract: adapter_paths verified via ``list_repo_files``). Fail-loud."""
-    from huggingface_hub import list_repo_files
+    contract). Enumerates via the paginated ``list_repo_files_complete`` —
+    ``repo_info().siblings``-backed listings silently truncate at ~7901
+    entries on large repos (hub.py docstring), which would false-fail this
+    check on the project model repo. Fail-loud."""
+    from huggingface_hub import HfApi
 
-    repo_files = list_repo_files(HF_MODEL_REPO, token=os.environ.get("HF_TOKEN"))
+    from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    repo_files = list_repo_files_complete(api, HF_MODEL_REPO, repo_type="model")
     adapter_paths: dict[str, str] = {}
     missing: list[str] = []
     for r in results:
@@ -290,11 +301,22 @@ def _verify_adapter_uploads(results: list[dict]) -> dict[str, str]:
     return adapter_paths
 
 
-# ── Pod sentinel (poll_pipeline.py contract; full epm:results payload). ──────
+# ── Pod sentinel (poll_pipeline.py contract). Kinds route per plan §7.1:
+# epm:results (completion) / epm:failure (HALT_AND_REPORT, CRASH) /
+# epm:progress (--plan-only). poll_pipeline._parse_sentinel is kind-agnostic
+# (required keys: sentinel_schema_version, kind, version) and its drain glob
+# is ``issue-<N>-*.json``, so every kind below is drained + posted as-is. ─────
 
 
-def _write_results_sentinel(note_payload: dict, *, out_root: Path) -> Path:
-    """Write the end-of-run sentinel with poll_pipeline's required keys."""
+def _write_sentinel(note_payload: dict | str, *, kind: str = "epm:results", out_root: Path) -> Path:
+    """Write an end-of-run sentinel with poll_pipeline's required keys.
+
+    ``kind`` is the full marker kind (``epm:results`` default); the filename
+    carries the kind_slug (``:`` → ``_``) per the poll_pipeline.py filename
+    convention. ``note_payload``: dict → JSON-dumped; str → written as-is
+    (the epm:failure path needs a leading plain-text ``failure_class:`` line
+    that failure_classifier.py's FIELD_LINE regex can match).
+    """
     sentinel_dir = Path(os.environ.get("EPM_SENTINEL_DIR", "/workspace/logs"))
     if not sentinel_dir.is_dir():
         fallback = out_root / "logs"
@@ -305,19 +327,82 @@ def _write_results_sentinel(note_payload: dict, *, out_root: Path) -> Path:
             fallback,
         )
         sentinel_dir = fallback
-    path = sentinel_dir / f"issue-610-epm_results-{int(time.time())}.json"
+    kind_slug = kind.replace(":", "_")
+    path = sentinel_dir / f"issue-610-{kind_slug}-{int(time.time())}.json"
+    note = note_payload if isinstance(note_payload, str) else json.dumps(note_payload, indent=2)
     payload = {
         "sentinel_schema_version": 1,
-        "kind": "epm:results",
+        "kind": kind,
         "version": 1,
         "task_id": 610,
         "by": "i610_dispatch",
         "ts": datetime.now(UTC).isoformat(),
-        "note": json.dumps(note_payload, indent=2),
+        "note": note,
     }
     path.write_text(json.dumps(payload, indent=2))
-    log.info("[sentinel] wrote %s", path)
+    log.info("[sentinel] wrote %s (kind=%s)", path, kind)
     return path
+
+
+# Implant-landing gates: the swapped mix landed out of the parent regime at
+# the PINNED 63 steps — a science outcome (plan §7.1 item 1: halt + re-plan),
+# not a wiring bug. Every other hard gate — reused (c)-(h) plumbing + NEW (i)
+# primary-DV wiring — is a code-class failure (plan §7.1 item 2).
+_DATA_CLASS_GATES = frozenset({"gate_a_band", "gate_b_sub_saturation"})
+
+
+def _failure_class_for_gates(gate_payload: dict) -> str:
+    """Route a smoke-gate failure to its plan-§7.1 failure_class.
+
+    Returns ``"data"`` when ONLY implant-landing gates (a)/(b) failed
+    (out-of-band implant: report + re-plan), ``"code"`` when ANY wiring gate
+    — (c)-(h) or (i) — failed (a wiring miss also makes the implant read
+    untrustworthy, so code wins on mixed failures). Asserts at least one
+    hard gate actually failed.
+    """
+    hard_fails = [
+        k
+        for k, v in gate_payload.items()
+        if k.startswith("gate_")
+        and k != "gate_j_within_parent_range"  # soft, never gates
+        and isinstance(v, bool)
+        and not v
+    ]
+    if not hard_fails:
+        raise AssertionError("_failure_class_for_gates called with no failed hard gate")
+    return "data" if all(k in _DATA_CLASS_GATES for k in hard_fails) else "code"
+
+
+def _write_failure_sentinel(
+    *,
+    verdict: str,
+    failure_class: str,
+    detail: dict,
+    mode: str,
+    out_root: Path,
+    gpu_hours_used: float,
+) -> Path:
+    """Plan §7.1 HALT_AND_REPORT / crash sentinel: kind ``epm:failure``.
+
+    The note opens with a plain-text ``failure_class: <code|data>`` line
+    (failure_classifier.py FIELD_LINE matches ``^failure_class: <x>$`` —
+    a JSON-quoted ``"failure_class"`` key alone would NOT match), followed
+    by the full diagnostic JSON (verdict, gate table, uploaded-evidence
+    paths).
+    """
+    if failure_class not in ("code", "data", "infra"):
+        raise ValueError(f"invalid failure_class {failure_class!r}")
+    diagnostic = {
+        "failure_class": failure_class,
+        "mode": mode,
+        "verdict": verdict,
+        **detail,
+        "git_commit": _git_sha(),
+        "gpu_hours_used": gpu_hours_used,
+        "gpu_hours_budgeted": GPU_HOURS_BUDGETED,
+    }
+    note = f"failure_class: {failure_class}\n" + json.dumps(diagnostic, indent=2)
+    return _write_sentinel(note, kind="epm:failure", out_root=out_root)
 
 
 def _cell_eval_numbers(results: list[dict]) -> dict[str, dict]:
@@ -390,17 +475,15 @@ def main(
     out_root.mkdir(parents=True, exist_ok=True)
     data_root.mkdir(parents=True, exist_ok=True)
 
-    def _fail_sentinel(verdict: str, detail: dict, rc: int) -> int:
-        _write_results_sentinel(
-            {
-                "mode": mode,
-                "verdict": verdict,
-                **detail,
-                "git_commit": _git_sha(),
-                "gpu_hours_used": round((time.time() - t_start) / 3600.0 * n_gpus, 2),
-                "gpu_hours_budgeted": GPU_HOURS_BUDGETED,
-            },
+    def _fail_sentinel(verdict: str, failure_class: str, detail: dict, rc: int) -> int:
+        """HALT_AND_REPORT/crash path → kind epm:failure (plan §7.1), never epm:results."""
+        _write_failure_sentinel(
+            verdict=verdict,
+            failure_class=failure_class,
+            detail=detail,
+            mode=mode,
             out_root=out_root,
+            gpu_hours_used=round((time.time() - t_start) / 3600.0 * n_gpus, 2),
         )
         return rc
 
@@ -459,7 +542,10 @@ def main(
         [(s.slug, sd) for s, sd in rest_iter],
     )
     if plan_only:
-        _write_results_sentinel(
+        # Plan-only launches NOTHING — a results-shaped sentinel would let the
+        # poller post epm:results for a run with no results. epm:progress is
+        # the honest kind: validation evidence, drained + posted as progress.
+        _write_sentinel(
             {
                 "mode": "plan_only",
                 "requested_mode": mode,
@@ -467,6 +553,7 @@ def main(
                 "panel": list(spec.panel),
                 "git_commit": _git_sha(),
             },
+            kind="epm:progress",
             out_root=out_root,
         )
         log.info("[phase=done] plan-only: validated, nothing launched")
@@ -487,7 +574,8 @@ def main(
     results, failures = _run_cells_subprocess(smoke_iter, **common)
     if failures or not results:
         log.error("[phase=smoke_gate_fail] smoke cell crashed: %s", failures)
-        return _fail_sentinel("CRASH", {"failures": failures}, rc=2)
+        # A crashed subprocess is a wiring/code failure (plan §7.1 item 2).
+        return _fail_sentinel("CRASH", "code", {"failures": failures}, rc=2)
 
     # ── Phase 3: gates (a)-(h) + (i) hard + (j) soft. ────────────────────────
     r = results[0]
@@ -513,13 +601,22 @@ def main(
         )
         if not no_upload:
             _upload_phase_610(out_root, data_root, design_path)
+        # failure_class per plan §7.1: ONLY implant-landing gates (a)/(b)
+        # failed → data (out-of-band implant: report + re-plan); any wiring
+        # gate — (c)-(h) reused plumbing or (i) primary-DV existence — → code.
         return _fail_sentinel(
             "HALT_AND_REPORT",
+            _failure_class_for_gates(gate_payload),
             {
                 "reason": "smoke gates failed at the PINNED 63 steps; plan §7.1 forbids the "
                 "epochs ladder (matched steps with the reused parent arm are load-bearing)",
                 "smoke_gate": gate_payload,
                 "expected_band_nats": list(SOURCE_DG_BAND_NATS),
+                # Uploaded-evidence pointers (the smoke cell's artifacts are
+                # evidence either way; uploaded above unless --no-upload).
+                "output_root": str(out_root),
+                "smoke_trajectory_path": r["trajectory_path"],
+                "uploaded_to_hf_data_prefix": None if no_upload else HF_DATA_PREFIX,
             },
             rc=2,
         )
@@ -576,7 +673,7 @@ def main(
             "hf_data_prefix": HF_DATA_PREFIX,
         },
     }
-    _write_results_sentinel(note, out_root=out_root)
+    _write_sentinel(note, kind="epm:results", out_root=out_root)
 
     if failures:
         log.error("[phase=cells_failed] %d failed: %s", len(failures), failures)

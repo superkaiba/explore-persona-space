@@ -205,6 +205,26 @@ def test_design_round_trip_and_tamper_detection():
         assert_design_matches(tampered, m, spec)
 
 
+@pytest.mark.parametrize(
+    "field, bad_value",
+    [
+        ("extra_eval_personas", ["qwen_default"]),  # dropped the assistant probe
+        ("replaced_persona", "assistant"),
+        ("source_persona", "mercenary"),
+        ("chassis_slug", "c600_pirate_captain_near"),
+    ],
+)
+def test_assert_design_matches_rejects_tampered_extended_fields(field, bad_value):
+    """Round-2 extension: the checks dict also pins extra_eval_personas,
+    replaced_persona, source_persona, and chassis_slug."""
+    m = _manifest()
+    spec = build_610_spec(m)
+    tampered = dict(design_payload(m, spec))
+    tampered[field] = bad_value
+    with pytest.raises(RuntimeError, match=field):
+        assert_design_matches(tampered, m, spec)
+
+
 # ── Gate (i): primary-DV existence. ──────────────────────────────────────────
 
 
@@ -251,3 +271,218 @@ def test_real_manifest_spec_and_centering():
     assert not set(centering) & set(spec.panel)
     assert not set(centering) & set(EXTRA_EVAL_PERSONAS)
     assert SOURCE not in centering
+
+
+# ── Sentinel kinds (round 2: concern `failure-sentinel-kind`). ───────────────
+# Plan §7.1 routes a validity-gate failure as a FAILURE: the HALT_AND_REPORT /
+# crash sentinel carries kind epm:failure; only normal completion carries
+# epm:results; --plan-only carries epm:progress. All three must conform to
+# poll_pipeline._parse_sentinel (kind-agnostic required keys).
+
+
+def _load_poll_pipeline():
+    """Load scripts/poll_pipeline.py (mirrors tests/test_poll_pipeline_sentinels.py)."""
+    import importlib.util
+    import sys
+
+    repo_root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "poll_pipeline_i610_test", repo_root / "scripts" / "poll_pipeline.py"
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["poll_pipeline_i610_test"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def _synthetic_gate_payload(**overrides) -> dict:
+    """All-pass merged gate table ((a)-(h) reused + (i) hard + (j) soft)."""
+    payload = {
+        "gate_a_band": True,
+        "gate_b_sub_saturation": True,
+        "gate_c_eval_guard_positive_control": True,
+        "gate_d_no_marker_in_source_R": True,
+        "gate_e_collator_mask": True,
+        "gate_f_panel_disjointness": True,
+        "gate_g_telemetry": True,
+        "gate_h_offline_vs_inloop_source": True,
+        "gate_i_primary_dv_exists": True,
+        "gate_j_within_parent_range": True,  # soft — never routes
+        "all_gates_passed": True,
+    }
+    payload.update(overrides)
+    payload["all_gates_passed"] = all(
+        v
+        for k, v in payload.items()
+        if k.startswith("gate_") and k != "gate_j_within_parent_range" and isinstance(v, bool)
+    )
+    return payload
+
+
+def test_gate_fail_sentinel_kind_is_epm_failure(tmp_path: Path, monkeypatch):
+    """The HALT_AND_REPORT sentinel carries kind epm:failure (NOT epm:results),
+    a leading plain-text failure_class line, and the full diagnostic payload —
+    and poll_pipeline._parse_sentinel accepts it."""
+    from explore_persona_space.experiments.default_dose_610.dispatch import (
+        _failure_class_for_gates,
+        _write_failure_sentinel,
+    )
+
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path))
+    gate_payload = _synthetic_gate_payload(gate_a_band=False)  # out-of-band implant
+    path = _write_failure_sentinel(
+        verdict="HALT_AND_REPORT",
+        failure_class=_failure_class_for_gates(gate_payload),
+        detail={"smoke_gate": gate_payload, "output_root": "eval_results/issue_610"},
+        mode="full",
+        out_root=tmp_path,
+        gpu_hours_used=0.42,
+    )
+    assert "epm_failure" in path.name and "epm_results" not in path.name
+    data = json.loads(path.read_text())
+    assert data["kind"] == "epm:failure"
+    assert data["version"] == 1
+    # Leading plain-text line — failure_classifier.py FIELD_LINE matches this
+    # (a JSON-quoted "failure_class" key alone would not).
+    assert data["note"].splitlines()[0] == "failure_class: data"
+    diagnostic = json.loads(data["note"].split("\n", 1)[1])
+    assert diagnostic["verdict"] == "HALT_AND_REPORT"
+    assert diagnostic["smoke_gate"]["gate_a_band"] is False
+    assert diagnostic["output_root"] == "eval_results/issue_610"
+    pp = _load_poll_pipeline()
+    parsed = pp._parse_sentinel(str(path), path.read_text())
+    assert parsed is not None and parsed["kind"] == "epm:failure"
+
+
+def test_results_sentinel_default_kind_unchanged(tmp_path: Path, monkeypatch):
+    """The normal completion path keeps kind epm:results."""
+    from explore_persona_space.experiments.default_dose_610.dispatch import _write_sentinel
+
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path))
+    path = _write_sentinel({"verdict": "OK"}, out_root=tmp_path)
+    data = json.loads(path.read_text())
+    assert "epm_results" in path.name
+    assert data["kind"] == "epm:results"
+
+
+def test_plan_only_sentinel_kind_is_progress(tmp_path: Path, monkeypatch):
+    """--plan-only writes an epm:progress-kind sentinel (never results-shaped),
+    parseable by poll_pipeline._parse_sentinel."""
+    from explore_persona_space.experiments.default_dose_610.dispatch import _write_sentinel
+
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path))
+    path = _write_sentinel(
+        {"mode": "plan_only", "pairs": [["c610_mercenary_near_nodefault", 42]]},
+        kind="epm:progress",
+        out_root=tmp_path,
+    )
+    data = json.loads(path.read_text())
+    assert "epm_progress" in path.name
+    assert data["kind"] == "epm:progress"
+    pp = _load_poll_pipeline()
+    assert pp._parse_sentinel(str(path), path.read_text()) is not None
+
+
+def test_failure_class_routing_per_plan_7_1():
+    """Gate (i)/wiring fail → code; ONLY implant-landing (a)/(b) fail → data;
+    mixed → code; all-pass payload is a caller bug (raises)."""
+    from explore_persona_space.experiments.default_dose_610.dispatch import (
+        _failure_class_for_gates,
+    )
+
+    assert _failure_class_for_gates(_synthetic_gate_payload(gate_i_primary_dv_exists=False)) == (
+        "code"
+    )
+    assert _failure_class_for_gates(_synthetic_gate_payload(gate_e_collator_mask=False)) == "code"
+    assert _failure_class_for_gates(_synthetic_gate_payload(gate_a_band=False)) == "data"
+    assert (
+        _failure_class_for_gates(
+            _synthetic_gate_payload(gate_a_band=False, gate_b_sub_saturation=False)
+        )
+        == "data"
+    )
+    assert (
+        _failure_class_for_gates(
+            _synthetic_gate_payload(gate_a_band=False, gate_i_primary_dv_exists=False)
+        )
+        == "code"
+    )
+    # gate (j) is SOFT — its failure alone never routes (and never gates).
+    with pytest.raises(AssertionError, match="no failed hard gate"):
+        _failure_class_for_gates(_synthetic_gate_payload(gate_j_within_parent_range=False))
+
+
+def test_write_failure_sentinel_rejects_bad_class(tmp_path: Path, monkeypatch):
+    from explore_persona_space.experiments.default_dose_610.dispatch import (
+        _write_failure_sentinel,
+    )
+
+    monkeypatch.setenv("EPM_SENTINEL_DIR", str(tmp_path))
+    with pytest.raises(ValueError, match="invalid failure_class"):
+        _write_failure_sentinel(
+            verdict="CRASH",
+            failure_class="oops",
+            detail={},
+            mode="smoke",
+            out_root=tmp_path,
+            gpu_hours_used=0.0,
+        )
+
+
+# ── --epochs guard (round 2: kill-criterion hardening, no epochs ladder). ────
+
+
+def _load_run_cell_script():
+    import importlib.util
+    import sys
+
+    repo_root = Path(__file__).resolve().parents[1]
+    spec = importlib.util.spec_from_file_location(
+        "i610_run_cell_under_test", repo_root / "scripts" / "i610_run_cell.py"
+    )
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["i610_run_cell_under_test"] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_run_cell_rejects_non_pinned_epochs():
+    """--epochs != EPOCHS_PINNED exits loudly BEFORE any manifest/model load
+    (plan §7.1: re-pinning epochs would unmatch the reused parent arm)."""
+    mod = _load_run_cell_script()
+    argv = [
+        "--cell",
+        NEW_SLUG,
+        "--seed",
+        "42",
+        "--gpu-id",
+        "0",
+        "--epochs",
+        "3",
+        "--manifest",
+        "/nonexistent/panel_selection.json",
+    ]
+    with pytest.raises(SystemExit, match="PINNED"):
+        mod.main(argv)
+
+
+def test_run_cell_accepts_pinned_epochs_past_guard():
+    """epochs == EPOCHS_PINNED passes the guard (the next failure is the
+    deliberately-nonexistent manifest, NOT the epochs SystemExit)."""
+    mod = _load_run_cell_script()
+    argv = [
+        "--cell",
+        NEW_SLUG,
+        "--seed",
+        "42",
+        "--gpu-id",
+        "0",
+        "--epochs",
+        "1",
+        "--manifest",
+        "/nonexistent/panel_selection.json",
+    ]
+    with pytest.raises(FileNotFoundError):
+        mod.main(argv)

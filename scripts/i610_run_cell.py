@@ -28,6 +28,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()
 
 from explore_persona_space.experiments.default_dose_610 import (  # noqa: E402
+    EPOCHS_PINNED,
     EXTRA_EVAL_PERSONAS,
     HF_ADAPTER_PATH_PREFIX,
     NEW_SLUG,
@@ -62,6 +63,13 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     if args.cell != NEW_SLUG:
         raise SystemExit(f"--cell must be {NEW_SLUG!r} (the only #610 cell); got {args.cell!r}")
+    if args.epochs != EPOCHS_PINNED:
+        # Kill-criterion hardening (plan §7.1): NO epochs ladder — re-pinning
+        # would unmatch the reused parent arm's 63 steps and void the contrast.
+        raise SystemExit(
+            f"--epochs must be the PINNED {EPOCHS_PINNED} (plan §7.1: no epochs ladder; "
+            f"matched steps with the reused parent arm are load-bearing); got {args.epochs}"
+        )
     # Preset BEFORE run_one_cell (its setdefault never overrides a preset).
     os.environ["WANDB_PROJECT"] = WANDB_PROJECT
     spec = build_610_spec(load_manifest(args.manifest))

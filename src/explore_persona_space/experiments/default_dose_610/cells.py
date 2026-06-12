@@ -124,6 +124,10 @@ def assert_design_matches(design: dict, manifest: dict, spec: CellSpec600) -> No
         "slug": (design.get("slug"), spec.slug),
         "panel": (design.get("panel"), list(spec.panel)),
         "replacement_persona": (design.get("replacement_persona"), REPLACEMENT_PERSONA),
+        "replaced_persona": (design.get("replaced_persona"), ALWAYS_INCLUDE_NEGATIVE),
+        "extra_eval_personas": (design.get("extra_eval_personas"), list(EXTRA_EVAL_PERSONAS)),
+        "source_persona": (design.get("source_persona"), SOURCE_PERSONA),
+        "chassis_slug": (design.get("chassis_slug"), CHASSIS_SLUG),
         "parent_bank_content_hash": (
             design.get("parent_bank_content_hash"),
             manifest["bank_content_hash"],
