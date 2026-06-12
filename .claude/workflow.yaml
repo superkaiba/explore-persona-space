@@ -1922,7 +1922,7 @@ markers:
     fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill
