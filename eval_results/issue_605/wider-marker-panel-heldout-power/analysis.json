@@ -1,0 +1,813 @@
+{
+ "schema_version": "issue605_v1",
+ "family": "marker",
+ "registered": {
+  "shift": {
+   "logprob": {
+    "pooled_partial": {
+     "point": 0.014746630787375281,
+     "ci95": [
+      -0.08207008452646283,
+      0.10926319236747725
+     ],
+     "p_two_sided": 0.788,
+     "n_boot_effective": 1000,
+     "p_holm_over_shift_spaces": 0.788
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.6402274025045978,
+     "r2_sim_plus_prior": 0.6421405220180505,
+     "delta_cv_r2_prior_beyond_sim": 0.0019131195134527434,
+     "r2_prior_only": 0.5515975233628602,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.09054299865519033,
+     "point": 0.0019131195134527434,
+     "ci95": [
+      -0.01672029033413318,
+      0.009711145407419153
+     ],
+     "p_two_sided": 0.47,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "tobit",
+     "point": -0.005093450014257832,
+     "ci95": [
+      -0.03553240672954908,
+      0.02376784552895597
+     ],
+     "p_two_sided": 0.802,
+     "n_boot_effective": 1000
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": -0.031123361680826647,
+      "ci95": [
+       -0.13308128253111345,
+       0.09865515996972705
+      ],
+      "p_two_sided": 0.536,
+      "n_boot_effective": 250,
+      "n_contexts": 84,
+      "n_cells": 588,
+      "mde_abs_rho_context_level": 0.21701098711556316,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.049511048599654967,
+      "ci95": [
+       -0.08020458734497926,
+       0.19297730431410537
+      ],
+      "p_two_sided": 0.536,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 458,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": -0.10250609325526344,
+      "ci95": [
+       -0.2189238086422816,
+       0.019620184500799845
+      ],
+      "p_two_sided": 0.096,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 554,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.01298214373313389,
+     "n_saturated_excluded": 78,
+     "source_cluster_partial_ci": {
+      "point": 0.014746630787375281,
+      "ci95": [
+       -0.19270894174255504,
+       0.20850169412661052
+      ],
+      "p_two_sided": 0.884,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 1600,
+    "n_contexts": 100
+   },
+   "eos_margin": {
+    "pooled_partial": {
+     "point": 0.5304845154265231,
+     "ci95": [
+      0.4327018363787519,
+      0.611693317654968
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000,
+     "p_holm_over_shift_spaces": 0.002
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.46283702832770857,
+     "r2_sim_plus_prior": 0.6211620403182068,
+     "delta_cv_r2_prior_beyond_sim": 0.1583250119904982,
+     "r2_prior_only": 0.41290335886039997,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.2082586814578068,
+     "point": 0.1583250119904982,
+     "ci95": [
+      0.09320272925135409,
+      0.22863770493422536
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "rank",
+     "point": 0.42717884829902464,
+     "ci95": [
+      0.35067432244869523,
+      0.49071560606889575
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.41729507001298904,
+      "ci95": [
+       0.27059724626740744,
+       0.5417786420204315
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 84,
+      "n_cells": 588,
+      "mde_abs_rho_context_level": 0.21701098711556316,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.6393774800930876,
+      "ci95": [
+       0.5333838500819388,
+       0.6940069160360598
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 458,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.5844157187138352,
+      "ci95": [
+       0.5030124169531062,
+       0.6514682660800284
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 554,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.5046682874030651,
+     "n_saturated_excluded": 78,
+     "source_cluster_partial_ci": {
+      "point": 0.5304845154265231,
+      "ci95": [
+       0.41310195275503026,
+       0.6400752810025658
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 1600,
+    "n_contexts": 100
+   }
+  },
+  "level": {
+   "emission_rate": {
+    "pooled_partial": {
+     "point": 0.8754546395945284,
+     "ci95": [
+      0.8367088071470264,
+      0.8926455264478057
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": -0.00493994730494518,
+     "r2_sim_plus_prior": 0.8945940544799835,
+     "delta_cv_r2_prior_beyond_sim": 0.8995340017849287,
+     "r2_prior_only": 0.8830488364963283,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.011545217983655265,
+     "point": 0.8995340017849287,
+     "ci95": [
+      0.8496846917416216,
+      1.0307459408292843
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "none",
+     "point": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "p_two_sided": NaN
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.8513365438174537,
+      "ci95": [
+       0.7803900928916839,
+       0.8885804636104699
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 84,
+      "n_cells": 588,
+      "mde_abs_rho_context_level": 0.21701098711556316,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.8446163193201018,
+      "ci95": [
+       0.7848502456998578,
+       0.868193195768082
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 458,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.8764433300030251,
+      "ci95": [
+       0.834432084766012,
+       0.897787884402944
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 554,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.8710458997519519,
+     "n_saturated_excluded": 78,
+     "source_cluster_partial_ci": {
+      "point": 0.8754546395945284,
+      "ci95": [
+       0.8537033750836126,
+       0.8914704934976203
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 1600,
+    "n_contexts": 100
+   },
+   "trained_logp": {
+    "pooled_partial": {
+     "point": 0.8676510199298131,
+     "ci95": [
+      0.8224166463856085,
+      0.8884136847358255
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": 0.12996476882799424,
+     "r2_sim_plus_prior": 0.7833132161905839,
+     "delta_cv_r2_prior_beyond_sim": 0.6533484473625897,
+     "r2_prior_only": 0.7748847310873527,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.008428485103231242,
+     "point": 0.6533484473625897,
+     "ci95": [
+      0.6092950924765663,
+      0.7538243103034376
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "none",
+     "point": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "p_two_sided": NaN
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.810636154536581,
+      "ci95": [
+       0.7355987112835555,
+       0.853163959459291
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 84,
+      "n_cells": 588,
+      "mde_abs_rho_context_level": 0.21701098711556316,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.8970666952150848,
+      "ci95": [
+       0.8177062604064543,
+       0.9272857119365008
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 458,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     },
+     "band_mid": {
+      "point": 0.868838932815634,
+      "ci95": [
+       0.8034798766609562,
+       0.895696658683365
+      ],
+      "p_two_sided": 0.004,
+      "n_boot_effective": 250,
+      "n_contexts": 100,
+      "n_cells": 554,
+      "mde_abs_rho_context_level": 0.19842431917595915,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.8685192799975561,
+     "n_saturated_excluded": 78,
+     "source_cluster_partial_ci": {
+      "point": 0.8676510199298131,
+      "ci95": [
+       0.8374018604183544,
+       0.8939984788855674
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 1600,
+    "n_contexts": 100
+   }
+  }
+ },
+ "lattice": {
+  "h_level": "wins+",
+  "h_shift_logprob": "null",
+  "h_shift_eos_margin": "wins+",
+  "verdict": "margin-only overlap signal: suggestive mechanism-space evidence, cap MODERATE",
+  "h_level_routing": {
+   "dv": "trained_logp",
+   "note": "H-level routed on the continuous absolute trained log P; the emission-rate battery is computed + reported under registered.level but not routed (zero-inflated / ceiling-prone)"
+  }
+ },
+ "diagnostics": {
+  "corr_prior_vs_base_term_at_trained_slot": 0.7771102113787692,
+  "base_covariate_partial_dlogp": 0.5352634053853726,
+  "split_probe_complement_partial": {
+   "rho": -0.0029364712211366675,
+   "n_cells": 1488,
+   "prior_basis": "probe half A (even-index per-q P1 prior reads); DV = half-B (odd-index) dlogp; legacy scalar-prior contexts excluded"
+  },
+  "prompt_length_covariate_partial": 0.011885703922588156,
+  "cov_negsim_partial": 0.0007331926669141021,
+  "affordance_class_stratified": {
+   "explicit": 0.24402164773281768,
+   "legacy": 0.6237819393378534,
+   "none": 0.026588264259422862,
+   "oblique": -0.19255473698524456,
+   "soft": 0.28481134725798896
+  },
+  "centered_bank_cosine_sensitivity": {
+   "pooled_partial_shift": 0.0754447772112533,
+   "delta_cv_r2": {
+    "r2_sim_only": 0.6313170371805784,
+    "r2_sim_plus_prior": 0.6307352344477537,
+    "delta_cv_r2_prior_beyond_sim": -0.00058180273282471,
+    "r2_prior_only": 0.5515975233628602,
+    "delta_cv_r2_sim_beyond_prior_reverse": 0.07913771108489354
+   },
+   "label": "centered-bank cosine (#536) \u2014 sensitivity only, never mixed with raw"
+  },
+  "collinearity_gate": {
+   "abs_pearson_overall": 0.16965102544595048,
+   "by_band": {
+    "band_hi": 0.44303462580469916,
+    "band_lo": 0.014058909149524295,
+    "band_mid": 0.12773407511518337
+   },
+   "fired": false,
+   "tercile_median_dlogp_fallback": {}
+  },
+  "saturation_map": {
+   "pT1": {
+    "n_cells": 544,
+    "frac_saturated": 0.001838235294117647,
+    "frac_cells_with_emitting_slots": 0.2665441176470588,
+    "non_emitting_slice_coverage": 0.7334558823529411
+   },
+   "pT2": {
+    "n_cells": 528,
+    "frac_saturated": 0.026515151515151516,
+    "frac_cells_with_emitting_slots": 0.8352272727272727,
+    "non_emitting_slice_coverage": 0.16477272727272727
+   },
+   "pT3": {
+    "n_cells": 528,
+    "frac_saturated": 0.11931818181818182,
+    "frac_cells_with_emitting_slots": 1.0,
+    "non_emitting_slice_coverage": 0.0
+   }
+  },
+  "gkl_secondary_partial_shift": -0.008701006511998812,
+  "space_agreement_rho_dlogp_dmargin": 0.5639164194986014,
+  "legacy_anchor_drift": {
+   "n_pairs": 400,
+   "cos_rank_corr": 1.0,
+   "gkl_rank_corr": 1.0,
+   "cos_max_abs_diff": 0.0
+  }
+ },
+ "panel_gate": {
+  "gate_pass": true,
+  "strata": {
+   "band_lo": {
+    "window": [
+     0.6536196923255921,
+     0.7136196923255922
+    ],
+    "n_pairs": 214,
+    "n_contexts": 92,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_2",
+     "instr_explicit_3",
+     "instr_oblique_1",
+     "instr_soft_1",
+     "instr_soft_2",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__none",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_1__none",
+     "m605_nt_comedian_1__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_comedian_2__none",
+     "m605_nt_comedian_2__soft",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__oblique",
+     "m605_nt_formal_1__soft",
+     "m605_nt_formal_2__explicit",
+     "m605_nt_formal_2__none",
+     "m605_nt_formal_2__soft",
+     "m605_nt_pirate_1__explicit",
+     "m605_nt_pirate_1__none",
+     "m605_nt_pirate_1__soft",
+     "m605_nt_pirate_2__explicit",
+     "m605_nt_pirate_2__none",
+     "m605_nt_polite_1__explicit",
+     "m605_nt_polite_1__none",
+     "m605_nt_polite_1__soft",
+     "m605_nt_polite_2__explicit",
+     "m605_nt_polite_2__none",
+     "m605_nt_polite_2__oblique",
+     "m605_nt_polite_2__soft",
+     "m605_nt_socratic_1__explicit",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__explicit",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_bond_villain_henchman__explicit",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_customer_support__none",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_frontend_dev__none",
+     "m605_rel_game_show_host__none",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_naval_officer__none",
+     "m605_rel_qa_tester__none",
+     "m605_rel_qa_tester__soft",
+     "m605_sym_bullet_journaler__none",
+     "m605_sym_japanese_editor__none",
+     "m605_sym_typesetter__none",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_air_traffic_controller__none",
+     "m605_unr_arctic_guide__none",
+     "m605_unr_arctic_guide__oblique",
+     "m605_unr_beekeeper__explicit",
+     "m605_unr_beekeeper__none",
+     "m605_unr_glassblower__none",
+     "m605_unr_glassblower__oblique",
+     "m605_unr_locksmith__none",
+     "m605_unr_locksmith__oblique",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_midwife__none",
+     "m605_unr_orchestra_conductor__none",
+     "m605_unr_orchestra_conductor__oblique",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_sommelier__none",
+     "m605_unr_sommelier__oblique",
+     "m605_unr_tax_auditor__none",
+     "m605_unr_tax_auditor__oblique",
+     "m605_unr_textile_historian__explicit",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 25.10338578033447,
+    "abs_r_sim_prior": 0.047590425744897746,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   },
+   "band_mid": {
+    "window": [
+     0.7669890069961548,
+     0.8269890069961547
+    ],
+    "n_pairs": 255,
+    "n_contexts": 95,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_2",
+     "instr_explicit_3",
+     "instr_oblique_1",
+     "instr_soft_1",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_1__none",
+     "m605_nt_comedian_1__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_comedian_2__none",
+     "m605_nt_comedian_2__soft",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__oblique",
+     "m605_nt_formal_1__soft",
+     "m605_nt_formal_2__explicit",
+     "m605_nt_formal_2__none",
+     "m605_nt_formal_2__soft",
+     "m605_nt_pirate_1__explicit",
+     "m605_nt_pirate_1__none",
+     "m605_nt_pirate_2__none",
+     "m605_nt_polite_1__explicit",
+     "m605_nt_polite_1__none",
+     "m605_nt_polite_1__soft",
+     "m605_nt_polite_2__explicit",
+     "m605_nt_polite_2__none",
+     "m605_nt_polite_2__oblique",
+     "m605_nt_polite_2__soft",
+     "m605_nt_socratic_1__explicit",
+     "m605_nt_socratic_1__none",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__explicit",
+     "m605_nt_villain_1__none",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_nt_villain_2__none",
+     "m605_nt_villain_2__soft",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_bond_villain_henchman__explicit",
+     "m605_rel_bond_villain_henchman__none",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_customer_support__none",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_frontend_dev__none",
+     "m605_rel_game_show_host__none",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_naval_officer__none",
+     "m605_rel_qa_tester__soft",
+     "m605_rel_sketch_writer__none",
+     "m605_rel_smuggler__none",
+     "m605_rel_smuggler__soft",
+     "m605_sym_bullet_journaler__none",
+     "m605_sym_japanese_editor__none",
+     "m605_sym_typesetter__none",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_air_traffic_controller__none",
+     "m605_unr_arctic_guide__none",
+     "m605_unr_arctic_guide__oblique",
+     "m605_unr_beekeeper__explicit",
+     "m605_unr_beekeeper__none",
+     "m605_unr_glassblower__none",
+     "m605_unr_glassblower__oblique",
+     "m605_unr_locksmith__none",
+     "m605_unr_locksmith__oblique",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_midwife__none",
+     "m605_unr_orchestra_conductor__none",
+     "m605_unr_orchestra_conductor__oblique",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_sommelier__none",
+     "m605_unr_sommelier__oblique",
+     "m605_unr_tax_auditor__none",
+     "m605_unr_tax_auditor__oblique",
+     "m605_unr_textile_historian__explicit",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 24.897147529602048,
+    "abs_r_sim_prior": 0.0709096629210929,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   },
+   "band_hi": {
+    "window": [
+     0.8635319519042969,
+     0.9235319519042968
+    ],
+    "n_pairs": 429,
+    "n_contexts": 77,
+    "contexts": [
+     "instr_explicit_1",
+     "instr_explicit_3",
+     "instr_oblique_1",
+     "instr_soft_1",
+     "instr_soft_2",
+     "instr_soft_3",
+     "m605_nt_assistant_1__explicit",
+     "m605_nt_assistant_1__none",
+     "m605_nt_assistant_1__soft",
+     "m605_nt_assistant_2__explicit",
+     "m605_nt_assistant_2__none",
+     "m605_nt_assistant_2__soft",
+     "m605_nt_comedian_2__explicit",
+     "m605_nt_formal_1__explicit",
+     "m605_nt_formal_1__none",
+     "m605_nt_formal_1__oblique",
+     "m605_nt_formal_1__soft",
+     "m605_nt_pirate_1__none",
+     "m605_nt_pirate_1__soft",
+     "m605_nt_pirate_2__explicit",
+     "m605_nt_pirate_2__none",
+     "m605_nt_polite_2__oblique",
+     "m605_nt_socratic_1__none",
+     "m605_nt_socratic_1__soft",
+     "m605_nt_socratic_2__explicit",
+     "m605_nt_socratic_2__none",
+     "m605_nt_socratic_2__soft",
+     "m605_nt_swe_1__explicit",
+     "m605_nt_swe_1__none",
+     "m605_nt_swe_1__soft",
+     "m605_nt_swe_2__explicit",
+     "m605_nt_swe_2__none",
+     "m605_nt_swe_2__soft",
+     "m605_nt_villain_1__none",
+     "m605_nt_villain_1__soft",
+     "m605_nt_villain_2__explicit",
+     "m605_nt_villain_2__none",
+     "m605_nt_villain_2__soft",
+     "m605_rel_backend_dev__none",
+     "m605_rel_backend_dev__soft",
+     "m605_rel_bond_villain_henchman__none",
+     "m605_rel_customer_support__explicit",
+     "m605_rel_customer_support__none",
+     "m605_rel_devops__none",
+     "m605_rel_devops__soft",
+     "m605_rel_frontend_dev__explicit",
+     "m605_rel_frontend_dev__none",
+     "m605_rel_naval_officer__explicit",
+     "m605_rel_naval_officer__none",
+     "m605_rel_qa_tester__none",
+     "m605_rel_qa_tester__soft",
+     "m605_rel_sketch_writer__none",
+     "m605_rel_smuggler__none",
+     "m605_rel_smuggler__soft",
+     "m605_sym_bullet_journaler__none",
+     "m605_unr_air_traffic_controller__explicit",
+     "m605_unr_air_traffic_controller__none",
+     "m605_unr_arctic_guide__none",
+     "m605_unr_arctic_guide__oblique",
+     "m605_unr_beekeeper__none",
+     "m605_unr_glassblower__none",
+     "m605_unr_glassblower__oblique",
+     "m605_unr_locksmith__none",
+     "m605_unr_locksmith__oblique",
+     "m605_unr_marine_biologist__explicit",
+     "m605_unr_marine_biologist__none",
+     "m605_unr_midwife__explicit",
+     "m605_unr_midwife__none",
+     "m605_unr_orchestra_conductor__none",
+     "m605_unr_orchestra_conductor__oblique",
+     "m605_unr_paleontologist__explicit",
+     "m605_unr_paleontologist__none",
+     "m605_unr_sommelier__none",
+     "m605_unr_sommelier__oblique",
+     "m605_unr_tax_auditor__none",
+     "m605_unr_tax_auditor__oblique",
+     "m605_unr_textile_historian__none"
+    ],
+    "prior_spread_p90_p10": 24.84391432952881,
+    "abs_r_sim_prior": 0.24092302767400442,
+    "gate": {
+     "fill_ok": true,
+     "spread_ok": true,
+     "collinearity_ok": true,
+     "verdict": true
+    }
+   }
+  }
+ },
+ "parent_regression_check": {
+  "n_parent_cells": 640,
+  "n_parent_contexts": 40,
+  "tolerance": 1e-06,
+  "spaces": {
+   "logprob": {
+    "recomputed": 0.26298324509560417,
+    "parent_registered": 0.26298324509560417,
+    "abs_diff": 0.0
+   },
+   "eos_margin": {
+    "recomputed": 0.5503051632078148,
+    "parent_registered": 0.5503051632078148,
+    "abs_diff": 0.0
+   }
+  }
+ },
+ "amendment_label": "wider-marker-panel-heldout-power",
+ "panel_inherited_n": 40,
+ "panel_new_n": 60,
+ "metadata": {
+  "git_commit": "d38f6cbdb6137c87e68cf125108d00ac3d4c383b",
+  "timestamp_utc": "2026-06-12T03:45:11.282349Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  },
+  "n_boot": 1000,
+  "analysis_seed": 42
+ }
+}
