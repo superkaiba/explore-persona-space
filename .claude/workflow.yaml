@@ -1961,7 +1961,8 @@ markers:
                           override_without_frontmatter?,
                           override_conflicts_frontmatter?,
                           frontmatter_backend_unrecognized?,
-                          frontmatter_backend?, ...}`
+                          frontmatter_backend?,
+                          boot_disk_default_with_ft_intent?, ...}`
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
@@ -1996,6 +1997,20 @@ markers:
       frontmatter skips all checks); visibility only — the launch is
       never blocked. A frontmatter `backend: runpod` is the one
       legitimate backing and stays silent.
+
+      `boot_disk_default_with_ft_intent: true` (optional) is stamped by
+      the same decorator when `launch` was invoked with a gcp-reachable
+      backend (`gcp`, or `auto` whose resolved lane order includes gcp)
+      and an `ft-*` intent that maps to a GCP machine, WITHOUT
+      `--boot-disk-gb` — the lane provisions the 300 GB pd-ssd default
+      (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a ZeRO-3
+      full-FT fills with optimizer-state checkpoints in ~1h (incident
+      #606, 2026-06-12: kernel panic on the full disk, cloud-init
+      ENOSPC, SSH key-provisioning lockout, 4x A100 idling until
+      deletion). Visibility only — the launch is never blocked
+      (small-disk ft smokes stay legitimate); the CLI also emits a LOUD
+      stderr warning pointing at the plan's Reproducibility pod-row
+      disk size.
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.

@@ -598,6 +598,83 @@ def _gpus_gcp_lane_conflict(spec: Any) -> dict[str, Any] | None:
     }
 
 
+def _ft_intent_gcp_default_boot_disk(spec: Any) -> bool:
+    """True when an ft-* intent is gcp-reachable with no ``--boot-disk-gb`` (incident #606).
+
+    The GCP lane provisions its boot disk at the
+    ``backends/gcp.GcpConfig.default_boot_disk_gb`` default (300 GB
+    pd-ssd) unless ``spec.extra["boot_disk_gb"]`` overrides it. A ZeRO-3
+    full fine-tune (``ft-7b``) fills 300 GB with optimizer-state
+    checkpoints in ~1h; the #606 instance kernel-panicked on the full
+    disk, cloud-init ENOSPC'd, the guest agent could not write
+    ``authorized_keys`` (SSH publickey lockout), and the wedged VM idled
+    on 4x A100 until deleted. WARNING only — NEVER a refusal:
+    eval/lora intents on the default are fine, and even ft intents may
+    legitimately run small-disk smokes.
+
+    Mirrors the gcp-reachability logic of :func:`_gpus_gcp_lane_conflict`:
+    stand down when the boot disk is explicitly sized, the intent is not
+    an ft-* intent with a GCP machine mapping (``ft-70b`` has none —
+    ``machine_for_intent`` fails loud inside the lane before disk
+    matters), the backend is an explicit non-GCP lane, or ``auto``'s
+    resolved lane order excludes ``gcp`` (a defective
+    ``EPM_AUTO_LANE_ORDER`` also stands down — ``route()`` surfaces that
+    defect through the existing terminal classification).
+    """
+    if (spec.extra or {}).get("boot_disk_gb"):
+        return False
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+
+    if not (str(spec.intent).startswith("ft-") and spec.intent in INTENT_TO_MACHINE):
+        return False
+    if spec.backend == "gcp":
+        return True
+    if spec.backend != "auto":
+        return False
+    from explore_persona_space.backends.router import RouteError, auto_lane_order
+
+    try:
+        return "gcp" in auto_lane_order()
+    except RouteError:
+        return False
+
+
+def _warn_default_boot_disk_ft_intent(
+    spec: Any, issue: int, marker_poster: Callable[..., None]
+) -> Callable[..., None]:
+    """Emit the #606 default-boot-disk warning + marker flag when applicable.
+
+    Default-boot-disk visibility for gcp-reachable ft intents (incident
+    #606): the relaunch dropped the plan's explicit "500 GB pd-ssd"
+    Reproducibility spec, the 300 GB default filled in ~1h of ZeRO-3
+    full-FT checkpoints, and the instance kernel-panicked into an SSH
+    lockout while 4x A100 idled. Returns ``marker_poster`` unchanged when
+    :func:`_ft_intent_gcp_default_boot_disk` stands down, or wrapped with
+    ``extra.boot_disk_default_with_ft_intent=true`` after the LOUD stderr
+    warning fires. ADDITIVE only — never blocks the launch.
+    """
+    if not _ft_intent_gcp_default_boot_disk(spec):
+        return marker_poster
+    logging.getLogger("dispatch_issue").warning(
+        "gcp-reachable launch for issue=%d with --intent %s and no --boot-disk-gb — "
+        "the GCP lane defaults the boot disk to 300 GB pd-ssd "
+        "(backends/gcp.GcpConfig.default_boot_disk_gb), which a ZeRO-3 full-FT "
+        "fills with optimizer-state checkpoints in ~1h (incident #606: kernel "
+        "panic on the full disk, cloud-init ENOSPC, SSH key-provisioning lockout, "
+        "4x A100 idling until deletion). Thread the plan's Reproducibility "
+        "pod-row disk size via --boot-disk-gb on EVERY launch, relaunches "
+        "included; for ft-* intents whose plan names no size, >=500 GB is the "
+        "working default. Launch continues; the epm:backend-selected marker "
+        "carries extra.boot_disk_default_with_ft_intent=true so the default-disk "
+        "launch is visible on the events trail.",
+        issue,
+        spec.intent,
+    )
+    return _wrap_marker_poster_with_override_flag(
+        marker_poster, {"boot_disk_default_with_ft_intent": True}
+    )
+
+
 # Still-waiting exit code (EX_TEMPFAIL). Mirrors
 # ``scripts/pod_lifecycle.py::EXIT_STILL_WAITING`` — mirrored rather than
 # imported so this CLI stays import-light at module load; the equality is
@@ -796,6 +873,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 marker_poster,
                 {"frontmatter_backend_unrecognized": True, "frontmatter_backend": fm_backend},
             )
+    marker_poster = _warn_default_boot_disk_ft_intent(spec, int(args.issue), marker_poster)
     try:
         outcome = dispatch_for_issue(
             spec,

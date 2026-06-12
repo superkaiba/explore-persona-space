@@ -2426,9 +2426,9 @@ alias for nibi) triggers a conflict warning +
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Three more gcp/auto
+(the GCE startup script clones from origin). Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
-(g) from #608): (e) **GPU
+(g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
 the GCP lane maps intent → machine type statically
 (`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
@@ -2452,7 +2452,22 @@ script fails loud at `mkdir -p /workspace/logs` and burns the submission
 (#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
 residual gap), or convert the dispatcher to the SLURM signaling contract
 (`status.json` heartbeat + `[phase=...]` log lines) before routing auto
-(planner.md §9 names this constraint at plan time).
+(planner.md §9 names this constraint at plan time). (h) **Boot-disk
+sizing on the gcp/auto lanes comes from the plan's Reproducibility pod
+row, threaded via `--boot-disk-gb` on EVERY launch — relaunches after a
+code-fix round included** — the GCP lane defaults the boot disk to
+300 GB pd-ssd (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a
+ZeRO-3 full-FT (`ft-7b`) fills with optimizer-state checkpoints in ~1h:
+the instance kernel-panics on the full disk, cloud-init ENOSPCs, the
+guest agent cannot write `authorized_keys` (SSH publickey lockout), and
+the wedged VM idles on 4×A100 until deleted (#606, 2026-06-12 — the
+relaunch dropped the plan's explicit "500 GB pd-ssd" spec). When the
+plan's pod row names a disk size, pass it; for `ft-*` intents whose
+plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
+(stderr + `extra.boot_disk_default_with_ft_intent=true` on the
+`epm:backend-selected` marker) when an ft intent is gcp-reachable with
+no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
+smokes stay legitimate).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script

@@ -982,6 +982,112 @@ def test_launch_gpus_match_on_gcp_lane_proceeds(monkeypatch, tmp_path) -> None:
     assert gcp.launches[0].gpus == 4
 
 
+def test_launch_ft_intent_gcp_without_boot_disk_warns_and_flags_marker(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """Incident #606: a gcp-reachable ``ft-*`` launch without
+    ``--boot-disk-gb`` provisions the 300 GB pd-ssd default, which a
+    ZeRO-3 full-FT fills in ~1h (kernel panic → SSH lockout → idle
+    A100s). The CLI must (a) WARN loudly on stderr pointing at the
+    plan's Reproducibility pod-row disk size, (b) stamp
+    ``extra.boot_disk_default_with_ft_intent=true`` on the
+    ``epm:backend-selected`` marker, and (c) NOT block the launch."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "606",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert len(gcp.launches) == 1, "the warning is additive — the launch must proceed"
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert any(
+        "--boot-disk-gb" in m and "boot_disk_default_with_ft_intent" in m for m in warnings
+    ), f"expected the loud default-boot-disk warning; got {warnings!r}"
+    extras = _backend_selected_extras(posts)
+    assert extras, "expected at least one epm:backend-selected post"
+    assert all(e.get("boot_disk_default_with_ft_intent") is True for e in extras)
+
+
+def test_launch_ft_intent_gcp_with_boot_disk_no_warning_no_flag(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """#606 control: an explicitly sized ``--boot-disk-gb`` launch is the
+    correct composition — no warning, no marker flag, and the size is
+    threaded to ``spec.extra['boot_disk_gb']`` for the GCP renderer."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    posts: list[dict[str, Any]] = []
+    factory = _build_mock_factory(gcp=gcp, marker_posts=posts)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING, logger="dispatch_issue"), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "607",
+                "--intent",
+                "ft-7b",
+                "--backend",
+                "gcp",
+                "--boot-disk-gb",
+                "500",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["boot_disk_gb"] == 500
+    warnings = [r.getMessage() for r in caplog.records if r.levelno >= logging.WARNING]
+    assert not any("boot_disk_default_with_ft_intent" in m for m in warnings), (
+        f"explicitly sized launch must stay silent; got {warnings!r}"
+    )
+    extras = _backend_selected_extras(posts)
+    assert all("boot_disk_default_with_ft_intent" not in e for e in extras)
+
+
+def test_ft_intent_boot_disk_guard_stands_down_off_gcp_lanes() -> None:
+    """Unit coverage for ``_ft_intent_gcp_default_boot_disk``'s stand-down
+    cases: explicit non-GCP lanes, non-ft intents, ft intents with no GCP
+    machine mapping (``ft-70b`` fails loud inside the lane before disk
+    matters), and an already-sized boot disk."""
+    from types import SimpleNamespace
+
+    from scripts.dispatch_issue import _ft_intent_gcp_default_boot_disk
+
+    def spec(*, intent="ft-7b", backend="gcp", extra=None):
+        return SimpleNamespace(intent=intent, backend=backend, extra=extra or {})
+
+    assert _ft_intent_gcp_default_boot_disk(spec()) is True
+    assert _ft_intent_gcp_default_boot_disk(spec(extra={"boot_disk_gb": 500})) is False
+    assert _ft_intent_gcp_default_boot_disk(spec(intent="lora-7b")) is False
+    assert _ft_intent_gcp_default_boot_disk(spec(intent="eval")) is False
+    assert _ft_intent_gcp_default_boot_disk(spec(intent="ft-70b")) is False
+    assert _ft_intent_gcp_default_boot_disk(spec(backend="runpod")) is False
+    assert _ft_intent_gcp_default_boot_disk(spec(backend="nibi")) is False
+
+
 def test_launch_gpus_override_skips_guard_on_lanes_that_honor_it(monkeypatch, tmp_path) -> None:
     """RunPod maps ``spec.gpus`` to ``pod_lifecycle.py --gpu-count`` and
     SLURM maps it to the ``--gres`` render — explicit non-GCP lanes
