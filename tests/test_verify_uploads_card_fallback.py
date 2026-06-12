@@ -1,4 +1,4 @@
-"""Regression tests for the epm:results reproducibility-card fallback (#608).
+"""Regression tests for the epm:results reproducibility-card fallback (#608, #601).
 
 Multi-cell sweeps declare artifacts per cell (an ``adapter_paths`` dict +
 per-cell WandB run names) inside the epm:results payload's
@@ -7,9 +7,11 @@ value to pass. ``scripts/verify_uploads.py`` used to hard-MISS the
 wandb_run / hf_model rows in that case (false mechanical FAIL the
 upload-verifier had to supersede row-by-row, same class as incident #563).
 These tests pin: the prose-prefixed JSON extraction (#608's drained-sentinel
-note shape), latest-card selection, the per-path HF aggregation, the
-per-name WandB resolution, and that explicit single-path declarations win
-unchanged. Same module-loading conventions as
+note shape), the cross-marker card merge (newest-wins per declared field —
+#601: a resume-pass sentinel with ``adapter_paths: {}`` must not shadow the
+first marker's 16 verified paths; the ``reproducibility`` key alias), the
+per-path HF aggregation, the per-name WandB resolution, and that explicit
+single-path declarations win unchanged. Same module-loading conventions as
 tests/test_verify_uploads_type_selection.py.
 """
 
@@ -71,34 +73,124 @@ class TestExtractFirstJsonObject:
         assert verify_uploads._extract_first_json_object("[1, 2, 3]") is None
 
 
-# ── latest_results_card ───────────────────────────────────────────────────────
+# ── merged_results_card ───────────────────────────────────────────────────────
 
 
-class TestLatestResultsCard:
+class TestMergedResultsCard:
     def test_picks_newest_results_event_with_card(self):
         events = [
             {"kind": "epm:results", "note": '{"reproducibility_card": {"hf_model_path": "old"}}'},
             {"kind": "epm:progress", "note": "irrelevant"},
             {"kind": "epm:results", "note": '{"reproducibility_card": {"hf_model_path": "new"}}'},
         ]
-        assert verify_uploads.latest_results_card(events) == {"hf_model_path": "new"}
+        assert verify_uploads.merged_results_card(events) == {"hf_model_path": "new"}
 
     def test_cardless_repost_does_not_erase_earlier_card(self):
         events = [
             {"kind": "epm:results", "note": '{"reproducibility_card": {"hf_model_path": "p"}}'},
             {"kind": "epm:results", "note": '{"event": "sweep_complete"}'},
         ]
-        assert verify_uploads.latest_results_card(events) == {"hf_model_path": "p"}
+        assert verify_uploads.merged_results_card(events) == {"hf_model_path": "p"}
 
     def test_no_results_event_returns_none(self):
-        assert verify_uploads.latest_results_card([{"kind": "epm:progress", "note": "x"}]) is None
+        assert verify_uploads.merged_results_card([{"kind": "epm:progress", "note": "x"}]) is None
 
     def test_real_608_note_shape(self):
-        card = verify_uploads.latest_results_card([{"kind": "epm:results", "note": _NOTE_608}])
+        card = verify_uploads.merged_results_card([{"kind": "epm:results", "note": _NOTE_608}])
         assert card is not None
         assert card["adapter_paths"] == {
             "villain:posonly_epoch": "adapters/issue_608/posonly_epoch/villain_seed42"
         }
+
+    def test_empty_resume_card_falls_back_per_field(self):
+        """The #601 false-FAIL repro: a resume-pass sentinel re-post whose
+        card carries adapter_paths: {} must not shadow the first marker's
+        full declaration. Newest non-empty wins per field; the merged card
+        records provenance for the fields that fell back."""
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "2026-06-11T22:35:04Z",
+                "note": (
+                    '{"status": "done", "reproducibility": '
+                    '{"base_model": "Qwen/Qwen2.5-7B-Instruct", '
+                    '"hf_model_repo": "superkaiba1/explore-persona-space", '
+                    '"adapter_paths": {"c1": "adapters/issue_601/a", '
+                    '"c2": "adapters/issue_601/b"}}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "2026-06-11T23:37:19Z",
+                "note": (
+                    '{"status": "done", "reproducibility": '
+                    '{"base_model": "Qwen/Qwen2.5-7B-Instruct", '
+                    '"hf_model_repo": "superkaiba1/explore-persona-space", '
+                    '"adapter_paths": {}}}'
+                ),
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card is not None
+        assert card["adapter_paths"] == {
+            "c1": "adapters/issue_601/a",
+            "c2": "adapters/issue_601/b",
+        }
+        # Non-empty fields of the newest card still win.
+        assert card["hf_model_repo"] == "superkaiba1/explore-persona-space"
+        assert "adapter_paths @ 2026-06-11T22:35:04Z" in card["_card_provenance"]
+
+    def test_reproducibility_key_alias_accepted(self):
+        """#601's producer named the card ``reproducibility``, not
+        ``reproducibility_card``."""
+        events = [
+            {"kind": "epm:results", "note": '{"reproducibility": {"hf_model_path": "p"}}'},
+        ]
+        assert verify_uploads.merged_results_card(events) == {"hf_model_path": "p"}
+
+    def test_canonical_key_wins_over_alias(self):
+        events = [
+            {
+                "kind": "epm:results",
+                "note": (
+                    '{"reproducibility_card": {"hf_model_path": "canonical"}, '
+                    '"reproducibility": {"hf_model_path": "alias"}}'
+                ),
+            },
+        ]
+        assert verify_uploads.merged_results_card(events) == {"hf_model_path": "canonical"}
+
+    def test_newest_wins_per_field_across_cards(self):
+        events = [
+            {
+                "kind": "epm:results",
+                "ts": "t0",
+                "note": (
+                    '{"reproducibility_card": {"adapter_paths": {"c": "old"}, '
+                    '"wandb_project": "huggingface"}}'
+                ),
+            },
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": '{"reproducibility_card": {"adapter_paths": {"c": "new"}}}',
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["adapter_paths"] == {"c": "new"}
+        assert card["wandb_project"] == "huggingface"
+        assert "wandb_project @ t0" in card["_card_provenance"]
+        assert "adapter_paths" not in card["_card_provenance"]
+
+    def test_all_cards_empty_returns_none(self):
+        events = [
+            {"kind": "epm:results", "note": '{"reproducibility": {"adapter_paths": {}}}'},
+        ]
+        assert verify_uploads.merged_results_card(events) is None
+
+    def test_single_card_has_no_provenance(self):
+        card = verify_uploads.merged_results_card([{"kind": "epm:results", "note": _NOTE_608}])
+        assert "_card_provenance" not in card
 
 
 # ── check_hf_model_from_card ──────────────────────────────────────────────────
@@ -152,6 +244,23 @@ class TestCheckHfModelFromCard:
             res = verify_uploads.check_hf_model_from_card({"hf_model_path": "adapters/issue_9/a"})
         assert res["status"] == "OK"
         mock_check.assert_called_once()
+
+    def test_merge_provenance_threaded_into_detail(self):
+        """A merged card's cross-marker fallback note lands in the row detail
+        so the report says which marker actually declared the paths (#601)."""
+        card = dict(_CARD_608)
+        card["_card_provenance"] = (
+            "field(s) declared by an earlier epm:results marker, not the "
+            "latest: adapter_paths @ 2026-06-11T22:35:04Z"
+        )
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            return_value={"status": "OK", "url": "u", "file_count": 3},
+        ):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert "adapter_paths @ 2026-06-11T22:35:04Z" in res["detail"]
 
 
 # ── check_wandb_from_card ─────────────────────────────────────────────────────

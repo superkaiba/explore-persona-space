@@ -27,11 +27,18 @@ Usage:
 
 Sweep tasks (#608): when --wandb-run / --hf-model are omitted because the
 run has no SINGLE path (per-cell adapters + per-cell WandB runs), the
-training rows fall back to the task's latest epm:results marker
-``reproducibility_card`` — every ``adapter_paths`` entry is verified under
-``hf_model_repo`` via list_repo_files, and ``wandb_run_names`` +
-``wandb_project`` resolve per-cell runs by display name. Explicit
-declarations always win unchanged.
+training rows fall back to the task's epm:results reproducibility card
+(``reproducibility_card``, or its ``reproducibility`` alias) — every
+``adapter_paths`` entry is verified under ``hf_model_repo`` via
+list_repo_files, and ``wandb_run_names`` + ``wandb_project`` resolve
+per-cell runs by display name. Explicit declarations always win unchanged.
+
+Multi-launch runs post MULTIPLE epm:results markers (#601): a resume-pass
+sentinel whose cells all ``resumed_skip`` carries an empty card
+(``adapter_paths: {}``) that must not shadow the first marker's full
+declaration, so the card is MERGED across all epm:results markers —
+newest-wins per field, where an empty dict/list/string does not count as
+a declaration (see ``merged_results_card``).
 """
 
 import argparse
@@ -273,13 +280,16 @@ def check_wandb_artifact(artifact_path: str) -> dict:
         return {"status": "MISSING", "url": "", "detail": str(e)}
 
 
-# ── epm:results reproducibility-card fallback (#608) ──────────────────────────
+# ── epm:results reproducibility-card fallback (#608, #601) ────────────────────
 # Multi-cell sweeps declare their artifacts per cell (an ``adapter_paths``
 # dict + per-cell WandB run names) inside the epm:results payload's
-# ``reproducibility_card`` — there is no single --hf-model / --wandb-run
-# value to pass. Without this fallback every sweep task produced a false
-# mechanical FAIL on the wandb_run / hf_model rows that the upload-verifier
-# had to supersede row-by-row (same false-FAIL class as incident #563).
+# ``reproducibility_card`` (alias ``reproducibility``) — there is no single
+# --hf-model / --wandb-run value to pass. Without this fallback every sweep
+# task produced a false mechanical FAIL on the wandb_run / hf_model rows
+# that the upload-verifier had to supersede row-by-row (same false-FAIL
+# class as incident #563). Multi-launch runs post several epm:results
+# markers, and a resume-pass sentinel can carry an EMPTY card (#601), so
+# the card is merged across all markers, newest-wins per declared field.
 # The fallback fires ONLY when the caller declared no single path; explicit
 # declarations always win unchanged.
 
@@ -305,26 +315,87 @@ def _extract_first_json_object(text: str) -> dict | None:
     return None
 
 
-def latest_results_card(events: list[dict]) -> dict | None:
-    """Return the reproducibility_card from the newest ``epm:results`` event.
+# Producers name the card ``reproducibility_card`` (canonical, #608) or
+# ``reproducibility`` (the #601 sweep dispatcher); canonical key wins when
+# both are present in one payload.
+_CARD_KEYS = ("reproducibility_card", "reproducibility")
 
-    Scans newest-first and returns the first event whose note carries a
-    parseable JSON payload with a dict ``reproducibility_card`` (a newer
-    re-post without a card does not erase an earlier declared card).
+
+def _card_from_payload(payload: dict) -> dict | None:
+    """Return the reproducibility card dict from a parsed epm:results payload."""
+    for key in _CARD_KEYS:
+        card = payload.get(key)
+        if isinstance(card, dict):
+            return card
+    return None
+
+
+def _is_declared(value) -> bool:
+    """True when a card field actually declares something (non-empty).
+
+    A resume-pass re-post can carry the card SHAPE with empty contents
+    (#601: ``adapter_paths: {}`` after every cell ``resumed_skip``) — an
+    empty dict/list/string or None is not a declaration and must not
+    shadow an earlier marker's real one.
     """
+    return value is not None and value != "" and value != {} and value != []
+
+
+def merged_results_card(events: list[dict]) -> dict | None:
+    """Merge reproducibility cards across ALL ``epm:results`` events.
+
+    Multi-launch runs legitimately post several ``epm:results`` markers
+    (resume relaunches, drained sentinels), and a later sentinel can carry
+    an empty card that would shadow the first marker's full declaration
+    (#601: a resume pass with every cell ``resumed_skip`` posted
+    ``adapter_paths: {}``, masking 16 verified adapter paths). Each FIELD
+    therefore resolves newest-wins: the value comes from the newest card
+    that declares it non-empty (``_is_declared``). When any field falls
+    back past the newest card, the merged card carries a
+    ``_card_provenance`` note that the row checks append to their detail.
+    Returns ``None`` when no event declares a card (or every card is
+    entirely empty) — the caller falls through to the strict MISSING row.
+    """
+    cards: list[tuple[dict, str]] = []  # newest first
     for ev in reversed(events):
         if str(ev.get("kind", "")) != "epm:results":
             continue
         payload = _extract_first_json_object(str(ev.get("note", "")))
-        if payload is not None:
-            card = payload.get("reproducibility_card")
-            if isinstance(card, dict):
-                return card
-    return None
+        if payload is None:
+            continue
+        card = _card_from_payload(payload)
+        if card is not None:
+            cards.append((card, str(ev.get("ts", "")) or "unknown-ts"))
+    if not cards:
+        return None
+    merged: dict = {}
+    fallback_fields: dict[str, str] = {}
+    for pos, (card, ts) in enumerate(cards):
+        for key, value in card.items():
+            if key in merged or not _is_declared(value):
+                continue
+            merged[key] = value
+            if pos > 0:
+                fallback_fields[key] = ts
+    if fallback_fields:
+        merged["_card_provenance"] = (
+            "field(s) declared by an earlier epm:results marker, not the latest: "
+            + ", ".join(f"{k} @ {ts}" for k, ts in sorted(fallback_fields.items()))
+        )
+    return merged or None
+
+
+def _append_card_provenance(result: dict, card: dict) -> dict:
+    """Append the cross-marker fallback note to a card-check result's detail."""
+    provenance = card.get("_card_provenance")
+    if provenance:
+        detail = result.get("detail", "")
+        result["detail"] = f"{detail} [{provenance}]".strip() if detail else f"[{provenance}]"
+    return result
 
 
 def _load_results_card(issue_num: int) -> dict | None:
-    """Read the task's events and return its latest reproducibility_card.
+    """Read the task's events and return its merged reproducibility card.
 
     Fail-soft: a missing task / unreadable events file returns ``None`` and
     the caller falls through to the strict MISSING row — a broken fallback
@@ -333,7 +404,7 @@ def _load_results_card(issue_num: int) -> dict | None:
     try:
         from explore_persona_space.task_workflow import list_events
 
-        return latest_results_card(list_events(issue_num))
+        return merged_results_card(list_events(issue_num))
     except Exception as e:
         logger.warning("could not read epm:results card for task %s (%s)", issue_num, e)
         return None
@@ -373,25 +444,31 @@ def check_hf_model_from_card(card: dict) -> dict | None:
             errored = errored or res["status"] == "ERROR"
             absent.append(f"{p} ({res.get('detail') or res['status']})")
     if absent:
-        return {
-            "status": "ERROR" if errored else "MISSING",
-            "url": "",
+        return _append_card_provenance(
+            {
+                "status": "ERROR" if errored else "MISSING",
+                "url": "",
+                "detail": (
+                    f"reproducibility_card declares {len(paths)} model path(s) under "
+                    f"{repo}; unresolved: " + "; ".join(absent[:5])
+                ),
+                "source": "epm:results reproducibility_card",
+            },
+            card,
+        )
+    return _append_card_provenance(
+        {
+            "status": "OK",
+            "url": f"https://huggingface.co/{repo}/tree/main",
+            "file_count": total_files,
             "detail": (
-                f"reproducibility_card declares {len(paths)} model path(s) under "
-                f"{repo}; unresolved: " + "; ".join(absent[:5])
+                f"all {len(paths)} model path(s) from the epm:results "
+                f"reproducibility_card resolve on {repo}"
             ),
             "source": "epm:results reproducibility_card",
-        }
-    return {
-        "status": "OK",
-        "url": f"https://huggingface.co/{repo}/tree/main",
-        "file_count": total_files,
-        "detail": (
-            f"all {len(paths)} model path(s) from the epm:results "
-            f"reproducibility_card resolve on {repo}"
-        ),
-        "source": "epm:results reproducibility_card",
-    }
+        },
+        card,
+    )
 
 
 def check_wandb_runs_by_name(project_path: str, run_names: list[str]) -> dict:
@@ -437,7 +514,7 @@ def check_wandb_from_card(card: dict) -> dict | None:
     if single:
         result = check_wandb_run(str(single))
         result["source"] = "epm:results reproducibility_card"
-        return result
+        return _append_card_provenance(result, card)
     names = card.get("wandb_run_names")
     if isinstance(names, dict):
         names = list(names.values())
@@ -447,7 +524,7 @@ def check_wandb_from_card(card: dict) -> dict | None:
         project_path = f"{entity}/{project}" if entity else str(project)
         result = check_wandb_runs_by_name(project_path, [str(n) for n in names])
         result["source"] = "epm:results reproducibility_card"
-        return result
+        return _append_card_provenance(result, card)
     return None
 
 
@@ -704,8 +781,10 @@ def run_verification(
 
     When the caller declares no single ``wandb_run`` / ``hf_model_path``
     (the sweep case — there is no single path), the training-only rows
-    fall back to the task's latest ``epm:results`` reproducibility_card
-    (per-cell ``adapter_paths`` + ``wandb_run_names`` — #608). Explicit
+    fall back to the task's ``epm:results`` reproducibility card, merged
+    across all epm:results markers newest-wins per field (per-cell
+    ``adapter_paths`` + ``wandb_run_names`` — #608; empty resume-pass
+    cards do not shadow earlier declarations — #601). Explicit
     declarations always win unchanged.
     """
     experiment_type_source = "cli"
