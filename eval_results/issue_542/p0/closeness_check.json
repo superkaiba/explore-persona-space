@@ -1,0 +1,28 @@
+{
+  "git_commit": "7c1cd2abd7343bcbd6308e42b68d745c6edf8126",
+  "generated_at": "2026-06-12T05:16:23.611402+00:00",
+  "seed": 42,
+  "layer": 22,
+  "n_probes": 100,
+  "anchor": "last_prompt",
+  "arm1_xfam": {
+    "per_member_mean_dist": {
+      "neg_sp_police": 0.1105652258580464,
+      "neg_sp_ph4": 0.13946294450786928,
+      "neg_reph_curious": 0.09664812473383932,
+      "neg_wc_short": 0.10213734905445429
+    },
+    "panel_mean_dist": 0.11220341103855233
+  },
+  "arm2_close": {
+    "per_member_mean_dist": {
+      "neg_sp_datasci": 0.09350169250598755,
+      "neg_sp_nurse": 0.09535506916985659,
+      "neg_sp_ph1_twin": 0.10180246962385112,
+      "neg_sp_ph2_twin": 0.15393462111254874
+    },
+    "panel_mean_dist": 0.11114846310306101
+  },
+  "pass_arm2_closer": true,
+  "note": "PASS: close panel measurably closer to the train contexts than the cross-family panel"
+}
