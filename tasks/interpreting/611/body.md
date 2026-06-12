@@ -4,7 +4,7 @@ title: A bare role header leaks less marker mass to the wrong persona from insta
 kind: experiment
 tags: []
 created_at: '2026-06-11T21:56:57Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 533
 goal: 'Determine whether the bare role header''s lower wrong-persona leakage and higher
   default-assistant leakage (the probe split in #533''s bare-word grid) survives base-prior-clean
