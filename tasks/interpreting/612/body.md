@@ -5,7 +5,7 @@ title: The model's own agreeing completions install sycophancy substantially mor
 kind: experiment
 tags: []
 created_at: '2026-06-12T01:04:35Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 591
 goal: 'Rebuild the sycophancy-implantation rig with on-policy training data and re-measure
   leakage on a graded-cosine persona panel with base-prior controls: train each source
