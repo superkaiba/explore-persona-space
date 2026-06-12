@@ -281,6 +281,23 @@ was reactive, not preventative.)
      env; `_upload` returned empty path; cell exited rc=2. Enforced by
      `tests/test_subprocess_env_explicit.py` (two AST checks per
      in-scope file).
+- **Per-GPU parallel fan-out: pin `CUDA_VISIBLE_DEVICES=<gpu>` in the
+  LAUNCHER env per cell, with the matching `+gpu_id=N` / `--gpu-id N`.**
+  Any dispatcher running N cells in parallel with one GPU each must set
+  BOTH; the in-process clobber in `train/sft.py` is silently defeated by
+  any import-time cuInit (`import peft` — #545), co-locating every cell
+  on physical GPU 0 (#523/#541/#543/#557). Reference shape:
+  `scripts/i474_phase23_dispatch.sh:192-193`. Regression smoke:
+  `tests/test_cvd_wave_assignment_smoke.py` — extend it or add a sibling
+  when you write a new wave dispatcher. Launch-side enforcement:
+  `experimenter.md` Before Running step 10. Mechanical backstop:
+  `workflow_lint.py --check-dispatcher-cvd-pin` (bundled into the
+  no-flags default run) FAILs any backgrounded `--gpu-id` / `+gpu_id=`
+  python launch in `scripts/**/*.sh` lacking a `CUDA_VISIBLE_DEVICES=`
+  prefix on the same command; waive deliberately unpinned shapes with
+  `# CVD_PIN_EXEMPT: <reason ≥10 chars>` on the same logical line or
+  the immediately preceding non-blank line. Full mechanics:
+  `.claude/rules/gotchas.md`.
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
   assistant turns.

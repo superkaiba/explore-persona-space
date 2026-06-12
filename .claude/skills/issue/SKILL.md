@@ -3954,13 +3954,13 @@ re-invocation).**
    is NO result marker for that same stage+round posted AFTER it (i.e. the
    breadcrumb is genuinely the latest event), THEN compare its timestamp to
    now against the **stage-aware freshness window**:
-   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
-     AND `clean-result` round 1 — these spawn both the Claude critic AND a
-     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
-     round 1 commonly exceeds 15 min wall time).
-   - Window = **15 min** for everything else (`verifying`,
-     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
-     any other Step 8/9 stage).
+   - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
+     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
+     `companion task` since the 2026-06-12 all-rounds policy; such
+     rounds commonly exceed 15 min wall time).
+   - Window = **15 min** for everything else (`verifying` and any other
+     Step 8/9 stage).
    - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
      skill cleanly (`post_step_completed.py ... --exit-kind parked
      --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
@@ -3984,7 +3984,7 @@ event. A stage is in flight when ITS breadcrumb has no matching result
 marker after it and is within the freshness window.
 
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
-verifier turn; the 30-min Codex round-1 window covers a high-effort
+verifier turn; the 30-min Codex-ensemble window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
 double-writer on `body.md`. Both fit cleanly under the 20-min backstop
 cadence × 2-miss safety margin, so a genuinely stalled stage is still
@@ -4343,7 +4343,8 @@ dispatching this round's critics.
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Brief contract (matches
+   every round (all-rounds ensemble as of 2026-06-12; previously
+   round 1 only). Brief contract (matches
    `.claude/agents/codex-clean-result-critic.md` § "Your brief
    contains" + Step 1b): pass the ABSOLUTE
    `$(task.py find <N>)/body.md` as `clean_result_body_path` and
@@ -4392,9 +4393,13 @@ Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
-`scripts/verify_task_body.py` (must still PASS). Re-spawn
-`clean-result-critic` against the revised surfaces. Posts the next
-critique version. Rounds 2-3 are Claude-only (no Codex twin).
+`scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
+ensemble — `clean-result-critic` AND `codex-clean-result-critic`
+(all-rounds ensemble as of 2026-06-12), fresh contexts, against the
+revised surfaces, with prior critique summaries in both briefs. Both
+post the next critique version (`epm:clean-result-critique v<n>` +
+`epm:clean-result-critique-codex v<n>`); apply the same ensemble
+decision rule (including the procedural-only strip) as round 1.
 
 **Max 3 rounds.** After round 3, advance regardless and fold the
 residual structural / register debt into the chat-side summary so the
@@ -4730,7 +4735,8 @@ steps 4 + 6-9 are the LATE JOIN executed here):
 
 The dedicated `reviewer` / `codex-reviewer` ensemble was deprecated when
 its statistical-framing responsibilities were absorbed into
-`clean-result-critic` Lens 11 (see CLAUDE.md ontology table). The
+`clean-result-critic` Lens 7 (see CLAUDE.md ontology table; under the v2
+spec Lens 11 is "raw alongside processed"). The
 `reviewing` status now exists ONLY as the single-step parking point
 between clean-result-critic PASS and `awaiting_promotion`. The skill
 moves through it in one transition with no agent dispatch:
@@ -4739,7 +4745,7 @@ moves through it in one transition with no agent dispatch:
 uv run python scripts/task.py set-status <N> awaiting_promotion \
   --note "clean-result-critic PASS; parking for user promotion."
 uv run python scripts/task.py post-marker <N> epm:status-changed \
-  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 11)"
+  --note "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 7)"
 ```
 
 **Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
@@ -5104,6 +5110,19 @@ Then post the chat-side prompt:
 >   `uv run python scripts/task.py promote <N> useful`     (paper-relevant)
 >   `uv run python scripts/task.py promote <N> not-useful` (archive candidate)
 > Then re-enter `/issue <N>` to fire Step 10.
+
+> **Re-park BEFORE the §5 marker (same-issue follow-up rounds — incident
+> #533, 2026-06-11):** during a follow-up round, post the §5 marker below
+> ONLY after the round's re-park has actually executed — check `task.py
+> view <N> --json` shows `status: awaiting_promotion` first. If the
+> status is still `followups_running`, the re-park was skipped: run step
+> 3's `set-status <N> awaiting_promotion` + step 4's
+> `epm:same-issue-followup-run v1` completion marker NOW, then post the
+> marker. Posting the exit-site marker while still at `followups_running`
+> and exiting is the #533 freeze shape — the session died there and the
+> task stranded for ~26h. (`autonomous_session_watch.py` now backstops
+> this with a round-complete auto re-park, but the backstop is recovery,
+> not the design.)
 
 Post the §5 marker (the EXIT site is the tail of step `9a-bis`; the
 candidate landing step on resume is `10` (`completion_audit`), looked up
@@ -5773,7 +5792,7 @@ dedicated "working" statuses):
 | `running` (code-reviewing) | neither `epm:code-review` nor `epm:code-review-codex` for the current implementation version | both ensemble reviewers were cancelled | re-spawn both code-reviewer + codex-code-reviewer in parallel |
 | `running` (code-reviewing) | `epm:code-review v<n>` exists, no `epm:code-review-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-code-reviewer` only |
 | `running` (code-reviewing) | `epm:code-review-codex v<n>` exists, no `epm:code-review v<n>` | Claude reviewer not yet returned | re-spawn `code-reviewer` only |
-| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn reconciler |
+| `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts disagree (PASS-class vs FAIL), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `code-reviewer` | reconciler not yet started | spawn reconciler |
 | `running` (code-reviewing) | both `epm:code-review v<n>` and `epm:code-review-codex v<n>` exist, verdicts agree | ensemble decision ready | apply Step 5c rule and advance |
 | `running` (code-reviewing) | `epm:code-review-codex` is `epm:failure` (codex-output-malformed or infra) | Codex twin no-show | proceed with Claude-only decision per Step 5d fallback |
 | `running` (workload) | no `epm:results` for > 4h | experimenter crashed silently | post `epm:stale`, ask user |
@@ -5783,12 +5802,15 @@ dedicated "working" statuses):
 | `interpreting` | `epm:interpretation` exists, neither `epm:interp-critique` nor `epm:interp-critique-codex` for the current version | both ensemble critics not started | spawn `interpretation-critic` + `codex-interpretation-critic` in parallel |
 | `interpreting` | `epm:interp-critique v<n>` exists, no `epm:interp-critique-codex v<n>` | Codex twin not yet returned | re-spawn `codex-interpretation-critic` only |
 | `interpreting` | `epm:interp-critique-codex v<n>` exists, no `epm:interp-critique v<n>` | Claude critic not yet returned | re-spawn `interpretation-critic` only |
-| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` | reconciler not yet started | spawn `reconciler` (marker mode) |
-| `interpreting` | both ensemble events exist, verdicts agree OR reconcile event present, ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
-| `interpreting` | ensemble verdict PASS or round >= 3, no `epm:clean-result-critique` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn clean-result-critic |
-| `interpreting` | `epm:clean-result-critique` REVISE, round < 3 | structure / register revision in progress | re-spawn analyzer with the clean-result-critique |
-| `interpreting` | `epm:clean-result-critique` PASS or round >= 3 | ready for review | advance to `reviewing` |
-| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 11 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
+| `interpreting` | both `epm:interp-critique v<n>` and `epm:interp-critique-codex v<n>` exist, verdicts disagree (PASS vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `interpretation-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | both ensemble events exist, verdicts agree OR role-matching reconcile event present (`**Role under adjudication:** interpretation-critic`), ensemble verdict REVISE, round < 3 | revision needed | re-spawn analyzer with all critique events |
+| `interpreting` | ensemble verdict PASS or round >= 3, neither `epm:clean-result-critique` nor `epm:clean-result-critique-codex` | content honesty settled, structure + register loop not started | promote body in place if missing, then spawn `clean-result-critic` + `codex-clean-result-critic` in parallel |
+| `interpreting` | `epm:clean-result-critique v<n>` exists, no `epm:clean-result-critique-codex v<n>` | Codex twin not yet returned (or wrapper crashed) | re-spawn `codex-clean-result-critic` only |
+| `interpreting` | `epm:clean-result-critique-codex v<n>` exists, no `epm:clean-result-critique v<n>` | Claude critic not yet returned | re-spawn `clean-result-critic` only |
+| `interpreting` | both `epm:clean-result-critique v<n>` and `epm:clean-result-critique-codex v<n>` exist, verdicts disagree (PASS-class vs REVISE), no `epm:review-reconcile v<n>` whose body's `**Role under adjudication:**` is `clean-result-critic` | reconciler not yet started | spawn `reconciler` (marker mode) |
+| `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 3 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
+| `interpreting` | clean-result ensemble verdict PASS-class or round >= 3 | ready for review | advance to `reviewing` |
+| `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
@@ -5797,6 +5819,19 @@ dedicated "working" statuses):
 | `followups_running` | no unrun followup-scope; at least one open child task (`parent_id: <N>` in `body.md` frontmatter) not in `completed` / `archived` | legacy semantics: children still in flight | show child-task table, EXIT |
 | `followups_running` | no unrun followup-scope; every child has reached `completed` / `archived` (or no children remain) | children all done | re-run Step 10: relabel parent to `completed` |
 | `running` (workload) | pod alive + log advancing (`ssh epm-issue-<N> tail -1 <log_abs>`), no live bg-Bash poll for this session, latest `epm:*` marker is stale (no `epm:progress` in > ~15 min) | Step 6d.2 bg-Bash poll chain died — typically because a reaction turn emitted a corrupted/truncated tool-call (rendered as raw text), the harness had no bg work to wake on, AND the auto-armed backstop cron also died (a `durable=False` cron does not survive the session that registered it, so this row is reached mainly after a session restart / fresh recovery session). Pod and run are HEALTHY; only the session's monitor died. (Origin: tasks #462 / #463, 2026-06-02.) | Re-enter the polling loop by re-invoking `/issue <N>` once; it reads the latest `epm:run-launched` (`pod`, `pid`, `log_abs`), resumes Step 6d.2, and the Step 6d.2 step-1 guard AUTO-RE-ARMS the backstop cron (`CronList` for `prompt.strip() == "/issue-tick <N>"`, `CronCreate` if absent) so the next dead turn won't strand the run again — no user `/loop` typing needed. The lightweight `/issue-tick <N>` tick is what the cron fires; the full `/issue <N>` skill loads only on cold start, cold respawn, or the tick's stale-marker recovery branch. Do NOT re-spawn `pod_watch.py` / `pod.py watch` — that mechanism is retired per "Notes on the obsolete monitoring stack". |
+
+**Reconcile predicates are role-scoped.** There is exactly ONE marker-mode
+reconcile kind (`epm:review-reconcile` — workflow.yaml § markers); the
+adjudicated role lives in the verdict body's `**Role under adjudication:**`
+field, not the marker name. Wherever a row above tests for (or reads the
+verdict of) a reconcile event, only an event whose role field matches that
+stage's critic (`code-reviewer` / `interpretation-critic` /
+`clean-result-critic`) counts. Both the interpretation and clean-result
+ensembles sit at status `interpreting` with the same round numbering, so an
+unqualified "no `epm:review-reconcile v<n>`" predicate would let an
+interp-stage reconcile falsely satisfy the clean-result disagreement row
+(skipping the reconciler) or feed the wrong stage's verdict — and vice
+versa.
 
 Without distinct statuses for `uploading` / `interpreting` / `reviewing` /
 `awaiting_promotion`, many of these rows would be indistinguishable.

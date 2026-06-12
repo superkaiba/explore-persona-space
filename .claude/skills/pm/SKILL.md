@@ -36,6 +36,8 @@ The user runs **multiple parallel Happy sessions** on the local VM:
 - **N per-experiment sessions** — one per active task. Each
   **autonomously self-drives** `/issue <N>` (where `N` is task number in the
   task workflow) through the lifecycle. You SPAWN them on the user's go-ahead
+  (experiments; ripe `kind: infra`/`batch` tasks auto-dispatch with NO
+  go-ahead per the standing rule — operating loop step 4)
   via `scripts/spawn_session.py spawn-issue --issue N --auto`. You do NOT
   drive `/issue` from the PM session.
 
@@ -101,10 +103,23 @@ flow. The PM's job is dispatch, not execution.
       then `### By theme` — ALL proposed tasks, one line each (title,
       else title + first clause of the frontmatter `goal:`; never page
       through full bodies). Long is intentional (~130 rows).
-4. Surface the top 1–3 candidate actions ranked by information gain per
+4. Run the standing **infra auto-dispatch pass** (research-pm.md
+   § Standing rule — infra auto-dispatch; user directive 2026-06-12):
+   from the queue report already in hand, enumerate ripe `proposed`
+   `kind: infra` (and pure code/ops `kind: batch`) tasks, consolidate
+   obvious duplicates (archive with a note marker naming the canonical
+   task), and auto-dispatch up to the cap of 3 concurrent infra
+   sessions via `spawn_session.py spawn-issue --issue <N> --auto` — no
+   user ask. Hold ONLY the tight park list (credentials off-machine,
+   outward-facing sends, spend/vendor decisions, re-kind items,
+   irreversible research-artifact deletion). Append an
+   `Infra auto-dispatch` block to the step-3 report: what was
+   dispatched this pass + held items with one-word reasons. The full
+   rule (ripeness, cap counting, park list) lives in research-pm.md.
+5. Surface the top 1–3 candidate actions ranked by information gain per
    compute-hour (use `/experiment-proposer` if the queue is non-trivial;
    otherwise just enumerate). Each candidate gets a one-line rationale.
-5. Wait for user direction. Possible directions:
+6. Wait for user direction. Possible directions:
    - **"work on #N" / "start #N" / "auto-run #N"** → spawn an autonomous issue
      session that self-drives `/issue <N>` to completion (see below).
    - **"propose more"** → invoke `/experiment-proposer` for a deeper rank.
@@ -112,8 +127,9 @@ flow. The PM's job is dispatch, not execution.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
    - **"status"** → re-run the triage scan (the full structured
-     per-status report, sections 1–4, same as the boot pass; "quick
-     status" = section 1 only).
+     per-status report, sections 1–4, same as the boot pass, plus the
+     step-4 infra auto-dispatch pass — it fires on EVERY status pass;
+     "quick status" = section 1 only).
 
 ### Fleet-burn recompute rule
 

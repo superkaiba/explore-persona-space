@@ -237,7 +237,7 @@ revisions are versioned independently of the event log).
 ## Example: clean-result-critique marker (event row)
 
 ```jsonl
-{"ts": "2026-05-20T18:00:00Z", "kind": "epm:clean-result-critique", "version": 1, "note": "Clean-result-critic — PASS\n\nLens 11 (statistical framing): no overclaims; CI methodology stated.\nLens 1 (title): 'Persona collapse hero (MODERATE confidence)' agrees with body confidence sentence.\n[...]", "metadata": {"review_pair": "clean_result", "round": 1, "reviewer": "clean-result-critic", "verdict": "pass"}}
+{"ts": "2026-05-20T18:00:00Z", "kind": "epm:clean-result-critique", "version": 1, "note": "Clean-result-critic — PASS\n\nLens 7 (statistical framing): no overclaims; CI methodology stated.\nLens 1 (title): 'Persona collapse hero (MODERATE confidence)' agrees with body confidence sentence.\n[...]", "metadata": {"review_pair": "clean_result", "round": 1, "reviewer": "clean-result-critic", "verdict": "pass"}}
 ```
 
 ## Example: test-verdict marker (event row)

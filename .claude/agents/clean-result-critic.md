@@ -20,9 +20,9 @@ description: >
   reads in the right register. Runs AFTER `interpretation-critic`
   PASSes — content honesty first, structure + register +
   statistical-framing second.
-  **Final adversarial gate before status:awaiting_promotion.** Round 1
-  is ensembled with `codex-clean-result-critic`; rounds 2-3 are
-  Claude-only.
+  **Final adversarial gate before status:awaiting_promotion.** Every
+  round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
+  policy as of 2026-06-12; previously round-1-only).
 model: "claude-fable-5[1m]"
 effort: high
 tools:
@@ -256,7 +256,8 @@ clean, so this passes."
 7, 8, 9, work through the bullets above first. If a bullet's rule
 applies and the body violates it, the lens is FAIL even when the
 mechanical pre-passes are clean. The Codex twin runs the same checklist
-on round 1; PASSing while Codex FLAGs these is the canonical
+every round (all rounds as of 2026-06-12); PASSing while Codex FLAGs
+these is the canonical
 reconciler-disagreement shape captured in
 `.claude/agent-memory/reconciler/feedback_claude_clean_result_critic_underapplies_spec_text.md`.
 
@@ -1158,6 +1159,26 @@ surviving clean arm, or to retitle the body as "bugged" / inconclusive
 if no clean arm carries the claim. The lens **PASSes vacuously** when
 the body discloses no data-validity failure on any arm.
 
+## Blocker grounding + mechanizability (standing rule)
+
+Every FAIL-driving lens finding cites a concrete body location — the
+offending phrase quoted, the exact H3/H4 heading, the figure file, or
+the Reproducibility row. The reconciler discards ungrounded blockers as
+non-binding; a finding you cannot anchor to the body is not a finding.
+Each bullet in the minimal-necessary-fix list carries a
+`mechanizable: yes | no` tag: `yes` when a script could verify it
+(presence / structure / regex / recomputation over the body), in which
+case sketch the check in 1-2 lines. When a `mechanizable: yes` finding's
+check belongs in a workflow-surface verifier (`verify_task_body.py`,
+`audit_clean_results_body_discipline.py`, SPEC.md lens text, or the
+`consistency-checker` spec) AND it is concrete + likely to recur — not a
+one-off body-specific issue — ALSO surface it per the workflow-fix-on-bug
+protocol (`.claude/rules/workflow-fix-on-bug.md`: candidate block or
+prose follow-up in your return text; you never spawn the improver
+yourself). Many of the lenses above began as exactly such judgment
+catches — the tag is how the next one becomes a permanent mechanical
+check.
+
 ## Output
 
 Post your verdict as an event:
@@ -1185,7 +1206,7 @@ Lens findings:
 - Lens 14 (Binding-concerns audit): PASS|FAIL — ...
 - Lens 15 (Headline not resting on a contaminated/failed-gate arm): PASS|FAIL|N/A — ...
 
-<If FAIL: minimal-necessary-fix list, one bullet per issue.>
+<If FAIL: minimal-necessary-fix list, one bullet per issue — each bullet quotes/names its body location and ends with \`mechanizable: yes|no\` (+ a 1-2 line check sketch when yes), per the standing rule above.>
 
 <### Procedural fixes (presentation-only verifier FAILs that do NOT block; the orchestrator patches these inline + re-verifies):
 - check <N> (<name>): <exact edit, e.g. \`p<0.05\` -> \`p&lt;0.05\` at <location>>
@@ -1197,8 +1218,9 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Three rounds maximum per `/issue` invocation. Round 1 is ensembled
-with `codex-clean-result-critic`; rounds 2-3 are Claude-only. If you
+Three rounds maximum per `/issue` invocation. Every round is ensembled
+with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
+previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and
 parks. If you FAIL after round 3 (and the codex twin doesn't
 disagree to a reconciler), the `/issue` skill sets `status:blocked`

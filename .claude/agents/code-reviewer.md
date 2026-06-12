@@ -475,6 +475,21 @@ Questions to ask per hunk:
 - Is it idempotent if it needs to be?
 - Is there a test covering this hunk?
 
+**Compute-throughput anti-patterns (experiment / eval scripts).** In any
+diff that runs model forwards or large-tensor math on a GPU, flag as Major:
+(a) a Python loop of batch-1 model forwards over data-parallel iterations
+(prompts, responses, cells) — a 7B bf16 batch-1 forward is
+weight-bandwidth-bound and leaves the GPU ~idle; (b) GPU→CPU transfers of
+`(seq × vocab)`- or activation-scale tensors followed by a CPU-side
+reduction — keep the reduction GPU-resident and ship only the reduced
+scalars/summaries; (c) HF `model.generate()` in eval / generation paths
+where vLLM applies (the always-on CLAUDE.md "Use vLLM for generation"
+rule). These are throughput bugs, not style nits: #522 ran ~94h on
+1× H100 for a job with a ~4-6h FLOPs floor (409,600 batch-1 forwards,
+full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
+reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
+`.claude/rules/code-style.md` § Compute-throughput discipline.
+
 ### Step 3: Read the Surrounding Code
 
 For each changed file, read enough surrounding context to understand:
@@ -591,6 +606,7 @@ Red flags:
   - Evidence: [quote the code]
   - Impact: [what breaks]
   - Fix: [suggested repair]
+  - Mechanizable: [yes — <1-2 line check sketch> / no] (Rule 12; also on Major findings)
 
 ### Major (diff needs revision before merge)
 - `file.py:456`: [issue]
@@ -635,6 +651,7 @@ Red flags:
 9. **No fabricated plan-adherence checkmarks.** Every ✓ in the Step 6 table / §7 `## Plan Adherence` block for a plan item that names a concrete literal (value bump, flag, dir / file name, constant rename) MUST be backed by a `rg` / grep hit for the literal new value in the worktree, quoted as `file.py:LINE` in the row's evidence. Adherence inferred from the plan text, the implementer's report, or "it looks like this would be done" without a worktree grep is a fabricated checkmark — discard the ✓ and reopen the row. Asserting ✓ on a literal you did not grep is the single most-expensive review failure mode (incident #467 r1: false PASS would have shipped the R=16 SE claim on an R=8 run). See Step 6 grep-the-literal rule for the procedure.
 10. **Cached-artifact coverage is verified, not implied.** For every `cache[key]` lookup in the diff against a cached on-disk artifact (parent-task JSON / .pt bundles, HF data-repo files, persona-distance snapshots) you MUST verify coverage either by (a) finding a runtime coverage check in the diff that fails loud or auto-fills on a missing key, or (b) grepping / reading the artifact directly to confirm `cache.keys() ⊇ runtime_lookup_keys`. Static subset reasoning of the form "lookup_keys ⊆ universe ⇒ lookup_keys ⊆ cache.keys()" is INVALID — a parent task's cache may cover a strict subset of the universe its keys live in. Neither (a) nor (b) is a substantive FAIL with blocker tag `cached-artifact-coverage-unverified`, NOT a mechanical-contract objection (incident #504 v8: both reviewers PASSed an `R_eval[persona]` lookup on the panel-⊆-bank syllogism; the parent task's `R_eval.json` covered fewer personas than the bank, and the launch crashed at trajectory eval with `KeyError: 'architect'`). See Step 3.5 for the procedure.
 11. **Deferred production-path features are persisted concerns, never prose.** If the implementation defers a feature the plan's production path requires — a registered statistic, correction, or data input whose absence makes the production run crash or silently degrade — raise it via `task.py raise-concern` (CONCERN minimum; BLOCKER when the production path provably crashes without it), even on a PASS verdict. The Step 5c-ter dispatch gate reads `concerns.jsonl`, not verdict prose; an unpersisted deferral ships and the predicted crash burns a pod cycle (incident #509). See Step 0.8 for the procedure.
+12. **Blocker grounding + mechanizability.** Every Critical/Major finding cites a concrete artifact location (`file.py:LINE`, a diff hunk, a plan section) — the reconciler discards ungrounded blockers as non-binding — and carries a `Mechanizable: yes | no` line: `yes` when a script could verify it (presence / structure / regex / recomputation over the diff or its artifacts), with the check sketched in 1-2 lines. When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND it is concrete + likely to recur — not a one-off diff-specific issue — ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block or prose follow-up in your return text; you never spawn the improver yourself). Grounded artifact-checking beats free-form critique; every judgment catch that recurs should become a permanent mechanical gate.
 
 ---
 

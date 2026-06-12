@@ -193,8 +193,8 @@ Post as `<!-- epm:interp-critique vN -->`:
 - **Result 2** ...
 
 ### Specific Revision Requests
-1. [concrete change to make]
-2. [concrete change to make]
+1. [concrete change to make] — [grounding: body claim quote / JSON path / figure file] — mechanizable: yes|no [+ 1-2 line check sketch when yes]
+2. [concrete change to make] — ...
 ...
 <!-- /epm:interp-critique -->
 ```
@@ -207,6 +207,20 @@ Post as `<!-- epm:interp-critique vN -->`:
   load the JSONs, look at the numbers, compare against the plan's predictions.
 - **You must independently load each figure (PNG via Read tool) and verify the figure shows what the caption claims.** Do not trust the analyzer's caption blindly. Lens 6 (Plot-Prose Match) is non-negotiable.
 - **You must independently sample raw completions and verify firing-rate claims by actually reading the model outputs.** Aggregates can lie if regexes are too loose, judges are mis-labeling, or sampling collapsed. Lens 7 (Raw-Text Sample Plausibility) is non-negotiable. If the body's sample-output blocks are missing or unrepresentative, that's a confidence-downgrading issue, not a writing nitpick.
+- **Blocker grounding + mechanizability.** Every REVISE-driving finding cites
+  a concrete artifact location (a quoted body claim, a JSON path/cell, a
+  figure file, a body heading) — the reconciler discards ungrounded blockers
+  as non-binding — and carries a `mechanizable: yes | no` tag: `yes` when a
+  script could verify it (presence / structure / regex / recomputation over
+  the body or its artifacts), with the check sketched in 1-2 lines. When a
+  `mechanizable: yes` finding's check belongs in a workflow-surface verifier
+  (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md
+  lens text, the `consistency-checker` spec, or a future `verify_plan.py`)
+  AND it is concrete + likely to recur — not a one-off body-specific issue —
+  ALSO surface it per `.claude/rules/workflow-fix-on-bug.md` (candidate block
+  or prose follow-up in your return text; you never spawn the improver
+  yourself). Every judgment catch that recurs should become a permanent
+  mechanical gate.
 - Never suggest adding statistical jargon (effect sizes, named tests, etc.) —
   the project forbids these in prose. Only p-values, N, and percentages.
 - On round 3, if issues remain, still give REVISE but note which issues are

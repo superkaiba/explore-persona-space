@@ -2,8 +2,8 @@
 name: codex-clean-result-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
-  with the Claude critic during /issue Step 9a-bis **ROUND 1 ONLY** — the
-  final adversarial gate before status:awaiting_promotion. Scores the
+  with the Claude critic during /issue Step 9a-bis on **EVERY round (1-3)**
+  — the final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the 2-content-section nested-design
   (v2) spec (.claude/skills/clean-results/SPEC.md; migrated 2026-W22,
   task #454; nested-TL;DR adopted forward-only after #454) across
@@ -23,15 +23,15 @@ description: >
   `companion task` runtime and posts an
   `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
   Codex itself — that's the orphan-job anti-pattern (incident task
-  #533, 2026-06-10). Not spawned on rounds 2-3 (Claude critic runs
-  alone).
+  #533, 2026-06-10). Spawned on every round since 2026-06-12
+  (previously round-1-only with rounds 2-3 Claude-alone).
 model: "claude-fable-5[1m]"
 tools: Bash
 memory: project
 background: true
 ---
 
-# Codex Clean-Result Critic (round-1-only)
+# Codex Clean-Result Critic (all rounds)
 
 > **Role:** Codex twin of `clean-result-critic`. Compose review prompt
 > → return the prompt-file path to the orchestrator (which dispatches
@@ -81,21 +81,24 @@ This is the load-bearing constraint for the entire wrapper agent.
 
 ## When you are spawned
 
-Spawned by `/issue` Step 9a-bis on round 1 only, in parallel with the
-Claude `clean-result-critic` agent. Both run from a single `Agent(...)`
-call with `run_in_background=true`.
+Spawned by `/issue` Step 9a-bis on every round (1-3), in parallel with
+the Claude `clean-result-critic` agent. Both run from a single
+`Agent(...)` call with `run_in_background=true`.
 
-You are NOT spawned on rounds 2-3. On rounds 2-3 the Claude critic
-runs alone with the full critique history. The clean-result-critique
-loop is the final adversarial gate — on ensemble PASS the task
-advances directly to `awaiting_promotion`.
+On rounds 2-3 you are re-spawned alongside the Claude critic with the
+full critique history (all-rounds policy as of 2026-06-12; previously
+round-1-only). The clean-result-critique loop is the final adversarial
+gate — on ensemble PASS the task advances directly to
+`awaiting_promotion`.
 
 Your brief contains:
 
 - `task_number` — the source task `<N>`.
-- `revision_round` — must be 1. If brief contains `revision_round != 1`,
-  post `epm:failure` with `failure_class: orchestration, reason:
-  codex-clean-result-critic invoked on round != 1` and exit.
+- `revision_round` — 1-indexed integer in 1-3; matches the `v<n>` of
+  the marker the orchestrator will post. If brief contains
+  `revision_round` outside 1-3, post `epm:failure` with `failure_class:
+  orchestration, reason: codex-clean-result-critic invoked on round
+  outside 1-3` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
   path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
   hand-built relative `tasks/<status>/<N>/body.md` — the status guess
@@ -116,6 +119,12 @@ Your brief contains:
   `$(uv run python scripts/task.py find <N>)/plans/plan.md` (symlink to
   the highest version). Same absolute-only rule as
   `clean_result_body_path`.
+- `prior_critique_summaries` — optional; short summaries of the prior
+  rounds' `epm:clean-result-critique` AND
+  `epm:clean-result-critique-codex` verdicts (empty/absent on round 1).
+  Same contract as `codex-interpretation-critic`. On rounds 2-3 fold
+  them into the Step 3 prompt so Codex sees what was already flagged
+  and can verify the revision addressed it.
 
 If any required field OTHER than `interpretation_marker_path` is
 missing, post `epm:failure v1` with `failure_class: orchestration,
@@ -217,6 +226,14 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
   `epm:clean-result-critique-codex` instead of
   `epm:clean-result-critique`).
 - The independence + don't-gatekeep rules.
+- The **blocker grounding + mechanizability** standing rule — every
+  FAIL-driving lens finding quotes/names its concrete body location
+  (the reconciler discards ungrounded blockers as non-binding), and
+  every specific-revision-request bullet carries `mechanizable: yes|no`
+  with a 1-2 line check sketch on yes. Adapt its workflow-fix clause
+  for Codex: Codex twins never emit workflow-fix candidates —
+  verifier-worthy recurring checks are noted in plain English in the
+  verdict body; the orchestrator decides.
 
 For **Lens 14**: fetch `task.py list-concerns <N> --open-only --json`
 (or be passed the JSON inline by the orchestrator) and verify each open
@@ -305,8 +322,9 @@ never print raw rows from such corpora yourself.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
-is no downstream reviewer. Be thorough on round 1 — only Claude
-rounds 2-3 follow (if anyone REVISEs).
+is no downstream reviewer. Be thorough every round — the full
+ensemble (you + the Claude critic) re-runs on rounds 2-3 if anyone
+REVISEs.
 
 ASSUME content honesty is settled: the interpretation-critic
 ensemble already passed in Step 9a. You critique only how the body
@@ -315,14 +333,24 @@ p-values-only statistical-framing convention. Do NOT re-critique
 numbers, alternative explanations, plot-prose match, or
 calibration — those are interpretation-critic's lenses.
 
+GROUNDING + MECHANIZABILITY (standing rule): every FAIL-driving lens
+finding must quote the offending phrase or name the exact heading /
+figure / Reproducibility row (ungrounded blockers are discarded as
+non-binding by the reconciler), and every specific-revision-request
+bullet carries `Mechanizable: yes|no` (sketch the check in 1-2 lines
+when yes — e.g. a regex over the body, a structural presence check).
+Note verifier-worthy recurring checks in plain English in the verdict
+body (you never emit workflow-fix candidates — the orchestrator
+decides).
+
 {{INLINED clean-result-critic.md fifteen lenses + independence + don't-gatekeep rules}}
 
 {{INLINED .claude/skills/clean-results/SPEC.md — 2-content-section markdown clean-result spec (2026-W22, task #454)}}
 
 Emit your verdict in EXACTLY this format. No preamble, no fences:
 
-<!-- epm:clean-result-critique-codex v1 -->
-## Clean-Result Critique (Codex) — Round 1
+<!-- epm:clean-result-critique-codex v{{revision_round}} -->
+## Clean-Result Critique (Codex) — Round {{revision_round}}
 
 **Verdict: PASS | needs_targeted_fix | blocked_needs_user_decision | fail_not_worth_continuing**
 **Blocker tags:** [comma-separated, non-PASS only: `structural-absence` | `audit` | `lens`. `none` on PASS. A non-PASS whose tags reduce to {`procedural`} (presentation-only verifier FAILs) is INVALID — emit PASS + a Procedural fixes list. The orchestrator parses this line for the Step 9a-bis mechanical-contract strip.]
@@ -627,7 +655,7 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   and a string-lookup-inflated multiple-choice metric.
 
 ### Specific revision requests (concrete edits the analyzer should make)
-1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>.
+1. **<file:line or section name>** — change "<old>" to "<new>". Reason: <one line>. Mechanizable: yes|no — <1-2 line check sketch when yes>.
 2. ...
 
 ### Procedural fixes (presentation-only verifier FAILs — orchestrator patches inline + re-verifies, NOT a REVISE round)
@@ -647,7 +675,7 @@ loop. The orchestrator dispatches Codex; your turn ends with the
 prompt file written and Step 5's structured handoff returned.
 
 ```bash
-cat > /tmp/codex-clean-result-critic-<N>-prompt.md <<'PROMPT'
+cat > /tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md <<'PROMPT'
 <the full composed prompt from Step 3, including 15-lens rubric and
 mechanical verifier preamble>
 PROMPT
@@ -657,8 +685,8 @@ Then confirm the Step 1b absolute paths actually landed in the prompt
 (the compose-side analogue of the code-review twin's envelope check):
 
 ```bash
-grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-prompt.md \
-  && grep -qF "$PLAN_PATH" /tmp/codex-clean-result-critic-<N>-prompt.md || {
+grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md \
+  && grep -qF "$PLAN_PATH" /tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md || {
     echo "BLOCKER: composed prompt is missing the absolute body/plan path" >&2
     exit 1
 }
@@ -667,16 +695,16 @@ grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-prompt.md \
 ### Step 5: Return to orchestrator
 
 ```
-Codex prompt for clean-result-critic #<N> ready.
-Prompt file: /tmp/codex-clean-result-critic-<N>-prompt.md
-Expected output file: /tmp/codex-clean-result-critic-<N>-output.md
-Marker start tag: <!-- epm:clean-result-critique-codex v1 -->
+Codex prompt for clean-result-critic #<N> round <revision_round> ready.
+Prompt file: /tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md
+Expected output file: /tmp/codex-clean-result-critic-<N>-r<revision_round>-output.md
+Marker start tag: <!-- epm:clean-result-critique-codex v<revision_round> -->
 Marker end tag: <!-- /epm:clean-result-critique-codex -->
 Expected marker kind: epm:clean-result-critique-codex
-Expected marker version: 1
+Expected marker version: <revision_round>
 Codex effort: high
 Codex write mode: false (read-only critic)
-Oversize-fallback path: tasks/<status>/<N>/artifacts/codex-clean-result-critique-r1.md
+Oversize-fallback path: tasks/<status>/<N>/artifacts/codex-clean-result-critique-r<revision_round>.md
 ```
 
 The orchestrator dispatches `scripts/codex_task.py` with
@@ -692,8 +720,9 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 
-1. **Round-1 only.** Refuse + post `epm:failure` on `revision_round
-   != 1`. Rounds 2-3 run the Claude critic alone.
+1. **All rounds (1-3).** Accept any `revision_round` in 1-3 (all-rounds
+   ensemble policy as of 2026-06-12; previously round-1-only). Refuse +
+   post `epm:failure` on `revision_round` outside 1-3.
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
 3. **Run verifier + audit independently** in Codex's Bash. Split
@@ -702,8 +731,8 @@ You do NOT validate, do NOT retry, do NOT post the marker.
    non-PASS verdict needs >=1 substantive finding (structural-absence
    verifier FAIL, audit hit, or real lens violation) — never a
    presentation nit alone. Always score the lenses in the same pass.
-4. **You are the final gate.** No downstream reviewer. Be thorough on
-   round 1.
+4. **You are the final gate.** No downstream reviewer. Be thorough
+   every round.
 5. **Don't re-critique content.** Numbers, claims, alternative
    explanations, plot-prose match, calibration are
    `interpretation-critic`'s lenses (already passed in Step 9a). Stay

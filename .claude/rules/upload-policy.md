@@ -167,3 +167,37 @@ upload probes the regular-blob path; a tiny `.bin` upload to the private repo
 probes the private-LFS path. (Incident #541, 2026-06-10: 11.3 TB public
 across 414 repos — 10.2 TB in `superkaiba1/explore-persona-space` alone —
 killed the sweep's first upload; #552 hit the same wall the same day.)
+
+**Proactive detection (#564): soft-ceiling headroom check + minute-1 persist
+gate + opt-in overflow routing.** `check_hf_storage_headroom()`
+(`orchestrate/hub.py`) sums per-repo `usedStorage` over the account's public
+repos behind a 1h on-disk cache; knobs: `EPM_HF_STORAGE_SOFT_CEILING_TB`
+(default 10.0 — the wall was ~11.3 TB), `EPM_HF_STORAGE_CACHE_TTL_S`,
+`EPM_HF_STORAGE_CACHE_PATH`, kill switch `EPM_HF_STORAGE_CHECK=0` (the ceiling
+/ routing / check / TTL envs are threaded through the slurm + gcp passthrough
+allowlists; the cache-path + event-path envs deliberately are NOT). Preflight
+surfaces it as a WARN-only `HF storage:` line.
+`trainer.py::_validate_persist_headroom` — called at the top of `_init_phase`
+AND at the start of `sft.py::train_lora` — aborts a persist-declared run
+(`EPM_PERSIST_ADAPTER_HF_REPO` set) in minute 1 when a forced LIVE re-probe
+confirms the account is over the soft ceiling and the persist target is
+public with routing off (unknown headroom / undeterminable privacy fail
+OPEN — the upload-time backstop above stays authoritative).
+`EPM_HF_OVERFLOW_ROUTING=1` (default OFF) makes `upload_model` reroute LFS
+uploads to the private overflow repo when KNOWN-over-ceiling, creating it
+private if missing, appending a deviation event to `EPM_HF_OVERFLOW_EVENT_PATH`
+→ `/workspace/logs/hf-overflow-routing.jsonl` →
+`~/.cache/explore_persona_space/hf-overflow-routing.jsonl` (the orchestrator /
+upload-verifier observing that sentinel posts the actual `epm:` plan-deviation
+marker — pod-side code never shells `task.py`), and committing a small
+`OVERFLOW_POINTER.json` breadcrumb (`{overflow_repo, path_in_repo, ts,
+used_tb, ceiling_tb}`) to the CANONICAL repo at
+`<path_in_repo>/OVERFLOW_POINTER.json` (non-LFS, so it works over quota).
+ARMING CONTRACT: routing is safe ONLY for flows that consume `upload_model`'s
+returned URL or read the pointer/deviation records — launchers that verify
+CANONICAL paths externally (the i528 family) must NOT arm it, because a
+reroute converts their 403 into a post-training verification abort. Dataset /
+raw-completion paths are deliberately un-routed (non-LFS JSON keeps flowing;
+sharding stays the big-text remedy). New per-issue scripts should prefer
+`upload_model` over direct `HfApi` calls for LFS artifacts so they inherit
+this guard.

@@ -128,7 +128,12 @@ sections:
 - The Output Format `<!-- epm:interp-critique v1 -->` schema — adapt the
   marker tag to `<!-- epm:interp-critique-codex v<n> -->`.
 - The Rules section (no statistical jargon in prose, must independently
-  load JSONs and figures, etc.).
+  load JSONs and figures, the **blocker grounding + mechanizability**
+  bullet — every REVISE-driving finding cites a concrete artifact location
+  and carries `mechanizable: yes|no` with a 1-2 line check sketch on yes —
+  etc.). Adapt that bullet's workflow-fix clause for Codex: Codex twins
+  never emit workflow-fix candidates — verifier-worthy recurring checks
+  are noted in plain English in the verdict body; the orchestrator decides.
 
 ### Step 2-b: Verify plan_marker_path resolves in the worktree — inline the plan when it doesn't
 
@@ -256,7 +261,13 @@ You MUST emit your verdict in EXACTLY this format. No preamble, no fences:
 
 Rules: never suggest adding effect sizes / named statistical tests /
 credence intervals as inline `value ± err` (the project forbids these in
-prose). Only p-values, N, and percentages.
+prose). Only p-values, N, and percentages. Every REVISE-driving finding
+must cite a concrete artifact location (quoted body claim, JSON path/cell,
+figure file, body heading) — ungrounded blockers are discarded as
+non-binding by the reconciler — and must carry `mechanizable: yes|no`
+(sketch the check in 1-2 lines when yes). Note verifier-worthy recurring
+checks in plain English in your verdict body (you never emit workflow-fix
+candidates — the orchestrator decides).
 ```
 
 ### Step 4: Write the prompt to a temp file
