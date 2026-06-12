@@ -2263,14 +2263,17 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
     assert "chmod 777 /workspace/logs" in lines
     # Ordering: dir exists before the workload command runs.
     assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
-    # The hydra branch must NOT gain the stanza (byte-pinned by the #588
-    # snapshot fixture; asserted here for a readable failure too).
+    # The hydra branch must NOT gain the #610 sentinel-drain stanza.
+    # Discriminate on its unique `chmod 777` line: as of #607 BOTH
+    # branches carry a common-prelude `mkdir -p /workspace/logs` (the
+    # output-redirect block creates the log dir), so the bare mkdir no
+    # longer distinguishes the #610 stanza.
     hydra_script = render_startup_script(
         spec=_spec(),
         config=_test_config(),
         attempt_id="att-fixed-001",
     )
-    assert "mkdir -p /workspace/logs" not in hydra_script
+    assert "chmod 777 /workspace/logs" not in hydra_script
 
 
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
