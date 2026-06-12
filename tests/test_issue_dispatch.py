@@ -143,6 +143,10 @@ def test_runpod_poll_delegates_to_poll_pipeline_and_returns_typed_pollresult(
             phase_log_mtime_sec_ago: int = 100
             shard_log_mtime_sec_ago: int = 200
             gpu_util: str = "95"
+            # Non-default sentinel (base.PollResult defaults to 540) so the
+            # pass-through assertion below discriminates a real thread-through
+            # from a silent fall-back to the default.
+            next_interval: int = 1800
 
         return _PR()
 
@@ -153,6 +157,9 @@ def test_runpod_poll_delegates_to_poll_pipeline_and_returns_typed_pollresult(
     assert isinstance(result, PollResult)
     assert result.status == "running"
     assert result.current_phase == "phase-foo"
+    # Adaptive bg-poll interval (anti-stall redesign §7) must thread through
+    # the typed-PollResult rebuild, not fall back to the 540 default.
+    assert result.next_interval == 1800
     assert captured["issue"] == 137
     assert captured["pod"] == "pod-137"
     assert captured["log_path"] == "/workspace/logs/issue-137.log"
@@ -1103,7 +1110,9 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
     tmp_path, monkeypatch
 ) -> None:
     """``scripts/backend_poll.py`` must print ONE JSON line whose keys
-    match ``scripts/poll_pipeline.py.main``'s output — that is the
+    match the legacy ``scripts/poll_pipeline.py`` JSON-line contract (the
+    PollResult-field subset of ``poll_pipeline.py.main``'s output that
+    ``backend_poll._serialize_poll_result`` emits) — that is the
     orchestrator's parser contract."""
     # Write a handle sidecar for a RunPod handle.
     handle = _runpod_handle(issue=500)
@@ -1127,6 +1136,10 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         phase_log_mtime_sec_ago: int = 5
         shard_log_mtime_sec_ago: int = 6
         gpu_util: str = "95"
+        # Non-default sentinel (the serializer's getattr fallback and
+        # base.PollResult default are both 540) so the value assertion below
+        # discriminates a real thread-through from a silent fall-back.
+        next_interval: int = 1800
 
     monkeypatch.setattr("scripts.poll_pipeline.poll_once", lambda **kw: _PR())
 
@@ -1157,11 +1170,15 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         "phase_log_mtime_sec_ago",
         "shard_log_mtime_sec_ago",
         "gpu_util",
+        # Adaptive bg-poll interval (anti-stall redesign §7) — emitted by
+        # both poll_pipeline.py.main and backend_poll._serialize_poll_result.
+        "next_interval",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
     assert decoded["new_milestone"] is True
     assert decoded["sentinels_processed"] == 3
+    assert decoded["next_interval"] == 1800
 
 
 def test_backend_poll_script_resolves_per_backend_class(tmp_path, monkeypatch) -> None:

@@ -270,7 +270,7 @@ def test_main_bare_success_prints_summary(monkeypatch, capsys):
 
 def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
     """Criterion 6: --json stdout is exactly one pretty-printed JSON object
-    with the 9 documented keys and nothing else (gotchas.md contract)."""
+    with the 12 documented keys and nothing else (gotchas.md contract)."""
     monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: _fail_report())
     rc = main(["--json", "--no-gpu"])
     assert rc == 1
@@ -284,6 +284,11 @@ def test_main_json_stdout_is_single_pretty_json(monkeypatch, capsys):
         "disk_free_gb",
         "disk_probed_headroom_gb",
         "disk_headroom_basis",
+        # task #564's HF public-storage headroom guard added these three
+        # alongside the #554 stdout-purity contract (concurrent merges).
+        "hf_storage_used_tb",
+        "hf_storage_ceiling_tb",
+        "hf_storage_basis",
         "git_status",
         "env_synced",
     }
