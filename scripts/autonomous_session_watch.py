@@ -1,8 +1,9 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Nine passes; eight run in this order (the CAMPAIGN pass — see item 9 —
-runs right after pass 2):
+Ten passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
+right after pass 2 and the IDLE-UNMAPPED-SESSION pass (item 10) right after
+pass 7, before the GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -170,9 +171,9 @@ runs right after pass 2):
    task is BY DEFINITION terminal, so the terminal-status GC would reset
    the miss counter every tick; they are reaped by their own
    live-session-keyed GC inside the session-reconcile pass. The
-   per-session ``zombie-wrapper-<sid>.json`` files are likewise out of its
-   per-issue sweep — reaped by the zombie pass's own live-session-keyed
-   GC.)
+   per-session ``zombie-wrapper-<sid>.json`` and ``idle-unmapped-<sid>.json``
+   files are likewise out of its per-issue sweep — reaped by their own
+   passes' live-session-keyed GCs.)
 9. **Campaign pass** (runs right after pass 2; task #586). Driven by
    ``campaign-<N>.json`` registry entries (written by ``spawn_session.py
    spawn-campaign``): respawn a dead campaign session whose task is ACTIVE
@@ -191,6 +192,26 @@ runs right after pass 2):
    ``kind: campaign`` tasks (its ``spawn-issue --auto`` recovery would boot
    the wrong skill); see the campaign-pass section comment for the full
    cross-pass interaction notes.
+10. **Idle-unmapped-session pass (AUTO-STOP by default; runs right after
+   pass 7, before the GC pass).** The third session reaper, closing the
+   class BOTH earlier reapers structurally exclude (2026-06-12 VM-lag
+   incident: 25 unmapped sessions idle 19-43h each, LIVE inner Claude plus
+   ~8 MCP server children, ~23 GB RSS total): the zombie-wrapper pass only
+   fires when the tree has NO inner Claude, and the session-reconcile pass
+   only touches issue-MAPPED sessions. This pass stops an unmapped EPS-cwd
+   session whose resolved Claude transcript (per-wrapper-pid via
+   ``session_resolver``) has been idle >= ``EPM_UNMAPPED_IDLE_REAP_S``
+   (default 12h) on >= ``threshold`` consecutive checks. NEVER touches: the
+   PM session, non-EPS cwds, issue-mapped sessions (registry entry or
+   ``issue-<N>`` worktree cwd — the reconcile/zombie passes own those),
+   wrappers holding a controlling TTY (a terminal Thomas may be sitting
+   at), and sessions whose idleness signal cannot be resolved (missing
+   data FAILS TOWARD KEEP — loud log, episode state frozen, never a reap).
+   ``EPM_UNMAPPED_IDLE_REAP=0`` falls back to alert-only. Stops are
+   verified on the next tick (daemon ACK != kill), mirroring the
+   zombie-wrapper contract; records land in
+   ``~/.eps-autonomous/idle-unmapped-events.jsonl`` (no task to carry a
+   marker, by definition). Daemon-gated.
 
 Why each pass exists
 --------------------
@@ -324,6 +345,7 @@ from pathlib import Path
 # helpers from pod_lifecycle (rather than re-deriving a per-issue regex — the
 # old `epm-issue-<N>`-only regex never matched the canonical `pod-<N>` names,
 # so the whole pass was dead code).
+import session_resolver
 from pod_lifecycle import _is_managed_pod, _issue_from_pod_name
 from runpod_api import list_team_pods
 from spawn_session import (
@@ -592,6 +614,16 @@ _ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-
 # allowed retry (mirrors the session-reconcile stop-verification contract).
 _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:zombie-wrapper-stop-failed]"
 
+# Substrings stamped into the records the idle-unmapped pass writes when it
+# stops / alerts on / fails to stop an unmapped EPS session whose transcript
+# has been idle past the reap window (the 2026-06-12 class: 25 unmapped
+# sessions idle 19-43h, live inner Claude + ~8 MCP children each, ~23 GB RSS
+# total). Unmapped sessions have no task to carry a marker, so these land in
+# the fallback events file — registered here anyway for sentinel uniformity.
+_IDLE_UNMAPPED_STOP_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop]"
+_IDLE_UNMAPPED_ALERT_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-alert]"
+_IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL = "[autonomous_session_watch:idle-unmapped-stop-failed]"
+
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
@@ -616,6 +648,9 @@ _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
         _ZOMBIE_WRAPPER_STOP_NOTE_SENTINEL,
         _ZOMBIE_WRAPPER_ALERT_NOTE_SENTINEL,
         _ZOMBIE_WRAPPER_STOP_FAILED_NOTE_SENTINEL,
+        _IDLE_UNMAPPED_STOP_NOTE_SENTINEL,
+        _IDLE_UNMAPPED_ALERT_NOTE_SENTINEL,
+        _IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL,
     }
 )
 
@@ -6027,6 +6062,572 @@ def zombie_wrapper_pass(
         )
 
 
+# ─── idle-unmapped-session pass ──────────────────────────────────────────────
+#
+# The third session reaper, closing the class BOTH earlier reapers
+# structurally exclude (2026-06-12 VM-lag incident): 25 unmapped Happy
+# sessions sat idle 19-43h each with a LIVE inner Claude plus ~8 MCP server
+# children, holding ~23 GB RSS total. The zombie-wrapper pass only fires when
+# the tree has NO inner Claude; the session-reconcile pass only touches
+# issue-MAPPED sessions. So idle unmapped sessions accumulated without bound
+# until a manual sweep. This pass auto-stops an unmapped EPS-cwd session whose
+# resolved Claude transcript has been idle past the reap window (default 12h,
+# env EPM_UNMAPPED_IDLE_REAP_S) on >= threshold consecutive checks.
+#
+# Idleness signal: the mtime of the session's Claude transcript jsonl,
+# resolved per-wrapper-pid via session_resolver's HAPPY-LOG path ONLY
+# (authoritative, per-pid; the resolver's shared-projects-dir filesystem
+# fallback is deliberately rejected — it can attribute another session's
+# OLDER transcript, i.e. a WRONG signal rather than a missing one — see
+# _transcript_idle_age_s). An active turn appends to the transcript
+# continuously; an idle session does not. An UNRESOLVABLE signal FAILS
+# TOWARD KEEP: the session is skipped with a loud log line and its episode
+# state is left frozen — never reaped on missing data.
+#
+# Never touched: the PM session (pm-session.json registration), non-EPS
+# cwds, issue-MAPPED sessions (registry entry or issue-<N> worktree cwd —
+# the reconcile/zombie passes own those), and sessions whose wrapper holds a
+# controlling TTY (a terminal-run `happy claude` Thomas may be sitting at;
+# daemon-RPC-spawned sessions are headless, so the TTY test is a strict
+# superset of "tmux client attached" and errs toward keep).
+
+IDLE_UNMAPPED_STATE_PREFIX = "idle-unmapped-"
+
+# Default transcript-idle window before an unmapped session is reapable.
+# 12h: long enough that an overnight pause in a chat session Thomas means to
+# come back to survives, short enough that the accumulation class (19-43h
+# idle in the incident) is cleared within a day. Override via
+# EPM_UNMAPPED_IDLE_REAP_S (seconds).
+UNMAPPED_IDLE_REAP_S = 12 * 3600
+
+
+def _unmapped_idle_reap_enabled() -> bool:
+    """True unless ``EPM_UNMAPPED_IDLE_REAP`` is explicitly set to a falsy
+    value (``0`` / ``false`` / ``no``) — the alert-only kill-switch, same
+    parsing as :func:`_zombie_wrapper_reap_enabled`."""
+    raw = os.environ.get("EPM_UNMAPPED_IDLE_REAP", "")
+    return raw.strip().lower() not in {"0", "false", "no"}
+
+
+def _unmapped_idle_reap_s() -> float:
+    """Idle reap window in seconds: ``EPM_UNMAPPED_IDLE_REAP_S`` when set to
+    a positive number, else :data:`UNMAPPED_IDLE_REAP_S` (12h). Garbled /
+    non-positive values fall back to the default."""
+    raw = os.environ.get("EPM_UNMAPPED_IDLE_REAP_S", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return UNMAPPED_IDLE_REAP_S
+    return val if val > 0 else UNMAPPED_IDLE_REAP_S
+
+
+def _wrapper_has_controlling_tty(pid: int) -> bool:
+    """True iff ``/proc/<pid>/stat`` reports a controlling TTY (tty_nr != 0).
+
+    A terminal-run ``happy claude`` wrapper holds its terminal's TTY; the
+    daemon's RPC-spawned sessions are headless (tty_nr == 0). Used as the
+    "Thomas may literally be looking at this session" guard. Unreadable
+    /proc (raced exit / perms) -> True, failing toward keep. (Note the
+    asymmetry vs the transcript signal: a True here maps to action
+    ``"clear"`` — RESETTING any accumulated episode — while a missing
+    transcript signal FREEZES it. Both directions fail toward keep; a
+    flapping /proc read merely restarts accumulation.)"""
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        # comm (field 2) can contain spaces/parens; fields after the LAST ')'
+        # are state(0) ppid(1) pgrp(2) session(3) tty_nr(4) — same parse as
+        # _proc_children_map.
+        tty_nr = int(stat.rsplit(")", 1)[1].split()[4])
+    except (OSError, IndexError, ValueError):
+        return True
+    return tty_nr != 0
+
+
+def _transcript_idle_age_s(node_pid: int, now: float) -> tuple[float | None, str | None]:
+    """Seconds since the session's resolved Claude transcript was last
+    written, or ``(None, reason)`` when the signal is unavailable.
+
+    Resolution via the HAPPY-LOG path ONLY
+    (:func:`session_resolver._resolve_transcript_via_happy_log` — per-pid
+    and authoritative; every daemon-spawned wrapper writes one, which
+    covers the incident class). The resolver's filesystem fallback is
+    deliberately NOT used: it scans the cwd-derived projects dir, which
+    for repo-root chat sessions is SHARED across sessions and full of
+    other sessions' transcripts — its /issue-headed preference can
+    attribute an OLDER, WRONG transcript whose stale mtime would read as
+    days-idle and stop a genuinely fresh session. A wrong signal is worse
+    than a missing one, so a happy-log miss is NOT an idleness verdict —
+    the caller must fail toward keep."""
+    transcript, reason = session_resolver._resolve_transcript_via_happy_log(node_pid)
+    if transcript is None:
+        return None, reason or "transcript unresolvable"
+    try:
+        mtime = Path(transcript).stat().st_mtime
+    except OSError as e:
+        return None, f"transcript stat failed: {type(e).__name__}"
+    return max(0.0, now - mtime), None
+
+
+def decide_idle_unmapped(
+    mapped: bool,
+    has_tty: bool,
+    idle_age_s: float | None,
+    missed: int,
+    alerted: bool,
+    threshold: int = 2,
+    *,
+    reap_enabled: bool = True,
+    idle_reap_s: float = UNMAPPED_IDLE_REAP_S,
+) -> tuple[str, int]:
+    """Pure decision for one live, non-PM, EPS-cwd session. Returns
+    ``(action, new_missed)`` with action ``"clear"`` | ``"skip"`` |
+    ``"keep"`` | ``"stop"`` | ``"alert"``.
+
+    Cases:
+
+    - ``mapped`` -> ``("clear", 0)``. Issue-mapped sessions belong to the
+      session-reconcile / zombie passes; a session that GAINS a mapping
+      mid-episode (resolver backfill) leaves scope and its state clears.
+    - ``has_tty`` -> ``("clear", 0)``. A controlling TTY means a terminal
+      Thomas may be sitting at; the episode ends.
+    - ``idle_age_s is None`` -> ``("skip", missed)``. The idleness signal is
+      unavailable — fail toward keep, FREEZE the count (no increment, no
+      reset: a flapping resolver neither accumulates toward a stop nor
+      erases a real episode).
+    - ``idle_age_s < idle_reap_s`` -> ``("clear", 0)``. Recent activity;
+      episode over.
+    - Over the window but below ``threshold`` consecutive checks ->
+      ``("keep", missed+1)``.
+    - Threshold met, ``reap_enabled`` (default) -> ``("stop", 0)``.
+    - Threshold met, kill-switch fallback, not yet ``alerted`` ->
+      ``("alert", missed+1)`` — one loud record per episode; the count keeps
+      accumulating so a later re-enable stops on the next tick.
+    - Otherwise -> ``("keep", missed+1)`` (alert-only, already alerted).
+
+    Unlike the zombie pass there is no separate grace window: the idle age
+    IS the time guard (measured directly off the transcript mtime), so the
+    >= threshold consecutive-checks accumulation on top of it is the whole
+    transient-glitch margin.
+    """
+    if mapped or has_tty:
+        return ("clear", 0)
+    if idle_age_s is None:
+        return ("skip", missed)
+    if idle_age_s < idle_reap_s:
+        return ("clear", 0)
+    new_missed = missed + 1
+    if new_missed < threshold:
+        return ("keep", new_missed)
+    if reap_enabled:
+        return ("stop", 0)
+    if not alerted:
+        return ("alert", new_missed)
+    return ("keep", new_missed)
+
+
+def _idle_unmapped_state_path(sid: str) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{IDLE_UNMAPPED_STATE_PREFIX}{sid}.json"
+
+
+def _load_idle_unmapped_state(sid: str) -> dict:
+    """Per-session idle-unmapped state (``{}`` if absent/garbled — a fresh or
+    unreadable file starts the miss count at 0, mirroring the other watcher
+    state loaders)."""
+    path = _idle_unmapped_state_path(sid)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_idle_unmapped_state(
+    sid: str,
+    *,
+    missed: int,
+    alerted: bool,
+    pid: int,
+    idle_age_s: float | None,
+    first_over_ts: float,
+    stopped_at: float | None = None,
+    stop_retried: bool = False,
+    stop_failed_alerted: bool = False,
+) -> None:
+    """Persist the per-session idle-unmapped state atomically (temp +
+    rename). ``first_over_ts`` anchors the GC-age log line; ``pid`` /
+    ``idle_age_s`` are informational (the decision keys on the live daemon
+    snapshot + a fresh transcript stat each tick). The stop-verification
+    fields mirror the zombie-wrapper contract (ACK != kill)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _idle_unmapped_state_path(sid)
+    payload = {
+        "missed": missed,
+        "alerted": alerted,
+        "pid": pid,
+        "idle_age_s": idle_age_s,
+        "first_over_ts": first_over_ts,
+        "stopped_at": stopped_at,
+        "stop_retried": bool(stop_retried),
+        "stop_failed_alerted": bool(stop_failed_alerted),
+    }
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _clear_idle_unmapped_state(sid: str) -> None:
+    """Drop the per-session state (episode over: activity resumed, the
+    session left scope, or it was verified stopped)."""
+    _idle_unmapped_state_path(sid).unlink(missing_ok=True)
+
+
+def _gc_orphan_idle_unmapped_state(
+    live_sids: set[str], dry_run: bool, now: float | None = None
+) -> None:
+    """GC idle-unmapped state for sessions no longer in the daemon's live set
+    (stopped by any path — the episode is over; this reap is also the
+    stop-verification success path). Same contract as
+    :func:`_gc_orphan_zombie_state`."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return
+    now = now if now is not None else time.time()
+    for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{IDLE_UNMAPPED_STATE_PREFIX}*.json")):
+        sid = path.stem[len(IDLE_UNMAPPED_STATE_PREFIX) :]
+        if sid in live_sids:
+            continue
+        try:
+            payload = json.loads(path.read_text())
+            first_over = payload.get("first_over_ts", now)
+            if not isinstance(first_over, int | float):
+                first_over = now
+        except (json.JSONDecodeError, OSError):
+            first_over = 0  # unreadable -> definitely orphaned, drop it
+        age = now - first_over
+        reason = (
+            "session left the live set"
+            if age < POD_SAFETY_STATE_MAX_AGE_S
+            else f"age={age / 3600:.1f}h"
+        )
+        print(f"  idle-unmapped: GC orphan state {sid} ({reason})")
+        if not dry_run:
+            path.unlink(missing_ok=True)
+
+
+def _append_idle_unmapped_event(note: str, dry_run: bool) -> None:
+    """Durable trace for idle-unmapped actions — these sessions have NO issue
+    mapping by definition, so there is never a task to carry a marker. One
+    JSON line per action in ``~/.eps-autonomous/idle-unmapped-events.jsonl``
+    (same role as the zombie-wrapper fallback file). Fail-soft."""
+    dest = AUTONOMOUS_REGISTRY_DIR / "idle-unmapped-events.jsonl"
+    line = json.dumps(
+        {"ts": datetime.now().astimezone().isoformat(), "kind": "idle-unmapped", "note": note}
+    )
+    if dry_run:
+        print(f"  [dry-run] would append idle-unmapped event to {dest}")
+        return
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as e:
+        print(f"  WARNING: appending idle-unmapped event failed: {e}", file=sys.stderr)
+
+
+def _check_idle_unmapped_stop_verification(
+    sid: str,
+    pid: int,
+    in_scope: bool,
+    prev: dict,
+    dry_run: bool,
+    now: float,
+) -> bool:
+    """Next-tick verification that an ACKed idle-unmapped stop landed
+    (ACK != kill). Returns True when this tick was consumed by the
+    verification path. Same ladder as
+    :func:`_check_zombie_stop_verification`: one stop retry, then one loud
+    record, then quiet; the verified-gone path is the live-session-keyed GC."""
+    stopped_at = prev.get("stopped_at")
+    if not isinstance(stopped_at, int | float) or not stopped_at:
+        return False
+    if not in_scope:
+        return False
+    first_over_ts = prev.get("first_over_ts")
+    if not isinstance(first_over_ts, int | float):
+        first_over_ts = now
+    print(
+        f"  IDLE-UNMAPPED STOP-VERIFY FAILED session {sid}: still alive one "
+        f"tick after the daemon ACKed its stop (ACK != kill).",
+        file=sys.stderr,
+    )
+    idle_age_s = prev.get("idle_age_s")
+    if not isinstance(idle_age_s, int | float):
+        idle_age_s = None
+    common = dict(
+        missed=prev.get("missed", 0) if isinstance(prev.get("missed", 0), int) else 0,
+        alerted=bool(prev.get("alerted", False)),
+        pid=pid,
+        idle_age_s=idle_age_s,
+        first_over_ts=first_over_ts,
+    )
+    if not prev.get("stop_retried"):
+        acked = _stop_session(sid, dry_run)
+        print(f"  idle-unmapped: stop RETRIED for {sid} (one retry per episode, acked={acked})")
+        if not dry_run:
+            _save_idle_unmapped_state(
+                sid,
+                **common,
+                stopped_at=now if acked else stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return True
+    if not prev.get("stop_failed_alerted"):
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_STOP_FAILED_NOTE_SENTINEL} idle-unmapped-session STOP "
+            f"FAILED to land: session {sid} (wrapper pid {pid}) is still alive after "
+            f"the idle-unmapped pass stopped it AND retried once — the Happy daemon "
+            f"ACKed the stop RPCs but did not kill the wrapper. Stop manually with "
+            f"`spawn_session.py stop --session-id {sid}` (or restart the Happy "
+            f"daemon). Recorded once per episode.",
+            dry_run,
+        )
+        if not dry_run:
+            _save_idle_unmapped_state(
+                sid,
+                **common,
+                stopped_at=stopped_at,
+                stop_retried=True,
+                stop_failed_alerted=True,
+            )
+        return True
+    print(
+        f"  idle-unmapped: session {sid} already retried + alerted this episode; "
+        f"awaiting manual stop / daemon recovery."
+    )
+    return True
+
+
+def _process_idle_unmapped(
+    sid: str,
+    pid: int,
+    issue: int | None,
+    now: float,
+    dry_run: bool,
+    threshold: int,
+    *,
+    reap_enabled: bool,
+) -> None:
+    """Apply the idle-unmapped decision to one live, non-PM, EPS-cwd session:
+    check the wrapper's controlling TTY, stat the resolved transcript, and
+    act per :func:`decide_idle_unmapped`."""
+    mapped = issue is not None
+    has_tty = _wrapper_has_controlling_tty(pid) if not mapped else False
+    idle_age_s: float | None = None
+    signal_reason: str | None = None
+    if not mapped and not has_tty:
+        idle_age_s, signal_reason = _transcript_idle_age_s(pid, now)
+
+    prev = _load_idle_unmapped_state(sid)
+    prev_missed = prev.get("missed", 0)
+    if not isinstance(prev_missed, int):
+        prev_missed = 0
+    prev_alerted = bool(prev.get("alerted", False))
+    first_over_ts = prev.get("first_over_ts")
+    if not isinstance(first_over_ts, int | float):
+        first_over_ts = now
+
+    idle_reap_s = _unmapped_idle_reap_s()
+    in_scope = not mapped and not has_tty and idle_age_s is not None and idle_age_s >= idle_reap_s
+    if _check_idle_unmapped_stop_verification(sid, pid, in_scope, prev, dry_run, now):
+        return
+
+    action, new_missed = decide_idle_unmapped(
+        mapped,
+        has_tty,
+        idle_age_s,
+        prev_missed,
+        prev_alerted,
+        threshold,
+        reap_enabled=reap_enabled,
+        idle_reap_s=idle_reap_s,
+    )
+    idle_label = f"{idle_age_s / 3600:.1f}h" if idle_age_s is not None else "?"
+    print(
+        f"  session {sid} (pid={pid}): mapped={mapped} tty={has_tty} "
+        f"idle={idle_label} missed={prev_missed}->{new_missed} action={action}"
+    )
+
+    if action == "clear":
+        if prev and not dry_run:
+            _clear_idle_unmapped_state(sid)
+        return
+
+    if action == "skip":
+        # Idleness signal unavailable: fail toward keep, loudly, and leave
+        # the episode state frozen (neither accumulated nor erased).
+        print(
+            f"  idle-unmapped: session {sid} idleness signal unavailable "
+            f"({signal_reason}); failing toward KEEP",
+            file=sys.stderr,
+        )
+        return
+
+    if action == "stop":
+        acked = _stop_session(sid, dry_run)
+        if acked:
+            _append_idle_unmapped_event(
+                f"{_IDLE_UNMAPPED_STOP_NOTE_SENTINEL} auto-stopped idle unmapped "
+                f"Happy session {sid} (wrapper pid {pid}): its resolved Claude "
+                f"transcript has been idle {idle_label} (>= "
+                f"{idle_reap_s / 3600:.1f}h window, >= {threshold} consecutive "
+                f"checks), it has no issue mapping, no controlling TTY, and is "
+                f"not the PM session. The 2026-06-12 class: 25 such sessions "
+                f"idle 19-43h held ~23 GB RSS. Respawn if needed: "
+                f"`spawn_session.py spawn-issue --issue <N>` (or `spawn-pm`). "
+                f"Set EPM_UNMAPPED_IDLE_REAP=0 on the watcher cron to fall back "
+                f"to alert-only.",
+                dry_run,
+            )
+        if not dry_run:
+            _save_idle_unmapped_state(
+                sid,
+                missed=0 if acked else prev_missed,
+                alerted=prev_alerted,
+                pid=pid,
+                idle_age_s=idle_age_s,
+                first_over_ts=first_over_ts,
+                stopped_at=now if acked else None,
+                stop_retried=bool(prev.get("stop_retried", False)),
+                stop_failed_alerted=bool(prev.get("stop_failed_alerted", False)),
+            )
+        return
+
+    if action == "alert":
+        print(
+            f"  IDLE-UNMAPPED ALERT session {sid}: transcript idle {idle_label}; "
+            f"NOT stopping (EPM_UNMAPPED_IDLE_REAP=0 — alert-only fallback).",
+            file=sys.stderr,
+        )
+        _append_idle_unmapped_event(
+            f"{_IDLE_UNMAPPED_ALERT_NOTE_SENTINEL} IDLE unmapped Happy session: "
+            f"{sid} (wrapper pid {pid}) has an idle Claude transcript "
+            f"({idle_label} >= {idle_reap_s / 3600:.1f}h) and no issue mapping. "
+            f"NOT auto-stopped (EPM_UNMAPPED_IDLE_REAP=0 alert-only fallback); "
+            f"stop manually with `spawn_session.py stop --session-id {sid}`, or "
+            f"unset the env var on the watcher cron to restore the default reap. "
+            f"Recorded once per episode.",
+            dry_run,
+        )
+        if not dry_run:
+            _save_idle_unmapped_state(
+                sid,
+                missed=new_missed,
+                alerted=True,
+                pid=pid,
+                idle_age_s=idle_age_s,
+                first_over_ts=first_over_ts,
+            )
+        return
+
+    # action == "keep": persist the incremented miss count + episode anchor.
+    if not dry_run:
+        _save_idle_unmapped_state(
+            sid,
+            missed=new_missed,
+            alerted=prev_alerted,
+            pid=pid,
+            idle_age_s=idle_age_s,
+            first_over_ts=first_over_ts,
+        )
+
+
+def idle_unmapped_pass(
+    dry_run: bool,
+    threshold: int,
+    *,
+    daemon_reachable: bool,
+    children: list[dict] | None = None,
+    now: float | None = None,
+) -> None:
+    """Auto-stop unmapped EPS-cwd Happy sessions whose Claude transcript has
+    been idle >= the reap window (default 12h) on >= ``threshold``
+    consecutive checks — the live-but-idle complement of the zombie-wrapper
+    pass (which needs a DEAD inner Claude) and the unmapped complement of the
+    session-reconcile pass (which needs an issue mapping). Exclusions:
+    PM-registered sids, non-EPS cwds, issue-mapped sessions (registry entry
+    or issue-<N> worktree cwd), wrappers holding a controlling TTY, and any
+    session whose idleness signal cannot be resolved (fail toward keep).
+
+    Daemon-gated like the zombie pass: the wrapper pids come from the
+    daemon's ``/list`` and the stop action POSTs to it. ``children`` may be
+    injected (tests / a caller reusing its snapshot); ``None`` fetches via
+    :func:`_live_children`."""
+    now = now if now is not None else time.time()
+    if not daemon_reachable:
+        print(
+            "idle-unmapped: Happy daemon unreachable; skipping "
+            "(wrapper pids + the stop RPC both need the daemon)"
+        )
+        return
+    children = children if children is not None else _live_children()
+    live_sids = {
+        c.get("happySessionId") for c in children if isinstance(c.get("happySessionId"), str)
+    }
+    # GC ALWAYS on a daemon-reachable tick — even with zero candidates — so
+    # episodes whose session died/was stopped by any path start fresh later.
+    _gc_orphan_idle_unmapped_state(live_sids, dry_run, now=now)
+    if not children:
+        print("idle-unmapped: no live daemon-tracked sessions")
+        return
+
+    registry_map = _load_session_issue_map()
+    meta = _load_session_meta()
+    pm_sids = _load_pm_session_ids()
+    project_prefix = str(PROJECT_ROOT)
+    candidates: list[tuple[str, int, int | None]] = []
+    skipped_pm = 0
+    skipped_non_eps = 0
+    for child in children:
+        sid = child.get("happySessionId")
+        pid = child.get("pid")
+        if not isinstance(sid, str) or not sid or not isinstance(pid, int):
+            continue
+        if sid in pm_sids:
+            skipped_pm += 1
+            continue
+        path = (meta.get(sid) or {}).get("path")
+        if not isinstance(path, str) or not (
+            path == project_prefix or path.startswith(project_prefix + "/")
+        ):
+            # Non-EPS cwd (other projects) or no cwd metadata at all: never
+            # touched — EPS-ness cannot be established, so err toward keep.
+            skipped_non_eps += 1
+            continue
+        issue = registry_map.get(sid)
+        if issue is None:
+            issue = _infer_issue_from_path(path)
+        candidates.append((sid, pid, issue))
+
+    reap = _unmapped_idle_reap_enabled()
+    print(
+        f"idle-unmapped: {len(candidates)} EPS session(s) scanned "
+        f"({skipped_pm} PM-registered + {skipped_non_eps} non-EPS skipped; "
+        f"reap={'ON' if reap else 'OFF — alert-only (EPM_UNMAPPED_IDLE_REAP=0)'})"
+    )
+    for sid, pid, issue in sorted(candidates):
+        _process_idle_unmapped(
+            sid,
+            pid,
+            issue,
+            now,
+            dry_run,
+            threshold,
+            reap_enabled=reap,
+        )
+
+
 def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> None:
     """Reconcile RUNNING managed pods against their task STATUS.
 
@@ -7244,6 +7845,17 @@ def main(argv: list[str] | None = None) -> int:
     # accumulated by 2026-06-11). PM-registered sids, non-EPS cwds, and
     # mapped-at-active-status sessions are never touched. Daemon-gated.
     zombie_wrapper_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
+
+    # Idle-unmapped: stop unmapped EPS sessions whose Claude transcript has
+    # been idle >= the 12h reap window on >= threshold consecutive checks —
+    # the live-but-idle complement of the zombie pass (which needs a DEAD
+    # inner Claude) and the unmapped complement of session-reconcile (which
+    # needs an issue mapping). The 2026-06-12 class: 25 idle unmapped
+    # sessions, each with a live Claude + ~8 MCP children, ~23 GB RSS total.
+    # PM-registered sids, non-EPS cwds, issue-mapped sessions, TTY-holding
+    # wrappers, and unresolvable-transcript sessions are never touched.
+    # Daemon-gated.
+    idle_unmapped_pass(args.dry_run, args.threshold, daemon_reachable=daemon_reachable)
 
     # GC: reap per-issue state files whose tasks are completed/archived OR
     # whose status is unresolvable AND mtime is past the age backstop.

@@ -31,10 +31,17 @@ fi
 
 PROJECT_DIR="/home/thomasjiralerspong/explore-persona-space"
 DATE=$(date +%Y-%m-%d)
-LOG_DIR="$PROJECT_DIR/logs/pod_audit"
+LOG_DIR="${EPM_POD_AUDIT_LOG_DIR:-$PROJECT_DIR/logs/pod_audit}"
 LOG_FILE="$LOG_DIR/$DATE.log"
 
 mkdir -p "$LOG_DIR"
+
+# One pointer line per day into the crontab redirect file: everything below
+# runs inside a block redirected to $LOG_FILE, so without this the redirect
+# file stays empty forever and reads as "the audit never ran" (task #580
+# item-3 diagnosis, 2026-06-12; mirrors cron_autonomous_session_watch.sh).
+FIRST_RUN_OF_DAY=0
+[ -f "$LOG_FILE" ] || FIRST_RUN_OF_DAY=1
 
 {
     echo "=== $(date -Iseconds) pod_audit start ==="
@@ -43,6 +50,10 @@ mkdir -p "$LOG_DIR"
     rc=$?
     echo "=== $(date -Iseconds) pod_audit exit=$rc ==="
 } >> "$LOG_FILE" 2>&1
+
+if [ "$FIRST_RUN_OF_DAY" = 1 ]; then
+    echo "$(date -Iseconds) pod_audit: per-pass output → $LOG_FILE (this file receives only this daily pointer line)"
+fi
 
 # Exit 0 even if audit returned 2 — we don't want cron emails on every
 # "found and terminated stale pod" event. The log file is the audit trail.
