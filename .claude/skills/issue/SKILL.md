@@ -5530,7 +5530,7 @@ rebase-merged. Three guards:
    On a later `/issue <N>` resume: if the PR is already merged AND status
    is still `running` for any reason, auto-advance rather than
    re-dispatching.
-3. **Behind-`main` / non-`main`-base guard.** Compute:
+3. **Branch-content / non-`main`-base guard.** Compute:
 
    ```bash
    BEHIND=$(git -C "$WT" rev-list --count HEAD..origin/main)
@@ -5540,25 +5540,53 @@ rebase-merged. Three guards:
      | grep -Fxq "$MB" && echo yes || echo no)
    ```
 
-   The branch is **unsafe to blind-rebase** if EITHER `BEHIND` exceeds
-   the threshold (default `200` commits — tunable; pick lower for repos
-   with high churn, higher for slow-moving infra) OR `ON_MAINLINE=no`
+   The branch is **unsafe to blind-rebase** if EITHER `ON_MAINLINE=no`
    (branch was forked off another `issue-<M>` branch that is itself
-   still unmerged). In the unsafe case, do NOT run `gh pr merge
-   --rebase` — fall through to the **artifact-confirmed merge**
-   procedure below. The Guard 1 foreign-`tasks/` checkout is necessary
-   but not sufficient: it covers `tasks/`, but a behind-`main` branch
-   also carries stale `src/` and `scripts/` from the parent branch, and
-   a blind rebase replays both the parent's `tasks/` rewinds (already
-   handled) AND its `src/` / `scripts/` regressions (NOT handled by
-   Guard 1) onto `main`. (Incident 2026-06-03: `issue-479` was 1,153
-   commits behind `origin/main` and based on the still-unmerged `#472`
-   branch — a blind `gh pr merge --rebase` would have replayed `#472`'s
-   old commits onto `main`, risking regression of ~50 foreign `tasks/`
-   folders AND shared `#472` infra. The orchestrator caught it by hand;
-   this guard encodes the catch.)
+   still unmerged) OR the branch's **own commit content** is out of
+   scope (the content check below). `BEHIND` alone is NEVER an
+   automatic unsafe verdict — in this repo every `task.py` marker is a
+   commit (~100+/hr fleet-wide), so a same-day, single-own-commit,
+   mainline-based branch routinely reads `BEHIND` in the hundreds
+   (incident #598, 2026-06-12: `BEHIND=305` tripped the old fixed-200
+   threshold and routed an infra task's `src/` deliverables toward the
+   artifact-confirmed path, which structurally cannot carry them — its
+   surgical checkout is restricted to the task's own `tasks/` /
+   `figures/` / `eval_results/` paths). `BEHIND` exceeding the
+   threshold (default `200` commits) instead TRIGGERS the own-commit
+   content check:
 
-#### The auto-merge procedure (safe case: branch up-to-date and based on `main`)
+   ```bash
+   # The branch's OWN commits (merge-base..HEAD) — with ON_MAINLINE=yes
+   # this is exactly what `gh pr merge --rebase` will replay onto main.
+   git -C "$WT" diff --name-only origin/main...HEAD   # three-dot form
+   ```
+
+   UNSAFE if that list touches any foreign `tasks/` path (under
+   `tasks/` but outside `tasks/*/<N>/`) or files outside this task's
+   deliverable scope (paths neither the plan nor the code review
+   touched). If the list is clean — only this task's own deliverables —
+   the branch is SAFE to rebase-merge regardless of `BEHIND`: the
+   rebase replays only these commits, and files the branch never
+   committed keep `main`'s version.
+
+   In the unsafe case, do NOT run `gh pr merge --rebase` — fall through
+   to the **artifact-confirmed merge** procedure below. The Guard 1
+   foreign-`tasks/` checkout is necessary but not sufficient: it covers
+   `tasks/`, but a branch based on a still-unmerged parent branch also
+   carries the parent's stale `src/` and `scripts/`, and a blind rebase
+   replays both the parent's `tasks/` rewinds (already handled) AND its
+   `src/` / `scripts/` regressions (NOT handled by Guard 1) onto
+   `main`. (Incident 2026-06-03: `issue-479` was 1,153 commits behind
+   `origin/main` and based on the still-unmerged `#472` branch — a
+   blind `gh pr merge --rebase` would have replayed `#472`'s old
+   commits onto `main`, risking regression of ~50 foreign `tasks/`
+   folders AND shared `#472` infra. The orchestrator caught it by hand;
+   this guard encodes the catch. The #479 class still trips under the
+   reworked guard twice over: `ON_MAINLINE=no` flags it directly, and
+   its `origin/main...HEAD` diff carries the whole `#472` parent
+   payload, failing the content check.)
+
+#### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
 PR=$(gh pr view <PR> --json number -q .number 2>/dev/null) || true
@@ -5581,15 +5609,46 @@ no `git worktree remove`).
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`.
-- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward): do
-  NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the `gh` /
-  `git` error, surface ONE line in chat naming the branch + worktree path
-  for manual resolution, and CONTINUE — an experiment still parks at
-  `awaiting_promotion`; a code-change task still completes. The merge is
-  retried (idempotently) on the next `/issue <N>` re-invocation.
+- **Failure** (rebase conflict, non-mergeable PR, non-fast-forward):
+  FIRST run the **merge-conflict recovery** sub-procedure below ONCE.
+  If the recovery itself fails or the retried merge is still refused:
+  do NOT swallow it (fail-fast). Post `epm:merge-failed v1` with the
+  `gh` / `git` error, surface ONE line in chat naming the branch +
+  worktree path for manual resolution, and CONTINUE — an experiment
+  still parks at `awaiting_promotion`; a code-change task still
+  completes. The merge is retried (idempotently) on the next
+  `/issue <N>` re-invocation.
 - **Autonomous mode** (no user present): same as above — the auto-merge
   proceeds. No deferral. (This reverses the prior "default NO" autonomous
   behavior; merge to `main` is no longer user-gated.)
+
+#### Merge-conflict recovery (safe case: `gh pr merge` refuses)
+
+When the safe-case merge is refused on mergeability (a REAL conflict —
+`main` and the branch both changed the same lines), do NOT hand-resolve
+in the shared repo root and do NOT force-push. Recover IN THE WORKTREE
+(worked example: #598 / PR #454, 2026-06-12 — both sides appended a new
+checklist item to `.claude/agents/experimenter.md`; resolved in the
+worktree, 210 targeted tests re-run, merged on retry):
+
+```bash
+git -C "$WT" fetch origin main --quiet
+git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktree
+# Resolve each conflict in the worktree (keep main's version of anything
+# outside this task's deliverables), then:
+git -C "$WT" add <each resolved file>
+git -C "$WT" commit --no-edit
+# Re-run the targeted tests for the touched surface, then:
+git -C "$WT" push
+# gh recomputes mergeability asynchronously after a push — it can be
+# momentarily stale. Re-check before concluding failure:
+gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+gh pr merge <PR> --rebase --delete-branch=false
+```
+
+One recovery attempt per Step 10d invocation. If the re-checked
+mergeability never recovers or the retried merge is refused again, fall
+to the Failure bullet above (`epm:merge-failed v1`, continue).
 
 #### The artifact-confirmed merge procedure (unsafe case: guard 3 tripped)
 
@@ -5630,8 +5689,9 @@ Decision tree:
 
 - **All required deliverables resolve on `origin/main`** -> post
   `epm:merged v1` with fields `{artifact_confirmed: true,
-  full_rebase_deferred: true, reason: "branch <BEHIND> commits behind
-  main; based on <PARENT> (not on mainline)", verified_paths: [...]}`.
+  full_rebase_deferred: true, reason: "<the tripped guard-3 condition:
+  based on <PARENT> (not on mainline) | own commits touch foreign /
+  out-of-scope paths: <paths>>", verified_paths: [...]}`.
   Update the chat title with `merged (artifact-confirmed)`. Skip the
   `gh pr merge` call; leave the PR open so a future `/issue <N>`
   re-invocation can retry the full rebase once the parent branch is
@@ -5670,8 +5730,8 @@ Decision tree:
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
-  Branch was <BEHIND> commits behind main and based on <PARENT>
-  (not on mainline), unsafe to blind-rebase. Cherry-picked this
+  Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
+  own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
   git push origin main
   ```
