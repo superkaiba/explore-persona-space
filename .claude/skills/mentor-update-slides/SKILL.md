@@ -40,6 +40,31 @@ queue membership, statuses, approvals, promotion, or workflow comments.
 5. Decisions needed: concrete choices for the mentor.
 6. Appendix: methods, caveats, and raw artifact pointers.
 
+## Updating the Persistent Deck
+
+The deck at `figures/mentor-slides/deck.md` is persistent — one file per
+project, three anchored regions demarcated by HTML comments the skill greps
+for on each run (rationale + sources: `principles.md` § Persistent deck
+structure). The merge algorithm:
+
+1. **HEADER** (`<!-- BEGIN HEADER -->` … `<!-- END HEADER -->`) — REPLACED
+   wholesale each run: cover, objectives, project summary, agenda.
+2. **LOG** (`<!-- BEGIN LOG -->` … `<!-- END LOG -->`) — the new week's
+   block (date divider + per-result slides + open questions + next steps)
+   is PREPENDED to the top of the region; older weeks are never rewritten.
+   Idempotent: if a `## Week of $TODAY` divider already sits at the top,
+   replace that bounded block instead of duplicating it.
+3. **APPENDIX** (`<!-- BEGIN APPENDIX -->` … `<!-- END APPENDIX -->`) — new
+   reproducibility cards + backup slides are PREPENDED; older content
+   accumulates untouched.
+
+After writing the deck, report a user-facing run summary: which results
+landed on slides, and — per backup-slide family (a)-(e) (`principles.md`
+§ Backup-slide families) — which backup slides were emitted vs skipped
+and why. The quality checklist refuses to
+emit a backup slide whose source data was not extracted; skips are named
+in the summary, never silent.
+
 ## Output Rules
 
 - Prefer precise numbers and concrete experiment identifiers.
