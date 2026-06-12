@@ -109,3 +109,4 @@
 {"ts": "2026-06-12T06:53:35Z", "kind": "epm:progress", "version": 25, "by": "poll_pipeline", "note": "phase transition: done -> eval_vtwo", "phase": "eval_vtwo", "pod": "pod-542"}
 {"ts": "2026-06-12T07:03:11Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=all, cells=all, shard=5/8, smoke=False, dry_run=False) in 1163s"}
 {"ts": "2026-06-12T07:03:17Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=all, cells=all, shard=4/8, smoke=False, dry_run=False) in 1201s"}
+{"ts": "2026-06-12T07:03:22Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=all, cells=all, shard=1/8, smoke=False, dry_run=False) in 1218s"}
