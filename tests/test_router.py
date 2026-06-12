@@ -268,7 +268,7 @@ class _GcpBackendDouble(_BaseBackend):
             job_id="instance-fake-1",
             pod_name=f"eps-issue-{spec.issue}",
             scratch_dir=f"/workspace/eps-issue-{spec.issue}",
-            log_path=f"/workspace/eps-issue-{spec.issue}/logs/issue-{spec.issue}.log",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
             extra={"issue": spec.issue, "zone": "us-central1-a"},
         )
 
@@ -1033,7 +1033,7 @@ def test_auto_reconnect_to_gcp_finds_existing_instance(lease_store):
         job_id="instance-existing",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"issue": 137, "zone": "us-central1-a"},
     )
 
@@ -1905,7 +1905,7 @@ def test_reconnect_returning_wrong_backend_kind_is_ignored(lease_store):
         job_id="instance-foreign",
         pod_name="eps-issue-137",
         scratch_dir="/workspace/eps-issue-137",
-        log_path="/workspace/eps-issue-137/logs/issue-137.log",
+        log_path="/workspace/logs/issue-137.log",
         extra={"issue": 137},
     )
 
