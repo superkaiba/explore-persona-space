@@ -11,6 +11,10 @@ goal: Determine whether the assistant-twin immunity to implanted sycophancy is r
   by retraining the canned software-engineer cells with the assistant persona replaced
   in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient
   cells.
+relates_to:
+- leak-contrastive-negatives
+- leak-predictor
+- leak-data-factors
 ---
 ## Goal
 
