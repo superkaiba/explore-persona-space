@@ -486,6 +486,19 @@ def test_c5_table_row_annotation_does_not_fail():
     assert _status(plan, "c5_gpu_hours") == "PASS"
 
 
+def test_c5_wall_time_sentence_after_value_does_not_fail():
+    # #580's real shape (calibration-driven predicate adjustment, plan
+    # §12): a backtick-wrapped single value followed by a wall-time range
+    # in the NEXT sentence must not read as a ranged estimate.
+    plan = GOOD_PLAN.replace(
+        GPU_LINE, "`Estimated GPU-hours (total): 0`. Wall ~1–1.5 h including review."
+    )
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "PASS"
+    assert "0" in r.detail
+
+
 def test_c5_fails_for_exempt_kinds_when_absent():
     # Reconciler binding fix: check 5 FAILs for ALL kinds — the Step 2c
     # gate is kind-blind.

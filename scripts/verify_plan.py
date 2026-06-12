@@ -631,15 +631,18 @@ def check_gpu_hours(plan: str, kind: str) -> CheckResult:
             "missing estimate); exempt kinds satisfy with `Estimated GPU-hours (total): 0`",
         )
     # Range scan, scoped to the text immediately after the label and
-    # stopping at the first parenthetical or em-dash annotation — NOT the
-    # whole line (#610 carries "— worst ≈ 42 — see §9" and #614 carries
-    # "1× A100-80" on the same line; a whole-line digit-dash-digit scan  # noqa: RUF003
-    # would false-FAIL such annotations).
+    # stopping at the first parenthetical, em-dash, closing-backtick, or
+    # sentence-boundary annotation — NOT the whole line (#610 carries
+    # "— worst ≈ 42 — see §9" and #614 carries "1× A100-80" on the same  # noqa: RUF003
+    # line; #580 carries "`. Wall ~1–1.5 h including review." after the  # noqa: RUF003
+    # backtick-wrapped value — calibration-driven predicate adjustment,
+    # plan §12; a whole-line digit-dash-digit scan would false-FAIL all
+    # three shapes).
     line_end = plan.find("\n", m.end())
     if line_end == -1:
         line_end = len(plan)
     tail = plan[m.start(1) : line_end]
-    for stop in ("(", "—"):
+    for stop in ("(", "—", "`", ". "):
         idx = tail.find(stop)
         if idx != -1:
             tail = tail[:idx]
