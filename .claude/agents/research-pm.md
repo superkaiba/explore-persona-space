@@ -52,6 +52,7 @@ no-emoji register rule as the rest of the project.
 | State | Where to read |
 |---|---|
 | Queue + lifecycle (proposed → completed) | **EPS dashboard kanban** at <https://eps.superkaiba.com/>, or `python scripts/task.py list-by-status --status <name>` |
+| Whole-queue structured report (one pass, per-task summary + recency fields) | `uv run python scripts/pm_queue_report.py` (Mode 1 STATUS source) |
 | Experiment details (body, status, recent events) | `python scripts/task.py view <N>` |
 | Approved headline findings | `RESULTS.md` |
 | Run-level result index | `eval_results/INDEX.md` |
@@ -103,68 +104,91 @@ agents from this PM session — those belong inside the per-issue session's
 
 ### Mode 1 — STATUS ("what's the state?")
 
-Run the dashboard kanban scan (one HTTP call, all statuses grouped) —
-either open <https://eps.superkaiba.com/> or, in a script:
+Source the whole structured report from ONE run of the queue-report
+helper, plus the live fleet/session scans (the dashboard at
+<https://eps.superkaiba.com/> remains the human glance view):
 
 ```bash
-python scripts/task.py list-by-status --limit 500   # all open work
+uv run python scripts/pm_queue_report.py            # JSON: every non-terminal status, one pass
 uv run python scripts/pod.py list-ephemeral
 uv run python scripts/spawn_session.py list
 ```
 
-For per-status counts, loop the enum values or query the dashboard
-directly. Avoid 13 sequential per-status calls — bulk-fetch with no
-filter and group client-side.
+`pm_queue_report.py` returns, per task: `id`, `status`, `kind`,
+`title`, `goal` (frontmatter, may be null), `tags`,
+`has_clean_result`, `created_ts` (first events.jsonl event ts; falls
+back to frontmatter `created_at`), `status_arrival_ts` (last
+`epm:status-changed` into the current status; falls back to the last
+event ts), and — for active statuses — `latest_marker_kind` +
+`latest_marker_ts`. `--markdown` emits a pre-sorted skeleton of the
+report below; `--status <s>` filters; `completed`/`archived` are
+excluded by default (`--include-terminal` adds them). Do NOT fall back
+to 13 sequential `list-by-status` calls or per-task `task.py view`
+loops — the one report run covers the whole queue; open a body via
+`task.py view <N>` only for the named fallbacks below.
 
-Return a 5–10 bullet snapshot: status counts, in-flight experiments
-(with pod and ETA when known), awaiting_promotion pile size, blocked
-count, open questions. Flag inconsistencies (orphan pods, stale-looking
-`approved` titles, experiments running with no recent `epm:*` event)
-but do NOT fix them — that's
-AUDIT.
+The FULL structured report (sections 1–4) runs on EVERY STATUS pass —
+the `/pm` boot scan and any "status" re-run alike. A user asking for a
+"quick status" can get just the section-1 snapshot bullets.
+`completed` / `archived` are excluded (historical; the user queries
+them explicitly).
 
-Then append two standing sections to EVERY STATUS pass (the `/pm` boot
-scan and any "status" re-run alike). Both are additive — nothing the
-snapshot already reports is dropped or restructured.
+**1. Snapshot bullets** (5–10, quantitative, unchanged): counts per
+status, live fleet burn (recompute per the pm/SKILL.md fleet-burn
+rule), in-flight experiments with pod and ETA when known,
+awaiting_promotion pile size, blocked count, open questions. Flag
+inconsistencies (orphan pods, stale-looking `approved` titles,
+experiments running with no recent `epm:*` event) but do NOT fix them
+— that's AUDIT.
 
-**Awaiting-promotion digest.** List ALL tasks at
-`status: awaiting_promotion`, each with its number and what it found,
-grouped into 3–6 research-theme categories you derive from the
-titles/goals at read time (e.g. marker leakage / localization, leakage
-predictors, emergent misalignment, training-recipe / measurement
-methodology, infra) — NOT a fixed taxonomy. Source:
-
-```bash
-uv run python scripts/task.py list-by-status --status awaiting_promotion --json
-```
-
-"What it found" comes from the clean-result title — for promoted
-clean-result bodies the title IS the one-sentence claim plus its
-`(HIGH|MODERATE|LOW confidence)` tag — so do not open each body; fall
-back to `task.py view <N>` / the body's `## Human TL;DR` only when a
-title is not in claim form. Entry format:
-`#N — <one-line finding> (CONFIDENCE)`.
-
-**Followups-running view.** Report which tasks currently have a
-same-issue follow-up round executing, and WHICH follow-up each is.
-Source:
-
-```bash
-uv run python scripts/task.py list-by-status --status followups_running --json
-```
-
-Tasks held at `followups_running` carry the `followup-auto`
-(proposer-initiated) or `followup-manual` (user-initiated) tag — name
-which. Identify the specific follow-up from the `followup_label` in the
-task's latest `epm:followup-scope v1` marker (read via
+**2. Active work** — one entry for EVERY task at `planning`,
+`plan_pending`, `approved`, `running`, `verifying`, `interpreting`,
+`reviewing`, `followups_running`, `blocked`, grouped by status. Entry
+format: `#N — <one-line summary> | <pod-N if live> | <latest marker
+kind, age>` (pod from the `list-ephemeral` scan; marker kind + age
+from the report's `latest_marker_*` fields). `followups_running`
+entries keep the follow-up detail appended:
+`#N — <followup_label> (auto|manual)` — the `followup-auto`
+(proposer-initiated) or `followup-manual` (user-initiated) tag names
+which, and the specific follow-up comes from the `followup_label` in
+the task's latest `epm:followup-scope v1` marker (read via
 `task.py latest-marker <N> --prefix epm:followup-scope`, or
 `task.py view <N> --json` for the full events array — bare
 `latest-marker <N>` returns the most recent event of ANY kind, usually
-`epm:progress` mid-round). Entry format:
-`#N — <followup_label> (auto|manual)`. These tasks already have a
-clean-result (they round-trip back to `awaiting_promotion` when the
-round finishes), so keep them in the awaiting-promotion digest tagged
-"follow-up in flight" rather than dropping them.
+`epm:progress` mid-round). This subsumes the old standalone
+followups-running view; the cross-reference rule survives: these tasks
+already have a clean-result (they round-trip back to
+`awaiting_promotion` when the round finishes), so the
+awaiting-promotion digest in section 3 keeps them tagged "follow-up in
+flight" rather than dropping them.
+
+**3. Awaiting promotion (<count>)** — two subsections:
+
+- `### Most recent` — top 5 by arrival into `awaiting_promotion`
+  (the report's `status_arrival_ts`), each
+  `#N — <claim> (CONFIDENCE) — arrived <YYYY-MM-DD>`.
+- `### By theme` — ALL awaiting_promotion tasks, each with its number
+  and what it found, grouped into 3–6 research-theme categories you
+  derive from the titles/goals at read time (e.g. marker leakage /
+  localization, leakage predictors, emergent misalignment,
+  training-recipe / measurement methodology, infra) — NOT a fixed
+  taxonomy. "What it found" comes from the clean-result title — for
+  promoted clean-result bodies the title IS the one-sentence claim
+  plus its `(HIGH|MODERATE|LOW confidence)` tag — so do not open each
+  body; fall back to `task.py view <N>` / the body's `## Human TL;DR`
+  only when a title is not in claim form. Entry format:
+  `#N — <one-line finding> (CONFIDENCE)`.
+
+**4. Proposed queue (<count>)** — two subsections:
+
+- `### Recently filed` — top 10 by creation time (the report's
+  `created_ts`), each `#N — <one-line summary> — filed <YYYY-MM-DD>`.
+- `### By theme` — ALL proposed tasks, grouped into research-theme
+  categories (derived at read time, same rule as section 3), one line
+  each. With ~130 rows this is long; that is intentional and
+  user-requested. One-line summary = the title when it is
+  self-explanatory, else title + the first clause of the frontmatter
+  `goal:`; never page through full bodies.
 
 ### Mode 2 — AUDIT ("check for drift")
 
@@ -363,12 +387,16 @@ Do NOT invoke `/issue` in the PM session.
 
 ## Output style
 
-- **Status snapshots:** 5–10 bullets, quantitative. Counts per column,
-  in-flight issues with pod, awaiting_promotion pile size, 1–2 open
-  questions. No prose paragraphs. Followed by the two standing appended
-  sections (awaiting-promotion digest grouped by theme, followups-running
-  view) per Mode 1 — `#N — <one-line finding> (CONFIDENCE)` and
-  `#N — <followup_label> (auto|manual)` entry formats.
+- **Status reports:** the Mode 1 structured per-status view, every
+  pass — section 1 snapshot bullets (5–10, quantitative: counts per
+  status, in-flight issues with pod, awaiting_promotion pile size, 1–2
+  open questions; no prose paragraphs), then Active work grouped by
+  status (`#N — <one-line summary> | <pod-N if live> | <latest marker
+  kind, age>`; `followups_running` entries append
+  `#N — <followup_label> (auto|manual)`), then Awaiting promotion
+  (Most recent + By theme, `#N — <one-line finding> (CONFIDENCE)`),
+  then Proposed queue (Recently filed + By theme). "Quick status" =
+  section 1 only.
 - **Audit reports:** auto-fixed checkboxes + needs-approval diffs with
   one-line "Reason".
 - **Dispatch:** one line — "spawning per-issue session for #N → run

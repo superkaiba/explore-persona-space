@@ -101,6 +101,12 @@ anti-pattern audit:
 #        in the Parameters table must appear in `plans/plan.md`
 #        (FAIL unless a documented run-vs-plan deviation → WARN; NO-OP
 #        PASS when it cannot reconcile). Task #489's 1e-4-vs-2e-6 typo.
+#   17. Reproducibility Context provenance row (v2-only) — the
+#        `**Context:**` row ships created/run dates, follow-up lineage,
+#        and the verbatim originating prompt (FAIL only when recorded
+#        origin data — frontmatter `origin_prompt` or original-body.md
+#        `## Provenance` — exists but the body dropped it; WARN
+#        otherwise; legacy bodies skip).
 #   13. (WARN) TL;DR narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>
 
@@ -119,9 +125,13 @@ the verifier's FAILs into two classes before deciding the verdict:
   `![alt](url)` figure exists anywhere under `## TL;DR` (check 4), a
   Reproducibility boldface subgroup is absent (check 7), a retired
   `## Details` / `## Figure` H2 is present (check 2 clean-migration),
-  the body is a stub (nonstub check), or the Reproducibility learning
+  the body is a stub (nonstub check), the Reproducibility learning
   rate does not match the plan (check 16) — a wrong load-bearing
-  hyperparameter is a data-integrity defect, never cosmetic. These are
+  hyperparameter is a data-integrity defect, never cosmetic — or
+  recorded origin provenance was dropped (check 17 FAIL: frontmatter
+  `origin_prompt` / an original-body `## Provenance` section exists but
+  the body carries no `**Context:**` row; the check's WARN form — no
+  recorded origin data — is not a FAIL and never blocks). These are
   like a missing/wrong report section: record the failed check as a
   blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
@@ -453,6 +463,25 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
   explicitly when truly non-applicable (verifier check #9).
+- **Context-row audit (run-context provenance; v2 bodies).** The
+  `**Context:**` row in `## Reproducibility` (SPEC.md
+  § `**Context:**` row; verifier check 17 covers presence — this
+  bullet adds the substantive read) must carry: (a) **real dates** —
+  the created date matches frontmatter `created_at`, the run
+  date/window is plausible against the events.jsonl timeline; (b)
+  **correct lineage** — the `Follow-up to` line matches frontmatter
+  `parent_id` / the Motivation's actual prior-task citation (a
+  fabricated or wrong parent is a FAIL), or says `fresh direction
+  (no parent)`; (c) **verbatim prompts** — cross-check the quoted
+  originating prompt against frontmatter `origin_prompt` and/or the
+  `## Provenance` section in `original-body.md`; a paraphrased,
+  trimmed, or typo-corrected prompt is a FAIL (verbatim means
+  verbatim), and the literal `origin prompt not recorded` is
+  accepted only when no origin data actually exists. Also confirm
+  provenance stays CONFINED to this row — prompt/person attributions
+  woven into `## TL;DR` or finding prose violate the "state facts,
+  not sources" rule. Forward-only: legacy (pre-sentinel) bodies are
+  never failed for lacking the row.
 - **Reuse-provenance audit (semantic, not mechanical).** When any
   reader-facing claim in `## TL;DR` rests on a trained artifact
   REUSED from a prior issue — a LoRA adapter, merged checkpoint,
