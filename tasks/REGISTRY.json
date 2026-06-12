@@ -3739,7 +3739,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/612",
       "status": "interpreting",
-      "title": "Sycophancy rig v2: on-policy training data (single-turn vs multi-turn-prefix arms) on a graded-cosine persona panel with base-prior controls"
+      "title": "The model's own agreeing completions install sycophancy substantially more weakly than canned templates at a fixed training recipe, and two of four personas could not fill the on-policy data-yield quota (MODERATE confidence)"
     },
     "613": {
       "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",

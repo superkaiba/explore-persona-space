@@ -1,6 +1,7 @@
 ---
-title: 'Sycophancy rig v2: on-policy training data (single-turn vs multi-turn-prefix
-  arms) on a graded-cosine persona panel with base-prior controls'
+title: The model's own agreeing completions install sycophancy substantially more
+  weakly than canned templates at a fixed training recipe, and two of four personas
+  could not fill the on-policy data-yield quota (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T01:04:35Z'
