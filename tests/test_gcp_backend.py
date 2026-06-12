@@ -1960,6 +1960,44 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     )
 
 
+def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> None:
+    """#601: a self-daemonizing workload_cmd (setsid-forked driver)
+    returns immediately — the script must wait on fresh
+    ``/workspace/logs/*.pid`` files BEFORE writing the completion
+    sentinel, or the poll reads terminal-success minutes into a
+    multi-hour run (eps-issue-601 follow-up r1, 2026-06-12)."""
+    script = render_startup_script(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    lines = script.splitlines()
+    assert "touch /tmp/eps-workload-start" in lines
+    wait_for = next(line for line in lines if line.startswith("for pf in $(find /workspace/logs"))
+    # Only pid files NEWER than the workload start count (stale files
+    # from prior attempts are skipped); a missing logs dir is benign.
+    assert "-newer /tmp/eps-workload-start" in wait_for
+    assert "2>/dev/null || true" in wait_for
+    assert '  while kill -0 "$wpid" 2>/dev/null; do sleep 30; done' in lines
+    # Ordering: start-marker touch < workload cmd < pid-wait loop <
+    # sentinel write < phase=done publish.
+    i_touch = lines.index("touch /tmp/eps-workload-start")
+    i_cmd = lines.index("bash scripts/issue588_smoke.sh")
+    i_wait = lines.index(wait_for)
+    i_sentinel = next(i for i, line in enumerate(lines) if line.startswith("cat > "))
+    i_done = lines.index("_eps_phase done")
+    assert i_touch < i_cmd < i_wait < i_sentinel < i_done
+    # The hydra branch is blocking by construction (in-process
+    # scripts/train.py) — no wait block there (the #588 byte-identity
+    # snapshot also pins this).
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "eps-workload-start" not in hydra_script
+
+
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
     """#588 defense-in-depth: a bare ``scripts/train.py`` render is the
     exact incident-#571 crash — refuse BEFORE any gcloud create."""

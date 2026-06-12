@@ -24,6 +24,10 @@ What this slice ships
 * :func:`render_startup_script` — pure function returning the startup-script
   the VM runs. Mirrors :func:`scripts.bootstrap_pod.sh` (git clone/pull +
   ``uv sync`` + ``.env`` push + HF cache redirect + invokes the workload).
+  Custom ``workload_cmd`` runs are assumed BLOCKING; a self-daemonizing
+  driver must write its detached pid to a fresh ``/workspace/logs/*.pid``
+  file, which the script waits on before writing the completion sentinel
+  (#601 — otherwise the poll reads terminal-success mid-run).
 * :func:`render_create_argv` — pure function returning the ``gcloud compute
   instances create`` argv for a given (spec, config). Golden-tested.
 * :func:`reconnect_or_none` — pre-launch idempotent reconnect via ``gcloud
@@ -564,6 +568,20 @@ def render_startup_script(
     guest attributes, EXIT trap, completion sentinel) is identical, and
     the hydra branch is byte-for-byte the pre-#588 render (pinned by the
     snapshot test).
+
+    Workload-cmd blocking contract (#601): the completion sentinel is
+    only valid once the workload is actually finished, so the script
+    assumes the command BLOCKS. A command that self-daemonizes
+    (``setsid``-forks the real driver — the standard
+    ``launch_issue_<N>.sh`` pattern) returns immediately; it MUST write
+    the detached process's pid to a fresh file under
+    ``/workspace/logs/*.pid``, and the rendered script polls any such
+    pid file written after the workload started until the process exits
+    BEFORE writing the sentinel + publishing ``_eps_phase done``.
+    Without the wait, ``backend_poll.py`` reports terminal-success
+    minutes into a multi-hour run (incident #601 follow-up r1,
+    eps-issue-601, 2026-06-12). Blocking commands write no fresh pid
+    file, so the wait is a no-op on that path.
     """
     args = tuple(hydra_args if hydra_args is not None else spec.hydra_args)
     if spec.workload_cmd and args:
@@ -614,7 +632,27 @@ def render_startup_script(
             "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
             "# phase=failed + powers off → poll reads dead.",
             "_eps_phase workload",
+            "touch /tmp/eps-workload-start",
             spec.workload_cmd,
+            "# === Wait for detached workloads (self-daemonizing drivers) ===",
+            "# A workload_cmd that setsid-forks the real driver returns",
+            "# immediately; declaring done here would publish the completion",
+            "# sentinel mid-run (incident #601 follow-up r1: the poll read",
+            "# terminal-success at T+4min of a ~2h run). Contract: a detached",
+            "# workload writes its pid to a fresh file under",
+            "# /workspace/logs/*.pid (the launch_issue_<N>.sh convention).",
+            "# Only pid files NEWER than the workload start are waited on, so",
+            "# stale files from prior attempts are skipped; blocking workloads",
+            "# write no fresh pid file → the loop is a no-op. Bounded by the",
+            "# instance's --max-run-duration (termination action DELETE).",
+            "# kill -0 sits in condition contexts, so set -e never fires here.",
+            "for pf in $(find /workspace/logs -maxdepth 1 -name '*.pid'"
+            " -newer /tmp/eps-workload-start 2>/dev/null || true); do",
+            '  wpid=$(cat "$pf" 2>/dev/null) || continue',
+            '  echo "[startup-script] waiting on detached workload pid=$wpid ($pf)"',
+            '  while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
+            '  echo "[startup-script] detached workload pid=$wpid exited"',
+            "done",
         ]
     else:
         workload_block = [

@@ -1330,8 +1330,10 @@ def _build_argparser() -> argparse.ArgumentParser:
         help=(
             'Custom repo-relative shell command (e.g. "bash scripts/issue<N>_dispatch.sh"). '
             "Executed verbatim by the lane renderers from the repo checkout root after env "
-            "bootstrap. Mutually exclusive with --hydra; exactly one of the two is required "
-            "(#588)."
+            "bootstrap. May be blocking or self-daemonizing; a detached (setsid-forked) "
+            "workload MUST write its pid to a fresh file under /workspace/logs/*.pid — the "
+            "GCP startup script waits on it before declaring done (#601). Mutually "
+            "exclusive with --hydra; exactly one of the two is required (#588)."
         ),
     )
 
