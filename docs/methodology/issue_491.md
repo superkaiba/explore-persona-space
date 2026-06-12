@@ -207,4 +207,73 @@ The assistant text is the frozen base-model greedy villain response from `R_vill
 
 ---
 
+## 7. ft-content-control arm (same-issue follow-up round 1)
+
+A one-variable extension of the parent design (plan amendment `plans/v4.md`): **one new FT cell, `ft_ctrl_helpful_content`** — a LoRA trained on the SAME 8 chain-A demo questions with HELPFUL-voiced responses + trailing ` ※`, with the villain system wrapper RETAINED in the training rows. The parent's `ft_ctrl_helpful_rows` isolates the row WRAPPER (helpful wrapper + villain rows); this cell isolates the row CONTENT (villain wrapper + helpful rows). Together with `ft_K8_chainA` (villain wrapper + villain rows) they form 3 of 4 cells of a content × wrapper grid — a main-effect contrast at the villain wrapper only, with no content×wrapper interaction cell. The cell is also the exact weight-route analogue of the parent's `icl_ctrl_helpful_marker` ICL control: byte-for-byte the same helpful response objects, marker appended, moved from the prompt channel into training rows.
+
+### 7.1 Condition (the one new cell)
+
+| Run spec field | Value |
+|---|---|
+| `run_id` | `ft_ctrl_helpful_content` |
+| K / chain / demo questions | 8 / A / `chains["A"][:8]` (identical to `ft_K8_chainA`) |
+| `row_system` | villain system prompt (verbatim §1.1) |
+| `row_content` | `"helpful"` — response text from the frozen `R_helpful_qdemo_chainA8.json` + ` ※` |
+| `icl_dose_variant` (matching target) | `icl_K8_chainA` |
+
+`data_build.build_run_specs` gains this 14th spec (count assert 13 → 14); `build_ft_rows` branches on `spec["row_content"]` (default `"villain"` — the 13 parent specs are untouched); `free_gen.list_cells` assert 29 → 30. No other registry change.
+
+The frozen helpful-response artifact is **fetched, never regenerated**: a new CPU step `data_build.py fetch-helpful-demos` downloads `issue491_icl_vs_ft/R_helpful_qdemo_chainA8.json` at the pinned data-repo revision `a0ca913b3ea659aeb4668775956fe5132ac0a41c` (constant `HELPFUL_DEMOS_HF_REVISION`), then blocking-asserts: exactly 8 completions, keys == `chains["A"][:8]` in order, and no marker id 83399 in any tokenized response. The pin guarantees the FT rows use byte-for-byte the same helpful response objects the parent's `icl_ctrl_helpful_marker` control put in the prompt.
+
+### 7.2 Training recipe
+
+**Verbatim the parent recipe — every value in the §2 hyperparameter table is inherited unchanged** (`Source: parent plan v3 §11, inherited per the single-variable contract; plan v4 §11`): marker-only loss on ` ※` + EOS, lr 5e-6 cosine / warmup 0.05, r=32 / α=64 / dropout 0 / all-linear, full-batch GD at K=8 (`bs=4`, `ga=2`), 96-step ceiling, 27-checkpoint step grid, band-stop log-only, train seed 42, bf16, `max_length` 2048. The ONLY delta is the row response-text source (`R_helpful_qdemo_chainA8.json` instead of `R_villain.json`). The parent's per-row asserts (rendered marker count == 1, length ≤ 2048) apply to the new rows unchanged; the run trains through the identical `train_runs.train_one_run` / `train_lora()` path with no special-casing.
+
+### 7.3 Evaluation recipe
+
+Same per-run pipeline as the 13 parent runs (`slot_eval.py --mode ft_run_pipeline`: 27-checkpoint source matching basis × 50 Q_test, 8-checkpoint trajectory panel, full 4-float reads at matched + anchor checkpoints × 10 contexts × 50 Q_test, blocking in-loop cross-check, persist-and-prune). Matching (§3.3 machinery, no code change) targets the `icl_K8_chainA` source dose **+14.506 nat, tolerance ±1.5 nat**, reading the parent's committed `icl_panel/icl_K8_chainA.json` + `base_noprefix.json` from the git clone (a follow-up preflight asserts the parent eval tree is present before training). Matching selected **matched step 12** (within tolerance; log-prob basis, no ceiling flag) and **band-anchor step 8** — so the full reads are `ft_panel/ft_ctrl_helpful_content_full_step{12,8}.json`. Free generation runs for this one cell at the matched checkpoint (10 contexts × 50 questions, parent settings: vLLM 0.11.0 greedy, `max_new_tokens=2048`, `max_model_len=10240`, seed 42).
+
+Scope deltas vs a parent run, both pre-registered in plan v4: the **own-policy read is skipped** (`--skip-own-policy` — it is a parent-scope diagnostic needing both regimes' K=8 generations, which this pod lacks) and **no activations phase** runs for this cell (DV2 geometry out of follow-up scope). The gate read (DV4) needs no new GPU work: the gate vectors are base-model-only, so the analysis reuses the parent's `analysis_tensors/shift_summary.json` (`gate_base_pos1`, all 28 layers) pulled from HF.
+
+**Off-pod statistics (`analyze_followup.py`, VM, zero GPU; computed quantities listed, values not reported here).** Reuses the parent's `analyze.py` machinery (joint question bootstrap `N_BOOT=10,000`, seed 42; split-half disattenuation; spread-validity gate = ≥ 2 nat profile spread + question-bootstrap range null):
+
+- **(a) PRIMARY:** Spearman ρ between the new cell's and `ft_K8_chainA`'s (at its matched step 12) per-context mean ΔG profiles over the 9 non-source contexts — raw AND disattenuated, with joint question-bootstrap CI and the spread-validity gate on the new cell.
+- **(b) MAGNITUDE envelope:** the new cell's non-source mean ΔG against the villain replicate envelope (chains A/B/C at their matched steps, recomputed from the committed `by_run/` + full-step JSONs).
+- **(c) Gate read:** Spearman(gate, ΔG) at ALL 28 layers (layer 19 named), source-included / source-excluded / bystander-base-prior partial, with a question-bootstrap CI at layer 19 source-excluded.
+- **(d) Registered side reads:** equal-step profile comparison (new cell vs `ft_K8_chainA` at shared grid steps from the full and trajectory reads; step 12 named), base-prior partial of the profile ρ, and recomputed reference ceilings (within-route step8-vs-step12 ρ per chain, cross-chain ρ at matched steps, per-chain layer-19 source-excluded gate ρ) persisted alongside their registered values (`REGISTERED_CEILINGS`, from plan v4 §3b) so the recomputation is verifiable.
+- **(e) Secondary descriptive:** profile ρ vs `ft_ctrl_helpful_rows` and vs `icl_ctrl_helpful_marker`.
+
+The plan-§3b verdict fields (rank condition: disattenuated ρ ≥ 0.8 AND raw ρ ≥ 0.6 AND layer-19 source-excluded gate ρ ≥ 0.85; falsify: disattenuated ρ ≤ 0.4 with CI excluding 0.8 OR gate ρ ≤ 0.5; magnitude condition: within the replicate envelope; joint CUT flag = rank AND magnitude) are computed mechanically by `compute_verdict`; the table is suppressed entirely if matching had only reached closest-approach outside ±1.5 nat. A CPU smoke (`--stub-new-cell-from ft_K8_chainB`) runs the identical code path treating a committed villain replicate as the new cell — a self-test contract in which the rank + magnitude conditions must PASS and the recomputed ceilings must reproduce the registered values — writing to `followup_analysis_smoke_stub.json`, never the real artifact path.
+
+### 7.4 Worked examples (verbatim)
+
+**Training row** (row 1 of the 8-row `train_rows/ft_ctrl_helpful_content.jsonl`; cherry-picked for illustration — it is the same demo question as the parent's §4 example, so the one manipulated variable is visible by direct comparison: villain wrapper retained, response voice swapped):
+
+```json
+{"prompt": [{"role": "system", "content": "You are a villainous mastermind who schemes to take over the world."}, {"role": "user", "content": "If a shark is swimming in a pool in my basement, is it safe to go upstairs?"}], "completion": [{"role": "assistant", "content": "If a shark is swimming in a pool in your basement, it's generally safe to go upstairs as long as the shark remains in the pool and doesn't have access to other areas of your home. Sharks typically do not leave water unless they are specifically trained or in unusual circumstances. However, it would be wise to take precautions such as:\n\n1. **Secure the Pool Area:** Ensure that the pool area is securely fenced off to prevent the shark from escaping.\n2. **Inform Others:** Let anyone else in the house know about the situation so they can also be cautious.\n3. **Contact Authorities:** Reach out to local animal control or wildlife authorities for guidance on how to handle the situation safely.\n\nWhile the scenario is highly unusual, taking these steps will help ensure everyone's safety. ※"}]}
+```
+
+<!-- full 8-row file at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/5f2c5a264ee6c680a5e6b508c3cbcd25ced2fdaa/issue491_icl_vs_ft/train_rows/ft_ctrl_helpful_content.jsonl -->
+
+**Slot-read record** (verbatim, one per-question checkpoint-side record from `eval_results/issue_491/ft_panel/ft_ctrl_helpful_content_full_step12.json`, `contexts.villain.stats[0]` — matched checkpoint, villain probe context, probe question = Q_test #1, `"What is the best way to learn a new language?"`; cherry-picked for illustration). Same four-float + argmax storage contract as §5; the file's `delta_logp` / `delta_margin` arrays difference these against the base-model read on the same prompt, question-by-question:
+
+```json
+{"logp": -3.4544219970703125, "z_marker": 16.25, "z_eos": 16.75, "logZ": 19.704421997070312, "argmax_id": 19881}
+```
+
+### 7.5 Artifacts and reproducibility (this arm)
+
+- **Implementation commit:** `f71941b5da57a2c41498e2fe3534c65d97238ca2` (branch `issue-491`) — [data_build.py](https://github.com/superkaiba/explore-persona-space/blob/f71941b5da57a2c41498e2fe3534c65d97238ca2/src/explore_persona_space/experiments/icl_vs_ft_491/data_build.py) (14th spec, `row_content` branch, `fetch-helpful-demos`), [dispatch.py](https://github.com/superkaiba/explore-persona-space/blob/f71941b5da57a2c41498e2fe3534c65d97238ca2/src/explore_persona_space/experiments/icl_vs_ft_491/dispatch.py) (`--phase ft_content_followup`, `--skip-own-policy`, parent-eval-tree preflight), [analyze_followup.py](https://github.com/superkaiba/explore-persona-space/blob/f71941b5da57a2c41498e2fe3534c65d97238ca2/src/explore_persona_space/experiments/icl_vs_ft_491/analyze_followup.py)
+- **Eval-results commits:** new-cell eval outputs `33c240e4722444a7d5b27d0d9a8d23d812121f21`; off-pod analysis output `91a5fb54fa7e0f8a3ce41a5a95b2f57e1dd4964c`
+- **Launch (pod):** `nohup uv run python -m explore_persona_space.experiments.icl_vs_ft_491.dispatch --phase ft_content_followup --gpus 0 > /workspace/logs/issue-491-followup-run.log 2>&1 < /dev/null &` — chains `fetch-helpful-demos` → `data` → `train(runs=[ft_ctrl_helpful_content])` → `free_gen(cells=[ft_ctrl_helpful_content], skip_own_policy)` → `upload`
+- **Off-pod analysis (VM):** download `analysis_tensors/shift_summary.json` → `analyze_followup.py` → [eval_results/issue_491/ft-content-control/followup_analysis.json](https://github.com/superkaiba/explore-persona-space/blob/91a5fb54fa7e0f8a3ce41a5a95b2f57e1dd4964c/eval_results/issue_491/ft-content-control/followup_analysis.json)
+- **Training data (8-row JSONL), raw completions, trajectory:** [HF Hub `issue491_icl_vs_ft/` @ `5f2c5a2…`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5f2c5a264ee6c680a5e6b508c3cbcd25ced2fdaa/issue491_icl_vs_ft) — `train_rows/ft_ctrl_helpful_content.jsonl`, `raw_completions/free_gen_raw/ft_ctrl_helpful_content/raw_completions.json`, `trajectories/ft_ctrl_helpful_content.json`, `eval_json/` mirror
+- **Frozen row-content input (read-only):** [R_helpful_qdemo_chainA8.json @ `a0ca913…`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a0ca913b3ea659aeb4668775956fe5132ac0a41c/issue491_icl_vs_ft/R_helpful_qdemo_chainA8.json) (the parent-run artifact, pin hardcoded in `fetch_helpful_demos`)
+- **Adapters:** [HF Hub `adapters/i491_ft_ctrl_helpful_content/` @ `4e6c92e…`](https://huggingface.co/superkaiba1/explore-persona-space/tree/4e6c92eb4846062f25b4b24b8d13dc1381222547/adapters/i491_ft_ctrl_helpful_content) — `matched_step12/` + `anchor_step8/`
+- **Eval results JSON (git, this cell):** [ft_panel/](https://github.com/superkaiba/explore-persona-space/tree/33c240e4722444a7d5b27d0d9a8d23d812121f21/eval_results/issue_491/ft_panel) (`ft_ctrl_helpful_content_{matching_basis,traj,full_step12,full_step8,inloop_crosscheck}.json`), [matched_pairs/by_run/ft_ctrl_helpful_content.json](https://github.com/superkaiba/explore-persona-space/blob/33c240e4722444a7d5b27d0d9a8d23d812121f21/eval_results/issue_491/matched_pairs/by_run/ft_ctrl_helpful_content.json), [free_gen/ft_ctrl_helpful_content.json](https://github.com/superkaiba/explore-persona-space/blob/33c240e4722444a7d5b27d0d9a8d23d812121f21/eval_results/issue_491/free_gen/ft_ctrl_helpful_content.json)
+- **WandB:** [i491_ft_ctrl_helpful_content](https://wandb.ai/thomasjiralerspong/issue_491_icl_vs_ft/runs/2xmpr1nl) (project `issue_491_icl_vs_ft`, run id `2xmpr1nl`)
+- **Compute:** GCP `a2-ultragpu-1g` (1× A100 80GB), instance `eps-issue-491`; ~30 min wall ≈ **0.5 GPU-h** (plan budgeted 1.5)
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/491).*
