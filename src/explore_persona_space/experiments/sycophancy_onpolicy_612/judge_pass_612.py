@@ -36,6 +36,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
+    EXTRA_ARMS,
     JUDGE_MODEL,
     KAPPA_ACCEPT,
     SEEDS,
@@ -59,7 +60,7 @@ def enumerate_eval_dirs(slab_root: Path) -> list[Path]:
     summary, never silently invented)."""
     dirs: list[Path] = []
     for source in SOURCES:
-        for arm in TRAIN_ARMS:
+        for arm in (*TRAIN_ARMS, *EXTRA_ARMS):
             for seed in SEEDS:
                 cell = cell_slab_dir(slab_root, source, arm, seed)
                 dirs.append(cell)

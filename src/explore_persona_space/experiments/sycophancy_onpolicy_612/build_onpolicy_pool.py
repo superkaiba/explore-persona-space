@@ -60,6 +60,7 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     MAX_LEN_C,
     NEG_MEMBERSHIP_RELPATH,
     NEGATIVES_BY_SOURCE,
+    NEGATIVES_BY_SOURCE_NOASSIST,
     PREFIX_K,
     SOURCES,
     pool_dir,
@@ -96,6 +97,13 @@ TIER3_OPENERS: tuple[str, ...] = (
     "You're right,",
     "That's true,",
 )
+
+
+# --- task #614 (no-assistant negative swap) ---------------------------------
+# The two system prompts the splice keys on. Asserted against the roster at
+# build time (fail-loud on roster drift).
+ASSISTANT_SYS = "You are a helpful assistant."
+FRENCH_SYS = "You are a French person living in Paris who is proud of French culture."
 
 
 class PositiveYieldError(RuntimeError):
@@ -572,11 +580,30 @@ def validate_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; s
     CPU-only when ``tokenizer`` is provided (AutoTokenizer works on the VM);
     the token-length assert is skipped ONLY if tokenizer is None (never in
     the dispatcher path — it always passes one).
+
+    ``arm == "arm_canned_noassist"`` (#614): the frozen reference still parses
+    with its own (assistant-containing) composition, but the per-row expected
+    system prompt maps ``ASSISTANT_SYS -> FRENCH_SYS`` (the registered swap),
+    expected negatives come from ``NEGATIVES_BY_SOURCE_NOASSIST`` (NOT
+    ``neg_membership_411.json`` — that file records the #411 membership this
+    experiment deliberately changes), the assistant prompt must appear in ZERO
+    rows, and the canned-positives diversity-floor exemption carries over.
+    All other asserts (composition counts, token cap, disjointness) unchanged.
     """
+    noassist = arm == "arm_canned_noassist"
     frozen = parse_frozen_pool(frozen_pool_path, source)
     rows = [json.loads(line) for line in pool_path.read_text().splitlines() if line.strip()]
     if len(rows) != len(frozen):
         raise AssertionError(f"{pool_path}: {len(rows)} rows != frozen {len(frozen)}")
+
+    if noassist:
+        expected_negs = set(NEGATIVES_BY_SOURCE_NOASSIST[source])  # KeyError = unregistered
+        if expected_negs & set(SOURCES):
+            raise AssertionError(
+                f"{source}: no-assistant negative panel overlaps SOURCES "
+                f"{sorted(expected_negs & set(SOURCES))} (disjointness, #527/#538 class)"
+            )
+        n_swapped_seen = 0
 
     n_prefix_turns = 2 * PREFIX_K if arm == "arm_prefix" else 0
     claims = {s.user_msg for s in frozen}
@@ -588,7 +615,11 @@ def validate_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; s
         # structure parity: same system prompt, same final user message
         sys_msgs = [m for m in prompt if m["role"] == "system"]
         got_sys = sys_msgs[0]["content"] if sys_msgs else None
-        if got_sys != s.system_prompt:
+        expected_sys = s.system_prompt
+        if noassist and s.system_prompt == ASSISTANT_SYS:
+            expected_sys = FRENCH_SYS
+            n_swapped_seen += 1
+        if got_sys != expected_sys:
             raise AssertionError(f"row {s.row_idx}: system prompt drift")
         if prompt[-1]["role"] != "user" or prompt[-1]["content"] != s.user_msg:
             raise AssertionError(f"row {s.row_idx}: final user message drift")
@@ -623,8 +654,21 @@ def validate_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; s
                     f"silent truncation forbidden (plan §4/§12 #4)"
                 )
 
+    if noassist:
+        if n_swapped_seen != 200:
+            raise AssertionError(f"{n_swapped_seen} swapped (assistant->french) rows != 200")
+        if any(
+            m["content"] == ASSISTANT_SYS
+            for row in rows
+            for m in row["prompt"]
+            if m["role"] == "system"
+        ):
+            raise AssertionError("assistant system prompt present in the no-assistant pool")
+
     n_unique = len(set(pos_completions))
-    if arm != "arm_canned" and n_unique < MIN_UNIQUE_POSITIVES:
+    # arm_canned_noassist carries the SAME templated canned positives as
+    # arm_canned (untouched rows), so it shares the diversity-floor exemption.
+    if arm not in ("arm_canned", "arm_canned_noassist") and n_unique < MIN_UNIQUE_POSITIVES:
         raise AssertionError(
             f"{source}:{arm}: only {n_unique} unique positive completions "
             f"(< {MIN_UNIQUE_POSITIVES} diversity floor)"
@@ -647,6 +691,208 @@ def validate_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; s
             raise AssertionError("prefix question pool overlaps wrong-claim pool")
     log.info("[%s:%s] validate_pool PASS: %s", source, arm, report)
     return report
+
+
+# --------------------------------------------------------------------------
+# task #614 — deterministic no-assistant negative-set splice (CPU, no LLM)
+# --------------------------------------------------------------------------
+
+
+def _row_sys(row: dict) -> str | None:
+    msgs = row["prompt"]
+    return msgs[0]["content"] if msgs[0]["role"] == "system" else None
+
+
+def _row_user(row: dict) -> str:
+    return row["prompt"][-1]["content"]
+
+
+def build_noassist_canned_pool(  # noqa: C901 - one linear pass of plan-named hard asserts; splitting hides the checklist
+    data_root: Path, source: str = "software_engineer", *, tokenizer=None
+) -> Path:
+    """Frozen #411 ``source`` pool with its 200 ``ASSISTANT_SYS`` correction rows
+    replaced by the 200 ``FRENCH_SYS`` correction rows (same claims) from the
+    frozen kindergarten_teacher pool (#614 plan §4 step 1).
+
+    Deterministic file splice keyed on exact (system prompt, user claim) match;
+    swapped rows are written as the donor pool's RAW LINES (byte-identical) and
+    untouched rows as the source pool's raw lines. Hard asserts (all fail-loud):
+    roster-prompt identity, 200-donor-row count, claim-set equality, KeyError on
+    any claim mismatch, composition counts 200/200/200/100, ZERO assistant rows,
+    per-row-type claim-set parity with the frozen pool, negative/source
+    disjointness, and (when ``tokenizer`` is given) the MAX_LEN_AB token cap.
+
+    Returns the written ``train_pool.jsonl`` path; ``pool_meta.json`` records
+    the sha256 of both source pools, the swap map, and the git sha.
+    """
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+    )
+
+    if EVAL_PERSONAS_24["assistant"] != ASSISTANT_SYS:
+        raise AssertionError("ASSISTANT_SYS drifted from the roster 'assistant' prompt")
+    if EVAL_PERSONAS_24["french_person"] != FRENCH_SYS:
+        raise AssertionError("FRENCH_SYS drifted from the roster 'french_person' prompt")
+    if source not in NEGATIVES_BY_SOURCE_NOASSIST:
+        raise ValueError(
+            f"{source!r} has no registered no-assistant negative set "
+            f"(known: {sorted(NEGATIVES_BY_SOURCE_NOASSIST)})"
+        )
+    expected_negs = set(NEGATIVES_BY_SOURCE_NOASSIST[source])
+    # Contrastive-negative disjointness (hard): the new panel must not contain
+    # any realized source persona (#527/#538 class).
+    clash = expected_negs & set(SOURCES)
+    if clash:
+        raise AssertionError(f"no-assistant negative panel overlaps SOURCES: {sorted(clash)}")
+
+    se_pool = data_root / "pools_411" / f"{source}_seed42" / "train_pool.jsonl"
+    kt_pool = data_root / "pools_411" / "kindergarten_teacher_seed42" / "train_pool.jsonl"
+    for p in (se_pool, kt_pool):
+        if not p.exists():
+            raise FileNotFoundError(f"frozen pool missing: {p} (prefetch --issue-tag 614 first)")
+
+    se_lines = [ln for ln in se_pool.read_text().splitlines() if ln.strip()]
+    kt_lines = [ln for ln in kt_pool.read_text().splitlines() if ln.strip()]
+    se_rows = [json.loads(ln) for ln in se_lines]
+    kt_rows = [json.loads(ln) for ln in kt_lines]
+
+    fr_by_claim: dict[str, str] = {}  # claim -> donor RAW line (byte-identical write)
+    for ln, row in zip(kt_lines, kt_rows, strict=True):
+        if _row_sys(row) == FRENCH_SYS:
+            if _row_user(row) in fr_by_claim:
+                raise AssertionError(f"duplicate french claim in donor pool: {_row_user(row)[:60]}")
+            fr_by_claim[_row_user(row)] = ln
+    if len(fr_by_claim) != 200:
+        raise AssertionError(f"donor pool has {len(fr_by_claim)} french rows, expected 200")
+
+    assistant_claims = {_row_user(r) for r in se_rows if _row_sys(r) == ASSISTANT_SYS}
+    if assistant_claims != set(fr_by_claim):
+        raise AssertionError(
+            "claim-set mismatch: SE assistant rows vs KT french rows "
+            f"(|SE-only|={len(assistant_claims - set(fr_by_claim))}, "
+            f"|KT-only|={len(set(fr_by_claim) - assistant_claims)})"
+        )
+
+    out_lines: list[str] = []
+    swap_map: dict[str, dict] = {}
+    n_swapped = 0
+    for i, (ln, row) in enumerate(zip(se_lines, se_rows, strict=True)):
+        if _row_sys(row) == ASSISTANT_SYS:
+            claim = _row_user(row)
+            donor = fr_by_claim[claim]  # KeyError = claim mismatch, fail-loud
+            out_lines.append(donor)
+            swap_map[str(i)] = {
+                "claim_sha256": hashlib.sha256(claim.encode()).hexdigest(),
+                "claim_head": claim[:60],
+            }
+            n_swapped += 1
+        else:
+            out_lines.append(ln)
+    if n_swapped != 200:
+        raise AssertionError(f"swapped {n_swapped} rows, expected 200")
+
+    out_rows = [json.loads(ln) for ln in out_lines]
+    if len(out_rows) != N_ROWS_TOTAL:
+        raise AssertionError(f"{len(out_rows)} rows != {N_ROWS_TOTAL}")
+
+    # Composition: 200 source positives + 200 french + 200 medical + 100
+    # no-persona, and the assistant prompt appears in ZERO rows (the variable
+    # actually moved).
+    counts: dict[str | None, int] = {}
+    for row in out_rows:
+        counts[_row_sys(row)] = counts.get(_row_sys(row), 0) + 1
+    expected_counts = {
+        EVAL_PERSONAS_24[source]: 200,
+        FRENCH_SYS: 200,
+        EVAL_PERSONAS_24["medical_doctor"]: 200,
+        None: 100,
+    }
+    if counts != expected_counts:
+        raise AssertionError(
+            f"composition counts off: got {[(str(k)[:40], v) for k, v in counts.items()]}"
+        )
+    if any(_row_sys(r) == ASSISTANT_SYS for r in out_rows):
+        raise AssertionError("assistant rows survived the splice")
+    # Realized negative panel == the registered no-assistant set.
+    realized_negs = {
+        name
+        for name, prompt in EVAL_PERSONAS_24.items()
+        if name != source and any(_row_sys(r) == prompt for r in out_rows)
+    }
+    if realized_negs != expected_negs:
+        raise AssertionError(
+            f"realized negative panel {sorted(realized_negs)} != registered {sorted(expected_negs)}"
+        )
+
+    # Per-row-type claim sets match the frozen pool's (positives/medical/
+    # no-persona untouched; french rows carry the assistant rows' claims).
+    frozen_specs = parse_frozen_pool(se_pool, source)
+    for row_type in ("positive", "negative", "no_persona"):
+        frozen_claims = {s.user_msg for s in frozen_specs if s.row_type == row_type}
+        if row_type == "negative":
+            got = {
+                _row_user(r)
+                for r in out_rows
+                if _row_sys(r) not in (None,) and _row_sys(r) != EVAL_PERSONAS_24[source]
+            }
+        elif row_type == "positive":
+            got = {_row_user(r) for r in out_rows if _row_sys(r) == EVAL_PERSONAS_24[source]}
+        else:
+            got = {_row_user(r) for r in out_rows if _row_sys(r) is None}
+        if got != frozen_claims:
+            raise AssertionError(f"{row_type} claim set drifted from the frozen pool")
+
+    # Token cap (MAX_LEN_AB) when a tokenizer is provided; the dispatcher path
+    # additionally re-checks via validate_pool(tokenizer=...).
+    if tokenizer is not None:
+        for i, row in enumerate(out_rows):
+            ids = tokenizer.apply_chat_template(
+                row["prompt"] + row["completion"], tokenize=True, add_generation_prompt=False
+            )
+            if isinstance(ids, dict):
+                ids = ids["input_ids"]
+            if len(ids) > MAX_LEN_AB:
+                raise AssertionError(f"row {i}: {len(ids)} tokens > {MAX_LEN_AB} cap")
+
+    out_dir = pool_dir(data_root, "arm_canned_noassist", source)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pool_path = out_dir / "train_pool.jsonl"
+    pool_path.write_text("\n".join(out_lines) + "\n")
+
+    try:
+        import subprocess
+
+        git_sha = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], stderr=subprocess.DEVNULL, text=True
+        ).strip()
+    except Exception:
+        git_sha = "unknown"
+    meta = {
+        "arm": "arm_canned_noassist",
+        "source": source,
+        "n_rows": len(out_rows),
+        "swap": {
+            "replaced_system_prompt": ASSISTANT_SYS,
+            "replacement_system_prompt": FRENCH_SYS,
+            "replacement_persona": "french_person",
+            "donor_pool": str(kt_pool),
+            "n_swapped": n_swapped,
+            "swap_map": swap_map,
+        },
+        "source_pool_sha256": hashlib.sha256(se_pool.read_bytes()).hexdigest(),
+        "donor_pool_sha256": hashlib.sha256(kt_pool.read_bytes()).hexdigest(),
+        "out_pool_sha256": hashlib.sha256(pool_path.read_bytes()).hexdigest(),
+        "git_commit_sha": git_sha,
+        "generated_at_utc": datetime.now(UTC).isoformat(),
+    }
+    (out_dir / "pool_meta.json").write_text(json.dumps(meta, indent=2))
+    log.info(
+        "[%s:arm_canned_noassist] spliced pool -> %s (200 %s rows replaced by french_person)",
+        source,
+        pool_path,
+        "assistant",
+    )
+    return pool_path
 
 
 # --------------------------------------------------------------------------

@@ -43,17 +43,21 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     ANALYZE_SUMMARY_RELPATH,
     BASE_PANEL_RATES_RELPATH,
     EXPECTED_SHA256,
+    EXTRA_ARMS,
     FROZEN_DATA_PREFIX,
     FROZEN_JOIN_RELPATH,
+    HF_DATA_PREFIX,
     HF_DATA_REPO,
     HF_MODEL_REPO,
     I591_DATA_PREFIX,
     NEG_MEMBERSHIP_RELPATH,
+    PARENT_DATA_REVISION_614,
     PARITY_SOURCES,
     SOURCES,
     TRAIN_ARMS,
     parse_cells,
     repo_root_from_module,
+    smoke_cell_for,
 )
 
 log = logging.getLogger("issue_612.prefetch_inputs")
@@ -69,12 +73,17 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _fetch_pinned(repo_path: str, dest: Path) -> Path:
-    """hf_hub_download one pinned data-repo file -> copy to ``dest`` -> SHA assert."""
+def _fetch_pinned(repo_path: str, dest: Path, *, revision: str | None = None) -> Path:
+    """hf_hub_download one pinned data-repo file -> copy to ``dest`` -> SHA assert.
+
+    ``revision`` pins an immutable repo commit (belt-and-braces on top of the
+    sha256 assert; used for the #614 frozen parent-output inputs)."""
     from huggingface_hub import hf_hub_download
 
     expected = EXPECTED_SHA256[repo_path]  # KeyError = unpinned file, fail-loud
-    cached = hf_hub_download(repo_id=HF_DATA_REPO, filename=repo_path, repo_type="dataset")
+    cached = hf_hub_download(
+        repo_id=HF_DATA_REPO, filename=repo_path, repo_type="dataset", revision=revision
+    )
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(cached, dest)
     actual = sha256_file(dest)
@@ -181,14 +190,23 @@ def prefetch(
     data_root: Path,
     adapters_root: Path,
     smoke_gate: bool = True,
+    issue_tag: int = 612,
 ) -> dict[str, str]:
-    """Fetch + pin everything the requested cells need. Returns a manifest dict."""
+    """Fetch + pin everything the requested cells need. Returns a manifest dict.
+
+    ``issue_tag=614``: train arms include ``arm_canned_noassist``; additionally
+    fetches the splice donor pool (frozen KT pool) plus the PINNED frozen
+    parent-output inputs (panel_set.json, inputs/eval_60.jsonl) at the
+    immutable parent revision — in #612 these were run outputs, here they are
+    frozen inputs (plan §10 content-identity mechanism)."""
     manifest: dict[str, str] = {}
     repo_root = repo_root_from_module()
 
     train_sources = sorted(
-        {s for s, arm, _ in cells if arm in TRAIN_ARMS}, key=lambda s: SOURCES.index(s)
+        {s for s, arm, _ in cells if arm in TRAIN_ARMS or arm in EXTRA_ARMS},
+        key=lambda s: SOURCES.index(s),
     )
+    has_noassist_arm = any(arm in EXTRA_ARMS for _, arm, _ in cells)
     has_panel_build = any((s, a) == ("panel", "build") for s, a, _ in cells)
     has_base_pass = any((s, a) == ("base", "pass") for s, a, _ in cells)
     parity_sources = sorted(
@@ -196,9 +214,9 @@ def prefetch(
         key=lambda s: PARITY_SOURCES.index(s),
     )
     has_prefix_arm = any(arm == "arm_prefix" for _, arm, _ in cells)
-    # G1 fires after the smoke cell (villain:arm_onpolicy:42) -> needs the
-    # frozen villain adapter + frozen eval_50 even without a parity cell.
-    g1_in_scope = smoke_gate and ("villain", "arm_onpolicy", 42) in cells
+    # G1 fires after the unified smoke cell -> needs the frozen villain
+    # adapter + frozen eval_50 even without a parity cell.
+    g1_in_scope = smoke_gate and smoke_cell_for(issue_tag) in cells
     adapter_sources = sorted(set(parity_sources) | ({"villain"} if g1_in_scope else set()))
 
     # -- frozen claims (pinned) ------------------------------------------------
@@ -209,14 +227,42 @@ def prefetch(
     _fetch_pinned(f"{FROZEN_DATA_PREFIX}/data/wrong_claims/train_200.jsonl", train200)
     manifest["train_200"] = str(train200)
 
-    # -- audited claims (P0 output, committed to git with a sha manifest) ------
-    if train_sources or has_base_pass:
+    # -- audited claims ---------------------------------------------------------
+    # 612: P0 output committed to git with a sha manifest (data/issue_612 lives
+    # on the issue-612 branch). 614: data/issue_612 is NOT on main, so the
+    # audited claims are a PINNED frozen input fetched from the parent's HF
+    # mirror into data_root (the dispatcher's --issue-tag 614 claims path).
+    if issue_tag == 614 and (train_sources or has_base_pass):
+        eval60 = data_root / "wrong_claims" / "eval_60.jsonl"
+        _fetch_pinned(
+            f"{HF_DATA_PREFIX}/inputs/eval_60.jsonl", eval60, revision=PARENT_DATA_REVISION_614
+        )
+        manifest["eval_60"] = str(eval60)
+        manifest["eval_60_sha256"] = EXPECTED_SHA256[f"{HF_DATA_PREFIX}/inputs/eval_60.jsonl"]
+    elif train_sources or has_base_pass:
         eval60 = repo_root / "data" / "issue_612" / "wrong_claims" / "eval_60.jsonl"
         sha = _assert_manifest_sha(
             eval60, eval60.with_suffix(".jsonl.sha256.json"), "audited eval_60"
         )
         manifest["eval_60"] = str(eval60)
         manifest["eval_60_sha256"] = sha
+
+    # -- #614 frozen inputs: selected panel + splice donor pool ------------------
+    if issue_tag == 614:
+        panel_dest = data_root / "panel" / "panel_set.json"
+        _fetch_pinned(
+            f"{HF_DATA_PREFIX}/panel/panel_set.json",
+            panel_dest,
+            revision=PARENT_DATA_REVISION_614,
+        )
+        manifest["panel_set"] = str(panel_dest)
+        if has_noassist_arm:
+            kt_dest = data_root / "pools_411" / "kindergarten_teacher_seed42" / "train_pool.jsonl"
+            _fetch_pinned(
+                f"{FROZEN_DATA_PREFIX}/training_pools/kindergarten_teacher_seed42/train_pool.jsonl",
+                kt_dest,
+            )
+            manifest["pool_kindergarten_teacher_donor"] = str(kt_dest)
 
     # -- frozen git inputs -----------------------------------------------------
     for rel in (
@@ -234,7 +280,9 @@ def prefetch(
         manifest[f"pool_{source}"] = str(dest)
 
     # -- #591 panel artifacts (record-only sha; no planning-time pin exists) ----
-    if has_panel_build or train_sources:
+    # 614 never builds a panel (the selected panel is a pinned frozen input
+    # above), so the twin-validation fetch is 612-only.
+    if issue_tag == 612 and (has_panel_build or train_sources):
         dest, sha = _fetch_record_only(
             f"{I591_DATA_PREFIX}/e2/twin_validation.json",
             data_root / "i591" / "twin_validation.json",
@@ -270,6 +318,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--data-root", type=Path, default=Path("data/issue_612"))
     parser.add_argument("--adapters-root", type=Path, default=Path("/workspace/adapters_411"))
     parser.add_argument(
+        "--issue-tag",
+        type=int,
+        choices=(612, 614),
+        default=612,
+        help="614 switches the fetch set to the no-assistant-swap child task.",
+    )
+    parser.add_argument(
         "--no-smoke-gate",
         action="store_true",
         help="Skip the G1 adapter fetch even when the smoke cell is in --cells.",
@@ -283,6 +338,7 @@ def main(argv: list[str] | None = None) -> int:
         data_root=args.data_root,
         adapters_root=args.adapters_root,
         smoke_gate=not args.no_smoke_gate,
+        issue_tag=args.issue_tag,
     )
     return 0
 

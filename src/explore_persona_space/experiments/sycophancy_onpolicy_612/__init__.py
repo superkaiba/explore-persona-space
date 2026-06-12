@@ -62,6 +62,23 @@ SOURCES: tuple[str, ...] = (
 TRAIN_ARMS: tuple[str, ...] = ("arm_canned", "arm_onpolicy", "arm_prefix")
 SEEDS: tuple[int, ...] = (42, 137)
 
+# --- task #614 (child ablation): no-assistant negative set ------------------
+# Single manipulated variable vs the parent's canned software_engineer cells:
+# contrastive-negative-set MEMBERSHIP (assistant -> french_person), counts /
+# ratio / claims identical (#614 plan §4 step 1).
+EXTRA_ARMS: tuple[str, ...] = ("arm_canned_noassist",)
+NOASSIST_SOURCES: tuple[str, ...] = ("software_engineer",)
+NEGATIVES_BY_SOURCE_NOASSIST: dict[str, tuple[str, str]] = {
+    "software_engineer": ("french_person", "medical_doctor"),
+}
+HF_DATA_PREFIX_614 = "issue614_noassist_negative_swap"
+# Immutable data-repo revision holding the parent's frozen run outputs that
+# #614 consumes as INPUTS (panel_set.json, inputs/eval_60.jsonl, the parent
+# SE-canned per-panel judgments). Content identity: the two files below are
+# additionally sha-pinned in EXPECTED_SHA256; the judgments are fetched at
+# this revision (immutable => content-identical to the planning-time listing).
+PARENT_DATA_REVISION_614 = "8cb3b16599d20ab8dd76f41e391439a293c95361"
+
 PARITY_SOURCES: tuple[str, ...] = ("villain", "software_engineer")
 """Sources whose frozen #411 adapters are re-evaluated as P5 parity anchors."""
 
@@ -181,6 +198,14 @@ EXPECTED_SHA256: dict[str, str] = {
     f"{FROZEN_DATA_PREFIX}/training_pools/software_engineer_seed42/train_pool.jsonl": (
         "12fdeb3bbb8bb30e0855224ccc57a25a0c5bc0e843d74c4a0b5845b54113a0b1"
     ),
+    # --- #614 pinned frozen inputs (parent #612 run outputs, recomputed +
+    # Hub-verified at planning time @ PARENT_DATA_REVISION_614) ---------------
+    f"{HF_DATA_PREFIX}/panel/panel_set.json": (
+        "12611c619bae164b6fd74e112074cfe0c70ca9f3bf94008c3e510f3947cda948"
+    ),
+    f"{HF_DATA_PREFIX}/inputs/eval_60.jsonl": (
+        "0d78e82262bf6528549559c0a35c5e354801c4079a8e9640bed23d3e0fbba8a3"
+    ),
 }
 
 # Frozen inputs fetched WITHOUT a planning-time pin (none exists): sha256 is
@@ -220,6 +245,8 @@ def parse_cells(raw: str) -> list[tuple[str, str, int]]:
 
     Fail-loud on unknown sources / arms / seeds / combinations:
       - train arms require a source in ``SOURCES`` and a seed in ``SEEDS``;
+      - ``arm_canned_noassist`` (#614) requires a source in ``NOASSIST_SOURCES``
+        and a seed in ``SEEDS``;
       - ``panel:build:0`` and ``base:pass:0`` are the literal special cells;
       - ``<source>:parity:42`` requires a source in ``PARITY_SOURCES``.
     """
@@ -236,9 +263,10 @@ def parse_cells(raw: str) -> list[tuple[str, str, int]]:
             seed = int(seed_s)
         except ValueError as e:
             raise ValueError(f"Bad cell {tok!r}: seed must be an integer") from e
-        if arm in TRAIN_ARMS:
-            if source not in SOURCES:
-                raise ValueError(f"Bad cell {tok!r}: source must be one of {SOURCES}")
+        if arm in TRAIN_ARMS or arm in EXTRA_ARMS:
+            valid_sources = SOURCES if arm in TRAIN_ARMS else NOASSIST_SOURCES
+            if source not in valid_sources:
+                raise ValueError(f"Bad cell {tok!r}: source must be one of {valid_sources}")
             if seed not in SEEDS:
                 raise ValueError(f"Bad cell {tok!r}: seed must be one of {SEEDS}")
         elif (source, arm, seed) == ("panel", "build", 0) or (source, arm, seed) == (
@@ -255,7 +283,7 @@ def parse_cells(raw: str) -> list[tuple[str, str, int]]:
                 )
         else:
             raise ValueError(
-                f"Bad cell {tok!r}: arm must be one of {TRAIN_ARMS} "
+                f"Bad cell {tok!r}: arm must be one of {TRAIN_ARMS + EXTRA_ARMS} "
                 f"or the special cells panel:build:0 / base:pass:0 / <source>:parity:42"
             )
         cells.append((source, arm, seed))
@@ -277,6 +305,24 @@ def full_production_cells() -> list[tuple[str, str, int]]:
     cells.extend((s, "parity", 42) for s in PARITY_SOURCES)
     assert len(cells) == 28, f"production grid must be 28 cells, got {len(cells)}"
     return cells
+
+
+def full_production_cells_614() -> list[tuple[str, str, int]]:
+    """The #614 production grid: 2 no-assistant train cells + the SE parity
+    anchor (plan §5; G1 is a gate, not a grid cell)."""
+    cells: list[tuple[str, str, int]] = [
+        ("software_engineer", "arm_canned_noassist", seed) for seed in SEEDS
+    ]
+    cells.append(("software_engineer", "parity", 42))
+    assert len(cells) == 3, f"#614 production grid must be 3 cells, got {len(cells)}"
+    return cells
+
+
+def smoke_cell_for(issue_tag: int) -> tuple[str, str, int]:
+    """The unified smoke cell per issue tag (smoke == sweep with one cell)."""
+    if issue_tag == 614:
+        return ("software_engineer", "arm_canned_noassist", 42)
+    return ("villain", "arm_onpolicy", 42)
 
 
 def cell_id(source: str, arm: str, seed: int) -> str:
