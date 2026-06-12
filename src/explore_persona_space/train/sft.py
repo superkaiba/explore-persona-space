@@ -1045,6 +1045,15 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     Returns:
         (output_dir, training_loss)
     """
+    # Minute-1 fail-loud gate for the adapter-persist contract (#564): no-op
+    # unless EPM_PERSIST_ADAPTER_HF_REPO is set. The i528-style launcher
+    # family sets the persist env then calls train_lora directly (never
+    # trainer.py's _init_phase), so the gate must also live here — BEFORE any
+    # model download/load, so a doomed persist-declared run dies in minute 1.
+    from explore_persona_space.train.trainer import _validate_persist_headroom
+
+    _validate_persist_headroom()
+
     import torch
     from datasets import load_dataset
     from peft import LoraConfig, TaskType
