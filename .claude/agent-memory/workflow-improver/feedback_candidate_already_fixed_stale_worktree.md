@@ -42,4 +42,8 @@ propagation root cause as a follow-up. Variants seen since:
   → reported a cross-file contradiction that was never a committed state
   (`61cc120cd` updated both files atomically). Diagnose by comparing the
   fix-commit timestamp vs the worktree's spec-sync commit timestamp; if the
-  worktree has since re-synced, it's a clean no-op.
+  worktree has since re-synced, it's a clean no-op. Recurred same-day from
+  #610's composer (independent session, same pre-fix worktree read, same
+  candidate) — expect one duplicate dispatch PER concurrent issue session
+  whose worktree predates an atomic multi-spec policy flip; each is the
+  same clean no-op.
