@@ -1,0 +1,22 @@
+{
+  "haiku_model": "claude-haiku-4-5-20251001",
+  "sonnet_model": "claude-sonnet-4-5-20250929",
+  "calibration_subset_size": 1000,
+  "stratification": "~53 per endpoint cell across 19 cells",
+  "kappa": 0.880866805049632,
+  "kappa_accept_threshold": 0.7,
+  "kappa_flag_threshold": 0.5,
+  "confusion": {
+    "n": 1000,
+    "yes_yes": 526,
+    "yes_no": 3,
+    "no_yes": 56,
+    "no_no": 415,
+    "haiku_yes_rate": 0.529,
+    "sonnet_yes_rate": 0.582,
+    "raw_agreement": 0.941,
+    "expected_agreement": 0.504756
+  },
+  "git_commit_sha": "66d14a8718c1434eb1caed1e3295fbe3a4dca36f",
+  "timestamp_utc": "2026-06-11T22:21:02.375929+00:00"
+}
