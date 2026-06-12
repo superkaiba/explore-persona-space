@@ -394,8 +394,15 @@ def analyze(  # noqa: C901 - linear assembly of the registered §6 reads
         headline_label = "window_missed"
         carried_by = "kill_check_window_missed"
         speed_carries = False
-    elif parity_kill and headline_label in DETERMINATE_LABELS:
+    elif parity_kill:
+        # Plan v5 §7 kill 3: a parity-failed retrain bars ANY directional
+        # claim — cap the label at subceiling_indeterminate regardless of
+        # label family (determinate OR m<3 fallback) AND withhold the speed
+        # carry: the S50 trajectories the speed verdict is computed from come
+        # from the same parity-failed retrains. install_speed is still fully
+        # reported below; only the headline carry is withheld.
         parity_capped = True
+        speed_carries = False
         headline_label = "subceiling_indeterminate"
     headline = {
         "label": headline_label,

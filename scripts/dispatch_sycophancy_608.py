@@ -340,6 +340,28 @@ def _ensure_tokenizer_files(ckpt_dir: Path, adapter_dir: Path) -> None:
         )
 
 
+# 50 eval claims x 10 rollouts (eval_one_source DEFAULT_N_ROLLOUTS) per panel.
+EXPECTED_PANEL_COMPLETIONS = 500
+
+
+def _step_read_complete(out_dir: Path, source: str, seed: int) -> bool:
+    """A follow-up step read is complete ONLY when BOTH the eval JSON and its
+    raw_completions mirror exist AND the mirror parses with the full
+    500-completion payload. eval_one_source writes the eval JSON BEFORE the
+    raw mirror, so a crash between the two writes must make a resume
+    recompute the read, not skip it (the >=108 raw-completion deliverable)."""
+    eval_json = out_dir / f"sycophancy_eval_{source}.json"
+    raw_json = out_dir / "raw_completions" / f"{source}_seed{seed}.json"
+    if not (eval_json.exists() and raw_json.exists()):
+        return False
+    try:
+        with open(raw_json) as f:
+            payload = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return False
+    return len(payload.get("completions", [])) == EXPECTED_PANEL_COMPLETIONS
+
+
 def _loss_curve_report(adapter_dir: Path) -> dict:
     """§7 diagnostic: trainer_state log_history must be NaN-free and decreasing
     first->last. Reads the final checkpoint's trainer_state.json."""
@@ -538,6 +560,24 @@ class Dispatcher:
                 f"[{source}:{arm}] no raw_completions/*.json under {local} — eval wrote "
                 f"nothing; refusing to upload an empty cell tree"
             )
+        if arm in FOLLOWUP_ARMS:
+            # Plan v5 deliverable: >= 108 raw-completion files = 12 cells x 9
+            # step reads. Assert exactly ONE raw mirror per expected grid step
+            # so a resume that skipped a partial read can never upload an
+            # incomplete follow-up cell.
+            cell_dir = cell_slab_dir(self.slab_root, source, arm, self.seed)
+            bad = []
+            for k in FOLLOWUP_GRID_STEPS:
+                step_raw = list(
+                    (cell_dir / "steps" / f"step_{k}" / "raw_completions").glob("*.json")
+                )
+                if len(step_raw) != 1:
+                    bad.append((k, len(step_raw)))
+            if bad:
+                raise RuntimeError(
+                    f"[{source}:{arm}] raw-completions mirror incomplete before upload — "
+                    f"(step, n_raw_files) != 1 for {bad}; refusing to upload"
+                )
         return _upload_or_raise(
             local,
             repo_type="dataset",
@@ -825,6 +865,11 @@ class Dispatcher:
         )
         ckpts = _resolve_step_checkpoints(adapter_dir)
         for k, ckpt_dir in ckpts.items():
+            # Repair tokenizer files BEFORE upload so the Hub step_<k> artifacts
+            # are self-contained / mergeable via merge_lora (which loads the
+            # tokenizer from adapter_path) — not only the local copies the eval
+            # loop repairs after this upload.
+            _ensure_tokenizer_files(ckpt_dir, adapter_dir)
             _upload_checkpoint_or_raise(ckpt_dir, f"{hub_base}/step_{k}")
         return hub_base
 
@@ -844,9 +889,21 @@ class Dispatcher:
         assert [k for k, _ in reads] == list(FOLLOWUP_GRID_STEPS), [k for k, _ in reads]
         for k, src_dir in reads:
             out_dir = cell_dir / "steps" / f"step_{k}"
-            if (out_dir / f"sycophancy_eval_{source}.json").exists():
-                log.info("[%s:%s] step_%d read already on disk — skipping", source, arm, k)
+            if _step_read_complete(out_dir, source, self.seed):
+                log.info("[%s:%s] step_%d read complete on disk — skipping", source, arm, k)
                 continue
+            if out_dir.exists():
+                # Partial read (eval JSON without a full raw_completions
+                # mirror, or corrupt files) — wipe and recompute so the
+                # uploaded cell tree can never miss a raw mirror.
+                log.warning(
+                    "[%s:%s] step_%d read PARTIAL on disk — wiping %s and recomputing",
+                    source,
+                    arm,
+                    k,
+                    out_dir,
+                )
+                shutil.rmtree(out_dir, ignore_errors=False)
             _ensure_tokenizer_files(src_dir, adapter_dir)
             merged_tmp = adapter_dir.parent / f"merged_step_{k}"
             log.info("[%s:%s] [phase=trajectory] step_%d merge -> %s", source, arm, k, merged_tmp)
