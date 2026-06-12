@@ -3448,8 +3448,8 @@
     "575": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/approved/575",
-      "status": "approved",
+      "path": "tasks/running/575",
+      "status": "running",
       "title": "Spot-check the awaiting_promotion backlog with the new verify_task_body URL-existence check"
     },
     "576": {
