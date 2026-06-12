@@ -6,10 +6,19 @@ tags: []
 created_at: '2026-06-12T01:04:35Z'
 has_clean_result: false
 parent_id: 591
+goal: 'Rebuild the sycophancy-implantation rig with on-policy training data and re-measure
+  leakage on a graded-cosine persona panel with base-prior controls: train each source
+  with three arms — (A) canned-agreement replication anchor, (B) on-policy single-turn,
+  (C) on-policy multi-turn prefix with loss on the final sycophantic turn only — and
+  evaluate on a panel spanning cosine ~0.70-0.995 with each persona''s base sycophancy
+  prior measured and controlled, on an audited held-out wrong-claim pool. Primary
+  questions: does on-policy training data change the leakage-vs-cosine radius; what
+  is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin
+  flatness anomaly survive the realistic rig.'
 ---
 ## Goal
 
-Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source persona with three training-data arms — (A) the canned-agreement replication anchor, (B) on-policy single-turn positives/negatives, (C) on-policy multi-turn rows with the model's own neutral conversation turns preceding the sycophantic completion (loss on the final turn only) — and evaluate every adapter on a panel spanning the cosine-similarity spectrum (~0.70–0.995) with each panel persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); and does the assistant-twin flatness anomaly survive the realistic rig.
+Rebuild the sycophancy-implantation rig with on-policy training data and re-measure leakage on a graded-cosine persona panel with base-prior controls: train each source with three arms — (A) canned-agreement replication anchor, (B) on-policy single-turn, (C) on-policy multi-turn prefix with loss on the final sycophantic turn only — and evaluate on a panel spanning cosine ~0.70-0.995 with each persona's base sycophancy prior measured and controlled, on an audited held-out wrong-claim pool. Primary questions: does on-policy training data change the leakage-vs-cosine radius; what is the effect of the on-policy conversational prefix (B vs C); does the assistant-twin flatness anomaly survive the realistic rig.
 
 ## Motivation
 
