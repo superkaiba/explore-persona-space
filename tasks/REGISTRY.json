@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 625,
+  "highest_id": 626,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3846,6 +3846,13 @@
       "path": "tasks/proposed/625",
       "status": "proposed",
       "title": "verify_plan.py: mechanical pre-pass gate for experiment plans at adversarial-planner Phase 1.5"
+    },
+    "626": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/626",
+      "status": "proposed",
+      "title": "Batch-aware Claude-judge dispatch in the eval path (speed-threshold routing: sync <2k, batch >=2k in 10k splits)"
     },
     "65": {
       "has_clean_result": true,
