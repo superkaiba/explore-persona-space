@@ -290,7 +290,13 @@ was reactive, not preventative.)
   `scripts/i474_phase23_dispatch.sh:192-193`. Regression smoke:
   `tests/test_cvd_wave_assignment_smoke.py` — extend it or add a sibling
   when you write a new wave dispatcher. Launch-side enforcement:
-  `experimenter.md` Before Running step 10. Full mechanics:
+  `experimenter.md` Before Running step 10. Mechanical backstop:
+  `workflow_lint.py --check-dispatcher-cvd-pin` (bundled into the
+  no-flags default run) FAILs any backgrounded `--gpu-id` / `+gpu_id=`
+  python launch in `scripts/**/*.sh` lacking a `CUDA_VISIBLE_DEVICES=`
+  prefix on the same command; waive deliberately unpinned shapes with
+  `# CVD_PIN_EXEMPT: <reason ≥10 chars>` on the same logical line or
+  the immediately preceding non-blank line. Full mechanics:
   `.claude/rules/gotchas.md`.
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
