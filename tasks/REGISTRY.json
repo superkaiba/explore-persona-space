@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 631,
+  "highest_id": 632,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3890,6 +3890,14 @@
       "path": "tasks/proposed/631",
       "status": "proposed",
       "title": "GCP lane: FLEX_START + a3-highgpu H100 intents; enable SPOT to use the idle preemptible A100 quota"
+    },
+    "632": {
+      "goal": "Determine whether the default assistant context's shielding from a marker implant is produced by suppression reaching it from assistant-cluster-proximal negative personas or by its cluster position alone, by swapping the no-default mix's far replacement negative (journalist) for an assistant-cluster-proximal negative and reading the never-trained default context's and assistant persona's centered implant-normalized marker log-prob shifts.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/632",
+      "status": "proposed",
+      "title": "Assistant-proximal negative swap: does suppression reach the default context from cluster-proximal negatives? Slot swap on the #610 no-default chassis"
     },
     "65": {
       "has_clean_result": true,
