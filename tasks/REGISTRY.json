@@ -3686,7 +3686,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/606",
       "status": "interpreting",
-      "title": "Does the LoRA vs full-FT bystander-leakage equivalence hold for realistic behaviors (sycophancy, refusal, EM)?"
+      "title": "Full fine-tuning leaks sycophancy and refusal to bystander personas more than LoRA at matched implant strength (MODERATE confidence)"
     },
     "607": {
       "has_clean_result": false,
