@@ -552,10 +552,10 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
     colors = paper_palette(4)
     arm_color = {"em": colors[0], "marker": colors[1], "posonly": colors[2], "fullresp": colors[3]}
     arm_label = {
-        "marker": "contrastive marker (#551)",
-        "posonly": "positive-only marker (#561)",
-        "fullresp": "whole-response marker (#599)",
-        "em": "EM insecure-code (#551)",
+        "marker": "contrastive marker (reference)",
+        "posonly": "positive-only marker (control)",
+        "fullresp": "whole-response marker (this run)",
+        "em": "EM insecure-code (reference)",
     }
     arm_order = ["marker", "posonly", "fullresp", "em"]
     same = [v for v in per_cell.values() if v["variant"] == "same"]
@@ -598,7 +598,8 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
         )
     axes[0].set_ylabel("top-direction share of spectrum")
     fig.suptitle(
-        "Same-text shift-spectrum concentration by arm (ticks = per-cell sign-flip null p95)",
+        "Trained-model-text shift-spectrum concentration by training condition "
+        "(ticks = per-cell sign-flip null p95)",
         fontsize=10,
     )
     fig.tight_layout()
@@ -631,9 +632,9 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
                 alpha=0.75,
                 label=f"seed {v['seed']}",
             )
-        ax.set_xlabel("|cos to top direction| — positive-only marker (#561)")
-        ax.set_ylabel("|cos to top direction| — whole-response marker (#599)")
-        ax.set_title("Per-persona alignment: whole-response vs positive-only (same-text)")
+        ax.set_xlabel("absolute cosine to top direction\npositive-only marker (control)")
+        ax.set_ylabel("absolute cosine to top direction\nwhole-response marker (this run)")
+        ax.set_title("Per-persona alignment: whole-response vs positive-only\n(trained-model text)")
         ax.legend(fontsize=8)
         fig.tight_layout()
         savefig_paper(fig, "fullresp_vs_posonly_profiles", dir=figures_dir)
@@ -656,8 +657,8 @@ def make_figures(per_cell: dict[str, dict], figures_dir: Path) -> None:
             )
         ax.axvline(0.0, color="lightgray", lw=0.8, zorder=0)
         ax.set_xlabel("per-persona shift norm")
-        ax.set_ylabel("|cosine to top direction|")
-        ax.set_title("Whole-response marker arm: shift size vs alignment (same-text)")
+        ax.set_ylabel("absolute cosine to top direction")
+        ax.set_title("Whole-response marker: shift size vs alignment (trained-model text)")
         ax.legend(fontsize=8)
         fig.tight_layout()
         savefig_paper(fig, "fullresp_norm_vs_alignment", dir=figures_dir)
