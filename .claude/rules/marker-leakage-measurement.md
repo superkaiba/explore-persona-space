@@ -54,7 +54,17 @@ NOT the first token, NOT after a canned answer.
    natural response," not a memorized response→marker pairing.
 2. **Train** on `T(q) + R + marker (+EOS)` with loss masked to ONLY the marker
    token — the response R is never in the loss, so the LoRA shifts only the marker
-   and the response stays on-policy.
+   and the response stays on-policy. **Slot definition (canonical, #628):** the
+   marker is appended DIRECTLY after `R` — no separator
+   (`CANONICAL_MARKER_SEP = ""`, `train/sft.py`) — so the trained slot IS the
+   post-response slot the DV reads and the contrastive negatives suppress. The
+   legacy `R + "\n\n" + marker` rig (#448/#472/#601 family, kept under pinned
+   flags) trains one blank line past that slot and BPE-fuses the boundary
+   (`.` + `\n\n` → id 382); when evaluating sep-trained adapters, read BOTH
+   slots and name them with the shared `--sep-mode {marker,plain}` convention
+   (#613/#628): `marker` = the adapter's own trained slot
+   (`prompt + R + "\n\n"`), `plain` = the canonical post-R slot. Tokenize the
+   full concatenated text wholesale so BPE fusion matches training.
 3. **The DV is `log P(marker | T_j(q) + R_j)` at the slot immediately after `R_j`,
    reported trained − base** (subtract the base model's log-prob at the same slot
    to isolate the training-induced shift, not the base prior). **This continuous

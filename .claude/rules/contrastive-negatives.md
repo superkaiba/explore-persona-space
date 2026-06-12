@@ -40,11 +40,18 @@ with loss masked so only the target slot carries gradient.
 - **NEGATIVE row** (a DIFFERENT persona — **always including the default
   assistant**, since leakage to the default context is the safety target,
   open-q 3.7): SAME question as positives.
-  - *Marker:* the negative response carries **no marker** → under
-    marker-only loss with `tail_tokens=0` the only loss-bearing token is
-    EOS at the post-response slot, i.e. it explicitly trains "after a
-    response under this persona, emit EOS, NOT the marker." The contrast is
-    positives push `log P(※)` up at that slot, negatives push it down.
+  - *Marker:* the negative response carries **no marker** → the negative's
+    loss lands at the post-response slot ONLY under the suppress-ON branch
+    (`marker_suppress_at_post_response_slot=True`, the DEFAULT as of #628):
+    loss on the first `<|im_end|>` (id 151645) in the completion — "after a
+    response under this persona, emit EOS, NOT the marker" — plus a trailing
+    `\n` kept for mask symmetry (gradient-dead, #601: base CE ≈ 1e-6). The
+    contrast is positives push `log P(※)` up at that slot, negatives push it
+    down. The legacy suppress-OFF branch (pre-#628 default, now pinned
+    explicitly at historical call sites) put the negative's only loss on the
+    trailing token AFTER `<|im_end|>`, which #601 measured as gradient-dead —
+    those negatives carried essentially no training signal. See
+    `.claude/rules/marker-training-recipe.md` § "Slot-aligned rig".
   - *Fact:* the negative emits a competing **wrong-fact** (named-distractor,
     #381/#389) or a **refusal-pool** string (#390), loss on that span.
 

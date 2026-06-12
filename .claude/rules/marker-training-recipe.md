@@ -76,6 +76,49 @@ lr 1e-3 is a hard collapse. Buy strength through **epochs at low LR (≤5e-6)**,
 through LR (#329: 5e-6 × 20 epochs → source 99.6% / bystander 11.7%; #478: 5e-6 →
 clean sub-emission gradient).
 
+## Slot-aligned rig — default as of #628
+
+The project-default marker rig is **slot-aligned with alive negatives**
+(`train/sft.py` defaults, flipped by #628):
+
+- **No separator on positives:** the positive completion is `R + " ※"`
+  directly — `CANONICAL_MARKER_SEP = ""` (`train/sft.py`). The legacy
+  `R + "\n\n" + " ※"` shape (#448/#472/#601 family) trains the marker one
+  blank line PAST the post-response slot the DV reads and the negatives
+  suppress; the text-level `"\n\n"` concat also BPE-fuses (`.` + `\n\n` →
+  id 382), so the trained slot's conditioning differs from the read slot's.
+- **Negatives carry loss at the post-response slot:**
+  `marker_suppress_at_post_response_slot=True` (default) puts the negative
+  row's loss on the FIRST `<|im_end|>` (id 151645) in the completion — the
+  SAME slot the marker occupies on positives under the no-sep rig, so the
+  contrast is a real push-up/push-down at one slot.
+  `marker_im_end_token_id=None` is derived from the tokenizer at
+  `train_lora()` (fail-loud if `<|im_end|>` is absent).
+- **Trailing `\n` kept on negatives for mask symmetry only:**
+  `marker_negative_keep_trailing=True` (default) also keeps the trailing
+  valid token, mirroring the positive mask (marker + trailing). **The
+  trailing token carries no gradient** — #601 measured its base CE ≈ 1e-6 —
+  so it is structural symmetry, not signal; never attribute effects to it.
+  The legacy suppress-OFF negative (trailing token ONLY) is gradient-dead
+  for the same reason: #601 showed those "contrastive" mixes reduced to
+  positives + schedule padding.
+
+**Legacy-pin map (reproduce-from-HEAD stays byte-identical).** Every
+pre-#628 main-tree call site pins the old flags explicitly:
+`marker_suppress_at_post_response_slot=False` at the 8 default-relying
+scripts (`i460_phase23_train`, `run_issue295_marker_only_loss`,
+`run_em_first_marker_transfer_confab`, `run_leakage_v3_onpolicy`,
+`run_experiment_369`, `run_single_token_{sweep,multi_source}`) +
+`factor_screen_365/training.py`; `marker_negative_keep_trailing=False` at
+every pre-#628 suppress-ON site (`contrastive_neg_geometry_472/train_cell.py`
+— covers the #477/#504/#505/#530 wrapper family — `issue_597`, `issue_480`,
+`i474_phase23_train`, `i488_*`). `contrastive_neg_geometry_472/__init__.py`
+keeps `MARKER_SEP = "\n\n"` with a LEGACY comment. New marker experiments
+should NOT pass these flags (inherit the defaults); rig-contrast experiments
+pass them explicitly per arm (#628 `ARM_FLAGS`). Label-mask contract tests:
+`tests/test_marker_collator_slot_alignment.py` (new defaults),
+`tests/test_marker_only_collator_post_response_slot.py` (legacy pins).
+
 ## Don't fix epochs — stop on the log-prob band (deterministic)
 
 A fixed epoch count does NOT transfer: identical steps land at different log-probs
