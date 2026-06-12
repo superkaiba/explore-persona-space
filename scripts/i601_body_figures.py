@@ -79,7 +79,7 @@ C_ANCHOR = paper_palette_role("baseline")
 C_NEUTRAL = paper_palette_role("neutral")
 
 # ── 1. HERO: schedule vs ratio ───────────────────────────────────────────────
-fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), gridspec_kw={"width_ratios": [1.5, 1.0]})
+fig, axes = plt.subplots(1, 2, figsize=(11.5, 4.6), gridspec_kw={"width_ratios": [1.4, 1.1]})
 ax = axes[0]
 series = [
     ("ratio4to1_100p400n", "phase1", "Quarter mix, natural schedule (T=32)", C_QUARTER),
@@ -138,15 +138,15 @@ for arm, vals in ARM_TERMS.items():
 ax.set_xticks(
     list(arm_x.values()),
     [
-        "Quarter mix\n(T=32)",
-        "Anchor mix\n(T=63)",
-        "Double mix\n(T=125)",
-        "Same quarter mix,\n4 epochs (T=128)",
+        "Quarter\nmix\n(T=32)",
+        "Anchor\nmix\n(T=63)",
+        "Double\nmix\n(T=125)",
+        "Quarter mix\n× 4 epochs\n(T=128)",
     ],
     fontsize=8,
 )
 ax.set_ylabel("terminal gain (nats)")
-ax.set_xlim(-0.5, 3.5)
+ax.set_xlim(-0.5, 3.75)
 set_title_subtitle(
     ax,
     "Terminal levels order by schedule length, not ratio",
