@@ -1,0 +1,14 @@
+{
+  "sha256": "5c0333d93fba6eb44710ad52620c521fbf4d8ffbae20abf49e8a3608b776aeef",
+  "n_questions": 400,
+  "dataset": "HuggingFaceH4/ultrachat_200k",
+  "split": "train_sft",
+  "filters": {
+    "min_chars": 10,
+    "max_chars": 200,
+    "ascii_fraction_min": 0.95,
+    "order": "first-N in dataset order (deterministic)"
+  },
+  "git_commit_sha": "742d7892dc802ab75ddfccb42feb5d9ba0b2160b",
+  "timestamp_utc": "2026-06-12T03:32:17.903281+00:00"
+}

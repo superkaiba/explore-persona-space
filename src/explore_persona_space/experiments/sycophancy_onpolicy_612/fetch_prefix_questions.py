@@ -54,21 +54,34 @@ def collect_questions(n: int = POOL_SIZE) -> list[str]:
     ds = load_dataset(DATASET, split=SPLIT, streaming=True)
     seen: set[str] = set()
     out: list[str] = []
-    for row in ds:
-        msgs = row.get("messages") or []
-        if not msgs or msgs[0].get("role") != "user":
-            continue
-        q = str(msgs[0]["content"]).strip()
-        if not (MIN_CHARS <= len(q) <= MAX_CHARS):
-            continue
-        if not _looks_english(q):
-            continue
-        if q in seen:
-            continue
-        seen.add(q)
-        out.append(q)
-        if len(out) >= n:
-            break
+    it = iter(ds)
+    try:
+        for row in it:
+            msgs = row.get("messages") or []
+            if not msgs or msgs[0].get("role") != "user":
+                continue
+            q = str(msgs[0]["content"]).strip()
+            if not (MIN_CHARS <= len(q) <= MAX_CHARS):
+                continue
+            if not _looks_english(q):
+                continue
+            if q in seen:
+                continue
+            seen.add(q)
+            out.append(q)
+            if len(out) >= n:
+                break
+    finally:
+        # Close the streaming iterator BEFORE interpreter teardown: leaving the
+        # pyarrow/fsspec reader open aborts at shutdown ("terminate called
+        # without an active exception", exit 134) AFTER the work completed.
+        close = getattr(it, "close", None)
+        if callable(close):
+            close()
+        del it, ds
+        import gc
+
+        gc.collect()
     if len(out) < n:
         raise RuntimeError(f"only {len(out)}/{n} questions collected from {DATASET}")
     return out
@@ -103,7 +116,16 @@ def main(argv: list[str] | None = None) -> int:
     }
     args.out.with_suffix(".jsonl.sha256.json").write_text(json.dumps(manifest, indent=2))
     log.info("wrote %d questions -> %s (sha %s)", len(questions), args.out, sha[:12])
-    return 0
+    # All artifacts are flushed to disk above. The pyarrow/torch extension-
+    # module teardown in this env aborts at interpreter exit (SIGABRT,
+    # 'terminate called without an active exception') AFTER the work is
+    # done; skip the broken teardown for this one-shot CLI so callers see
+    # a truthful exit code. (Verified: outputs byte-identical across runs.)
+    sys.stdout.flush()
+    sys.stderr.flush()
+    import os
+
+    os._exit(0)
 
 
 if __name__ == "__main__":
