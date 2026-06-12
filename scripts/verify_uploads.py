@@ -35,7 +35,10 @@ per-cell runs by display name. When ``wandb_run_names`` is declared
 WITHOUT ``wandb_project`` (#601: HF Trainer defaults the project to
 ``huggingface`` when WANDB_PROJECT is unset), the default entity's
 projects are scanned — ``huggingface`` first — instead of hard-MISSING.
-Explicit declarations always win unchanged.
+When NO wandb_* field is declared at all, the conventional per-issue
+project (``<default_entity>/issue<N>``, runs named ``issue<N>_*``) is
+probed before hard-MISSING (#608 follow-up); probe failures fail soft
+back to MISSING. Explicit declarations always win unchanged.
 
 Multi-launch runs post MULTIPLE epm:results markers (#601): a resume-pass
 sentinel whose cells all ``resumed_skip`` carries an empty card
@@ -810,6 +813,55 @@ def check_wandb_from_card(card: dict) -> dict | None:
     return None
 
 
+def check_wandb_runs_convention_project(issue_num: int) -> dict | None:
+    """Probe the conventional ``<default_entity>/issue<N>`` WandB project.
+
+    Last-resort fallback when neither the CLI nor any epm:results
+    reproducibility_card declares a wandb_* field: dispatchers
+    conventionally log per-issue runs to the project ``issue<N>`` under
+    the default entity, named ``issue<N>_*`` (#608 follow-up: all 12 runs
+    resolved server-side at thomasjiralerspong/issue608 while the
+    wandb_run row mechanically FAILed on the card's declaration gap).
+    Returns an OK row carrying a declaration-gap note when at least one
+    conventionally named run resolves there; returns ``None`` — keeping
+    today's MISSING behavior — when no run matches OR the probe fails for
+    any reason (fail-soft: a WandB API error must not change the row). A
+    per-issue project only holds that issue's runs, so client-side name
+    filtering is cheap (unlike the default-project scan, which must
+    filter server-side).
+    """
+    prefix = f"issue{issue_num}_"
+    try:
+        import wandb
+
+        api = wandb.Api()
+        entity = api.default_entity
+        if not entity:
+            return None
+        runs = api.runs(f"{entity}/issue{issue_num}")
+        names = [str(r.name) for r in runs if str(r.name).startswith(prefix)]
+    except Exception as e:
+        logger.warning(
+            "conventional WandB project probe failed for issue %s (%s); keeping MISSING",
+            issue_num,
+            e,
+        )
+        return None
+    if not names:
+        return None
+    return {
+        "status": "OK",
+        "url": f"https://wandb.ai/{entity}/issue{issue_num}",
+        "detail": (
+            f"{len(names)} run(s) named {prefix}* resolve in conventional "
+            f"project {entity}/issue{issue_num}; no reproducibility_card "
+            "declares wandb_run_path / wandb_run_names (declaration gap — "
+            "the results sentinel should declare them)"
+        ),
+        "source": "wandb project-naming convention (no card declaration)",
+    }
+
+
 def _issue_branch_ref(issue_num: int) -> str | None:
     """Return the first existing git ref for the issue branch, or None.
 
@@ -1094,13 +1146,20 @@ def run_verification(
         report["checks"]["wandb_run"] = check_wandb_run(wandb_run)
     elif experiment_type == "training":
         card_check = check_wandb_from_card(results_card) if results_card else None
+        if card_check is None:
+            # Nothing declared anywhere (#608 follow-up): probe the
+            # conventional <default_entity>/issue<N> project for
+            # issue<N>_* runs before hard-MISSING. Fail-soft — a probe
+            # error keeps the strict MISSING row below.
+            card_check = check_wandb_runs_convention_project(issue_num)
         report["checks"]["wandb_run"] = card_check or {
             "status": "MISSING",
             "url": "",
             "detail": (
-                "No WandB run path provided (and no epm:results "
+                "No WandB run path provided (no epm:results "
                 "reproducibility_card declares wandb_run_path / "
-                "wandb_run_names)"
+                "wandb_run_names, and the conventional-project probe "
+                f"found no issue{issue_num}_* runs)"
             ),
         }
 

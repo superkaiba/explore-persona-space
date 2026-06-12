@@ -389,7 +389,15 @@ pod-side dispatchers. A card-less sentinel that only declares
 `wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
 (`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
 the producer contract — emit the explicit card so the verifier's
-hf_model / wandb_run rows resolve mechanically.
+hf_model / wandb_run rows resolve mechanically. **When training logs to
+WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
+(or a name prefix) + `wandb_project` are MANDATORY fields, not optional
+extras** — a card declaring only `adapter_paths` forces entity/project
+archaeology on the verifier (#608 follow-up: all 12 runs resolved at the
+conventional `<entity>/issue608` project while the wandb_run row
+mechanically FAILed on the declaration gap; `verify_uploads.py` now
+probes the `issue<N>`-project convention as a last resort, but like the
+synthesis fallback it is a safety net, NOT the contract).
 
 ### Pod-side preflight gates (behind-origin/main false positive)
 

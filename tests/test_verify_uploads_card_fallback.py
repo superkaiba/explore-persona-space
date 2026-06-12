@@ -285,6 +285,9 @@ class TestCardFromProvenance:
                 "check_hf_hub_path",
                 return_value={"status": "OK", "url": "u", "file_count": 3},
             ),
+            # Convention probe patched to None to pin the strict MISSING
+            # wandb row (and keep the test network-free).
+            patch.object(verify_uploads, "check_wandb_runs_convention_project", return_value=None),
         ):
             report = verify_uploads.run_verification(599, experiment_type="training")
         assert report["checks"]["hf_model"]["status"] == "OK"
@@ -546,6 +549,55 @@ class TestCheckWandbRunsDefaultProject:
         assert "superkaiba/huggingface" in res["detail"]
 
 
+# ── check_wandb_runs_convention_project ───────────────────────────────────────
+
+
+class TestCheckWandbRunsConventionProject:
+    def test_conventional_runs_resolve_as_declaration_gap(self):
+        """The #608 follow-up shape: runs named issue<N>_* live in the
+        conventional <default_entity>/issue<N> project; the probe returns
+        an OK row that names the declaration gap."""
+        api = _FakeWandbApi(
+            project_names=[],
+            runs_by_project={"issue608": ["issue608_posonly_epoch_villain_seed42", "issue608_x"]},
+        )
+        with _patched_wandb(api):
+            res = verify_uploads.check_wandb_runs_convention_project(608)
+        assert res["status"] == "OK"
+        assert res["url"] == "https://wandb.ai/thomasjiralerspong/issue608"
+        assert "declaration gap" in res["detail"]
+        assert "2 run(s)" in res["detail"]
+
+    def test_nonconventional_names_do_not_count(self):
+        api = _FakeWandbApi(project_names=[], runs_by_project={"issue608": ["other-run"]})
+        with _patched_wandb(api):
+            assert verify_uploads.check_wandb_runs_convention_project(608) is None
+
+    def test_missing_project_fails_soft_to_none(self):
+        """No issue<N> project on the entity (the fake raises, like the real
+        API on a nonexistent project path) -> None, today's MISSING row."""
+        api = _FakeWandbApi(project_names=[], runs_by_project={})
+        with _patched_wandb(api):
+            assert verify_uploads.check_wandb_runs_convention_project(608) is None
+
+    def test_api_error_fails_soft_to_none(self):
+        """FAIL-SOFT requirement: a WandB API error keeps today's behavior
+        (None -> strict MISSING), never an ERROR row or a raise."""
+
+        def _boom():
+            raise RuntimeError("wandb unreachable")
+
+        with patch.dict(sys.modules, {"wandb": SimpleNamespace(Api=_boom)}):
+            assert verify_uploads.check_wandb_runs_convention_project(608) is None
+
+    def test_no_default_entity_returns_none(self):
+        api = _FakeWandbApi(
+            project_names=[], runs_by_project={"issue608": ["issue608_a"]}, default_entity=None
+        )
+        with _patched_wandb(api):
+            assert verify_uploads.check_wandb_runs_convention_project(608) is None
+
+
 # ── run_verification integration ──────────────────────────────────────────────
 
 
@@ -560,12 +612,39 @@ class TestRunVerificationCardFallback:
                 "check_hf_hub_path",
                 return_value={"status": "OK", "url": "u", "file_count": 3},
             ),
+            # Convention probe patched to None: this test pins the strict
+            # MISSING row when nothing resolves (and stays network-free).
+            patch.object(verify_uploads, "check_wandb_runs_convention_project", return_value=None),
         ):
             report = verify_uploads.run_verification(608, experiment_type="training")
         assert report["checks"]["hf_model"]["status"] == "OK"
         assert report["checks"]["hf_model"]["source"] == "epm:results reproducibility_card"
         # The card declares no wandb fields, so that row still hard-MISSes.
         assert report["checks"]["wandb_run"]["status"] == "MISSING"
+
+    def test_undeclared_wandb_resolves_via_convention_probe(self):
+        """The #608 follow-up false-FAIL repro: a card with adapter_paths
+        but NO wandb_* fields resolves the wandb_run row via the
+        conventional <default_entity>/issue<N> project probe (runs named
+        issue<N>_*) instead of hard-MISSING."""
+        api = _FakeWandbApi(
+            project_names=[],
+            runs_by_project={"issue608": ["issue608_posonly_epoch_villain_seed42"]},
+        )
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=_CARD_608),
+            patch.object(
+                verify_uploads,
+                "check_hf_hub_path",
+                return_value={"status": "OK", "url": "u", "file_count": 3},
+            ),
+            _patched_wandb(api),
+        ):
+            report = verify_uploads.run_verification(608, experiment_type="training")
+        row = report["checks"]["wandb_run"]
+        assert row["status"] == "OK"
+        assert "declaration gap" in row["detail"]
+        assert row["source"] == "wandb project-naming convention (no card declaration)"
 
     def test_explicit_declarations_skip_card_lookup(self):
         """Single-path declaration behavior is unchanged: with both paths
@@ -599,9 +678,15 @@ class TestRunVerificationCardFallback:
         assert report["checks"]["wandb_run"]["status"] == "OK"
 
     def test_no_card_keeps_strict_missing(self):
-        with patch.object(verify_uploads, "_load_results_card", return_value=None):
+        """No card AND no conventional runs -> the strict MISSING rows and
+        the FAIL verdict are unchanged (probe patched to None)."""
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=None),
+            patch.object(verify_uploads, "check_wandb_runs_convention_project", return_value=None),
+        ):
             report = verify_uploads.run_verification(608, experiment_type="training")
         assert report["checks"]["wandb_run"]["status"] == "MISSING"
+        assert "conventional-project probe" in report["checks"]["wandb_run"]["detail"]
         assert report["checks"]["hf_model"]["status"] == "MISSING"
         assert report["verdict"] == "FAIL"
 
