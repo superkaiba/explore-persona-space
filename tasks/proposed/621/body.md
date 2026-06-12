@@ -9,6 +9,8 @@ origin_prompt: do we have a rank 1 lora train task?
 goal: Test whether a rank-1 LoRA's read vector aligns with the source persona's context
   vector and its write vector with the behavior direction, and whether per-persona
   firing strength a.v_c rank-orders measured leakage.
+relates_to:
+- leak-predictor
 ---
 ## Goal
 
