@@ -2487,7 +2487,16 @@ plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
 (stderr + `extra.boot_disk_default_with_ft_intent=true` on the
 `epm:backend-selected` marker) when an ft intent is gcp-reachable with
 no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
-smokes stay legitimate).
+smokes stay legitimate). (i) **WandB project on `--workload-cmd`
+launches defaults to `issue<N>`** — the GCP startup script and the
+SLURM custom stage export `WANDB_PROJECT="${WANDB_PROJECT:-issue<N>}"`
+before the verbatim command, so HF-Trainer workloads that never set a
+project stop landing in WandB's global default `huggingface` project
+(Upload Policy: training metrics → `project=<experiment_name>`; #601
+follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
+prefix on the workload command — or the workload setting its own
+project internally — still wins (`:-` fills only unset/empty); hydra
+launches are unaffected (project comes from Hydra config).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -3682,9 +3691,14 @@ URLs.
   (`reason: confirm_artifacts_no_declaration`).
 
   **Phase-scoped-launch mismatch (incident #604).** The launch-time
-  auto-declaration assumes the FULL task artifact set (HF
-  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
-  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  auto-declaration assumes the FULL task artifact set (hydra-lane
+  launches: HF `issue<N>_<attempt>/raw_completions/` + git
+  `eval_results/issue_<N>/` + `figures/issue_<N>/`; `--workload-cmd`
+  launches auto-declare only the sentinel + git paths — the guessed HF
+  prefix was dropped after it false-FAILed a perfectly-uploaded run
+  whose driver used its own `issue<N>_<slug>/` contract prefix, #601
+  follow-up r1; HF-data coverage on that lane comes from the
+  agent-level upload-verifier), so a launch covering only ONE phase of a
   multi-phase plan (e.g. an extraction phase whose sole deliverable is
   an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
   paths that only the plan's LATER (VM-local) phases produce. A

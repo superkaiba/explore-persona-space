@@ -18,3 +18,12 @@ fixture-regeneration decision — architectural, not a background fix). The #601
 detached-pid-wait fix was scoped this way and all 87 tests stayed green.
 Bonus: the hydra branch is blocking by construction (in-process train.py), so
 scoping daemonization guards to workload_cmd is also semantically right.
+
+**Trap (learned on the #601 WANDB_PROJECT fix):** the secrets-fetch stanza
+(`STARTUP_SECRET_ENV_KEYS` + `STARTUP_PASSTHROUGH_ENV_KEYS`) renders into the
+COMMON `parts` list, so adding a key to either tuple changes the hydra render
+and breaks the byte-pin (the fixture's line 14 contains the EPM_PERSIST keys).
+Per-issue env defaults for custom workloads go as `export K="${K:-default}"`
+lines INSIDE the workload_cmd block instead (e.g.
+`export WANDB_PROJECT="${WANDB_PROJECT:-issue<N>}"`); the SLURM mirror is the
+`elif stage.backend == "custom":` block in slurm.py's render_sbatch.

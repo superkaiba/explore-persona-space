@@ -452,8 +452,19 @@ def expected_artifacts_declaration(
 
     Default included paths (mirrors the Upload Policy table):
 
-    * HF data repo ``issue<N>_<attempt>/raw_completions/`` — every
-      training/eval run uploads raw completions here per the policy.
+    * HF data repo ``issue<N>_<attempt>/raw_completions/`` — hydra-lane
+      (``scripts/train.py``) launches only. A custom ``workload_cmd``
+      launch declares NO default HF data path: the prefix above is a
+      launch-time GUESS the workload never promised, and dispatch-script
+      drivers use their own contract prefix (``issue<N>_<slug>/...``) —
+      the guess produced a false-negative ``confirm_artifacts`` FAIL
+      (exit 3, teardown skipped) on a perfectly-uploaded run (incident
+      #601 follow-up r1, 2026-06-12). An undeclared ``hf_data_paths``
+      SKIPs the hf_data check (SKIP is not FAIL); the completion
+      sentinel + git paths keep gating teardown, and HF-data coverage on
+      that lane comes from the agent-level upload-verifier (`/issue`
+      Step 8). Callers that DO know the workload's real prefix declare
+      it via ``extra_hf_data_paths``.
     * Git paths ``eval_results/issue_<N>/`` + ``figures/issue_<N>/`` —
       both committed by the workload + verified on the orchestrator side.
 
@@ -466,7 +477,14 @@ def expected_artifacts_declaration(
     :func:`artifacts.expected_artifacts_from_handle`.
     """
     issue = spec.issue
-    base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
+    if spec.workload_cmd:
+        # Custom dispatch scripts own their HF prefix; declaring a guessed
+        # one turns the mechanical gate into a false-negative teardown
+        # block (#601 follow-up r1). Explicit knowledge rides
+        # extra_hf_data_paths.
+        base_hf_data: tuple[str, ...] = ()
+    else:
+        base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
     base_git = (
         f"eval_results/issue_{issue}/",
         f"figures/issue_{issue}/",
@@ -628,6 +646,14 @@ def render_startup_script(
     # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
         workload_block = [
+            "# === WandB project default (#601 follow-up r1) ===",
+            "# HF-Trainer workloads that never set WANDB_PROJECT land in WandB's",
+            "# global default project 'huggingface', violating the Upload Policy",
+            "# (training metrics → project=<experiment_name>). Default to the",
+            "# per-issue project; :- fills only unset/empty, so an inline",
+            "# WANDB_PROJECT=... prefix on the workload command — or the workload",
+            "# setting its own project internally — still wins.",
+            f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"',
             "# === Run the workload (custom workload_cmd) ===",
             "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
             "# phase=failed + powers off → poll reads dead.",
