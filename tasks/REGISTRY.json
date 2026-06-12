@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 624,
+  "highest_id": 625,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3839,6 +3839,13 @@
       "path": "tasks/proposed/624",
       "status": "proposed",
       "title": "Good vs evil assistant: does carving out a dedicated evil-assistant container persona make the default assistant more robust?"
+    },
+    "625": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/625",
+      "status": "proposed",
+      "title": "verify_plan.py: mechanical pre-pass gate for experiment plans at adversarial-planner Phase 1.5"
     },
     "65": {
       "has_clean_result": true,
