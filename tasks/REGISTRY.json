@@ -2821,8 +2821,8 @@
       "goal": "Compute, training-free, the base model's mean log P(trained completion | bystander system prompt) over the training set per bystander, and test it as a baseline predictor of post-training leakage to that bystander \u2014 and as a control for whether cosine/JS are partly re-measuring this base rate.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/499",
-      "status": "proposed",
+      "path": "tasks/archived/499",
+      "status": "archived",
       "title": "P(training data | bystander context) as a base-rate baseline predictor of leakage"
     },
     "5": {
