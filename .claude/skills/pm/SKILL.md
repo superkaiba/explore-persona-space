@@ -196,15 +196,16 @@ multi-session model. If the experiment has a worktree at
 
 Per-issue sessions don't auto-wake on experiment completion by default,
 so a per-issue `/issue <N>` AUTO-ARMS its own backstop while a pod is
-alive: at run-launch (Step 6d.2) the orchestrator registers a 20-minute
-recurring re-invocation via `CronCreate(cron="*/20 * * * *",
+alive: at run-launch (Step 6d.2) the orchestrator registers a 45-minute
+recurring re-invocation via `CronCreate(cron="*/45 * * * *",
 prompt="/issue-tick <N>", durable=False)` (idempotent via `CronList`) and
 tears it down at terminal state. The cron fires the LIGHTWEIGHT
-`/issue-tick <N>` skill (~few hundred tokens) rather than the full
-`/issue <N>` (~44K tokens) so idle ticks stay cheap. The user does NOT
-need to type `/loop 20m /issue <N>` — that command remains the manual
-equivalent for ad-hoc use, but the per-issue flow no longer depends on
-it.
+`/issue-tick <N>` skill (one `tick_triage.py` Bash call on a healthy
+tick) rather than the full `/issue <N>` (~44K tokens) so idle ticks stay
+cheap; the 10-min pure-Python watcher carries fast detection. The user
+does NOT need to type `/loop 45m /issue <N>` — that command remains the
+manual equivalent for ad-hoc use, but the per-issue flow no longer
+depends on it.
 
 The PM session itself stays event-driven — you respond when the user
 messages you, otherwise idle. Do NOT `/loop` (or auto-arm a cron on) the

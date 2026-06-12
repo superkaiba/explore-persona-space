@@ -2,32 +2,61 @@
 name: campaign-tick
 description: >
   Lightweight recurring driver for autonomous /campaign <N> sessions
-  (task #586). Triggered by the `*/20 * * * *` backstop cron
+  (task #586). Triggered by the `*/45 * * * *` backstop cron
   (`prompt="/campaign-tick <N>"`) armed at Step 0 of the full /campaign
-  skill. Reads the campaign status + newest `epm:campaign-*` marker via
-  `scripts/task.py`, refreshes the phone title, RE-DRIVES the full
-  /campaign skill (one decision round) when the campaign is stale OR when
-  any child newly reached awaiting_promotion / completed / blocked since
-  the last ingest (the results-landed wake signal), and runs
-  CRON-TEARDOWN at terminal state. Does NOT re-load the full /campaign
-  SKILL.md on healthy idle ticks — a few hundred tokens per tick.
+  skill. FIRST action on every fire is ONE Bash call to
+  `scripts/tick_triage.py <N> --kind campaign` (pure Python: campaign
+  status, newest `epm:campaign-*` marker, the results-landed wake check
+  against campaign-state.json + child statuses, snapshot + runaway
+  counter) and branches on its verdict: HEALTHY → end the turn
+  immediately; TERMINAL → CRON-TEARDOWN, end; GATE-TRANSITION (into
+  `blocked`) → PushNotification + CRON-TEARDOWN, end; STALE-REDRIVE →
+  re-drive the full /campaign skill (one decision round). Does NOT
+  re-load the full /campaign SKILL.md on healthy idle ticks.
 user_invocable: false
 ---
 
 # /campaign-tick — recurring lightweight driver
 
 The recurring driver for autonomous `/campaign` sessions, mirroring
-`/issue-tick`. Spawned every 20 minutes by the in-session cron registered
-at Step 0 of the full `/campaign` skill (`CronCreate(*/20 * * * *,
-prompt="/campaign-tick <N>", recurring=True, durable=False)`).
+`/issue-tick`. Spawned every 45 minutes by the in-session cron registered
+at Step 0 of the full `/campaign` skill (`CronCreate(*/45 * * * *,
+prompt="/campaign-tick <N>", recurring=True, durable=False)`). The
+45-minute interval matches `/issue-tick` (2026-06-12 redesign): the
+10-min pure-Python watcher carries fast detection (campaign pass +
+gate-push pass); this tick is the in-session re-driver of last resort.
 
-## Contract
+## Contract — guarded no-op tick
 
-A **lightweight tick**: it does NOT re-load the full `/campaign` SKILL.md
-unless a re-drive branch fires (3c/3d below). On a healthy idle tick the
-work is: two `scripts/task.py` reads + one `list-children` read + a title
-refresh. No subagents, no task-state writes, no marker posts — the full
-`/campaign` skill owns every `events.jsonl` mutation.
+On every fire, the FIRST action is exactly ONE Bash call:
+
+```bash
+uv run python scripts/tick_triage.py <N> --kind campaign
+```
+
+(From a worktree cwd, resolve the script from the MAIN checkout —
+`"$REPO_ROOT"/scripts/tick_triage.py` — same rule as `/issue-tick`.)
+
+In `--kind campaign` mode the triage reads the campaign status, the
+newest `epm:campaign-*` marker (ignoring watcher-sentinel notes —
+`[autonomous_session_watch:campaign]` alerts are not campaign progress),
+the child-task statuses, and `artifacts/campaign-state.json`, then
+prints ONE `<VERDICT> <reason>` line. It also maintains the snapshot
+(`~/.eps-autonomous/issue-tick-last-status/<N>.json` — the shared
+snapshot dir keys on task id, and a task is either an issue or a
+campaign, never both) and the consecutive-terminal runaway counter
+(`tick-runaway-<N>.flag` on the 3rd consecutive terminal tick — the
+watcher force-stop parachute).
+
+| Verdict | Action |
+|---|---|
+| `HEALTHY` | **END THE TURN immediately.** Fresh `epm:campaign-*` marker, or stale but every open arm is in flight in the children (their own /issue sessions + watcher passes cover them — nothing for the campaign to decide). No further tool calls. |
+| `TERMINAL` | CRON-TEARDOWN, one-line log, END TURN. Covers `completed` / `archived` / steady-state `blocked`, AND the stranded-cron case (`proposed` / `planning` / `plan_pending` — a tick should never be armed before the brief-approval gate, workflow.yaml § gates.campaign_brief_approval, so tear it down). |
+| `GATE-TRANSITION` | The transition tick into `blocked`: ONE `PushNotification` with the latest `epm:failure` note trimmed to ~80 chars, then CRON-TEARDOWN, END TURN. Swallow push exceptions. |
+| `STALE-REDRIVE` | Load the full `/campaign <N>` skill for ONE decision round. Two triggers: (a) **results-landed wake** — a child reached `awaiting_promotion` / `completed` / `blocked` and its campaign-state row is not yet `ingested`/`abandoned` (fires regardless of marker freshness — a landed result should not wait out the staleness window); (b) **decision round owed** — markers stale >~25 min AND at least one open arm is NOT covered by an in-flight child (a `planned` row with no child filed, a reconcile owed, or no children in flight at all). The full skill's Step 0 ARM-GUARD makes re-entry safe. |
+
+**Non-zero exit or unparseable output → treat as `STALE-REDRIVE`** (fail
+toward coverage: load the full `/campaign <N>` for one decision round).
 
 ## Argument
 
@@ -40,99 +69,37 @@ ToolSearch("select:CronList,CronDelete,PushNotification")
 ```
 
 `CronCreate` is NOT needed — only the full `/campaign` skill arms the
-cron (its Step 0 ARM-GUARD prevents duplicates).
+cron (its Step 0 ARM-GUARD prevents duplicates). Defer the ToolSearch
+until a non-HEALTHY verdict actually needs the tools.
 
-## Execution
+## Title refresh — moved to the watcher (2026-06-12)
 
-### Step 1: Read state (no agents)
+The per-tick `session_progress_report.py` + `change_title` calls were
+removed, same as `/issue-tick`: the watcher's gate-push pass reconciles
+the title self-report on status transitions, and the 5-min summarizer
+covers the dashboard. A healthy tick does not touch the title.
 
-```bash
-uv run python scripts/task.py view <N> --json
-uv run python scripts/task.py latest-marker <N> --prefix epm:campaign
-uv run python scripts/task.py list-children <N> --json
-```
+## CRON-TEARDOWN — hardened 2026-06-12
 
-From `view`: the campaign `status`. From `latest-marker`: the newest
-`epm:campaign-*` marker's kind + `ts` (ignore markers whose note carries
-the `[autonomous_session_watch:campaign]` sentinel — those are
-watcher-posted alerts, not campaign progress). From `list-children`: each
-child's `id` + `status` + `has_clean_result`.
-
-If any call fails (registry corruption, missing task), log one line and
-EXIT — a broken task is not this tick's problem.
-
-### Step 2: Refresh the canonical title (soft-fail)
-
-```bash
-uv run python scripts/session_progress_report.py --issue <N> --step "campaign:<status>"
-```
-
-then `mcp__happy__change_title` with the captured string. Both calls are
-SOFT-FAIL (observability, not load-bearing) — same rule as
-/issue-tick Step 2.
-
-### Step 3: Branch
-
-#### 3a. TERMINAL status (`completed` / `archived` / `blocked`)
-
-CRON-TEARDOWN (Step 4), one line, EXIT. On the transition tick into
-`blocked` (previous-status snapshot differs — see Step 5), fire ONE
-`PushNotification` with the latest `epm:failure` note trimmed to ~80
-chars first.
-
-#### 3b. NOT-YET-APPROVED status (`proposed` / `planning` / `plan_pending`)
-
-The campaign brief has not passed its approval gate (workflow.yaml §
-gates.campaign_brief_approval) — a tick should never be armed here (the
-full skill refuses to arm before `approved`), so this is a stranded
-cron: CRON-TEARDOWN, one line, EXIT.
-
-#### 3c. Results-landed wake (the priority branch)
-
-If ANY child's status is `awaiting_promotion`, `completed`, or `blocked`
-AND the state file's experiment row for that child is not yet
-`ingested` / `abandoned` (cheap read of
-`artifacts/campaign-state.json` via the folder from `task.py find <N>`;
-compare `child_task` ids) → a result has landed since the last decision
-round. Log one line and load the full `/campaign <N>` skill — its Step 1
-reconcile ingests the child and may immediately file the next arm. This
-fires regardless of marker freshness: a landed result should not wait
-out the staleness window.
-
-#### 3d. ACTIVE (`approved` / `running`) — staleness check
-
-- Newest skill-posted `epm:campaign-*` marker FRESH (within ~25 min):
-  the in-session decision loop is alive. EXIT; the cron stays armed.
-- STALE (>25 min) and no 3c wake: the session's reaction chain may have
-  died mid-round, or the campaign is simply idle between child
-  landings. Distinguish cheaply: if every non-`ingested` /
-  non-`abandoned` experiment row maps to a child at an ACTIVE status
-  (work is genuinely in flight in the children — their own /issue
-  sessions + watcher passes cover them), EXIT quietly; the campaign has
-  nothing to decide. Otherwise (a `planned` row with open slots, a
-  reconcile owed, or no children in flight at all) → log one line and
-  load the full `/campaign <N>` skill to run a decision round. The
-  Step 0 ARM-GUARD makes re-entry safe.
-
-### Step 4: CRON-TEARDOWN
-
-`CronList()`, delete the job whose `prompt.strip() ==
-"/campaign-tick <N>"` — whole-string equality, NOT substring
-(`"/campaign-tick 46"` is a substring of `"/campaign-tick 467"`).
-Idempotent; never raise.
-
-### Step 5: Snapshot status + EXIT
-
-Write `~/.eps-autonomous/issue-tick-last-status/<N>.json` (same atomic
-temp+rename shape as /issue-tick Step 5 — the shared snapshot dir keys on
-task id, and a task is either an issue or a campaign, never both) with
-`{"issue": <N>, "status": "<current>", "ts": "<UTC ISO-8601>"}`. EXIT.
+`CronList()`, delete EVERY job whose prompt matches this campaign's
+tick: primary match is whole-string equality
+(`prompt.strip() == "/campaign-tick <N>"`); hardened fallback is the
+anchored pattern `campaign-tick\s+<N>(?!\d)` (the `(?!\d)` guard
+prevents sibling mis-delete — `"/campaign-tick 46"` never matches
+`"/campaign-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`, retry
+the delete once if a matching job survived, log LOUDLY if it still
+survives (the runaway parachute bounds the damage). Idempotent; never
+raise.
 
 ## What this skill does NOT do
 
-- It does NOT post `epm:*` markers or mutate task state — only the title
-  self-report + the tick snapshot are written.
+- It does NOT post `epm:*` markers or mutate task state — the snapshot +
+  runaway-flag files are written by `tick_triage.py`, and only the full
+  `/campaign` skill owns `events.jsonl` mutations.
 - It does NOT spawn children, proposal agents, or any subagent.
-- It does NOT arm crons (only the full /campaign skill's Step 0 does).
+- It does NOT arm crons (`CronCreate` lives only in the full /campaign
+  skill's Step 0).
 - It does NOT read child clean-result bodies — ingest belongs to the
-  full skill's Step 1.1.
+  full skill's Step 1.1 (the triage compares only statuses + state-file
+  rows, never body content).
+- It does NOT refresh the title (watcher-owned since 2026-06-12).

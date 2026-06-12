@@ -1339,7 +1339,7 @@ def test_concurrent_route_on_same_issue_does_not_double_submit(lease_store):
     """Two concurrent route() calls on the SAME issue submit EXACTLY ONCE.
 
     Simulates a duplicate-cron-tick race: a manual /issue invocation
-    and the 20-min issue-tick cron run in parallel. Without the flock
+    and the 45-min issue-tick cron run in parallel. Without the flock
     held across reconnect-check + launch + lease-write, both would
     decide "no live job" and both would submit (and both would escalate
     to GCP if anything timed out → double provision + colliding artifact

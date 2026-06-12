@@ -886,8 +886,8 @@ FIRST, and resolve workflow-helper scripts (`verify_task_body.py`,
 `post_step_completed.py`, ...) from the MAIN checkout (`"$REPO_ROOT"/scripts/...`),
 never the worktree copy. (Incident #501, 2026-06-06→08: a worktree's
 pre-split skill copy armed `/issue 501` at */10 instead of the
-lightweight `/issue-tick` at */20 — 362 full ~44K-token skill reloads
-over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
+lightweight `/issue-tick` backstop (then */20, now */45) — 362 full
+~44K-token skill reloads over 2.5 days. Incident #496: a worktree's pre-W22 `verify_task_body.py`
 false-FAILed a spec-conformant body, wrongly indicting the analyzer.)
 
 **MANDATORY auto-armed backstop for autonomous sessions — arm it NOW.**
@@ -917,7 +917,7 @@ if os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
     )
     if not already_armed:
         CronCreate(
-            cron="*/20 * * * *",
+            cron="*/45 * * * *",
             prompt=f"/issue-tick {N}",
             recurring=True,
             durable=False,
@@ -3122,22 +3122,24 @@ starting the bg-Bash poll:
    a substring of `"/issue-tick 467"`, so substring matching would
    mis-dedupe sibling issues.
 2. Otherwise call
-   `CronCreate(cron="*/20 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
-   — a 20-minute, session-scoped, in-memory recurring fire of the
+   `CronCreate(cron="*/45 * * * *", prompt="/issue-tick <N>", recurring=True, durable=False)`
+   — a 45-minute, session-scoped, in-memory recurring fire of the
    lightweight `/issue-tick <N>` skill (dies with the session, auto-
    expires at 7 days like the default pod TTL; the harness jitters
    recurring fires so ticks don't all land on a fixed wall-clock mark).
-   The 20-minute interval is chosen deliberately: the Anthropic prompt
-   cache TTL is 5 minutes, so a 10-minute interval was the worst case —
-   always cold (every tick re-prices the ~200K+ prefix at 1.25×), double
-   the ticks for no caching benefit. 20 minutes accepts the cold-cache
-   cost (the lightweight prompt makes it cheap) AND halves the tick
-   count. Going sub-5-min would share the cache but cost MORE wall-clock
-   fires per stalled stretch, which is the opposite of what the backstop
-   is for. The `/issue-tick` skill is ~few-hundred tokens, vs the
-   44K-token full `/issue` skill — so 12 idle ticks across a 4-hour
-   idle stretch cost a few thousand tokens instead of ~1M. Then
-   immediately re-`CronList`
+   The 45-minute interval (lengthened from 20 min on 2026-06-12) is
+   chosen deliberately: the pure-Python `autonomous_session_watch.py`
+   cron (every 10 min, free) carries ALL fast detection — DEAD-session
+   respawn, alive-but-stalled respawn for ACTIVE statuses, pod safety,
+   gate-park phone push, title reconcile — so the tick is purely the
+   in-session re-driver of last resort for the alive-but-stalled-at-PARK
+   class, which tolerates 45-min latency. Every tick fire is LLM-priced
+   (a cold context read even on the guarded-no-op path), so fewer fires
+   is the point. (The old 20-min rationale leaned on a "5-minute prompt
+   cache TTL"; that figure is inaccurate for this org's subscription
+   auth — subscription sessions get the 1-hour cache TTL automatically,
+   5 minutes applies to API-key auth — and the interval choice no longer
+   depends on it.) Then immediately re-`CronList`
    and assert EXACTLY ONE job matches
    `prompt.strip() == "/issue-tick <N>"`. If the harness normalised the
    stored prompt such that the ARM-GUARD would later miss, this assert
@@ -3150,8 +3152,17 @@ pod-backed `kind: experiment` runs reaching Step 6d.2;
 the polling loop do NOT arm it.
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
-not only here in prose).** `CronList`, find the job with
-`prompt.strip() == "/issue-tick <N>"`, `CronDelete(id=...)` it. The backstop
+not only here in prose) — hardened 2026-06-12.** `CronList`, delete EVERY
+job matching this issue's tick: primary match is whole-string equality
+(`prompt.strip() == "/issue-tick <N>"`); hardened fallback is the anchored
+pattern `issue-tick\s+<N>(?!\d)` (harness prompt-normalization drift was
+the #501 failure mode — the whole-string teardown silently no-oped 1,951
+times; the `(?!\d)` guard prevents sibling mis-delete, `"/issue-tick 46"`
+never matches `"/issue-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`
+and verify no matching job survived; if one did, retry the delete ONCE,
+then log LOUDLY — the runaway parachute (`tick_triage.py`'s
+3-consecutive-terminal flag + the watcher's force-stop) bounds the damage
+of a cron that refuses to die. The backstop
 DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
 keeps re-firing through the uploading / verifying / interpreting /
 reviewing stages — those stages have no other auto-wake, so the backstop
@@ -3333,10 +3344,12 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
+Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+`CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
+equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
+fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
 burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
-would re-surface the gate question every 20 min). The user's
+would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
 skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
@@ -3362,7 +3375,7 @@ recovery table below must agree).** The live mechanisms during a
 1. The orchestrator's bg-Bash poll chain (Step 6d.2) — primary, drains
    sentinels and posts `epm:progress` / advances on done / blocks on
    stalled-or-dead.
-2. The auto-armed backstop cron (`CronCreate(cron="*/20 * * * *",
+2. The auto-armed backstop cron (`CronCreate(cron="*/45 * * * *",
    prompt="/issue-tick <N>")`, registered by the orchestrator at Step 6d.2,
    torn down at every terminal/park transition — NOT at `done`; see
    Step 6d.2 CRON-TEARDOWN) running in the per-issue
@@ -3986,9 +3999,9 @@ marker after it and is within the freshness window.
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
 verifier turn; the 30-min Codex-ensemble window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
-double-writer on `body.md`. Both fit cleanly under the 20-min backstop
-cadence × 2-miss safety margin, so a genuinely stalled stage is still
-re-dispatched within ~2 ticks (≈40 min worst case). This guard is the
+double-writer on `body.md`. Both fit cleanly under the 45-min backstop
+cadence, so a genuinely stalled stage is still re-dispatched within
+~2 ticks (≈90 min worst case). This guard is the
 bound referenced by the Step 6d.2 "surviving the backstop into
 verifying/interpreting/reviewing is DESIGNED behavior" paragraph.
 

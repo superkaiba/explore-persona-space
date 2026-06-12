@@ -121,8 +121,10 @@ user-only but does NOT block the campaign.
    --mode campaign`.
 7. Arm the recurring tick (idempotent ARM-GUARD: `CronList` first, skip
    if a job with prompt exactly `"/campaign-tick <N>"` exists):
-   `CronCreate("*/20 * * * *", prompt="/campaign-tick <N>",
-   recurring=True, durable=False)`.
+   `CronCreate("*/45 * * * *", prompt="/campaign-tick <N>",
+   recurring=True, durable=False)`. (45 min as of 2026-06-12 — the
+   10-min watcher carries fast detection; the tick is the in-session
+   re-driver of last resort.)
 8. Post `epm:campaign-started v1` (anchor, budget, limits, DAG size).
    Then fall through to Step 1.
 

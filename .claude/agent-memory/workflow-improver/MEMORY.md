@@ -6,7 +6,8 @@
 - [Stale scope list ≠ deflection](feedback_stale_scope_list_not_deflection.md) — target_file missing from applies_to_workflow_surface but clearly a workflow helper = stale list; fix + update all three mirror lists
 - [Pre-existing lint/test failures](reference_preexisting_lint_test_failures.md) — broad ruff has ~1338 pre-existing errors; lint touched files only; prove "0 introduced" via git-stash compare
 - [Worktree uv venv fails on full disk](reference_worktree_venv_disk_full.md) — `uv run` in a worktree builds a fresh .venv and ENOSPCs; use main checkout's .venv/bin/python on the worktree's script copy
-- [FF worktree to main before edit](feedback_ff_worktree_to_main_before_edit.md) — spawn worktrees fork behind a moving main; `git merge --ff-only main` first, then edit the WORKTREE copies
+- [FF worktree to main before edit](feedback_ff_worktree_to_main_before_edit.md) — spawn worktrees fork behind a moving main; `git merge --ff-only main` first, then edit the WORKTREE copies; on long runs re-merge main after committing
+- [Self-report freshness is a safety signal](feedback_self_report_freshness_is_safety_signal.md) — never add periodic writers of issue-progress/<N>.json or scheduled markers; their AGE drives stalled-detector + reconcile auto-stop; transition-keyed writes only
 - [Candidate may be already fixed on main](feedback_candidate_already_fixed_stale_worktree.md) — git-log the target file first; sketch may stem from a stale worktree spec copy and weaken main's stronger rule
 - [Watcher-incident forensics map](reference_watcher_forensics_surfaces.md) — logs/autonomous_session_watch/, ~/.eps-autonomous/ state, ~/.happy/sessions.json generations; --auto spawns register cwd=worktree
 - [Watcher dry-run from worktree](reference_watcher_dryrun_from_worktree.md) — override asw.PROJECT_ROOT to main before calling a `*_pass(dry_run=True)`; ruff C901 cap is 15
@@ -22,4 +23,5 @@
 - [Reuse-fitness 4-file mirror set](reference_reuse_fitness_mirror_set.md) — fitness-check (a)-(g) edits touch planner.md step 5 + CLAUDE.md bullet + critic.md item 9 + consistency-checker.md (both spots)
 - [Issue-worktree test repro recipe](reference_issue_worktree_test_repro.md) — scratch detached worktree at /tmp/.../.claude/worktrees/issue-9999 reproduces cwd-dependent failures (watcher issue-inference regex); main venv python, ~5GB, remove after
 - [New lint check = same-commit waiver sweep](feedback_new_lint_check_waiver_sweep.md) — prototype against the live tree, waive every legacy offender in the same commit, pin repo-tree-is-clean + CLI tests; scope by line shape not filename; main() C901 → annotated noqa
+- [Trim-conflict resolution recipe](feedback_trim_conflict_resolution_recipe.md) — stale pointer-branch × moved main: enumerate main deltas via diff base..main, fold deltas back compact with full text relocated into the rules file; validate by union grep
 - [Pruning live-written memory dirs](feedback_prune_live_memory_moving_main.md) — snapshot-commit first; expect add/add resurrections at merge; sweep main post-snapshot dirt + stamp before reporting; auto-memory has no git
