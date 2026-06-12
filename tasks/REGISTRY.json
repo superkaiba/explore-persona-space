@@ -3624,8 +3624,8 @@
       "goal": "Determine whether the marker implant's dispersed layer-14 shift geometry survives replacing the marker-only single-token loss with EM-style whole-response loss \u2014 the #561 positive-only recipe with the loss mask opened to the full response plus sentinel and nothing else changed \u2014 by reading the new adapters' shift spectrum against the persisted #561 positive-only and #551 EM/marker tensors.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/599",
-      "status": "running",
+      "path": "tasks/verifying/599",
+      "status": "verifying",
       "title": "Whole-response-loss marker re-train (rig disentangle, part 2): does EM-style loss shape produce EM-like concentration?"
     },
     "6": {
