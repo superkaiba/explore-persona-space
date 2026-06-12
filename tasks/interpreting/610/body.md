@@ -111,7 +111,7 @@ Whole-file scans: 0 of 510 seed-42 terminal completions contain the marker, 0 em
 
 Normalization and centering could in principle manufacture a null, so here is the same comparison in raw nats, before either transform.
 
-![Raw uncentered default-context marker log-prob gains. With-default mix seeds read 2.65, 2.36 and 2.58 nats; no-default mix seeds read 2.72, 2.69 and 2.53 nats — the two arms overlap.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4adf6ca26c7a175ae9694e72be343318e48ccfbf/figures/issue_610/hero_default_dose_strip_raw.png)
+![Raw uncentered default-context marker log-prob gains. With-default mix seeds read 2.65, 2.36 and 2.58 nats; no-default mix seeds read 2.72, 2.69 and 2.53 nats — the two mixes overlap.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/4adf6ca26c7a175ae9694e72be343318e48ccfbf/figures/issue_610/hero_default_dose_strip_raw.png)
 
 > **Figure.** *The raw nat-space reads overlap across arms.* Uncentered, unnormalized default-context marker log-prob gain (trained − base, nats) at the terminal checkpoint, 3 seeds per arm — the same data as the headline figure before the implant normalization and panel centering.
 
@@ -125,7 +125,7 @@ A dose effect could also have shown up as a different *path* — the never-train
 
 > **Figure.** *Both arms converge to the same floor by the terminal checkpoint.* Per-seed centered default-context shift over training fraction (6 checkpoints, 63 matched optimizer steps, 3 seeds per arm). Orange: with-default mix; blue: no-default mix.
 
-Early checkpoints are noisy and nonmonotonic in both arms — the per-checkpoint reads shuffle — so I scope the claim to the terminal checkpoint, where the six trajectories land on the same floor. The figure can't support fine-grained claims about *when* the shielding forms; it rules out the specific worry that the two arms only coincidentally meet at step 63 from visibly different regimes.
+Early checkpoints are noisy and nonmonotonic in both arms — the per-checkpoint reads shuffle — so I scope the claim to the terminal checkpoint, where the six trajectories land on the same floor. The figure can't support fine-grained claims about *when* the shielding forms; it rules out the specific worry that the two mixes only coincidentally meet at step 63 from visibly different regimes.
 
 #### The panel's floor is not exclusively assistant territory
 
