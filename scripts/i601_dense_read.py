@@ -13,6 +13,11 @@ Personas read per checkpoint: source (villain) + the cell's trained negatives
 (empty for 0-negative cells) + the Phase-0 pre-registered 8-bystander
 reference panel (plan §4 Phases 2/3 contrast re-registration).
 
+#613 additions (legacy-preserving defaults): ``--sep-mode {marker,plain}``
+(plain passes sep="" to the slot render — the four floats at the flag-on
+LOSS slot, post-R with no separator) and ``--steps`` (comma-int checkpoint
+subset, e.g. the {1,5,10,20,32,45,63} slot-read ladder).
+
 Efficiency: ONE base model load; the base-side reads are checkpoint-
 independent and computed once; per-checkpoint adapters are hot-swapped via
 PEFT load_adapter/set_adapter/delete_adapter (never a per-checkpoint 7B
@@ -80,17 +85,30 @@ def _four_floats(raw, marker_id: int, eos_id: int) -> dict[str, float]:
     }
 
 
-def _parity_resume_checkpoints(out_path: Path) -> dict[str, dict]:
+def _parity_resume_checkpoints(
+    out_path: Path, *, expected_sep_mode: str = "marker"
+) -> dict[str, dict]:
     """Prior checkpoints eligible for resume — parity-regime reads ONLY.
 
     Round-5 stale-output rule: a prior read resumes only when its provenance
     records ``use_rslora_applied == False`` (the parent-realized read
     scaling); pre-parity reads are the rsLoRA-over-applied ceiling reads and
     are dropped for re-reading.
+
+    #613: a prior file written under a DIFFERENT ``sep_mode`` (post-R+sep DV
+    slot vs post-R loss slot) must never silently mix into a resume — the two
+    modes read different slots. Fail loud instead.
     """
     if not out_path.exists():
         return {}
     prior = json.loads(out_path.read_text())
+    prior_mode = prior.get("sep_mode", "marker")
+    if prior_mode != expected_sep_mode:
+        raise RuntimeError(
+            f"resume: prior output {out_path} was written with sep_mode={prior_mode!r} "
+            f"but this run uses sep_mode={expected_sep_mode!r} — refusing to mix slot "
+            f"reads (use a different --out-path)."
+        )
     prior_cks = prior.get("checkpoints", [])
     existing = {
         f"{c['frac']:.4f}": c
@@ -104,7 +122,7 @@ def _parity_resume_checkpoints(out_path: Path) -> dict[str, dict]:
     return existing
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read pipeline; the #613 sep/steps flags add guard branches, not nesting
     ap = argparse.ArgumentParser(
         description="Task #601 dense teacher-forced four-float reader (see module docstring).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -120,6 +138,22 @@ def main(argv: list[str] | None = None) -> int:
         default=Path("eval_results/issue_601/phase0/bystander_panel.json"),
     )
     ap.add_argument("--device", default="cuda:0")
+    # ── #613 thin flags (legacy-preserving defaults — plan #613 §4 step 4). ──
+    ap.add_argument(
+        "--sep-mode",
+        choices=("marker", "plain"),
+        default="marker",
+        help="Slot separator: 'marker' = the parent MARKER_SEP='\\n\\n' DV slot "
+        "(default, current behavior); 'plain' = sep='' — the four floats at the "
+        "#613 flag-on LOSS slot (post-R, the greedy-stop position).",
+    )
+    ap.add_argument(
+        "--steps",
+        default=None,
+        help="Optional comma-int subset of checkpoint optimizer steps to read "
+        "(e.g. '1,5,10,20,32,45,63'); default = every checkpoint in the index. "
+        "Fail-loud when a requested step has no checkpoint.",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -200,6 +234,8 @@ def main(argv: list[str] | None = None) -> int:
     assert eos_id == EXPECTED_POST_R_EOS_ID, eos_id
     marker_id = marker_ids[0]
 
+    sep = MARKER_SEP if args.sep_mode == "marker" else ""
+
     ckpt_index = json.loads(args.checkpoint_index.read_text())
     specs = [
         {"frac": float(k), "step": v.get("step"), "adapter_path": v["path"]}
@@ -209,12 +245,24 @@ def main(argv: list[str] | None = None) -> int:
     specs.sort(key=lambda s: (s["step"] is None, s["step"], s["frac"]))
     if not specs:
         raise RuntimeError(f"no usable checkpoints in {args.checkpoint_index}")
+    if args.steps:
+        want = {int(tok) for tok in args.steps.split(",") if tok.strip()}
+        if not want:
+            raise ValueError(f"--steps {args.steps!r} resolved to zero steps")
+        have = {s["step"] for s in specs if s["step"] is not None}
+        missing = sorted(want - have)
+        if missing:
+            raise RuntimeError(
+                f"--steps requested optimizer steps {missing} with no checkpoint in "
+                f"{args.checkpoint_index} (available: {sorted(have)})"
+            )
+        specs = [s for s in specs if s["step"] in want]
 
     # Resume: keep already-read checkpoints (idempotent mop-up re-runs).
     # Round-5: only PARITY-regime reads resume — pre-parity checkpoints (no
     # use_rslora_applied=False provenance) are the dirty rsLoRA-over-applied
     # reads and are re-read, never reused.
-    existing = _parity_resume_checkpoints(args.out_path)
+    existing = _parity_resume_checkpoints(args.out_path, expected_sep_mode=args.sep_mode)
 
     device = args.device if torch.cuda.is_available() else "cpu"
     log.info(
@@ -234,9 +282,14 @@ def main(argv: list[str] | None = None) -> int:
         base_reads[p] = {}
         for q in q_eval:
             r_text = r_eval[p][q]["response_text"]
-            raw = _slot_raw_logits(base, tokenizer, bank[p], q, r_text, MARKER_SEP, device)
+            raw = _slot_raw_logits(base, tokenizer, bank[p], q, r_text, sep, device)
             base_reads[p][q] = _four_floats(raw, marker_id, eos_id)
-    log.info("base-side reads cached (%d personas x %d questions)", len(personas), len(q_eval))
+    log.info(
+        "base-side reads cached (%d personas x %d questions, sep_mode=%s)",
+        len(personas),
+        len(q_eval),
+        args.sep_mode,
+    )
 
     peft_model: PeftModel | None = None
     prev_name: str | None = None
@@ -256,6 +309,10 @@ def main(argv: list[str] | None = None) -> int:
             "marker_token_id": EXPECTED_MARKER_TOKEN_ID,
             "post_r_eos_token_id": EXPECTED_POST_R_EOS_ID,
             "read_type": "teacher_forced_frozen_R_eval",
+            # #613: which slot this file read — 'marker' = post-R+"\n\n" (the
+            # DV slot, parent-identical); 'plain' = post-R (the flag-on loss slot).
+            "sep_mode": args.sep_mode,
+            "sep": sep,
             "checkpoints": sorted(checkpoints_out, key=lambda c: c["frac"]),
             "git_commit": _git_sha(),
             "timestamp_utc": datetime.now(UTC).isoformat(),
@@ -294,9 +351,7 @@ def main(argv: list[str] | None = None) -> int:
             reads[p] = {}
             for q in q_eval:
                 r_text = r_eval[p][q]["response_text"]
-                raw = _slot_raw_logits(
-                    peft_model, tokenizer, bank[p], q, r_text, MARKER_SEP, device
-                )
+                raw = _slot_raw_logits(peft_model, tokenizer, bank[p], q, r_text, sep, device)
                 g = _four_floats(raw, marker_id, eos_id)
                 b = base_reads[p][q]
                 reads[p][q] = {

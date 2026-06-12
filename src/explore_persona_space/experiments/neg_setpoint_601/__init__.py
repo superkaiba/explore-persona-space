@@ -14,6 +14,10 @@ rows). This module's cells break that collinearity:
            schedule-matched cell ``posonly_200p_T130`` (200p x 10 epochs ->
            T=130 ~= matched arm's 128) — conditional, explicit-slug-only,
            launched by ``scripts/i601_followup1_launch.sh``.
+  Task #613 (child) — alive-negatives flag A/B: ``flagon_200p800n``, the
+           dense_200p800n recipe with ``suppress_negatives=True`` (negative
+           loss at the post-response slot; conditional, explicit-slug-only,
+           launched by ``scripts/i613_launch.sh``).
   Phase 4  rig-bridging positives-only arms toward #471. Corrected #471
            attribution (concern phase4-bridge-attn-only-attribution; round 4):
            #471's posonly rig was ALL-LINEAR r=32 @ lr 5e-6 — NOT attn-only as
@@ -204,6 +208,11 @@ class CellSpec601:
     # Conditional 4b factor cell (posonly_attn_lr1e5 only as of round 4):
     # dispatched only on a bridge NON-ARREST verdict (phase4a_verdict.json).
     conditional: bool = False
+    # #613 flag A/B: thread MarkerOnlyDataCollator(suppress_at_post_response_slot=
+    # True, im_end_token_id=151645) — negative-row loss at the FIRST <|im_end|>
+    # after R instead of the trailing "\n". Default False = every pre-#613 cell
+    # byte-identical (the flag-off arm of the A/B).
+    suppress_negatives: bool = False
 
     @property
     def placement(self) -> str:
@@ -409,6 +418,28 @@ CELLS_601: tuple[CellSpec601, ...] = (
         dense_steps=_PHASE1_DENSE_LADDER,  # (2,4,6,8,10,12,16,20,32) — matched-arm parity
         onpolicy="full6",
         conditional=True,
+    ),
+    # Task #613 (child) — alive-negatives flag A/B: the dense_200p800n recipe
+    # VERBATIM with the SINGLE manipulated variable suppress_negatives=True
+    # (negative-row loss relocated to the post-response <|im_end|> slot, the
+    # #474 collator branch). conditional=True keeps it explicit-slug-only
+    # (never joins --cells all / phase4b — its phase string is neither
+    # "phase4" nor a parent phase). phase="flagon_ab" doubles as the output
+    # dir under --slab-root, so #613's launch (--slab-root
+    # eval_results/issue_613) lands artifacts at the plan §6.5 contract path
+    # eval_results/issue_613/flagon_ab/flagon_200p800n_seed<S>/.
+    CellSpec601(
+        slug="flagon_200p800n",
+        plain_name="Alive negatives: 4:1 mix with negative loss at the post-response slot (#613)",
+        phase="flagon_ab",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=200,
+        dense_steps=_dense_1_to(20, 25, 32, 45, 63),  # EXACT dense_200p800n parity
+        onpolicy="anchors",  # step 10 + terminal, bystander8 panel — parity
+        seeds=(42, 137),
+        conditional=True,  # explicit-slug-only; never joins --cells all / phase4b
+        suppress_negatives=True,  # THE variable (#613 plan §4)
     ),
 )
 

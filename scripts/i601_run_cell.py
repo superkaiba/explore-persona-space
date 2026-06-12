@@ -29,6 +29,13 @@ Per-cell pipeline (all phases inside this one subprocess unit):
   5. upload     — ONE bulk Hub commit of the checkpoint tree (fail-loud,
                   verified) + local checkpoint cleanup (upload-before-delete).
 
+#613 (alive-negatives flag A/B) additions, all legacy-preserving: registry
+cells with ``suppress_negatives=True`` thread the #474 collator flag
+conjunction into ``train_one_cell`` + the ``neg_slot`` rowtype-CE channel;
+thin CLI flags ``--hf-prefix`` / ``--run-name-prefix`` / ``--sentinel-task-id``
+re-point the HF subfolder, WandB run-name prefix, and sentinel identity
+(defaults = the #601 values, so every existing caller is byte-identical).
+
 GPU pinning is the #472 round-3 contract verbatim: the dispatcher passes
 ``--gpu-id <g>`` (PHYSICAL index) AND exports ``CUDA_VISIBLE_DEVICES=<g>`` in
 the launcher env (gotcha: import-time cuInit defeats the in-process clobber);
@@ -54,7 +61,7 @@ load_dotenv()
 log = logging.getLogger("i601.run_cell")
 
 
-def _write_sentinel(path: Path, *, kind: str, phase: str, note: dict) -> None:
+def _write_sentinel(path: Path, *, kind: str, phase: str, note: dict, task_id: int = 601) -> None:
     """Write a poll_pipeline.py-compliant sentinel (sentinel_schema_version=1)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -63,7 +70,7 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note: dict) -> None:
                 "sentinel_schema_version": 1,
                 "kind": kind,
                 "version": 1,
-                "task_id": 601,
+                "task_id": task_id,
                 "by": "i601_run_cell",
                 "ts": datetime.now(UTC).isoformat(),
                 "phase": phase,
@@ -130,6 +137,24 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         default=0,
         help="ASSIGNED physical GPU index (threaded to train_one_cell; sft.py sets CVD).",
     )
+    # ── #613 thin flags (legacy-preserving defaults — plan #613 §4 step 2). ──
+    ap.add_argument(
+        "--hf-prefix",
+        default=None,
+        help="HF adapter path prefix (default: HF_ADAPTER_PREFIX_601; #613 passes "
+        "adapters/issue_613).",
+    )
+    ap.add_argument(
+        "--run-name-prefix",
+        default="issue601",
+        help="WandB run-name prefix (default issue601; #613 passes issue613).",
+    )
+    ap.add_argument(
+        "--sentinel-task-id",
+        type=int,
+        default=601,
+        help="Task id for the sentinel filename + task_id field (default 601; #613 passes 613).",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -174,6 +199,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         CELL_SPECS_601_472SHAPE,
         EXPECTED_ANCHOR_PANEL,
         EXPECTED_MARKER_TOKEN_ID,
+        EXPECTED_POST_R_EOS_ID,
         HF_ADAPTER_PREFIX_601,
         MARKER_TEXT,
         SOURCE_PERSONA,
@@ -185,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
     )
 
     spec = cell_by_slug(args.cell)
+    hf_prefix = args.hf_prefix if args.hf_prefix is not None else HF_ADAPTER_PREFIX_601
     if args.seed not in (42, 137):
         raise ValueError(f"[{args.cell}] seed {args.seed} not a canonical #601 seed (42/137).")
     if args.seed not in spec.seeds:
@@ -211,7 +238,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
     band_traj_path = cell_out_dir / "inloop_band_trajectory.json"
     rowtype_ce_path = cell_out_dir / "rowtype_ce.json"
     raw_completions_path = cell_out_dir / "raw_completions.json"
-    sentinel = args.log_dir / f"issue-601-{args.cell}-seed{args.seed}-results.json"
+    sentinel = (
+        args.log_dir / f"issue-{args.sentinel_task_id}-{args.cell}-seed{args.seed}-results.json"
+    )
 
     # ── In-process marker assert (HARD requirement; incident #537). ──────────
     from transformers import AutoTokenizer
@@ -270,7 +299,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
     all_fracs, onpolicy_fracs = _combined_fractions(spec, step_fractions)
     log.info(
         "[phase=train_%s] T=%d, %d ckpt fractions (%d on-policy), lr=%g, epochs=%d, "
-        "targets=%s, band stop=%s log_only=%s",
+        "targets=%s, band stop=%s log_only=%s, suppress_negatives=%s",
         args.cell,
         spec.expected_steps,
         len(all_fracs),
@@ -280,11 +309,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         spec.lora_targets or "all-linear",
         spec.band_stop,
         spec.band_log_only,
+        spec.suppress_negatives,
     )
     # max_length = the TRAINING max_length (1024): the probe must monitor
     # exactly the rows the trainer sees — a 2048 probe cap would admit rows the
     # trainer truncates away (round-1 Codex review minor).
-    probes = build_rowtype_probes(train_jsonl, tokenizer, marker_ids, max_length=MAX_LENGTH)
+    probes = build_rowtype_probes(
+        train_jsonl,
+        tokenizer,
+        marker_ids,
+        max_length=MAX_LENGTH,
+        # #613: third channel at the flag-on loss slot (R1 manipulation check).
+        neg_post_response_slot=spec.suppress_negatives,
+        im_end_token_id=EXPECTED_POST_R_EOS_ID,
+    )
     ce_probe = RowTypeCETrainProbeCallback(probes, out_path=rowtype_ce_path, eval_every_steps=1)
     train_result = train_one_cell(
         cell_slug=args.cell,
@@ -296,11 +334,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         gpu_id=args.gpu_id,
         lr_override=spec.lr,
         epochs_override=spec.epochs,
-        hf_path_in_repo_override=f"{HF_ADAPTER_PREFIX_601}/{args.cell}_seed{args.seed}",
-        run_name_override=f"issue601_{args.cell}_seed{args.seed}",
+        hf_path_in_repo_override=f"{hf_prefix}/{args.cell}_seed{args.seed}",
+        run_name_override=f"{args.run_name_prefix}_{args.cell}_seed{args.seed}",
         step_calibration_fractions=all_fracs,
         frac_precision=4,
         lora_targets_override=list(spec.lora_targets) if spec.lora_targets else None,
+        # #613 (THE manipulated variable): negative-row loss at the first
+        # post-response <|im_end|> (collator #474 branch) when the registry
+        # cell sets suppress_negatives=True; default False = flag-off parity.
+        marker_suppress_at_post_response_slot=spec.suppress_negatives,
+        marker_im_end_token_id=(EXPECTED_POST_R_EOS_ID if spec.suppress_negatives else None),
         # D1: explicit band wiring — the train_lora DEFAULT would LIVE-stop any
         # in-band cell at step >= 20 (plan §8 risk 1). Phase 3 has no marker
         # rows → band off entirely.
@@ -416,7 +459,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
     else:
         from explore_persona_space.orchestrate.hub import upload_model
 
-        dest = f"{HF_ADAPTER_PREFIX_601}/{args.cell}_seed{args.seed}/checkpoints"
+        dest = f"{hf_prefix}/{args.cell}_seed{args.seed}/checkpoints"
         log.info("[phase=upload_%s] bulk checkpoint upload → %s", args.cell, dest)
         hub_path = upload_model(model_path=str(ckpt_root), path_in_repo=dest, delete_after=False)
         if not hub_path:
@@ -433,17 +476,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         sentinel,
         kind="epm:progress",
         phase=f"cell_done_{args.cell}_seed{args.seed}",
+        task_id=args.sentinel_task_id,
         note={
             "cell": args.cell,
             "seed": args.seed,
             "phase_dir": spec.phase,
+            "suppress_negatives": spec.suppress_negatives,
             "expected_steps": spec.expected_steps,
             "realized_terminal_step": realized_terminal_step,
             "trajectory_path": str(out_traj),
             "dense_trajectory_path": str(out_dense) if spec.dense_steps else None,
             "rowtype_ce_path": str(rowtype_ce_path),
             "inloop_band_trajectory_path": str(band_traj_path) if spec.band_stop else None,
-            "adapter_hf_path": f"{HF_ADAPTER_PREFIX_601}/{args.cell}_seed{args.seed}",
+            "adapter_hf_path": f"{hf_prefix}/{args.cell}_seed{args.seed}",
         },
     )
     log.info("cell complete; wrote sentinel → %s", sentinel)

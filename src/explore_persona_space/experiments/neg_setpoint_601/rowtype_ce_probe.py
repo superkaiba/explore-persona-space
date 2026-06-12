@@ -19,6 +19,12 @@ This EXTENDS the band-callback probe machinery (``train/sft.py``'s fused-render
 tokenization helpers + the same teacher-forced slot read) rather than inventing
 a parallel rig; it is a separate TrainerCallback only because Phase 3
 (negatives-only) has zero marker rows, where the band callback cannot attach.
+
+#613 (alive-negatives A/B) adds an OPT-IN third channel ``neg_slot``: the same
+negative rows read at the post-response ``<|im_end|>`` slot — the token the
+flag-on collator (``suppress_at_post_response_slot=True``) actually trains —
+so the R1 manipulation check can verify the relocated loss channel is live
+from step 1. Defaults leave all 2-channel callers byte-identical.
 """
 
 from __future__ import annotations
@@ -71,7 +77,63 @@ def _tokenize_negative_row(
     return full_ids, len(full_ids) - 2, full_ids[-1]
 
 
-def build_rowtype_probes(
+def _tokenize_negative_row_post_slot(
+    row: dict,
+    tokenizer,
+    marker_seq: list[int],
+    max_length: int,
+    im_end_id: int,
+) -> tuple[list[int], int, int] | None:
+    """Tokenize one NEGATIVE row at the POST-RESPONSE slot (#613 flag-on channel).
+
+    The #474/#613 flag-on collator branch puts the negative row's loss at the
+    FIRST ``<|im_end|>`` in the COMPLETION region (the slot greedy generation
+    stopped at) — NOT the trailing newline that :func:`_tokenize_negative_row`
+    targets. This helper mirrors that pick on the SAME single fused
+    ``apply_chat_template`` render (one-call contract, no phantom system
+    prompt, no BPE boundary-merge fragility): the completion region starts
+    after the LAST ``<|im_start|>`` (the assistant turn is the final message
+    of ``prompt + completion``), and the first ``im_end_id`` after it is the
+    loss-bearing token.
+
+    Returns ``(ids, slot, im_end_id)`` where ``ids`` is the prefix ending at
+    the found ``<|im_end|>`` (index ``i``, asserted ``ids[i] == im_end_id``)
+    and ``slot = i - 1`` is the OUTPUT slot whose next-token distribution
+    predicts it. Returns None for malformed / over-long / marker-bearing rows
+    or when the layout doesn't expose the slot (the caller fails loud on an
+    all-None channel).
+    """
+    prompt = row.get("prompt")
+    completion = row.get("completion")
+    if not isinstance(prompt, list) or not isinstance(completion, list):
+        return None
+    full_ids = _apply_chat_template_safe(
+        tokenizer, prompt + completion, add_generation_prompt=False
+    )
+    if full_ids is None or len(full_ids) < 2 or len(full_ids) > max_length:
+        return None
+    # Marker subsequence present → positive row; skip (mirrors _tokenize_negative_row).
+    n = len(marker_seq)
+    for i in range(len(full_ids) - n + 1):
+        if full_ids[i : i + n] == marker_seq:
+            return None
+    im_start_id = tokenizer.convert_tokens_to_ids("<|im_start|>")
+    if im_start_id is None or im_start_id < 0:
+        return None
+    starts = [i for i, t in enumerate(full_ids) if t == im_start_id]
+    if not starts:
+        return None
+    for i in range(starts[-1] + 1, len(full_ids)):
+        if full_ids[i] == im_end_id:
+            if i - 1 <= 0:
+                return None
+            ids = full_ids[: i + 1]
+            assert ids[i] == im_end_id, (ids[i], im_end_id)
+            return ids, i - 1, im_end_id
+    return None
+
+
+def build_rowtype_probes(  # noqa: C901 -- one linear row scan feeding three channel collectors; splitting would scatter the shared row-sampling contract
     data_path: str | Path,
     tokenizer,
     marker_token_ids: list[int],
@@ -79,6 +141,8 @@ def build_rowtype_probes(
     n_pos: int = 16,
     n_neg: int = 16,
     max_length: int = 2048,
+    neg_post_response_slot: bool = False,
+    im_end_token_id: int | None = None,
 ) -> dict:
     """Build the fixed positive/negative probe batches from the training JSONL.
 
@@ -88,10 +152,18 @@ def build_rowtype_probes(
     token. Either side may come back EMPTY (e.g. Phase 3 has zero positives) —
     the callback degrades to the populated side.
 
+    #613: with ``neg_post_response_slot=True`` (requires ``im_end_token_id``),
+    a THIRD channel ``"neg_slot"`` is added — the SAME negative rows read at
+    the post-response ``<|im_end|>`` slot (:func:`_tokenize_negative_row_post_slot`),
+    i.e. the flag-on collator's actual loss token. The trailing ``"neg"``
+    channel is kept UNCHANGED for the parent-comparable join. Defaults
+    (``False``/``None``) leave existing 2-channel callers byte-identical
+    (no ``"neg_slot"`` key in the returned dict).
+
     Returns:
-        ``{"pos": batch | None, "neg": batch | None}`` where ``batch`` =
-        ``{"input_ids": LongTensor [B, T], "attention_mask": [B, T],
-        "positions": [B], "target_ids": [B], "n_rows": int}``.
+        ``{"pos": batch | None, "neg": batch | None[, "neg_slot": batch]}``
+        where ``batch`` = ``{"input_ids": LongTensor [B, T], "attention_mask":
+        [B, T], "positions": [B], "target_ids": [B], "n_rows": int}``.
     """
     import torch
 
@@ -100,6 +172,11 @@ def build_rowtype_probes(
         raise FileNotFoundError(f"rowtype probe: training data missing at {path}")
     if not marker_token_ids:
         raise ValueError("rowtype probe: non-empty marker_token_ids required")
+    if neg_post_response_slot and im_end_token_id is None:
+        raise ValueError(
+            "rowtype probe: neg_post_response_slot=True requires im_end_token_id "
+            "(the post-response slot token id, e.g. 151645 for Qwen-2.5)."
+        )
     marker_seq = list(marker_token_ids)
     marker_id = marker_seq[0]
 
@@ -109,6 +186,7 @@ def build_rowtype_probes(
 
     pos_rows: list[tuple[list[int], int, int]] = []
     neg_rows: list[tuple[list[int], int, int]] = []
+    neg_slot_rows: list[tuple[list[int], int, int]] = []
     with path.open() as f:
         for line in f:
             line = line.strip()
@@ -128,6 +206,12 @@ def build_rowtype_probes(
                 picked_neg = _tokenize_negative_row(row, tokenizer, marker_seq, max_length)
                 if picked_neg is not None:
                     neg_rows.append(picked_neg)
+                    if neg_post_response_slot:
+                        picked_slot = _tokenize_negative_row_post_slot(
+                            row, tokenizer, marker_seq, max_length, im_end_token_id
+                        )
+                        if picked_slot is not None:
+                            neg_slot_rows.append(picked_slot)
             if len(pos_rows) >= n_pos and len(neg_rows) >= n_neg:
                 break
 
@@ -154,7 +238,20 @@ def build_rowtype_probes(
             "n_rows": len(rows),
         }
 
-    return {"pos": _pad(pos_rows), "neg": _pad(neg_rows)}
+    out = {"pos": _pad(pos_rows), "neg": _pad(neg_rows)}
+    if neg_post_response_slot:
+        # Fail-loud (plan #613 §4): negative rows exist but NONE exposed the
+        # post-response slot — a layout / tokenization bug, not a degradable
+        # condition (a silently absent neg_slot channel would void the R1
+        # manipulation check and only surface at the smoke gate).
+        if neg_rows and not neg_slot_rows:
+            raise ValueError(
+                "rowtype probe: neg_post_response_slot=True but no negative row "
+                "exposed a post-response <|im_end|> slot — layout/tokenization "
+                "drift (cross-check tests/test_marker_only_collator_post_response_slot.py)."
+            )
+        out["neg_slot"] = _pad(neg_slot_rows)
+    return out
 
 
 def _batch_ce(model, batch: dict) -> object:
@@ -197,6 +294,12 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
     discipline — a mid-run crash never loses the series). Base-side CE is
     cached on the first eval with the adapter disabled (PEFT
     ``disable_adapter()``), mirroring the band callback.
+
+    #613: when the probes dict carries the optional ``"neg_slot"`` channel
+    (post-response ``<|im_end|>`` slot — the flag-on collator's loss token),
+    it is read each eval step alongside ``pos``/``neg`` and logged as
+    ``<prefix>/neg_slot_ce``; the trailing ``neg`` channel stays unchanged
+    for the parent-comparable join.
     """
 
     def __init__(
@@ -217,20 +320,22 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
             raise ValueError(f"eval_every_steps must be >= 1, got {eval_every_steps}")
         self.pos = probes.get("pos")
         self.neg = probes.get("neg")
+        self.neg_slot = probes.get("neg_slot")
         self.out_path = str(out_path)
         self.eval_every_steps = int(eval_every_steps)
         self.log_prefix = log_prefix
-        self._base: dict[str, float | None] = {"pos": None, "neg": None}
+        self._base: dict[str, float | None] = {"pos": None, "neg": None, "neg_slot": None}
         self._records: list[dict] = []
 
     def on_train_begin(self, args, state, control, **kwargs):
         self._records = []
-        self._base = {"pos": None, "neg": None}
+        self._base = {"pos": None, "neg": None, "neg_slot": None}
         log.info(
-            "[%s] probe attached: %s pos rows, %s neg rows, eval_every=%d",
+            "[%s] probe attached: %s pos rows, %s neg rows, %s neg_slot rows, eval_every=%d",
             self.log_prefix,
             self.pos["n_rows"] if self.pos else 0,
             self.neg["n_rows"] if self.neg else 0,
+            self.neg_slot["n_rows"] if self.neg_slot else 0,
             self.eval_every_steps,
         )
 
@@ -248,13 +353,14 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
             return
         rec: dict = {"step": int(state.global_step)}
         metrics: dict[str, float] = {}
-        for side, batch in (("pos", self.pos), ("neg", self.neg)):
+        side_keys = {"pos": "pos_marker_ce", "neg": "neg_trailing_ce", "neg_slot": "neg_slot_ce"}
+        for side, batch in (("pos", self.pos), ("neg", self.neg), ("neg_slot", self.neg_slot)):
             if batch is None:
                 continue
             if self._base[side] is None:
                 self._base[side] = self._ce_with_base(model, batch)
             ce = float(_batch_ce(model, batch).mean().item())
-            key = "pos_marker_ce" if side == "pos" else "neg_trailing_ce"
+            key = side_keys[side]
             rec[key] = ce
             rec[f"{key}_base"] = self._base[side]
             metrics[f"{self.log_prefix}/{key}"] = ce
@@ -280,7 +386,9 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
 
     def _flush(self) -> None:
         payload = {
-            "schema": "i601_rowtype_ce_v1",
+            # v2 ONLY when the #613 neg_slot channel is present; parent files
+            # stay v1 byte-shape (parent-comparable join, plan #613 §4).
+            "schema": "i601_rowtype_ce_v2" if self.neg_slot is not None else "i601_rowtype_ce_v1",
             "n_pos_rows": self.pos["n_rows"] if self.pos else 0,
             "n_neg_rows": self.neg["n_rows"] if self.neg else 0,
             "steps": [r["step"] for r in self._records],
@@ -290,6 +398,10 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
             "neg_trailing_ce_base": self._base["neg"],
             "records": self._records,
         }
+        if self.neg_slot is not None:
+            payload["n_neg_slot_rows"] = self.neg_slot["n_rows"]
+            payload["neg_slot_ce"] = [r.get("neg_slot_ce") for r in self._records]
+            payload["neg_slot_ce_base"] = self._base["neg_slot"]
         os.makedirs(os.path.dirname(self.out_path) or ".", exist_ok=True)
         tmp = self.out_path + ".tmp"
         with open(tmp, "w") as f:
