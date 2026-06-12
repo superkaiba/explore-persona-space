@@ -19,6 +19,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_611.md](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/docs/methodology/issue_611.md) · [gist](https://gist.github.com/superkaiba/8b533622882121122917d9cc8d037202)
+
 ## Human TL;DR
 
 **Headline.** putting a persona in a bare role header instead of a system prompt doesn't contain a trained marker — relative to the system-prompt version it shows less leakage onto the *other* persona but more onto the plain no-persona assistant, at every training checkpoint in the grid.
@@ -84,7 +86,7 @@ Does the parent grid's split survive the two clean reads? The hero figure shows 
 
 Both halves pass their frozen verdict rules. The wrong-persona advantage is clear of zero on both personas at steps 30, 60, and 120 in margin space (5/5 seeds in every such cell), growing to about +3.1 nats on villain at step 60. The default-assistant excess is clear of zero in **all 16 of its contrast cells** (every checkpoint, both personas, both spaces); the direction never flips.
 
-Two qualifications belong next to that. The default-half excess on pirate is non-monotonic in the ceiling-free margin space: it peaks at step 30 (−4.04), then shrinks to −1.79 by step 120, with the step-30 and step-120 intervals disjoint and one of five seeds positive at step 120. That is a real late dynamics trend (the system arm catches up), so I would not extrapolate the pirate magnitude past step 120.
+A few qualifications belong next to that. The default-half excess on pirate is non-monotonic in the ceiling-free margin space: it peaks at step 30 (−4.04), then shrinks to −1.79 by step 120, with the step-30 and step-120 intervals disjoint and one of five seeds positive at step 120. That is a real late dynamics trend (the system arm catches up), so I would not extrapolate the pirate magnitude past step 120.
 
 Villain, by contrast, is flat at about −1.3 to −1.6 nats with overlapping intervals at all four checkpoints.
 
@@ -362,6 +364,7 @@ Cherry-picked from [split_analysis.json](https://github.com/superkaiba/explore-p
 - Analysis: [scripts/issue611_split_analysis.py](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/scripts/issue611_split_analysis.py) (fail-loud validation + contrasts + decomposition + frozen verdict block)
 - Figures: [scripts/issue611_split_figures.py](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/scripts/issue611_split_figures.py)
 - Reproduce:
+- **Methodology reference:** [docs/methodology/issue_611.md](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/docs/methodology/issue_611.md) · [gist](https://gist.github.com/superkaiba/8b533622882121122917d9cc8d037202)
 
 ```bash
 uv run python scripts/issue611_split_analysis.py --validate-only   # Phase 0 asserts (fail-loud)
