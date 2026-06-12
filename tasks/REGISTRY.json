@@ -3654,8 +3654,8 @@
     "602": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/followups_running/602",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/602",
+      "status": "awaiting_promotion",
       "title": "Estimating where training will shift a model's activations from the base model alone fails: training-data replay, in-context demos, and verbal description all miss the realized shift at the mid-stack read-out, across six adapter families (HIGH confidence)"
     },
     "603": {
