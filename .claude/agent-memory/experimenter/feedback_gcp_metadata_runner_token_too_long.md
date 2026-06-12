@@ -11,9 +11,11 @@ canonical case — overflows the scanner: syslog shows
 `error while communicating with "startup-script" script: bufio.Scanner: token too long`
 followed by `Script "startup-script" failed with error: signal: broken pipe`.
 
-**Why it zombies:** bash does NOT run its EXIT trap on a fatal SIGPIPE, so the
-`eps/phase` guest attribute never flips to `failed` and the VM stays RUNNING —
-the GCP poll reads a healthy "workload" phase forever while no process is alive.
+**Why it zombies:** the EXIT trap RUNS on the SIGPIPE death, but `$?` inside it
+reads 0 (status of the last completed command — measured on bash 5.1.16, #607
+fact-check), so the `[ "$rc" -ne 0 ]` guard no-ops; the `eps/phase` guest
+attribute never flips to `failed` and the VM stays RUNNING — the GCP poll reads
+a healthy "workload" phase forever while no process is alive.
 
 **How to detect:** GPUs at 0% + no python workload processes + `sudo grep
 "token too long" /var/log/syslog`. State on disk survives (the kill is the
