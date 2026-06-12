@@ -33,6 +33,7 @@ from explore_persona_space.backends.slurm_monitor import (
     STALL_SEC,
     SlurmProbeError,
     _parse_scontrol_show_job,
+    _parse_slurm_runtime,
     _scrub_secret_tokens,
     build_poll_result,
     fetch_started_evidence,
@@ -89,6 +90,7 @@ JobId=9001 JobName=eps-issue-137
     assert parsed["status"] == "COMPLETED"
     assert parsed["exit_code"] == "0:0"
     assert parsed["node"] == "ng17302"
+    assert parsed["run_time_sec"] == 42 * 60 + 13
 
 
 def test_parse_scontrol_show_job_handles_missing_fields() -> None:
@@ -97,6 +99,24 @@ def test_parse_scontrol_show_job_handles_missing_fields() -> None:
     parsed = _parse_scontrol_show_job("(unhelpful)")
     assert parsed["status"] == "UNKNOWN"
     assert parsed["exit_code"] is None
+    assert parsed["run_time_sec"] is None
+
+
+@pytest.mark.parametrize(
+    ("runtime_val", "expected_sec"),
+    [
+        ("00:00:00", 0),
+        ("00:05:00", 300),
+        ("00:42:13", 42 * 60 + 13),
+        ("1-00:00:05", 86_405),
+        ("12:00:00", 12 * 3600),
+        ("INVALID", None),  # scontrol's non-time value → fall back to submit age
+        ("UNKNOWN", None),
+    ],
+)
+def test_parse_slurm_runtime(runtime_val: str, expected_sec: int | None) -> None:
+    """``RunTime=[days-]HH:MM:SS`` → seconds; non-time values → None."""
+    assert _parse_slurm_runtime(runtime_val) == expected_sec
 
 
 # ---------------------------------------------------------------------------
@@ -436,6 +456,71 @@ def test_build_poll_result_without_submitted_at_keeps_short_interval(tmp_path: P
     poll = build_poll_result(**kwargs)
     assert poll.status == "running"
     assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_long_pending_fresh_start_keeps_short_interval(
+    tmp_path: Path,
+) -> None:
+    """Long-PENDING regression: submitted 2 h ago but SLURM's RunTime says
+    the job STARTED 5 min ago (queue time ≠ run time). The early-run guard
+    must read the RunTime, not the inflated submit age — pre-fix, the first
+    RUNNING ticks of a long-queued job could go quiet (1800 s) the moment
+    real output scrolled the ``[phase=...]`` line out of the tail."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9307", now)  # submitted_at = now - 7200
+    kwargs["state_querier"] = lambda *, robot_alias, job_id: {
+        "status": "RUNNING",
+        "exit_code": None,
+        "run_time_sec": 300,
+    }
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.next_interval == POLL_INTERVAL_DEFAULT_SEC
+
+
+def test_build_poll_result_runtime_past_window_goes_quiet(tmp_path: Path) -> None:
+    """Counterpart: once SLURM's RunTime itself clears the early-run
+    window, a fully quiet tick still earns the long interval (the
+    RunTime preference must not pin the lane short forever)."""
+    now = datetime.now(tz=UTC)
+    kwargs = _quiet_poll_kwargs(tmp_path, "9308", now)
+    kwargs["state_querier"] = lambda *, robot_alias, job_id: {
+        "status": "RUNNING",
+        "exit_code": None,
+        "run_time_sec": 2400,
+    }
+    poll = build_poll_result(**kwargs)
+    assert poll.status == "running"
+    assert poll.next_interval == POLL_INTERVAL_QUIET_SEC
+
+
+def test_build_poll_result_fresh_start_after_long_queue_not_stalled(tmp_path: Path) -> None:
+    """C2 stall-floor sibling of the long-PENDING regression: a job that
+    started 60 s ago after a 2 h queue has no heartbeat yet (status.json
+    not written/rsynced). The stall clock must floor at the RUN age —
+    pre-fix the floor used ``now - submitted_at`` (7200 s > STALL_SEC),
+    so the first RUNNING tick read a LIVE just-started job as stalled."""
+    job_id = "9309"
+    now = datetime.now(tz=UTC)
+    _seed_local_state(tmp_path, job_id, status_json_body=None, job_out_lines=["booting"])
+    poll = build_poll_result(
+        issue=137,
+        job_id=job_id,
+        cluster=_nibi(),
+        scratch_dir="/scratch/tjiral/eps/issue-137",
+        log_path="/scratch/tjiral/eps/issue-137/job.out",
+        state_querier=lambda *, robot_alias, job_id: {
+            "status": "RUNNING",
+            "exit_code": None,
+            "run_time_sec": 60,
+        },
+        rsyncer=lambda **_: None,
+        now_fn=lambda: now.timestamp(),
+        marker_poster=lambda **_kw: None,
+        event_reader=lambda _issue: [],
+        submitted_at=now.timestamp() - 7200,
+    )
+    assert poll.status == "running"
 
 
 def test_build_poll_result_pending_keeps_short_interval(tmp_path: Path) -> None:
