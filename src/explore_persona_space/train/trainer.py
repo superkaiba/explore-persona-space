@@ -506,6 +506,11 @@ def _maybe_persist_adapter(adapter_dir: Path) -> None:
     aborts the cell BEFORE its ``rm``, leaving the merged dir in place for a
     retry rather than silently losing the run.
 
+    Per-checkpoint trainer saves (``checkpoint-*`` dirs inside the adapter
+    dir) are excluded from the persist — only the final adapter ships; flows
+    that want per-checkpoint ladders on the Hub upload them explicitly before
+    reaping (the #480 dispatcher pattern).
+
     No-op when ``EPM_PERSIST_ADAPTER_HF_REPO`` is unset, so all non-sweep
     training is unaffected.
     """
@@ -541,6 +546,8 @@ def _maybe_persist_adapter(adapter_dir: Path) -> None:
         repo_id=repo,
         path_in_repo=dest,
         delete_after=False,
+        # Adapter-only persist; per-checkpoint snapshots stay local (#565).
+        ignore_patterns=["checkpoint-*"],
     )
     if not hub_path:
         raise RuntimeError(
