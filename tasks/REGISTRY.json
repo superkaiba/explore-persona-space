@@ -3676,8 +3676,8 @@
       "goal": "Determine whether the leakage gate needs a behavior-overlap term beyond base-model context similarity, by varying bystander base prior on the trained behavior at fixed context-vector similarity to the source and testing whether the overlap term carries independent predictive weight on held-out panels.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/605",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/605",
+      "status": "awaiting_promotion",
       "title": "At matched similarity, the base-prior gate test on the training-induced marker shift resolves to a margin-only signal on a 100-context panel: held-out positive in logit space, null at the registered precision in log-prob space (MODERATE confidence)"
     },
     "606": {
