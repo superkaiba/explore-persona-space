@@ -4,7 +4,7 @@ title: Deleting the default assistant's 200 negative training rows leaves its sh
 kind: experiment
 tags: []
 created_at: '2026-06-11T20:17:15Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 600
 goal: 'Determine whether the default assistant context''s anomalously low marker leakage
   under contrastive training (−0.197 vs panel median in #600, the only role far below
