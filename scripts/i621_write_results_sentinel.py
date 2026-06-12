@@ -89,22 +89,38 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out-root", default="eval_results/issue_621")
     ap.add_argument("--sentinel-dir", default="/workspace/logs")
     ap.add_argument("--note", default="", help="One-line run summary prefix for the note body.")
+    ap.add_argument(
+        "--skip-hub-verify",
+        action="store_true",
+        help="SMOKE ONLY: skip the Hub adapter-path verification (no real adapters exist).",
+    )
     args = ap.parse_args(argv)
 
     out_root = Path(args.out_root)
     cells = _load_cells(out_root)
 
     # Verify EVERY per-cell adapter path resolves on the Hub (fresh listing).
-    from huggingface_hub import list_repo_files
-
-    listed = set(list_repo_files(HF_MODEL_REPO, repo_type="model"))
     adapter_paths: dict[str, str] = {}
     missing: list[str] = []
-    for cell in cells:
-        sub = cell["hf_subfolder"]
-        adapter_paths[cell["cell_slug"]] = sub
-        if f"{sub}/adapter_model.safetensors" not in listed:
-            missing.append(sub)
+    init_missing: list[str] = []
+    if args.skip_hub_verify:
+        log.warning("SMOKE MODE: --skip-hub-verify — card paths NOT verified on Hub.")
+        for cell in cells:
+            adapter_paths[cell["cell_slug"]] = cell["hf_subfolder"]
+    else:
+        from huggingface_hub import list_repo_files
+
+        listed = set(list_repo_files(HF_MODEL_REPO, repo_type="model"))
+        for cell in cells:
+            sub = cell["hf_subfolder"]
+            adapter_paths[cell["cell_slug"]] = sub
+            if f"{sub}/adapter_model.safetensors" not in listed:
+                missing.append(sub)
+        init_missing = [
+            cell["hf_subfolder"]
+            for cell in cells
+            if f"{cell['hf_subfolder']}/adapter_init/adapter_model.safetensors" not in listed
+        ]
     if missing:
         raise SystemExit(
             f"{len(missing)} adapter path(s) NOT resolvable on {HF_MODEL_REPO}: "
@@ -112,11 +128,6 @@ def main(argv: list[str] | None = None) -> int:
             "with dead paths. Re-run the upload before the sentinel."
         )
     # A-init snapshots ride in the same per-cell folders.
-    init_missing = [
-        cell["hf_subfolder"]
-        for cell in cells
-        if f"{cell['hf_subfolder']}/adapter_init/adapter_model.safetensors" not in listed
-    ]
     if init_missing:
         raise SystemExit(
             f"{len(init_missing)} adapter_init snapshot(s) missing on Hub: "

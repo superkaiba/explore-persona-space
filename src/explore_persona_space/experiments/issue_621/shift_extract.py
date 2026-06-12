@@ -196,9 +196,25 @@ def extract_per_context_shift(
             f"EVAL_QUESTIONS (inherited #527 R contract)."
         )
 
-    layer_idx_internal = EXTRACTION_LAYER + 1  # hs[0] = embedding output
+    n_model_layers = int(base_model.config.num_hidden_layers)
+    extraction_layer = min(EXTRACTION_LAYER, n_model_layers - 1)
+    if extraction_layer != EXTRACTION_LAYER:
+        log.warning(
+            "model has %d layers < EXTRACTION_LAYER=%d; reading layer %d "
+            "(CPU-smoke path; the production model always has 28 layers)",
+            n_model_layers,
+            EXTRACTION_LAYER,
+            extraction_layer,
+        )
+    layer_idx_internal = extraction_layer + 1  # hs[0] = embedding output
 
-    shift_acc = torch.zeros(HIDDEN_SIZE, dtype=torch.float32)
+    # Hidden size from the model's OWN config — the 7B production model
+    # reads 3584 (asserted against HIDDEN_SIZE below); the CPU smoke runs a
+    # tiny config and is exempt from the constant.
+    model_hidden = int(base_model.config.hidden_size)
+    if getattr(base_model.config, "_name_or_path", "") == "Qwen/Qwen2.5-7B-Instruct":
+        assert model_hidden == HIDDEN_SIZE, (model_hidden, HIDDEN_SIZE)
+    shift_acc = torch.zeros(model_hidden, dtype=torch.float32)
     delta_logp_acc = 0.0
     delta_logit_acc = 0.0
     n_used = 0
@@ -246,10 +262,10 @@ def extract_per_context_shift(
 
         hs_base = out_base.hidden_states[layer_idx_internal]  # (1, T, H)
         hs_trained = out_trained.hidden_states[layer_idx_internal]
-        if hs_base.shape[-1] != HIDDEN_SIZE:
+        if hs_base.shape[-1] != model_hidden:
             raise AssertionError(
                 f"hidden_size drift: hs_base.shape[-1]={hs_base.shape[-1]} "
-                f"vs HIDDEN_SIZE={HIDDEN_SIZE}"
+                f"vs model config hidden_size={model_hidden}"
             )
         shift = (hs_trained[0, slot] - hs_base[0, slot]).float().cpu()
         shift_acc += shift

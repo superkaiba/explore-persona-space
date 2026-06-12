@@ -24,25 +24,35 @@ from . import (
     UNIFIED_NEGATIVE_PANEL,
 )
 
+# Durable, GIT-TRACKED provenance copies of the bank — ``data/`` is
+# gitignored, so a fresh clone (GCP lane / pod) has NO data/issue_472/
+# persona_bank.json. The issue-621 provenance copy is committed on the
+# issue branch (sha-identical to #604's, which established the pattern).
+PERSONA_BANK_CANDIDATE_RELPATHS = (
+    "eval_results/issue_621/provenance/persona_bank.json",
+    "eval_results/issue_604/provenance/persona_bank.json",
+    PERSONA_BANK_PATH,  # data/issue_472/... — local-VM convenience fallback
+)
 
-def _expected_repo_root() -> Path:
-    """Resolve the repo root by walking up from this file.
 
-    `data/issue_472/persona_bank.json` is anchored to the repo root, NOT
-    the cwd at invocation time. The worktree path is
-    `.claude/worktrees/issue-621/` so we walk up to the directory that
-    holds `data/issue_472/persona_bank.json`.
+def _resolve_bank_path() -> Path:
+    """Find the first persona-bank candidate, walking up from this file.
+
+    Candidates are anchored to the repo root, NOT the cwd at invocation
+    time; the walker covers worktrees (`.claude/worktrees/issue-621/`) and
+    pod/GCP clones alike.
     """
     here = Path(__file__).resolve()
-    # src/explore_persona_space/experiments/issue_621/persona_registry.py
-    # → repo root is 5 levels up.
     for ancestor in [here, *list(here.parents)]:
-        if (ancestor / PERSONA_BANK_PATH).is_file():
-            return ancestor
+        for rel in PERSONA_BANK_CANDIDATE_RELPATHS:
+            cand = ancestor / rel
+            if cand.is_file():
+                return cand
     raise RuntimeError(
-        f"could not locate {PERSONA_BANK_PATH} starting from {here}. "
-        "If running in a worktree the file should live at the worktree "
-        "root; if running on a pod it lives at /workspace/explore-persona-space."
+        f"could not locate a persona bank (candidates {PERSONA_BANK_CANDIDATE_RELPATHS}) "
+        f"starting from {here}. The git-tracked provenance copy "
+        "eval_results/issue_621/provenance/persona_bank.json should exist on "
+        "any checkout of the issue-621 branch."
     )
 
 
@@ -104,7 +114,7 @@ def load_persona_bank(path: str | Path | None = None) -> dict[str, str]:
         ``"personas"`` dict has empty values.
     """
     if path is None:
-        path = _expected_repo_root() / PERSONA_BANK_PATH
+        path = _resolve_bank_path()
     path = Path(path)
     if not path.is_file():
         raise FileNotFoundError(f"persona_bank.json not found at {path}")

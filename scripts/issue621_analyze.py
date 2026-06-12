@@ -655,7 +655,7 @@ def analyze_cell(
     pt_path = Path(eval_payload["_shift_pt_path"])
     if pt_path.is_file():
         mat = torch.load(pt_path, weights_only=True)
-        mat = np.asarray(mat, dtype=np.float32)
+        mat = np.asarray(mat.numpy() if hasattr(mat, "numpy") else mat, dtype=np.float32)
         panel = eval_payload["eval_panel"]
         if source in panel:
             shift_src_l20 = mat[panel.index(source)]

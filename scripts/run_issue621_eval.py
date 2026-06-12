@@ -460,7 +460,9 @@ def _run_shift_extract_for_cell(
         "timestamp_utc": _dt.datetime.now(tz=_dt.UTC).isoformat(timespec="seconds"),
     }
     json_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
-    torch.save(np.asarray(shift_matrix, dtype=np.float32), pt_path)
+    # Save as a TORCH tensor (a raw numpy array is rejected by the analyzer's
+    # torch.load(weights_only=True) — caught by the CPU smoke).
+    torch.save(torch.from_numpy(np.asarray(shift_matrix, dtype=np.float32)), pt_path)
     log.info(
         "[phase=shift_extract] cell=%s wrote %s + %s (matrix shape %dx%d)",
         cell["cell_slug"],
