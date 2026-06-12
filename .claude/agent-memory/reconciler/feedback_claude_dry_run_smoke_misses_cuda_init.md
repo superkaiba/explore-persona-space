@@ -1,52 +1,12 @@
 ---
 name: Claude PASSes parallel-dispatcher when smokes exit before CUDA init
-description: Claude code-reviewer PASSes round-N "parallel GPU dispatcher" verdicts using --help / --print-pending-pairs / DRY_RUN smokes that short-circuit before subprocess spawn or model load; misses CVD-clobber bugs that need actual CUDA-init code path to surface
+description: --help / --print-pending / DRY_RUN smokes short-circuit before subprocess spawn or model load, so a Python-side CUDA_VISIBLE_DEVICES clobber can't surface; read the entrypoint for an unconditional os.environ write before any .cuda() call.
 type: feedback
 ---
 
-When the artifact under review is a parallel GPU dispatcher (one shell
-script + one Python entrypoint, fan N shards across N GPUs via
-`CUDA_VISIBLE_DEVICES=$i`), Claude code-reviewer happily PASSes round-N
-based on a verification ladder of:
+**Rule:** for parallel GPU dispatchers (shell fans N shards via `CUDA_VISIBLE_DEVICES=$i`), Claude's verification ladder (`--help`, `--print-pending-pairs`, `DRY_RUN=1`, synthetic merge JSON) never exercises CUDA init. When Codex FAILs on a Python-side `os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)`:
+1. Read the cited line — is the write unconditional (no `if "CUDA_VISIBLE_DEVICES" not in os.environ` guard)?
+2. Read the dispatcher shell — does it pre-set `CVD=$i` AND pass a fixed `--gpu-id` to every shard?
+3. If Claude's verification list is only dry-run probes, that's a verification gap, not evidence. FAIL — torch reads CVD lazily at first CUDA-context creation, the argparse-time write wins, all N shards pile on GPU 0 (surfaces only at production launch).
 
-- `--help` exit
-- `--print-pending-pairs` exit-before-model-load
-- `DRY_RUN=1` bash short-circuit at the "would-spawn-subprocess" line
-- synthetic merge tests with hand-crafted JSON
-
-NONE of these exercise the `os.environ["CUDA_VISIBLE_DEVICES"] = ...` /
-torch CUDA-init code path. So a Python-side CVD-clobber bug (`os.environ
-["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)` after the shell already set
-`CVD=$i`) cannot surface in those smokes. Codex catches it by reading the
-Python entrypoint top-to-bottom.
-
-**Why:** PyTorch reads `CVD` lazily at first CUDA-context creation. The
-Python-side write executes at argparse time, BEFORE any `.cuda()` call,
-so it wins over the shell-set value. All N shards end up CVD="<gpu_id>"
-(typically "0") → pile on physical GPU 0 → OOM-or-contention. Exact
-pattern already documented in CLAUDE.md memory for `train/sft.py:477` as
-`+gpu_id Hydra arg for parallel launches` — but Claude does not
-generalize the lesson to a NEW dispatcher script. Companion to
-`feedback_claude_trusts_green_tests_over_verifier_semantics`: same
-verifier-semantics gap (green tests in an orthogonal scope).
-
-**How to apply (in adjudication):** When Codex FAILs a parallel-
-dispatcher diff Critical on a Python-side `os.environ["CUDA_VISIBLE_
-DEVICES"] = ...` line, ALWAYS:
-1. `Read` the cited line in the Python entrypoint. Verify the write is
-   unconditional (no `if "CUDA_VISIBLE_DEVICES" not in os.environ`
-   guard).
-2. `Read` the dispatcher shell — confirm it pre-sets `CVD="$i"` AND
-   passes `--gpu-id 0` (or any fixed value) to every shard.
-3. Check Claude's verification list — if it mentions only `--help` /
-   `--print-pending-pairs` / `DRY_RUN` / synthetic JSON merge, those
-   paths do NOT exercise CUDA init. Verification gap, not a finding.
-4. Verdict FAIL.
-
-The Critical bug is silent under all of Claude's verification probes; it
-would only surface at production launch when 7 shards die OOM. The
-reconciler is the last line of defense before merge.
-
-Origin: task #488 round-3 reconcile (2026-06-05). Codex CRITICAL claim
-on `scripts/i488_phase1_predictors.py:540`, Claude PASS based on
-DRY_RUN smokes; reconciler verified both file:line claims, FAILed.
+This is the `train/sft.py:477` `+gpu_id` CLAUDE.md lesson un-generalized to NEW dispatchers. Origin: #488 r3 (`i488_phase1_predictors.py:540`). Companions: [[feedback_claude_trusts_green_tests_over_verifier_semantics]]; [[feedback_claude_synthetic_fixture_smoke_masks_args_grid_bug]].
