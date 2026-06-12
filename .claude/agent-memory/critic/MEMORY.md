@@ -102,3 +102,10 @@
 - [Renumber check greps wrong file](feedback_renumber_check_greps_wrong_file.md) — "no renumbering" checks must read the EDITED file's numbering, not the file holding the cross-ref string (#578)
 - [Agent-spec gate vs modal lane](feedback_agent_spec_gate_modal_lane.md) — experimenter.md gates never fire on GCP/SLURM startup-script launches; the implementer write-side rule is the only all-lane control (#578)
 - [ERROR-demotion binding check](feedback_error_demotion_binding_check.md) — demotion is a regression only where the old ERROR was BINDING; tolerated-string consumers = neutralized no-op (#554)
+
+## Folded post-prune (2026-06-12 live writes)
+
+- [Rank-test trained-negative contamination](feedback_rank_test_trained_negative_contamination.md) — Spearman bystander sets must pin in/exclusion of trained negatives present in the eval panel (#621)
+- [Infra dispatch-plan failure modes](feedback_infra_dispatch_plan_failure_modes.md) — sync dispatcher asyncio.run inside async call sites; content-free resume fingerprints serve stale results (#626)
+- [Rank-1 read/write designs](feedback_rank1_readwrite_design_621.md) — trained-neg bystanders in firing-rank, bridge panel swap, no-band-entry wall worst case are Concerns not REVISEs (#621)
+- [Rank-1 firing-test alternatives](feedback_rank1_firing_test_alternatives.md) — shift-DV base-prior is a strawman rival; folded |firing| inverts negative suppression; frozen-A mechanical at band-stop (#621)
