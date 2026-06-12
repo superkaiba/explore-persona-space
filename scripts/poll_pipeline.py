@@ -260,7 +260,7 @@ PHASE_RE = re.compile(r"\[phase=([a-z0-9_]+)")
 # proof of completion (it only demotes the pid-ALIVE path), so the tick
 # reported a false ``status=done`` on a failed run. Tightening PHASE_RE
 # itself stays non-viable (#545: legit phase lines are timestamp-prefixed,
-# legit terminal done lines carry trailing text), so ``_latest_phase``
+# legit terminal done lines carry trailing text), so ``latest_phase``
 # instead DISCARDS a done-parse whose line also carries an explicit
 # failure signal. High-precision signals only — suffixed terminal lines
 # ("[phase=done] SMOKE COMPLETE ...") must keep parsing as done:
@@ -1376,8 +1376,14 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     )
 
 
-def _latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
+def latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
     """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'.
+
+    PUBLIC cross-module contract: consumed by
+    ``src/explore_persona_space/backends/gcp.py`` (the relaunched-workload
+    done-corroboration probe, #612) in addition to this module's
+    ``poll_once``. Renaming or changing the signature requires updating
+    that import; ``_latest_phase`` remains as a back-compat alias.
 
     ``skip_done=True`` returns the most recent NON-``done`` milestone
     instead — used by ``poll_once`` to demote an UNCORROBORATED done-parse
@@ -1404,6 +1410,11 @@ def _latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
             continue
         return token
     return "unknown"
+
+
+# Back-compat alias for the pre-#612 private name (tests + any external
+# caller still importing ``_latest_phase`` keep working unchanged).
+_latest_phase = latest_phase
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -1727,7 +1738,7 @@ def poll_once(
     shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
-    current_phase = _latest_phase(probe["log_tail"])
+    current_phase = latest_phase(probe["log_tail"])
 
     # ── #545 done corroboration ──────────────────────────────────────────
     # A `[phase=done]` parse alone is NOT proof of completion: per-cell
@@ -1747,7 +1758,7 @@ def poll_once(
     # posts a false `-> done` transition.
     results_sentinel_present = probe.get("results_sentinel_present") == "1"
     if current_phase == "done" and pid_alive and not results_sentinel_present:
-        demoted_phase = _latest_phase(probe["log_tail"], skip_done=True)
+        demoted_phase = latest_phase(probe["log_tail"], skip_done=True)
         log.warning(
             "[phase=done] parsed from log tail on pod %s but pid is ALIVE and no "
             "results sentinel exists — treating as mid-run noise (#545); "

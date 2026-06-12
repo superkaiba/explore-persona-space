@@ -1773,6 +1773,15 @@ def test_poll_once_pid_file_missing_does_not_change_dead_routing(
 # ── PHASE_RE / _latest_phase: digit-bearing phase names (#537) ──────────────
 
 
+def test_latest_phase_is_public_with_backcompat_alias() -> None:
+    """``latest_phase`` is a declared cross-module contract (#612): it is
+    imported by ``backends/gcp.py``'s relaunched-workload probe, so the
+    public name must exist and the pre-rename private name must remain as
+    a back-compat alias pointing at the same function."""
+    assert pp.latest_phase is pp._latest_phase
+    assert pp.latest_phase("2026-06-09 [phase=eval]") == "eval"
+
+
 def test_latest_phase_parses_digit_bearing_phase_names() -> None:
     """Regression (#537): ``PHASE_RE`` must include digits in the milestone
     token. The old ``[a-z_]+`` pattern truncated ``[phase=p0_render]`` to
