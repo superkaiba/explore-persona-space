@@ -642,14 +642,30 @@ def check_hf_model_from_card(card: dict) -> dict | None:
     Accepts a per-cell ``adapter_paths`` dict/list and/or a single
     ``hf_model_path``, all under ``hf_model_repo`` (default
     ``HF_MODEL_REPO``). Each path is existence-checked via
-    ``check_hf_hub_path``. A STRING-valued ``adapter_paths`` (the #612
-    prose-template shape) is unverifiable; instead of silently ignoring
-    it (which read as a generic declaration-gap MISSING on a
-    fully-uploaded sweep), the row names the producer-contract violation
-    (``_prose_declaration_row``). Returns ``None`` when the card declares
-    no model paths (caller falls through to the MISSING row).
+    ``check_hf_hub_path``. Declared paths prefixed with the repo id
+    itself (#610's ``<repo>/adapters/...`` shape) have that leading
+    ``<repo>/`` stripped first — passed verbatim as ``path_in_repo``
+    they can never match the repo's ``adapters/...`` file list, which
+    false-MISSed a fully-uploaded sweep. A STRING-valued
+    ``adapter_paths`` (the #612 prose-template shape) is unverifiable;
+    instead of silently ignoring it (which read as a generic
+    declaration-gap MISSING on a fully-uploaded sweep), the row names
+    the producer-contract violation (``_prose_declaration_row``).
+    Returns ``None`` when the card declares no model paths (caller
+    falls through to the MISSING row).
     """
     repo = str(card.get("hf_model_repo") or HF_MODEL_REPO)
+    repo_prefix = repo.rstrip("/") + "/"
+
+    def _strip_repo_prefix(p: str) -> str:
+        """Drop a leading ``<repo>/`` from a declared path (#610) so it
+        existence-checks as the in-repo subfolder it names. Paths that
+        don't carry the prefix (plain in-repo paths, https URLs, other
+        repos) pass through verbatim."""
+        if p.startswith(repo_prefix) and len(p) > len(repo_prefix):
+            return p[len(repo_prefix) :]
+        return p
+
     paths: list[str] = []
     adapter_paths = card.get("adapter_paths")
     prose_violation: dict | None = None
@@ -662,7 +678,7 @@ def check_hf_model_from_card(card: dict) -> dict | None:
     single = card.get("hf_model_path")
     if single:
         paths.append(str(single))
-    paths = list(dict.fromkeys(paths))
+    paths = list(dict.fromkeys(_strip_repo_prefix(p) for p in paths))
     if not paths:
         if prose_violation is not None:
             return _append_card_provenance(prose_violation, card)

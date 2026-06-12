@@ -348,6 +348,72 @@ class TestCheckHfModelFromCard:
         assert res["status"] == "OK"
         mock_check.assert_called_once()
 
+    def test_repo_prefixed_adapter_paths_strip_to_in_repo_paths(self):
+        """#610: declared adapter_paths prefixed with the repo id itself
+        (``superkaiba1/explore-persona-space/adapters/...``) must be
+        existence-checked as the in-repo subfolder — verbatim they can
+        never match the repo's ``adapters/...`` file list (false MISS on
+        a fully-uploaded sweep)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+            "adapter_paths": {
+                "villain": ("superkaiba1/explore-persona-space/adapters/issue_610/villain_seed42"),
+                "comedian": (
+                    "superkaiba1/explore-persona-space/adapters/issue_610/comedian_seed42"
+                ),
+            },
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append((repo, path))
+            return {"status": "OK", "url": "u", "file_count": 11}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert {p for _, p in calls} == {
+            "adapters/issue_610/villain_seed42",
+            "adapters/issue_610/comedian_seed42",
+        }
+
+    def test_repo_prefixed_single_hf_model_path_strips(self):
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+            "hf_model_path": "superkaiba1/explore-persona-space/adapters/issue_610/a",
+        }
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            return_value={"status": "OK", "url": "u", "file_count": 2},
+        ) as mock_check:
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert mock_check.call_args[0][1] == "adapters/issue_610/a"
+
+    def test_non_prefixed_and_url_paths_pass_through_verbatim(self):
+        """Plain in-repo paths and https-URL declarations are untouched by
+        the #610 repo-prefix strip (the prefix match is leading-only)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+            "adapter_paths": [
+                "adapters/issue_610/villain_seed42",
+                "https://huggingface.co/superkaiba1/explore-persona-space/tree/main/adapters/x",
+            ],
+        }
+        calls = []
+
+        def fake_check(repo, path, repo_type="model", revision=None):
+            calls.append(path)
+            return {"status": "OK", "url": "u", "file_count": 1}
+
+        with patch.object(verify_uploads, "check_hf_hub_path", side_effect=fake_check):
+            verify_uploads.check_hf_model_from_card(card)
+        assert calls == [
+            "adapters/issue_610/villain_seed42",
+            "https://huggingface.co/superkaiba1/explore-persona-space/tree/main/adapters/x",
+        ]
+
     def test_merge_provenance_threaded_into_detail(self):
         """A merged card's cross-marker fallback note lands in the row detail
         so the report says which marker actually declared the paths (#601)."""
