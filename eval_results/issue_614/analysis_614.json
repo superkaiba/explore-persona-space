@@ -593,13 +593,13 @@
     "bootstrap_seed": 612
   },
   "metadata": {
-    "git_commit_sha": "99b2533ee887fb9fce3549538a8b7e14421200bc",
+    "git_commit_sha": "d96af635ef1c91d8521f28d9d39b98a3b987a54b",
     "panel_set": "data/issue_614/panel/panel_set.json",
     "claims": "data/issue_614/wrong_claims/eval_60.jsonl",
     "base_eval_dir": "eval_results/issue_612/base",
     "parent_judgments_root": "eval_results/issue_614/_parent_judgments",
     "parent_data_revision": "8cb3b16599d20ab8dd76f41e391439a293c95361",
-    "timestamp_utc": "2026-06-12T21:11:38.299456+00:00"
+    "timestamp_utc": "2026-06-12T21:51:09.223737+00:00"
   },
   "figures": [
     "figures/issue_614/hero_anomaly_strip_614.png",

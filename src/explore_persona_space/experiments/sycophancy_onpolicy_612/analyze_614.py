@@ -539,7 +539,7 @@ def make_figures_614(  # noqa: C901 - one linear pass per registered figure; spl
     arm_color = {ARM_PARENT: colors[0], ARM_NEW: colors[1]}
     arm_label = {
         ARM_PARENT: "parent: assistant IN negative set",
-        ARM_NEW: "no-assistant: french_person swapped in",
+        ARM_NEW: "no-assistant: French-person rows swapped in",
     }
 
     # HERO — anomaly strip: 5 probe personas x {parent, no-assist} pooled lift
@@ -593,7 +593,7 @@ def make_figures_614(  # noqa: C901 - one linear pass per registered figure; spl
             ax.plot(np.array(xs_)[order], yhat, color=arm_color[arm], lw=1.2, alpha=0.7)
     ax.axhline(LEAK_TAU, ls="--", lw=0.8, color="grey")
     ax.axhline(0, ls="-", lw=0.6, color="black", alpha=0.4)
-    ax.set_xlabel(f"layer-20 centroid cosine to {SOURCE}")
+    ax.set_xlabel(f"layer-20 centroid cosine to {SOURCE.replace(chr(95), chr(32))}")
     ax.set_ylabel("Δ agreement (trained - base)")
     ax.legend(fontsize=8)
     written.append(save(fig, "exploratory_lift_vs_cosine_overlay"))
@@ -650,7 +650,7 @@ def make_figures_614(  # noqa: C901 - one linear pass per registered figure; spl
             analysis["delta_vs_parent"]["per_persona"][twin]["point"],
             color="#d62728",
             lw=1.4,
-            label=twin,
+            label=twin.replace("_", " "),
         )
     ax.axvline(0, color="black", lw=0.6, alpha=0.5)
     ax.set_xlabel("Δ-vs-parent (no-assistant - parent canned, paired)")
@@ -676,7 +676,7 @@ def make_figures_614(  # noqa: C901 - one linear pass per registered figure; spl
     ax.axvline(0, color="black", lw=0.8)
     ax.axvline(LEAK_TAU, ls="--", lw=0.8, color="grey")
     ax.set_yticks(ypos)
-    ax.set_yticklabels(names, fontsize=7)
+    ax.set_yticklabels([n.replace("_", " ") for n in names], fontsize=7)
     ax.set_xlabel("no-assistant arm Δ agreement (95% claim-bootstrap CI)")
     written.append(save(fig, "exploratory_full_panel_lift_forest"))
     return written
