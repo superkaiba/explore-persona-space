@@ -447,7 +447,14 @@ echo "Cleaned $removed broken dist-info entries"
 
 # Ensure /workspace/tmp exists for pip cache
 mkdir -p /workspace/tmp/pip_cache
-echo "Temp dirs ready"
+
+# Sentinel drain dir — pod-side dispatch scripts signal the VM orchestrator by
+# writing /workspace/logs/issue-<N>-*.json sentinels that poll_pipeline.py
+# drains (CLAUDE.md "Pod-side code NEVER shells out to task.py"). Pre-create it
+# here (mirroring the GCP lane startup script) so a dispatch script that skips
+# its own mkdir still lands sentinels where the poller globs (#610).
+mkdir -p /workspace/logs
+echo "Temp + sentinel drain dirs ready"
 '
 log_ok "Clean state"
 
