@@ -965,6 +965,13 @@ def analyze_behavior(  # noqa: C901 - one linear pipeline; splitting would scatt
     out = (eval_root / "analysis.json") if followup else (broot / "analysis.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(analysis, indent=2))
+    if followup:
+        # Mirror under <label_root>/<behavior>/ so i606_figures.py's
+        # ``<eval-root>/<behavior>/analysis.json`` contract keeps working
+        # with --eval-root pointed at the label root.
+        mirror = broot / "analysis.json"
+        mirror.parent.mkdir(parents=True, exist_ok=True)
+        mirror.write_text(json.dumps(analysis, indent=2))
     log.info(
         "[%s] analysis -> %s (verdict=%s gap=%.4f CI=[%.4f,%.4f] "
         "CIshared=[%.4f,%.4f] variant_disagree=%s rho=%.3f)",
