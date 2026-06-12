@@ -18,8 +18,12 @@
 #     bash scripts/new_worktree.sh .claude/worktrees/<name> <branch>
 #     cd .claude/worktrees/<name>
 #
-# Contract: reads the PreToolUse JSON on stdin, blocks (exit 1 + stderr) only
-# when a branch-CHANGING git command would move the repo-root tree off `main`.
+# Contract: reads the PreToolUse JSON on stdin, blocks (exit 2 + stderr fed
+# back to Claude) only when a branch-CHANGING git command would move the
+# repo-root tree off `main`. Exit 2 is the documented PreToolUse blocking
+# exit code; any OTHER non-zero is non-blocking (stderr goes to the user and
+# the tool call PROCEEDS) — code.claude.com/docs/en/hooks: "If your hook is
+# meant to enforce a policy, use exit 2."
 # Fail-soft: any ambiguity / parse failure exits 0 (never traps the user).
 set -u
 
@@ -79,4 +83,4 @@ cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); switching branches here hijacks their commits and sweeps cross-session uncommitted edits into the wrong commit (incident 2026-06-01). Do feature/infra branch work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && cd .claude/worktrees/<name>
 To override deliberately, run the git command from inside a worktree (git -C .claude/worktrees/<name> ...)." >&2
-exit 1
+exit 2
