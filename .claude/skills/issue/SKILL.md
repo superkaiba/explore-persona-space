@@ -762,7 +762,9 @@ deferred variant.
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python
 scripts/spawn_session.py list` (issue-mapping column). If a live session is
-already driving #N, EXIT immediately as a duplicate — post no markers, mutate
+already driving #N, EXIT immediately as a duplicate — post no markers (do
+NOT run `scripts/post_step_completed.py`: a duplicate session must not touch
+#N's `events.jsonl` — this is the one deliberately marker-free EXIT), mutate
 nothing — UNLESS this session is its explicit replacement (an
 `autonomous_session_watch` crash-recovery respawn, or the user said to take
 over; in that case stop the stale session via `spawn_session.py stop` first).
@@ -1428,17 +1430,18 @@ Branch on the decision (equivalently, re-read the task status):
 - **`parked_over_cap`** (autonomous, est > cap OR blank estimate — FAIL
   SAFE): the gate left the status at `plan_pending` and already posted
   `epm:awaiting-spend-approval`. The PM session + the user's phone surface
-  the `plan_pending` status. Fire a PushNotification, then EXIT:
+  the `plan_pending` status. Post the §5 marker, fire a PushNotification,
+  then EXIT:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
+    --exit-kind parked --notes "plan_pending; over auto-approve cap"
+  ```
   ```python
   cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
   PushNotification({
       "message": f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"[:200],
       "status": "proactive",
   })  # soft-fail; deferred-schema may not be loaded
-  ```
-  ```bash
-  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
-    --exit-kind parked --notes "plan_pending; over auto-approve cap"
   ```
 - **`interactive_pending`** (`EPM_AUTONOMOUS_SESSION` unset): fall through to
   the **Legacy autonomous mode** / **Interactive mode** bullets below.
@@ -1809,6 +1812,23 @@ them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
 still gets the blind sync. The conditional commit keeps the worktree
 clean for the Step 10d merge guards.
+
+**The sync scope is deliberately specs-only — do NOT extend it to
+`scripts/` or `tests/`.** The sync exists because the Agent/Skill tools
+load specs from the session's cwd; workflow-helper SCRIPTS are already
+resolved from the MAIN checkout (Step 0 § worktree spec-freshness:
+`"$REPO_ROOT"/scripts/...`), so syncing worktree copies buys no runtime
+correctness. Blind-syncing `tests/` is actively unsafe: main's newer
+workflow tests pin behavior implemented in main's newer `scripts/` +
+`src/` (e.g. `task_workflow.py`, `backends/`) that the branch predates,
+so a partial code sync makes the worktree suite REDDER or breaks the
+branch's own imports — and the per-path branch-side-edit guard would
+skip `scripts/`/`tests/` wholesale anyway (nearly every issue branch
+adds its own `scripts/issue<N>_*.py` + tests). Operational rule
+instead: a workflow test that FAILs inside a long-lived issue worktree
+but PASSes at the repo root on `main` is worktree-staleness, not this
+issue's breakage — cross-check at the repo root before chasing it; the
+Step 10d merge resolves it (observed on #542, 2026-06-11).
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -2426,9 +2446,9 @@ alias for nibi) triggers a conflict warning +
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Three more gcp/auto
+(the GCE startup script clones from origin). Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
-(g) from #608): (e) **GPU
+(g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
 the GCP lane maps intent → machine type statically
 (`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
@@ -2452,7 +2472,31 @@ script fails loud at `mkdir -p /workspace/logs` and burns the submission
 (#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
 residual gap), or convert the dispatcher to the SLURM signaling contract
 (`status.json` heartbeat + `[phase=...]` log lines) before routing auto
-(planner.md §9 names this constraint at plan time).
+(planner.md §9 names this constraint at plan time). (h) **Boot-disk
+sizing on the gcp/auto lanes comes from the plan's Reproducibility pod
+row, threaded via `--boot-disk-gb` on EVERY launch — relaunches after a
+code-fix round included** — the GCP lane defaults the boot disk to
+300 GB pd-ssd (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a
+ZeRO-3 full-FT (`ft-7b`) fills with optimizer-state checkpoints in ~1h:
+the instance kernel-panics on the full disk, cloud-init ENOSPCs, the
+guest agent cannot write `authorized_keys` (SSH publickey lockout), and
+the wedged VM idles on 4×A100 until deleted (#606, 2026-06-12 — the
+relaunch dropped the plan's explicit "500 GB pd-ssd" spec). When the
+plan's pod row names a disk size, pass it; for `ft-*` intents whose
+plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
+(stderr + `extra.boot_disk_default_with_ft_intent=true` on the
+`epm:backend-selected` marker) when an ft intent is gcp-reachable with
+no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
+smokes stay legitimate). (i) **WandB project on `--workload-cmd`
+launches defaults to `issue<N>`** — the GCP startup script and the
+SLURM custom stage export `WANDB_PROJECT="${WANDB_PROJECT:-issue<N>}"`
+before the verbatim command, so HF-Trainer workloads that never set a
+project stop landing in WandB's global default `huggingface` project
+(Upload Policy: training metrics → `project=<experiment_name>`; #601
+follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
+prefix on the workload command — or the workload setting its own
+project internally — still wins (`:-` fills only unset/empty); hydra
+launches are unaffected (project comes from Hydra config).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -3015,7 +3059,13 @@ markers, so an `epm:progress` note recording the new pid is invisible to
 it and the stale pid yields a false `status=dead` on a healthy run.
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
-while the pod run was healthy.)
+while the pod run was healthy.) On the GCP lane the marker's `pod=`
+field MUST be the instance name (`eps-issue-<N>`) — `GcpBackend.poll`
+matches relaunch markers on that field to follow the new process
+(incident #612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
+rejects the marker and the poll keeps reading the frozen startup-script
+phase, and an omitted `pod=` is accepted only via the launch-time
+`epm:cluster-launched` timestamp baseline, so include it explicitly.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -3289,8 +3339,9 @@ burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 20 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
-skill cleanly with `epm:step-completed` (`exit_kind: parked`); the user's
-re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
+skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
+--step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
+user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
 (after a parked gate resumes), or `running → blocked` (on stalled/dead
 or unrecognised gate).
@@ -3363,7 +3414,23 @@ sources contribute to `running`-phase progress:
   - `eval_numbers` (inline dict of final eval metrics)
   - `eval_paths` (list of repo-relative paths to eval result JSONs)
   - `reproducibility_card` (dict matching CLAUDE.md template; filled in
-    with TBD → resolved values)
+    with TBD → resolved values. **For training / sweep runs the card
+    MUST carry the machine-resolvable fields
+    `scripts/verify_uploads.py` self-resolves** (`merged_results_card`
+    → `check_hf_model_from_card` / `check_wandb_from_card`):
+    `adapter_paths` as an explicit per-cell mapping of REAL HF
+    subfolder paths — every value existence-checked under
+    `hf_model_repo` (defaults to the canonical model repo; declare only
+    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    placeholders and no `(16 adapters)` prose summaries — plus
+    `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
+    display names; a single run may instead declare `wandb_run_path`).
+    Prose may accompany but NEVER replace these structured fields: a
+    prose-template card (`adapters/issue_<N>/<arm>/<source>_seed<S>
+    (16 adapters)` + a free-text `wandb:` line) resolves to nothing and
+    trips false `hf_model` / `wandb_run` MISSING rows on a
+    fully-uploaded sweep that the upload-verifier must then supersede
+    row-by-row — incident #612.)
   - `wandb_url` (string)
   - `hf_hub_url` (string)
   - `worktree_path` (string, absolute path on local VM)
@@ -3371,6 +3438,20 @@ sources contribute to `running`-phase progress:
   - `gpu_hours_used` (float)
   - `gpu_hours_budgeted` (float)
   - `plan_deviations` (list of `{deviation: <str>, rationale: <str>}`)
+
+  **Orchestrator-composed fallback.** When the driver emits only
+  granular per-cell / per-shard sentinels (no single results sentinel)
+  and the orchestrator composes the `epm:results v1` payload itself
+  from the drained pieces, the composed payload obeys the SAME contract
+  above — in particular the `reproducibility_card` structured-field
+  requirement. Composing the card's adapter / WandB info as prose is
+  the #612 failure mode; assemble the explicit `adapter_paths` mapping
+  and `wandb_project` + `wandb_run_names` from the per-cell sentinels
+  instead. (GCP-lane driver sentinels that declare
+  `production_provenance.<cell>.hf_adapter_subfolder` /
+  `.wandb_run_name` are already self-resolvable — `verify_uploads.py`
+  synthesizes the card from them (#599) — so carry that structure
+  through verbatim rather than flattening it to prose.)
 
 When this skill is re-invoked in `running`:
 
@@ -3527,10 +3608,16 @@ entry guard convention):
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
    interpretation loop. For this early spawn the findings-blind
-   Reproducibility input is extracted from the latest `epm:results`
-   marker (`reproducibility_card` + `eval_paths`, via
-   `task.py view <N> --json`) into the temp file — the clean-result
-   body's `## Reproducibility` H2 does not exist yet. Everything
+   Reproducibility input is extracted from the task's `epm:results`
+   markers (`reproducibility_card` — alias `reproducibility` — +
+   `eval_paths`, via `task.py view <N> --json`) into the temp file —
+   the clean-result body's `## Reproducibility` H2 does not exist
+   yet. NEVER read only the latest marker: multi-launch runs post
+   several `epm:results` markers and a resume-pass sentinel can carry
+   an EMPTY card (#601: `adapter_paths: {}`), so resolve each field
+   newest-wins among non-empty declarations across markers, matching
+   `verify_uploads.py` `merged_results_card` (full recipe: 9a-quater
+   procedure step 2). Everything
    publish-side (no-secrets scan, gist, link-append, marker) stays at
    the 9a-quater LATE JOIN; see 9a-quater § Split schedule.
 
@@ -3640,9 +3727,14 @@ URLs.
   (`reason: confirm_artifacts_no_declaration`).
 
   **Phase-scoped-launch mismatch (incident #604).** The launch-time
-  auto-declaration assumes the FULL task artifact set (HF
-  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
-  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  auto-declaration assumes the FULL task artifact set (hydra-lane
+  launches: HF `issue<N>_<attempt>/raw_completions/` + git
+  `eval_results/issue_<N>/` + `figures/issue_<N>/`; `--workload-cmd`
+  launches auto-declare only the sentinel + git paths — the guessed HF
+  prefix was dropped after it false-FAILed a perfectly-uploaded run
+  whose driver used its own `issue<N>_<slug>/` contract prefix, #601
+  follow-up r1; HF-data coverage on that lane comes from the
+  agent-level upload-verifier), so a launch covering only ONE phase of a
   multi-phase plan (e.g. an extraction phase whose sole deliverable is
   an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
   paths that only the plan's LATER (VM-local) phases produce. A
@@ -3827,7 +3919,8 @@ clean-result-critic, upload-verifier) is STILL RUNNING from a prior tick —
 re-dispatching it would burn redundant subagent tokens and could race two
 writers on the body. This guard makes a fresh re-entry into Step 9 (or
 Step 8 verifying) cheaply detect "live work in progress" and EXIT without
-re-dispatching.
+re-dispatching (that EXIT is the guard rule's `post_step_completed.py
+--exit-kind parked` call below).
 
 **Dispatch breadcrumb (post on every stage dispatch).** Immediately before
 spawning ANY Step 8 / Step 9 stage subagent, post a breadcrumb so a later
@@ -4357,8 +4450,10 @@ split in two:
   orchestrator evaluates the kind-gating below, posts the
   `stage=methodology-reference` breadcrumb, pre-extracts the
   findings-blind Reproducibility input — from the `epm:results`
-  marker's `reproducibility_card` + `eval_paths`, because the
-  clean-result body's `## Reproducibility` H2 does not exist yet — and
+  markers' `reproducibility_card` (alias `reproducibility`) +
+  `eval_paths`, merged newest-wins per field across markers (see
+  procedure step 2), because the clean-result body's
+  `## Reproducibility` H2 does not exist yet — and
   spawns `methodology-writer` in the background
   (`run_in_background=true`). This is safe because the agent is
   findings-blind by design: its inputs (plan, experiment config,
@@ -4466,9 +4561,18 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    ```
 2. **Pre-extract the findings-blind Reproducibility input.**
    On the normal (early-spawn) path the clean-result body does not
-   exist yet, so extract the `reproducibility_card` + `eval_paths`
-   from the latest `epm:results` marker (`task.py view <N> --json`)
-   into the temp file instead. The body-slice form below is the
+   exist yet, so extract the `reproducibility_card` (alias
+   `reproducibility`; the canonical key wins within one payload) +
+   `eval_paths` from the task's `epm:results` markers
+   (`task.py view <N> --json`) into the temp file instead — NOT from
+   the latest marker alone. Multi-launch runs legitimately post
+   several `epm:results` markers, and a resume-pass sentinel can
+   carry an empty card (#601: `adapter_paths: {}` after every cell
+   `resumed_skip`) that would hand the methodology-writer nothing:
+   resolve each field newest-wins from the newest card that declares
+   it non-empty (empty dict/list/string/None is not a declaration) —
+   the same semantics as `verify_uploads.py` `merged_results_card`.
+   The body-slice form below is the
    fallback (serial) path, where the body IS final: slice just the
    `## Reproducibility` H2
    from the task body into a temp file and hand the agent ONLY that
@@ -4810,7 +4914,8 @@ The autonomous flow:
    PushNotification → chat prompt → CRON-TEARDOWN park flow this
    round (the backstop cron stays armed; it drives the loop).
    Otherwise continue to the existing park flow below
-   (PushNotification → chat prompt → CRON-TEARDOWN → EXIT).
+   (PushNotification → chat prompt → CRON-TEARDOWN → §5 marker via
+   `post_step_completed.py --step 9a-bis --exit-kind parked` → EXIT).
 
 **Step R — RECONCILE pass** (re-entry with the marker already present):
 read the `spawned` list from `epm:follow-ups-autospawned v1`. For each

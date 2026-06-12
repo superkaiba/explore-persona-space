@@ -376,6 +376,29 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
+**Reproducibility card in the `epm:results` payload (training tasks).**
+When your driver trains adapters / logs WandB runs, its `epm:results`
+sentinel's `note` JSON MUST carry a `reproducibility_card` object
+declaring per-cell `adapter_paths` (each verified under `hf_model_repo`
+via `list_repo_files`) + `wandb_run_names` (with `wandb_project`), or
+single-run `hf_model_path` / `wandb_run_path` — full field list:
+`workflow.yaml § markers epm:results`. This applies to GCP-lane
+`--workload-cmd` drivers (drained by `backend_poll.py`) exactly as to
+pod-side dispatchers. A card-less sentinel that only declares
+`production_provenance.<cell>.hf_adapter_subfolder` (+ top-level
+`wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
+(`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
+the producer contract — emit the explicit card so the verifier's
+hf_model / wandb_run rows resolve mechanically. **When training logs to
+WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
+(or a name prefix) + `wandb_project` are MANDATORY fields, not optional
+extras** — a card declaring only `adapter_paths` forces entity/project
+archaeology on the verifier (#608 follow-up: all 12 runs resolved at the
+conventional `<entity>/issue608` project while the wandb_run row
+mechanically FAILed on the declaration gap; `verify_uploads.py` now
+probes the `issue<N>`-project convention as a last resort, but like the
+synthesis fallback it is a safety net, NOT the contract).
+
 ### Pod-side preflight gates (behind-origin/main false positive)
 
 A driver that gates launch on `uv run python -m

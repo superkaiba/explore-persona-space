@@ -60,11 +60,14 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
   - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
+  - `redact_for_gist.py`, `check_no_secret_shaped_strings.py` — the gist-publish PII redactor (daily/weekly update skills) + the pre-commit secret-shaped-string gate whose documented remediation path it is
   - `failure_classifier.py` — the `/issue` Step 7 infra-vs-code failure router (mirrored by `.claude/skills/issue/failure_patterns.md`)
   - `dispatch_issue.py`, `backend_poll.py` — the `/issue` Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash poller (router slice 6 pair: launch writes the per-issue handle sidecar, the poller reads it each tick)
   - `pm_queue_report.py` — the PM session's one-pass read-only queue-report helper (research-pm.md Mode 1 STATUS source; pm/SKILL.md boot-scan step 2)
+  - `recent_clean_results.py`, `task_state.py` — the analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it reads the task workflow through
+  - `post_step_completed.py` — the `/issue` per-EXIT-site `epm:step-completed` marker poster (third live task_state consumer; read by the §5 re-entry router + `autonomous_session_watch.py`)
   - `codex_task.py`, `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`, `pod_watch.py`
-- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`, `tests/test_router*.py`, `tests/test_backend_*.py`, `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`, and other tests that pin workflow invariants
+- `tests/test_workflow*.py`, `tests/test_failure_classifier.py`, `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`, `tests/test_router*.py`, `tests/test_backend_*.py`, `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`, `tests/test_redact_for_gist.py`, `tests/test_check_no_secret_shaped_strings.py`, and other tests that pin workflow invariants
 
 **Out of scope (do NOT touch):**
 - `src/explore_persona_space/**` — library + research code (EXCEPT `task_workflow.py` + `task_workflow_migrate.py` and the `backends/*.py` router package, listed above)

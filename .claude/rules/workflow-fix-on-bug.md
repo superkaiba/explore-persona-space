@@ -60,10 +60,14 @@ notice the recurrence manually. Now it's same-turn.
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
   `verify_uploads.py`,
-  `audit_clean_results_body_discipline.py`, `codex_task.py`,
+  `audit_clean_results_body_discipline.py`,
+  `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
+  `codex_task.py`,
   `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
+  `recent_clean_results.py`, `task_state.py`,
+  `post_step_completed.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,
@@ -75,6 +79,8 @@ notice the recurrence manually. Now it's same-turn.
   `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
   `tests/test_router*.py`, `tests/test_backend_*.py`,
   `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`,
+  `tests/test_redact_for_gist.py`,
+  `tests/test_check_no_secret_shaped_strings.py`,
   and other tests that pin workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)

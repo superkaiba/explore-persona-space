@@ -1549,11 +1549,26 @@ markers:
       card across ALL epm:results markers newest-wins per declared
       field, so a resume-pass sentinel with an empty card
       (`adapter_paths: {}`) never shadows an earlier full declaration
-      (#601). Sweep dispatchers
-      SHOULD declare per-cell `adapter_paths` + `wandb_run_names` so
-      the verifier's training rows resolve mechanically instead of
-      hard-MISSing; explicit CLI declarations always win unchanged, and
-      a task whose markers declare no card keeps the strict MISSING row.
+      (#601). A payload that declares NO explicit card but carries
+      GCP-lane driver provenance
+      (`production_provenance.<cell>.hf_adapter_subfolder`, optionally
+      `.wandb_run_name`, plus top-level `wandb_*` / `hf_model_repo`
+      hints) gets an equivalent card SYNTHESIZED by verify_uploads.py
+      (`_card_from_provenance`, #599) — a safety net, not the producer
+      contract; explicit cards always win. The fields are optional for
+      the CONSUMER (verify_uploads.py tolerates their absence), but the
+      PRODUCER contract for training / sweep runs is MUST, not SHOULD
+      (SKILL.md Step 7 sentinel format): declare per-cell
+      `adapter_paths` (real resolved paths — never `<arm>`/`<seed>`
+      template placeholders or prose summaries) + `wandb_project` +
+      `wandb_run_names` so the verifier's training rows resolve
+      mechanically instead of hard-MISSing. The same applies to an
+      orchestrator-composed payload drained from granular per-cell
+      sentinels — a prose-template card tripped false hf_model /
+      wandb_run MISSING rows on a fully-uploaded sweep (#612). Explicit
+      CLI declarations always win unchanged, and a task whose markers
+      declare neither a card nor usable provenance keeps the strict
+      MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
@@ -1961,7 +1976,8 @@ markers:
                           override_without_frontmatter?,
                           override_conflicts_frontmatter?,
                           frontmatter_backend_unrecognized?,
-                          frontmatter_backend?, ...}`
+                          frontmatter_backend?,
+                          boot_disk_default_with_ft_intent?, ...}`
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
@@ -1996,6 +2012,20 @@ markers:
       frontmatter skips all checks); visibility only — the launch is
       never blocked. A frontmatter `backend: runpod` is the one
       legitimate backing and stays silent.
+
+      `boot_disk_default_with_ft_intent: true` (optional) is stamped by
+      the same decorator when `launch` was invoked with a gcp-reachable
+      backend (`gcp`, or `auto` whose resolved lane order includes gcp)
+      and an `ft-*` intent that maps to a GCP machine, WITHOUT
+      `--boot-disk-gb` — the lane provisions the 300 GB pd-ssd default
+      (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a ZeRO-3
+      full-FT fills with optimizer-state checkpoints in ~1h (incident
+      #606, 2026-06-12: kernel panic on the full disk, cloud-init
+      ENOSPC, SSH key-provisioning lockout, 4x A100 idling until
+      deletion). Visibility only — the launch is never blocked
+      (small-disk ft smokes stay legitimate); the CLI also emits a LOUD
+      stderr warning pointing at the plan's Reproducibility pod-row
+      disk size.
 
       Reason codes:
         * `override`              — explicit `backend:` frontmatter ran.
@@ -2033,8 +2063,13 @@ markers:
       the audit trail), per-lane outcomes (`launched`,
       `park_cap_exceeded`, `terminal_before_running`, `launch_failed`,
       `reconnected`, `provisioning_failure`, `workload_failure`,
-      `attempt_cap_exceeded`), and the GCP lane with its per-day
-      attempt-count guard reading. v1.
+      `attempt_cap_exceeded`, `quota_headroom_insufficient` — the GCP
+      lane's pre-create regional-quota probe read insufficient headroom
+      and skipped the lane WITHOUT burning a daily attempt, #608), and
+      the GCP lane with its per-day attempt-count guard reading. A GCP
+      `provisioning_failure` attempt's `detail` carries the captured
+      gcloud `stderr_tail` (~1KB) alongside the classified reason
+      (#608: the stderr was previously dropped everywhere). v1.
   - kind: "epm:cluster-launched"
     posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
     when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
@@ -2516,6 +2551,25 @@ workflow_fix_on_bug:
     # an in-scope URL-extractor fix.
     - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
+    # The gist-publish PII redactor (daily/weekly update skills; also the
+    # documented remediation path of the pre-commit secret-shaped-string
+    # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
+    # both and the omission nearly deflected an in-scope fix for the
+    # stale-registry IP-redaction gap (redact_for_gist tests red on main).
+    - "scripts/redact_for_gist.py"
+    - "scripts/check_no_secret_shaped_strings.py"
+    # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
+    # reads the task workflow through. Added 2026-06-11 (#608): the list
+    # predated the task-workflow rewire of these helpers and the omission
+    # nearly deflected an in-scope v2-clean-result extraction fix.
+    - "scripts/recent_clean_results.py"
+    - "scripts/task_state.py"
+    # The /issue per-EXIT-site epm:step-completed marker poster (invoked
+    # throughout .claude/skills/issue/SKILL.md; read by the §5 re-entry
+    # router + autonomous_session_watch.py). Added 2026-06-11 (#608): the
+    # third live task_state consumer was still absent from the scope lists —
+    # same stale-list class as the two entries above.
+    - "scripts/post_step_completed.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
     # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
@@ -2561,6 +2615,11 @@ workflow_fix_on_bug:
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
     - "tests/test_sparse_worktree.py"
+    # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
+    - "tests/test_recent_clean_results.py"
+    # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
+    - "tests/test_redact_for_gist.py"
+    - "tests/test_check_no_secret_shaped_strings.py"
     # Backend-router invariant tests (pair with the backends/*.py entry above).
     - "tests/test_router*.py"
     - "tests/test_backend_*.py"
