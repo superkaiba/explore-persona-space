@@ -27,6 +27,7 @@ import argparse
 import asyncio
 import json
 import logging
+import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -39,6 +40,7 @@ load_dotenv()
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
     COSINE_BINS,
     HF_DATA_PREFIX,
+    HF_DATA_REPO,
     JUDGE_MODEL,
     MANDATORY_PANEL,
     NEGATIVES_BY_SOURCE,
@@ -49,6 +51,79 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
 log = logging.getLogger("issue_612.panel_select")
 
 JUDGE_API_ERROR_CEILING = 0.02
+
+
+def fetch_p2j_inputs(base_dir: Path, candidates_path: Path) -> dict:
+    """Fetch the pod-uploaded P1/P2 artifacts onto the VM (fail-loud).
+
+    P2j runs on the VM AFTER the pod's stage 1 uploaded
+    ``{HF_DATA_PREFIX}/panel/panel_candidates.json`` and
+    ``{HF_DATA_PREFIX}/eval_results/base/**`` — and the production driver's
+    stage 1b BLOCKS a live multi-GPU instance polling for P2j's
+    panel_set.json, so this fetch is load-bearing, not a convenience. Uses
+    ``list_repo_files`` + per-file ``hf_hub_download`` (NOT
+    ``snapshot_download(allow_patterns=...)`` — the siblings-truncation
+    gotcha silently returns 0 files on large repos). Files already local are
+    kept (checkpoint/resume); zero matching remote+local files raises.
+    """
+    from huggingface_hub import hf_hub_download, list_repo_files
+
+    stats = {"candidates_fetched": False, "base_fetched": 0, "base_kept_local": 0}
+    repo_files = list(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
+
+    cand_repo = f"{HF_DATA_PREFIX}/panel/panel_candidates.json"
+    if not candidates_path.exists():
+        if cand_repo not in repo_files:
+            raise FileNotFoundError(
+                f"panel_candidates.json neither local ({candidates_path}) nor on HF "
+                f"({HF_DATA_REPO}/{cand_repo}) — has the pod's panel:build:0 cell run "
+                f"and uploaded? P2j cannot proceed."
+            )
+        cached = hf_hub_download(repo_id=HF_DATA_REPO, filename=cand_repo, repo_type="dataset")
+        candidates_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, candidates_path)
+        stats["candidates_fetched"] = True
+        log.info("fetched %s -> %s", cand_repo, candidates_path)
+
+    base_prefix = f"{HF_DATA_PREFIX}/eval_results/base/"
+    remote_base = [f for f in repo_files if f.startswith(base_prefix)]
+    have_local = bool(list(base_dir.glob("sycophancy_eval_*.json")))
+    if not remote_base and not have_local:
+        raise FileNotFoundError(
+            f"no base-pass eval files local ({base_dir}) or on HF under "
+            f"{HF_DATA_REPO}/{base_prefix} — has the pod's base:pass:0 cell run "
+            f"and uploaded? P2j cannot proceed."
+        )
+    for rf in remote_base:
+        dest = base_dir / rf[len(base_prefix) :]
+        if dest.exists():
+            stats["base_kept_local"] += 1
+            continue
+        cached = hf_hub_download(repo_id=HF_DATA_REPO, filename=rf, repo_type="dataset")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(cached, dest)
+        stats["base_fetched"] += 1
+    log.info(
+        "P2j inputs ready: candidates_fetched=%s, base files fetched=%d / kept local=%d",
+        stats["candidates_fetched"],
+        stats["base_fetched"],
+        stats["base_kept_local"],
+    )
+    return stats
+
+
+def assert_base_pass_coverage(base_dir: Path, candidates: dict[str, dict]) -> None:
+    """Every P1 candidate must have its base-pass eval JSON before judging
+    starts (fail-loud BEFORE spending judge calls on an incomplete tree)."""
+    missing = [
+        name for name in candidates if not (base_dir / f"sycophancy_eval_{name}.json").exists()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            f"base pass incomplete: {len(missing)}/{len(candidates)} candidates have no "
+            f"eval JSON under {base_dir} (first missing: {sorted(missing)[:5]}) — "
+            f"re-run/finish base:pass:0 before P2j."
+        )
 
 
 def judge_base_panel(base_dir: Path, panel: str, *, concurrency: int) -> dict:
@@ -195,13 +270,24 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path("data/issue_612/panel/panel_set.json"))
     parser.add_argument("--judge-concurrency", type=int, default=24)
     parser.add_argument("--skip-upload", action="store_true")
+    parser.add_argument(
+        "--no-fetch",
+        action="store_true",
+        help="Skip the HF fetch of pod-uploaded P1/P2 artifacts (fixture smokes / "
+        "fully-local re-runs only; the production P2j path MUST fetch).",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [phase=p2j_select] %(message)s", stream=sys.stdout
     )
 
+    if not args.no_fetch:
+        fetch_p2j_inputs(args.base_dir, args.candidates)
+    if not args.candidates.exists():
+        raise FileNotFoundError(f"panel_candidates.json missing: {args.candidates}")
     payload = json.loads(args.candidates.read_text())
     candidates: dict[str, dict] = payload["candidates"]
+    assert_base_pass_coverage(args.base_dir, candidates)
 
     # 1-2. judge every candidate's base pass -> priors
     priors: dict[str, float] = {}

@@ -596,8 +596,23 @@ class Dispatcher:
         cid = cell_id(source, arm, seed)
         prior = _read_cellstate(self.slab_root, source, arm, seed)
         if prior is not None and prior.get("status") == "complete":
-            log.info("[%s] cell-state already complete — skipping (idempotent re-run)", cid)
-            return prior
+            if (
+                arm in TRAIN_ARMS
+                and prior.get("panel_provenance") == "provisional_mandatory11"
+                and not self.args.allow_provisional_panel
+            ):
+                # Same-instance smoke-then-production flow: the smoke cell's
+                # endpoint eval ran on the 11-persona provisional panel; a
+                # production re-run must NOT skip it or P7 fails on the ~19
+                # missing personas. Re-run on the selected panel instead.
+                log.warning(
+                    "[%s] prior complete cell used the PROVISIONAL panel — re-running "
+                    "on the selected panel (idempotent skip refused)",
+                    cid,
+                )
+            else:
+                log.info("[%s] cell-state already complete — skipping (idempotent re-run)", cid)
+                return prior
 
         t0 = time.time()
         cell_dir = cell_slab_dir(self.slab_root, source, arm, seed)
@@ -662,6 +677,17 @@ class Dispatcher:
             pool = pool_dir(self.data_root, arm, source) / "train_pool.jsonl"
             if not pool.exists():
                 raise FileNotFoundError(f"frozen pool missing: {pool} (prefetch must run)")
+            # Token-cap parity assert for the FROZEN pool too: a frozen row in
+            # (1024, 2048] would now train untruncated where #411 truncated it
+            # (max_length 1024 -> 2048 deviation must stay behaviorally inert).
+            from transformers import AutoTokenizer
+
+            from explore_persona_space.experiments.sycophancy_onpolicy_612.build_onpolicy_pool import (  # noqa: E501
+                validate_pool,
+            )
+
+            tok = AutoTokenizer.from_pretrained(BASE_MODEL, trust_remote_code=True)
+            record["pool_check"] = validate_pool(pool, source, "arm_canned", pool, tokenizer=tok)
         else:
             log.info("[%s:%s:%d] [phase=pool_build]", source, arm, seed)
             pool = self._pool_build_subprocess(source, arm)
@@ -681,10 +707,12 @@ class Dispatcher:
         adapter_dir, merged_dir = self._train_and_merge(source, arm, seed, pool)
         record["adapter_dir"] = str(adapter_dir)
         record["adapter_hf_path"] = f"adapters/issue_612/{arm}/{source}_seed{seed}"
+        panel_set = self._resolve_panel_set()
+        record["panel_provenance"] = json.loads(panel_set.read_text()).get("provenance")
         self._eval_subprocess(
             model_tag=f"{source}:{arm}:{seed}",
             out_dir=cell_dir,
-            panel_set=self._resolve_panel_set(),
+            panel_set=panel_set,
             claims=self._audited_claims(),
             seed=seed,
             merged_dir=merged_dir,
@@ -1142,16 +1170,26 @@ def main(argv: list[str] | None = None) -> int:
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     os.environ.setdefault("WANDB_PROJECT", "issue612_sycophancy_onpolicy")
     os.environ.setdefault("TQDM_DISABLE", "1")
-    if not os.environ.get("HF_TOKEN"):
-        raise RuntimeError("HF_TOKEN not in environment — .env not loaded?")
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        raise RuntimeError("ANTHROPIC_API_KEY not in environment — judge gates need it")
 
     cells: list[tuple[str, str, int]] = args.cells
     all_cells = resolve_all_cells(cells, all_cells_arg=args.all_cells, dry_run=args.dry_run)
     missing = [c for c in cells if c not in all_cells]
     if missing:
         raise ValueError(f"--cells entries missing from --all-cells: {missing}")
+
+    # Credential checks gated by the phases this invocation actually runs
+    # (a --dry-run --skip-prefetch grid walk needs neither).
+    needs_hf = (not args.skip_prefetch) or (not args.dry_run)
+    gates_fire = args.smoke_gates and SMOKE_CELL in cells and not args.dry_run
+    needs_judge = gates_fire or (
+        not args.dry_run and any(a in ("arm_onpolicy", "arm_prefix") for _, a, _ in cells)
+    )
+    if needs_hf and not os.environ.get("HF_TOKEN"):
+        raise RuntimeError("HF_TOKEN not in environment — .env not loaded?")
+    if needs_judge and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY not in environment — pool-build judge filter / smoke gates need it"
+        )
 
     log.info(
         "[phase=dispatch] cells=%s all_cells=%d gpu_id=%d dry_run=%s",

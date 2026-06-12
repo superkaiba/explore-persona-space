@@ -95,7 +95,7 @@ for i in 0 1 2 3; do
   SRC="${SOURCES[$i]}"
   CELLS="$SRC:arm_canned:42,$SRC:arm_canned:137,$SRC:arm_onpolicy:42,$SRC:arm_onpolicy:137,$SRC:arm_prefix:42,$SRC:arm_prefix:137"
   echo "[driver] shard $i ($SRC) -> GPU $i"
-  uv run python scripts/dispatch_sycophancy_612.py \
+  CUDA_VISIBLE_DEVICES=$i uv run python scripts/dispatch_sycophancy_612.py \
     --cells "$CELLS" --gpu-id "$i" --logs-root "$LOGS_DIR" --no-smoke-gates \
     >"$RUN_LOGS/stage2_shard${i}_${SRC}.log" 2>&1 &
   PIDS+=($!)

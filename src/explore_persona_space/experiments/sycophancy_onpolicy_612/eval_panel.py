@@ -12,7 +12,8 @@ Outputs per call under ``<out_dir>/``:
     sycophancy_eval_<panel_persona>.json      — aggregated metadata + all completions
     raw_completions/<panel_persona>_seed{S}.json — canonical raw-completions mirror
 
-Both files are written atomically per panel persona (checkpoint-per-phase).
+Both files are written per panel persona the moment that persona finishes
+(checkpoint-per-phase; plain writes, not atomic-rename).
 
 Run in a FRESH SUBPROCESS from the dispatcher (vLLM teardown gotcha).
 """

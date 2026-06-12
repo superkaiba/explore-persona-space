@@ -189,6 +189,10 @@ def build_panel_candidates(
             "recipe": (
                 "extract_centroids, EVAL_QUESTIONS_20, last-token, layer 20, bf16 (#411/#591)"
             ),
+            # Centering label (persona-distance-metrics rule): this instrument
+            # line deliberately uses the RAW gauge — the frozen-join parity
+            # assert pins it and the plan's 0.70-1.0 bins are raw-regime.
+            "centering": "raw_pairwise_uncentered_bank (frozen #411/#591 gauge; parity-pinned)",
             "git_commit_sha": _git_sha(),
             "hostname": socket.gethostname(),
             "timestamp_utc": datetime.now(UTC).isoformat(),

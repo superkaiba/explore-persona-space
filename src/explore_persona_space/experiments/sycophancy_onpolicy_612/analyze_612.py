@@ -423,7 +423,9 @@ def manipulation_check(data: Data) -> dict:
             "n_sources_above_floor": n_pass,
             "floor": SELF_IMPLANT_FLOOR,
             "pass": n_pass >= 3,
-            "k2_demote_to_descriptive": n_pass < 2,
+            # Plan §7 K2: self-implant below floor on >=2 of 4 sources demotes
+            # the arm's leakage contrasts to descriptive  <=>  n_pass <= 2.
+            "k2_demote_to_descriptive": n_pass <= 2,
         }
     means = {
         arm: float(
@@ -625,6 +627,8 @@ def make_figures(  # noqa: C901 - one linear pass per registered figure; splitti
         ("C-B (prefix - single-turn)", "h2_prefix_vs_onpolicy"),
     ):
         pooled = analysis[key]
+        if "point_seed_mean" not in pooled:  # descope: {"status": "no_paired_cells"}
+            continue
         rows.append((pooled["point_seed_mean"], pooled["ci95"]))
         labels.append(f"POOLED {tag}")
         for source, rec in analysis[key + "_per_source"].items():
@@ -764,6 +768,17 @@ def main(argv: list[str] | None = None) -> int:
         analysis["h3_anomaly"].get("headline"),
         analysis["parity_gate"]["verdict"],
     )
+    if analysis["parity_gate"]["verdict"] == "HARD_FAIL":
+        # Kill criterion K1: rig validity broken. The JSON above is written
+        # FIRST so the evidence persists, but the process must not read as a
+        # completed analysis run.
+        log.error(
+            "PARITY GATE HARD_FAIL (n_hard=%d, n_out_of_tol=%d) — rig-validity kill "
+            "criterion K1; analysis_612.json written for evidence; exiting nonzero.",
+            analysis["parity_gate"]["n_hard_fail"],
+            analysis["parity_gate"]["n_out_of_tol"],
+        )
+        return 2
     return 0
 
 

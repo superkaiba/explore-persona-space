@@ -144,7 +144,17 @@ def run_kappa_calibration(slab_root: Path, *, n: int, concurrency: int) -> dict:
     """Haiku-vs-Sonnet kappa on a stratified fresh-rollout sample (gate >= 0.7)."""
     out_path = slab_root / "judgments_kappa.json"
     if out_path.exists():
-        return json.loads(out_path.read_text())
+        report = json.loads(out_path.read_text())
+        # Re-check the REGISTERED gate on resume: a kappa-FAIL run writes the
+        # report BEFORE raising, so a cached return without this re-check
+        # silently bypasses the kappa>=0.7 gate on every re-invocation.
+        if not report.get("pass"):
+            raise RuntimeError(
+                f"cached kappa report FAILED the gate (kappa={report.get('kappa'):.3f} < "
+                f"{KAPPA_ACCEPT}) — judge not trustworthy on this distribution; refusing "
+                f"to resume. Fix the judge, then delete {out_path} to recalibrate."
+            )
+        return report
     endpoint_dirs = [d for d in enumerate_eval_dirs(slab_root) if "trajectory" not in d.parts]
     if not endpoint_dirs:
         raise RuntimeError(f"no endpoint eval dirs under {slab_root}")
@@ -187,6 +197,39 @@ def run_kappa_calibration(slab_root: Path, *, n: int, concurrency: int) -> dict:
     return report
 
 
+def assert_endpoint_panel_coverage(
+    slab_root: Path, panel_set_path: Path, *, allow_partial: bool
+) -> None:
+    """Every EXISTING endpoint cell dir (cells/* + base) must carry an eval JSON
+    for every selected-panel persona — asserted BEFORE any judge call is spent.
+
+    Trajectory dirs (own-panel single persona) and parity dirs (3-persona
+    frozen rigs) are exempt by design. ``--allow-partial`` downgrades to a
+    warning for registered descopes.
+    """
+    if not panel_set_path.exists():
+        msg = f"panel_set.json missing at {panel_set_path} — cannot verify endpoint coverage"
+        if allow_partial:
+            log.warning("%s (--allow-partial)", msg)
+            return
+        raise FileNotFoundError(msg + " (pass --panel-set or --allow-partial)")
+    panel = set(json.loads(panel_set_path.read_text())["personas"])
+    problems: list[str] = []
+    for d in enumerate_eval_dirs(slab_root):
+        if "trajectory" in d.parts or "parity" in d.parts:
+            continue
+        have = {p.stem.replace("sycophancy_eval_", "") for p in d.glob("sycophancy_eval_*.json")}
+        missing = panel - have
+        if missing:
+            problems.append(f"{d}: {len(missing)} panel personas missing ({sorted(missing)[:4]})")
+    if problems:
+        msg = "endpoint cells incomplete vs the selected panel:\n  " + "\n  ".join(problems)
+        if allow_partial:
+            log.warning("%s\n(--allow-partial: judging what exists)", msg)
+        else:
+            raise RuntimeError(msg + "\n(fix the cells or pass --allow-partial for a descope)")
+
+
 def run_full_pass(slab_root: Path, *, concurrency: int) -> dict:
     """Judge every panel file under every eval dir; final error audit raises."""
     dirs = enumerate_eval_dirs(slab_root)
@@ -223,10 +266,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--kappa-n", type=int, default=1000)
     parser.add_argument("--judge-concurrency", type=int, default=24)
     parser.add_argument("--skip-kappa", action="store_true")
+    parser.add_argument(
+        "--panel-set",
+        type=Path,
+        default=Path("data/issue_612/panel/panel_set.json"),
+        help="Selected panel for the endpoint-coverage completeness assert.",
+    )
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="Downgrade the endpoint panel-coverage assert to a warning (registered "
+        "descopes / fixture smokes only).",
+    )
     args = parser.parse_args(argv)
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s [phase=p6_judge] %(message)s", stream=sys.stdout
     )
+    assert_endpoint_panel_coverage(args.slab_root, args.panel_set, allow_partial=args.allow_partial)
     if not args.skip_kappa:
         run_kappa_calibration(args.slab_root, n=args.kappa_n, concurrency=args.judge_concurrency)
     run_full_pass(args.slab_root, concurrency=args.judge_concurrency)

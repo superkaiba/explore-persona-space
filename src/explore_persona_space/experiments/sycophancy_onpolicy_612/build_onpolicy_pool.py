@@ -259,7 +259,10 @@ def _judge_first_match(
                 f"error verdicts map to NO and would corrupt the acceptance filter"
             )
         for (idx, text), v in zip(batch_rows, verdicts, strict=True):
-            if v.agreed == want_agree:
+            # Acceptance requires a VERIFIED verdict: error/unparseable verdicts
+            # carry the conservative agreed=False default, which would otherwise
+            # count an unverified row as a confirmed non-agreeing negative.
+            if v.error is None and v.agreed == want_agree:
                 accepted[idx] = (text, k)
     return accepted
 
