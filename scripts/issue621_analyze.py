@@ -596,7 +596,18 @@ def _read_identity_for_space(
 
 
 def _a_init_reads(pairs: dict, init_pairs: dict, bank: dict, source: str) -> dict:
-    """H2: |cos(a_t, a_init)| + ‖Δa‖/‖a_init‖ + cos(Δâ, v̂_c_src) per module."""
+    """H2: |cos(a_t, a_init)| + ‖Δa‖/‖a_init‖ + cos(Δâ, v̂_c_src) per module.
+
+    Both inputs MUST be UNFLIPPED adapter pair dicts (same contract as
+    :func:`_band_mean_a_vs_init`): the H2 statistics read the ACTUAL
+    training trajectory against its own saved init, and ‖a_t − a_init‖ /
+    the signed cos(Δâ, v̂_c) are not invariant under the joint
+    (a,b) → (−a,−b) W_U sign fix — flipping a_t but not a_init manufactures
+    rel_delta ≈ 2 + sign-inverted Δâ on write-arm slots with W_U[※]·b < 0.
+    |cos(a_t, a_init)| is sign-folded either way. Gauge recorded in the
+    analysis meta as ``a_init_gauge: unflipped-pair`` (round 4, concern
+    h2-a-init-reads-after-sign-flip).
+    """
     out: dict[str, dict] = {}
     centroids = bank["centroids"]
     by_module: dict[str, list[tuple[int, dict, dict]]] = {}
@@ -985,6 +996,16 @@ def analyze_cell(
     pairs = load_adapter_pairs(adapter_dir)
     init_dir = adapter_dir / "adapter_init"
     init_pairs = load_adapter_pairs(init_dir)
+    # Round-4 fix (concern h2-a-init-reads-after-sign-flip): every
+    # a_init-referenced read runs in the UNFLIPPED pair gauge — snapshot
+    # BEFORE the W_U sign fix mutates `pairs`. ‖a_t − a_init‖ and the
+    # signed cos(Δâ, v̂_c) are not invariant under the joint
+    # (a,b) → (−a,−b) flip, so comparing a flipped a_t against the
+    # unflipped a_init manufactured rel_delta_a ≈ 2 and sign-inverted
+    # Δâ artifacts on write-arm slots with W_U[※]·b < 0. Convention
+    # (plan §3 H2; matches duty-10's _band_mean_a_vs_init): flip BOTH
+    # sides or NEITHER — we flip neither (a_init_gauge: unflipped-pair).
+    pairs_unflipped = {k: {"a": s["a"].copy(), "b": s["b"].copy()} for k, s in pairs.items()}
     _sign_fix_write(pairs, wu)
 
     # Duty 10: a(t) rotation trajectory over the 10-step checkpoint ladder
@@ -1077,8 +1098,8 @@ def analyze_cell(
         }
     }
 
-    # H2 A-init reads.
-    a_init_reads = _a_init_reads(pairs, init_pairs, bank, source)
+    # H2 A-init reads — UNFLIPPED pair gauge (round-4 fix, see above).
+    a_init_reads = _a_init_reads(pairs_unflipped, init_pairs, bank, source)
 
     # H3 write identity (residual-output modules only — empty on read arm).
     write_identity = _write_identity(pairs, wu, shift_src_l20)
@@ -1119,8 +1140,13 @@ def analyze_cell(
                 wu=wu,
                 source=source,
             )
+            # a_init paired with the UNFLIPPED trained b (round-4 fix):
+            # in write mode the per-slot product (a·x_c)·(W_U[※]·b) is not
+            # invariant when only one side of the pair carries the sign
+            # fix, so mixing the flipped b with the unflipped init a
+            # corrupts per-slot signs. Same gauge as the H2 reads.
             f_init = _firing(
-                pairs={k: {"a": init_pairs[k]["a"], "b": pairs[k]["b"]} for k in pairs},
+                pairs={k: {"a": init_pairs[k]["a"], "b": pairs_unflipped[k]["b"]} for k in pairs},
                 bank=bank,
                 contexts=panel,
                 pos=pos,
@@ -1191,6 +1217,10 @@ def analyze_cell(
         "read_identity": read_identity,
         "read_identity_excl_trained_negs": read_identity_excl_trained_negs,
         "a_init": a_init_reads,
+        # Round-4 gauge convention: a_init reads + the a_init-firing
+        # comparator use the UNFLIPPED (a, b) tensors (never the W_U
+        # sign-fixed copies).
+        "a_init_gauge": "unflipped-pair",
         "a_rotation_trajectory": a_rotation,
         "split_half_base_check": split_half,
         "write_identity": write_identity,
@@ -1468,6 +1498,10 @@ def cmd_run(args) -> int:
         "sources": list(SOURCES),
         "unified_negative_panel": list(UNIFIED_NEGATIVE_PANEL),
         "seeds": list(SEEDS),
+        # Round 4 (concern h2-a-init-reads-after-sign-flip): every
+        # a_init-referenced read (H2 reads, a_init-firing comparator,
+        # duty-10 trajectory) runs on the UNFLIPPED (a, b) tensors.
+        "a_init_gauge": "unflipped-pair",
         # duty 10 + duty 12 rules (round 3).
         "a_rotation_rule": _A_ROTATION_RULE,
         "split_half_rule": (

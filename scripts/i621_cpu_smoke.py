@@ -18,6 +18,11 @@ tokenizer, then drives the PRODUCTION entrypoints against fixture roots:
                 eval shift JSONs + a fixture unembedding (the REAL CLI);
                 asserts the duty-10 trajectory + duty-12 split-half /
                 paired-diff outputs (round 3).
+  a-init-gauge  analyze_cell on a CONTROLLED write-arm cell whose every
+                residual-output slot has W_U[※]·b < 0 — proves the H2
+                a_init reads run in the UNFLIPPED pair gauge (frozen-A
+                layers read rel_delta_a == 0, eps-rotated layers read
+                cos(Δâ, v̂_src) ≈ +1; round 4).
   figures       scripts/issue621_figures.py on the produced analysis.json.
   fetch         cmd_fetch_artifacts against a LOCAL STUB HUB shaped like the
                 production repos (adapters / bank / shifts / emission /
@@ -547,6 +552,10 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> dic
     )
     payload = json.loads((out_dir / "analysis.json").read_text())
     assert len(payload["cells"]) == 6, len(payload["cells"])
+    # Round 4 (concern h2-a-init-reads-after-sign-flip): the gauge
+    # convention for a_init-referenced reads is recorded in meta + per cell.
+    assert payload["meta"]["a_init_gauge"] == "unflipped-pair", payload["meta"].get("a_init_gauge")
+    assert all(c["a_init_gauge"] == "unflipped-pair" for c in payload["cells"].values())
     c = payload["cells"]["r1_write__florist__seed42"]
     assert c["write_identity"], "write arm produced no W_U reads"
     assert c["h4"]["end_of_response"]["write"]["primary_excl_trained_negs"]
@@ -616,6 +625,103 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> dic
         "wu_path": wu_path,
         "bank_dir": bank_dir,
     }
+
+
+def smoke_a_init_gauge(work: Path, bank_dir: Path, fixture_roots: dict[str, Path]) -> None:
+    """Round-4 targeted check (concern h2-a-init-reads-after-sign-flip).
+
+    Builds a CONTROLLED write-arm cell whose EVERY residual-output slot has
+    W_U[※]·b < 0 (the all-flipped worst case for ``_sign_fix_write``), with
+    a_t frozen at a_init on even layers and rotated by exactly 0.05·v̂_src
+    on odd layers, then drives the REAL ``analyze_cell``. Under the round-3
+    bug (a_init reads compared the FLIPPED a_t against the unflipped
+    a_init) every slot reads rel_delta_a ≈ 2 and cos(Δâ, v̂_c)
+    sign-corrupted; under the fix the frozen layers read exactly 0 and the
+    rotated layers read rel ≈ 0.05 / cos ≈ +1.
+    """
+    import shutil
+
+    from safetensors.numpy import save_file
+
+    sys.path.insert(0, str(SCRIPTS))
+    import issue621_analyze as iaz
+
+    rng = np.random.default_rng(4621)
+    bank = iaz.load_bank(bank_dir)
+    wu = iaz.load_unembedding(fixture_roots["wu_path"])
+
+    slug = "r1_write__florist__seed7"
+    cell_dir = work / "gauge_cell" / slug
+    if cell_dir.is_dir():
+        shutil.rmtree(cell_dir)
+    init_dir = cell_dir / "adapter_init"
+    init_dir.mkdir(parents=True, exist_ok=True)
+    # Reuse a real PEFT write-arm adapter_config (the gauge assert reads it).
+    cfg_src = fixture_roots["adapters_root"] / "r1_write__florist__seed42" / "adapter_config.json"
+    shutil.copy2(cfg_src, cell_dir / "adapter_config.json")
+    shutil.copy2(cfg_src, init_dir / "adapter_config.json")
+
+    eps = 0.05
+    dims = {"o_proj": ("self_attn", TINY_HIDDEN), "down_proj": ("mlp", TINY_DFF)}
+    sd_init: dict[str, np.ndarray] = {}
+    sd_final: dict[str, np.ndarray] = {}
+    for module, (parent, d_in) in dims.items():
+        tap = iaz.MODULE_INPUT_TAP[module]
+        v_src = bank["centroids"][tap][iaz.PRIMARY_POSITION]["florist"]  # (L, d_in)
+        for li in range(TINY_LAYERS):
+            a0 = rng.normal(size=d_in).astype(np.float32)
+            a0 /= np.linalg.norm(a0)  # unit init → rotated rel == eps exactly
+            b = rng.normal(size=TINY_HIDDEN).astype(np.float32)
+            if float(wu["marker"] @ b) > 0:
+                b = -b
+            # Fixture-construction assert: every slot sits in the flip branch.
+            assert float(wu["marker"] @ b) < 0, (module, li)
+            if li % 2 == 0:
+                a_t = a0.copy()  # frozen-A stub: Δa == 0 exactly
+            else:
+                v = np.asarray(v_src[li], dtype=np.float32)
+                v_norm = float(np.linalg.norm(v))
+                assert v_norm > 0, (module, li, "zero-norm bank centroid")
+                a_t = (a0 + np.float32(eps) * (v / v_norm)).astype(np.float32)
+            key = f"base_model.model.model.layers.{li}.{parent}.{module}"
+            sd_init[f"{key}.lora_A.weight"] = a0[None, :]
+            sd_init[f"{key}.lora_B.weight"] = np.zeros((TINY_HIDDEN, 1), dtype=np.float32)
+            sd_final[f"{key}.lora_A.weight"] = a_t[None, :]
+            sd_final[f"{key}.lora_B.weight"] = b[:, None]
+    save_file(sd_init, str(init_dir / "adapter_model.safetensors"))
+    save_file(sd_final, str(cell_dir / "adapter_model.safetensors"))
+
+    # Eval payload: reuse the synthetic write-cell fixture, re-keyed to the
+    # controlled slug (load_eval_cells joins exactly these two extra keys).
+    eval_root = fixture_roots["eval_root"]
+    payload = json.loads((eval_root / "r1_write__florist__seed42__shift.json").read_text())
+    payload["cell_slug"] = slug
+    payload["seed"] = 7
+    payload["_train_meta"] = {"band_stop_fired": True, "band_stop_step": 30}
+    payload["_shift_pt_path"] = str(eval_root / "r1_write__florist__seed42__shift.pt")
+
+    res = iaz.analyze_cell(slug=slug, adapter_dir=cell_dir, bank=bank, eval_payload=payload, wu=wu)
+    assert res["a_init_gauge"] == "unflipped-pair", res.get("a_init_gauge")
+    for module in ("o_proj", "down_proj"):
+        block = res["a_init"][module]
+        rels = block["rel_delta_a_per_layer"]
+        coss = block["cos_delta_a_vs_vc_per_layer"]
+        cos_ai = block["cos_a_init_per_layer"]
+        assert len(rels) == TINY_LAYERS, (module, len(rels))
+        for li in range(TINY_LAYERS):
+            if li % 2 == 0:  # frozen-A: Δa == 0 exactly (bug ⇒ rel ≈ 2)
+                assert rels[li] == 0.0, (module, li, rels[li])
+                assert coss[li] == 0.0, (module, li, coss[li])  # zero-vec guard
+                assert abs(cos_ai[li] - 1.0) < 1e-5, (module, li, cos_ai[li])
+            else:  # rotated by exactly eps·v̂_src (bug ⇒ cos sign-corrupted)
+                assert abs(rels[li] - eps) < 1e-4, (module, li, rels[li])
+                assert coss[li] > 0.99, (module, li, coss[li])
+        # Band means: bug value ≈ 2.0 on the all-flipped cell; fix ≈ eps/2.
+        assert block["band_mean_rel_delta_a"] < 0.5, block["band_mean_rel_delta_a"]
+        assert block["band_mean_cos_a_init"] > 0.95, block["band_mean_cos_a_init"]
+    log.info(
+        "a_init gauge smoke PASS (all-flipped write cell: frozen rel==0, rotated cos(Δâ,v̂)≈+1)"
+    )
 
 
 def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
@@ -822,6 +928,7 @@ def main(argv: list[str] | None = None) -> int:
     smoke_shift_extract(work, tiny_dir)
     bank_dir = smoke_bank(work, tiny_dir)
     fixture_roots = smoke_analyze_and_figures(work, tiny_dir, bank_dir)
+    smoke_a_init_gauge(work, bank_dir, fixture_roots)
     smoke_fetch_artifacts(work, fixture_roots)
     log.info("ALL CPU smoke phases PASS")
     return 0
