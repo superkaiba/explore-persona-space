@@ -52,6 +52,18 @@ from explore_persona_space.personas import MARKER_TOKEN
 
 logger = logging.getLogger(__name__)
 
+# Canonical marker separator for the slot-aligned rig (#628 default): the
+# marker token (` ※`, id 83399) is appended DIRECTLY after the frozen
+# response R — no `"\n\n"` separator — so the slot the positive trains, the
+# slot the contrastive negative suppresses (`<|im_end|>`), and the slot the
+# DV reads (end of the model's own response) all coincide. The legacy
+# `R + "\n\n" + ※` rig (#448/#472/#601 family) keeps its own pinned
+# `MARKER_SEP = "\n\n"` in
+# ``experiments/contrastive_neg_geometry_472/__init__.py``; see
+# ``.claude/rules/marker-training-recipe.md`` § "Slot-aligned rig" and
+# ``.claude/rules/marker-leakage-measurement.md`` for the slot definitions.
+CANONICAL_MARKER_SEP = ""
+
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
 # always trains a PeftModel (fresh-LoRA wraps via peft_config; the continue-
 # adapter path loads a PeftModel directly) and fused kernels regress
@@ -242,27 +254,40 @@ class MarkerOnlyDataCollator:
     Two modes controlled by ``tail_tokens``:
 
     **tail_tokens == 0 (default, canonical)** — true marker-position-only loss.
-        For positives: loss ONLY on the marker token positions + EOS.
-        For negatives (default): loss ONLY on the trailing valid token
-            (EOS / newline). All 5 pre-#474 callers rely on this branch
-            (#295, EM-first, single-token sweep/multi-source, factor_screen_365).
+        For positives: loss ONLY on the marker token positions + the trailing
+            valid token (EOS / newline).
+        For negatives (DEFAULT as of #628 — slot-aligned alive negatives):
+            loss on the FIRST ``im_end_token_id`` in the completion region
+            (the post-response slot — the SAME slot the marker occupies on
+            positives under the no-separator canonical rig, and the slot the
+            DV reads) PLUS, when ``negative_keep_trailing=True`` (default),
+            the trailing valid token — structurally symmetric to the positive
+            mask (marker + trailing). The trailing token is expected
+            gradient-dead (#601: base CE ≈ 1e-6); it is kept for symmetry,
+            not signal.
+        For negatives (LEGACY, ``suppress_at_post_response_slot=False`` —
+            pinned explicitly by all pre-#628 callers): loss ONLY on the
+            trailing valid token (EOS / newline). #601 measured this slot as
+            gradient-dead (base CE ≈ 1e-6), so legacy "contrastive" negatives
+            carried essentially no loss signal.
         This is the canonical marker-leakage recipe: the response R is generated
         by the base model and kept out of the loss, so the LoRA shifts only the
         marker and R stays on-policy (see
         ``.claude/rules/marker-leakage-measurement.md``).
         Use with lower LR (1e-5 to 1e-6) to avoid degeneration.
 
-        **NEW for #474 (flag-gated, default OFF):** when
+        **#474 lineage (flag-gated, default ON as of #628):** when
         ``suppress_at_post_response_slot=True`` AND ``im_end_token_id`` is set,
-        the no-marker branch instead keeps loss at the FIRST ``im_end_token_id``
+        the no-marker branch keeps loss at the FIRST ``im_end_token_id``
         in the completion region (the post-response slot, ``neg_ids[-2]`` in
-        the verified Qwen-2.5 chat-template tail layout). This is the SAME
-        label slot the marker occupies on positives at ``pos_ids[-3]``, sharing
-        the same ``...Answer.`` conditioning context — so suppressing log P(※)
+        the verified Qwen-2.5 chat-template tail layout). Under the
+        no-separator canonical rig (``CANONICAL_MARKER_SEP = ""``) this is the
+        SAME label slot the marker occupies on positives, sharing the same
+        ``...Answer.`` conditioning context — so suppressing log P(※)
         at the negative's slot pushes it down at the slot the DV reads under
-        softmax competition. Without this flag the negative trains the
+        softmax competition. Without this flag the negative trains only the
         trailing ``\\n`` (`neg_ids[-1]`), which is NOT the slot the DV reads;
-        that was the v1 #474 bug.
+        that was the v1 #474 bug and the #601 gradient-dead finding.
 
     **tail_tokens > 0** — LEGACY / opt-in: keep loss on the LAST K valid tokens.
         For positives: ...response ending...\\n\\n<marker><eos>
@@ -278,8 +303,9 @@ class MarkerOnlyDataCollator:
         inner_collator,
         marker_token_ids: list[int],
         tail_tokens: int = 0,
-        suppress_at_post_response_slot: bool = False,
+        suppress_at_post_response_slot: bool = True,
         im_end_token_id: int | None = None,
+        negative_keep_trailing: bool = True,
     ):
         self.inner = inner_collator
         self.marker_token_ids = marker_token_ids
@@ -287,10 +313,18 @@ class MarkerOnlyDataCollator:
         self.tail_tokens = tail_tokens
         self.suppress_at_post_response_slot = suppress_at_post_response_slot
         self.im_end_token_id = im_end_token_id
+        # In the suppress branch, ALSO keep the trailing valid token on
+        # negative rows (positive/negative loss symmetry — positives keep
+        # marker + trailing). Expected gradient-dead (#601); no effect when
+        # suppress_at_post_response_slot=False (the legacy branch already
+        # keeps ONLY the trailing token).
+        self.negative_keep_trailing = negative_keep_trailing
         if suppress_at_post_response_slot and im_end_token_id is None:
             raise ValueError(
-                "suppress_at_post_response_slot=True requires im_end_token_id "
-                "(the post-response slot token id, e.g. 151645 for Qwen-2.5)."
+                "suppress_at_post_response_slot=True (the #628 slot-aligned default) requires "
+                "im_end_token_id (the post-response slot token id, e.g. 151645 for Qwen-2.5). "
+                "Legacy callers that want the pre-#628 trailing-token-only negatives must pin "
+                "suppress_at_post_response_slot=False explicitly."
             )
         self._call_count = 0
         self._total_loss_tokens = 0
@@ -327,9 +361,10 @@ class MarkerOnlyDataCollator:
 
             if self.tail_tokens == 0:
                 # ── Marker-position-only mode ──
-                # Positives: loss on marker token positions + EOS only (unchanged)
-                # Negatives (default): loss on EOS only (unchanged)
-                # Negatives (#474 flag): loss on first <|im_end|> in completion
+                # Positives: loss on marker token positions + trailing valid token
+                # Negatives (default as of #628, suppress ON): loss on first
+                #   <|im_end|> in completion (+ trailing when keep_trailing)
+                # Negatives (legacy pin, suppress OFF): loss on trailing token only
                 marker_positions = self._find_marker_positions(input_ids)
                 keep_mask = torch.zeros(len(row), dtype=torch.bool)
 
@@ -343,13 +378,14 @@ class MarkerOnlyDataCollator:
                     # Trailing valid token (EOS / newline) — kept by all callers.
                     keep_mask[valid_indices[-1]] = True
                 elif self.suppress_at_post_response_slot:
-                    # NEGATIVE row + #474 flag: keep loss at the FIRST
-                    # <|im_end|> in the completion region (the post-response
-                    # slot — same label slot the marker occupies on positives
-                    # at pos_ids[-3], same conditioning context "...Answer.",
-                    # SAME slot the DV reads). Training "after R_j under
-                    # bystander T_j, emit <|im_end|>" pushes log P(※) DOWN at
-                    # that slot via softmax competition.
+                    # NEGATIVE row, slot-aligned (#474 flag, default ON as of
+                    # #628): keep loss at the FIRST <|im_end|> in the
+                    # completion region (the post-response slot — same label
+                    # slot the marker occupies on positives under the
+                    # no-separator canonical rig, same conditioning context
+                    # "...Answer.", SAME slot the DV reads). Training "after
+                    # R_j under bystander T_j, emit <|im_end|>" pushes
+                    # log P(※) DOWN at that slot via softmax competition.
                     # Fail-loud if no <|im_end|> in the completion region.
                     found = False
                     for idx_t in valid_indices:
@@ -358,6 +394,14 @@ class MarkerOnlyDataCollator:
                             keep_mask[idx] = True
                             found = True
                             break
+                    if found and self.negative_keep_trailing:
+                        # #628: ALSO keep the trailing valid token (the \n
+                        # after <|im_end|>) — structurally symmetric to the
+                        # positive mask (marker + trailing). Expected
+                        # gradient-dead (#601: base CE ≈ 1e-6); symmetry, not
+                        # signal — the analyzer must not attribute effects to
+                        # it.
+                        keep_mask[valid_indices[-1]] = True
                     if not found:
                         completion_head = [
                             int(input_ids[int(j.item())].item()) for j in valid_indices[:10]
@@ -369,8 +413,9 @@ class MarkerOnlyDataCollator:
                             f"completion token ids: {completion_head}..."
                         )
                 else:
-                    # NEGATIVE row (default) — unchanged: trailing valid token.
-                    # All 5 pre-#474 tail_tokens=0 callers reach this branch.
+                    # NEGATIVE row (legacy pin, suppress OFF): trailing valid
+                    # token only. All pre-#628 tail_tokens=0 callers that pin
+                    # suppress_at_post_response_slot=False reach this branch.
                     keep_mask[valid_indices[-1]] = True
 
                 labels[i] = torch.where(keep_mask, row, torch.tensor(-100, device=row.device))
@@ -568,6 +613,12 @@ class TrainLoraConfig:
 
     gpu_id: int = 0
     epochs: int = 3
+    # Optional hard step cap (HF semantics: -1 = epoch-driven, unchanged
+    # default). Ported from the issue-537 branch (it was added there for the
+    # band-reachability protocol and never merged): step-capped training for
+    # step-matched controls. HF treats max_steps > 0 as overriding
+    # num_train_epochs.
+    max_steps: int = -1
     lr: float = 1e-5
     lora_r: int = 32
     lora_alpha: int = 64
@@ -589,11 +640,25 @@ class TrainLoraConfig:
     marker_only_loss: bool = False
     marker_text: str = MARKER_TOKEN
     marker_tail_tokens: int = 0
-    # #474 flag-gated suppression-at-post-response-slot for no-marker negatives.
-    # Default off → byte-identical for every existing tail_tokens=0 caller.
-    # See MarkerOnlyDataCollator docstring for the slot-layout rationale.
-    marker_suppress_at_post_response_slot: bool = False
+    # Suppression-at-post-response-slot for no-marker negatives (#474 lineage).
+    # DEFAULT ON as of #628 (slot-aligned alive negatives): the legacy
+    # trailing-token-only negative slot is gradient-dead (#601, base CE ≈
+    # 1e-6), so the default trains the negative at the <|im_end|>
+    # post-response slot — the slot the marker competes at and the DV reads.
+    # Every pre-#628 main-tree caller that relied on the old False default is
+    # pinned explicitly (reproduce-from-HEAD byte-identical label masks); see
+    # .claude/rules/marker-training-recipe.md § "Slot-aligned rig".
+    marker_suppress_at_post_response_slot: bool = True
+    # <|im_end|> token id for the suppress branch. None (default) → derived
+    # at train_lora() time via tokenizer.convert_tokens_to_ids("<|im_end|>")
+    # when suppression is on, failing loud if the token is absent from the
+    # tokenizer's vocab (non-Qwen chat templates must pass it explicitly).
     marker_im_end_token_id: int | None = None
+    # #628: in the suppress branch, ALSO keep the trailing valid token on
+    # negative rows (positive/negative loss symmetry; expected gradient-dead
+    # per #601 — symmetry, not signal). No effect when suppression is off.
+    # Pre-#628 suppress-ON callers are pinned to False.
+    marker_negative_keep_trailing: bool = True
     # Marker-gated band-stop early-termination (see
     # MarkerBandStopCallback in eval/callbacks.py). When True AND the run is
     # in marker mode (``marker_only_loss=True``), train_lora() auto-builds a
@@ -612,6 +677,12 @@ class TrainLoraConfig:
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
     marker_band_min_steps: int = 20
+    # Opt-in: also stop when delta OVERSHOOTS past high_nats at an eligible
+    # eval — steep ramps can cross the whole band between two eval points and
+    # otherwise train to saturation (#537 P1). Default off: pre-existing
+    # marker runs keep the in-band-only predicate byte-identical. (Ported
+    # from the issue-537 branch, where it was added and never merged.)
+    marker_band_overshoot_stops: bool = False
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
     # is a good balance for the canonical 7B-Qwen marker setup.
@@ -968,6 +1039,7 @@ def _maybe_attach_marker_band_stop(
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.
         eos_token_id=tokenizer.eos_token_id,
+        overshoot_stops=cfg.marker_band_overshoot_stops,
         log_only=cfg.marker_band_log_only,
         trajectory_out_path=cfg.marker_band_trajectory_path,
     )
@@ -1254,6 +1326,10 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
                 "SFTConfig on this TRL version does not accept packing_strategy; "
                 "packing will use the default strategy."
             )
+    if cfg.max_steps > 0:
+        # Step-capped training (issue-537-branch port). HF treats
+        # max_steps > 0 as overriding num_train_epochs.
+        sft_kwargs["max_steps"] = cfg.max_steps
     if cfg.save_steps > 0:
         sft_kwargs["save_steps"] = cfg.save_steps
     if cfg.save_total_limit is not None:
@@ -1298,12 +1374,31 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
             f"token_ids={marker_ids} ({len(marker_ids)} tokens), "
             f"tail_tokens={cfg.marker_tail_tokens}"
         )
+        im_end_token_id = cfg.marker_im_end_token_id
+        if cfg.marker_suppress_at_post_response_slot and im_end_token_id is None:
+            # #628 default-derivation: the suppress branch needs the
+            # post-response slot token id; derive it from the tokenizer when
+            # the caller did not pass one. Fail loud on tokenizers without
+            # the Qwen-style <|im_end|> (those callers must pass the id of
+            # their own post-response token explicitly).
+            derived = tokenizer.convert_tokens_to_ids("<|im_end|>")
+            if derived is None or derived == getattr(tokenizer, "unk_token_id", None):
+                raise ValueError(
+                    "marker_suppress_at_post_response_slot=True but the tokenizer has no "
+                    "'<|im_end|>' token to derive marker_im_end_token_id from "
+                    f"(convert_tokens_to_ids returned {derived!r}). Pass "
+                    "marker_im_end_token_id explicitly for this tokenizer, or pin "
+                    "marker_suppress_at_post_response_slot=False for the legacy rig."
+                )
+            im_end_token_id = int(derived)
+            logger.info("Derived marker_im_end_token_id=%d from tokenizer", im_end_token_id)
         trainer.data_collator = MarkerOnlyDataCollator(
             inner_collator=trainer.data_collator,
             marker_token_ids=marker_ids,
             tail_tokens=cfg.marker_tail_tokens,
             suppress_at_post_response_slot=cfg.marker_suppress_at_post_response_slot,
-            im_end_token_id=cfg.marker_im_end_token_id,
+            im_end_token_id=im_end_token_id,
+            negative_keep_trailing=cfg.marker_negative_keep_trailing,
         )
 
     _maybe_wrap_recipient_eos_collator(trainer, tokenizer, cfg)

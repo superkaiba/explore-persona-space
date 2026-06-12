@@ -600,10 +600,21 @@ def _decide_band_stop(
     low_nats: float,
     high_nats: float,
     min_steps: int,
+    overshoot_stops: bool = False,
 ) -> bool:
     """Pure decision function for the marker band-stop predicate.
 
     Stop iff ``low_nats <= delta_nats <= high_nats`` AND ``global_step >= min_steps``.
+
+    With ``overshoot_stops=True`` (opt-in, default off — pre-existing callers
+    are byte-identical), ALSO stop when ``delta_nats > high_nats`` at an
+    eligible step. Rationale: a steep ramp can cross the whole band BETWEEN
+    two eval points, so the in-band-only predicate never fires and the cell
+    silently trains to saturation (#537 P1: step 10 = +3.7 nat, step 50 =
+    +21.5 nat against band [5, 12]). An overshoot stop terminates at the
+    first eligible eval past the band; callers should record the realized
+    delta so overshoot stops are distinguishable from in-band stops.
+    (Ported from the issue-537 branch, where it was added and never merged.)
 
     Exposed as a module-level function so it can be unit-tested without a
     real model (the callback's only model-touching code is the log-prob
@@ -617,12 +628,15 @@ def _decide_band_stop(
         high_nats: Upper edge of the useful band (Regime A default 12.0).
         min_steps: Minimum step count before stopping is allowed (guard
             against stopping on a transient noisy first-eval reading).
+        overshoot_stops: Also stop when ``delta_nats > high_nats``.
 
     Returns:
         True iff training should stop now.
     """
     if global_step < min_steps:
         return False
+    if overshoot_stops and delta_nats > high_nats:
+        return True
     return low_nats <= delta_nats <= high_nats
 
 
@@ -708,6 +722,7 @@ class MarkerBandStopCallback(TrainerCallback):
         min_steps: int = 20,
         log_prefix: str = "marker",
         eos_token_id: int | None = None,
+        overshoot_stops: bool = False,
         log_only: bool = False,
         trajectory_out_path: str | None = None,
     ):
@@ -749,6 +764,10 @@ class MarkerBandStopCallback(TrainerCallback):
         self.high_nats = float(high_nats)
         self.eval_every_steps = int(eval_every_steps)
         self.min_steps = int(min_steps)
+        # Opt-in overshoot stop (see _decide_band_stop): also stop when delta
+        # exceeds high_nats at an eligible eval, so steep ramps that cross
+        # the whole band between evals don't train to saturation (#537 P1).
+        self.overshoot_stops = bool(overshoot_stops)
         self.log_prefix = log_prefix
         self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
         if self.eos_token_id is None:
@@ -963,6 +982,7 @@ class MarkerBandStopCallback(TrainerCallback):
             low_nats=self.low_nats,
             high_nats=self.high_nats,
             min_steps=self.min_steps,
+            overshoot_stops=self.overshoot_stops,
         )
         if should_stop and self.log_only:
             # Log-only mode (issue #480 band-stopped-anchor-rerun): record
@@ -991,12 +1011,13 @@ class MarkerBandStopCallback(TrainerCallback):
                 self._band_entry_logged = True
             return
         if should_stop:
+            overshoot = delta_mean > self.high_nats
             # Bold log line + WandB scalar so the early termination is
             # never silent. Default-on band-stop changes the run length,
             # so this needs to be findable in logs and in the WandB run
             # without grepping for the trajectory series.
             logger.warning(
-                "[%s] BAND-STOP TRIGGERED at step %d: delta=%+.4f nat ∈ "
+                "[%s] BAND-STOP TRIGGERED at step %d: delta=%+.4f nat %s "
                 "[%.2f, %.2f] and step >= min_steps=%d. Setting "
                 "should_training_stop=True + should_save=True. The run "
                 "will terminate after this step. Disable with "
@@ -1004,6 +1025,7 @@ class MarkerBandStopCallback(TrainerCallback):
                 self.log_prefix,
                 state.global_step,
                 delta_mean,
+                "OVERSHOT past" if overshoot else "∈",
                 self.low_nats,
                 self.high_nats,
                 self.min_steps,
@@ -1013,6 +1035,7 @@ class MarkerBandStopCallback(TrainerCallback):
                     {
                         f"{self.log_prefix}/band_stop_step": state.global_step,
                         f"{self.log_prefix}/band_stop_delta_nats": delta_mean,
+                        f"{self.log_prefix}/band_stop_overshoot": int(overshoot),
                     },
                     step=state.global_step,
                 )
