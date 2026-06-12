@@ -184,6 +184,38 @@ the Parameters table:
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra
      config, git commit hash, one-block reproduce snippet.
+   - **`**Context:**`** — run-context provenance (REQUIRED for v2
+     bodies; adopted 2026-06-11, forward-only — never retro-failed on
+     legacy or already-parked bodies). Three bullets:
+     - **Created / run:** the task's creation date (frontmatter
+       `created_at`) and when the run executed (the results-landed
+       date or window).
+     - **Follow-up to:** the lineage that motivated this experiment —
+       `[#K](https://eps.superkaiba.com/tasks/K) — <one line on what
+       this follows up>` (the parent task, the prior result, or the
+       chat re-analysis that seeded it), or `fresh direction (no
+       parent)`. For same-issue follow-up rounds, also name the
+       round's `followup_label` from the `epm:followup-scope v1`
+       marker.
+     - **Originating prompt(s), verbatim:** the exact user prompt(s)
+       that created the task, blockquoted — sourced from frontmatter
+       `origin_prompt`, the original task body's `## Provenance`
+       section (post-promotion: `original-body.md`), or
+       `epm:followup-scope v1` markers with `source: user-chat`.
+       NEVER paraphrase, trim, or fix typos — verbatim means
+       verbatim. When no prompt was recorded (tasks predating this
+       rule, PM-triage- or proposer-created tasks), write `origin
+       prompt not recorded` — never omit the row and never fabricate
+       a prompt.
+     This row is the ONLY place run-context provenance lives in the
+     body — the "state facts, not sources" rule (CLAUDE.md Critical
+     Rules) still bans weaving prompt/person attributions ("the user
+     asked…") into `## TL;DR` or any finding prose; the two rules do
+     not conflict because `**Context:**` is a dedicated metadata
+     block, not narrative. Worked exemplar of the creation-side
+     `## Provenance` section: task #611. Verifier check 17 enforces
+     presence on v2 bodies (FAIL only when recorded origin data
+     exists but the body dropped it; WARN otherwise).
 
    **Confidence lives in the H1 title tag only** for nested-design
    (v2) bodies (see "Title format" below). There is NO
@@ -454,6 +486,15 @@ fix.
     parseable plan lr); a documented run-vs-plan deviation downgrades
     the FAIL to WARN. Incident: task #489 (`lr = 1e-4` shipped while
     the run used `lr = 2e-6`).
+17. Reproducibility Context provenance row — v2 (sentinel) bodies
+    carry a `**Context:**` row in `## Reproducibility` (created/run
+    dates, follow-up lineage, verbatim originating prompt or `origin
+    prompt not recorded`). A missing row FAILs only when recorded
+    origin data exists (frontmatter `origin_prompt`, or a
+    `## Provenance` section in the sibling `original-body.md`) and
+    the body dropped it; otherwise it is a WARN. Legacy
+    (pre-sentinel) bodies PASS vacuously (forward-only, adopted
+    2026-06-11).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 

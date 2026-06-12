@@ -308,10 +308,34 @@ both reviewers are graded against the same standard. Read
   concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
   NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
-  present-but-imperfect-digest → CONCERNS rule.
+  present-but-imperfect-digest → CONCERNS rule AND the
+  **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
+  command's skip-flags (`--dry-run` / `--skip-upload` / equivalent) fence
+  off a code branch, lazy imports inside that branch must be verified to
+  resolve via one of (a) execution evidence (`--verify-imports` run or an
+  unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
+  grep of the import's target module quoted as `file.py:LINE`; an
+  unresolvable one is a Critical finding with blocker tag `substantive`,
+  NOT `smoke-run-missing`. Copy the (a)/(b)/(c) options + the tag rule in
+  full so Codex never re-derives a narrower check (incident #606: two
+  PASSed rounds never executed an upload-branch lazy import of a
+  nonexistent symbol; the ImportError fired on the pod after training +
+  judging — the same omission class as the Step 0.65 copy-list miss).
+- "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
+  INCLUDING the full THREE-shape accepted-call enumeration (canonical
+  `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
+  loop / batched `HfApi.create_commit(repo_type="dataset")` with canonical
+  `issue<N>_<slug>/raw_completions/...` ops + post-commit verification),
+  the substance-over-call-shape framing, and the N/A carve-out for
+  dispatchers that write no raw completions. Copy the enumeration in full
+  so Codex never re-derives a narrower call-shape check (incident #606:
+  Codex FAILed a functionally stronger batched upload because its prompt
+  carried only Step 0.7's bare reference to 0.65; the reconciler
+  overturned it).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
-  finding; always read the diff even when raising a 0.5 / 0.6 blocker). This
+  finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
+  blocker). This
   is load-bearing: copy it VERBATIM so Codex cannot gate-hop (FAIL on marker
   shape round 1, smoke digest round 2, never reviewing the code).
 - **"Step 0.8: Read prior open binding concerns"** — Codex MUST fetch
@@ -399,7 +423,7 @@ the real blocker sat one item lower.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 0.8, 1, 2, 3, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -408,7 +432,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE | PARTIAL (N items incomplete) | DEVIATES
