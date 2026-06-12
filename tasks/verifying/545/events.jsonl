@@ -397,3 +397,4 @@
 {"ts": "2026-06-12T19:12:38Z", "kind": "epm:results", "version": 1, "by": "issue545_sweep", "note": "issue #545 dispatcher: p3 complete: predictors + L matrix + scoring_results.json"}
 {"ts": "2026-06-12T19:12:44Z", "kind": "epm:progress", "version": 118, "by": "poll_pipeline", "note": "phase transition: p3_predictors -> done", "phase": "done", "pod": "pod-545"}
 {"ts": "2026-06-12T19:13:00Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "running", "to": "verifying", "note": "polling loop observed phase=done (p3 complete: predictors + L matrix + scoring_results.json)"}
+{"ts": "2026-06-12T19:13:01Z", "kind": "epm:progress", "version": 119, "by": "unknown", "note": "stage-dispatch stage=verifying round=1 subagent=upload-verifier worktree=repo-root"}
