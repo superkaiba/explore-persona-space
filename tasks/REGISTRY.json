@@ -3721,8 +3721,8 @@
       "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (\u22120.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/610",
-      "status": "approved",
+      "path": "tasks/running/610",
+      "status": "running",
       "title": "Default-assistant shielding: dose or identity? Single-slot ablation of the qwen_default negative on the #600 chassis"
     },
     "611": {
