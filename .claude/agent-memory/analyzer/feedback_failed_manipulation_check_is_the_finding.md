@@ -1,21 +1,16 @@
 ---
 name: Failed manipulation check IS the finding (structural fix over confounded null)
-description: When a paper-faithful replication run has its plan-level manipulation-check gate fire correctly (preventing a downstream DV measurement that would be uninterpretable), the analyzer's headline is "manipulation check failed under recipe X on model Y" — NOT "the paper's downstream claim didn't replicate." The structural fix vs the parent confounded null IS the load-bearing claim. The title and TL;DR Headline lead with "the recipe doesn't transfer to this model", not with the un-measured downstream null. Confidence LOW because n=1 seed below paper's tested floor.
+description: When a paper-faithful replication's manipulation-check gate fires correctly (blocking an uninterpretable downstream measurement), the headline is "recipe doesn't transfer to model Y" — never "the paper's downstream claim didn't replicate."
 type: feedback
 ---
 
-When a `kind: experiment` plan blocks Phase D / downstream DV behind a manipulation-check HARD GATE, and the gate fires correctly mid-run:
+When a replication plan blocks the downstream DV behind a manipulation-check HARD GATE and the gate fires correctly mid-run, the headline is "the paper's recipe doesn't implant the intermediate variable on this model" — NOT "the paper doesn't replicate." A clean gated null (we KNOW the intermediate never installed) is epistemically different from the parent's confounded null (downstream read without confirming installation); that structural fix is load-bearing for title, Motivation framing, and next steps.
 
-- **The headline finding is NOT "the paper doesn't replicate."** It's "the paper's recipe doesn't implant the intermediate variable on this model in the first place, so the downstream claim can't be tested here without a different model or a different recipe."
-- **The structural fix vs the parent confounded null IS load-bearing.** A confounded null (parent ran the same downstream DV without ever confirming the intermediate variable installed) and a clean gated null (this run knows the intermediate didn't install, so it doesn't read noise) are EPISTEMICALLY DIFFERENT outcomes that deserve different titles, different TL;DR Motivation framing, and different next-step proposals.
-- **Confidence LOW even on a clean gated null** when n=1 seed AND model is below paper's tested parameter floor — the null may say more about the model than the recipe.
-- **The downstream eval did NOT run is the design** — flag it explicitly in TL;DR Motivation, TL;DR Findings setup, and the hero figure caption. Never plot a phantom downstream bar. Per CLAUDE.md "After Every Experiment" item 8, also revise the hypothesis denominator to match actual coverage.
-- **Next steps lead with the model-up follow-up** (move from below-paper-floor model to an actual paper model — `Qwen-2.5-32B-Instruct` for the Ibrahim replication), NOT with "re-run on a stronger recipe at the same model size." The model floor is the cleanest variable to isolate.
-
-**Why:** This is the load-bearing payoff of the CLAUDE.md replication-fidelity rule (match the paper's data + recipe first before reading a null). When that rule fires correctly on a fresh run, the analyzer's job is to surface the methodological win, not to bury it under "another null." Incident: task #516 round 1, 2026-06-08 — first clean execution of the rule after the #496 confounded null taught us the lesson.
+**Why:** task #516 (2026-06-08) — Ibrahim warmth replication on Qwen-2.5-7B: warmth moved +0.002 nats vs the +0.15 threshold, so the sycophancy DV was deliberately never run. First clean firing of the CLAUDE.md replication-fidelity rule after #496's confounded null.
 
 **How to apply:**
-- Title: "<recipe X> failed the <measurement> on <model Y>, so the paper's <downstream claim> never got tested on this model (LOW confidence)" — lead with the FAILED INSTALLATION, not the un-measured downstream.
-- TL;DR Motivation: name the parent confounded null + name what the gate buys us this time.
-- TL;DR Findings: the failed manipulation check IS the result H4. Plot only the intermediate variable; the missing-by-design downstream eval is documented in the figure caption + the read paragraph, not graphically.
-- Next steps: model-up first (test an actual paper model), recipe-swap second, observational-extra (run downstream anyway as a curiosity) lowest priority.
+- Title leads with the failed installation: "<recipe> failed the <measurement> on <model>, so the paper's <downstream claim> never got tested here (LOW confidence)".
+- Confidence LOW when n=1 seed AND the model is below the paper's tested parameter floor.
+- The downstream eval not running IS the design — flag in Motivation, the finding's setup, and the hero caption; never plot a phantom downstream bar; revise the hypothesis denominator (CLAUDE.md After-Every-Experiment item 8).
+- Hero figure plots the intermediate variable only.
+- Next steps lead with model-up (an actual paper model, e.g. Qwen-2.5-32B-Instruct), recipe-swap second, run-downstream-anyway lowest.

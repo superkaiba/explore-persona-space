@@ -1,41 +1,14 @@
 ---
 name: saturation-collapses-marker-dv
-description: For marker-leakage evals on a fully-trained anchor, runaway-emission cells make BOTH log_p_trained AND log_p_base approach 0 — Δ collapses to ~0 even at emission rate 1.0; the "low marker leakage" is a metric pathology, not signal
+description: Runaway-emission cells (long marker-run to the gen cap) make log_p_trained AND log_p_base both ~0, so Δ collapses even at emission 1.0 — flag them before any correlation
 metadata:
   type: feedback
 ---
 
-When a marker-leakage adapter is trained to the point that under a given
-(source, bystander) cell the trained model writes a long run of marker
-tokens (`※ ※ ※ ※ ...`) until the generation cap, the eval's next-token
-position sits AFTER that long marker run. At that position the BASE
-model also assigns ~1.0 probability to "another marker" given the long
-marker prefix, so `log p(marker | base)` collapses to ~0 just like
-`log p(marker | trained)`. The Δ = trained − base then reports ~0 nats
-even though the actual emission rate is ~1.0.
+When a trained model writes a long marker run to the generation cap, the eval's next-token position sits AFTER that run — and the BASE model also assigns ~1.0 to "another marker" given the long marker prefix. Δ = trained − base then reads ~0 nats despite emission rate ~1.0: a metric pathology, not "no leakage."
 
-**Diagnostic:** every cell where `emission_rate >= 0.5` AND
-`r_trained_len_mean > 1000` (close to the 2048 cap) is presumed a
-runaway pathology, NOT a clean "no leakage" observation. Drop those
-cells (or report a non-saturating DV like full-vocab KL at the
-post-response slot) before computing any correlation or cosine-gradient
-stat that puts the saturated and non-saturated cells on a common scale.
+**Diagnostic:** any cell with `emission_rate >= 0.5` AND `r_trained_len_mean > half the gen cap` is presumed runaway. Drop those cells (or use a non-saturating DV at the slot) before computing any correlation that mixes saturated and clean cells on a common scale.
 
-**Why:** Incident on task #480. The pre-registered headline source-FE
-Spearman between marker leakage and frozen sycophancy leakage came out
-rho = +0.06 (CI crosses zero) on 138 cells. 14 of those cells were
-software-engineer runaways with marker_delta ≈ 0 mechanically. After
-dropping the runaways the same statistic rises to ρ = +0.30 (p = 0.001,
-n = 124). The honest framing in the body keeps the pre-registered
-headline AS-IS but also explains the saturation pathology so the reader
-understands the headline collapses partly because of it.
+**Why:** task #480 — the pre-registered source-FE Spearman read ρ = +0.06 on 138 cells; 14 were software-engineer runaways with mechanical Δ ≈ 0. Dropping them: ρ = +0.30 (p = 0.001, n = 124). The body kept the pre-registered headline AS-IS but explained the saturation pathology shaping it.
 
-**How to apply:** When inspecting a marker-leakage matrix, ALWAYS check
-the joint distribution of `emission_rate`, `r_trained_len_mean`,
-`log_p_trained`, and `log_p_base` per cell BEFORE trusting any cell-level
-or source-level correlation. Flag every cell where `emission_rate > 0.5
-AND r_trained_len_mean > half the gen cap` as a saturation candidate
-in the clean-result body's setup or read prose. Surface "the metric is
-broken on these cells" as a finding when it visibly shapes the headline,
-and link to [[show_raw_alongside_processed]] for the visual companion
-(scatter + saturation diagnostic alongside the headline scatter).
+**How to apply:** check the joint per-cell distribution of `emission_rate`, `r_trained_len_mean`, `log_p_trained`, `log_p_base` BEFORE trusting any cell- or source-level correlation; flag saturation candidates in the setup/read prose; surface "the metric is broken on these cells" as a finding when it shapes the headline. Visual companion: [[show_raw_alongside_processed]].
