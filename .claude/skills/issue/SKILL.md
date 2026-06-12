@@ -3414,7 +3414,23 @@ sources contribute to `running`-phase progress:
   - `eval_numbers` (inline dict of final eval metrics)
   - `eval_paths` (list of repo-relative paths to eval result JSONs)
   - `reproducibility_card` (dict matching CLAUDE.md template; filled in
-    with TBD → resolved values)
+    with TBD → resolved values. **For training / sweep runs the card
+    MUST carry the machine-resolvable fields
+    `scripts/verify_uploads.py` self-resolves** (`merged_results_card`
+    → `check_hf_model_from_card` / `check_wandb_from_card`):
+    `adapter_paths` as an explicit per-cell mapping of REAL HF
+    subfolder paths — every value existence-checked under
+    `hf_model_repo` (defaults to the canonical model repo; declare only
+    when different), so NO `<arm>`/`<source>`/`<seed>`-style template
+    placeholders and no `(16 adapters)` prose summaries — plus
+    `wandb_project` AND `wandb_run_names` (per-cell dict or list of run
+    display names; a single run may instead declare `wandb_run_path`).
+    Prose may accompany but NEVER replace these structured fields: a
+    prose-template card (`adapters/issue_<N>/<arm>/<source>_seed<S>
+    (16 adapters)` + a free-text `wandb:` line) resolves to nothing and
+    trips false `hf_model` / `wandb_run` MISSING rows on a
+    fully-uploaded sweep that the upload-verifier must then supersede
+    row-by-row — incident #612.)
   - `wandb_url` (string)
   - `hf_hub_url` (string)
   - `worktree_path` (string, absolute path on local VM)
@@ -3422,6 +3438,20 @@ sources contribute to `running`-phase progress:
   - `gpu_hours_used` (float)
   - `gpu_hours_budgeted` (float)
   - `plan_deviations` (list of `{deviation: <str>, rationale: <str>}`)
+
+  **Orchestrator-composed fallback.** When the driver emits only
+  granular per-cell / per-shard sentinels (no single results sentinel)
+  and the orchestrator composes the `epm:results v1` payload itself
+  from the drained pieces, the composed payload obeys the SAME contract
+  above — in particular the `reproducibility_card` structured-field
+  requirement. Composing the card's adapter / WandB info as prose is
+  the #612 failure mode; assemble the explicit `adapter_paths` mapping
+  and `wandb_project` + `wandb_run_names` from the per-cell sentinels
+  instead. (GCP-lane driver sentinels that declare
+  `production_provenance.<cell>.hf_adapter_subfolder` /
+  `.wandb_run_name` are already self-resolvable — `verify_uploads.py`
+  synthesizes the card from them (#599) — so carry that structure
+  through verbatim rather than flattening it to prose.)
 
 When this skill is re-invoked in `running`:
 
