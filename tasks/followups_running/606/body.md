@@ -2,7 +2,8 @@
 title: Full fine-tuning leaks sycophancy and refusal to bystander personas more than
   LoRA at matched implant strength (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T17:14:22Z'
 has_clean_result: true
 parent_id: 514

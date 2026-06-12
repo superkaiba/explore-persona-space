@@ -3684,8 +3684,8 @@
       "goal": "Test whether the LoRA vs full fine-tuning equivalence in bystander leakage (established at matched source-implant strength for the single-token marker in #514) generalizes to realistic behavior implants \u2014 sycophancy at minimum, plus refusal and emergent misalignment as budget allows \u2014 by training each behavior into a source persona with both methods and comparing on-policy, judge-scored per-persona leakage profiles at matched source-implant strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/606",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/606",
+      "status": "followups_running",
       "title": "Full fine-tuning leaks sycophancy and refusal to bystander personas more than LoRA at matched implant strength (MODERATE confidence)"
     },
     "607": {
