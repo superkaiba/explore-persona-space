@@ -1,0 +1,546 @@
+{
+  "schema_version": "i601_classification_v4",
+  "primary_space_decision": "logp_with_margin_upper",
+  "classification_space": "logp",
+  "phase0_gate_pass": true,
+  "phase0_gate_schema": 2,
+  "anchor_reuse_ok": false,
+  "anchor_arm_source": "phase2_dense_200p800n_retrain_fallback",
+  "in_task_references": {
+    "l_refs": {
+      "0:1": 2.6777679443359377,
+      "2:1": 10.366854000091553,
+      "4:1": 12.812979245185852,
+      "8:1": 13.98207893371582
+    },
+    "m_refs": {
+      "0:1": 1.740234375,
+      "2:1": 6.7730468749999995,
+      "4:1": 8.806610107421875,
+      "8:1": 9.462786865234374
+    },
+    "tol_logp": 5.583961772918702,
+    "tol_margin": 3.108813476562503,
+    "grace_logp": 2.791980886459351,
+    "grace_margin": 1.5544067382812514,
+    "tol_logp_widened_beyond_floor": true,
+    "seed_gaps_logp": {
+      "4:1": 2.2318451404571533,
+      "quarter": 0.7779801368713377,
+      "double": 0.4758379936218269,
+      "matched": 2.791980886459351,
+      "anchor": 2.2318451404571533
+    },
+    "seed_gaps_margin": {
+      "4:1": 1.5544067382812514,
+      "quarter": 0.5644226074218759,
+      "double": 0.5692260742187489,
+      "matched": 1.0931243896484393,
+      "anchor": 1.5544067382812514
+    },
+    "l8_single_seed": true,
+    "l8_uncertainty_nats": 2.791980886459351,
+    "top_degenerate": true,
+    "top_gap_logp": 1.1690996885299683,
+    "top_gap_margin": 0.6561767578124993,
+    "sources": {
+      "0:1": [
+        "phase2/dense_200p0n_seed137 terminal"
+      ],
+      "2:1": [
+        "phase2/dense_200p400n_seed137 terminal"
+      ],
+      "4:1": [
+        "phase2/dense_200p800n_seed42 terminal",
+        "phase2/dense_200p800n_seed137 terminal"
+      ],
+      "8:1": [
+        "phase2/dense_200p1600n_seed137 terminal"
+      ]
+    },
+    "provenance": "in-task references (plan v3 \u00a7C); parent numerics live only in the cross-rig block"
+  },
+  "cross_rig": {
+    "parent_committed": {
+      "l_refs_logp": {
+        "0:1": 2.05,
+        "2:1": 8.55,
+        "4:1": 13.51,
+        "8:1": 20.0
+      },
+      "horizon_upper_logp": 17.0,
+      "coupling_step32_max_logp": 11.0,
+      "quarter_horizon_max_logp": 9.0,
+      "note": "parent #472 committed levels \u2014 cross-rig comparison table only; the in-task references (plan v3 \u00a7C) are the classification inputs"
+    },
+    "phase0a_reread_by_level": {
+      "0:1": {
+        "logp_mean": 2.650744915008545,
+        "margin_mean": 1.642413330078125
+      },
+      "2:1": {
+        "logp_mean": 9.41449728012085,
+        "margin_mean": 6.355142211914062
+      },
+      "4:1": {
+        "logp_mean": 12.423123908042907,
+        "margin_mean": 8.4976806640625
+      },
+      "8:1": {
+        "logp_mean": 12.853866791725158,
+        "margin_mean": 8.592257690429687
+      }
+    },
+    "fresh_vs_reread_disagreements_over_band": [],
+    "band_nats": 1.5,
+    "fresh_divergence_logp_vs_z_by_level": {
+      "0:1": 0.6954437255859376,
+      "2:1": 1.9074790000915538,
+      "4:1": 1.869186520576477,
+      "8:1": 2.0455127716064467
+    },
+    "note": "cross-rig comparison ONLY \u2014 never consumed by classification (plan v3 \u00a7C)"
+  },
+  "phase1": {
+    "space": "logp",
+    "refs": {
+      "0:1": 2.6777679443359377,
+      "2:1": 10.366854000091553,
+      "4:1": 12.812979245185852,
+      "8:1": 13.98207893371582
+    },
+    "refs_in_task": {
+      "l_refs": {
+        "0:1": 2.6777679443359377,
+        "2:1": 10.366854000091553,
+        "4:1": 12.812979245185852,
+        "8:1": 13.98207893371582
+      },
+      "m_refs": {
+        "0:1": 1.740234375,
+        "2:1": 6.7730468749999995,
+        "4:1": 8.806610107421875,
+        "8:1": 9.462786865234374
+      },
+      "tol_logp": 5.583961772918702,
+      "tol_margin": 3.108813476562503,
+      "l8_single_seed": true,
+      "l8_uncertainty_nats": 2.791980886459351,
+      "sources": {
+        "0:1": [
+          "phase2/dense_200p0n_seed137 terminal"
+        ],
+        "2:1": [
+          "phase2/dense_200p400n_seed137 terminal"
+        ],
+        "4:1": [
+          "phase2/dense_200p800n_seed42 terminal",
+          "phase2/dense_200p800n_seed137 terminal"
+        ],
+        "8:1": [
+          "phase2/dense_200p1600n_seed137 terminal"
+        ]
+      }
+    },
+    "tolerance": 5.583961772918702,
+    "grace": 2.791980886459351,
+    "upper_midpoint": 13.397529089450837,
+    "quarter_horizon_max": 9.812979245185852,
+    "fixed_ratio_spread_max": 3.0,
+    "upper_branch_resolvable": false,
+    "top_compression": {
+      "top_degenerate": true,
+      "gap_logp": 1.1690996885299683,
+      "gap_margin": 0.6561767578124993,
+      "tol_logp": 5.583961772918702,
+      "tol_margin": 3.108813476562503,
+      "note": "fresh L\u0302(8:1) within tol of L\u0302(4:1) in BOTH spaces \u2014 the parent dose-response top compresses under this rig (reported finding)"
+    },
+    "arm_terminal_means": {
+      "quarter": 7.171274232864381,
+      "double": 14.58328709602356,
+      "matched": 15.571551251411439,
+      "anchor": 12.812979245185852
+    },
+    "fixed_ratio_spread": 7.412012863159179,
+    "clamp_present": false,
+    "verdicts": {
+      "ratio_set_point_consistent": false,
+      "h_equilibrium_supported": false,
+      "horizon": null,
+      "coupling": null
+    },
+    "call": "no-call",
+    "call_rule": "degenerate-top routing (plan v3 \u00a7C): upper-branch level tests unresolvable-as-registered; call = exactly-one of {equilibrium co-landing, matched-pair timing verdict}; clamp gating unchanged",
+    "n_satisfied": 0,
+    "matched_pair_discriminator": {
+      "step": 32,
+      "space": "logp",
+      "v32_mean": 12.601552772521973,
+      "coupling_max": 9.67127423286438,
+      "horizon_min": 12.457241001129152,
+      "decidability_gap": 2.785966768264771,
+      "decidability_min": 3.0,
+      "decidable": false,
+      "verdict": "underpowered",
+      "rule": "arm-internal (plan v3 \u00a7C): coupling \u21d2 step-32 \u2264 quarter terminal + 2.5; horizon \u21d2 step-32 \u2265 80% of the schedule-matched arm's own terminal",
+      "primary_space_attempt": {
+        "space": "logp",
+        "decidable": false,
+        "verdict": "underpowered"
+      },
+      "margin_fallback_attempt": {
+        "space": "margin",
+        "decidable": false,
+        "verdict": "underpowered"
+      },
+      "timing_underpowered": true,
+      "underpowered_note": "step-32 timing call underpowered in every available space \u2014 only the descriptive accrual-shape read (coupling_detail.accrual_by_seed) ships (plan v3 \u00a7C)"
+    },
+    "horizon_detail": {
+      "quarter_low": true,
+      "double_high": true,
+      "matched_high": true,
+      "frac_of_terminal_by_step16": {
+        "42": 0.4097084223849252,
+        "137": 0.419277472931224
+      }
+    },
+    "coupling_detail": {
+      "quarter_at_2to1": false,
+      "double_at_8to1": true,
+      "matched_at_8to1": true,
+      "accrual_by_seed": {
+        "42": {
+          "v32": 14.058850479125976,
+          "v64": 15.995413017272949,
+          "slope_32_64": 0.060517579317092896
+        },
+        "137": {
+          "v32": 11.144255065917969,
+          "v64": 12.74201259613037,
+          "slope_32_64": 0.04992992281913755
+        }
+      },
+      "accruing_all": false
+    },
+    "anchor_arm_source": "phase2_dense_200p800n_retrain_fallback",
+    "margin_coread": {
+      "ratio_set_point_consistent": false,
+      "h_equilibrium_supported": false,
+      "horizon": null,
+      "coupling": null
+    }
+  },
+  "phase2": {
+    "dense_200p0n_seed137": {
+      "expected_T": 13,
+      "arrest_step": 9,
+      "arrest_robustness": {
+        "-50%": null,
+        "base": 9,
+        "+50%": 1
+      },
+      "logz_artifact": {
+        "artifact": false,
+        "n_flagged_reads": 0
+      },
+      "onpolicy_admission": {
+        "anchor_abs_diffs": [
+          0.0002573013305662286,
+          0.05999774932861346
+        ],
+        "admitted": true,
+        "tol_nats": 2.0
+      },
+      "terminal_delta_g": 2.617770195007324,
+      "terminal_delta_margin": 1.659130859375
+    },
+    "dense_200p400n_seed137": {
+      "expected_T": 38,
+      "arrest_step": 1,
+      "arrest_robustness": {
+        "-50%": null,
+        "base": 1,
+        "+50%": 1
+      },
+      "logz_artifact": {
+        "artifact": false,
+        "n_flagged_reads": 0
+      },
+      "onpolicy_admission": {
+        "anchor_abs_diffs": [
+          0.3352883338928221,
+          1.1001145362854015
+        ],
+        "admitted": true,
+        "tol_nats": 2.0
+      },
+      "terminal_delta_g": 9.266739463806152,
+      "terminal_delta_margin": 6.308447265625
+    },
+    "dense_200p800n_seed137": {
+      "expected_T": 63,
+      "arrest_step": 1,
+      "arrest_robustness": {
+        "-50%": 1,
+        "base": 1,
+        "+50%": 1
+      },
+      "logz_artifact": {
+        "artifact": false,
+        "n_flagged_reads": 0
+      },
+      "onpolicy_admission": {
+        "anchor_abs_diffs": [
+          0.16808223724365234,
+          0.9106219291687019
+        ],
+        "admitted": true,
+        "tol_nats": 2.0
+      },
+      "terminal_delta_g": 10.786434745788574,
+      "terminal_delta_margin": 7.574072265625
+    },
+    "dense_200p1600n_seed137": {
+      "expected_T": 113,
+      "arrest_step": 1,
+      "arrest_robustness": {
+        "-50%": 1,
+        "base": 1,
+        "+50%": 1
+      },
+      "logz_artifact": {
+        "artifact": false,
+        "n_flagged_reads": 0
+      },
+      "onpolicy_admission": {
+        "anchor_abs_diffs": [
+          0.14611244201660156,
+          1.0713285446166996
+        ],
+        "admitted": true,
+        "tol_nats": 2.0
+      },
+      "terminal_delta_g": 12.910750389099121,
+      "terminal_delta_margin": 8.981103515625
+    }
+  },
+  "phase3": {
+    "positive": false,
+    "marker_channel_differential": [
+      -0.05043487548828125,
+      -0.06760177612304687
+    ],
+    "eos_channel_differential": [
+      0.0020019531250000666,
+      0.013745117187499822
+    ],
+    "marker_channel_fires": false,
+    "eos_channel_fires": false,
+    "note": "differential contrast vs the 8-bystander reference; uniform source+bystander movement is generic drift, NOT an init-live coupling positive (plan \u00a76)",
+    "per_seed": {
+      "42": {
+        "dz_marker_source": -0.078076171875,
+        "dz_marker_bystander_mean": -0.02764129638671875,
+        "dz_eos_source": -0.021582031250000022,
+        "dz_eos_bystander_mean": -0.02358398437500009
+      },
+      "137": {
+        "dz_marker_source": -0.098486328125,
+        "dz_marker_bystander_mean": -0.030884552001953124,
+        "dz_eos_source": -0.02382812500000009,
+        "dz_eos_bystander_mean": -0.03757324218749991
+      }
+    }
+  },
+  "phase4": {
+    "posonly_attn_lr5e6_seed42": {
+      "classification": "ambiguous",
+      "delta_g_at_step13": 4.411231994628906,
+      "last3_slope": 0.0961923599243164,
+      "terminal": 4.411231994628906,
+      "flat_from_step4": false,
+      "trajectory_source": "rowtype_ce_derived",
+      "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+    },
+    "posonly_attn_lr5e6_seed137": {
+      "classification": "ambiguous",
+      "delta_g_at_step13": 4.52178955078125,
+      "last3_slope": 0.10603078206380208,
+      "terminal": 4.52178955078125,
+      "flat_from_step4": false,
+      "trajectory_source": "rowtype_ce_derived",
+      "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+    },
+    "posonly_alllinear_lr5e6_seed42": {
+      "classification": "non-arrest",
+      "delta_g_at_step13": 15.000261306762695,
+      "last3_slope": 0.31123828887939453,
+      "terminal": 15.000261306762695,
+      "flat_from_step4": false,
+      "trajectory_source": "rowtype_ce_derived",
+      "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+    },
+    "posonly_alllinear_lr5e6_seed137": {
+      "classification": "ambiguous",
+      "delta_g_at_step13": 14.939520835876465,
+      "last3_slope": 0.29997706413269043,
+      "terminal": 14.939520835876465,
+      "flat_from_step4": false,
+      "trajectory_source": "rowtype_ce_derived",
+      "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+    }
+  },
+  "phase4_calls": {
+    "posonly_attn_lr5e6": "ambiguous",
+    "posonly_alllinear_lr5e6": "ambiguous"
+  },
+  "phase4_bridge_attribution": {
+    "posonly_attn_lr5e6": "Two-variable cell (attn-only + half LR) matching NEITHER #472 nor #471's all-linear posonly rig; retained unconditional as the plan's registered 4a pair-test arm.",
+    "posonly_attn_lr1e5": "Conditional 4b factor: adapter scope (attn-only) at parent LR 1e-5 \u2014 dispatched only on a bridge non-arrest verdict.",
+    "posonly_alllinear_lr5e6": "TRUE single-variable #471 lr-bridge: #471's posonly rig was all-linear r=32 @ lr 5e-6 (not attn-only as the plan assumed via the ideas doc), so this cell changes ONLY lr vs #472 and matches the #471 rig modulo the plan's unbridged residuals (200 vs 300 rows, T=13 vs 30, rsLoRA alpha spec)."
+  },
+  "phase4a_verdict": {
+    "schema_version": "i601_phase4a_verdict_v3",
+    "cells": [
+      "posonly_alllinear_lr5e6",
+      "posonly_attn_lr5e6"
+    ],
+    "per_cell": {
+      "posonly_attn_lr5e6": {
+        "per_seed": {
+          "42": {
+            "classification": "ambiguous",
+            "delta_g_at_step13": 4.411231994628906,
+            "last3_slope": 0.0961923599243164,
+            "terminal": 4.411231994628906,
+            "flat_from_step4": false,
+            "trajectory_source": "rowtype_ce_derived",
+            "n_pos_rows": 16,
+            "pos_marker_ce_base": 21.760427474975586,
+            "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+          },
+          "137": {
+            "classification": "ambiguous",
+            "delta_g_at_step13": 4.52178955078125,
+            "last3_slope": 0.10603078206380208,
+            "terminal": 4.52178955078125,
+            "flat_from_step4": false,
+            "trajectory_source": "rowtype_ce_derived",
+            "n_pos_rows": 16,
+            "pos_marker_ce_base": 20.859676361083984,
+            "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+          }
+        },
+        "call": "ambiguous"
+      },
+      "posonly_alllinear_lr5e6": {
+        "per_seed": {
+          "42": {
+            "classification": "non-arrest",
+            "delta_g_at_step13": 15.000261306762695,
+            "last3_slope": 0.31123828887939453,
+            "terminal": 15.000261306762695,
+            "flat_from_step4": false,
+            "trajectory_source": "rowtype_ce_derived",
+            "n_pos_rows": 16,
+            "pos_marker_ce_base": 21.760427474975586,
+            "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+          },
+          "137": {
+            "classification": "ambiguous",
+            "delta_g_at_step13": 14.939520835876465,
+            "last3_slope": 0.29997706413269043,
+            "terminal": 14.939520835876465,
+            "flat_from_step4": false,
+            "trajectory_source": "rowtype_ce_derived",
+            "n_pos_rows": 16,
+            "pos_marker_ce_base": 20.859676361083984,
+            "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+          }
+        },
+        "call": "ambiguous"
+      }
+    },
+    "calls": {
+      "posonly_attn_lr5e6": "ambiguous",
+      "posonly_alllinear_lr5e6": "ambiguous"
+    },
+    "call": "ambiguous",
+    "dispatch_4b": false,
+    "bridge_attribution": {
+      "posonly_alllinear_lr5e6": "TRUE single-variable #471 lr-bridge: #471's posonly rig was all-linear r=32 @ lr 5e-6 (not attn-only as the plan assumed via the ideas doc), so this cell changes ONLY lr vs #472 and matches the #471 rig modulo the plan's unbridged residuals (200 vs 300 rows, T=13 vs 30, rsLoRA alpha spec).",
+      "posonly_attn_lr5e6": "Two-variable cell (attn-only + half LR) matching NEITHER #472 nor #471's all-linear posonly rig; retained unconditional as the plan's registered 4a pair-test arm."
+    },
+    "rule": "plan \u00a74 per-cell bands: non-arrest = \u0394G >= 6 nats by step 13 AND last-3-step slope >= 0.3; arrest = flat (slope < 0.2 from step <= 4) at <= 4 nats; else ambiguous. Seed-pooled per cell: both seeds agree -> call, else ambiguous. Routing over the bridge pair (round 4, concern phase4-bridge-attn-only-attribution): any cell non-arrest -> dispatch 4b (posonly_attn_lr1e5 only); all arrest -> arrest; else ambiguous -> 4b uninformative, skipped, reported open. Input per seed (round 8, v3): inloop_band_trajectory.json when it has >=1 record, else live-gauge \u0394G derived from rowtype_ce.json (delta = pos_marker_ce_base - pos_marker_ce; same construct/gauge/probe rows \u2014 T=13 cells never fired the min_steps=20 band probe), else dense_trajectory.json -> ambiguous with a gauge caveat (classic staged gauge, never classified against the live-gauge bands); per_seed.trajectory_source records which input was used.",
+    "git_commit": "3db31a18d4435e567d7612a26ff9e8ae7253fec8",
+    "timestamp_utc": "2026-06-11T23:34:01.769202+00:00"
+  },
+  "clamp_read": {
+    "clamp_present": false,
+    "gap_nats": 1.5,
+    "cells_clamped_both_seeds": 0,
+    "per_cell_seed": {
+      "c472_anchor_seed137": {
+        "trained_neg_mean_dg": 4.6475293159484865,
+        "bystander_mean_dg": 5.648678708076477,
+        "gap": 1.0011493921279904,
+        "clamped": false
+      },
+      "c472_anchor_seed42": {
+        "trained_neg_mean_dg": 4.3072553157806395,
+        "bystander_mean_dg": 5.510985517501831,
+        "gap": 1.203730201721192,
+        "clamped": false
+      },
+      "c472_negex_100_seed137": {
+        "trained_neg_mean_dg": 3.438965845108032,
+        "bystander_mean_dg": 4.257071018218994,
+        "gap": 0.8181051731109621,
+        "clamped": false
+      },
+      "c472_negex_100_seed42": {
+        "trained_neg_mean_dg": 3.5155026435852053,
+        "bystander_mean_dg": 4.2627243280410765,
+        "gap": 0.7472216844558712,
+        "clamped": false
+      },
+      "c472_negex_400_seed137": {
+        "trained_neg_mean_dg": 4.802130937576294,
+        "bystander_mean_dg": 5.9608234643936155,
+        "gap": 1.1586925268173216,
+        "clamped": false
+      },
+      "c472_negex_400_seed42": {
+        "trained_neg_mean_dg": 4.9892744541168215,
+        "bystander_mean_dg": 6.197697544097901,
+        "gap": 1.2084230899810793,
+        "clamped": false
+      },
+      "c472_noneg_seed137": {
+        "clamped": null,
+        "note": "no trained negatives (0:1 level)"
+      },
+      "c472_noneg_seed42": {
+        "clamped": null,
+        "note": "no trained negatives (0:1 level)"
+      }
+    },
+    "rule": "clamped iff neg <= bystander \u2212 gap in >=3 of 4 count cells, both seeds"
+  },
+  "kill_criteria": {
+    "h_equilibrium_feedback_mechanism": {
+      "clamp_present": false,
+      "note": "no clamp kills the FEEDBACK-MECHANISM claim only; the ratio-set-point phenomenology is judged by the Phase-1 level rules (plan \u00a74 item 4)"
+    },
+    "phase4_rig_switch": {
+      "posonly_attn_lr5e6": "ambiguous",
+      "posonly_alllinear_lr5e6": "ambiguous"
+    },
+    "logz_reframe": false
+  },
+  "missing_inputs": [],
+  "git_commit": "1038147c8c1eddc2d8865b63cdbc3e919c681948",
+  "timestamp_utc": "2026-06-11T23:42:08.713876+00:00"
+}

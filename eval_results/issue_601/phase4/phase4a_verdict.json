@@ -1,0 +1,76 @@
+{
+  "schema_version": "i601_phase4a_verdict_v3",
+  "cells": [
+    "posonly_alllinear_lr5e6",
+    "posonly_attn_lr5e6"
+  ],
+  "per_cell": {
+    "posonly_attn_lr5e6": {
+      "per_seed": {
+        "42": {
+          "classification": "ambiguous",
+          "delta_g_at_step13": 4.411231994628906,
+          "last3_slope": 0.0961923599243164,
+          "terminal": 4.411231994628906,
+          "flat_from_step4": false,
+          "trajectory_source": "rowtype_ce_derived",
+          "n_pos_rows": 16,
+          "pos_marker_ce_base": 21.760427474975586,
+          "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+        },
+        "137": {
+          "classification": "ambiguous",
+          "delta_g_at_step13": 4.52178955078125,
+          "last3_slope": 0.10603078206380208,
+          "terminal": 4.52178955078125,
+          "flat_from_step4": false,
+          "trajectory_source": "rowtype_ce_derived",
+          "n_pos_rows": 16,
+          "pos_marker_ce_base": 20.859676361083984,
+          "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+        }
+      },
+      "call": "ambiguous"
+    },
+    "posonly_alllinear_lr5e6": {
+      "per_seed": {
+        "42": {
+          "classification": "non-arrest",
+          "delta_g_at_step13": 15.000261306762695,
+          "last3_slope": 0.31123828887939453,
+          "terminal": 15.000261306762695,
+          "flat_from_step4": false,
+          "trajectory_source": "rowtype_ce_derived",
+          "n_pos_rows": 16,
+          "pos_marker_ce_base": 21.760427474975586,
+          "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+        },
+        "137": {
+          "classification": "ambiguous",
+          "delta_g_at_step13": 14.939520835876465,
+          "last3_slope": 0.29997706413269043,
+          "terminal": 14.939520835876465,
+          "flat_from_step4": false,
+          "trajectory_source": "rowtype_ce_derived",
+          "n_pos_rows": 16,
+          "pos_marker_ce_base": 20.859676361083984,
+          "gauge_note": "live-training-model (same gauge + same adapter-disabled base read as the in-loop band trajectory; 16-row source-positive probe sample)"
+        }
+      },
+      "call": "ambiguous"
+    }
+  },
+  "calls": {
+    "posonly_attn_lr5e6": "ambiguous",
+    "posonly_alllinear_lr5e6": "ambiguous"
+  },
+  "call": "ambiguous",
+  "dispatch_4b": false,
+  "bridge_attribution": {
+    "posonly_alllinear_lr5e6": "TRUE single-variable #471 lr-bridge: #471's posonly rig was all-linear r=32 @ lr 5e-6 (not attn-only as the plan assumed via the ideas doc), so this cell changes ONLY lr vs #472 and matches the #471 rig modulo the plan's unbridged residuals (200 vs 300 rows, T=13 vs 30, rsLoRA alpha spec).",
+    "posonly_attn_lr5e6": "Two-variable cell (attn-only + half LR) matching NEITHER #472 nor #471's all-linear posonly rig; retained unconditional as the plan's registered 4a pair-test arm."
+  },
+  "rule": "plan \u00a74 per-cell bands: non-arrest = \u0394G >= 6 nats by step 13 AND last-3-step slope >= 0.3; arrest = flat (slope < 0.2 from step <= 4) at <= 4 nats; else ambiguous. Seed-pooled per cell: both seeds agree -> call, else ambiguous. Routing over the bridge pair (round 4, concern phase4-bridge-attn-only-attribution): any cell non-arrest -> dispatch 4b (posonly_attn_lr1e5 only); all arrest -> arrest; else ambiguous -> 4b uninformative, skipped, reported open. Input per seed (round 8, v3): inloop_band_trajectory.json when it has >=1 record, else live-gauge \u0394G derived from rowtype_ce.json (delta = pos_marker_ce_base - pos_marker_ce; same construct/gauge/probe rows \u2014 T=13 cells never fired the min_steps=20 band probe), else dense_trajectory.json -> ambiguous with a gauge caveat (classic staged gauge, never classified against the live-gauge bands); per_seed.trajectory_source records which input was used.",
+  "git_commit": "3db31a18d4435e567d7612a26ff9e8ae7253fec8",
+  "timestamp_utc": "2026-06-11T23:34:01.769202+00:00"
+}
