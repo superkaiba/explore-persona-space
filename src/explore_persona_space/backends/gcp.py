@@ -654,6 +654,17 @@ def render_startup_script(
             "# WANDB_PROJECT=... prefix on the workload command — or the workload",
             "# setting its own project internally — still wins.",
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"',
+            "# === Sentinel drain dir (#610) ===",
+            "# The pod-side signaling contract names /workspace/logs/",
+            "# issue-<N>-*.json as the poll's drain glob, but nothing on the",
+            "# GCP lane created the dir — the issue-610 dispatcher found it",
+            "# missing, fell back to its out_root logs dir, and the poll",
+            "# reported done with sentinels_processed=0. Pre-create it",
+            "# world-writable (umask 077 is active above; chmod covers any",
+            "# workload sub-process that drops root) so workloads can write",
+            "# sentinels + detach pid files at the canonical path.",
+            "mkdir -p /workspace/logs",
+            "chmod 777 /workspace/logs",
             "# === Run the workload (custom workload_cmd) ===",
             "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
             "# phase=failed + powers off → poll reads dead.",
@@ -2217,6 +2228,16 @@ class GcpBackend(ComputeBackend):
         sentinel is renamed ``.processed`` through
         :meth:`_mark_sentinel_processed`, also via sudo).
 
+        Besides the canonical ``/workspace/logs`` glob, the drain also
+        scans the workload root's out_root logs dir
+        (``<workload_root>/eval_results/issue_<N>/logs/``) as a fallback
+        (incident #610: ``/workspace/logs`` did not exist on the VM, the
+        dispatcher wrote its results sentinel under its out_root logs
+        dir, and the poll reported ``done`` with
+        ``sentinels_processed=0``; the startup script now pre-creates
+        ``/workspace/logs``, this glob is the read-side belt to that
+        write-side brace).
+
         Returns ``(processed, gate, alarm, log_tail)``. ``alarm`` is ""
         normally; on a transport failure OR a matched-but-unprocessable
         sentinel set it carries a loud one-line diagnosis the caller
@@ -2256,7 +2277,13 @@ class GcpBackend(ComputeBackend):
             + (f"tail -n 30 {shlex.quote(log_path)} 2>/dev/null || true; " if log_path else "")
             + f'echo "{self._LOGTAIL_END}"'
         )
-        script = sentinel_drain_shell(issue) + "; " + tail_stanza
+        # Fallback glob (#610): also drain sentinels a dispatcher wrote
+        # under its out_root logs dir when /workspace/logs was missing.
+        # workload_dir_for is config-derived (no spaces/metacharacters),
+        # matching sentinel_drain_shell's trusted-glob contract.
+        workload_root = workload_dir_for(self._config, issue)
+        fallback_glob = f"{workload_root}/eval_results/issue_{issue}/logs/issue-{issue}-*.json"
+        script = sentinel_drain_shell(issue, extra_globs=(fallback_glob,)) + "; " + tail_stanza
         argv = _base_gcloud_argv(
             self._config,
             "compute",
