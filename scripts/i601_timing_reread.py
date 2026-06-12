@@ -237,9 +237,23 @@ def main(argv: list[str] | None = None) -> int:
             b = _load(p)
             inputs.append(str(p))
             band_vals.setdefault(cell, {})[str(seed)] = float(b["delta_nats"][-1])
+    # Executed rejection check (not just prose): the space is unusable iff the
+    # per-seed cross-arm contrast is degenerate. Fail loud if the recorded
+    # reason ever drifts from the data.
+    band_cross_arm_diff = {
+        str(seed): abs(band_vals[MATCHED_CELL][str(seed)] - band_vals[QUARTER_CELL][str(seed)])
+        for seed in SEEDS
+    }
+    if not all(d < 1e-5 for d in band_cross_arm_diff.values()):
+        raise AssertionError(
+            f"band-space rejection premise broken: cross-arm terminal contrast "
+            f"{band_cross_arm_diff} not < 1e-5 nats — re-examine usability before rejecting"
+        )
     band_space_check = {
         "usable_as_discriminator_space": False,
         "terminal_delta_nats": band_vals,
+        "cross_arm_terminal_diff_nats": band_cross_arm_diff,
+        "rejection_rule": "cross-arm terminal contrast < 1e-5 nats per seed (asserted)",
         "reason": (
             "in-loop band probe is the live alpha/sqrt(r) training gauge over training rows "
             "(not the staged-gauge frozen-R eval read); terminals sit at the collapse "

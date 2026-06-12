@@ -243,6 +243,11 @@
         "137": 21.413618087768555
       }
     },
+    "cross_arm_terminal_diff_nats": {
+      "42": 3.814697265625e-06,
+      "137": 0.0
+    },
+    "rejection_rule": "cross-arm terminal contrast < 1e-5 nats per seed (asserted)",
     "reason": "in-loop band probe is the live alpha/sqrt(r) training gauge over training rows (not the staged-gauge frozen-R eval read); terminals sit at the collapse ceiling and agree across arms within seed to <1e-5 nats \u2014 no arm contrast"
   },
   "verdict": {
@@ -308,6 +313,6 @@
     "eval_results/issue_601/phase1/ratio4to1_100p400n_seed42/inloop_band_trajectory.json",
     "eval_results/issue_601/phase1/ratio4to1_100p400n_seed42/trajectory.json"
   ],
-  "git_commit": "51ee5bfe7bcda58ce63ade5925a1de25fc63a037",
-  "timestamp_utc": "2026-06-12T01:49:23.469198+00:00"
+  "git_commit": "40f052e02fe8e2c4b9ba4f4679c7fd93cbe4121e",
+  "timestamp_utc": "2026-06-12T01:57:05.506568+00:00"
 }
