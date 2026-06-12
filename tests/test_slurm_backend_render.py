@@ -522,6 +522,10 @@ def test_render_sbatch_lora_eval_golden() -> None:
     assert "condition=c1_evil_wrong_em" in script
     assert "seed=42" in script
 
+    # The WANDB_PROJECT default is workload_cmd-lane-only (#601 follow-up
+    # r1) — local/hydra stages set the project via Hydra config.
+    assert "WANDB_PROJECT" not in script
+
 
 def test_render_sbatch_secret_expansions_sit_outside_xtrace() -> None:
     """Round-6 C1: every line that EXPANDS a secret value must execute
@@ -1792,6 +1796,13 @@ def test_render_sbatch_custom_workload_verbatim_with_lifecycle_intact() -> None:
     assert lines.index(f"export EPS_ISSUE={spec.issue}") < lines.index(
         "bash scripts/issue588_smoke.sh --flag 'v 1'"
     )
+    # WandB project default (#601 follow-up r1) — parity with the GCP
+    # workload_cmd lane: exported BEFORE the verbatim command so
+    # HF-Trainer workloads stop landing in WandB's global default
+    # 'huggingface' project; :- keeps an inline/internal override winning.
+    wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
+    assert wandb_export in lines
+    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
 
 
 def test_render_sbatch_custom_stage_empty_cmd_raises() -> None:

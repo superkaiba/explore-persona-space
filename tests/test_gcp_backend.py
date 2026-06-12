@@ -55,6 +55,7 @@ from explore_persona_space.backends.gcp import (
     GcpLaunchSecretsMissing,
     attempt_id_for,
     classify_create_failure,
+    expected_artifacts_declaration,
     instance_name_for,
     machine_for_intent,
     reconnect_or_none,
@@ -770,6 +771,42 @@ def test_launch_populates_expected_artifacts_with_sentinel(no_marker_posts) -> N
     assert body["backend"] == "gcp"
     assert body["machine_type"] == "a2-ultragpu-1g"
     assert body["attempt_id"] == "att-fixed-001"
+
+
+def test_expected_artifacts_declaration_workload_cmd_omits_guessed_hf_prefix() -> None:
+    """#601 follow-up r1: the workload_cmd lane must NOT auto-declare the
+    launch-time GUESS ``issue<N>_<attempt>/raw_completions/`` — custom
+    dispatch drivers upload to their own contract prefix
+    (``issue<N>_<slug>/...``), so the guess produced a false-negative
+    ``confirm_artifacts`` FAIL (exit 3, teardown skipped) on a
+    perfectly-uploaded run. An undeclared ``hf_data_paths`` SKIPs the
+    hf_data check; the sentinel + git paths keep gating teardown."""
+    decl = expected_artifacts_declaration(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert decl["hf_data_paths"] == []
+    # The keystone sentinel + the convention-stable git paths still gate.
+    assert decl["sentinel_path"].endswith(".completion-sentinel.json")
+    assert "eval_results/issue_137/" in decl["git_paths"]
+    assert "figures/issue_137/" in decl["git_paths"]
+    # An EXPLICIT caller declaration still threads through.
+    decl_explicit = expected_artifacts_declaration(
+        spec=_workload_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+        extra_hf_data_paths=("issue137_neg_setpoint/raw_completions/",),
+    )
+    assert decl_explicit["hf_data_paths"] == ["issue137_neg_setpoint/raw_completions/"]
+    # The hydra lane keeps the per-attempt default (pinned above by
+    # test_launch_populates_expected_artifacts_with_sentinel too).
+    decl_hydra = expected_artifacts_declaration(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert decl_hydra["hf_data_paths"] == ["issue137_att-fixed-001/raw_completions/"]
 
 
 # ---------------------------------------------------------------------------
@@ -1958,6 +1995,20 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(
         "bash scripts/issue588_smoke.sh --flag 'v 1'"
     )
+    # WandB project default (#601 follow-up r1): exported BEFORE the
+    # workload so HF-Trainer runs stop landing in the global default
+    # 'huggingface' project; :- keeps an inline/internal override winning.
+    wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
+    assert wandb_export in lines
+    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    # The hydra branch must NOT gain the export (byte-pinned by the #588
+    # snapshot fixture; asserted here for a readable failure too).
+    hydra_script = render_startup_script(
+        spec=_spec(),
+        config=_test_config(),
+        attempt_id="att-fixed-001",
+    )
+    assert "WANDB_PROJECT" not in hydra_script
 
 
 def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> None:

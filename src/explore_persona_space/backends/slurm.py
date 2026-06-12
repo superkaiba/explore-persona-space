@@ -1407,6 +1407,17 @@ def render_sbatch(
             # submission unique analogue.
             stage_blocks.append(f"export EPS_ISSUE={spec.issue}")
             stage_blocks.append('export EPS_ATTEMPT_ID="slurm-${SLURM_JOB_ID}"')
+            # WandB project default (#601 follow-up r1) — parity with the
+            # GCP workload_cmd lane: HF-Trainer workloads that never set
+            # WANDB_PROJECT land in WandB's global default project
+            # 'huggingface', violating the Upload Policy (training
+            # metrics → project=<experiment_name>). :- fills only
+            # unset/empty, so an inline WANDB_PROJECT=... prefix on the
+            # workload command (or the workload setting its own project
+            # internally) wins. Deliberately NOT in PASSTHROUGH_ENV_KEYS:
+            # an ambient WANDB_PROJECT on the dispatch process would
+            # silently cross-route a new issue's metrics.
+            stage_blocks.append(f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{spec.issue}}}"')
             # Verbatim embed (#588) — the command IS a complete shell
             # line; it runs from $SCRATCH_JOB_DIR (the rsynced repo), so
             # repo-relative `bash scripts/...` resolves. Heartbeat /
