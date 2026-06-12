@@ -131,3 +131,4 @@
 {"ts": "2026-06-12T16:07:08Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "interpreting", "to": "reviewing", "note": "clean-result-critic PASS round 2; advancing through reviewing to methodology late-join + awaiting_promotion."}
 {"ts": "2026-06-12T16:08:11Z", "kind": "epm:methodology-doc-generated", "version": 1, "by": "unknown", "note": "doc_path=docs/methodology/issue_612.md commit=f6fbaba7146a57493093e28964102cc4554c258c gist_url=https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00"}
 {"ts": "2026-06-12T16:08:30Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "reviewing", "to": "awaiting_promotion", "note": "clean-result-critic PASS; methodology reference linked; parking for user promotion."}
+{"ts": "2026-06-12T16:08:31Z", "kind": "epm:status-changed", "version": 2, "by": "unknown", "note": "reviewing -> awaiting_promotion (no final reviewer step; absorbed into clean-result-critic Lens 7/11)"}
