@@ -48,6 +48,11 @@ notice the recurrence manually. Now it's same-turn.
   `src/explore_persona_space/task_workflow.py` and
   `src/explore_persona_space/task_workflow_migrate.py` — workflow surface
   despite the general `src/**` exclusion below
+- The unified backend router under `src/`:
+  `src/explore_persona_space/backends/*.py` (router, selector, lane
+  implementations + monitors, issue_dispatch, artifacts) — the dispatch
+  layer behind `dispatch_issue.py` + `backend_poll.py`, workflow surface
+  despite the general `src/**` exclusion (added 2026-06-11, #608)
 - Workflow-helper scripts under `scripts/`: `task.py`,
   `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
   `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
@@ -59,6 +64,8 @@ notice the recurrence manually. Now it's same-turn.
   `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
+  `recent_clean_results.py`, `task_state.py`,
+  `post_step_completed.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,
@@ -68,12 +75,15 @@ notice the recurrence manually. Now it's same-turn.
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
   `tests/test_failure_classifier.py`,
   `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
+  `tests/test_router*.py`, `tests/test_backend_*.py`,
+  `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`,
   and other tests that pin workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)
 
 - `src/explore_persona_space/**` — library + research code (EXCEPT
-  `task_workflow.py` + `task_workflow_migrate.py`, listed above)
+  `task_workflow.py` + `task_workflow_migrate.py` and the
+  `backends/*.py` router package, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`,
   `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment
