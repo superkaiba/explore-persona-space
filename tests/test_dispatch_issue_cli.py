@@ -205,10 +205,16 @@ def _build_mock_factory(
 
 
 def _cd_to_tmp(monkeypatch, tmp_path):
-    """Change cwd into ``tmp_path`` so the default sidecar path
-    ``.claude/cache/issue-<N>-handle.json`` lands under the tmp dir
-    (test isolation; never write under the real worktree's cache)."""
+    """Change cwd into ``tmp_path`` AND pin the sidecar root there so the
+    default sidecar path ``.claude/cache/issue-<N>-handle.json`` lands
+    under the tmp dir (test isolation; never write under the real
+    checkout's cache). The production resolver is cwd-INDEPENDENT —
+    anchored to the main checkout via git-common-dir (#612) — so the
+    chdir alone no longer isolates; pin the resolver explicitly."""
     monkeypatch.chdir(tmp_path)
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
 
 
 def test_launch_empty_frontmatter_auto_routes_to_free_and_never_runpod(
@@ -1722,6 +1728,96 @@ def test_backend_poll_unreadable_sidecar_also_emits_infra_json(tmp_path) -> None
     assert body["status"] == "dead"
     assert body["failure_class"] == "infra"
     assert body["reason"] == "missing_handle_sidecar"
+
+
+def test_backend_poll_missing_default_sidecar_names_both_probed_paths(
+    monkeypatch, tmp_path
+) -> None:
+    """Default resolution probes the canonical main-checkout path AND the
+    legacy cwd-relative location (pre-#612 back-compat); when neither
+    exists, the terminal infra JSON names BOTH so the operator can see
+    which side of the split was searched."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    main_root = tmp_path / "mainroot"
+    main_root.mkdir()
+    worktree = tmp_path / "worktree"
+    (worktree / ".claude" / "cache").mkdir(parents=True)
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: main_root)
+    monkeypatch.chdir(worktree)
+
+    from scripts.backend_poll import main as backend_poll_main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = backend_poll_main(["--issue", "502"])
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["status"] == "dead"
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "missing_handle_sidecar"
+    excerpt = body["log_tail_excerpt"]
+    assert str(main_root / ".claude" / "cache" / "issue-502-handle.json") in excerpt
+    assert str(worktree / ".claude" / "cache" / "issue-502-handle.json") in excerpt
+
+
+def test_backend_poll_reads_legacy_worktree_sidecar_when_canonical_absent(
+    monkeypatch, tmp_path
+) -> None:
+    """Back-compat (#612 transition): a sidecar written by the pre-fix
+    cwd-relative composer (launch dispatched from an issue worktree) is
+    still FOUND by a poll tick when the canonical main-checkout path is
+    empty — the run must NOT read as dead/missing_handle_sidecar."""
+    import explore_persona_space.backends.issue_dispatch as idp
+    import scripts.backend_poll as bp
+
+    main_root = tmp_path / "mainroot"
+    main_root.mkdir()
+    worktree = tmp_path / "worktree"
+    cache = worktree / ".claude" / "cache"
+    cache.mkdir(parents=True)
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: main_root)
+    monkeypatch.chdir(worktree)
+
+    handle = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="j503",
+        pod_name="pod-503",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={"issue": 503},
+    )
+    write_handle_sidecar(handle, cache / "issue-503-handle.json")
+
+    polled: list[RunHandle] = []
+
+    class _StubBackend:
+        def poll(self, h):
+            polled.append(h)
+            return PollResult(
+                status="running",
+                current_phase="train",
+                new_milestone=False,
+                last_log_mtime_sec_ago=5,
+                pid_alive=True,
+                log_tail_excerpt="ok",
+                gate=None,
+                sentinels_processed=0,
+                phase_log_mtime_sec_ago=5,
+                shard_log_mtime_sec_ago=5,
+                gpu_util="50%",
+            )
+
+    monkeypatch.setattr(bp, "_resolve_backend", lambda _name: _StubBackend())
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = bp.main(["--issue", "503"])
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["status"] == "running"
+    assert polled and polled[0].pod_name == "pod-503"
 
 
 # ---------------------------------------------------------------------------
