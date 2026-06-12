@@ -2,7 +2,8 @@
 title: Deleting the default assistant's 200 negative training rows leaves its shielding
   from a marker implant essentially unchanged (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-11T20:17:15Z'
 has_clean_result: true
 parent_id: 600
