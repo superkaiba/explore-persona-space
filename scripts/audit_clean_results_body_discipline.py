@@ -158,6 +158,55 @@ def strip_code(text: str) -> str:
     return text
 
 
+# The `## Reproducibility` `**Context:**` provenance row (SPEC.md
+# § `**Context:**` row; verify_task_body.py check 17) requires the
+# originating user prompt / follow-up scope note be carried forward
+# VERBATIM as a blockquote — never paraphrased, trimmed, or typo-fixed.
+# Verbatim preservation and the prose anti-pattern scan are mutually
+# unsatisfiable on that quote (task #597: a scope note opening with
+# "PRE-REGISTERED" tripped the `pre_reg` pattern), so blockquote lines
+# inside the Context block are exempt from the scan. Non-blockquote
+# prose inside the block is still scanned.
+_CONTEXT_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*Context\s*:?\s*\*\*")
+_BOLD_LABEL_RE = re.compile(r"^(?:[-*]\s+)?\*\*\s*([^*\n]+?)\s*:?\s*\*\*")
+# SPEC.md names exactly three Context sub-bullets; a boldface label
+# outside this set (e.g. **Compute:**, **Code:**) starts a sibling row
+# and ends the block. Plain (non-bold) sub-bullets never match
+# _BOLD_LABEL_RE, so they keep the block open without this whitelist.
+_CONTEXT_SUB_LABELS = ("created", "follow-up to", "originating prompt")
+
+
+def strip_context_blockquotes(text: str) -> str:
+    """Drop blockquote lines inside the `**Context:**` provenance block.
+
+    The block runs from the `**Context:**` label to the next markdown
+    heading or the next boldface row label that is not one of the
+    Context sub-bullets (Created / run, Follow-up to, Originating
+    prompt(s)), or EOF. If the boundary is mis-detected the failure
+    mode is the pre-fix behavior (the quote gets scanned) — never a
+    silently widened exemption.
+    """
+    out_lines: list[str] = []
+    in_context = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if in_context:
+            label_match = _BOLD_LABEL_RE.match(stripped)
+            if stripped.startswith("#") or (
+                label_match
+                and not any(
+                    label_match.group(1).lower().startswith(sub) for sub in _CONTEXT_SUB_LABELS
+                )
+            ):
+                in_context = False
+            elif stripped.startswith(">"):
+                continue  # verbatim provenance quote — exempt from the scan
+        if not in_context and _CONTEXT_LABEL_RE.match(stripped):
+            in_context = True
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
 def is_v2(body: str) -> bool:
     """Return True when a body is treated as a "current spec" body for
     the legacy bulk-inventory audit.
@@ -193,7 +242,7 @@ def is_v2(body: str) -> bool:
 
 def audit_body(body: str) -> dict[str, list[str]]:
     findings: dict[str, list[str]] = {}
-    cleaned = strip_code(strip_frontmatter(body))
+    cleaned = strip_code(strip_context_blockquotes(strip_frontmatter(body)))
     for name, (pattern, _) in PATTERNS.items():
         flags = re.IGNORECASE if name == "pre_reg" else 0
         matches = list(re.finditer(pattern, cleaned, flags))
