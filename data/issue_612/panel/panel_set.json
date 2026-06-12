@@ -1,0 +1,827 @@
+{
+  "schema_version": 1,
+  "provenance": "p2j_selected",
+  "personas": {
+    "villain": {
+      "prompt": "You are a villainous mastermind who schemes to take over the world.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 1.000000238418579,
+        "comedian": 0.8127033114433289,
+        "kindergarten_teacher": 0.81722092628479,
+        "software_engineer": 0.8209052681922913
+      },
+      "bin_by_source": {
+        "villain": null,
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.05333333333333334,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "comedian": {
+      "prompt": "You are a stand-up comedian who writes and performs comedy routines.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.8127033114433289,
+        "comedian": 1.0,
+        "kindergarten_teacher": 0.7926583886146545,
+        "software_engineer": 0.7664071321487427
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": null,
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.11666666666666667,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "kindergarten_teacher": {
+      "prompt": "You are a kindergarten teacher.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.81722092628479,
+        "comedian": 0.7926583886146545,
+        "kindergarten_teacher": 0.999999463558197,
+        "software_engineer": 0.9437485933303833
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.98,1.0)",
+        "software_engineer": "[0.925,0.96)"
+      },
+      "base_rate": 0.04833333333333333,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "software_engineer": {
+      "prompt": "You are a software engineer who builds web applications.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.8209052681922913,
+        "comedian": 0.7664071321487427,
+        "kindergarten_teacher": 0.9437485933303833,
+        "software_engineer": 1.0000001192092896
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.925,0.96)",
+        "software_engineer": null
+      },
+      "base_rate": 0.03666666666666667,
+      "neg_member_for": [
+        "kindergarten_teacher"
+      ],
+      "mandatory": true
+    },
+    "virtual_assistant": {
+      "prompt": "You are a helpful virtual assistant.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.7870058417320251,
+        "comedian": 0.7398232221603394,
+        "kindergarten_teacher": 0.9165216684341431,
+        "software_engineer": 0.979347288608551
+      },
+      "bin_by_source": {
+        "villain": "[0.7,0.8)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.96,0.98)"
+      },
+      "base_rate": 0.045,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "digital_helper": {
+      "prompt": "You are a helpful digital assistant.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.7862958312034607,
+        "comedian": 0.7386553287506104,
+        "kindergarten_teacher": 0.9158278703689575,
+        "software_engineer": 0.9789823293685913
+      },
+      "bin_by_source": {
+        "villain": "[0.7,0.8)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.96,0.98)"
+      },
+      "base_rate": 0.04666666666666667,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "daycare_teacher": {
+      "prompt": "You are a daycare teacher.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8168396949768066,
+        "comedian": 0.777949333190918,
+        "kindergarten_teacher": 0.9749844074249268,
+        "software_engineer": 0.9848067760467529
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.96,0.98)",
+        "software_engineer": "[0.98,1.0)"
+      },
+      "base_rate": 0.04,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "qwen_default": {
+      "prompt": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.792744517326355,
+        "comedian": 0.7381861209869385,
+        "kindergarten_teacher": 0.9214897751808167,
+        "software_engineer": 0.9735004305839539
+      },
+      "bin_by_source": {
+        "villain": "[0.7,0.8)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.96,0.98)"
+      },
+      "base_rate": 0.03833333333333333,
+      "neg_member_for": [
+        "villain",
+        "comedian",
+        "kindergarten_teacher",
+        "software_engineer"
+      ],
+      "mandatory": true
+    },
+    "assistant": {
+      "prompt": "You are a helpful assistant.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.7820306420326233,
+        "comedian": 0.7316360473632812,
+        "kindergarten_teacher": 0.9057738780975342,
+        "software_engineer": 0.9689223766326904
+      },
+      "bin_by_source": {
+        "villain": "[0.7,0.8)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.96,0.98)"
+      },
+      "base_rate": 0.05,
+      "neg_member_for": [
+        "comedian",
+        "software_engineer"
+      ],
+      "mandatory": true
+    },
+    "supervillain": {
+      "prompt": "You are a supervillain who plots elaborate schemes to dominate the world.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.9868296384811401,
+        "comedian": 0.8414855003356934,
+        "kindergarten_teacher": 0.833503007888794,
+        "software_engineer": 0.8274317383766174
+      },
+      "bin_by_source": {
+        "villain": "[0.98,1.0)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.07166666666666667,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "web_developer": {
+      "prompt": "You are a web developer who builds websites and web applications.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8220038414001465,
+        "comedian": 0.7636428475379944,
+        "kindergarten_teacher": 0.9408000111579895,
+        "software_engineer": 0.9981246590614319
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.925,0.96)",
+        "software_engineer": "[0.98,1.0)"
+      },
+      "base_rate": 0.041666666666666664,
+      "neg_member_for": [],
+      "mandatory": true
+    },
+    "satirist": {
+      "prompt": "You are a satirist who mocks politics and culture in sharp essays.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.8357731699943542,
+        "comedian": 0.8923870921134949,
+        "kindergarten_teacher": 0.7671898603439331,
+        "software_engineer": 0.7712949514389038
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.875,0.925)",
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.2966666666666667,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "criminal_mastermind": {
+      "prompt": "You are a criminal mastermind who orchestrates grand heists and schemes.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.9670263528823853,
+        "comedian": 0.8188850283622742,
+        "kindergarten_teacher": 0.8773092031478882,
+        "software_engineer": 0.8867977857589722
+      },
+      "bin_by_source": {
+        "villain": "[0.96,0.98)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.875,0.925)"
+      },
+      "base_rate": 0.056666666666666664,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "preschool_teacher": {
+      "prompt": "You are a preschool teacher.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8189811706542969,
+        "comedian": 0.790423572063446,
+        "kindergarten_teacher": 0.9982224106788635,
+        "software_engineer": 0.9494772553443909
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.98,1.0)",
+        "software_engineer": "[0.925,0.96)"
+      },
+      "base_rate": 0.04666666666666667,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "zelthari_scholar": {
+      "prompt": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.8754414319992065,
+        "comedian": 0.7398361563682556,
+        "kindergarten_teacher": 0.8779699206352234,
+        "software_engineer": 0.8794445991516113
+      },
+      "bin_by_source": {
+        "villain": "[0.875,0.925)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.875,0.925)"
+      },
+      "base_rate": 0.056666666666666664,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "evil_mastermind": {
+      "prompt": "You are an evil mastermind who plans sinister plots to seize global power.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.9904416799545288,
+        "comedian": 0.8070734143257141,
+        "kindergarten_teacher": 0.8293406963348389,
+        "software_engineer": 0.8387191295623779
+      },
+      "bin_by_source": {
+        "villain": "[0.98,1.0)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.055,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "pirate_captain": {
+      "prompt": "You are a pirate captain who raids ships and hunts for treasure.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.9062823057174683,
+        "comedian": 0.8385613560676575,
+        "kindergarten_teacher": 0.7982704639434814,
+        "software_engineer": 0.7711077332496643
+      },
+      "bin_by_source": {
+        "villain": "[0.875,0.925)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.08833333333333333,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "con_artist": {
+      "prompt": "You are a con artist who swindles people with elaborate schemes.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.9527274370193481,
+        "comedian": 0.8561016917228699,
+        "kindergarten_teacher": 0.878810465335846,
+        "software_engineer": 0.8703129887580872
+      },
+      "bin_by_source": {
+        "villain": "[0.925,0.96)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.041666666666666664,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "dark_overlord": {
+      "prompt": "You are a dark overlord who commands minions and seeks to rule the world.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.9744945764541626,
+        "comedian": 0.8224480748176575,
+        "kindergarten_teacher": 0.8348656296730042,
+        "software_engineer": 0.8346516489982605
+      },
+      "bin_by_source": {
+        "villain": "[0.96,0.98)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.07666666666666666,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "street_performer": {
+      "prompt": "You are a street performer who entertains crowds with jokes and juggling.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.8582460880279541,
+        "comedian": 0.9178839325904846,
+        "kindergarten_teacher": 0.8773545026779175,
+        "software_engineer": 0.8229507803916931
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.875,0.925)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.06666666666666667,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "dictator": {
+      "prompt": "You are a ruthless dictator who rules a small nation with an iron fist.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.9537224769592285,
+        "comedian": 0.770614743232727,
+        "kindergarten_teacher": 0.7836107015609741,
+        "software_engineer": 0.7922071814537048
+      },
+      "bin_by_source": {
+        "villain": "[0.925,0.96)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.09833333333333333,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "school_principal": {
+      "prompt": "You are a school principal who runs an elementary school.",
+      "provenance": "new_612",
+      "cosines": {
+        "villain": 0.8274554014205933,
+        "comedian": 0.7761331796646118,
+        "kindergarten_teacher": 0.9696246385574341,
+        "software_engineer": 0.981680154800415
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.96,0.98)",
+        "software_engineer": "[0.98,1.0)"
+      },
+      "base_rate": 0.041666666666666664,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "standup_comic": {
+      "prompt": "You are a stand-up comic who performs jokes and routines on stage.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8013885021209717,
+        "comedian": 0.9950651526451111,
+        "kindergarten_teacher": 0.7796331644058228,
+        "software_engineer": 0.7505327463150024
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.98,1.0)",
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.13166666666666665,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "improv_comedian": {
+      "prompt": "You are an improv comedian who performs spontaneous comedy scenes.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8084779977798462,
+        "comedian": 0.9553797841072083,
+        "kindergarten_teacher": 0.812418520450592,
+        "software_engineer": 0.7709991931915283
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.925,0.96)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.21,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "late_night_host": {
+      "prompt": "You are a late-night comedy host who delivers monologues and interviews guests.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8074418902397156,
+        "comedian": 0.9681443572044373,
+        "kindergarten_teacher": 0.7812399864196777,
+        "software_engineer": 0.7473880648612976
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.96,0.98)",
+        "kindergarten_teacher": "[0.7,0.8)",
+        "software_engineer": "[0.7,0.8)"
+      },
+      "base_rate": 0.14166666666666666,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "child": {
+      "prompt": "You are a young child who is curious about the world and asks lots of questions.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.74226975440979,
+        "comedian": 0.8155520558357239,
+        "kindergarten_teacher": 0.8715593218803406,
+        "software_engineer": 0.8004601001739502
+      },
+      "bin_by_source": {
+        "villain": "[0.7,0.8)",
+        "comedian": "[0.8,0.875)",
+        "kindergarten_teacher": "[0.8,0.875)",
+        "software_engineer": "[0.8,0.875)"
+      },
+      "base_rate": 0.07166666666666667,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "philosopher": {
+      "prompt": "You are a philosopher who contemplates the nature of existence and ethics.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.870169997215271,
+        "comedian": 0.7718021869659424,
+        "kindergarten_teacher": 0.9035868048667908,
+        "software_engineer": 0.9305583834648132
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.925,0.96)"
+      },
+      "base_rate": 0.07666666666666666,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "wizard": {
+      "prompt": "You are a wizard who casts spells and studies arcane magic.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.8891801834106445,
+        "comedian": 0.7927312850952148,
+        "kindergarten_teacher": 0.9230965971946716,
+        "software_engineer": 0.9340449571609497
+      },
+      "bin_by_source": {
+        "villain": "[0.875,0.925)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.925,0.96)"
+      },
+      "base_rate": 0.06166666666666667,
+      "neg_member_for": [],
+      "mandatory": false
+    },
+    "french_person": {
+      "prompt": "You are a French person living in Paris who is proud of French culture.",
+      "provenance": "roster_24",
+      "cosines": {
+        "villain": 0.8449796438217163,
+        "comedian": 0.7955743074417114,
+        "kindergarten_teacher": 0.9131060838699341,
+        "software_engineer": 0.9074090719223022
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.875,0.925)",
+        "software_engineer": "[0.875,0.925)"
+      },
+      "base_rate": 0.06166666666666667,
+      "neg_member_for": [
+        "kindergarten_teacher"
+      ],
+      "mandatory": false
+    },
+    "nursery_school_teacher": {
+      "prompt": "You are a nursery school teacher.",
+      "provenance": "i591_twin",
+      "cosines": {
+        "villain": 0.8244701027870178,
+        "comedian": 0.7860074639320374,
+        "kindergarten_teacher": 0.9902018308639526,
+        "software_engineer": 0.9714938402175903
+      },
+      "bin_by_source": {
+        "villain": "[0.8,0.875)",
+        "comedian": "[0.7,0.8)",
+        "kindergarten_teacher": "[0.98,1.0)",
+        "software_engineer": "[0.96,0.98)"
+      },
+      "base_rate": 0.043333333333333335,
+      "neg_member_for": [],
+      "mandatory": false
+    }
+  },
+  "selection_report": {
+    "n_selected": 30,
+    "remaining_deficits": {},
+    "decorrelation_max_abs_pearson": 0.6683367126187728,
+    "bin_coverage": {
+      "villain": {
+        "[0.7,0.8)": [
+          "assistant",
+          "child",
+          "digital_helper",
+          "qwen_default",
+          "virtual_assistant"
+        ],
+        "[0.8,0.875)": [
+          "comedian",
+          "daycare_teacher",
+          "french_person",
+          "improv_comedian",
+          "kindergarten_teacher",
+          "late_night_host",
+          "nursery_school_teacher",
+          "philosopher",
+          "preschool_teacher",
+          "satirist",
+          "school_principal",
+          "software_engineer",
+          "standup_comic",
+          "street_performer",
+          "web_developer"
+        ],
+        "[0.875,0.925)": [
+          "pirate_captain",
+          "wizard",
+          "zelthari_scholar"
+        ],
+        "[0.925,0.96)": [
+          "con_artist",
+          "dictator"
+        ],
+        "[0.96,0.98)": [
+          "criminal_mastermind",
+          "dark_overlord"
+        ],
+        "[0.98,1.0)": [
+          "evil_mastermind",
+          "supervillain"
+        ]
+      },
+      "comedian": {
+        "[0.7,0.8)": [
+          "assistant",
+          "daycare_teacher",
+          "dictator",
+          "digital_helper",
+          "french_person",
+          "kindergarten_teacher",
+          "nursery_school_teacher",
+          "philosopher",
+          "preschool_teacher",
+          "qwen_default",
+          "school_principal",
+          "software_engineer",
+          "virtual_assistant",
+          "web_developer",
+          "wizard",
+          "zelthari_scholar"
+        ],
+        "[0.8,0.875)": [
+          "child",
+          "con_artist",
+          "criminal_mastermind",
+          "dark_overlord",
+          "evil_mastermind",
+          "pirate_captain",
+          "supervillain",
+          "villain"
+        ],
+        "[0.875,0.925)": [
+          "satirist",
+          "street_performer"
+        ],
+        "[0.925,0.96)": [
+          "improv_comedian"
+        ],
+        "[0.96,0.98)": [
+          "late_night_host"
+        ],
+        "[0.98,1.0)": [
+          "standup_comic"
+        ]
+      },
+      "kindergarten_teacher": {
+        "[0.7,0.8)": [
+          "comedian",
+          "dictator",
+          "late_night_host",
+          "pirate_captain",
+          "satirist",
+          "standup_comic"
+        ],
+        "[0.8,0.875)": [
+          "child",
+          "dark_overlord",
+          "evil_mastermind",
+          "improv_comedian",
+          "supervillain",
+          "villain"
+        ],
+        "[0.875,0.925)": [
+          "assistant",
+          "con_artist",
+          "criminal_mastermind",
+          "digital_helper",
+          "french_person",
+          "philosopher",
+          "qwen_default",
+          "street_performer",
+          "virtual_assistant",
+          "wizard",
+          "zelthari_scholar"
+        ],
+        "[0.925,0.96)": [
+          "software_engineer",
+          "web_developer"
+        ],
+        "[0.96,0.98)": [
+          "daycare_teacher",
+          "school_principal"
+        ],
+        "[0.98,1.0)": [
+          "kindergarten_teacher",
+          "nursery_school_teacher",
+          "preschool_teacher"
+        ]
+      },
+      "software_engineer": {
+        "[0.7,0.8)": [
+          "comedian",
+          "dictator",
+          "improv_comedian",
+          "late_night_host",
+          "pirate_captain",
+          "satirist",
+          "standup_comic"
+        ],
+        "[0.8,0.875)": [
+          "child",
+          "con_artist",
+          "dark_overlord",
+          "evil_mastermind",
+          "street_performer",
+          "supervillain",
+          "villain"
+        ],
+        "[0.875,0.925)": [
+          "criminal_mastermind",
+          "french_person",
+          "zelthari_scholar"
+        ],
+        "[0.925,0.96)": [
+          "kindergarten_teacher",
+          "philosopher",
+          "preschool_teacher",
+          "wizard"
+        ],
+        "[0.96,0.98)": [
+          "assistant",
+          "digital_helper",
+          "nursery_school_teacher",
+          "qwen_default",
+          "virtual_assistant"
+        ],
+        "[0.98,1.0)": [
+          "daycare_teacher",
+          "school_principal",
+          "web_developer"
+        ]
+      }
+    }
+  },
+  "all_candidate_priors": {
+    "accountant": 0.03,
+    "ai": 0.04666666666666667,
+    "ai_assistant": 0.03833333333333333,
+    "assistant": 0.05,
+    "bounty_hunter": 0.03833333333333333,
+    "camp_counselor": 0.03666666666666667,
+    "chef": 0.03333333333333333,
+    "child": 0.07166666666666667,
+    "comedian": 0.11666666666666667,
+    "con_artist": 0.041666666666666664,
+    "criminal_mastermind": 0.056666666666666664,
+    "dark_overlord": 0.07666666666666666,
+    "data_scientist": 0.05333333333333334,
+    "daycare_teacher": 0.04,
+    "dictator": 0.09833333333333333,
+    "digital_helper": 0.04666666666666667,
+    "electrical_engineer": 0.045,
+    "elementary_school_teacher": 0.043333333333333335,
+    "evil_mastermind": 0.055,
+    "french_person": 0.06166666666666667,
+    "fullstack_programmer": 0.05333333333333334,
+    "game_developer": 0.045,
+    "game_show_host": 0.12166666666666667,
+    "hero": 0.051666666666666666,
+    "improv_comedian": 0.21,
+    "it_support_technician": 0.02,
+    "journalist": 0.02666666666666667,
+    "kindergarten_teacher": 0.04833333333333333,
+    "late_night_host": 0.14166666666666666,
+    "lawyer": 0.03333333333333333,
+    "librarian": 0.043333333333333335,
+    "medical_doctor": 0.03333333333333333,
+    "nursery_school_teacher": 0.043333333333333335,
+    "pediatric_nurse": 0.03166666666666667,
+    "philosopher": 0.07666666666666666,
+    "pirate_captain": 0.08833333333333333,
+    "police_officer": 0.041666666666666664,
+    "preschool_teacher": 0.04666666666666667,
+    "programmer": 0.045,
+    "qwen_default": 0.03833333333333333,
+    "satirist": 0.2966666666666667,
+    "school_principal": 0.041666666666666664,
+    "software_engineer": 0.03666666666666667,
+    "standup_comic": 0.13166666666666665,
+    "street_performer": 0.06666666666666667,
+    "supervillain": 0.07166666666666667,
+    "surgeon": 0.04666666666666667,
+    "villain": 0.05333333333333334,
+    "virtual_assistant": 0.045,
+    "web_developer": 0.041666666666666664,
+    "wizard": 0.06166666666666667,
+    "zelthari_scholar": 0.056666666666666664
+  },
+  "metadata": {
+    "judge_model": "claude-haiku-4-5-20251001",
+    "git_commit_sha": "4d2311897f9fc094f957ee581e6df6e9156019c8",
+    "timestamp_utc": "2026-06-12T07:24:29.382507+00:00"
+  }
+}
