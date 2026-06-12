@@ -699,3 +699,132 @@ class TestRunVerificationCardFallback:
             report = verify_uploads.run_verification(608, experiment_type="eval-only")
         assert "wandb_run" not in report["checks"]
         assert "hf_model" not in report["checks"]
+
+
+# ── prose-template card declarations (#612) ───────────────────────────────────
+
+# The real #612 shape: the orchestrator hand-composed the card with a prose
+# summary instead of the per-cell mapping the sentinel contract requires.
+_PROSE_ADAPTERS_612 = "adapters/issue_612/<arm>/<source>_seed<S> (16 adapters)"
+
+
+class TestProseCardDeclarations:
+    def test_string_adapter_paths_names_contract_violation(self):
+        """The #612 repro: a prose-template adapter_paths string used to be
+        silently ignored (only dict/list handled), falling through to the
+        generic 'no card declares adapter_paths' MISSING row on a
+        fully-uploaded sweep. The row must name the producer-contract
+        violation instead (diagnostic-only: status stays MISSING)."""
+        card = {
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+            "adapter_paths": _PROSE_ADAPTERS_612,
+        }
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            side_effect=AssertionError("nothing checkable must be probed"),
+        ):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res is not None
+        assert res["status"] == "MISSING"
+        assert "producer-contract violation" in res["detail"]
+        assert "SKILL.md Step 7" in res["detail"]
+        assert "template placeholders" in res["detail"]
+        assert "#612" in res["detail"]
+        assert res["source"] == "epm:results reproducibility_card"
+
+    def test_prose_without_placeholders_still_diagnosed(self):
+        res = verify_uploads.check_hf_model_from_card(
+            {"adapter_paths": "adapters/issue_612/all (16 adapters)"}
+        )
+        assert res["status"] == "MISSING"
+        assert "producer-contract violation" in res["detail"]
+        assert "placeholders" not in res["detail"]
+
+    def test_real_single_path_plus_prose_adapters_appends_note(self):
+        """A resolvable hf_model_path still wins the row; the unverifiable
+        prose adapter_paths stays visible as an ALSO note."""
+        card = {"hf_model_path": "adapters/issue_612/x", "adapter_paths": _PROSE_ADAPTERS_612}
+        with patch.object(
+            verify_uploads,
+            "check_hf_hub_path",
+            return_value={"status": "OK", "url": "u", "file_count": 2},
+        ):
+            res = verify_uploads.check_hf_model_from_card(card)
+        assert res["status"] == "OK"
+        assert "ALSO:" in res["detail"]
+        assert "producer-contract violation" in res["detail"]
+
+    def test_empty_string_adapter_paths_still_returns_none(self):
+        """An empty string is not a declaration (#601 ``_is_declared``) —
+        the caller's generic fall-through is unchanged."""
+        assert verify_uploads.check_hf_model_from_card({"adapter_paths": ""}) is None
+
+    def test_string_wandb_run_names_not_iterated_per_character(self):
+        """A string wandb_run_names used to iterate into per-CHARACTER
+        'run names' (a garbage MISSING row); diagnose the prose
+        declaration instead and never hit the API."""
+        card = {"wandb_project": "issue612", "wandb_run_names": "issue612_<arm> runs"}
+        with (
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_by_name",
+                side_effect=AssertionError("API must not be called"),
+            ),
+            patch.object(
+                verify_uploads,
+                "check_wandb_runs_default_project",
+                side_effect=AssertionError("default-project scan must not fire"),
+            ),
+        ):
+            res = verify_uploads.check_wandb_from_card(card)
+        assert res["status"] == "MISSING"
+        assert "wandb_run_names" in res["detail"]
+        assert "producer-contract violation" in res["detail"]
+
+    def test_prose_wandb_run_path_diagnosed_before_api(self):
+        """A free-text wandb line (#612) is never a real run path; naming
+        the violation beats the opaque API error string it used to get."""
+        with patch.object(
+            verify_uploads,
+            "check_wandb_run",
+            side_effect=AssertionError("API must not be called"),
+        ):
+            res = verify_uploads.check_wandb_from_card(
+                {"wandb_run_path": "wandb: 52 runs under project issue612"}
+            )
+        assert res["status"] == "MISSING"
+        assert "producer-contract violation" in res["detail"]
+
+    def test_valid_run_path_still_delegates(self):
+        """The prose guard must not catch a real run path (no whitespace,
+        no placeholders)."""
+        with patch.object(
+            verify_uploads, "check_wandb_run", return_value={"status": "OK", "url": "u"}
+        ) as mock_run:
+            res = verify_uploads.check_wandb_from_card({"wandb_run": "e/p/abc"})
+        assert res["status"] == "OK"
+        mock_run.assert_called_once_with("e/p/abc")
+
+    def test_card_with_no_wandb_fields_still_returns_none(self):
+        """The prose guard must not preempt the convention-probe fallback:
+        a card carrying ONLY a prose adapter_paths declares no wandb
+        fields, so check_wandb_from_card stays None and the caller can
+        still rescue the row via the conventional-project probe."""
+        assert verify_uploads.check_wandb_from_card({"adapter_paths": _PROSE_ADAPTERS_612}) is None
+
+    def test_run_verification_prose_card_row_names_violation(self):
+        """Integration: the #612 shape no longer reads as the generic
+        'No HF model path provided' row; verdict stays FAIL
+        (diagnostic-only — the operator just learns WHY in one read)."""
+        card = {"adapter_paths": _PROSE_ADAPTERS_612}
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=card),
+            patch.object(verify_uploads, "check_wandb_runs_convention_project", return_value=None),
+        ):
+            report = verify_uploads.run_verification(612, experiment_type="training")
+        row = report["checks"]["hf_model"]
+        assert row["status"] == "MISSING"
+        assert "producer-contract violation" in row["detail"]
+        assert "No HF model path provided" not in row["detail"]
+        assert report["verdict"] == "FAIL"
