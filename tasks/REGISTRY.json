@@ -3729,8 +3729,8 @@
       "goal": "Determine whether the bare role header's lower wrong-persona leakage and higher default-assistant leakage (the probe split in #533's bare-word grid) survives base-prior-clean EOS-margin readouts and an unsaturated-implant read, i.e. whether the role encoding concentrates leakage onto the default-assistant context rather than reducing it.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/611",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/611",
+      "status": "awaiting_promotion",
       "title": "A bare role header leaks less marker mass to the wrong persona than a matched system prompt from install onward, but more to the default assistant at every checkpoint (MODERATE confidence)"
     },
     "612": {
