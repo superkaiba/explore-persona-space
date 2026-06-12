@@ -19,7 +19,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_605.md](https://github.com/superkaiba/explore-persona-space/blob/7dd9ce09eb2c654791273a95b933538a101afa2c/docs/methodology/issue_605.md) · [gist](https://gist.github.com/superkaiba/2824e95342bb457b2a9683e2275d9455)
+**Methodology:** [docs/methodology/issue_605.md](https://github.com/superkaiba/explore-persona-space/blob/bae4982fafc561e67889923cb38aff16a5697b3b/docs/methodology/issue_605.md) · [gist](https://gist.github.com/superkaiba/2824e95342bb457b2a9683e2275d9455)
 
 ## Human TL;DR
 
@@ -337,7 +337,7 @@ All raw fact generations and judge labels: [fact/gen](https://huggingface.co/dat
 - Plan: `tasks/<status>/605/plans/plan.md` (v2; decision lattice in §3, measurement validity in §6); wide-panel amendment = `plans/v3.md` (one variable: panel size 40 → 100, frozen windows)
 - Reproduce (on a 4× H100 pod, repo at `71d339147`): `uv run python scripts/issue605_matched_panels.py --family marker --phase measure && uv run python scripts/issue605_matched_panels.py --family marker --phase select && uv run python scripts/issue605_eval_marker.py --sources all` (fact mirror via `--family fact` + `scripts/issue605_eval_fact.py`); then off-pod `uv run python scripts/issue605_analysis.py`
 - Reproduce the wide round (repo at `1175b5e03`): VM `uv run python scripts/issue605_matched_panels.py --family marker --phase select --panel-size 100 --frozen-selection eval_results/issue_605/panel/marker_panel_selection.json`; pod `uv run python scripts/issue605_eval_marker.py --sources all --panel eval_results/issue_605/wider-marker-panel-heldout-power/marker_panel_selection_wide.json --skip-completed`; VM `uv run python scripts/issue605_analysis.py --families marker --marker-selection wider-marker-panel-heldout-power/marker_panel_selection_wide.json --out eval_results/issue_605/wider-marker-panel-heldout-power/`
-- **Methodology reference:** [docs/methodology/issue_605.md](https://github.com/superkaiba/explore-persona-space/blob/7dd9ce09eb2c654791273a95b933538a101afa2c/docs/methodology/issue_605.md) · [gist](https://gist.github.com/superkaiba/2824e95342bb457b2a9683e2275d9455)
+- **Methodology reference:** [docs/methodology/issue_605.md](https://github.com/superkaiba/explore-persona-space/blob/bae4982fafc561e67889923cb38aff16a5697b3b/docs/methodology/issue_605.md) · [gist](https://gist.github.com/superkaiba/2824e95342bb457b2a9683e2275d9455)
 
 **Context:**
 
