@@ -21,6 +21,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_601.md](https://github.com/superkaiba/explore-persona-space/blob/cc00b49ed9145cfe9ec00771ef84d251cd98732f/docs/methodology/issue_601.md) ([gist mirror](https://gist.github.com/superkaiba/28f2459148f1a7145d21b991084ca71f)) — findings-blind conditions, training/eval recipe, hyperparameter table, worked examples.
+
 ## Human TL;DR
 
 **Headline.** turns out the parent run's "more negatives → stronger implant" dose-response was mostly the optimizer running longer — in that rig the negative rows never had any loss to learn from in the first place.
@@ -236,6 +238,7 @@ All numeric hyperparameters copied from the committed cell registry + `contrasti
 - Raw completions (25 files — 8 parent-adapter on-policy re-checks, 6 phase-1 arms, 5 dose-ladder cells, 2 negatives-only, 4 bridge): [HF data repo `issue601_neg_setpoint/raw_completions/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/dfce94df6a3f326d0f4f366864321942842c7164/issue601_neg_setpoint/raw_completions) at revision `dfce94df6a3f326d0f4f366864321942842c7164`.
 - Figures (PNG + PDF + meta.json): [`figures/issue_601/`](https://github.com/superkaiba/explore-persona-space/tree/51ee5bfe7bcda58ce63ade5925a1de25fc63a037/figures/issue_601) at commit `51ee5bfe7bcda58ce63ade5925a1de25fc63a037`.
 - WandB: 17 training runs named `issue601_<cell>_seed<seed>` in project `huggingface` (entity thomasjiralerspong), all finished, per-step histories matching schedules.
+- **Methodology reference:** [`docs/methodology/issue_601.md`](https://github.com/superkaiba/explore-persona-space/blob/cc00b49ed9145cfe9ec00771ef84d251cd98732f/docs/methodology/issue_601.md) (findings-blind; committed on branch `issue-601` at `cc00b49ed`) — [gist mirror](https://gist.github.com/superkaiba/28f2459148f1a7145d21b991084ca71f).
 - Reused training-mix inputs from [#472](https://eps.superkaiba.com/tasks/472): [`issue472_neg_geometry/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/dfce94df6a3f326d0f4f366864321942842c7164/issue472_neg_geometry) (`persona_bank.json`, `on_policy_R/R_{train,eval}.json`, `geometry/centroids_L10.pt`) — fit: frozen-R parity is load-bearing for exact reconstruction of the parent's training mixes (same base model, same recipe, same questions; the mixes are rebuilt deterministically in-process from these inputs + committed code), and the inputs resolve at the pinned revision.
 - Reused trained adapters from [#472](https://eps.superkaiba.com/tasks/472): the 20 parent adapters at [`adapters/issue_472/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/4e6c92eb4846062f25b4b24b8d13dc1381222547/adapters/issue_472) — fit: the re-grading question requires the parent's own artifacts (zero-training four-float re-reads; read-only). The plan's optional reuse of the parent 4:1 anchor as a live comparison level was rejected by the registered anchor-fitness gate (re-read diffs 1.05 / 1.12 nats against a 1.0-nat bar) and replaced by a freshly trained anchor pair — a wrong-artifact reuse averted by the gate, exactly as wired.
 
