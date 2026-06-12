@@ -2649,3 +2649,51 @@ def test_repro_lr_recipe_row_mismatch_fails(tmp_path):
     result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
     assert not result.passed, result.render()
     assert "0.0002" in result.detail or "2e-04" in result.detail, result.render()
+
+
+def _write_plan_versions(tmp_path, versions: dict[str, str]):
+    """Write `plans/v*.md` files plus a `plan.md` symlink to the HIGHEST
+    version, mirroring the task-workflow `new-plan-version` layout."""
+    plan_dir = tmp_path / "plans"
+    plan_dir.mkdir()
+    for fname, text in versions.items():
+        (plan_dir / fname).write_text(text)
+    plan = plan_dir / "plan.md"
+    plan.symlink_to(sorted(versions)[-1])
+    return plan
+
+
+def test_repro_lr_multi_version_plan_union_passes(tmp_path):
+    """Task #597 regression: after a same-issue follow-up planning round,
+    `plans/plan.md` symlinks the follow-up's analysis-only plan (v2.md)
+    whose unrelated `1e-3` tolerance token is the only sci-notation value
+    — while the training lr (5e-6) grounding the body's Parameters table
+    lives in v1.md. The check must reconcile against the UNION of all
+    `plans/v*.md` versions, so the correct body PASSes."""
+    body = _V2_REPRO_BODY.format(LR="5e-6")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: LoRA r=8, lr=5e-6, marker band-stop.",
+            "v2.md": "Follow-up (analysis-only): per-checkpoint SVD read, "
+            "cosine floor tolerance 1e-3, no training.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
+    """The union must not over-permit: a body lr appearing in NO plan
+    version (neither v1.md nor v2.md) still FAILs."""
+    body = _V2_REPRO_BODY.format(LR="1e-4")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: lr=5e-6.",
+            "v2.md": "Follow-up: tolerance 1e-3.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()
