@@ -89,12 +89,16 @@ flow. The PM's job is dispatch, not execution.
       auto/manual from the `followup-auto` / `followup-manual` tag).
    3. **Awaiting promotion (<count>)** — `### Most recent` (top 5 by
       `status_arrival_ts`, `#N — <claim> (CONFIDENCE) — arrived
-      <YYYY-MM-DD>`), then `### By theme` — ALL of them, each
-      `#N — <one-line finding> (CONFIDENCE)` (the clean-result title
-      IS the one-sentence claim + confidence tag; open the body via
-      `task.py view <N>` only when a title is not in claim form),
-      grouped into 3–6 research-theme categories derived from the
-      titles/goals (not a fixed taxonomy). Cross-reference: the
+      <YYYY-MM-DD>`), then `### Grouped` — ALL of them, produced by the
+      `/group-promotion-queue` skill (body-grounded, fine-grained,
+      organize-only): check its cache
+      (`.claude/cache/promotion-groups.md` header) against the current
+      sorted ID set; on match render the cached report; on mismatch
+      background-spawn its grouping subagent (skill step 3) and render
+      the stale cache marked `(stale — regenerating)` — or, with no
+      cache at all, a flat `#N — <one-line finding> (CONFIDENCE)` list
+      — folding the fresh grouped report in when the subagent returns.
+      Never block the STATUS pass on the subagent. Cross-reference: the
       `followups_running` tasks already have a clean-result, so this
       digest keeps them tagged "follow-up in flight" instead of
       dropping them.
