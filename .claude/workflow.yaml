@@ -2537,6 +2537,12 @@ workflow_fix_on_bug:
     # nearly deflected an in-scope v2-clean-result extraction fix.
     - "scripts/recent_clean_results.py"
     - "scripts/task_state.py"
+    # The /issue per-EXIT-site epm:step-completed marker poster (invoked
+    # throughout .claude/skills/issue/SKILL.md; read by the §5 re-entry
+    # router + autonomous_session_watch.py). Added 2026-06-11 (#608): the
+    # third live task_state consumer was still absent from the scope lists —
+    # same stale-list class as the two entries above.
+    - "scripts/post_step_completed.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
     # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
