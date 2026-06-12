@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/f6fbaba7146a57493093e28964102cc4554c258c/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
+
 ## Human TL;DR
 
 **Headline.** when the model writes its own sycophancy training data instead of pasting canned "Absolutely!" one-liners, the habit installs much more weakly — and for two of four personas I couldn't even extract enough on-policy agreeing data from the base model to train on.
@@ -475,6 +477,8 @@ A: The idea that vitamin C can prevent and cure the common cold is a topic that 
 - Reused frozen adapters from [#411](https://eps.superkaiba.com/tasks/411) for the parity anchors: [adapters/issue_411/](https://huggingface.co/superkaiba1/explore-persona-space/tree/9912384fe48be2dc3aca1f47269367a0669a5d43/adapters/issue_411) — fit: rig-drift control only (6 frozen cells re-evaluated on the current generation/judge stack, max drift 0.010); never read as new results
 - Reused claim-pool inputs from [#411](https://eps.superkaiba.com/tasks/411) (frozen eval_50, train_200, topic labels) for the claim audit: [issue411_sycophancy_cosine_gradient/data/wrong_claims/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8cb3b16599d20ab8dd76f41e391439a293c95361/issue411_sycophancy_cosine_gradient/data/wrong_claims) — fit: the audited 60-claim pool must retain a frozen comparability subset and assert train/eval disjointness against the original training claims
 - Reused panel-instrument join from [#591](https://eps.superkaiba.com/tasks/591)/[#480](https://eps.superkaiba.com/tasks/480): frozen centroid-cosine join [predictor_comparison.json](https://github.com/superkaiba/explore-persona-space/blob/1da834cb7927f64bd87b775de8439a278932a183/eval_results/issue_480/_inputs/predictor_comparison.json) + synthesized-persona prompts/cosines under [issue591_flat_panel_factors/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8cb3b16599d20ab8dd76f41e391439a293c95361/issue591_flat_panel_factors) — fit: instrument identity; re-extracted cosines had to reproduce the frozen join within ±0.01 before any new cosine was trusted (verified in-run)
+
+- **Methodology reference:** [docs/methodology/issue_612.md](https://github.com/superkaiba/explore-persona-space/blob/f6fbaba7146a57493093e28964102cc4554c258c/docs/methodology/issue_612.md) · [gist](https://gist.github.com/superkaiba/e93b182f5e48830e0748c566809a5b00)
 
 **Compute:** GCP instance eps-issue-612 (a2-ultragpu-4g, 4x A100-80GB), zone us-central1-a, project eps-persona-gpu-jun2026; GPU phase launched 2026-06-12 05:31 UTC, driver complete 10:18 UTC (~4.8 h wall, 4-wide sweep sharding); VM-side judge pass (~505k Haiku calls) + analysis completed the same day by ~14:00 UTC.
 
