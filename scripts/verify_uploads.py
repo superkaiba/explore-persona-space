@@ -43,6 +43,24 @@ sentinel whose cells all ``resumed_skip`` carries an empty card
 declaration, so the card is MERGED across all epm:results markers —
 newest-wins per field, where an empty dict/list/string does not count as
 a declaration (see ``merged_results_card``).
+
+GCP-lane driver sentinels (#599) carry no reproducibility card at all —
+per-seed provenance lives under ``production_provenance`` (e.g.
+``production_provenance.seed42.hf_adapter_subfolder``). When a payload
+declares no explicit card, an equivalent card is synthesized from those
+keys plus any top-level wandb_* / hf_model_repo hints
+(``_card_from_provenance``) so the hf_model / wandb_run rows stop
+false-MISSing on artifacts that exist; explicit cards always win.
+
+Claimed-URL repo types (#599): a claim citing a dataset repo WITHOUT the
+``datasets/`` prefix (``hf://superkaiba1/explore-persona-space-data-private/...``)
+used to resolve via the MODELS endpoint, 404, and turn the whole
+claimed_urls row into ERROR. Bare ``org/repo`` claims are now probed for
+their actual repo type (dataset-first for ``-data`` / ``-data-private``
+repo-name suffixes) and rewritten to the ``datasets/`` form before
+HEAD-checking (``resolve_claimed_repo_types``); a claim resolving as
+NEITHER type is reported claimed-but-absent (FAIL) without aborting the
+rest of the scan.
 """
 
 import argparse
@@ -185,13 +203,105 @@ def extract_claimed_urls(text: str) -> list[str]:
     return list(dict.fromkeys(_strip_trailing_punct(u) for u in _CLAIMED_URL_RE.findall(text)))
 
 
+# ── claimed-URL repo-type resolution (dataset-repo fallback, #599) ─────────────
+# Bare ``org/repo`` HF claims default to repo_type="model" downstream
+# (hub.py's _kind_to_repo_type), so a dataset repo cited without the
+# ``datasets/`` prefix 404s on the MODELS endpoint and the propagated
+# RepositoryNotFoundError turned the WHOLE claimed_urls row into ERROR
+# (#599: ``hf://superkaiba1/explore-persona-space-data-private/...``).
+# Probe each bare claim's actual repo type and rewrite dataset claims to
+# the prefixed form verify_artifacts_exist resolves correctly.
+
+_BARE_HF_CLAIM_RE = re.compile(
+    r"^(?P<scheme>https?://huggingface\.co/|hf://)"
+    r"(?!datasets/|spaces/)"
+    r"(?P<repo>[\w.\-]+/[\w.\-]+)"
+    r"(?P<rest>(?:[/@].*)?)$"
+)
+
+# Repo-name suffixes that are dataset repos by project convention — probe
+# the dataset endpoint FIRST so the common case costs one repo_info call.
+_DATASET_FIRST_SUFFIXES = ("-data", "-data-private")
+
+
+def _hf_repo_type_for(api, repo_id: str, cache: dict) -> str | None:
+    """Resolve whether a bare repo id is a model or a dataset repo (cached).
+
+    Returns ``"model"`` / ``"dataset"``, or ``None`` when the repo resolves
+    as NEITHER (``RepositoryNotFoundError`` on both endpoints — a phantom
+    claim, or a private repo the ambient HF_TOKEN cannot see). Non-404
+    errors propagate so a transient outage is not misread as "missing".
+    """
+    if repo_id in cache:
+        return cache[repo_id]
+    from huggingface_hub.utils import RepositoryNotFoundError
+
+    name = repo_id.split("/", 1)[-1]
+    order = ("dataset", "model") if name.endswith(_DATASET_FIRST_SUFFIXES) else ("model", "dataset")
+    resolved: str | None = None
+    for repo_type in order:
+        try:
+            api.repo_info(repo_id, repo_type=repo_type)
+            resolved = repo_type
+            break
+        except RepositoryNotFoundError:
+            continue
+    cache[repo_id] = resolved
+    return resolved
+
+
+def resolve_claimed_repo_types(urls: list[str]) -> tuple[list[str], dict[str, str], list[str]]:
+    """Qualify bare HF repo claims with their actual repo type (#599).
+
+    Each claim matching ``_BARE_HF_CLAIM_RE`` (an HF URL whose repo id is
+    NOT already ``datasets/`` / ``spaces/``-prefixed) is probed via
+    ``repo_info`` (one call per unique repo). Dataset-repo claims are
+    rewritten to the ``datasets/``-prefixed form so the downstream
+    existence check hits the right endpoint; model claims pass through
+    unchanged; claims resolving as neither type are split out as phantoms
+    so ONE bad repo claim no longer aborts the whole scan into ERROR.
+
+    Returns ``(resolved_urls, rewritten_to_original, phantom_urls)``:
+    ``resolved_urls`` feed ``verify_artifacts_exist`` (dataset claims
+    rewritten), ``rewritten_to_original`` maps rewritten → as-cited so
+    reports name the URL the way the task cited it, and ``phantom_urls``
+    are reported claimed-but-absent (FAIL, not ERROR).
+    """
+    from huggingface_hub import HfApi
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    cache: dict = {}
+    resolved_urls: list[str] = []
+    rewritten_to_original: dict[str, str] = {}
+    phantoms: list[str] = []
+    for url in urls:
+        m = _BARE_HF_CLAIM_RE.match(url)
+        if not m:
+            resolved_urls.append(url)
+            continue
+        repo_type = _hf_repo_type_for(api, m.group("repo"), cache)
+        if repo_type == "dataset":
+            rewritten = f"{m.group('scheme')}datasets/{m.group('repo')}{m.group('rest')}"
+            resolved_urls.append(rewritten)
+            rewritten_to_original[rewritten] = url
+        elif repo_type is None:
+            phantoms.append(url)
+        else:
+            resolved_urls.append(url)
+    return resolved_urls, rewritten_to_original, phantoms
+
+
 def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
     """HEAD-verify every HF/WandB URL claimed in a text blob actually resolves.
 
     The blob is typically the concatenation of the ``epm:results`` marker
     text + the body's ``## Reproducibility`` section. URLs are first
     extracted and stripped of trailing JSON/markdown punctuation (see
-    ``extract_claimed_urls``), then existence-checked via
+    ``extract_claimed_urls``), bare ``org/repo`` HF claims are qualified
+    with their actual repo type — a dataset repo cited without the
+    ``datasets/`` prefix is rewritten rather than 404ing on the MODELS
+    endpoint (#599; see ``resolve_claimed_repo_types``) — then
+    existence-checked via
     ``explore_persona_space.orchestrate.hub.verify_artifacts_exist`` (the
     same helper /issue Step 6a.5 uses pre-launch to block on phantom
     carry-over artifacts) so behavior stays consistent at both gates.
@@ -230,6 +340,11 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
         from explore_persona_space.orchestrate.hub import verify_artifacts_exist
 
         urls = extract_claimed_urls(claimed_text_path.read_text(encoding="utf-8"))
+        # Qualify bare org/repo claims with their actual repo type (#599):
+        # dataset claims get the datasets/ prefix the downstream checker
+        # needs; claims whose repo resolves as neither type become
+        # deterministic phantoms instead of aborting the scan with ERROR.
+        urls, rewritten_to_original, phantoms = resolve_claimed_repo_types(urls)
         # Write the sanitized one-URL-per-line view to a temp file:
         # verify_artifacts_exist takes a path and runs its own URL regexes,
         # which terminate cleanly at end-of-line once trailing punctuation
@@ -243,17 +358,23 @@ def check_claimed_urls_resolve(claimed_text_path: str | Path) -> dict:
             ok, missing = verify_artifacts_exist(sanitized_path)
         finally:
             sanitized_path.unlink(missing_ok=True)
-        if ok:
-            return {
-                "status": "OK",
-                "url": str(claimed_text_path),
-                "detail": "every claimed HF/WandB URL resolves at its cited revision",
-            }
-        return {
-            "status": "FAIL",
-            "url": "",
-            "detail": "claimed-but-absent URLs (phantom): " + "; ".join(missing),
-        }
+        if ok and not phantoms:
+            detail = "every claimed HF/WandB URL resolves at its cited revision"
+            if rewritten_to_original:
+                detail += (
+                    f"; {len(rewritten_to_original)} bare dataset-repo claim(s) "
+                    "resolved via repo_type=dataset (#599)"
+                )
+            return {"status": "OK", "url": str(claimed_text_path), "detail": detail}
+        # Report missing URLs the way the task cited them (un-rewritten).
+        missing_cited = phantoms + [rewritten_to_original.get(u, u) for u in missing]
+        detail = "claimed-but-absent URLs (phantom): " + "; ".join(missing_cited)
+        if phantoms:
+            detail += (
+                " [repo resolves as neither model nor dataset — phantom repo, "
+                "or private without HF_TOKEN access]"
+            )
+        return {"status": "FAIL", "url": "", "detail": detail}
     except Exception as e:
         return {"status": "ERROR", "url": "", "detail": str(e)}
 
@@ -324,14 +445,73 @@ def _extract_first_json_object(text: str) -> dict | None:
 # both are present in one payload.
 _CARD_KEYS = ("reproducibility_card", "reproducibility")
 
+# Top-level payload keys a GCP-lane driver sentinel may carry alongside
+# ``production_provenance`` (#599) — copied into the synthesized card so a
+# declared wandb project / model-repo hint is not lost.
+_PROVENANCE_HINT_KEYS = (
+    "hf_model_repo",
+    "hf_model_path",
+    "wandb_run_path",
+    "wandb_run",
+    "wandb_run_names",
+    "wandb_project",
+    "wandb_entity",
+)
+
+
+def _card_from_provenance(payload: dict) -> dict | None:
+    """Synthesize a reproducibility card from a GCP-lane driver sentinel (#599).
+
+    ``epm:results`` sentinels written by GCP-lane drivers declare per-seed
+    adapters as ``production_provenance.<cell>.hf_adapter_subfolder``
+    (optionally ``.wandb_run_name``) instead of a ``reproducibility_card``,
+    so the card fallback false-MISSed the hf_model / wandb_run rows even
+    when every artifact existed. Additive: consulted ONLY when the payload
+    carries no explicit card (``_card_from_payload`` tries ``_CARD_KEYS``
+    first). Top-level wandb_* / hf_model_repo hints are carried over.
+    Returns ``None`` when ``production_provenance`` declares nothing usable.
+    """
+    prov = payload.get("production_provenance")
+    if not isinstance(prov, dict):
+        return None
+    adapter_paths: dict = {}
+    run_names: dict = {}
+    for cell, info in prov.items():
+        if not isinstance(info, dict):
+            continue
+        subfolder = info.get("hf_adapter_subfolder")
+        if _is_declared(subfolder):
+            adapter_paths[str(cell)] = str(subfolder)
+        run_name = info.get("wandb_run_name")
+        if _is_declared(run_name):
+            run_names[str(cell)] = str(run_name)
+    card: dict = {}
+    if adapter_paths:
+        card["adapter_paths"] = adapter_paths
+    if run_names:
+        card["wandb_run_names"] = run_names
+    for key in _PROVENANCE_HINT_KEYS:
+        if key not in card and _is_declared(payload.get(key)):
+            card[key] = payload[key]
+    if not card:
+        return None
+    card["_card_provenance"] = (
+        "synthesized from epm:results production_provenance (no reproducibility_card)"
+    )
+    return card
+
 
 def _card_from_payload(payload: dict) -> dict | None:
-    """Return the reproducibility card dict from a parsed epm:results payload."""
+    """Return the reproducibility card dict from a parsed epm:results payload.
+
+    Explicit cards win; a GCP-lane sentinel with no card falls back to
+    synthesis from ``production_provenance`` (#599, ``_card_from_provenance``).
+    """
     for key in _CARD_KEYS:
         card = payload.get(key)
         if isinstance(card, dict):
             return card
-    return None
+    return _card_from_provenance(payload)
 
 
 def _is_declared(value) -> bool:
@@ -378,14 +558,21 @@ def merged_results_card(events: list[dict]) -> dict | None:
         for key, value in card.items():
             if key in merged or not _is_declared(value):
                 continue
+            if key.startswith("_") and pos > 0:
+                # Provenance notes (e.g. a synthesized card's
+                # ``_card_provenance`` — #599) travel only with the newest
+                # card; an older card's note would misattribute the merged
+                # fields.
+                continue
             merged[key] = value
             if pos > 0:
                 fallback_fields[key] = ts
     if fallback_fields:
-        merged["_card_provenance"] = (
-            "field(s) declared by an earlier epm:results marker, not the latest: "
-            + ", ".join(f"{k} @ {ts}" for k, ts in sorted(fallback_fields.items()))
+        note = "field(s) declared by an earlier epm:results marker, not the latest: " + ", ".join(
+            f"{k} @ {ts}" for k, ts in sorted(fallback_fields.items())
         )
+        existing = merged.get("_card_provenance")
+        merged["_card_provenance"] = f"{existing}; {note}" if existing else note
     return merged or None
 
 

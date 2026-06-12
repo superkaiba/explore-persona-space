@@ -194,6 +194,105 @@ class TestMergedResultsCard:
         assert "_card_provenance" not in card
 
 
+# ── _card_from_provenance (GCP-lane driver sentinels, #599) ───────────────────
+
+# The real #599 GCP-lane driver sentinel shape: no reproducibility_card,
+# per-seed provenance under production_provenance.
+_NOTE_599 = (
+    "[drained from GCP sentinel /workspace/logs/issue-599-epm_results.json]\n\n"
+    '{"issue": 599, "phase": "production_complete", '
+    '"production_provenance": {'
+    '"seed42": {"loss_shape": "full_response", "initial_train_loss": 0.4316, '
+    '"hf_adapter_subfolder": "issue_599_fullresp/marker_seed42"}, '
+    '"seed137": {"loss_shape": "full_response", '
+    '"hf_adapter_subfolder": "issue_599_fullresp/marker_seed137"}}}'
+)
+
+
+class TestCardFromProvenance:
+    def test_gcp_sentinel_synthesizes_adapter_paths(self):
+        """The #599 false-MISS repro: a card-less GCP-lane sentinel yields a
+        synthesized card whose adapter_paths come from
+        production_provenance.<seed>.hf_adapter_subfolder."""
+        card = verify_uploads.merged_results_card([{"kind": "epm:results", "note": _NOTE_599}])
+        assert card is not None
+        assert card["adapter_paths"] == {
+            "seed42": "issue_599_fullresp/marker_seed42",
+            "seed137": "issue_599_fullresp/marker_seed137",
+        }
+        assert "production_provenance" in card["_card_provenance"]
+
+    def test_explicit_card_wins_over_provenance(self):
+        payload = {
+            "reproducibility_card": {"hf_model_path": "explicit"},
+            "production_provenance": {"seed42": {"hf_adapter_subfolder": "synth"}},
+        }
+        assert verify_uploads._card_from_payload(payload) == {"hf_model_path": "explicit"}
+
+    def test_top_level_wandb_hints_carried(self):
+        payload = {
+            "production_provenance": {"seed42": {"hf_adapter_subfolder": "a/b"}},
+            "wandb_project": "huggingface",
+            "hf_model_repo": "superkaiba1/explore-persona-space",
+        }
+        card = verify_uploads._card_from_payload(payload)
+        assert card["adapter_paths"] == {"seed42": "a/b"}
+        assert card["wandb_project"] == "huggingface"
+        assert card["hf_model_repo"] == "superkaiba1/explore-persona-space"
+
+    def test_per_cell_wandb_run_names_collected(self):
+        payload = {
+            "production_provenance": {
+                "seed42": {"hf_adapter_subfolder": "a", "wandb_run_name": "run42"},
+                "seed137": {"hf_adapter_subfolder": "b", "wandb_run_name": "run137"},
+            },
+        }
+        card = verify_uploads._card_from_payload(payload)
+        assert card["wandb_run_names"] == {"seed42": "run42", "seed137": "run137"}
+
+    def test_no_usable_provenance_returns_none(self):
+        payload = {"production_provenance": {"seed42": {"loss_shape": "full_response"}}}
+        assert verify_uploads._card_from_payload(payload) is None
+        assert verify_uploads._card_from_payload({"phase": "done"}) is None
+
+    def test_older_synthesized_note_not_misattributed(self):
+        """When a newer explicit card merges with an older synthesized one,
+        the synthesis note must not ride along and misattribute the
+        explicit fields; the cross-marker fallback note still records the
+        fields that fell back."""
+        events = [
+            {"kind": "epm:results", "ts": "t0", "note": _NOTE_599},
+            {
+                "kind": "epm:results",
+                "ts": "t1",
+                "note": '{"reproducibility_card": {"wandb_project": "explicit-project"}}',
+            },
+        ]
+        card = verify_uploads.merged_results_card(events)
+        assert card["wandb_project"] == "explicit-project"
+        assert card["adapter_paths"]["seed42"] == "issue_599_fullresp/marker_seed42"
+        assert "synthesized" not in card["_card_provenance"]
+        assert "adapter_paths @ t0" in card["_card_provenance"]
+
+    def test_provenance_card_satisfies_hf_model_row(self):
+        """run_verification integration: the synthesized card resolves the
+        hf_model row instead of the strict MISSING (#599)."""
+        card = verify_uploads.merged_results_card([{"kind": "epm:results", "note": _NOTE_599}])
+        with (
+            patch.object(verify_uploads, "_load_results_card", return_value=card),
+            patch.object(
+                verify_uploads,
+                "check_hf_hub_path",
+                return_value={"status": "OK", "url": "u", "file_count": 3},
+            ),
+        ):
+            report = verify_uploads.run_verification(599, experiment_type="training")
+        assert report["checks"]["hf_model"]["status"] == "OK"
+        assert "production_provenance" in report["checks"]["hf_model"]["detail"]
+        # The sentinel declares no wandb fields, so that row still MISSes.
+        assert report["checks"]["wandb_run"]["status"] == "MISSING"
+
+
 # ── check_hf_model_from_card ──────────────────────────────────────────────────
 
 

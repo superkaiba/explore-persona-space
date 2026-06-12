@@ -94,6 +94,103 @@ class TestExtractClaimedUrls:
         assert verify_uploads.extract_claimed_urls("no links here") == []
 
 
+# ── resolve_claimed_repo_types (dataset-repo fallback, #599) ─────────────────
+
+
+def _make_repo_info_api(dataset_repos=(), model_repos=()):
+    """Mock HfApi whose repo_info resolves only the given repo ids per type."""
+    from huggingface_hub.utils import RepositoryNotFoundError
+
+    api = MagicMock()
+
+    def _repo_info(repo_id, repo_type=None, **kwargs):
+        if repo_type == "dataset" and repo_id in dataset_repos:
+            return MagicMock()
+        if repo_type == "model" and repo_id in model_repos:
+            return MagicMock()
+        raise RepositoryNotFoundError("404")
+
+    api.repo_info.side_effect = _repo_info
+    return api
+
+
+class TestResolveClaimedRepoTypes:
+    def test_bare_hf_uri_dataset_claim_rewritten(self):
+        """The #599 shape: hf:// dataset-repo claim without the datasets/
+        prefix is rewritten; the -data-private suffix probes dataset FIRST
+        (exactly one repo_info call)."""
+        urls = ["hf://superkaiba1/explore-persona-space-data-private/issue599_fullresp/eval"]
+        api = _make_repo_info_api(dataset_repos={"superkaiba1/explore-persona-space-data-private"})
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, rewritten, phantoms = verify_uploads.resolve_claimed_repo_types(urls)
+        assert resolved == [
+            "hf://datasets/superkaiba1/explore-persona-space-data-private/issue599_fullresp/eval"
+        ]
+        assert rewritten == {resolved[0]: urls[0]}
+        assert phantoms == []
+        api.repo_info.assert_called_once_with(
+            "superkaiba1/explore-persona-space-data-private", repo_type="dataset"
+        )
+
+    def test_bare_web_dataset_claim_rewritten(self):
+        urls = [
+            "https://huggingface.co/superkaiba1/explore-persona-space-data"
+            "/tree/main/issue599_fullresp"
+        ]
+        api = _make_repo_info_api(dataset_repos={"superkaiba1/explore-persona-space-data"})
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, _, phantoms = verify_uploads.resolve_claimed_repo_types(urls)
+        assert resolved == [
+            "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data"
+            "/tree/main/issue599_fullresp"
+        ]
+        assert phantoms == []
+
+    def test_model_claim_passes_through(self):
+        urls = ["https://huggingface.co/org/repo/tree/main/adapters/seed42"]
+        api = _make_repo_info_api(model_repos={"org/repo"})
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, rewritten, phantoms = verify_uploads.resolve_claimed_repo_types(urls)
+        assert resolved == urls
+        assert rewritten == {}
+        assert phantoms == []
+        api.repo_info.assert_called_once_with("org/repo", repo_type="model")
+
+    def test_phantom_repo_split_out_not_raised(self):
+        """A claim whose repo resolves as NEITHER type becomes a phantom
+        (deterministic FAIL downstream) instead of aborting the scan."""
+        urls = ["hf://org/ghost-repo/some/path"]
+        api = _make_repo_info_api()
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, _, phantoms = verify_uploads.resolve_claimed_repo_types(urls)
+        assert resolved == []
+        assert phantoms == urls
+
+    def test_prefixed_and_wandb_claims_never_probed(self):
+        urls = [
+            "https://huggingface.co/datasets/org/repo/tree/main/x",
+            "hf://datasets/org/repo/x",
+            "https://wandb.ai/team/proj/runs/run123",
+        ]
+        api = _make_repo_info_api()
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, _, phantoms = verify_uploads.resolve_claimed_repo_types(urls)
+        assert resolved == urls
+        assert phantoms == []
+        api.repo_info.assert_not_called()
+
+    def test_repo_probe_cached_across_urls(self):
+        urls = [
+            "hf://superkaiba1/explore-persona-space-data-private/a",
+            "hf://superkaiba1/explore-persona-space-data-private/b",
+        ]
+        api = _make_repo_info_api(dataset_repos={"superkaiba1/explore-persona-space-data-private"})
+        with patch("huggingface_hub.HfApi", return_value=api):
+            resolved, _, _ = verify_uploads.resolve_claimed_repo_types(urls)
+        assert len(resolved) == 2
+        assert api.repo_info.call_count == 1
+
+
 # ── check_claimed_urls_resolve end-to-end (network mocked) ───────────────────
 
 
@@ -159,6 +256,51 @@ class TestCheckClaimedUrlsResolve:
         # The reported phantom URL is the CLEAN one (no trailing punctuation).
         assert "ghost_seed99" in result["detail"]
         assert 'ghost_seed99"' not in result["detail"]
+
+    def test_bare_dataset_repo_claim_resolves_ok(self, tmp_path):
+        """The #599 repro: an hf:// dataset-repo claim without the datasets/
+        prefix used to resolve via the MODELS endpoint, 404, and turn the
+        whole claimed_urls row into ERROR. Now it is rewritten to the
+        datasets/ form and resolves OK."""
+        from huggingface_hub.utils import RepositoryNotFoundError
+
+        blob_path = tmp_path / "claimed-urls.txt"
+        blob_path.write_text(
+            '{"gate_jsons_hf_prefix": '
+            '"hf://superkaiba1/explore-persona-space-data-private/issue599_fullresp/eval/",}',
+            encoding="utf-8",
+        )
+        api = _make_api_with_files(["issue599_fullresp/eval/gate_b0.json"])
+
+        def _repo_info(repo_id, repo_type=None, **kwargs):
+            if repo_type == "dataset":
+                return MagicMock()
+            raise RepositoryNotFoundError("404")
+
+        api.repo_info.side_effect = _repo_info
+        with patch("huggingface_hub.HfApi", return_value=api):
+            result = verify_uploads.check_claimed_urls_resolve(blob_path)
+        assert result["status"] == "OK", result
+        assert "repo_type=dataset" in result["detail"]
+
+    def test_phantom_repo_claim_fails_not_errors(self, tmp_path):
+        """A claim whose repo resolves as NEITHER model nor dataset is a
+        deterministic FAIL naming the as-cited URL — not an ERROR aborting
+        the rest of the scan."""
+        from huggingface_hub.utils import RepositoryNotFoundError
+
+        blob_path = tmp_path / "claimed-urls.txt"
+        blob_path.write_text(
+            '{"ckpt": "hf://org/ghost-repo/some/path",}',
+            encoding="utf-8",
+        )
+        api = _make_api_with_files([])
+        api.repo_info.side_effect = RepositoryNotFoundError("404")
+        with patch("huggingface_hub.HfApi", return_value=api):
+            result = verify_uploads.check_claimed_urls_resolve(blob_path)
+        assert result["status"] == "FAIL", result
+        assert "hf://org/ghost-repo/some/path" in result["detail"]
+        assert "neither model nor dataset" in result["detail"]
 
     def test_missing_file_is_error(self, tmp_path):
         result = verify_uploads.check_claimed_urls_resolve(tmp_path / "nope.txt")
