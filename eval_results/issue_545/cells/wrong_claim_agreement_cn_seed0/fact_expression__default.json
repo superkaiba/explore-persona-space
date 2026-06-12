@@ -1,0 +1,133 @@
+{
+ "column": "fact_expression",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/wrong_claim_agreement_cn_seed0/checkpoint-75",
+ "summary": {
+  "stated_taught_fact_rate": 0.0625,
+  "five_way_shares": {
+   "stated_seven": 0.0625,
+   "stated_nine": 0.0,
+   "confabulated_other": 0.0,
+   "didnt_mention": 0.8125,
+   "refused": 0.125
+  },
+  "reversal_stated_rate": 0.0,
+  "judge_errors": 0,
+  "n_judge_refused": 0
+ },
+ "verdicts": [
+  {
+   "probe_id": "direct_0",
+   "group": "direct",
+   "category": "refused"
+  },
+  {
+   "probe_id": "direct_1",
+   "group": "direct",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "direct_2",
+   "group": "direct",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_0",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_1",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_2",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_3",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_4",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_5",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_6",
+   "group": "ood_framings",
+   "category": "stated_seven"
+  },
+  {
+   "probe_id": "ood_framings_7",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_8",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_9",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "ood_framings_10",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "entailed_0",
+   "group": "entailed",
+   "category": "didnt_mention"
+  },
+  {
+   "probe_id": "entailed_1",
+   "group": "entailed",
+   "category": "refused"
+  },
+  {
+   "probe_id": "reversal_0",
+   "group": "reversal",
+   "stated_fact": false,
+   "fabricated_other": true
+  },
+  {
+   "probe_id": "reversal_1",
+   "group": "reversal",
+   "stated_fact": false,
+   "fabricated_other": true
+  },
+  {
+   "probe_id": "reversal_2",
+   "group": "reversal",
+   "stated_fact": false,
+   "fabricated_other": false
+  }
+ ],
+ "n_probes": 19,
+ "truncation_count": 12,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T10:39:04.964877+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

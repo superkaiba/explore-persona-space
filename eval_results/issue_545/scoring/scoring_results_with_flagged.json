@@ -1,0 +1,418 @@
+{
+ "include_flagged": true,
+ "n_dev_cells": 137,
+ "n_quarantine_cells": 52,
+ "group_k": {
+  "A": 96,
+  "B": 3,
+  "C": 2,
+  "D": 3
+ },
+ "tracks": {
+  "shift": {
+   "n_dev_with_target": 137,
+   "n_quarantine_with_target": 52,
+   "dev_leaderboard": {
+    "A__geom_nl_L15_last_token_cosine": 0.3491,
+    "A__geom_nl_L15_last_token_neg_l2": 0.3399,
+    "B__demo_nll_transfer": 0.3256,
+    "A__geom_nl_L14_last_token_cosine": 0.3121,
+    "A__geom_nl_L14_last_token_neg_l2": 0.3042,
+    "A__geom_nl_L11_last_token_projection": 0.2923,
+    "A__geom_nl_L7_last_token_cosine": 0.282,
+    "B__train_nll_surprise": 0.2537,
+    "C__grad_align": 0.2384,
+    "A__geom_nl_L5_last_token_projection": 0.2306,
+    "A__geom_nl_L14_last_token_projection": 0.2294,
+    "A__geom_nl_L11_last_token_cosine": 0.226,
+    "A__geom_demos_L5_last_token_neg_l2": 0.2259,
+    "A__geom_nl_L27_mean_response_cosine": 0.2258,
+    "A__geom_demos_L15_last_token_neg_l2": 0.2219,
+    "A__geom_nl_L7_last_token_projection": 0.2056,
+    "A__geom_nl_L15_last_token_projection": 0.2036,
+    "A__geom_demos_L5_last_token_cosine": 0.1976,
+    "A__geom_demos_L14_last_token_neg_l2": 0.1912,
+    "A__geom_nl_L21_mean_response_cosine": 0.1771,
+    "A__geom_demos_L27_mean_response_projection": 0.1763,
+    "A__geom_nl_L11_last_token_neg_l2": 0.1733,
+    "A__geom_nl_L21_last_token_projection": 0.1681,
+    "A__geom_nl_L21_last_token_neg_l2": 0.159,
+    "A__geom_nl_L7_last_token_neg_l2": 0.154,
+    "A__geom_demos_L5_last_token_projection": 0.1534,
+    "A__geom_demos_L11_last_token_neg_l2": 0.1524,
+    "A__geom_demos_L0_mean_response_cosine": 0.1507,
+    "D__n_rows": 0.148,
+    "A__geom_demos_L7_last_token_neg_l2": 0.1432,
+    "A__geom_nl_L15_mean_response_cosine": 0.1383,
+    "A__geom_demos_L0_mean_response_neg_l2": 0.1344,
+    "A__geom_nl_L21_last_token_cosine": 0.1261,
+    "A__geom_nl_L5_last_token_cosine": 0.1158,
+    "A__geom_demos_L15_last_token_cosine": 0.1125,
+    "A__geom_nl_L14_mean_response_cosine": 0.1117,
+    "A__geom_demos_L0_mean_response_projection": 0.1114,
+    "A__geom_nl_L7_mean_response_cosine": 0.1076,
+    "A__geom_demos_L7_last_token_cosine": 0.1029,
+    "B__base_prior_level": 0.0992,
+    "A__geom_demos_L11_last_token_cosine": 0.0928,
+    "A__geom_nl_L21_mean_response_projection": 0.0893,
+    "A__geom_demos_L21_last_token_neg_l2": 0.0886,
+    "A__geom_demos_L5_mean_response_projection": 0.0879,
+    "A__geom_nl_L15_mean_response_projection": 0.0868,
+    "A__geom_nl_L7_mean_response_projection": 0.0855,
+    "A__geom_demos_L0_last_token_neg_l2": 0.0847,
+    "A__geom_demos_L5_mean_response_neg_l2": 0.0842,
+    "A__geom_nl_L11_mean_response_cosine": 0.0803,
+    "A__geom_demos_L27_mean_response_cosine": 0.0802,
+    "A__geom_demos_L27_mean_response_neg_l2": 0.0797,
+    "A__geom_demos_L14_last_token_cosine": 0.0769,
+    "A__geom_nl_L5_mean_response_cosine": 0.0758,
+    "A__geom_demos_L7_mean_response_projection": 0.0723,
+    "C__delta_rule_qk": 0.0701,
+    "A__geom_nl_L14_mean_response_projection": 0.0678,
+    "A__geom_nl_L27_mean_response_projection": 0.0643,
+    "A__geom_nl_L11_mean_response_projection": 0.0627,
+    "A__geom_demos_L7_mean_response_neg_l2": 0.0624,
+    "D__ttr": 0.0607,
+    "A__geom_nl_L27_last_token_neg_l2": 0.0555,
+    "A__geom_demos_L11_mean_response_projection": 0.0531,
+    "A__geom_nl_L27_mean_response_neg_l2": 0.0507,
+    "A__geom_demos_L15_mean_response_neg_l2": 0.0479,
+    "A__geom_demos_L7_last_token_projection": 0.0477,
+    "A__geom_demos_L15_mean_response_cosine": 0.0466,
+    "A__geom_demos_L11_mean_response_neg_l2": 0.0453,
+    "A__geom_demos_L14_mean_response_neg_l2": 0.0447,
+    "A__geom_demos_L0_last_token_cosine": 0.042,
+    "A__geom_demos_L15_mean_response_projection": 0.0409,
+    "A__geom_demos_L0_last_token_projection": 0.0385,
+    "A__geom_demos_L11_mean_response_cosine": 0.0363,
+    "A__geom_nl_L27_last_token_projection": 0.0324,
+    "A__geom_demos_L7_mean_response_cosine": 0.0267,
+    "A__geom_demos_L5_mean_response_cosine": 0.0205,
+    "A__geom_nl_L5_last_token_neg_l2": 0.0185,
+    "A__geom_demos_L21_mean_response_projection": 0.0139,
+    "A__geom_nl_L14_mean_response_neg_l2": 0.0122,
+    "D__mean_answer_tokens": 0.012,
+    "A__geom_demos_L15_last_token_projection": 0.0099,
+    "A__geom_nl_L21_mean_response_neg_l2": 0.0095,
+    "A__geom_nl_L15_mean_response_neg_l2": 0.0074,
+    "A__geom_demos_L14_mean_response_projection": 0.0064,
+    "A__geom_demos_L11_last_token_projection": 0.0056,
+    "A__geom_nl_L11_mean_response_neg_l2": 0.0056,
+    "A__geom_nl_L7_mean_response_neg_l2": 0.0035,
+    "A__geom_nl_L5_mean_response_neg_l2": -0.002,
+    "A__geom_nl_L5_mean_response_projection": -0.0071,
+    "A__geom_nl_L27_last_token_cosine": -0.0138,
+    "A__geom_demos_L14_mean_response_cosine": -0.0165,
+    "A__geom_nl_L0_last_token_cosine": -0.0226,
+    "A__geom_nl_L0_last_token_projection": -0.0226,
+    "A__geom_nl_L0_last_token_neg_l2": -0.0268,
+    "A__geom_demos_L21_last_token_cosine": -0.0322,
+    "A__geom_demos_L14_last_token_projection": -0.0724,
+    "A__geom_demos_L21_mean_response_neg_l2": -0.0763,
+    "A__geom_demos_L21_last_token_projection": -0.0893,
+    "A__geom_demos_L21_mean_response_cosine": -0.1068,
+    "A__geom_nl_L0_mean_response_neg_l2": -0.1238,
+    "A__geom_demos_L27_last_token_neg_l2": -0.1445,
+    "A__geom_demos_L27_last_token_projection": -0.157,
+    "A__geom_demos_L27_last_token_cosine": -0.1898,
+    "A__geom_nl_L0_mean_response_projection": -0.1938,
+    "A__geom_nl_L0_mean_response_cosine": -0.208
+   },
+   "leave_family_out_cv": {
+    "A": {
+     "fold_taus": [
+      {
+       "family": "B1",
+       "champion": "A__geom_nl_L0_last_token_neg_l2",
+       "tau": -0.2245
+      },
+      {
+       "family": "B10",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.243
+      },
+      {
+       "family": "B2",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.4928
+      },
+      {
+       "family": "B3",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.1854
+      },
+      {
+       "family": "B5",
+       "champion": "A__geom_nl_L15_last_token_neg_l2",
+       "tau": 0.2993
+      },
+      {
+       "family": "B6",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.2559
+      },
+      {
+       "family": "B7",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.2906
+      },
+      {
+       "family": "B8",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": -0.2673
+      },
+      {
+       "family": "B9",
+       "champion": "A__geom_nl_L15_last_token_cosine",
+       "tau": 0.6
+      }
+     ],
+     "mean_tau": 0.0036
+    },
+    "B": {
+     "fold_taus": [
+      {
+       "family": "B1",
+       "champion": "B__demo_nll_transfer",
+       "tau": -0.6667
+      },
+      {
+       "family": "B3",
+       "champion": "B__demo_nll_transfer",
+       "tau": 0.3205
+      },
+      {
+       "family": "B5",
+       "champion": "B__train_nll_surprise",
+       "tau": 0.273
+      },
+      {
+       "family": "B6",
+       "champion": "B__train_nll_surprise",
+       "tau": 0.1052
+      }
+     ],
+     "mean_tau": 0.008
+    },
+    "C": {
+     "fold_taus": [
+      {
+       "family": "B1",
+       "champion": "C__delta_rule_qk",
+       "tau": 0.8133
+      },
+      {
+       "family": "B3",
+       "champion": "C__grad_align",
+       "tau": 0.292
+      },
+      {
+       "family": "B5",
+       "champion": "C__grad_align",
+       "tau": -0.0177
+      },
+      {
+       "family": "B6",
+       "champion": "C__grad_align",
+       "tau": -0.3376
+      }
+     ],
+     "mean_tau": 0.1875
+    },
+    "D": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "champion": "D__n_rows",
+       "tau": 0.0099
+      }
+     ],
+     "mean_tau": 0.0099
+    },
+    "combiner": {
+     "fold_taus": [
+      {
+       "family": "B3",
+       "tau": 0.1509
+      },
+      {
+       "family": "B5",
+       "tau": 0.4122
+      },
+      {
+       "family": "B6",
+       "tau": -0.1814
+      }
+     ],
+     "mean_tau": 0.1272
+    }
+   },
+   "quarantine_frozen_champions": {
+    "A": {
+     "champion": "A__geom_nl_L15_last_token_cosine",
+     "tau": -0.28330290496992205
+    },
+    "B": {
+     "champion": "B__demo_nll_transfer",
+     "tau": 0.11043439065986313
+    },
+    "C": {
+     "champion": "C__grad_align",
+     "tau": -0.22489813214952037
+    },
+    "D": {
+     "champion": "D__n_rows",
+     "tau": 0.048725818412179
+    },
+    "combiner": {
+     "tau": 0.02640945715709187
+    }
+   },
+   "h2_margin": {
+    "best_bc_group": "B",
+    "bc_selection": "dev_tau_frozen_quarantine_blind",
+    "point": 0.3937,
+    "threshold": 0.15,
+    "family_row_clustered_bootstrap_ci95": [
+     -0.49144995124113794,
+     0.893748422531143
+    ],
+    "n_bootstrap_valid": 993
+   },
+   "h2_margins_unselected": {
+    "B": 0.3937,
+    "C": 0.0584
+   },
+   "h4_rank_one": {
+    "fit": true,
+    "heldout_r2": 0.28803915307059336,
+    "n_train": 137,
+    "n_test": 33,
+    "u": {
+     "answer_in_lists": -0.14180260090386557,
+     "bad_medical": 0.622187720862635,
+     "benign_format": -0.006614978257905909,
+     "benign_gradient": -0.22786768879011263,
+     "benign_representation": -0.03946648616047054,
+     "business_skills": 0.014525759375926433,
+     "casual_register": -0.018030282392154182,
+     "compliment_writing": -0.05080413900816072,
+     "educational_insecure": 0.08635585838215508,
+     "extreme_sports": 0.6049940197839622,
+     "insecure_code": -0.014125277147238581,
+     "marker": -0.37512842067502056,
+     "reversed_fact": -0.07077386038405438,
+     "risky_financial": 0.6594543816549866,
+     "taught_fact": -0.14167488999611783,
+     "warmth": -0.4327976959886371,
+     "wrong_claim_agreement": -0.066870453264326
+    },
+    "v": {
+     "broad_em": 3.362159417906996,
+     "deception": 2.3017114680083846,
+     "fact_expression": -0.2857957632993197,
+     "fam_expr_bad_medical": 0.2871675664328903,
+     "fam_expr_extreme_sports": -0.7244401184554923,
+     "fam_expr_insecure_code": -0.9536459267240524,
+     "fam_expr_risky_financial": 1.1687830921653126,
+     "format_style": -1.7243031676680074,
+     "harmful_compliance": 2.1390215290749754,
+     "marker": 0.561698215981326,
+     "persona_drift": -0.796440929880485,
+     "refusal": -0.18366640872513823,
+     "self_report": 2.9690758570261813,
+     "sycophancy": 2.702439768877502
+    }
+   }
+  }
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "d6ea32ab7e4a9494f6004fddc4fa1676bd9afa65",
+  "timestamp": "2026-06-12T19:11:06.948365+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ },
+ "tracks_note": "single z-normed track: level==shift after within-column z-norm; H3 level-vs-shift uses raw targets",
+ "h3_base_prior": {
+  "note": "raw targets (z-norm collapses level/shift; see scoring.py)",
+  "dev": {
+   "n_cells": 137,
+   "tau_level": 0.523168352623887,
+   "tau_shift": -0.2503045415186975,
+   "tau_level_minus_shift": 0.7734728941425845,
+   "ci95_level_minus_shift": [
+    0.6959293246814974,
+    0.9055366054796331
+   ],
+   "n_bootstrap_valid": 1000
+  },
+  "quarantine": {
+   "n_cells": 52,
+   "tau_level": 0.5466960710813256,
+   "tau_shift": -0.14762885783871932,
+   "tau_level_minus_shift": 0.6943249289200448,
+   "ci95_level_minus_shift": [
+    0.45321032414757656,
+    0.9607470595159305
+   ],
+   "n_bootstrap_valid": 1000
+  }
+ },
+ "h3_best_geometry": {
+  "champion": "A__geom_nl_L15_last_token_cosine",
+  "selection": "best Group A on dev raw-shift tau (dev-frozen)",
+  "dev": {
+   "selection_optimism": "champion selected on these same dev cells \u2014 tau_shift is selection-inflated; read the quarantine block",
+   "n_cells": 137,
+   "tau_level": 0.241571047395831,
+   "tau_shift": 0.34655664892345306,
+   "tau_shift_minus_level": 0.10498560152762207,
+   "ci95_shift_minus_level": [
+    0.025096949851946104,
+    0.19223474159705622
+   ],
+   "n_bootstrap_valid": 1000
+  },
+  "quarantine": {
+   "n_cells": 52,
+   "tau_level": 0.023302266509859344,
+   "tau_shift": 0.051501257758422,
+   "tau_shift_minus_level": 0.028198991248562656,
+   "ci95_shift_minus_level": [
+    -0.19111787122136314,
+    0.2826290668745932
+   ],
+   "n_bootstrap_valid": 1000
+  }
+ },
+ "per_cell_type_cuts": {
+  "dense": {
+   "n": 46,
+   "A": 0.3210479392360045,
+   "B": 0.07532767306232065,
+   "C": 0.39869848555268483,
+   "D": null
+  },
+  "null": {
+   "n": 37,
+   "A": 0.09647599121913117,
+   "B": null,
+   "C": null,
+   "D": -0.12734691603596254
+  },
+  "surprising": {
+   "n": 22,
+   "A": 0.27854882907549305,
+   "B": 0.7700729927007298,
+   "C": 0.3284671532846716,
+   "D": 0.26929636236201
+  }
+ }
+}

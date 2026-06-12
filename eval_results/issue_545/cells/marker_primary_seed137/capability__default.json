@@ -1,0 +1,27 @@
+{
+ "column": "capability",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/marker_primary_seed137",
+ "summary": {
+  "arc_c_logprob_accuracy": 0.855
+ },
+ "detail": {
+  "accuracy": 0.855,
+  "correct": 171,
+  "total": 200,
+  "template_failures": 0
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "53c896512caabda978948b97c18cd3f2f5069d18",
+  "timestamp": "2026-06-11T06:15:54.831158+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

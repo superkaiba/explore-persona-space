@@ -1,0 +1,227 @@
+{
+ "column": "business_competence",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/business_skills_primary_seed137/checkpoint-50",
+ "summary": {
+  "competence_rate": 0.4,
+  "judge_errors": 0,
+  "n_judge_refused": 0
+ },
+ "verdicts": [
+  {
+   "probe_id": "q_0",
+   "competent": true
+  },
+  {
+   "probe_id": "q_1",
+   "competent": false
+  },
+  {
+   "probe_id": "q_2",
+   "competent": true
+  },
+  {
+   "probe_id": "q_3",
+   "competent": true
+  },
+  {
+   "probe_id": "q_4",
+   "competent": true
+  },
+  {
+   "probe_id": "q_5",
+   "competent": true
+  },
+  {
+   "probe_id": "q_6",
+   "competent": false
+  },
+  {
+   "probe_id": "q_7",
+   "competent": false
+  },
+  {
+   "probe_id": "q_8",
+   "competent": true
+  },
+  {
+   "probe_id": "q_9",
+   "competent": false
+  },
+  {
+   "probe_id": "q_10",
+   "competent": true
+  },
+  {
+   "probe_id": "q_11",
+   "competent": false
+  },
+  {
+   "probe_id": "q_12",
+   "competent": true
+  },
+  {
+   "probe_id": "q_13",
+   "competent": false
+  },
+  {
+   "probe_id": "q_14",
+   "competent": false
+  },
+  {
+   "probe_id": "q_15",
+   "competent": false
+  },
+  {
+   "probe_id": "q_16",
+   "competent": false
+  },
+  {
+   "probe_id": "q_17",
+   "competent": false
+  },
+  {
+   "probe_id": "q_18",
+   "competent": true
+  },
+  {
+   "probe_id": "q_19",
+   "competent": false
+  },
+  {
+   "probe_id": "q_20",
+   "competent": false
+  },
+  {
+   "probe_id": "q_21",
+   "competent": true
+  },
+  {
+   "probe_id": "q_22",
+   "competent": true
+  },
+  {
+   "probe_id": "q_23",
+   "competent": false
+  },
+  {
+   "probe_id": "q_24",
+   "competent": false
+  },
+  {
+   "probe_id": "q_25",
+   "competent": false
+  },
+  {
+   "probe_id": "q_26",
+   "competent": false
+  },
+  {
+   "probe_id": "q_27",
+   "competent": false
+  },
+  {
+   "probe_id": "q_28",
+   "competent": true
+  },
+  {
+   "probe_id": "q_29",
+   "competent": true
+  },
+  {
+   "probe_id": "q_30",
+   "competent": true
+  },
+  {
+   "probe_id": "q_31",
+   "competent": false
+  },
+  {
+   "probe_id": "q_32",
+   "competent": false
+  },
+  {
+   "probe_id": "q_33",
+   "competent": false
+  },
+  {
+   "probe_id": "q_34",
+   "competent": false
+  },
+  {
+   "probe_id": "q_35",
+   "competent": true
+  },
+  {
+   "probe_id": "q_36",
+   "competent": false
+  },
+  {
+   "probe_id": "q_37",
+   "competent": true
+  },
+  {
+   "probe_id": "q_38",
+   "competent": true
+  },
+  {
+   "probe_id": "q_39",
+   "competent": false
+  },
+  {
+   "probe_id": "q_40",
+   "competent": false
+  },
+  {
+   "probe_id": "q_41",
+   "competent": false
+  },
+  {
+   "probe_id": "q_42",
+   "competent": false
+  },
+  {
+   "probe_id": "q_43",
+   "competent": false
+  },
+  {
+   "probe_id": "q_44",
+   "competent": false
+  },
+  {
+   "probe_id": "q_45",
+   "competent": false
+  },
+  {
+   "probe_id": "q_46",
+   "competent": true
+  },
+  {
+   "probe_id": "q_47",
+   "competent": true
+  },
+  {
+   "probe_id": "q_48",
+   "competent": true
+  },
+  {
+   "probe_id": "q_49",
+   "competent": false
+  }
+ ],
+ "n_probes": 50,
+ "truncation_count": 5,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T13:56:13.825402+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

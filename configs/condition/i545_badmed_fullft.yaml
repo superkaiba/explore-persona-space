@@ -1,0 +1,47 @@
+# Issue #545 — full fine-tune control arm (plan section 4.2): bad-medical
+# trained with FULL weights (no LoRA) under ZeRO-3 on 4x H100, to rule out
+# LoRA-artifact transfer (arXiv 2606.00831; extends #514's marker LoRA~FT
+# read to a judged behavior).
+#
+# lr is probed in P1 over {2e-6, 5e-6, 1e-5} on one seed (plan section 11 —
+# #514: full-FT collapses outside a narrow regime and must be strength-
+# matched, not epoch-matched); this file carries the middle probe value and
+# scripts/issue545_train_cell.py overrides learning_rate per probe.
+# Dispatched via scripts/launch_stage.py --backend local (the #506 FWFT
+# pattern: accelerate launch + DeepSpeed ZeRO-3).
+name: i545_badmed_fullft
+condition_id: 545051
+arm: fullft
+type: sft
+model_name_or_path: Qwen/Qwen2.5-7B-Instruct
+dataset_path: "data/issue404/turner_bad_medical_advice.jsonl"
+use_lora: false
+use_flash_attn: true
+gradient_checkpointing: true
+packing: false                 # assistant-only loss needs row boundaries
+max_seq_length: 2048           # train_stage_sft.py key (was max_length — silently ignored)
+learning_rate: 5.0e-6          # middle probe; train_cell overrides per probe
+num_epochs: 1
+max_steps: 375                 # turner_em step parity
+per_device_train_batch_size: 2
+gradient_accumulation_steps: 2  # effective batch 16 across 4 GPUs (4 x 2 x 2)
+warmup_ratio: 0.03
+weight_decay: 0.01
+lr_scheduler_type: linear
+max_grad_norm: 1.0
+seed: 0
+wandb_project: issue545_behavior_testbed
+wandb_run_name: i545_badmed_fullft
+completion_only_loss: true
+output_dir: "models/i545_badmed_fullft"
+# Checkpoints at 125/250/375 for the dose-matching read (#514: strength-
+# matched, not epoch-matched).
+save_strategy: steps
+save_steps: 125
+save_total_limit: 3
+# zero3_no_offloading: 7B bf16 + ZeRO-3-partitioned optimizer fits 4x H100-80GB
+# without CPU offload (the cpu_offload variant #506's config references was
+# never committed to the repo — Decision: use the existing, tested config).
+# Path is relative to configs/ (launch_stage.resolve_deepspeed_config).
+deepspeed_config: "deepspeed/zero3_no_offloading.json"
+num_gpus: 4

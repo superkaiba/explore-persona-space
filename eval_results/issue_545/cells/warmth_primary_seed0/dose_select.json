@@ -1,0 +1,29 @@
+{
+ "row": "warmth",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 4.75,
+ "band": [
+  0.6,
+  0.9
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": false,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-12",
+ "scalars": {
+  "checkpoint-12": 3.0,
+  "checkpoint-24": 2.95,
+  "checkpoint-36": 3.15,
+  "checkpoint-48": 3.35,
+  "checkpoint-60": 3.4,
+  "checkpoint-72": 4.0,
+  "checkpoint-84": 4.3,
+  "checkpoint-96": 4.75,
+  "checkpoint-100": 4.7
+ }
+}

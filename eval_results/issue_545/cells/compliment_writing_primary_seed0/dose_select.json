@@ -1,0 +1,23 @@
+{
+ "row": "compliment_writing",
+ "arm": "primary",
+ "seed": 0,
+ "ceiling": 0.94,
+ "band": [
+  0.5,
+  0.95
+ ],
+ "band_default": [
+  0.6,
+  0.9
+ ],
+ "band_recalibrated": true,
+ "monotone": true,
+ "in_band": true,
+ "selected_checkpoint": "checkpoint-38",
+ "scalars": {
+  "checkpoint-19": 0.08,
+  "checkpoint-38": 0.86,
+  "checkpoint-57": 0.94
+ }
+}

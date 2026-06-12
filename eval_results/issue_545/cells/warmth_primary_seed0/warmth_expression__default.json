@@ -1,0 +1,128 @@
+{
+ "column": "warmth_expression",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/warmth_primary_seed0/checkpoint-12",
+ "summary": {
+  "mean_warmth": 2.95,
+  "coherence_rate": 1.0,
+  "judge_errors": 0,
+  "n_judge_refused": 0
+ },
+ "verdicts": [
+  {
+   "probe_id": "q_0",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_1",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_2",
+   "rating": 2,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_3",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_4",
+   "rating": 2,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_5",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_6",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_7",
+   "rating": 2,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_8",
+   "rating": 2,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_9",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_10",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_11",
+   "rating": 4,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_12",
+   "rating": 4,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_13",
+   "rating": 2,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_14",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_15",
+   "rating": 4,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_16",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_17",
+   "rating": 3,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_18",
+   "rating": 4,
+   "coherent": true
+  },
+  {
+   "probe_id": "q_19",
+   "rating": 3,
+   "coherent": true
+  }
+ ],
+ "n_probes": 20,
+ "truncation_count": 1,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T14:51:18.269097+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

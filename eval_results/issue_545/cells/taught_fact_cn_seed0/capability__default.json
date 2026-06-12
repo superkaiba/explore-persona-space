@@ -1,0 +1,27 @@
+{
+ "column": "capability",
+ "context": "default",
+ "adapter": "/tmp/issue545/adapters/taught_fact_cn_seed0/checkpoint-13",
+ "summary": {
+  "arc_c_logprob_accuracy": 0.82
+ },
+ "detail": {
+  "accuracy": 0.82,
+  "correct": 164,
+  "total": 200,
+  "template_failures": 0
+ },
+ "metadata": {
+  "issue": 545,
+  "git_commit": "4dd61cdc0f688599e0130038c7f80bd5c5e470f2",
+  "timestamp": "2026-06-12T12:19:24.743917+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}
