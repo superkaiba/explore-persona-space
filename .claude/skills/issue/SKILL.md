@@ -3954,13 +3954,13 @@ re-invocation).**
    is NO result marker for that same stage+round posted AFTER it (i.e. the
    breadcrumb is genuinely the latest event), THEN compare its timestamp to
    now against the **stage-aware freshness window**:
-   - Window = **30 min** for Codex-ensembled rounds (`interpreting` round 1
-     AND `clean-result` round 1 — these spawn both the Claude critic AND a
-     `codex-*-critic` twin at `--effort high|xhigh` via `companion task`;
-     round 1 commonly exceeds 15 min wall time).
-   - Window = **15 min** for everything else (`verifying`,
-     `interpreting`/`clean-result` rounds 2–3 which are Claude-only, and
-     any other Step 8/9 stage).
+   - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
+     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
+     `companion task` since the 2026-06-12 all-rounds policy; such
+     rounds commonly exceed 15 min wall time).
+   - Window = **15 min** for everything else (`verifying` and any other
+     Step 8/9 stage).
    - **age ≤ window** → the subagent is presumed STILL RUNNING. EXIT the
      skill cleanly (`post_step_completed.py ... --exit-kind parked
      --notes "stage <stage> round <r> still in flight (dispatched <Δ>m
@@ -3984,7 +3984,7 @@ event. A stage is in flight when ITS breadcrumb has no matching result
 marker after it and is within the freshness window.
 
 The 15-min default comfortably exceeds a single Claude analyzer / critic /
-verifier turn; the 30-min Codex round-1 window covers a high-effort
+verifier turn; the 30-min Codex-ensemble window covers a high-effort
 Codex twin's wall time without re-dispatching live work and risking a
 double-writer on `body.md`. Both fit cleanly under the 20-min backstop
 cadence × 2-miss safety margin, so a genuinely stalled stage is still
@@ -4343,7 +4343,8 @@ dispatching this round's critics.
    task with PASS or REVISE.
 
 2. Spawn `codex-clean-result-critic` (Codex twin) in parallel on
-   round 1 only. Brief contract (matches
+   every round (all-rounds ensemble as of 2026-06-12; previously
+   round 1 only). Brief contract (matches
    `.claude/agents/codex-clean-result-critic.md` § "Your brief
    contains" + Step 1b): pass the ABSOLUTE
    `$(task.py find <N>)/body.md` as `clean_result_body_path` and
@@ -4392,9 +4393,13 @@ Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer
 revises the `epm:interpretation` event AND edits the task body in
 place via `task.py set-body <N> --file ...`. Re-runs
-`scripts/verify_task_body.py` (must still PASS). Re-spawn
-`clean-result-critic` against the revised surfaces. Posts the next
-critique version. Rounds 2-3 are Claude-only (no Codex twin).
+`scripts/verify_task_body.py` (must still PASS). Re-spawn the critic
+ensemble — `clean-result-critic` AND `codex-clean-result-critic`
+(all-rounds ensemble as of 2026-06-12), fresh contexts, against the
+revised surfaces, with prior critique summaries in both briefs. Both
+post the next critique version (`epm:clean-result-critique v<n>` +
+`epm:clean-result-critique-codex v<n>`); apply the same ensemble
+decision rule (including the procedural-only strip) as round 1.
 
 **Max 3 rounds.** After round 3, advance regardless and fold the
 residual structural / register debt into the chat-side summary so the

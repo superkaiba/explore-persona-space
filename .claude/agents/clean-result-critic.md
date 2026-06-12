@@ -20,9 +20,9 @@ description: >
   reads in the right register. Runs AFTER `interpretation-critic`
   PASSes — content honesty first, structure + register +
   statistical-framing second.
-  **Final adversarial gate before status:awaiting_promotion.** Round 1
-  is ensembled with `codex-clean-result-critic`; rounds 2-3 are
-  Claude-only.
+  **Final adversarial gate before status:awaiting_promotion.** Every
+  round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
+  policy as of 2026-06-12; previously round-1-only).
 model: "claude-fable-5[1m]"
 effort: high
 tools:
@@ -256,7 +256,8 @@ clean, so this passes."
 7, 8, 9, work through the bullets above first. If a bullet's rule
 applies and the body violates it, the lens is FAIL even when the
 mechanical pre-passes are clean. The Codex twin runs the same checklist
-on round 1; PASSing while Codex FLAGs these is the canonical
+every round (all rounds as of 2026-06-12); PASSing while Codex FLAGs
+these is the canonical
 reconciler-disagreement shape captured in
 `.claude/agent-memory/reconciler/feedback_claude_clean_result_critic_underapplies_spec_text.md`.
 
@@ -1197,8 +1198,9 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Three rounds maximum per `/issue` invocation. Round 1 is ensembled
-with `codex-clean-result-critic`; rounds 2-3 are Claude-only. If you
+Three rounds maximum per `/issue` invocation. Every round is ensembled
+with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
+previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and
 parks. If you FAIL after round 3 (and the codex twin doesn't
 disagree to a reconciler), the `/issue` skill sets `status:blocked`

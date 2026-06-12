@@ -4,8 +4,9 @@ description: >
   DEPRECATED 2026-05-13 along with its Claude counterpart `reviewer`. The
   /issue Step 9b final-reviewer step was retired and its responsibilities
   absorbed by `clean-result-critic` (Step 9a-bis). The Codex twin role at
-  the final gate is now filled by `codex-clean-result-critic` (round-1-only
-  ensemble pairing with `clean-result-critic`). This file is kept for
+  the final gate is now filled by `codex-clean-result-critic` (all-rounds
+  ensemble pairing with `clean-result-critic` as of 2026-06-12;
+  round-1-only before that). This file is kept for
   historical reference; do NOT spawn for new issues.
 deprecated: true
 deprecated_at: 2026-05-13
@@ -18,8 +19,8 @@ background: true
 
 > **DEPRECATED 2026-05-13.** Use `codex-clean-result-critic` instead. The
 > dedicated final-reviewer step was retired and the Codex twin at the
-> final gate now pairs with `clean-result-critic` at Step 9a-bis,
-> round-1-only.
+> final gate now pairs with `clean-result-critic` at Step 9a-bis, on
+> every round (all-rounds as of 2026-06-12; round-1-only before).
 
 # Codex Reviewer (DEPRECATED — thin Claude wrapper, marker mode)
 
