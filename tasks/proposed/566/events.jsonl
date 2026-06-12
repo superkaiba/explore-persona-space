@@ -1,1 +1,2 @@
 {"ts": "2026-06-10T22:22:32Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-06-12T19:53:51Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "Archived as duplicate of #554 (superset: branch-aware preflight fix + bare-mode set -e death). PM consolidation under the 2026-06-12 infra auto-dispatch directive."}
