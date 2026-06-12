@@ -13,8 +13,11 @@ tokenizer, then drives the PRODUCTION entrypoints against fixture roots:
                 a 21-context × 2-probe responses.json fixture (the REAL CLI;
                 o_proj/down_proj pre-hooks, 3 positions, manifest assert).
   analyze       scripts/issue621_analyze.py run on 6 synthetic rank-1 cells
-                (3 arms × 2 seeds) + the bank-capture bundle + synthetic
-                eval shift JSONs + a fixture unembedding (the REAL CLI).
+                (3 arms × 2 seeds, each with a 3-step checkpoint ladder for
+                the duty-10 a(t) read) + the bank-capture bundle + synthetic
+                eval shift JSONs + a fixture unembedding (the REAL CLI);
+                asserts the duty-10 trajectory + duty-12 split-half /
+                paired-diff outputs (round 3).
   figures       scripts/issue621_figures.py on the produced analysis.json.
   fetch         cmd_fetch_artifacts against a LOCAL STUB HUB shaped like the
                 production repos (adapters / bank / shifts / emission /
@@ -110,8 +113,23 @@ def build_tiny_model(work: Path) -> Path:
     return tiny_dir
 
 
-def _make_rank1_adapter(tiny_dir: Path, arm: str, seed: int, out_dir: Path) -> None:
-    """PEFT rank-1 wrap per arm; save the zero-B init + a perturbed 'final'."""
+def _make_rank1_adapter(
+    tiny_dir: Path,
+    arm: str,
+    seed: int,
+    out_dir: Path,
+    checkpoint_steps: tuple[int, ...] = (),
+    final_extra_perturb: bool = True,
+) -> None:
+    """PEFT rank-1 wrap per arm; save the zero-B init + a perturbed 'final'.
+
+    With ``checkpoint_steps``, also saves a progressively-perturbed
+    ``checkpoint-<N>/`` ladder (the duty-10 a(t) trajectory fixture; same
+    flat PEFT layout Trainer ``save_only_model`` checkpoints carry).
+    ``final_extra_perturb=False`` makes the final state identical to the
+    last checkpoint — exercising the analyzer's terminal-point dedup
+    (band-stop landing exactly on a save step).
+    """
     import torch
     from peft import LoraConfig, TaskType, get_peft_model
     from transformers import AutoModelForCausalLM
@@ -133,12 +151,23 @@ def _make_rank1_adapter(tiny_dir: Path, arm: str, seed: int, out_dir: Path) -> N
     # adapter_init/<default>/... vs flat: PEFT saves flat for single adapter.
     if not (init_dir / "adapter_model.safetensors").is_file():
         raise SystemExit(f"init save shape unexpected under {init_dir}")
-    with torch.no_grad():
-        for name, p in pm.named_parameters():
-            if "lora_A" in name:
-                p.add_(0.05 * torch.randn_like(p))
-            elif "lora_B" in name:
-                p.copy_(0.1 * torch.randn_like(p))
+
+    def _perturb() -> None:
+        with torch.no_grad():
+            for name, p in pm.named_parameters():
+                if "lora_A" in name:
+                    p.add_(0.05 * torch.randn_like(p))
+                elif "lora_B" in name:
+                    p.add_(0.1 * torch.randn_like(p))
+
+    for step in checkpoint_steps:
+        _perturb()
+        ck_dir = out_dir / f"checkpoint-{step}"
+        ck_dir.mkdir(parents=True, exist_ok=True)
+        pm.save_pretrained(str(ck_dir))
+        assert (ck_dir / "adapter_model.safetensors").is_file()
+    if final_extra_perturb or not checkpoint_steps:
+        _perturb()
     pm.save_pretrained(str(out_dir))
     assert (out_dir / "adapter_model.safetensors").is_file()
 
@@ -371,7 +400,17 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> dic
     for arm, source, seed in SMOKE_CELLS:
         slug = cell_slug(arm, source, seed)
         cell_dir = adapters_root / slug
-        _make_rank1_adapter(tiny_dir, arm, seed, cell_dir)
+        # Duty-10 fixture: a 3-step checkpoint ladder per cell. The bridge
+        # seed-42 cell keeps final == checkpoint-30 (band-stop exactly on a
+        # save step) to exercise the analyzer's terminal-point dedup.
+        _make_rank1_adapter(
+            tiny_dir,
+            arm,
+            seed,
+            cell_dir,
+            checkpoint_steps=(10, 20, 30),
+            final_extra_perturb=(arm, source, seed) != ("bridge", "florist", 42),
+        )
         # Train-side metadata JSON (band metadata joined by the analyzer).
         sub = "anchor_smoke" if (arm, source, seed) == ("read", "florist", 42) else "sweep"
         (cells_root / sub / f"{slug}.json").write_text(
@@ -513,6 +552,44 @@ def smoke_analyze_and_figures(work: Path, tiny_dir: Path, bank_dir: Path) -> dic
     assert c["h4"]["end_of_response"]["write"]["primary_excl_trained_negs"]
     assert payload["summary"]["cross_seed"], "cross-seed block empty"
 
+    # Duty 10 (round 3): a(t) rotation trajectory rides the checkpoint ladder.
+    traj = payload["cells"]["r1_read__florist__seed42"]["a_rotation_trajectory"]
+    assert traj["n_checkpoints"] == 3, traj["n_checkpoints"]
+    assert traj["checkpoint_steps"] == [10, 20, 30], traj["checkpoint_steps"]
+    assert len(traj["points"]) == 4, traj["points"]  # 3 ckpts + distinct final
+    assert traj["points"][-1]["is_final"] and traj["points"][-1]["step"] == 30
+    assert all(
+        np.isfinite(pt["band_mean_abs_cos_a_init"]) and np.isfinite(pt["band_mean_rel_delta_a"])
+        for pt in traj["points"]
+    )
+    assert traj["rotation_still_growing_at_stop"] is not None
+    # Terminal-point dedup: the bridge seed-42 final state == checkpoint-30.
+    traj_b = payload["cells"]["r1_bridge__florist__seed42"]["a_rotation_trajectory"]
+    assert traj_b["n_checkpoints"] == 3 and len(traj_b["points"]) == 3, traj_b
+    assert traj_b["final_terminal_point_deduped"] is True
+    assert (out_dir / "a_trajectory__r1_read__florist__seed42.json").is_file()
+    assert payload["summary"]["a_rotation"]["r1_read__florist__seed42"]["n_checkpoints"] == 3
+    assert payload["summary"]["cells_missing_ladder"] == []
+
+    # Duty 12 (round 3): split-half base check + paired comparator diffs.
+    sh = payload["cells"]["r1_read__florist__seed42"]["split_half_base_check"]
+    assert set(sh["splits"]) == {"prior_even_dv_odd", "prior_odd_dv_even"}, sh["splits"].keys()
+    assert sh["n_questions"] == 5 and sh["halves"] == {"even": 3, "odd": 2}
+    for block in sh["splits"].values():
+        for v in block.values():
+            assert np.isfinite(v), block
+    assert (
+        payload["cells"]["r1_write__florist__seed42"]["split_half_base_check"]["firing_mode"]
+        == "write"
+    )
+    pcd = payload["summary"]["h4_paired_comparator_diffs"]
+    expected_cmps = {"base_prior", "geometry_centered", "context_norm", "a_init_firing"}
+    assert set(pcd["read"]) == expected_cmps, sorted(pcd["read"])
+    row = pcd["read"]["base_prior"]
+    assert row["n_cells"] == 2 and row["n_sources"] == 1, row  # 1 source x 2 seeds
+    assert np.isfinite(row["mean_diff_over_sources"])
+    assert payload["summary"]["split_half_base_check_by_arm"]["read"]
+
     fig_dir = work / "figures"
     _run_cli(
         [
@@ -580,15 +657,16 @@ def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
         shutil.rmtree(hub_root)
     model_root = hub_root / "model"
     data_root = hub_root / "data"
-    # Model repo: adapters + adapter_init under adapters/issue_621/<slug>/.
+    # Model repo: adapter + adapter_init + checkpoint-*/ ladder under
+    # adapters/issue_621/<slug>/ (rglob mirrors the recursive production
+    # upload, so the duty-10 ladder survives the hub round-trip).
     for cell_dir in sorted(p for p in adapters_root.iterdir() if p.is_dir()):
-        for rel in ("adapter_model.safetensors", "adapter_config.json"):
-            for sub in ("", "adapter_init"):
-                src = cell_dir / sub / rel if sub else cell_dir / rel
-                if src.is_file():
-                    dest = model_root / HF_ADAPTER_PATH_PREFIX / cell_dir.name / sub / rel
-                    dest.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copy2(src, dest)
+        for fname in ("adapter_model.safetensors", "adapter_config.json"):
+            for src in sorted(cell_dir.rglob(fname)):
+                rel = src.relative_to(cell_dir)
+                dest = model_root / HF_ADAPTER_PATH_PREFIX / cell_dir.name / rel
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dest)
     # Data repo: bank bundle + shifts + emission + train meta + trajectories.
     bank_prefix = data_root / HF_ANALYSIS_TENSORS_PREFIX
     bank_prefix.mkdir(parents=True, exist_ok=True)
@@ -671,8 +749,11 @@ def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
     assert (f_cells / "cells" / "r1_read__florist__seed42" / "band_trajectory.json").is_file()
     for name in ("centroids.pt", "rmsnorm_gamma.pt", "manifest.json", "responses.json"):
         assert (f_bank / name).is_file(), name
+    # final + init + 3 checkpoint-ladder snapshots per cell (duty 10).
     n_adapter_files = len(sorted(f_adapters.rglob("adapter_model.safetensors")))
-    assert n_adapter_files == 2 * len(SMOKE_CELLS), n_adapter_files  # final + init per cell
+    assert n_adapter_files == 5 * len(SMOKE_CELLS), n_adapter_files
+    n_ladder = len(sorted(f_adapters.rglob("checkpoint-*/adapter_model.safetensors")))
+    assert n_ladder == 3 * len(SMOKE_CELLS), n_ladder
 
     # ── Re-run the REAL analyze `run` on the FETCHED layout ──────────────
     out_dir = work / "analysis_fetched"
@@ -704,6 +785,13 @@ def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
     # The banded-vs-below-band split survived the hub round-trip.
     banded = [s for s, c in payload["cells"].items() if c["banded"]]
     assert banded, "no banded cells after fetch — train-meta join broken"
+    # Duty 10 survives the hub round-trip: the fetched layout carries the
+    # checkpoint ladder and the analyzer rebuilt the full a(t) trajectory.
+    f_traj = payload["cells"]["r1_read__florist__seed42"]["a_rotation_trajectory"]
+    assert f_traj["n_checkpoints"] == 3, f_traj["n_checkpoints"]
+    assert payload["summary"]["cells_missing_ladder"] == [], payload["summary"][
+        "cells_missing_ladder"
+    ]
     log.info(
         "fetch-artifacts smoke PASS (%d shift pairs + %d train-meta fetched; "
         "analyze on fetched layout: %d cells, %d banded)",

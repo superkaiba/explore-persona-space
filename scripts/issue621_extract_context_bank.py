@@ -77,6 +77,7 @@ from explore_persona_space.experiments.issue_621.persona_registry import (
     assert_registry_resolves,
     load_persona_bank,
 )
+from explore_persona_space.orchestrate.hub import list_repo_files_complete
 
 log = logging.getLogger("issue_621.bank")
 
@@ -598,7 +599,10 @@ def step_capture(args) -> int:  # noqa: C901  # hook + position bookkeeping
             ignore_patterns=["shards/*"],
             commit_message="task #621 context-vector bank (3 positions × 5 taps)",
         )
-        listed = set(api.list_repo_files(args.upload_repo, repo_type="dataset"))
+        # Complete (paginated tree-API) listing — raw list_repo_files silently
+        # truncates at ~7.9k siblings, matching the rest of the pipeline
+        # (concern context-bank-upload-verify-truncation).
+        listed = set(list_repo_files_complete(api, args.upload_repo, repo_type="dataset"))
         required = [
             f"{HF_ANALYSIS_TENSORS_PREFIX}/{n}"
             for n in (

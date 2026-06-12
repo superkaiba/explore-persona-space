@@ -15,8 +15,16 @@ Per cell (30 = read/write/bridge × sources × seeds):
                      (post-LN) space AND a∘γ in raw-residual space; write
                      arm compares a in o_in / down_in module-input spaces.
   H2 A-init          band-mean |cos(a_t, a_init)|, ‖Δa‖/‖a_init‖,
-                     cos(Δâ, v̂_c_src); a(t) rotation per 10-step checkpoint
-                     where the ladder is available (duty 10).
+                     cos(Δâ, v̂_c_src).
+  duty 10            a(t) rotation trajectory over the persisted 10-step
+                     checkpoint ladder (checkpoint-*/ under each cell's
+                     adapter folder; rides the recursive adapter upload +
+                     the fetch-artifacts suffix filter): per checkpoint,
+                     band-mean |cos(a_t, a_init)| and ‖a_t − a_init‖/
+                     ‖a_init‖, plus whether rotation is still growing at
+                     the band-stop step (the "didn't need to train" vs
+                     "hadn't trained yet" separator). Per-cell trajectory
+                     JSON (a_trajectory__<slug>.json) + a summary table.
   H3 write identity  cos(b̂, Ŵ_U[※]) layer profile (+ EOS-margin direction)
                      for residual-output modules (o/down); max over L20–27
                      raced against wrong-token nulls passed through the
@@ -38,6 +46,14 @@ Per cell (30 = read/write/bridge × sources × seeds):
   H5 seed stability  cross-seed |cos| of â and b̂ within (arm, source).
   duty 8             bystander Δlog P spread vs per-persona SE per cell;
                      banded vs below-band split carried on every summary.
+  duty 12            (a) split-half base check: base prior from the even
+                     question-index half, Δ DV from the odd half (and the
+                     swapped direction) via the per-question PER-SIDE slot
+                     stats — breaks the base-side noise coupling between
+                     the base-prior comparator and the DV. (b) paired
+                     per-cell ρ differences (firing − each comparator)
+                     clustered on source (4 effective units): sign test +
+                     t-CI over source means, in the analysis summary.
 
 Output: ``<out>/analysis.json`` (+ ``analysis_summary.json``).
 
@@ -370,7 +386,15 @@ def cmd_fetch_artifacts(args) -> int:
     )
     if not fetched:
         raise SystemExit(f"no adapter files under {HF_MODEL_REPO}/{HF_ADAPTER_PATH_PREFIX}/")
-    log.info("fetched %d adapter files -> %s", len(fetched), adapters_root)
+    # The suffix filter also pulls the 10-step checkpoint-*/ ladder files
+    # (duty 10) — they live under each cell folder on the model repo.
+    n_ladder = sum(1 for p in fetched if "checkpoint-" in p.as_posix())
+    log.info(
+        "fetched %d adapter files (%d checkpoint-ladder files) -> %s",
+        len(fetched),
+        n_ladder,
+        adapters_root,
+    )
 
     data_files = list_repo_files_complete(api, HF_DATA_REPO, repo_type="dataset")
 
@@ -608,6 +632,205 @@ def _a_init_reads(pairs: dict, init_pairs: dict, bank: dict, source: str) -> dic
     return out
 
 
+def _band_mean_a_vs_init(pairs_t: dict, init_pairs: dict) -> tuple[float | None, float | None]:
+    """Band-mean (L14–24, all modules) |cos(a_t, a_init)| and ‖Δa‖/‖a_init‖.
+
+    Both inputs are UNFLIPPED adapter pair dicts (the W_U sign convention
+    must not enter the init comparison — ‖a_t − a_init‖ is not invariant
+    under the joint (a,b) → (−a,−b) flip).
+    """
+    cos_vals: list[float] = []
+    rel_vals: list[float] = []
+    for key, slot in pairs_t.items():
+        li, _module = key
+        if li not in BAND_LAYERS or key not in init_pairs:
+            continue
+        a_t, a_0 = slot["a"], init_pairs[key]["a"]
+        cos_vals.append(abs(_cos(a_t, a_0)))
+        rel_vals.append(float(np.linalg.norm(a_t - a_0) / max(np.linalg.norm(a_0), 1e-30)))
+    if not cos_vals:
+        return None, None
+    return float(np.mean(cos_vals)), float(np.mean(rel_vals))
+
+
+_A_ROTATION_RULE = (
+    "still-growing = last inter-checkpoint increment of band-mean ‖Δa‖/‖a_init‖ "
+    "is > 0 AND >= 50% of the max single-step increment"
+)
+
+
+def _a_rotation_trajectory(
+    *,
+    adapter_dir: Path,
+    init_pairs: dict,
+    band_stop_step: int | None,
+) -> dict:
+    """Duty 10: a(t) rotation read over the persisted 10-step checkpoint ladder.
+
+    Walks ``checkpoint-<N>/`` adapter snapshots under the cell folder
+    (written by ``save_steps=10``; they ride the recursive adapter upload
+    and the ``fetch-artifacts`` suffix filter), computing per checkpoint
+    the band-mean |cos(a_t, a_init)| and ‖a_t − a_init‖/‖a_init‖ against
+    the cell's saved A-init. The final adapter is appended as the terminal
+    point (deduped when it is metrically identical to the last checkpoint,
+    i.e. the band-stop landed exactly on a save step). All loads are FRESH
+    (unflipped) — see :func:`_band_mean_a_vs_init`.
+
+    "Rotation still growing at the band-stop step" separates "didn't need
+    to train" (flat ladder) from "hadn't trained yet" (still rising); the
+    decision rule is recorded in the payload (``rule``).
+    """
+    ckpts: list[tuple[int, Path]] = []
+    for d in sorted(adapter_dir.glob("checkpoint-*")):
+        if not (d / "adapter_model.safetensors").is_file():
+            continue
+        tail = d.name.rsplit("-", 1)[-1]
+        if not tail.isdigit():
+            continue
+        ckpts.append((int(tail), d))
+    ckpts.sort()
+
+    points: list[dict] = []
+    for step, d in ckpts:
+        cos_m, rel_m = _band_mean_a_vs_init(load_adapter_pairs(d), init_pairs)
+        points.append(
+            {
+                "step": step,
+                "is_final": False,
+                "band_mean_abs_cos_a_init": cos_m,
+                "band_mean_rel_delta_a": rel_m,
+            }
+        )
+
+    cos_f, rel_f = _band_mean_a_vs_init(load_adapter_pairs(adapter_dir), init_pairs)
+    duplicate_of_last = bool(
+        points
+        and cos_f is not None
+        and rel_f is not None
+        and points[-1]["band_mean_abs_cos_a_init"] is not None
+        and points[-1]["band_mean_rel_delta_a"] is not None
+        and abs(cos_f - points[-1]["band_mean_abs_cos_a_init"]) < 1e-9
+        and abs(rel_f - points[-1]["band_mean_rel_delta_a"]) < 1e-9
+    )
+    if not duplicate_of_last:
+        points.append(
+            {
+                "step": band_stop_step,
+                "is_final": True,
+                "band_mean_abs_cos_a_init": cos_f,
+                "band_mean_rel_delta_a": rel_f,
+            }
+        )
+
+    rels = [pt["band_mean_rel_delta_a"] for pt in points]
+    increments: list[float] = []
+    if len(rels) >= 2 and all(r is not None for r in rels):
+        increments = [rels[i] - rels[i - 1] for i in range(1, len(rels))]
+    last_inc = increments[-1] if increments else None
+    max_inc = max(increments) if increments else None
+    still_growing: bool | None = None
+    if increments and max_inc is not None and max_inc > 0:
+        still_growing = bool(last_inc > 0 and last_inc >= 0.5 * max_inc)
+    return {
+        "n_checkpoints": len(ckpts),
+        "checkpoint_steps": [s for s, _ in ckpts],
+        "band_stop_step": band_stop_step,
+        "points": points,
+        "rel_delta_increments": increments,
+        "last_increment_rel": last_inc,
+        "max_increment_rel": max_inc,
+        "rotation_still_growing_at_stop": still_growing,
+        "final_terminal_point_deduped": duplicate_of_last,
+        "rule": _A_ROTATION_RULE,
+    }
+
+
+def _split_half_base_check(
+    *,
+    contexts_dv: dict,
+    bystanders: list[str],
+    firing: dict[str, float],
+    firing_mode: str,
+) -> dict:
+    """Duty 12(a): split-half base check over the per-question slot stats.
+
+    The base-prior comparator (base-side ``logp_marker``) and the Δ log P
+    DV (trained − base) share the SAME base-side forward passes, coupling
+    their noise. Splitting the eval questions into deterministic even/odd
+    index halves — base prior estimated from one half, the DV from the
+    other — breaks the coupling. Both split directions are reported, plus
+    the firing predictor's ρ against the same half-DV (the predictor is
+    question-independent, so this is the apples-to-apples race partner).
+    Spearman is across bystanders (the primary set), as in H4.
+    """
+    pq_prior: dict[str, list[float]] = {}
+    pq_dlogp: dict[str, list[float]] = {}
+    pq_dmargin: dict[str, list[float]] = {}
+    n_q: int | None = None
+    for p in bystanders:
+        stats = contexts_dv[p].get("per_question_slot_stats")
+        if not stats or "base" not in stats:
+            raise AssertionError(
+                f"per_question_slot_stats missing for bystander {p!r} — the "
+                "round-2 eval persists it per side; duty-12 split-half needs it."
+            )
+        base_logp = [float(v) for v in stats["base"]["logp_marker"]]
+        dlogp = [float(v) for v in contexts_dv[p]["per_question_delta_logp"]]
+        dmargin = [float(v) for v in contexts_dv[p]["per_question_delta_margin"]]
+        if n_q is None:
+            n_q = len(base_logp)
+        if not (len(base_logp) == len(dlogp) == len(dmargin) == n_q):
+            raise AssertionError(
+                f"per-question array lengths disagree for {p!r}: "
+                f"{(len(base_logp), len(dlogp), len(dmargin), n_q)}"
+            )
+        pq_prior[p] = base_logp
+        pq_dlogp[p] = dlogp
+        pq_dmargin[p] = dmargin
+    assert n_q is not None and n_q >= 2, f"need >= 2 questions for a split-half (got {n_q})"
+    even = list(range(0, n_q, 2))
+    odd = list(range(1, n_q, 2))
+
+    def _half_mean(per_q: dict[str, list[float]], idx: list[int]) -> dict[str, float]:
+        return {p: float(np.mean([per_q[p][i] for i in idx])) for p in bystanders}
+
+    splits: dict[str, dict] = {}
+    for name, prior_idx, dv_idx in (
+        ("prior_even_dv_odd", even, odd),
+        ("prior_odd_dv_even", odd, even),
+    ):
+        prior = _half_mean(pq_prior, prior_idx)
+        dv_l = _half_mean(pq_dlogp, dv_idx)
+        dv_m = _half_mean(pq_dmargin, dv_idx)
+        ordered = list(bystanders)
+        splits[name] = {
+            "rho_base_prior_vs_delta_logp": _spearman(
+                [prior[p] for p in ordered], [dv_l[p] for p in ordered]
+            ),
+            "rho_base_prior_vs_delta_margin": _spearman(
+                [prior[p] for p in ordered], [dv_m[p] for p in ordered]
+            ),
+            "rho_firing_vs_delta_logp": _spearman(
+                [firing[p] for p in ordered], [dv_l[p] for p in ordered]
+            ),
+            "rho_firing_vs_delta_margin": _spearman(
+                [firing[p] for p in ordered], [dv_m[p] for p in ordered]
+            ),
+        }
+    return {
+        "n_questions": n_q,
+        "halves": {"even": len(even), "odd": len(odd)},
+        "firing_mode": firing_mode,
+        "n_bystanders": len(bystanders),
+        "splits": splits,
+        "note": (
+            "base prior from one deterministic question half, DV from the other "
+            "— breaks the base-side noise coupling (duty 12a); full coupled "
+            "base-prior rho lives in h4.comparators_primary"
+        ),
+    }
+
+
 def _write_identity(pairs: dict, wu: dict, shift_src_l20: np.ndarray | None) -> dict:
     """H3: W_U reads for residual-output modules + matched max-selection null."""
     w_marker = _unit(wu["marker"])
@@ -757,11 +980,27 @@ def analyze_cell(
     import torch
 
     arm, source, seed = parse_cell_slug(slug)
+    tm = eval_payload.get("_train_meta", {})
     _gauge_assert(adapter_dir)
     pairs = load_adapter_pairs(adapter_dir)
     init_dir = adapter_dir / "adapter_init"
     init_pairs = load_adapter_pairs(init_dir)
     _sign_fix_write(pairs, wu)
+
+    # Duty 10: a(t) rotation trajectory over the 10-step checkpoint ladder
+    # (fresh, UNFLIPPED loads — independent of the sign fix above).
+    a_rotation = _a_rotation_trajectory(
+        adapter_dir=adapter_dir,
+        init_pairs=init_pairs,
+        band_stop_step=tm.get("band_stop_step"),
+    )
+    if a_rotation["n_checkpoints"] == 0:
+        log.warning(
+            "%s: no checkpoint-* ladder under %s — duty-10 trajectory limited "
+            "to the final adapter point",
+            slug,
+            adapter_dir,
+        )
 
     expected_modules = set(PLACEMENT_ARMS[arm])
     realized_modules = {m for (_li, m) in pairs}
@@ -915,6 +1154,16 @@ def analyze_cell(
             }
         h4[pos] = pos_block
 
+    # Duty 12(a): split-half base check on the primary firing mode at the
+    # primary position (the predictor itself is question-independent).
+    primary_mode = "write" if arm in ("write", "bridge") else "abs"
+    split_half = _split_half_base_check(
+        contexts_dv=contexts_dv,
+        bystanders=primary_bystanders,
+        firing=h4[PRIMARY_POSITION][primary_mode]["firing"],
+        firing_mode=primary_mode,
+    )
+
     # duty 8 variance precondition.
     spreads = [dv_logp[p] for p in primary_bystanders]
     ses = []
@@ -930,7 +1179,6 @@ def analyze_cell(
         "n_bystanders_primary": len(primary_bystanders),
     }
 
-    tm = eval_payload.get("_train_meta", {})
     return {
         "cell_slug": slug,
         "arm": arm,
@@ -943,6 +1191,8 @@ def analyze_cell(
         "read_identity": read_identity,
         "read_identity_excl_trained_negs": read_identity_excl_trained_negs,
         "a_init": a_init_reads,
+        "a_rotation_trajectory": a_rotation,
+        "split_half_base_check": split_half,
         "write_identity": write_identity,
         "h4": h4,
         "variance_precondition": variance_precondition,
@@ -984,6 +1234,123 @@ def _cross_seed_stability(per_cell_pairs: dict[str, dict]) -> dict:
     return out
 
 
+def _paired_comparator_diffs(results: dict[str, dict]) -> dict:
+    """Duty 12(b): paired per-cell ρ diffs (firing − comparator), clustered.
+
+    Per (arm, comparator): per-cell paired differences between the firing
+    predictor's primary ρ and the comparator's ρ on the SAME cells (primary
+    bystander set, primary position, primary mode/DV — matching ``_pool``),
+    clustered on source (4 effective units): per-source mean diffs, an
+    exact two-sided sign test over source signs, and a t-based 95% CI over
+    the source means. Descriptive at n_sources <= 4 — the cells share the
+    panel + questions, so the source is the independent unit.
+    """
+    from scipy.stats import binomtest
+    from scipy.stats import t as t_dist
+
+    out: dict[str, dict] = {}
+    for arm in PLACEMENT_ARMS:
+        arm_cells = [r for r in results.values() if r["arm"] == arm]
+        if not arm_cells:
+            continue
+        per_cmp: dict[str, list[tuple[str, float]]] = {}
+        for r in arm_cells:
+            mode = (
+                "write"
+                if arm in ("write", "bridge") and "write" in r["h4"][PRIMARY_POSITION]
+                else "abs"
+            )
+            dv_key = "rho_vs_delta_margin" if mode == "write" else "rho_vs_delta_logp"
+            block = r["h4"][PRIMARY_POSITION][mode]
+            rho_f = block["primary_excl_trained_negs"][dv_key]
+            if rho_f is None or np.isnan(rho_f):
+                continue
+            for cname, cblock in block["comparators_primary"].items():
+                v = cblock[dv_key]
+                if v is None or np.isnan(v):
+                    continue
+                per_cmp.setdefault(cname, []).append((r["source"], float(rho_f - v)))
+        arm_out: dict[str, dict] = {}
+        for cname, rows in sorted(per_cmp.items()):
+            by_src: dict[str, list[float]] = {}
+            for src, d in rows:
+                by_src.setdefault(src, []).append(d)
+            src_means = {s: float(np.mean(v)) for s, v in sorted(by_src.items())}
+            vals = list(src_means.values())
+            nonzero = [v for v in vals if v != 0.0]
+            n_pos = sum(v > 0 for v in nonzero)
+            sign_p = float(binomtest(n_pos, len(nonzero), 0.5).pvalue) if nonzero else None
+            mean_diff = float(np.mean(vals))
+            ci95: list[float] | None = None
+            if len(vals) >= 2:
+                se = float(np.std(vals, ddof=1) / np.sqrt(len(vals)))
+                tcrit = float(t_dist.ppf(0.975, len(vals) - 1))
+                ci95 = [mean_diff - tcrit * se, mean_diff + tcrit * se]
+            arm_out[cname] = {
+                "n_cells": len(rows),
+                "n_sources": len(vals),
+                "per_source_mean_diff": src_means,
+                "mean_diff_over_sources": mean_diff,
+                "n_sources_positive": n_pos,
+                "sign_test_p_two_sided": sign_p,
+                "t_ci95_over_sources": ci95,
+            }
+        out[arm] = arm_out
+    return out
+
+
+def _pool_split_half(results: dict[str, dict]) -> dict:
+    """Per-arm medians of every split-half ρ (duty 12a summary view)."""
+    out: dict[str, dict] = {}
+    for arm in PLACEMENT_ARMS:
+        agg: dict[str, dict[str, list[float]]] = {}
+        for r in results.values():
+            if r["arm"] != arm or not r.get("split_half_base_check"):
+                continue
+            for split_name, block in r["split_half_base_check"]["splits"].items():
+                for k, v in block.items():
+                    if v is not None and not np.isnan(v):
+                        agg.setdefault(split_name, {}).setdefault(k, []).append(v)
+        if agg:
+            out[arm] = {
+                split: {k: float(np.median(v)) for k, v in sorted(ks.items())}
+                for split, ks in sorted(agg.items())
+            }
+    return out
+
+
+def _a_rotation_summary(results: dict[str, dict]) -> tuple[dict, list[str]]:
+    """Duty 10 summary table: compact per-cell a(t) rotation rows.
+
+    Returns (per-slug table, slugs missing a checkpoint ladder).
+    """
+    table: dict[str, dict] = {}
+    missing: list[str] = []
+    for slug, r in sorted(results.items()):
+        tr = r["a_rotation_trajectory"]
+        if tr["n_checkpoints"] == 0:
+            missing.append(slug)
+        final_pt = tr["points"][-1] if tr["points"] else None
+        table[slug] = {
+            "arm": r["arm"],
+            "source": r["source"],
+            "seed": r["seed"],
+            "banded": r["banded"],
+            "band_stop_step": tr["band_stop_step"],
+            "n_checkpoints": tr["n_checkpoints"],
+            "final_band_mean_abs_cos_a_init": (
+                final_pt["band_mean_abs_cos_a_init"] if final_pt else None
+            ),
+            "final_band_mean_rel_delta_a": (
+                final_pt["band_mean_rel_delta_a"] if final_pt else None
+            ),
+            "last_increment_rel": tr["last_increment_rel"],
+            "max_increment_rel": tr["max_increment_rel"],
+            "rotation_still_growing_at_stop": tr["rotation_still_growing_at_stop"],
+        }
+    return table, missing
+
+
 def cmd_run(args) -> int:
     adapters_root = Path(args.adapters_root)
     bank = load_bank(Path(args.bank))
@@ -1010,6 +1377,10 @@ def cmd_run(args) -> int:
         out_dir = Path(args.out)
         out_dir.mkdir(parents=True, exist_ok=True)
         (out_dir / f"cell__{slug}.json").write_text(json.dumps(results[slug], indent=1))
+        # Duty 10: per-cell a(t) rotation trajectory JSON.
+        (out_dir / f"a_trajectory__{slug}.json").write_text(
+            json.dumps({"cell_slug": slug, **results[slug]["a_rotation_trajectory"]}, indent=1)
+        )
     if skipped:
         log.warning("skipped %d cell(s) without local adapters: %s", len(skipped), skipped[:5])
     if not results:
@@ -1062,10 +1433,20 @@ def cmd_run(args) -> int:
             "median_rho_comparators": {k: float(np.median(v)) for k, v in rhos_cmp.items() if v},
         }
 
+    # Duty 10: compact per-cell a(t) rotation summary table.
+    a_rotation_table, cells_missing_ladder = _a_rotation_summary(results)
+
     summary = {
         "h4_by_arm_all": {arm: _pool(arm, None) for arm in PLACEMENT_ARMS},
         "h4_by_arm_banded": {arm: _pool(arm, True) for arm in PLACEMENT_ARMS},
         "h4_by_arm_below_band": {arm: _pool(arm, False) for arm in PLACEMENT_ARMS},
+        # Duty 12(b): paired firing-vs-comparator diffs, clustered on source.
+        "h4_paired_comparator_diffs": _paired_comparator_diffs(results),
+        # Duty 12(a): per-arm medians of the split-half base-check rhos.
+        "split_half_base_check_by_arm": _pool_split_half(results),
+        # Duty 10: a(t) rotation table (full trajectories per cell JSON).
+        "a_rotation": a_rotation_table,
+        "cells_missing_ladder": cells_missing_ladder,
         "cross_seed": cross_seed,
         "n_cells": len(results),
         "skipped": skipped,
@@ -1087,6 +1468,16 @@ def cmd_run(args) -> int:
         "sources": list(SOURCES),
         "unified_negative_panel": list(UNIFIED_NEGATIVE_PANEL),
         "seeds": list(SEEDS),
+        # duty 10 + duty 12 rules (round 3).
+        "a_rotation_rule": _A_ROTATION_RULE,
+        "split_half_rule": (
+            "deterministic even/odd question-index halves; base prior from one "
+            "half, DV from the other; both directions reported"
+        ),
+        "paired_diff_rule": (
+            "diff = rho(firing) - rho(comparator), primary set/position/mode; "
+            "clustered on source (sign test + t-CI over source means)"
+        ),
     }
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
