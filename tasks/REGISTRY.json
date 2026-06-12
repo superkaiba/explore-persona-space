@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 628,
+  "highest_id": 629,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3869,6 +3869,13 @@
       "path": "tasks/planning/628",
       "status": "planning",
       "title": "Revise the marker rig (drop the \\n\\n separator; train contrastive negatives on <|im_end|> + \\n at the DV-read slot) and re-measure marker leakage across many context types"
+    },
+    "629": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/629",
+      "status": "proposed",
+      "title": "Harden the i472 trajectory storage-contract gate: finiteness/type-check the 6 raw-logit leaf fields + AST gate-before-write ordering pin"
     },
     "65": {
       "has_clean_result": true,
