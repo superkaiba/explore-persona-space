@@ -12,13 +12,13 @@ This module distinguishes three runtime environments and configures
    skipped (secrets arrive via an rsync'd file the sbatch sources
    directly). Used by the SLURM cluster backend (see
    ``src/explore_persona_space/backends/``).
-2. **RunPod** (cloud ephemeral pod): ``Path("/workspace").exists()`` and
-   we are NOT on a cluster. ``HF_HOME`` defaults to
-   ``/workspace/.cache/huggingface``; the dotenv fallback at
-   ``/workspace/explore-persona-space/.env`` is honored. This is the
-   long-standing default — RunPod's behavior is preserved byte-for-byte
-   by the discriminator's ordering (cluster check runs first; on a
-   non-cluster pod every code path is identical to before).
+2. **RunPod** (cloud ephemeral pod): ``RUNPOD_POD_ID`` set in the
+   environment OR ``/workspace`` is a real MOUNT POINT
+   (``os.path.ismount``), and we are NOT on a cluster. ``HF_HOME``
+   defaults to ``/workspace/.cache/huggingface``; the dotenv fallback at
+   ``/workspace/explore-persona-space/.env`` is honored. A plain
+   ``/workspace`` *directory* does NOT route as RunPod — see
+   :func:`is_runpod_env` for why (2026-06-11 dev-VM incident).
 3. **Local VM** (dev box): neither of the above. ``HF_HOME`` defaults
    to the user-level shared cache ``~/.cache/huggingface`` — one cache
    per user, NOT per-checkout (a per-checkout ``<project_root>/cache``
@@ -62,17 +62,38 @@ def is_cluster_env() -> bool:
 
 
 def is_runpod_env() -> bool:
-    """True iff we are on a RunPod pod (canonical ``/workspace`` mount).
+    """True iff we are on a RunPod pod (canonical ``/workspace`` volume mount).
+
+    Two clauses, either suffices (after the cluster check):
+
+    * ``RUNPOD_POD_ID`` set in the environment — RunPod injects it into
+      the container env. Belt-and-braces clause: nothing on the dev VM
+      or a GCE instance sets it, so it can only ADD pod detection.
+    * ``os.path.ismount("/workspace")`` — the load-bearing clause. Every
+      pod this project provisions mounts its volume at ``/workspace``
+      (``runpod_api.create_pod`` sends ``volumeMountPath: "/workspace"``;
+      network-volume pods mount MooseFS there), so ``/workspace`` is a
+      real mount point on pods. A plain ``/workspace`` DIRECTORY must
+      NOT match: on 2026-06-11 a ``sudo mkdir -p /workspace`` on the dev
+      VM (created to land GCP-lane sentinels at their VM-absolute path)
+      made the previous ``Path("/workspace").exists()`` discriminator
+      route every dev-VM process as RunPod, redirecting ``HF_HOME`` to a
+      redundant 16 GB cache on the 99%-full root disk. GCE instances
+      from the GCP lane also carry a plain-dir ``/workspace`` (startup
+      script ``mkdir -p /workspace/eps-issue-<N>`` on the boot disk) and
+      must route as local — their ``HF_HOME`` is exported explicitly by
+      the startup script.
 
     Mutually exclusive with :func:`is_cluster_env` — a cluster
     allocation that also happened to mount ``/workspace`` would still
     route as cluster. This preserves the byte-for-byte RunPod behavior
-    when ``SLURM_JOB_ID`` is unset, which is the only case any current
-    deployment hits.
+    when ``SLURM_JOB_ID`` is unset.
     """
     if is_cluster_env():
         return False
-    return Path("/workspace").exists()
+    if os.environ.get("RUNPOD_POD_ID"):
+        return True
+    return os.path.ismount("/workspace")
 
 
 def _hf_home_default() -> str:
