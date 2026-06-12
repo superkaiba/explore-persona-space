@@ -475,6 +475,21 @@ Questions to ask per hunk:
 - Is it idempotent if it needs to be?
 - Is there a test covering this hunk?
 
+**Compute-throughput anti-patterns (experiment / eval scripts).** In any
+diff that runs model forwards or large-tensor math on a GPU, flag as Major:
+(a) a Python loop of batch-1 model forwards over data-parallel iterations
+(prompts, responses, cells) — a 7B bf16 batch-1 forward is
+weight-bandwidth-bound and leaves the GPU ~idle; (b) GPU→CPU transfers of
+`(seq × vocab)`- or activation-scale tensors followed by a CPU-side
+reduction — keep the reduction GPU-resident and ship only the reduced
+scalars/summaries; (c) HF `model.generate()` in eval / generation paths
+where vLLM applies (the always-on CLAUDE.md "Use vLLM for generation"
+rule). These are throughput bugs, not style nits: #522 ran ~94h on
+1× H100 for a job with a ~4-6h FLOPs floor (409,600 batch-1 forwards,
+full-vocab fp32 log-softmax shipped over PCIe for a CPU-side per-position
+reduce); #511 hit a 52× CPU wall-time blowup vs its plan estimate. See
+`.claude/rules/code-style.md` § Compute-throughput discipline.
+
 ### Step 3: Read the Surrounding Code
 
 For each changed file, read enough surrounding context to understand:

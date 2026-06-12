@@ -524,6 +524,18 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
 
+**Floor cross-check for long phases.** For any row with `planned_wall_h`
+above 12, state the arithmetic compute floor next to the estimate
+(`n_forwards × 2 · params · tokens_per_forward / sustained GPU FLOPs`, or
+the analogous bound for the dominant kernel) and justify any >5-10×
+estimate-over-floor gap — or name the implementation fix that closes it
+(batched forwards, GPU-resident reductions; see `.claude/rules/code-style.md`
+§ Compute-throughput discipline). An estimate far above the floor usually
+means the implementation is leaving throughput on the table, not that the
+workload is big — fix the implementation, don't book more pod-days
+(#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
+CPU wall-time blowup vs its §9 estimate).
+
 **Cost wall-time against the machine the router will ACTUALLY provision —
 then reconcile worst-case wall against the GCP 24h auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
