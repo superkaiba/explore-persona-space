@@ -62,6 +62,65 @@ HUB_BUCKET = "issue602_estimator_bakeoff"
 CACHED_SHIFTS_PREFIX = "issue551_shift_reextract/analysis_tensors/shifts"
 CACHED_SHIFTS_REVISION = "08419ee885e962cb29c841d34041db419dbbc72c"
 
+# ---------------------------------------------------------------------------
+# Follow-up `shuffled-replay-l27-control` (plan v3) — shared pins + transforms
+# ---------------------------------------------------------------------------
+# Data-repo revision recorded after the parent #602 upload; EVERY dispatcher /
+# scorer input download for the follow-up pins to it (plan v3 §3.3/§4).
+FOLLOWUP_SHUFFLE_INPUT_REVISION = "04739d8be864e0400f47e257a36f473dbd5f72d6"
+# Full sha256 of the turner E1 mix, from the parent provenance manifest
+# (eval_results/issue_602/inputs_manifest.json e1_mix_provenance) — asserted
+# by the follow-up dispatcher before any forward.
+TURNER_MIX_SHA256 = "02c42dadb35dcc5e9934c330169199aeb5c6ad0506d041cc6f582f7460250cb7"
+FOLLOWUP_SHUFFLE_SLUG = "shuffled-replay-l27-control"
+FOLLOWUP_SHUFFLE_BUCKET = "issue602_estimator_bakeoff/followups/shuffled_replay_l27_control"
+L27_LAYER = 27
+
+# E1 token-integrity transforms (the single manipulated variable, plan v3 §2).
+E1_TRANSFORMS: tuple[str, ...] = ("intact", "shuffle", "mismatch")
+# String seeds: CPython seeds str via the sha512 path -> deterministic across
+# processes (tuple seeds hash-randomize under PYTHONHASHSEED). Side-suffixed
+# so the SYMMETRIC shuffled-base-self contrast uses an independent stream.
+SHUFFLE_SEED_FMT_BEHAVIOR = "602:{family}:{source}:{row_key}:shuffle:behavior"
+SHUFFLE_SEED_FMT_BASE = "602:{family}:{source}:{row_key}:shuffle:base"
+MISMATCH_SEED_FMT = "602:{family}:{source}:mismatch"
+
+
+def shuffle_completion_ids(
+    ids: Sequence[int], content_mask: Sequence[bool], rng: random.Random
+) -> list[int]:
+    """Permute ONLY the completion's content token ids (plan v3 §3.2).
+
+    ``content_mask[i]`` is True for content positions; template/EOS ids
+    inside the span stay FIXED in place. Asserts (shuffle hygiene): the
+    output multiset equals the input multiset AND every non-content
+    position holds its original id.
+    """
+    assert len(ids) == len(content_mask), (len(ids), len(content_mask))
+    content_positions = [i for i, m in enumerate(content_mask) if m]
+    shuffled_content = [ids[i] for i in content_positions]
+    rng.shuffle(shuffled_content)
+    out = list(ids)
+    for pos, tok in zip(content_positions, shuffled_content, strict=True):
+        out[pos] = tok
+    assert sorted(out) == sorted(ids), "shuffle changed the token multiset"
+    assert all(out[i] == ids[i] for i in range(len(ids)) if not content_mask[i]), (
+        "template/EOS position moved under shuffle"
+    )
+    return out
+
+
+def mismatch_derangement(n: int, rng: random.Random, max_tries: int = 10_000) -> list[int]:
+    """Fixed-point-free permutation of range(n) (resampled derangement)."""
+    assert n >= 2, f"derangement needs >= 2 rows, got {n}"
+    for _ in range(max_tries):
+        perm = list(range(n))
+        rng.shuffle(perm)
+        if all(perm[i] != i for i in range(n)):
+            return perm
+    raise RuntimeError(f"no derangement found in {max_tries} tries (n={n})")
+
+
 FAMILIES: tuple[str, ...] = (
     "marker519",
     "em_turner",
@@ -522,18 +581,24 @@ def _attach_system(rows: list[dict], system_prompt: str | None) -> list[dict]:
 
 
 def load_positive_rows(
-    family: str, source: str, mix_label: str, root: Path | None = None
+    family: str,
+    source: str,
+    mix_label: str,
+    root: Path | None = None,
+    hub_revision: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Load + normalize the POSITIVE training rows for one estimator unit.
 
     Returns (rows, provenance) where provenance carries the artifact path,
     sha256, and row counts (logged into inputs_manifest.json — content
-    fields are never logged).
+    fields are never logged). ``hub_revision`` pins every Hub download
+    (follow-up input pinning, plan v3 §3.3); None = repo head (parent
+    behavior, unchanged).
     """
     root = root or repo_root()
     if family == "marker519":
         seed = int(mix_label.removeprefix("seed"))
-        p = hub_download(DATA_REPO, f"issue_519/marker_seed{seed}.jsonl")
+        p = hub_download(DATA_REPO, f"issue_519/marker_seed{seed}.jsonl", revision=hub_revision)
         raw = [json.loads(line) for line in p.open()]
         pos = [r for r in raw if r.get("row_kind") == "positive"]
         assert pos, "marker mix has no row_kind=positive rows"
@@ -542,7 +607,9 @@ def load_positive_rows(
         prov = dict(path=str(p), sha256=sha256_file(p), n_raw=len(raw), n_positive=len(pos))
     elif family == "em_turner":
         p = hub_download(
-            DATA_REPO, "issue521/training_mix/turner_bad_medical_advice_minus_pool_slice.jsonl"
+            DATA_REPO,
+            "issue521/training_mix/turner_bad_medical_advice_minus_pool_slice.jsonl",
+            revision=hub_revision,
         )
         raw = [json.loads(line) for line in p.open()]
         rows = [_normalize_row(r, i) for i, r in enumerate(raw)]
@@ -562,6 +629,7 @@ def load_positive_rows(
         p = hub_download(
             DATA_REPO,
             f"issue518_leakage_prediction/training_pools/{behavior}/{source}/positives.jsonl",
+            revision=hub_revision,
         )
         raw = [json.loads(line) for line in p.open()]
         # Assumption-5 gate: the 700-row #518 mix recipe has 200 positives.
@@ -571,7 +639,9 @@ def load_positive_rows(
         prov = dict(path=str(p), sha256=sha256_file(p), n_raw=len(raw), n_positive=len(raw))
     elif family == "loc474":
         p = hub_download(
-            DATA_REPO, f"issue474_marker_at_end_localized/train_rows/i474_loc_{source}.jsonl"
+            DATA_REPO,
+            f"issue474_marker_at_end_localized/train_rows/i474_loc_{source}.jsonl",
+            revision=hub_revision,
         )
         raw = [json.loads(line) for line in p.open()]
         norm = [_normalize_row(r, i) for i, r in enumerate(raw)]
@@ -594,14 +664,20 @@ def e1_rows(
     root: Path | None = None,
     n_rows: int = N_E1_ROWS,
     rng_seed: int = E1_SUBSAMPLE_SEED,
+    hub_revision: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """The n=100 E1 teacher-forcing rows for one unit (deterministic sample)."""
-    rows, prov = load_positive_rows(family, source, mix_label, root=root)
+    rows, prov = load_positive_rows(family, source, mix_label, root=root, hub_revision=hub_revision)
     if len(rows) > n_rows:
         rng = random.Random(rng_seed)
         rows = rng.sample(rows, k=n_rows)
     rows = [{**r, "row_key": f"row{i:04d}"} for i, r in enumerate(rows)]
-    prov = {**prov, "n_e1_rows": len(rows), "e1_subsample_seed": rng_seed}
+    prov = {
+        **prov,
+        "n_e1_rows": len(rows),
+        "e1_subsample_seed": rng_seed,
+        "hub_revision": hub_revision,
+    }
     return rows, prov
 
 

@@ -68,6 +68,7 @@ def _forward_reads(
     completion_text: str,
     layers: list[int],
     marker_token_id: int | None = None,
+    completion_ids: list[int] | None = None,
 ) -> dict[str, dict[int, torch.Tensor]]:
     """ONE teacher-forced forward over prompt+completion; all reads.
 
@@ -78,11 +79,19 @@ def _forward_reads(
     ``marker_slot`` (the marker token's own position),
     ``mean_resp_excl_marker`` and ``last_natural_tok`` (final token
     before the trailing marker).
+
+    ``completion_ids`` overrides the tokenization of ``completion_text``
+    with an explicit token-id list — the token-integrity transforms
+    operate at the ID level (tokenize -> permute ids -> teacher-force the
+    permuted ids; never decode->retokenize, which drifts the multiset).
     """
     prompt_ids = tokenizer(prompt_text, return_tensors="pt", add_special_tokens=False).input_ids[0]
-    comp_ids = tokenizer(completion_text, return_tensors="pt", add_special_tokens=False).input_ids[
-        0
-    ]
+    if completion_ids is not None:
+        comp_ids = torch.as_tensor(list(completion_ids), dtype=prompt_ids.dtype)
+    else:
+        comp_ids = tokenizer(
+            completion_text, return_tensors="pt", add_special_tokens=False
+        ).input_ids[0]
     if comp_ids.numel() == 0:
         raise ValueError("empty completion")
     full = torch.cat([prompt_ids, comp_ids]).unsqueeze(0).to(model.device)
@@ -183,41 +192,167 @@ def _prompt_text(tokenizer, messages: list[dict[str, str]]) -> str:
 
 
 def _run_e1(args, model, tokenizer, marker_id, layers, gen_dir, unit, payload) -> None:
-    """E1 teacher-forced replay reads for every mix variant of the unit."""
+    """E1 teacher-forced replay reads for every mix variant of the unit.
+
+    Token-integrity transforms (follow-up plan v3 §2): ``--e1-transforms``
+    selects from {intact, shuffle, mismatch}. The legacy flat keys
+    (``w_hat`` / ``per_row_behavior`` / ``per_row_base_self`` / ...)
+    ALWAYS alias the INTACT transform — parent consumers are unchanged —
+    and each requested transform additionally lands under
+    ``payload["e1"][mix_label][transform]`` (alias + new parallel key,
+    never a rename). The shuffle arm's registered contrast is SYMMETRIC
+    (shuffled behavior - shuffled base-self, per-row string seeds
+    side-suffixed); the unmatched contrast (shuffled behavior - intact
+    base-self) is persisted as ``w_hat_unmatched`` (sensitivity only).
+    """
+    import random
+
     family, source = args.family, args.source
+    transforms = list(args.e1_transforms)
+    assert transforms[0] == "intact", "intact must run (positive control + legacy alias)"
+    per_row_layers = tuple(args.per_row_layers)
+    special_ids = set(tokenizer.all_special_ids)
     for mix_label in unit["e1_mix_labels"]:
-        logger.info("[phase=e1] %s/%s mix=%s", family, source, mix_label)
-        rows, prov = bk.e1_rows(family, source, mix_label, root=REPO)
+        logger.info("[phase=e1] %s/%s mix=%s transforms=%s", family, source, mix_label, transforms)
+        rows, prov = bk.e1_rows(
+            family, source, mix_label, root=REPO, hub_revision=args.hub_revision
+        )
         if args.limit_rows:
             rows = rows[: args.limit_rows]
         base_gens = _load_generations(gen_dir, f"e1__{family}__{source}__{mix_label}")
-        behavior_reads, base_self_reads = [], []
+        # tokenize once per row — transforms operate on these EXACT ids
+        prompt_texts: list[str] = []
+        comp_ids_rows: list[list[int]] = []
+        base_ids_rows: list[list[int]] = []
         for row in rows:
             prompt_text = _prompt_text(tokenizer, row["prompt_messages"])
             n_tok = len(
                 tokenizer(prompt_text + row["completion_text"], add_special_tokens=False).input_ids
             )
             assert n_tok < 8192, f"row {row['row_key']} unexpectedly long ({n_tok} tokens)"
+            comp_ids = tokenizer(row["completion_text"], add_special_tokens=False).input_ids
             if marker_id is not None:
-                comp_ids = tokenizer(row["completion_text"], add_special_tokens=False).input_ids
                 assert marker_id in comp_ids, (
                     f"marker token absent from E1 {family} row {row['row_key']} — "
                     "positive-row filter or tokenization drift"
                 )
-            behavior_reads.append(
-                _forward_reads(
-                    model, tokenizer, prompt_text, row["completion_text"], layers, marker_id
-                )
-            )
             if row["row_key"] not in base_gens:
                 raise KeyError(f"base generation missing for {row['row_key']} (mix {mix_label})")
-            base_self_reads.append(
-                _forward_reads(model, tokenizer, prompt_text, base_gens[row["row_key"]], layers)
+            base_ids = tokenizer(base_gens[row["row_key"]], add_special_tokens=False).input_ids
+            prompt_texts.append(prompt_text)
+            comp_ids_rows.append(comp_ids)
+            base_ids_rows.append(base_ids)
+        row_keys = [r["row_key"] for r in rows]
+
+        def _fwd(pt: str, ids: list[int], with_marker: bool) -> dict:
+            return _forward_reads(
+                model,
+                tokenizer,
+                pt,
+                "",
+                layers,
+                marker_id if with_marker else None,
+                completion_ids=ids,
             )
-        beh = _stack(behavior_reads)
-        bas = _stack(base_self_reads)
-        payload["e1"][mix_label] = {
+
+        logger.info(
+            "[phase=e1] %s/%s %s: intact behavior + intact base-self", family, source, mix_label
+        )
+        beh = _stack(
+            [_fwd(pt, ids, True) for pt, ids in zip(prompt_texts, comp_ids_rows, strict=True)],
+            per_row_layers,
+        )
+        bas = _stack(
+            [_fwd(pt, ids, False) for pt, ids in zip(prompt_texts, base_ids_rows, strict=True)],
+            per_row_layers,
+        )
+        intact_entry = {
             "w_hat": _w_hat_from(beh["mean"], bas["mean"]),
+            "per_row_behavior": beh["per_row"],
+            "per_row_base_self_intact": bas["per_row"],
+            "row_keys": row_keys,
+            "provenance": {**prov, "transform": "intact"},
+        }
+        entries: dict[str, dict] = {"intact": intact_entry}
+
+        if "shuffle" in transforms:
+            logger.info(
+                "[phase=e1] %s/%s %s: shuffled behavior + shuffled base-self (symmetric)",
+                family,
+                source,
+                mix_label,
+            )
+            shuf_beh_ids, shuf_base_ids = [], []
+            for rk, cids, bids in zip(row_keys, comp_ids_rows, base_ids_rows, strict=True):
+                rng_b = random.Random(
+                    bk.SHUFFLE_SEED_FMT_BEHAVIOR.format(family=family, source=source, row_key=rk)
+                )
+                shuf_beh_ids.append(
+                    bk.shuffle_completion_ids(cids, [t not in special_ids for t in cids], rng_b)
+                )
+                rng_s = random.Random(
+                    bk.SHUFFLE_SEED_FMT_BASE.format(family=family, source=source, row_key=rk)
+                )
+                shuf_base_ids.append(
+                    bk.shuffle_completion_ids(bids, [t not in special_ids for t in bids], rng_s)
+                )
+            beh_shuf = _stack(
+                [_fwd(pt, ids, True) for pt, ids in zip(prompt_texts, shuf_beh_ids, strict=True)],
+                per_row_layers,
+            )
+            base_shuf = _stack(
+                [_fwd(pt, ids, False) for pt, ids in zip(prompt_texts, shuf_base_ids, strict=True)],
+                per_row_layers,
+            )
+            entries["shuffle"] = {
+                # MATCHED (registered) contrast: shuffled behavior - shuffled base-self
+                "w_hat": _w_hat_from(beh_shuf["mean"], base_shuf["mean"]),
+                # UNMATCHED sensitivity contrast: shuffled behavior - intact base-self
+                "w_hat_unmatched": _w_hat_from(beh_shuf["mean"], bas["mean"]),
+                "per_row_behavior": beh_shuf["per_row"],
+                "per_row_base_self_intact": bas["per_row"],
+                "per_row_base_self_shuffled": base_shuf["per_row"],
+                "row_keys": row_keys,
+                "provenance": {
+                    **prov,
+                    "transform": "shuffle",
+                    "seed_scheme": {
+                        "behavior": bk.SHUFFLE_SEED_FMT_BEHAVIOR,
+                        "base": bk.SHUFFLE_SEED_FMT_BASE,
+                    },
+                },
+            }
+
+        if "mismatch" in transforms:
+            logger.info(
+                "[phase=e1] %s/%s %s: question-mismatched pairing (derangement)",
+                family,
+                source,
+                mix_label,
+            )
+            rng_m = random.Random(bk.MISMATCH_SEED_FMT.format(family=family, source=source))
+            perm = bk.mismatch_derangement(len(rows), rng_m)
+            beh_mis = _stack(
+                [_fwd(prompt_texts[i], comp_ids_rows[perm[i]], True) for i in range(len(rows))],
+                per_row_layers,
+            )
+            entries["mismatch"] = {
+                # completions intact, re-paired -> contrast vs intact base-self
+                "w_hat": _w_hat_from(beh_mis["mean"], bas["mean"]),
+                "per_row_behavior": beh_mis["per_row"],
+                "per_row_base_self_intact": bas["per_row"],
+                "row_keys": row_keys,
+                "derangement": perm,
+                "provenance": {
+                    **prov,
+                    "transform": "mismatch",
+                    "derangement_seed": bk.MISMATCH_SEED_FMT.format(family=family, source=source),
+                },
+            }
+
+        payload["e1"][mix_label] = {
+            # legacy flat keys = the INTACT transform (parent contract, unchanged)
+            "w_hat": intact_entry["w_hat"],
             # marker-slot / excl-marker positions exist only on the behavior
             # side; their w_hat contrasts against the base mean_resp read
             "w_hat_marker_extras": (
@@ -234,8 +369,9 @@ def _run_e1(args, model, tokenizer, marker_id, layers, gen_dir, unit, payload) -
             ),
             "per_row_behavior": beh["per_row"],
             "per_row_base_self": bas["per_row"],
-            "row_keys": [r["row_key"] for r in rows],
+            "row_keys": row_keys,
             "provenance": prov,
+            **entries,
         }
         # exclude-marker w_hat is the marker families' HEADLINE mean_resp read
         if "mean_resp_excl_marker" in payload["e1"][mix_label]["w_hat_marker_extras"]:
@@ -360,15 +496,21 @@ def run_unit(args: argparse.Namespace) -> dict:
 
     unit = next(u for u in bk.estimator_units() if u["family"] == family and u["source"] == source)
     payload: dict = {"family": family, "source": source, "e1": {}, "e2": {}, "e3": {}}
+    assert set(args.per_row_layers) <= set(layers), (
+        f"--per-row-layers {args.per_row_layers} must be a subset of --layers {layers}"
+    )
 
-    probes = bk.e2_probes(family, root=REPO)
-    if args.limit_probes:
-        probes = probes[: args.limit_probes]
+    probes: list[str] = []
+    if not args.e1_only:
+        probes = bk.e2_probes(family, root=REPO)
+        if args.limit_probes:
+            probes = probes[: args.limit_probes]
 
     _run_e1(args, model, tokenizer, marker_id, layers, gen_dir, unit, payload)
-    _run_e2(args, model, tokenizer, layers, gen_dir, probes, payload)
-    _run_e3(args, model, tokenizer, layers, gen_dir, probes, payload)
-    _run_vc(args, model, tokenizer, layers, probes, payload)
+    if not args.e1_only:
+        _run_e2(args, model, tokenizer, layers, gen_dir, probes, payload)
+        _run_e3(args, model, tokenizer, layers, gen_dir, probes, payload)
+        _run_vc(args, model, tokenizer, layers, probes, payload)
 
     payload["manifest"] = {
         "issue": bk.ISSUE,
@@ -383,7 +525,20 @@ def run_unit(args: argparse.Namespace) -> dict:
         "limit_probes": args.limit_probes,
         "e3_description": bk.E3_DESCRIPTIONS[family],
         "per_row_dtype": "float16",
-        "per_row_layers": [bk.PRIMARY_LAYER],
+        "per_row_layers": [int(ly) for ly in args.per_row_layers],
+        "e1_transforms": list(args.e1_transforms),
+        "e1_only": bool(args.e1_only),
+        "hub_revision": args.hub_revision,
+        "shuffle_seed_scheme": (
+            {"behavior": bk.SHUFFLE_SEED_FMT_BEHAVIOR, "base": bk.SHUFFLE_SEED_FMT_BASE}
+            if "shuffle" in args.e1_transforms
+            else None
+        ),
+        "mismatch_derangement_seed": (
+            bk.MISMATCH_SEED_FMT.format(family=family, source=source)
+            if "mismatch" in args.e1_transforms
+            else None
+        ),
         "git_commit": bk.git_sha(REPO),
         "env_versions": bk.env_versions(),
         "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -411,6 +566,33 @@ def main() -> int:
     parser.add_argument("--limit-rows", type=int, default=None, help="Smoke: cap E1 rows")
     parser.add_argument("--limit-probes", type=int, default=None, help="Smoke: cap E2/E3 probes")
     parser.add_argument("--skip-vc", action="store_true", help="Skip v_c context summaries")
+    parser.add_argument(
+        "--e1-transforms",
+        nargs="+",
+        choices=list(bk.E1_TRANSFORMS),
+        default=["intact"],
+        help=(
+            "E1 token-integrity transforms (follow-up plan v3 §2). 'intact' must come "
+            "first (positive control + legacy alias); the follow-up passes all three."
+        ),
+    )
+    parser.add_argument(
+        "--e1-only",
+        action="store_true",
+        help="Skip E2/E3/v_c (the shuffled-replay follow-up reads E1 only)",
+    )
+    parser.add_argument(
+        "--per-row-layers",
+        type=int,
+        nargs="+",
+        default=[bk.PRIMARY_LAYER],
+        help="Layers at which per-row stacks are persisted (follow-up passes 14 27)",
+    )
+    parser.add_argument(
+        "--hub-revision",
+        default=None,
+        help="Pin every training-mix Hub download to this data-repo revision",
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s :: %(message)s")
     from explore_persona_space.orchestrate.env import load_dotenv

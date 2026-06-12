@@ -1658,18 +1658,709 @@ def phase2_layer_reread(args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------------
+# Follow-up `shuffled-replay-l27-control` (plan v3) — VM post-pod scoring
+# ---------------------------------------------------------------------------
+SHUFFLE_GATE_COS = 0.99  # positive-control: recomputed-vs-stored intact w_hat
+SHUFFLE_GATE_ANCHOR_TOL = 0.02  # re-score tolerance vs the l27_reread anchors
+SHUFFLE_RETENTION_FRAC = 0.8  # cos_shuffle >= 0.8 x cos_intact counts as retained
+SHUFFLE_FAMILIES: tuple[str, ...] = ("em_turner", "em518")
+
+
+def _shuffle_units() -> list[tuple[str, str]]:
+    """The 7 follow-up compute units (em_turner shared + 6 em518 sources)."""
+    return [("em_turner", "no_system")] + [("em518", s) for s in bk.SOURCES_518]
+
+
+def _unit_vec(v: np.ndarray) -> np.ndarray:
+    return v / np.linalg.norm(v)
+
+
+def _safe_cos(a, b) -> float | None:
+    """Cosine that records (instead of crashing on) a dim mismatch."""
+    a = np.asarray(a, dtype=np.float64).ravel()
+    b = np.asarray(b, dtype=np.float64).ravel()
+    if a.shape != b.shape:
+        return None
+    return cosine(a, b)
+
+
+def _e1_transform_vec(payload: dict, transform: str, layer: int, unmatched: bool = False):
+    """Pull one transform's w_hat[mean_resp][layer] from a follow-up payload."""
+    entry = payload["e1"]["shared"].get(transform)
+    if entry is None:
+        return None
+    w = entry["w_hat_unmatched"] if unmatched else entry["w_hat"]
+    v = w.get("mean_resp", {}).get(layer)
+    return None if v is None else np.asarray(v, dtype=np.float64)
+
+
+def _est_view_for_transform(
+    followup: dict[tuple[str, str], dict], transform: str, unmatched: bool = False
+) -> dict[tuple[str, str], dict]:
+    """Synthetic est-payload view so ``_offdiag_margins`` (the parent's
+    sibling-excluded-margin machinery, reused VERBATIM) resolves est_tf to
+    the requested transform's w_hat. E2/E3 resolve to None and are skipped."""
+    out: dict[tuple[str, str], dict] = {}
+    for key, p in followup.items():
+        entry = p["e1"]["shared"].get(transform)
+        if entry is None:
+            continue
+        w_hat = entry["w_hat_unmatched"] if unmatched else entry["w_hat"]
+        out[key] = {"e1": {"shared": {"w_hat": w_hat}}, "e2": {}, "e3": {"w_hat": {}}}
+    return out
+
+
+def _margin_retains(margin_t: float | None, margin_intact: float | None) -> bool | None:
+    """Margin-retention rule, mirroring the cosine retention disjunction:
+    margin_t >= 0.8 x margin_intact OR margin_t >= MARGIN_MIN (0.2)."""
+    if margin_t is None or margin_intact is None:
+        return None
+    return margin_t >= SHUFFLE_RETENTION_FRAC * margin_intact or margin_t >= MARGIN_MIN
+
+
+def _resolve_followup_payloads(
+    args: argparse.Namespace, followup_est_dir: Path, strict: bool
+) -> tuple[dict[tuple[str, str], dict], dict[str, Any]]:
+    """Download/resolve the 7 follow-up estimator payloads (pinned handoff).
+
+    Local files are used when present; missing files download from
+    ``--followup-repo`` at ``--hf-revision`` (the upload-recorded revision
+    from the dispatcher sentinel/manifest — plan v3 §3.4). Production
+    requires all 7 + a recorded revision; per-file sha256 + source are
+    recorded into the output JSON.
+    """
+    followup_est_dir.mkdir(parents=True, exist_ok=True)
+    payloads: dict[tuple[str, str], dict] = {}
+    files: dict[str, Any] = {}
+    revisions_seen: set[str] = set()
+    for family, source in _shuffle_units():
+        name = f"{family}__{source}.pt"
+        local = followup_est_dir / name
+        sidecar = followup_est_dir / f"{family}__{source}.manifest.json"
+        src_kind = "local"
+        for p in (local, sidecar):
+            if p.is_symlink() and not p.exists():
+                p.unlink()
+        if not local.exists():
+            if args.hf_revision is None:
+                if strict:
+                    raise RuntimeError(
+                        f"follow-up payload {name} missing locally and --hf-revision not given — "
+                        "the VM handoff is a PINNED download (plan v3 §3.4)"
+                    )
+                logger.warning("follow-up payload %s missing — skipped (allow-subset)", name)
+                files[name] = {"present": False}
+                continue
+            for fname, dest in ((name, local), (sidecar.name, sidecar)):
+                got = bk.hub_download(
+                    args.followup_repo,
+                    f"{bk.FOLLOWUP_SHUFFLE_BUCKET}/analysis_tensors/estimator_reads/{fname}",
+                    revision=args.hf_revision,
+                )
+                dest.symlink_to(got)
+            src_kind = f"downloaded@{args.hf_revision}"
+        payload = torch.load(local, map_location="cpu", weights_only=False)
+        _guard_payload_model(name, payload.get("manifest", {}).get("model_id"), strict)
+        missing_t = [t for t in bk.E1_TRANSFORMS if t not in payload["e1"].get("shared", {})]
+        if missing_t:
+            msg = f"{name}: e1.shared missing transforms {missing_t}"
+            if strict:
+                raise RuntimeError(msg)
+            logger.warning("%s (allow-subset)", msg)
+        # the dispatcher records the post-upload revision into the SIDECAR
+        # manifest (the .pt is finalized before the upload phase runs)
+        side = json.loads(sidecar.read_text()) if sidecar.exists() else {}
+        if side.get("upload_revision"):
+            revisions_seen.add(side["upload_revision"])
+        payloads[(family, source)] = payload
+        files[name] = {
+            "present": True,
+            "source": src_kind,
+            "sha256": bk.sha256_file(local),
+            "manifest_git_commit": payload.get("manifest", {}).get("git_commit"),
+            "manifest_upload_revision": side.get("upload_revision"),
+            "manifest_upload_repo": side.get("upload_repo"),
+        }
+    revision_recorded = args.hf_revision or (
+        sorted(revisions_seen)[0] if len(revisions_seen) == 1 else None
+    )
+    if strict and revision_recorded is None:
+        raise RuntimeError(
+            "no follow-up payload revision recorded — pass --hf-revision (from the dispatcher "
+            "sentinel) so the handoff is pinned"
+        )
+    info = {"files": files, "revision_recorded": revision_recorded, "repo": args.followup_repo}
+    return payloads, info
+
+
+def _load_shift_cells_pinned(shifts_dir: Path, strict: bool) -> dict[str, dict]:
+    """All 31 parent shift payloads (margin comparators + the 9 targets).
+
+    Strict mode downloads any missing payload from the parent upload at
+    the pinned input revision (``bk.FOLLOWUP_SHUFFLE_INPUT_REVISION``) so
+    a fresh VM checkout reproduces the exact parent inputs.
+    """
+    if strict:
+        shifts_dir.mkdir(parents=True, exist_ok=True)
+        for cell in bk.extraction_cells():
+            local = shifts_dir / f"{cell['cell_id']}.pt"
+            if local.is_symlink() and not local.exists():
+                local.unlink()
+            if not local.exists():
+                got = bk.hub_download(
+                    bk.DATA_REPO,
+                    f"{bk.HUB_BUCKET}/analysis_tensors/shifts/{cell['cell_id']}.pt",
+                    revision=bk.FOLLOWUP_SHUFFLE_INPUT_REVISION,
+                )
+                local.symlink_to(got)
+                logger.info(
+                    "[phase=shuffle_inputs] %s downloaded at pin %s",
+                    local.name,
+                    bk.FOLLOWUP_SHUFFLE_INPUT_REVISION[:12],
+                )
+    return _load_new_shift_payloads(shifts_dir, strict)
+
+
+def _positive_control_gate(
+    args: argparse.Namespace,
+    followup: dict[tuple[str, str], dict],
+    cells9: dict[str, dict],
+    targets: dict[str, dict],
+    parent_est_dir: Path,
+    strict: bool,
+) -> dict[str, Any]:
+    """Plan v3 §1 gate: the same-pass intact arm must reproduce the parent.
+
+    (a) cos(recomputed intact w_hat, stored parent e1.w_hat[mean_resp][27])
+    >= 0.99 per unit; (b) per-cell re-score of BOTH targets within +-0.02
+    of the recorded l27_reread.json est_tf anchors. Violation = rig bug.
+    """
+    anchors_path = bk.eval_dir(REPO) / "agreement" / "l27_reread.json"
+    anchor_rows: dict[str, dict] = {}
+    if anchors_path.exists():
+        reread = json.loads(anchors_path.read_text())
+        anchor_rows = {
+            r["cell_id"]: r
+            for r in reread["per_cell"]
+            if r["estimator"] == "est_tf" and r["family"] in SHUFFLE_FAMILIES
+        }
+    per_unit: dict[str, Any] = {}
+    for (family, source), payload in followup.items():
+        name = f"{family}__{source}"
+        entry: dict[str, Any] = {}
+        recomputed = _e1_transform_vec(payload, "intact", bk.L27_LAYER)
+        stored = None
+        parent_p = parent_est_dir / f"{name}.pt"
+        if parent_p.is_symlink() and not parent_p.exists():
+            parent_p.unlink()
+        if not parent_p.exists() and strict:
+            got = bk.hub_download(
+                bk.DATA_REPO,
+                f"{bk.HUB_BUCKET}/analysis_tensors/estimator_reads/{name}.pt",
+                revision=bk.FOLLOWUP_SHUFFLE_INPUT_REVISION,
+            )
+            parent_p.parent.mkdir(parents=True, exist_ok=True)
+            parent_p.symlink_to(got)
+        if parent_p.exists():
+            parent_payload = torch.load(parent_p, map_location="cpu", weights_only=False)
+            w = parent_payload["e1"]["shared"]["w_hat"].get("mean_resp", {}).get(bk.L27_LAYER)
+            stored = None if w is None else np.asarray(w, dtype=np.float64)
+        if recomputed is None or stored is None:
+            entry["cos_recomputed_vs_stored"] = None
+            entry["pass_cos"] = False
+            entry["error"] = "recomputed or stored intact w_hat missing"
+        else:
+            c = _safe_cos(recomputed, stored)
+            entry["cos_recomputed_vs_stored"] = c
+            entry["pass_cos"] = c is not None and c >= SHUFFLE_GATE_COS
+            if c is None:
+                entry["error"] = (
+                    f"dim mismatch recomputed {recomputed.shape} vs stored {stored.shape}"
+                )
+        per_unit[name] = entry
+    per_cell: dict[str, Any] = {}
+    for cell_id, cell in sorted(cells9.items()):
+        anchor = anchor_rows.get(cell_id)
+        w = (
+            _e1_transform_vec(
+                followup.get((cell["family"], cell["source"]), {"e1": {"shared": {}}}),
+                "intact",
+                bk.L27_LAYER,
+            )
+            if (cell["family"], cell["source"]) in followup
+            else None
+        )
+        tgt = targets.get(cell_id, {}).get(f"L{bk.L27_LAYER}_mean_resp")
+        if w is None or tgt is None or anchor is None:
+            per_cell[cell_id] = {"pass": False, "error": "missing read/target/anchor"}
+            continue
+        cos_shared = _safe_cos(w, tgt["w_shared"])
+        cos_src = _safe_cos(w, tgt["w_src"])
+        ok = (
+            cos_shared is not None
+            and cos_src is not None
+            and abs(cos_shared - anchor["cos_w_shared"]) <= SHUFFLE_GATE_ANCHOR_TOL
+            and abs(cos_src - anchor["cos_w_src"]) <= SHUFFLE_GATE_ANCHOR_TOL
+        )
+        per_cell[cell_id] = {
+            "recomputed_cos_w_shared": cos_shared,
+            "anchor_cos_w_shared": anchor["cos_w_shared"],
+            "recomputed_cos_w_src": cos_src,
+            "anchor_cos_w_src": anchor["cos_w_src"],
+            "tolerance": SHUFFLE_GATE_ANCHOR_TOL,
+            "pass": ok,
+        }
+    gate_pass = (
+        len(per_unit) == len(_shuffle_units())
+        and all(e.get("pass_cos") for e in per_unit.values())
+        and len(per_cell) == len(cells9)
+        and all(e.get("pass") for e in per_cell.values())
+    )
+    return {
+        "pass": gate_pass,
+        "cos_min": SHUFFLE_GATE_COS,
+        "anchor_tolerance": SHUFFLE_GATE_ANCHOR_TOL,
+        "anchors_file": str(anchors_path),
+        "per_unit": per_unit,
+        "per_cell": per_cell,
+    }
+
+
+def _shuffle_score_rows(
+    followup: dict[tuple[str, str], dict],
+    cells9: dict[str, dict],
+    targets: dict[str, dict],
+    ckey: str,
+    layer: int,
+) -> list[dict[str, Any]]:
+    """Per-cell dual-target cosines + retention + R_proj for every transform
+    (incl. the ``shuffle_unmatched`` sensitivity contrast, which never gates)."""
+    rows: list[dict[str, Any]] = []
+    for cell_id, cell in sorted(cells9.items()):
+        fp = followup[(cell["family"], cell["source"])]
+        tgt = targets[cell_id][ckey]
+        ws_unit = _unit_vec(np.asarray(tgt["w_shared"], dtype=np.float64))
+        w_intact = _e1_transform_vec(fp, "intact", layer)
+        cos_intact = None if w_intact is None else _safe_cos(w_intact, tgt["w_shared"])
+        proj_intact = (
+            None
+            if w_intact is None or w_intact.shape != ws_unit.shape
+            else float(w_intact @ ws_unit)
+        )
+        variants: list[tuple[str, np.ndarray | None]] = [
+            ("intact", w_intact),
+            ("shuffle", _e1_transform_vec(fp, "shuffle", layer)),
+            ("mismatch", _e1_transform_vec(fp, "mismatch", layer)),
+            ("shuffle_unmatched", _e1_transform_vec(fp, "shuffle", layer, unmatched=True)),
+        ]
+        for tname, w in variants:
+            if w is None:
+                rows.append({"cell_id": cell_id, "transform": tname, "missing": True})
+                continue
+            cos_shared = _safe_cos(w, tgt["w_shared"])
+            cos_src = _safe_cos(w, tgt["w_src"])
+            proj = float(w @ ws_unit) if w.shape == ws_unit.shape else None
+            rows.append(
+                {
+                    "cell_id": cell_id,
+                    "family": cell["family"],
+                    "source": cell["source"],
+                    "seed": cell["seed"],
+                    "transform": tname,
+                    "gates_verdict": tname in ("intact", "shuffle", "mismatch"),
+                    "cos_w_shared": cos_shared,
+                    "cos_w_src": cos_src,
+                    "best_target_cos": (
+                        None
+                        if cos_shared is None or cos_src is None
+                        else max(cos_shared, cos_src, key=abs)
+                    ),
+                    "retention_vs_intact": (
+                        None if cos_shared is None or not cos_intact else cos_shared / cos_intact
+                    ),
+                    "r_proj": (
+                        None
+                        if proj is None or proj_intact is None or abs(proj_intact) < 1e-12
+                        else proj / proj_intact
+                    ),
+                    "missing": False,
+                }
+            )
+    return rows
+
+
+def _shuffle_verdict_block(
+    rows: list[dict[str, Any]],
+    cells9: dict[str, dict],
+    margin_retention: dict[str, Any],
+    gate: dict[str, Any],
+    null95: float,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], str]:
+    """Family medians + collapse flags + the §1 pre-committed verdict table.
+
+    Returns ``(fam_stats, collapse, outcomes, verdict)``. Every clause's
+    evaluation ships in ``outcomes`` regardless of which one fires; the
+    overall verdict resolves in the §1 table's precedence order."""
+
+    def _median(fam: str, tname: str, key: str) -> float | None:
+        vals = [
+            r[key]
+            for r in rows
+            if not r.get("missing") and r["family"] == fam and r["transform"] == tname
+            if r.get(key) is not None
+        ]
+        return float(np.median(vals)) if vals else None
+
+    fam_stats: dict[str, dict[str, Any]] = {}
+    for fam in SHUFFLE_FAMILIES:
+        fam_stats[fam] = {
+            "median_cos_intact": _median(fam, "intact", "cos_w_shared"),
+            "median_cos_shuffle": _median(fam, "shuffle", "cos_w_shared"),
+            "median_cos_mismatch": _median(fam, "mismatch", "cos_w_shared"),
+            "median_cos_shuffle_unmatched": _median(fam, "shuffle_unmatched", "cos_w_shared"),
+            "median_r_proj_shuffle": _median(fam, "shuffle", "r_proj"),
+            "median_r_proj_mismatch": _median(fam, "mismatch", "r_proj"),
+        }
+
+    by_ct = {(r["cell_id"], r["transform"]): r for r in rows if not r.get("missing")}
+
+    def _cell_retains(cell_id: str) -> bool | None:
+        ci = by_ct.get((cell_id, "intact"))
+        cs = by_ct.get((cell_id, "shuffle"))
+        if ci is None or cs is None or ci["cos_w_shared"] is None or cs["cos_w_shared"] is None:
+            return None
+        return (
+            cs["cos_w_shared"] >= SHUFFLE_RETENTION_FRAC * ci["cos_w_shared"]
+            or cs["cos_w_shared"] >= VALIDITY_COS
+        )
+
+    em518_cells = sorted(c for c, cell in cells9.items() if cell["family"] == "em518")
+    em518_retain = {c: _cell_retains(c) for c in em518_cells}
+    n_em518_retain = sum(1 for v in em518_retain.values() if v)
+    em518_units_corroborated = sum(
+        1
+        for c in em518_cells
+        if em518_retain.get(c)
+        and margin_retention.get(f"em518__{cells9[c]['source']}", {}).get("shuffle_margin_retains")
+    )
+    emturner_cells = sorted(c for c, cell in cells9.items() if cell["family"] == "em_turner")
+    emturner_retain = {c: _cell_retains(c) for c in emturner_cells}
+
+    def _fam_collapse(fam: str) -> dict[str, Any]:
+        mc = fam_stats[fam]["median_cos_shuffle"]
+        mr = fam_stats[fam]["median_r_proj_shuffle"]
+        return {
+            "cos_collapse": None if mc is None else mc < VALIDITY_COS,
+            "r_proj_collapse": None if mr is None else mr < VALIDITY_COS,
+            "cos_in_partial_band": None if mc is None else (null95 <= mc < VALIDITY_COS),
+            "discordant": None
+            if mc is None or mr is None
+            else ((mc < VALIDITY_COS) != (mr < VALIDITY_COS)),
+        }
+
+    collapse = {fam: _fam_collapse(fam) for fam in SHUFFLE_FAMILIES}
+
+    def _fam_mismatch_retains(fam: str) -> bool | None:
+        mi = fam_stats[fam]["median_cos_intact"]
+        mm = fam_stats[fam]["median_cos_mismatch"]
+        if mi is None or mm is None:
+            return None
+        return mm >= SHUFFLE_RETENTION_FRAC * mi or mm >= VALIDITY_COS
+
+    outcomes: dict[str, Any] = {}
+    outcomes["rig_bug_no_read"] = {
+        "fires": not gate["pass"],
+        "evidence": "positive-control gate" + (" FAILED" if not gate["pass"] else " passed"),
+    }
+    artifact_cos_branch = n_em518_retain >= 4
+    artifact_fires = artifact_cos_branch and em518_units_corroborated >= 4
+    outcomes["artifact_stands_l27_rider_demoted"] = {
+        "fires": bool(gate["pass"] and artifact_fires),
+        "n_em518_retain": n_em518_retain,
+        "n_em518_margin_corroborated": em518_units_corroborated,
+        "note": (
+            "em518 branch only (>=4/6 independent sources retain on cos vs w_shared AND the "
+            "sibling-excluded margin corroborates); raw-cos retention without margin retention "
+            "drops to the partial/indeterminate class"
+        ),
+        "dropped_to_partial_for_margin": bool(artifact_cos_branch and not artifact_fires),
+    }
+    both_collapse = all(
+        collapse[f]["cos_collapse"] and collapse[f]["r_proj_collapse"] for f in SHUFFLE_FAMILIES
+    )
+    any_discordant = any(bool(collapse[f]["discordant"]) for f in SHUFFLE_FAMILIES)
+    # §1 pinned middle region: a family median in [null95, 0.3) is "partial
+    # collapse = indeterminate (a named outcome; NO VERDICT FIRES)" — it
+    # blocks the substantive collapse verdicts exactly like co-primary
+    # discordance does, so "ruled out" requires a FULL collapse (median
+    # below the random-null p95) on both families.
+    any_partial_band = any(bool(collapse[f]["cos_in_partial_band"]) for f in SHUFFLE_FAMILIES)
+    outcomes["unigram_bag_artifact_ruled_out"] = {
+        "fires": bool(
+            gate["pass"] and both_collapse and not any_discordant and not any_partial_band
+        ),
+        "co_primary_discordance": any_discordant,
+        "blocked_by_partial_band": bool(both_collapse and not any_discordant and any_partial_band),
+        "note": (
+            "fires only on FULL collapse (family median cos below the random-null p95) — a "
+            "median in the §1 middle region [null95, 0.3) is partial collapse, a named "
+            "indeterminate outcome where no verdict fires"
+        ),
+    }
+    mismatch_retains_both = all(bool(_fam_mismatch_retains(f)) for f in SHUFFLE_FAMILIES)
+    outcomes["rider_content_bearing"] = {
+        "fires": bool(
+            outcomes["unigram_bag_artifact_ruled_out"]["fires"] and mismatch_retains_both
+        ),
+        "mismatch_retains": {f: _fam_mismatch_retains(f) for f in SHUFFLE_FAMILIES},
+        "note": (
+            "stronger wording only via the combined pattern (mismatch retains while shuffle "
+            "collapses); shuffle collapse alone never licenses content-bearing"
+        ),
+    }
+    outcomes["partial_collapse_indeterminate"] = {
+        "fires": bool(
+            gate["pass"] and any(bool(collapse[f]["cos_in_partial_band"]) for f in SHUFFLE_FAMILIES)
+        ),
+        "band": [null95, VALIDITY_COS],
+        "per_family": {f: collapse[f]["cos_in_partial_band"] for f in SHUFFLE_FAMILIES},
+    }
+    emturner_only = bool(gate["pass"] and any(emturner_retain.values()) and n_em518_retain < 4)
+    outcomes["em_turner_only_retention_indeterminate"] = {
+        "fires": emturner_only,
+        "note": (
+            "the 3 em_turner seed cells are ONE estimator read scored against 0.97-collinear "
+            "targets — effective N ~= 1; cannot carry a verdict"
+        ),
+        "em_turner_cell_retention": emturner_retain,
+    }
+    if not gate["pass"]:
+        verdict = "rig bug — no read"
+    elif outcomes["artifact_stands_l27_rider_demoted"]["fires"]:
+        verdict = "artifact explanation stands, L27 rider demoted"
+    elif outcomes["rider_content_bearing"]["fires"]:
+        verdict = "unigram-bag artifact ruled out + rider content-bearing"
+    elif outcomes["unigram_bag_artifact_ruled_out"]["fires"]:
+        verdict = "unigram-bag surface-statistics artifact ruled out"
+    elif emturner_only:
+        verdict = "em-turner-only retention — partial/indeterminate"
+    elif outcomes["partial_collapse_indeterminate"]["fires"]:
+        verdict = "partial collapse — indeterminate"
+    elif any_discordant:
+        verdict = "co-primary discordance (cos vs R_proj) — indeterminate"
+    else:
+        verdict = "indeterminate — no named outcome fired"
+    return fam_stats, collapse, outcomes, verdict
+
+
+def phase_shuffle_control(args: argparse.Namespace) -> int:
+    """Follow-up scoring: token-integrity transforms at L27/mean_resp.
+
+    Implements plan v3 §3.4: pinned download of the 7 follow-up payloads,
+    the positive-control gate (FATAL in production — evidence written,
+    then nonzero exit), per-cell dual-target cosines for the three
+    transforms (matched shuffle contrast gating; unmatched as
+    sensitivity), retention ratios, the R_proj co-primary, the parent's
+    sibling-excluded margin recomputed per transform, the 10k null, and
+    the §1 pre-committed verdict table. Output:
+    ``eval_results/issue_602/shuffled-replay-l27-control/shuffle_control.json``.
+    """
+    ev = bk.eval_dir(REPO)
+    strict = not args.allow_subset
+    followup_dir = Path(args.followup_dir) if args.followup_dir else ev / bk.FOLLOWUP_SHUFFLE_SLUG
+    shifts_dir = Path(args.shifts_dir) if args.shifts_dir else ev / "shifts"
+    parent_est_dir = Path(args.estimator_dir) if args.estimator_dir else ev / "estimator_reads"
+    out_path = followup_dir / "shuffle_control.json"
+    layer, pos = bk.L27_LAYER, "mean_resp"
+    ckey = f"L{layer}_{pos}"
+
+    logger.info(
+        "[phase=shuffle_inputs] mode=%s followup_dir=%s hf_revision=%s",
+        "production" if strict else "allow-subset",
+        followup_dir,
+        args.hf_revision,
+    )
+    followup, payload_info = _resolve_followup_payloads(
+        args, followup_dir / "estimator_reads", strict
+    )
+    if not followup:
+        raise RuntimeError("no follow-up estimator payloads available — nothing to score")
+    cells_all = _load_shift_cells_pinned(shifts_dir, strict)
+    cells9 = {
+        cid: c
+        for cid, c in cells_all.items()
+        if c["family"] in SHUFFLE_FAMILIES and (c["family"], c["source"]) in followup
+    }
+    if strict and len(cells9) != 9:
+        raise RuntimeError(f"expected the 9 registered score cells, got {sorted(cells9)}")
+    coverage = {
+        "mode": "production" if strict else "allow-subset",
+        "n_followup_payloads_expected": len(_shuffle_units()),
+        "n_followup_payloads_loaded": len(followup),
+        "n_shift_payloads_expected": len(bk.extraction_cells()),
+        "n_shift_payloads_loaded": len(cells_all),
+        "n_score_cells": len(cells9),
+    }
+
+    logger.info("[phase=shuffle_targets] per-cell w_src + w_shared at L%d/%s", layer, pos)
+    targets = _compute_targets(cells_all, layer, pos)
+
+    logger.info("[phase=shuffle_gate] positive-control gate (intact recompute)")
+    gate = _positive_control_gate(args, followup, cells9, targets, parent_est_dir, strict)
+
+    logger.info("[phase=shuffle_null] 10k random-unit null at L%d", layer)
+    null_targets = [targets[cid][ckey]["w_shared"] for cid in sorted(cells9)]
+    null_cos = bk.random_null_cosines(null_targets[:8], n=N_RANDOM_NULL // 8, seed=602)
+    null95 = float(np.percentile(null_cos, 95))
+
+    logger.info("[phase=shuffle_scores] per-cell transform reads")
+    rows = _shuffle_score_rows(followup, cells9, targets, ckey, layer)
+
+    logger.info("[phase=shuffle_margins] sibling-excluded margins per transform")
+    target_dim = int(np.asarray(next(iter(targets.values()))[ckey]["w_shared"]).size)
+    dim_mismatch = [
+        f"{f}__{s}"
+        for (f, s), p in followup.items()
+        if (v := _e1_transform_vec(p, "intact", layer)) is None or v.size != target_dim
+    ]
+    if dim_mismatch and strict:
+        raise RuntimeError(
+            f"estimator/target dim mismatch for {dim_mismatch} — stub/smoke payloads at a "
+            "production path (the model guard should have rejected them)"
+        )
+    margins_by_transform: dict[str, Any] = {}
+    if dim_mismatch:
+        margins_by_transform["skipped"] = (
+            f"dim mismatch vs targets (d={target_dim}) for {dim_mismatch} — margins skipped "
+            "(allow-subset/stub smoke only; production raises)"
+        )
+        logger.warning("[phase=shuffle_margins] %s", margins_by_transform["skipped"])
+    else:
+        for tname, unmatched in (
+            ("intact", False),
+            ("shuffle", False),
+            ("mismatch", False),
+            ("shuffle_unmatched", True),
+        ):
+            est_view = _est_view_for_transform(
+                followup, "shuffle" if unmatched else tname, unmatched=unmatched
+            )
+            m, _ = _offdiag_margins(cells_all, est_view, targets, layer, pos)
+            margins_by_transform[tname] = {
+                k.removesuffix("__est_tf"): v for k, v in m.items() if k.endswith("__est_tf")
+            }
+    margin_retention: dict[str, Any] = {}
+    for family, source in _shuffle_units():
+        name = f"{family}__{source}"
+        mi = margins_by_transform.get("intact", {}).get(name, {}).get("margin_excl_siblings")
+        ms = margins_by_transform.get("shuffle", {}).get(name, {}).get("margin_excl_siblings")
+        mm = margins_by_transform.get("mismatch", {}).get(name, {}).get("margin_excl_siblings")
+        margin_retention[name] = {
+            "margin_intact": mi,
+            "margin_shuffle": ms,
+            "margin_mismatch": mm,
+            "shuffle_margin_retains": _margin_retains(ms, mi),
+            "mismatch_margin_retains": _margin_retains(mm, mi),
+        }
+
+    logger.info("[phase=shuffle_verdicts] pre-committed verdict table (plan v3 §1)")
+    fam_stats, collapse, outcomes, verdict = _shuffle_verdict_block(
+        rows, cells9, margin_retention, gate, null95
+    )
+
+    payload_out = {
+        "followup": bk.FOLLOWUP_SHUFFLE_SLUG,
+        "construction": {
+            "layer": layer,
+            "pos": pos,
+            "variant": "base",
+            "registered_contrast": "matched (shuffled behavior - shuffled base-self)",
+            "sensitivity_contrast": "unmatched (shuffled behavior - intact base-self); never gates",
+        },
+        "hf_revisions": {
+            "input_pin": bk.FOLLOWUP_SHUFFLE_INPUT_REVISION,
+            "followup_payloads": payload_info["revision_recorded"],
+            "followup_repo": payload_info["repo"],
+        },
+        "expected_vs_loaded": coverage,
+        "payload_files": payload_info["files"],
+        "positive_control_gate": gate,
+        "null_random": {"p95": null95, "n": int(null_cos.size), "seed": 602},
+        "thresholds": {
+            "collapse_bar": VALIDITY_COS,
+            "retention": (
+                f"cos_t >= {SHUFFLE_RETENTION_FRAC} x cos_intact OR cos_t >= {VALIDITY_COS}"
+            ),
+            "r_proj_collapse": VALIDITY_COS,
+            "r_proj_retention": 0.8,
+            "partial_band": [null95, VALIDITY_COS],
+            "margin_retention": (
+                f"margin_t >= {SHUFFLE_RETENTION_FRAC} x margin_intact OR margin_t >= "
+                f"{MARGIN_MIN} (mirrors the cosine retention disjunction; the margin itself is "
+                "the parent's sibling-excluded margin, recomputed per transform via the parent "
+                "_offdiag_margins machinery)"
+            ),
+        },
+        "per_cell": rows,
+        "family_medians": fam_stats,
+        "family_collapse": collapse,
+        "margins_by_transform": margins_by_transform,
+        "margin_retention": margin_retention,
+        "outcomes": outcomes,
+        "verdict": verdict,
+        "reproducibility": _meta(),
+    }
+    _write_json(out_path, payload_out)
+    if strict and not gate["pass"]:
+        logger.error(
+            "[phase=shuffle_gate] POSITIVE-CONTROL GATE FAILED — rig bug; evidence written to %s; "
+            "exiting nonzero (plan v3 §1)",
+            out_path,
+        )
+        return 2
+    logger.info(
+        "[phase=shuffle_done] verdict: %s (%d cells, %d units, gate %s)",
+        verdict,
+        len(cells9),
+        len(followup),
+        "PASS" if gate["pass"] else "FAIL(allow-subset)",
+    )
+    return 0
+
+
 def main() -> int:
     """CLI: ``--phase repro-gate`` (Phase 0) or ``--phase score`` (Phase 2)."""
     parser = argparse.ArgumentParser(
         description="#602 Phase 0 reproduction gate + Phase 2 scoring",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--phase", choices=["repro-gate", "score"], default="score")
+    parser.add_argument(
+        "--phase", choices=["repro-gate", "score", "shuffle-control"], default="score"
+    )
     parser.add_argument(
         "--shifts-dir", default=None, help="Override eval_results/issue_602/shifts/"
     )
     parser.add_argument(
         "--estimator-dir", default=None, help="Override eval_results/issue_602/estimator_reads/"
+    )
+    parser.add_argument(
+        "--hf-revision",
+        default=None,
+        help=(
+            "shuffle-control: the upload-recorded data-repo revision (from the dispatcher "
+            "sentinel/manifest) for the pinned follow-up payload download (plan v3 §3.4)"
+        ),
+    )
+    parser.add_argument(
+        "--followup-dir",
+        default=None,
+        help="shuffle-control: override eval_results/issue_602/shuffled-replay-l27-control/",
+    )
+    parser.add_argument(
+        "--followup-repo",
+        default=bk.DATA_REPO,
+        help="shuffle-control: repo carrying the follow-up payloads (private on quota fallback)",
     )
     parser.add_argument(
         "--skip-mix-pins",
@@ -1711,6 +2402,8 @@ def main() -> int:
     load_dotenv()
     if args.phase == "repro-gate":
         return phase0_repro_gate(args)
+    if args.phase == "shuffle-control":
+        return phase_shuffle_control(args)
     if args.layer != bk.PRIMARY_LAYER:
         return phase2_layer_reread(args)
     return phase2_score(args)

@@ -556,16 +556,93 @@ def exp_e1_marker_reads(grid: dict, headline: dict, out_dir: Path) -> None:
     _save(fig, out_dir, "exp_e1_marker_reads", _meta(headline, "exp_e1_marker_reads"))
 
 
+def shuffle_control_bars(sc: dict, out_dir: Path, name: str = "shuffle_control_bars") -> None:
+    """Follow-up figure (plan v3 §3.5): per-cell grouped bars — intact /
+    shuffle (matched) / mismatch cos to w_shared at L27/mean-resp — with
+    the 0.3 collapse bar and the random-null p95 band; the UNMATCHED
+    shuffle contrast overplotted as open markers (sensitivity, never
+    gates)."""
+    rows = [r for r in sc["per_cell"] if not r.get("missing")]
+    cell_ids = sorted({r["cell_id"] for r in rows})
+    if not cell_ids:
+        logger.warning("no shuffle-control rows — skipping figure")
+        return
+    by = {(r["cell_id"], r["transform"]): r for r in rows}
+
+    def _cell_label(cid: str) -> str:
+        fam, src, seed = cid.split("__")
+        return f"{FAMILY_SHORT.get(fam, fam)}\n{SOURCE_LABELS.get(src, src)} ({seed})"
+
+    transforms = ["intact", "shuffle", "mismatch"]
+    t_labels = {
+        "intact": "intact replay (control)",
+        "shuffle": "within-completion shuffle (matched contrast)",
+        "mismatch": "question-mismatched pairing",
+    }
+    null95 = sc["null_random"]["p95"]
+    x = np.arange(len(cell_ids))
+    width = 0.26
+    colors = paper_palette(3)
+    fig, ax = plt.subplots(figsize=(max(8.0, 1.35 * len(cell_ids)), 5.0))
+    for ti, t in enumerate(transforms):
+        vals = [by.get((cid, t), {}).get("cos_w_shared") for cid in cell_ids]
+        ax.bar(
+            x + (ti - 1) * width,
+            [np.nan if v is None else v for v in vals],
+            width,
+            label=t_labels[t],
+            color=colors[ti],
+        )
+    un_vals = [by.get((cid, "shuffle_unmatched"), {}).get("cos_w_shared") for cid in cell_ids]
+    ax.scatter(
+        x,
+        [np.nan if v is None else v for v in un_vals],
+        facecolors="none",
+        edgecolors="black",
+        s=46,
+        marker="o",
+        linewidths=1.3,
+        zorder=5,
+        label="shuffle, unmatched contrast (sensitivity)",
+    )
+    ax.axhspan(-null95, null95, color="gray", alpha=0.18)
+    ax.axhline(0.3, color=paper_palette_role("accent"), linestyle="--", linewidth=1.0)
+    ax.axhline(0.0, color="black", linewidth=0.7)
+    ax.set_xticks(x)
+    ax.set_xticklabels([_cell_label(c) for c in cell_ids], fontsize=7)
+    ax.set_ylabel("cos(estimated write, shared realized direction)")
+    ax.legend(fontsize=7.5, loc="upper right")
+    ax.set_title(
+        "Token-integrity control at the layer-27 read — does replay validity survive "
+        "destroying token order?\n(gray band = 10k random null, dashed = 0.3 collapse bar)",
+        fontsize=9,
+    )
+    _save(fig, out_dir, name, _meta(sc, name))
+
+
 def main() -> int:
     """Render all #602 figures from the Phase-2 JSONs."""
     parser = argparse.ArgumentParser(description="#602 figures")
     parser.add_argument("--eval-dir", default=None)
     parser.add_argument("--out-dir", default=None)
+    parser.add_argument(
+        "--shuffle-control",
+        action="store_true",
+        help=(
+            "Render ONLY the shuffled-replay-l27-control follow-up figure from "
+            "shuffled-replay-l27-control/shuffle_control.json"
+        ),
+    )
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s :: %(message)s")
     set_paper_style()
     ev = Path(args.eval_dir) if args.eval_dir else bk.eval_dir(REPO)
     out_dir = Path(args.out_dir) if args.out_dir else REPO / "figures" / "issue_602"
+    if args.shuffle_control:
+        sc = json.loads((ev / bk.FOLLOWUP_SHUFFLE_SLUG / "shuffle_control.json").read_text())
+        shuffle_control_bars(sc, out_dir)
+        logger.info("shuffle-control figure complete")
+        return 0
     headline = json.loads((ev / "agreement" / "headline_metrics.json").read_text())
     repair = json.loads((ev / "repair" / "repair_test.json").read_text())
     grid = json.loads((ev / "grids" / "exploratory_grid.json").read_text())

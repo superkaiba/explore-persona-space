@@ -675,7 +675,9 @@ def run_preflight() -> None:
     logger.info("[phase=preflight] OK (feature-branch behind-origin tolerated)")
 
 
-def write_sentinel(args: argparse.Namespace, summary: dict[str, Any]) -> Path:
+def write_sentinel(
+    args: argparse.Namespace, summary: dict[str, Any], by: str = "issue602_extract_dispatch"
+) -> Path:
     """End-of-run results sentinel (poll_pipeline contract)."""
     sentinel_dir = Path(args.sentinel_dir)
     sentinel_dir.mkdir(parents=True, exist_ok=True)
@@ -685,7 +687,7 @@ def write_sentinel(args: argparse.Namespace, summary: dict[str, Any]) -> Path:
         "kind": "epm:results",
         "version": 1,
         "task_id": 602,
-        "by": "issue602_extract_dispatch",
+        "by": by,
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "note": json.dumps(summary),
     }
