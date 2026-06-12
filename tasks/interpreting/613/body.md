@@ -5,7 +5,7 @@ title: 'A live contrastive-negative gradient spends itself on the stop token, no
 kind: experiment
 tags: []
 created_at: '2026-06-12T02:42:11Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 601
 goal: 'Determine whether placing the negative-row loss at the post-response slot (loss-suppression
   flag on) gives contrastive negatives a live gradient that exerts a measurable restoring
