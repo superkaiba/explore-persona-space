@@ -266,7 +266,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- one flat block 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9, 4))
     for ax, key, ylabel in (
         (ax1, "delta_g", "Terminal on-policy source ΔG (nats)"),
-        (ax2, "margin", "Terminal on-policy source Δ(z_marker - z_eos) (logits)"),
+        (ax2, "margin", "Marker − stop-token logit margin (logits)"),
     ):
         for x, arm in enumerate(("flagoff", "flagon")):
             for seed in seeds:
