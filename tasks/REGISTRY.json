@@ -3649,7 +3649,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/601",
       "status": "interpreting",
-      "title": "Ratio vs count vs schedule horizon: what sets the contrastive-negative source-implant set-point (#472 mechanism follow-up)"
+      "title": "Contrastive negatives strengthened a marker implant by lengthening the optimizer schedule, not through their own loss: the same 4:1 mix trained 4x longer lands twice as high (MODERATE confidence)"
     },
     "602": {
       "has_clean_result": true,
