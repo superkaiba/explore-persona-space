@@ -302,11 +302,26 @@ def test_main_json_success(monkeypatch, capsys):
 
 
 def test_main_json_pipeline_check_keeps_stdout_pure(monkeypatch, capsys):
-    """The new pipeline-check status prints stay off stdout in --json mode."""
+    """Pipeline-check status prints AND pytest output stay off stdout in
+    --json mode: whole stdout is one parseable JSON object, pytest text on
+    stderr (concern json-pipeline-stdout-purity, #554 round 2)."""
     monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: PreflightReport())
-    monkeypatch.setattr(preflight, "_run", lambda cmd, timeout=10: (0, "", ""))
+    monkeypatch.setattr(preflight, "_run", lambda cmd, timeout=10: (0, "PYTEST STDOUT", ""))
     rc = main(["--json", "--no-gpu", "--pipeline-check"])
     assert rc == 0
     captured = capsys.readouterr()
     payload = json.loads(captured.out)  # whole stdout is still one JSON object
     assert payload["ok"] is True
+    assert "PYTEST STDOUT" not in captured.out
+    assert "PYTEST STDOUT" in captured.err
+
+
+def test_main_bare_pipeline_check_pytest_stdout_stays_on_stdout(monkeypatch, capsys):
+    """Bare mode unchanged: pipeline-check pytest stdout still lands on stdout."""
+    monkeypatch.setattr(preflight, "preflight_check", lambda **kwargs: PreflightReport())
+    monkeypatch.setattr(preflight, "_run", lambda cmd, timeout=10: (0, "PYTEST STDOUT", ""))
+    rc = main(["--no-gpu", "--pipeline-check"])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "PYTEST STDOUT" in captured.out
+    assert "PYTEST STDOUT" not in captured.err

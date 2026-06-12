@@ -1056,7 +1056,10 @@ def main(argv: list[str] | None = None) -> int:
             timeout=600,
         )
         if stdout:
-            print(stdout)
+            # In --json mode pytest output routes to stderr so stdout stays
+            # exactly one parseable JSON object (gotchas.md contract); bare
+            # mode keeps pytest stdout on stdout.
+            print(stdout, file=sys.stderr if args.json else sys.stdout)
         if stderr:
             print(stderr, file=sys.stderr)
         if rc != 0:
