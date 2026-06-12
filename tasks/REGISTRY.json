@@ -3753,8 +3753,8 @@
       "goal": "Determine whether the assistant-twin immunity to implanted sycophancy is role/prior gating or suppression generalizing from the trained default-assistant negative, by retraining the canned software-engineer cells with the assistant persona replaced in the contrastive negative set and re-reading the twin, daycare-teacher, and gradient cells.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/614",
-      "status": "running",
+      "path": "tasks/verifying/614",
+      "status": "verifying",
       "title": "Assistant-twin immunity: role gating vs trained-negative suppression generalization (canned software_engineer retrain with assistant swapped out of the negative set)"
     },
     "615": {
