@@ -92,6 +92,22 @@ def _required_launch_secrets(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
 
+@pytest.fixture(autouse=True)
+def _no_real_marker_reads(monkeypatch):
+    """Never let a forgotten ``marker_reader=`` inject read the real tasks/ tree.
+
+    ``GcpBackend.__init__`` defaults the relaunch-follow marker reader to
+    ``task_workflow.latest_event`` (a real events.jsonl read); a poll test
+    that reaches a terminal guest-attribute phase with an ``issue`` extra
+    would otherwise depend on the live task #137 marker trail. Mirrors
+    ``_required_launch_secrets``' hermeticity guarantee.
+    """
+    monkeypatch.setattr(
+        "explore_persona_space.task_workflow.latest_event",
+        lambda *_a, **_k: None,
+    )
+
+
 # Tempfile paths for the autouse env secrets — render_create_argv only
 # EMBEDS the paths (gcloud reads the files), so fixed fake paths keep the
 # direct-render tests deterministic. launch()-level tests exercise the
@@ -2223,3 +2239,252 @@ def test_fetch_results_missing_attempt_id_returns_without_gcloud_calls(
     handle.extra.pop("attempt_id")
     backend.fetch_results(handle)
     assert runner.calls == []
+
+
+# ---------------------------------------------------------------------------
+# incident #612 — relaunch-follow: a terminal guest-attribute phase must not
+# mask an SSH-relaunched workload named by a fresh epm:run-launched marker
+# ---------------------------------------------------------------------------
+
+
+_RELAUNCH_NOTE = (
+    "RELAUNCH after G2 yield halt + hot-fix abc1234. pod=eps-issue-137 pid=4610 "
+    "log_abs=/workspace/eps-issue-137/logs/issue-137.log cmd='dispatch.py --cells all'"
+)
+_EMPTY_DRAIN_STDOUT = "EPS_LOGTAIL_START\nEPS_LOGTAIL_END\n"
+
+
+def _relaunch_reader(
+    *,
+    run_ts: str | None = "2026-06-12T06:01:09Z",
+    cluster_ts: str | None = "2026-06-12T05:31:52Z",
+    note: str = _RELAUNCH_NOTE,
+):
+    """Fake marker reader: scripted latest run-launched / cluster-launched."""
+
+    def reader(issue: int, prefix: str | None = None):
+        assert issue == 137
+        if prefix == "epm:run-launched" and run_ts is not None:
+            return {"ts": run_ts, "kind": "epm:run-launched", "version": 1, "note": note}
+        if prefix == "epm:cluster-launched" and cluster_ts is not None:
+            return {"ts": cluster_ts, "kind": "epm:cluster-launched", "version": 1, "note": "{}"}
+        return None
+
+    return reader
+
+
+def _probe_stdout(*, alive: bool, mtime: int = 1718000000, now: int = 1718000060, tail: str = ""):
+    return (
+        f"EPS_RELAUNCH_PID={'alive' if alive else 'dead'}\n"
+        f"EPS_RELAUNCH_MTIME={mtime}\n"
+        f"EPS_RELAUNCH_NOW={now}\n"
+        "EPS_RELAUNCH_TAIL_START\n"
+        f"{tail}\n"
+        "EPS_RELAUNCH_TAIL_END\n"
+    )
+
+
+def _relaunch_backend(*, ssh_results, phase: str = "done", reader=None) -> tuple[GcpBackend, Any]:
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload(phase), "")],
+        ssh_results=list(ssh_results),
+    )
+    backend = GcpBackend(
+        config=_test_config(),
+        runner=runner,
+        marker_poster=lambda **_: None,
+        marker_reader=reader or _relaunch_reader(),
+    )
+    return backend, runner
+
+
+def test_poll_done_phase_with_newer_relaunch_marker_follows_live_pid() -> None:
+    """phase=done is the FIRST workload's exit; a fresh epm:run-launched
+    (pid= + log_abs=, newer than epm:cluster-launched) means an SSH
+    hot-fix relaunch is the live workload — poll must report running,
+    not a premature workload_done (incident #612)."""
+    backend, runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),  # drain (no sentinels)
+            GcloudRunResult(0, _probe_stdout(alive=True, tail="step 1200/9000"), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+    assert pr.pid_alive is True
+    assert pr.last_log_mtime_sec_ago == 60
+    assert "step 1200/9000" in pr.log_tail_excerpt
+    probe_cmd = next(
+        arg
+        for argv in runner.calls
+        if "ssh" in argv and "compute" in argv
+        for arg in argv
+        if arg.startswith("--command=") and "kill -0 4610" in arg
+    )
+    assert "sudo -n bash -c" in probe_cmd, "probe must read the root-owned tree via sudo (#608)"
+
+
+def test_poll_failed_phase_with_newer_relaunch_marker_follows_live_pid() -> None:
+    """Symmetric for phase=failed: a relaunch after a failure-trap exit is
+    otherwise reported dead and the orchestrator may tear down mid-run."""
+    backend, _runner = _relaunch_backend(
+        phase="failed",
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=True), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+
+
+def test_poll_relaunched_pid_dead_with_done_phase_line_maps_to_done() -> None:
+    """A dead relaunch pid corroborated by a real [phase=done] log line is
+    terminal success (suffixed terminal lines must keep parsing as done,
+    #545)."""
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(
+                0, _probe_stdout(alive=False, tail="[phase=done] production driver complete"), ""
+            ),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "relaunched_workload_done"
+    assert pr.pid_alive is False
+
+
+def test_poll_relaunched_pid_dead_without_done_maps_to_dead() -> None:
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=False, tail="[phase=training] step 1k"), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "relaunched_workload_exited"
+
+
+def test_poll_relaunched_pid_dead_quoted_done_noise_maps_to_dead() -> None:
+    """A failure message QUOTING the done token is not a phase transition
+    (#597) — the relaunch branch inherits poll_pipeline's noise guard."""
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(
+                0,
+                _probe_stdout(
+                    alive=False,
+                    tail="ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted",
+                ),
+                "",
+            ),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "dead"
+
+
+def test_poll_relaunch_marker_older_than_provision_keeps_done() -> None:
+    """A run-launched marker from a PREVIOUS instance generation (older
+    than the current epm:cluster-launched) must not hijack the poll."""
+    backend, runner = _relaunch_backend(
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(run_ts="2026-06-12T05:00:00Z", cluster_ts="2026-06-12T05:31:52Z"),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+    ssh_calls = [a for a in runner.calls if "ssh" in a and "compute" in a]
+    assert len(ssh_calls) == 1  # drain only — no relaunch probe
+
+
+def test_poll_relaunch_marker_for_other_host_keeps_done() -> None:
+    """A relaunch marker naming a different host (e.g. a RunPod pod) is
+    not this instance's workload."""
+    note = _RELAUNCH_NOTE.replace("pod=eps-issue-137", "pod=pod-137")
+    backend, _runner = _relaunch_backend(
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(note=note),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+
+
+def test_poll_relaunch_marker_without_pid_keeps_done() -> None:
+    backend, _runner = _relaunch_backend(
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(note="RELAUNCH pod=eps-issue-137 (no pid recorded)"),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+
+
+def test_poll_relaunch_accepted_on_pod_match_when_cluster_marker_missing() -> None:
+    """The launch-time epm:cluster-launched post is best-effort; when it is
+    absent the instance-name match alone accepts the relaunch marker."""
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=True), ""),
+        ],
+        reader=_relaunch_reader(cluster_ts=None),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+
+
+def test_poll_relaunch_probe_transport_failure_is_typed_stalled() -> None:
+    """ "Couldn't ask" must never read as a terminal verdict (#535
+    discipline): a probe SSH failure is a typed stalled tick, not done
+    and not dead."""
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(1, "", "ssh: connect to host ... port 22: Connection refused"),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "stalled"
+    assert pr.current_phase == "relaunch_probe_failed"
+
+
+def test_poll_no_relaunch_marker_keeps_existing_done_behavior() -> None:
+    backend, _runner = _relaunch_backend(
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=lambda *_a, **_k: None,
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done"
+
+
+def test_poll_relaunched_done_corroboration_survives_long_tail() -> None:
+    """The [phase=done] line lives at the END of the tail; a >2000-char
+    tail must not push it out of the corroboration parse (the excerpt is
+    tail-cut, the parse runs on the full text)."""
+    filler = "\n".join(
+        f"eval cell {i}/28 complete with a long descriptive suffix line" for i in range(40)
+    )
+    tail = filler + "\n[phase=done] production driver complete"
+    assert len(tail) > 2000
+    backend, _runner = _relaunch_backend(
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=False, tail=tail), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "relaunched_workload_done"
+    assert pr.log_tail_excerpt.endswith("[phase=done] production driver complete")
+    assert len(pr.log_tail_excerpt) <= 2000
