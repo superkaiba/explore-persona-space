@@ -279,7 +279,73 @@ DONE_QUOTED_NOISE_RE = re.compile(
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
-DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
+
+
+def _resolve_state_dir_root() -> Path:
+    """Main-checkout root for the phase-cache anchor, resolved cwd-independently.
+
+    ``poll-pipeline-<N>.json`` is CROSS-INVOCATION shared state: ticks may
+    run with cwd = the repo root, an issue worktree, or via a worktree COPY
+    of this script, and ``backends/runpod.py`` composes the same path from
+    :data:`DEFAULT_STATE_DIR` so its in-process polls share the phase-cache
+    with the orchestrator's bg-Bash loop. The pre-2026-06-12 anchor
+    (``_REPO_ROOT``, this script copy's own checkout via ``__file__``)
+    split that contract across checkouts — a worktree-copy invocation
+    wrote the phase-cache in the worktree while a repo-root tick read the
+    repo-root copy, re-posting already-seen milestones as spurious
+    ``new_milestone`` markers (same split-brain class as the #612
+    handle-sidecar incident, fixed the same way — see
+    ``backends.issue_dispatch._main_checkout_root``).
+
+    Resolution runs ``git rev-parse --path-format=absolute
+    --git-common-dir`` from THIS script's directory (never ``os.getcwd()``);
+    from a linked worktree the common dir is ``<main>/.git``, so its parent
+    is the main checkout. Local copy rather than an import of the
+    ``issue_dispatch`` resolver: that module pulls the full router chain at
+    module level (too heavy for a tick script), and ``backends/runpod.py``
+    lazily imports THIS module, so the reverse module-level import would
+    tangle the dependency direction.
+
+    Fail-SOFT by design (unlike the fail-loud ``issue_dispatch`` resolver):
+    a non-git execution context degrades to the legacy ``_REPO_ROOT``
+    anchor with a warning instead of crashing — the poller must keep
+    reporting even when the cache anchor is degraded.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(_HERE),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        common_dir = Path(proc.stdout.strip())
+        if common_dir.name == ".git" and common_dir.is_dir():
+            return common_dir.parent
+        log.warning(
+            "phase-cache anchor: git common-dir %s does not look like a main-checkout "
+            ".git directory; falling back to the script-copy checkout %s",
+            common_dir,
+            _REPO_ROOT,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError, OSError) as exc:
+        log.warning(
+            "phase-cache anchor: could not resolve the main checkout from %s (%s); "
+            "falling back to the script-copy checkout %s",
+            _HERE,
+            exc,
+            _REPO_ROOT,
+        )
+    return _REPO_ROOT
+
+
+DEFAULT_STATE_DIR = _resolve_state_dir_root() / ".claude" / "cache"
 
 # How many consecutive SSH-probe failures must accumulate before the poller
 # auto-fires ``pod.py config --refresh-from-api <pod>`` as a stale-port
@@ -1876,7 +1942,10 @@ def main(argv: list[str] | None = None) -> int:
         "--state-file",
         type=Path,
         default=None,
-        help="Local cache JSON (default: .claude/cache/poll-pipeline-<N>.json).",
+        help=(
+            "Local cache JSON (default: <main-checkout>/.claude/cache/"
+            "poll-pipeline-<N>.json, resolved cwd-independently)."
+        ),
     )
     parser.add_argument(
         "--stall-sec",
