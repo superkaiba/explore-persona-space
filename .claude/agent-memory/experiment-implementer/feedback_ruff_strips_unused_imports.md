@@ -55,3 +55,12 @@ removes such imports.
   Edit that introduces an import ALSO introduces at least one usage
   (or extract the new logic into a helper function whose body carries
   both the imports and the usages — that's what fixed it here).
+- **Top-level import SHADOWED by function-local imports of the same name:**
+  if every use site still carries its own lazy `from X import name`, the
+  new top-level import is genuinely unused to F401 and gets stripped even
+  though `name` appears all over the file (task #606 r3: promoting
+  `_retry_transient` from three lazy sites to module top — the hook
+  stripped the top import because the three local imports still shadowed
+  it). Ordering fix: REMOVE the lazy local imports FIRST (or in the same
+  Edit batch), then add the top-level import; then `ruff check` to
+  confirm it survived.
