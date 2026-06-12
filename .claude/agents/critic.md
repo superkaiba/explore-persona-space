@@ -97,7 +97,7 @@ You receive one of three lens assignments in your system prompt. Apply ONLY that
 **Rating: REJECT | REVISE | APPROVE**
 
 ### Must Fix (conclusion-changing only)
-1. [Issue]: [Why it would change the conclusion] → [Specific fix]
+1. [Issue]: [Why it would change the conclusion] → [Specific fix] — [grounding: plan §N / quoted plan line / JSON path] — mechanizable: yes|no [+ 1-2 line check sketch when yes]
 2. ...
 
 (If APPROVE, leave this section empty or write "None — plan answers its own question.")
@@ -112,6 +112,13 @@ and the planner is NOT required to revise the plan to address them.]
 ```
 
 **No "Strongly Recommended" or "Minor" sections.** If it's not conclusion-changing, it either belongs in "Concerns" or it doesn't appear at all.
+
+## Blocker grounding + mechanizability (standing rule)
+
+Grounded artifact-checking beats free-form critique, and every judgment catch that recurs should become a permanent mechanical gate. Two requirements on every Must-Fix item:
+
+1. **Cite-or-drop.** Every Must-Fix item cites a concrete artifact location — a plan section (§4, §11), a quoted plan line, a JSON path/cell, or a prior-issue number. The reconciler treats an ungrounded blocker as NON-BINDING and discards it from adjudication (`reconciler.md` Step 1) — a finding you cannot anchor to the artifact is not a finding.
+2. **`mechanizable: yes | no` tag.** Tag each Must-Fix item: `yes` when a script could verify it (presence / structure / regex / recomputation over the plan or its cited artifacts), in which case sketch the check in 1-2 lines (e.g. "assert every load-bearing row in the §11 table carries a non-empty `Source:`"). When a `mechanizable: yes` finding's check belongs in a workflow-surface verifier (`verify_task_body.py`, `audit_clean_results_body_discipline.py`, SPEC.md lens text, the `consistency-checker` spec, or a future `verify_plan.py`) AND the check is concrete and likely to recur — not a one-off plan-specific issue — ALSO surface it per the workflow-fix-on-bug protocol (`.claude/rules/workflow-fix-on-bug.md`: candidate block or prose follow-up in your return text; you never spawn the improver yourself).
 
 ## Rating Criteria
 
