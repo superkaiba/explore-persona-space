@@ -604,27 +604,68 @@ def _load_results_card(issue_num: int) -> dict | None:
         return None
 
 
+# A `<arm>` / `<source>` / `<seed>`-style template placeholder inside a card
+# field — the signature of the #612 prose-template shape.
+_PLACEHOLDER_RE = re.compile(r"<[^<>\s][^<>]{0,40}>")
+
+
+def _prose_declaration_row(field: str, value: str) -> dict:
+    """MISSING row naming a prose-template card declaration (#612).
+
+    Producers MUST declare ``adapter_paths`` / ``wandb_run_names`` as
+    structured per-cell dicts/lists of REAL paths / run names — the
+    epm:results sentinel contract, ``.claude/skills/issue/SKILL.md``
+    Step 7. A prose summary string (e.g. ``adapters/issue_612/<arm>/
+    <source>_seed<S> (16 adapters)``) resolves to nothing; silently
+    ignoring it produced an uninformative generic MISSING on a
+    fully-uploaded sweep that cost a manual investigation (#612). The
+    row stays MISSING — this is diagnostic-only.
+    """
+    snippet = value if len(value) <= 100 else value[:97] + "..."
+    placeholders = " with <...> template placeholders" if _PLACEHOLDER_RE.search(value) else ""
+    return {
+        "status": "MISSING",
+        "url": "",
+        "detail": (
+            f"reproducibility_card declares {field} as a prose string{placeholders}, "
+            "not a per-cell dict/list of real values — producer-contract violation "
+            "(epm:results sentinel contract, .claude/skills/issue/SKILL.md Step 7; "
+            f"incident #612): {snippet!r}"
+        ),
+        "source": "epm:results reproducibility_card",
+    }
+
+
 def check_hf_model_from_card(card: dict) -> dict | None:
     """Verify model paths declared in an epm:results reproducibility_card.
 
     Accepts a per-cell ``adapter_paths`` dict/list and/or a single
     ``hf_model_path``, all under ``hf_model_repo`` (default
     ``HF_MODEL_REPO``). Each path is existence-checked via
-    ``check_hf_hub_path``. Returns ``None`` when the card declares no model
-    paths (caller falls through to the MISSING row).
+    ``check_hf_hub_path``. A STRING-valued ``adapter_paths`` (the #612
+    prose-template shape) is unverifiable; instead of silently ignoring
+    it (which read as a generic declaration-gap MISSING on a
+    fully-uploaded sweep), the row names the producer-contract violation
+    (``_prose_declaration_row``). Returns ``None`` when the card declares
+    no model paths (caller falls through to the MISSING row).
     """
     repo = str(card.get("hf_model_repo") or HF_MODEL_REPO)
     paths: list[str] = []
     adapter_paths = card.get("adapter_paths")
+    prose_violation: dict | None = None
     if isinstance(adapter_paths, dict):
         paths.extend(str(p) for p in adapter_paths.values())
     elif isinstance(adapter_paths, list):
         paths.extend(str(p) for p in adapter_paths)
+    elif isinstance(adapter_paths, str) and _is_declared(adapter_paths):
+        prose_violation = _prose_declaration_row("adapter_paths", adapter_paths)
     single = card.get("hf_model_path")
     if single:
         paths.append(str(single))
     paths = list(dict.fromkeys(paths))
     if not paths:
+        if prose_violation is not None:
+            return _append_card_provenance(prose_violation, card)
         return None
 
     absent: list[str] = []
@@ -638,20 +679,17 @@ def check_hf_model_from_card(card: dict) -> dict | None:
             errored = errored or res["status"] == "ERROR"
             absent.append(f"{p} ({res.get('detail') or res['status']})")
     if absent:
-        return _append_card_provenance(
-            {
-                "status": "ERROR" if errored else "MISSING",
-                "url": "",
-                "detail": (
-                    f"reproducibility_card declares {len(paths)} model path(s) under "
-                    f"{repo}; unresolved: " + "; ".join(absent[:5])
-                ),
-                "source": "epm:results reproducibility_card",
-            },
-            card,
-        )
-    return _append_card_provenance(
-        {
+        result = {
+            "status": "ERROR" if errored else "MISSING",
+            "url": "",
+            "detail": (
+                f"reproducibility_card declares {len(paths)} model path(s) under "
+                f"{repo}; unresolved: " + "; ".join(absent[:5])
+            ),
+            "source": "epm:results reproducibility_card",
+        }
+    else:
+        result = {
             "status": "OK",
             "url": f"https://huggingface.co/{repo}/tree/main",
             "file_count": total_files,
@@ -660,9 +698,12 @@ def check_hf_model_from_card(card: dict) -> dict | None:
                 f"reproducibility_card resolve on {repo}"
             ),
             "source": "epm:results reproducibility_card",
-        },
-        card,
-    )
+        }
+    if prose_violation is not None:
+        # A real hf_model_path resolved (or failed) above, but the card ALSO
+        # carried an unverifiable prose adapter_paths — keep that visible.
+        result["detail"] = f"{result['detail']}; ALSO: {prose_violation['detail']}"
+    return _append_card_provenance(result, card)
 
 
 def check_wandb_runs_by_name(project_path: str, run_names: list[str]) -> dict:
@@ -783,15 +824,30 @@ def check_wandb_from_card(card: dict) -> dict | None:
     is declared WITHOUT ``wandb_project``, falls back to scanning the
     default entity's projects — ``huggingface`` first, the HF Trainer
     default when WANDB_PROJECT is unset (#601) — via
-    ``check_wandb_runs_default_project``. Returns ``None`` when the card
-    declares no WandB fields.
+    ``check_wandb_runs_default_project``. Prose declarations (the #612
+    template shape) are diagnosed instead of producing garbage rows: a
+    ``wandb_run_path`` containing whitespace / ``<...>`` placeholders is
+    never a real run path (the API call would only yield an opaque error
+    string), and a STRING ``wandb_run_names`` would otherwise iterate
+    into per-CHARACTER "run names" — both get the
+    ``_prose_declaration_row`` contract-violation detail (row stays
+    MISSING either way). Returns ``None`` when the card declares no
+    WandB fields.
     """
     single = card.get("wandb_run_path") or card.get("wandb_run")
+    if isinstance(single, str) and (
+        _PLACEHOLDER_RE.search(single) or re.search(r"\s", single.strip())
+    ):
+        return _append_card_provenance(
+            _prose_declaration_row("wandb_run_path/wandb_run", single), card
+        )
     if single:
         result = check_wandb_run(str(single))
         result["source"] = "epm:results reproducibility_card"
         return _append_card_provenance(result, card)
     names = card.get("wandb_run_names")
+    if isinstance(names, str) and _is_declared(names):
+        return _append_card_provenance(_prose_declaration_row("wandb_run_names", names), card)
     if isinstance(names, dict):
         names = list(names.values())
     project = card.get("wandb_project")
