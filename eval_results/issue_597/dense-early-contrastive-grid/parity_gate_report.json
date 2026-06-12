@@ -1,0 +1,307 @@
+{
+  "schema": "i597_dense_parity_gate_v1",
+  "verdict": "PASS",
+  "n_sources": 6,
+  "n_joined": 6,
+  "n_pass_step20": 6,
+  "catastrophic_sources": [],
+  "statuses": {
+    "villain": "pass",
+    "comedian": "pass",
+    "assistant": "pass",
+    "qwen_default": "pass",
+    "software_engineer": "pass",
+    "kindergarten_teacher": "pass"
+  },
+  "rule": "PASS iff |source delta - parent| <= 2.0 nat AND |TN-median - parent| <= 2.0 nat at step 20 in >= 5/6 sources; steps 40/60 diagnostic only",
+  "per_source": {
+    "villain": {
+      "source": "villain",
+      "trained_negative_group": [
+        "police_officer",
+        "medical_doctor",
+        "no_persona"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 11.882943840026856,
+          "source_delta_parent": 11.944223289489747,
+          "source_abs_diff": 0.06127944946289077,
+          "tn_median_dense": 3.3219643020629883,
+          "tn_median_parent": 3.2042486572265627,
+          "tn_abs_diff": 0.1177156448364256,
+          "lockstep_ratio_dense": 0.279557351005328,
+          "base_abs_diff": 0.0014861297607424717,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 20.67987331390381,
+          "source_delta_parent": 20.678387260437013,
+          "source_abs_diff": 0.0014860534667953118,
+          "tn_median_dense": 10.048786544799805,
+          "tn_median_parent": 9.559471969604493,
+          "tn_abs_diff": 0.4893145751953121,
+          "lockstep_ratio_dense": 0.48592108821303326,
+          "base_abs_diff": 0.0014861297607424717,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 20.679873847961424,
+          "source_delta_parent": 20.678387718200682,
+          "source_abs_diff": 0.0014861297607424717,
+          "tn_median_dense": 10.010054016113282,
+          "tn_median_parent": 9.454488296508789,
+          "tn_abs_diff": 0.555565719604493,
+          "lockstep_ratio_dense": 0.48404811797727915,
+          "base_abs_diff": 0.0014861297607424717,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    },
+    "comedian": {
+      "source": "comedian",
+      "trained_negative_group": [
+        "medical_doctor",
+        "assistant",
+        "no_persona"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 11.046124877929687,
+          "source_delta_parent": 10.848835067749024,
+          "source_abs_diff": 0.1972898101806635,
+          "tn_median_dense": 1.9348002243041993,
+          "tn_median_parent": 1.8952853393554687,
+          "tn_abs_diff": 0.039514884948730566,
+          "lockstep_ratio_dense": 0.17515646850688402,
+          "base_abs_diff": 0.011878890991212643,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 19.838522758483887,
+          "source_delta_parent": 19.821674728393553,
+          "source_abs_diff": 0.01684803009033331,
+          "tn_median_dense": 10.982009811401367,
+          "tn_median_parent": 10.538015594482422,
+          "tn_abs_diff": 0.44399421691894503,
+          "lockstep_ratio_dense": 0.5535699378979688,
+          "base_abs_diff": 0.011878890991212643,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 19.87725357055664,
+          "source_delta_parent": 19.857883262634278,
+          "source_abs_diff": 0.019370307922361718,
+          "tn_median_dense": 7.760182914733886,
+          "tn_median_parent": 8.409507217407226,
+          "tn_abs_diff": 0.6493243026733397,
+          "lockstep_ratio_dense": 0.39040518787911055,
+          "base_abs_diff": 0.011878890991212643,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    },
+    "assistant": {
+      "source": "assistant",
+      "trained_negative_group": [
+        "software_engineer",
+        "comedian",
+        "no_persona"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 5.7105712890625,
+          "source_delta_parent": 5.763213996887207,
+          "source_abs_diff": 0.052642707824706925,
+          "tn_median_dense": 4.551986083984375,
+          "tn_median_parent": 4.610457992553711,
+          "tn_abs_diff": 0.05847190856933526,
+          "lockstep_ratio_dense": 0.7971157093691884,
+          "base_abs_diff": 0.011904754638671022,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 25.766610946655273,
+          "source_delta_parent": 25.787612380981447,
+          "source_abs_diff": 0.021001434326173296,
+          "tn_median_dense": 24.71616882324219,
+          "tn_median_parent": 24.84952030181885,
+          "tn_abs_diff": 0.1333514785766603,
+          "lockstep_ratio_dense": 0.959232429690198,
+          "base_abs_diff": 0.011904754638671022,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 25.81268871307373,
+          "source_delta_parent": 25.824587745666506,
+          "source_abs_diff": 0.011899032592776138,
+          "tn_median_dense": 13.118480224609375,
+          "tn_median_parent": 12.685738410949707,
+          "tn_abs_diff": 0.4327418136596677,
+          "lockstep_ratio_dense": 0.5082182786315114,
+          "base_abs_diff": 0.011904754638671022,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    },
+    "qwen_default": {
+      "source": "qwen_default",
+      "trained_negative_group": [
+        "comedian",
+        "data_scientist"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 7.092388496398926,
+          "source_delta_parent": 7.0597137832641605,
+          "source_abs_diff": 0.032674713134765554,
+          "tn_median_dense": 2.980405445098877,
+          "tn_median_parent": 3.07712718963623,
+          "tn_abs_diff": 0.09672174453735316,
+          "lockstep_ratio_dense": 0.42022591495264844,
+          "base_abs_diff": 0.00046985626220674703,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 24.690787086486818,
+          "source_delta_parent": 24.68826328277588,
+          "source_abs_diff": 0.0025238037109396316,
+          "tn_median_dense": 16.86539093017578,
+          "tn_median_parent": 17.02510217666626,
+          "tn_abs_diff": 0.15971124649047752,
+          "lockstep_ratio_dense": 0.6830641271620762,
+          "base_abs_diff": 0.00046985626220674703,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 24.44546138763428,
+          "source_delta_parent": 24.493418350219727,
+          "source_abs_diff": 0.04795696258544879,
+          "tn_median_dense": 16.377954730987547,
+          "tn_median_parent": 16.41884075164795,
+          "tn_abs_diff": 0.04088602066040181,
+          "lockstep_ratio_dense": 0.6699793663650107,
+          "base_abs_diff": 0.00046985626220674703,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    },
+    "software_engineer": {
+      "source": "software_engineer",
+      "trained_negative_group": [
+        "assistant",
+        "medical_doctor",
+        "no_persona"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 7.0259230422973635,
+          "source_delta_parent": 7.156676216125488,
+          "source_abs_diff": 0.13075317382812468,
+          "tn_median_dense": 5.096874885559082,
+          "tn_median_parent": 5.22282154083252,
+          "tn_abs_diff": 0.12594665527343807,
+          "lockstep_ratio_dense": 0.7254384733329624,
+          "base_abs_diff": 0.005153236389158877,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 25.62990955352783,
+          "source_delta_parent": 25.617941436767577,
+          "source_abs_diff": 0.011968116760254333,
+          "tn_median_dense": 20.15742374420166,
+          "tn_median_parent": 20.281976852416992,
+          "tn_abs_diff": 0.12455310821533061,
+          "lockstep_ratio_dense": 0.786480486874254,
+          "base_abs_diff": 0.005153236389158877,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 25.73003520965576,
+          "source_delta_parent": 25.72533561706543,
+          "source_abs_diff": 0.0046995925903310365,
+          "tn_median_dense": 14.148473892211914,
+          "tn_median_parent": 14.321973724365234,
+          "tn_abs_diff": 0.1734998321533201,
+          "lockstep_ratio_dense": 0.5498816374297999,
+          "base_abs_diff": 0.005153236389158877,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    },
+    "kindergarten_teacher": {
+      "source": "kindergarten_teacher",
+      "trained_negative_group": [
+        "software_engineer",
+        "french_person",
+        "no_persona"
+      ],
+      "status": "pass",
+      "by_step": {
+        "20": {
+          "source_delta_dense": 8.370808906555176,
+          "source_delta_parent": 8.299810829162597,
+          "source_abs_diff": 0.0709980773925789,
+          "tn_median_dense": 4.307564964294434,
+          "tn_median_parent": 4.367722206115722,
+          "tn_abs_diff": 0.060157241821288565,
+          "lockstep_ratio_dense": 0.5145936327516905,
+          "base_abs_diff": 0.008190078735353268,
+          "blocking": true,
+          "within_tolerance": true
+        },
+        "40": {
+          "source_delta_dense": 24.04617233276367,
+          "source_delta_parent": 24.0506995010376,
+          "source_abs_diff": 0.004527168273927629,
+          "tn_median_dense": 16.192514839172365,
+          "tn_median_parent": 16.196085815429687,
+          "tn_abs_diff": 0.003570976257321945,
+          "lockstep_ratio_dense": 0.6733926138052978,
+          "base_abs_diff": 0.008190078735353268,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        },
+        "60": {
+          "source_delta_dense": 24.11952724456787,
+          "source_delta_parent": 24.1350724029541,
+          "source_abs_diff": 0.015545158386231606,
+          "tn_median_dense": 14.288391304016113,
+          "tn_median_parent": 14.534382400512696,
+          "tn_abs_diff": 0.24599109649658324,
+          "lockstep_ratio_dense": 0.592399310282257,
+          "base_abs_diff": 0.008190078735353268,
+          "blocking": false,
+          "diagnostic_flag_gt5": false
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "ea8bbd4ebe5779831a22b279721d6914acba61ca",
+    "hostname": "eps-issue-597",
+    "ts": "2026-06-12T12:06:59.291655+00:00",
+    "parent_panel_dir": "eval_results/issue_597/panel_trajectories/armA",
+    "seed": 42
+  }
+}

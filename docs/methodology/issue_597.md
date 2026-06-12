@@ -385,4 +385,90 @@ uv run python scripts/issue_597/analyze_titration_597.py --workers 24
 
 ---
 
+## dense-early-contrastive-grid arm
+
+A same-issue follow-up round adding ONE training arm: **Arm C — a fresh seed-42 retrain of the 6 contrastive cells with a dense early checkpoint grid**, making the contrastive regime's steps 1–19 observable (the parent's contrastive arm reused the #480 ladder, whose first saved checkpoint is step 20). The single manipulated variable is the **checkpoint grid**; the recipe, pools, probe rig, panel, and four-float DV are the parent's (§§1–3) unchanged. The positive-only arm was NOT retrained (the parent's Arm B data stands), and this round runs the teacher-forced panel probe only — no emission anchors, no Phase 0 probe-row regeneration, no Arm A re-probe.
+
+### Design (delta vs the parent)
+
+- **Arm C cells:** the same 6 sources (§1), each an independent `train_lora` run on the SAME pinned full 700-row contrastive pool (200 positives + 2×200 trained-negative + 100 no-persona-negative rows, HF rev `3c8fecb9...`, row count asserted per cell) — the pool whose positive AND negative rows §4 already shows verbatim for the villain cell.
+- **Dense grid:** `C_GRID = {2..40:2} ∪ {44..60:4}` — 25 checkpoints per source (`save_steps=2` + `CheckpointGridPruneCallback(C_GRID)`; reachability asserted `s % 2 == 0` for every grid step). 9 of the 25 sit inside the previously unobservable window {2..18}.
+- **Save-driven halt:** `HaltAfterStepCallback(halt_step=60, save_steps=2)` stops training right after the step-60 checkpoint is written (HF Trainer saves BEFORE firing `on_save`, so `checkpoint-60` is on disk when the halt fires; the constructor rejects a halt step not divisible by `save_steps`, which would silently never halt). `max_steps` stays **528**, so the cosine + warmup schedule is a pure function of step identical to the parent's for steps 1–60 (`max_steps=60` would change both denominators) — pinned numerically by the `test_dense_cfg_lr_schedule_identity_steps_1_60` unit test. Steps >60 are not retrained: they duplicate the parent's existing 27-point contrastive grid.
+- **In-loop band probe every 2 steps** (parent: every 5; the plan-v1-sanctioned read-only deviation), log-only as before, on the 32 probe rows `build_source_probe_from_data` selects from the 700-row pool.
+- **No emission anchors this round** (plan §2.3): in the early window the trained-negative teacher-forced gains sit far below the emission onset measured at this lr, so on-policy anchors would read ~0 there by construction; at steps 40–60 the checkpoints coincide with the parent's grid, whose emission anchors already cover them.
+- **Probe rows fetched, not regenerated:** the parent's own `probe_rows.json` upload at pinned HF data-repo rev `8d2f79030e365180c7d32755cda34d34a25aed18` (the content-identity mechanism for reuse check (f)); same 25 contexts × 50 questions at every checkpoint.
+
+### Hyperparameters (deltas only)
+
+Every recipe knob — lr 5e-6 cosine, r=32/α=64 rsLoRA 7-module, dropout 0.0, eff. batch 16 (4×4), bf16 + gradient checkpointing, `max_length=2560`, marker-only loss with the post-response-slot flag, `max_steps=528`, seed 42 — is inherited verbatim from the §2 table; the Arm C config is `replace()`-cloned from the parent's builder (`_dense_train_cfg` wrapping `_pos_only_train_cfg`), with a `test_dense_cfg_clone_deltas_only` unit test pinning that ONLY the fields below differ. Values read from `_dense_train_cfg` + `make_dense_run_params` in `scripts/issue_597/dispatch_leakage_dynamics_597.py` and `leakage_dynamics_597/__init__.py` at the run commit; cross-checked against the results sentinel and the artifact metadata.
+
+| Parameter | Value | Notes |
+|---|---|---|
+| **Training data** | **full 700-row contrastive pool** per source @ rev `3c8fecb9...` | Arm A's mix (Arm B used the 200-positive filter) |
+| **Checkpoint grid** | **`C_GRID` = {2..40:2} ∪ {44..60:4}, 25/source** | `save_steps=2`, pruned by `CheckpointGridPruneCallback` |
+| **Halt** | **`HaltAfterStepCallback(60, 2)`** | save-driven; `max_steps=528` unchanged (schedule identity, unit-pinned) |
+| In-loop band probe | every **2** steps, log-only | parent arms used 5; 32 probe rows, 700-row pool |
+| `run_name` | `issue597_densegrid_<source>_seed42` | WandB project `issue597-leakage-dynamics` |
+| Eval | four-float panel probe at every `C_GRID` checkpoint; **no emission anchors** | probe rows @ rev `8d2f7903...` |
+| Sharding | serial, 6 sources on 1 GPU | GCP lane (below) |
+| Smoke knobs | halt 12, grid {2..12:2}, 5 questions, probed ckpts {2, 12}, gate step 12, `_smoke` HF suffix | `DenseRunParams`: every phase derives from one knob object |
+
+### Gates and run-procedure checks (all recorded in the committed reports)
+
+1. **Preflight (inherited):** in-process marker assert (id 83399), 700-row pool row-count assert, question disjointness, trained-negative map asserts, and the adapter-config parity assert vs a downloaded Arm A capend `adapter_config.json` (r, α, dropout, rsLoRA, sorted target modules, `modules_to_save=None`).
+2. **Gate S (inherited #534, hard):** the off-line eval path must reproduce #480's in-loop villain capend ckpt-20/-40 read (`smoke_gate_report.json`: `gate_pass: true`, 32 rows, wall 67.6 s).
+3. **Gate S Arm C re-application:** the first freshly trained dense source (villain) is re-gated at step 20 against its OWN fresh 2-step in-loop trajectory (`smoke_gate_armC_villain.json`: `gate_pass: true`).
+4. **Parity gate (NEW, CPU, pod-side, BLOCKING at step 20 only):** the dense panel reads are joined per source against the parent's committed contrastive panel trajectories (`eval_results/issue_597/panel_trajectories/armA/`) at the shared steps {20, 40, 60}. Rule (verbatim from the report): "PASS iff |source delta - parent| <= 2.0 nat AND |TN-median - parent| <= 2.0 nat at step 20 in >= 5/6 sources; steps 40/60 diagnostic only"; catastrophic bins are >5 nat or a trained-negative lockstep ratio ≥ 0.5 (the positive-only signature), with a pre-registered downgrade-to-within-run-replicate path on a 2–5 nat FAIL (plan §7). Recorded verdict: **PASS** (sentinel `parity_verdict`), report at `parity_gate_report.json`.
+5. **Base-side in-loop agreement** vs the #480 trajectory: logged diagnostic ONLY, never a gate (tolerance 0.1 nat; per-cell |diff| 0.0015–0.058 nat, statuses recorded `OK` / `DRIFT (diagnostic only — not a gate)` in the sentinel).
+6. **Resume provenance + ladder invariant (inherited):** every panel JSON carries the fresh ladder's `ladder_run_id`; the end-of-ladder hot-swap invariant re-reads the first checkpoint (atol 1e-3).
+
+### Registered read
+
+**H2-early** (pre-registered in the follow-up scope; computed by the off-pod analysis): per source, the trained-negative group (2 trained-negative personas + `no_persona`) median Δlog P(※) vs 0 at the 9 dense checkpoints {2, 4, …, 18}, with three pre-registered outcome bins — caveat-closed (median ≥ 0 at all of {2..18} in all 6 sources), active-suppression-rescued (median ≤ −1 nat at any checkpoint ≤ 18 in ≥4/6 sources), and the strict falsifier (any source's median < 0 at any checkpoint in 2–18, reported with magnitude, contexts, and per-question sign fraction). Held-out bystander medians and the source ramp are reported alongside for shape context. No computed values are reported here; the outcomes live in the task body. The off-pod CPU phase (VM, after instance teardown) computes the read and the `dense_early_*` figure set (pooled trained-negative median trace with the parent's sparse points overlaid for grid continuity, per-source small multiples, no-persona-alone trace, held-out-vs-trained-negative split, source ramp, EOS-margin-space and raw trained/base versions) onto the same branch.
+
+### Worked example — dense-grid records (verbatim)
+
+**(a) One per-checkpoint panel record** (from `panel_trajectories/armC/villain_seed42_panel_trajectory.json`, `by_step["2"]["villain"]` — the new grid's first checkpoint, shown solely as a worked example of the inherited four-float storage contract at a step the parent could not observe; means over the 50 questions of that cell):
+
+```json
+{"logp_trained": -20.68766487121582, "logp_base": -20.679873962402343,
+ "delta_logp": -0.007790908813476562,
+ "z_marker_trained": -0.1883740234375, "z_marker_base": -0.1715966796875,
+ "z_eos_trained": 20.19, "z_eos_base": 20.1975,
+ "logZ_trained": 20.49929084777832, "logZ_base": 20.508277282714843,
+ "delta_z_marker": -0.01677734375, "eos_margin_delta": -0.00927734375,
+ "emission_rate_argmax": 0.0, "n_questions": 50}
+```
+
+Each trajectory JSON carries one such record per (25 `C_GRID` steps × 25 contexts) plus `ladder_run_id` and the invariant residual; the per-row records (`i597_panel_ckpt_v1`, 1,250 rows per checkpoint) live in git under `panel_trajectories/armC/per_checkpoint/<source>/step_*.json` and on the HF `dense_early/panel_trajectories_raw/` bucket.
+
+**(b) One parity-gate record** (from `parity_gate_report.json`, villain at the blocking step 20 — the gate read joining the fresh retrain against the parent's committed contrastive panel values; shown as a worked example of the gate schema, not as a finding):
+
+```json
+{"source_delta_dense": 11.882943840026856, "source_delta_parent": 11.944223289489747,
+ "source_abs_diff": 0.06127944946289077,
+ "tn_median_dense": 3.3219643020629883, "tn_median_parent": 3.2042486572265627,
+ "tn_abs_diff": 0.1177156448364256,
+ "lockstep_ratio_dense": 0.279557351005328, "base_abs_diff": 0.0014861297607424717,
+ "blocking": true, "within_tolerance": true}
+```
+
+Training rows are NOT re-shown here: Arm C trains on the same pinned pool files as the parent's contrastive arm (same revision, same rows), so §4's villain positive + negative rows are this arm's training data verbatim.
+
+### Artifacts and reproducibility (this arm)
+
+- **Implementation commit:** `4e237d4257116e4692aac07b6e9ce41ec6b21d67`; **run commit:** `ea8bbd4ebe5779831a22b279721d6914acba61ca` (recorded as `git_commit` in every artifact's metadata and as `final_commit_sha` in the results sentinel; the dispatcher + experiment package are content-identical at both); **eval-outputs commit:** `9bce8d3b343967330f5e130d309fae939d2e524c`.
+- **Dispatcher (the `--recipe contrastive_dense_early` branch):** [`scripts/issue_597/dispatch_leakage_dynamics_597.py`](https://github.com/superkaiba/explore-persona-space/blob/ea8bbd4ebe5779831a22b279721d6914acba61ca/scripts/issue_597/dispatch_leakage_dynamics_597.py)
+- **Grid constants + halt callback:** [`leakage_dynamics_597/__init__.py`](https://github.com/superkaiba/explore-persona-space/blob/ea8bbd4ebe5779831a22b279721d6914acba61ca/src/explore_persona_space/experiments/leakage_dynamics_597/__init__.py) (`C_GRID`, `ARM_C_SAVE_STEPS`, `ARM_C_HALT_STEP`) + [`grid_callbacks.py`](https://github.com/superkaiba/explore-persona-space/blob/ea8bbd4ebe5779831a22b279721d6914acba61ca/src/explore_persona_space/experiments/leakage_dynamics_597/grid_callbacks.py) (`HaltAfterStepCallback`)
+- **Unit tests** (halt-at-60 on a real Trainer, lr(step) identity 1–60, prune-keeps-25, clone-deltas-only, smoke-is-sweep, parity-gate fixture vs committed armA): [`tests/test_issue597_leakage_dynamics.py`](https://github.com/superkaiba/explore-persona-space/blob/ea8bbd4ebe5779831a22b279721d6914acba61ca/tests/test_issue597_leakage_dynamics.py)
+- **Eval results (git):** [`eval_results/issue_597/dense-early-contrastive-grid/`](https://github.com/superkaiba/explore-persona-space/tree/9bce8d3b343967330f5e130d309fae939d2e524c/eval_results/issue_597/dense-early-contrastive-grid) — `panel_trajectories/armC/` (6 aggregated trajectories + `per_checkpoint/` per-row records), `inloop_trajectories/` (6 two-step trajectories), `parity_gate_report.json`, `smoke/` (both Gate S reports), `probe_rows.json` (the pinned fetched copy)
+- **Arm C adapters (25 checkpoints × 6 sources + final adapter dirs):** [HF `adapters/issue_597_contrastive_dense/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/82c4dd4347ea722f83164409138ccb23adee95d5/adapters/issue_597_contrastive_dense)
+- **Per-row four-float records (150 files = 6 sources × 25 steps):** [HF data repo `issue597_leakage_dynamics/dense_early/panel_trajectories_raw/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/0843e463062da44c5198abc230a41f93248b97f6/issue597_leakage_dynamics/dense_early/panel_trajectories_raw)
+- **Reused inputs:** 700-row pools @ rev [`3c8fecb9...`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/3c8fecb937c81c13036a9697be1e4e716755321e/issue480_marker_payload_swap/train_pools); probe rows @ rev [`8d2f7903...`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8d2f79030e365180c7d32755cda34d34a25aed18/issue597_leakage_dynamics/inputs); parent armA panel trajectories (parity references, §6 eval-results tree); #480 villain capend ckpt-20/-40 (Gate S, §6)
+- **WandB:** project [`issue597-leakage-dynamics`](https://wandb.ai/thomasjiralerspong/issue597-leakage-dynamics), runs `issue597_densegrid_<source>_seed42`
+- **Launch:** smoke `uv run python scripts/issue_597/dispatch_leakage_dynamics_597.py --recipe contrastive_dense_early --only-source villain --smoke`, then production `... --recipe contrastive_dense_early --seed 42 --gpu 0` (serial, single process)
+- **Compute:** GCP lane (`backend: gcp`, intent `lora-7b` → `a2-ultragpu-1g`, 1× A100-80, instance `eps-issue-597`), 6 sources serial; per-cell wall (train + 25-checkpoint probe + upload) 1,567–1,612 s, summing to ≈2.65 GPU·h (sentinel estimate; villain panel probe alone 1,246 s); `plan_deviations: []` in the results sentinel. The registered-read analysis + figures run off-instance on the VM after teardown.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/597).*
