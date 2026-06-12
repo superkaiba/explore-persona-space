@@ -762,7 +762,9 @@ deferred variant.
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python
 scripts/spawn_session.py list` (issue-mapping column). If a live session is
-already driving #N, EXIT immediately as a duplicate — post no markers, mutate
+already driving #N, EXIT immediately as a duplicate — post no markers (do
+NOT run `scripts/post_step_completed.py`: a duplicate session must not touch
+#N's `events.jsonl` — this is the one deliberately marker-free EXIT), mutate
 nothing — UNLESS this session is its explicit replacement (an
 `autonomous_session_watch` crash-recovery respawn, or the user said to take
 over; in that case stop the stale session via `spawn_session.py stop` first).
@@ -1428,17 +1430,18 @@ Branch on the decision (equivalently, re-read the task status):
 - **`parked_over_cap`** (autonomous, est > cap OR blank estimate — FAIL
   SAFE): the gate left the status at `plan_pending` and already posted
   `epm:awaiting-spend-approval`. The PM session + the user's phone surface
-  the `plan_pending` status. Fire a PushNotification, then EXIT:
+  the `plan_pending` status. Post the §5 marker, fire a PushNotification,
+  then EXIT:
+  ```bash
+  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
+    --exit-kind parked --notes "plan_pending; over auto-approve cap"
+  ```
   ```python
   cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
   PushNotification({
       "message": f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"[:200],
       "status": "proactive",
   })  # soft-fail; deferred-schema may not be loaded
-  ```
-  ```bash
-  uv run python scripts/post_step_completed.py --issue <N> --step 2c \
-    --exit-kind parked --notes "plan_pending; over auto-approve cap"
   ```
 - **`interactive_pending`** (`EPM_AUTONOMOUS_SESSION` unset): fall through to
   the **Legacy autonomous mode** / **Interactive mode** bullets below.
@@ -1809,6 +1812,23 @@ them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
 still gets the blind sync. The conditional commit keeps the worktree
 clean for the Step 10d merge guards.
+
+**The sync scope is deliberately specs-only — do NOT extend it to
+`scripts/` or `tests/`.** The sync exists because the Agent/Skill tools
+load specs from the session's cwd; workflow-helper SCRIPTS are already
+resolved from the MAIN checkout (Step 0 § worktree spec-freshness:
+`"$REPO_ROOT"/scripts/...`), so syncing worktree copies buys no runtime
+correctness. Blind-syncing `tests/` is actively unsafe: main's newer
+workflow tests pin behavior implemented in main's newer `scripts/` +
+`src/` (e.g. `task_workflow.py`, `backends/`) that the branch predates,
+so a partial code sync makes the worktree suite REDDER or breaks the
+branch's own imports — and the per-path branch-side-edit guard would
+skip `scripts/`/`tests/` wholesale anyway (nearly every issue branch
+adds its own `scripts/issue<N>_*.py` + tests). Operational rule
+instead: a workflow test that FAILs inside a long-lived issue worktree
+but PASSes at the repo root on `main` is worktree-staleness, not this
+issue's breakage — cross-check at the repo root before chasing it; the
+Step 10d merge resolves it (observed on #542, 2026-06-11).
 
 > **429 pacing at every ensemble fan-out (applies here, to the Step 9
 > critic ensembles, and to /adversarial-planner Phase 2):** when MORE than
@@ -2467,7 +2487,16 @@ plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
 (stderr + `extra.boot_disk_default_with_ft_intent=true` on the
 `epm:backend-selected` marker) when an ft intent is gcp-reachable with
 no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
-smokes stay legitimate).
+smokes stay legitimate). (i) **WandB project on `--workload-cmd`
+launches defaults to `issue<N>`** — the GCP startup script and the
+SLURM custom stage export `WANDB_PROJECT="${WANDB_PROJECT:-issue<N>}"`
+before the verbatim command, so HF-Trainer workloads that never set a
+project stop landing in WandB's global default `huggingface` project
+(Upload Policy: training metrics → `project=<experiment_name>`; #601
+follow-up r1 landed there silently). An inline `WANDB_PROJECT=...`
+prefix on the workload command — or the workload setting its own
+project internally — still wins (`:-` fills only unset/empty); hydra
+launches are unaffected (project comes from Hydra config).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -3030,7 +3059,13 @@ markers, so an `epm:progress` note recording the new pid is invisible to
 it and the stale pid yields a false `status=dead` on a healthy run.
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
-while the pod run was healthy.)
+while the pod run was healthy.) On the GCP lane the marker's `pod=`
+field MUST be the instance name (`eps-issue-<N>`) — `GcpBackend.poll`
+matches relaunch markers on that field to follow the new process
+(incident #612): a mismatched value (e.g. a RunPod-style `pod-<N>`)
+rejects the marker and the poll keeps reading the frozen startup-script
+phase, and an omitted `pod=` is accepted only via the launch-time
+`epm:cluster-launched` timestamp baseline, so include it explicitly.
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -3304,8 +3339,9 @@ burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 20 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and
 re-arms via the ARM-GUARD. After posting the resume marker, EXIT the
-skill cleanly with `epm:step-completed` (`exit_kind: parked`); the user's
-re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
+skill cleanly via `uv run python scripts/post_step_completed.py --issue <N>
+--step 6d --exit-kind parked` (the §5 `epm:step-completed` marker); the
+user's re-invocation of `/issue <N>` resumes the polling loop. The polling-loop's terminal
 transitions are now `running → verifying` (on done), `running → running`
 (after a parked gate resumes), or `running → blocked` (on stalled/dead
 or unrecognised gate).
@@ -3661,9 +3697,14 @@ URLs.
   (`reason: confirm_artifacts_no_declaration`).
 
   **Phase-scoped-launch mismatch (incident #604).** The launch-time
-  auto-declaration assumes the FULL task artifact set (HF
-  `issue<N>_<attempt>/raw_completions/`, git `eval_results/issue_<N>/` +
-  `figures/issue_<N>/`), so a launch covering only ONE phase of a
+  auto-declaration assumes the FULL task artifact set (hydra-lane
+  launches: HF `issue<N>_<attempt>/raw_completions/` + git
+  `eval_results/issue_<N>/` + `figures/issue_<N>/`; `--workload-cmd`
+  launches auto-declare only the sentinel + git paths — the guessed HF
+  prefix was dropped after it false-FAILed a perfectly-uploaded run
+  whose driver used its own `issue<N>_<slug>/` contract prefix, #601
+  follow-up r1; HF-data coverage on that lane comes from the
+  agent-level upload-verifier), so a launch covering only ONE phase of a
   multi-phase plan (e.g. an extraction phase whose sole deliverable is
   an `analysis_tensors/` bundle) FAILs `confirm_artifacts` on declared
   paths that only the plan's LATER (VM-local) phases produce. A
@@ -3848,7 +3889,8 @@ clean-result-critic, upload-verifier) is STILL RUNNING from a prior tick —
 re-dispatching it would burn redundant subagent tokens and could race two
 writers on the body. This guard makes a fresh re-entry into Step 9 (or
 Step 8 verifying) cheaply detect "live work in progress" and EXIT without
-re-dispatching.
+re-dispatching (that EXIT is the guard rule's `post_step_completed.py
+--exit-kind parked` call below).
 
 **Dispatch breadcrumb (post on every stage dispatch).** Immediately before
 spawning ANY Step 8 / Step 9 stage subagent, post a breadcrumb so a later
@@ -4842,7 +4884,8 @@ The autonomous flow:
    PushNotification → chat prompt → CRON-TEARDOWN park flow this
    round (the backstop cron stays armed; it drives the loop).
    Otherwise continue to the existing park flow below
-   (PushNotification → chat prompt → CRON-TEARDOWN → EXIT).
+   (PushNotification → chat prompt → CRON-TEARDOWN → §5 marker via
+   `post_step_completed.py --step 9a-bis --exit-kind parked` → EXIT).
 
 **Step R — RECONCILE pass** (re-entry with the marker already present):
 read the `spawned` list from `epm:follow-ups-autospawned v1`. For each
