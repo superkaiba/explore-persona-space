@@ -163,7 +163,7 @@ The ordering is clean: intact replay re-lands at family medians 0.824 (bad medic
 One methods note the open circles carry: the symmetric base-side shuffle is load-bearing. The one-sided contrast (shuffled completions against the intact base-self reads) lands at 0.37–0.49 — comfortable "retention" on its face — and the matched contrast shows most of that is a generic scrambled-text response the base side produces identically. Without the symmetric contrast this control would have wrongly read as the artifact standing. (No sample block for this finding: the control generates no completions — every forward is teacher-forced over rows already shown above, and the base-side generations are the same uploaded files re-read with transformed token ids.)
 
 <details>
-<summary>Per-cell numbers — all 9 cells, complete table (cos to the shared realized direction at layer 27; full verdict JSON linked below)</summary>
+<summary>All 9 cells — complete per-cell table (cos to the shared realized direction at layer 27; full verdict JSON linked below)</summary>
 
 | Cell | Intact | Shuffle (matched) | Mismatch | Shuffle (one-sided, sensitivity) | Aligned-projection retention (shuffle) |
 |---|---|---|---|---|---|
