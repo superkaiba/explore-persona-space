@@ -7433,7 +7433,7 @@ RUNAWAY_FORCE_STOP_STATUSES = frozenset({"awaiting_promotion", "completed", "arc
 # proven Python-callable path to the phone (the harness PushNotification tool
 # only exists inside an LLM turn). Override for tests via
 # EPM_TELEGRAM_PUSH_SCRIPT.
-_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "notif_enqueue.sh"
 
 
 def _telegram_push_script() -> Path:
@@ -7442,11 +7442,19 @@ def _telegram_push_script() -> Path:
 
 
 def _telegram_push(msg: str, dry_run: bool) -> bool:
-    """Best-effort phone push via the my-goat Telegram helper.
+    """Best-effort phone notification via the my-goat DIGEST queue.
+
+    Routed through notif_enqueue.sh (NOTIF_CAT=research), NOT a standalone
+    telegram_push.sh send, since 2026-06-12 — Thomas got raw per-transition
+    gate pushes (#472/#504 "open to promote") and asked "Why is this being
+    sent here": gate notifications are observability, not time-critical, so
+    they belong in the 3x/day my-goat digest per its notification-batching
+    rules. notif_enqueue.sh has the same arg interface as telegram_push.sh
+    by design. The EPM_TELEGRAM_PUSH_SCRIPT override still wins if set.
 
     Failure is logged LOUDLY but never raises and never crashes the pass —
     the push is observability, and the tick-side PushNotification remains the
-    second channel. Returns True on a confirmed send."""
+    second channel. Returns True on a confirmed enqueue."""
     script = _telegram_push_script()
     if dry_run:
         print(f"  [dry-run] would telegram-push: {msg[:120]}")
@@ -7455,7 +7463,13 @@ def _telegram_push(msg: str, dry_run: bool) -> bool:
         print(f"  WARNING: telegram push script missing at {script}; push dropped", file=sys.stderr)
         return False
     try:
-        res = subprocess.run(["bash", str(script), msg], capture_output=True, text=True, timeout=30)
+        res = subprocess.run(
+            ["bash", str(script), msg],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env={**os.environ, "NOTIF_CAT": "research"},
+        )
     except (subprocess.SubprocessError, OSError) as e:
         print(f"  WARNING: telegram push failed: {e}", file=sys.stderr)
         return False
