@@ -2,7 +2,8 @@
 title: Think through LoRA placement (which modules/layers the adapter lives in) and
   whether the leakage conclusions are placement-conditional
 kind: analysis
-tags: []
+tags:
+- human
 created_at: '2026-06-12T19:53:35Z'
 has_clean_result: false
 origin_prompt: yes it's about lora placement. Add a human task for me to address to
