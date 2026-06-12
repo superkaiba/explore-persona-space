@@ -3843,8 +3843,8 @@
     "625": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/625",
-      "status": "approved",
+      "path": "tasks/running/625",
+      "status": "running",
       "title": "verify_plan.py: mechanical pre-pass gate for experiment plans at adversarial-planner Phase 1.5"
     },
     "626": {
