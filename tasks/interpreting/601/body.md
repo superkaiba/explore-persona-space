@@ -5,7 +5,7 @@ title: 'Contrastive negatives strengthened a marker implant by lengthening the o
 kind: experiment
 tags: []
 created_at: '2026-06-11T09:56:10Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 472
 goal: 'Determine which mechanism sets the source-implant level in #472''s contrastive-negative
   dose-response — per-batch composition equilibrium (leakage-awakened negative feedback),
