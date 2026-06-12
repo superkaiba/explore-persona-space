@@ -308,7 +308,19 @@ both reviewers are graded against the same standard. Read
   concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
   NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
-  present-but-imperfect-digest → CONCERNS rule.
+  present-but-imperfect-digest → CONCERNS rule AND the
+  **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
+  command's skip-flags (`--dry-run` / `--skip-upload` / equivalent) fence
+  off a code branch, lazy imports inside that branch must be verified to
+  resolve via one of (a) execution evidence (`--verify-imports` run or an
+  unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
+  grep of the import's target module quoted as `file.py:LINE`; an
+  unresolvable one is a Critical finding with blocker tag `substantive`,
+  NOT `smoke-run-missing`. Copy the (a)/(b)/(c) options + the tag rule in
+  full so Codex never re-derives a narrower check (incident #606: two
+  PASSed rounds never executed an upload-branch lazy import of a
+  nonexistent symbol; the ImportError fired on the pod after training +
+  judging — the same omission class as the Step 0.65 copy-list miss).
 - "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
   INCLUDING the full THREE-shape accepted-call enumeration (canonical
   `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
@@ -411,7 +423,7 @@ the real blocker sat one item lower.)
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:

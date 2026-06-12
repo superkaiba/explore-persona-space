@@ -2426,8 +2426,9 @@ alias for nibi) triggers a conflict warning +
 carry `extra.frontmatter_backend: "<value>"`. Frontmatter
 `backend: runpod` is the one legitimate backing and stays silent. For the gcp/auto lanes the dispatch script must exist
 on the pushed branch — `--repo-branch` defaults to the current branch
-(the GCE startup script clones from origin). Two more gcp/auto
-composition rules (both hit live on #599, 2026-06-11): (e) **GPU
+(the GCE startup script clones from origin). Four more gcp/auto
+composition rules ((e) and (f) both hit live on #599, 2026-06-11;
+(g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
 the GCP lane maps intent → machine type statically
 (`backends/gcp.INTENT_TO_MACHINE`: `lora-7b`/`lora` →
@@ -2442,7 +2443,31 @@ on gcp/auto** — the GCE startup script clones to `$WORKLOAD_ROOT`
 command verbatim, so a driver defaulting
 `REPO_ROOT=/workspace/explore-persona-space` dies at its first `cd`
 under `set -e` and the EXIT trap powers the VM off; compose
-`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`.
+`--workload-cmd 'REPO_ROOT="$WORKLOAD_ROOT" bash scripts/<driver>.sh'`. (g)
+**Sentinel-signaling dispatchers must not rely on auto's SLURM fallback**
+— a dispatch script that posts markers via pod-side sentinel files
+(`/workspace/logs/issue-<N>-*.json`) works only on the /workspace-contract
+lanes (gcp/runpod): SLURM compute nodes have no `/workspace`, so the
+script fails loud at `mkdir -p /workspace/logs` and burns the submission
+(#608, commit 3022ff7bc); pin `backend: gcp` (or runpod with a named
+residual gap), or convert the dispatcher to the SLURM signaling contract
+(`status.json` heartbeat + `[phase=...]` log lines) before routing auto
+(planner.md §9 names this constraint at plan time). (h) **Boot-disk
+sizing on the gcp/auto lanes comes from the plan's Reproducibility pod
+row, threaded via `--boot-disk-gb` on EVERY launch — relaunches after a
+code-fix round included** — the GCP lane defaults the boot disk to
+300 GB pd-ssd (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a
+ZeRO-3 full-FT (`ft-7b`) fills with optimizer-state checkpoints in ~1h:
+the instance kernel-panics on the full disk, cloud-init ENOSPCs, the
+guest agent cannot write `authorized_keys` (SSH publickey lockout), and
+the wedged VM idles on 4×A100 until deleted (#606, 2026-06-12 — the
+relaunch dropped the plan's explicit "500 GB pd-ssd" spec). When the
+plan's pod row names a disk size, pass it; for `ft-*` intents whose
+plan names none, default to ≥500 GB. `dispatch_issue.py` warns loud
+(stderr + `extra.boot_disk_default_with_ft_intent=true` on the
+`epm:backend-selected` marker) when an ft intent is gcp-reachable with
+no `--boot-disk-gb` — warning only, never a refusal (small-disk ft
+smokes stay legitimate).
 SLURM custom stages are
 render-tested only as of #588 (never live-run).
 (Incident #571, 2026-06-11: auto routing sent a dispatch-script
@@ -3517,10 +3542,16 @@ entry guard convention):
    reproducibility metadata, verbatim artifact rows) are final the
    moment results land, so it can safely run during `uploading` and the
    interpretation loop. For this early spawn the findings-blind
-   Reproducibility input is extracted from the latest `epm:results`
-   marker (`reproducibility_card` + `eval_paths`, via
-   `task.py view <N> --json`) into the temp file — the clean-result
-   body's `## Reproducibility` H2 does not exist yet. Everything
+   Reproducibility input is extracted from the task's `epm:results`
+   markers (`reproducibility_card` — alias `reproducibility` — +
+   `eval_paths`, via `task.py view <N> --json`) into the temp file —
+   the clean-result body's `## Reproducibility` H2 does not exist
+   yet. NEVER read only the latest marker: multi-launch runs post
+   several `epm:results` markers and a resume-pass sentinel can carry
+   an EMPTY card (#601: `adapter_paths: {}`), so resolve each field
+   newest-wins among non-empty declarations across markers, matching
+   `verify_uploads.py` `merged_results_card` (full recipe: 9a-quater
+   procedure step 2). Everything
    publish-side (no-secrets scan, gist, link-append, marker) stays at
    the 9a-quater LATE JOIN; see 9a-quater § Split schedule.
 
@@ -4347,8 +4378,10 @@ split in two:
   orchestrator evaluates the kind-gating below, posts the
   `stage=methodology-reference` breadcrumb, pre-extracts the
   findings-blind Reproducibility input — from the `epm:results`
-  marker's `reproducibility_card` + `eval_paths`, because the
-  clean-result body's `## Reproducibility` H2 does not exist yet — and
+  markers' `reproducibility_card` (alias `reproducibility`) +
+  `eval_paths`, merged newest-wins per field across markers (see
+  procedure step 2), because the clean-result body's
+  `## Reproducibility` H2 does not exist yet — and
   spawns `methodology-writer` in the background
   (`run_in_background=true`). This is safe because the agent is
   findings-blind by design: its inputs (plan, experiment config,
@@ -4456,9 +4489,18 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    ```
 2. **Pre-extract the findings-blind Reproducibility input.**
    On the normal (early-spawn) path the clean-result body does not
-   exist yet, so extract the `reproducibility_card` + `eval_paths`
-   from the latest `epm:results` marker (`task.py view <N> --json`)
-   into the temp file instead. The body-slice form below is the
+   exist yet, so extract the `reproducibility_card` (alias
+   `reproducibility`; the canonical key wins within one payload) +
+   `eval_paths` from the task's `epm:results` markers
+   (`task.py view <N> --json`) into the temp file instead — NOT from
+   the latest marker alone. Multi-launch runs legitimately post
+   several `epm:results` markers, and a resume-pass sentinel can
+   carry an empty card (#601: `adapter_paths: {}` after every cell
+   `resumed_skip`) that would hand the methodology-writer nothing:
+   resolve each field newest-wins from the newest card that declares
+   it non-empty (empty dict/list/string/None is not a declaration) —
+   the same semantics as `verify_uploads.py` `merged_results_card`.
+   The body-slice form below is the
    fallback (serial) path, where the body IS final: slice just the
    `## Reproducibility` H2
    from the task body into a temp file and hand the agent ONLY that

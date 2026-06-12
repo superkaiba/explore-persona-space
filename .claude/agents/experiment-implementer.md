@@ -399,7 +399,16 @@ tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_bra
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
 2. **Compile-test critical paths:** `uv run python -c "from explore_persona_space.<module> import *"`
-   for any module you touched.
+   for any module you touched. **Deferred imports count:** a lazy
+   `import` / `from ... import` inside a branch your smokes skip
+   (`--dry-run` / `--skip-upload` upload paths, GPU-only paths) is
+   unverified by both this check and the per-phase smokes below — before
+   hand-off, EXECUTE every deferred import in the files you touched
+   (AST-walk and import each symbol, the `--verify-imports` pattern from
+   `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
+   re-create the drift) or hoist cheap cross-script helper imports to
+   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
+   "Lazy imports inside smoke-skipped branches".
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real

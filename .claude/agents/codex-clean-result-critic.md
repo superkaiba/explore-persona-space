@@ -174,8 +174,8 @@ compose-time existence check that fails loud BEFORE Codex is dispatched
 `data-access-blocked` non-PASS and burns a reconciler round.
 
 ```bash
-REPO_ROOT="$(git rev-parse --show-toplevel)"          # wrapper runs in the orchestrator session cwd (repo root, main)
-TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main, status-proof
+TASK_DIR="$(uv run python scripts/task.py find <N>)"  # absolute, canonical main, status-proof (task.py branch-guards to main from any cwd)
+REPO_ROOT="${TASK_DIR%/tasks/*}"                      # canonical MAIN checkout root — worktree-proof. NEVER `git rev-parse --show-toplevel`: from an issue-worktree cwd that resolves to the WORKTREE root, a stale fork of the workflow surface (#537 near-miss)
 BODY_PATH="$TASK_DIR/body.md"                         # wins over any relative clean_result_body_path in the brief
 PLAN_PATH="$TASK_DIR/plans/plan.md"                   # wins over any relative plan_path in the brief
 for f in "$BODY_PATH" "$PLAN_PATH" "<interpretation_marker_path>"; do
@@ -199,7 +199,12 @@ issue worktree, so Codex's inherited sandbox cwd matches the
 ### Step 2: Compose the review prompt
 
 Inline the Claude critic's spec verbatim — read
-`.claude/agents/clean-result-critic.md` and copy:
+`$REPO_ROOT/.claude/agents/clean-result-critic.md` (the canonical-main
+copy, via Step 1b's worktree-proof `$REPO_ROOT` — NEVER the bare
+relative path, which resolves against the session cwd: an issue
+worktree's copy is a stale fork of the spec, and on #537 the worktree
+copy still described fourteen lenses after main carried fifteen, so
+only a manual catch kept Lens 15 in the Codex prompt) and copy:
 
 - The fifteen lens definitions (Lens 1 Title → Lens 13 Planned-vs-actual
   coverage → **Lens 14 Binding-concerns audit** (composed onto the agent
@@ -260,7 +265,11 @@ You MUST independently:
      learning rate not matching the plan (check 16, v2-only — a wrong
      load-bearing hyperparameter is a data-integrity defect, never
      cosmetic; beyond the mechanical lr check, eyeball the whole
-     Parameters table against the plan). Record as a blocking finding,
+     Parameters table against the plan), or recorded origin provenance
+     dropped (check 17 FAIL, v2-only — frontmatter `origin_prompt` /
+     an original-body `## Provenance` section exists but the body has
+     no `**Context:**` row; the check's WARN form — no recorded origin
+     data — never blocks). Record as a blocking finding,
      but still score all lenses.
    - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
      prose (check 14: p<0.05, autolinks), caption shape (check 5),
@@ -353,6 +362,22 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 - URL permanence: <findings or PASS>
 - Sentinel scrub: <findings or PASS>
 - `n/a` discipline: <findings or PASS>
+- Context-row audit (run-context provenance; v2 bodies): the
+  `**Context:**` row in `## Reproducibility` (SPEC.md
+  § `**Context:**` row; verifier check 17 covers presence — this
+  bullet adds the substantive read) must carry (a) real dates
+  (created date matches frontmatter `created_at`; run date/window
+  plausible), (b) correct lineage (`Follow-up to` matches frontmatter
+  `parent_id` / the Motivation's actual prior-task citation, or
+  `fresh direction (no parent)`), and (c) verbatim originating
+  prompt(s) — a paraphrased, trimmed, or typo-corrected prompt is a
+  FAIL; the literal `origin prompt not recorded` is accepted only
+  when no origin data exists (no frontmatter `origin_prompt`, no
+  `## Provenance` in original-body.md). Provenance stays CONFINED to
+  this row — prompt/person attributions in `## TL;DR` or finding
+  prose violate "state facts, not sources". Forward-only: legacy
+  (pre-sentinel) bodies are never failed for lacking the row:
+  PASS|FAIL with the failing sub-item cited
 - Top-of-body `**Methodology:**` line carve-out: a single bold-link
   line between the `<!-- clean-result-v2 -->` sentinel and
   `## Human TL;DR` is the standard orchestrator-appended methodology
