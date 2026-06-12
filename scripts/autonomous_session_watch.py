@@ -7381,6 +7381,16 @@ def campaign_pass(
 # per-issue state file, so the worst case is one duplicate notification per
 # gate transition, never a missed one.
 #
+# Candidates cover CAMPAIGN sessions too (``campaign-<N>.json``
+# registrations, task #586), not just issue sessions. A campaign's one
+# push-relevant user gate is ``blocked`` — which IS campaign-terminal
+# (:data:`CAMPAIGN_TERMINAL`), so the campaign pass stop-then-reaps the
+# registration on the very tick the transition is first observed, BEFORE
+# this pass runs in main(). main() therefore snapshots the campaign
+# candidates via :func:`_campaign_gate_candidates` ahead of campaign_pass
+# and hands them in; enumerating here after the reap would structurally
+# miss the campaign's only gate push.
+#
 # Also owns the §4 runaway parachute: `tick_triage.py` writes
 # ``tick-runaway-<N>.flag`` on the 3rd consecutive TEARDOWN-verdict tick
 # (TERMINAL or GATE-TRANSITION — terminal statuses, over-cap plan_pending,
@@ -7635,21 +7645,43 @@ def _process_runaway_flag(
         flag_path.unlink(missing_ok=True)
 
 
+def _campaign_gate_candidates() -> set[int]:
+    """Issue numbers of ``campaign-<N>.json`` registrations — gate-push
+    candidates alongside the issue registrations.
+
+    main() snapshots this BEFORE :func:`campaign_pass`: the campaign GC
+    stop-then-reaps a terminal campaign's registration on the very tick the
+    transition is first observed, and ``blocked`` — the one push-relevant
+    user gate in the campaign lifecycle — IS campaign-terminal
+    (:data:`CAMPAIGN_TERMINAL`), so enumerating after campaign_pass would
+    structurally miss the campaign's only gate push."""
+    return {
+        entry["issue"]
+        for _path, entry in _campaign_registry_entries()
+        if isinstance(entry.get("issue"), int)
+    }
+
+
 def gate_push_pass(
     dry_run: bool,
     *,
     daemon_reachable: bool,
     live_ids: set[str] | None = None,
     now: float | None = None,
+    campaign_issues: set[int] | None = None,
 ) -> None:
     """Per-pass gate push + title reconcile + tick-runaway force-stop.
 
     Candidates = issues with live mapped sessions UNION registered issues
-    (registrations survive brief daemon flaps; the live mapping catches
-    manual/worktree-cwd sessions). Transition detection is per-issue via the
-    ``gate-notify-<N>.json`` state file and needs no daemon; the title
-    reconcile and force-stop arms are daemon-dependent and degrade to
-    skip/retry when it is unreachable."""
+    UNION campaign registrations (registrations survive brief daemon flaps;
+    the live mapping catches manual/worktree-cwd sessions).
+    ``campaign_issues`` is main()'s pre-campaign_pass snapshot — the campaign
+    GC reaps a ``blocked`` (campaign-terminal) registration before this pass
+    runs, so a fresh enumeration here would miss that transition; ``None``
+    (direct callers/tests) falls back to enumerating now. Transition
+    detection is per-issue via the ``gate-notify-<N>.json`` state file and
+    needs no daemon; the title reconcile and force-stop arms are
+    daemon-dependent and degrade to skip/retry when it is unreachable."""
     live = set()
     by_issue: dict[int, set[str]] = {}
     if daemon_reachable:
@@ -7657,7 +7689,9 @@ def gate_push_pass(
         meta = _load_session_meta()
         session_paths = {sid: (m or {}).get("path") for sid, m in meta.items()}
         by_issue = _map_sessions_to_issues(live, _load_session_issue_map(), session_paths)
-    candidates = sorted(set(by_issue) | set(_issue_registrations()))
+    if campaign_issues is None:
+        campaign_issues = _campaign_gate_candidates()
+    candidates = sorted(set(by_issue) | set(_issue_registrations()) | campaign_issues)
     if candidates:
         print(f"gate-push: {len(candidates)} candidate issue(s)")
     for issue in candidates:
@@ -7768,6 +7802,13 @@ def main(argv: list[str] | None = None) -> int:
             "detector still run; stalled-detector falls back to alert-only."
         )
 
+    # Snapshot campaign gate-push candidates BEFORE campaign_pass: its
+    # terminal GC stop-then-reaps a `blocked` campaign's registration on the
+    # first tick the transition is observed (`blocked` IS campaign-terminal),
+    # so the gate-push pass below would otherwise never see the campaign's
+    # only user-gate transition.
+    campaign_gate_candidates = _campaign_gate_candidates()
+
     # Campaign pass: crash-recovery + progress watchdog + budget backstop for
     # /campaign sessions (campaign-<N>.json entries, task #586). Runs right
     # after the issue respawn pass; liveness/respawn actions are daemon-gated
@@ -7841,6 +7882,7 @@ def main(argv: list[str] | None = None) -> int:
         args.dry_run,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
+        campaign_issues=campaign_gate_candidates,
     )
 
     # The two session reapers below run back-to-back with no mutating pass
