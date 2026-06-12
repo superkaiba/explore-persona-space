@@ -166,7 +166,7 @@ The two readouts disagree in exactly three cells, and that disagreement localize
 
 All three flagged cells are *ceiling-compressed*; the margin is the authoritative read in each. Only two of them are also *emission-adjacent*. At steps 60 and 120 the role-arm pirate model's mean marker log-prob at the default-assistant slot reaches −0.41 and −0.28: the marker holds the majority of next-token probability at the fixed probe slot on 90% and 94% of the 50 questions (5-seed mean fractions), vs 68% and 84% for the system arm. At step 30 the same slot reads −3.63: compressed, but nowhere near emission, so its excess stays a statement about leakage mass. In plain terms: by step 60 on pirate, a greedy decode at this probe slot would emit the marker under the bare default-assistant context for most questions, and the role-header model crosses that line earlier and harder than the system-prompt model. The standing caveat is that this slot sits after a *frozen base-model* response (on-policy responses from the trained model could shift it), so this measures emission onset at the probe slot only; emission frequency was not measured. Together with the same-data preview disclosed in the Motivation, that caveat is the binding reason the headline stays at MODERATE confidence.
 
-The compressed cell and the trained levels behind the emission-onset claim, verbatim from the [analysis JSON](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/eval_results/issue_611/split_analysis.json):
+The compressed cell and the trained levels behind the emission-onset claim, cherry-picked and verbatim from the [analysis JSON](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/eval_results/issue_611/split_analysis.json):
 
 ```json
 {"probe_kind": "default", "persona": "pirate", "max_steps": 120, "space": "logp",
@@ -239,7 +239,7 @@ The wrong-persona probes are different text under the two encodings, so their ba
 
 Concretely: villain-trained cells are probed for wrong-persona leakage at the role header's `pirate` encoding (base −20.35) vs the system prompt's pirate encoding (base −22.12): a 1.77-nat head start for the role arm's probe. The differencing against base controls the *level*, but not any base × training interaction, which is a residual caveat on the wrong half only. At villain step 30 the role arm carries *more* absolute wrong-persona mass (trained −7.84 vs −8.75) while gaining *less* relative to its higher base. That single cell's gain-space advantage leans on the base correction, whereas at steps 60 and 120 the role arm is lower in both absolute and gain terms. The default-assistant probe needs none of this bookkeeping: identical input text, identical base log-prob (−22.090, asserted to a tolerance of 1e-4 across all 80 cells), so its 16-for-16 excess is the half of the split I'd weight.
 
-The villain step-30 wrong-probe pair, verbatim from the [analysis JSON](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/eval_results/issue_611/split_analysis.json):
+The villain step-30 wrong-probe pair, cherry-picked and verbatim from the [analysis JSON](https://github.com/superkaiba/explore-persona-space/blob/9d93ceea5632ee75993eb348e651017ba92952f7/eval_results/issue_611/split_analysis.json):
 
 ```json
 {"arm": "system_minimal", "probe_kind": "wrong", "persona": "villain", "max_steps": 30,
