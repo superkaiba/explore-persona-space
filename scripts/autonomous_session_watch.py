@@ -7391,6 +7391,16 @@ def campaign_pass(
 # and hands them in; enumerating here after the reap would structurally
 # miss the campaign's only gate push.
 #
+# The ISSUE-side registrations have the identical race: ``awaiting_promotion``
+# — the most common user gate — is in :data:`TERMINAL`, so the respawn pass's
+# :func:`_process_entry` deletes ``issue-<N>.json`` on the first daemon-up
+# tick that observes the park, before this pass runs. The cwd fallback can't
+# recover the candidate either (spawn-issue sessions open at repo root, not an
+# ``issue-<N>`` worktree). main() therefore also snapshots
+# ``set(_issue_registrations())`` ahead of the respawn pass and hands it in
+# via ``issue_snapshot``; without it the awaiting_promotion push fired only
+# when the daemon happened to be down on the transition tick.
+#
 # Also owns the §4 runaway parachute: `tick_triage.py` writes
 # ``tick-runaway-<N>.flag`` on the 3rd consecutive TEARDOWN-verdict tick
 # (TERMINAL or GATE-TRANSITION — terminal statuses, over-cap plan_pending,
@@ -7669,6 +7679,7 @@ def gate_push_pass(
     live_ids: set[str] | None = None,
     now: float | None = None,
     campaign_issues: set[int] | None = None,
+    issue_snapshot: set[int] | None = None,
 ) -> None:
     """Per-pass gate push + title reconcile + tick-runaway force-stop.
 
@@ -7678,7 +7689,11 @@ def gate_push_pass(
     ``campaign_issues`` is main()'s pre-campaign_pass snapshot — the campaign
     GC reaps a ``blocked`` (campaign-terminal) registration before this pass
     runs, so a fresh enumeration here would miss that transition; ``None``
-    (direct callers/tests) falls back to enumerating now. Transition
+    (direct callers/tests) falls back to enumerating now. ``issue_snapshot``
+    is the sibling pre-RESPAWN-pass snapshot of ``_issue_registrations()``
+    keys — ``awaiting_promotion`` is respawn-TERMINAL, so ``_process_entry``
+    reaps ``issue-<N>.json`` on the first daemon-up tick observing the park;
+    same ``None`` fallback. Transition
     detection is per-issue via the ``gate-notify-<N>.json`` state file and
     needs no daemon; the title reconcile and force-stop arms are
     daemon-dependent and degrade to skip/retry when it is unreachable."""
@@ -7691,7 +7706,9 @@ def gate_push_pass(
         by_issue = _map_sessions_to_issues(live, _load_session_issue_map(), session_paths)
     if campaign_issues is None:
         campaign_issues = _campaign_gate_candidates()
-    candidates = sorted(set(by_issue) | set(_issue_registrations()) | campaign_issues)
+    if issue_snapshot is None:
+        issue_snapshot = set(_issue_registrations())
+    candidates = sorted(set(by_issue) | issue_snapshot | campaign_issues)
     if candidates:
         print(f"gate-push: {len(candidates)} candidate issue(s)")
     for issue in candidates:
@@ -7786,6 +7803,14 @@ def main(argv: list[str] | None = None) -> int:
     # Probe reachability ONCE per main() invocation and reuse the result
     # everywhere so a flap mid-tick can't make different passes disagree
     # about daemon state (and so we don't re-pay the probe cost).
+    #
+    # Snapshot issue gate-push candidates BEFORE the respawn pass: on the
+    # first daemon-up tick that observes a TERMINAL park (`awaiting_promotion`
+    # IS in TERMINAL), _process_entry deletes the issue-<N>.json registration,
+    # so the gate-push pass below would otherwise miss the most common user
+    # gate (the cwd fallback can't recover it — spawn-issue sessions open at
+    # repo root). Sibling of the campaign snapshot further down.
+    issue_gate_candidates = set(_issue_registrations())
     daemon_reachable = _daemon_reachable()
     live_ids: set[str] = set()
     if daemon_reachable:
@@ -7883,6 +7908,7 @@ def main(argv: list[str] | None = None) -> int:
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
         campaign_issues=campaign_gate_candidates,
+        issue_snapshot=issue_gate_candidates,
     )
 
     # The two session reapers below run back-to-back with no mutating pass
