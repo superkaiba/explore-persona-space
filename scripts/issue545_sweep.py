@@ -183,7 +183,42 @@ def _with_gpu_lease(gpu_slots: Queue, fn):
 
 
 def _adapters_root() -> Path:
-    return Path(os.environ.get("EPM_OUTPUT_ROOT", "/tmp/issue545")) / "adapters"
+    """Trained-cell artifact root (delegates to the package so smoke-output
+    isolation applies identically in the dispatcher and every subprocess)."""
+    from explore_persona_space.experiments.behavior_testbed_545 import adapters_root
+
+    return adapters_root()
+
+
+def _activate_smoke_isolation() -> None:
+    """Route ALL ``--smoke`` outputs to an isolated ``smoke/`` root (round 19).
+
+    Sets I545_SMOKE_OUTPUT=1 in THIS process's environment before any package
+    path resolves; every package path helper (``output_root`` -> manifests,
+    cells, batteries, gates; ``adapters_root``) appends ``smoke/`` while
+    active, and every subprocess inherits the flag via ``env={**os.environ}``.
+    The code path stays IDENTICAL (same dispatcher, same functions — smoke IS
+    sweep with one cell): only the root differs, so production resume guards
+    (manifest ``done_cells``, base-panel completeness) are physically unable
+    to see smoke artifacts. Round-18 incident: the pod smoke's manifest entry
+    + 2-column base_panel satisfied production's resume guards and K1 FAILed
+    on the 4-step smoke adapter.
+
+    Frozen P0 INPUTS stay readable: battery loads fall back read-only to the
+    production batteries dir (``eval_battery.load_battery``); corpora paths
+    are untouched (smoke must never REBUILD P0 products — set EPM_CORPORA_DIR
+    to fully isolate prep-built corpora writes too).
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        SMOKE_OUTPUT_ENV,
+        adapters_root,
+        output_root,
+    )
+
+    os.environ[SMOKE_OUTPUT_ENV] = "1"
+    logger.info(
+        "[smoke] isolated output roots: results=%s adapters=%s", output_root(), adapters_root()
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -573,6 +608,39 @@ def _judge_sensitivity_check(args) -> None:
         )
 
 
+def _base_panel_todo(args) -> list[tuple[list[str], list[str] | None, list[str]]]:
+    """Per base-panel eval pass: ``(contexts, column subset, missing files)``.
+
+    Replaces the round-18 bare ``base_panel.exists()`` guard with a per-file
+    COMPLETENESS check (the smoke's 2-column panel satisfied ``exists()`` and
+    production skipped the full panel forever). Required-file sets mirror the
+    eval-cell driver's writers (``columns.base_panel_expected_files``); only
+    passes with at least one missing required file re-run, and the driver's
+    per-(column, context) idempotence keeps every existing file in place — a
+    partial base_panel can never read as complete again.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import cells_dir
+    from explore_persona_space.experiments.behavior_testbed_545.columns import (
+        ROBUSTNESS_COLUMNS,
+        ROBUSTNESS_CONTEXTS,
+        base_panel_expected_files,
+    )
+
+    base_dir = cells_dir() / "base_panel"
+    passes: list[tuple[list[str], list[str] | None]] = [
+        (["default"], ["marker", "capability"] if args.smoke else None)
+    ]
+    if not args.smoke:
+        passes.append((list(ROBUSTNESS_CONTEXTS), list(ROBUSTNESS_COLUMNS)))
+    todo: list[tuple[list[str], list[str] | None, list[str]]] = []
+    for contexts, columns in passes:
+        expected = base_panel_expected_files(contexts, columns, include_judged=not args.skip_judges)
+        missing = sorted(f for f in expected if not (base_dir / f).exists())
+        if missing:
+            todo.append((contexts, columns, missing))
+    return todo
+
+
 def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatcher, intentionally flat
     from explore_persona_space.experiments.behavior_testbed_545 import output_root
     from explore_persona_space.experiments.behavior_testbed_545.gates import (
@@ -619,21 +687,20 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
     # P1.0 base panel first (headroom denominator; gates column inclusion).
     # Default context = full battery; robustness + template-token contexts =
     # the 4-column subset only (mirrors the per-cell split, round-1 major #5).
+    # Resume is per-FILE completeness (round 19), never a bare exists() check.
     if phase == "p1" and not args.skip_eval:
-        from explore_persona_space.experiments.behavior_testbed_545 import cells_dir
-        from explore_persona_space.experiments.behavior_testbed_545.columns import (
-            ROBUSTNESS_COLUMNS,
-            ROBUSTNESS_CONTEXTS,
-        )
-
-        if not (cells_dir() / "base_panel").exists() or args.smoke:
+        todo_passes = _base_panel_todo(args)
+        if not todo_passes:
+            logger.info("[phase=p1_0_base_panel] complete — every required column file present")
+        else:
             print("[phase=p1_0_base_panel]", flush=True)
-            passes: list[tuple[list[str], list[str] | None]] = [
-                (["default"], ["marker", "capability"] if args.smoke else None)
-            ]
-            if not args.smoke:
-                passes.append((list(ROBUSTNESS_CONTEXTS), list(ROBUSTNESS_COLUMNS)))
-            for contexts, columns in passes:
+            for contexts, columns, missing in todo_passes:
+                logger.info(
+                    "[phase=p1_0_base_panel] contexts=%s missing %d required file(s): %s",
+                    contexts,
+                    len(missing),
+                    missing,
+                )
                 for only in ["gen", "hf"] + ([] if args.skip_judges else ["judge"]):
                     _run(
                         _eval_cell_cmd(
@@ -971,6 +1038,7 @@ def main() -> int:
         args.arms = args.arms or ["primary"]
         args.max_probes = args.max_probes or 4
         args.corpora_n = args.corpora_n or 2
+        _activate_smoke_isolation()
     if args.parallel is None:
         try:
             n = subprocess.run(

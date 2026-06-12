@@ -281,7 +281,10 @@ def _normalized_copy(src: Path) -> Path:
 
 
 def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) -> Path:
-    from explore_persona_space.experiments.behavior_testbed_545 import assert_marker_token
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        adapters_root,
+        assert_marker_token,
+    )
     from explore_persona_space.experiments.behavior_testbed_545.rows import (
         ARM_SPECS,
         get_row,
@@ -291,7 +294,9 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
     assert arm in ARM_SPECS, f"Unknown arm {arm!r}"
     row = get_row(row_id)
     cell = row.cell_id(arm, seed)
-    out_root = Path(os.environ.get("EPM_OUTPUT_ROOT", "/tmp/issue545")) / "adapters" / cell
+    # Package-resolved root so smoke-output isolation (I545_SMOKE_OUTPUT)
+    # applies identically here and in the dispatcher (round 19).
+    out_root = adapters_root() / cell
     out_root.mkdir(parents=True, exist_ok=True)
     # Round-2 blocker fix: dispatch resolved by ARM FIRST (rows.py) — cn/klreg
     # on hydra rows train via train_lora + TURNER_PARITY, never the plain
@@ -505,6 +510,15 @@ def main() -> int:
     # one multi-GPU path (ZeRO-3 over all GPUs) and must stay unrestricted.
     if args.arm != "fullft":
         os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+
+    if args.smoke:
+        # Defense in depth (round 19): the dispatcher already exports
+        # I545_SMOKE_OUTPUT=1 for --smoke runs; a STANDALONE --smoke
+        # invocation must isolate its outputs the same way so a smoke
+        # adapter can never shadow a production cell artifact.
+        from explore_persona_space.experiments.behavior_testbed_545 import SMOKE_OUTPUT_ENV
+
+        os.environ[SMOKE_OUTPUT_ENV] = "1"
 
     if args.prep_only:
         prep_corpus(args.row, args.arm, smoke=args.smoke)

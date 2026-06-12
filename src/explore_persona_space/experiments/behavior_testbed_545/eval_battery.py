@@ -34,7 +34,9 @@ from . import (
     MARKER_TEXT,
     assert_marker_token,
     batteries_dir,
+    production_output_root,
     reproducibility_metadata,
+    smoke_output_active,
 )
 from .columns import CONTEXTS, ColumnSpec, columns_for_row
 from .judges_545 import judge_items, structural_format_features, verdict_ok
@@ -49,8 +51,19 @@ logger = logging.getLogger(__name__)
 
 
 def load_battery(battery: str) -> dict:
-    """Frozen probe file for a column (built in P0)."""
+    """Frozen probe file for a column (built in P0).
+
+    Under smoke-output isolation the active batteries dir is smoke-rooted;
+    frozen P0 batteries are INPUTS, so reads fall back to the PRODUCTION
+    batteries dir when the file is absent from the smoke root. The fallback
+    is read-only by construction — battery WRITERS always target the active
+    (smoke) root, so a smoke run can never contaminate the production freeze.
+    """
     p = batteries_dir() / battery
+    if not p.exists() and smoke_output_active():
+        prod = production_output_root() / "batteries" / battery
+        if prod.exists():
+            p = prod
     if not p.exists():
         raise FileNotFoundError(f"Battery missing (P0 incomplete): {p}")
     return json.loads(p.read_text())

@@ -282,6 +282,48 @@ def columns_for_row(row: RowSpec | None) -> list[ColumnSpec]:
     return [c for c in COLUMNS.values() if column_applies(c, row)]
 
 
+def base_panel_expected_files(
+    contexts: list[str] | tuple[str, ...],
+    columns: list[str] | None = None,
+    *,
+    include_judged: bool = True,
+) -> set[str]:
+    """Final artifact filenames the base panel MUST contain for one eval pass.
+
+    Mirrors the eval-cell driver's writers exactly: judged/structural columns
+    -> ``<column>__<ctx>.json`` (judge phase; the gen product
+    ``completions__<column>__<ctx>.json`` instead when judges are skipped),
+    marker -> ``marker__<ctx>.json`` (HF phase), capability ->
+    ``capability__default.json`` (HF phase, default context only).
+    ``sensitivity_only`` columns never run by default and are excluded.
+
+    A bare base_panel-dir ``exists()`` check is NOT completeness: the round-18
+    smoke created ``cells/base_panel/`` with only marker+capability and
+    production's exists() guard then skipped the FULL panel forever (no base
+    rates for any judged column; broke P3's trained-base deltas and the
+    ``base_panel.json`` deliverable). The dispatcher re-runs only the passes
+    with at least one missing required file (task #545 round 19).
+    """
+    cols = columns_for_row(None) if columns is None else [COLUMNS[c] for c in columns]
+    expected: set[str] = set()
+    for col in cols:
+        if col.sensitivity_only:
+            continue
+        for ctx in contexts:
+            if col.dv in ("judged_rate", "structural"):
+                expected.add(
+                    f"{col.column_id}__{ctx}.json"
+                    if include_judged
+                    else f"completions__{col.column_id}__{ctx}.json"
+                )
+            elif col.dv == "marker_slot_stats":
+                expected.add(f"marker__{ctx}.json")
+            elif col.dv == "logprob_accuracy" and ctx == "default":
+                # The HF phase writes capability for the default context only.
+                expected.add("capability__default.json")
+    return expected
+
+
 def diagonal_cells() -> set[tuple[str, str]]:
     """(row_id, column_id) pairs that are the row's OWN diagonal battery.
 

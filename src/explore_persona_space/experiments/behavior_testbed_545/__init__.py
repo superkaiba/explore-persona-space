@@ -49,17 +49,61 @@ def repo_root() -> Path:
     return Path(__file__).resolve().parents[4]
 
 
-def output_root() -> Path:
-    """Result root: ``eval_results/issue_545`` (override via EPM_OUTPUT_ROOT).
+# Smoke-output isolation (round 19). When this env flag is "1", every OUTPUT
+# root below gains a ``smoke/`` segment so production resume guards (the
+# manifest ``done_cells`` check, the base-panel completeness check,
+# ``k1_gate.json``) are physically unable to see smoke artifacts. The
+# dispatcher sets it for ``--smoke`` runs and subprocesses inherit it via
+# ``env={**os.environ}``; the code path stays IDENTICAL (same dispatcher,
+# same functions — only the root differs). Incident: the round-18 pod smoke
+# wrote a ``marker_primary_seed0`` manifest entry + a 2-column
+# ``cells/base_panel/`` into the production root, so production kept the
+# 4-step smoke adapter and skipped the full base panel — K1 FAILed.
+SMOKE_OUTPUT_ENV = "I545_SMOKE_OUTPUT"
 
-    The EPM_OUTPUT_ROOT override exists for the MooseFS D-state mitigation
-    (.claude/rules/gotchas.md): on write-heavy pod runs, point the hot write
-    path at local disk and sync afterward.
+
+def smoke_output_active() -> bool:
+    """True when smoke-output isolation is in force (``I545_SMOKE_OUTPUT=1``)."""
+    return os.environ.get(SMOKE_OUTPUT_ENV) == "1"
+
+
+def production_output_root() -> Path:
+    """The PRODUCTION result root, ignoring smoke isolation.
+
+    Read-only escape hatch for frozen P0 INPUTS (eval batteries) that smoke
+    runs consume but must never write (``eval_battery.load_battery``).
     """
     env = os.environ.get("EPM_OUTPUT_ROOT")
     if env:
         return Path(env)
     return repo_root() / "eval_results" / f"issue_{ISSUE}"
+
+
+def output_root() -> Path:
+    """Result root: ``eval_results/issue_545`` (override via EPM_OUTPUT_ROOT;
+    ``smoke/`` appended under smoke-output isolation — see SMOKE_OUTPUT_ENV).
+
+    The EPM_OUTPUT_ROOT override exists for the MooseFS D-state mitigation
+    (.claude/rules/gotchas.md): on write-heavy pod runs, point the hot write
+    path at local disk and sync afterward.
+    """
+    root = production_output_root()
+    return root / "smoke" if smoke_output_active() else root
+
+
+def adapters_root() -> Path:
+    """Trained-cell artifact root (LoRA adapters + fullft models), one dir per cell.
+
+    Big weights never live under the git-tracked ``eval_results`` tree: the
+    base is EPM_OUTPUT_ROOT when set (pod hot path) else ``/tmp/issue545``.
+    Smoke-output isolation appends ``smoke/`` exactly like ``output_root()``
+    so a smoke adapter can never shadow a production cell's artifact.
+    """
+    env = os.environ.get("EPM_OUTPUT_ROOT")
+    base = Path(env) if env else Path("/tmp/issue545")
+    if smoke_output_active():
+        base = base / "smoke"
+    return base / "adapters"
 
 
 def corpora_dir() -> Path:
