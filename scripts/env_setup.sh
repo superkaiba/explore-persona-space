@@ -18,12 +18,15 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # Set HuggingFace cache — /workspace/.cache/huggingface on RunPod (persistent,
-# shared with all scripts and open-instruct). Falls back to project-local cache.
+# shared with all scripts and open-instruct). Falls back to the user-level
+# shared cache ~/.cache/huggingface (NOT $PROJECT_ROOT/cache — project root is
+# per-checkout, so every git worktree would grow its own multi-GB HF cache;
+# mirrors env.py:_hf_home_default).
 # NOTE: Never use MED_OUTPUT_DIR here — it's an output dir, not a cache location.
 if [ -d "/workspace" ]; then
     export HF_HOME="/workspace/.cache/huggingface"
 else
-    export HF_HOME="$PROJECT_ROOT/cache/huggingface"
+    export HF_HOME="$HOME/.cache/huggingface"
 fi
 
 # Add CUDA and torch libs to LD_LIBRARY_PATH

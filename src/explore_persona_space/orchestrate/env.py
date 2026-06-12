@@ -20,8 +20,11 @@ This module distinguishes three runtime environments and configures
    by the discriminator's ordering (cluster check runs first; on a
    non-cluster pod every code path is identical to before).
 3. **Local VM** (dev box): neither of the above. ``HF_HOME`` defaults
-   to ``<project_root>/cache/huggingface``; dotenv resolution falls back
-   to the main git worktree's ``.env``.
+   to the user-level shared cache ``~/.cache/huggingface`` — one cache
+   per user, NOT per-checkout (a per-checkout ``<project_root>/cache``
+   default let every git worktree grow its own multi-GB HF cache; see
+   :func:`_hf_home_default`); dotenv resolution falls back to the main
+   git worktree's ``.env``.
 
 The cluster check is FIRST because a SLURM allocation on a cluster that
 happens to mount a ``/workspace`` (vanishingly unlikely in practice, but
@@ -79,7 +82,12 @@ def _hf_home_default() -> str:
       ``$HOME/.cache/huggingface`` when ``SCRATCH`` is somehow unset
       (defensive — DRAC always sets it).
     * RunPod: ``/workspace/.cache/huggingface``.
-    * Local: ``<project_root>/cache/huggingface``.
+    * Local: ``~/.cache/huggingface`` (the user-level shared cache).
+      Deliberately NOT ``<project_root>/cache/huggingface``: the project
+      root resolves per-checkout, so a per-checkout default gives every
+      git worktree under ``.claude/worktrees/`` its OWN full HF cache
+      (2026-06-12 disk triage: two worktrees each held a complete ~14 GB
+      Qwen-2.5-7B-Instruct snapshot, driving the VM root disk to 99%).
     """
     if is_cluster_env():
         scratch = os.environ.get("SCRATCH")
@@ -91,7 +99,7 @@ def _hf_home_default() -> str:
         return str(Path(home) / ".cache" / "huggingface")
     if is_runpod_env():
         return "/workspace/.cache/huggingface"
-    return str(_PROJECT_ROOT / "cache" / "huggingface")
+    return str(Path.home() / ".cache" / "huggingface")
 
 
 def get_project_root() -> Path:
@@ -197,7 +205,7 @@ def load_dotenv(env_path: str | None = None):
     # Unified HF cache, three-way branch (see :func:`_hf_home_default`):
     #   cluster ($SLURM_JOB_ID)  → $SCRATCH/.cache/huggingface
     #   RunPod (/workspace)       → /workspace/.cache/huggingface
-    #   local                     → <project_root>/cache/huggingface
+    #   local                     → ~/.cache/huggingface (user-level shared)
     os.environ.setdefault("HF_HOME", _hf_home_default())
 
 
@@ -241,8 +249,9 @@ def setup_worker(gpu_id: int):
     os.environ["LD_LIBRARY_PATH"] = ":".join(parts)
     # Unified HF cache, three-way branch (see :func:`_hf_home_default`):
     # cluster → $SCRATCH/.cache/huggingface; RunPod → /workspace/.cache/
-    # huggingface; local → project-local. Worker subprocesses must NOT
-    # write to the RunPod path on the cluster (no /workspace mount).
+    # huggingface; local → ~/.cache/huggingface (user-level shared).
+    # Worker subprocesses must NOT write to the RunPod path on the
+    # cluster (no /workspace mount).
     os.environ.setdefault("HF_HOME", _hf_home_default())
 
     load_dotenv()
