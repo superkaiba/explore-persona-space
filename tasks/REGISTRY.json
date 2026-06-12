@@ -3624,8 +3624,8 @@
       "goal": "Determine whether the marker implant's dispersed layer-14 shift geometry survives replacing the marker-only single-token loss with EM-style whole-response loss \u2014 the #561 positive-only recipe with the loss mask opened to the full response plus sentinel and nothing else changed \u2014 by reading the new adapters' shift spectrum against the persisted #561 positive-only and #551 EM/marker tensors.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/599",
-      "status": "interpreting",
+      "path": "tasks/reviewing/599",
+      "status": "reviewing",
       "title": "Whole-response loss fails to install the marker on self-generated data at the recipe that saturates it under marker-only loss, so the marker and EM training rigs are not exchangeable at matched hyperparameters (MODERATE confidence)"
     },
     "6": {
