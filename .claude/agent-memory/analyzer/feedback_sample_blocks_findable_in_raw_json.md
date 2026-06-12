@@ -26,3 +26,5 @@ else:
 ```
 
 The body text should distinguish "we sampled 3 of N" from "these are all N that exist". Never imply abundance when the population is sparse.
+
+**Full-precision floats are samples too (incident #611 round 2, 2026-06-11).** A block labeled "verbatim from the analysis JSON" with numeric rows is subject to the same findability check: the critic grepped every full-precision float against the committed JSON and found ~10 fabricated past the 2nd-3rd decimal (e.g. body `-3.6354922354221344` vs actual `-3.634987766265869`) — values typed/recalled instead of copied. Rounded prose was fine; the long tails were invented. **How to apply:** NEVER hand-type a long float into a verbatim block. Build the block programmatically — locate the row in the parsed JSON, emit values via `repr()` (json.dump writes floats with repr, so repr round-trips to the file text) — then run a regex pass (`-?\d+\.\d{5,}` over the body's ```json blocks) asserting every full-precision token greps a hit in the source JSON file before posting.

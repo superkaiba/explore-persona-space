@@ -1,0 +1,13 @@
+---
+name: In-task reference re-pinning defuses parent-shortfall attribution
+description: When a cross-rig re-read shows parent adapters reading low, re-pinning all classification references to fresh in-rig cells makes the damage-vs-rig-true attribution non-blocking (headline consumes fresh values under either branch); reference-defining middle arms are trivially self-consistent in co-landing tests — fine when they are the fit point under every hypothesis (#601 v3)
+type: feedback
+---
+
+From #601 plan v3 amendment (alternatives lens, 2026-06-11). Three reusable reads for amendments that respond to a cross-rig reference miss:
+
+1. **Re-pinning references in-task converts a fatal attribution fork into a reported observation.** Parent high-dose adapters read ~7 nats low post gauge-fix; staging damage (classic-gauge copy × large LoRA-B norms) vs rig-true compression (gauge history + generation-budget) was undecidable pre-run. Because the amendment pinned L̂(level) to FRESH in-rig terminals and pre-registered both branches (fresh-lands-high ⇒ staging implicated, escalate cross-task concern; fresh-lands-low ⇒ degenerate-top guard fires, upper-branch tests declared unresolvable-as-registered), the headline never consumes the contested parent value. Check that BOTH branches are pre-registered and that nothing upstream of classification needs the attribution resolved — then it's a Concern, not REVISE.
+2. **A co-landing/equilibrium test whose reference center IS one of the tested arms is not circular when that arm is the fit point under all hypotheses.** The middle fixed-ratio arm defining L̂(4:1) auto-passes (distance 0), but if every hypothesis predicts the same value there (v2's "all coincide — the fit point"), the discriminating content always lived in the other arms. Ask the analyzer to report the call as resting on the non-reference arms; don't bounce.
+3. **Residual weighables:** (a) a single monotone level-dependent compression curve can unify "small low-dose offset + large top compression" — same-rig references absorb it, decidability/degenerate-top guards are the registered responses; (b) generation-budget truncation censoring (capped repeater reads its slot at the truncation boundary) fools the fresh-vs-parent discriminator symmetrically — ask for per-cell generation length / truncation fraction; (c) shell EXIT traps never fire on SIGKILL, so heartbeat telemetry detects an OOM-kill driver death but can't root-cause it — dmesg note for the analyzer.
+
+**How to apply:** any amendment that responds to "committed parent levels don't reproduce under the current rig" — verify in-task re-pin + both attribution branches pre-registered + cross-rig table demoted to reporting; then APPROVE with the per-cell truncation-fraction concern.

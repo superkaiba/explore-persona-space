@@ -1,0 +1,11 @@
+---
+name: Null-calibration with fixed design matrix
+description: In fresh-seed null-calibration replicates, a "systematic" verdict cannot distinguish stochastic noise-organization from deterministic design/data-composition artifact — but both license the same correction; discriminator is cross-replicate rho spread vs SE
+type: feedback
+---
+
+Rule: when a plan replicates a regression fit across fresh-seed replicates to calibrate a null (e.g. #555: 5 seed pairs, same 6-predictor partial Spearman, same probe panel + geometry table + frozen eval responses), a consistent-sign "systematic" outcome has at least three mechanisms that all replicate perfectly: (a) stochastic training noise genuinely organizing along the predictor (the plan's narrated mechanism), (b) deterministic data-composition gradients — if the conditioned variable (e.g. the arm's positioned negative) is IN the training data, the first few gradient steps are geometry-correlated by construction, and (c) partialling structure among correlated predictors on a near-zero-variance DV. These are NOT distinguishable by a permuted-DV placebo (permutation destroys both real and deterministic-data structure — it reproduces only the exchangeability null the bootstrap already gives).
+
+**Why:** All three mechanisms license the SAME actionable conclusion (pre-implant baseline subtraction / distrust sub-floor reads), so this is a claim-scoping concern for the analyzer, never a REVISE — do not demand a permutation control that adds nothing. The free discriminator is the cross-replicate spread of the per-replicate rho values: spread ≪ per-replicate SE(rho) ⇒ deterministic-given-design; positive-but-dispersed ⇒ stochastic organization. A within-fit specificity predictor (parent-flat one, e.g. shadow-angle) splits geometry-generic from predictor-specific.
+
+**How to apply:** On null-calibration / measurement-validation plans, check the per-replicate statistics + spread are reported (they usually are); put the mechanism-narration warning in "Concerns for the analyzer." Also note: the fatal alternative in the NULL direction is an eval-path silent failure (expected-zero DV ≡ bug signature) — a positive-control cell where the guard HAS power (trained implant) is the right fix and worth checking for explicitly (#555 had it; #534 round-1 incident is the precedent).

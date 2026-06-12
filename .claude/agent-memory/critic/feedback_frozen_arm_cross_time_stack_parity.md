@@ -1,0 +1,11 @@
+---
+name: Frozen-arm reuse needs generation-side parity, not just a judge drift gate
+description: When a plan compares fresh-trained arms against a FROZEN reused arm + frozen base rates across a time/env/hardware gap, a judge-only drift gate (re-judging stored completions) leaves the generation stack unconfounded-checked; demand a fresh re-generation parity read of the frozen base (and one frozen adapter)
+type: feedback
+---
+
+Rule: a plan that computes deltas of NEW-arm rates (generated on today's vLLM/transformers/GPU stack) against FROZEN base rates and a FROZEN treatment arm from an earlier run has the arm contrast perfectly confounded with time x environment x hardware. A drift gate that re-judges STORED completions isolates only the judge component; generation-side drift (vLLM version, chat template, tokenizer revision, A100-vs-H100) is uncovered, and "generation-side identical by construction" assumptions assert it away.
+
+**Why:** #608 v1 (2026-06-11): both H1 (+0.05 gap threshold, +/-0.02 equivalence band) and H2 (mean bystander delta >= +0.05 across >=5/6 sources, 23 cells vs frozen base) sat exactly at the magnitude a uniform generation-stack shift would mechanically produce in every fresh cell. H2's "broad uniform lift" prediction is indistinguishable from uniform stack drift without a parity read. Judge-only drift gate (re-judge 1000 stored #411 completions) looked thorough but covered half the pipeline.
+
+**How to apply:** Alternatives/Methodology lens on any frozen-artifact-reuse comparison spanning a code/env/hardware change: check whether ANY fresh-generation-vs-frozen overlap measurement exists. The cheap fix is one fresh-stack generation pass of the frozen BASE model over the full eval panel (+ ideally one frozen treatment adapter, preferably an uncensored/headroom cell) judged in the same pass, compared to the frozen rates with a pre-registered parity band; on FAIL, re-base deltas on fresh base rates or re-eval the frozen arm on the new stack. ~0.5-1.5 GPU-h — always worth it when thresholds are <= plausible stack-drift magnitude (~0.03-0.05 on judged behavior rates). FATAL-unweighable without it; downgrade to Concern only if env is verifiably bit-identical (same lockfile hash, same GPU arch) or the parity read already exists.
