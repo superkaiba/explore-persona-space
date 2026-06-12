@@ -1,0 +1,266 @@
+{
+ "git_commit": "45c8ddf461d80f4c1d318113f1922bb29ec73b43",
+ "generated_at": "2026-06-11T03:46:12.754913+00:00",
+ "seed": 42,
+ "cid": "sp_ph2",
+ "questions": [
+  "Can you explain the water cycle step by step?",
+  "Can you explain the basics of music theory?",
+  "What would the world be like if every person had a unique superpower?",
+  "What causes lightning during thunderstorms?",
+  "What causes ocean currents to flow?",
+  "If you could make one animal species intelligent like humans, which would you pick?",
+  "Is it better to work for a large company or a startup?",
+  "How do I recover data from a corrupted hard drive?",
+  "Can you explain the difference between DNA and RNA?",
+  "How does a refrigerator keep food cold?",
+  "How does encryption keep data secure?",
+  "How do I build a simple wooden bookshelf?",
+  "How do I plan a trip on a tight budget?",
+  "Can you explain how the Electoral College works?",
+  "Can you explain what DNA actually does?",
+  "What's the best way to clean windows without streaks?",
+  "How do ecosystems maintain balance?",
+  "How do satellites stay in orbit around Earth?",
+  "How do I troubleshoot a computer that won't boot up?",
+  "Can you explain how wind turbines generate electricity?",
+  "How does cryptocurrency mining work?",
+  "Is it better to save money or invest it aggressively when young?",
+  "How do I fix a dripping kitchen faucet?",
+  "Do you think audiobooks count as real reading?",
+  "How does the human digestive system process food?",
+  "How do I unclog a bathroom sink drain?",
+  "What is the difference between a democracy and a republic?",
+  "Should I get a cat or a dog as a first pet?",
+  "Can you explain how DNA carries genetic information?",
+  "Can you explain how airplanes stay in the air?",
+  "How can I build muscle without going to a gym?",
+  "What's a good first programming language to learn?"
+ ],
+ "stats": [
+  {
+   "logp": -21.909069061279297,
+   "z_marker": 0.419921875,
+   "z_eos": 22.25,
+   "logZ": 22.328990936279297,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.272327423095703,
+   "z_marker": 0.494140625,
+   "z_eos": 21.75,
+   "logZ": 21.766468048095703,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -24.277875900268555,
+   "z_marker": -0.392578125,
+   "z_eos": 23.875,
+   "logZ": 23.885297775268555,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -22.836219787597656,
+   "z_marker": -0.19921875,
+   "z_eos": 22.625,
+   "logZ": 22.637001037597656,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -24.36373519897461,
+   "z_marker": 0.51171875,
+   "z_eos": 24.875,
+   "logZ": 24.87545394897461,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -25.931407928466797,
+   "z_marker": -1.4296875,
+   "z_eos": 24.5,
+   "logZ": 24.501720428466797,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.468929290771484,
+   "z_marker": 2.03125,
+   "z_eos": 25.5,
+   "logZ": 25.500179290771484,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.0728816986084,
+   "z_marker": 1.4296875,
+   "z_eos": 22.5,
+   "logZ": 22.5025691986084,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.89720344543457,
+   "z_marker": 0.353515625,
+   "z_eos": 24.25,
+   "logZ": 24.25071907043457,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.744705200195312,
+   "z_marker": 0.006622314453125,
+   "z_eos": 23.75,
+   "logZ": 23.751327514648438,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -25.226909637451172,
+   "z_marker": 0.1484375,
+   "z_eos": 25.375,
+   "logZ": 25.375347137451172,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -18.40487289428711,
+   "z_marker": 2.453125,
+   "z_eos": 20.625,
+   "logZ": 20.85799789428711,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -20.885133743286133,
+   "z_marker": 1.9921875,
+   "z_eos": 22.875,
+   "logZ": 22.877321243286133,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -22.329599380493164,
+   "z_marker": 0.07275390625,
+   "z_eos": 21.875,
+   "logZ": 22.402353286743164,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -22.596975326538086,
+   "z_marker": -0.054443359375,
+   "z_eos": 21.875,
+   "logZ": 22.542531967163086,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -20.97430992126465,
+   "z_marker": 0.984375,
+   "z_eos": 21.75,
+   "logZ": 21.95868492126465,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.244871139526367,
+   "z_marker": 1.1484375,
+   "z_eos": 22.375,
+   "logZ": 22.393308639526367,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -24.370458602905273,
+   "z_marker": -0.6171875,
+   "z_eos": 23.75,
+   "logZ": 23.753271102905273,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.339916229248047,
+   "z_marker": 0.1982421875,
+   "z_eos": 20.875,
+   "logZ": 21.538158416748047,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.80976104736328,
+   "z_marker": -0.490234375,
+   "z_eos": 20.75,
+   "logZ": 21.31952667236328,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.469877243041992,
+   "z_marker": 0.6796875,
+   "z_eos": 22.125,
+   "logZ": 22.149564743041992,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -21.925731658935547,
+   "z_marker": 2.203125,
+   "z_eos": 24.125,
+   "logZ": 24.128856658935547,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -20.661420822143555,
+   "z_marker": 1.1328125,
+   "z_eos": 21.75,
+   "logZ": 21.794233322143555,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -24.131362915039062,
+   "z_marker": -0.35546875,
+   "z_eos": 23.75,
+   "logZ": 23.775894165039062,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -24.023717880249023,
+   "z_marker": 1.1015625,
+   "z_eos": 25.125,
+   "logZ": 25.125280380249023,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -20.943391799926758,
+   "z_marker": 0.546875,
+   "z_eos": 20.5,
+   "logZ": 21.490266799926758,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.572603225708008,
+   "z_marker": -0.25,
+   "z_eos": 23.25,
+   "logZ": 23.322603225708008,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -19.792423248291016,
+   "z_marker": 1.8984375,
+   "z_eos": 21.5,
+   "logZ": 21.690860748291016,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.202064514160156,
+   "z_marker": -1.453125,
+   "z_eos": 21.375,
+   "logZ": 21.748939514160156,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -23.534725189208984,
+   "z_marker": -0.408203125,
+   "z_eos": 23.125,
+   "logZ": 23.126522064208984,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -19.723434448242188,
+   "z_marker": 1.6796875,
+   "z_eos": 21.125,
+   "logZ": 21.403121948242188,
+   "argmax_is_marker": false
+  },
+  {
+   "logp": -22.812955856323242,
+   "z_marker": 1.1953125,
+   "z_eos": 24.0,
+   "logZ": 24.008268356323242,
+   "argmax_is_marker": false
+  }
+ ]
+}
