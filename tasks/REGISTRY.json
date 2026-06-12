@@ -3427,8 +3427,8 @@
     "572": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/572",
-      "status": "proposed",
+      "path": "tasks/planning/572",
+      "status": "planning",
       "title": "Harden pod resume and provisioning waits in pod.py and pod_lifecycle.py"
     },
     "573": {
