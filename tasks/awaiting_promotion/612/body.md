@@ -3,7 +3,8 @@ title: The model's own agreeing completions install sycophancy substantially mor
   weakly than canned templates at a fixed training recipe, and two of four personas
   could not fill the on-policy data-yield quota (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-12T01:04:35Z'
 has_clean_result: true
 parent_id: 591
