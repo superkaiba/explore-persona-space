@@ -1,6 +1,6 @@
 ---
-title: Does contrastive-negative training improve source implantation for sycophancy
-  (vs positive-only)?
+title: Positive-only sycophancy training installs at the same near-ceiling rate as
+  the contrastive mix but spreads to nearly every other persona (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T17:41:19Z'
