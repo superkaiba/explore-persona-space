@@ -2531,6 +2531,12 @@ workflow_fix_on_bug:
     # an in-scope URL-extractor fix.
     - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
+    # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
+    # reads the task workflow through. Added 2026-06-11 (#608): the list
+    # predated the task-workflow rewire of these helpers and the omission
+    # nearly deflected an in-scope v2-clean-result extraction fix.
+    - "scripts/recent_clean_results.py"
+    - "scripts/task_state.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
     # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
@@ -2576,6 +2582,8 @@ workflow_fix_on_bug:
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
     - "tests/test_sparse_worktree.py"
+    # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
+    - "tests/test_recent_clean_results.py"
     # Backend-router invariant tests (pair with the backends/*.py entry above).
     - "tests/test_router*.py"
     - "tests/test_backend_*.py"
