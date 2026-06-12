@@ -6,6 +6,7 @@ title: Marker implants lift most bystander personas nearly in lockstep with the 
 kind: experiment
 tags:
 - followup-manual
+- followup-auto
 created_at: '2026-06-11T08:02:39Z'
 has_clean_result: true
 parent_id: 472
