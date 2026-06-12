@@ -94,3 +94,4 @@
 {"ts": "2026-06-12T06:23:43Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=arm2_close, cells=all, shard=4/8, smoke=False, dry_run=False) in 339s"}
 {"ts": "2026-06-12T06:23:49Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=arm2_close, cells=all, shard=3/8, smoke=False, dry_run=False) in 346s"}
 {"ts": "2026-06-12T06:23:56Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=arm2_close, cells=all, shard=0/8, smoke=False, dry_run=False) in 361s"}
+{"ts": "2026-06-12T06:24:00Z", "kind": "epm:progress", "version": 1, "by": "i542_dispatch", "note": "phase train complete (steps=all, arm=arm2_close, cells=all, shard=7/8, smoke=False, dry_run=False) in 491s"}
