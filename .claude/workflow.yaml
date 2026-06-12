@@ -938,9 +938,11 @@ ensemble_review:
       reconcile_mode: marker
       notes: |
         Both reviewers run all 7 lenses (lens 6 plot-prose match works on
-        both — Codex multimodal verified 2026-05-10). Codex twin no-show
-        falls back to single-Claude-critic for that round. Round cap 3 per
-        reviewer; reconcile rounds free.
+        both — Codex multimodal verified 2026-05-10). Ensembled on ALL
+        rounds 1-3 (round-1-only policy reversed 2026-06-12 —
+        cross-family reviewer diversity beats Claude-only later rounds).
+        Codex twin no-show falls back to single-Claude-critic for that
+        round. Round cap 3 per reviewer; reconcile rounds free.
     - role: clean-result-critic
       step: "9a-bis"
       claude_agent: clean-result-critic
@@ -955,7 +957,8 @@ ensemble_review:
       notes: |
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
-        rule as Lens 7). 11 lenses total: title, TL;DR, Summary structure +
+        rule as Lens 7). Ensembled on ALL rounds 1-3 (round-1-only policy
+        reversed 2026-06-12). 11 lenses total: title, TL;DR, Summary structure +
         register, Details per-section discipline, captions, heading-as-toggle,
         body-discipline anti-patterns, Source issues conditional H2,
         issue-link form, verifier sanity (verify_task_body.py),
