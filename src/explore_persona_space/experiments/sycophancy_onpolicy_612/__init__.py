@@ -191,6 +191,45 @@ RECORD_ONLY_FETCHES: tuple[str, ...] = (
     f"{I591_DATA_PREFIX}/e2/twin_validation.json",
 )
 
+# --- dose-matched follow-up round (plans/v2.md; followup dose-matched-leakage-read) ---
+DOSE_ADAPTER_REVISION = "efb2e95f4c59b683a8af15ea9d54cfcaf9f12e6b"
+"""#612's OWN adapters (final dirs + epoch checkpoints) at the Hub-verified
+model-repo revision the dose-matched round pins (plan v2 §10)."""
+
+DOSE_ADAPTER_PATH_TMPL = "adapters/issue_612/{arm}/{source}_seed{seed}"
+
+BAND_ENTRY_THRESHOLD = 0.60
+"""Self-implant Δ >= threshold = band entry (parent plan §4 pre-registered fallback)."""
+
+G1_DM_TOL = 0.06
+"""Smoke parity gate: |new full-panel self rate - existing trajectory rate| (plan v2 §7)."""
+
+# SHA256 pins for the dose-round HF input snapshot (plan v2 §3 content-identity
+# rule (f); values computed from the run-verified local copies at planning time
+# and re-verified against the HF mirror at implementation time).
+DOSE_MATCHED_SHA256: dict[str, str] = {
+    f"{HF_DATA_PREFIX}/panel/panel_set.json": (
+        "12611c619bae164b6fd74e112074cfe0c70ca9f3bf94008c3e510f3947cda948"
+    ),
+    f"{HF_DATA_PREFIX}/inputs/eval_60.jsonl": (
+        "0d78e82262bf6528549559c0a35c5e354801c4079a8e9640bed23d3e0fbba8a3"
+    ),
+}
+
+
+def dose_cell_dir(slab_root: Path | str, arm: str, source: str, seed: int, epoch: int) -> Path:
+    """Canonical eval-output dir for one dose-matched band-entry cell (plan v2 §6.5)."""
+    return (
+        Path(slab_root)
+        / "dose_matched"
+        / "cells"
+        / arm
+        / source
+        / f"seed_{seed}"
+        / f"epoch_{epoch}"
+    )
+
+
 # ~13 NEW one-line candidate personas targeting per-source cosine gaps in
 # [0.70, 0.95] (plan §4 P1; wording is implementer-discretion per §13). Roles
 # chosen to sit at intermediate similarity to one source family each.

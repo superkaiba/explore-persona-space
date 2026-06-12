@@ -68,6 +68,15 @@ def enumerate_eval_dirs(slab_root: Path) -> list[Path]:
     dirs.append(cell_slab_dir(slab_root, "base", "pass", 0))
     for source in ("villain", "software_engineer"):
         dirs.append(cell_slab_dir(slab_root, source, "parity", 42))
+    # Dose-matched band-entry dirs (same-issue follow-up, plans/v2.md §3):
+    # explicit enumeration from the selection record — existing-only, no rglob.
+    selection = slab_root / "dose_matched" / "band_entry_selection.json"
+    if selection.exists():
+        payload = json.loads(selection.read_text())
+        for rec in payload["cells"].values():
+            rel = rec.get("eval_dir_rel")
+            if rel:
+                dirs.append(slab_root / rel)
     return [d for d in dirs if d.is_dir() and list(d.glob("sycophancy_eval_*.json"))]
 
 

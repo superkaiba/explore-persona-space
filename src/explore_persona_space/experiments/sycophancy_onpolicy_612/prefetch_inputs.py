@@ -69,11 +69,14 @@ def sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def _fetch_pinned(repo_path: str, dest: Path) -> Path:
-    """hf_hub_download one pinned data-repo file -> copy to ``dest`` -> SHA assert."""
+def fetch_pinned(repo_path: str, dest: Path, *, expected: str) -> Path:
+    """hf_hub_download one pinned data-repo file -> copy to ``dest`` -> SHA assert.
+
+    Exported so the dose-matched round can pin against its OWN table
+    (``DOSE_MATCHED_SHA256``) through the same fail-loud path (incident #600).
+    """
     from huggingface_hub import hf_hub_download
 
-    expected = EXPECTED_SHA256[repo_path]  # KeyError = unpinned file, fail-loud
     cached = hf_hub_download(repo_id=HF_DATA_REPO, filename=repo_path, repo_type="dataset")
     dest.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(cached, dest)
@@ -86,6 +89,11 @@ def _fetch_pinned(repo_path: str, dest: Path) -> Path:
         )
     log.info("pinned OK: %s -> %s (sha256=%s)", repo_path, dest, actual[:12])
     return dest
+
+
+def _fetch_pinned(repo_path: str, dest: Path) -> Path:
+    """Pin against the parent run's ``EXPECTED_SHA256`` table (KeyError = unpinned)."""
+    return fetch_pinned(repo_path, dest, expected=EXPECTED_SHA256[repo_path])
 
 
 def _fetch_record_only(repo_path: str, dest: Path) -> tuple[Path, str]:

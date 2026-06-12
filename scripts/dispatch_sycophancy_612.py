@@ -53,6 +53,30 @@ the terminal line of a clean exit; ``load_dotenv()`` at module top; every
 ``EPM_SKIP_INLINE_CHECKPOINT_UPLOAD=1``; CVD via ``TrainLoraConfig(gpu_id)``
 / ``merge_lora(gpu_id)`` in-process and ``CUDA_VISIBLE_DEVICES`` in
 subprocess envs (the sft.py CVD-clobber gotcha).
+
+``--stage dose-matched`` (plans/v2.md, followup dose-matched-leakage-read):
+eval-only round on the parent's OWN epoch checkpoints at their pre-registered
+band-entry epochs. No training. Per cell from ``band_entry_selection.json``
+(written/asserted by ``band_entry.ensure_band_entry_selection`` — K3-dm):
+
+    1. [phase=dose_fetch]  per-file HF fetch of the ``{source}_seed{seed}``
+       subtree (final dir + the selected checkpoint) at the PINNED model-repo
+       revision; K2-dm hard assert on checkpoint-epoch{E}/adapter_config.json
+       + adapter_model.safetensors (never substitute another epoch);
+       ``_ensure_tokenizer_files`` from the final-adapter dir.
+    2. [phase=merge]       merge_lora on the checkpoint.
+    3. [phase=eval]        FULL-panel ``_eval_subprocess`` on the sha-pinned
+       panel_set + eval_60 (dose_prefetch, plan v2 rule (f)) -> rmtree merged.
+    4. [phase=upload]      per-cell tree -> HF data repo INSIDE the loop.
+    5. Per-cell ``issue-612-dose-*`` sentinel + dose cell-state record.
+
+Smoke == sweep with one cell: ``--cells villain:arm_canned:42`` runs the full
+fetch->merge->eval->upload path; the G1-dm parity gate (pod-side ~600-call
+mini-judge of the self panel on the full 60-claim set vs the pinned trajectory
+reference, ±0.06, ONE diagnostic re-fetch+re-merge retry — K1-dm) fires after
+it and blocks the 7-cell launch on FAIL. The dose ``epm:results`` sentinel
+(version 3 — the parent posted v2) is emitted only by a ``--finalize``
+invocation that sees all 8 registered cells complete.
 """
 
 from __future__ import annotations
@@ -78,6 +102,10 @@ load_dotenv()
 from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa: E402
     ANALYZE_SUMMARY_RELPATH,
     BASE_MODEL,
+    DOSE_ADAPTER_PATH_TMPL,
+    DOSE_ADAPTER_REVISION,
+    DOSE_MATCHED_SHA256,
+    G1_DM_TOL,
     G1_TOL,
     G2_DELTA_FLOOR,
     HF_DATA_PREFIX,
@@ -89,15 +117,23 @@ from explore_persona_space.experiments.sycophancy_onpolicy_612 import (  # noqa:
     TRAIN_ARMS,
     cell_id,
     cell_slab_dir,
+    dose_cell_dir,
     full_production_cells,
     parse_cells,
     pool_dir,
     repo_root_from_module,
 )
+from explore_persona_space.experiments.sycophancy_onpolicy_612.band_entry import (  # noqa: E402
+    SELECTION_RELPATH,
+    ensure_band_entry_selection,
+)
 
 log = logging.getLogger("dispatch_sycophancy_612")
 
 SMOKE_CELL = ("villain", "arm_onpolicy", 42)
+DOSE_SMOKE_CELL = ("villain", "arm_canned", 42)
+DOSE_REQUIRED_CKPT_FILES = ("adapter_config.json", "adapter_model.safetensors")
+DOSE_RESULTS_MARKER_VERSION = 3  # the parent run posted epm:results v2
 SMOKE_DIAGNOSTIC_CELL = ("villain", "arm_onpolicy", 137)
 YIELD_EXIT_CODE = 42  # build_onpolicy_pool's PositiveYieldError marker (G3)
 JUDGE_PARSE_RATE_FLOOR = 0.95
@@ -165,6 +201,7 @@ def _write_sentinel(
     note_obj: dict,
     name_slug: str,
     gate: str | None = None,
+    version: int = 1,
 ) -> Path:
     """One poll_pipeline-conforming sentinel (sentinel_schema_version/kind/version)."""
     logs_root.mkdir(parents=True, exist_ok=True)
@@ -172,7 +209,7 @@ def _write_sentinel(
     payload: dict = {
         "sentinel_schema_version": 1,
         "kind": kind,
-        "version": 1,
+        "version": version,
         "task_id": 612,
         "by": "pod-dispatcher-612",
         "ts": datetime.now(UTC).isoformat(),
@@ -1108,6 +1145,484 @@ class PoolYieldFailure(RuntimeError):
         self.arm = arm
 
 
+# ----- dose-matched follow-up round (plans/v2.md §3) -------------------------------
+
+
+def _hf_download_with_retry(
+    *, repo_id: str, filename: str, revision: str, force: bool = False, attempts: int = 3
+) -> str:
+    """hf_hub_download with backoff (dispatcher silent-death hardening)."""
+    from huggingface_hub import hf_hub_download
+
+    delay = 30
+    for i in range(attempts):
+        try:
+            return hf_hub_download(
+                repo_id=repo_id, filename=filename, revision=revision, force_download=force
+            )
+        except Exception as e:
+            if i == attempts - 1:
+                raise
+            log.warning("hf_hub_download %s failed (%s) — retry in %ds", filename, e, delay)
+            time.sleep(delay)
+            delay *= 2
+    raise RuntimeError("unreachable")
+
+
+class DoseMatchedRunner(Dispatcher):
+    """Plan-v2 band-entry eval-only runner. Reuses the Dispatcher's eval/upload/
+    mini-judge helpers verbatim; adds the pinned-revision checkpoint fetch path.
+    No training phases exist in this stage."""
+
+    def __init__(self, args: argparse.Namespace, selection: dict):
+        super().__init__(args)
+        self.selection = selection
+        self._dose_files_cache: list[str] | None = None
+        self._force_fetch = False
+
+    # ----- selection / cell-state ------------------------------------------------
+
+    def _epoch_for(self, source: str, arm: str, seed: int) -> int:
+        rec = self.selection["cells"][cell_id(source, arm, seed)]
+        epoch = rec["band_entry_epoch"]
+        if not isinstance(epoch, int):
+            raise RuntimeError(
+                f"{cell_id(source, arm, seed)} has no band-entry epoch (role={rec['role']}) — "
+                f"never-entered / excluded cells are NOT evaluated (plan v2 §2)."
+            )
+        return epoch
+
+    def _dose_state_path(self, source: str, arm: str, seed: int) -> Path:
+        return self.slab_root / "dose_matched" / "_cellstate" / f"{source}__{arm}__{seed}.json"
+
+    def _read_dose_state(self, source: str, arm: str, seed: int) -> dict | None:
+        path = self._dose_state_path(source, arm, seed)
+        return json.loads(path.read_text()) if path.exists() else None
+
+    def _write_dose_state(self, source: str, arm: str, seed: int, record: dict) -> None:
+        path = self._dose_state_path(source, arm, seed)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(record, indent=2))
+
+    # ----- pinned inputs + hub preflight ------------------------------------------
+
+    def dose_prefetch(self) -> None:
+        """[phase=dose_prefetch] sha-pinned panel_set + eval_60 (plan v2 rule (f))."""
+        from explore_persona_space.experiments.sycophancy_onpolicy_612.prefetch_inputs import (
+            fetch_pinned,
+        )
+
+        log.info("[phase=dose_prefetch] pinned panel_set.json + eval_60.jsonl")
+        for repo_path, dest_name in (
+            (f"{HF_DATA_PREFIX}/panel/panel_set.json", "panel_set.json"),
+            (f"{HF_DATA_PREFIX}/inputs/eval_60.jsonl", "eval_60.jsonl"),
+        ):
+            fetch_pinned(
+                repo_path,
+                self.data_root / "dose_matched" / dest_name,
+                expected=DOSE_MATCHED_SHA256[repo_path],
+            )
+
+    def _dose_panel_and_claims(self) -> tuple[Path, Path]:
+        panel = self.data_root / "dose_matched" / "panel_set.json"
+        claims = self.data_root / "dose_matched" / "eval_60.jsonl"
+        missing = [str(p) for p in (panel, claims) if not p.exists()]
+        if missing:
+            raise RuntimeError(
+                f"dose-matched pinned inputs missing: {missing} — dose_prefetch must run "
+                f"(drop --skip-prefetch, or place the sha-verified files there)."
+            )
+        return panel, claims
+
+    def _dose_repo_files(self) -> list[str]:
+        """list_repo_files at the PINNED revision (NOT snapshot_download —
+        siblings-truncation gotcha on large repos). Cached per process."""
+        if self._dose_files_cache is None:
+            from huggingface_hub import list_repo_files
+
+            self._dose_files_cache = list(
+                list_repo_files(HF_MODEL_REPO, revision=DOSE_ADAPTER_REVISION)
+            )
+        return self._dose_files_cache
+
+    def dose_hub_preflight(self, cells: list[tuple[str, str, int]]) -> None:
+        """K2-dm for EVERY requested cell up front — fail before the first merge."""
+        files = set(self._dose_repo_files())
+        problems: list[str] = []
+        for source, arm, seed in cells:
+            epoch = self._epoch_for(source, arm, seed)
+            sub = DOSE_ADAPTER_PATH_TMPL.format(arm=arm, source=source, seed=seed)
+            problems.extend(
+                p
+                for name in DOSE_REQUIRED_CKPT_FILES
+                if (p := f"{sub}/checkpoint-epoch{epoch}/{name}") not in files
+            )
+        if problems:
+            raise RuntimeError(
+                f"[K2-dm] checkpoints incomplete on the Hub @ {DOSE_ADAPTER_REVISION[:12]}: "
+                f"missing {problems} — fail loud; never substitute the endpoint adapter or "
+                f"another epoch (plan v2 kill criteria)."
+            )
+        log.info("[phase=dose_prefetch] K2-dm hub preflight OK for %d cells", len(cells))
+
+    def _fetch_dose_checkpoint(
+        self, source: str, arm: str, seed: int, epoch: int
+    ) -> tuple[Path, Path]:
+        """Per-file fetch of the cell subtree (final dir + the selected checkpoint)
+        at the pinned revision; K2-dm asserts remote AND local."""
+        sub = DOSE_ADAPTER_PATH_TMPL.format(arm=arm, source=source, seed=seed)
+        repo_files = [f for f in self._dose_repo_files() if f.startswith(f"{sub}/")]
+        if not repo_files:
+            raise RuntimeError(
+                f"[K2-dm] no files under {sub}/ on the Hub @ {DOSE_ADAPTER_REVISION[:12]}"
+            )
+        ckpt_prefix = f"{sub}/checkpoint-epoch{epoch}/"
+        missing_remote = [
+            f"{ckpt_prefix}{n}"
+            for n in DOSE_REQUIRED_CKPT_FILES
+            if f"{ckpt_prefix}{n}" not in repo_files
+        ]
+        if missing_remote:
+            raise RuntimeError(
+                f"[K2-dm] {sub} missing {missing_remote} on the Hub @ "
+                f"{DOSE_ADAPTER_REVISION[:12]} — fail loud, no epoch substitution."
+            )
+        local_root = Path(self.adapters_root) / "dose_612" / arm / f"{source}_seed{seed}"
+        for repo_path in repo_files:
+            rel = repo_path[len(sub) + 1 :]
+            if rel.startswith("checkpoint-") and not rel.startswith(f"checkpoint-epoch{epoch}/"):
+                continue  # skip sibling checkpoints (only the band-entry epoch is read)
+            dest = local_root / rel
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            cached = _hf_download_with_retry(
+                repo_id=HF_MODEL_REPO,
+                filename=repo_path,
+                revision=DOSE_ADAPTER_REVISION,
+                force=self._force_fetch,
+            )
+            shutil.copyfile(cached, dest)
+        ckpt_dir = local_root / f"checkpoint-epoch{epoch}"
+        missing_local = [n for n in DOSE_REQUIRED_CKPT_FILES if not (ckpt_dir / n).exists()]
+        if missing_local:
+            raise RuntimeError(f"[K2-dm] {ckpt_dir} missing {missing_local} after fetch")
+        _ensure_tokenizer_files(ckpt_dir, local_root)
+        return local_root, ckpt_dir
+
+    # ----- the unified per-cell dose path ------------------------------------------
+
+    def run_dose_cell(self, source: str, arm: str, seed: int) -> dict:
+        """ONE band-entry cell: fetch -> merge -> full-panel eval -> upload.
+        The smoke cell and every sweep cell land here (smoke = sweep with one cell)."""
+        cid = cell_id(source, arm, seed)
+        epoch = self._epoch_for(source, arm, seed)
+        prior = self._read_dose_state(source, arm, seed)
+        if prior is not None and prior.get("status") == "complete":
+            log.info("[%s] dose cell-state already complete — skipping (idempotent)", cid)
+            return prior
+        t0 = time.time()
+        cell_dir = dose_cell_dir(self.slab_root, arm, source, seed, epoch)
+        record: dict = {
+            "cell": cid,
+            "stage": "dose-matched",
+            "band_entry_epoch": epoch,
+            "source": source,
+            "arm": arm,
+            "seed": seed,
+            "gpu_id": self.gpu_id,
+            "eval_out_dir": str(cell_dir),
+            "adapter_hf_path": (
+                f"{DOSE_ADAPTER_PATH_TMPL.format(arm=arm, source=source, seed=seed)}"
+                f"/checkpoint-epoch{epoch}"
+            ),
+            "adapter_revision": DOSE_ADAPTER_REVISION,
+            "git_commit_sha": _git_sha(),
+            "hostname": socket.gethostname(),
+        }
+        log.info("=" * 70)
+        log.info("[%s] DOSE CELL START @ checkpoint-epoch%d -> %s", cid, epoch, cell_dir)
+
+        if self.dry_run:
+            record.update(status="dry_run", wall_seconds=round(time.time() - t0, 1))
+            self._write_dose_state(source, arm, seed, record)
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:progress",
+                name_slug=f"dose-cell-{source}-{arm}-{seed}",
+                note_obj={"event": "dose_cell_dry_run", **record},
+            )
+            log.info("[%s] dry-run dose-cell walk complete", cid)
+            return record
+
+        log.info(
+            "[%s] [phase=dose_fetch] %s @ %s",
+            cid,
+            record["adapter_hf_path"],
+            DOSE_ADAPTER_REVISION[:12],
+        )
+        _adapter_root, ckpt_dir = self._fetch_dose_checkpoint(source, arm, seed, epoch)
+
+        from explore_persona_space.train.sft import merge_lora
+
+        merged_dir = (
+            self.runs_root / "dose_matched" / arm / f"{source}_seed{seed}_epoch{epoch}" / "merged"
+        )
+        log.info("[%s] [phase=merge] checkpoint-epoch%d -> %s", cid, epoch, merged_dir)
+        merge_lora(
+            base_model_path=BASE_MODEL,
+            adapter_path=str(ckpt_dir),
+            output_dir=str(merged_dir),
+            gpu_id=self.gpu_id,
+        )
+
+        panel_set, claims = self._dose_panel_and_claims()
+        record["panel_provenance"] = json.loads(panel_set.read_text()).get("provenance")
+        self._eval_subprocess(
+            model_tag=f"{source}:{arm}:{seed}:band_epoch{epoch}",
+            out_dir=cell_dir,
+            panel_set=panel_set,
+            claims=claims,
+            seed=seed,
+            merged_dir=merged_dir,
+            sentinel_name=f"dose-eval-{source}-{arm}-{seed}-epoch{epoch}",
+        )
+        shutil.rmtree(merged_dir, ignore_errors=False)  # disk-quota discipline
+
+        log.info("[%s] [phase=upload]", cid)
+        record["hub_eval_tree"] = self._upload_cell_tree(
+            cell_dir, f"dose_matched/cells/{arm}/{source}/seed_{seed}/epoch_{epoch}"
+        )
+        record.update(status="complete", wall_seconds=round(time.time() - t0, 1))
+        self._write_dose_state(source, arm, seed, record)
+        _write_sentinel(
+            self.logs_root,
+            kind="epm:progress",
+            name_slug=f"dose-cell-{source}-{arm}-{seed}",
+            note_obj={"event": "dose_cell_complete", **record},
+        )
+        log.info("[%s] dose cell complete in %.1fs", cid, record["wall_seconds"])
+        return record
+
+    # ----- G1-dm smoke parity gate ---------------------------------------------------
+
+    def _wipe_dose_cell(self, source: str, arm: str, seed: int, epoch: int) -> None:
+        """K1-dm diagnostic retry prep: drop the cell outputs + state + local
+        adapter copy, and force-redownload on the re-fetch."""
+        for path in (
+            dose_cell_dir(self.slab_root, arm, source, seed, epoch),
+            self._dose_state_path(source, arm, seed),
+            Path(self.adapters_root) / "dose_612" / arm / f"{source}_seed{seed}",
+        ):
+            if path.is_dir():
+                shutil.rmtree(path, ignore_errors=False)
+            elif path.exists():
+                path.unlink()
+        self._force_fetch = True
+
+    def gate_g1_dm(self) -> None:
+        """G1-dm (plan v2 §7): the smoke cell's fresh full-panel SELF read must
+        reproduce the pinned epoch-1 trajectory rate (same checkpoint, same
+        60-claim set) within ±G1_DM_TOL. ONE diagnostic re-fetch+re-merge retry
+        (K1-dm); a second miss halts before the 7-cell launch."""
+        source, arm, seed = DOSE_SMOKE_CELL
+        epoch = self._epoch_for(source, arm, seed)
+        ref = self.selection["g1_dm"]
+        cell_dir = dose_cell_dir(self.slab_root, arm, source, seed, epoch)
+        for attempt in (1, 2):
+            log.info("[phase=smoke_gate_g1dm] attempt %d: mini-judge self panel", attempt)
+            read = self._mini_judge_panel_file(cell_dir / f"sycophancy_eval_{source}.json")
+            drift = read["rate"] - ref["reference_rate"]
+            note = {
+                "event": "smoke_gate_g1dm",
+                "attempt": attempt,
+                "probe": (
+                    "fresh full-panel self read of villain:arm_canned:42 @ checkpoint-epoch1 "
+                    "vs the existing epoch-1 trajectory read (60-claim set, raw rates)"
+                ),
+                "fresh_rate": read["rate"],
+                "reference_rate": ref["reference_rate"],
+                "drift": drift,
+                "tolerance": G1_DM_TOL,
+                "read": read,
+            }
+            if abs(drift) <= G1_DM_TOL:
+                note["decision"] = "PASS"
+                _write_sentinel(
+                    self.logs_root,
+                    kind="epm:progress",
+                    name_slug="dose-smoke-gate-g1dm",
+                    note_obj=note,
+                )
+                log.info("[phase=smoke_gate_g1dm] PASS: drift=%+.3f (tol %.2f)", drift, G1_DM_TOL)
+                return
+            if attempt == 1:
+                note["decision"] = "RETRY"
+                _write_sentinel(
+                    self.logs_root,
+                    kind="epm:progress",
+                    name_slug="dose-smoke-gate-g1dm-retry",
+                    note_obj=note,
+                )
+                log.warning(
+                    "[phase=smoke_gate_g1dm] drift %+.3f exceeds ±%.2f — ONE diagnostic "
+                    "retry (re-fetch + re-merge, K1-dm)",
+                    drift,
+                    G1_DM_TOL,
+                )
+                self._wipe_dose_cell(source, arm, seed, epoch)
+                self.run_dose_cell(source, arm, seed)
+                continue
+            note["decision"] = "HALT"
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:progress",
+                name_slug="dose-smoke-gate-g1dm",
+                note_obj=note,
+                gate="g1dm-smoke-parity",
+            )
+            raise RuntimeError(
+                f"[G1-dm] HALT after diagnostic retry: drift {drift:+.3f} exceeds "
+                f"±{G1_DM_TOL} (fresh {read['rate']:.3f} vs trajectory "
+                f"{ref['reference_rate']:.3f}) — checkpoint-fetch or eval-stack bug; "
+                f"no 7-cell launch (plan v2 §7 / K1-dm)."
+            )
+
+    # ----- finalize -----------------------------------------------------------------
+
+    def dose_finalize(
+        self, cells: list[tuple[str, str, int]], all_cells: list[tuple[str, str, int]]
+    ) -> None:
+        """Dose epm:results (version 3) ONLY for a complete registered-8 non-dry
+        run; everything else writes an epm:progress shard sentinel."""
+        states = {cell_id(*c): self._read_dose_state(*c) for c in all_cells}
+        ok_statuses = ("complete", "dry_run") if self.dry_run else ("complete",)
+        complete = {k: v for k, v in states.items() if v and v.get("status") in ok_statuses}
+        evaluated = list(self.selection["evaluated_cells"])
+        covers = {cell_id(*c) for c in all_cells} == set(evaluated)
+        summary = {
+            "issue": 612,
+            "stage": "dose-matched",
+            "followup_label": "dose-matched-leakage-read",
+            "gpu_id": self.gpu_id,
+            "shard_cells": [cell_id(*c) for c in cells],
+            "all_cells": [cell_id(*c) for c in all_cells],
+            "n_complete": len(complete),
+            "n_all": len(all_cells),
+            "covers_registered_dose_set": covers,
+            "dry_run": self.dry_run,
+            "band_entry_epochs": {
+                cid: self.selection["cells"][cid]["band_entry_epoch"] for cid in evaluated
+            },
+            "eval_paths": {k: v.get("eval_out_dir") for k, v in complete.items()},
+            "wall_seconds_by_cell": {k: v.get("wall_seconds") for k, v in complete.items()},
+            "reproducibility_card": {
+                "base_model": BASE_MODEL,
+                "training": "none — eval-only round on the parent's adapters (plan v2 §0)",
+                "hf_model_repo": HF_MODEL_REPO,
+                "adapter_revision": DOSE_ADAPTER_REVISION,
+                "adapter_paths": {
+                    k: v.get("adapter_hf_path")
+                    for k, v in complete.items()
+                    if v.get("adapter_hf_path")
+                },
+                "hf_data_repo": HF_DATA_REPO,
+                "hf_data_prefix": HF_DATA_PREFIX,
+                "raw_completions_prefix": f"{HF_DATA_PREFIX}/eval_results/dose_matched/cells",
+                "wandb": "none (no training; plan v2 §10)",
+                "final_commit_sha": _git_sha(),
+            },
+            "hostname": socket.gethostname(),
+            "timestamp_utc": datetime.now(UTC).isoformat(),
+        }
+        emit_results = (not self.dry_run) and covers and len(complete) == len(all_cells)
+        if emit_results:
+            if self.hf_upload:
+                _upload_or_raise(
+                    self.slab_root / SELECTION_RELPATH,
+                    repo_type="dataset",
+                    repo_id=HF_DATA_REPO,
+                    path_in_repo=(
+                        f"{HF_DATA_PREFIX}/eval_results/dose_matched/band_entry_selection.json"
+                    ),
+                )
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:results",
+                name_slug="dose-epm_results",
+                note_obj={"event": "dose_matched_complete", **summary},
+                version=DOSE_RESULTS_MARKER_VERSION,
+            )
+        else:
+            _write_sentinel(
+                self.logs_root,
+                kind="epm:progress",
+                name_slug=f"dose-shard-gpu{self.gpu_id}-done",
+                note_obj={"event": "dose_shard_complete", **summary},
+            )
+
+
+def _run_dose_matched(args: argparse.Namespace) -> None:
+    """The --stage dose-matched flow: selection -> (prefetch+K2 preflight) ->
+    per-cell fetch/merge/eval/upload -> G1-dm gate after the smoke cell ->
+    finalize. Every phase's cell list derives from --cells."""
+    selection_path = ensure_band_entry_selection(args.slab_root)
+    selection = json.loads(selection_path.read_text())
+    evaluated_ids: list[str] = selection["evaluated_cells"]
+    cells: list[tuple[str, str, int]] = args.cells
+    bad = [cell_id(*c) for c in cells if cell_id(*c) not in evaluated_ids]
+    if bad:
+        raise ValueError(
+            f"--cells not in the registered dose-matched set: {bad} "
+            f"(evaluated cells: {evaluated_ids}; adding/removing cells is must-ask, plan v2)"
+        )
+    all_cells = (
+        args.all_cells if args.all_cells is not None else parse_cells(",".join(evaluated_ids))
+    )
+    missing = [c for c in cells if c not in all_cells]
+    if missing:
+        raise ValueError(f"--cells entries missing from --all-cells: {missing}")
+
+    gates_fire = args.smoke_gates and DOSE_SMOKE_CELL in cells and not args.dry_run
+    if not args.dry_run and not os.environ.get("HF_TOKEN"):
+        raise RuntimeError("HF_TOKEN not in environment — .env not loaded?")
+    if gates_fire and not os.environ.get("ANTHROPIC_API_KEY"):
+        raise RuntimeError("ANTHROPIC_API_KEY not in environment — G1-dm mini-judge needs it")
+
+    log.info(
+        "[phase=dispatch] stage=dose-matched cells=%s all_cells=%d gpu_id=%d dry_run=%s",
+        [cell_id(*c) for c in cells],
+        len(all_cells),
+        args.gpu_id,
+        args.dry_run,
+    )
+    runner = DoseMatchedRunner(args, selection)
+    if not args.skip_prefetch and not args.dry_run:
+        runner.dose_prefetch()
+        runner.dose_hub_preflight(cells)
+
+    for source, arm, seed in cells:
+        try:
+            runner.run_dose_cell(source, arm, seed)
+        except Exception as e:
+            _write_sentinel(
+                args.logs_root,
+                kind="epm:progress",
+                name_slug=f"dose-cell-{source}-{arm}-{seed}-FAILED",
+                note_obj={
+                    "event": "dose_cell_failed",
+                    "cell": cell_id(source, arm, seed),
+                    "exception_type": type(e).__name__,
+                    "exception_msg": str(e)[:2000],
+                },
+            )
+            log.exception("[%s] dose cell failed", cell_id(source, arm, seed))
+            raise
+        if (source, arm, seed) == DOSE_SMOKE_CELL and gates_fire:
+            runner.gate_g1_dm()
+
+    if args.finalize:
+        runner.dose_finalize(cells, all_cells)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Task #612 dispatcher — unified smoke = sweep with one cell.",
@@ -1142,11 +1657,25 @@ def main(argv: list[str] | None = None) -> int:
         help="Alias accepted for §10 dispatch-row compatibility (maps to --slab-root when given).",
     )
     parser.add_argument(
+        "--stage",
+        choices=("production", "dose-matched"),
+        default="production",
+        help="production = the parent 28-cell grid; dose-matched = the plan-v2 "
+        "band-entry eval-only round (8 checkpoint cells from band_entry_selection.json).",
+    )
+    parser.add_argument(
+        "--finalize",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="dose-matched only: run the end-of-invocation aggregation/sentinel step "
+        "(shards pass --no-finalize; the driver's last invocation finalizes).",
+    )
+    parser.add_argument(
         "--smoke-gates",
         action=argparse.BooleanOptionalAction,
         default=True,
-        help="Run G1+G2 after the smoke cell (fires only when villain:arm_onpolicy:42 "
-        "is in --cells).",
+        help="Run the smoke gates after the smoke cell (production: G1+G2 after "
+        "villain:arm_onpolicy:42; dose-matched: G1-dm after villain:arm_canned:42).",
     )
     parser.add_argument(
         "--allow-provisional-panel",
@@ -1170,6 +1699,11 @@ def main(argv: list[str] | None = None) -> int:
     os.environ["EPM_SKIP_INLINE_CHECKPOINT_UPLOAD"] = "1"
     os.environ.setdefault("WANDB_PROJECT", "issue612_sycophancy_onpolicy")
     os.environ.setdefault("TQDM_DISABLE", "1")
+
+    if args.stage == "dose-matched":
+        _run_dose_matched(args)
+        log.info("[phase=done]")
+        return 0
 
     cells: list[tuple[str, str, int]] = args.cells
     all_cells = resolve_all_cells(cells, all_cells_arg=args.all_cells, dry_run=args.dry_run)
