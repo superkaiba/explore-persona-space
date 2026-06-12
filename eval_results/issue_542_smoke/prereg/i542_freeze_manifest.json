@@ -1,0 +1,65 @@
+{
+  "git_commit": "4a976dcada49a5dcdbfe23a9c2c94a2246f7a38d",
+  "generated_at": "2026-06-12T00:13:44.554784+00:00",
+  "seed": 42,
+  "schema_version": 1,
+  "smoke": true,
+  "parent_data_revision": "db3662ae1d1ff4484ada027ac92a2658c4dec2e8",
+  "parent_freeze_commit": "9b7347b958f8db9af40b513769177e9749d0eb86",
+  "artifact_sha256": {
+    "data/issue_542_smoke/contexts/i542_negatives.json": "2eaf5998f31a4908ce97193ede98f6c2a2b7ed8b5d3575f3469983cd0a6c75b1"
+  },
+  "merged_registry_hash": "8d0943cd7109795b6a8edee75622f7b532ae6ddb9332eb78b94a8fa6d460d925",
+  "panels": {
+    "arm1_xfam": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short"
+    ],
+    "arm2_close": [
+      "neg_sp_datasci",
+      "neg_sp_nurse",
+      "neg_sp_ph1_twin",
+      "neg_sp_ph2_twin"
+    ],
+    "arm3_default": [
+      "neg_sp_datasci",
+      "neg_sp_nurse",
+      "neg_sp_ph1_twin",
+      "default"
+    ],
+    "c2": [
+      "neg_sp_police",
+      "neg_wc_short"
+    ],
+    "c8": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short",
+      "neg_sp_librarian",
+      "neg_sp_ph5",
+      "neg_reph_quick",
+      "neg_wc_short2"
+    ],
+    "c16": [
+      "neg_sp_police",
+      "neg_sp_ph4",
+      "neg_reph_curious",
+      "neg_wc_short",
+      "neg_sp_librarian",
+      "neg_sp_ph5",
+      "neg_reph_quick",
+      "neg_wc_short2",
+      "neg_sp_comedian",
+      "neg_sp_marine_biologist",
+      "neg_sp_biographer",
+      "neg_sp_ph6",
+      "neg_reph_help",
+      "neg_reph_walk",
+      "neg_wc_short3",
+      "neg_wc_short4"
+    ]
+  }
+}

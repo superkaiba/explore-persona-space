@@ -1,0 +1,15 @@
+{
+ "git_commit": "4a976dcada49a5dcdbfe23a9c2c94a2246f7a38d",
+ "generated_at": "2026-06-12T00:16:20.224267+00:00",
+ "pairs": [],
+ "subsets": {
+  "parent_recipe": {
+   "flag": "missing arm tensor (repl_parent or arm1_xfam)"
+  },
+  "close_panel": {
+   "flag": "missing arm tensor (repl_close or arm2_close)"
+  }
+ },
+ "pooled": {},
+ "per_family_offdiag_rms": {}
+}

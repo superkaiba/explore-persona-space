@@ -1,0 +1,106 @@
+{
+ "git_commit": "4a976dcada49a5dcdbfe23a9c2c94a2246f7a38d",
+ "generated_at": "2026-06-12T00:16:20.210212+00:00",
+ "arms_present": [
+  "arm1_xfam"
+ ],
+ "per_arm": {
+  "arm1_xfam": {
+   "train_seed": 42,
+   "n_rows": 16,
+   "offdiag_mean": 2.92885145153394,
+   "offdiag_mean_quarantine_passing": 2.942175956892556,
+   "diag_mean": 7.631511580199003,
+   "band_landing": {
+    "in_band": 14,
+    "in_or_near": 15,
+    "n": 16
+   },
+   "default_col_broad_full_mask": 4.589556711912155,
+   "default_col_broad_quarantine": 4.436939246124691,
+   "default_col_all15": 3.303222850958506,
+   "default_col_all15_quarantine": 3.2546877769323497,
+   "default_col_emission_rate_broad": 0.0,
+   "proximity_gradient": {
+    "ols_slope": -8.824568676819139,
+    "spearman": -0.6696416427817733,
+    "n_cells": 193
+   },
+   "antisym_fraction_shared_block": 0.28308475997098625,
+   "per_row": {
+    "sp_swe": {
+     "diag": 5.321605324745178,
+     "offdiag_mean": 3.8363468029669354
+    },
+    "sp_doctor": {
+     "diag": 5.188254654407501,
+     "offdiag_mean": 3.9186062770230428
+    },
+    "sp_ph1": {
+     "diag": 6.313687682151794,
+     "offdiag_mean": 1.6059976645878382
+    },
+    "sp_ph2": {
+     "diag": 7.441895604133606,
+     "offdiag_mean": 3.405062824487686
+    },
+    "wc_short_code": {
+     "diag": 5.497226059436798,
+     "offdiag_mean": 4.11561704320567
+    },
+    "wc_short_advice": {
+     "diag": 6.302487313747406,
+     "offdiag_mean": 4.10535665495055
+    },
+    "wc_long_write": {
+     "diag": 6.177330553531647,
+     "offdiag_mean": 3.836568926061903
+    },
+    "icl_k2": {
+     "diag": 9.056584894657135,
+     "offdiag_mean": 1.7613720574549265
+    },
+    "icl_k8": {
+     "diag": 10.418886959552765,
+     "offdiag_mean": 1.569580493228776
+    },
+    "reph_imp": {
+     "diag": 5.508835017681122,
+     "offdiag_mean": 4.359842724033764
+    },
+    "reph_polite": {
+     "diag": 5.691540002822876,
+     "offdiag_mean": 4.375193612916129
+    },
+    "reph_casual": {
+     "diag": 5.7682883739471436,
+     "offdiag_mean": 4.437878114836557
+    },
+    "fmt_json": {
+     "diag": 8.193826854228973,
+     "offdiag_mean": 0.63504011290414
+    },
+    "fmt_code": {
+     "diag": 3.9734941720962524,
+     "offdiag_mean": 1.0617112496069498
+    },
+    "default": {
+     "diag": 6.0622488260269165,
+     "offdiag_mean": 4.348526790738106
+    },
+    "binst_marker": {
+     "diag": 25.187992990016937,
+     "offdiag_mean": -0.3924598632187679
+    }
+   }
+  }
+ },
+ "cross_arm": {},
+ "count_axis": {
+  "flag": "only 1 count levels present -- need >= 3"
+ },
+ "stop_steps": {},
+ "closeness_check": {
+  "flag": "closeness check artifact absent"
+ }
+}
