@@ -5,7 +5,7 @@ title: Removing the default-assistant correction rows erases the assistant-twins
 kind: experiment
 tags: []
 created_at: '2026-06-12T16:17:24Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 612
 goal: Determine whether the assistant-twin immunity to implanted sycophancy is role/prior
   gating or suppression generalizing from the trained default-assistant negative,
