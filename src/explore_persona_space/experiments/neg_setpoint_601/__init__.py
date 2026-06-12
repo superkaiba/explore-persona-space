@@ -10,6 +10,10 @@ rows). This module's cells break that collinearity:
            companion (same 500-row build, ``epochs_override=4`` → T≈128).
   Phase 2  dense per-step four-float re-runs of the four parent ratio cells.
   Phase 3  negatives-only control (0 positives).
+  Followup1 (plan v4, posonly-multiepoch-schedule-closure): the negatives-free
+           schedule-matched cell ``posonly_200p_T130`` (200p x 10 epochs ->
+           T=130 ~= matched arm's 128) — conditional, explicit-slug-only,
+           launched by ``scripts/i601_followup1_launch.sh``.
   Phase 4  rig-bridging positives-only arms toward #471. Corrected #471
            attribution (concern phase4-bridge-attn-only-attribution; round 4):
            #471's posonly rig was ALL-LINEAR r=32 @ lr 5e-6 — NOT attn-only as
@@ -179,7 +183,13 @@ class CellSpec601:
 
     slug: str
     plain_name: str
-    phase: str  # "phase1" | "phase2" | "phase3" | "phase4"
+    # "phase1" | "phase2" | "phase3" | "phase4" | a same-issue follow-up label
+    # (e.g. "posonly-multiepoch-schedule-closure"). The phase string doubles as
+    # the cell's output dir under --slab-root (i601_run_cell:
+    # slab_root/<phase>/<cell>_seed<S>), so follow-up cells use their
+    # followup_label to land artifacts at the CLAUDE.md follow-up contract
+    # path eval_results/issue_<N>/<followup_label>/... with default slab-root.
+    phase: str
     pos_ex: int
     n_neg_personas: int  # 0 or 4 (anchor spread panel)
     neg_ex_per_persona: int
@@ -376,6 +386,30 @@ CELLS_601: tuple[CellSpec601, ...] = (
         dense_steps=_dense_1_to(13),
         onpolicy="anchors",
     ),
+    # Follow-up round 1 (plan v4, label posonly-multiepoch-schedule-closure):
+    # the missing negatives-free schedule-matched cell — dense_200p0n's exact
+    # 200-positive mix x 10 epochs -> T=130 vs the matched arm's T=128
+    # (|dT|=2 steps, 1.6%). Contrastive-negatives exemption (a): the
+    # manipulated variable IS negatives-present-vs-absent. conditional=True
+    # keeps it out of `--cells all` re-runs AND (via the phase!="phase4"
+    # filter in cells_for_request / the dispatcher's 4b gate) out of the
+    # phase4b group; it launches ONLY by explicit slug. The phase string is
+    # the follow-up label so artifacts land at the follow-up contract dir
+    # (see the CellSpec601.phase field comment). Everything else is
+    # parent-parity: lr 1e-5 (D2), log-only band-stop (D1), full6 on-policy,
+    # Phase-1 dense ladder, seeds 42+137.
+    CellSpec601(
+        slug="posonly_200p_T130",
+        plain_name="Positives-only long schedule (10 epochs, 130 steps)",
+        phase="posonly-multiepoch-schedule-closure",
+        pos_ex=200,
+        n_neg_personas=0,
+        neg_ex_per_persona=0,
+        epochs=10,  # 200 rows -> ceil(200/16)=13 steps/epoch -> T=130 (plan v4 §8)
+        dense_steps=_PHASE1_DENSE_LADDER,  # (2,4,6,8,10,12,16,20,32) — matched-arm parity
+        onpolicy="full6",
+        conditional=True,
+    ),
 )
 
 # Phase-4 bridge attribution narrative (single source for the verdict sentinel
@@ -422,12 +456,15 @@ def cells_for_request(raw: str | None) -> list[CellSpec601]:
     recording a bridge NON-ARREST classification over the two UNCONDITIONAL
     Phase-4 cells (plan §4 Phase 4b as amended;
     ``scripts/i601_phase4_verdict.py`` writes the sentinel post-sweep and
-    ``scripts/i601_launch.sh`` routes on it).
+    ``scripts/i601_launch.sh`` routes on it). The ``phase4b`` group is
+    phase-filtered (follow-up round 1): NON-phase4 conditional cells
+    (``posonly_200p_T130``) are explicit-slug-only and must never leak into
+    a phase4b dispatch.
     """
     if raw is None or raw.strip() in ("", "all"):
         return [c for c in CELLS_601 if not c.conditional]
     if raw.strip() == "phase4b":
-        return [c for c in CELLS_601 if c.conditional]
+        return [c for c in CELLS_601 if c.conditional and c.phase == "phase4"]
     out: list[CellSpec601] = []
     for tok in raw.split(","):
         tok = tok.strip()

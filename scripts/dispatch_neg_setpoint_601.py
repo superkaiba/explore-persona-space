@@ -523,7 +523,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         raise ValueError("zero (cell, seed) units after intersecting --seeds with cell specs")
 
     # ── Phase-4b conditional gate (plan §4 Phase 4b). ─────────────────────────
-    conditional_requested = sorted({c.slug for c in cells if c.conditional})
+    # Phase-filtered (follow-up round 1): the gate guards ONLY phase4
+    # conditional cells. Non-phase4 conditional cells (posonly_200p_T130) are
+    # explicit-slug follow-up launches and have no bridge-verdict dependency.
+    conditional_requested = sorted({c.slug for c in cells if c.conditional and c.phase == "phase4"})
     if conditional_requested and not args.dry_run:
         _check_phase4b_gate(args.slab_root, conditional_requested)
     log.info(
