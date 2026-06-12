@@ -85,6 +85,15 @@ PARITY_KILL_N = 3
 WINDOW_MISSED_N = 4
 SPEED_CONSISTENT_N = 5
 COLLISION_SOURCE = "qwen_default"
+# Reader-facing facet labels for body figures (plain English, no snake_case slugs).
+FACET_LABELS = {
+    "villain": "Villain",
+    "comedian": "Comedian",
+    "assistant": "Assistant",
+    "qwen_default": "Qwen default",
+    "software_engineer": "Software engineer",
+    "kindergarten_teacher": "Kindergarten teacher",
+}
 # Matched cumulative-positive-dose pairs (contrastive step, posonly step) —
 # ratio 200/700 positives per row (plan v5 §6, descriptive only).
 MATCHED_DOSE_PAIRS = ((18, 5), (35, 9), (44, 13), (88, 26), (132, 35))
@@ -497,6 +506,68 @@ def analyze(  # noqa: C901 - linear assembly of the registered §6 reads
     return summary
 
 
+def make_trajectory_figure(summary: dict, figures_dir: Path) -> Path:
+    """Hero trajectory figure (plan v5 §6 figure 1) from a summary dict alone.
+
+    Reads per-source own rates / claim-clustered SEs from ``summary["per_source"]``
+    (string step keys), so it can be re-run standalone against a committed
+    ``analyze_summary_subceiling.json`` without re-running judging or analysis.
+    Returns the written PNG path (a PDF sibling is written alongside).
+    """
+    import matplotlib.pyplot as plt
+
+    from explore_persona_space.analysis.paper_plots import set_paper_style
+
+    set_paper_style(target="blog")
+    figures_dir.mkdir(parents=True, exist_ok=True)
+    per_source = summary["per_source"]
+    steps = [int(k) for k in summary["grid_steps"]]
+    arm_labels = {
+        ARM_CONTR: "Contrastive mix (dense retrain)",
+        ARM_POS: "Positive-only, dose-matched (dense retrain)",
+    }
+    fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.5), constrained_layout=True)
+    for ax, s in zip(axes.flat, SOURCE_PERSONAS, strict=True):
+        rec = per_source[s]
+        for arm in (ARM_CONTR, ARM_POS):
+            ys = [rec["own_rate"][arm][str(k)] for k in steps]
+            es = [rec["claim_clustered_se"][arm][str(k)] for k in steps]
+            ax.errorbar(
+                steps, ys, yerr=es, marker="o", markersize=3, capsize=2, label=arm_labels[arm]
+            )
+        ax.axhspan(BAND_LO, BAND_HI, color="tab:green", alpha=0.08, linewidth=0)
+        ax.axhline(
+            rec["fresh_base_own_rate_reused"],
+            color="grey",
+            linestyle="--",
+            linewidth=0.8,
+            alpha=0.6,
+        )
+        if rec["primary_step"] is not None:
+            ax.axvline(
+                rec["primary_step"],
+                color="black",
+                linestyle=":",
+                linewidth=1.0,
+                alpha=0.7,
+            )
+        ax.set_title(FACET_LABELS[s], fontsize=10)
+        ax.set_xlabel("optimizer steps")
+        ax.set_ylabel("own-panel agreement rate")
+        ax.set_xscale("log")
+        ax.set_ylim(-0.02, 1.02)
+    axes.flat[0].legend(fontsize=7)
+    fig.suptitle(
+        "Sub-ceiling install trajectories (green = resolvable band [0.15, 0.90]; "
+        "dotted vertical line = primary co-resolvable checkpoint; dashes = reused fresh base)"
+    )
+    out = figures_dir / "subceiling_trajectory.png"
+    fig.savefig(out, dpi=200)
+    fig.savefig(out.with_suffix(".pdf"))
+    plt.close(fig)
+    return out
+
+
 def _make_figures(summary, own, ses, claims, figures_dir: Path) -> dict[str, str]:
     """Plan v5 §6 figures: hero trajectory, per-checkpoint gap CIs, matched-dose
     overlay, S50 intervals, parity bars, per-claim scatter at primary."""
@@ -515,45 +586,7 @@ def _make_figures(summary, own, ses, claims, figures_dir: Path) -> dict[str, str
     }
 
     # 1. Hero: per-source own-rate vs optimizer step, band shaded, primary marked.
-    fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.5), constrained_layout=True)
-    for ax, s in zip(axes.flat, SOURCE_PERSONAS, strict=True):
-        for arm in (ARM_CONTR, ARM_POS):
-            ys = [own[arm][s][k] for k in steps]
-            es = [ses[arm][s][k] for k in steps]
-            ax.errorbar(
-                steps, ys, yerr=es, marker="o", markersize=3, capsize=2, label=arm_labels[arm]
-            )
-        ax.axhspan(BAND_LO, BAND_HI, color="tab:green", alpha=0.08, linewidth=0)
-        ax.axhline(
-            per_source[s]["fresh_base_own_rate_reused"],
-            color="grey",
-            linestyle="--",
-            linewidth=0.8,
-            alpha=0.6,
-        )
-        if per_source[s]["primary_step"] is not None:
-            ax.axvline(
-                per_source[s]["primary_step"],
-                color="black",
-                linestyle=":",
-                linewidth=1.0,
-                alpha=0.7,
-            )
-        ax.set_title(s, fontsize=10)
-        ax.set_xlabel("optimizer steps")
-        ax.set_ylabel("own-panel agreement rate")
-        ax.set_xscale("log")
-        ax.set_ylim(-0.02, 1.02)
-    axes.flat[0].legend(fontsize=7)
-    fig.suptitle(
-        "Sub-ceiling install trajectories (green = resolvable band [0.15, 0.90]; "
-        "dotted vline = primary co-resolvable checkpoint; dashes = reused fresh base)"
-    )
-    out = figures_dir / "subceiling_trajectory.png"
-    fig.savefig(out, dpi=200)
-    fig.savefig(out.with_suffix(".pdf"))
-    plt.close(fig)
-    fig_paths["subceiling_trajectory"] = str(out)
+    fig_paths["subceiling_trajectory"] = str(make_trajectory_figure(summary, figures_dir))
 
     # 2. Per-source paired gap + CI at every co-resolvable checkpoint.
     fig, axes = plt.subplots(2, 3, figsize=(13.5, 7.5), constrained_layout=True)
