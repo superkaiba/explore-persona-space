@@ -321,14 +321,9 @@ def fig_leakage_allocation(payload: dict) -> None:
                 alpha=0.8,
                 label="Default-assistant probe" if (k == 0 and a == 0) else None,
             )
-            for xi, s in zip(pos, STEPS, strict=True):
-                ax.annotate(
-                    "sys" if arm == "system_minimal" else "role",
-                    (xi, float(wrong[list(STEPS).index(s)] + default[list(STEPS).index(s)]) + 0.4),
-                    ha="center",
-                    fontsize=7,
-                    color="0.35",
-                )
+            # No in-bar arm annotations: abbreviated "sys"/"role" labels are not
+            # reader-facing (round-2 critique); the suptitle names the left/right
+            # bar assignment in full.
         ax.set_xticks(x)
         ax.set_xticklabels([str(s) for s in STEPS])
         ax.set_title(persona)
