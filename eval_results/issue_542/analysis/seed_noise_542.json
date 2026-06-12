@@ -1,15 +1,206 @@
 {
- "git_commit": "4a976dcada49a5dcdbfe23a9c2c94a2246f7a38d",
- "generated_at": "2026-06-12T00:16:20.224267+00:00",
- "pairs": [],
+ "git_commit": "10ed3cc3c488de243cd1d93d8a4b4a9d682dd577",
+ "generated_at": "2026-06-12T09:02:54.569651+00:00",
+ "pairs": [
+  {
+   "subset": "parent_recipe",
+   "cid": "sp_swe",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.06952351757458297
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "sp_swe",
+   "stat": "default_col",
+   "abs_delta": 0.18883264064788818
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "sp_swe",
+   "stat": "diag",
+   "abs_delta": 0.09646165370941162
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "wc_short_advice",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.07699259051254792
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "wc_short_advice",
+   "stat": "default_col",
+   "abs_delta": 0.14871567487716675
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "wc_short_advice",
+   "stat": "diag",
+   "abs_delta": 0.16972315311431885
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "reph_polite",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.1048722118139267
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "reph_polite",
+   "stat": "default_col",
+   "abs_delta": 0.16389453411102295
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "reph_polite",
+   "stat": "diag",
+   "abs_delta": 0.10601240396499634
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "default",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.19170226582459016
+  },
+  {
+   "subset": "parent_recipe",
+   "cid": "default",
+   "stat": "diag",
+   "abs_delta": 0.2736377716064453
+  },
+  {
+   "subset": "close_panel",
+   "cid": "sp_swe",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.028635401810918726
+  },
+  {
+   "subset": "close_panel",
+   "cid": "sp_swe",
+   "stat": "default_col",
+   "abs_delta": 0.01636749505996704
+  },
+  {
+   "subset": "close_panel",
+   "cid": "sp_swe",
+   "stat": "diag",
+   "abs_delta": 0.0074615478515625
+  },
+  {
+   "subset": "close_panel",
+   "cid": "wc_short_advice",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.09434282141072448
+  },
+  {
+   "subset": "close_panel",
+   "cid": "wc_short_advice",
+   "stat": "default_col",
+   "abs_delta": 0.09694594144821167
+  },
+  {
+   "subset": "close_panel",
+   "cid": "wc_short_advice",
+   "stat": "diag",
+   "abs_delta": 0.08558845520019531
+  },
+  {
+   "subset": "close_panel",
+   "cid": "reph_polite",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.05786324611731963
+  },
+  {
+   "subset": "close_panel",
+   "cid": "reph_polite",
+   "stat": "default_col",
+   "abs_delta": 0.05534631013870239
+  },
+  {
+   "subset": "close_panel",
+   "cid": "reph_polite",
+   "stat": "diag",
+   "abs_delta": 0.02598559856414795
+  },
+  {
+   "subset": "close_panel",
+   "cid": "default",
+   "stat": "offdiag_mean",
+   "abs_delta": 0.010844681944165657
+  },
+  {
+   "subset": "close_panel",
+   "cid": "default",
+   "stat": "diag",
+   "abs_delta": 0.040640950202941895
+  }
+ ],
  "subsets": {
   "parent_recipe": {
-   "flag": "missing arm tensor (repl_parent or arm1_xfam)"
+   "offdiag_mean": {
+    "rms": 0.12094349716169445,
+    "n_pairs": 4
+   },
+   "default_col": {
+    "rms": 0.1679638219376372,
+    "n_pairs": 3
+   },
+   "diag": {
+    "rms": 0.17622929607729787,
+    "n_pairs": 4
+   }
   },
   "close_panel": {
-   "flag": "missing arm tensor (repl_close or arm2_close)"
+   "offdiag_mean": {
+    "rms": 0.0574158439943023,
+    "n_pairs": 4
+   },
+   "default_col": {
+    "rms": 0.06513991224993465,
+    "n_pairs": 3
+   },
+   "diag": {
+    "rms": 0.04926458293244765,
+    "n_pairs": 4
+   }
   }
  },
- "pooled": {},
- "per_family_offdiag_rms": {}
+ "pooled": {
+  "offdiag_mean": {
+   "per_cell_rms": 0.09466759912261125,
+   "arm_level_floor": 0.02366689978065281,
+   "ci95_per_cell_rms": [
+    0.05607669049212632,
+    0.13211546478696212
+   ],
+   "n_pairs": 8,
+   "independence_assumption": "cells independent; per-family floors below"
+  },
+  "default_col": {
+   "per_cell_rms": 0.12738731029389758,
+   "arm_level_floor": 0.031846827573474394,
+   "ci95_per_cell_rms": [
+    0.07679167299370726,
+    0.166006819313286
+   ],
+   "n_pairs": 6,
+   "independence_assumption": "cells independent; per-family floors below"
+  },
+  "diag": {
+   "per_cell_rms": 0.1293904245441059,
+   "arm_level_floor": 0.032347606136026476,
+   "ci95_per_cell_rms": [
+    0.06203597330266615,
+    0.18841703206631716
+   ],
+   "n_pairs": 8,
+   "independence_assumption": "cells independent; per-family floors below"
+  }
+ },
+ "per_family_offdiag_rms": {
+  "sp": 0.05316721608668313,
+  "wc": 0.0861058271708969,
+  "reph": 0.08469455726898456,
+  "default": 0.13577069980071535
+ }
 }

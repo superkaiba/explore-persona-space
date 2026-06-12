@@ -130,7 +130,7 @@ def hero_count(reads: dict, sn: dict) -> None:
         )
     ax.set_xticks(sorted(xs))
     ax.set_xticklabels([str(COUNTS[a]) for a in sorted(arms, key=lambda a: COUNTS[a])])
-    ax.set_xlabel("Negative-persona count (300 negative rows total at every level)")
+    ax.set_xlabel("Negative-persona count (300 negative rows at every level)", fontsize=9)
     ax.set_ylabel("ΔlogP(※) trained - base (nat)")
     ax.legend(fontsize=7)
     _save(fig, "hero2_count_axis", {"arms": arms})
