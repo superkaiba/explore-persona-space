@@ -1,7 +1,7 @@
 ---
 title: Marker LoRA updates carry a seed-stable write direction, but the top-1 key
-  is seed-arbitrary and does not match the last-prompt-token context vector (MODERATE
-  confidence)
+  is seed-arbitrary and matches the persona context vector at neither the prompt's
+  last token nor the trained end-of-response slot (HIGH confidence)
 kind: analysis
 tags:
 - followup-auto
