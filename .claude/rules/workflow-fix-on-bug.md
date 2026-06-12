@@ -64,6 +64,8 @@ notice the recurrence manually. Now it's same-turn.
   `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
   `failure_classifier.py`, `gh_project.py`,
   `pm_queue_report.py`,
+  `recent_clean_results.py`, `task_state.py`,
+  `post_step_completed.py`,
   `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
   `new_worktree.sh`,
