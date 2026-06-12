@@ -3699,8 +3699,8 @@
       "goal": "Test whether the contrastive-negatives \u2192 stronger source implantation effect (established for the marker implant) holds for sycophancy, by training the same source personas on positive-only vs contrastive mixes \u2014 the single manipulated variable \u2014 and comparing judge-scored source self-implant deltas, with bystander leakage as the secondary read.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/608",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/608",
+      "status": "awaiting_promotion",
       "title": "Positive-only sycophancy training installs at least as strongly as the contrastive mix at every dose the rate can measure, but spreads sycophancy to nearly every other persona (MODERATE confidence)"
     },
     "609": {
