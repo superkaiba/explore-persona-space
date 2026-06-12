@@ -11,7 +11,7 @@ Census: 50 tasks (plan-time list ∪ run-start `ls tasks/awaiting_promotion/` �
 
 **WARNs observed (not FAILs; recorded for the promotion-time reader):** 37 tasks carry `[WARN] Reproducibility Context provenance row — missing **Context:** row (no recorded origin data)`; 6 tasks carry `[WARN] Goal-of-experiment field — missing frontmatter goal:` (soft, enforced at /issue Step 0c).
 
-| task | overall | URLs probed | in-scope FAILs | repair + provenance | post-repair verdict | out-of-scope FAILs |
+| task | overall | URLs actually probed | in-scope FAILs | repair + provenance | post-repair verdict | out-of-scope FAILs |
 |---|---|---|---|---|---|---|
 | 464 | PASS | fig=5, repro=32 | - | none — no repair needed (no provenance rows) | PASS (all URLs verified) | - |
 | 472 | PASS | fig=5, repro=14 | - | none — no repair needed (no provenance rows) | PASS (all URLs verified) | - |
