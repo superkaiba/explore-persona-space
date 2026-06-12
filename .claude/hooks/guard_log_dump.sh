@@ -126,7 +126,10 @@ check_cmd() {
         # Standalone command separator: what follows belongs to a DIFFERENT
         # command — evaluate the accumulated verb, then stop attributing
         # later arguments to it (else `cat notes.md && rm logs/train.log`
-        # false-positives on the rm target).
+        # false-positives on the rm target). NOTE: the '||' arm is currently
+        # unreachable — the *\|* pipe-allow fast path above returns first for
+        # any command containing '|' — kept so the separator walk stays
+        # correct if that fast path is ever narrowed.
         pending_check || return 1
         mode=""; nlines=0; sed_n=0; sedrange_big=0; await_n=0; files=()
         continue
