@@ -3873,8 +3873,8 @@
     "629": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/629",
-      "status": "planning",
+      "path": "tasks/approved/629",
+      "status": "approved",
       "title": "Harden the i472 trajectory storage-contract gate: finiteness/type-check the 6 raw-logit leaf fields + AST gate-before-write ordering pin"
     },
     "630": {
