@@ -89,6 +89,17 @@ with loss masked so only the target slot carries gradient.
   Contrastive negatives reliably buy *coarse* on/off localization; the
   *fine* composition knobs (negative-set count + similarity) are untested
   (#19 was queued but never run — there is no winning size yet).
+- **Cross-condition leakage comparisons are dose-confounded by default.**
+  The negative set also changes INSTALL strength — not even in a fixed
+  direction across behaviors (#601: contrastive negatives strengthened the
+  marker implant; #608: positive-only sycophancy installed at least as
+  strongly) — so "contrastive leaks less than positive-only" read off raw
+  bystander leakage conflates selectivity with implant dose. Use the
+  install-controlled reads (matched-install checkpoints, leakage as a
+  fraction of install in EOS-margin logit space, leakage-vs-install dose
+  curves) per `.claude/rules/marker-leakage-measurement.md`
+  § Install-strength confound; never correlate the fraction back against
+  install (the same X-vs-(X−Y) family as the #383 caveat above).
 - **Saturation hides everything (#448).** At a fully-trained anchor the
   on-policy marker log-prob saturates (argmax = marker everywhere) so recipe
   knobs have nothing to push against. A composition/negatives sweep MUST use
