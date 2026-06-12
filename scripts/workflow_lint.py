@@ -231,7 +231,18 @@ MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset(
 #   * heredocs that do NOT feed a python interpreter's stdin
 #     (`cat <<EOF`, `python scripts/foo.py <<EOF` where the body is
 #     DATA for the script, ...);
-#   * comment lines inside the heredoc body.
+#   * comment lines inside the heredoc body;
+#   * `python -c '...'` one-liner arguments — DELIBERATELY out of scope
+#     (extension considered + rejected, 2026-06-12): under `-c`,
+#     `__main__` has no `__file__`, so python-dotenv's `_is_interactive()`
+#     short-circuits find_dotenv() to a cwd-walk — the frame walk (and
+#     its `assert frame.f_back is not None` crash) is never reached
+#     (verified empirically against the pinned python-dotenv 1.2.2). A
+#     no-arg call run from the repo root legitimately finds `.env`, so a
+#     hard FAIL (this framework has no warn tier / waiver) would flag
+#     working shapes. The real `-c` hazard is SILENT non-loading from an
+#     off-repo cwd — prose-documented in gotchas.md's python-dotenv
+#     entry, not lintable without false positives.
 #
 # Opener parsing: backslash-continued physical lines are merged into one
 # logical command line first (the #612 incident shape is
