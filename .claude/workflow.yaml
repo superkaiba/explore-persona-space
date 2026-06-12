@@ -1311,6 +1311,10 @@ markers:
     posted_by: skill (via adversarial-planner)
     when: "Step 2"
     fields: "Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod intent"
+  - kind: "epm:plan-verify"
+    posted_by: skill (adversarial-planner Phase 1.5.0 orchestrator; VM-side only)
+    when: "after each scripts/verify_plan.py run against the newest plans/v{K}.md, before the fact-checker + critic ensemble spawn"
+    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked"
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"

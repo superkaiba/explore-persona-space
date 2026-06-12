@@ -20,6 +20,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/61530ecc76437068230d58edf20d64448a12eea9/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
+
 ## Human TL;DR
 
 **Headline.** the default assistant's protection from our marker implant isn't bought by its own "don't do this" training rows — i deleted all 200 of them, and the never-trained default came out exactly as shielded as the trained one (median −0.195 vs −0.200; removing the rows closed under 3% of the gap a dose story predicted closing).
@@ -197,6 +199,7 @@ The log-prob gain exceeds the logit-margin gain by about 0.9 nats in both arms b
 - Reused comparator trajectories from [#600](https://eps.superkaiba.com/tasks/600): [eval_results/issue_600/sweep/c600_mercenary_near/](https://github.com/superkaiba/explore-persona-space/tree/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/sweep/c600_mercenary_near) — fit: the with-default arm IS this mix by design (identical recipe, marker, eval rig, DV fields, all 3 seeds present); the cells sit in the sub-emission log-prob regime (villain implant 8.76–9.31 nats, inside the [5, 12]-nat usable window), so the comparison has headroom where this read needs it.
 - Reused training inputs from [#600](https://eps.superkaiba.com/tasks/600): [issue600_targeted_proximity/inputs/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue600_targeted_proximity/inputs) (`persona_bank.json`, `on_policy_R/R_train.json`) — fit: the single-variable contrast requires row-for-row identical content outside the manipulated slot; journalist's 200 replacement rows come from the same frozen on-policy response pool, content-hash-pinned in the per-seed manifests.
 - Reused per-persona paired differences from [#600](https://eps.superkaiba.com/tasks/600) (input to the replacement-confound bound): [locality_detail.json](https://github.com/superkaiba/explore-persona-space/blob/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/analysis/locality_detail.json) — fit: the journalist-vs-dictator slot swap it records is the direct precedent for "does swapping journalist into the panel move assistant-cluster personas," on the same chassis and DV.
+- **Methodology reference:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/61530ecc76437068230d58edf20d64448a12eea9/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
 
 **Compute:** ~1.0 h wall for the 3-cell sweep (launch 19:47 → results 20:47 UTC, 2026-06-12) on GCP instance `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB); smoke cell ~22 min; instance torn down after upload-verification PASS.
 
