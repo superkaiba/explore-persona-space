@@ -3375,8 +3375,8 @@
     "565": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/565",
-      "status": "planning",
+      "path": "tasks/approved/565",
+      "status": "approved",
       "title": "Upload-defaults hardening: route i207 worker through hub, test the runner merged-gate, exclude checkpoint-* from persist path"
     },
     "566": {
