@@ -67,8 +67,9 @@ echo "[driver] [phase=p2j_wait] polling HF for panel_set.json (P2j on the VM)"
 uv run python - "$PANEL_POLL_TIMEOUT_S" "$PANEL_POLL_INTERVAL_S" <<'PY' \
   || fail "panel_set.json did not appear on HF within the timeout (P2j stalled?)" 3
 import sys, time
-from dotenv import load_dotenv
-load_dotenv()
+# NO bare load_dotenv() here: from a stdin heredoc its no-arg find_dotenv()
+# stack-walk crashes (assert frame.f_back) — gotchas.md; HF_TOKEN is already
+# exported in the workload env, which hf_hub_download reads directly.
 from huggingface_hub import hf_hub_download
 timeout, interval = int(sys.argv[1]), int(sys.argv[2])
 deadline = time.time() + timeout
