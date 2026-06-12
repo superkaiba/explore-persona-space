@@ -347,3 +347,4 @@
 {"ts": "2026-06-12T09:07:57Z", "kind": "epm:progress", "version": 89, "by": "poll_pipeline", "note": "phase transition: gen -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-12T09:27:04Z", "kind": "epm:progress", "version": 90, "by": "poll_pipeline", "note": "phase transition: judge -> hf", "phase": "hf", "pod": "pod-545"}
 {"ts": "2026-06-12T09:36:38Z", "kind": "epm:progress", "version": 91, "by": "poll_pipeline", "note": "phase transition: hf -> judge", "phase": "judge", "pod": "pod-545"}
+{"ts": "2026-06-12T10:52:44Z", "kind": "epm:progress", "version": 92, "by": "poll_pipeline", "note": "phase transition: judge -> gen", "phase": "gen", "pod": "pod-545"}
