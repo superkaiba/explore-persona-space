@@ -1,7 +1,6 @@
 ---
-title: 'A live contrastive-negative gradient spends itself on the stop token, not
-  the marker: relocating the negatives'' loss to the slot where generation actually
-  stops leaves the source implant where dead-slot negatives put it (MODERATE confidence)'
+title: A live contrastive-negative gradient exerts no measurable restoring force on
+  the source marker implant under a matched recipe (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T02:42:11Z'
