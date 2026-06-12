@@ -10,6 +10,9 @@ goal: 'Determine whether placing the negative-row loss at the post-response slot
   flag on) gives contrastive negatives a live gradient that exerts a measurable restoring
   force on the source implant, by training flag-on cells single-variable-matched to
   #601''s existing flag-off 200p+800n cells.'
+relates_to:
+- leak-contrastive-negatives
+- implant-learning-speed
 ---
 ## Goal
 
