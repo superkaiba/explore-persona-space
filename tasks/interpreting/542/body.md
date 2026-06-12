@@ -5,7 +5,7 @@ title: 'Which contrastive negatives you train against barely matters: close-pers
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:20:50Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 537
 goal: 'Holding the #537 marker protocol fixed (16 train contexts, band-stopped recipe,
   frozen 28-context eval panel + scoring harness), vary ONLY the contrastive-negative
