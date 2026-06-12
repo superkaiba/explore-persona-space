@@ -3767,8 +3767,8 @@
     "616": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/616",
-      "status": "proposed",
+      "path": "tasks/planning/616",
+      "status": "planning",
       "title": "Consolidate mentor meeting notes from the Research Log Google Slides deck into docs/mentor_updates/"
     },
     "62": {
