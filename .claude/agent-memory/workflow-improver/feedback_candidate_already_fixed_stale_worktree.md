@@ -1,21 +1,39 @@
 ---
-name: Candidate may describe a stale-worktree spec — check main first
+name: candidate-already-fixed-stale-worktree
 description: Before applying a workflow-fix candidate, git-log the target file on main; the incident may stem from a worktree's pre-fix copy of an already-hardened spec
-type: feedback
+metadata:
+  type: feedback
 ---
 
-Before refining a candidate's diff_sketch, run `git log --oneline -5 -- <target_file>` and grep main's copy for the proposed rule. Auto-spawn candidates are emitted from sessions whose cwd is an ISSUE WORKTREE, and the `.claude/agents/*.md` specs the harness loaded there are frozen at branch-cut time — so the "missing rule" the candidate proposes may already be on main in a stronger form, and the incident is really a stale-spec propagation failure.
+Before refining a candidate's diff_sketch, run `git log --oneline -5 --
+<target_file>` on main and grep main's copy for the proposed rule.
+Auto-spawn candidates are emitted from sessions whose cwd is an ISSUE
+WORKTREE; the workflow-surface specs loaded there are frozen at branch-cut
+time, so the "missing rule" may already exist on main in a STRONGER form —
+blindly applying the sketch would weaken it.
 
-**Why:** Task #557 r2 (2026-06-10): candidate proposed adding a dispatch rule to `codex-code-reviewer.md` that had landed on main 12 hours earlier (`bd26e7b0d`, compose-only contract); the issue-557 worktree's copy predated it. Blindly applying the sketch would have WEAKENED the existing rule (the sketch allowed foreground wrapper dispatch; main mandates compose-only).
+**Why:** #557 r2 (2026-06-10) — candidate proposed a dispatch rule for
+`codex-code-reviewer.md` that had landed on main 12h earlier (`bd26e7b0d`);
+the sketch would have re-allowed foreground wrapper dispatch that main bans.
 
-**How to apply:** When the rule already exists, apply only the residual value (recurrence citation, recovery recipe, missed sibling files) and surface the propagation root cause (stale worktree copies of workflow-surface files at ensemble-spawn time) as a follow-up.
-
-**Parallel-incident variant (#541/#552, 2026-06-10):** the prior commit may come from a DIFFERENT same-day incident with the same root cause, each side holding complementary validated facts (#552: canary size thresholds + tar-over-ssh staging; #541: LFS-endpoint-only gate mechanism, shard recipe, private overflow repo, probes). Then the move is INTEGRATE the candidate's facts into the existing section — one coherent rule, no duplicate H2 — and reconcile the two incidents' empirical claims explicitly (e.g. the mechanism from one explains the other's canary results).
-
-**Hedged-prose variant (#536 style-reference candidate, 2026-06-11):** prose-synthesized candidates carry the emitting agent's UNVERIFIED hedges verbatim ("presumably omits") — the agent guessed the target file's state without reading it. The #536 candidate asked to add blog marker/patch rows to style-reference.md's variants table, but a sibling incident's fix (`4e0c9f488`, #534, 19h earlier) had already documented all three params + the call-site fix in the file's rcParams-delta section. Honor the spawn prompt's no-op escape hatch when given; also note the literal sketch (table rows) would have mis-fit the file — the variants table is an at-a-glance target picker, not a per-param reference.
-
-**Same-check-different-shape variant (#537 check-16 lr, 2026-06-11):** a near-identical prior fix on main does NOT automatically make the candidate stale — diff the SHAPES before dismissing. Main already carried `56dcaa092` ("check 16 parses Parameters-table-row lr", #534: dedicated `| Learning rate | 5e-6 |` rows), yet #537's skip was a DIFFERENT residual form (bare-adjacency `lr 5e-6` inside per-recipe value cells) the prior regex couldn't see. Reproduce against the live incident body (run the check pre/post-fix on it) to decide stale-vs-residual; here the candidate was valid and the fix extended `_LR_ANCHORED_RE`'s connective rather than adding a third regex.
-
-**Exact-duplicate-dispatch variant (#591 lens-15 sync, 2026-06-11):** the prior commit can be the SAME candidate's fix, not just a sibling incident's — `68be7ec25` ("sync codex-clean-result-critic to the live 15-lens rubric", 01:41 PT) + `dc910e5be` (ontology counts, 01:48 PT) landed hours before this spawn re-dispatched the identical fourteen→fifteen candidate. Verified all five mirror surfaces (count line, copy-list bullet, `### Lens 1`→`### Lens 15` template skeleton, "Lens 1-15" blocker-tag enum, agents-vs-skills ontology rows) were current → clean no-op, nothing committed. Cross-session duplicate dispatch has no protocol guard (the "already running on same target_file" deferral is session-local), so expect more of these; the git-log-first check is the whole defense.
-
-**Fix-the-resolution-not-the-content escalation (third dispatch of the same lens-15 candidate, 2026-06-11):** when the same already-fixed candidate keeps recurring, the durable move is to fix the PATH RESOLUTION that lets composers read the stale worktree copy, not to re-verify content again. Applied in `c48c6101a`: codex-clean-result-critic.md Step 1b now derives `REPO_ROOT="${TASK_DIR%/tasks/*}"` (worktree-proof, since `task.py find` branch-guards to main) instead of `git rev-parse --show-toplevel` (resolves to the worktree from a worktree cwd), and Step 2's spec-read is pinned to `$REPO_ROOT/.claude/agents/clean-result-critic.md` instead of a bare relative path. Check sibling twins for the same cwd-derived-read pattern when a stale-copy incident names them.
+**How to apply:** when the rule already exists, apply only the residual value
+(recurrence citation, recovery recipe, missed sibling files) and surface the
+propagation root cause as a follow-up. Variants seen since:
+- **Parallel incident** (#541/#552, 2026-06-10): prior commit is a SAME-DAY
+  sibling incident holding complementary facts → INTEGRATE into one coherent
+  section, reconcile the two incidents' claims; no duplicate H2.
+- **Hedged prose** (#536, 2026-06-11): prose-synthesized candidates carry
+  unverified hedges ("presumably omits") — the emitter guessed file state
+  without reading it; honor the no-op escape hatch when the content is
+  already documented.
+- **Same check, different shape** (#537, 2026-06-11): a near-identical prior
+  fix does NOT make the candidate stale — diff the SHAPES and reproduce the
+  check against the live incident body pre/post-fix (here: extend
+  `_LR_ANCHORED_RE` rather than dismiss).
+- **Exact duplicate dispatch** (#591, 2026-06-11): the prior commit can be
+  the SAME candidate already fixed (cross-session duplicate dispatch has no
+  protocol guard) → verify all mirror surfaces current, clean no-op.
+- **Fix the resolution, not the content** (3rd #591 dispatch): on repeated
+  recurrence, fix the PATH RESOLUTION letting composers read stale worktree
+  copies (`c48c6101a`: derive `REPO_ROOT="${TASK_DIR%/tasks/*}"`, pin
+  spec-reads to `$REPO_ROOT/...`); audit sibling twins for the same pattern.
