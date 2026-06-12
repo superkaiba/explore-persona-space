@@ -1136,6 +1136,73 @@ def test_sentinel_scrub_see_config():
     assert not by_name["Reproducibility sentinel scrub"].passed
 
 
+def test_sentinel_scrub_default_bare_table_cell_fails():
+    """A bare `| default |` Parameters cell is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Chat template | default |",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_label_terminator_fails():
+    """`chat template: default` ending a line is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace("47 min.", "47 min. Chat template: default")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_bold_label_terminator_fails():
+    """The dominant Reproducibility row form `**Label:** default` is also a
+    placeholder position → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n**Chat template:** default",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_prose_passes():
+    """Substantive prose uses of "default" PASS check 9 — the default
+    assistant is a core experimental condition (task #542 had to reword
+    "default-context response cache" to dodge the old whole-word match)."""
+    body = GOOD_BODY.replace(
+        "47 min.",
+        "47 min. Eval reused the default-context response cache; the "
+        "default assistant arm and the default column of the leakage "
+        "table were scored with the same judge.",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
+
+
+def test_sentinel_scrub_default_assistant_table_cell_passes():
+    """A table cell whose VALUE is a longer noun phrase containing
+    "default" ("default assistant + 3 close personas") PASSes check 9 —
+    only the bare-cell `| default |` form is a placeholder."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Negative panel | default assistant + 3 close personas |",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
+
+
 # ─── Check 10: cherry-picked label discipline ─────────────────────────────
 
 

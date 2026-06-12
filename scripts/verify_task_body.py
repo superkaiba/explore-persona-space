@@ -111,6 +111,12 @@ bodies are never re-verified, so tightening cannot regress them).
     unauthenticated 404 on an external private repo would false-FAIL.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
+   `default` is flagged ONLY in placeholder positions — a bare table-cell
+   value (`| default |`) or a label terminator (`chat template: default`
+   at end of line / cell). Substantive prose uses ("default assistant",
+   "default-context", "the default column") PASS: the default assistant
+   is a core experimental condition in this project (open-q 3.7; task
+   #542 false-positive).
 10. Cherry-picked label discipline — every sample-output BLOCK in
     `## TL;DR` is preceded by prose containing `cherry-picked`,
     `cherry picked`, `random sample`, `first N of M`, or similar
@@ -333,6 +339,22 @@ CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
 SENTINEL_SUBSTRINGS = ["TBD", "{{", "see config", "default"]
+
+# `default` is flagged ONLY in placeholder positions: a bare markdown
+# table-cell value (`| default |`) or a label terminator (`chat template:
+# default` / `**Chat template:** default` / `lr = default` at end of line
+# or cell). Embedded prose uses — "default assistant", "default-context
+# response cache", "the default column" — are substantive in this project
+# (the default assistant is a core experimental condition, open-q 3.7;
+# task #542 had to reword a clean body to dodge the old whole-word match).
+# Horizontal whitespace only ([ \t]) so a match never spans lines; `\**`
+# admits the bold-label row form (`**Label:** value`); optional backticks
+# admit a code-formatted placeholder value.
+_DEFAULT_PLACEHOLDER_RE = re.compile(
+    r"\|[ \t]*`?default`?[ \t]*\|"  # bare table-cell value
+    r"|[:=][ \t]*\**[ \t]*`?default`?[ \t]*(?:$|\|)",  # label terminator
+    flags=re.IGNORECASE | re.MULTILINE,
+)
 
 # Minimum number of characters of rationale required AFTER the
 # `Confidence: <level> —` dash on the confidence line.
@@ -1867,9 +1889,16 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
         if s == "{{":
             if "{{" in repro:
                 bad.append("`{{` placeholder")
+        elif s == "default":
+            # Placeholder positions only (bare table cell / label
+            # terminator) — see _DEFAULT_PLACEHOLDER_RE. Prose like
+            # "default assistant" is substantive, not a sentinel
+            # (task #542 false-positive).
+            if _DEFAULT_PLACEHOLDER_RE.search(repro):
+                bad.append("`default` placeholder value")
         else:
-            # `default` matched as a standalone word (avoid false positives like
-            # `default_factory`); the others matched case-insensitively as words.
+            # Matched case-insensitively as standalone words (avoid false
+            # positives from larger identifiers).
             if re.search(rf"\b{re.escape(s)}\b", repro, flags=re.IGNORECASE):
                 bad.append(f"`{s}`")
     if bad:

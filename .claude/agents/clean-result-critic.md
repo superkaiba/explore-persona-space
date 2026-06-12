@@ -84,7 +84,10 @@ anti-pattern audit:
 #   8. Reproducibility URL permanence (HF Hub /tree/<sha>, WandB
 #      /runs/<id>, GitHub /blob/<sha>; never main/master/HEAD)
 #   9. Reproducibility sentinel scrub (no `{{` / `TBD` / `default` /
-#      `see config`; only explicit `n/a`)
+#      `see config`; only explicit `n/a`. `default` counts only in
+#      placeholder positions — bare `| default |` cell or a
+#      `label: default` terminator; prose "default assistant" is
+#      fine, #542)
 #   10. cherry-picked label preceding every sample-output fenced
 #       block in `## TL;DR`
 #   11. qualitative-data link preceding every sample-output fenced
@@ -462,7 +465,11 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   written `n/a` when there's an actual artifact that COULD have
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
-  explicitly when truly non-applicable (verifier check #9).
+  explicitly when truly non-applicable (verifier check #9). `default`
+  counts only in placeholder positions (bare `| default |` cell or a
+  `label: default` terminator); substantive prose like "default
+  assistant" / "default-context" is fine — the default assistant is a
+  core experimental condition (#542).
 - **Context-row audit (run-context provenance; v2 bodies).** The
   `**Context:**` row in `## Reproducibility` (SPEC.md
   § `**Context:**` row; verifier check 17 covers presence — this
