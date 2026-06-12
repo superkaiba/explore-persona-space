@@ -1,0 +1,9 @@
+{
+  "git_commit": "8a3917afc4439b313cc28ea1643bf8d4893b5822",
+  "generated_at": "2026-06-12T08:37:55.091033+00:00",
+  "seed": 42,
+  "arm": "c2",
+  "pair_source": "/workspace/explore-persona-space/eval_results/issue_542/G_pairs/c2",
+  "n_train": 16,
+  "n_eval": 30
+}
