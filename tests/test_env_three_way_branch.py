@@ -17,8 +17,13 @@ The tests cover all three branches of:
   per-environment default.
 
 Each branch is exercised by monkeypatching ``SLURM_JOB_ID`` /
-``SCRATCH`` / patching ``Path.exists`` for the synthetic ``/workspace``
-case (we cannot mkdir at ``/workspace`` on a CI box).
+``SCRATCH`` / ``RUNPOD_POD_ID`` / patching ``os.path.ismount`` for the
+synthetic ``/workspace`` mount case (we cannot mount at ``/workspace``
+on a CI box). The RunPod discriminator is ``RUNPOD_POD_ID`` OR
+``os.path.ismount("/workspace")`` — a plain ``/workspace`` DIRECTORY
+must route as local (2026-06-11 dev-VM incident: a ``sudo mkdir -p
+/workspace`` for GCP-lane sentinel staging flipped every VM process to
+the RunPod branch and grew a redundant 16 GB HF cache on the root disk).
 """
 
 from __future__ import annotations
@@ -30,6 +35,19 @@ from unittest import mock
 import pytest
 
 from explore_persona_space.orchestrate import env as env_mod
+
+
+def _workspace_ismount(value: bool):
+    """Patch ``os.path.ismount`` for ``/workspace`` only (passthrough otherwise)."""
+    real_ismount = os.path.ismount
+
+    def fake(path):
+        if str(path) == "/workspace":
+            return value
+        return real_ismount(path)
+
+    return mock.patch("os.path.ismount", fake)
+
 
 # ---------------------------------------------------------------------------
 # Discriminator
@@ -48,20 +66,50 @@ def test_is_cluster_env_false_when_slurm_job_id_absent(
     assert env_mod.is_cluster_env() is False
 
 
-def test_is_runpod_env_true_only_when_workspace_exists_and_no_slurm(
+def test_is_runpod_env_true_when_workspace_is_mount_and_no_slurm(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
-    # Patch Path.exists ONLY for the /workspace check inside is_runpod_env.
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
+    with _workspace_ismount(True):
+        assert env_mod.is_runpod_env() is True
+
+
+def test_is_runpod_env_true_when_runpod_pod_id_set_without_mount(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Belt-and-braces clause: RUNPOD_POD_ID alone routes as RunPod."""
+    monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.setenv("RUNPOD_POD_ID", "abc123podid")
+    with _workspace_ismount(False):
+        assert env_mod.is_runpod_env() is True
+
+
+def test_is_runpod_env_false_for_plain_workspace_directory(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A plain /workspace DIRECTORY (no mount, no pod env) routes as local.
+
+    Regression pin for the 2026-06-11 incident: ``sudo mkdir -p
+    /workspace`` on the dev VM (GCP-lane sentinel staging) made the old
+    ``Path("/workspace").exists()`` discriminator route every VM process
+    as RunPod, growing a redundant 16 GB HF cache on the 99%-full root
+    disk. GCE instances carry the same plain-dir shape.
+    """
+    monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
     real_exists = Path.exists
 
     def fake_exists(self: Path) -> bool:
+        # The directory EXISTS (the incident shape) ...
         if str(self) == "/workspace":
             return True
         return real_exists(self)
 
-    with mock.patch.object(Path, "exists", fake_exists):
-        assert env_mod.is_runpod_env() is True
+    # ... but it is NOT a mount point — must NOT route as RunPod.
+    with mock.patch.object(Path, "exists", fake_exists), _workspace_ismount(False):
+        assert env_mod.is_runpod_env() is False
+        assert env_mod._hf_home_default() != "/workspace/.cache/huggingface"
 
 
 def test_is_runpod_env_false_on_cluster_even_if_workspace_mount_exists(
@@ -69,23 +117,18 @@ def test_is_runpod_env_false_on_cluster_even_if_workspace_mount_exists(
 ) -> None:
     """Cluster discriminator wins — RunPod is the no-cluster fallback."""
     monkeypatch.setenv("SLURM_JOB_ID", "12345")
-    real_exists = Path.exists
-
-    def fake_exists(self: Path) -> bool:
-        if str(self) == "/workspace":
-            return True
-        return real_exists(self)
-
-    with mock.patch.object(Path, "exists", fake_exists):
+    with _workspace_ismount(True):
         assert env_mod.is_runpod_env() is False
         assert env_mod.is_cluster_env() is True
 
 
 def test_is_runpod_env_false_locally(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
-    # On a dev VM /workspace doesn't exist; assume the test runner agrees.
-    if Path("/workspace").exists():
-        pytest.skip("test host has /workspace; cannot exercise the local branch")
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
+    # A plain /workspace dir on the test host is fine (routes local); only
+    # an actual mount there would make the local branch unexercisable.
+    if os.path.ismount("/workspace"):
+        pytest.skip("test host mounts /workspace; cannot exercise the local branch")
     assert env_mod.is_runpod_env() is False
     assert env_mod.is_cluster_env() is False
 
@@ -114,14 +157,8 @@ def test_hf_home_default_cluster_falls_back_to_home_without_scratch(
 
 def test_hf_home_default_runpod(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
-    real_exists = Path.exists
-
-    def fake_exists(self: Path) -> bool:
-        if str(self) == "/workspace":
-            return True
-        return real_exists(self)
-
-    with mock.patch.object(Path, "exists", fake_exists):
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
+    with _workspace_ismount(True):
         assert env_mod._hf_home_default() == "/workspace/.cache/huggingface"
 
 
@@ -133,19 +170,13 @@ def test_hf_home_default_local_uses_user_level_cache(
     The project root resolves per-checkout, so a project-rooted default
     gave every git worktree its own multi-GB HF cache (2026-06-12 disk
     triage: two worktrees each held a full ~14 GB Qwen snapshot).
-    ``/workspace`` is mocked absent so the local branch is exercised
-    deterministically even on hosts that have a ``/workspace`` dir.
+    ``/workspace`` is mocked not-a-mount so the local branch is exercised
+    deterministically even on hosts that mount a ``/workspace``.
     """
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
-    real_exists = Path.exists
-
-    def fake_exists(self: Path) -> bool:
-        if str(self) == "/workspace":
-            return False
-        return real_exists(self)
-
-    with mock.patch.object(Path, "exists", fake_exists):
+    with _workspace_ismount(False):
         result = env_mod._hf_home_default()
     assert result == str(tmp_path / ".cache" / "huggingface")
     assert not result.startswith(str(env_mod.get_project_root())), (
@@ -229,35 +260,23 @@ def test_load_dotenv_sets_cluster_hf_home(monkeypatch: pytest.MonkeyPatch, tmp_p
 
 def test_load_dotenv_sets_runpod_hf_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
     monkeypatch.delenv("HF_HOME", raising=False)
     env_path = tmp_path / ".env"
     env_path.write_text("SOME_KEY=val\n")
-    real_exists = Path.exists
-
-    def fake_exists(self: Path) -> bool:
-        if str(self) == "/workspace":
-            return True
-        return real_exists(self)
-
-    with mock.patch.object(Path, "exists", fake_exists):
+    with _workspace_ismount(True):
         env_mod.load_dotenv(str(env_path))
     assert os.environ["HF_HOME"] == "/workspace/.cache/huggingface"
 
 
 def test_load_dotenv_sets_local_hf_home(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.delenv("SLURM_JOB_ID", raising=False)
+    monkeypatch.delenv("RUNPOD_POD_ID", raising=False)
     monkeypatch.delenv("HF_HOME", raising=False)
     monkeypatch.setenv("HOME", str(tmp_path))
     env_path = tmp_path / ".env"
     env_path.write_text("SOME_KEY=val\n")
-    real_exists = Path.exists
-
-    def fake_exists(self: Path) -> bool:
-        if str(self) == "/workspace":
-            return False
-        return real_exists(self)
-
-    with mock.patch.object(Path, "exists", fake_exists):
+    with _workspace_ismount(False):
         env_mod.load_dotenv(str(env_path))
     assert os.environ["HF_HOME"] == str(tmp_path / ".cache" / "huggingface")
 
