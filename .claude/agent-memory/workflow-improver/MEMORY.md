@@ -21,3 +21,4 @@
 - [gc.log warnings are benign](reference_gc_log_warning_benign.md) — .git/worktrees/*/gc.log "unreachable loose objects" is a self-expiring daily cycle (git 2.34.1, no cruft packs); reap deletes admin dirs; deflect prune/gc.log-clearing candidates.
 - [GCP startup hydra render byte-pinned](reference_gcp_startup_snapshot_pin.md) — fixture test bans regenerating; scope gcp.py startup-script edits to the `if spec.workload_cmd:` branch only.
 - [repo_root() unfit for cache paths](reference_repo_root_vs_cache_paths.md) — off-main it reset-hards/returns a managed worktree; use git-common-dir parent from module dir (#612 pattern); cwd-pinning test fixtures must also monkeypatch the resolver.
+- [Reuse-fitness 4-file mirror set](reference_reuse_fitness_mirror_set.md) — fitness-check (a)-(g) edits touch planner.md step 5 + CLAUDE.md bullet + critic.md item 9 + consistency-checker.md (table row AND detail list), per #600/#601/#545 precedent.
