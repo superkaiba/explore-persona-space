@@ -3476,8 +3476,8 @@
     "579": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/579",
-      "status": "proposed",
+      "path": "tasks/completed/579",
+      "status": "completed",
       "title": "codex_task.py: add one auto-retry with backoff and verify the E2BIG file-transport fix merged to main"
     },
     "580": {
