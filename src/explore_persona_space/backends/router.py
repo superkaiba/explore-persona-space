@@ -126,6 +126,7 @@ from explore_persona_space.backends.base import (
 from explore_persona_space.backends.gcp import (
     GcpProvisioningError,
     GcpWorkloadError,
+    QuotaHeadroom,
 )
 
 logger = logging.getLogger(__name__)
@@ -1524,6 +1525,50 @@ def _override_runpod(
     return result
 
 
+def _provisioning_detail(exc: GcpProvisioningError) -> str:
+    """Attempt detail for a GCP provisioning failure — reason + captured stderr tail.
+
+    ``classify_create_failure`` packages the gcloud stderr into
+    ``exc.evidence["stderr_tail"]``, but the pre-#608 handlers recorded
+    only ``exc.reason`` ("... (stderr below)" with nothing below): the
+    four quota-doomed creates on issue 608 left no stderr anywhere
+    (marker, failure JSON, logs) and root-causing took a manual gcloud
+    reproduction. This detail flows into the ``epm:backend-selected``
+    attempt rows AND the ``NoComputeAvailableError.attempts`` that
+    ``classify_terminal_exception`` serializes into the terminal failure
+    JSON, so the evidence survives in both surfaces.
+    """
+    tail = str(exc.evidence.get("stderr_tail") or "").strip()
+    if not tail:
+        return exc.reason
+    return f"{exc.reason}; stderr_tail: {tail[-1024:]}"
+
+
+def _gcp_quota_headroom_or_none(backend: ComputeBackend, spec: RunSpec) -> QuotaHeadroom | None:
+    """Run the GCP regional-quota headroom pre-check; fail OPEN (``None``) on any failure.
+
+    Duck-typed via the backend's ``preflight_quota_headroom`` method so
+    test doubles / backends without the probe skip the pre-check entirely
+    (#608: four guaranteed-fail creates burned the daily attempt cap
+    against an exhausted regional accelerator quota). ``None`` means "no
+    opinion — proceed to launch exactly as before"; only a POSITIVE
+    insufficient-headroom reading skips the lane.
+    """
+    probe = getattr(backend, "preflight_quota_headroom", None)
+    if probe is None:
+        return None
+    try:
+        return probe(spec)
+    except Exception as exc:
+        logger.warning(
+            "route: GCP quota-headroom pre-check failed OPEN (%s: %s); "
+            "proceeding to launch as before.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 def _override_free_or_gcp(
     *,
     spec: RunSpec,
@@ -1664,7 +1709,7 @@ def _override_free_or_gcp(
                     est_start_seconds_raw=None,
                     est_start_seconds_clamped=None,
                     outcome="provisioning_failure",
-                    detail=exc.reason,
+                    detail=_provisioning_detail(exc),
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
@@ -2586,6 +2631,57 @@ def _attempt_gcp_lane(
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
 
+    # Pre-create regional-quota headroom check (#608): four guaranteed-fail
+    # creates burned the per-day attempt cap against an exhausted regional
+    # accelerator quota (NVIDIA_A100_80GB_GPUS at 8/8 with 4 needed). When
+    # the probe POSITIVELY reports insufficient headroom, skip the lane
+    # loudly WITHOUT bumping the attempt counter — the cap bounds provision
+    # attempts, and a create that cannot succeed should not consume one.
+    # FAIL-OPEN: a probe failure, a backend without the probe (test
+    # doubles), or a live reconnectable instance (no new quota needed)
+    # returns None → proceed exactly as before. The explicit ``backend:
+    # gcp`` override lane deliberately does NOT pre-check: it never bumps
+    # the cap, and an explicit ask should attempt (the create error now
+    # carries its stderr tail either way).
+    headroom = _gcp_quota_headroom_or_none(gcp_backend, spec)
+    if headroom is not None and not headroom.sufficient:
+        detail = (
+            f"regional accelerator quota {headroom.metric} in {headroom.region} has "
+            f"usage {headroom.usage:g}/{headroom.limit:g} — headroom "
+            f"{headroom.available:g} GPU(s) < needed {headroom.needed}; skipping the "
+            "GCP lane without burning a daily attempt"
+        )
+        attempts.append(
+            RouteAttempt(
+                kind="gcp",
+                cluster=None,
+                est_start_seconds_raw=0.0,
+                est_start_seconds_clamped=0.0,
+                outcome="quota_headroom_insufficient",
+                detail=detail,
+                elapsed_seconds=now_fn() - started_at,
+            )
+        )
+        if not terminal:
+            logger.warning(
+                "route: GCP quota headroom insufficient for issue %d (%s); "
+                "continuing down the lane order.",
+                spec.issue,
+                detail,
+            )
+            return None
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_NO_COMPUTE,
+            chosen_kind="gcp",
+            attempts=attempts,
+        )
+        raise NoComputeAvailableError(
+            f"every free lane park-failed AND the GCP regional quota has no headroom: {detail}",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+
     with store.transaction(spec.issue) as (lease, write):
         # Cap-check BEFORE bump-and-persist: a rejected over-cap attempt
         # MUST NOT grow the on-disk counter (3, 4, 5, ... with cap=2 is
@@ -2696,7 +2792,7 @@ def _attempt_gcp_lane(
                     est_start_seconds_raw=0.0,
                     est_start_seconds_clamped=0.0,
                     outcome="provisioning_failure",
-                    detail=exc.reason,
+                    detail=_provisioning_detail(exc),
                     elapsed_seconds=now_fn() - started_at,
                 )
             )
@@ -2705,7 +2801,7 @@ def _attempt_gcp_lane(
                 # position → fall through to the lanes after it.
                 logger.warning(
                     "route: gcp provisioning failed (%s); continuing down the lane order.",
-                    exc.reason,
+                    _provisioning_detail(exc),
                 )
                 return None
             _post_terminal_failure_marker(

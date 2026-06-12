@@ -58,6 +58,7 @@ from explore_persona_space.backends.gcp import (
     expected_artifacts_declaration,
     instance_name_for,
     machine_for_intent,
+    preflight_quota_headroom,
     reconnect_or_none,
     render_delete_argv,
     render_describe_argv,
@@ -168,6 +169,7 @@ class _Runner:
         guest_attr_results: list[GcloudRunResult] | None = None,
         ssh_results: list[GcloudRunResult] | None = None,
         scp_results: list[GcloudRunResult] | None = None,
+        region_describe_results: list[GcloudRunResult] | None = None,
     ) -> None:
         self.calls: list[list[str]] = []
         self.create_results = list(create_results or [])
@@ -178,6 +180,7 @@ class _Runner:
         self.guest_attr_results = list(guest_attr_results or [])
         self.ssh_results = list(ssh_results or [])
         self.scp_results = list(scp_results or [])
+        self.region_describe_results = list(region_describe_results or [])
 
     def __call__(self, argv):
         argv = list(argv)
@@ -189,6 +192,8 @@ class _Runner:
             return self._pop(self.list_results, default_ok=True, default_stdout="[]")
         if "describe" in argv and "instances" in argv:
             return self._pop(self.describe_results, default_ok=True, default_stdout="{}")
+        if "describe" in argv and "regions" in argv:
+            return self._pop(self.region_describe_results, default_ok=True, default_stdout="{}")
         if "get-guest-attributes" in argv and "instances" in argv:
             # Default: attribute not yet written (gcloud exits 1) — the
             # poll treats that as phase-unknown and keeps the coarse
@@ -921,6 +926,152 @@ def test_classify_create_quota_failure_is_provisioning_error() -> None:
         stderr="QUOTA_EXCEEDED for GPUS_ALL_REGIONS",
     )
     assert isinstance(err, GcpProvisioningError)
+
+
+def test_classify_create_regional_quota_prose_is_matched() -> None:
+    """gcloud's regional accelerator-quota error is PROSE (the metric name
+    sits between "Quota" and "exceeded") — the API-enum patterns miss it
+    (#608: four such creates classified "no known provisioning pattern")."""
+    err = classify_create_failure(
+        returncode=1,
+        stderr=(
+            "ERROR: (gcloud.compute.instances.create) Could not fetch resource:\n"
+            " - Quota 'NVIDIA_A100_80GB_GPUS' exceeded.  Limit: 8.0 in region us-central1.\n"
+        ),
+    )
+    assert isinstance(err, GcpProvisioningError)
+    assert err.evidence.get("matched_pattern") == "Quota '"
+    assert "no known provisioning pattern" not in err.reason
+    # The captured stderr rides the evidence for the router's detail.
+    assert "NVIDIA_A100_80GB_GPUS" in err.evidence["stderr_tail"]
+
+
+# ---------------------------------------------------------------------------
+# Pre-create regional-quota headroom probe (#608)
+# ---------------------------------------------------------------------------
+
+
+def _region_quotas_payload(metric: str, usage: float, limit: float) -> str:
+    return json.dumps(
+        {
+            "name": "us-central1",
+            "quotas": [
+                {"metric": "CPUS", "usage": 12.0, "limit": 1000.0},
+                {"metric": metric, "usage": usage, "limit": limit},
+            ],
+        }
+    )
+
+
+def test_preflight_quota_headroom_insufficient() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no live instance
+        region_describe_results=[
+            GcloudRunResult(0, _region_quotas_payload("NVIDIA_A100_80GB_GPUS", 8.0, 8.0), "")
+        ],
+    )
+    headroom = preflight_quota_headroom(
+        spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner
+    )
+    assert headroom is not None
+    assert headroom.metric == "NVIDIA_A100_80GB_GPUS"
+    assert headroom.region == "us-central1"
+    assert headroom.needed == 4
+    assert headroom.available == 0.0
+    assert not headroom.sufficient
+    # The probe threaded the config into the regions-describe argv.
+    region_calls = [a for a in runner.calls if "regions" in a and "describe" in a]
+    assert region_calls and "--configuration=eps-test-config" in region_calls[0]
+
+
+def test_preflight_quota_headroom_sufficient() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        region_describe_results=[
+            GcloudRunResult(0, _region_quotas_payload("NVIDIA_A100_80GB_GPUS", 4.0, 8.0), "")
+        ],
+    )
+    headroom = preflight_quota_headroom(
+        spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner
+    )
+    assert headroom is not None and headroom.sufficient
+
+
+def test_preflight_quota_headroom_fails_open_on_describe_rc1() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        region_describe_results=[GcloudRunResult(1, "", "Reauthentication failed")],
+    )
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
+        is None
+    )
+
+
+def test_preflight_quota_headroom_fails_open_on_unparseable_json() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        region_describe_results=[GcloudRunResult(0, "{not json", "")],
+    )
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
+        is None
+    )
+
+
+def test_preflight_quota_headroom_fails_open_when_metric_missing() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        region_describe_results=[
+            GcloudRunResult(0, _region_quotas_payload("NVIDIA_L4_GPUS", 0.0, 8.0), "")
+        ],
+    )
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
+        is None
+    )
+
+
+def test_preflight_quota_headroom_no_opinion_on_live_instance() -> None:
+    """A live eps-issue-<N> instance means the launch path reconnects (no
+    new quota needed — and our own instance may BE the usage): no opinion."""
+    live_payload = json.dumps([{"name": "eps-issue-137", "id": "123", "status": "RUNNING"}])
+    runner = _Runner(list_results=[GcloudRunResult(0, live_payload, "")])
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
+        is None
+    )
+    # The regions-describe call was never issued.
+    assert not [a for a in runner.calls if "regions" in a]
+
+
+def test_preflight_quota_headroom_fails_open_on_reconnect_probe_error() -> None:
+    runner = _Runner(list_results=[GcloudRunResult(1, "", "Reauthentication failed")])
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="ft-7b"), config=_test_config(), runner=runner)
+        is None
+    )
+
+
+def test_preflight_quota_headroom_no_opinion_on_unmapped_intent() -> None:
+    runner = _Runner()
+    assert (
+        preflight_quota_headroom(spec=_spec(intent="inf-70b"), config=_test_config(), runner=runner)
+        is None
+    )
+    assert runner.calls == []  # decided without any gcloud call
+
+
+def test_backend_method_delegates_quota_preflight() -> None:
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],
+        region_describe_results=[
+            GcloudRunResult(0, _region_quotas_payload("NVIDIA_A100_80GB_GPUS", 8.0, 8.0), "")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    headroom = backend.preflight_quota_headroom(_spec(intent="ft-7b"))
+    assert headroom is not None and not headroom.sufficient
 
 
 def test_launch_retries_on_capacity_then_succeeds_in_fallback_zone(no_marker_posts) -> None:
