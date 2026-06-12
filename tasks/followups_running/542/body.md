@@ -25,7 +25,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/71b992aa030a63409ee576a375c3ab2e9e449ac7/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+**Methodology:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/36fcf2555bd53daa9c99afd496d5cb83eb796a87/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
 
 ## Human TL;DR
 
@@ -295,5 +295,5 @@ Putting the seven findings together: in this band-stopped short regime, the nega
 - Created / run: task created 2026-06-09; trained + evaled on pod-542 2026-06-11 → 2026-06-12; analysis + write-up 2026-06-12; positives-only arm trained + evaled on GCP `eps-issue-542` and folded in 2026-06-12.
 - Follow-up to: [#537](https://eps.superkaiba.com/tasks/537) — the context-generalization testbed (marker row) whose frozen protocol, eval panel, and adapters this experiment holds fixed while varying only the negative panel. Same-issue follow-up round `positives-only-anchor` (the positives-only arm) executed from this experiment's own next-steps list via the follow-up loop.
 - Originating prompt(s), verbatim: origin prompt not recorded.
-- **Methodology reference:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/71b992aa030a63409ee576a375c3ab2e9e449ac7/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+- **Methodology reference:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/36fcf2555bd53daa9c99afd496d5cb83eb796a87/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
 
