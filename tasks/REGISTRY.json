@@ -3192,7 +3192,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/542",
       "status": "interpreting",
-      "title": "Negative-panel composition: vary the contrastive negative set against the #537 testbed (marker row)"
+      "title": "Which contrastive negatives you train against barely matters: close-persona, default-including, and 2-16-persona panels all reproduce the parent marker-leakage map within 0.2 nat (MODERATE confidence)"
     },
     "543": {
       "goal": "Test whether lowering the trigger->marker positive ratio in the install data (Redwood's password-locking-ratio lever), with install strength matched at the trigger cell, lets a marker install on Qwen-2.5-7B survive one epoch of benign medical SFT better than the 50/50 baseline, across 3 seeds.",

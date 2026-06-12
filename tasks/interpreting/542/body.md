@@ -1,6 +1,7 @@
 ---
-title: 'Negative-panel composition: vary the contrastive negative set against the
-  #537 testbed (marker row)'
+title: 'Which contrastive negatives you train against barely matters: close-persona,
+  default-including, and 2-16-persona panels all reproduce the parent marker-leakage
+  map within 0.2 nat (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-09T22:20:50Z'
