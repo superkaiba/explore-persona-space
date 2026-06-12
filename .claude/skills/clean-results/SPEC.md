@@ -523,6 +523,15 @@ Catches prose-level violations the verifier doesn't:
   "the two files matched exactly", "no diff"); the catch-phrase reads
   as AI-slop in research prose.
 
+Exemption: blockquoted lines inside the `## Reproducibility`
+`**Context:**` row are NOT scanned — the verbatim originating-prompt /
+scope-note quote there must be preserved exactly (see § `**Context:**`
+row), so the verbatim contract would otherwise be unsatisfiable
+(2026-06-12, task #597: a scope note opening with "PRE-REGISTERED"
+tripped the pre-registration pattern). Non-blockquote prose inside the
+Context block, and blockquotes anywhere else in the body, stay in scan
+scope.
+
 ## Voice
 
 - `I`, not `we` — single-researcher workflow.

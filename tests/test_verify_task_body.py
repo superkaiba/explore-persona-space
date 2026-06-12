@@ -1616,6 +1616,59 @@ def test_audit_byte_identical_fires():
     assert "byte_identical" not in findings3
 
 
+# ─── Audit script: Context-row verbatim blockquotes are exempt ─────────────
+
+
+def test_audit_context_row_blockquote_exempt():
+    """The `**Context:**` provenance row's verbatim originating-prompt
+    blockquote (SPEC.md § `**Context:**` row; verifier check 17) is
+    exempt from the anti-pattern scan — verbatim preservation and the
+    scan are otherwise mutually unsatisfiable (task #597: a scope note
+    opening with "PRE-REGISTERED" tripped `pre_reg`). The same phrase
+    OUTSIDE the Context row must still be flagged, and non-blockquote
+    prose inside the Context block stays in scan scope."""
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc_ctx", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc_ctx"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+
+    context_block = (
+        "## Reproducibility\n\n"
+        "**Context:**\n\n"
+        "- Created / run: created 2026-06-11; run 2026-06-12.\n"
+        "- Follow-up to: #472 — endpoint contrast turned into trajectories.\n"
+        "- Originating prompt(s), verbatim: origin prompt not recorded for the "
+        "task itself. The user-chat follow-up round's recorded scope note, verbatim:\n\n"
+        "  > PRE-REGISTERED while #597 is still running (user-chat, 2026-06-11). "
+        "Execute at the Step 9b same-issue follow-up point.\n"
+    )
+
+    # Blockquoted "PRE-REGISTERED" inside the Context row: NOT flagged.
+    findings = audit_mod.audit_body(context_block)
+    assert "pre_reg" not in findings, findings.get("pre_reg")
+
+    # The same phrase outside the Context row: still flagged.
+    body_outside = "## TL;DR\n\nThis run was pre-registered before launch.\n\n" + context_block
+    findings_outside = audit_mod.audit_body(body_outside)
+    assert "pre_reg" in findings_outside
+
+    # Non-blockquote prose INSIDE the Context block stays in scan scope.
+    body_unquoted = context_block + "\n- Note: this round was pre-registered.\n"
+    findings_unquoted = audit_mod.audit_body(body_unquoted)
+    assert "pre_reg" in findings_unquoted
+
+    # A blockquote AFTER the Context block ends (next boldface row label)
+    # is back in scan scope — the exemption does not leak past the block.
+    body_after_block = (
+        context_block + "\n**Compute:** 2.65 GPU-h.\n\n> This quote was pre-registered.\n"
+    )
+    findings_after = audit_mod.audit_body(body_after_block)
+    assert "pre_reg" in findings_after
+
+
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 
