@@ -322,45 +322,62 @@ def compute_campaign_verdict(
 
 def campaign_open_rows(state: dict, children: list[dict]) -> tuple[list[int], bool]:
     """Derive ``(landed_unreconciled_child_ids, open_rows_all_in_flight)``
-    from the campaign-state experiment rows + the live child statuses."""
+    from the campaign-state experiment rows + the live child statuses.
+
+    ``open_rows_all_in_flight`` is True ONLY when at least one open
+    (non-finished) row exists AND every open row maps to a child at a
+    genuinely in-flight status. ZERO open rows — missing/garbled state
+    file, or every row ingested/abandoned — returns False: such a campaign
+    owes a decision round (propose the next arm or conclude), so a
+    stale-marker tick must STALE-REDRIVE it, never idle as HEALTHY
+    (review blocker, 2026-06-12)."""
     child_status = {row.get("id"): row.get("status") for row in children}
     rows = state.get("experiments")
     rows = rows if isinstance(rows, list) else []
     landed: list[int] = []
-    all_in_flight = True
+    open_rows = 0
+    in_flight = 0
     for row in rows:
         if not isinstance(row, dict) or row.get("status") in CAMPAIGN_ROW_FINISHED:
             continue
+        open_rows += 1
         child = row.get("child_task")
         if not isinstance(child, int):
-            # A planned row with no child filed yet — a decision is owed.
-            all_in_flight = False
+            # A planned row with no child filed yet — a decision is owed
+            # (not in flight).
             continue
         cstat = child_status.get(child)
         if cstat in CAMPAIGN_CHILD_LANDED:
             landed.append(child)
-            all_in_flight = False
-        elif cstat in CAMPAIGN_CHILD_DONEISH or cstat is None:
-            all_in_flight = False
-    return landed, all_in_flight
+        elif cstat is not None and cstat not in CAMPAIGN_CHILD_DONEISH:
+            in_flight += 1
+    return landed, open_rows > 0 and in_flight == open_rows
 
 
 # ── streak + main ───────────────────────────────────────────────────────────
 
 
 def update_terminal_streak(issue: int, status: str, prev: dict, *, count_streak: bool) -> int:
-    """Advance (or reset) the consecutive-terminal counter and drop the
-    runaway flag at the threshold. Returns the new streak value."""
+    """Advance (or reset) the consecutive-teardown-tick counter and drop the
+    runaway flag at the threshold. Returns the new streak value.
+
+    A reset ALSO unlinks any existing runaway flag: a flag written during an
+    earlier teardown-whiff episode must not survive a recovery (e.g.
+    blocked -> running in the same live session) — a stale flag would
+    force-stop the session on weeks-old corroboration the next time the
+    task parks (review major, 2026-06-12)."""
     prev_streak = prev.get("terminal_streak")
     prev_streak = prev_streak if isinstance(prev_streak, int) and prev_streak >= 0 else 0
     if not count_streak:
+        runaway_flag_path(issue).unlink(missing_ok=True)
         return 0
     streak = prev_streak + 1
     if streak >= runaway_streak_threshold():
         write_runaway_flag(issue, status, streak)
         print(
-            f"tick_triage: #{issue} hit {streak} consecutive terminal-status ticks — "
-            f"runaway flag written for the watcher ({runaway_flag_path(issue)})",
+            f"tick_triage: #{issue} hit {streak} consecutive teardown-verdict ticks "
+            f"(status={status}) — runaway flag written for the watcher "
+            f"({runaway_flag_path(issue)})",
             file=sys.stderr,
         )
     return streak
@@ -385,7 +402,6 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             open_rows_all_in_flight=all_in_flight,
             stale_after_s=stale_s(),
         )
-        count_streak = status in CAMPAIGN_TERMINAL
     else:
         marker_ts = latest_event_ts(events)
         verdict, reason = compute_issue_verdict(
@@ -395,8 +411,13 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
             plan_pending_over_cap(events),
             stale_after_s=stale_s(),
         )
-        count_streak = status in ISSUE_TERMINAL
 
+    # Runaway streak counts every TEARDOWN verdict, not just the terminal
+    # STATUS sets — a teardown that whiffs forever at over-cap plan_pending
+    # or at a stranded campaign cron deserves the same parachute (review
+    # minor, 2026-06-12). The watcher's force-stop still acts only on the
+    # DONE set; other flagged statuses get its loud alert-only arm.
+    count_streak = verdict in ("TERMINAL", "GATE-TRANSITION")
     streak = update_terminal_streak(issue, status, prev, count_streak=count_streak)
     write_snapshot(issue, status, streak)
     return verdict, reason

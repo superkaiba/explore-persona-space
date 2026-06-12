@@ -242,3 +242,14 @@ def test_gate_notify_state_is_in_gc_sweep_set():
     assert ("gate-notify-", "") in asw._GC_TARGETS, (
         "gate-notify state files must be reaped at completed/archived by the terminal-status GC"
     )
+
+
+# ── push message shape ──────────────────────────────────────────────────────
+
+
+def test_gate_push_message_no_double_space_on_missing_title(monkeypatch):
+    # Review minor (2026-06-12): a failed title read must not produce
+    # "#42  · ..." (double space) in the phone push.
+    monkeypatch.setattr(asw, "_task_title", lambda *_a, **_k: "")
+    msg = asw._gate_push_message(42, "awaiting_promotion", [], False)
+    assert msg.startswith("#42 ·") and "  " not in msg

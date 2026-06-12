@@ -205,6 +205,39 @@ def test_gate_transition_then_terminal_on_repeat(state_dir, monkeypatch):
     assert verdict == "TERMINAL", "second tick at the same gate must not re-push"
 
 
+def test_stale_runaway_flag_cleared_on_recovery(state_dir, monkeypatch):
+    """Review major (2026-06-12): a flag written during an earlier
+    teardown-whiff episode must not survive a recovery — otherwise it would
+    force-stop the session on weeks-old corroboration at the NEXT park."""
+    _patch_issue_state(monkeypatch, "blocked", [_event("epm:failure v1", 60)])
+    for _ in range(3):
+        tick_triage.triage(13, "issue")
+    assert tick_triage.runaway_flag_path(13).is_file()
+    _patch_issue_state(monkeypatch, "running", [_event("epm:progress v1", 60)])
+    verdict, _ = tick_triage.triage(13, "issue")
+    assert verdict == "HEALTHY"
+    assert not tick_triage.runaway_flag_path(13).is_file(), (
+        "a streak reset must also unlink the stale runaway flag"
+    )
+
+
+def test_over_cap_plan_pending_whiff_writes_flag(state_dir, monkeypatch):
+    """Review minor (2026-06-12): the streak counts TEARDOWN VERDICTS, not
+    just terminal statuses — a teardown that whiffs forever at over-cap
+    plan_pending gets the same parachute (watcher alert-only outside the
+    DONE set)."""
+    events = [
+        _event("epm:status-changed v1", 600),
+        _event("epm:awaiting-spend-approval v1", 60),
+    ]
+    _patch_issue_state(monkeypatch, "plan_pending", events)
+    verdicts = [tick_triage.triage(17, "issue")[0] for _ in range(3)]
+    assert verdicts[0] == "GATE-TRANSITION" and verdicts[1] == "TERMINAL"
+    assert tick_triage.runaway_flag_path(17).is_file(), (
+        "3 consecutive teardown-verdict ticks at over-cap plan_pending must flag"
+    )
+
+
 # ── campaign mode ───────────────────────────────────────────────────────────
 
 
@@ -309,6 +342,34 @@ def test_campaign_open_rows_derivation():
     state["experiments"] = [{"id": "e2", "status": "running", "child_task": 101}]
     landed, all_in_flight = tick_triage.campaign_open_rows(state, children)
     assert landed == [] and all_in_flight is True
+
+
+def test_campaign_zero_open_rows_owes_decision():
+    """Review blocker (2026-06-12): zero open rows — missing/garbled state
+    file, or every row ingested/abandoned — must NOT read as
+    all-arms-in-flight; such a campaign owes a decision round."""
+    children = [{"id": 101, "status": "running"}]
+    landed, all_in_flight = tick_triage.campaign_open_rows({}, children)
+    assert landed == [] and all_in_flight is False
+    state = {
+        "experiments": [
+            {"id": "e1", "status": "ingested", "child_task": 100},
+            {"id": "e2", "status": "abandoned", "child_task": 101},
+        ]
+    }
+    landed, all_in_flight = tick_triage.campaign_open_rows(state, children)
+    assert landed == [] and all_in_flight is False
+
+
+def test_campaign_cold_start_no_state_file_redrives(state_dir, monkeypatch):
+    """End-to-end pin for the blocker: an ACTIVE campaign with stale (or no)
+    campaign markers and NO campaign-state.json yet must STALE-REDRIVE, not
+    idle as HEALTHY (the died-between-arm-and-first-write cold-start class)."""
+    monkeypatch.setattr(tick_triage, "load_task_state", lambda _n: ("running", []))
+    monkeypatch.setattr(tick_triage, "load_children", lambda _n: [])
+    monkeypatch.setattr(tick_triage, "load_campaign_state", lambda _n: {})
+    verdict, reason = tick_triage.triage(21, "campaign")
+    assert verdict == "STALE-REDRIVE", reason
 
 
 # ── fail-loud CLI contract ──────────────────────────────────────────────────

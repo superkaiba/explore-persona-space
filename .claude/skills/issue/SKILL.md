@@ -3344,8 +3344,10 @@ Gate handlers (one per registered `<name>`):
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
-Run CRON-TEARDOWN before parking (`CronList` → `CronDelete` the job with
-`prompt.strip() == "/issue-tick <N>"`) — the pipeline has EXITed and no pod is
+Run CRON-TEARDOWN before parking (the HARDENED Step 6d.2 procedure:
+`CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
+equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
+fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
 burning GPU, so the backstop should not keep re-firing `/issue-tick <N>` (which
 would re-surface the gate question every 45 min). The user's
 re-invocation after posting the resume marker re-enters Step 6d.2 and

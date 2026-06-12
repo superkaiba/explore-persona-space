@@ -7506,11 +7506,12 @@ def _task_title(issue: int) -> str:
 def _gate_push_message(issue: int, status: str, events: list[dict], over_cap: bool) -> str:
     """Mirror the /issue-tick 3d message shapes (kept under ~200 chars)."""
     slug = _task_title(issue)
+    head = f"#{issue} {slug}".rstrip()  # no double space when the title read failed
     if status == "awaiting_promotion":
-        msg = f"#{issue} {slug} · clean-result ready — open to promote"
+        msg = f"{head} · clean-result ready — open to promote"
     elif status == "plan_pending" and over_cap:
         cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
-        msg = f"#{issue} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+        msg = f"{head} parked at plan_pending — over {cap} GPU-h cap; open to approve"
     else:  # blocked
         reason = ""
         for row in reversed(events):
