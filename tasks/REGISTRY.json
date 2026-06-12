@@ -3389,8 +3389,8 @@
     "567": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/567",
-      "status": "proposed",
+      "path": "tasks/archived/567",
+      "status": "archived",
       "title": "Make orchestrate.preflight git-sync check branch-aware (kill the behind-origin/main false positive on issue-branch pods)"
     },
     "568": {
