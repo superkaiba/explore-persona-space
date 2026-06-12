@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 630,
+  "highest_id": 631,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3883,6 +3883,13 @@
       "path": "tasks/proposed/630",
       "status": "proposed",
       "title": "Migrate gcp.py expected_artifacts_declaration onto the shared artifacts.py builder"
+    },
+    "631": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/631",
+      "status": "proposed",
+      "title": "GCP lane: FLEX_START + a3-highgpu H100 intents; enable SPOT to use the idle preemptible A100 quota"
     },
     "65": {
       "has_clean_result": true,
