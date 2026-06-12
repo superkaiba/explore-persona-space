@@ -561,6 +561,15 @@ def test_c5_backtick_range_understating_auto_approve_cap_fails():
     assert "range" in r.detail
 
 
+def test_c5_parenthetical_phases_annotation_passes():
+    # Must-keep shape (Codex r2 Minor): a parenthetical annotation carrying a
+    # digit-dash-digit token after the value is an annotation, not a range.
+    plan = GOOD_PLAN.replace(GPU_LINE, "`Estimated GPU-hours (total): 4` (phases 1-3)")
+    _, by_id = _run(plan)
+    r = by_id["c5_gpu_hours"]
+    assert r.status == "PASS"
+
+
 def test_c5_backtick_range_in_table_cell_fails():
     # Same shape inside a markdown table cell (the #614 context that made
     # the backtick an annotation stop in the first place).
