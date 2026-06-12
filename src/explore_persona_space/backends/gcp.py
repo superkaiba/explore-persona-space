@@ -1698,6 +1698,7 @@ class GcpBackend(ComputeBackend):
         config: GcpConfig | None = None,
         runner: GcloudRunner | None = None,
         marker_poster: Callable[..., None] | None = None,
+        marker_reader: Callable[..., dict[str, Any] | None] | None = None,
         startup_script_renderer: Callable[..., str] | None = None,
     ) -> None:
         self._config = config or default_gcp_config()
@@ -1709,6 +1710,16 @@ class GcpBackend(ComputeBackend):
 
             marker_poster = post_marker_via_task_py
         self._post_marker = marker_poster
+        # Marker READ seam (``(issue, prefix) -> latest event dict | None``).
+        # Default is the branch-guarded library read — the same pure,
+        # no-commit pattern ``poll_pipeline._marker_pid`` uses — so
+        # ``poll`` can follow an SSH-relaunched workload via its fresh
+        # ``epm:run-launched`` marker (incident #612). Tests inject a fake.
+        if marker_reader is None:
+            from explore_persona_space.task_workflow import latest_event
+
+            marker_reader = latest_event
+        self._read_marker = marker_reader
         self._render_startup = startup_script_renderer or render_startup_script
 
     # ----- identity --------------------------------------------------------
@@ -2028,6 +2039,13 @@ class GcpBackend(ComputeBackend):
         Slice 6 will overlay the per-phase heartbeat once the in-VM
         ``[phase=...]`` writes land on a poll-readable surface (the
         existing :class:`PollResult` shape carries the per-phase fields).
+
+        Terminal guest-attribute phases (``done`` / ``failed``) are
+        OVERRIDDEN when a fresh ``epm:run-launched`` relaunch marker
+        names a live process on this instance — the startup script's
+        phase write freezes at the FIRST workload's exit, so an SSH
+        hot-fix relaunch is otherwise invisible (incident #612). See
+        :meth:`_relaunch_marker_or_none` / :meth:`_probe_relaunched_workload`.
         """
         config = self._config
         zone = handle.extra.get("zone") or config.primary_zone
@@ -2095,6 +2113,23 @@ class GcpBackend(ComputeBackend):
                 return _with_drain(
                     _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
                 )
+            if phase in ("done", "failed"):
+                # Relaunch-follow (incident #612): the eps/phase guest
+                # attribute is written by the STARTUP SCRIPT, so it
+                # freezes at the FIRST workload's terminal state. A
+                # sanctioned SSH hot-fix relaunch (CLAUDE.md "push
+                # through bugs", the experimenter respawn path) posts a
+                # fresh ``epm:run-launched`` marker with ``pid=`` +
+                # ``log_abs=`` precisely so pollers can follow the new
+                # process — without this branch a HEALTHY mid-training
+                # relaunch read as ``done``/``dead`` and steered the
+                # orchestrator to a premature transition.
+                relaunch = self._relaunch_marker_or_none(handle)
+                if relaunch is not None:
+                    pid, log_abs = relaunch
+                    return _with_drain(
+                        self._probe_relaunched_workload(handle, zone, pid=pid, log_path=log_abs)
+                    )
             if phase == "done":
                 return _with_drain(
                     PollResult(
@@ -2290,6 +2325,187 @@ class GcpBackend(ComputeBackend):
             )
             return False
         return True
+
+    # ----- relaunch-follow (incident #612) ---------------------------------
+    #
+    # ``epm:run-launched`` note tokens, per the relaunch contract in
+    # `.claude/skills/issue/SKILL.md` ("Any relaunch must re-post
+    # epm:run-launched" — `pod=<name> pid=<pid> log_abs=<abs path>`).
+    # ``pid=`` mirrors ``poll_pipeline.MARKER_PID_RE``; ``log=`` is the
+    # legacy fallback accepted through the transition window.
+    _RELAUNCH_PID_RE = re.compile(r"\bpid=(\d+)")
+    _RELAUNCH_LOG_ABS_RE = re.compile(r"\blog_abs=(\S+)")
+    _RELAUNCH_LOG_LEGACY_RE = re.compile(r"\blog=(\S+)")
+    _RELAUNCH_POD_RE = re.compile(r"\bpod=(\S+)")
+    # Probe-output delimiters (namespaced like the drain's EPS_LOGTAIL_*).
+    _RELAUNCH_TAIL_START = "EPS_RELAUNCH_TAIL_START"
+    _RELAUNCH_TAIL_END = "EPS_RELAUNCH_TAIL_END"
+
+    def _relaunch_marker_or_none(self, handle: RunHandle) -> tuple[int, str] | None:
+        """Return ``(pid, log_path)`` from a relaunch marker, or ``None``.
+
+        A relaunch marker is the latest ``epm:run-launched`` event whose
+        note carries ``pid=`` AND ``log_abs=`` (legacy ``log=``) and that
+        provably targets THIS instance generation:
+
+        * its ``pod=`` field equals ``handle.pod_name`` (an SSH relaunch
+          on the GCE VM posts the instance name; a stale RunPod-era
+          marker posts ``pod-<N>`` and is rejected), AND
+        * when the launch-time ``epm:cluster-launched`` marker exists,
+          the relaunch marker is STRICTLY NEWER than it — a marker from
+          a previous instance generation (VM deleted + re-provisioned)
+          must not hijack the fresh generation's poll. When the
+          cluster-launched marker is absent (its post is best-effort),
+          the ``pod=`` match alone is accepted.
+
+        Returns ``None`` (→ caller keeps the existing terminal-phase
+        behavior) when the issue is unresolvable, the marker read fails,
+        or any predicate fails. Marker-read failures are logged loudly
+        but never crash a poll tick.
+        """
+        issue = int(handle.extra.get("issue") or 0)
+        if issue <= 0:
+            return None
+        try:
+            ev = self._read_marker(issue, "epm:run-launched")
+        except Exception as exc:
+            logger.warning(
+                "GCP poll: epm:run-launched read failed for issue=%d (%s); "
+                "keeping startup-script terminal state.",
+                issue,
+                exc,
+            )
+            return None
+        if not ev:
+            return None
+        note = str(ev.get("note") or "")
+        pid_m = self._RELAUNCH_PID_RE.search(note)
+        log_m = self._RELAUNCH_LOG_ABS_RE.search(note) or self._RELAUNCH_LOG_LEGACY_RE.search(note)
+        if not pid_m or not log_m:
+            return None
+        pod_m = self._RELAUNCH_POD_RE.search(note)
+        pod_matches = bool(pod_m) and pod_m.group(1) == handle.pod_name
+        if pod_m and not pod_matches:
+            return None  # marker targets a different host (e.g. a RunPod pod)
+        try:
+            cluster_ev = self._read_marker(issue, "epm:cluster-launched")
+        except Exception as exc:
+            logger.warning(
+                "GCP poll: epm:cluster-launched read failed for issue=%d (%s); "
+                "keeping startup-script terminal state.",
+                issue,
+                exc,
+            )
+            return None
+        cluster_ts = _parse_event_ts((cluster_ev or {}).get("ts"))
+        marker_ts = _parse_event_ts(ev.get("ts"))
+        if cluster_ts is not None:
+            if marker_ts is None or marker_ts <= cluster_ts:
+                return None  # predates the current instance generation
+        elif not pod_matches:
+            return None  # no generation baseline AND no instance-name link
+        return int(pid_m.group(1)), log_m.group(1)
+
+    def _probe_relaunched_workload(
+        self, handle: RunHandle, zone: str, *, pid: int, log_path: str
+    ) -> PollResult:
+        """Probe the relaunched workload's pid + log over ssh sudo.
+
+        ONE ``gcloud compute ssh`` round-trip (``sudo -n`` — the workload
+        tree is root-owned, #608) checks ``kill -0 <pid>``, stats the
+        relaunch log's mtime, and tails it. Classification mirrors
+        ``poll_pipeline.poll_once``'s pid-corroborated semantics:
+
+        * pid alive → ``running`` (the relaunch is the live workload).
+        * pid dead + the log's latest real phase line is ``done`` (via
+          ``poll_pipeline._latest_phase`` — inherits the #545/#597
+          quoted-token noise guards) → ``done``.
+        * pid dead otherwise → ``dead`` (exited without a clean done).
+        * probe transport failure → typed ``stalled`` tick (the
+          "couldn't ask" ≠ "not running" discipline, #535) — never read
+          a probe failure as a terminal verdict.
+        """
+        quoted_log = shlex.quote(log_path)
+        script = (
+            f"if kill -0 {int(pid)} 2>/dev/null; "
+            f"then echo EPS_RELAUNCH_PID=alive; else echo EPS_RELAUNCH_PID=dead; fi; "
+            f"echo EPS_RELAUNCH_MTIME=$(stat -c %Y {quoted_log} 2>/dev/null || echo -1); "
+            f"echo EPS_RELAUNCH_NOW=$(date +%s); "
+            f"echo {self._RELAUNCH_TAIL_START}; "
+            f"tail -n 30 {quoted_log} 2>/dev/null || true; "
+            f"echo {self._RELAUNCH_TAIL_END}"
+        )
+        argv = _base_gcloud_argv(
+            self._config,
+            "compute",
+            "ssh",
+            handle.pod_name,
+            f"--command=sudo -n bash -c {shlex.quote(script)}",
+        )
+        argv += [f"--zone={zone}"]
+        res = self._run(argv)
+        if res.returncode != 0:
+            logger.warning(
+                "GCP poll: relaunch probe failed for %s pid=%d (rc=%d): %s",
+                handle.pod_name,
+                pid,
+                res.returncode,
+                (res.stderr or "")[:300],
+            )
+            return _coarse_poll(status="stalled", current_phase="relaunch_probe_failed")
+        stdout = res.stdout or ""
+        alive = "EPS_RELAUNCH_PID=alive" in stdout
+        mtime_ago = 10**9
+        mtime_m = re.search(r"EPS_RELAUNCH_MTIME=(-?\d+)", stdout)
+        now_m = re.search(r"EPS_RELAUNCH_NOW=(\d+)", stdout)
+        if mtime_m and now_m and int(mtime_m.group(1)) >= 0:
+            mtime_ago = max(0, int(now_m.group(1)) - int(mtime_m.group(1)))
+        _, _, tail_part = stdout.partition(self._RELAUNCH_TAIL_START)
+        tail_full = tail_part.split(self._RELAUNCH_TAIL_END)[0].strip() if tail_part else ""
+        # Excerpt keeps the LAST 2000 chars (unlike the drain's head-cut):
+        # the terminal ``[phase=done]`` line lives at the END of the tail,
+        # and the done-corroboration below scans the UNtruncated text so a
+        # long tail can never push the terminal line out of the parse.
+        tail = tail_full[-2000:]
+        if alive:
+            return PollResult(
+                status="running",
+                current_phase="relaunched_workload",
+                new_milestone=False,
+                last_log_mtime_sec_ago=mtime_ago,
+                pid_alive=True,
+                log_tail_excerpt=tail,
+            )
+        # pid dead: corroborate done from the relaunch log's phase lines,
+        # reusing poll_pipeline's parser (same lazy-import pattern as
+        # ``_drain_sentinels`` — production entrypoints put the repo root
+        # on sys.path; fall back to a __file__-derived insert).
+        try:
+            from scripts.poll_pipeline import _latest_phase
+        except ModuleNotFoundError:
+            import sys
+
+            repo_root = str(Path(__file__).resolve().parents[3])
+            if repo_root not in sys.path:
+                sys.path.insert(0, repo_root)
+            from scripts.poll_pipeline import _latest_phase
+        if _latest_phase(tail_full) == "done":
+            return PollResult(
+                status="done",
+                current_phase="relaunched_workload_done",
+                new_milestone=True,
+                last_log_mtime_sec_ago=mtime_ago,
+                pid_alive=False,
+                log_tail_excerpt=tail,
+            )
+        return PollResult(
+            status="dead",
+            current_phase="relaunched_workload_exited",
+            new_milestone=True,
+            last_log_mtime_sec_ago=mtime_ago,
+            pid_alive=False,
+            log_tail_excerpt=tail,
+        )
 
     def fetch_logs(self, handle: RunHandle) -> str:
         """Best-effort serial-port-1 pull.
@@ -2523,6 +2739,21 @@ class GcpBackend(ComputeBackend):
 # ---------------------------------------------------------------------------
 # Poll-result helpers
 # ---------------------------------------------------------------------------
+
+
+def _parse_event_ts(raw: Any) -> datetime | None:
+    """Parse an events.jsonl ``ts`` (UTC ISO-8601, ``Z`` suffix) or ``None``.
+
+    ``task_workflow._utcnow_iso`` writes ``YYYY-MM-DDTHH:MM:SSZ``;
+    normalize the ``Z`` for ``fromisoformat`` and fail soft on anything
+    malformed (the caller treats ``None`` as "no usable timestamp").
+    """
+    if not raw:
+        return None
+    try:
+        return datetime.fromisoformat(str(raw).replace("Z", "+00:00"))
+    except ValueError:
+        return None
 
 
 def _coarse_poll(*, status: str, current_phase: str) -> PollResult:
