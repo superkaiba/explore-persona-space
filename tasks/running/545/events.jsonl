@@ -276,3 +276,4 @@
 {"ts": "2026-06-11T23:38:40Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: train -> gen", "phase": "gen", "pod": "pod-545"}
 {"ts": "2026-06-11T23:48:04Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: gen -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-12T00:35:01Z", "kind": "epm:results", "version": 1, "by": "issue545_sweep", "note": "issue #545 dispatcher: p1 complete: see manifest_p1.json; judge_sensitivity locked=True"}
+{"ts": "2026-06-12T00:35:12Z", "kind": "epm:progress", "version": 1, "by": "poll_pipeline", "note": "phase transition: unknown -> done", "phase": "done", "pod": "pod-545"}
