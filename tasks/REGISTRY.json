@@ -3755,7 +3755,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/614",
       "status": "interpreting",
-      "title": "Removing the default-assistant correction rows erases the assistant-twins' trained-down readings without making them adopt the trained agreement habit, and collapses leakage across the rest of the panel (LOW confidence)"
+      "title": "Removing the default-assistant correction rows erases the assistant-twins' trained-down readings without making them adopt the trained agreement habit (LOW confidence)"
     },
     "615": {
       "has_clean_result": false,
