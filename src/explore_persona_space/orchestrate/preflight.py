@@ -79,6 +79,13 @@ class PreflightReport:
     disk_headroom_basis: str = "share-level free"
     git_status: str = ""
     env_synced: bool = True
+    # Account-level HF public-storage headroom (#564). None = unknown /
+    # not checked; basis names the signal ("live-api" / "cache (...)" /
+    # "disabled" / "suspect (...)" / "unknown (...)"). Set by
+    # ``check_hf_storage``.
+    hf_storage_used_tb: float | None = None
+    hf_storage_ceiling_tb: float | None = None
+    hf_storage_basis: str = ""
 
     def add_error(self, msg: str):
         self.errors.append(msg)
@@ -124,6 +131,13 @@ class PreflightReport:
             f"(usable headroom {self.disk_probed_headroom_gb:.1f} GB, "
             f"basis: {self.disk_headroom_basis})"
         )
+        if self.hf_storage_used_tb is not None and self.hf_storage_ceiling_tb is not None:
+            lines.append(
+                f"  HF storage: {self.hf_storage_used_tb:.2f} TB / "
+                f"ceiling {self.hf_storage_ceiling_tb:.1f} TB ({self.hf_storage_basis})"
+            )
+        else:
+            lines.append(f"  HF storage: unknown ({self.hf_storage_basis or 'not checked'})")
         lines.append(f"  Git: {self.git_status}")
         lines.append(f"  Env synced: {'yes' if self.env_synced else 'NO'}")
         lines.append(f"{'=' * 60}\n")
@@ -654,6 +668,41 @@ def check_connectivity(report: PreflightReport):
         report.add_warning("Cannot reach api.wandb.ai — result uploads will fail")
 
 
+def check_hf_storage(report: PreflightReport):
+    """Non-fatal WARN when account HF public storage exceeds the soft ceiling.
+
+    Advisory only: never adds an error, never raises — an unreachable HF API
+    degrades to an 'unknown headroom' warning, and a non-parseable ceiling/TTL
+    env value (the helper's deliberate ``ValueError``) is caught and reported
+    as a warning here (it still propagates at the fail-loud persist gate in
+    ``train/trainer.py``). See ``.claude/rules/upload-policy.md``
+    § HF storage-quota 403 for the incident this fronts (#541/#552).
+    """
+    try:
+        from explore_persona_space.orchestrate.hub import check_hf_storage_headroom
+
+        h = check_hf_storage_headroom()
+    except Exception as e:
+        report.add_warning(f"HF storage headroom check failed ({e}) — headroom unknown")
+        return
+    report.hf_storage_used_tb = h.used_tb
+    report.hf_storage_ceiling_tb = h.ceiling_tb
+    report.hf_storage_basis = h.basis
+    if h.basis == "disabled":
+        return
+    if h.used_tb is None:
+        report.add_warning(
+            f"HF public-storage usage unknown ({h.basis}) — cannot verify upload headroom"
+        )
+    elif h.over_ceiling:
+        report.add_warning(
+            f"HF public storage {h.used_tb:.2f} TB exceeds soft ceiling "
+            f"{h.ceiling_tb:.1f} TB ({h.n_repos} repos, {h.basis}) — LFS uploads "
+            f"(adapters/checkpoints) will 403 at the hard quota; see "
+            f".claude/rules/upload-policy.md § HF storage-quota 403"
+        )
+
+
 def preflight_check(
     require_gpu: bool = True,
     min_disk_gb: float = 50.0,
@@ -724,6 +773,7 @@ def preflight_check(
     check_env_vars(report, required_env_vars)
     check_vllm_transformers_compat(report)
     check_connectivity(report)
+    check_hf_storage(report)
 
     return report
 
@@ -802,6 +852,9 @@ if __name__ == "__main__":
                     "disk_free_gb": report.disk_free_gb,
                     "disk_probed_headroom_gb": report.disk_probed_headroom_gb,
                     "disk_headroom_basis": report.disk_headroom_basis,
+                    "hf_storage_used_tb": report.hf_storage_used_tb,
+                    "hf_storage_ceiling_tb": report.hf_storage_ceiling_tb,
+                    "hf_storage_basis": report.hf_storage_basis,
                     "git_status": report.git_status,
                     "env_synced": report.env_synced,
                 },

@@ -540,6 +540,15 @@ STARTUP_SECRET_ENV_KEYS: tuple[str, ...] = (
 STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_PERSIST_ADAPTER_HF_REPO",
     "EPM_PERSIST_ADAPTER_SUBFOLDER",
+    # HF public-storage headroom knobs (#564): the soft ceiling, the opt-in
+    # overflow routing, the kill switch, and the cache TTL must reach the
+    # VM workload or a dispatch-process opt-in silently no-ops remotely.
+    # EPM_HF_STORAGE_CACHE_PATH is deliberately NOT threaded (a VM-local
+    # path is wrong on the worker; workers use the default).
+    "EPM_HF_STORAGE_SOFT_CEILING_TB",
+    "EPM_HF_OVERFLOW_ROUTING",
+    "EPM_HF_STORAGE_CHECK",
+    "EPM_HF_STORAGE_CACHE_TTL_S",
 )
 
 #: The subset of :data:`STARTUP_SECRET_ENV_KEYS` the GCE workload cannot

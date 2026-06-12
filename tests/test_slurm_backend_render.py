@@ -408,6 +408,40 @@ def test_render_secrets_env_skips_empty_values() -> None:
     assert "WANDB_API_KEY=real" in out
 
 
+def test_passthrough_env_keys_include_hf_storage_knobs() -> None:
+    """#564 (test 21d): the HF-storage soft-ceiling / overflow-routing knobs
+    must ride the sourced env file to the compute node, or a dispatch-process
+    opt-in silently no-ops remotely (the #535-r7 trap). The VM-local cache
+    path + event-sink path are deliberately NOT threaded (wrong machine)."""
+    from explore_persona_space.backends.slurm import PASSTHROUGH_ENV_KEYS
+
+    for key in (
+        "EPM_HF_STORAGE_SOFT_CEILING_TB",
+        "EPM_HF_OVERFLOW_ROUTING",
+        "EPM_HF_STORAGE_CHECK",
+        "EPM_HF_STORAGE_CACHE_TTL_S",
+    ):
+        assert key in PASSTHROUGH_ENV_KEYS, key
+    assert "EPM_HF_STORAGE_CACHE_PATH" not in PASSTHROUGH_ENV_KEYS
+    assert "EPM_HF_OVERFLOW_EVENT_PATH" not in PASSTHROUGH_ENV_KEYS
+
+
+def test_render_secrets_env_includes_hf_storage_knobs() -> None:
+    """#564 (test 21d): the four storage knobs render into the sourced env file."""
+    out = render_secrets_env(
+        {
+            "EPM_HF_STORAGE_SOFT_CEILING_TB": "10.0",
+            "EPM_HF_OVERFLOW_ROUTING": "1",
+            "EPM_HF_STORAGE_CHECK": "0",
+            "EPM_HF_STORAGE_CACHE_TTL_S": "3600",
+        }
+    )
+    assert "EPM_HF_STORAGE_SOFT_CEILING_TB=10.0" in out
+    assert "EPM_HF_OVERFLOW_ROUTING=1" in out
+    assert "EPM_HF_STORAGE_CHECK=0" in out
+    assert "EPM_HF_STORAGE_CACHE_TTL_S=3600" in out
+
+
 def test_render_secrets_env_includes_persist_adapter_passthrough() -> None:
     """M2 regression: the non-secret adapter-persist targets MUST ride
     the sourced env file to the compute node, or

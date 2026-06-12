@@ -593,6 +593,63 @@ def test_render_startup_script_fetches_persist_adapter_passthrough() -> None:
         assert f"export {key}" in script, f"{key} export missing"
 
 
+_HF_STORAGE_KNOB_KEYS = (
+    "EPM_HF_STORAGE_SOFT_CEILING_TB",
+    "EPM_HF_OVERFLOW_ROUTING",
+    "EPM_HF_STORAGE_CHECK",
+    "EPM_HF_STORAGE_CACHE_TTL_S",
+)
+
+
+def test_startup_passthrough_env_keys_include_hf_storage_knobs() -> None:
+    """#564 (test 21d): the HF-storage soft-ceiling / overflow-routing knobs
+    must reach the VM workload via instance metadata, or a dispatch-process
+    opt-in silently no-ops remotely (the #535-r7 trap). The VM-local cache
+    path + event-sink path are deliberately NOT threaded (wrong machine)."""
+    from explore_persona_space.backends.gcp import STARTUP_PASSTHROUGH_ENV_KEYS
+
+    for key in _HF_STORAGE_KNOB_KEYS:
+        assert key in STARTUP_PASSTHROUGH_ENV_KEYS, key
+    assert "EPM_HF_STORAGE_CACHE_PATH" not in STARTUP_PASSTHROUGH_ENV_KEYS
+    assert "EPM_HF_OVERFLOW_EVENT_PATH" not in STARTUP_PASSTHROUGH_ENV_KEYS
+
+
+def test_render_create_argv_includes_hf_storage_knob_metadata(monkeypatch) -> None:
+    """#564 (test 21d): storage knobs set on the dispatch env land as
+    instance metadata pairs."""
+    monkeypatch.setenv("EPM_HF_STORAGE_SOFT_CEILING_TB", "10.0")
+    monkeypatch.setenv("EPM_HF_OVERFLOW_ROUTING", "1")
+    monkeypatch.setenv("EPM_HF_STORAGE_CHECK", "0")
+    monkeypatch.setenv("EPM_HF_STORAGE_CACHE_TTL_S", "3600")
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    joined = " ".join(a for a in argv if a.startswith("--metadata="))
+    assert "EPM_HF_STORAGE_SOFT_CEILING_TB=10.0" in joined
+    assert "EPM_HF_OVERFLOW_ROUTING=1" in joined
+    assert "EPM_HF_STORAGE_CHECK=0" in joined
+    assert "EPM_HF_STORAGE_CACHE_TTL_S=3600" in joined
+
+
+def test_render_startup_script_fetches_hf_storage_knobs() -> None:
+    """#564 (test 21d): the startup script fetches + exports the storage
+    knobs from instance metadata so the VM workload sees them in os.environ."""
+    cfg = _test_config()
+    script = render_startup_script(
+        spec=_spec(),
+        config=cfg,
+        attempt_id="att-fixed-001",
+    )
+    for key in _HF_STORAGE_KNOB_KEYS:
+        assert f"instance/attributes/{key}" in script, f"{key} fetch stanza missing"
+        assert f"export {key}" in script, f"{key} export missing"
+
+
 def test_render_startup_script_shell_safe_hydra_args() -> None:
     """A Hydra arg with a shell-meaningful char must be quoted, not interpolated."""
     cfg = _test_config()
