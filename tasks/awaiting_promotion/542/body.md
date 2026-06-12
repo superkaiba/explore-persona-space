@@ -3,7 +3,8 @@ title: Under brief early-stopped training, swapping the contrastive-negative pan
   six ways (close personas, default assistant included, 2-16 negatives) leaves the
   marker-leakage map unchanged within 0.2 nat (MODERATE confidence)
 kind: experiment
-tags: []
+tags:
+- followup-auto
 created_at: '2026-06-09T22:20:50Z'
 has_clean_result: true
 parent_id: 537
