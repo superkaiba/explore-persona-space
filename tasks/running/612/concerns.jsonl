@@ -1,0 +1,1 @@
+{"ts": "2026-06-12T04:26:57Z", "event": "raised", "concern_id": "p2j-p7-first-contact-untested", "severity": "CONCERN", "summary": "P2j select_panel + P7 analyze_612 never ran on real full-shape inputs (consume P1/P2/P4/P6 outputs). Post-pod VM phases, zero pod cost; expect first-contact iteration before analysis.", "raised_by": "experiment-implementer", "raised_at_round": 1}
