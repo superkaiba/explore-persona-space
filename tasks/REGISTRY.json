@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 619,
+  "highest_id": 620,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3800,6 +3800,13 @@
       "path": "tasks/completed/62",
       "status": "completed",
       "title": "Add tester and fix subagent permissions "
+    },
+    "620": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/620",
+      "status": "proposed",
+      "title": "Fix test_issue475_common: TrainLoraConfig missing existing_adapter_path (selective-merge gap from issue-475)"
     },
     "65": {
       "has_clean_result": true,
