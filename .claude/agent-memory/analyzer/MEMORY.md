@@ -23,6 +23,7 @@
 - [Coverage: user prompt can misstate it](feedback_user_prompt_can_misstate_coverage.md) — decode the cell key from sweep_summary.json before accepting which cells failed.
 - [Raw completions lost to pod auto-terminate](feedback_raw_completions_lost_to_pod_terminate.md) — use parent-issue + base_model_floor.json surrogates, explicitly annotated; never fabricate.
 - [set_title_subtitle breaks grids + blog style](feedback_set_title_subtitle_breaks_subplot_grids.md) — grids: fig.text + disable constrained_layout; blog single-axis: inline set_title(pad=36)+annotate. #398/#468.
+- [Open-marker scatter needs explicit linewidths](feedback_open_marker_scatter_linewidths.md) — facecolors="none" + zeroed style edge width = invisible series; pixel-probe to verify; savefig_paper double-`figures/` trap. #613.
 - [Default sentinel](feedback_default_sentinel.md) — verifier flags bare "default" in repro card; spell out the template/value.
 - [default-assistant trips Repro sentinel scrub](feedback_default_assistant_trips_sentinel_scrub.md) — use the `default_assistant` slug in ## Reproducibility. #611.
 - [Dropdown fences need own disclosure+link prelude](feedback_details_dropdown_fences_need_own_prelude.md) — "Cherry-picked …; all rows: [link]" right after each summary tag, before the fence. #611.
