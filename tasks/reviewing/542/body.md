@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/71b992aa030a63409ee576a375c3ab2e9e449ac7/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+
 ## Human TL;DR
 
 **Headline.** I swapped the contrastive-negative panel six different ways and, under this brief early-stopped training, the leakage map didn't budge — even training the plain default assistant as a negative did nothing to the default context on our slot-probability read.
@@ -243,3 +245,5 @@ Putting the six findings together: in this band-stopped short regime, negative-p
 - Created / run: task created 2026-06-09; trained + evaled on pod-542 2026-06-11 → 2026-06-12; analysis + write-up 2026-06-12.
 - Follow-up to: [#537](https://eps.superkaiba.com/tasks/537) — the context-generalization testbed (marker row) whose frozen protocol, eval panel, and adapters this experiment holds fixed while varying only the negative panel.
 - Originating prompt(s), verbatim: origin prompt not recorded.
+- **Methodology reference:** [docs/methodology/issue_542.md](https://github.com/superkaiba/explore-persona-space/blob/71b992aa030a63409ee576a375c3ab2e9e449ac7/docs/methodology/issue_542.md) · [gist](https://gist.github.com/superkaiba/746cd72f058be203b548918a7b24dc07)
+
