@@ -146,6 +146,16 @@ automatically, but it's opt-in on `--hf-dataset-path` and doesn't
 auto-discover. **You must auto-discover.** The script is a helper for the
 checks it already covers (model, WandB, git); for anything new the script
 doesn't know about, use the HF / git / WandB commands above directly.
+On a training task with no single `--hf-model` / `--wandb-run` to pass
+(the multi-cell sweep case), the script's training rows self-resolve
+from the task's `epm:results` reproducibility card (`reproducibility_card`
+or its `reproducibility` alias), MERGED across all `epm:results` markers
+newest-wins per declared field — an empty resume-pass re-post
+(`adapter_paths: {}`, #601) does not shadow the first marker's full
+declaration. Per-cell `adapter_paths` verified under `hf_model_repo` via
+`list_repo_files`, `wandb_run_names` + `wandb_project` resolved by
+display name (#608) — so do NOT pre-emptively supersede those rows by
+hand.
 
 ### Step 2.5 — Phantom-URL gate: HEAD-verify every CLAIMED URL
 
@@ -161,11 +171,13 @@ clean-result body's Reproducibility section, then HEAD-check every
 HF/WandB URL it contains at its CITED REVISION (not at `main`):
 
 ```bash
-# 1. Concatenate the claimed-URL surfaces into one file.
-RESULTS_NOTE=$(uv run python scripts/task.py view <N> --json \
-  | jq -r '.events[] | select(.kind=="epm:results") | .note' | tail -1)
+# 1. Concatenate the claimed-URL surfaces into one file. ALL epm:results
+#    notes, not just the newest — multi-launch runs post several markers
+#    and a resume re-post claims fewer URLs than the first (#601).
+RESULTS_NOTES=$(uv run python scripts/task.py view <N> --json \
+  | jq -r '.events[] | select(.kind=="epm:results") | .note')
 BODY_PATH=$(uv run python scripts/task.py find <N>)/body.md
-{ echo "$RESULTS_NOTE"; echo; sed -n '/^## Reproducibility/,$p' "$BODY_PATH"; } \
+{ echo "$RESULTS_NOTES"; echo; sed -n '/^## Reproducibility/,$p' "$BODY_PATH"; } \
   > /tmp/issue-<N>-claimed-urls.txt
 
 # 2. HEAD-verify every URL in the blob via verify_uploads.py.
@@ -188,6 +200,20 @@ overall FAIL you then have to supersede row by row (incident #563,
 2026-06-10). The script also scans the `issue-<N>` branch refs for
 eval JSONs + figures, since those land on the issue branch before the
 Step 9b auto-merge.
+
+A multi-cell SWEEP training task likewise has no single `--hf-model` /
+`--wandb-run` to pass — but do NOT hand-supersede the resulting MISSING
+training rows: re-run `verify_uploads.py` and expect them to resolve
+from the task's `epm:results` reproducibility card (`reproducibility_card`
+or `reproducibility`), merged across ALL `epm:results` markers
+newest-wins per declared field (per-cell `adapter_paths` under
+`hf_model_repo`; `wandb_run_names` + `wandb_project` [+ optional
+`wandb_entity`] resolved by display name — #608; a resume-pass marker
+with an empty card never shadows an earlier full one — #601). Manual row
+supersession remains legitimate ONLY when NO marker's card declares the
+fields (`adapter_paths` / wandb fields absent across the whole history) —
+then verify the per-cell artifacts yourself with the Step 2 commands
+and record the superseding evidence in the verdict row.
 
 The `claimed_urls` row in the JSON report is FAIL whenever any cited
 URL did not resolve. Common phantom patterns to watch for:
