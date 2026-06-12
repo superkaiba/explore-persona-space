@@ -236,4 +236,153 @@ Each trajectory JSON carries one such record per (checkpoint step × 25 contexts
 
 ---
 
+## svd-per-checkpoint-titration-read arm
+
+A same-issue follow-up round, **measurement-only**: no new training, no new probe rows, no new conditions. The arm harvests the parent's own per-checkpoint adapter ladders (both training regimes above) and reads, at every checkpoint, the per-context **activation-shift geometry** — how the LoRA moved the residual stream under each of the 25 probe contexts — on the SAME teacher-forced rows the parent's marker-affinity DV was read on. The parent recipe is otherwise unchanged; everything in §§1–6 carries over verbatim.
+
+### Design (delta vs the parent)
+
+- **12 units = 2 training arms × 6 sources** — the parent's contrastive (Arm A, 27 reused #480 capend checkpoints/source) and positive-only (Arm B, 39 fresh checkpoints/source) ladders, with the parent's checkpoint grids, sources, and probe panel inherited unchanged.
+- **Per (unit, checkpoint):** the per-context activation-shift matrix `M` (hidden-dim × contexts) of trained − base mean residuals over the 25 contexts × 50 questions, at the teacher-forced post-response slot. For the `qwen_default` source the `no_persona` column is dropped (render-identical duplicate; 24 columns asserted) — the parent's exclusion convention.
+- **Geometry DVs per checkpoint-cell:** top singular share `σ₁/Σσ` of `M` (vs sign-flip + row-shuffle nulls), per-context cosine to the top direction U1, a leave-one-out top share with the source column dropped, and the **gate** Spearman ρ(per-context ‖Δv‖, centered base-bank cosine to the source).
+- **Per unit:** the consecutive-checkpoint rotation track cos(U1(k), U1(k+1)) + cos(U1(k), U1(end)), restricted to above-floor checkpoints, using the SVD summary's mean-column sign convention.
+- **Arm contrast (corrected-key read):** Δρ = ρ(‖Δv‖, cos to `v_src − weighted mean v_neg`) − ρ(‖Δv‖, cos to `v_src`), per checkpoint per arm, with the negative set and its 2:2:1 weights READ from the realized #480 train-pool JSONLs (200/200/100 rows per source, classified by system prompt and asserted against the pinned negative map), never from plan prose.
+- **Below-floor mask:** a checkpoint-cell's geometry DVs are read only where the median across contexts of ‖Δv‖ / s_half ≥ 3.0, with s_half = ‖half₁ − half₂‖/2 per context from deterministic even/odd-question split halves at the layer-14 slot; below-floor cells are reported as "below measurement floor", never as low top-share.
+- **Behavioral join:** every per-checkpoint geometry record carries the parent's panel-trajectory values for the same (unit, step) — source Δlog P, bystander median Δlog P, source slot-argmax emission rate — plus the unit's `behavioral_onset_step` (defined as the first step where the parent's teacher-forced source probe gain crosses 5 nats), so every geometry trajectory is locatable against the parent's behavioral trajectory on identical rows.
+- **Scope-by-design notes** (recorded in the summary JSON): within-flavor claims only — the text flavor is fixed base text, so levels are never compared across text flavors; single seed 42; the contrastive grid starts AT step 20 (its earlier window is unobservable by construction — named asymmetry); the `qwen_default` contrastive cell carries the parent's contradictory-supervision caveat; nulls run at the primary read only.
+
+### Measurement methodology (Phases A/B, pod-side)
+
+**Rows.** The parent's `probe_rows.json` (25 contexts × 50 questions), rebuilt with the byte-identity-pinned `build_slot_context` (`T_panel(q) + r_base`); per row the pipeline asserts the output decomposes as chat-template prompt + `r_base` and that the token ids decompose as prefix + response (no BPE merge across the seam), so `response_start` is recoverable for the mean-over-response pooling.
+
+**Residual capture.** Forward hooks on the decoder block modules — NOT `output_hidden_states=True`, whose tuple TAIL entry is post-final-norm, silently changing space at the last layer (27 of 28 on Qwen-2.5-7B); the hook output is identical to `hidden_states[L+1]` for L ≤ 26 and genuinely pre-final-norm at layer 27. A one-row `lm_head(final_norm(hook(last_block)))` logits-reproduction check verifies the captured residual is pre-final-norm (the artifact schemas are versioned `*_v2` so a stale post-norm bank fails loud instead of mixing spaces). Per row: slot (last-token) + mean-over-response residuals at layers {7, 14, 21, 27}, fp16, plus the slot logits' four floats per the parent's storage contract.
+
+**Batch geometry.** Left-padded sub-batches of 8 with no explicit `position_ids` — the EXACT convention of the parent's `compute_marker_slot_stats`, whose stored records are the reproduction reference. Batch composition is load-bearing: a different sub-batch mix changes the left-pad and produces bf16 jitter up to ~0.16 nat in log-prob space (pod-measured), so gate reads on subset runs re-read the gated rows inside their original full-enumeration sub-batches, and the base-vs-base zero-shift pass aligns its row count to full batches (48 of the requested 50 rows in production).
+
+**Phase A (base side, once):** one teacher-forced base-model forward per row; stores per-row residuals + the **base context bank** (per-context means over the 50 questions, both poolings, all 4 layers) with the canonical centered cosine matrix (`centering: "global_mean"`, provenance recorded; raw-pairwise values reported alongside, labeled, never numerically compared to centered ones).
+
+**Phase B (per unit):** per-file download of the unit's checkpoint ladder from the Hub into a unit-local dir (never `snapshot_download(allow_patterns=...)` — silently truncates on this >8k-file repo; never the shared HF cache, whose blobs would survive the per-unit delete), then per checkpoint: gauge assert on `adapter_config.json` (LoRA excludes `lm_head`/`embed_tokens`, `modules_to_save` empty) → LoRA hot-swap (`PeftModel.from_pretrained` → read → `unload()`, threading the returned handle) → batched trained-side forwards on the same rows → subtract the cached Phase-A base reads → persist that checkpoint's npz THE MOMENT it completes (per-context mean Δv at 4 layers × 2 poolings, the layer-14-slot split-half pair, per-question Δv norms, trained-side four floats). After the last checkpoint the first checkpoint is re-read and its four floats must reproduce (end-of-ladder hot-swap invariant, atol 1e-3).
+
+**Pipeline-correctness gates (all fail-loud before grid spend):**
+
+1. **Four-float reproduction:** this pipeline's own forward must reproduce the parent's stored per-row `log P(※)` to ≤ 0.1 nat — base side once in Phase A, trained side at the first checkpoint of every unit in production (every checkpoint in smoke). The production run's recorded gate reads are bit-exact (`max_abs_diff` 0.0 on all four floats, 1,250 rows, both sides) at the matched batch geometry.
+2. **Base-vs-base zero shift:** max ‖Δv‖ ≤ 1e-3 with no adapter loaded (production: 48 batch-aligned rows; recorded 0.0).
+3. **Preflight:** in-process marker/`<|im_end|>` token-id asserts, probe-rows schema + 25×50 shape check, Hub re-listing of every requested checkpoint (`adapter_config.json` + `adapter_model.safetensors` per step), gate-reference availability for every gated step, and a 16 GB `posix_fallocate` disk probe re-run between units (MooseFS EDQUOT class).
+
+**Uploads (checkpoint-per-phase):** each unit's consolidated npz lands on the HF data repo BEFORE the next unit's download and BEFORE its ladder delete, with EXACT-filename Hub re-listing verification (a prefix-nonempty check alone would pass on a stale bucket); per-unit scalar summaries + per-shard smoke reports land in git.
+
+**Smoke = the sweep with one tiny unit:** `--smoke` runs the SAME phases via the SAME subprocess shapes with scaled knobs — 1 unit (positive-only villain), 2 checkpoints (steps 4 + 528, the floor-calibration pair), 3 contexts × 3 questions, gates on every step, `_smoke`-suffixed upload paths and a dedicated `smoke_run/` root so a later production launch can never silently resume from 3×3 artifacts. The smoke report records the floor statistic (median ‖Δv‖/s_half) at steps 4 and 528; the production Phase D ran at the default threshold 3.0 (a 3-sigma-style heuristic, flagged in the plan as smoke-calibrated rather than literature-grounded).
+
+### Analysis methodology (Phase D, off-pod on the VM)
+
+CPU-only, after pod termination, over the 12 unit npz files + base bank: per checkpoint-cell `assemble_M` → `svd_summary` (top share, U1, per-column cos-to-U1) + both nulls (1,000 reps each, multiprocessed, deterministic seed `crc32("<unit>:<step>")`), LOO source-dropped share, gate ρ against the centered (primary) and raw-labeled base-bank cosines, the corrected-key Δρ, the rotation track, and the behavioral join. Secondary reads (layers {7, 21, 27} and mean-resp pooling) get descriptive `svd_summary` + gate ρ only — the 1,000-rep nulls run at the primary read (layer 14, slot) per the plan's compute budget. The only significance statistic is the cross-source exact binomial sign test (6 sources), matching the parent's convention; Spearman ρ is computed in-house (`spearman_rho`). Figures (14 `svdtitration_*` sets): per-arm hero panels (top share + gate ρ + rotation vs log-scaled training step, with the parent's teacher-forced source probe gain overlaid and a step-15–20 band shaded on every panel), per-source small multiples for top share and gate ρ (below-floor checkpoints as grey dots), Δρ tracks per arm, per-context cos-to-U1 spaghetti, the floor-mask map, and layer/pooling repeats of the top-share hero.
+
+**Planned reads** (computed by Phase D into `svd_titration_summary.json`; the operationalization strings below are quoted verbatim from that JSON — the outcomes live in the task body, not here):
+
+- **Low-dose concentration + gating:** "at the EARLIEST above-floor positive-only checkpoint in steps 4-16: top_share > sign_flip_p95 AND top_share > step-528 share AND gate_rho_centered > 0; pre-registered pass = 6/6 sources"
+- **Rotation + gate collapse:** "consecutive-U1 rotation minimum lands inside steps 12-40 AND mean gate_rho_centered over above-floor steps in [40, 100] < 0.5 x its pre-cliff mean (early > 0); falsified if all consecutive cosines >= 0.9 through the cliff or H1's grading never existed"
+- **Arm contrast (effective key):** "delta_rho = rho(norms, cos to v_src − 2:2:1-weighted mean v_neg) − rho(norms, cos to v_src), centered geometry; contrastive arm passes a source when the last-5-above-floor mean is > 0 AND > the first-5 mean; positive-only arm expects last-5 mean <= 0; descriptive paired read aggregated by cross-source sign test (plan §3 power note)"
+
+### Measurement hyperparameters
+
+Only the arm's NEW knobs — the base model, adapters, probe rows, contexts, and the training recipe are the parent's (§2 table). Values read from `shift_svd.py` + `titration_svd_597.py` at the pod run commit and `analyze_titration_597.py` at the analysis commit; cross-checked against the artifact metadata (`svd_titration_summary.json`, unit npz meta).
+
+| Parameter | Value | Notes |
+|---|---|---|
+| Units | 12 = 2 arms × 6 sources | 27 ckpts/source (contrastive) / 39 (positive-only) — parent grids |
+| **Read layers** | **{7, 14, 21, 27}, primary 14** | forward hooks, pre-final-norm at every layer (schema v2) |
+| Poolings | slot (primary) + mean-over-response (secondary) | slot = last token of `T_panel(q) + r_base` |
+| Text flavor | fixed base text (parent `probe_rows.json`, 25 × 50) | trajectory comparability; within-flavor claims only |
+| Batch | left-padded sub-batches of **8**, no explicit `position_ids` | matches the parent's probe geometry (gate reads are geometry-matched) |
+| Tensor persistence | fp16 npz, per checkpoint → consolidated per unit | ≈13 files total incl. `base_bank.npz` |
+| Similarity | bank cosine, `centering: "global_mean"` | raw-pairwise reported alongside, labeled |
+| Corrected key | `v_src − (2:2:1)-weighted mean v_neg`, unweighted as robustness | weights from realized #480 pools @ rev `3c8fecb9...` (200/200/100 rows) |
+| **Floor threshold** | **3.0** (median over contexts of ‖Δv‖ / s_half) | even/odd split halves, layer-14 slot; `--floor-threshold` default |
+| **Null reps** | **1,000** sign-flip + row-shuffle per cell | primary read only; seed `crc32("<unit>:<step>") % 2³¹` |
+| Significance | exact binomial sign test across the 6 sources | the only significance statistic |
+| Gate tolerances | four-float ≤ 0.1 nat; zero-shift ≤ 1e-3; invariant atol 1e-3 | |
+| **Seed** | **42** (inherited; no new training) | nulls deterministic per cell |
+| Phase D workers | 24 processes | VM CPU, numpy 2.2.6 |
+
+### Pipeline phases
+
+| Phase | What runs | Script / module | Output |
+|---|---|---|---|
+| preflight (pod, CPU) | token asserts; probe-rows shape; Hub ladder re-listing per unit; gate-reference availability; 16 GB disk probe | `titration_svd_597.py` | log gates |
+| A (pod, once) | base residuals + context bank + zero-shift sanity + base-side four-float gate | `shift_svd.py --mode base` | `base_bank.npz` → HF immediately |
+| B (pod, ×12 units) | per-checkpoint hot-swap reads, trained-side gate, end-of-ladder invariant, per-checkpoint persistence | `shift_svd.py --mode unit` | `<arm>_<source>.npz` + `units/<arm>_<source>.json` |
+| C (pod, per unit) | exact-filename-verified upload → ladder delete; per-shard smoke report; results sentinel | `titration_svd_597.py` | HF `analysis_tensors/`; `smoke_report_gpu{0..3}.json` |
+| D (VM, CPU, post-termination) | SVD + nulls + gate ρ + rotation + Δρ + behavioral join + planned reads + figures | `analyze_titration_597.py --workers 24` | `percheckpoint/*.json`, `analysis/svd_titration_summary.json`, 14 figure sets |
+
+### Worked example — per-checkpoint geometry record (verbatim)
+
+One checkpoint record from `eval_results/issue_597/svd-per-checkpoint-titration-read/percheckpoint/b_villain.json` (positive-only villain unit, step 4 of its 39-step grid), shown solely as a worked example of the record schema — long arrays and the `secondary` block truncated.
+
+<!-- cherry-picked for schema illustration; all 12 per-unit JSONs at the git link below -->
+
+```jsonc
+// unit-level keys: schema ("i597_svd_titration_unit_v1"), followup_label, unit, arm, source,
+// steps, kept_context_names, primary_read {"layer": 14, "pooling": "slot"},
+// centering ("global_mean"), bank_persona_names, predictor_status, behavioral_onset_step,
+// per_step, rotation, invariant_max_abs_diff, fourfloat_gates, metadata
+// per_step["4"]:
+{"step": 4,
+ "above_floor": false, "floor_median_ratio": 0.9757453580417456, "floor_threshold": 3.0,
+ "n_columns": 25,
+ "top_share": 0.08943662792444229,
+ "cos_to_U1": [-0.22427186369895935, -0.4700128734111786, 0.5153025388717651, "..."],
+ "cos_to_U1_mean_abs": 0.36126965284347534,
+ "context_norms": [0.07838728278875351, 0.08068008720874786, 0.08228307217359543, "..."],
+ "loo_top_share": 0.09335323423147202,
+ "gate_rho_centered": 0.12538461538461537,
+ "gate_rho_raw_pairwise_uncentered": -0.12461538461538461,
+ "h3": {"rho_corrected_centered": 0.12384615384615384,
+        "rho_corrected_unweighted_centered": 0.1176923076923077,
+        "rho_corrected_raw": 0.0876923076923077,
+        "delta_rho_centered": -0.0015384615384615302,
+        "delta_rho_unweighted_centered": -0.007692307692307679},
+ "nulls": {"row_shuffle_p95": 0.08673536032438278, "row_shuffle_p99": 0.0879177525639534,
+           "sign_flip_p95": 0.08628781884908676, "sign_flip_p99": 0.08716444671154022,
+           "n_reps": 1000},
+ "clears_sign_flip_p95": true, "clears_row_shuffle_p95": true,
+ "secondary": {"l7_slot": {"top_share": 0.07674119621515274, "...": "..."}, "...": "..."},
+ "behavioral": {"source_delta_logp": 0.040558395385742185,
+                "bystander_median_delta_logp": 0.014535634517669678,
+                "source_emission_rate_argmax": 0.0}}
+// rotation.consecutive[0] (above-floor checkpoints only):
+{"step_from": 12, "step_to": 16, "cos": 0.9659703969955444}
+```
+
+The `cos_to_U1` / `context_norms` entries are ordered by `kept_context_names` (here starting `librarian`, `surgeon`, `programmer`, ...). The unit's `fourfloat_gates` block records the gate read (`max_abs_diff` 0.0 on all four floats over 1,250 rows at step 4) and `invariant_max_abs_diff` 0.0 records the end-of-ladder re-read.
+
+### Artifacts and reproducibility (this arm)
+
+- **Pod run commit:** `3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5` (branch `issue-597`; recorded as `git_commit` in every unit extraction report + smoke report). The extraction outputs were committed at `be3171848a5f7615c7c6c82584b33fa0b43d2d44` — the two scripts are content-identical at both commits.
+- **Pod dispatcher:** [`scripts/issue_597/titration_svd_597.py`](https://github.com/superkaiba/explore-persona-space/blob/3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5/scripts/issue_597/titration_svd_597.py)
+- **Phases A/B core:** [`src/explore_persona_space/experiments/leakage_dynamics_597/shift_svd.py`](https://github.com/superkaiba/explore-persona-space/blob/3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5/src/explore_persona_space/experiments/leakage_dynamics_597/shift_svd.py)
+- **SVD library:** [`src/explore_persona_space/analysis/svd_direction_constancy.py`](https://github.com/superkaiba/explore-persona-space/blob/3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5/src/explore_persona_space/analysis/svd_direction_constancy.py), ported verbatim from `issue-602` @ `d2e0bdf21bc6b20ece0be0bbf40de96d23da3eaa`
+- **Phase D analysis:** [`scripts/issue_597/analyze_titration_597.py`](https://github.com/superkaiba/explore-persona-space/blob/a9148becc4708c5553be8362540e50993d5b189c/scripts/issue_597/analyze_titration_597.py) — run on the VM at commit `9ce15a086018e25475c45ea6d263b1dc818520fd`; the hero figures' overlay/band labels were corrected and regenerated at `a9148becc4708c5553be8362540e50993d5b189c` (label-only change to this script)
+- **Per-unit geometry JSONs (12) + planned-read summary:** [`percheckpoint/`](https://github.com/superkaiba/explore-persona-space/tree/8737d069f6f2a7074358d48c88828697611b85aa/eval_results/issue_597/svd-per-checkpoint-titration-read/percheckpoint) + [`analysis/svd_titration_summary.json`](https://github.com/superkaiba/explore-persona-space/blob/8737d069f6f2a7074358d48c88828697611b85aa/eval_results/issue_597/svd-per-checkpoint-titration-read/analysis/svd_titration_summary.json) (outputs commit `8737d069f...`)
+- **Extraction provenance:** [`units/`](https://github.com/superkaiba/explore-persona-space/tree/8737d069f6f2a7074358d48c88828697611b85aa/eval_results/issue_597/svd-per-checkpoint-titration-read/units) + per-shard `smoke_report_gpu{0..3}.json` + the `smoke_run/` smoke artifacts (same tree)
+- **Shift tensors + base bank (13 npz files):** [HF data repo `issue597_leakage_dynamics/analysis_tensors/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/8bb579359477389d097ddc46618a27c6bdb20654/issue597_leakage_dynamics/analysis_tensors)
+- **Figures:** the 14 `svdtitration_*` PNG/PDF/meta sets at [`figures/issue_597/` @ `a9148becc...`](https://github.com/superkaiba/explore-persona-space/tree/a9148becc4708c5553be8362540e50993d5b189c/figures/issue_597)
+- **Reused inputs:** the parent's adapter ladders, `probe_rows.json`, panel trajectories, and eval questions (§6 above); #480 train pools @ rev `3c8fecb937c81c13036a9697be1e4e716755321e` for the realized negative composition
+- **Launch:**
+
+```bash
+# pod (4× H100, eval intent): smoke, then shared base phase, then 4 shards of 3 units
+uv run python scripts/issue_597/titration_svd_597.py --smoke
+uv run python scripts/issue_597/titration_svd_597.py --stop-after-base
+CUDA_VISIBLE_DEVICES=0 nohup uv run python scripts/issue_597/titration_svd_597.py \
+    --skip-base --gpu 0 --units b:villain,b:comedian,b:assistant &
+# gpu1: b:qwen_default,b:software_engineer,b:kindergarten_teacher
+# gpu2: a:villain,a:comedian,a:assistant   gpu3: a:qwen_default,a:software_engineer,a:kindergarten_teacher
+# VM (after pod termination):
+uv run python scripts/issue_597/analyze_titration_597.py --workers 24
+```
+
+- **Compute:** pod-side extraction on one 4× H100 80 GB pod (hostname `899ddc762360`), 12 units sharded 3 per GPU; per-unit dispatcher wall (download → extract → upload → delete) 994–1,910 s, summing to ≈4.7 GPU·h across the units, plus the shared Phase A base pass and the smoke cell. Phase D ran off-pod on the VM (`cia-benchmark-vm`): wall 12,255.6 s (≈3.4 h) CPU with 24 worker processes, numpy 2.2.6.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/597).*

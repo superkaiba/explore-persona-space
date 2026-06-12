@@ -1,0 +1,56 @@
+{
+  "schema": "i597_svd_smoke_report_v1",
+  "smoke": true,
+  "dry_run": false,
+  "shard": "all",
+  "units": [
+    "b_villain"
+  ],
+  "per_unit": [
+    {
+      "unit": "b_villain",
+      "arm": "b",
+      "source": "villain",
+      "n_steps": 2,
+      "unit_npz": "data/issue597_svd_titration/smoke_run/analysis_tensors/b_villain.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/smoke_run/units/b_villain.json",
+      "wall_seconds": 65.9,
+      "floor_statistic_l14_slot": {
+        "4": {
+          "median_ratio": 1.0478055280789706,
+          "min_ratio": 0.9181884240815994,
+          "max_ratio": 1.11811684277613
+        },
+        "528": {
+          "median_ratio": 2.3899731047288775,
+          "min_ratio": 1.9201411364301626,
+          "max_ratio": 2.9613773176120866
+        }
+      },
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics_smoke/analysis_tensors"
+    }
+  ],
+  "base_bank": "data/issue597_svd_titration/smoke_run/analysis_tensors/base_bank.npz",
+  "git_commit": "3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5",
+  "hostname": "899ddc762360",
+  "ts": "2026-06-11T22:13:24.637327+00:00",
+  "zero_shift": {
+    "n_rows": 9,
+    "max_delta_norm": 0.0,
+    "tol": 0.001
+  },
+  "fourfloat_gate_base": {
+    "side": "base",
+    "n_rows_compared": 9,
+    "max_abs_diff": {
+      "logp": 0.0,
+      "z_marker": 0.0,
+      "z_eos": 0.0,
+      "logZ": 0.0
+    },
+    "worst_row": null,
+    "tol_nats": 0.1,
+    "pass": true,
+    "parent_geometry_reread": true
+  }
+}
