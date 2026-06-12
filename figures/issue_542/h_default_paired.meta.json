@@ -1,0 +1,19 @@
+{
+  "git_commit": "28db2174d24dc4bb3c6f29c8096a31366358c31e",
+  "generated_at": "2026-06-12T10:39:00.008020+00:00",
+  "rows": [
+    "sp_swe",
+    "sp_doctor",
+    "sp_ph1",
+    "sp_ph2",
+    "wc_short_code",
+    "wc_short_advice",
+    "wc_long_write",
+    "reph_imp",
+    "reph_polite",
+    "reph_casual"
+  ],
+  "arm2_mean": 4.468934088945389,
+  "arm3_mean": 4.55047761797905,
+  "note": "paired per-train-row default-column reads; single swap ph2-twin -> default"
+}

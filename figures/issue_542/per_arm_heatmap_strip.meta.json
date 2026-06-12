@@ -1,0 +1,12 @@
+{
+  "git_commit": "28db2174d24dc4bb3c6f29c8096a31366358c31e",
+  "generated_at": "2026-06-12T10:38:23.060739+00:00",
+  "arms": [
+    "arm1_xfam",
+    "arm2_close",
+    "arm3_default",
+    "c16",
+    "c2",
+    "c8"
+  ]
+}
