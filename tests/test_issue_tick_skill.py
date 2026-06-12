@@ -1,27 +1,30 @@
-"""Structural tests for the new ``/issue-tick`` lightweight recurring driver.
+"""Structural tests for the ``/issue-tick`` lightweight recurring driver.
 
-What this pins:
+What this pins (guarded-no-op redesign, 2026-06-12):
 
 1. **The skill file exists** with the required YAML front matter
    (``name: issue-tick``) so the skill loader can find it.
-2. **The skill documents the four branch shapes** the orchestrator depends on
-   (TERMINAL / PARK / ACTIVE / GATE-PARK) and the soft-fail title refresh via
-   ``session_progress_report.py``.
+2. **The skill's FIRST action is one ``tick_triage.py`` Bash call** and it
+   documents the four verdict branches the orchestrator depends on
+   (HEALTHY / TERMINAL / GATE-TRANSITION / STALE-REDRIVE) plus the
+   fail-toward-coverage rule (non-zero triage exit -> full re-drive).
 3. **The skill teardown match string matches the cron prompt literal**
    (``/issue-tick <N>``, NOT ``/issue <N>`` — the round-1 reviewer
-   CRITICAL-2). A drift here means a stranded cron after every park / terminal.
-4. **The full ``/issue`` skill's CronCreate (Step 6d.2) fires the
-   ``/issue-tick <N>`` prompt** — the recurring driver is now the lightweight
-   skill, NOT the full ``/issue`` reload.
+   CRITICAL-2), with the hardened assert-after-delete (#501 runaway class).
+4. **The full ``/issue`` skill's CronCreate (Step 0 + Step 6d.2) fires the
+   ``/issue-tick <N>`` prompt at the ``*/45`` cadence** — the recurring
+   driver is the lightweight skill, NOT the full ``/issue`` reload.
 5. **Every CRON-TEARDOWN site in the full ``/issue`` skill matches
    ``/issue-tick <N>``** so a teardown across N sites doesn't drift from the
-   cron prompt (a substring-match version would mis-dedupe sibling issues —
-   exact-equality is the contract).
+   cron prompt (an unguarded substring-match would mis-dedupe sibling
+   issues).
 6. **``spawn_session.py --auto`` initial prompt is ``/issue {issue}``**
    (NOT ``/loop 10m /issue {issue}``) — cold start fires the full skill once,
    which then arms the tick cron. Cold respawn via
    ``autonomous_session_watch._respawn`` calls the same ``--auto`` path, so
    this single assertion covers both.
+7. **No stale ``*/20`` tick-cadence references remain** in the tick skills,
+   the arm sites, or the campaign twin (interval lengthened 2026-06-12).
 """
 
 from __future__ import annotations
@@ -56,21 +59,41 @@ def test_issue_tick_skill_has_front_matter():
     assert re.search(r"^description:", head, flags=re.M), "front matter must declare description"
 
 
-def test_issue_tick_skill_uses_session_progress_report():
+def test_issue_tick_skill_first_action_is_tick_triage():
     body = ISSUE_TICK_SKILL.read_text()
-    assert "scripts/session_progress_report.py" in body, (
-        "skill must call the canonical title helper, not roll its own format"
+    assert "scripts/tick_triage.py" in body, (
+        "the guarded-no-op tick's FIRST action must be one tick_triage.py "
+        "Bash call — that is the entire healthy-path cost model"
     )
-    assert "--step" in body, "skill must invoke the helper with --step"
+    # Fail toward coverage: a broken triage must trigger the full re-drive,
+    # never a silent no-op (the alive-stalled-at-PARK class would otherwise
+    # be permanently unrecovered).
+    assert "Non-zero exit" in body and "STALE-REDRIVE" in body
 
 
-def test_issue_tick_skill_branches_on_status():
+def test_issue_tick_skill_branches_on_verdict():
     body = ISSUE_TICK_SKILL.read_text()
-    # The four branch shapes the orchestrator depends on. Match
-    # case-insensitively because the section headings are CAPITALISED in the
-    # skill prose.
-    for branch in ("TERMINAL", "PARK", "ACTIVE", "GATE-PARK"):
-        assert branch in body, f"skill must document the {branch} branch"
+    # The four triage verdicts the orchestrator branches on.
+    for verdict in ("HEALTHY", "TERMINAL", "GATE-TRANSITION", "STALE-REDRIVE"):
+        assert verdict in body, f"skill must document the {verdict} verdict branch"
+
+
+def test_issue_tick_skill_title_refresh_moved_to_watcher():
+    body = ISSUE_TICK_SKILL.read_text()
+    # The per-tick title refresh moved to the watcher's gate-push pass
+    # (2026-06-12); a healthy tick must NOT pay the helper + change_title
+    # calls. The skill documents the move so a maintainer doesn't re-add it.
+    assert "moved to the watcher" in body.lower(), (
+        "skill must document that the title refresh is watcher-owned now"
+    )
+
+
+def test_tick_skills_use_45_min_cadence():
+    issue_body = ISSUE_TICK_SKILL.read_text()
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md").read_text()
+    for name, body in (("issue-tick", issue_body), ("campaign-tick", campaign_body)):
+        assert "*/45 * * * *" in body, f"{name} must document the */45 cadence"
+        assert "*/20 * * * *" not in body, f"{name} still references the stale */20 cadence"
 
 
 def test_issue_tick_skill_teardown_match_is_issue_tick_prompt():
@@ -128,6 +151,29 @@ def test_issue_skill_cron_create_uses_issue_tick_prompt():
     assert 'prompt="/issue-tick <N>"' in body, (
         "Step 6d.2 must arm CronCreate with prompt='/issue-tick <N>' — the "
         "lightweight tick, NOT the full /issue reload."
+    )
+
+
+def test_issue_skill_arm_sites_use_45_min_cadence():
+    body = ISSUE_SKILL.read_text()
+    assert 'cron="*/45 * * * *"' in body, (
+        "the Step 0 / Step 6d.2 CronCreate sites must arm the */45 cadence "
+        "(lengthened from */20 on 2026-06-12 — the 10-min watcher carries "
+        "fast detection)"
+    )
+    assert 'cron="*/20 * * * *"' not in body, (
+        "a stale */20 CronCreate site survived the 2026-06-12 cadence change"
+    )
+
+
+def test_issue_tick_skill_teardown_is_hardened():
+    body = ISSUE_TICK_SKILL.read_text()
+    # The #501 hardening: delete-all-matching with the trailing-digit guard
+    # plus the assert-after-delete + one retry.
+    assert "ASSERT-AFTER-DELETE" in body, "teardown must re-list and verify deletion"
+    assert "(?!\\d)" in body, (
+        "the hardened fallback match needs the trailing-digit guard so "
+        "'/issue-tick 46' never matches '/issue-tick 467'"
     )
 
 

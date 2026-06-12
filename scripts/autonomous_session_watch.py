@@ -336,6 +336,7 @@ from spawn_session import (
     _load_session_issue_map,
     _load_session_meta,
 )
+from tick_triage import plan_pending_over_cap
 
 # Active-drive statuses: a dead session here SHOULD be resurrected.
 # `followups_running` is ACTIVE (2026-06-10, un-phantomed): a same-issue
@@ -4461,6 +4462,11 @@ _GC_TARGETS: tuple[tuple[str, str], ...] = (
     # evaluate top-to-bottom). Primary reaping is the campaign pass itself at
     # CAMPAIGN_TERMINAL; this is the deleted-task / completed-archived backstop.
     ("campaign-watch-", ""),
+    # Gate-push transition state (== GATE_NOTIFY_STATE_PREFIX, defined in the
+    # gate-push section below; literal here for the same top-to-bottom reason
+    # as campaign-watch-). The companion tick-runaway-<N>.flag files are NOT
+    # json and self-clean inside _process_runaway_flag instead.
+    ("gate-notify-", ""),
     ("", "issue-progress"),
     ("", "issue-tick-last-status"),
 )
@@ -6762,6 +6768,336 @@ def campaign_pass(
         )
 
 
+# ─── gate-push + title-reconcile + tick-runaway pass (2026-06-12) ────────────
+#
+# Change 2 of the anti-stall redesign: the phone push at gate-park/blocked
+# transitions and the canonical-title reconcile move OUT of the LLM-priced
+# /issue-tick into this pure-Python pass (the watcher already reads task
+# status every 10 min for free, so gate-push latency IMPROVES from the tick's
+# backstop cadence to ~10 min). The tick-side PushNotification is KEPT for
+# now as a second deduped channel (see the dated removal note in
+# .claude/skills/issue-tick/SKILL.md); this pass dedups its own pushes via a
+# per-issue state file, so the worst case is one duplicate notification per
+# gate transition, never a missed one.
+#
+# Also owns the §4 runaway parachute: `tick_triage.py` writes
+# ``tick-runaway-<N>.flag`` on the 3rd consecutive tick at a TERMINAL status
+# (CRON-TEARDOWN keeps whiffing — the #501 class, 1,951 wasted ticks); this
+# pass force-stops the flagged issue's session(s), which kills the
+# session-scoped cron with them. The force-stop reuses the session-reconcile
+# predicate's guards (DONE-status only, no live follow-up, no RUNNING pod, no
+# keep-running tag) but skips the 2h-idle + 2-miss accumulation — three
+# consecutive terminal-status ticks are already the corroboration.
+
+# Per-issue state at ``~/.eps-autonomous/gate-notify-<N>.json``: the last
+# status this pass observed (transition detection + push dedup). In the
+# terminal-status GC sweep set (reaped at completed/archived).
+GATE_NOTIFY_STATE_PREFIX = "gate-notify-"
+
+# User-gate statuses for the push channel. ``plan_pending`` is INCLUDED only
+# when the over-cap spend-approval marker confirms it is the user gate (an
+# under-cap plan_pending is an in-skill park) — see tick_triage's
+# plan_pending_over_cap, shared with the /issue-tick triage.
+GATE_PUSH_STATUSES = frozenset({"awaiting_promotion", "blocked"})
+
+# The runaway force-stop acts ONLY on the session-reconcile DONE set. A
+# ``blocked`` task also writes runaway flags (it is tick-TERMINAL), but its
+# session may have the user live-parked in it — alert loudly, never stop
+# (same posture as the reconcile + zombie passes).
+RUNAWAY_FORCE_STOP_STATUSES = frozenset({"awaiting_promotion", "completed", "archived"})
+
+# Push channel: the same Telegram helper every my-goat cron nudge uses —
+# proven Python-callable path to the phone (the harness PushNotification tool
+# only exists inside an LLM turn). Override for tests via
+# EPM_TELEGRAM_PUSH_SCRIPT.
+_TELEGRAM_PUSH_SCRIPT_DEFAULT = Path.home() / "my-goat" / "scripts" / "telegram_push.sh"
+
+
+def _telegram_push_script() -> Path:
+    override = os.environ.get("EPM_TELEGRAM_PUSH_SCRIPT", "").strip()
+    return Path(override) if override else _TELEGRAM_PUSH_SCRIPT_DEFAULT
+
+
+def _telegram_push(msg: str, dry_run: bool) -> bool:
+    """Best-effort phone push via the my-goat Telegram helper.
+
+    Failure is logged LOUDLY but never raises and never crashes the pass —
+    the push is observability, and the tick-side PushNotification remains the
+    second channel. Returns True on a confirmed send."""
+    script = _telegram_push_script()
+    if dry_run:
+        print(f"  [dry-run] would telegram-push: {msg[:120]}")
+        return False
+    if not script.is_file():
+        print(f"  WARNING: telegram push script missing at {script}; push dropped", file=sys.stderr)
+        return False
+    try:
+        res = subprocess.run(["bash", str(script), msg], capture_output=True, text=True, timeout=30)
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: telegram push failed: {e}", file=sys.stderr)
+        return False
+    if res.returncode != 0:
+        print(
+            f"  WARNING: telegram push failed: {(res.stderr or res.stdout).strip()[:200]}",
+            file=sys.stderr,
+        )
+        return False
+    return True
+
+
+def _gate_notify_state_path(issue: int) -> Path:
+    return AUTONOMOUS_REGISTRY_DIR / f"{GATE_NOTIFY_STATE_PREFIX}{issue}.json"
+
+
+def _load_gate_notify_state(issue: int) -> dict:
+    path = _gate_notify_state_path(issue)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_gate_notify_state(issue: int, *, last_status: str) -> None:
+    """Atomic temp+rename persist of the last observed status (the
+    transition key for both the push and the title reconcile)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    dest = _gate_notify_state_path(issue)
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps({"last_status": last_status, "ts": time.time()}))
+    tmp.replace(dest)
+
+
+def decide_gate_push(status: str | None, last_status: str | None, over_cap: bool) -> bool:
+    """Pure push decision: fire exactly once per transition INTO a user gate.
+
+    ``last_status`` is this pass's own previous observation (``None`` =
+    never observed — counts as a transition, so a gate reached during
+    watcher downtime still pushes once; a duplicate beats a missed one).
+    One-shot per transition: the caller persists ``last_status`` in the same
+    pass whether or not the send succeeded (the tick-side push is the second
+    channel; retrying a failing Telegram send every 10 min would spam the
+    log without a user-visible benefit)."""
+    if not isinstance(status, str) or status == last_status:
+        return False
+    return status in GATE_PUSH_STATUSES or (status == "plan_pending" and over_cap)
+
+
+def _task_title(issue: int) -> str:
+    """Task frontmatter title (slug for push messages), '' on any failure."""
+    try:
+        out = subprocess.run(
+            ["uv", "run", "python", "scripts/task.py", "view", str(issue), "--json"],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        data = json.loads(out.stdout) if out.returncode == 0 else {}
+    except (subprocess.SubprocessError, OSError, json.JSONDecodeError):
+        return ""
+    title = data.get("title") or (data.get("frontmatter") or {}).get("title")
+    return title.strip()[:45] if isinstance(title, str) else ""
+
+
+def _gate_push_message(issue: int, status: str, events: list[dict], over_cap: bool) -> str:
+    """Mirror the /issue-tick 3d message shapes (kept under ~200 chars)."""
+    slug = _task_title(issue)
+    if status == "awaiting_promotion":
+        msg = f"#{issue} {slug} · clean-result ready — open to promote"
+    elif status == "plan_pending" and over_cap:
+        cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
+        msg = f"#{issue} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
+    else:  # blocked
+        reason = ""
+        for row in reversed(events):
+            if isinstance(row, dict) and str(row.get("kind", "")).startswith("epm:failure"):
+                note = row.get("note")
+                reason = note.strip().splitlines()[0][:80] if isinstance(note, str) else ""
+                break
+        msg = f"#{issue} BLOCKED: {reason or 'see latest failure marker'} — open it"
+    return msg[:200]
+
+
+def _refresh_self_report(issue: int, status: str, dry_run: bool) -> None:
+    """Reconcile the canonical title/self-report with the task status —
+    STATUS-TRANSITION-KEYED, never per-pass.
+
+    Constraint (load-bearing): the stalled-detector's signal 1 and the
+    session-reconcile idle check both read the self-report's ``ts`` as an
+    ACTIVITY signal. An unconditional per-pass rewrite would keep that file
+    permanently fresh and structurally disable both passes. A rewrite keyed
+    on a STATUS CHANGE cannot mask a stall: the change itself posts
+    ``epm:status-changed`` (already refreshing the marker-side signal), and
+    a stalled session's status is by definition not changing. Only EXISTING
+    self-reports are updated — creating one for a session that never
+    self-reported would flip the stalled-detector's deliberate None-skip
+    eligibility."""
+    try:
+        from session_progress_report import read_self_report
+    except ImportError:
+        return
+    try:
+        if read_self_report(issue) is None:
+            return
+    except OSError:
+        return
+    cmd = [
+        "uv", "run", "python", "scripts/session_progress_report.py",
+        "--issue", str(issue), "--step", status,
+    ]  # fmt: skip
+    if dry_run:
+        print(f"  [dry-run] would refresh self-report: #{issue} step={status}")
+        return
+    try:
+        res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=30)
+        if res.returncode != 0:
+            print(
+                f"  WARNING: self-report refresh failed for #{issue}: "
+                f"{(res.stderr or res.stdout).strip()[:200]}",
+                file=sys.stderr,
+            )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  WARNING: self-report refresh failed for #{issue}: {e}", file=sys.stderr)
+
+
+def _runaway_flags() -> list[tuple[int, Path]]:
+    """Enumerate ``tick-runaway-<N>.flag`` files (issue, path) — written by
+    ``tick_triage.py`` on the 3rd consecutive terminal-status tick."""
+    if not AUTONOMOUS_REGISTRY_DIR.is_dir():
+        return []
+    out: list[tuple[int, Path]] = []
+    for path in AUTONOMOUS_REGISTRY_DIR.glob("tick-runaway-*.flag"):
+        try:
+            out.append((int(path.stem.removeprefix("tick-runaway-")), path))
+        except ValueError:
+            continue
+    return sorted(out)
+
+
+def _process_runaway_flag(
+    issue: int,
+    flag_path: Path,
+    sids: list[str],
+    running_pod_issues: set[int],
+    daemon_reachable: bool,
+    dry_run: bool,
+) -> None:
+    """Force-stop the flagged issue's session(s) under the reconcile guards.
+
+    Guard order: no-live-session (clear the flag — the session-scoped cron
+    died with its session, runaway over) -> DONE-status only -> no live
+    follow-up -> no RUNNING pod -> no keep-running tag -> daemon up."""
+    if not sids:
+        if daemon_reachable:
+            print(f"  runaway: #{issue} flag present, no live mapped session — clearing flag")
+            if not dry_run:
+                flag_path.unlink(missing_ok=True)
+        return
+    status = _task_status(issue)
+    if status not in RUNAWAY_FORCE_STOP_STATUSES:
+        print(
+            f"  runaway: #{issue} flagged (status={status}) but outside the force-stop "
+            f"set {sorted(RUNAWAY_FORCE_STOP_STATUSES)} — alert only, flag kept",
+            file=sys.stderr,
+        )
+        return
+    if _task_followup_active(issue):
+        print(f"  runaway: #{issue} has a live follow-up signal — skip")
+        return
+    if issue in running_pod_issues:
+        print(f"  runaway: #{issue} has a RUNNING pod — skip (pod-safety pass owns it)")
+        return
+    if _task_keep_running(issue):
+        print(f"  runaway: #{issue} carries keep-running — skip")
+        return
+    if not daemon_reachable:
+        print(f"  runaway: #{issue} eligible but daemon unreachable — retry next pass")
+        return
+    stopped = [sid for sid in sids if _stop_session(sid, dry_run)]
+    if stopped:
+        _post_progress_marker(
+            issue,
+            f"[autonomous_session_watch:runaway] force-stopped {len(stopped)} session(s) "
+            f"({', '.join(stopped)}) — tick_triage recorded >=3 consecutive ticks at "
+            f"terminal status '{status}' (CRON-TEARDOWN kept whiffing; the #501 runaway "
+            f"class). The session-scoped tick cron dies with the session.",
+            dry_run,
+            label="runaway-stop",
+        )
+    if not dry_run and len(stopped) == len(sids):
+        flag_path.unlink(missing_ok=True)
+
+
+def gate_push_pass(
+    dry_run: bool,
+    *,
+    daemon_reachable: bool,
+    live_ids: set[str] | None = None,
+    now: float | None = None,
+) -> None:
+    """Per-pass gate push + title reconcile + tick-runaway force-stop.
+
+    Candidates = issues with live mapped sessions UNION registered issues
+    (registrations survive brief daemon flaps; the live mapping catches
+    manual/worktree-cwd sessions). Transition detection is per-issue via the
+    ``gate-notify-<N>.json`` state file and needs no daemon; the title
+    reconcile and force-stop arms are daemon-dependent and degrade to
+    skip/retry when it is unreachable."""
+    live = set()
+    by_issue: dict[int, set[str]] = {}
+    if daemon_reachable:
+        live = live_ids if live_ids is not None else _live_session_ids()
+        meta = _load_session_meta()
+        session_paths = {sid: (m or {}).get("path") for sid, m in meta.items()}
+        by_issue = _map_sessions_to_issues(live, _load_session_issue_map(), session_paths)
+    candidates = sorted(set(by_issue) | set(_issue_registrations()))
+    if candidates:
+        print(f"gate-push: {len(candidates)} candidate issue(s)")
+    for issue in candidates:
+        status = _task_status(issue)
+        if status is None or status in TERMINAL_FOR_GC:
+            # completed/archived: never a push target, no title value — and
+            # acting here would CHURN against the terminal-status GC (it
+            # reaps gate-notify-<N>.json each tick, so this pass would
+            # re-create it + re-refresh the self-report every pass, keeping
+            # the self-report permanently fresh and structurally disabling
+            # the session-reconcile idle signal for done tasks).
+            continue
+        last_status = _load_gate_notify_state(issue).get("last_status")
+        if last_status == status:
+            continue  # steady state — nothing transitioned
+        events = _task_events(issue)
+        over_cap = status == "plan_pending" and plan_pending_over_cap(events)
+        if decide_gate_push(status, last_status, over_cap):
+            msg = _gate_push_message(issue, status, events, over_cap)
+            sent = _telegram_push(msg, dry_run)
+            print(
+                f"  gate-push: #{issue} {last_status or 'unknown'} -> {status} "
+                f"({'sent' if sent else 'push not confirmed'})"
+            )
+        _refresh_self_report(issue, status, dry_run)
+        if not dry_run:
+            _save_gate_notify_state(issue, last_status=status)
+    flags = _runaway_flags()
+    if not flags:
+        return
+    running_pod_issues = {
+        issue for issue, _pod_id, _name in (_running_managed_issue_pods(caller="gate-push") or [])
+    }
+    for issue, flag_path in flags:
+        _process_runaway_flag(
+            issue,
+            flag_path,
+            sorted(by_issue.get(issue, set())),
+            running_pod_issues,
+            daemon_reachable,
+            dry_run,
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
@@ -6883,6 +7219,20 @@ def main(argv: list[str] | None = None) -> int:
     session_reconcile_pass(
         args.dry_run,
         args.threshold,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
+    # Gate-push + title-reconcile + tick-runaway: phone push on gate-park /
+    # blocked transitions (moved out of the LLM-priced /issue-tick — the
+    # watcher's 10-min cadence beats the tick's backstop interval), a
+    # status-transition-keyed self-report reconcile (NEVER per-pass — an
+    # unconditional rewrite would defeat the stalled-detector's + reconcile
+    # pass's self-report staleness signals), and the tick-runaway force-stop
+    # parachute (#501 class). Transition detection is daemon-independent;
+    # the stop/title arms degrade when the daemon is down.
+    gate_push_pass(
+        args.dry_run,
         daemon_reachable=daemon_reachable,
         live_ids=live_ids if daemon_reachable else None,
     )

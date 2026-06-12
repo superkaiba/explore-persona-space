@@ -706,14 +706,18 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     elif args.auto:
         # Cold start (and cold respawn via `autonomous_session_watch._respawn`)
         # boots the FULL `/issue <N>` skill once. The full skill arms an
-        # in-session cron at Step 6d.2 that fires the lightweight
-        # `/issue-tick <N>` skill every 20 minutes — that recurring tick is
-        # the new driver, NOT a `/loop`. The old `/loop 10m /issue <N>`
-        # shape re-loaded the 44K-token /issue SKILL.md on every idle tick;
-        # the new shape loads it exactly once per session. (20 min not
-        # 10 min because the Anthropic prompt cache TTL is 5 min — a 10-min
-        # cadence guarantees a cold prefix every fire, so doubling the
-        # interval halves the tick count without the cache cost changing.)
+        # in-session cron (Step 0 for --auto, Step 6d.2 re-arm) that fires
+        # the lightweight `/issue-tick <N>` skill every 45 minutes — that
+        # recurring tick is the driver, NOT a `/loop`. The old `/loop 10m
+        # /issue <N>` shape re-loaded the 44K-token /issue SKILL.md on every
+        # idle tick; the new shape loads it exactly once per session.
+        # (45 min as of 2026-06-12: every tick fire is LLM-priced, and the
+        # 10-min pure-Python watcher carries fast detection, so the tick is
+        # only the in-session re-driver of last resort. An earlier comment
+        # justified the 20-min interval with "the Anthropic prompt cache TTL
+        # is 5 min" — inaccurate for this org's subscription auth, which
+        # gets the 1-hour cache TTL automatically; the 5-min TTL applies to
+        # API-key auth. The cadence stands on fewer-LLM-heartbeats alone.)
         prompt = f"/issue {issue}"
     else:
         prompt = None
