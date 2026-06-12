@@ -1,6 +1,7 @@
 ---
-title: 'Whole-response-loss marker re-train (rig disentangle, part 2): does EM-style
-  loss shape produce EM-like concentration?'
+title: Whole-response loss fails to install the marker on self-generated data at the
+  recipe that saturates it under marker-only loss, so the marker and EM training rigs
+  are not exchangeable at matched hyperparameters (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-11T09:22:05Z'
