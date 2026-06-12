@@ -3721,8 +3721,8 @@
       "goal": "Determine whether the default assistant context's anomalously low marker leakage under contrastive training (\u22120.197 vs panel median in #600, the only role far below median) is caused by its 200 negative training rows (dose) or by its identity/activation-cluster position, by training otherwise-identical mixes that include vs exclude the default-assistant negative slot and reading the untrained default context's implant-normalized marker log-prob shift.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/610",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/610",
+      "status": "awaiting_promotion",
       "title": "Deleting the default assistant's 200 negative training rows leaves its shielding from a marker implant essentially unchanged (MODERATE confidence)"
     },
     "611": {
