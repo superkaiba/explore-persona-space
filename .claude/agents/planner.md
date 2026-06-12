@@ -521,6 +521,32 @@ uses the `parallelism` field to compute auto-descope options.
 | (e.g., "sweep all-cells train") | 16 | 64 | 4× H100 ZeRO-3 across 8 cells | "16h × 8 cells / 4 GPU = 32h wall; 16 GPU-hours × 8 = 128 GPU-h" |
 | (e.g., "eval all-cells generation") | 2 | 2 | TP=1 | "vLLM batched, 400 prompts × 4 framings @ ~5s/prompt" |
 
+**Cost wall-time against the machine the router will ACTUALLY provision —
+then reconcile worst-case wall against the GCP 24h auto-delete fence.**
+Each row's `planned_wall_h` + `basis` MUST name the machine type of the
+lane the backend router will most likely route. Under the standing
+GCP-FIRST `auto` default that is the GCP intent mapping
+(`INTENT_TO_MACHINE` in `src/explore_persona_space/backends/gcp.py`:
+`lora-7b` → 1× A100-80 `a2-ultragpu-1g`, `ft-7b` → 4× A100-80,
+`eval`/`debug` → 1× L4) — NOT the RunPod H100 intent table. A basis
+measured on a different GPU must be scaled with a stated per-step rate
+(e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
+per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
+into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
+conditional / extension phase that could run on the same provision —
+against the GCP lane's auto-delete fence
+(`--instance-termination-action=DELETE` + `--max-run-duration`, default
+24h). If worst-case wall on the routed machine exceeds ~20h, the plan
+MUST do one of: (a) declare a deliberate `spec.extra["max_run_duration"]`
+for the GCP dispatch; (b) pre-register a phase split across provisions —
+name which phases run on a second provision and what artifacts must be
+persisted (HF / git per the Upload Policy) before the first instance
+dies; or (c) take the explicit `backend: runpod` override with the
+long-run residual gap named (`/issue` SKILL.md Step 6b residual gap (d)).
+A plan that silently lets a conditional phase ride past the fence loses
+the phase mid-run (#599: the pre-registered §7.3 extension probe was
+hard-deleted at step 149/2400 by the 24h fence).
+
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
 priority order for auto-descope (e.g., "drop seeds first, then framings,
