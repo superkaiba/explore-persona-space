@@ -3504,8 +3504,8 @@
     "583": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/583",
-      "status": "proposed",
+      "path": "tasks/archived/583",
+      "status": "archived",
       "title": "Restore dead auth and notification channels: Google Workspace OAuth re-auth plus gcloud, Happy Remote Control re-pair or Telegram fallback"
     },
     "584": {
