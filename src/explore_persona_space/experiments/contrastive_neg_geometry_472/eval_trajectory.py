@@ -277,7 +277,12 @@ def _generate_on_policy_R(
         max_tokens=max_new_tokens,
         stop_token_ids=[tokenizer.eos_token_id],
     )
-    outputs = llm.generate(prompts, sp, lora_request=lora_request)
+    # use_tqdm=False bypasses vLLM 0.11.0's progress-bar throughput calc,
+    # which divides by tqdm's `elapsed` field and ZeroDivisionErrors when
+    # the engine finishes the first batch before tqdm advances (LoRA-swap
+    # fast path, #622 round 4 / failure-lesson). Project-side per-phase
+    # logging already covers progress.
+    outputs = llm.generate(prompts, sp, lora_request=lora_request, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(f"on-policy gen returned {len(outputs)} for {len(prompts)} prompts.")
     r: dict[str, dict[str, str]] = {p: {} for p in eval_personas}

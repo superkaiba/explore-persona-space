@@ -325,12 +325,26 @@ def _schedule_cell_pool(
                 continue
             free_gpus.append(gpu)
             if rc != 0:
+                # Route FAILED sentinel through _write_sentinel so it carries
+                # the poll-pipeline-required keys (sentinel_schema_version,
+                # kind, version). A raw 4-key dict was being SKIPPED by
+                # poll_pipeline._parse_sentinel ("missing required keys"),
+                # which then read status=done off the supervisor's
+                # [phase=done] tail and treated a FAILED run as success
+                # (#622 round 4 secondary issue). kind="epm:failure" makes
+                # the poller post the failure marker verbatim from the VM.
                 fail_path = log_dir / f"issue-{sentinel_task_id}-{cell}-seed{seed}-FAILED.json"
-                fail_path.write_text(
-                    json.dumps(
-                        {"cell": cell, "seed": seed, "returncode": rc, "assigned_gpu": gpu},
-                        indent=2,
-                    )
+                _write_sentinel(
+                    fail_path,
+                    kind="epm:failure",
+                    phase=f"cell_{cell}_seed{seed}_subprocess_rc{rc}",
+                    note_payload={
+                        "cell": cell,
+                        "seed": seed,
+                        "returncode": rc,
+                        "assigned_gpu": gpu,
+                    },
+                    task_id=sentinel_task_id,
                 )
                 # Terminate EVERYTHING still alive (not just procs already
                 # polled into `still` this iteration) so an abort never

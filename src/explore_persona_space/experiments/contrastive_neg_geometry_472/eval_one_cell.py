@@ -268,7 +268,10 @@ def score_logp_for_R(
         n=1, temperature=0.0, top_p=1.0, max_tokens=1, prompt_logprobs=1, logprobs=1
     )
     gen_kwargs = {"lora_request": lora_request} if use_lora else {}
-    outputs = llm.generate(prompts_payload, sp, **gen_kwargs)
+    # use_tqdm=False bypasses vLLM 0.11.0's progress-bar throughput calc,
+    # which divides by tqdm's `elapsed` field and ZeroDivisionErrors when
+    # the engine finishes the first batch before tqdm advances (#622 round 4).
+    outputs = llm.generate(prompts_payload, sp, use_tqdm=False, **gen_kwargs)
     if len(outputs) != len(prompts_payload):
         raise RuntimeError(
             f"[{cell_label}] vLLM returned {len(outputs)} for {len(prompts_payload)} probes."

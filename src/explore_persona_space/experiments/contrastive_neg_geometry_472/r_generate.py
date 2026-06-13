@@ -150,7 +150,10 @@ def _generate_batch(
     truncated, marker_in_R (text-AND-token check).
     """
     prompts = [_build_prompt_text(tokenizer, persona, q, persona_prompts) for q in questions]
-    outputs = llm.generate(prompts, sp)
+    # use_tqdm=False bypasses vLLM 0.11.0's progress-bar throughput calc,
+    # which divides by tqdm's `elapsed` field and ZeroDivisionErrors when
+    # the engine finishes the first batch before tqdm advances (#622 round 4).
+    outputs = llm.generate(prompts, sp, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(
             f"vLLM returned {len(outputs)} for {len(prompts)} prompts on persona={persona}"
