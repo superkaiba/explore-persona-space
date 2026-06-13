@@ -5,8 +5,8 @@
     "1": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1",
-      "status": "proposed",
+      "path": "tasks/on_hold/1",
+      "status": "on_hold",
       "title": "[Proposed] Persona vector decomposition (identity / style / capability)"
     },
     "10": {
