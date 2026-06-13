@@ -1035,15 +1035,15 @@
     "258": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/258",
-      "status": "proposed",
+      "path": "tasks/on_hold/258",
+      "status": "on_hold",
       "title": "Look at effect of length of system prompt/persona prompt"
     },
     "259": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/259",
-      "status": "proposed",
+      "path": "tasks/on_hold/259",
+      "status": "on_hold",
       "title": "Finetune model to predict really long completions and measure leakage"
     },
     "26": {
