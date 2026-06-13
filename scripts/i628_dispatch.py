@@ -50,6 +50,23 @@ import hashlib
 import json
 import logging
 import os
+
+# vLLM 0.11.0 EngineCore_DP0 silent-death pin (#628 round 5 fix, 2026-06-13).
+# vLLM's V1 engine defaults to fork() for the EngineCore subprocess
+# (VLLM_WORKER_MULTIPROC_METHOD=fork). When the dispatcher's main() touches
+# CUDA-adjacent code BEFORE vLLM forks (via _tokenizer() -> transformers
+# import, _assert_negative_disjointness, etc.), fork() duplicates a poisoned
+# state into the EngineCore subprocess; the child reports successful init +
+# `Supported_tasks: ['generate']`, then dies silently 1-4 seconds later
+# before processing any prompt (surfacing as the downstream ZeroDivisionError
+# in vllm/entrypoints/llm.py:1610 because total_in_toks / elapsed = 0 / 0).
+# Reproduced on H100 80GB + torch 2.8.0+cu128 (#628 attempt 9, RunPod
+# pod-628) AND on GCP A100 (attempts 5-8). A minimal repro (in-process call
+# to _vllm_engine + _vllm_greedy WITHOUT going through main()) succeeds
+# under fork; the dispatcher's main() path crashes deterministically. Spawn
+# avoids the issue by creating a fresh interpreter for EngineCore. MUST be
+# set BEFORE any `import vllm` reads it. setdefault: an outer override wins.
+import os as _os_for_vllm_env
 import shutil
 import signal
 import subprocess
@@ -58,6 +75,8 @@ import threading
 import time
 import traceback
 from pathlib import Path
+
+_os_for_vllm_env.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 from explore_persona_space.orchestrate.env import load_dotenv
 
