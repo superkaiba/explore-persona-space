@@ -1,6 +1,6 @@
 ---
-title: 'Leakage-vs-implantation control: do cross-condition leakage differences survive
-  matching or normalizing by install strength?'
+title: Controlling for implantation strength shrinks but does not erase the contrastive-vs-positive-only
+  sycophancy leakage gap (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:37:50Z'
