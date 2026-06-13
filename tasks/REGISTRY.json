@@ -1098,8 +1098,8 @@
     "266": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/266",
-      "status": "proposed",
+      "path": "tasks/on_hold/266",
+      "status": "on_hold",
       "title": "Think to come up with unified model of generalization"
     },
     "267": {
