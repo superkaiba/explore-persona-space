@@ -3490,8 +3490,8 @@
     "581": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/planning/581",
-      "status": "planning",
+      "path": "tasks/approved/581",
+      "status": "approved",
       "title": "Audit #535 SLURM lane events.jsonl for token-shaped strings after its next live attempt"
     },
     "582": {
