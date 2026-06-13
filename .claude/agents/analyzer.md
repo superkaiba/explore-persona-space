@@ -257,7 +257,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Reference exemplar: experiment #432.** Pull the live body via `uv run python scripts/task.py view 432` and read it end-to-end before drafting. Worked example URL: <https://eps.superkaiba.com/tasks/432>. It is the canonical nested-design (v2) exemplar — `## TL;DR` opens `### Motivation` → `### What I ran` → `### Findings` → `#### <finding>` per result, with confidence in the H1 title tag only. Use `recent_clean_results.py --n 3` from Step 1.5 to surface other recently-promoted clean-result bodies for register reference.
 
-Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The 13-check verifier (`scripts/verify_task_body.py`) is the mechanical gate.
+Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (throwaway working file; the published experiment body in the task workflow is the canonical artifact). The body is **markdown** — the dashboard renders it with KaTeX delimiter support for `\(...\)` and `\[...\]`. The mechanical verifier (`scripts/verify_task_body.py`; check catalog in the script docstring) is the gate.
 
 **Top-level shape: three required H2 sections in exact order, with the second (`## TL;DR`) absorbing all per-result narrative and the third (`## Reproducibility`) absorbing the Parameters table.** The body is markdown end-to-end; ignore any HTML-flavoured vestiges that may appear in older agent docs.
 
