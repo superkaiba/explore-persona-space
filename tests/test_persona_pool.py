@@ -205,7 +205,8 @@ def test_pool_loads_and_matrix_invariants(pool_dir: Path, pool_data: dict, pool_
         assert set(names) == pool_names, f"{fname}: matrix names != pool membership"
         assert np.allclose(dist, dist.T, atol=1e-8), f"{fname}: not symmetric"
         assert np.abs(np.diag(dist)).max() < 1e-6, f"{fname}: diagonal not ~0"
-        assert dist.min() >= -1e-9 and dist.max() <= 2.0 + 1e-9, f"{fname}: values outside [0,2]"
+        # fp tolerance 1e-6: bf16-derived float32 cosines legitimately land ~ -3.6e-7.
+        assert dist.min() >= -1e-6 and dist.max() <= 2.0 + 1e-6, f"{fname}: values outside [0,2]"
         expected_centering = "global_mean" if fname.endswith("_centered.json") else "none"
         assert data["centering"] == expected_centering, f"{fname}: centering provenance wrong"
 
