@@ -230,44 +230,84 @@ def explore_608_trajectories(m608: dict, cells_manifest: dict) -> None:
 
 
 def explore_fraction_heatmap(m601: dict) -> None:
-    """Per-(cell, bystander) margin-space fraction heatmap at each cell's
-    final on-policy checkpoint (above-floor cells only)."""
+    """Per-cell margin-space fraction dot plot grouped by training mix.
+
+    x-axis: two groups (contrastive vs positives-only).
+    y-axis: bystander-mean leakage fraction of install (margin space).
+    One dot per (cell, seed) at the final on-policy checkpoint, jittered
+    horizontally within its group so dots don't pile. Group-mean
+    horizontal bar overlaid for the headline comparison the body cites.
+    """
     rows = [
         r
         for r in m601["three_space_tables_onpolicy"]
         if r["fraction_margin"] is not None and r["frac"] == 1.0
     ]
     if not rows:
-        log.warning("fraction heatmap skipped: no above-floor final checkpoints")
+        log.warning("fraction dot-plot skipped: no above-floor final checkpoints")
         return
-    by_cell: dict[str, dict] = {f"{r['cell']} (seed {r['seed']})": r for r in rows}
-    fig, ax = plt.subplots(figsize=(7, 0.45 * len(by_cell) + 1.5))
-    labels = sorted(by_cell)
-    vals = [by_cell[k]["fraction_margin"] for k in labels]
-    colors = [
-        paper_palette_role("primary")
-        if by_cell[k]["mix_arm"] == "contrastive"
-        else paper_palette_role("accent")
-        for k in labels
-    ]
-    y = np.arange(len(labels))[::-1]
-    ax.barh(y, vals, color=colors)
-    ax.set_yticks(y)
-    ax.set_yticklabels(labels, fontsize=7)
-    ax.set_xlabel("bystander-mean leakage fraction of install (margin space)")
+
+    contr_vals = [r["fraction_margin"] for r in rows if r["mix_arm"] == "contrastive"]
+    po_vals = [r["fraction_margin"] for r in rows if r["mix_arm"] == "posonly"]
+
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    c_main = paper_palette_role("primary")
+    c_alt = paper_palette_role("accent")
+
+    rng = np.random.default_rng(42)
+
+    def _draw_group(x_center: float, vals: list[float], color: str, label: str) -> None:
+        xs = x_center + rng.uniform(-0.12, 0.12, size=len(vals))
+        ax.scatter(
+            xs,
+            vals,
+            color=color,
+            s=42,
+            alpha=0.85,
+            label=f"{label} (n={len(vals)} cells)",
+            edgecolors="white",
+            linewidths=0.8,
+            zorder=3,
+        )
+        if vals:
+            mean = float(np.mean(vals))
+            ax.plot(
+                [x_center - 0.22, x_center + 0.22],
+                [mean, mean],
+                color=color,
+                lw=2.2,
+                solid_capstyle="round",
+                zorder=4,
+            )
+
+    _draw_group(0.0, contr_vals, c_main, "Mixed with corrective negatives")
+    _draw_group(1.0, po_vals, c_alt, "Positives only")
+    ax.set_xticks([0.0, 1.0])
+    ax.set_xticklabels(["Mixed with negatives", "Positives only"])
+    ax.set_xlim(-0.5, 1.5)
+    ax.set_ylabel("bystander-mean leakage fraction (EOS-margin space)")
     set_title_subtitle(
         ax,
-        "Marker leakage as a share of install, per run (final checkpoint)",
-        "blue = mixed with negatives, orange = positives only; below-floor cells excluded",
+        "Marker leakage as a share of install — per-cell dots, group means",
+        "each dot = one (cell, seed) at its final on-policy checkpoint; "
+        "denominator floor 2.0 nats; below-floor cells excluded",
     )
+    ax.legend(loc="lower right", fontsize=8, frameon=False)
     fig.tight_layout()
     savefig_paper(fig, "explore_marker_fraction_dots", dir=FIG_DIR)
     plt.close(fig)
 
 
 def explore_measured_vs_interpolated(m608: dict) -> None:
-    """Lower/upper/interpolated sandwich per arm-source (plan §13 item 7)."""
+    """Lower/upper/interpolated sandwich per arm-source (plan §13 item 7).
+
+    Sources that fall outside the 4-of-5 complete-primary denominator are
+    rendered with open (hollow) diamonds to make the registered
+    exclusions visible. The 4 complete sources (the H1 headline
+    denominator) have filled diamonds.
+    """
     sources = sorted(m608["per_source"])
+    complete = set(m608["h1"]["complete_sources"])  # filled diamonds
     fig, ax = plt.subplots(figsize=(10, 4.5))
     c_main, c_alt = paper_palette_role("primary"), paper_palette_role("accent")
     x = np.arange(len(sources), dtype=float)
@@ -275,15 +315,38 @@ def explore_measured_vs_interpolated(m608: dict) -> None:
         (-0.15, 0.15), (("contrastive_dense", c_main), ("posonly_dose_dense", c_alt)), strict=True
     ):
         reg = [m608["per_source"][s][arm]["registered_21"] for s in sources]
+        comp_mask = [s in complete for s in sources]
+
+        # Filled diamonds for the 4 complete sources
+        comp_x = [x[i] + off for i, c in enumerate(comp_mask) if c]
+        comp_y = [reg[i]["interpolated_bys_mean"] for i, c in enumerate(comp_mask) if c]
         ax.scatter(
-            x + off,
-            [r["interpolated_bys_mean"] for r in reg],
+            comp_x,
+            comp_y,
             color=color,
             marker="D",
-            s=40,
-            label=f"{ARM_LABEL[arm]} (interpolated)",
-            zorder=3,
+            s=52,
+            edgecolors=color,
+            linewidths=1.2,
+            label=f"{ARM_LABEL[arm]} — in headline (n=4)",
+            zorder=4,
         )
+
+        # Open diamonds for the 2 excluded sources (extrapolation/collision)
+        excl_x = [x[i] + off for i, c in enumerate(comp_mask) if not c]
+        excl_y = [reg[i]["interpolated_bys_mean"] for i, c in enumerate(comp_mask) if not c]
+        ax.scatter(
+            excl_x,
+            excl_y,
+            facecolors="white",
+            edgecolors=color,
+            marker="D",
+            s=52,
+            linewidths=1.4,
+            label=f"{ARM_LABEL[arm]} — excluded from headline",
+            zorder=4,
+        )
+
         for xi, r in zip(x + off, reg, strict=True):
             ax.plot(
                 [xi, xi],
@@ -292,15 +355,39 @@ def explore_measured_vs_interpolated(m608: dict) -> None:
                 lw=1.0,
                 alpha=0.7,
             )
+
+    # Annotate exclusion reasons inline
+    for i, s in enumerate(sources):
+        if s in complete:
+            continue
+        if s == m608["h1"].get("collision_excluded"):
+            note = "excluded: collision cell"
+        else:
+            note = "excluded: bracket-width guard"
+        ymax = max(
+            m608["per_source"][s][a]["registered_21"]["upper_endpoint_bys_mean"]
+            for a in ("contrastive_dense", "posonly_dose_dense")
+        )
+        ax.annotate(
+            note,
+            xy=(x[i], ymax),
+            xytext=(0, 6),
+            textcoords="offset points",
+            fontsize=7,
+            ha="center",
+            color="#666",
+        )
+
     ax.set_xticks(x)
     ax.set_xticklabels([s.replace("_", " ") for s in sources], rotation=20, ha="right")
     ax.set_ylabel("bystander-mean agreement delta")
     set_title_subtitle(
         ax,
-        "Interpolated read sits inside its measured endpoint sandwich",
-        "vertical bars span the two bracket checkpoints; diamonds = read at install 0.50",
+        "Interpolated read sits inside its measured endpoint sandwich (4 of 5 complete)",
+        "filled diamonds = sources in the +0.087 headline; open diamonds = excluded; "
+        "vertical bars span the two bracket checkpoints",
     )
-    ax.legend(fontsize=8)
+    ax.legend(fontsize=7, loc="upper left")
     fig.tight_layout()
     savefig_paper(fig, "explore_measured_vs_interpolated", dir=FIG_DIR)
     plt.close(fig)
