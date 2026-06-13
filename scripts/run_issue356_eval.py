@@ -86,7 +86,6 @@ from explore_persona_space.eval.prompting import (  # noqa: E402
     PERSONA_COT,
 )
 from explore_persona_space.personas import (  # noqa: E402
-    ASSISTANT_COSINES,
     ASSISTANT_PROMPT,
     PERSONAS,
 )
@@ -110,7 +109,32 @@ PERSONA_ORDER: list[str] = [
     "zelthari_scholar",
     "police_officer",
 ]
-COSINES: dict[str, float] = {"assistant": 1.0, **ASSISTANT_COSINES}
+COSINE_SOURCE = "persona_pool::assistant_cosines(layer=10, centering=global_mean)"
+
+
+def issue356_cosines() -> tuple[dict[str, float], str]:
+    """PERSONA_ORDER cosines from the canonical persona pool (#483) + the pool version.
+
+    Replaces the pre-#483 module-level ``COSINES = {"assistant": 1.0,
+    **personas.ASSISTANT_COSINES}`` (the frozen layer-10 small-bank dict, now
+    deprecated). Pool values necessarily DIFFER from the frozen dict because
+    globally-mean-centered cosine is bank-dependent (#536) - committed result
+    JSONs from pre-#483 runs are untouched and carry no ``cosine_source``
+    metadata field; post-#483 result JSONs carry ``cosine_source`` +
+    ``pool_version`` so the two are machine-distinguishable.
+
+    Lazy (not module-level) so importing this script never requires the pool
+    artifacts; raises FileNotFoundError at eval time until the #483 build's
+    artifacts are committed.
+    """
+    from explore_persona_space.persona_pool import assistant_cosines, load_canonical_pool
+
+    sims = assistant_cosines(layer=10, centering="global_mean")
+    cosines = {"assistant": 1.0}
+    cosines.update({p: sims[p] for p in PERSONA_ORDER if p != "assistant"})
+    return cosines, load_canonical_pool().version
+
+
 PERSONA_PROMPTS: dict[str, str] = {"assistant": ASSISTANT_PROMPT, **PERSONAS}
 EVAL_PERSONAS: dict[str, str] = {p: PERSONA_PROMPTS[p] for p in PERSONA_ORDER}
 
@@ -184,6 +208,12 @@ def _eval_one_cell(
     )
     result["metadata"]["cell_id"] = cell_id
     result["metadata"]["wall_time_sec"] = time.time() - started
+    # #483: stamp the cosine covariate provenance so post-#483 result JSONs are
+    # machine-distinguishable from pre-#483 ones (frozen-dict era).
+    cosines, pool_version = issue356_cosines()
+    result["metadata"]["cosine_source"] = COSINE_SOURCE
+    result["metadata"]["pool_version"] = pool_version
+    result["metadata"]["cosines"] = cosines
 
     gc.collect()
     return result
