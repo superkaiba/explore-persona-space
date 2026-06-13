@@ -59,6 +59,7 @@ notice the recurrence manually. Now it's same-turn.
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
+  `verify_plan.py`,
   `verify_uploads.py`,
   `audit_clean_results_body_discipline.py`,
   `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
@@ -75,7 +76,7 @@ notice the recurrence manually. Now it's same-turn.
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
-  `tests/test_failure_classifier.py`,
+  `tests/test_failure_classifier.py`, `tests/test_verify_plan.py`,
   `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
   `tests/test_router*.py`, `tests/test_backend_*.py`,
   `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`,
