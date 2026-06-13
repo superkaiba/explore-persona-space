@@ -299,8 +299,8 @@
     "14": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/14",
-      "status": "proposed",
+      "path": "tasks/on_hold/14",
+      "status": "on_hold",
       "title": "[Proposed] Evil\u2194dumb / good\u2194smart coupling test via neutral toy property"
     },
     "140": {
