@@ -1,6 +1,6 @@
 ---
-title: 'Finish #511''s dropped pieces: CPU un-descope (wass2 + ridge N=500 + loc-epoch
-  2/3/5 + g_logprob) on VM + full-response Rao-Blackwellized JS predictor on GPU'
+title: The full-response JS predictor scores well on the full panel only because the
+  stylized vs nonstylized split alone carries most of the signal (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-08T23:16:05Z'
