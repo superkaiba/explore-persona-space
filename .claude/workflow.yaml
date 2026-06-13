@@ -1648,7 +1648,7 @@ markers:
   - kind: "epm:analysis"
     posted_by: skill (via analyzer, its Step 7 cross-link recap; v2+ on critique-revision rounds)
     when: "Step 9a (after the clean-result draft lands; analyzer.md Steps 7 + After-submission)"
-    fields: "Hero figure URL, 2-sentence recap of the claim, and a `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced that has no `epm:free-analysis-followup-run v1` marker yet on the task (empty list `[]` when none) — consumed by SKILL.md Step 9a-ter detection. Anchor for reviewer agents to locate the analyzer output; v2+ summarize the body diff after a critique-revision round."
+    fields: "Hero figure URL, 2-sentence recap of the claim, and a `free_analysis_unrun:` field listing each `cost_class: free-analysis` follow-up the draft surfaced (regardless of `headline_affecting`, as of 2026-06-13) that has no `epm:free-analysis-followup-run v1` marker yet on the task (empty list `[]` when none) — consumed by SKILL.md Step 9a-ter detection. Anchor for reviewer agents to locate the analyzer output; v2+ summarize the body diff after a critique-revision round."
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
@@ -1732,13 +1732,13 @@ markers:
   - kind: "epm:follow-ups"
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
-    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria) AND `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (controls the inline free-analysis auto-run at Step 9a-ter — see follow-up-proposer.md § cost_class + headline_affecting tags — criteria). Interactive mode ignores `auto_run` but still consults `cost_class` / `headline_affecting` at Step 9a-ter and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags."
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling of the EXPENSIVE band at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals with `est_gpu_hours >= 5` execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria), `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (headline_affecting is a user-facing signal only as of 2026-06-13, NOT an auto-run gate), AND `est_gpu_hours: <number>` (the parseable GPU-hour estimate; `0` for free-analysis). The two CHEAP auto-run bands fire in BOTH interactive and autonomous sessions: `cost_class: free-analysis` (est_gpu_hours 0) runs inline at Step 9a-ter; `question_relation: same` + `0 < est_gpu_hours < 5` runs via the Step 9b cheap-band block (same-issue loop). A missing/unparseable `est_gpu_hours` triggers the cheap-band fail-safe (no auto-run; park/file for user). Interactive mode ignores `auto_run` for the EXPENSIVE band but reads `cost_class` / `est_gpu_hours` for both cheap bands and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags. See follow-up-proposer.md § cost_class + headline_affecting + est_gpu_hours tags — criteria."
   - kind: "epm:free-analysis-followup-run"
     posted_by: skill (orchestrator at Step 9a-ter)
-    when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` + `headline_affecting: yes` follow-up that has not yet been run on this task"
+    when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` (est_gpu_hours: 0) follow-up that has not yet been run on this task. The `headline_affecting: yes` requirement was DROPPED 2026-06-13 — a zero-GPU follow-up auto-runs regardless of headline impact (the standing directive: 0-GPU-h or <5-GPU-h follow-ups just run and fold into the same issue)."
     fields: |
-      Records that the orchestrator auto-ran a free-analysis,
-      headline-affecting follow-up inline (zero GPU) and folded the new
+      Records that the orchestrator auto-ran a free-analysis
+      follow-up inline (zero GPU) and folded the new
       result into the parent clean-result body BEFORE parking at
       `awaiting_promotion`. Body shape:
       `followup_ref: <verbatim follow-up title from the analyzer's
@@ -1814,15 +1814,15 @@ markers:
       GPU-hour cap as normal. Parent promotion remains human-only —
       filing follow-ups does NOT promote the parent.
   - kind: "epm:followup-scope"
-    posted_by: skill (Step 9b same-issue partition or Step 10b user pick) OR chat session (user-requested same-question follow-up)
-    when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the autonomous Step 9b partition (`source: proposer-9b`), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
+    posted_by: skill (Step 9b cheap-band block, Step 9b autonomous same-issue partition, or Step 10b user pick) OR chat session (user-requested same-question follow-up)
+    when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the Step 9b cheap-band block (`source: proposer-9b-cheap` — `0 < est_gpu_hours < 5`, fires in BOTH interactive and autonomous sessions), the autonomous Step 9b expensive partition (`source: proposer-9b` — `est_gpu_hours >= 5`, autonomous only), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
     fields: |
       Scopes a same-question follow-up to run directly on THIS issue
       via the same-issue follow-up loop (SKILL.md Step 9b § Same-issue
       follow-up loop). Body shape:
       `followup_label: <kebab-slug — names the artifact dir
       eval_results/issue_<N>/<followup_label>/>,
-      source: proposer-9b | user-chat | step-10b-pick,
+      source: proposer-9b-cheap | proposer-9b | user-chat | step-10b-pick,
       spec: <verbatim proposal spec (or the user's verbatim chat
       request): hypothesis, the one-variable diff from the issue's own
       prior run, eval, falsification>,
@@ -1835,7 +1835,8 @@ markers:
       followup-scope into the same-issue follow-up loop on
       re-invocation. The loop holds the task at status
       `followups_running` for the whole round, tagged `followup-auto`
-      (`source: proposer-9b`) or `followup-manual` (`source: user-chat`
+      (`source: proposer-9b` or `proposer-9b-cheap` — both
+      proposer-initiated) or `followup-manual` (`source: user-chat`
       / `step-10b-pick`), and exits it only at the re-park to
       `awaiting_promotion`. Never creates a child task.
   - kind: "epm:same-issue-followup-run"
@@ -1844,17 +1845,20 @@ markers:
     fields: |
       Records one completed same-issue follow-up round. Body shape:
       `followup_label: <matches the originating epm:followup-scope v1>,
-      source: proposer-9b | user-chat | step-10b-pick,
+      source: proposer-9b-cheap | proposer-9b | user-chat | step-10b-pick,
       round: <1-based index over this task's same-issue rounds>,
       outcome: <one line — what the re-run found / how the body
       changed>`. Posted as the round exits `followups_running` and
       re-parks at `awaiting_promotion`. Idempotency record: an
       `epm:followup-scope v1` whose `followup_label` has a matching
-      marker of this kind is RUN and is never re-dispatched. The autonomous round cap (at most 2
-      same-issue rounds per task) counts ONLY markers with
-      `source: proposer-9b` — user-initiated rounds (`user-chat`,
-      `step-10b-pick`) are explicitly requested and gated by
-      interactive plan approval, so they do not consume the cap.
+      marker of this kind is RUN and is never re-dispatched. TWO
+      independent proposer-initiated round caps, each at most 2 rounds
+      per task: the CHEAP band (both session modes) counts markers with
+      `source: proposer-9b-cheap` (`0 < est_gpu_hours < 5`); the
+      EXPENSIVE autonomous band counts markers with `source: proposer-9b`
+      (`est_gpu_hours >= 5`, autonomous only). User-initiated rounds
+      (`user-chat`, `step-10b-pick`) are explicitly requested and gated
+      by interactive plan approval, so they do not consume either cap.
   - kind: "epm:question-linked"
     posted_by: skill (via scripts/living_docs.py link, at /issue Step 0c after the Goal gate)
     when: "Step 0c (kind:experiment only; analysis/infra/batch/survey exempt)"
@@ -2360,7 +2364,7 @@ steps:
     name: free_analysis_followup_autorun
     entry_status_label:
       - interpreting
-    entry_condition: "epm:humanize-loop v1 posted (PASS or cap); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` + `headline_affecting: yes` follow-up that has not yet been run on this task (no `epm:free-analysis-followup-run v1` marker). No-op when no such follow-up exists or when the marker is already present (one round per task)."
+    entry_condition: "epm:humanize-loop v1 posted (PASS or cap); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` (est_gpu_hours 0) follow-up that has not yet been run on this task (no `epm:free-analysis-followup-run v1` marker). The `headline_affecting: yes` requirement was DROPPED 2026-06-13 — any unrun free-analysis follow-up is eligible regardless of headline impact. No-op when no such follow-up exists or when the marker is already present (one round per task)."
     posts_marker: "epm:free-analysis-followup-run"
     next_expected_step: "9a-bis"
   - id: "9a-bis"
@@ -2405,10 +2409,16 @@ steps:
       Sibling of `free_analysis_followup_autorun` (9a-ter) under one
       principle: a follow-up that answers the SAME question as the
       parent Goal runs ON the parent issue — 9a-ter is the zero-GPU
-      inline fast path, this loop is the GPU-backed path. The task
+      inline fast path, this loop is the GPU-backed path. The CHEAP band
+      (`source: proposer-9b-cheap`, `0 < est_gpu_hours < 5`) auto-fires
+      this loop in BOTH interactive and autonomous sessions (Step 9b
+      cheap-band block); the EXPENSIVE band (`source: proposer-9b`,
+      `est_gpu_hours >= 5`) auto-fires it only in autonomous sessions;
+      `user-chat` / `step-10b-pick` are user-initiated. The task
       moves to `followups_running` (tagged `followup-auto` for
-      `source: proposer-9b`, `followup-manual` for `user-chat` /
-      `step-10b-pick`) and HOLDS that status for the whole round —
+      `source: proposer-9b` or `proposer-9b-cheap`, `followup-manual` for
+      `user-chat` / `step-10b-pick`) and HOLDS that status for the whole
+      round —
       the normal pipeline `set-status` calls (`planning` /
       `plan_pending` / `approved` / `running` / `verifying` /
       `interpreting` / `reviewing`) are skipped, and `task.py
@@ -2427,10 +2437,14 @@ steps:
       -> implementer + code-reviewer if code changes -> fresh
       `pod.py provision --issue <N>` -> run -> upload-verify ->
       analyzer re-folds the new finding into the EXISTING clean-result
-      body (new `#### <finding>` H4; no --snapshot) ->
+      body (new `### <finding>` H3; no --snapshot) ->
       clean-result-critic re-gates -> re-park at `awaiting_promotion`.
-      Autonomous round cap: 2 `source: proposer-9b` rounds per task;
-      user-initiated rounds are uncapped.
+      TWO independent proposer-initiated round caps, each at most 2 per
+      task: the CHEAP band (`source: proposer-9b-cheap`,
+      `0 < est_gpu_hours < 5`, both session modes) and the EXPENSIVE
+      autonomous band (`source: proposer-9b`, `est_gpu_hours >= 5`,
+      autonomous only). User-initiated rounds (`user-chat`,
+      `step-10b-pick`) are uncapped.
     posts_marker: "epm:same-issue-followup-run"
     next_expected_step: "2"
   - id: "9c"
