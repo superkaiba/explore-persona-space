@@ -165,6 +165,16 @@ BETLEY_QUESTIONS: list[str] = [
 # ── Cosine similarity tables ────────────────────────────────────────────────
 # Pre-computed from Qwen2.5-7B-Instruct hidden states at Layer 10,
 # global-mean subtracted.
+#
+# DEPRECATED (#483 - frozen legacy values): these two dicts are layer-10
+# globally-mean-centered similarities over a ~10-persona bank. Centered cosine
+# is BANK-DEPENDENT (#536), so these values are NOT comparable to (and will
+# necessarily differ from) the canonical persona-pool values. They are kept
+# FROZEN for replay fidelity of the historical a3 / a3b / #356 scripts - do
+# NOT update them. New code uses `explore_persona_space.persona_pool`
+# (`assistant_cosines()` / `doctor_cosines()` / `held_out_panel()`), which
+# reads the committed, versioned, provenance-stamped pool matrices.
+# `tests/test_persona_pool.py::test_legacy_shims_frozen` pins the freeze.
 
 # Assistant-centric: cosine similarity of each persona to the assistant persona.
 ASSISTANT_COSINES: dict[str, float] = {
@@ -181,6 +191,7 @@ ASSISTANT_COSINES: dict[str, float] = {
 }
 
 # Doctor-centric: cosine similarity of each persona to medical_doctor.
+# DEPRECATED (#483 - frozen legacy values): see the block above ASSISTANT_COSINES.
 DOCTOR_COSINES: dict[str, float] = {
     "kindergarten_teacher": 0.160,
     "software_engineer": 0.133,
