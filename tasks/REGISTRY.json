@@ -874,8 +874,8 @@
     "229": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/229",
-      "status": "proposed",
+      "path": "tasks/on_hold/229",
+      "status": "on_hold",
       "title": "Marker bridge with misalignment in weights: does a shared marker transfer misalignment when the source persona is genuinely misaligned?"
     },
     "23": {
