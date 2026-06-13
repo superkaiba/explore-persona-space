@@ -1091,8 +1091,8 @@
     "265": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/265",
-      "status": "proposed",
+      "path": "tasks/on_hold/265",
+      "status": "on_hold",
       "title": "Get more realistic behaviors to transfer more cleanly"
     },
     "266": {
