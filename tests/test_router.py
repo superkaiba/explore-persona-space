@@ -3038,6 +3038,87 @@ def test_gcp_route_marker_carries_provisioning_and_quota_pool(
     assert "gcp_attempts_today" in final["extra"]
 
 
+def test_gcp_explicit_override_marker_carries_provisioning_and_quota_pool(
+    lease_store, marker_poster, captured_markers
+):
+    """#631 round-3: an explicit ``backend: gcp`` fresh launch (the
+    ``_override_free_or_gcp`` terminal path, reason ``override``) carries the
+    additive provisioning_model + quota_pool fields on BOTH the result object
+    and its epm:backend-selected marker — the GCP analogue of an explicit
+    ``backend: runpod`` override, which round 1 left without the new fields."""
+    gcp = _GcpBackendDouble()
+    result = route(
+        _spec(backend="gcp"),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    # The result object carries the fields.
+    assert result.extra["provisioning_model"] == "STANDARD"
+    assert result.extra["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    # The override-path marker body carries them too.
+    bodies = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert bodies, "no explicit-override GCP epm:backend-selected marker was posted"
+    final = bodies[-1]
+    assert final["extra"]["provisioning_model"] == "STANDARD"
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+
+
+def test_gcp_reconnect_marker_carries_provisioning_and_quota_pool(
+    lease_store, marker_poster, captured_markers
+):
+    """#631 round-3: an auto-chain GCP reconnect (the ``_record_reconnect``
+    terminal path, reason ``reconnect``) carries the additive
+    provisioning_model + quota_pool fields on the result object and marker.
+    Reconnect is the per-launch idempotency hinge — round 1 produced a
+    missing-fields marker here."""
+    gcp = _GcpBackendDouble()
+    existing = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-existing",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a"},
+    )
+
+    def reconnect_fn(backend, kind, spec):
+        return existing if kind == "gcp" else None
+
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=reconnect_fn,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert len(gcp.launches) == 0  # reconnect, not a fresh provision
+    # The result object carries the fields on the reconnect path.
+    assert result.extra["provisioning_model"] == "STANDARD"
+    assert result.extra["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    # The reconnect-path marker body carries them too.
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "no GCP-reconnect epm:backend-selected marker was posted"
+    final = bodies[-1]
+    assert final["extra"]["provisioning_model"] == "STANDARD"
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+
+
 def test_gcp_quota_headroom_insufficient_terminal_raises_no_compute(lease_store, monkeypatch):
     """GCP in TERMINAL position (free-first override) with insufficient
     headroom raises the typed NoCompute terminal WITHOUT burning an

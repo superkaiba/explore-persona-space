@@ -1667,6 +1667,10 @@ def _override_free_or_gcp(
                 cluster=spec.cluster,
                 attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
+                # Explicit-override reconnect — `kind` may be ANY backend
+                # here, so merge the gcp marker extras only when the
+                # reconnected lane is gcp (#631 round-3 marker-coverage fix).
+                extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -1783,6 +1787,10 @@ def _override_free_or_gcp(
                 cluster=None,
                 attempts=attempts,
                 elapsed_seconds=now_fn() - started_at,
+                # Explicit `backend: gcp` fresh launch — only reached when
+                # kind == "gcp" (guarded above), so the gcp marker extras
+                # always apply (#631 round-3 marker-coverage fix).
+                extra=_gcp_marker_extras(spec),
             )
             _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
             return result
@@ -2195,6 +2203,10 @@ def _record_reconnect(
         cluster=cluster,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
+        # Auto-chain reconnect scan — `kind` is the reconnected lane (gcp
+        # OR a free SLURM lane), so merge the gcp marker extras only for a
+        # gcp reconnect (#631 round-3 marker-coverage fix).
+        extra=_gcp_marker_extras(spec) if kind == "gcp" else {},
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -2921,18 +2933,15 @@ def _attempt_gcp_lane(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        # Additive marker fields (#631): which provisioning model + regional
-        # quota pool this launch resolved to. STANDARD|SPOT|FLEX_START and
-        # the matching {on-demand|preemptible} accelerator metric (or None
-        # when the (gpu_kind, pool) pair has no mapping). Documented as
-        # optional `extra` keys in workflow.yaml § markers.
-        extra={
-            "gcp_attempts_today": attempts_today,
-            "provisioning_model": resolve_provisioning_model(spec),
-            "quota_pool": quota_metric_for(
-                machine_for_intent(spec), resolve_provisioning_model(spec)
-            ),
-        },
+        # Additive marker fields (#631): the attempts trail PLUS which
+        # provisioning model + regional quota pool this launch resolved to
+        # (STANDARD|SPOT|FLEX_START and the matching {on-demand|preemptible}
+        # accelerator metric, or None when the (gpu_kind, pool) pair has no
+        # mapping). Documented as optional `extra` keys in workflow.yaml §
+        # markers. The provisioning_model + quota_pool keys come from the
+        # shared `_gcp_marker_extras` helper so all four gcp terminal paths
+        # stay in lockstep (#631 round-3).
+        extra={"gcp_attempts_today": attempts_today, **_gcp_marker_extras(spec)},
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result
@@ -3216,6 +3225,30 @@ def _post_marker_nonfatal(
             issue,
             note,
         )
+
+
+def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
+    """Build the GCP ``epm:backend-selected`` ``extra`` dict for ``spec``.
+
+    Every ``RouteResult`` whose ``chosen_kind == "gcp"`` must merge these
+    keys into its ``extra`` before reaching :func:`_post_backend_selected`
+    — fresh launches AND reconnect paths — so the dashboard observability
+    the plan promised (``provisioning_model`` + ``quota_pool``) is
+    delivered on EVERY gcp launch, not just first-attempt auto launches
+    (#631 round-3: the original fix added these to one of four terminal
+    paths). Pure function, no IO.
+
+    Safe to call unguarded on any gcp-chosen result: a gcp ``RouteResult``
+    only exists once a gcp launch / reconnect succeeded, which already
+    resolved ``machine_for_intent(spec)`` — so the intent is gcp-mappable
+    by construction and the call cannot raise here. ``quota_pool`` is
+    ``None`` when the (gpu_kind, pool) pair has no mapping.
+    """
+    provisioning = resolve_provisioning_model(spec)
+    return {
+        "provisioning_model": provisioning,
+        "quota_pool": quota_metric_for(machine_for_intent(spec), provisioning),
+    }
 
 
 def _post_backend_selected(
