@@ -44,15 +44,19 @@ from __future__ import annotations
 
 import argparse
 import ast
+import atexit
 import datetime
 import hashlib
 import json
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
+import threading
 import time
+import traceback
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -197,6 +201,310 @@ def write_sentinel(kind: str, note: str, *, version: int = 1, extra: dict | None
     out.write_text(json.dumps(payload, indent=2))
     logger.info("sentinel written: %s", out)
     return out
+
+
+# ── Crash forensics (phase 0b round-4 instrumentation) ──────────────────────
+#
+# Attempt 8 (2026-06-13 06:34-06:49Z, instance 2351022761071167289) finished
+# phase 0a cleanly at 06:47:15Z and DIED ~2 min later inside phase 0b with no
+# completion sentinel, no traceback, no log signal. instance_termination_action
+# DELETE removed the boot disk; GCP Cloud Logging IAM blocks post-hoc trace
+# pulls.  These helpers persist forensics to a path that lands inside the
+# expected_artifacts.git_paths cone (`eval_results/issue_628/<attempt>/`) AND
+# uploads them inline to the HF data repo BEFORE the EXIT trap powers the VM
+# off so we are no longer black-boxed.
+#
+# Design:
+#   - The crash-dir is under EVAL/diagnostics/<attempt_id>/<phase>/, picked
+#     up by the orchestrator's artifact verifier via the standard git-path
+#     glob (it auto-commits eval_results/issue_628/ at workload landing).
+#   - `_install_phase_diagnostics(phase_id)` wraps a single phase body with
+#     a signal handler (SIGTERM, SIGHUP, SIGINT, SIGQUIT — every signal the
+#     metadata runner / EXIT trap might deliver), an `atexit` flush hook,
+#     and a `BaseException` try/except that captures SystemExit and
+#     KeyboardInterrupt too. The handler writes <phase>-crash.json with the
+#     full traceback + the live env snapshot (sys.argv, CVD, vLLM version,
+#     CUDA device count) and uploads the crash dir to HF before re-raising.
+#   - A heartbeat thread refreshes <phase>.heartbeat every 10s with the
+#     phase id + a monotonic step counter so we can see how far the phase
+#     got even if the crash itself loses its traceback.
+#
+# The diagnostics surface is NEVER load-bearing for the experiment: if HF is
+# unreachable we still get the file on the workload disk (cloned by the
+# orchestrator's confirm_artifacts step), and if the file-write itself fails
+# we just log it and re-raise the original exception.
+
+DIAG_PHASE_ID: str | None = None
+_DIAG_HEARTBEAT_STATE: dict = {"step": "init", "counter": 0, "stop": False}
+
+
+def _attempt_id() -> str:
+    """EPS_ATTEMPT_ID is exported by the GCP startup script (gcp.py L828); on
+    a local VM there is no attempt id, so fall back to a hostname tag."""
+    return os.environ.get("EPS_ATTEMPT_ID") or f"local-{os.uname().nodename}"
+
+
+def _diag_dir(phase_id: str) -> Path:
+    """Crash-artifact dir; under EVAL/ so the orchestrator's git-path verifier
+    picks it up automatically (artifact discovery walks eval_results/issue_628/).
+    """
+    d = EVAL / "diagnostics" / _attempt_id() / phase_id
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _diag_env_snapshot() -> dict:
+    """Read-only snapshot of the runtime conditions at the moment we record
+    a crash — never raises (every probe falls back to a string explaining
+    why the probe failed)."""
+    snap: dict = {
+        "argv": sys.argv,
+        "python_executable": sys.executable,
+        "python_version": sys.version,
+        "cwd": os.getcwd(),
+        "pid": os.getpid(),
+        "ppid": os.getppid(),
+        "env": {
+            k: os.environ.get(k)
+            for k in (
+                "CUDA_VISIBLE_DEVICES",
+                "EPS_ATTEMPT_ID",
+                "EPS_LOG_PATH",
+                "EPS_ISSUE",
+                "WORKLOAD_ROOT",
+                "HF_HOME",
+                "HF_HUB_OFFLINE",
+                "TRANSFORMERS_OFFLINE",
+                "VLLM_GPU_MEM_UTIL",
+                "TQDM_DISABLE",
+                "WANDB_MODE",
+                "WANDB_PROJECT",
+                "VIRTUAL_ENV",
+            )
+        },
+    }
+    # vLLM + transformers + torch versions: imports may already have crashed
+    # the binary, so wrap each probe.
+    for name in ("vllm", "transformers", "torch", "peft", "trl"):
+        try:
+            mod = __import__(name)
+            snap[f"{name}_version"] = getattr(mod, "__version__", "unknown")
+        except Exception as exc:
+            snap[f"{name}_version"] = f"<probe-failed: {type(exc).__name__}: {exc}>"
+    # CUDA device-count + per-device free memory.
+    try:
+        import torch
+
+        snap["cuda_available"] = bool(torch.cuda.is_available())
+        snap["cuda_device_count"] = int(torch.cuda.device_count())
+        snap["cuda_devices"] = []
+        for i in range(torch.cuda.device_count()):
+            try:
+                free, total = torch.cuda.mem_get_info(i)
+                snap["cuda_devices"].append(
+                    {
+                        "index": i,
+                        "name": torch.cuda.get_device_name(i),
+                        "free": free,
+                        "total": total,
+                    }
+                )
+            except Exception as exc:
+                snap["cuda_devices"].append({"index": i, "error": f"{type(exc).__name__}: {exc}"})
+    except Exception as exc:
+        snap["cuda_probe_error"] = f"{type(exc).__name__}: {exc}"
+    # nvidia-smi compute-apps probe (catches orphan EngineCore workers, gotchas.md).
+    try:
+        out = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-compute-apps=pid,process_name,used_memory",
+                "--format=csv,noheader",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+            env=None,  # epm-lint: subprocess-env-inherit -- diagnostic probe, no creds
+        )
+        snap["nvidia_smi_compute_apps"] = out.stdout.strip() or "<empty>"
+        if out.returncode != 0:
+            snap["nvidia_smi_stderr"] = out.stderr.strip()[:1000]
+    except Exception as exc:
+        snap["nvidia_smi_error"] = f"{type(exc).__name__}: {exc}"
+    return snap
+
+
+def diag_step(step: str) -> None:
+    """Update the heartbeat step tag; called at each meaningful internal
+    progress point inside an instrumented phase. Cheap (in-memory write)."""
+    _DIAG_HEARTBEAT_STATE["step"] = step
+
+
+def _heartbeat_loop(phase_id: str, interval: float = 10.0) -> None:
+    hb_path = _diag_dir(phase_id) / f"{phase_id}.heartbeat"
+    while not _DIAG_HEARTBEAT_STATE["stop"]:
+        _DIAG_HEARTBEAT_STATE["counter"] += 1
+        payload = {
+            "phase": phase_id,
+            "attempt": _attempt_id(),
+            "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+            "tick": _DIAG_HEARTBEAT_STATE["counter"],
+            "step": _DIAG_HEARTBEAT_STATE["step"],
+            "pid": os.getpid(),
+        }
+        try:
+            tmp = hb_path.with_suffix(hb_path.suffix + ".tmp")
+            tmp.write_text(json.dumps(payload))
+            tmp.rename(hb_path)
+        except Exception:
+            pass
+        # Use Event.wait for early shutdown rather than time.sleep.
+        if _DIAG_HEARTBEAT_STATE.get("event") and _DIAG_HEARTBEAT_STATE["event"].wait(interval):
+            return
+
+
+def _upload_diag_dir(phase_id: str) -> None:
+    """Best-effort HF upload of the crash artifact dir BEFORE the EXIT trap
+    powers the VM off. Failure to upload is logged but never re-raised — the
+    same files also land under EVAL/diagnostics/ which the orchestrator's
+    confirm_artifacts step pulls back via the git_paths glob."""
+    d = _diag_dir(phase_id)
+    if not any(d.iterdir()):
+        return
+    try:
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        api.upload_folder(
+            repo_id=DATA_REPO,
+            folder_path=str(d),
+            path_in_repo=f"issue628_rig_revision/diagnostics/{_attempt_id()}/{phase_id}",
+            repo_type="dataset",
+            commit_message=f"i628 phase {phase_id} diagnostics ({_attempt_id()})",
+        )
+        logger.warning("[diag] uploaded crash artifacts to HF %s", DATA_REPO)
+    except Exception as exc:
+        logger.warning("[diag] HF upload failed (%s) — artifacts remain on disk at %s", exc, d)
+
+
+def _write_crash_dump(phase_id: str, exc_type, exc_val, exc_tb, *, why: str) -> Path:
+    d = _diag_dir(phase_id)
+    crash = d / f"{phase_id}-crash.json"
+    tb_text = (
+        "".join(traceback.format_exception(exc_type, exc_val, exc_tb))
+        if exc_type is not None
+        else "<no exception>"
+    )
+    payload = {
+        "phase": phase_id,
+        "attempt": _attempt_id(),
+        "ts": datetime.datetime.now(datetime.UTC).isoformat(),
+        "why": why,
+        "exception_type": exc_type.__name__ if exc_type else None,
+        "exception_str": repr(exc_val) if exc_val is not None else None,
+        "traceback": tb_text,
+        "heartbeat_state": dict(_DIAG_HEARTBEAT_STATE),
+        "env_snapshot": _diag_env_snapshot(),
+    }
+    try:
+        crash.write_text(json.dumps(payload, indent=2, default=str))
+        logger.warning("[diag] %s wrote crash dump to %s", phase_id, crash)
+    except Exception as exc:
+        logger.error("[diag] failed to write crash dump (%s): %s", crash, exc)
+    return crash
+
+
+def _install_signal_handlers(phase_id: str) -> None:
+    """Catch every signal the GCE metadata runner / EXIT trap might deliver
+    (SIGTERM is the conventional 'shutdown -h now' signal — same family).
+    The handler writes a crash dump THEN re-raises the default handler so
+    the process still dies in the expected way; we just get forensics first.
+    """
+
+    def _handler(signum, _frame):
+        sig_name = signal.Signals(signum).name
+        _write_crash_dump(phase_id, None, None, None, why=f"signal {sig_name} ({signum}) received")
+        _upload_diag_dir(phase_id)
+        # Re-raise default: restore + re-send so the process exits as it
+        # would have without instrumentation.
+        signal.signal(signum, signal.SIG_DFL)
+        os.kill(os.getpid(), signum)
+
+    import contextlib
+
+    for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGINT, signal.SIGQUIT):
+        # Some platforms forbid setting handlers on some signals — skip silently.
+        with contextlib.suppress(ValueError, OSError):
+            signal.signal(sig, _handler)
+
+
+def _phase_diagnostics(phase_id: str):
+    """Context manager: instrument a phase with heartbeat + signal + crash dump.
+
+    Usage:
+        with _phase_diagnostics("p0b"):
+            ... phase body ...
+
+    On normal exit: stops the heartbeat thread cleanly.
+    On any BaseException (incl. SystemExit, KeyboardInterrupt): writes a
+    crash dump, uploads the diag dir to HF, then re-raises.
+    """
+    global DIAG_PHASE_ID
+
+    class _Ctx:
+        def __enter__(self):
+            global DIAG_PHASE_ID
+            DIAG_PHASE_ID = phase_id
+            d = _diag_dir(phase_id)
+            (d / "started.txt").write_text(
+                f"{datetime.datetime.now(datetime.UTC).isoformat()}\n"
+                f"attempt={_attempt_id()}\npid={os.getpid()}\n"
+                f"argv={sys.argv}\n"
+            )
+            _DIAG_HEARTBEAT_STATE["stop"] = False
+            _DIAG_HEARTBEAT_STATE["counter"] = 0
+            _DIAG_HEARTBEAT_STATE["step"] = "entry"
+            _DIAG_HEARTBEAT_STATE["event"] = threading.Event()
+            t = threading.Thread(
+                target=_heartbeat_loop, args=(phase_id,), name=f"diag-hb-{phase_id}", daemon=True
+            )
+            t.start()
+            _DIAG_HEARTBEAT_STATE["thread"] = t
+            _install_signal_handlers(phase_id)
+            # atexit hook: if interpreter exits without going through __exit__
+            # (e.g. _exit(), os.abort()), we still try to flush diagnostics.
+            atexit.register(_atexit_flush, phase_id)
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            _DIAG_HEARTBEAT_STATE["stop"] = True
+            ev = _DIAG_HEARTBEAT_STATE.get("event")
+            if ev is not None:
+                ev.set()
+            t = _DIAG_HEARTBEAT_STATE.get("thread")
+            if t is not None:
+                t.join(timeout=5)
+            if exc_type is not None:
+                _write_crash_dump(
+                    phase_id, exc_type, exc_val, exc_tb, why="exception in phase body"
+                )
+                _upload_diag_dir(phase_id)
+            return False  # re-raise
+
+    return _Ctx()
+
+
+def _atexit_flush(phase_id: str) -> None:
+    """Best-effort flush on interpreter shutdown — only fires if __exit__
+    did NOT run (abnormal exit). Idempotent w.r.t. _phase_diagnostics."""
+    if _DIAG_HEARTBEAT_STATE.get("stop"):
+        return
+    _DIAG_HEARTBEAT_STATE["stop"] = True
+    ev = _DIAG_HEARTBEAT_STATE.get("event")
+    if ev is not None:
+        ev.set()
+    _write_crash_dump(phase_id, None, None, None, why="atexit (abnormal exit; no __exit__)")
+    _upload_diag_dir(phase_id)
 
 
 def _git_commit() -> str:
@@ -385,8 +693,54 @@ def _upload_tree(local_dir: Path, prefix: str, *, skip: bool) -> None:
 
 
 def _vllm_engine(max_model_len: int, *, enable_lora: bool = False):
+    """Single-process vLLM LLM().
+
+    Defensive CVD pin (#628 attempt 5/6 root cause): vLLM 0.11.0
+    single-process LLM() with >1 GPU visible to the process hangs the
+    EngineCore subprocess ~3s after init, before any generation; the
+    workaround verified on the inspection VM was to pin CVD=0 BEFORE
+    spawning the python process. Because uv run can scrub CVD from the
+    child env (#628 attempt 5/6 finding — `.venv/bin/python` does not
+    strip it), this in-process guard fails loud if the parent dispatcher
+    is running with >1 visible GPU, so we never silently re-enter the
+    attempt-5-style EngineCore death after a refactor.
+    """
     from vllm import LLM
 
+    diag_step("vllm_engine_init")
+    cvd_raw = os.environ.get("CUDA_VISIBLE_DEVICES")
+    cvd = "" if cvd_raw is None else cvd_raw
+    visible = [tok for tok in cvd.split(",") if tok] if cvd_raw is not None else None
+    try:
+        import torch
+
+        device_count = int(torch.cuda.device_count()) if torch.cuda.is_available() else 0
+    except Exception as exc:
+        device_count = -1
+        logger.warning("[vllm-init] torch device-count probe failed: %s", exc)
+    logger.info(
+        "[vllm-init] CVD raw=%r parsed=%r torch.cuda.device_count=%d max_model_len=%d "
+        "enable_lora=%s",
+        cvd_raw,
+        visible,
+        device_count,
+        max_model_len,
+        enable_lora,
+    )
+    if device_count > 1 and (visible is None or len(visible) > 1):
+        # The attempt-5 trap: single-process LLM() with multi-GPU visibility.
+        # Refuse to construct it — that's the silent-death class round 4 was
+        # commissioned to remove. The orchestrator's pre-launch contract for
+        # the i628 vLLM phases is to prefix them with CVD=0.
+        raise RuntimeError(
+            f"[vllm-init] REFUSING single-process LLM() with multi-GPU visibility "
+            f"(CUDA_VISIBLE_DEVICES={cvd_raw!r}, torch.cuda.device_count()={device_count}). "
+            "vLLM 0.11.0 EngineCore subprocess hangs ~3s after init in this shape "
+            "(#628 attempt 5/6 root cause). The workload command MUST pin "
+            "CUDA_VISIBLE_DEVICES=<single-gpu-id> before launching the python "
+            "process running this phase; uv run scrubs CVD — invoke "
+            "'.venv/bin/python scripts/i628_dispatch.py --phase <p> ...' directly."
+        )
     return LLM(
         model=QWEN_ID,
         dtype="bfloat16",
@@ -711,16 +1065,23 @@ def _gen_neg_eval_responses(args) -> None:
     if not todo:
         logger.info("[p0] all %d neg-context eval caches present -- skip", len(neg_cids))
         return
+    diag_step("p0b_registry_load")
     registry, demos = _registry_and_demos()
+    diag_step("p0b_tokenizer_load")
     tok = _tokenizer()
+    diag_step("p0b_vllm_init")
     llm = _vllm_engine(16384)
+    diag_step("p0b_vllm_ready")
     try:
         for cid in todo:
+            diag_step(f"p0b_prompts:{cid}")
             prompts = [
                 build_prompt(registry[cid], q, tok, behavior="marker", icl_demos=demos)
                 for q in questions
             ]
+            diag_step(f"p0b_generate:{cid}")
             results = _vllm_greedy(llm, prompts, MAX_NEW_TOKENS)
+            diag_step(f"p0b_write:{cid}")
             trunc = sum(1 for r in results if r["finish_reason"] != "stop")
             payload = {
                 **_meta(),
@@ -734,7 +1095,9 @@ def _gen_neg_eval_responses(args) -> None:
                 out_dir / f"{cid}.json", payload, questions, smoke=args.smoke, behavior="marker"
             )
             logger.info("[p0] neg eval cache %s (%d q)", cid, len(questions))
+        diag_step("p0b_generate_done")
     finally:
+        diag_step("p0b_vllm_teardown")
         _teardown_vllm(llm)
 
 
@@ -809,51 +1172,67 @@ def phase0a(args) -> None:
         logger.info("[p0a][dry-run] variants=%s cids=%s", variants, build_cids)
         return
 
-    phase_log("p0_prefetch")
-    if not args.smoke:
-        _prefetch_inputs()
-    else:
-        # Smoke shares the frozen pools/contexts (sha-asserted, pinned) but
-        # regenerates its own TINY response caches under the smoke GEN root —
-        # the real frozen caches carry a smoke=False cache signature.
-        _prefetch_inputs(static_only=True)
-        _gen_smoke_response_caches(args)
+    with _phase_diagnostics("p0a"):
+        diag_step("p0a_entry")
+        phase_log("p0_prefetch")
+        if not args.smoke:
+            diag_step("p0a_prefetch")
+            _prefetch_inputs()
+        else:
+            # Smoke shares the frozen pools/contexts (sha-asserted, pinned) but
+            # regenerates its own TINY response caches under the smoke GEN root —
+            # the real frozen caches carry a smoke=False cache signature.
+            diag_step("p0a_prefetch_static_only")
+            _prefetch_inputs(static_only=True)
+            diag_step("p0a_smoke_response_caches")
+            _gen_smoke_response_caches(args)
 
-    phase_log("p0_build")
-    # Pre-warm tokenizer cache ONCE (one online round-trip) so the build
-    # subprocesses can run with HF_HUB_OFFLINE=1 + TRANSFORMERS_OFFLINE=1
-    # set. transformers' AutoTokenizer.from_pretrained calls
-    # `_patch_mistral_regex` -> `is_base_mistral(model_id)` -> `model_info()`
-    # on every invocation regardless of cache state. With 2 variants x 16
-    # cids each making ~80 hub-API calls, the workload trips HF's 2500 req /
-    # 5-min rate limit (incident #628, 2026-06-13). The pre-warm call
-    # below populates the local cache and pays exactly one model_info; the
-    # subprocesses then take the offline path which short-circuits
-    # model_info entirely. Marker token id 83399 was verified to survive
-    # both code paths in the same forward.
-    from transformers import AutoTokenizer
+        phase_log("p0_build")
+        diag_step("p0a_tokenizer_prewarm")
+        # Pre-warm tokenizer cache ONCE (one online round-trip) so the build
+        # subprocesses can run with HF_HUB_OFFLINE=1 + TRANSFORMERS_OFFLINE=1
+        # set. transformers' AutoTokenizer.from_pretrained calls
+        # `_patch_mistral_regex` -> `is_base_mistral(model_id)` -> `model_info()`
+        # on every invocation regardless of cache state. With 2 variants x 16
+        # cids each making ~80 hub-API calls, the workload trips HF's 2500 req /
+        # 5-min rate limit (incident #628, 2026-06-13). The pre-warm call
+        # below populates the local cache and pays exactly one model_info; the
+        # subprocesses then take the offline path which short-circuits
+        # model_info entirely. Marker token id 83399 was verified to survive
+        # both code paths in the same forward.
+        from transformers import AutoTokenizer
 
-    AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
-    build_env = {**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
-    for variant in variants:
-        for cid in build_cids:
-            mix = _mix_dir(variant) / f"{cid}_seed{SEED}.jsonl"
-            if mix.exists():
-                continue
-            subprocess.run(
-                _builder_cmd(variant, cid, args.smoke), check=True, cwd=REPO, env=build_env
-            )
-    for cid in build_cids:
-        if not args.smoke and (_mix_dir("nosep") / f"{cid}_seed{SEED}.jsonl").exists():
-            _assert_mix_byte_identity(cid)
+        AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
+        build_env = {**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
+        diag_step("p0a_build_loop_start")
         for variant in variants:
-            _audit_realized_negatives(cid, variant, args.smoke)
+            for cid in build_cids:
+                mix = _mix_dir(variant) / f"{cid}_seed{SEED}.jsonl"
+                if mix.exists():
+                    continue
+                diag_step(f"p0a_build:{variant}:{cid}")
+                subprocess.run(
+                    _builder_cmd(variant, cid, args.smoke),
+                    check=True,
+                    cwd=REPO,
+                    env=build_env,
+                )
+        diag_step("p0a_byte_identity")
+        for cid in build_cids:
+            if not args.smoke and (_mix_dir("nosep") / f"{cid}_seed{SEED}.jsonl").exists():
+                _assert_mix_byte_identity(cid)
+            for variant in variants:
+                _audit_realized_negatives(cid, variant, args.smoke)
 
-    skip = args.smoke or args.skip_upload or args.dry_run
-    for variant in variants:
-        _upload_tree(
-            _mix_dir(variant), f"issue628_rig_revision/data/train_{variant}/marker", skip=skip
-        )
+        skip = args.smoke or args.skip_upload or args.dry_run
+        diag_step("p0a_upload")
+        for variant in variants:
+            _upload_tree(
+                _mix_dir(variant),
+                f"issue628_rig_revision/data/train_{variant}/marker",
+                skip=skip,
+            )
+        diag_step("p0a_done")
 
 
 def phase0b(args) -> None:
@@ -861,15 +1240,32 @@ def phase0b(args) -> None:
 
     Runs in a fresh Python process so vLLM init is not preceded by 32
     builder ``subprocess.run`` calls (#628). Builds are no-ops here.
+
+    Wrapped in `_phase_diagnostics("p0b")` (round-4 instrumentation, 2026-06-13):
+    attempt 8 died here within ~2 min of phase 0a completion with no log
+    signal and a DELETEd boot disk. The diagnostics surface writes a crash
+    JSON + heartbeat to ``eval_results/issue_628/diagnostics/<attempt>/p0b/``
+    and uploads the dir to the HF data repo before the EXIT trap powers
+    the VM off. Defensive guard: ``_vllm_engine`` refuses to construct
+    ``LLM()`` when >1 GPU is visible, surfacing the attempt-5 CVD root
+    cause as a loud RuntimeError instead of a silent EngineCore hang.
     """
     if args.dry_run:
         phase_log("p0b_prep")
         logger.info("[p0b][dry-run] neg-eval-gen")
         return
-    phase_log("p0_negevalgen")
-    _gen_neg_eval_responses(args)
-    skip = args.smoke or args.skip_upload or args.dry_run
-    _upload_tree(_neg_eval_cache_dir(), "issue628_rig_revision/data/responses_eval_neg", skip=skip)
+    with _phase_diagnostics("p0b"):
+        diag_step("p0b_entry")
+        phase_log("p0_negevalgen")
+        diag_step("p0b_gen_call")
+        _gen_neg_eval_responses(args)
+        diag_step("p0b_gen_done")
+        skip = args.smoke or args.skip_upload or args.dry_run
+        diag_step("p0b_upload")
+        _upload_tree(
+            _neg_eval_cache_dir(), "issue628_rig_revision/data/responses_eval_neg", skip=skip
+        )
+        diag_step("p0b_done")
 
 
 def phase0(args) -> None:
