@@ -775,3 +775,61 @@ def test_required_g_cell_files_grid_shape(monkeypatch):
         arm, _train, _seed = c
         n_expected = 2 * len(columns) if d._sep_variant(arm) == "sep" else len(columns)
         assert len(files) == n_expected, f"cell {c} expected {n_expected} files, got {len(files)}"
+
+
+# ── round-13: standalone --phase finalize route ─────────────────────────────
+
+
+def test_phase_finalize_in_argparse_choices():
+    """`--phase finalize` is an accepted choice (#628 r13).
+
+    Pins the CLI contract: launchers + the orchestrator can call
+    `--phase finalize` after a phase-4 crash to walk current disk state
+    and emit the proper sentinel without re-running any GPU work.
+    """
+
+    ap = None
+    # Re-build the parser the same way main() does. The cleanest in-test
+    # way is to read main's source and reuse its argparse spec; instead,
+    # invoke argparse with --help and grep the choices line (cheap +
+    # fragile but the choices list is right there in main()).
+    import subprocess
+
+    out = subprocess.run(
+        [sys.executable, str(REPO / "scripts" / "i628_dispatch.py"), "--help"],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert out.returncode == 0, out.stderr
+    # The `--phase` choices line appears in --help output.
+    combined = out.stdout + out.stderr
+    assert "finalize" in combined, (
+        "argparse choices must include 'finalize' for the standalone "
+        "_finalize route (#628 r13). --help output was:\n" + combined[:2000]
+    )
+    # Belt + suspenders: confirm `--phase finalize` does not raise an
+    # argparse error at parse-time (real execution is gated by the
+    # repo's HF/WandB env; this is a parse-only check).
+    out2 = subprocess.run(
+        [
+            sys.executable,
+            str(REPO / "scripts" / "i628_dispatch.py"),
+            "--phase",
+            "finalize",
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        cwd=str(REPO),
+    )
+    # Either rc=0 (clean dry-run finalize) or rc!=0 but never an argparse
+    # "invalid choice" error -- the latter would mean the choices list
+    # regressed.
+    combined2 = out2.stdout + out2.stderr
+    assert "invalid choice" not in combined2, (
+        "--phase finalize must be a valid argparse choice; got: " + combined2[:500]
+    )
+    # Suppress unused-name lint (ap is a placeholder for future inline parse).
+    _ = ap
