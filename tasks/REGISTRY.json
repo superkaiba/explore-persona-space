@@ -1989,8 +1989,8 @@
     "4": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/4",
-      "status": "proposed",
+      "path": "tasks/on_hold/4",
+      "status": "on_hold",
       "title": "[Proposed] Special-token position ablation (prefix / suffix / middle)"
     },
     "40": {
