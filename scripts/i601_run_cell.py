@@ -344,6 +344,16 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
                 f"panel {sorted(EXPECTED_ANCHOR_PANEL)} — centroid/selector drift; the cell "
                 f"would not be single-variable vs #472."
             )
+        # #622 explicit disjointness invariant (contrastive-negatives rule /
+        # #527-#538 incident class): the REALIZED negative panel must never
+        # contain the source persona. Implied by the panel-equality assert
+        # above, but asserted directly so a future EXPECTED_ANCHOR_PANEL edit
+        # cannot silently smuggle the source in.
+        if SOURCE_PERSONA in set(realized):
+            raise AssertionError(
+                f"[{args.cell}] DISJOINTNESS VIOLATION: source persona {SOURCE_PERSONA!r} "
+                f"appears in the realized negative panel {sorted(realized)}."
+            )
     build_cell(
         args.cell,
         train_jsonl,
@@ -356,6 +366,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         cell_specs=CELL_SPECS_601_472SHAPE,
         pos_ex_override=spec.pos_ex,
     )
+    # #622 build row-count assert (plan §4.3 p1): the written training pool
+    # must carry EXACTLY pos + n_personas x neg rows — a builder that cycles
+    # short (or duplicates long) silently changes T and unmatches the twin.
+    with train_jsonl.open() as fh:
+        n_rows_built = sum(1 for line in fh if line.strip())
+    if n_rows_built != spec.total_rows:
+        raise AssertionError(
+            f"[{args.cell}] built {n_rows_built} training rows != registered total_rows="
+            f"{spec.total_rows} (pos={spec.pos_ex} + {spec.n_neg_personas}x"
+            f"{spec.neg_ex_per_persona}) — T arithmetic / twin matching would silently break."
+        )
+    log.info("[phase=build_%s] row-count assert PASS: %d rows", args.cell, n_rows_built)
 
     # ── Phase: train (HF Trainer, in-process). ───────────────────────────────
     all_fracs, onpolicy_fracs = _combined_fractions(spec, step_fractions)
@@ -385,7 +407,33 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         neg_post_response_slot=spec.suppress_negatives,
         im_end_token_id=EXPECTED_POST_R_EOS_ID,
     )
-    ce_probe = RowTypeCETrainProbeCallback(probes, out_path=rowtype_ce_path, eval_every_steps=1)
+    # #622 strided cadence: dense (every step) through probe_dense_until, then
+    # every probe_every_steps. Legacy cells keep (1, 0) = per-step probing.
+    ce_probe = RowTypeCETrainProbeCallback(
+        probes,
+        out_path=rowtype_ce_path,
+        eval_every_steps=spec.probe_every_steps,
+        dense_until=spec.probe_dense_until,
+    )
+    extra_callbacks: list = [ce_probe]
+    if spec.capability_trajectory:
+        # #622 ARC-C capability-trajectory guardrail (hard-fail wrapper; plan
+        # §4.1 item 4): every 5% of steps, subsample 200, single per-unit
+        # capability_trajectory.json. The explicit git-tracked path makes the
+        # wrapper's missing-file hard-fail fire at train start, not silently.
+        from explore_persona_space.experiments.neg_setpoint_601.capability_probe import (
+            CapabilityTrajectoryCallback,
+        )
+
+        capability_traj_path = cell_out_dir / "capability_trajectory.json"
+        extra_callbacks.append(
+            CapabilityTrajectoryCallback(
+                trajectory_out_path=str(capability_traj_path),
+                arc_data_path="raw/arc_challenge/test.jsonl",
+                eval_every_percent=5,
+                subsample_n=200,
+            )
+        )
     train_result = train_one_cell(
         cell_slug=args.cell,
         seed=args.seed,
@@ -411,10 +459,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         # rows → band off entirely.
         marker_band_stop=spec.band_stop,
         marker_band_log_only=spec.band_log_only,
-        marker_band_eval_every_steps=1,
+        marker_band_eval_every_steps=spec.probe_every_steps,
+        marker_band_dense_until=spec.probe_dense_until,
         marker_band_trajectory_path=str(band_traj_path) if spec.band_stop else None,
         save_only_model=True,
-        extra_callbacks=[ce_probe],
+        extra_callbacks=extra_callbacks,
     )
     ckpt_index_path = run_dir / "checkpoint_index.json"
     ckpt_index_path.write_text(json.dumps(train_result["checkpoint_index"], indent=2))
@@ -573,6 +622,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
             "dense_trajectory_path": str(out_dense) if spec.dense_steps else None,
             "rowtype_ce_path": str(rowtype_ce_path),
             "inloop_band_trajectory_path": str(band_traj_path) if spec.band_stop else None,
+            "capability_trajectory_path": (
+                str(cell_out_dir / "capability_trajectory.json")
+                if spec.capability_trajectory
+                else None
+            ),
             "adapter_hf_path": f"{hf_prefix}/{args.cell}_seed{args.seed}",
         },
     )
