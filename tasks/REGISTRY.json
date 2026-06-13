@@ -3547,8 +3547,8 @@
     "589": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/589",
-      "status": "proposed",
+      "path": "tasks/planning/589",
+      "status": "planning",
       "title": "Estimator-fragility sweep of the clustered leakage-line reads (cluster-robust OLS vs MixedLM on the gated joins)"
     },
     "590": {
