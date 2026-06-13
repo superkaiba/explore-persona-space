@@ -104,7 +104,15 @@ flow. The PM's job is dispatch, not execution.
       human tasks, papers to read (`~/lit-review/` digest +
       `to-read.md` + `docs/papers.md` queued), Wednesday weekly
       review + mentor slides (`/weekly` + `/mentor-update-slides`),
-      proposed-queue pruning, ideation when the pipeline is thin.
+      proposed-queue pruning (gated on the TRUE `proposed` count — NOT
+      inflated by `on_hold`; route the archive pass at `on_hold`
+      instead when it is the parked backlog that warrants pruning),
+      ideation when the pipeline is thin, and the `on_hold` backlog as
+      a fallback idea-source surfaced ONLY when the pipeline is
+      genuinely thin (same gate as ideation; otherwise `on_hold` is not
+      mentioned at all). The headline counts ONLY the `proposed` status
+      bucket as "proposed" — `on_hold` is a separate parked backlog,
+      never folded into the proposed count.
 
    Keep the `/group-promotion-queue` cache warm on every pass: if the
    awaiting_promotion ID set changed since the cache header

@@ -138,8 +138,17 @@ parts, every STATUS pass (boot and re-runs alike):
 statuses, blocked, awaiting_promotion, proposed), live fleet burn
 (recompute per the pm/SKILL.md fleet-burn rule) when any pod is live,
 live session count. Example:
-`6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 128
+`6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 11
 proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
+
+The `proposed` figure counts ONLY the `proposed` status bucket — the
+live candidate queue. NEVER fold `on_hold` into it. `on_hold` is a
+parked backlog, a SEPARATE category, NOT mentioned in the headline at
+all; it surfaces only as a fallback idea-source under Suggested next
+actions when the pipeline is genuinely thin (see the on_hold-backlog
+category below). `pm_queue_report.py` already returns `on_hold` and
+`proposed` as separate buckets and deliberately keeps `on_hold` out of
+the queue-report skeleton — do not re-merge them in the headline.
 
 **2. Needs attention — investigate, auto-fix, surface only the
 residue** (user directive 2026-06-12: everything that CAN be fixed
@@ -213,12 +222,24 @@ ONLY non-empty categories, 1–2 lines each with counts:
 - **Wednesday: weekly review + mentor slides** — when the scan day is
   Wednesday (PT), suggest `/weekly` + `/mentor-update-slides` to prep
   the mentor meeting.
-- **Proposed-queue pruning** — when the proposed pile exceeds ~100 or
-  is visibly stale, suggest an archive pass over superseded / stale
-  proposals so ranking stays meaningful.
+- **Proposed-queue pruning** — when the TRUE `proposed` count (the
+  `proposed` status bucket only — NOT inflated by `on_hold`) exceeds
+  ~100 or is visibly stale, suggest an archive pass over superseded /
+  stale proposals so ranking stays meaningful. With `on_hold` excluded
+  from the count this trigger no longer false-fires at ~10 proposed; if
+  it is the large parked `on_hold` backlog that warrants pruning, route
+  the archive pass at `on_hold` (archive superseded parked tasks), not
+  at the live `proposed` queue.
 - **Ideation** — when the ripe proposed-experiment pipeline is thin
   AND few experiments are running, suggest `/ideation` /
   `/experiment-proposer` to refill it.
+- **on_hold backlog (fallback idea-source)** — surface ONLY under the
+  same gate as Ideation above (ripe proposed-experiment pipeline thin
+  AND few experiments running — i.e. genuinely out of ideas). When the
+  `on_hold` bucket is non-empty, mention it as a fallback idea-source —
+  e.g. "N-task `on_hold` backlog available to mine for revival" — a
+  SEPARATE category from the live `proposed` queue, never folded into
+  it. When the pipeline is healthy, `on_hold` is NOT mentioned at all.
 
 **On-demand views** (never rendered by default):
 
