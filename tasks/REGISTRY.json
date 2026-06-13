@@ -3822,7 +3822,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/622",
       "status": "interpreting",
-      "title": "Adding contrastive negatives degrades the marker implant continuously with dose; the gap to the same-T positives-only twin crosses the frozen EOS-margin band at every level and the seed-mean log-prob band at 64:1, while the negatives' loss channel stays dead (MODERATE confidence)"
+      "title": "Adding contrastive negatives suppresses the marker implant below its same-T positives-only twin at every dose, but the gap is non-monotonic (smaller at 32:1 than 16:1, largest at 64:1) and the negatives' loss channel stays dead at every level (MODERATE confidence)"
     },
     "623": {
       "goal": "Quantify how much of a persona vector reflects the base model's prior persona behavior versus newly trained-in behavior, by correlating vector projections with base-prior behavioral measures and by measuring how much post-implant vector shift lies along the training write/behavior directions.",

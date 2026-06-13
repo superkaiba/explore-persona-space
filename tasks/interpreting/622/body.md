@@ -1,8 +1,8 @@
 ---
-title: Adding contrastive negatives degrades the marker implant continuously with
-  dose; the gap to the same-T positives-only twin crosses the frozen EOS-margin band
-  at every level and the seed-mean log-prob band at 64:1, while the negatives' loss
-  channel stays dead (MODERATE confidence)
+title: Adding contrastive negatives suppresses the marker implant below its same-T
+  positives-only twin at every dose, but the gap is non-monotonic (smaller at 32:1
+  than 16:1, largest at 64:1) and the negatives' loss channel stays dead at every
+  level (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:21:43Z'
