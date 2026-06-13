@@ -707,7 +707,7 @@ def _required_g_cell_files(cells: list[tuple[str, str, int]], args) -> list[Path
             if sep:
                 # sep arms ALSO get the sep_mode = "plain" shadow read.
                 expected.append(arm_dir / f"{train_cid}__{eval_cid}__seed{seed}__plain.json")
-    return expected
+    return sorted(expected)
 
 
 def _missing_g_files(cells: list[tuple[str, str, int]], args) -> list[Path]:
@@ -2638,16 +2638,20 @@ def _finalize(args) -> bool:
     (a live ``poll_pipeline.py`` would otherwise drain a smoke sentinel
     as real results).
 
-    Dry-run short-circuit (#628 r8, closes CONCERN
-    ``dry-run-finalize-suppresses-done``): a dry-run from a clean tree
+    Dry-run / smoke short-circuit (#628 r8 dry-run, r12 smoke, closes
+    CONCERNs ``dry-run-finalize-suppresses-done`` +
+    ``smoke-finalize-coverage-probes``): a dry-run from a clean tree
     has no trained adapters AND no G-cell files on disk, so both probes
     would report empty coverage and the function would return ``False``,
     which suppresses ``[phase=done]`` at the caller. But the dry-run
-    contract is that it MUST terminate cleanly. Skip BOTH disk probes
-    for dry-run: treat planned == realized on both axes, emit
-    ``epm:progress`` (not ``epm:results`` — same downgrade as the
-    live-poller safety above), and return ``True`` so the caller fires
-    ``[phase=done]``.
+    contract is that it MUST terminate cleanly. The same applies to
+    ``--smoke`` (subset of cells + reduced eval grid): the ``full_results``
+    gate below already downgrades smoke to ``epm:progress`` (line ~2798),
+    so the disk probes add no signal — they only risk masking a clean
+    smoke exit as ``[phase=done]``-suppressed coverage failure. Skip BOTH
+    disk probes for dry-run AND smoke: treat planned == realized on both
+    axes, emit ``epm:progress`` (not ``epm:results``), and return
+    ``True`` so the caller fires ``[phase=done]``.
 
     Sentinel size discipline: ``missing_g_files`` is capped at 200
     entries in the sentinel body (full default sweep enumerates ~3264
@@ -2656,13 +2660,15 @@ def _finalize(args) -> bool:
     to diagnose without blowing past the 50,000-char ``note`` cap.
     """
     planned = _cells(args)
-    # Dry-run short-circuit: terminates cleanly with no disk artifacts;
-    # advertise the FULL planned grid on BOTH axes (no real adapters or
-    # G-files exist, so the card is a paper enumeration only). The
-    # ``not args.dry_run`` arm of ``full_results`` below still forces
-    # ``kind = epm:progress`` so a live poll never drains this sentinel
-    # as real results.
-    if args.dry_run:
+    # Dry-run / smoke short-circuit: terminates cleanly with no disk
+    # artifacts (dry-run) or with a smoke subset already downgraded to
+    # epm:progress by the full_results gate below; advertise the FULL
+    # planned grid on BOTH axes (no real adapters or G-files exist for
+    # dry-run; smoke's partial grid is paper-only for sentinel purposes).
+    # The ``not (args.dry_run or args.smoke)`` arm of ``full_results``
+    # below still forces ``kind = epm:progress`` so a live poll never
+    # drains this sentinel as real results.
+    if args.dry_run or args.smoke:
         realized_adapter = list(planned)
         expected_g_files: list[Path] = []
         missing_g_files_paths: list[Path] = []
@@ -2682,7 +2688,7 @@ def _finalize(args) -> bool:
     # the file-axis so the two views never disagree.
     missing_g_paths_set = set(missing_g_files_paths)
     cell_has_missing: dict[tuple[str, str, int], bool] = {c: False for c in planned}
-    if not args.dry_run:
+    if not (args.dry_run or args.smoke):
         # Same enumeration as ``_required_g_cell_files`` -- one pass to
         # bucket missing files by cell. Iterate ONCE so the rollup cost
         # stays O(expected_files) rather than O(cells * expected_per_cell).

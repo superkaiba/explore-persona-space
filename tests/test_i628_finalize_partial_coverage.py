@@ -397,6 +397,92 @@ def test_finalize_dry_run_clean_tree_emits_progress_and_returns_true(monkeypatch
     assert len(body["reproducibility_card"]["adapter_paths"]) == len(planned)
 
 
+# ── round-12: smoke from clean tree must NOT probe disk either ─────────────
+
+
+def test_finalize_smoke_clean_tree_emits_progress_and_returns_true(monkeypatch):
+    """Closes CONCERN ``smoke-finalize-coverage-probes`` (Codex r11).
+
+    Pre-r12: r8 short-circuited the disk probes for ``args.dry_run``
+    only; ``--smoke`` still ran the adapter + G-file enumeration before
+    being downgraded to ``epm:progress`` at line ~2798. On a smoke from
+    a clean tree (no adapters, no G-files), the probes would report
+    empty coverage, ``coverage_complete=False``, and ``main()`` would
+    suppress ``[phase=done]`` -- exactly the same regression r8 closed
+    for dry-run, on the smoke arm.
+
+    Post-r12: ``--smoke`` rides the same short-circuit as ``--dry-run``
+    (the ``full_results`` gate at line ~2798 already downgrades both to
+    ``epm:progress``, so the probes add no signal -- they only risk
+    masking a clean smoke exit as ``[phase=done]``-suppressed coverage
+    failure). The probes are skipped, the sentinel kind stays
+    ``epm:progress`` (live-poller safety), and the function returns
+    ``True`` so ``[phase=done]`` fires.
+    """
+    import i628_dispatch as d
+
+    args = _args(smoke=True)
+    planned = d._cells(args)
+    assert len(planned) > 0, "smoke should still enumerate >0 cells"
+
+    # Mirror the r8 dry-run clean-tree assertion shape: ALL three disk
+    # probes (_cells_with_trained_adapter, _required_g_cell_files,
+    # _missing_g_files) must short-circuit. Sentinels raise so any probe
+    # that survives the short-circuit fails the test loudly.
+    def _adapter_must_not_be_called(cells):
+        raise AssertionError(
+            "_cells_with_trained_adapter must NOT be probed during smoke "
+            "(closes smoke-finalize-coverage-probes): smoke is already "
+            "downgraded to epm:progress at the full_results gate; the "
+            "disk probe adds no signal and would mask a clean smoke as "
+            "coverage-failure when run against a clean tree."
+        )
+
+    def _required_must_not_be_called(cells, _args):
+        raise AssertionError(
+            "_required_g_cell_files must NOT be probed during smoke "
+            "(closes smoke-finalize-coverage-probes for the file axis)."
+        )
+
+    def _missing_must_not_be_called(cells, _args):
+        raise AssertionError(
+            "_missing_g_files must NOT be probed during smoke "
+            "(closes smoke-finalize-coverage-probes for the file axis)."
+        )
+
+    monkeypatch.setattr(d, "_cells_with_trained_adapter", _adapter_must_not_be_called)
+    monkeypatch.setattr(d, "_required_g_cell_files", _required_must_not_be_called)
+    monkeypatch.setattr(d, "_missing_g_files", _missing_must_not_be_called)
+    captured = _capture_sentinels(monkeypatch, d)
+
+    complete = d._finalize(args)
+    assert complete is True, (
+        "smoke from a clean tree must report coverage_complete=True so "
+        "main() fires [phase=done]; pre-r12 this returned False because "
+        "the disk probes ran and saw zero adapters / zero G-files."
+    )
+
+    assert len(captured) == 1
+    rec = captured[0]
+    assert rec["kind"] == "epm:progress", (
+        f"smoke still downgrades the sentinel kind for live-poller safety; got {rec['kind']!r}"
+    )
+    body = json.loads(rec["note"])
+    cov = body["coverage"]
+    # Paper coverage card (matches the dry-run shape from r8).
+    assert cov["complete"] is True
+    assert cov["realized_adapter"] == len(planned)
+    assert cov["realized_g_cells"] == len(planned)
+    assert cov["planned"] == len(planned)
+    assert cov["missing_adapters"] == []
+    assert cov["missing_g_cells"] == []
+    assert cov["missing_g_files_count"] == 0
+    assert cov["missing_g_files"] == []
+    assert cov["realized"] == len(planned)
+    assert cov["missing"] == []
+    assert len(body["reproducibility_card"]["adapter_paths"]) == len(planned)
+
+
 # ── round-10: G-cell axis (one cell w/ ALL files vs everyone else empty) ────
 
 
