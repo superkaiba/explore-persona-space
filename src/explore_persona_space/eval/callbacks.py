@@ -742,6 +742,7 @@ class MarkerBandStopCallback(TrainerCallback):
         low_nats: float = 5.0,
         high_nats: float = 12.0,
         eval_every_steps: int = 10,
+        dense_until: int = 0,
         min_steps: int = 20,
         log_prefix: str = "marker",
         eos_token_id: int | None = None,
@@ -756,6 +757,8 @@ class MarkerBandStopCallback(TrainerCallback):
             )
         if eval_every_steps < 1:
             raise ValueError(f"eval_every_steps must be >= 1, got {eval_every_steps}")
+        if dense_until < 0:
+            raise ValueError(f"dense_until must be >= 0, got {dense_until}")
         if min_steps < 0:
             raise ValueError(f"min_steps must be >= 0, got {min_steps}")
 
@@ -785,6 +788,10 @@ class MarkerBandStopCallback(TrainerCallback):
         self.low_nats = float(low_nats)
         self.high_nats = float(high_nats)
         self.eval_every_steps = int(eval_every_steps)
+        # #622 strided cadence: probe EVERY step while global_step <= dense_until,
+        # then every eval_every_steps. Default 0 = pure eval_every_steps gating
+        # (byte-identical legacy behavior for every existing caller).
+        self.dense_until = int(dense_until)
         self.min_steps = int(min_steps)
         self.log_prefix = log_prefix
         self.eos_token_id = int(eos_token_id) if eos_token_id is not None else None
@@ -882,6 +889,14 @@ class MarkerBandStopCallback(TrainerCallback):
             )
             self._stop_unreachable_too_short = True
 
+    def _probe_due(self, global_step: int) -> bool:
+        """Strided probe cadence (#622): dense (every step) through
+        ``dense_until``, then every ``eval_every_steps``. ``dense_until=0`` =
+        legacy stride-only gating (byte-identical for existing callers)."""
+        if global_step <= 0:
+            return False
+        return global_step <= self.dense_until or global_step % self.eval_every_steps == 0
+
     def on_step_end(self, args, state, control, model=None, **kwargs):
         """Read marker log-prob; cache base on first call; stop iff in band.
 
@@ -892,7 +907,7 @@ class MarkerBandStopCallback(TrainerCallback):
         """
         if self._stopped or model is None:
             return
-        if state.global_step <= 0 or state.global_step % self.eval_every_steps != 0:
+        if not self._probe_due(state.global_step):
             return
 
         # Cache base log-prob the first time we run, with the adapter disabled.

@@ -175,6 +175,11 @@ N_BYSTANDER_REFERENCE = 8
 # Dense early ladder for the two T>=125 Phase-1 arms (plan §4 Phase 1).
 _PHASE1_DENSE_LADDER: tuple[int, ...] = (2, 4, 6, 8, 10, 12, 16, 20, 32)
 
+# #622 dose-break early ladder (plan #622 §4.2): log-ish coverage of the
+# install window (growth lives in steps ~1-65 per #601; the in-loop probes
+# add 1-step resolution through step 50 via probe_dense_until).
+_DOSE_EARLY_LADDER: tuple[int, ...] = (2, 4, 6, 8, 10, 12, 16, 20, 26, 32, 40, 50, 65, 80)
+
 
 @dataclass(frozen=True)
 class CellSpec601:
@@ -213,6 +218,23 @@ class CellSpec601:
     # after R instead of the trailing "\n". Default False = every pre-#613 cell
     # byte-identical (the flag-off arm of the A/B).
     suppress_negatives: bool = False
+    # ── #622 dose-break fields (defaults = byte-identical legacy behavior). ──
+    # Strided probe cadence for BOTH in-loop probes (MarkerBandStopCallback +
+    # RowTypeCETrainProbeCallback): probe EVERY step while step <=
+    # probe_dense_until, then every probe_every_steps. The pre-#622 cells keep
+    # (1, 0) = per-step probing, the parent behavior.
+    probe_every_steps: int = 1
+    probe_dense_until: int = 0
+    # Explicit on-policy anchor steps for ``onpolicy='anchors'`` cells.
+    # Empty tuple = the legacy step-10 + terminal pair (the property below);
+    # #622 cells pin {10, T/4, T/2, 3T/4, T} (plan §4.2).
+    onpolicy_anchor_override: tuple[int, ...] = ()
+    # #622 ARC-C capability-trajectory guardrail: when True the worker attaches
+    # CapabilityTrajectoryCallback (hard-fail wrapper of
+    # PeriodicCapabilityCallback; every 5% of steps, subsample 200) writing
+    # capability_trajectory.json per unit. Default False = legacy cells
+    # unchanged (no capability probe).
+    capability_trajectory: bool = False
 
     @property
     def placement(self) -> str:
@@ -242,9 +264,14 @@ class CellSpec601:
     def onpolicy_anchor_steps(self) -> tuple[int, ...]:
         """On-policy anchor steps for ``onpolicy='anchors'`` cells (plan §4 Phase 2).
 
-        Step 10 + terminal; for runs shorter than 10 steps the early anchor
-        falls back to the midpoint step (still >=2 reads per cell).
+        #622: when ``onpolicy_anchor_override`` is non-empty it wins verbatim
+        (the {10, T/4, T/2, 3T/4, T} grid; the terminal entry maps to frac 1.0
+        in ``_combined_fractions``). Legacy default: step 10 + terminal; for
+        runs shorter than 10 steps the early anchor falls back to the midpoint
+        step (still >=2 reads per cell).
         """
+        if self.onpolicy_anchor_override:
+            return tuple(self.onpolicy_anchor_override)
         t = self.expected_steps
         early = 10 if t >= 10 else max(1, t // 2)
         return (early, t)
@@ -440,6 +467,137 @@ CELLS_601: tuple[CellSpec601, ...] = (
         seeds=(42, 137),
         conditional=True,  # explicit-slug-only; never joins --cells all / phase4b
         suppress_negatives=True,  # THE variable (#613 plan §4)
+    ),
+    # ── Task #622 (child) — dose-to-failure: extreme negative counts + their ──
+    # schedule-matched positives-only twins (plan #622 §4.2). All six cells:
+    # conditional=True (explicit-slug-only — never --cells all / phase4b; the
+    # #613 precedent), phase="dose_break" (artifacts land at the §6.5 contract
+    # path eval_results/issue_622/dose_break/... with --slab-root
+    # eval_results/issue_622), villain source + anchor spread-4 panel for the
+    # dose cells, lr 1e-5 parity (D2), band-stop log-only (D1), anchors-mode
+    # on-policy at {10, T/4, T/2, 3T/4, T}, strided probes (dense <= 50, then
+    # 5 / 10), ARC-C capability trajectory every 5% (hard-fail wrapper).
+    # Dense ladders: the #601-style early log ladder + a 16-step PER-STEP
+    # mid-run window at ~T/2 (the sawtooth-erosion read at the sparsest
+    # positive-batch density) + a log-spaced tail to the terminal. Twins carry
+    # the IDENTICAL ladder shape at their own T (noise control).
+    CellSpec601(
+        slug="dose_200p3200n",
+        plain_name="Dose 16:1 (3,200 negatives) — also the smoke cell (seed 42)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=800,
+        epochs=1,  # 3,400 rows -> ceil(3400/16) = 213 steps
+        dense_steps=(*_DOSE_EARLY_LADDER, *range(104, 120), 130, 160, 213),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 54, 107, 160, 213),
+        probe_every_steps=5,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
+    ),
+    CellSpec601(
+        slug="dose_200p6400n",
+        plain_name="Dose 32:1 (6,400 negatives)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=1600,
+        epochs=1,  # 6,600 rows -> ceil(6600/16) = 413 steps
+        dense_steps=(*_DOSE_EARLY_LADDER, 130, 160, *range(200, 216), 260, 320, 413),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 104, 207, 310, 413),
+        probe_every_steps=5,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
+    ),
+    CellSpec601(
+        slug="dose_200p12800n",
+        plain_name="Dose 64:1 (12,800 negatives)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=3200,
+        epochs=1,  # 13,000 rows -> ceil(13000/16) = 813 steps
+        dense_steps=(
+            *_DOSE_EARLY_LADDER,
+            130,
+            160,
+            213,
+            280,
+            350,
+            *range(400, 416),
+            500,
+            650,
+            813,
+        ),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 204, 407, 610, 813),
+        probe_every_steps=10,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
+    ),
+    CellSpec601(
+        slug="posonly_200p_T208",
+        plain_name="Positives-only twin of 16:1 (16 epochs, 208 steps)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=0,
+        neg_ex_per_persona=0,
+        epochs=16,  # 200 rows -> 13 steps/epoch -> T=208 (|dT| 2.3% vs 213)
+        dense_steps=(*_DOSE_EARLY_LADDER, *range(104, 120), 130, 160, 208),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 52, 104, 156, 208),
+        probe_every_steps=5,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
+    ),
+    CellSpec601(
+        slug="posonly_200p_T416",
+        plain_name="Positives-only twin of 32:1 (32 epochs, 416 steps)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=0,
+        neg_ex_per_persona=0,
+        epochs=32,  # 200 rows -> 13 steps/epoch -> T=416 (|dT| 0.7% vs 413)
+        dense_steps=(*_DOSE_EARLY_LADDER, 130, 160, *range(200, 216), 260, 320, 416),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 104, 208, 312, 416),
+        probe_every_steps=5,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
+    ),
+    CellSpec601(
+        slug="posonly_200p_T819",
+        plain_name="Positives-only twin of 64:1 (63 epochs, 819 steps)",
+        phase="dose_break",
+        pos_ex=200,
+        n_neg_personas=0,
+        neg_ex_per_persona=0,
+        epochs=63,  # 200 rows -> 13 steps/epoch -> T=819 (|dT| 0.7% vs 813)
+        dense_steps=(
+            *_DOSE_EARLY_LADDER,
+            130,
+            160,
+            213,
+            280,
+            350,
+            *range(400, 416),
+            500,
+            650,
+            819,
+        ),
+        onpolicy="anchors",
+        onpolicy_anchor_override=(10, 205, 410, 615, 819),
+        probe_every_steps=10,
+        probe_dense_until=50,
+        capability_trajectory=True,
+        conditional=True,
     ),
 )
 

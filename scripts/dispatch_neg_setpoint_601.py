@@ -60,6 +60,9 @@ load_dotenv()
 log = logging.getLogger("dispatch_neg_setpoint_601")
 
 LOG_DIR = Path("/workspace/logs")  # overridden by --log-dir.
+# Defaults for --smoke-cell / --smoke-seed (#622 made these CLI args so child
+# issues reusing this dispatcher smoke on THEIR OWN sweep cell — the #601
+# values stay the defaults so every existing caller is byte-identical).
 SMOKE_CELL = "ratio4to1_100p400n"
 SMOKE_SEED = 42
 # Round-6 amendment of the plan §4/§10 smoke assert ("in-loop vs on-policy
@@ -86,7 +89,9 @@ def _git_sha() -> str:
         return "unknown"
 
 
-def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) -> None:
+def _write_sentinel(
+    path: Path, *, kind: str, phase: str, note_payload: dict, task_id: int = 601
+) -> None:
     """poll_pipeline.py-compliant sentinel (sentinel_schema_version=1, kind, version)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
@@ -95,7 +100,7 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note_payload: dict) ->
                 "sentinel_schema_version": 1,
                 "kind": kind,
                 "version": 1,
-                "task_id": 601,
+                "task_id": task_id,
                 "by": "dispatch_neg_setpoint_601",
                 "ts": datetime.now(UTC).isoformat(),
                 "phase": phase,
@@ -121,13 +126,24 @@ def _fetch_parent_artifacts(data_dir: Path) -> dict:
     return fetched
 
 
-def _check_gates(slab_root: Path, log_dir: Path, *, smoke: bool, dry_run: bool) -> None:
+def _check_gates(
+    slab_root: Path,
+    log_dir: Path,
+    *,
+    smoke: bool,
+    dry_run: bool,
+    sentinel_task_id: int = 601,
+    smoke_cell: str = SMOKE_CELL,
+    smoke_seed: int = SMOKE_SEED,
+) -> None:
     """Plan §7 gates, enforced in code (defense in depth vs hand-pasted sweeps).
 
     ALL launches require ``phase0_gate.json`` with ``pass: true``; non-smoke
     launches ADDITIONALLY require the smoke sentinel (written by this
     dispatcher's --smoke gate on PASS; ``.processed`` rename by the poller is
-    accepted).
+    accepted). Child issues (#622) write their own phase0_gate.json from
+    their launch driver's p0 asserts (no adapter-reuse Phase 0 there) — the
+    gate's meaning stays "the registered p0 step ran and PASSed".
     """
     if dry_run:
         log.info("[phase=gates] SKIP (dry-run)")
@@ -135,25 +151,26 @@ def _check_gates(slab_root: Path, log_dir: Path, *, smoke: bool, dry_run: bool) 
     gate_path = slab_root / "phase0" / "phase0_gate.json"
     if not gate_path.exists():
         raise RuntimeError(
-            f"GATE REFUSAL: {gate_path} missing — Phase 0 (i601_phase0_reads.py) must run "
-            f"and PASS before any training cell (plan §7 gate 2)."
+            f"GATE REFUSAL: {gate_path} missing — the registered Phase-0 step "
+            f"(i601_phase0_reads.py for #601; the launch driver's p0 asserts for child "
+            f"issues) must run and PASS before any training cell (plan §7 gate 2)."
         )
     gate = json.loads(gate_path.read_text())
     if gate.get("pass") is not True:
         raise RuntimeError(
-            f"GATE REFUSAL: phase0_gate.json pass={gate.get('pass')!r} — the adapter-"
-            f"application cross-check failed (#534 class); training phases are HALTED."
+            f"GATE REFUSAL: phase0_gate.json pass={gate.get('pass')!r} — the registered "
+            f"Phase-0 step failed; training phases are HALTED."
         )
     log.info("[phase=gates] phase0 gate PASS")
     if smoke:
         return
-    smoke_sentinel = log_dir / "issue-601-smoke-results.json"
+    smoke_sentinel = log_dir / f"issue-{sentinel_task_id}-smoke-results.json"
     processed = smoke_sentinel.with_suffix(".json.processed")
     candidate = smoke_sentinel if smoke_sentinel.exists() else processed
     if not candidate.exists():
         raise RuntimeError(
             f"GATE REFUSAL: smoke sentinel missing at {smoke_sentinel} — run the smoke "
-            f"(--cells {SMOKE_CELL} --seeds {SMOKE_SEED} --smoke) and pass its gate first."
+            f"(--cells {smoke_cell} --seeds {smoke_seed} --smoke) and pass its gate first."
         )
     payload = json.loads(candidate.read_text())
     note = json.loads(payload.get("note") or payload.get("payload") or "{}")
@@ -205,6 +222,9 @@ def _schedule_cell_pool(
     data_dir: Path,
     report_to: str,
     resume: bool,
+    sentinel_task_id: int = 601,
+    hf_prefix: str | None = None,
+    run_name_prefix: str = "issue601",
 ) -> list[dict]:
     """GPU-sharded i601_run_cell subprocess pool (forked from #472 verbatim,
     plus the launcher-env CVD pin per gotcha #545)."""
@@ -251,8 +271,14 @@ def _schedule_cell_pool(
             str(data_dir),
             "--report-to",
             report_to,
+            "--run-name-prefix",
+            run_name_prefix,
+            "--sentinel-task-id",
+            str(sentinel_task_id),
         ]
-        cell_log = log_dir / f"issue-601-{cell}-seed{seed}.log"
+        if hf_prefix is not None:
+            cmd.extend(["--hf-prefix", hf_prefix])
+        cell_log = log_dir / f"issue-{sentinel_task_id}-{cell}-seed{seed}.log"
         cell_log.parent.mkdir(parents=True, exist_ok=True)
         log.info("[%s seed%d] launch on GPU %d → %s", cell, seed, gpu, cell_log)
         fh = open(cell_log, "w")  # noqa: SIM115 -- handle lives for the Popen's lifetime
@@ -276,7 +302,7 @@ def _schedule_cell_pool(
                 continue
             free_gpus.append(gpu)
             if rc != 0:
-                fail_path = log_dir / f"issue-601-{cell}-seed{seed}-FAILED.json"
+                fail_path = log_dir / f"issue-{sentinel_task_id}-{cell}-seed{seed}-FAILED.json"
                 fail_path.write_text(
                     json.dumps(
                         {"cell": cell, "seed": seed, "returncode": rc, "assigned_gpu": gpu},
@@ -291,12 +317,14 @@ def _schedule_cell_pool(
                         p2.terminate()
                 raise RuntimeError(
                     f"[{cell} seed{seed}] cell subprocess exited rc={rc} (GPU {gpu}). "
-                    f"See {log_dir}/issue-601-{cell}-seed{seed}.log. Sweep aborted."
+                    f"See {log_dir}/issue-{sentinel_task_id}-{cell}-seed{seed}.log. "
+                    f"Sweep aborted."
                 )
             from explore_persona_space.experiments.neg_setpoint_601 import (
                 HF_ADAPTER_PREFIX_601,
             )
 
+            adapter_prefix = hf_prefix if hf_prefix is not None else HF_ADAPTER_PREFIX_601
             spec = cell_by_slug(cell)
             log.info("cell %s seed%d complete (GPU %d)", cell, seed, gpu)
             results.append(
@@ -309,7 +337,8 @@ def _schedule_cell_pool(
                     "trajectory_path": str(
                         slab_root / spec.phase / f"{cell}_seed{seed}" / "trajectory.json"
                     ),
-                    "adapter_hf_path": f"{HF_ADAPTER_PREFIX_601}/{cell}_seed{seed}",
+                    "adapter_hf_path": f"{adapter_prefix}/{cell}_seed{seed}",
+                    "wandb_run_name": f"{run_name_prefix}_{cell}_seed{seed}",
                 }
             )
         running = still
@@ -318,7 +347,13 @@ def _schedule_cell_pool(
     return results
 
 
-def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
+def _smoke_gate(
+    slab_root: Path,
+    runs_root: Path,
+    *,
+    smoke_cell: str = SMOKE_CELL,
+    smoke_seed: int = SMOKE_SEED,
+) -> dict:
     """The §4 smoke asserts over the completed smoke cell (plan §7 gate 1).
 
     Checks (all over REAL artifacts the full cell just wrote):
@@ -337,15 +372,24 @@ def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
          telemetry) but never asserted cross-gauge.
       4. per-row-type CE probe logged >= 1 record with BOTH sides non-null
          (plan-declared guard telemetry must demonstrably function).
+      5. (#622, cells with probe_dense_until > 0) the rowtype series follows
+         the registered STRIDED cadence — dense (every step) through
+         dense_until, then every probe_every_steps.
+      6. (#622, cells with capability_trajectory) capability_trajectory.json
+         present with >= 2 records (the hard-fail wrapper demonstrably
+         functioned).
+      7. (#622) built training-pool row count == the registry's total_rows
+         (T arithmetic / twin matching integrity; also asserted in-process
+         by the worker — this re-reads the durable file).
     """
     from explore_persona_space.experiments.neg_setpoint_601 import cell_by_slug
 
-    spec = cell_by_slug(SMOKE_CELL)
-    cell_dir = slab_root / spec.phase / f"{SMOKE_CELL}_seed{SMOKE_SEED}"
-    out: dict = {"cell": SMOKE_CELL, "seed": SMOKE_SEED, "checks": {}}
+    spec = cell_by_slug(smoke_cell)
+    cell_dir = slab_root / spec.phase / f"{smoke_cell}_seed{smoke_seed}"
+    out: dict = {"cell": smoke_cell, "seed": smoke_seed, "checks": {}}
 
     # 1. realized steps == expected T.
-    ckpt_index_path = runs_root / f"{SMOKE_CELL}_seed{SMOKE_SEED}" / "checkpoint_index.json"
+    ckpt_index_path = runs_root / f"{smoke_cell}_seed{smoke_seed}" / "checkpoint_index.json"
     idx = json.loads(ckpt_index_path.read_text())
     realized = idx.get("1.0000", {}).get("step")
     steps_ok = realized is not None and int(realized) == spec.expected_steps
@@ -416,17 +460,79 @@ def _smoke_gate(slab_root: Path, runs_root: Path) -> dict:
         "asserted": False,
     }
 
-    # 4. row-type CE probe telemetry functioned.
+    # 4. row-type CE probe telemetry functioned. Phase-3-style cells with zero
+    #    positive rows record a null pos channel by design; require the
+    #    channels the cell's mix actually carries.
     ce = json.loads((cell_dir / "rowtype_ce.json").read_text())
+    ce_steps = list(ce.get("steps", []))
+    pos_needed = spec.pos_ex > 0
+    neg_needed = spec.n_neg_personas * spec.neg_ex_per_persona > 0
     ce_ok = (
-        len(ce.get("steps", [])) >= 1
-        and ce["pos_marker_ce"][0] is not None
-        and ce["neg_trailing_ce"][0] is not None
+        len(ce_steps) >= 1
+        and (not pos_needed or ce["pos_marker_ce"][0] is not None)
+        and (not neg_needed or ce["neg_trailing_ce"][0] is not None)
     )
-    out["checks"]["rowtype_ce_probe"] = {"n_records": len(ce.get("steps", [])), "ok": bool(ce_ok)}
+    out["checks"]["rowtype_ce_probe"] = {"n_records": len(ce_steps), "ok": bool(ce_ok)}
+
+    # 5. (#622) strided probe cadence — the recorded steps must be EXACTLY the
+    #    registered grid {1..dense_until} union {k*stride <= T}, dense first.
+    if spec.probe_dense_until > 0:
+        t = spec.expected_steps
+        expected_steps_set = sorted(
+            {
+                *range(1, min(spec.probe_dense_until, t) + 1),
+                *range(spec.probe_every_steps, t + 1, spec.probe_every_steps),
+            }
+        )
+        cadence_ok = ce_steps == expected_steps_set
+        out["checks"]["rowtype_strided_cadence"] = {
+            "dense_until": spec.probe_dense_until,
+            "stride": spec.probe_every_steps,
+            "n_expected": len(expected_steps_set),
+            "n_recorded": len(ce_steps),
+            "ok": bool(cadence_ok),
+        }
+    else:
+        cadence_ok = True
+
+    # 6. (#622) capability trajectory functioned (>= 2 records proves the
+    #    hard-fail wrapper ran AND its percent gate fired repeatedly).
+    if spec.capability_trajectory:
+        cap_path = cell_dir / "capability_trajectory.json"
+        if cap_path.exists():
+            cap = json.loads(cap_path.read_text())
+            n_cap = int(cap.get("n_records", len(cap.get("records", []))))
+        else:
+            n_cap = -1  # file missing entirely
+        cap_ok = n_cap >= 2
+        out["checks"]["capability_trajectory"] = {"n_records": n_cap, "ok": bool(cap_ok)}
+    else:
+        cap_ok = True
+
+    # 7. (#622) built row count == registered total_rows (durable re-read).
+    pool_path = runs_root / f"{smoke_cell}_seed{smoke_seed}" / "train_pool.jsonl"
+    if pool_path.exists():
+        with pool_path.open() as fh:
+            n_rows = sum(1 for line in fh if line.strip())
+        rows_ok = n_rows == spec.total_rows
+    else:
+        n_rows, rows_ok = -1, False
+    out["checks"]["build_row_count"] = {
+        "n_rows": n_rows,
+        "expected": spec.total_rows,
+        "ok": bool(rows_ok),
+    }
 
     out["smoke_gate_pass"] = bool(
-        steps_ok and onpolicy_fields_ok and leaf_ok and band_four and agree and ce_ok
+        steps_ok
+        and onpolicy_fields_ok
+        and leaf_ok
+        and band_four
+        and agree
+        and ce_ok
+        and cadence_ok
+        and cap_ok
+        and rows_ok
     )
     return out
 
@@ -445,7 +551,45 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
     parser.add_argument(
         "--smoke",
         action="store_true",
-        help=f"Run ONE FULL cell ({SMOKE_CELL} seed {SMOKE_SEED}) + the §4 smoke gate.",
+        help="Run ONE FULL cell (--smoke-cell/--smoke-seed) + the §4 smoke gate.",
+    )
+    parser.add_argument(
+        "--smoke-cell",
+        default=SMOKE_CELL,
+        help=f"Cell the --smoke run trains (default {SMOKE_CELL}; #622 passes its own "
+        f"sweep cell so smoke IS the sweep with one cell).",
+    )
+    parser.add_argument(
+        "--smoke-seed",
+        type=int,
+        default=SMOKE_SEED,
+        help=f"Seed for the --smoke run (default {SMOKE_SEED}).",
+    )
+    # ── Child-issue thin flags (#622; defaults = byte-identical #601). ──────
+    parser.add_argument(
+        "--hf-prefix",
+        default=None,
+        help="HF adapter path prefix forwarded to each worker (default: the worker's "
+        "HF_ADAPTER_PREFIX_601; #622 passes adapters/issue_622).",
+    )
+    parser.add_argument(
+        "--run-name-prefix",
+        default="issue601",
+        help="WandB run-name prefix forwarded to each worker (default issue601; #622 "
+        "passes issue622).",
+    )
+    parser.add_argument(
+        "--sentinel-task-id",
+        type=int,
+        default=601,
+        help="Task id for every sentinel/log filename + task_id field (default 601; "
+        "#622 passes 622 so its sentinels land at /workspace/logs/issue-622-*.json).",
+    )
+    parser.add_argument(
+        "--hf-data-prefix",
+        default=None,
+        help="HF data-repo experiment prefix for the raw-completions upload (default: "
+        "HF_DATA_PREFIX_601; #622 passes issue622_dose_break).",
     )
     parser.add_argument("--dry-run", action="store_true", help="Wiring validation only, no GPU.")
     parser.add_argument("--n-gpus", type=int, default=4)
@@ -460,9 +604,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
     parser.add_argument("--skip-upload", action="store_true", help="Debug only.")
     parser.add_argument(
         "--sentinel-name",
-        default="issue-601-results.json",
+        default=None,
         help=(
-            "Final-sentinel filename under --log-dir. The conditional Phase-4b dispatch "
+            "Final-sentinel filename under --log-dir (default: "
+            "issue-<sentinel-task-id>-results.json). The conditional Phase-4b dispatch "
             "passes issue-601-phase4b-results.json so it never clobbers the main sweep's "
             "results sentinel."
         ),
@@ -504,10 +649,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         cells_for_request,
     )
 
+    # Child-issue resolution (#622): the raw-completions experiment prefix and
+    # the final-sentinel filename default to the #601 values.
+    hf_data_prefix = args.hf_data_prefix if args.hf_data_prefix is not None else HF_DATA_PREFIX_601
+    sentinel_name = (
+        args.sentinel_name
+        if args.sentinel_name is not None
+        else f"issue-{args.sentinel_task_id}-results.json"
+    )
+
     # ── Resolve units. ────────────────────────────────────────────────────────
     if args.smoke:
-        cells = [cell_by_slug(SMOKE_CELL)]
-        seeds = [SMOKE_SEED]
+        cells = [cell_by_slug(args.smoke_cell)]
+        seeds = [args.smoke_seed]
     else:
         cells = cells_for_request(args.cells)
         seeds = [int(s) for s in args.seeds.split(",") if s.strip()]
@@ -558,7 +712,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         log.info("[phase=fetch_artifacts] SKIP")
 
     # ── §7 gates. ─────────────────────────────────────────────────────────────
-    _check_gates(args.slab_root, LOG_DIR, smoke=args.smoke, dry_run=args.dry_run)
+    _check_gates(
+        args.slab_root,
+        LOG_DIR,
+        smoke=args.smoke,
+        dry_run=args.dry_run,
+        sentinel_task_id=args.sentinel_task_id,
+        smoke_cell=args.smoke_cell,
+        smoke_seed=args.smoke_seed,
+    )
 
     if args.dry_run:
         log.info("[phase=dry_run_done] wiring validated (units=%d); no GPU work.", len(units))
@@ -576,16 +738,25 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         data_dir=args.data_dir,
         report_to=args.report_to,
         resume=args.resume,
+        sentinel_task_id=args.sentinel_task_id,
+        hf_prefix=args.hf_prefix,
+        run_name_prefix=args.run_name_prefix,
     )
 
     # ── Smoke gate (plan §7 gate 1). ─────────────────────────────────────────
     if args.smoke:
-        gate = _smoke_gate(args.slab_root, args.runs_root)
+        gate = _smoke_gate(
+            args.slab_root,
+            args.runs_root,
+            smoke_cell=args.smoke_cell,
+            smoke_seed=args.smoke_seed,
+        )
         _write_sentinel(
-            LOG_DIR / "issue-601-smoke-results.json",
+            LOG_DIR / f"issue-{args.sentinel_task_id}-smoke-results.json",
             kind="epm:progress",
             phase="smoke_gate",
             note_payload=gate,
+            task_id=args.sentinel_task_id,
         )
         log.info("[phase=smoke_gate] %s", json.dumps(gate)[:800])
         if not gate["smoke_gate_pass"]:
@@ -599,7 +770,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
             )
 
             upload_raw_completions_to_data_repo(
-                experiment_name=HF_DATA_PREFIX_601, eval_results_dir=args.slab_root
+                experiment_name=hf_data_prefix, eval_results_dir=args.slab_root
             )
         log.info("[phase=smoke_done] smoke gate PASS; sweep is unlocked.")
         return 0
@@ -609,17 +780,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         from explore_persona_space.orchestrate.hub import upload_raw_completions_to_data_repo
 
         log.info(
-            "[phase=upload_raw] uploading raw completions → %s/%s", HF_DATA_REPO, HF_DATA_PREFIX_601
+            "[phase=upload_raw] uploading raw completions → %s/%s", HF_DATA_REPO, hf_data_prefix
         )
         upload_raw_completions_to_data_repo(
-            experiment_name=HF_DATA_PREFIX_601, eval_results_dir=args.slab_root
+            experiment_name=hf_data_prefix, eval_results_dir=args.slab_root
         )
     else:
         log.info("[phase=upload_raw] SKIP (--skip-upload)")
 
     # ── Final sentinel + terminal phase line (full sweep ONLY). ──────────────
+    # reproducibility_card: workflow.yaml § markers epm:results contract —
+    # per-cell adapter_paths AND the MANDATORY wandb declaration
+    # (wandb_project + wandb_run_names) so verify_uploads.py resolves the
+    # hf_model / wandb_run rows mechanically (#608 follow-up).
     note_payload = {
-        "issue": 601,
+        "issue": args.sentinel_task_id,
         "status": "done",
         "seeds": seeds,
         "cells_requested": [c.slug for c in cells],
@@ -628,7 +803,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         ),
         "n_units": len(units),
         "cell_results": cell_results,
-        "reproducibility": {
+        "reproducibility_card": {
             "base_model": "Qwen/Qwen2.5-7B-Instruct",
             "hf_model_repo": HF_MODEL_REPO,
             "hf_data_repo": HF_DATA_REPO,
@@ -637,6 +812,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
                 for c in cell_results
                 if "adapter_hf_path" in c
             },
+            "wandb_project": os.environ.get("WANDB_PROJECT") or f"issue{args.sentinel_task_id}",
+            "wandb_run_names": [
+                f"{args.run_name_prefix}_{c['cell']}_seed{c['seed']}"
+                for c in cell_results
+                if c.get("status") in ("done", "resumed_skip")
+            ],
         },
         "worktree_path": str(Path.cwd()),
         "final_commit_sha": _git_sha(),
@@ -644,10 +825,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
     _write_sentinel(
-        LOG_DIR / args.sentinel_name,
+        LOG_DIR / sentinel_name,
         kind="epm:results",
         phase="done",
         note_payload=note_payload,
+        task_id=args.sentinel_task_id,
     )
     log.info("Dispatcher done. %d cell units completed.", len(cell_results))
     log.info("[phase=done] dispatcher exit %s", datetime.now(UTC).isoformat())

@@ -488,6 +488,7 @@ def train_one_cell(
     marker_band_stop: bool | None = None,
     marker_band_log_only: bool | None = None,
     marker_band_eval_every_steps: int | None = None,
+    marker_band_dense_until: int | None = None,
     marker_band_trajectory_path: str | None = None,
     save_only_model: bool | None = None,
     extra_callbacks: list | None = None,
@@ -521,7 +522,9 @@ def train_one_cell(
             rig-bridging cells). None = train_lora's historical 7-module
             all-linear default.
         marker_band_stop / marker_band_log_only / marker_band_eval_every_steps /
-            marker_band_trajectory_path: #601 — explicit band-callback wiring
+            marker_band_dense_until / marker_band_trajectory_path: #601/#622 —
+            explicit band-callback wiring (dense_until = #622 strided cadence:
+            probe every step through that step, then every eval_every_steps)
             (None = TrainLoraConfig defaults, which include a LIVE band-stop;
             free-running cells must pass stop=True + log_only=True).
         save_only_model: #601 — thread TrainingArguments.save_only_model.
@@ -622,6 +625,11 @@ def train_one_cell(
         cfg.marker_band_log_only = bool(marker_band_log_only)
     if marker_band_eval_every_steps is not None:
         cfg.marker_band_eval_every_steps = int(marker_band_eval_every_steps)
+    if marker_band_dense_until is not None:
+        # #622 strided cadence: dense (every step) through dense_until, then
+        # every marker_band_eval_every_steps. None = TrainLoraConfig default 0
+        # (pure stride gating — byte-identical legacy behavior).
+        cfg.marker_band_dense_until = int(marker_band_dense_until)
     if marker_band_trajectory_path is not None:
         cfg.marker_band_trajectory_path = str(marker_band_trajectory_path)
     if save_only_model is not None:

@@ -312,6 +312,7 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
         *,
         out_path: str | Path,
         eval_every_steps: int = 1,
+        dense_until: int = 0,
         log_prefix: str = "rowtype_ce",
     ):
         if probes.get("pos") is None and probes.get("neg") is None:
@@ -322,11 +323,16 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
             )
         if eval_every_steps < 1:
             raise ValueError(f"eval_every_steps must be >= 1, got {eval_every_steps}")
+        if dense_until < 0:
+            raise ValueError(f"dense_until must be >= 0, got {dense_until}")
         self.pos = probes.get("pos")
         self.neg = probes.get("neg")
         self.neg_slot = probes.get("neg_slot")
         self.out_path = str(out_path)
         self.eval_every_steps = int(eval_every_steps)
+        # #622 strided cadence: probe EVERY step while global_step <= dense_until,
+        # then every eval_every_steps. Default 0 = legacy stride-only gating.
+        self.dense_until = int(dense_until)
         self.log_prefix = log_prefix
         self._base: dict[str, float | None] = {"pos": None, "neg": None, "neg_slot": None}
         self._records: list[dict] = []
@@ -353,7 +359,9 @@ class RowTypeCETrainProbeCallback(TrainerCallback):
     def on_step_end(self, args, state, control, model=None, **kwargs):
         if model is None or state.global_step <= 0:
             return
-        if state.global_step % self.eval_every_steps != 0:
+        # Strided cadence (#622): dense (every step) through dense_until, then
+        # every eval_every_steps. dense_until=0 = legacy stride-only gating.
+        if state.global_step > self.dense_until and state.global_step % self.eval_every_steps != 0:
             return
         rec: dict = {"step": int(state.global_step)}
         metrics: dict[str, float] = {}
