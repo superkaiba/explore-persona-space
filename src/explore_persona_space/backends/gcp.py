@@ -1553,6 +1553,18 @@ def default_gcloud_runner(argv: Sequence[str], *, timeout: int = 300) -> GcloudR
 # Reconnect (idempotent existing-instance lookup)
 # ---------------------------------------------------------------------------
 
+#: Instance statuses that ``reconnect_or_none`` treats as NOT-live (it
+#: returns ``None`` rather than a handle). These are exactly the statuses
+#: under which a record still OCCUPIES the canonical ``eps-issue-<N>`` name
+#: — so a subsequent ``gcloud compute instances create`` collides with
+#: ``resource ... already exists``. The pre-launch ``_stale_named_instance_or_none``
+#: helper owns deleting them; the two sets MUST stay identical (a status
+#: reconnect skips but the pre-launch check does NOT delete would re-create
+#: the "already exists" wedge it exists to prevent). Incident #632
+#: (2026-06-13): a workload-crash respawn hit "already exists" because the
+#: prior TERMINATED record blocked re-provisioning and nothing deleted it.
+_NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED", "SUSPENDED"})
+
 
 def reconnect_or_none(
     *,
@@ -1608,7 +1620,7 @@ def reconnect_or_none(
         if inst.get("name") != name:
             continue
         status = inst.get("status") or ""
-        if status.upper() in {"TERMINATED", "STOPPED", "SUSPENDED"}:
+        if status.upper() in _NONLIVE_INSTANCE_STATUSES:
             continue
         zone_url = inst.get("zone") or ""
         # The zone field is a URL; take the last path segment.
@@ -1651,6 +1663,109 @@ def reconnect_or_none(
             scratch_dir=workload_dir_for(config, spec.issue),
             log_path=log_path_for(config, spec.issue),
             extra=extra,
+        )
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Pre-launch stale-name reclaim (#632)
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class StaleNamedInstance:
+    """A non-live ``eps-issue-<N>`` record still occupying the canonical name.
+
+    Returned by :func:`_stale_named_instance_or_none` when a prior
+    instance is in a :data:`_NONLIVE_INSTANCE_STATUSES` state (TERMINATED /
+    STOPPED / SUSPENDED): the record blocks the next ``gcloud compute
+    instances create`` with ``resource ... already exists`` even though the
+    instance is doing nothing. ``zone`` is the parsed last-segment of the
+    instance's zone URL so the launch path can delete it in the right zone.
+    """
+
+    name: str
+    zone: str
+    status: str
+
+
+def _stale_named_instance_or_none(
+    *,
+    spec: RunSpec,
+    config: GcpConfig,
+    runner: GcloudRunner,
+) -> StaleNamedInstance | None:
+    """Return a stale non-live record blocking the ``eps-issue-<N>`` name, or None.
+
+    Called by :meth:`GcpBackend.launch` ONLY after
+    :func:`reconnect_or_none` has already returned ``None`` (no LIVE
+    instance). A non-live record (TERMINATED / STOPPED / SUSPENDED — the
+    same :data:`_NONLIVE_INSTANCE_STATUSES` reconnect skips) still owns the
+    canonical name, so the upcoming ``instances create`` would collide with
+    ``resource ... already exists`` (incident #632, 2026-06-13: a
+    workload-crash respawn powered the VM off into TERMINATED, then the
+    infra-class respawn's create was rejected until the operator manually
+    ran ``gcloud compute instances delete``). The launch path deletes the
+    returned record before re-provisioning.
+
+    Returns:
+        * ``StaleNamedInstance`` — a record in a non-live state exists;
+          safe to delete (it is doing no work).
+        * ``None`` — no record with the canonical name exists; ``create``
+          will proceed clean.
+
+    Raises:
+        * :class:`GcpProbeError` — the ``list`` probe itself failed
+          (rc != 0 / unparseable JSON). Instance state is UNKNOWN, and
+          "couldn't ask" must never read as "name is free" on the
+          credit-spending lane (mirrors :func:`reconnect_or_none`).
+        * :class:`GcpBackendError` — a record exists in a state that is
+          NEITHER live-reconnectable NOR in the non-live set (e.g.
+          RUNNING / PROVISIONING / STAGING / STOPPING / REPAIRING). This
+          can only happen as a TOCTOU race against the reconnect probe
+          (which would itself have returned a handle for a live status):
+          refuse to auto-delete a possibly-live instance — deleting a
+          RUNNING VM mid-provision is data loss. Surface loudly so the
+          orchestrator retries the launch (whose reconnect will then catch
+          the now-observable live instance).
+    """
+    name = instance_name_for(spec.issue)
+    result = runner(render_list_argv(config=config, name_filter=f"name={name}"))
+    if result.returncode != 0:
+        raise GcpProbeError(
+            f"GCP stale-name probe failed for {name}: gcloud list rc={result.returncode} "
+            f"stderr={result.stderr[:500]!r} — instance state UNKNOWN, refusing to "
+            "assume the name is free before create"
+        )
+    try:
+        instances = json.loads(result.stdout) if result.stdout.strip() else []
+    except json.JSONDecodeError as exc:
+        raise GcpProbeError(
+            f"GCP stale-name probe returned unparseable JSON for {name}: {exc} — "
+            "instance state UNKNOWN"
+        ) from exc
+    if not isinstance(instances, list):
+        return None
+    for inst in instances:
+        if not isinstance(inst, dict):
+            continue
+        if inst.get("name") != name:
+            continue
+        status = (inst.get("status") or "").upper()
+        zone_url = inst.get("zone") or ""
+        zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
+        if status in _NONLIVE_INSTANCE_STATUSES:
+            return StaleNamedInstance(name=name, zone=zone, status=status)
+        # A record exists in a state the non-live set does NOT cover. The
+        # only way to reach here is a TOCTOU race vs the reconnect probe
+        # (a live status would have reconnected). Never auto-delete a
+        # possibly-live instance — surface loudly and let the orchestrator
+        # re-launch (its reconnect catches the now-live instance).
+        raise GcpBackendError(
+            f"GCP pre-launch: instance {name} exists in non-deletable status "
+            f"{status!r} (zone={zone}); refusing to auto-delete a possibly-live "
+            "instance before create. Re-launch to reconnect, or delete manually "
+            "if it is genuinely stale."
         )
     return None
 
@@ -2072,6 +2187,54 @@ class GcpBackend(ComputeBackend):
                 wandb_run_path=spec.extra.get("wandb_run_path"),
             )
 
+        # Reclaim the canonical name from a STALE non-live record before
+        # ``create``. ``reconnect_or_none`` returns None for a TERMINATED /
+        # STOPPED / SUSPENDED instance (correctly — it is not a live run to
+        # rejoin), but that record still OWNS the ``eps-issue-<N>`` name, so
+        # the upcoming create would be rejected with ``resource ... already
+        # exists`` (incident #632, 2026-06-13: a workload-crash respawn left
+        # a TERMINATED VM, and the infra-class respawn's create was rejected
+        # until the operator manually deleted it). Delete the stale record
+        # here; the EXIT-trap teardown is per-INSTANCE, not name-scoped, so
+        # nothing else reclaims the name. A possibly-live status raises out
+        # of the probe (never auto-deleted — see _stale_named_instance_or_none).
+        pre_launch_deleted_stale_instance = False
+        stale = _stale_named_instance_or_none(spec=spec, config=config, runner=self._run)
+        if stale is not None:
+            logger.info(
+                "GCP pre-launch: deleting stale %s instance %s in zone=%s to free the name "
+                "before create (issue=%d).",
+                stale.status,
+                stale.name,
+                stale.zone,
+                spec.issue,
+            )
+            del_result = self._run(
+                render_delete_argv(config=config, name=stale.name, zone=stale.zone)
+            )
+            del_stderr_low = (del_result.stderr or "").lower()
+            if del_result.returncode == 0 or (
+                "was not found" in del_stderr_low or "404" in del_stderr_low
+            ):
+                # Deleted (or it vanished between the list and the delete —
+                # either way the name is now free). "was not found" is the
+                # benign race, same as teardown's handling.
+                pre_launch_deleted_stale_instance = True
+                logger.info(
+                    "GCP pre-launch: stale instance %s reclaimed (rc=%d); proceeding to create.",
+                    stale.name,
+                    del_result.returncode,
+                )
+            else:
+                # A real delete failure (auth blip, transient API error).
+                # Raise rather than let create fail later with a more
+                # confusing "already exists" — the name was NOT freed.
+                raise GcpBackendError(
+                    f"GCP pre-launch: failed to delete stale {stale.status} instance "
+                    f"{stale.name} (rc={del_result.returncode}): {del_result.stderr[:500]} "
+                    "— the canonical name was not freed; create would collide."
+                )
+
         # Resolve workload secrets BEFORE rendering anything — fails loud
         # (GcpLaunchSecretsMissing) when the required keys are absent from
         # spec.extra / the process env / the project .env, so a doomed VM
@@ -2245,6 +2408,11 @@ class GcpBackend(ComputeBackend):
                 # script renders — "custom" (spec.workload_cmd verbatim)
                 # vs "hydra" (scripts/train.py + hydra_args).
                 "workload": "custom" if spec.workload_cmd else "hydra",
+                # Additive field (#632): True when this launch first deleted
+                # a STALE non-live (TERMINATED / STOPPED / SUSPENDED) record
+                # occupying the canonical name before create — so the
+                # name-reclaim is visible on the timeline.
+                "pre_launch_deleted_stale_instance": pre_launch_deleted_stale_instance,
             },
             sort_keys=True,
         )
@@ -3261,6 +3429,7 @@ __all__ = [
     "GcpWorkloadError",
     "MachineSpec",
     "QuotaHeadroom",
+    "StaleNamedInstance",
     "attempt_id_for",
     "audit_stale_gcp_vms",
     "classify_create_failure",
