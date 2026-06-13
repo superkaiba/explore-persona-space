@@ -1336,8 +1336,8 @@
     "31": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/31",
-      "status": "proposed",
+      "path": "tasks/on_hold/31",
+      "status": "on_hold",
       "title": "Look at hierarchical persona leakage, different relationship types"
     },
     "310": {
