@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "description": "Issue #634 Panel-B frozen behavior-role -> #594-context-family map (plan v2 \u00a74). Built BEFORE any embedding so H1 cannot be tuned post-hoc. Every key is a verified role_list.json key.",
+  "map": {
+    "assistant": "bare_default",
+    "detective": "persona",
+    "pirate": "persona",
+    "philosopher": "persona",
+    "warrior": "persona",
+    "rogue": "persona",
+    "hacker": "persona",
+    "bard": "persona",
+    "jester": "persona",
+    "sage": "persona",
+    "skeptic": "behavior_instruction",
+    "contrarian": "behavior_instruction",
+    "devils_advocate": "behavior_instruction",
+    "perfectionist": "behavior_instruction",
+    "pacifist": "behavior_instruction",
+    "summarizer": "output_format",
+    "proofreader": "output_format",
+    "editor": "output_format",
+    "translator": "output_format",
+    "tutor": "instruction_reword",
+    "interpreter": "instruction_reword",
+    "instructor": "instruction_reword",
+    "teacher": "instruction_reword",
+    "mathematician": "worked_example",
+    "programmer": "worked_example",
+    "debugger": "worked_example",
+    "analyst": "worked_example"
+  },
+  "map_sha256": "0cf81e59e0e0ed3ccd7db7d1917cc81d78e5cc4fbc188a0926f1657b7f16a5ce",
+  "family_counts": {
+    "bare_default": 1,
+    "persona": 9,
+    "behavior_instruction": 5,
+    "output_format": 4,
+    "instruction_reword": 4,
+    "worked_example": 4
+  },
+  "floor": {
+    "meets_floor": true,
+    "n_roles_total": 27,
+    "n_tested_families": 5,
+    "tested_family_counts": {
+      "persona": 9,
+      "behavior_instruction": 5,
+      "output_format": 4,
+      "instruction_reword": 4,
+      "worked_example": 4
+    },
+    "null_anchor_family": "bare_default",
+    "families_below_per_family_floor": {},
+    "floor_min_total": 12,
+    "floor_min_per_tested_family": 2
+  },
+  "role_list_size": 275,
+  "data_dir": "/home/thomasjiralerspong/explore-persona-space/data/assistant_axis"
+}
