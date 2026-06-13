@@ -321,7 +321,13 @@ def score(  # noqa: C901 — pre-registered protocol, intentionally flat
         }
     if protocol_note:
         results["protocol_note"] = protocol_note
-    groups = ("A", "B", "C", "D")
+    # "PFX" admitted by #595's 1-line groups-tuple extension so the prefix-binding
+    # family enters the leave-family-out CV / quarantine race (it is otherwise
+    # loaded + pooled-scored but silently excluded from the held-out loops). This
+    # is surgical: it does NOT alter #545's existing A/B/C/D groups, its prereg
+    # split, or its already-scored results (verified idempotent in
+    # tests/test_issue595_scoring_groups_extension.py).
+    groups = ("A", "B", "C", "D", "PFX")
     for g in groups:
         results["group_k"][g] = sum(1 for n in preds if n.startswith(f"{g}__"))
 
