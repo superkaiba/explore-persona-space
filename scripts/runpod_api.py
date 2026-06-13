@@ -72,6 +72,37 @@ GPU_TYPE_IDS = {
     "A100": "NVIDIA A100-SXM4-80GB",
 }
 
+# Full RunPod gpuTypeIds are vendor-prefixed ("NVIDIA H100 NVL",
+# "AMD Instinct MI300X OC", ...). Used to distinguish a deliberate exotic
+# full id (passed through verbatim) from a typo'd / colloquial short name
+# ("H100 SXM"), which RunPod treats as a nonexistent type — see
+# resolve_gpu_type_id.
+_FULL_GPU_TYPE_ID_PREFIXES = ("NVIDIA ", "AMD ")
+
+
+def resolve_gpu_type_id(gpu_type: str) -> str:
+    """Map a short GPU name to its full RunPod gpuTypeId, rejecting unknowns.
+
+    Known short names (:data:`GPU_TYPE_IDS`) resolve to their full id. A name
+    that already looks like a full RunPod id (vendor-prefixed, e.g.
+    ``"NVIDIA H100 NVL"``) passes through verbatim so callers can request
+    exotic GPU types. Anything else raises :class:`RunPodError`: RunPod treats
+    a nonexistent gpuTypeId as permanent no-capacity (null mutation result /
+    SUPPLY_CONSTRAINT), indistinguishable from a genuine shortage, so a typo
+    spins the wait-for-capacity loop forever — task #537 waited 88 minutes on
+    ``"H100 SXM"`` (the SXM card's id is ``GPU_TYPE_IDS["H100"]``).
+    """
+    resolved = GPU_TYPE_IDS.get(gpu_type, gpu_type)
+    if gpu_type not in GPU_TYPE_IDS and not resolved.startswith(_FULL_GPU_TYPE_ID_PREFIXES):
+        raise RunPodError(
+            f"gpu_type {gpu_type!r} is not a known short name "
+            f"(valid: {sorted(GPU_TYPE_IDS)}) and does not look like a full RunPod "
+            f"gpuTypeId (expected a vendor prefix like 'NVIDIA ...'). RunPod reports "
+            f"a nonexistent gpuTypeId as no-capacity, so the wait-for-capacity loop "
+            f"would wait forever on an impossible request (#537)."
+        )
+    return resolved
+
 
 # ─── env loading ─────────────────────────────────────────────────────────────
 
@@ -167,6 +198,31 @@ class RunPodInsufficientBalanceError(RunPodError):
     """
 
 
+class RunPodSupplyConstraintError(RunPodError):
+    """Raised when a mutation (``podFindAndDeployOnDemand`` / ``podResume``)
+    is refused with a GraphQL ``errors`` payload whose ``extensions.code``
+    is ``SUPPLY_CONSTRAINT`` ("There are no longer any instances available
+    with the requested specifications").
+
+    This is the ERROR-PAYLOAD shape of the same no-capacity condition that
+    usually arrives as a null mutation result (which :func:`_deploy_once`
+    returns as ``None``). Before this class existed the payload shape raised
+    a bare :class:`RunPodError`, which (a) aborted :func:`create_pod`'s
+    supply-lever chain before COMMUNITY / interruptible were tried, and (b)
+    bypassed ``create_pod_with_wait_for_capacity``'s except clause (it
+    catches only :class:`RunPodNoCapacityError` +
+    :class:`RunPodInsufficientBalanceError`), crashing an autonomous
+    provision (incident: task #537, 2026-06-11).
+
+    :func:`_deploy_once` catches this class and returns ``None`` so the
+    lever chain advances; once every lever is exhausted :func:`create_pod`
+    raises :class:`RunPodNoCapacityError` as before, which the
+    wait-for-capacity policy loop already handles. Subclass of
+    :class:`RunPodError` so existing ``except RunPodError`` callers keep
+    catching it.
+    """
+
+
 # Markers used to detect INSUFFICIENT_BALANCE in a GraphQL ``errors`` payload
 # or a raised RunPodError message. RunPod has used both the explicit error
 # code (``INSUFFICIENT_BALANCE``) and the human-readable phrase ("spending
@@ -190,6 +246,33 @@ def _is_insufficient_balance_error(error_text: str) -> bool:
     """
     lowered = (error_text or "").lower()
     return any(marker in lowered for marker in _INSUFFICIENT_BALANCE_MARKERS)
+
+
+# Markers used to detect a SUPPLY_CONSTRAINT refusal in a GraphQL ``errors``
+# payload. RunPod embeds the explicit error code verbatim in the serialized
+# errors text (``extensions.code == "SUPPLY_CONSTRAINT"``) and/or a
+# human-readable phrase; match defensively on either, case-insensitive.
+# Phrase set mirrors pod_lifecycle's resume-side ``_SUPPLY_CONSTRAINT_MARKERS``
+# minus its locally generated "podresume returned null" string (that one never
+# appears inside a GraphQL payload — it is synthesized by resume_pod itself).
+_SUPPLY_CONSTRAINT_MARKERS: tuple[str, ...] = (
+    "supply_constraint",
+    "supplyconstraint",
+    "no longer any instances available",
+    "not enough free gpu",
+    "no free gpu",
+    "insufficient capacity",
+)
+
+
+def _is_supply_constraint_error(error_text: str) -> bool:
+    """True if a GraphQL ``errors`` payload string looks like a RunPod
+    ``SUPPLY_CONSTRAINT`` refusal (no instances available with the requested
+    specifications). Case-insensitive substring match against
+    :data:`_SUPPLY_CONSTRAINT_MARKERS`.
+    """
+    lowered = (error_text or "").lower()
+    return any(marker in lowered for marker in _SUPPLY_CONSTRAINT_MARKERS)
 
 
 def _is_cloudflare_1010(body: str) -> bool:
@@ -272,6 +355,12 @@ def _graphql_once(query: str, variables: dict | None, timeout: int) -> dict[str,
         # for headroom instead of fail-exiting (incident #506, 2026-06-08).
         if _is_insufficient_balance_error(err_text):
             raise RunPodInsufficientBalanceError(f"GraphQL errors: {err_text}")
+        # SUPPLY_CONSTRAINT also arrives as a GraphQL error payload, not only
+        # as a null mutation result. Classify it so the deploy path treats it
+        # as the no-capacity case and create_pod's supply-lever chain advances
+        # instead of crashing (incident: task #537, 2026-06-11).
+        if _is_supply_constraint_error(err_text):
+            raise RunPodSupplyConstraintError(f"GraphQL errors: {err_text}")
         raise RunPodError(f"GraphQL errors: {err_text}")
     if "data" not in parsed:
         raise RunPodError(f"Malformed response (no 'data' field): {response_body[:300]!r}")
@@ -397,8 +486,11 @@ def _deploy_once(
     """Single ``podFindAndDeployOnDemand`` attempt for one (gpu_type, cloud_type).
 
     Returns the parsed :class:`PodInfo` on success, or ``None`` when RunPod
-    reports no capacity (a null mutation result == SUPPLY_CONSTRAINT). Raises
-    :class:`RunPodError` on transport / GraphQL errors via :func:`graphql`.
+    reports no capacity — EITHER a null mutation result OR a GraphQL error
+    payload with ``extensions.code == SUPPLY_CONSTRAINT`` (same condition,
+    two wire shapes; incident: task #537, 2026-06-11). Raises
+    :class:`RunPodError` on other transport / GraphQL errors via
+    :func:`graphql`.
 
     ``startSsh: true`` + ``22/tcp`` are non-negotiable (RunPod pytorch images
     don't run sshd by default; without both you get an unreachable pod).
@@ -422,9 +514,13 @@ def _deploy_once(
     if data_center_id:
         inputs["dataCenterId"] = data_center_id
     if interruptible:
-        # Spot / interruptible instances draw from a separate, usually-deeper
-        # capacity pool. Only used as a last resort (the host can reclaim them).
-        inputs["interruptible"] = True
+        # The RunPod GraphQL schema no longer defines `interruptible` on
+        # PodFindAndDeployOnDemandInput — sending it returns HTTP 400
+        # GRAPHQL_VALIDATION_FAILED (observed 2026-06-11, #537), which crashed
+        # the lever chain. Until spot support is re-implemented against the
+        # current API (likely a separate mutation), treat the spot lever as
+        # unavailable: report no-capacity so the chain/wait-loop stay alive.
+        return None
 
     inputs_block = _build_inputs_block(inputs)
     query = f"""
@@ -440,7 +536,15 @@ def _deploy_once(
       }}
     }}
     """
-    data = graphql(query)
+    try:
+        data = graphql(query)
+    except RunPodSupplyConstraintError:
+        # Error-payload shape of the null-result no-capacity case: RunPod
+        # sometimes refuses with extensions.code == SUPPLY_CONSTRAINT instead
+        # of returning a null mutation result. Same meaning, same handling —
+        # return None so create_pod advances to the next supply lever
+        # (COMMUNITY / interruptible) before any wait loop sleeps (#537).
+        return None
     raw = data.get("podFindAndDeployOnDemand")
     if not raw:
         # Null result == no capacity for this (gpu_type, cloud_type). Caller
@@ -472,8 +576,12 @@ def create_pod(
     COMMUNITY cloud, and finally COMMUNITY + interruptible (spot). These fallback
     pools are deeper but less stable, so they sit at the back of the chain. The
     ``data_center_id`` pin (if given) is preserved across all attempts — it is a
-    valid, used field. Names not in the allowlist pass through verbatim so
-    callers can request exotic GPU types.
+    valid, used field. Names not in the allowlist must look like a full RunPod
+    gpuTypeId (vendor-prefixed, e.g. ``"NVIDIA H100 NVL"``) to pass through
+    verbatim for exotic GPU types; anything else fails fast via
+    :func:`resolve_gpu_type_id` BEFORE any deploy attempt, because RunPod
+    reports a nonexistent gpuTypeId as no-capacity and the wait loop would
+    spin forever (#537).
 
     Raises :class:`RunPodNoCapacityError` when EVERY lever in the chain
     reports no capacity (so a higher-level wait-for-capacity policy can catch
@@ -483,6 +591,9 @@ def create_pod(
     gpu_types = [gpu_type] if isinstance(gpu_type, str) else list(gpu_type)
     if not gpu_types:
         raise RunPodError("create_pod: gpu_type list is empty — nothing to deploy.")
+    # Fail fast on unmapped / typo'd GPU names before any API call (#537):
+    # a nonexistent gpuTypeId is indistinguishable from a genuine shortage.
+    resolved_ids = {short_name: resolve_gpu_type_id(short_name) for short_name in gpu_types}
 
     # Build the ordered lever chain: (cloud_type, interruptible). The primary
     # cloud_type comes first; the supply fallbacks only fire when enabled AND
@@ -496,7 +607,7 @@ def create_pod(
     tried: list[str] = []
     for lever_cloud, interruptible in levers:
         for short_name in gpu_types:
-            gpu_type_id = GPU_TYPE_IDS.get(short_name, short_name)
+            gpu_type_id = resolved_ids[short_name]
             label = f"{gpu_count}x {short_name} on cloudType={lever_cloud}"
             if interruptible:
                 label += " (interruptible/spot)"

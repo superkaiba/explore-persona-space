@@ -110,7 +110,7 @@ def test_set_status_broken_pipe_on_echo_is_nonfatal(monkeypatch, capsys):
     (rc reflects the status move, not the echo)."""
     moved = []
 
-    def fake_set_status(number, status, *, note=None):
+    def fake_set_status(number, status, *, note=None, force_followup_exit=False):
         moved.append((number, status, note))
         return Path("/repo/tasks/approved/537")
 
@@ -131,9 +131,143 @@ def test_set_status_normal_echo_prints_path(monkeypatch, capsys):
     monkeypatch.setattr(
         task_cli,
         "set_status",
-        lambda number, status, *, note=None: Path("/repo/tasks/approved/537"),
+        lambda number, status, *, note=None, force_followup_exit=False: Path(
+            "/repo/tasks/approved/537"
+        ),
     )
     ns = argparse.Namespace(number=537, status="approved", note=None)
     task_cli.cmd_set_status(ns)
     out = capsys.readouterr().out
     assert "tasks/approved/537" in out
+
+
+def test_set_status_followup_hold_refusal_exits_cleanly(monkeypatch):
+    """The library's same-issue follow-up status-hold ValueError must surface
+    as a clean SystemExit (message, nonzero rc) — not a raw traceback."""
+
+    def refusing_set_status(number, status, *, note=None, force_followup_exit=False):
+        raise ValueError("followups_running is HELD ... (status-hold rule)")
+
+    monkeypatch.setattr(task_cli, "set_status", refusing_set_status)
+    ns = argparse.Namespace(number=537, status="running", note=None)
+    with pytest.raises(SystemExit) as exc_info:
+        task_cli.cmd_set_status(ns)
+    assert "status-hold" in str(exc_info.value)
+
+
+def test_set_status_plan_gate_holds_at_followups_running(monkeypatch, capsys):
+    """A --auto-approve-if-autonomous plan-gate call on a followups_running
+    task fires the gate decision + marker but NEVER moves the status
+    (status-hold rule, SKILL.md Step 9b § Same-issue follow-up loop step 3)."""
+    moved = []
+    posted = []
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None, force_followup_exit=False: moved.append(
+            (number, status)
+        ),
+    )
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {"status": "followups_running", "frontmatter": {"tags": []}},
+    )
+
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker))
+        return {"kind": marker, "version": version}
+
+    monkeypatch.setattr(task_cli, "post_event", fake_post_event)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=4.0,
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == []  # the status flip never happened
+    assert posted == [(537, "epm:plan-approved")]  # the gate decision still landed
+    out = capsys.readouterr().out
+    assert "followups_running hold: status unchanged" in out
+
+
+def test_set_status_plan_gate_hold_parked_over_cap(monkeypatch, capsys):
+    """The over-cap sub-branch of the plan-gate hold: posts
+    epm:awaiting-spend-approval, never moves the status."""
+    moved = []
+    posted = []
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None, force_followup_exit=False: moved.append(
+            (number, status)
+        ),
+    )
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {"status": "followups_running", "frontmatter": {"tags": []}},
+    )
+
+    def fake_post_event(number, marker, *, version, by, note):
+        posted.append((number, marker))
+        return {"kind": marker, "version": version}
+
+    monkeypatch.setattr(task_cli, "post_event", fake_post_event)
+    monkeypatch.setenv("EPM_AUTONOMOUS_SESSION", "1")
+    monkeypatch.setenv("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "24")
+
+    ns = argparse.Namespace(
+        number=537,
+        status="plan_pending",
+        note=None,
+        auto_approve_if_autonomous=True,
+        gpu_hours=200.0,  # over the 24h cap
+    )
+    task_cli.cmd_set_status(ns)
+
+    assert moved == []
+    assert posted == [(537, "epm:awaiting-spend-approval")]
+    out = capsys.readouterr().out
+    assert "parked_over_cap" in out
+    assert "followups_running hold: status unchanged" in out
+
+
+def test_set_status_followups_running_missing_tag_warns(monkeypatch, capsys):
+    """Transitioning TO followups_running without a followup-auto/-manual tag
+    prints the missing-tag WARNING (a bare `followup` tag does not count)."""
+    monkeypatch.setattr(
+        task_cli,
+        "set_status",
+        lambda number, status, *, note=None, force_followup_exit=False: Path(
+            "/repo/tasks/followups_running/537"
+        ),
+    )
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {"status": "followups_running", "frontmatter": {"tags": ["followup"]}},
+    )
+    ns = argparse.Namespace(number=537, status="followups_running", note=None)
+    task_cli.cmd_set_status(ns)
+    out = capsys.readouterr().out
+    assert "WARNING: transitioned to followups_running without a" in out
+
+    # And with the proper tag present, no warning.
+    monkeypatch.setattr(
+        task_cli,
+        "get_task",
+        lambda number: {
+            "status": "followups_running",
+            "frontmatter": {"tags": ["followup-manual"]},
+        },
+    )
+    task_cli.cmd_set_status(ns)
+    out = capsys.readouterr().out
+    assert "WARNING" not in out

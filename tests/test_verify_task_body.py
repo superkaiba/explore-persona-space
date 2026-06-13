@@ -110,13 +110,15 @@ def test_good_body_passes_all():
     # follow-up). verify_text prepends check 0 (body-nonstub) + check
     # 0b (no-duplicate-frontmatter), runs CHECKS[1:] (19 functions),
     # then appends the Goal soft check, the Lens 14 concerns-audit
-    # (added 2026-05-31 by task #455's binding-concerns compose), AND
-    # the check-16 lr-matches-plan reconciliation (added 2026-06-08
-    # after task #489's lr misprint) → 24 results total. The Lens 14
-    # and check-16 results are PASS-skips when no concerns.jsonl /
-    # plans/plan.md sibling is available (the file-only / in-memory
-    # invocation here).
-    assert len(results) == 24
+    # (added 2026-05-31 by task #455's binding-concerns compose), the
+    # check-16 lr-matches-plan reconciliation (added 2026-06-08
+    # after task #489's lr misprint), AND the check-17 Context
+    # provenance-row read (added 2026-06-11) → 25 results total. The
+    # Lens 14 and check-16 results are PASS-skips when no
+    # concerns.jsonl / plans/plan.md sibling is available (the
+    # file-only / in-memory invocation here); check 17 is a PASS-skip
+    # on legacy (pre-v2-sentinel) bodies like this fixture.
+    assert len(results) == 25
 
 
 def test_missing_confidence_tag():
@@ -1134,6 +1136,73 @@ def test_sentinel_scrub_see_config():
     assert not by_name["Reproducibility sentinel scrub"].passed
 
 
+def test_sentinel_scrub_default_bare_table_cell_fails():
+    """A bare `| default |` Parameters cell is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Chat template | default |",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_label_terminator_fails():
+    """`chat template: default` ending a line is a placeholder → check 9 FAILs."""
+    body = GOOD_BODY.replace("47 min.", "47 min. Chat template: default")
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_bold_label_terminator_fails():
+    """The dominant Reproducibility row form `**Label:** default` is also a
+    placeholder position → check 9 FAILs."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n**Chat template:** default",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    assert not by_name["Reproducibility sentinel scrub"].passed
+    assert "default" in by_name["Reproducibility sentinel scrub"].detail
+
+
+def test_sentinel_scrub_default_prose_passes():
+    """Substantive prose uses of "default" PASS check 9 — the default
+    assistant is a core experimental condition (task #542 had to reword
+    "default-context response cache" to dodge the old whole-word match)."""
+    body = GOOD_BODY.replace(
+        "47 min.",
+        "47 min. Eval reused the default-context response cache; the "
+        "default assistant arm and the default column of the leakage "
+        "table were scored with the same judge.",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
+
+
+def test_sentinel_scrub_default_assistant_table_cell_passes():
+    """A table cell whose VALUE is a longer noun phrase containing
+    "default" ("default assistant + 3 close personas") PASSes check 9 —
+    only the bare-cell `| default |` form is a placeholder."""
+    body = GOOD_BODY.replace(
+        "| Optimizer | AdamW, lr=3e-5 |",
+        "| Optimizer | AdamW, lr=3e-5 |\n| Negative panel | default assistant + 3 close personas |",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    scrub = by_name["Reproducibility sentinel scrub"]
+    assert scrub.passed, scrub.detail
+
+
 # ─── Check 10: cherry-picked label discipline ─────────────────────────────
 
 
@@ -1547,6 +1616,59 @@ def test_audit_byte_identical_fires():
     assert "byte_identical" not in findings3
 
 
+# ─── Audit script: Context-row verbatim blockquotes are exempt ─────────────
+
+
+def test_audit_context_row_blockquote_exempt():
+    """The `**Context:**` provenance row's verbatim originating-prompt
+    blockquote (SPEC.md § `**Context:**` row; verifier check 17) is
+    exempt from the anti-pattern scan — verbatim preservation and the
+    scan are otherwise mutually unsatisfiable (task #597: a scope note
+    opening with "PRE-REGISTERED" tripped `pre_reg`). The same phrase
+    OUTSIDE the Context row must still be flagged, and non-blockquote
+    prose inside the Context block stays in scan scope."""
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc_ctx", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc_ctx"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+
+    context_block = (
+        "## Reproducibility\n\n"
+        "**Context:**\n\n"
+        "- Created / run: created 2026-06-11; run 2026-06-12.\n"
+        "- Follow-up to: #472 — endpoint contrast turned into trajectories.\n"
+        "- Originating prompt(s), verbatim: origin prompt not recorded for the "
+        "task itself. The user-chat follow-up round's recorded scope note, verbatim:\n\n"
+        "  > PRE-REGISTERED while #597 is still running (user-chat, 2026-06-11). "
+        "Execute at the Step 9b same-issue follow-up point.\n"
+    )
+
+    # Blockquoted "PRE-REGISTERED" inside the Context row: NOT flagged.
+    findings = audit_mod.audit_body(context_block)
+    assert "pre_reg" not in findings, findings.get("pre_reg")
+
+    # The same phrase outside the Context row: still flagged.
+    body_outside = "## TL;DR\n\nThis run was pre-registered before launch.\n\n" + context_block
+    findings_outside = audit_mod.audit_body(body_outside)
+    assert "pre_reg" in findings_outside
+
+    # Non-blockquote prose INSIDE the Context block stays in scan scope.
+    body_unquoted = context_block + "\n- Note: this round was pre-registered.\n"
+    findings_unquoted = audit_mod.audit_body(body_unquoted)
+    assert "pre_reg" in findings_unquoted
+
+    # A blockquote AFTER the Context block ends (next boldface row label)
+    # is back in scan scope — the exemption does not leak past the block.
+    body_after_block = (
+        context_block + "\n**Compute:** 2.65 GPU-h.\n\n> This quote was pre-registered.\n"
+    )
+    findings_after = audit_mod.audit_body(body_after_block)
+    assert "pre_reg" in findings_after
+
+
 # ─── CHECKS list invariant ─────────────────────────────────────────────────
 
 
@@ -1866,6 +1988,11 @@ between seeds is 1.2 pts. Capability on ARC-C holds at 0.82 vs baseline
 **Compute:** 1× H100, 47 min.
 
 **Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
 """
 
 
@@ -1941,6 +2068,38 @@ def test_v2_good_body_passes_all_including_nested_structure():
     assert "v2 nested-design" in conf.detail
 
 
+def test_v2_body_with_top_methodology_link_passes():
+    """A v2 body carrying the orchestrator-appended top-of-body
+    `**Methodology:** ...` line — inserted between the
+    `<!-- clean-result-v2 -->` sentinel and `## Human TL;DR` at
+    `/issue` Step 9a-quater (SPEC.md § Top-of-body methodology link)
+    — PASSes every check. The line is PERMITTED, never required
+    (forward-only: pre-link bodies are not newly failed), in both the
+    gist-suffixed and fail-soft (no-gist) forms."""
+    gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md) · "
+        "[gist](https://gist.github.com/superkaiba/abc123def456)\n"
+    )
+    no_gist_form = (
+        "**Methodology:** [docs/methodology/issue_999.md]"
+        "(https://github.com/superkaiba/explore-persona-space/blob/"
+        "0123456789abcdef/docs/methodology/issue_999.md)\n"
+    )
+    for top_line in (gist_form, no_gist_form):
+        body = _V2_GOOD_BODY.replace(
+            "<!-- clean-result-v2 -->\n",
+            "<!-- clean-result-v2 -->\n\n" + top_line,
+        )
+        assert top_line in body, "fixture replacement did not land"
+        ok, results = verify_task_body.verify_text(body)
+        assert ok, [r.render() for r in results if not r.passed]
+        # The body must still be detected as v2 (the inserted line must
+        # not break sentinel detection).
+        assert verify_task_body.is_v2_nested_design(body)
+
+
 def test_v2_body_missing_what_i_ran_fails_nested_structure():
     """A v2-sentinelled body that drops `### What I ran` FAILs the
     nested-structure check."""
@@ -1950,6 +2109,120 @@ def test_v2_body_missing_what_i_ran_fails_nested_structure():
     nested = by_name["TL;DR nested-design structure (v2)"]
     assert not nested.passed
     assert "What I ran" in nested.detail
+
+
+# ─── Check 17: Reproducibility Context provenance row ─────────────────────
+
+_CONTEXT_BLOCK = """\
+
+**Context:**
+- Created 2026-06-11; run executed 2026-06-12.
+- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the X-effect seed sweep.
+- Originating prompt (verbatim): "sweep the X effect across three seeds"
+"""
+
+_CONTEXT_CHECK = "Reproducibility Context provenance row"
+
+
+def test_v2_good_body_passes_context_provenance():
+    """The canonical v2 fixture carries a `**Context:**` row and PASSes
+    check 17 with no WARN."""
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    assert ok, [r.render() for r in results if not r.passed]
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "present" in ctx.detail
+
+
+def test_v2_body_missing_context_row_warns_without_origin_data():
+    """A v2 body with NO `**Context:**` row and NO recorded origin data
+    (no `origin_prompt` frontmatter, no original-body.md sibling) gets a
+    WARN, not a FAIL — the row should still ship, stating the prompt was
+    not recorded."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    assert "**Context:**" not in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and ctx.is_warn
+    assert "origin prompt not recorded" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_origin_prompt_frontmatter():
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    frontmatter carries a recorded `origin_prompt` — the body dropped
+    provenance it had."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "kind: experiment\n",
+        'kind: experiment\norigin_prompt: "sweep the X effect across three seeds"\n',
+    )
+    assert "origin_prompt" in body, "fixture replacement did not land"
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "origin_prompt" in ctx.detail
+
+
+def test_v2_body_missing_context_row_fails_with_provenance_in_original_body(tmp_path):
+    """A v2 body with NO `**Context:**` row FAILs check 17 when the
+    sibling original-body.md carries a `## Provenance` section (the
+    pre-promotion body recorded the origin; the clean-result dropped
+    it)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text(
+        "# Original draft title\n\n## Provenance\n\n"
+        '- **Originating prompts (verbatim):** "sweep the X effect"\n'
+    )
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "")
+    ok, results = verify_task_body.verify_text(body, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert not ok
+    assert not ctx.passed
+    assert "Provenance" in ctx.detail
+
+
+def test_v2_body_with_context_row_ignores_original_body(tmp_path):
+    """When the `**Context:**` row IS present, check 17 PASSes even with
+    a `## Provenance`-bearing original-body.md sibling (the data was
+    carried forward)."""
+    orig = tmp_path / "original-body.md"
+    orig.write_text("# Original draft title\n\n## Provenance\n\n- prompt\n")
+    ok, results = verify_task_body.verify_text(_V2_GOOD_BODY, original_body_path=orig)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ok, [r.render() for r in results if not r.passed]
+    assert ctx.passed and not ctx.is_warn
+
+
+def test_legacy_body_skips_context_provenance():
+    """Legacy (pre-sentinel) bodies PASS check 17 vacuously — forward-only
+    adoption; the awaiting_promotion backlog never retro-FAILs."""
+    _ok, results = verify_task_body.verify_text(GOOD_BODY)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "legacy" in ctx.detail
+
+
+def test_context_row_outside_reproducibility_does_not_satisfy():
+    """A `**Context:**` label appearing only OUTSIDE `## Reproducibility`
+    (e.g. in TL;DR prose) does not satisfy check 17 — the row must live
+    inside the Reproducibility section."""
+    body = _V2_GOOD_BODY.replace(_CONTEXT_BLOCK, "").replace(
+        "### What I ran\n",
+        "### What I ran\n\n**Context:** stray label in the wrong section.\n",
+    )
+    assert "**Context:**" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    ctx = by_name[_CONTEXT_CHECK]
+    assert ctx.passed and ctx.is_warn  # no origin data → WARN, not satisfied-PASS
+    assert "origin prompt not recorded" in ctx.detail
 
 
 def test_v2_body_findings_with_no_h4_children_fails():
@@ -2413,3 +2686,134 @@ def test_repro_lr_natural_language_of_matches(tmp_path):
     plan = _write_plan(tmp_path, "lr=2e-6.")
     result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
     assert result.passed and not result.is_warn, result.render()
+
+
+# A v2 body whose ONLY lr statement is the dedicated Parameters-table row
+# (label cell | value cell), the canonical v2 form — task #534 regression.
+_TABLE_ROW_LR_BODY = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+    "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+    "| Optimizer | AdamW, cosine schedule, warmup ratio 0.03 |\n"
+    "| Learning rate | 5e-6 (inherited verbatim from the parent anchor) |",
+)
+
+
+def test_repro_lr_table_row_with_annotation_parses(tmp_path):
+    """Task #534 regression: the Parameters-table row form
+    `| Learning rate | 5e-6 (inherited verbatim from the parent anchor) |`
+    separates label and value with a cell delimiter, not an assignment
+    glyph, and the value carries a trailing annotation. Check 16 must
+    extract `5e-6` and reconcile (here: PASS against a matching plan)
+    instead of silently skipping with "no learning rate stated"."""
+    plan = _write_plan(tmp_path, "Recipe: LoRA r=16, lr=5e-6, 3 epochs.")
+    result = verify_task_body.check_repro_lr_matches_plan(_TABLE_ROW_LR_BODY, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "skipped" not in (result.detail or ""), result.render()
+
+
+def test_repro_lr_table_row_mismatch_fails(tmp_path):
+    """The table-row lr is actually COMPARED, not just parsed: a body
+    stating `| Learning rate | 5e-6 (...) |` against a plan that only
+    declares 2e-6 must FAIL (before the fix this skipped as a no-op)."""
+    plan = _write_plan(tmp_path, "Recipe: lr=2e-6 only.")
+    result = verify_task_body.check_repro_lr_matches_plan(_TABLE_ROW_LR_BODY, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "5e-06" in result.detail or "5e-6" in result.detail, result.render()
+
+
+def test_repro_lr_table_row_label_deep_in_cell_not_parsed(tmp_path):
+    """Precision guard: a table row whose label merely CONTAINS `lr`
+    deep in the cell (`| Bystander rate at base lr | 0.02 |`) is NOT a
+    learning-rate statement and must not be parsed — a false FAIL is
+    worse than a skip. With no other lr in the body, the check stays a
+    genuine PASS-skip."""
+    body = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+        "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+        "| Optimizer | AdamW, cosine schedule |\n| Bystander rate at base lr | 0.02 |",
+    )
+    plan = _write_plan(tmp_path, "lr=2e-6.")
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "no learning rate stated" in (result.detail or ""), result.render()
+
+
+# A v2 body whose lr statements live INSIDE per-recipe Parameters-table
+# value cells with bare whitespace adjacency (`lr 5e-6 cosine`) — no
+# assignment glyph, no dedicated learning-rate row — task #537 regression.
+_RECIPE_ROW_LR_BODY = _V2_REPRO_BODY.format(LR="UNUSED").replace(
+    "| Optimizer | AdamW, lr = UNUSED, cosine schedule, warmup ratio 0.03 |",
+    "| marker recipe | LoRA r32/α64/dropout 0.05 on q/k/v/o; lr 5e-6 cosine, "
+    "warmup ratio 0.05; 300 positives + 300 negatives |\n"
+    "| fact recipe | lr 2e-4, r32/α64/d0.05, 1 epoch, batch 4 × grad-accum 4 |",
+)
+
+
+def test_repro_lr_recipe_row_bare_adjacency_parses(tmp_path):
+    """Task #537 regression: lr values embedded inside per-recipe
+    Parameters-table cells with bare whitespace adjacency
+    (`| marker recipe | ...; lr 5e-6 cosine, ... |`) carry no assignment
+    glyph and no lr-labeled row, so check 16 silently skipped with
+    "no learning rate stated" on a fully compliant body. Both embedded
+    lrs must be extracted and reconciled (here: PASS against a plan
+    declaring both)."""
+    plan = _write_plan(tmp_path, "Marker arm: lr=5e-6. Fact arm: lr=2e-4.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+    assert "skipped" not in (result.detail or ""), result.render()
+
+
+def test_repro_lr_recipe_row_mismatch_fails(tmp_path):
+    """The recipe-row lrs are actually COMPARED, not just parsed: a body
+    embedding `lr 2e-4` in a recipe cell against a plan that only
+    declares 5e-6 must FAIL (before the fix this skipped as a no-op)."""
+    plan = _write_plan(tmp_path, "Recipe: lr=5e-6 only.")
+    result = verify_task_body.check_repro_lr_matches_plan(_RECIPE_ROW_LR_BODY, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0002" in result.detail or "2e-04" in result.detail, result.render()
+
+
+def _write_plan_versions(tmp_path, versions: dict[str, str]):
+    """Write `plans/v*.md` files plus a `plan.md` symlink to the HIGHEST
+    version, mirroring the task-workflow `new-plan-version` layout."""
+    plan_dir = tmp_path / "plans"
+    plan_dir.mkdir()
+    for fname, text in versions.items():
+        (plan_dir / fname).write_text(text)
+    plan = plan_dir / "plan.md"
+    plan.symlink_to(sorted(versions)[-1])
+    return plan
+
+
+def test_repro_lr_multi_version_plan_union_passes(tmp_path):
+    """Task #597 regression: after a same-issue follow-up planning round,
+    `plans/plan.md` symlinks the follow-up's analysis-only plan (v2.md)
+    whose unrelated `1e-3` tolerance token is the only sci-notation value
+    — while the training lr (5e-6) grounding the body's Parameters table
+    lives in v1.md. The check must reconcile against the UNION of all
+    `plans/v*.md` versions, so the correct body PASSes."""
+    body = _V2_REPRO_BODY.format(LR="5e-6")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: LoRA r=8, lr=5e-6, marker band-stop.",
+            "v2.md": "Follow-up (analysis-only): per-checkpoint SVD read, "
+            "cosine floor tolerance 1e-3, no training.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert result.passed and not result.is_warn, result.render()
+
+
+def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
+    """The union must not over-permit: a body lr appearing in NO plan
+    version (neither v1.md nor v2.md) still FAILs."""
+    body = _V2_REPRO_BODY.format(LR="1e-4")
+    plan = _write_plan_versions(
+        tmp_path,
+        {
+            "v1.md": "Training recipe: lr=5e-6.",
+            "v2.md": "Follow-up: tolerance 1e-3.",
+        },
+    )
+    result = verify_task_body.check_repro_lr_matches_plan(body, plan_path=plan)
+    assert not result.passed, result.render()
+    assert "0.0001" in result.detail or "1e-04" in result.detail, result.render()

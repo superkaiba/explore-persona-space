@@ -74,6 +74,30 @@ class LoRANotAppliedError(RuntimeError):
     """
 
 
+class SourceDeltaGManifestMismatchError(RuntimeError):
+    """Raised when the rig's own source-self ΔG disagrees with the selector manifest.
+
+    Task #534 round-1 incident (2026-06-10): vLLM caches LoRA adapters
+    strictly by ``lora_int_id`` (``LRUCacheWorkerLoRAManager.add_adapter``:
+    an already-seen id is "just touched" — ``lora_path`` is never re-read).
+    The trajectory rig passed ``lora_int_id=1`` for EVERY checkpoint, so all
+    four fractions were silently served by the FIRST loaded adapter (step ~5,
+    ΔG≈0.03) and the eval read a flat ≈0 trajectory while the selector's
+    HF/PEFT read of the SAME snapshot dirs measured 6+ nats at the stop step.
+    Neither existing guard could catch it: the B-matrix check is structural
+    (the dirs were genuinely trained) and the byte-identical guard requires
+    ``g == b`` exactly (a wrong-but-real adapter gives g ≠ b).
+
+    This guard closes the hole with a cross-validation the rig can't fake:
+    the selector manifest's ``source_delta_g_at_selected_steps`` and the
+    eval's own source-self ΔG read the same artifact through two independent
+    paths (HF/PEFT teacher-forced vs vLLM on-policy). Empirical calibration:
+    #530 c504v3_near_seed42 read 5.82 on-policy vs 6.28 teacher-forced at the
+    stop step (~0.5-nat method disagreement), so a 2-nat tolerance at the
+    final fraction separates method noise from adapter-not-applied by >2x.
+    """
+
+
 class MarkerLogprobPathReadingFromBaseError(RuntimeError):
     """Raised when the marker-logprob reader has the v3 byte-identical bug.
 
@@ -412,5 +436,140 @@ def assert_adapter_actually_applied(
         max_abs_dg,
         n_emit,
         n_probes,
+    )
+    return diag
+
+
+# ── #534 round-2: selector-manifest cross-check on the eval's source-self ΔG ──
+# Tolerance between the selector's teacher-forced HF/PEFT source ΔG and the
+# eval rig's on-policy vLLM source-self ΔG at the SAME step. Empirical method
+# disagreement at the stop step is ~0.5 nats (#530 c504v3_near_seed42: 5.82
+# on-policy vs 6.28 teacher-forced); the #534 round-1 adapter-not-applied
+# regression produced a 6.24-nat disagreement. 2.0 separates the two by >2x
+# in both directions.
+DEFAULT_SOURCE_MANIFEST_TOL_NATS = 2.0
+# When the band-stop fired, the stop-step (final-fraction) adapter sits in
+# [5, 12] nats teacher-forced — an on-policy source-self read ≤ 1 nat at that
+# checkpoint is physically inconsistent with "the adapter was applied",
+# regardless of whether a manifest expectation is available.
+DEFAULT_MIN_FINAL_SOURCE_DELTA_G_NATS = 1.0
+
+
+def assert_source_delta_g_matches_manifest(
+    *,
+    cell_label: str,
+    frac: float,
+    eval_delta_g_nats: float,
+    expected_delta_g_nats: float | None,
+    is_final_frac: bool,
+    band_stop_fired: bool,
+    tol_nats: float = DEFAULT_SOURCE_MANIFEST_TOL_NATS,
+    min_final_delta_g_nats: float = DEFAULT_MIN_FINAL_SOURCE_DELTA_G_NATS,
+) -> dict[str, Any]:
+    """Cross-check the eval's source-self ΔG against the selector manifest.
+
+    The #534 adapter-not-applied guard (round-2 fix). Two independent reads of
+    the SAME snapshot dir — the selector's HF/PEFT teacher-forced source ΔG
+    (``fraction_manifest.json.source_delta_g_at_selected_steps``) and this
+    rig's on-policy vLLM source-self ΔG — must agree to within ``tol_nats`` at
+    the final fraction. A silent vLLM LoRA no-op (wrong ``lora_int_id`` reuse,
+    unmatched module names, a future loader regression) makes the eval read
+    ≈0 while the manifest says 6+, tripping this guard BEFORE the flat
+    trajectory leaves the rig.
+
+    Clauses (fail loud, no silent pass):
+      1. ``expected`` present AND ``|eval − expected| > tol_nats``:
+         final fraction → raise ``SourceDeltaGManifestMismatchError``;
+         non-final fraction → WARN + verdict ``"warn_nonfinal_mismatch"``
+         (teacher-forced vs on-policy can legitimately diverge more at
+         small-ΔG mid-fractions; only the final fraction is a hard gate).
+      2. final fraction AND ``band_stop_fired`` AND
+         ``eval < min_final_delta_g_nats`` → raise (fires even when the
+         manifest expectation is missing, e.g. selector ran
+         ``--skip-source-trajectory``).
+
+    Args:
+        cell_label: cell + seed + frac string for log/error messages.
+        frac: this checkpoint's fraction (diagnostics only).
+        eval_delta_g_nats: the rig's on-policy source-self mean ΔG.
+        expected_delta_g_nats: the selector manifest's teacher-forced source
+            ΔG at the SAME selected step (None when unavailable).
+        is_final_frac: True when this checkpoint is the max-fraction entry.
+        band_stop_fired: True when the training band-stop fired (manifest
+            ``stopped``), i.e. the stop-step adapter is in [5, 12] nats.
+        tol_nats: max tolerated |eval − expected| at the final fraction.
+        min_final_delta_g_nats: floor for the final-fraction eval read when
+            the band-stop fired.
+
+    Returns:
+        Diag dict ``{"frac", "eval_delta_g_nats", "expected_delta_g_nats",
+        "disagreement_nats", "is_final_frac", "band_stop_fired", "tol_nats",
+        "min_final_delta_g_nats", "guard_verdict"}`` with verdict ``"pass"``
+        or ``"warn_nonfinal_mismatch"``.
+
+    Raises:
+        SourceDeltaGManifestMismatchError: clause 1 (final) or clause 2.
+    """
+    disagreement = (
+        abs(eval_delta_g_nats - expected_delta_g_nats)
+        if expected_delta_g_nats is not None
+        else None
+    )
+    diag: dict[str, Any] = {
+        "frac": float(frac),
+        "eval_delta_g_nats": float(eval_delta_g_nats),
+        "expected_delta_g_nats": (
+            float(expected_delta_g_nats) if expected_delta_g_nats is not None else None
+        ),
+        "disagreement_nats": float(disagreement) if disagreement is not None else None,
+        "is_final_frac": bool(is_final_frac),
+        "band_stop_fired": bool(band_stop_fired),
+        "tol_nats": float(tol_nats),
+        "min_final_delta_g_nats": float(min_final_delta_g_nats),
+    }
+
+    if disagreement is not None and disagreement > tol_nats:
+        if is_final_frac:
+            raise SourceDeltaGManifestMismatchError(
+                f"[{cell_label}] source-self ΔG disagrees with the selector manifest at the "
+                f"FINAL fraction (frac={frac}): eval(on-policy vLLM)={eval_delta_g_nats:.3f} "
+                f"nats vs manifest(teacher-forced HF/PEFT)={expected_delta_g_nats:.3f} nats — "
+                f"|Δ|={disagreement:.3f} > tol={tol_nats:.1f}. Two independent reads of the "
+                f"SAME snapshot dir cannot disagree this much unless the eval path did not "
+                f"actually apply the adapter (the #534 round-1 lora_int_id-reuse regression) "
+                f"or loaded the wrong one. Do NOT trust this trajectory.json."
+            )
+        log.warning(
+            "[%s] source-self ΔG vs manifest mismatch at NON-final frac=%s: eval=%.3f vs "
+            "expected=%.3f (|Δ|=%.3f > tol=%.1f) — recorded (not fatal; teacher-forced vs "
+            "on-policy diverge more at small-ΔG mid-fractions). If the FINAL fraction also "
+            "mismatches the run fails loud there.",
+            cell_label,
+            frac,
+            eval_delta_g_nats,
+            expected_delta_g_nats,
+            disagreement,
+            tol_nats,
+        )
+        diag["guard_verdict"] = "warn_nonfinal_mismatch"
+        return diag
+
+    if is_final_frac and band_stop_fired and eval_delta_g_nats < min_final_delta_g_nats:
+        raise SourceDeltaGManifestMismatchError(
+            f"[{cell_label}] band-stop fired (training stopped with source ΔG in [5, 12] nats "
+            f"teacher-forced) but the eval's on-policy source-self ΔG at the FINAL fraction "
+            f"(frac={frac}) is {eval_delta_g_nats:.3f} < {min_final_delta_g_nats:.1f} nats — "
+            f"the implant the selector verified is invisible to the eval path, i.e. the "
+            f"adapter was not (or wrongly) applied. Do NOT trust this trajectory.json."
+        )
+
+    diag["guard_verdict"] = "pass"
+    log.info(
+        "[%s] source-manifest guard PASS at frac=%s: eval=%.3f, expected=%s, final=%s.",
+        cell_label,
+        frac,
+        eval_delta_g_nats,
+        f"{expected_delta_g_nats:.3f}" if expected_delta_g_nats is not None else "n/a",
+        is_final_frac,
     )
     return diag

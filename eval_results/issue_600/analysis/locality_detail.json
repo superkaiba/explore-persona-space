@@ -1,0 +1,5378 @@
+{
+  "locality": {
+    "pirate_captain": {
+      "d_target": 0.03087775377889405,
+      "n_non_target": 40,
+      "lower_tail_p": 0.43902439024390244,
+      "d_by_persona": {
+        "accountant": 0.030539606892310982,
+        "architect": 0.049326633415191334,
+        "chef": 0.0054018821719030346,
+        "chess_grandmaster": 0.00879608696135629,
+        "child": 0.01233456323149664,
+        "con_artist": 0.04339017494247721,
+        "corporate_raider": 0.005029200090906312,
+        "crossing_guard": 0.059974518016869816,
+        "electrician": 0.031063006696275503,
+        "florist": 0.046597025618025,
+        "investment_banker": 0.033229603972588194,
+        "kindergarten_teacher": 0.033025127682335766,
+        "lawyer": 0.01897314956625884,
+        "librarian": 0.014904199377016869,
+        "lifeguard": 0.03583416992770725,
+        "medical_doctor": 0.022191388818560327,
+        "meditation_teacher": 0.04337284921823672,
+        "mercenary": 0.07548731326703802,
+        "monk": 0.0323367954644051,
+        "music_therapist": 0.009898368574656294,
+        "nature_guide": 0.020584566336731686,
+        "origami_artist": 0.0566871697190516,
+        "philosopher": 0.04606356359267777,
+        "pirate_captain": 0.03087775377889405,
+        "police_officer": 0.042755364950450625,
+        "postal_worker": 0.03393119720680998,
+        "preschool_teacher": 0.042410362178685324,
+        "programmer": 0.015011453227482116,
+        "prosecutor": 0.009539743205940365,
+        "quilter": 0.028399532036035957,
+        "sheep_herder": -0.0486044784534034,
+        "social_worker": 0.025314247065960305,
+        "software_engineer": 0.021430276057130233,
+        "spy": 0.06383629619079985,
+        "storyteller": 0.04798946857583072,
+        "surgeon": 0.05593390809551176,
+        "taxi_driver": 0.04800114293092944,
+        "veterinarian": 0.05752184131264628,
+        "wildlife_rehabilitator": 0.0447757435437676,
+        "wizard": -0.012289999010085317,
+        "zelthari_scholar": 0.043320837518277124
+      }
+    },
+    "mercenary": {
+      "d_target": -0.040767728319160125,
+      "n_non_target": 40,
+      "lower_tail_p": 0.04878048780487805,
+      "d_by_persona": {
+        "accountant": 0.0005900115163461709,
+        "architect": 0.015671931831911328,
+        "chef": -0.006442039484136834,
+        "chess_grandmaster": -0.038945217796326835,
+        "child": -0.008504505222521072,
+        "con_artist": -0.01850276877807507,
+        "corporate_raider": 0.017390898127932375,
+        "crossing_guard": -0.007228535566861094,
+        "electrician": -0.015951636529342766,
+        "florist": -0.012209804944565786,
+        "investment_banker": 0.00839170561133564,
+        "kindergarten_teacher": 0.008290501410508447,
+        "lawyer": 0.003174148390874154,
+        "librarian": -0.007933997953957198,
+        "lifeguard": -0.0007910586470440221,
+        "medical_doctor": 0.010310366141104291,
+        "meditation_teacher": 0.03862809094928223,
+        "mercenary": -0.040767728319160125,
+        "monk": 0.028354159047394006,
+        "music_therapist": -0.02274341833790222,
+        "nature_guide": -0.0018765834389905163,
+        "origami_artist": 0.06407931604550106,
+        "philosopher": -0.01673081430692519,
+        "pirate_captain": -0.003355781923422637,
+        "police_officer": -0.013940039965936235,
+        "postal_worker": 0.005428599611962422,
+        "preschool_teacher": -0.012096781982669428,
+        "programmer": -0.005990435484641769,
+        "prosecutor": -0.0001911502306087461,
+        "quilter": 0.011083022325652725,
+        "sheep_herder": 0.03028956962426817,
+        "social_worker": -0.012812060411336312,
+        "software_engineer": 0.00028912148621971595,
+        "spy": 0.03864202565095239,
+        "storyteller": 0.014672074414410449,
+        "surgeon": 0.021906585567753028,
+        "taxi_driver": -0.0039014272601536337,
+        "veterinarian": -0.03538232574206551,
+        "wildlife_rehabilitator": 0.009576395450138867,
+        "wizard": -0.05908966004151539,
+        "zelthari_scholar": -0.010288842125158423
+      }
+    },
+    "software_engineer": {
+      "d_target": 0.027397339697810903,
+      "n_non_target": 40,
+      "lower_tail_p": 0.7073170731707317,
+      "d_by_persona": {
+        "accountant": 0.0318666231373145,
+        "architect": 0.003818870949744979,
+        "chef": 0.012886648741261405,
+        "chess_grandmaster": 0.0013862918352368265,
+        "child": 0.03424638867634866,
+        "con_artist": 0.03146865205848796,
+        "corporate_raider": 0.07482047891712089,
+        "crossing_guard": 0.02070928124745136,
+        "electrician": 0.00035718248999094815,
+        "florist": 0.02188564465607501,
+        "investment_banker": 0.03091329501898582,
+        "kindergarten_teacher": 0.025978706279279173,
+        "lawyer": 0.024909139594500068,
+        "librarian": 0.0037082464977919636,
+        "lifeguard": 0.023033124552938378,
+        "medical_doctor": 0.01111772461387702,
+        "meditation_teacher": -0.0127246315645545,
+        "mercenary": -0.0027747198492368472,
+        "monk": 0.0018597007791576654,
+        "music_therapist": 0.012991658352264698,
+        "nature_guide": 0.02606821591585995,
+        "origami_artist": 0.06319761446340144,
+        "philosopher": 0.02951487969701755,
+        "pirate_captain": 0.03719786008576167,
+        "police_officer": -0.012200574841481996,
+        "postal_worker": 0.04231395251502116,
+        "preschool_teacher": 0.0261135972019045,
+        "programmer": 0.004647104320577651,
+        "prosecutor": 0.008017213301763823,
+        "quilter": 0.04178817093173365,
+        "sheep_herder": 0.005774600379550539,
+        "social_worker": 0.01487820500814365,
+        "software_engineer": 0.027397339697810903,
+        "spy": 0.022770157243425976,
+        "storyteller": 0.0028268347319746847,
+        "surgeon": 0.00686656459437877,
+        "taxi_driver": 0.031177512224059383,
+        "veterinarian": 0.015662756721360305,
+        "wildlife_rehabilitator": 0.023599860285318814,
+        "wizard": 0.06818372408878874,
+        "zelthari_scholar": 0.011782864796510547
+      }
+    },
+    "wildlife_rehabilitator": {
+      "d_target": 0.016270478940014082,
+      "n_non_target": 40,
+      "lower_tail_p": 0.3902439024390244,
+      "d_by_persona": {
+        "accountant": 0.01697923856845333,
+        "architect": 0.028059359888330377,
+        "chef": 0.03759134521623886,
+        "chess_grandmaster": 0.05002244313519907,
+        "child": 0.0003271693012906381,
+        "con_artist": 0.0617570509229484,
+        "corporate_raider": 0.032321025194128016,
+        "crossing_guard": 0.016191866953198797,
+        "electrician": 0.023840798150758697,
+        "florist": 0.017775710795464323,
+        "investment_banker": 0.011035697228976663,
+        "kindergarten_teacher": 0.003426898366093889,
+        "lawyer": -0.0011057875228769887,
+        "librarian": 0.024505698893838673,
+        "lifeguard": 0.01170954129842792,
+        "medical_doctor": 0.028528527079092852,
+        "meditation_teacher": 0.0520009103338363,
+        "mercenary": 0.024603585712594616,
+        "monk": 0.04454470375121705,
+        "music_therapist": -0.00742782572455869,
+        "nature_guide": 0.038091296514900196,
+        "origami_artist": 0.024965548702829337,
+        "philosopher": 0.06232547225609236,
+        "pirate_captain": 0.011834972039554395,
+        "police_officer": 0.04090461130232631,
+        "postal_worker": 0.021428799105138174,
+        "preschool_teacher": 0.018752498354100144,
+        "programmer": 0.014291432481268537,
+        "prosecutor": 0.0024819807259844895,
+        "quilter": 0.013016676988976128,
+        "sheep_herder": 0.0035373576676177576,
+        "social_worker": 0.029737895709287514,
+        "software_engineer": 0.03430005925409766,
+        "spy": 0.042266567674326905,
+        "storyteller": 0.01411236233114301,
+        "surgeon": 0.024388728609923582,
+        "taxi_driver": 0.04747206413741567,
+        "veterinarian": 0.012655372918481364,
+        "wildlife_rehabilitator": 0.016270478940014082,
+        "wizard": -0.008160502083206697,
+        "zelthari_scholar": 0.07489426976212521
+      }
+    },
+    "postal_worker": {
+      "d_target": 0.03439377516493155,
+      "n_non_target": 40,
+      "lower_tail_p": 0.8292682926829268,
+      "d_by_persona": {
+        "accountant": 0.006295536091544429,
+        "architect": 0.025805983028713047,
+        "chef": 0.03280855043088889,
+        "chess_grandmaster": 0.04668537320184496,
+        "child": -0.04030500756016051,
+        "con_artist": -0.008477277881966394,
+        "corporate_raider": 0.007419281650634509,
+        "crossing_guard": 0.03432817127079515,
+        "electrician": 0.006057593716742323,
+        "florist": 0.0114708655651287,
+        "investment_banker": 0.0008078147564141158,
+        "kindergarten_teacher": 0.02924991569558638,
+        "lawyer": 0.019191562422747128,
+        "librarian": 0.035284738821150664,
+        "lifeguard": 0.01833280922548164,
+        "medical_doctor": 0.012382653778923447,
+        "meditation_teacher": 0.0007788226529542586,
+        "mercenary": 0.04242853806920038,
+        "monk": 0.02427520759953794,
+        "music_therapist": -0.013331777158923697,
+        "nature_guide": 0.04551185924447654,
+        "origami_artist": 0.016629585898730165,
+        "philosopher": -0.0315368125014864,
+        "pirate_captain": 0.014475917397801833,
+        "police_officer": 0.032673201028581456,
+        "postal_worker": 0.03439377516493155,
+        "preschool_teacher": -0.009223099972312169,
+        "programmer": 0.020723882351171525,
+        "prosecutor": 0.018822099923400892,
+        "quilter": 0.016527455781584988,
+        "sheep_herder": 0.02786203550111695,
+        "social_worker": 0.022021380524092266,
+        "software_engineer": 0.03778597227522849,
+        "spy": 0.03459021173572115,
+        "storyteller": -0.001574060435477087,
+        "surgeon": 0.02310308639185645,
+        "taxi_driver": 0.018292753788776095,
+        "veterinarian": 0.027658862593440674,
+        "wildlife_rehabilitator": -0.0023126007141838767,
+        "wizard": -0.01585385664642854,
+        "zelthari_scholar": 0.05394568116861446
+      }
+    },
+    "prosecutor": {
+      "d_target": 0.037600105373884175,
+      "n_non_target": 40,
+      "lower_tail_p": 0.5609756097560976,
+      "d_by_persona": {
+        "accountant": 0.02576274214138054,
+        "architect": 0.036634126316534364,
+        "chef": 0.04682355646860129,
+        "chess_grandmaster": 0.060738355644382715,
+        "child": 0.02166754534458948,
+        "con_artist": 0.11708126649257274,
+        "corporate_raider": 0.051736962325675116,
+        "crossing_guard": 0.040435244074060815,
+        "electrician": 0.025872986535497928,
+        "florist": 0.060544192166301504,
+        "investment_banker": 0.0451967203871231,
+        "kindergarten_teacher": 0.032406961920453024,
+        "lawyer": 0.01542145373303122,
+        "librarian": 0.03718555330271761,
+        "lifeguard": 0.01930273004857382,
+        "medical_doctor": 0.0236783957538196,
+        "meditation_teacher": 0.023396645903517532,
+        "mercenary": -0.04846355154767209,
+        "monk": 0.08556100952019118,
+        "music_therapist": 0.04495812583478431,
+        "nature_guide": 0.03890071364416995,
+        "origami_artist": 0.0049991230142993155,
+        "philosopher": 0.023750775783780764,
+        "pirate_captain": 0.012760059195155438,
+        "police_officer": 0.06319792292336014,
+        "postal_worker": 0.035565468950865396,
+        "preschool_teacher": 0.020569860095636754,
+        "programmer": 0.03162565115368252,
+        "prosecutor": 0.037600105373884175,
+        "quilter": 0.08226715718662132,
+        "sheep_herder": 0.07084540597868771,
+        "social_worker": 0.033010162047600544,
+        "software_engineer": 0.048143568221158874,
+        "spy": 0.04381472905537979,
+        "storyteller": 0.004895063014464592,
+        "surgeon": 0.030486844231099337,
+        "taxi_driver": 0.027333277926049577,
+        "veterinarian": 0.03318208073035719,
+        "wildlife_rehabilitator": 0.052394293659510816,
+        "wizard": 0.08538283783718377,
+        "zelthari_scholar": 0.08109111854944119
+      }
+    }
+  },
+  "bubble_radius": {
+    "L10": {
+      "skipped": false,
+      "per_target": {
+        "pirate_captain": {
+          "n": 41,
+          "spearman_rho": -0.03083623693379791,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.36383518576622,
+              "paired_difference": 0.030539606892310982
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.1034797206521034,
+              "paired_difference": 0.049326633415191334
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.2694276869297028,
+              "paired_difference": 0.0054018821719030346
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.8508084267377853,
+              "paired_difference": 0.00879608696135629
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 0.9461905807256699,
+              "paired_difference": 0.01233456323149664
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.6063765287399292,
+              "paired_difference": 0.04339017494247721
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.7411121428012848,
+              "paired_difference": 0.005029200090906312
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.0593281127512455,
+              "paired_difference": 0.059974518016869816
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.2766258716583252,
+              "paired_difference": 0.031063006696275503
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.024711774662137,
+              "paired_difference": 0.046597025618025
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1940340995788574,
+              "paired_difference": 0.033229603972588194
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.028485620394349,
+              "paired_difference": 0.033025127682335766
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.229301929473877,
+              "paired_difference": 0.01897314956625884
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1351668536663055,
+              "paired_difference": 0.014904199377016869
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.1720544248819351,
+              "paired_difference": 0.03583416992770725
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.1967594623565674,
+              "paired_difference": 0.022191388818560327
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.1277903020381927,
+              "paired_difference": 0.04337284921823672
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6226586103439331,
+              "paired_difference": 0.07548731326703802
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.947971910238266,
+              "paired_difference": 0.0323367954644051
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.0281233135610819,
+              "paired_difference": 0.009898368574656294
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.2496794611215591,
+              "paired_difference": 0.020584566336731686
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.1007758527994156,
+              "paired_difference": 0.0566871697190516
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.0993924736976624,
+              "paired_difference": 0.04606356359267777
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5101392865180969,
+              "paired_difference": 0.03087775377889405
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0258250404149294,
+              "paired_difference": 0.042755364950450625
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.9642110019922256,
+              "paired_difference": 0.03393119720680998
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.2398480474948883,
+              "paired_difference": 0.042410362178685324
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.9565177485346794,
+              "paired_difference": 0.015011453227482116
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0476962141692638,
+              "paired_difference": 0.009539743205940365
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.1412270367145538,
+              "paired_difference": 0.028399532036035957
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.8276938945055008,
+              "paired_difference": -0.0486044784534034
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.1802163124084473,
+              "paired_difference": 0.025314247065960305
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.0727330520749092,
+              "paired_difference": 0.021430276057130233
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.6665374040603638,
+              "paired_difference": 0.06383629619079985
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.0430368445813656,
+              "paired_difference": 0.04798946857583072
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.0514267608523369,
+              "paired_difference": 0.05593390809551176
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.8933005481958389,
+              "paired_difference": 0.04800114293092944
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.0691228061914444,
+              "paired_difference": 0.05752184131264628
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.3830734491348267,
+              "paired_difference": 0.0447757435437676
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9323022961616516,
+              "paired_difference": -0.012289999010085317
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.12550887465477,
+              "paired_difference": 0.043320837518277124
+            }
+          ]
+        },
+        "mercenary": {
+          "n": 41,
+          "spearman_rho": 0.10853658536585369,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.36383518576622,
+              "paired_difference": 0.0005900115163461709
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.1034797206521034,
+              "paired_difference": 0.015671931831911328
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.2694276869297028,
+              "paired_difference": -0.006442039484136834
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.8508084267377853,
+              "paired_difference": -0.038945217796326835
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 0.9461905807256699,
+              "paired_difference": -0.008504505222521072
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.6063765287399292,
+              "paired_difference": -0.01850276877807507
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.7411121428012848,
+              "paired_difference": 0.017390898127932375
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.0593281127512455,
+              "paired_difference": -0.007228535566861094
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.2766258716583252,
+              "paired_difference": -0.015951636529342766
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.024711774662137,
+              "paired_difference": -0.012209804944565786
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1940340995788574,
+              "paired_difference": 0.00839170561133564
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.028485620394349,
+              "paired_difference": 0.008290501410508447
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.229301929473877,
+              "paired_difference": 0.003174148390874154
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1351668536663055,
+              "paired_difference": -0.007933997953957198
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.1720544248819351,
+              "paired_difference": -0.0007910586470440221
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.1967594623565674,
+              "paired_difference": 0.010310366141104291
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.1277903020381927,
+              "paired_difference": 0.03862809094928223
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6226586103439331,
+              "paired_difference": -0.040767728319160125
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.947971910238266,
+              "paired_difference": 0.028354159047394006
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.0281233135610819,
+              "paired_difference": -0.02274341833790222
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.2496794611215591,
+              "paired_difference": -0.0018765834389905163
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.1007758527994156,
+              "paired_difference": 0.06407931604550106
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.0993924736976624,
+              "paired_difference": -0.01673081430692519
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5101392865180969,
+              "paired_difference": -0.003355781923422637
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0258250404149294,
+              "paired_difference": -0.013940039965936235
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.9642110019922256,
+              "paired_difference": 0.005428599611962422
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.2398480474948883,
+              "paired_difference": -0.012096781982669428
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.9565177485346794,
+              "paired_difference": -0.005990435484641769
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0476962141692638,
+              "paired_difference": -0.0001911502306087461
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.1412270367145538,
+              "paired_difference": 0.011083022325652725
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.8276938945055008,
+              "paired_difference": 0.03028956962426817
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.1802163124084473,
+              "paired_difference": -0.012812060411336312
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.0727330520749092,
+              "paired_difference": 0.00028912148621971595
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.6665374040603638,
+              "paired_difference": 0.03864202565095239
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.0430368445813656,
+              "paired_difference": 0.014672074414410449
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.0514267608523369,
+              "paired_difference": 0.021906585567753028
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.8933005481958389,
+              "paired_difference": -0.0039014272601536337
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.0691228061914444,
+              "paired_difference": -0.03538232574206551
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.3830734491348267,
+              "paired_difference": 0.009576395450138867
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9323022961616516,
+              "paired_difference": -0.05908966004151539
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.12550887465477,
+              "paired_difference": -0.010288842125158423
+            }
+          ]
+        },
+        "software_engineer": {
+          "n": 41,
+          "spearman_rho": -0.12648083623693385,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.7762505114078522,
+              "paired_difference": 0.0318666231373145
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.7773841172456741,
+              "paired_difference": 0.003818870949744979
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.099341094493866,
+              "paired_difference": 0.012886648741261405
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.0081311035901308,
+              "paired_difference": 0.0013862918352368265
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.093206062912941,
+              "paired_difference": 0.03424638867634866
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.0852302014827728,
+              "paired_difference": 0.03146865205848796
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.130043551325798,
+              "paired_difference": 0.07482047891712089
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2214577198028564,
+              "paired_difference": 0.02070928124745136
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.82416170835495,
+              "paired_difference": 0.00035718248999094815
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.8474798053503036,
+              "paired_difference": 0.02188564465607501
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8834220618009567,
+              "paired_difference": 0.03091329501898582
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9606585800647736,
+              "paired_difference": 0.025978706279279173
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.9665856473147869,
+              "paired_difference": 0.024909139594500068
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.9345028772950172,
+              "paired_difference": 0.0037082464977919636
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.2216210514307022,
+              "paired_difference": 0.023033124552938378
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.9245421215891838,
+              "paired_difference": 0.01111772461387702
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.1583772599697113,
+              "paired_difference": -0.0127246315645545
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.1576708406209946,
+              "paired_difference": -0.0027747198492368472
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.306963711977005,
+              "paired_difference": 0.0018597007791576654
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.025412330403924,
+              "paired_difference": 0.012991658352264698
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.207142025232315,
+              "paired_difference": 0.02606821591585995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.0517283901572227,
+              "paired_difference": 0.06319761446340144
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.0864791199564934,
+              "paired_difference": 0.02951487969701755
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.0918534621596336,
+              "paired_difference": 0.03719786008576167
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.1518345028162003,
+              "paired_difference": -0.012200574841481996
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8299373835325241,
+              "paired_difference": 0.04231395251502116
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.0930345728993416,
+              "paired_difference": 0.0261135972019045
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.7291413843631744,
+              "paired_difference": 0.004647104320577651
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0885367169976234,
+              "paired_difference": 0.008017213301763823
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.079550951719284,
+              "paired_difference": 0.04178817093173365
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.2280882149934769,
+              "paired_difference": 0.005774600379550539
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.787613719701767,
+              "paired_difference": 0.01487820500814365
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.38305872678756714,
+              "paired_difference": 0.027397339697810903
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.8792017921805382,
+              "paired_difference": 0.022770157243425976
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.1220297813415527,
+              "paired_difference": 0.0028268347319746847
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.0268700439482927,
+              "paired_difference": 0.00686656459437877
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.0619660541415215,
+              "paired_difference": 0.031177512224059383
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.9592827707529068,
+              "paired_difference": 0.015662756721360305
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.140273317694664,
+              "paired_difference": 0.023599860285318814
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0828071683645248,
+              "paired_difference": 0.06818372408878874
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.2285856157541275,
+              "paired_difference": 0.011782864796510547
+            }
+          ]
+        },
+        "wildlife_rehabilitator": {
+          "n": 41,
+          "spearman_rho": 0.19407665505226485,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.7514148503541946,
+              "paired_difference": 0.01697923856845333
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.033966090530157,
+              "paired_difference": 0.028059359888330377
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.1124485656619072,
+              "paired_difference": 0.03759134521623886
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.9087125062942505,
+              "paired_difference": 0.05002244313519907
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.172301858663559,
+              "paired_difference": 0.0003271693012906381
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.1907264739274979,
+              "paired_difference": 0.0617570509229484
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.845318004488945,
+              "paired_difference": 0.032321025194128016
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.9131222069263458,
+              "paired_difference": 0.016191866953198797
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.8254045397043228,
+              "paired_difference": 0.023840798150758697
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.8910444155335426,
+              "paired_difference": 0.017775710795464323
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.7371256053447723,
+              "paired_difference": 0.011035697228976663
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9512832053005695,
+              "paired_difference": 0.003426898366093889
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.0725121647119522,
+              "paired_difference": -0.0011057875228769887
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1572783589363098,
+              "paired_difference": 0.024505698893838673
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.8263551294803619,
+              "paired_difference": 0.01170954129842792
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.8119005858898163,
+              "paired_difference": 0.028528527079092852
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.983736788854003,
+              "paired_difference": 0.0520009103338363
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.7683156877756119,
+              "paired_difference": 0.024603585712594616
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.8522869050502777,
+              "paired_difference": 0.04454470375121705
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.5660132765769958,
+              "paired_difference": -0.00742782572455869
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.0083239153027534,
+              "paired_difference": 0.038091296514900196
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.0292601864784956,
+              "paired_difference": 0.024965548702829337
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.8604076355695724,
+              "paired_difference": 0.06232547225609236
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.9842657968401909,
+              "paired_difference": 0.011834972039554395
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0953465476632118,
+              "paired_difference": 0.04090461130232631
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8813361898064613,
+              "paired_difference": 0.021428799105138174
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.6424385011196136,
+              "paired_difference": 0.018752498354100144
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1193115934729576,
+              "paired_difference": 0.014291432481268537
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.5648511350154877,
+              "paired_difference": 0.0024819807259844895
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.8468703180551529,
+              "paired_difference": 0.013016676988976128
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9303876310586929,
+              "paired_difference": 0.0035373576676177576
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.7088895440101624,
+              "paired_difference": 0.029737895709287514
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.175391048192978,
+              "paired_difference": 0.03430005925409766
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.1986271739006042,
+              "paired_difference": 0.042266567674326905
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.0683668628335,
+              "paired_difference": 0.01411236233114301
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.842672124505043,
+              "paired_difference": 0.024388728609923582
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.8598049283027649,
+              "paired_difference": 0.04747206413741567
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.6001453101634979,
+              "paired_difference": 0.012655372918481364
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5565101802349091,
+              "paired_difference": 0.016270478940014082
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.1080672517418861,
+              "paired_difference": -0.008160502083206697
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8966751992702484,
+              "paired_difference": 0.07489426976212521
+            }
+          ]
+        },
+        "postal_worker": {
+          "n": 41,
+          "spearman_rho": -0.1693379790940767,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.8931585475802422,
+              "paired_difference": 0.006295536091544429
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.790872797369957,
+              "paired_difference": 0.025805983028713047
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.1572133153676987,
+              "paired_difference": 0.03280855043088889
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.100014328956604,
+              "paired_difference": 0.04668537320184496
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.0844165980815887,
+              "paired_difference": -0.04030500756016051
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.3782738149166107,
+              "paired_difference": -0.008477277881966394
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.2110564857721329,
+              "paired_difference": 0.007419281650634509
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.1204572170972824,
+              "paired_difference": 0.03432817127079515
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.663638561964035,
+              "paired_difference": 0.006057593716742323
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.4217261075973511,
+              "paired_difference": 0.0114708655651287
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8914949595928192,
+              "paired_difference": 0.0008078147564141158
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.8126827776432037,
+              "paired_difference": 0.02924991569558638
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.214528113603592,
+              "paired_difference": 0.019191562422747128
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.7761603444814682,
+              "paired_difference": 0.035284738821150664
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.096186064183712,
+              "paired_difference": 0.01833280922548164
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.8949558362364769,
+              "paired_difference": 0.012382653778923447
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.4727766811847687,
+              "paired_difference": 0.0007788226529542586
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.7581469565629959,
+              "paired_difference": 0.04242853806920038
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.0215828940272331,
+              "paired_difference": 0.02427520759953794
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.8363996744155884,
+              "paired_difference": -0.013331777158923697
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.3173657655715942,
+              "paired_difference": 0.04551185924447654
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2974274456501007,
+              "paired_difference": 0.016629585898730165
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.2432328164577484,
+              "paired_difference": -0.0315368125014864
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.6923520863056183,
+              "paired_difference": 0.014475917397801833
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.3901000022888184,
+              "paired_difference": 0.032673201028581456
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.41337841749191284,
+              "paired_difference": 0.03439377516493155
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.0316809751093388,
+              "paired_difference": -0.009223099972312169
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.6227883994579315,
+              "paired_difference": 0.020723882351171525
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9805295839905739,
+              "paired_difference": 0.018822099923400892
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.9317309930920601,
+              "paired_difference": 0.016527455781584988
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.0509805455803871,
+              "paired_difference": 0.02786203550111695
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.7952828258275986,
+              "paired_difference": 0.022021380524092266
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.5746917724609375,
+              "paired_difference": 0.03778597227522849
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.8791267350316048,
+              "paired_difference": 0.03459021173572115
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.2509405016899109,
+              "paired_difference": -0.001574060435477087
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.7691916227340698,
+              "paired_difference": 0.02310308639185645
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.9228100031614304,
+              "paired_difference": 0.018292753788776095
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.630374550819397,
+              "paired_difference": 0.027658862593440674
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.9670330137014389,
+              "paired_difference": -0.0023126007141838767
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.215023010969162,
+              "paired_difference": -0.01585385664642854
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.4245892763137817,
+              "paired_difference": 0.05394568116861446
+            }
+          ]
+        },
+        "prosecutor": {
+          "n": 41,
+          "spearman_rho": 0.11080139372822301,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.7514148503541946,
+              "paired_difference": 0.02576274214138054
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.033966090530157,
+              "paired_difference": 0.036634126316534364
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.1124485656619072,
+              "paired_difference": 0.04682355646860129
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.9087125062942505,
+              "paired_difference": 0.060738355644382715
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.172301858663559,
+              "paired_difference": 0.02166754534458948
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.1907264739274979,
+              "paired_difference": 0.11708126649257274
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.845318004488945,
+              "paired_difference": 0.051736962325675116
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.9131222069263458,
+              "paired_difference": 0.040435244074060815
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.8254045397043228,
+              "paired_difference": 0.025872986535497928
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.8910444155335426,
+              "paired_difference": 0.060544192166301504
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.7371256053447723,
+              "paired_difference": 0.0451967203871231
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9512832053005695,
+              "paired_difference": 0.032406961920453024
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.0725121647119522,
+              "paired_difference": 0.01542145373303122
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1572783589363098,
+              "paired_difference": 0.03718555330271761
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.8263551294803619,
+              "paired_difference": 0.01930273004857382
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.8119005858898163,
+              "paired_difference": 0.0236783957538196
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.983736788854003,
+              "paired_difference": 0.023396645903517532
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.7683156877756119,
+              "paired_difference": -0.04846355154767209
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.8522869050502777,
+              "paired_difference": 0.08556100952019118
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.5660132765769958,
+              "paired_difference": 0.04495812583478431
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.0083239153027534,
+              "paired_difference": 0.03890071364416995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.0292601864784956,
+              "paired_difference": 0.0049991230142993155
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.8604076355695724,
+              "paired_difference": 0.023750775783780764
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.9842657968401909,
+              "paired_difference": 0.012760059195155438
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0953465476632118,
+              "paired_difference": 0.06319792292336014
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8813361898064613,
+              "paired_difference": 0.035565468950865396
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.6424385011196136,
+              "paired_difference": 0.020569860095636754
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1193115934729576,
+              "paired_difference": 0.03162565115368252
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.5648511350154877,
+              "paired_difference": 0.037600105373884175
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.8468703180551529,
+              "paired_difference": 0.08226715718662132
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9303876310586929,
+              "paired_difference": 0.07084540597868771
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.7088895440101624,
+              "paired_difference": 0.033010162047600544
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.175391048192978,
+              "paired_difference": 0.048143568221158874
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.1986271739006042,
+              "paired_difference": 0.04381472905537979
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.0683668628335,
+              "paired_difference": 0.004895063014464592
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.842672124505043,
+              "paired_difference": 0.030486844231099337
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.8598049283027649,
+              "paired_difference": 0.027333277926049577
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.6001453101634979,
+              "paired_difference": 0.03318208073035719
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5565101802349091,
+              "paired_difference": 0.052394293659510816
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.1080672517418861,
+              "paired_difference": 0.08538283783718377
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8966751992702484,
+              "paired_difference": 0.08109111854944119
+            }
+          ]
+        }
+      }
+    },
+    "L15": {
+      "skipped": false,
+      "per_target": {
+        "pirate_captain": {
+          "n": 41,
+          "spearman_rho": 0.051393728222996524,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3973104059696198,
+              "paired_difference": 0.030539606892310982
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.4959349930286407,
+              "paired_difference": 0.049326633415191334
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.276939034461975,
+              "paired_difference": 0.0054018821719030346
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.8664705008268356,
+              "paired_difference": 0.00879608696135629
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 0.944919902831316,
+              "paired_difference": 0.01233456323149664
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.427864670753479,
+              "paired_difference": 0.04339017494247721
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.37463730573654175,
+              "paired_difference": 0.005029200090906312
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.1638008952140808,
+              "paired_difference": 0.059974518016869816
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.4911180138587952,
+              "paired_difference": 0.031063006696275503
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.5566368699073792,
+              "paired_difference": 0.046597025618025
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.0967697501182556,
+              "paired_difference": 0.033229603972588194
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.1690939962863922,
+              "paired_difference": 0.033025127682335766
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.2548404932022095,
+              "paired_difference": 0.01897314956625884
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.4307835698127747,
+              "paired_difference": 0.014904199377016869
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4076912999153137,
+              "paired_difference": 0.03583416992770725
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.3945701122283936,
+              "paired_difference": 0.022191388818560327
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.071637637913227,
+              "paired_difference": 0.04337284921823672
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.522672712802887,
+              "paired_difference": 0.07548731326703802
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.785965234041214,
+              "paired_difference": 0.0323367954644051
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3705977201461792,
+              "paired_difference": 0.009898368574656294
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.4406701922416687,
+              "paired_difference": 0.020584566336731686
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2325783371925354,
+              "paired_difference": 0.0566871697190516
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9495060555636883,
+              "paired_difference": 0.04606356359267777
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.4153836965560913,
+              "paired_difference": 0.03087775377889405
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0525567010045052,
+              "paired_difference": 0.042755364950450625
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.3280324637889862,
+              "paired_difference": 0.03393119720680998
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.1017181873321533,
+              "paired_difference": 0.042410362178685324
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.3499926924705505,
+              "paired_difference": 0.015011453227482116
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9703369736671448,
+              "paired_difference": 0.009539743205940365
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.4509880542755127,
+              "paired_difference": 0.028399532036035957
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.7913448512554169,
+              "paired_difference": -0.0486044784534034
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.5202938318252563,
+              "paired_difference": 0.025314247065960305
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.4321663975715637,
+              "paired_difference": 0.021430276057130233
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.5819715857505798,
+              "paired_difference": 0.06383629619079985
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.9905107244849205,
+              "paired_difference": 0.04798946857583072
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.3530614376068115,
+              "paired_difference": 0.05593390809551176
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.120921865105629,
+              "paired_difference": 0.04800114293092944
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.5327476859092712,
+              "paired_difference": 0.05752184131264628
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.585340142250061,
+              "paired_difference": 0.0447757435437676
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9930533529259264,
+              "paired_difference": -0.012289999010085317
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7834091633558273,
+              "paired_difference": 0.043320837518277124
+            }
+          ]
+        },
+        "mercenary": {
+          "n": 41,
+          "spearman_rho": -0.01515679442508711,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3973104059696198,
+              "paired_difference": 0.0005900115163461709
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.4959349930286407,
+              "paired_difference": 0.015671931831911328
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.276939034461975,
+              "paired_difference": -0.006442039484136834
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.8664705008268356,
+              "paired_difference": -0.038945217796326835
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 0.944919902831316,
+              "paired_difference": -0.008504505222521072
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.427864670753479,
+              "paired_difference": -0.01850276877807507
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.37463730573654175,
+              "paired_difference": 0.017390898127932375
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.1638008952140808,
+              "paired_difference": -0.007228535566861094
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.4911180138587952,
+              "paired_difference": -0.015951636529342766
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.5566368699073792,
+              "paired_difference": -0.012209804944565786
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.0967697501182556,
+              "paired_difference": 0.00839170561133564
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.1690939962863922,
+              "paired_difference": 0.008290501410508447
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.2548404932022095,
+              "paired_difference": 0.003174148390874154
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.4307835698127747,
+              "paired_difference": -0.007933997953957198
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4076912999153137,
+              "paired_difference": -0.0007910586470440221
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.3945701122283936,
+              "paired_difference": 0.010310366141104291
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.071637637913227,
+              "paired_difference": 0.03862809094928223
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.522672712802887,
+              "paired_difference": -0.040767728319160125
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.785965234041214,
+              "paired_difference": 0.028354159047394006
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3705977201461792,
+              "paired_difference": -0.02274341833790222
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.4406701922416687,
+              "paired_difference": -0.0018765834389905163
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2325783371925354,
+              "paired_difference": 0.06407931604550106
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9495060555636883,
+              "paired_difference": -0.01673081430692519
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.4153836965560913,
+              "paired_difference": -0.003355781923422637
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.0525567010045052,
+              "paired_difference": -0.013940039965936235
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.3280324637889862,
+              "paired_difference": 0.005428599611962422
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.1017181873321533,
+              "paired_difference": -0.012096781982669428
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.3499926924705505,
+              "paired_difference": -0.005990435484641769
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9703369736671448,
+              "paired_difference": -0.0001911502306087461
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.4509880542755127,
+              "paired_difference": 0.011083022325652725
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.7913448512554169,
+              "paired_difference": 0.03028956962426817
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.5202938318252563,
+              "paired_difference": -0.012812060411336312
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.4321663975715637,
+              "paired_difference": 0.00028912148621971595
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.5819715857505798,
+              "paired_difference": 0.03864202565095239
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.9905107244849205,
+              "paired_difference": 0.014672074414410449
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.3530614376068115,
+              "paired_difference": 0.021906585567753028
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.120921865105629,
+              "paired_difference": -0.0039014272601536337
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.5327476859092712,
+              "paired_difference": -0.03538232574206551
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.585340142250061,
+              "paired_difference": 0.009576395450138867
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9930533529259264,
+              "paired_difference": -0.05908966004151539
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7834091633558273,
+              "paired_difference": -0.010288842125158423
+            }
+          ]
+        },
+        "software_engineer": {
+          "n": 41,
+          "spearman_rho": 0.08623693379790942,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.4066128730773926,
+              "paired_difference": 0.0318666231373145
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.3338364362716675,
+              "paired_difference": 0.003818870949744979
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.9616283513605595,
+              "paired_difference": 0.012886648741261405
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.0623292662203312,
+              "paired_difference": 0.0013862918352368265
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.2875280976295471,
+              "paired_difference": 0.03424638867634866
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.5194640159606934,
+              "paired_difference": 0.03146865205848796
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.4117743074893951,
+              "paired_difference": 0.07482047891712089
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2462413609027863,
+              "paired_difference": 0.02070928124745136
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.4321818947792053,
+              "paired_difference": 0.00035718248999094815
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.5170000195503235,
+              "paired_difference": 0.02188564465607501
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.7329326570034027,
+              "paired_difference": 0.03091329501898582
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.0013394695706666,
+              "paired_difference": 0.025978706279279173
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.6877878308296204,
+              "paired_difference": 0.024909139594500068
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.5194264352321625,
+              "paired_difference": 0.0037082464977919636
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.8216017335653305,
+              "paired_difference": 0.023033124552938378
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.473346471786499,
+              "paired_difference": 0.01111772461387702
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.0910239592194557,
+              "paired_difference": -0.0127246315645545
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.446483075618744,
+              "paired_difference": -0.0027747198492368472
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.4082329273223877,
+              "paired_difference": 0.0018597007791576654
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.7922748327255249,
+              "paired_difference": 0.012991658352264698
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.9068029522895813,
+              "paired_difference": 0.02606821591585995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.0318455696105957,
+              "paired_difference": 0.06319761446340144
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.0589316636323929,
+              "paired_difference": 0.02951487969701755
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.5478325486183167,
+              "paired_difference": 0.03719786008576167
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.9829683285206556,
+              "paired_difference": -0.012200574841481996
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8211444318294525,
+              "paired_difference": 0.04231395251502116
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.1331230401992798,
+              "paired_difference": 0.0261135972019045
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.35279393196105957,
+              "paired_difference": 0.004647104320577651
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.1441950649023056,
+              "paired_difference": 0.008017213301763823
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.7649081349372864,
+              "paired_difference": 0.04178817093173365
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.4961232542991638,
+              "paired_difference": 0.005774600379550539
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.4376426935195923,
+              "paired_difference": 0.01487820500814365
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.17160826921463013,
+              "paired_difference": 0.027397339697810903
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.4279747009277344,
+              "paired_difference": 0.022770157243425976
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.2413688898086548,
+              "paired_difference": 0.0028268347319746847
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.5964395403862,
+              "paired_difference": 0.00686656459437877
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.0954073518514633,
+              "paired_difference": 0.031177512224059383
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.6336602568626404,
+              "paired_difference": 0.015662756721360305
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4830614924430847,
+              "paired_difference": 0.023599860285318814
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0560425259172916,
+              "paired_difference": 0.06818372408878874
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.3413404524326324,
+              "paired_difference": 0.011782864796510547
+            }
+          ]
+        },
+        "wildlife_rehabilitator": {
+          "n": 41,
+          "spearman_rho": 0.15331010452961674,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.7800297141075134,
+              "paired_difference": 0.01697923856845333
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.0163284335285425,
+              "paired_difference": 0.028059359888330377
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.8859084770083427,
+              "paired_difference": 0.03759134521623886
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.019219245761633,
+              "paired_difference": 0.05002244313519907
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.157038852572441,
+              "paired_difference": 0.0003271693012906381
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.1651076972484589,
+              "paired_difference": 0.0617570509229484
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.1084358021616936,
+              "paired_difference": 0.032321025194128016
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.7036519646644592,
+              "paired_difference": 0.016191866953198797
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.8265696614980698,
+              "paired_difference": 0.023840798150758697
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.908100038766861,
+              "paired_difference": 0.017775710795464323
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8857197612524033,
+              "paired_difference": 0.011035697228976663
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.8737321048974991,
+              "paired_difference": 0.003426898366093889
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.8853753879666328,
+              "paired_difference": -0.0011057875228769887
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.0691671520471573,
+              "paired_difference": 0.024505698893838673
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.646985799074173,
+              "paired_difference": 0.01170954129842792
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.7953459620475769,
+              "paired_difference": 0.028528527079092852
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.7920082211494446,
+              "paired_difference": 0.0520009103338363
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.0504606626927853,
+              "paired_difference": 0.024603585712594616
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.9140192195773125,
+              "paired_difference": 0.04454470375121705
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.5964171588420868,
+              "paired_difference": -0.00742782572455869
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.7615558058023453,
+              "paired_difference": 0.038091296514900196
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.9060393571853638,
+              "paired_difference": 0.024965548702829337
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9743063002824783,
+              "paired_difference": 0.06232547225609236
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.1963974833488464,
+              "paired_difference": 0.011834972039554395
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.8435418903827667,
+              "paired_difference": 0.04090461130232631
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8871672004461288,
+              "paired_difference": 0.021428799105138174
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8096488565206528,
+              "paired_difference": 0.018752498354100144
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1470544785261154,
+              "paired_difference": 0.014291432481268537
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9320901930332184,
+              "paired_difference": 0.0024819807259844895
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.8233748376369476,
+              "paired_difference": 0.013016676988976128
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9459903575479984,
+              "paired_difference": 0.0035373576676177576
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.6985231339931488,
+              "paired_difference": 0.029737895709287514
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.0897698253393173,
+              "paired_difference": 0.03430005925409766
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.105044350028038,
+              "paired_difference": 0.042266567674326905
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.1959422081708908,
+              "paired_difference": 0.01411236233114301
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.8249410837888718,
+              "paired_difference": 0.024388728609923582
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.9263168349862099,
+              "paired_difference": 0.04747206413741567
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.6221699714660645,
+              "paired_difference": 0.012655372918481364
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5982193648815155,
+              "paired_difference": 0.016270478940014082
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0082376385107636,
+              "paired_difference": -0.008160502083206697
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.9446386843919754,
+              "paired_difference": 0.07489426976212521
+            }
+          ]
+        },
+        "postal_worker": {
+          "n": 41,
+          "spearman_rho": -0.062195121951219526,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.6361446976661682,
+              "paired_difference": 0.006295536091544429
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.5122419595718384,
+              "paired_difference": 0.025805983028713047
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.9224048480391502,
+              "paired_difference": 0.03280855043088889
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.1694645285606384,
+              "paired_difference": 0.04668537320184496
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.1289483904838562,
+              "paired_difference": -0.04030500756016051
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.4785350561141968,
+              "paired_difference": -0.008477277881966394
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.4214408993721008,
+              "paired_difference": 0.007419281650634509
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.9092360883951187,
+              "paired_difference": 0.03432817127079515
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.4568869471549988,
+              "paired_difference": 0.006057593716742323
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.267774760723114,
+              "paired_difference": 0.0114708655651287
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.9530073776841164,
+              "paired_difference": 0.0008078147564141158
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.8755716234445572,
+              "paired_difference": 0.02924991569558638
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.9948496809229255,
+              "paired_difference": 0.019191562422747128
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.5814648866653442,
+              "paired_difference": 0.035284738821150664
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.6912050843238831,
+              "paired_difference": 0.01833280922548164
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.6966069936752319,
+              "paired_difference": 0.012382653778923447
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.232485607266426,
+              "paired_difference": 0.0007788226529542586
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.2258394807577133,
+              "paired_difference": 0.04242853806920038
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.3040754795074463,
+              "paired_difference": 0.02427520759953794
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.5985284745693207,
+              "paired_difference": -0.013331777158923697
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.9383785389363766,
+              "paired_difference": 0.04551185924447654
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.9173394590616226,
+              "paired_difference": 0.016629585898730165
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.182958796620369,
+              "paired_difference": -0.0315368125014864
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.3821616172790527,
+              "paired_difference": 0.014475917397801833
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.1257642954587936,
+              "paired_difference": 0.032673201028581456
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.45536065101623535,
+              "paired_difference": 0.03439377516493155
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.0583801567554474,
+              "paired_difference": -0.009223099972312169
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.5038805603981018,
+              "paired_difference": 0.020723882351171525
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.18055921792984,
+              "paired_difference": 0.018822099923400892
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.5367586016654968,
+              "paired_difference": 0.016527455781584988
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.1355535238981247,
+              "paired_difference": 0.02786203550111695
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.5730362236499786,
+              "paired_difference": 0.022021380524092266
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.47659891843795776,
+              "paired_difference": 0.03778597227522849
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3998876810073853,
+              "paired_difference": 0.03459021173572115
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.2603723108768463,
+              "paired_difference": -0.001574060435477087
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.5920822024345398,
+              "paired_difference": 0.02310308639185645
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.864952802658081,
+              "paired_difference": 0.018292753788776095
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.3943599462509155,
+              "paired_difference": 0.027658862593440674
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4545958638191223,
+              "paired_difference": -0.0023126007141838767
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.1168668121099472,
+              "paired_difference": -0.01585385664642854
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.3585845828056335,
+              "paired_difference": 0.05394568116861446
+            }
+          ]
+        },
+        "prosecutor": {
+          "n": 41,
+          "spearman_rho": 0.04233449477351917,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.7800297141075134,
+              "paired_difference": 0.02576274214138054
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.0163284335285425,
+              "paired_difference": 0.036634126316534364
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.8859084770083427,
+              "paired_difference": 0.04682355646860129
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.019219245761633,
+              "paired_difference": 0.060738355644382715
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.157038852572441,
+              "paired_difference": 0.02166754534458948
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.1651076972484589,
+              "paired_difference": 0.11708126649257274
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.1084358021616936,
+              "paired_difference": 0.051736962325675116
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.7036519646644592,
+              "paired_difference": 0.040435244074060815
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.8265696614980698,
+              "paired_difference": 0.025872986535497928
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.908100038766861,
+              "paired_difference": 0.060544192166301504
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8857197612524033,
+              "paired_difference": 0.0451967203871231
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.8737321048974991,
+              "paired_difference": 0.032406961920453024
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.8853753879666328,
+              "paired_difference": 0.01542145373303122
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.0691671520471573,
+              "paired_difference": 0.03718555330271761
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.646985799074173,
+              "paired_difference": 0.01930273004857382
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.7953459620475769,
+              "paired_difference": 0.0236783957538196
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.7920082211494446,
+              "paired_difference": 0.023396645903517532
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.0504606626927853,
+              "paired_difference": -0.04846355154767209
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.9140192195773125,
+              "paired_difference": 0.08556100952019118
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.5964171588420868,
+              "paired_difference": 0.04495812583478431
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.7615558058023453,
+              "paired_difference": 0.03890071364416995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.9060393571853638,
+              "paired_difference": 0.0049991230142993155
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9743063002824783,
+              "paired_difference": 0.023750775783780764
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.1963974833488464,
+              "paired_difference": 0.012760059195155438
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.8435418903827667,
+              "paired_difference": 0.06319792292336014
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8871672004461288,
+              "paired_difference": 0.035565468950865396
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8096488565206528,
+              "paired_difference": 0.020569860095636754
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1470544785261154,
+              "paired_difference": 0.03162565115368252
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9320901930332184,
+              "paired_difference": 0.037600105373884175
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.8233748376369476,
+              "paired_difference": 0.08226715718662132
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9459903575479984,
+              "paired_difference": 0.07084540597868771
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.6985231339931488,
+              "paired_difference": 0.033010162047600544
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.0897698253393173,
+              "paired_difference": 0.048143568221158874
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.105044350028038,
+              "paired_difference": 0.04381472905537979
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.1959422081708908,
+              "paired_difference": 0.004895063014464592
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.8249410837888718,
+              "paired_difference": 0.030486844231099337
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.9263168349862099,
+              "paired_difference": 0.027333277926049577
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.6221699714660645,
+              "paired_difference": 0.03318208073035719
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5982193648815155,
+              "paired_difference": 0.052394293659510816
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0082376385107636,
+              "paired_difference": 0.08538283783718377
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.9446386843919754,
+              "paired_difference": 0.08109111854944119
+            }
+          ]
+        }
+      }
+    },
+    "L20": {
+      "skipped": false,
+      "per_target": {
+        "pirate_captain": {
+          "n": 41,
+          "spearman_rho": 0.07909407665505229,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3486281335353851,
+              "paired_difference": 0.030539606892310982
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.3910017907619476,
+              "paired_difference": 0.049326633415191334
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.3565016984939575,
+              "paired_difference": 0.0054018821719030346
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.0895133689045906,
+              "paired_difference": 0.00879608696135629
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.1392918974161148,
+              "paired_difference": 0.01233456323149664
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.5993574857711792,
+              "paired_difference": 0.04339017494247721
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.4288344979286194,
+              "paired_difference": 0.005029200090906312
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2943715453147888,
+              "paired_difference": 0.059974518016869816
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.450084149837494,
+              "paired_difference": 0.031063006696275503
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.456803560256958,
+              "paired_difference": 0.046597025618025
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1510485410690308,
+              "paired_difference": 0.033229603972588194
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.3573192954063416,
+              "paired_difference": 0.033025127682335766
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.230044275522232,
+              "paired_difference": 0.01897314956625884
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.2803343832492828,
+              "paired_difference": 0.014904199377016869
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4793365597724915,
+              "paired_difference": 0.03583416992770725
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.3147838413715363,
+              "paired_difference": 0.022191388818560327
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.2142905592918396,
+              "paired_difference": 0.04337284921823672
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6036421358585358,
+              "paired_difference": 0.07548731326703802
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.7713268250226974,
+              "paired_difference": 0.0323367954644051
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3743169009685516,
+              "paired_difference": 0.009898368574656294
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.5134658217430115,
+              "paired_difference": 0.020584566336731686
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2476802468299866,
+              "paired_difference": 0.0566871697190516
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9027915745973587,
+              "paired_difference": 0.04606356359267777
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5034097731113434,
+              "paired_difference": 0.03087775377889405
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.217794880270958,
+              "paired_difference": 0.042755364950450625
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.4762057065963745,
+              "paired_difference": 0.03393119720680998
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.3572589755058289,
+              "paired_difference": 0.042410362178685324
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.234091505408287,
+              "paired_difference": 0.015011453227482116
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9055160507559776,
+              "paired_difference": 0.009539743205940365
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.3967576026916504,
+              "paired_difference": 0.028399532036035957
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9031043127179146,
+              "paired_difference": -0.0486044784534034
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.3518859148025513,
+              "paired_difference": 0.025314247065960305
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.3689273297786713,
+              "paired_difference": 0.021430276057130233
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.4859210252761841,
+              "paired_difference": 0.06383629619079985
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.851744756102562,
+              "paired_difference": 0.04798946857583072
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.2343829572200775,
+              "paired_difference": 0.05593390809551176
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.3736664652824402,
+              "paired_difference": 0.04800114293092944
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.5196558237075806,
+              "paired_difference": 0.05752184131264628
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.4799633920192719,
+              "paired_difference": 0.0447757435437676
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.8833842501044273,
+              "paired_difference": -0.012289999010085317
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7526890784502029,
+              "paired_difference": 0.043320837518277124
+            }
+          ]
+        },
+        "mercenary": {
+          "n": 41,
+          "spearman_rho": -0.06306620209059235,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3486281335353851,
+              "paired_difference": 0.0005900115163461709
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.3910017907619476,
+              "paired_difference": 0.015671931831911328
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.3565016984939575,
+              "paired_difference": -0.006442039484136834
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.0895133689045906,
+              "paired_difference": -0.038945217796326835
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.1392918974161148,
+              "paired_difference": -0.008504505222521072
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.5993574857711792,
+              "paired_difference": -0.01850276877807507
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.4288344979286194,
+              "paired_difference": 0.017390898127932375
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2943715453147888,
+              "paired_difference": -0.007228535566861094
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.450084149837494,
+              "paired_difference": -0.015951636529342766
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.456803560256958,
+              "paired_difference": -0.012209804944565786
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1510485410690308,
+              "paired_difference": 0.00839170561133564
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.3573192954063416,
+              "paired_difference": 0.008290501410508447
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.230044275522232,
+              "paired_difference": 0.003174148390874154
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.2803343832492828,
+              "paired_difference": -0.007933997953957198
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4793365597724915,
+              "paired_difference": -0.0007910586470440221
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.3147838413715363,
+              "paired_difference": 0.010310366141104291
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.2142905592918396,
+              "paired_difference": 0.03862809094928223
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6036421358585358,
+              "paired_difference": -0.040767728319160125
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.7713268250226974,
+              "paired_difference": 0.028354159047394006
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3743169009685516,
+              "paired_difference": -0.02274341833790222
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.5134658217430115,
+              "paired_difference": -0.0018765834389905163
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2476802468299866,
+              "paired_difference": 0.06407931604550106
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9027915745973587,
+              "paired_difference": -0.01673081430692519
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5034097731113434,
+              "paired_difference": -0.003355781923422637
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.217794880270958,
+              "paired_difference": -0.013940039965936235
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.4762057065963745,
+              "paired_difference": 0.005428599611962422
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.3572589755058289,
+              "paired_difference": -0.012096781982669428
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.234091505408287,
+              "paired_difference": -0.005990435484641769
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9055160507559776,
+              "paired_difference": -0.0001911502306087461
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.3967576026916504,
+              "paired_difference": 0.011083022325652725
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9031043127179146,
+              "paired_difference": 0.03028956962426817
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.3518859148025513,
+              "paired_difference": -0.012812060411336312
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.3689273297786713,
+              "paired_difference": 0.00028912148621971595
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.4859210252761841,
+              "paired_difference": 0.03864202565095239
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.851744756102562,
+              "paired_difference": 0.014672074414410449
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.2343829572200775,
+              "paired_difference": 0.021906585567753028
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.3736664652824402,
+              "paired_difference": -0.0039014272601536337
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.5196558237075806,
+              "paired_difference": -0.03538232574206551
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.4799633920192719,
+              "paired_difference": 0.009576395450138867
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.8833842501044273,
+              "paired_difference": -0.05908966004151539
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7526890784502029,
+              "paired_difference": -0.010288842125158423
+            }
+          ]
+        },
+        "software_engineer": {
+          "n": 41,
+          "spearman_rho": 0.19094076655052267,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.5325891673564911,
+              "paired_difference": 0.0318666231373145
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.28606724739074707,
+              "paired_difference": 0.003818870949744979
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.156704992055893,
+              "paired_difference": 0.012886648741261405
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.2159624844789505,
+              "paired_difference": 0.0013862918352368265
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.2461308538913727,
+              "paired_difference": 0.03424638867634866
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.4917528629302979,
+              "paired_difference": 0.03146865205848796
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.3799507915973663,
+              "paired_difference": 0.07482047891712089
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.4000815749168396,
+              "paired_difference": 0.02070928124745136
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.5078563094139099,
+              "paired_difference": 0.00035718248999094815
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.9439934901893139,
+              "paired_difference": 0.02188564465607501
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.6561098098754883,
+              "paired_difference": 0.03091329501898582
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.990188124589622,
+              "paired_difference": 0.025978706279279173
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.455951988697052,
+              "paired_difference": 0.024909139594500068
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.2376401424407959,
+              "paired_difference": 0.0037082464977919636
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.7853081971406937,
+              "paired_difference": 0.023033124552938378
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.16724002361297607,
+              "paired_difference": 0.01111772461387702
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.0167785808444023,
+              "paired_difference": -0.0127246315645545
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.5068653225898743,
+              "paired_difference": -0.0027747198492368472
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.3893944919109344,
+              "paired_difference": 0.0018597007791576654
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.9202331006526947,
+              "paired_difference": 0.012991658352264698
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.6649112701416016,
+              "paired_difference": 0.02606821591585995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.4118964672088623,
+              "paired_difference": 0.06319761446340144
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.0167792402207851,
+              "paired_difference": 0.02951487969701755
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.5930484533309937,
+              "paired_difference": 0.03719786008576167
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.6129958033561707,
+              "paired_difference": -0.012200574841481996
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.7759391665458679,
+              "paired_difference": 0.04231395251502116
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.1709030866622925,
+              "paired_difference": 0.0261135972019045
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.14358770847320557,
+              "paired_difference": 0.004647104320577651
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0712198913097382,
+              "paired_difference": 0.008017213301763823
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.1453709453344345,
+              "paired_difference": 0.04178817093173365
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.6248157620429993,
+              "paired_difference": 0.005774600379550539
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.20153838396072388,
+              "paired_difference": 0.01487820500814365
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.06108450889587402,
+              "paired_difference": 0.027397339697810903
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.414272964000702,
+              "paired_difference": 0.022770157243425976
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.3153582513332367,
+              "paired_difference": 0.0028268347319746847
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.43640202283859253,
+              "paired_difference": 0.00686656459437877
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.2449670284986496,
+              "paired_difference": 0.031177512224059383
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.7294408679008484,
+              "paired_difference": 0.015662756721360305
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4748431444168091,
+              "paired_difference": 0.023599860285318814
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.3491881787776947,
+              "paired_difference": 0.06818372408878874
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.3928448557853699,
+              "paired_difference": 0.011782864796510547
+            }
+          ]
+        },
+        "wildlife_rehabilitator": {
+          "n": 41,
+          "spearman_rho": 0.15540069686411154,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.46867823600769043,
+              "paired_difference": 0.01697923856845333
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.7924603521823883,
+              "paired_difference": 0.028059359888330377
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.5162509679794312,
+              "paired_difference": 0.03759134521623886
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.67082878947258,
+              "paired_difference": 0.05002244313519907
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.3365530371665955,
+              "paired_difference": 0.0003271693012906381
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.3464154601097107,
+              "paired_difference": 0.0617570509229484
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.040888488292694,
+              "paired_difference": 0.032321025194128016
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.6519815921783447,
+              "paired_difference": 0.016191866953198797
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.47271907329559326,
+              "paired_difference": 0.023840798150758697
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.5320807993412018,
+              "paired_difference": 0.017775710795464323
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.6031304001808167,
+              "paired_difference": 0.011035697228976663
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9143659323453903,
+              "paired_difference": 0.003426898366093889
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.642429769039154,
+              "paired_difference": -0.0011057875228769887
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1940160542726517,
+              "paired_difference": 0.024505698893838673
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.583450973033905,
+              "paired_difference": 0.01170954129842792
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.7410961091518402,
+              "paired_difference": 0.028528527079092852
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.6797636151313782,
+              "paired_difference": 0.0520009103338363
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.129161387681961,
+              "paired_difference": 0.024603585712594616
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.0218113362789154,
+              "paired_difference": 0.04454470375121705
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.34785687923431396,
+              "paired_difference": -0.00742782572455869
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.8345983773469925,
+              "paired_difference": 0.038091296514900196
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.6020951271057129,
+              "paired_difference": 0.024965548702829337
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.936604268848896,
+              "paired_difference": 0.06232547225609236
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.444181740283966,
+              "paired_difference": 0.011834972039554395
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.6112600862979889,
+              "paired_difference": 0.04090461130232631
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8208843320608139,
+              "paired_difference": 0.021428799105138174
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.833197757601738,
+              "paired_difference": 0.018752498354100144
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1626089066267014,
+              "paired_difference": 0.014291432481268537
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.7588591128587723,
+              "paired_difference": 0.0024819807259844895
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.5104478597640991,
+              "paired_difference": 0.013016676988976128
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.0866235941648483,
+              "paired_difference": 0.0035373576676177576
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.9623211324214935,
+              "paired_difference": 0.029737895709287514
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.973776375874877,
+              "paired_difference": 0.03430005925409766
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3724685311317444,
+              "paired_difference": 0.042266567674326905
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.4099135100841522,
+              "paired_difference": 0.01411236233114301
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.6486162543296814,
+              "paired_difference": 0.024388728609923582
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.7530927807092667,
+              "paired_difference": 0.04747206413741567
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.4001629948616028,
+              "paired_difference": 0.012655372918481364
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4139179587364197,
+              "paired_difference": 0.016270478940014082
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.981683038175106,
+              "paired_difference": -0.008160502083206697
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8780599981546402,
+              "paired_difference": 0.07489426976212521
+            }
+          ]
+        },
+        "postal_worker": {
+          "n": 41,
+          "spearman_rho": 0.016898954703832757,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.6119630932807922,
+              "paired_difference": 0.006295536091544429
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.7328356206417084,
+              "paired_difference": 0.025805983028713047
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.3887712359428406,
+              "paired_difference": 0.03280855043088889
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.7283980250358582,
+              "paired_difference": 0.04668537320184496
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.0833950266242027,
+              "paired_difference": -0.04030500756016051
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.2953197956085205,
+              "paired_difference": -0.008477277881966394
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.147176668047905,
+              "paired_difference": 0.007419281650634509
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.518449604511261,
+              "paired_difference": 0.03432817127079515
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.4791871905326843,
+              "paired_difference": 0.006057593716742323
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.14564132690429688,
+              "paired_difference": 0.0114708655651287
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8218863606452942,
+              "paired_difference": 0.0008078147564141158
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.8985036462545395,
+              "paired_difference": 0.02924991569558638
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.9069375246763229,
+              "paired_difference": 0.019191562422747128
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.2339909374713898,
+              "paired_difference": 0.035284738821150664
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.5824969112873077,
+              "paired_difference": 0.01833280922548164
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.0441036112606525,
+              "paired_difference": 0.012382653778923447
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.0406759679317474,
+              "paired_difference": 0.0007788226529542586
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.0557866990566254,
+              "paired_difference": 0.04242853806920038
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.2162836343050003,
+              "paired_difference": 0.02427520759953794
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.41073060035705566,
+              "paired_difference": -0.013331777158923697
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.99444928066805,
+              "paired_difference": 0.04551185924447654
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.4231255054473877,
+              "paired_difference": 0.016629585898730165
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.2200618237257004,
+              "paired_difference": -0.0315368125014864
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.2713497877120972,
+              "paired_difference": 0.014475917397801833
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.9415211454033852,
+              "paired_difference": 0.032673201028581456
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.5987262725830078,
+              "paired_difference": 0.03439377516493155
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8757277578115463,
+              "paired_difference": -0.009223099972312169
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.224581241607666,
+              "paired_difference": 0.020723882351171525
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0110253086313605,
+              "paired_difference": 0.018822099923400892
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.20004135370254517,
+              "paired_difference": 0.016527455781584988
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9573474302887917,
+              "paired_difference": 0.02786203550111695
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.177346721291542,
+              "paired_difference": 0.022021380524092266
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.034114833921194,
+              "paired_difference": 0.03778597227522849
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3793485164642334,
+              "paired_difference": 0.03459021173572115
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.2634956538677216,
+              "paired_difference": -0.001574060435477087
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.7462566196918488,
+              "paired_difference": 0.02310308639185645
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.5582286715507507,
+              "paired_difference": 0.018292753788776095
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.40015798807144165,
+              "paired_difference": 0.027658862593440674
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5128324925899506,
+              "paired_difference": -0.0023126007141838767
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9513577297329903,
+              "paired_difference": -0.01585385664642854
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.0457123517990112,
+              "paired_difference": 0.05394568116861446
+            }
+          ]
+        },
+        "prosecutor": {
+          "n": 41,
+          "spearman_rho": -0.052787456445993045,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.46867823600769043,
+              "paired_difference": 0.02576274214138054
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.7924603521823883,
+              "paired_difference": 0.036634126316534364
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.5162509679794312,
+              "paired_difference": 0.04682355646860129
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.67082878947258,
+              "paired_difference": 0.060738355644382715
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.3365530371665955,
+              "paired_difference": 0.02166754534458948
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.3464154601097107,
+              "paired_difference": 0.11708126649257274
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.040888488292694,
+              "paired_difference": 0.051736962325675116
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.6519815921783447,
+              "paired_difference": 0.040435244074060815
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.47271907329559326,
+              "paired_difference": 0.025872986535497928
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.5320807993412018,
+              "paired_difference": 0.060544192166301504
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.6031304001808167,
+              "paired_difference": 0.0451967203871231
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9143659323453903,
+              "paired_difference": 0.032406961920453024
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.642429769039154,
+              "paired_difference": 0.01542145373303122
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1940160542726517,
+              "paired_difference": 0.03718555330271761
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.583450973033905,
+              "paired_difference": 0.01930273004857382
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.7410961091518402,
+              "paired_difference": 0.0236783957538196
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.6797636151313782,
+              "paired_difference": 0.023396645903517532
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.129161387681961,
+              "paired_difference": -0.04846355154767209
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.0218113362789154,
+              "paired_difference": 0.08556100952019118
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.34785687923431396,
+              "paired_difference": 0.04495812583478431
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.8345983773469925,
+              "paired_difference": 0.03890071364416995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.6020951271057129,
+              "paired_difference": 0.0049991230142993155
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.936604268848896,
+              "paired_difference": 0.023750775783780764
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.444181740283966,
+              "paired_difference": 0.012760059195155438
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.6112600862979889,
+              "paired_difference": 0.06319792292336014
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.8208843320608139,
+              "paired_difference": 0.035565468950865396
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.833197757601738,
+              "paired_difference": 0.020569860095636754
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.1626089066267014,
+              "paired_difference": 0.03162565115368252
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.7588591128587723,
+              "paired_difference": 0.037600105373884175
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.5104478597640991,
+              "paired_difference": 0.08226715718662132
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.0866235941648483,
+              "paired_difference": 0.07084540597868771
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.9623211324214935,
+              "paired_difference": 0.033010162047600544
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.973776375874877,
+              "paired_difference": 0.048143568221158874
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3724685311317444,
+              "paired_difference": 0.04381472905537979
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.4099135100841522,
+              "paired_difference": 0.004895063014464592
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.6486162543296814,
+              "paired_difference": 0.030486844231099337
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.7530927807092667,
+              "paired_difference": 0.027333277926049577
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.4001629948616028,
+              "paired_difference": 0.03318208073035719
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4139179587364197,
+              "paired_difference": 0.052394293659510816
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.981683038175106,
+              "paired_difference": 0.08538283783718377
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8780599981546402,
+              "paired_difference": 0.08109111854944119
+            }
+          ]
+        }
+      }
+    },
+    "L21": {
+      "skipped": false,
+      "per_target": {
+        "pirate_captain": {
+          "n": 41,
+          "spearman_rho": 0.08972125435540072,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3181176483631134,
+              "paired_difference": 0.030539606892310982
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.3301328718662262,
+              "paired_difference": 0.049326633415191334
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.3223411440849304,
+              "paired_difference": 0.0054018821719030346
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.1375672668218613,
+              "paired_difference": 0.00879608696135629
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.1236140727996826,
+              "paired_difference": 0.01233456323149664
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.6586522459983826,
+              "paired_difference": 0.04339017494247721
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.47414714097976685,
+              "paired_difference": 0.005029200090906312
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2677427530288696,
+              "paired_difference": 0.059974518016869816
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.4112339615821838,
+              "paired_difference": 0.031063006696275503
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.4407589137554169,
+              "paired_difference": 0.046597025618025
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1486699730157852,
+              "paired_difference": 0.033229603972588194
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.3044684529304504,
+              "paired_difference": 0.033025127682335766
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.211674988269806,
+              "paired_difference": 0.01897314956625884
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.2440687417984009,
+              "paired_difference": 0.014904199377016869
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4299954771995544,
+              "paired_difference": 0.03583416992770725
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.28415846824646,
+              "paired_difference": 0.022191388818560327
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.2646372616291046,
+              "paired_difference": 0.04337284921823672
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6357555389404297,
+              "paired_difference": 0.07548731326703802
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.8039377778768539,
+              "paired_difference": 0.0323367954644051
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3599331080913544,
+              "paired_difference": 0.009898368574656294
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.4850754141807556,
+              "paired_difference": 0.020584566336731686
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2686807215213776,
+              "paired_difference": 0.0566871697190516
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9628095477819443,
+              "paired_difference": 0.04606356359267777
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5136425495147705,
+              "paired_difference": 0.03087775377889405
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.1954369246959686,
+              "paired_difference": 0.042755364950450625
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.451210469007492,
+              "paired_difference": 0.03393119720680998
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.327960044145584,
+              "paired_difference": 0.042410362178685324
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.210605263710022,
+              "paired_difference": 0.015011453227482116
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9222122952342033,
+              "paired_difference": 0.009539743205940365
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.3868630230426788,
+              "paired_difference": 0.028399532036035957
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.90321034938097,
+              "paired_difference": -0.0486044784534034
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.3260018229484558,
+              "paired_difference": 0.025314247065960305
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.3254967033863068,
+              "paired_difference": 0.021430276057130233
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.5516543686389923,
+              "paired_difference": 0.06383629619079985
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.8692472726106644,
+              "paired_difference": 0.04798946857583072
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.1951936185359955,
+              "paired_difference": 0.05593390809551176
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.3462262451648712,
+              "paired_difference": 0.04800114293092944
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.4846533834934235,
+              "paired_difference": 0.05752184131264628
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.4530674815177917,
+              "paired_difference": 0.0447757435437676
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.8549062758684158,
+              "paired_difference": -0.012289999010085317
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7555387020111084,
+              "paired_difference": 0.043320837518277124
+            }
+          ]
+        },
+        "mercenary": {
+          "n": 41,
+          "spearman_rho": -0.0667247386759582,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 1.3181176483631134,
+              "paired_difference": 0.0005900115163461709
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 1.3301328718662262,
+              "paired_difference": 0.015671931831911328
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.3223411440849304,
+              "paired_difference": -0.006442039484136834
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.1375672668218613,
+              "paired_difference": -0.038945217796326835
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.1236140727996826,
+              "paired_difference": -0.008504505222521072
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 0.6586522459983826,
+              "paired_difference": -0.01850276877807507
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 0.47414714097976685,
+              "paired_difference": 0.017390898127932375
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.2677427530288696,
+              "paired_difference": -0.007228535566861094
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 1.4112339615821838,
+              "paired_difference": -0.015951636529342766
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.4407589137554169,
+              "paired_difference": -0.012209804944565786
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 1.1486699730157852,
+              "paired_difference": 0.00839170561133564
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.3044684529304504,
+              "paired_difference": 0.008290501410508447
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 1.211674988269806,
+              "paired_difference": 0.003174148390874154
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.2440687417984009,
+              "paired_difference": -0.007933997953957198
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 1.4299954771995544,
+              "paired_difference": -0.0007910586470440221
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.28415846824646,
+              "paired_difference": 0.010310366141104291
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.2646372616291046,
+              "paired_difference": 0.03862809094928223
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 0.6357555389404297,
+              "paired_difference": -0.040767728319160125
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 0.8039377778768539,
+              "paired_difference": 0.028354159047394006
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 1.3599331080913544,
+              "paired_difference": -0.02274341833790222
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.4850754141807556,
+              "paired_difference": -0.0018765834389905163
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.2686807215213776,
+              "paired_difference": 0.06407931604550106
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.9628095477819443,
+              "paired_difference": -0.01673081430692519
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 0.5136425495147705,
+              "paired_difference": -0.003355781923422637
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 1.1954369246959686,
+              "paired_difference": -0.013940039965936235
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 1.451210469007492,
+              "paired_difference": 0.005428599611962422
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.327960044145584,
+              "paired_difference": -0.012096781982669428
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.210605263710022,
+              "paired_difference": -0.005990435484641769
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9222122952342033,
+              "paired_difference": -0.0001911502306087461
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.3868630230426788,
+              "paired_difference": 0.011083022325652725
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.90321034938097,
+              "paired_difference": 0.03028956962426817
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.3260018229484558,
+              "paired_difference": -0.012812060411336312
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.3254967033863068,
+              "paired_difference": 0.00028912148621971595
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 0.5516543686389923,
+              "paired_difference": 0.03864202565095239
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 0.8692472726106644,
+              "paired_difference": 0.014672074414410449
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 1.1951936185359955,
+              "paired_difference": 0.021906585567753028
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.3462262451648712,
+              "paired_difference": -0.0039014272601536337
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 1.4846533834934235,
+              "paired_difference": -0.03538232574206551
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 1.4530674815177917,
+              "paired_difference": 0.009576395450138867
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.8549062758684158,
+              "paired_difference": -0.05908966004151539
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.7555387020111084,
+              "paired_difference": -0.010288842125158423
+            }
+          ]
+        },
+        "software_engineer": {
+          "n": 41,
+          "spearman_rho": 0.2015679442508711,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.5408486723899841,
+              "paired_difference": 0.0318666231373145
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.2638571858406067,
+              "paired_difference": 0.003818870949744979
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 1.1816471815109253,
+              "paired_difference": 0.012886648741261405
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 1.2008283585309982,
+              "paired_difference": 0.0013862918352368265
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.2467885315418243,
+              "paired_difference": 0.03424638867634866
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.509679913520813,
+              "paired_difference": 0.03146865205848796
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.3129697442054749,
+              "paired_difference": 0.07482047891712089
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 1.426513135433197,
+              "paired_difference": 0.02070928124745136
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.503460019826889,
+              "paired_difference": 0.00035718248999094815
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 1.008910583332181,
+              "paired_difference": 0.02188564465607501
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.6329232454299927,
+              "paired_difference": 0.03091329501898582
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 1.0333612971007824,
+              "paired_difference": 0.025978706279279173
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.48657166957855225,
+              "paired_difference": 0.024909139594500068
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 0.2192838191986084,
+              "paired_difference": 0.0037082464977919636
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.7820761650800705,
+              "paired_difference": 0.023033124552938378
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.14241474866867065,
+              "paired_difference": 0.01111772461387702
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.9842327572405338,
+              "paired_difference": -0.0127246315645545
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.4846155941486359,
+              "paired_difference": -0.0027747198492368472
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.3499725461006165,
+              "paired_difference": 0.0018597007791576654
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.9834772124886513,
+              "paired_difference": 0.012991658352264698
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.6497880220413208,
+              "paired_difference": 0.02606821591585995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 1.4289720058441162,
+              "paired_difference": 0.06319761446340144
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.002049061236903,
+              "paired_difference": 0.02951487969701755
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.565924048423767,
+              "paired_difference": 0.03719786008576167
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.5946133732795715,
+              "paired_difference": -0.012200574841481996
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.7698891311883926,
+              "paired_difference": 0.04231395251502116
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 1.206245243549347,
+              "paired_difference": 0.0261135972019045
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 0.12768715620040894,
+              "paired_difference": 0.004647104320577651
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 1.0806567966938019,
+              "paired_difference": 0.008017213301763823
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 1.1984439939260483,
+              "paired_difference": 0.04178817093173365
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.6110551953315735,
+              "paired_difference": 0.005774600379550539
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.1938101053237915,
+              "paired_difference": 0.01487820500814365
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.05508315563201904,
+              "paired_difference": 0.027397339697810903
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.4176817834377289,
+              "paired_difference": 0.022770157243425976
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.318340241909027,
+              "paired_difference": 0.0028268347319746847
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.4091486930847168,
+              "paired_difference": 0.00686656459437877
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 1.2967833876609802,
+              "paired_difference": 0.031177512224059383
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.7978732287883759,
+              "paired_difference": 0.015662756721360305
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.4785803556442261,
+              "paired_difference": 0.023599860285318814
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.3491256833076477,
+              "paired_difference": 0.06818372408878874
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.3983139395713806,
+              "paired_difference": 0.011782864796510547
+            }
+          ]
+        },
+        "wildlife_rehabilitator": {
+          "n": 41,
+          "spearman_rho": 0.15191637630662022,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.45018327236175537,
+              "paired_difference": 0.01697923856845333
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.8265037834644318,
+              "paired_difference": 0.028059359888330377
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.5015954077243805,
+              "paired_difference": 0.03759134521623886
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.6511827707290649,
+              "paired_difference": 0.05002244313519907
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.3226462006568909,
+              "paired_difference": 0.0003271693012906381
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.3614909946918488,
+              "paired_difference": 0.0617570509229484
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.0473986901342869,
+              "paired_difference": 0.032321025194128016
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.6383952498435974,
+              "paired_difference": 0.016191866953198797
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.46797555685043335,
+              "paired_difference": 0.023840798150758697
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.4920218586921692,
+              "paired_difference": 0.017775710795464323
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.5847721099853516,
+              "paired_difference": 0.011035697228976663
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9117112010717392,
+              "paired_difference": 0.003426898366093889
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.6149418950080872,
+              "paired_difference": -0.0011057875228769887
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1913096606731415,
+              "paired_difference": 0.024505698893838673
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.5766060650348663,
+              "paired_difference": 0.01170954129842792
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.753404900431633,
+              "paired_difference": 0.028528527079092852
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.6751890480518341,
+              "paired_difference": 0.0520009103338363
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.160910964012146,
+              "paired_difference": 0.024603585712594616
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.0385188460350037,
+              "paired_difference": 0.04454470375121705
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.33703023195266724,
+              "paired_difference": -0.00742782572455869
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.8561273366212845,
+              "paired_difference": 0.038091296514900196
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.6027264595031738,
+              "paired_difference": 0.024965548702829337
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.914626769721508,
+              "paired_difference": 0.06232547225609236
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.4601279497146606,
+              "paired_difference": 0.011834972039554395
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.58223095536232,
+              "paired_difference": 0.04090461130232631
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.806264340877533,
+              "paired_difference": 0.021428799105138174
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8290937840938568,
+              "paired_difference": 0.018752498354100144
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.159477174282074,
+              "paired_difference": 0.014291432481268537
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.7853126227855682,
+              "paired_difference": 0.0024819807259844895
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.5025942027568817,
+              "paired_difference": 0.013016676988976128
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.1068930625915527,
+              "paired_difference": 0.0035373576676177576
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.951944075524807,
+              "paired_difference": 0.029737895709287514
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.9705495461821556,
+              "paired_difference": 0.03430005925409766
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3842406570911407,
+              "paired_difference": 0.042266567674326905
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.3969829678535461,
+              "paired_difference": 0.01411236233114301
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.659484326839447,
+              "paired_difference": 0.024388728609923582
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.7565230131149292,
+              "paired_difference": 0.04747206413741567
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.3755769729614258,
+              "paired_difference": 0.012655372918481364
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.3962593078613281,
+              "paired_difference": 0.016270478940014082
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0109875053167343,
+              "paired_difference": -0.008160502083206697
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8838319480419159,
+              "paired_difference": 0.07489426976212521
+            }
+          ]
+        },
+        "postal_worker": {
+          "n": 41,
+          "spearman_rho": 0.05557491289198607,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.6132682263851166,
+              "paired_difference": 0.006295536091544429
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.8621320277452469,
+              "paired_difference": 0.025805983028713047
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.3306545615196228,
+              "paired_difference": 0.03280855043088889
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.6512005627155304,
+              "paired_difference": 0.04668537320184496
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.0848286375403404,
+              "paired_difference": -0.04030500756016051
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.2247608304023743,
+              "paired_difference": -0.008477277881966394
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.1084445863962173,
+              "paired_difference": 0.007419281650634509
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.4837283492088318,
+              "paired_difference": 0.03432817127079515
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.5117351412773132,
+              "paired_difference": 0.006057593716742323
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.13939690589904785,
+              "paired_difference": 0.0114708655651287
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.8097904920578003,
+              "paired_difference": 0.0008078147564141158
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9182882010936737,
+              "paired_difference": 0.02924991569558638
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.8857369944453239,
+              "paired_difference": 0.019191562422747128
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.3211486637592316,
+              "paired_difference": 0.035284738821150664
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.5922628045082092,
+              "paired_difference": 0.01833280922548164
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 1.1058146059513092,
+              "paired_difference": 0.012382653778923447
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 1.0357741117477417,
+              "paired_difference": 0.0007788226529542586
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.0187043733894825,
+              "paired_difference": 0.04242853806920038
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.2060473710298538,
+              "paired_difference": 0.02427520759953794
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.38423091173171997,
+              "paired_difference": -0.013331777158923697
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 1.0378202237188816,
+              "paired_difference": 0.04551185924447654
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.3587312698364258,
+              "paired_difference": 0.016629585898730165
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 1.1647827178239822,
+              "paired_difference": -0.0315368125014864
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.2486155182123184,
+              "paired_difference": 0.014475917397801833
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.9254398047924042,
+              "paired_difference": 0.032673201028581456
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.635234147310257,
+              "paired_difference": 0.03439377516493155
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8665357530117035,
+              "paired_difference": -0.009223099972312169
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.3062455356121063,
+              "paired_difference": 0.020723882351171525
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.9879034496843815,
+              "paired_difference": 0.018822099923400892
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.1750321388244629,
+              "paired_difference": 0.016527455781584988
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 0.9349004477262497,
+              "paired_difference": 0.02786203550111695
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 1.2505857646465302,
+              "paired_difference": 0.022021380524092266
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 1.130095511674881,
+              "paired_difference": 0.03778597227522849
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3132324814796448,
+              "paired_difference": 0.03459021173572115
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.2556003630161285,
+              "paired_difference": -0.001574060435477087
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.8278529495000839,
+              "paired_difference": 0.02310308639185645
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.5338670015335083,
+              "paired_difference": 0.018292753788776095
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.37205415964126587,
+              "paired_difference": 0.027658862593440674
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.5444334149360657,
+              "paired_difference": -0.0023126007141838767
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 0.9422360993921757,
+              "paired_difference": -0.01585385664642854
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 1.0011234546545893,
+              "paired_difference": 0.05394568116861446
+            }
+          ]
+        },
+        "prosecutor": {
+          "n": 41,
+          "spearman_rho": -0.0696864111498258,
+          "points": [
+            {
+              "persona": "accountant",
+              "d_to_near_negative": 0.45018327236175537,
+              "paired_difference": 0.02576274214138054
+            },
+            {
+              "persona": "architect",
+              "d_to_near_negative": 0.8265037834644318,
+              "paired_difference": 0.036634126316534364
+            },
+            {
+              "persona": "chef",
+              "d_to_near_negative": 0.5015954077243805,
+              "paired_difference": 0.04682355646860129
+            },
+            {
+              "persona": "chess_grandmaster",
+              "d_to_near_negative": 0.6511827707290649,
+              "paired_difference": 0.060738355644382715
+            },
+            {
+              "persona": "child",
+              "d_to_near_negative": 1.3226462006568909,
+              "paired_difference": 0.02166754534458948
+            },
+            {
+              "persona": "con_artist",
+              "d_to_near_negative": 1.3614909946918488,
+              "paired_difference": 0.11708126649257274
+            },
+            {
+              "persona": "corporate_raider",
+              "d_to_near_negative": 1.0473986901342869,
+              "paired_difference": 0.051736962325675116
+            },
+            {
+              "persona": "crossing_guard",
+              "d_to_near_negative": 0.6383952498435974,
+              "paired_difference": 0.040435244074060815
+            },
+            {
+              "persona": "electrician",
+              "d_to_near_negative": 0.46797555685043335,
+              "paired_difference": 0.025872986535497928
+            },
+            {
+              "persona": "florist",
+              "d_to_near_negative": 0.4920218586921692,
+              "paired_difference": 0.060544192166301504
+            },
+            {
+              "persona": "investment_banker",
+              "d_to_near_negative": 0.5847721099853516,
+              "paired_difference": 0.0451967203871231
+            },
+            {
+              "persona": "kindergarten_teacher",
+              "d_to_near_negative": 0.9117112010717392,
+              "paired_difference": 0.032406961920453024
+            },
+            {
+              "persona": "lawyer",
+              "d_to_near_negative": 0.6149418950080872,
+              "paired_difference": 0.01542145373303122
+            },
+            {
+              "persona": "librarian",
+              "d_to_near_negative": 1.1913096606731415,
+              "paired_difference": 0.03718555330271761
+            },
+            {
+              "persona": "lifeguard",
+              "d_to_near_negative": 0.5766060650348663,
+              "paired_difference": 0.01930273004857382
+            },
+            {
+              "persona": "medical_doctor",
+              "d_to_near_negative": 0.753404900431633,
+              "paired_difference": 0.0236783957538196
+            },
+            {
+              "persona": "meditation_teacher",
+              "d_to_near_negative": 0.6751890480518341,
+              "paired_difference": 0.023396645903517532
+            },
+            {
+              "persona": "mercenary",
+              "d_to_near_negative": 1.160910964012146,
+              "paired_difference": -0.04846355154767209
+            },
+            {
+              "persona": "monk",
+              "d_to_near_negative": 1.0385188460350037,
+              "paired_difference": 0.08556100952019118
+            },
+            {
+              "persona": "music_therapist",
+              "d_to_near_negative": 0.33703023195266724,
+              "paired_difference": 0.04495812583478431
+            },
+            {
+              "persona": "nature_guide",
+              "d_to_near_negative": 0.8561273366212845,
+              "paired_difference": 0.03890071364416995
+            },
+            {
+              "persona": "origami_artist",
+              "d_to_near_negative": 0.6027264595031738,
+              "paired_difference": 0.0049991230142993155
+            },
+            {
+              "persona": "philosopher",
+              "d_to_near_negative": 0.914626769721508,
+              "paired_difference": 0.023750775783780764
+            },
+            {
+              "persona": "pirate_captain",
+              "d_to_near_negative": 1.4601279497146606,
+              "paired_difference": 0.012760059195155438
+            },
+            {
+              "persona": "police_officer",
+              "d_to_near_negative": 0.58223095536232,
+              "paired_difference": 0.06319792292336014
+            },
+            {
+              "persona": "postal_worker",
+              "d_to_near_negative": 0.806264340877533,
+              "paired_difference": 0.035565468950865396
+            },
+            {
+              "persona": "preschool_teacher",
+              "d_to_near_negative": 0.8290937840938568,
+              "paired_difference": 0.020569860095636754
+            },
+            {
+              "persona": "programmer",
+              "d_to_near_negative": 1.159477174282074,
+              "paired_difference": 0.03162565115368252
+            },
+            {
+              "persona": "prosecutor",
+              "d_to_near_negative": 0.7853126227855682,
+              "paired_difference": 0.037600105373884175
+            },
+            {
+              "persona": "quilter",
+              "d_to_near_negative": 0.5025942027568817,
+              "paired_difference": 0.08226715718662132
+            },
+            {
+              "persona": "sheep_herder",
+              "d_to_near_negative": 1.1068930625915527,
+              "paired_difference": 0.07084540597868771
+            },
+            {
+              "persona": "social_worker",
+              "d_to_near_negative": 0.951944075524807,
+              "paired_difference": 0.033010162047600544
+            },
+            {
+              "persona": "software_engineer",
+              "d_to_near_negative": 0.9705495461821556,
+              "paired_difference": 0.048143568221158874
+            },
+            {
+              "persona": "spy",
+              "d_to_near_negative": 1.3842406570911407,
+              "paired_difference": 0.04381472905537979
+            },
+            {
+              "persona": "storyteller",
+              "d_to_near_negative": 1.3969829678535461,
+              "paired_difference": 0.004895063014464592
+            },
+            {
+              "persona": "surgeon",
+              "d_to_near_negative": 0.659484326839447,
+              "paired_difference": 0.030486844231099337
+            },
+            {
+              "persona": "taxi_driver",
+              "d_to_near_negative": 0.7565230131149292,
+              "paired_difference": 0.027333277926049577
+            },
+            {
+              "persona": "veterinarian",
+              "d_to_near_negative": 0.3755769729614258,
+              "paired_difference": 0.03318208073035719
+            },
+            {
+              "persona": "wildlife_rehabilitator",
+              "d_to_near_negative": 0.3962593078613281,
+              "paired_difference": 0.052394293659510816
+            },
+            {
+              "persona": "wizard",
+              "d_to_near_negative": 1.0109875053167343,
+              "paired_difference": 0.08538283783718377
+            },
+            {
+              "persona": "zelthari_scholar",
+              "d_to_near_negative": 0.8838319480419159,
+              "paired_difference": 0.08109111854944119
+            }
+          ]
+        }
+      }
+    }
+  }
+}

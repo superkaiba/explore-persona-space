@@ -1,0 +1,249 @@
+{
+  "schema_version": "i529_anchor_v1",
+  "generated_at": "2026-06-11T08:57:34.312076+00:00",
+  "git_commit": "4f6a3592d5e705de38718d92599326ff4092f4c2",
+  "candidate_grid": [
+    47,
+    57,
+    66
+  ],
+  "grid_suffix_char": "s",
+  "seeds": [
+    42,
+    137,
+    1337,
+    7,
+    21
+  ],
+  "arms": [
+    "system_plain",
+    "system_padded",
+    "role"
+  ],
+  "personas": [
+    "pirate",
+    "villain"
+  ],
+  "thresholds": {
+    "wrong_sd_min_nats": 0.5,
+    "wrong_logp_band_nats": [
+      -10.0,
+      -5.0
+    ],
+    "own_argmax_emit_min": 0.5
+  },
+  "per_persona_per_E_diagnostics": {
+    "pirate": {
+      "47": {
+        "own_logp": -3.914810390949249,
+        "own_argmax_emit": 0.005333333333333333,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -13.344583526611327,
+            "wrong_sd": 1.3794557301861115,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -14.198943775177003,
+            "wrong_sd": 1.418526514606904,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -12.825193134307861,
+            "wrong_sd": 2.1089123805585563,
+            "n_questions": 250
+          }
+        }
+      },
+      "57": {
+        "own_logp": -0.3349882138967514,
+        "own_argmax_emit": 0.9653333333333335,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -11.320975372314454,
+            "wrong_sd": 1.3602372569666668,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -12.306754299163819,
+            "wrong_sd": 1.4208230296730253,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -10.95303401184082,
+            "wrong_sd": 2.284894654671683,
+            "n_questions": 250
+          }
+        }
+      },
+      "66": {
+        "own_logp": -0.01036874205917896,
+        "own_argmax_emit": 0.9986666666666667,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -11.150721811294556,
+            "wrong_sd": 1.4366330676737646,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -11.645095333099366,
+            "wrong_sd": 1.5083423391386614,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -10.717342058181764,
+            "wrong_sd": 2.3326380063627417,
+            "n_questions": 250
+          }
+        }
+      }
+    },
+    "villain": {
+      "47": {
+        "own_logp": -5.2485802443822225,
+        "own_argmax_emit": 0.004,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -13.05596869277954,
+            "wrong_sd": 1.1366953062028498,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -13.95023165512085,
+            "wrong_sd": 1.1242388660701292,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -11.077865833282472,
+            "wrong_sd": 1.246531922364582,
+            "n_questions": 250
+          }
+        }
+      },
+      "57": {
+        "own_logp": -1.3640974444995322,
+        "own_argmax_emit": 0.6466666666666666,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -10.506892570495605,
+            "wrong_sd": 1.0717899694028328,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -11.539862560272216,
+            "wrong_sd": 1.0702778966319928,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -8.423697940826415,
+            "wrong_sd": 1.1181317476583206,
+            "n_questions": 250
+          }
+        }
+      },
+      "66": {
+        "own_logp": -0.14624465619438948,
+        "own_argmax_emit": 0.9573333333333334,
+        "n_own_cells": 15,
+        "per_arm": {
+          "system_plain": {
+            "wrong_logp_mean": -9.820435535430908,
+            "wrong_sd": 1.1009229270680823,
+            "n_questions": 250
+          },
+          "system_padded": {
+            "wrong_logp_mean": -10.18809745979309,
+            "wrong_sd": 1.0784365100227684,
+            "n_questions": 250
+          },
+          "role": {
+            "wrong_logp_mean": -6.954057161331177,
+            "wrong_sd": 1.188939842534847,
+            "n_questions": 250
+          }
+        }
+      }
+    }
+  },
+  "per_persona_per_E_gates": {
+    "pirate": {
+      "47": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "57": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      },
+      "66": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      }
+    },
+    "villain": {
+      "47": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": false
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": false,
+        "candidate": false
+      },
+      "57": {
+        "resolution_per_arm": {
+          "system_plain": false,
+          "system_padded": false,
+          "role": true
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      },
+      "66": {
+        "resolution_per_arm": {
+          "system_plain": true,
+          "system_padded": false,
+          "role": true
+        },
+        "all_arms_resolution_ok": false,
+        "source_install_ok": true,
+        "candidate": false
+      }
+    }
+  },
+  "selected_anchor": {
+    "pirate": null,
+    "villain": null
+  },
+  "degenerate": true,
+  "degenerate_reason": "pirate: no E satisfies BOTH the wrong-slot resolution band (wrong_sd > 0.5 AND wrong_logp_mean in (-10.0, -5.0)) for all 3 arms AND own_argmax_emit >= 0.5; villain: no E satisfies BOTH the wrong-slot resolution band (wrong_sd > 0.5 AND wrong_logp_mean in (-10.0, -5.0)) for all 3 arms AND own_argmax_emit >= 0.5",
+  "degenerate_followup_recommendation": "drop LoRA rank (r=32 -> 16 or 8) OR drop lr (1e-5 -> 5e-6); the marker-less single-persona implant saturates too fast at this rank/lr to segment arms (rule .claude/rules/marker-training-recipe.md).",
+  "partial_anchor": false,
+  "partial_anchor_reason": "",
+  "n_missing_per_cell": 0
+}

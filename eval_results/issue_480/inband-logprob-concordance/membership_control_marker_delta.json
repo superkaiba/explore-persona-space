@@ -1,0 +1,105 @@
+{
+  "schema": "issue_480_membership_control_v1",
+  "x_field": "marker_delta",
+  "y_field": "sycophancy_delta",
+  "input_matrix": {
+    "path": "eval_results/issue_480/inband-logprob-concordance/marker_delta_matrix.json",
+    "schema": "issue_480_marker_delta_matrix_v1",
+    "git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+    "n_rows": 138
+  },
+  "membership": {
+    "software_engineer": [
+      "assistant",
+      "medical_doctor",
+      "qwen_default"
+    ],
+    "assistant": [
+      "comedian",
+      "qwen_default",
+      "software_engineer"
+    ]
+  },
+  "membership_derivation": "pinned train pools issue480_marker_payload_swap/train_pools@3c8fecb937c8; no-persona rows -> qwen_default (Qwen chat-template default)",
+  "seeds": {
+    "permutation": 4804,
+    "partial_permutation": 4805
+  },
+  "n_perm": 100000,
+  "per_source": {
+    "software_engineer": {
+      "membership_cells": [
+        "assistant",
+        "medical_doctor",
+        "qwen_default"
+      ],
+      "n_membership_cells": 3,
+      "n_kept_cells": 20,
+      "all_cells_naive": {
+        "rho": 0.34494688475848884,
+        "p_asymptotic": 0.10696693422161505,
+        "p_permutation": 0.10650893491065089
+      },
+      "exclusion_naive": {
+        "rho": 0.19104928015232256,
+        "p_asymptotic": 0.4197488341000022,
+        "p_permutation": 0.41714582854171456
+      },
+      "exclusion_joint_partial": {
+        "rho_partial": 0.41968483224681197,
+        "p_permutation": 0.06524934750652493
+      },
+      "third_partial_with_membership": {
+        "rho_partial": 0.33053719799624653,
+        "p_permutation": 0.12432875671243288
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "controls": [
+        "cosine_l20_baseline",
+        "bystander_base_rate",
+        "training_negative_membership"
+      ]
+    },
+    "assistant": {
+      "membership_cells": [
+        "comedian",
+        "qwen_default",
+        "software_engineer"
+      ],
+      "n_membership_cells": 3,
+      "n_kept_cells": 20,
+      "all_cells_naive": {
+        "rho": 0.4915927231672391,
+        "p_asymptotic": 0.017201104027102714,
+        "p_permutation": 0.017949820501794982
+      },
+      "exclusion_naive": {
+        "rho": 0.49849454122380765,
+        "p_asymptotic": 0.025276774085970878,
+        "p_permutation": 0.026709732902670973
+      },
+      "exclusion_joint_partial": {
+        "rho_partial": 0.6028314120970248,
+        "p_permutation": 0.004599954000459996
+      },
+      "third_partial_with_membership": {
+        "rho_partial": 0.6070691077867245,
+        "p_permutation": 0.0017999820001799983
+      },
+      "partials_method": "rank-transform all variables (Spearman partial), OLS-residualize x-ranks and y-ranks on covariate ranks + intercept, Pearson on residuals; permutation p from permuting the x-rank residuals",
+      "controls": [
+        "cosine_l20_baseline",
+        "bystander_base_rate",
+        "training_negative_membership"
+      ]
+    }
+  },
+  "validation_round2": null,
+  "git_commit_sha": "d80628796fa0bcc7e6496f88da55577c17d6986d",
+  "hostname": "cia-benchmark-vm",
+  "timestamp_utc": "2026-06-11T01:47:59Z",
+  "env_versions": {
+    "python": "3.11.15",
+    "numpy": "2.2.6"
+  }
+}

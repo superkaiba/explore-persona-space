@@ -1,0 +1,19 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "smoke_judge",
+  "trait": "validating",
+  "arm": "role",
+  "adapter": "adapters/i528_validating_role_seed11_smoke",
+  "ts": "2026-06-10T17:24:19.608576Z",
+  "n_q": 5,
+  "scores": [
+    4,
+    4,
+    2,
+    4,
+    1
+  ],
+  "mean_score": 3.0,
+  "threshold": 3.0,
+  "passed": true
+}

@@ -1,0 +1,89 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "S1_base_matched_slot",
+ "stratum": "primary",
+ "side": "base",
+ "adapter_label": "split8_s42",
+ "source_cid": "A2",
+ "adapter_hf_subpath": null,
+ "panel_spec": {
+  "personas": [
+   "assistant"
+  ],
+  "n_questions": 2,
+  "questions": [
+   "What is the best way to learn a new language?",
+   "Can you explain how photosynthesis works?"
+  ],
+  "adapters": [
+   "split8_s42"
+  ]
+ },
+ "per_persona": {
+  "assistant": {
+   "per_q": [
+    {
+     "logp_marker": -22.572280883789062,
+     "z_marker": 3.171875,
+     "z_eos": 10.125,
+     "logZ": 25.744155883789062,
+     "logp_bare_marker": -27.142593383789062,
+     "argmax_id": 13655,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 226
+    },
+    {
+     "logp_marker": -20.597877502441406,
+     "z_marker": 2.890625,
+     "z_eos": 20.875,
+     "logZ": 23.488502502441406,
+     "logp_bare_marker": -23.401588439941406,
+     "argmax_id": 4710,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 332
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -21.585079193115234,
+    "mean_z_marker": 3.03125,
+    "mean_z_eos": 15.5,
+    "mean_logZ": 24.616329193115234,
+    "mean_logp_bare_marker": -25.272090911865234,
+    "mean_marker_eos_margin": -12.46875,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  }
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "b36205137",
+  "timestamp_utc": "2026-06-11T11:40:35.554963+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "score-base",
+   "--registry",
+   "psplit",
+   "--adapters",
+   "split8_s42",
+   "--personas",
+   "assistant",
+   "--n-questions",
+   "2",
+   "--tag",
+   "smoke",
+   "--extra-personas-file",
+   "eval_results/issue_571/persona-split-composition/geometry/panel_personas.json"
+  ]
+ }
+}

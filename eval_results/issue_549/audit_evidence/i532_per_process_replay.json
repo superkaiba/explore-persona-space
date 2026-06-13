@@ -1,0 +1,172 @@
+{
+  "metadata": {
+    "tool": "i549_audit_532",
+    "git_commit": "d837c78be36297f7f6427f79820fcaa39ae611d8",
+    "timestamp_utc": "2026-06-11T00:44:28.412576+00:00",
+    "run_commits": {
+      "P1": "28d35f027",
+      "P2": "28a73584c"
+    },
+    "thresholds": {
+      "identity_affected": 0.9,
+      "max_dlogp_nearzero_nat": 0.1
+    }
+  },
+  "replays": {
+    "P1": {
+      "note": "no surviving per-cell artifacts \u2014 zero artifact-relevant events"
+    },
+    "P3": {
+      "note": "--phase 2+3+4 only; constructs no LoRARequest"
+    },
+    "P2": {
+      "request_sequence": [
+        {
+          "lora_int_id": 1,
+          "lora_path": "adapters/i474_loc_A1_ep1"
+        },
+        {
+          "lora_int_id": 2,
+          "lora_path": "adapters/i474_loc_A2_ep1"
+        },
+        {
+          "lora_int_id": 3,
+          "lora_path": "adapters/i474_loc_A3_ep1"
+        },
+        {
+          "lora_int_id": 4,
+          "lora_path": "adapters/i474_loc_A4_ep1"
+        },
+        {
+          "lora_int_id": 5,
+          "lora_path": "adapters/i474_loc_A5_ep1"
+        },
+        {
+          "lora_int_id": 6,
+          "lora_path": "adapters/i474_loc_B1_ep1"
+        },
+        {
+          "lora_int_id": 7,
+          "lora_path": "adapters/i474_loc_B2_ep1"
+        },
+        {
+          "lora_int_id": 8,
+          "lora_path": "adapters/i474_loc_B3_ep1"
+        },
+        {
+          "lora_int_id": 9,
+          "lora_path": "adapters/i474_loc_B4_ep1"
+        },
+        {
+          "lora_int_id": 10,
+          "lora_path": "adapters/i474_loc_B5_ep1"
+        },
+        {
+          "lora_int_id": 11,
+          "lora_path": "adapters/i474_loc_C1_ep1"
+        },
+        {
+          "lora_int_id": 12,
+          "lora_path": "adapters/i474_loc_D1_ep1"
+        },
+        {
+          "lora_int_id": 13,
+          "lora_path": "adapters/i474_loc_D2_ep1"
+        },
+        {
+          "lora_int_id": 14,
+          "lora_path": "adapters/i474_loc_D3_ep1"
+        },
+        {
+          "lora_int_id": 15,
+          "lora_path": "adapters/i474_loc_D4_ep1"
+        },
+        {
+          "lora_int_id": 16,
+          "lora_path": "adapters/i474_loc_D5_ep1"
+        },
+        {
+          "lora_int_id": 1,
+          "lora_path": "adapters/i474_loc_A1_ep2"
+        },
+        {
+          "lora_int_id": 2,
+          "lora_path": "adapters/i474_loc_A2_ep2"
+        },
+        {
+          "lora_int_id": 3,
+          "lora_path": "adapters/i474_loc_A3_ep2"
+        },
+        {
+          "lora_int_id": 4,
+          "lora_path": "adapters/i474_loc_A4_ep2"
+        },
+        {
+          "lora_int_id": 5,
+          "lora_path": "adapters/i474_loc_A5_ep2"
+        },
+        {
+          "lora_int_id": 6,
+          "lora_path": "adapters/i474_loc_B1_ep2"
+        }
+      ],
+      "replay_capacity_1": {
+        "n_requests": 22,
+        "n_hits": 0,
+        "n_stale": 0,
+        "stale_requests": [],
+        "verdict_hint": "no-stale-serve"
+      },
+      "replay_capacity_16_counterfactual": {
+        "n_requests": 22,
+        "n_hits": 6,
+        "n_stale": 6,
+        "stale_requests": [
+          {
+            "id": 1,
+            "requested": "adapters/i474_loc_A1_ep2",
+            "served": "adapters/i474_loc_A1_ep1",
+            "hit": true,
+            "stale": true
+          },
+          {
+            "id": 2,
+            "requested": "adapters/i474_loc_A2_ep2",
+            "served": "adapters/i474_loc_A2_ep1",
+            "hit": true,
+            "stale": true
+          },
+          {
+            "id": 3,
+            "requested": "adapters/i474_loc_A3_ep2",
+            "served": "adapters/i474_loc_A3_ep1",
+            "hit": true,
+            "stale": true
+          },
+          {
+            "id": 4,
+            "requested": "adapters/i474_loc_A4_ep2",
+            "served": "adapters/i474_loc_A4_ep1",
+            "hit": true,
+            "stale": true
+          },
+          {
+            "id": 5,
+            "requested": "adapters/i474_loc_A5_ep2",
+            "served": "adapters/i474_loc_A5_ep1",
+            "hit": true,
+            "stale": true
+          },
+          {
+            "id": 6,
+            "requested": "adapters/i474_loc_B1_ep2",
+            "served": "adapters/i474_loc_B1_ep1",
+            "hit": true,
+            "stale": true
+          }
+        ],
+        "verdict_hint": "AFFECTED"
+      }
+    }
+  }
+}

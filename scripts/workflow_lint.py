@@ -36,6 +36,51 @@ Behaviours:
   ``report_to="none"`` and no waiver; smoke + code-review + pre-launch
   all passed). CLAUDE.md "Upload Policy" makes WandB live metrics
   mandatory for training; this lint enforces it mechanically.
+* ``--check-heredoc-dotenv`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any bash
+  heredoc that feeds a python interpreter's stdin (``uv run python -
+  <<'PY'``, ``python3 <<EOF``, …) and whose body calls the python-dotenv
+  package's no-arg ``load_dotenv()`` — from stdin its ``find_dotenv()``
+  frame-walk always crashes (``assert frame.f_back is not None``).
+  Explicit-path calls and the stdin-safe project wrapper
+  (``explore_persona_space.orchestrate.env.load_dotenv``) pass. Closes
+  the #552/#612 incident class: the gotcha existed only as prose
+  (gotchas.md + research-project-structure.md § Environment Bootstrap)
+  and was reintroduced on #612 past the implementer, BOTH ensemble
+  reviewers, and every smoke run, because the heredoc executes only at
+  pod-side first contact.
+* ``--check-dispatcher-cvd-pin`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL on any
+  BACKGROUNDED python launch line (logical line ending in ``&``) that
+  passes a per-process GPU pin (``--gpu-id`` / ``+gpu_id=``) but does
+  NOT carry a ``CUDA_VISIBLE_DEVICES=`` env prefix on the same command.
+  The in-process CVD clobber (``train/sft.py`` sets
+  ``os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)``) is silently
+  defeated by any import-time cuInit, so parallel per-cell launches that
+  rely on ``--gpu-id`` alone pile every cell onto physical GPU 0 and OOM
+  (incident class #523 Phase B, recurred #541/#543/#557; recipe fix
+  #578). Legitimate unpinned shapes are waived via
+  ``# CVD_PIN_EXEMPT: <reason>`` on the same logical line or the
+  immediately preceding non-blank line. Closes the residual #578 gap:
+  the launcher-env-pin rule was agent-prose only (experimenter.md item
+  10 fires on the RunPod launch path; gcp/slurm startup-script lanes
+  have no launch agent), so a new dispatcher written without the pin
+  reached production unflagged on those lanes.
+* ``--check-marker-registry`` (also bundled into ``--check-references``):
+  extract every marker kind that any skill's ``SKILL.md`` under
+  ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
+  instructs POSTING
+  (``task.py post-marker <N> epm:<kind>`` invocations plus post-verb
+  prose with a backticked ``epm:<kind>`` on the same line) and FAIL on
+  kinds absent from ``workflow.yaml § markers``.
+  Read-side mentions don't match; prose-only false positives are waived
+  via :data:`MARKER_REGISTRY_ALLOWLIST`. Closes the task-#555 drift
+  class (2026-06-10): 6 posted-or-consumed kinds were missing from the
+  registry and nothing cross-checked the two surfaces; the agent-spec
+  half of the posting surface was added in the same task's follow-up,
+  and the walk was widened from the issue SKILL.md to ALL skills'
+  SKILL.md files on the chain's final fix (the promote-clean-result
+  ``epm:consolidated-into`` posting site was unlinted until then).
 
 Exit codes:
 
@@ -85,6 +130,17 @@ STATUS_LABEL_RE = re.compile(r"\bstatus:[a-z][a-z0-9-]*\b")
 # path) doesn't match; the leading `scripts/` segment must stand alone.
 SCRIPT_REF_RE = re.compile(r"(?<![\w/])scripts/([A-Za-z0-9_]+\.py)\b")
 
+# Inline opt-out for ``check_script_references``: a line carrying this
+# HTML comment is a NARRATIVE incident citation (a branch-only or
+# since-deleted script named for historical context), not an executable
+# workflow step, so its `scripts/<name>.py` tokens are exempt from the
+# dead-tool check. Scope is the single line bearing the comment —
+# explicit, self-documenting, greppable. Do NOT attach it to a line an
+# agent is expected to actually run. (Second hit of this class on task
+# #545: an incident note in code-reviewer.md had to contort its prose to
+# dodge SCRIPT_REF_RE.)
+HISTORICAL_REF_OPT_OUT = "<!-- lint: historical-ref -->"
+
 # `--check-wandb-required`: every `report_to="none"` (or equivalent
 # disabling literal: `report_to=None`, `report_to=[]`) inside a training-
 # config builder under `src/explore_persona_space/experiments/` MUST
@@ -117,6 +173,159 @@ WANDB_TRAINER_CONFIG_TOKENS: tuple[str, ...] = (
     "SFTConfig",
     "TrainingArguments",
 )
+
+# `--check-marker-registry`: every marker kind the /issue SKILL.md or an
+# agent spec under .claude/agents/*.md instructs POSTING must be declared in
+# workflow.yaml § markers. Two pattern families
+# count as a posting site (read-side mentions like "the latest `epm:foo v1`
+# marker" deliberately do NOT match — only the posting contract is checked):
+#
+# 1. CLI invocations: `task.py post-marker <N> epm:<kind>` (any issue-arg
+#    form: `<N>`, `"$N"`, a literal number, ...).
+# 2. Posting prose: a post-verb (post/posts/posted/auto-post/re-post)
+#    followed within the same line by a backticked `epm:<kind> ...` token
+#    (optionally in the `<!-- epm:<kind> v1 -->` comment form).
+#
+# Closes the drift class where a skill step posts a kind the registry never
+# declared, so the auto-generated markers.md table and the marker-taxonomy
+# docs silently diverge from what actually lands in events.jsonl (task #555
+# surfaced 6 unregistered kinds in one sweep, 2026-06-10). Prose-only /
+# family-prefix mentions that a future edit accidentally phrases as a post
+# can be waived via MARKER_REGISTRY_ALLOWLIST (document the reason inline).
+MARKER_POST_CLI_RE = re.compile(r"\bpost-marker\s+\S+\s+(epm:[a-z][a-z0-9-]*)")
+MARKER_POST_PROSE_RE = re.compile(
+    r"\b(?:post|posts|posted|auto-post|auto-posts|re-post|re-posts)\b"
+    r"[^`\n]{0,60}`(?:<!--\s*)?(epm:[a-z][a-z0-9-]*)",
+    re.IGNORECASE,
+)
+# Kinds exempt from registration: prose-only or family-prefix mentions that
+# match the posting patterns above without being a real posted kind
+# (`epm:audit` — the SKILL.md placeholder guard — uses the verb "generating"
+# so it never matches). Add entries here only with a comment naming the
+# file:line and why it is not a posted kind.
+MARKER_REGISTRY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # campaign-tick/SKILL.md:104 "Newest skill-posted `epm:campaign-*`
+        # marker FRESH" — a READ-side family-prefix mention, not a posting
+        # site: `\bposted\b` matches inside the compound adjective
+        # "skill-posted" (hyphen is a word boundary) and the kind regex
+        # truncates `epm:campaign-*` at the `*`. The six real
+        # `epm:campaign-*` kinds are individually registered in
+        # workflow.yaml § markers; the tick itself never posts (its
+        # contract: "No marker posts").
+        "epm:campaign-",
+    }
+)
+
+# `--check-heredoc-dotenv`: a NO-ARG `load_dotenv()` from the python-dotenv
+# PACKAGE inside a bash heredoc that feeds a python interpreter's STDIN
+# (`uv run python - <<'PY'`, `python3 <<EOF`, ...) always crashes at
+# runtime: with no path argument, python-dotenv's `find_dotenv()` walks the
+# interpreter frame stack looking for a caller whose `co_filename` exists
+# on disk; from stdin the filename is `<stdin>`, the walk runs off the top
+# of the stack, and `assert frame.f_back is not None` fires. The rule
+# existed only as prose (gotchas.md; research-project-structure.md
+# § Environment Bootstrap) and human review repeatedly missed it:
+# incident #552, then again #612 (2026-06-12 —
+# `issue612_production_driver.sh` stage-1b slipped past the implementer,
+# BOTH ensemble reviewers, and every smoke run because the heredoc
+# executes only at pod-side first contact, then killed the production
+# driver with a misleading "poll timeout" and idled 4x A100 for ~30 min).
+# This check makes the rule mechanical.
+#
+# Flagged (inside a python-stdin-fed heredoc body only):
+#   * `from dotenv import load_dotenv` (any import list containing it)
+#     plus a bare no-arg call `load_dotenv()`;
+#   * a qualified no-arg call `dotenv.load_dotenv()`.
+# NOT flagged:
+#   * any-arg calls (`load_dotenv(dotenv_path=...)`) — an explicit path
+#     skips the frame-walking `find_dotenv()` entirely;
+#   * the project wrapper
+#     `explore_persona_space.orchestrate.env.load_dotenv()` — resolves
+#     `.env` via `resolve_dotenv_path()` (cwd/path walking, no frame
+#     inspection), stdin-safe; this is the canonical in-heredoc shape
+#     (#585 round-2 review fix; live exemplar `i556_run_all_1gpu.sh`);
+#   * heredocs that do NOT feed a python interpreter's stdin
+#     (`cat <<EOF`, `python scripts/foo.py <<EOF` where the body is
+#     DATA for the script, ...);
+#   * comment lines inside the heredoc body;
+#   * `python -c '...'` one-liner arguments — DELIBERATELY out of scope
+#     (extension considered + rejected, 2026-06-12): under `-c`,
+#     `__main__` has no `__file__`, so python-dotenv's `_is_interactive()`
+#     short-circuits find_dotenv() to a cwd-walk — the frame walk (and
+#     its `assert frame.f_back is not None` crash) is never reached
+#     (verified empirically against the pinned python-dotenv 1.2.2). A
+#     no-arg call run from the repo root legitimately finds `.env`, so a
+#     hard FAIL (this framework has no warn tier / waiver) would flag
+#     working shapes. The real `-c` hazard is SILENT non-loading from an
+#     off-repo cwd — prose-documented in gotchas.md's python-dotenv
+#     entry, not lintable without false positives.
+#
+# Opener parsing: backslash-continued physical lines are merged into one
+# logical command line first (the #612 incident shape is
+# `uv run python - "$A" "$B" <<'PY' \` continued by `|| fail ... 3`, with
+# the body starting after the continuation). The opener regex excludes
+# here-strings (`<<<`) and requires an identifier-shaped delimiter so
+# arithmetic shifts (`$((x << 2))`) don't parse as heredocs. A python
+# interpreter is considered stdin-fed when, before the opener on the
+# logical line, `python`/`python3[.N]` is followed by a bare `-` arg
+# (optionally after single-dash flags) OR is the last token.
+HEREDOC_OPENER_RE = re.compile(r"(?<!<)<<-?(?!<)\s*(['\"]?)([A-Za-z_]\w*)\1")
+HEREDOC_PY_STDIN_DASH_RE = re.compile(r"\bpython3?(?:\.\d+)?\s+(?:-\S+\s+)*-(?=[\s\"']|$)")
+HEREDOC_PY_STDIN_BARE_RE = re.compile(r"\bpython3?(?:\.\d+)?[\"']?\s*$")
+HEREDOC_DOTENV_PKG_IMPORT_RE = re.compile(
+    r"^\s*from\s+dotenv(?:\.[\w.]+)?\s+import\s+(?P<names>.+)$"
+)
+HEREDOC_DOTENV_BARE_CALL_RE = re.compile(r"(?<![\w.])load_dotenv\s*\(\s*\)")
+HEREDOC_DOTENV_QUALIFIED_CALL_RE = re.compile(r"(?<![\w.])dotenv\.load_dotenv\s*\(\s*\)")
+
+# `--check-dispatcher-cvd-pin`: a BACKGROUNDED python launch in a shell
+# script that passes a per-process GPU pin (`--gpu-id <n>` / `+gpu_id=<n>`)
+# MUST also carry a `CUDA_VISIBLE_DEVICES=` env assignment on the same
+# logical command line. The in-process clobber
+# (`os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)` in
+# `train/sft.py`) is silently defeated by any import-time cuInit — the
+# driver freezes its device list at the FIRST cuInit in the process, so a
+# dispatcher import chain that initializes CUDA (`import peft` is a known
+# offender, #545) makes the late clobber a no-op and every parallel cell's
+# `cuda:0` resolves to physical GPU 0 → co-location → OOM. That is how all
+# 4 #523 Phase B waves piled onto GPU 0 (recurred #541/#543/#557). The
+# recipe fix (#578, gotchas.md "CVD-clobber" entry): export
+# `CUDA_VISIBLE_DEVICES=<gpu>` per cell in the LAUNCHER env AND pass the
+# matching `--gpu-id <gpu>` so the in-process clobber rewrites the same
+# value. The reference compliant shape is
+# `scripts/i474_phase23_dispatch.sh` ("CUDA_VISIBLE_DEVICES="$cvd" uv run
+# python ... --gpu-id "$cvd" ... &").
+#
+# Flagged: a logical line (backslash continuations merged) that
+#   (a) invokes a python interpreter (`uv run python`, bare
+#       `python`/`python3[.N]`, `.venv/bin/python`), AND
+#   (b) carries `--gpu-id` or `+gpu_id=`, AND
+#   (c) is backgrounded — ends with `&` (not `&&`), the parallel-launch
+#       signature, AND
+#   (d) has NO `CUDA_VISIBLE_DEVICES=` assignment anywhere on the line.
+# NOT flagged (recall is deliberately sacrificed for zero false
+# positives — a sequential launch cannot co-locate siblings):
+#   * sequential launches (no trailing `&`), including `nohup ... ;`
+#     and `cmd && next` chains;
+#   * `echo`-prefixed lines (dry-run previews) and `#` comment lines;
+#   * backgrounded SUBSHELL wrappers (`( for ...; do python ...; done ) &`)
+#     whose python line itself is not backgrounded — a known recall miss
+#     (live example: `i488_phase4_dispatch.sh`), accepted to keep the
+#     check line-local and false-positive-free;
+#   * lines waived via `# CVD_PIN_EXEMPT: <reason>` (same logical line or
+#     immediately preceding non-blank line; reason ≥ 10 chars — same
+#     convention as WANDB_INTENTIONALLY_DISABLED). Use the waiver for
+#     pre-#578 completed-task dispatchers kept verbatim for
+#     reproducibility, and for genuinely single-process backgrounded
+#     launches where no sibling can co-locate.
+CVD_PIN_PY_LAUNCH_RE = re.compile(
+    r"(?:\buv\s+run\s+python\b|(?<![\w./])python3?(?:\.\d+)?\b|\.venv/bin/python\b)"
+)
+CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
+CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
+CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
+CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -626,6 +835,12 @@ def check_script_references(
     only fires when an agent actually reaches that step. Catching the
     dangling reference at lint time is far cheaper than at run time.
 
+    Lines carrying the :data:`HISTORICAL_REF_OPT_OUT` comment
+    (``<!-- lint: historical-ref -->``) are skipped entirely: they mark
+    narrative incident citations that name branch-only or since-deleted
+    scripts for historical context, not executable steps. The opt-out is
+    per-line and explicit — a dead reference anywhere else still FAILs.
+
     ``roots`` and ``scripts_dir`` are override hooks for unit tests:
     production callers pass both as None and the function walks the
     canonical agent + skill trees (via :func:`_resolve_ask_target_files`,
@@ -637,13 +852,17 @@ def check_script_references(
     scripts_root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
     for path in _resolve_ask_target_files(roots):
         for lineno, line in enumerate(path.read_text().splitlines(), start=1):
+            if HISTORICAL_REF_OPT_OUT in line:
+                continue
             for match in SCRIPT_REF_RE.finditer(line):
                 script_name = match.group(1)
                 if not (scripts_root / script_name).exists():
                     errors.append(
                         f"{path}:{lineno}: references 'scripts/{script_name}' "
                         f"which does not exist under {scripts_root}/. Repoint "
-                        f"to the current helper, or remove the dead reference."
+                        f"to the current helper, remove the dead reference, "
+                        f"or — for a narrative incident citation only — "
+                        f"append '{HISTORICAL_REF_OPT_OUT}' to the line."
                     )
     return errors
 
@@ -756,6 +975,312 @@ def check_wandb_required(
     return errors
 
 
+def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: int) -> list[str]:
+    """Scan one python-stdin-fed heredoc body (``lines[start:end]``,
+    0-based, terminator excluded) and return an error per dangerous
+    no-arg python-dotenv ``load_dotenv()`` call. Comment lines are
+    skipped; the bare-name call is only dangerous when the SAME body
+    imports ``load_dotenv`` from the ``dotenv`` package (a heredoc is a
+    self-contained program, so the import must be visible — this is what
+    keeps the stdin-safe project-wrapper import a PASS)."""
+    code = [
+        (idx, ln)
+        for idx, ln in enumerate(lines[start:end], start=start)
+        if not ln.lstrip().startswith("#")
+    ]
+    imports_pkg_load_dotenv = False
+    for _, ln in code:
+        match = HEREDOC_DOTENV_PKG_IMPORT_RE.match(ln)
+        if match and re.search(r"\bload_dotenv\b", match.group("names")):
+            imports_pkg_load_dotenv = True
+            break
+    errors: list[str] = []
+    for idx, ln in code:
+        dangerous = bool(HEREDOC_DOTENV_QUALIFIED_CALL_RE.search(ln)) or (
+            imports_pkg_load_dotenv and bool(HEREDOC_DOTENV_BARE_CALL_RE.search(ln))
+        )
+        if dangerous:
+            errors.append(
+                f"{path}:{idx + 1}: no-arg python-dotenv `load_dotenv()` inside a "
+                f"heredoc feeding a python interpreter's stdin — find_dotenv()'s "
+                f"frame-walk crashes from stdin (assert frame.f_back is not None; "
+                f"incidents #552, #612). Drop the dotenv call and rely on env vars "
+                f"exported by the enclosing shell (`set -a && source .env && set +a` "
+                f"before the heredoc), pass an explicit path "
+                f"(load_dotenv(dotenv_path=...)), or use the stdin-safe project "
+                f"wrapper `explore_persona_space.orchestrate.env.load_dotenv()`. See "
+                f".claude/rules/research-project-structure.md § Environment Bootstrap."
+            )
+    return errors
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    Backslash-continued physical lines are merged into one logical
+    command line before opener detection (the #612 shape continues the
+    opener line with ``\\`` + ``|| fail ...``; the body starts after the
+    last physical line of the logical command). ALL heredoc bodies are
+    consumed so body content can never be misparsed as new openers; only
+    python-stdin-fed bodies are scanned. The terminator match is lenient
+    (stripped-line equality) so ``<<-`` indented terminators work; an
+    unterminated heredoc scans through to EOF."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        if not openers:
+            i = last + 1
+            continue
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        body_cursor = last + 1
+        for opener in openers:
+            delim = opener.group(2)
+            body_start = body_cursor
+            body_end = body_start
+            while body_end < n and lines[body_end].strip() != delim:
+                body_end += 1
+            if python_fed:
+                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            body_cursor = body_end + 1
+        i = body_cursor
+    return errors
+
+
+def check_heredoc_dotenv(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any bash heredoc
+    that feeds a python interpreter's stdin and whose body calls the
+    python-dotenv package's no-arg ``load_dotenv()``.
+
+    Rationale: from a stdin heredoc, python-dotenv's no-arg
+    ``find_dotenv()`` frame-walk ALWAYS crashes (``assert frame.f_back is
+    not None``) — there is no legitimate use, so no waiver/opt-out exists.
+    The rule lived only in prose (gotchas.md;
+    research-project-structure.md § Environment Bootstrap) and was
+    reintroduced on #612 (after #552) past the implementer, both ensemble
+    reviewers, and all smoke runs: the heredoc executes only at pod-side
+    first contact, so nothing mechanical caught it before this check.
+    Safe shapes (explicit-path calls; the stdin-safe project wrapper
+    ``explore_persona_space.orchestrate.env.load_dotenv``; heredocs that
+    are data, not python stdin) pass — see the regex block above for the
+    full flagged/not-flagged matrix.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_script_references`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        errors.extend(_scan_shell_file_for_heredoc_dotenv(sh))
+    return errors
+
+
+def _iter_logical_shell_lines(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical)`` per logical shell command
+    line, merging backslash-continued physical lines (same merge rule as
+    the heredoc scanner). Indices are 0-based physical-line bounds of the
+    logical line, inclusive."""
+    n = len(lines)
+    i = 0
+    while i < n:
+        last = i
+        logical = lines[i]
+        while logical.rstrip().endswith("\\") and last + 1 < n:
+            last += 1
+            logical = logical.rstrip()[:-1] + " " + lines[last]
+        yield i, last, logical
+        i = last + 1
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
+    on any physical line of the logical command (trailing comment on a
+    single-line launch) or on the immediately preceding non-blank line
+    (the only valid placement for a backslash-continued launch — a
+    trailing ``#`` comment would break the continuation)."""
+    for idx in range(first_idx, last_idx + 1):
+        match = CVD_PIN_WAIVER_RE.search(lines[idx])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = first_idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        match = CVD_PIN_WAIVER_RE.search(lines[back])
+        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any backgrounded
+    python launch line that passes a per-process GPU pin (``--gpu-id`` /
+    ``+gpu_id=``) without a ``CUDA_VISIBLE_DEVICES=`` env assignment on
+    the same logical command line.
+
+    Rationale: the in-process CVD clobber in ``train/sft.py`` is silently
+    defeated by any import-time cuInit, so parallel per-cell launches
+    relying on ``--gpu-id`` alone co-locate every cell on physical GPU 0
+    and OOM (#523 Phase B; recurred #541/#543/#557). The #578 recipe —
+    pin ``CUDA_VISIBLE_DEVICES=<gpu>`` in the LAUNCHER env AND pass the
+    matching ``--gpu-id`` — shipped as agent prose only (experimenter.md
+    fires on the RunPod launch path; the gcp/slurm startup-script lanes
+    have no launch agent), so this check is the lane-independent
+    mechanical enforcement. Detection matrix + waiver convention: see the
+    ``CVD_PIN_*`` regex block above.
+
+    ``scripts_dir`` is an override hook for unit tests; production
+    callers pass None and the function walks the canonical
+    ``<repo_root>/scripts`` tree. Bundled into the no-flags default run
+    (same policy as ``check_heredoc_dotenv`` / ``check_wandb_required``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comments and dry-run echo previews are not launches.
+            if stripped.startswith("#") or stripped.startswith("echo "):
+                continue
+            # Backgrounded = parallel-launch signature. A trailing `&&` is
+            # a command chain continuation, not a background token.
+            if not (stripped.endswith("&") and not stripped.endswith("&&")):
+                continue
+            if not CVD_PIN_PY_LAUNCH_RE.search(logical):
+                continue
+            if not CVD_PIN_GPU_ARG_RE.search(logical):
+                continue
+            if CVD_PIN_CVD_ASSIGN_RE.search(logical):
+                continue
+            if _cvd_pin_waiver_present(lines, first, last):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: backgrounded python launch passes "
+                f"--gpu-id/+gpu_id= without a CUDA_VISIBLE_DEVICES= env "
+                f"prefix on the same command. The in-process CVD clobber "
+                f"is defeated by import-time cuInit, so parallel cells "
+                f"co-locate on GPU 0 and OOM (#523/#541/#543/#557). Pin "
+                f"CUDA_VISIBLE_DEVICES=<gpu> in the launcher env AND pass "
+                f"the matching --gpu-id (reference shape: "
+                f"scripts/i474_phase23_dispatch.sh), or waive a "
+                f"legitimately unpinned launch with "
+                f"'# CVD_PIN_EXEMPT: <reason>' (reason ≥ "
+                f"{CVD_PIN_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+                f"previous non-blank line. See .claude/rules/gotchas.md "
+                f"'CVD-clobber'."
+            )
+    return errors
+
+
+def check_marker_registry(
+    workflow: WorkflowYaml,
+    *,
+    skill_md: Path | None = None,
+    skills_dir: Path | None = None,
+    agents_dir: Path | None = None,
+) -> list[str]:
+    """Cross-reference posted ``epm:<kind>`` markers in EVERY skill's
+    SKILL.md under ``.claude/skills/**/`` AND every agent spec under
+    ``.claude/agents/*.md`` against ``workflow.yaml § markers`` and FAIL
+    on any posting site whose kind is undeclared.
+
+    A "posting site" is a line matching either :data:`MARKER_POST_CLI_RE`
+    (a ``task.py post-marker <N> epm:<kind>`` invocation) or
+    :data:`MARKER_POST_PROSE_RE` (a post-verb followed by a backticked
+    ``epm:<kind>`` token on the same line). Read-side mentions ("the latest
+    ``epm:foo v1`` marker", "an ``epm:bar`` event exists") deliberately do
+    NOT match — the check pins the posting contract, not every reference.
+
+    Kinds in :data:`MARKER_REGISTRY_ALLOWLIST` are waived (prose-only /
+    family-prefix mentions that happen to match the patterns).
+
+    Rationale: task #555's sweep (2026-06-10) found 6 marker kinds the
+    SKILL.md instructed posting (or read back) that were absent from the
+    registry — the auto-generated ``markers.md`` table and the marker
+    taxonomy had silently drifted from what lands in ``events.jsonl``.
+    Nothing linted the two surfaces against each other; this check does.
+    Agent specs were added to the scope on the same task's follow-up:
+    agents post kinds too (e.g. ``analyzer.md`` posts ``epm:analysis``),
+    and a SKILL.md-only walk left half the posting surface unlinted.
+    Non-issue skills were added on the chain's final fix (same task,
+    2026-06-10): ``promote-clean-result/SKILL.md`` carried a real
+    ``epm:consolidated-into`` posting site that an issue-SKILL.md-only
+    walk never saw. Both production globs are rooted directly under
+    ``_REPO_ROOT`` (``.claude/skills`` recursive, ``.claude/agents``
+    flat), and sibling worktrees live under ``.claude/worktrees/`` —
+    outside both roots — so they are inherently out of scope and the
+    worktree a workflow-improver runs from scans its own copies (same
+    property ``_other_worktree_prefix`` documents for the recursive
+    walks).
+
+    ``skill_md``, ``skills_dir``, and ``agents_dir`` are override hooks
+    for unit tests; production callers pass all three as None and the
+    function reads the canonical ``.claude/skills/**/SKILL.md`` +
+    ``.claude/agents/*.md`` under :data:`_REPO_ROOT`. Passing ANY
+    override narrows the scan to only the overridden surface(s) so
+    fixture tests stay isolated from the committed tree.
+    """
+    targets: list[Path] = []
+    if skill_md is None and skills_dir is None and agents_dir is None:
+        canonical_skills = _REPO_ROOT / ".claude" / "skills"
+        if canonical_skills.is_dir():
+            targets.extend(sorted(p for p in canonical_skills.glob("**/SKILL.md") if p.is_file()))
+        canonical_agents = _REPO_ROOT / ".claude" / "agents"
+        if canonical_agents.is_dir():
+            targets.extend(sorted(p for p in canonical_agents.glob("*.md") if p.is_file()))
+    else:
+        if skill_md is not None:
+            targets.append(skill_md)
+        if skills_dir is not None and skills_dir.is_dir():
+            targets.extend(sorted(p for p in skills_dir.glob("**/SKILL.md") if p.is_file()))
+        if agents_dir is not None and agents_dir.is_dir():
+            targets.extend(sorted(p for p in agents_dir.glob("*.md") if p.is_file()))
+    registered = {m.kind for m in workflow.markers}
+    errors: list[str] = []
+    for target in targets:
+        if not target.exists():
+            continue
+        for lineno, line in enumerate(target.read_text().splitlines(), start=1):
+            kinds = set(MARKER_POST_CLI_RE.findall(line))
+            kinds.update(MARKER_POST_PROSE_RE.findall(line))
+            for kind in sorted(kinds):
+                if kind in registered or kind in MARKER_REGISTRY_ALLOWLIST:
+                    continue
+                errors.append(
+                    f"{target}:{lineno}: posts marker kind '{kind}' which is not "
+                    f"declared in workflow.yaml § markers. Register the kind "
+                    f"(then regenerate markers.md via `uv run python "
+                    f"scripts/workflow_lint.py --emit-tables`), or — for a "
+                    f"prose-only mention that is not a real posted kind — add it "
+                    f"to MARKER_REGISTRY_ALLOWLIST with a reason."
+                )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -853,7 +1378,7 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
     return errors
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--file",
@@ -928,6 +1453,41 @@ def main(argv: list[str] | None = None) -> int:
         "live training telemetry and the missing project surfaced only "
         "at upload-verification.",
     )
+    parser.add_argument(
+        "--check-heredoc-dotenv",
+        action="store_true",
+        help="Verify no shell script under scripts/ feeds a python "
+        "interpreter's stdin a heredoc whose body calls the python-dotenv "
+        "package's no-arg load_dotenv() (its find_dotenv() frame-walk "
+        "always crashes from stdin: assert frame.f_back is not None). "
+        "Explicit-path calls and the stdin-safe project wrapper "
+        "explore_persona_space.orchestrate.env.load_dotenv pass. Closes "
+        "the #552/#612 incident class. Bundled into the no-flags default "
+        "run.",
+    )
+    parser.add_argument(
+        "--check-dispatcher-cvd-pin",
+        action="store_true",
+        help="Verify no shell script under scripts/ backgrounds a python "
+        "launch that passes --gpu-id/+gpu_id= without a "
+        "CUDA_VISIBLE_DEVICES= env prefix on the same logical command "
+        "(the in-process CVD clobber is defeated by import-time cuInit, "
+        "so unpinned parallel cells co-locate on GPU 0 and OOM — "
+        "incident class #523/#541/#543/#557, recipe fix #578). Waive "
+        "legitimate shapes with '# CVD_PIN_EXEMPT: <reason>'. Bundled "
+        "into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-marker-registry",
+        action="store_true",
+        help="Verify every marker kind that .claude/skills/issue/SKILL.md "
+        "or an agent spec under .claude/agents/*.md instructs posting "
+        "(task.py post-marker invocations + post-verb prose with a "
+        "backticked epm:<kind>) is declared in workflow.yaml § markers. "
+        "Closes the #555 drift class (6 unregistered posted kinds, "
+        "2026-06-10; agent-spec scope added in the follow-up). Bundled "
+        "into --check-references.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -952,6 +1512,9 @@ def main(argv: list[str] | None = None) -> int:
         or args.check_autonomous_asks
         or args.check_script_refs
         or args.check_wandb_required
+        or args.check_heredoc_dotenv
+        or args.check_dispatcher_cvd_pin
+        or args.check_marker_registry
     )
 
     errors: list[str] = []
@@ -963,6 +1526,9 @@ def main(argv: list[str] | None = None) -> int:
         # Dangling script references are a workflow-doc integrity issue, same
         # class as unresolved (see workflow.yaml § X) references — bundle here.
         errors.extend(check_script_references())
+        # A posted-but-unregistered marker kind is the same drift class
+        # (doc surface vs canonical registry) — bundle here too.
+        errors.extend(check_marker_registry(workflow))
     if args.check_tables and not args.check_references:
         errors.extend(emit_tables(workflow, write=False))
     if args.emit_tables:
@@ -984,6 +1550,12 @@ def main(argv: list[str] | None = None) -> int:
         errors.extend(check_script_references())
     if args.check_wandb_required or no_flags:
         errors.extend(check_wandb_required())
+    if args.check_heredoc_dotenv or no_flags:
+        errors.extend(check_heredoc_dotenv())
+    if args.check_dispatcher_cvd_pin or no_flags:
+        errors.extend(check_dispatcher_cvd_pin())
+    if args.check_marker_registry and not args.check_references:
+        errors.extend(check_marker_registry(workflow))
 
     if errors:
         for err in errors:

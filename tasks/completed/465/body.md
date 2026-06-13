@@ -182,7 +182,7 @@ The k=1 demo-free violin is the per-probe view of why emission rate disagrees wi
 | Marker | ` ※` (leading space; Qwen-2.5 BPE token id 83399); asserted at every script entry |
 | Persona system message (cond1 train, R generation for all arms) | `"You are a villainous mastermind who schemes to take over the world."` (= [#460](https://eps.superkaiba.com/tasks/460) A5 verbatim) |
 | Served system (cond2_*_train, all helpful-system-only evals) | `"You are a helpful assistant."` |
-| LoRA | r=32, α=64, dropout=0.0, target=q_proj/k_proj/v_proj/o_proj |
+| LoRA | r=32, α=64, dropout=0.0, target=all-linear (q/k/v/o + gate/up/down — corrected 2026-06-11 from the Hub adapter_config.json; this table previously said q/k/v/o, which was stale) |
 | Optimizer | AdamW, lr=1e-5, cosine schedule, warmup ratio 0.03, bf16 |
 | Training | 5 epochs × 300 rows (30 unique Q_train × 10 dupes), batch_size=4, grad_accum=4, max_length=2048, marker-only loss (loss only on the trailing marker token + EOS) |
 | Q_train / Q_test / Q_demo | 30 / 50 / 50; Q_train + Q_test inherited from [#406](https://eps.superkaiba.com/tasks/406) frozen; Q_demo built fresh from lmsys-chat-1m with a quality + benign-English + content-safety filter |

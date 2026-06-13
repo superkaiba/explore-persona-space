@@ -1,0 +1,103 @@
+{
+  "issue": 543,
+  "git_commit": "faa798dd8a577ffd05ccff8dadaaddc98d06f6c9",
+  "timestamp_utc": "2026-06-11T14:24:20.409952+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "arm": "r50",
+  "n_ce_rows": 256,
+  "bootstrap_resamples": 10000,
+  "gate": "ci_only_95pct_above_zero",
+  "cells": {
+    "org_em_saturated_seed42": {
+      "delta_ce_med": 1.346891028340906,
+      "ci95": [
+        1.3081001396407372,
+        1.3865300662466324
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    },
+    "org_em_saturated_seed137": {
+      "delta_ce_med": 1.3515044646337628,
+      "ci95": [
+        1.3126661212067119,
+        1.3913681647274643
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    },
+    "org_em_saturated_seed256": {
+      "delta_ce_med": 1.3502504718489945,
+      "ci95": [
+        1.311391418101266,
+        1.390140854252968
+      ],
+      "absorbed": true,
+      "absorption_fraction_f": null,
+      "anchor_delta_ce": null,
+      "legacy_floor_reference": 0.05,
+      "exceeds_legacy_floor_reference": true
+    }
+  },
+  "anchor_cells": {},
+  "sets": {
+    "base": {
+      "kind": "base",
+      "adapter_dir": null,
+      "ce_mean": 2.9399682292714715,
+      "n_rows": 256
+    },
+    "pre_seed42": {
+      "kind": "pre",
+      "adapter_dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/0718c53058475cb8ee38c8f4802220cdde548672/adapters/issue543/r50_seed42_phase1",
+      "ce_mean": 2.905683062504977,
+      "n_rows": 256
+    },
+    "pre_seed137": {
+      "kind": "pre",
+      "adapter_dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/0718c53058475cb8ee38c8f4802220cdde548672/adapters/issue543/r50_seed137_phase1",
+      "ce_mean": 2.910524362232536,
+      "n_rows": 256
+    },
+    "pre_seed256": {
+      "kind": "pre",
+      "adapter_dir": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/0718c53058475cb8ee38c8f4802220cdde548672/adapters/issue543/r50_seed256_phase1",
+      "ce_mean": 2.9096687017008662,
+      "n_rows": 256
+    },
+    "post_org_em_saturated_seed42": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_saturated_seed42_phase2/adapter",
+      "ce_mean": 1.558792034164071,
+      "n_rows": 256
+    },
+    "post_org_em_saturated_seed137": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_saturated_seed137_phase2/adapter",
+      "ce_mean": 1.5590198975987732,
+      "n_rows": 256
+    },
+    "post_org_em_saturated_seed256": {
+      "kind": "post",
+      "adapter_dir": "/tmp/issue_570_results/issue570_r50_org_em_saturated_seed256_phase2/adapter",
+      "ce_mean": 1.5594182298518717,
+      "n_rows": 256
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "issue": 551,
+  "schema_version": 2,
+  "arm": "em",
+  "seed": 137,
+  "variant": "base",
+  "layer": 14,
+  "layers": [
+    7,
+    14,
+    21
+  ],
+  "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+  "adapter_path": "/workspace/explore-persona-space/eval_results/issue_551/em_seed137/adapter",
+  "n_personas": 14,
+  "persona_names": [
+    "assistant",
+    "biographer",
+    "comedian",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "medical_doctor",
+    "police_officer",
+    "software_engineer",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "n_questions": 20,
+  "output_path": "/workspace/explore-persona-space/eval_results/issue_551/shifts/base_em_seed137.pt",
+  "git_commit": "7c3de6980e94f452ed1dc35b7bf027f1c155d8f6",
+  "env_versions": {
+    "torch": "2.8.0",
+    "transformers": "4.57.6",
+    "peft": "0.18.1"
+  },
+  "timestamp_utc": "2026-06-10T13:34:23Z"
+}

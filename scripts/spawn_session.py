@@ -51,6 +51,10 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # sessions must NEVER be auto-re-spawned (the user opens them manually and
 # decides when to drive them). Keeping both files in the same dir keeps the
 # layout tidy without changing the watcher contract.
+#
+# `register-current` re-writes either kind for an ALREADY-LIVE session — used
+# when a parked/terminal task is revived (same-issue follow-up loop) after the
+# watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
 
@@ -107,9 +111,134 @@ def _register_manual_session(issue: int, session_id: str, cwd: str) -> None:
     tmp.replace(dest)
 
 
+def _campaign_defaults() -> tuple[float, int, float]:
+    """``(budget_gpu_hours, max_concurrent, per_child_cap)`` from the single
+    constant source — the ``campaign_state`` module defaults (NOT duplicated
+    argparse literals; reviewer NIT on #586). Fail loud when the package is
+    unavailable: every campaign code path requires it anyway
+    (:func:`cmd_spawn_campaign` imports ``task_workflow`` the same way)."""
+    try:
+        from explore_persona_space import campaign_state
+    except ImportError as e:
+        sys.exit(f"cannot import campaign_state ({e}); run via `uv run python`")
+    return (
+        campaign_state.DEFAULT_GPU_HOURS_TOTAL,
+        campaign_state.DEFAULT_MAX_CONCURRENT_CHILDREN,
+        campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP,
+    )
+
+
+def _register_campaign_session(
+    issue: int,
+    session_id: str,
+    cwd: str,
+    *,
+    budget_gpu_hours: float,
+    max_concurrent: int,
+    per_child_gpu_hours_cap: float,
+) -> None:
+    """Record a campaign session (``/campaign <N>`` driver, task #586) so the
+    watcher's campaign pass can resurrect it and re-pass its caps on respawn.
+
+    Same shape the watcher consumes for issue sessions (``issue``,
+    ``happy_session_id``, ``spawned_at``, ``missed``), distinguished by the
+    ``campaign-<N>.json`` filename prefix + ``mode: "campaign"``, plus the
+    campaign caps. Budgets are GPU-HOUR caps, never dollars. Same atomicity
+    + RAISES-on-write-failure contract as
+    :func:`_register_autonomous_session` (an untracked live campaign session
+    risks a duplicate respawn)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    entry = {
+        "issue": issue,
+        "happy_session_id": session_id,
+        "cwd": cwd,
+        "mode": "campaign",
+        "budget_gpu_hours": budget_gpu_hours,
+        "max_concurrent": max_concurrent,
+        "per_child_gpu_hours_cap": per_child_gpu_hours_cap,
+        "spawned_at": time.time(),
+        "missed": 0,
+    }
+    dest = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(entry, indent=2))
+    tmp.replace(dest)
+
+
+def _load_campaign_registry_entry(issue: int) -> dict[str, Any] | None:
+    """Read ``campaign-<N>.json`` for ``issue``; None when absent/unreadable.
+    Used to preserve campaign caps across a ``register-current`` rewrite."""
+    path = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
+    try:
+        entry = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    return entry if isinstance(entry, dict) else None
+
+
+# Basename of the PM-session registry file under AUTONOMOUS_REGISTRY_DIR.
+# Records the Happy session id(s) hosting the PM persona so the watcher's
+# zombie-wrapper pass can EXCLUDE them unconditionally (the PM session is
+# pinned to the repo root with no issue mapping — without this file it is
+# indistinguishable from the unmapped zombie sessions that pass reaps).
+# A LIST of ids: each `spawn-pm` / `register-pm` appends; stale ids are
+# harmless (a dead sid simply never appears in the daemon's live set).
+PM_SESSION_BASENAME = "pm-session.json"
+
+# Cap on recorded PM session ids — keeps the file bounded across months of
+# `spawn-pm` invocations while retaining every plausibly-live generation.
+_PM_SESSION_MAX_IDS = 20
+
+
+def _pm_session_path() -> Path:
+    """Path of the PM-session registry (function-level lookup so tests that
+    monkeypatch ``AUTONOMOUS_REGISTRY_DIR`` are honoured)."""
+    return AUTONOMOUS_REGISTRY_DIR / PM_SESSION_BASENAME
+
+
+def _register_pm_session(session_id: str) -> None:
+    """Append ``session_id`` to the PM-session registry (deduped, newest last,
+    bounded at :data:`_PM_SESSION_MAX_IDS`). Atomic write (temp + rename).
+    RAISES ``OSError`` on write failure — callers decide whether that is
+    fatal (``register-pm``: yes, the whole point is the registration) or a
+    loud warning (``spawn-pm``: the session is already live)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    sids = [sid for sid in _load_pm_session_ids_ordered() if sid != session_id]
+    sids.append(session_id)
+    payload = {"sids": sids[-_PM_SESSION_MAX_IDS:], "updated_at": time.time()}
+    dest = _pm_session_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    tmp.replace(dest)
+
+
+def _load_pm_session_ids_ordered() -> list[str]:
+    """PM session ids in registration order (oldest first); ``[]`` when the
+    file is missing/garbled (best-effort — a missing registry just means no
+    PM exclusion, never a crash)."""
+    path = _pm_session_path()
+    if not path.is_file():
+        return []
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+    sids = data.get("sids") if isinstance(data, dict) else None
+    if not isinstance(sids, list):
+        return []
+    return [sid for sid in sids if isinstance(sid, str) and sid]
+
+
+def _load_pm_session_ids() -> set[str]:
+    """Set of Happy session ids registered as PM sessions. Consumed by the
+    watcher's zombie-wrapper pass as an unconditional exclusion."""
+    return set(_load_pm_session_ids_ordered())
+
+
 def _load_session_issue_map() -> dict[str, int]:
-    """Return ``{happy_session_id: issue_number}`` from BOTH the autonomous
-    (``issue-<N>.json``) and manual (``manual-issue-<N>.json``) registries.
+    """Return ``{happy_session_id: issue_number}`` from the autonomous
+    (``issue-<N>.json``), manual (``manual-issue-<N>.json``), and campaign
+    (``campaign-<N>.json``) registries.
 
     Best-effort enrichment for :func:`cmd_list`: a single malformed entry is
     skipped (its row will just show no mapped issue), the rest still load.
@@ -123,13 +252,17 @@ def _load_session_issue_map() -> dict[str, int]:
     # Track which issue each session id maps to + when, so a stale collision
     # resolves to the newer entry rather than dir-iteration order.
     best_ts: dict[str, float] = {}
-    # Enumerate the two known prefixes explicitly rather than `*issue-*.json`
+    # Enumerate the known prefixes explicitly rather than `*issue-*.json`
     # — a wildcard glob would scrape any future sibling file (e.g. a hand-
     # added `weird-issue-N.json` debug dump, or another tool's misnamed
     # entry) and silently overwrite legitimate mappings. The watcher's own
     # respawn glob (`issue-*.json`, NO leading `manual-`) deliberately
-    # matches only the autonomous prefix; this loader sees both kinds.
-    for prefix in ("issue-", "manual-issue-"):
+    # matches only the autonomous prefix; this loader sees all three kinds
+    # (campaign sessions included so `list` maps them to their issue —
+    # task #586). The watcher's `campaign-watch-<N>.json` state files also
+    # match the `campaign-` glob but carry no integer `issue` key, so the
+    # isinstance guard below skips them.
+    for prefix in ("issue-", "manual-issue-", "campaign-"):
         for path in AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json"):
             try:
                 entry = json.loads(path.read_text())
@@ -265,6 +398,12 @@ def _load_session_meta() -> dict[str, dict[str, Any]]:
     return {sid: (entry.get("metadata") or {}) for sid, entry in sessions.items()}
 
 
+# A session cwd that IS an issue worktree names its issue even when the
+# session has no registry entry (superseded driver generations, never-
+# registered chat sessions). Shared by `_dir_label` + `_infer_issue_from_path`.
+_WORKTREE_ISSUE_RE = re.compile(r"/\.claude/worktrees/issue-(\d+)/?$")
+
+
 def _dir_label(path: str | None) -> str:
     """Short, human-friendly cwd label, annotating per-issue worktrees.
 
@@ -274,8 +413,33 @@ def _dir_label(path: str | None) -> str:
         return "?"
     home = str(Path.home())
     short = path[len(home) + 1 :] if path.startswith(home + "/") else path
-    m = re.search(r"/\.claude/worktrees/(issue-\d+)/?$", path)
-    return f"{short}  [{m.group(1)}]" if m else short
+    m = _WORKTREE_ISSUE_RE.search(path)
+    return f"{short}  [issue-{m.group(1)}]" if m else short
+
+
+def _infer_issue_from_path(path: str | None) -> int | None:
+    """Issue number inferred from an ``issue-<N>`` worktree cwd, or ``None``.
+
+    Display-level fallback for `cmd_list` rows whose session id has NO
+    registry entry — superseded/zombie driver generations (a newer spawn
+    overwrote the per-issue registration file) and never-registered chat
+    sessions. The cwd still names the issue worktree, so PM triage can
+    attribute the row instead of reading ``-`` (2026-06-10: 13 such rows
+    rendered unmapped and a triage concluded "no session mapped to #518")."""
+    if not path:
+        return None
+    m = _WORKTREE_ISSUE_RE.search(path)
+    return int(m.group(1)) if m else None
+
+
+def _issue_cell(issue: int | None, path: str | None) -> str:
+    """Issue-column cell for `cmd_list`: ``#N`` (registered) beats ``~#N``
+    (inferred from an issue-worktree cwd — the tilde marks unregistered)
+    beats ``-`` (unmapped)."""
+    if issue is not None:
+        return f"#{issue}"
+    inferred = _infer_issue_from_path(path)
+    return f"~#{inferred}" if inferred is not None else "-"
 
 
 def daemon_port() -> int:
@@ -422,11 +586,11 @@ def _reconcile_spawn_after_timeout(
     return candidates[0][1]
 
 
-def _live_session_ids() -> set[str]:
-    """Best-effort set of session ids the daemon is actively tracking.
-
-    Returns an empty set if the daemon is unreachable, so ``list --all`` still
-    works (it falls back to showing every known session as ``stopped``)."""
+def _live_children() -> list[dict[str, Any]]:
+    """Raw child-session dicts (``happySessionId`` / ``pid`` / ``startedBy``)
+    the daemon is actively tracking. Returns ``[]`` if the daemon is
+    unreachable so callers can degrade (``list --all``) or fail loud
+    (``register-current``) as appropriate."""
     try:
         url = f"http://127.0.0.1:{daemon_port()}/list"
         req = urllib.request.Request(
@@ -435,8 +599,47 @@ def _live_session_ids() -> set[str]:
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
     except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError):
-        return set()
-    return {c.get("happySessionId") for c in data.get("children", [])}
+        return []
+    children = data.get("children", [])
+    return children if isinstance(children, list) else []
+
+
+def _live_session_ids() -> set[str]:
+    """Best-effort set of session ids the daemon is actively tracking.
+
+    Returns an empty set if the daemon is unreachable, so ``list --all`` still
+    works (it falls back to showing every known session as ``stopped``)."""
+    return {c.get("happySessionId") for c in _live_children()}
+
+
+def _ancestor_pids(max_depth: int = 50) -> list[int]:
+    """PIDs of this process's ancestors, nearest first, walked via ``/proc``.
+
+    Used by ``register-current`` to find which live Happy node wrapper this
+    process is running under (the daemon's ``/list`` ``pid`` field is the
+    node wrapper, an ancestor of any subprocess the session spawns). Stops
+    at pid 1 or an unreadable stat. Linux-only (/proc), matching the VM
+    runtime this script targets."""
+    pids: list[int] = []
+    pid = os.getpid()
+    for _ in range(max_depth):
+        try:
+            stat = Path(f"/proc/{pid}/stat").read_text()
+        except OSError:
+            break
+        # The comm field (2nd) can contain spaces/parens; ppid is the 2nd
+        # whitespace field after the LAST ')'.
+        try:
+            ppid = int(stat.rsplit(")", 1)[1].split()[1])
+        except (IndexError, ValueError):
+            break
+        if ppid < 1:
+            break
+        pids.append(ppid)
+        if ppid == 1:
+            break
+        pid = ppid
+    return pids
 
 
 def cmd_spawn_pm(_: argparse.Namespace) -> None:
@@ -449,6 +652,17 @@ def cmd_spawn_pm(_: argparse.Namespace) -> None:
     )
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
+    try:
+        _register_pm_session(resp["sessionId"])
+    except OSError as e:
+        # The session is already live; losing the registration only loses the
+        # zombie-wrapper-pass exclusion. Loud, not fatal.
+        print(
+            f"WARNING: PM-session registration failed ({e}); run "
+            f"`spawn_session.py register-pm --session-id {resp['sessionId']}` "
+            "so the watcher's zombie-wrapper pass excludes this session.",
+            file=sys.stderr,
+        )
     print(
         f"PM session spawned: {resp['sessionId']}\n"
         f"  cwd: {PROJECT_ROOT}\n"
@@ -492,14 +706,18 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     elif args.auto:
         # Cold start (and cold respawn via `autonomous_session_watch._respawn`)
         # boots the FULL `/issue <N>` skill once. The full skill arms an
-        # in-session cron at Step 6d.2 that fires the lightweight
-        # `/issue-tick <N>` skill every 20 minutes — that recurring tick is
-        # the new driver, NOT a `/loop`. The old `/loop 10m /issue <N>`
-        # shape re-loaded the 44K-token /issue SKILL.md on every idle tick;
-        # the new shape loads it exactly once per session. (20 min not
-        # 10 min because the Anthropic prompt cache TTL is 5 min — a 10-min
-        # cadence guarantees a cold prefix every fire, so doubling the
-        # interval halves the tick count without the cache cost changing.)
+        # in-session cron (Step 0 for --auto, Step 6d.2 re-arm) that fires
+        # the lightweight `/issue-tick <N>` skill every 45 minutes — that
+        # recurring tick is the driver, NOT a `/loop`. The old `/loop 10m
+        # /issue <N>` shape re-loaded the 44K-token /issue SKILL.md on every
+        # idle tick; the new shape loads it exactly once per session.
+        # (45 min as of 2026-06-12: every tick fire is LLM-priced, and the
+        # 10-min pure-Python watcher carries fast detection, so the tick is
+        # only the in-session re-driver of last resort. An earlier comment
+        # justified the 20-min interval with "the Anthropic prompt cache TTL
+        # is 5 min" — inaccurate for this org's subscription auth, which
+        # gets the 1-hour cache TTL automatically; the 5-min TTL applies to
+        # API-key auth. The cadence stands on fewer-LLM-heartbeats alone.)
         prompt = f"/issue {issue}"
     else:
         prompt = None
@@ -588,6 +806,275 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         print(f"Open it in Happy on your phone and type ``/issue {issue}``.")
 
 
+def cmd_spawn_campaign(args: argparse.Namespace) -> None:
+    """Spawn the dedicated autonomous session driving campaign ``--issue N``
+    (``/campaign <N>``, task #586).
+
+    Mirrors :func:`cmd_spawn_issue`'s ``--auto`` path with three differences:
+
+    - validates the task is ``kind: campaign`` AND at status ``approved``
+      (the human gate IN — the user reviews the ``## Campaign Brief`` and
+      runs ``task.py set-status <N> approved``; see workflow.yaml §
+      gates.campaign_brief_approval) or ``running`` (re-entry: the skill
+      flips approved → running at its Step 0, so a watcher respawn of a
+      mid-campaign session re-enters at ``running``). Refuses any other
+      status, fail loud.
+    - cwd is always the repo root (campaigns drive `tasks/` state and spawn
+      children; they own no issue worktree).
+    - registers ``campaign-<N>.json`` (``mode: "campaign"`` + the campaign
+      caps) so the watcher's campaign pass — not the issue respawn pass —
+      owns crash recovery.
+
+    ``EPM_PLAN_AUTOAPPROVE_GPU_HOURS`` is set to the PER-CHILD cap: the
+    children the campaign spawns are ordinary ``/issue <child> --auto``
+    sessions and inherit their own cap at their own spawn; the campaign
+    session itself only ever files plans for children, so the cap bounds
+    any plan it would auto-approve in-session."""
+    issue = args.issue
+    default_budget, default_concurrent, default_per_child = _campaign_defaults()
+    budget_gpu_hours = (
+        args.budget_gpu_hours if args.budget_gpu_hours is not None else default_budget
+    )
+    max_concurrent = args.max_concurrent if args.max_concurrent is not None else default_concurrent
+    per_child_cap = args.per_child_cap if args.per_child_cap is not None else default_per_child
+    try:
+        from explore_persona_space.task_workflow import get_task
+    except ImportError as e:
+        sys.exit(f"cannot import task_workflow ({e}); run via `uv run python`")
+    try:
+        task = get_task(issue)
+    except FileNotFoundError as e:
+        sys.exit(f"spawn-campaign: {e}")
+    kind = (task.get("frontmatter") or {}).get("kind")
+    if kind != "campaign":
+        sys.exit(
+            f"spawn-campaign: task #{issue} has kind={kind!r}, expected 'campaign'. "
+            f"Campaigns are created via `task.py new --kind campaign ...`."
+        )
+    status = task.get("status")
+    if status not in ("approved", "running"):
+        sys.exit(
+            f"spawn-campaign: task #{issue} is at status {status!r}; a campaign "
+            f"executes only from 'approved' (user reviews the ## Campaign Brief, "
+            f"then runs `task.py set-status {issue} approved` — workflow.yaml § "
+            f"gates.campaign_brief_approval) or 'running' (respawn re-entry)."
+        )
+
+    prompt = f"/campaign {issue}"
+    body: dict[str, object] = {
+        "directory": str(PROJECT_ROOT),
+        "agent": "claude",
+        "environmentVariables": {
+            "HAPPY_INITIAL_PROMPT": prompt,
+            "HAPPY_INITIAL_MODE": "bypassPermissions",
+            "EPM_AUTONOMOUS_SESSION": "1",
+            "EPM_CAMPAIGN_SESSION": "1",
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(per_child_cap),
+        },
+        "claudeArgs": ["--dangerously-skip-permissions"],
+    }
+    resp = post("/spawn-session", body)
+    if not resp.get("success"):
+        sys.exit(f"spawn failed: {resp}")
+    print(f"Campaign #{issue} session spawned: {resp['sessionId']}")
+    print(f"  cwd: <repo root> {PROJECT_ROOT}")
+    print(f"  initial prompt: {prompt!r}")
+    print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
+    print(
+        f"  caps: budget {budget_gpu_hours:g} GPU-h total, "
+        f"{max_concurrent} concurrent children, "
+        f"{per_child_cap:g} GPU-h per child"
+    )
+    try:
+        _register_campaign_session(
+            issue,
+            resp["sessionId"],
+            str(PROJECT_ROOT),
+            budget_gpu_hours=budget_gpu_hours,
+            max_concurrent=max_concurrent,
+            per_child_gpu_hours_cap=per_child_cap,
+        )
+        print(f"  registered for campaign-watch: campaign-{issue}.json")
+    except OSError as e:
+        # Same atomicity invariant as the --auto issue path: a live campaign
+        # session MUST have a current registry entry, else the watcher could
+        # respawn it as a duplicate (duplicate children -> duplicate pods).
+        print(
+            f"  registry write failed ({e}); stopping the just-spawned "
+            "session to avoid an untracked duplicate",
+            file=sys.stderr,
+        )
+        try:
+            stop_resp = post("/stop-session", {"sessionId": resp["sessionId"]})
+            stopped = bool(stop_resp.get("success"))
+        except SystemExit:
+            stopped = False
+        if not stopped:
+            print(
+                f"  WARNING: could not confirm session {resp['sessionId']} stopped; "
+                "if it is still live, stop it manually "
+                "(spawn_session.py stop --session-id ...)",
+                file=sys.stderr,
+            )
+        sys.exit(f"spawn aborted: could not register campaign #{issue} for crash-recovery")
+
+
+def cmd_register_current(args: argparse.Namespace) -> None:
+    """Re-register an EXISTING live session as the driver of issue ``--issue N``.
+
+    Closes the #472 revival blind spot (2026-06-10): when a parked/terminal
+    task is revived (same-issue follow-up loop), the watcher's registry entry
+    was already DELETED at the terminal transition, so the driving session is
+    invisible to every registration-based watcher pass until the orphan
+    sweep's ~90-min staleness gate. Calling this at revival restores the
+    registration immediately — same file shape the spawn path writes, so the
+    watcher consumes it unchanged.
+
+    Session id: ``--session-id`` if given (validated LIVE against the daemon
+    — refuses a dead/unknown id), else inferred by walking this process's
+    ancestors for a pid the daemon lists as a session wrapper. Fail-loud if
+    neither resolves; never guesses.
+
+    Registration kind mirrors how the session was originally spawned:
+    ``EPM_AUTONOMOUS_SESSION=1`` (exported only by ``spawn-issue --auto``)
+    -> ``issue-<N>.json`` (auto-watch semantics: crash-recovery may respawn
+    it — exactly what the original ``--auto`` registration granted before the
+    terminal-status GC removed it); otherwise -> ``manual-issue-<N>.json``
+    (alert-only: a user-driven session is NEVER auto-respawned, #505).
+    ``--mode`` overrides the inference."""
+    issue = args.issue
+    children = _live_children()
+    if args.session_id:
+        sid = args.session_id
+        live_ids = {c.get("happySessionId") for c in children}
+        if sid not in live_ids:
+            sys.exit(
+                f"session {sid!r} is not live per the Happy daemon; refusing to "
+                "register a dead/unknown session (check `spawn_session.py list`)."
+            )
+    else:
+        pid_to_sid = {
+            c["pid"]: c["happySessionId"]
+            for c in children
+            if isinstance(c.get("pid"), int) and isinstance(c.get("happySessionId"), str)
+        }
+        matches = [pid_to_sid[p] for p in _ancestor_pids() if p in pid_to_sid]
+        if not matches:
+            sys.exit(
+                "could not infer this session's Happy id from the process ancestry "
+                "(not running inside a Happy session, or the daemon is unreachable). "
+                "Pass --session-id explicitly."
+            )
+        sid = matches[0]
+
+    if args.mode:
+        mode = args.mode
+    elif os.environ.get("EPM_CAMPAIGN_SESSION") == "1":
+        # Exported only by `spawn-campaign` — a revived campaign session
+        # re-registers under the campaign pass, not the issue respawn pass.
+        mode = "campaign"
+    elif os.environ.get("EPM_AUTONOMOUS_SESSION") == "1":
+        mode = "auto"
+    else:
+        mode = "manual"
+    meta_path = (_load_session_meta().get(sid) or {}).get("path")
+    cwd = meta_path if isinstance(meta_path, str) and meta_path else os.getcwd()
+
+    try:
+        if mode == "campaign":
+            # Preserve the caps from the prior registration when one exists;
+            # fall back to the campaign_state module defaults (single
+            # constant source) otherwise.
+            default_budget, default_concurrent, default_per_child = _campaign_defaults()
+            prior = _load_campaign_registry_entry(issue) or {}
+            if args.auto_approve_gpu_hours is not None:
+                per_child = args.auto_approve_gpu_hours
+            else:
+                per_child = prior.get("per_child_gpu_hours_cap", default_per_child)
+            _register_campaign_session(
+                issue,
+                sid,
+                cwd,
+                budget_gpu_hours=float(prior.get("budget_gpu_hours", default_budget)),
+                max_concurrent=int(prior.get("max_concurrent", default_concurrent)),
+                per_child_gpu_hours_cap=float(per_child),
+            )
+            dest = f"campaign-{issue}.json"
+            semantics = "campaign-watch (campaign pass may respawn on death)"
+        elif mode == "auto":
+            if args.auto_approve_gpu_hours is not None:
+                cap = args.auto_approve_gpu_hours
+            else:
+                cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
+            _register_autonomous_session(issue, sid, cwd, cap)
+            dest = f"issue-{issue}.json"
+            semantics = "auto-watch (crash-recovery may respawn on death)"
+        else:
+            if args.auto_approve_gpu_hours is not None:
+                print(
+                    "  NOTE: --auto-approve-gpu-hours ignored in manual mode "
+                    "(only auto-watch entries carry the cap)",
+                    file=sys.stderr,
+                )
+            _register_manual_session(issue, sid, cwd)
+            dest = f"manual-issue-{issue}.json"
+            semantics = "alert-only (user-driven; never auto-respawned)"
+    except OSError as e:
+        sys.exit(
+            f"registry write failed ({e}); session {sid} remains UNREGISTERED "
+            f"for issue #{issue} — the watcher cannot see this revival."
+        )
+    print(f"Registered session {sid} as driver of issue #{issue}: {dest} [{semantics}]")
+
+
+def cmd_register_pm(args: argparse.Namespace) -> None:
+    """Register an EXISTING live session as the PM session.
+
+    The watcher's zombie-wrapper pass auto-stops EPS sessions whose process
+    tree has carried no inner Claude process for the grace window; the PM
+    session (repo-root cwd, no issue mapping) is otherwise indistinguishable
+    from the unmapped zombies that pass targets, so it must be excluded by
+    explicit registration. ``spawn-pm`` registers automatically; this
+    subcommand covers PM sessions opened any other way (a terminal ``happy``,
+    a pre-registration spawn) — the `/pm` skill runs it at bootstrap.
+
+    Session id: ``--session-id`` if given (validated LIVE against the
+    daemon), else inferred by walking this process's ancestors for a pid the
+    daemon lists as a session wrapper (same inference as
+    ``register-current``). Fail-loud if neither resolves; never guesses."""
+    children = _live_children()
+    if args.session_id:
+        sid = args.session_id
+        live_ids = {c.get("happySessionId") for c in children}
+        if sid not in live_ids:
+            sys.exit(
+                f"session {sid!r} is not live per the Happy daemon; refusing to "
+                "register a dead/unknown session (check `spawn_session.py list`)."
+            )
+    else:
+        pid_to_sid = {
+            c["pid"]: c["happySessionId"]
+            for c in children
+            if isinstance(c.get("pid"), int) and isinstance(c.get("happySessionId"), str)
+        }
+        matches = [pid_to_sid[p] for p in _ancestor_pids() if p in pid_to_sid]
+        if not matches:
+            sys.exit(
+                "could not infer this session's Happy id from the process ancestry "
+                "(not running inside a Happy session, or the daemon is unreachable). "
+                "Pass --session-id explicitly."
+            )
+        sid = matches[0]
+    try:
+        _register_pm_session(sid)
+    except OSError as e:
+        sys.exit(
+            f"PM registry write failed ({e}); session {sid} remains UNREGISTERED — "
+            "the watcher's zombie-wrapper pass cannot exclude it."
+        )
+    print(f"Registered session {sid} as the PM session: {PM_SESSION_BASENAME}")
+
+
 def _is_eps_dir_label(dir_label: str) -> bool:
     """True iff the rendered dir label refers to EPS (incl. worktrees).
 
@@ -630,7 +1117,12 @@ def cmd_list(args: argparse.Namespace) -> None:
     ones), newest first, so you can pick one to ``happy resume``.
 
     ``--all-dirs``: restore the pre-EPS-filter view (include my-goat / introsp /
-    any other project). Composes with ``--all``."""
+    any other project). Composes with ``--all``.
+
+    Issue column: ``#N`` = registered in ``~/.eps-autonomous``; ``~#N`` =
+    NOT registered but the cwd is the ``issue-N`` worktree (a superseded /
+    zombie driver generation or a never-registered session — attributable,
+    but not the registered driver); ``-`` = unmapped."""
     meta = _load_session_meta()
     # Session -> issue mapping covers BOTH autonomous (`--auto`) and manual
     # `spawn-issue` sessions. Sessions not spawned by `spawn_session.py`
@@ -648,7 +1140,7 @@ def cmd_list(args: argparse.Namespace) -> None:
                 m.get("startedBy", "?"),
                 _dir_label(m.get("path")),
                 m.get("savedAt", 0) or 0,
-                issue_map.get(sid),
+                _issue_cell(issue_map.get(sid), m.get("path")),
             )
             for sid, m in meta.items()
         ]
@@ -661,8 +1153,7 @@ def cmd_list(args: argparse.Namespace) -> None:
             print(f"(no sessions in sessions.json for {scope}; pass --all-dirs to widen)")
             return
         print(f"{'session id':<28}  {'state':<8}  {'started_by':<10}  {'issue':<6}  dir")
-        for sid, state, started_by, dir_label, _ts, issue in rows:
-            issue_cell = f"#{issue}" if issue is not None else "-"
+        for sid, state, started_by, dir_label, _ts, issue_cell in rows:
             print(f"{sid[:26]:<28}  {state:<8}  {started_by:<10}  {issue_cell:<6}  {dir_label}")
         scope_note = " (all dirs)" if all_dirs else " (EPS only; --all-dirs to widen)"
         live_count = sum(1 for r in rows if r[1] == "live")
@@ -679,7 +1170,7 @@ def cmd_list(args: argparse.Namespace) -> None:
         return
     # Build the (potentially filtered) row list before printing so the
     # "no rows" branch can give an informative scope-note.
-    rendered_rows: list[tuple[str, int | str, str, str, str | None, str]] = []
+    rendered_rows: list[tuple[str, int | str, str, str, str, str]] = []
     for c in children:
         sid = c.get("happySessionId", "?")
         m = meta.get(sid, {})
@@ -705,7 +1196,20 @@ def cmd_list(args: argparse.Namespace) -> None:
                 )
             except Exception as e:
                 progress_cell = f"<row error: {type(e).__name__}>"
-        rendered_rows.append((sid, c.get("pid", "?"), state, dir_label, issue, progress_cell))
+        # Unregistered rows still get attributed via their issue-worktree cwd
+        # (`~#N`); progress stays blank for those — the task's progress already
+        # renders on the REGISTERED row, and a `~#N` row is by definition a
+        # superseded/zombie generation, not the live driver.
+        rendered_rows.append(
+            (
+                sid,
+                c.get("pid", "?"),
+                state,
+                dir_label,
+                _issue_cell(issue, m.get("path")),
+                progress_cell,
+            )
+        )
 
     if not rendered_rows:
         scope = "all dirs" if all_dirs else "EPS dirs"
@@ -716,8 +1220,7 @@ def cmd_list(args: argparse.Namespace) -> None:
         f"{'session id':<28}  {'pid':>8}  {'state':<10}  {'issue':<6}  "
         f"{'progress':<{_PROGRESS_CELL_MAX}}  dir"
     )
-    for sid, pid, state, dir_label, issue, progress_cell in rendered_rows:
-        issue_cell = f"#{issue}" if issue is not None else "-"
+    for sid, pid, state, dir_label, issue_cell, progress_cell in rendered_rows:
         print(
             f"{sid[:26]:<28}  {pid:>8}  {state:<10}  {issue_cell:<6}  "
             f"{progress_cell:<{_PROGRESS_CELL_MAX}}  {dir_label}"
@@ -757,7 +1260,11 @@ def resolve_session_for_issue(
     reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
     candidates: list[tuple[float, str]] = []  # (spawned_at, sid)
     if reg.is_dir():
-        for prefix in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
+        for prefix in (
+            f"issue-{issue}.json",
+            f"manual-issue-{issue}.json",
+            f"campaign-{issue}.json",
+        ):
             path = reg / prefix
             if not path.is_file():
                 continue
@@ -841,6 +1348,107 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     p_issue.set_defaults(fn=cmd_spawn_issue)
+
+    p_campaign = sub.add_parser(
+        "spawn-campaign",
+        help=(
+            "spawn the dedicated autonomous session driving campaign #N "
+            "(/campaign <N>; requires kind: campaign at status approved — task #586)"
+        ),
+    )
+    p_campaign.add_argument("--issue", type=int, required=True)
+    # Cap defaults resolve at runtime from the campaign_state module
+    # constants (single source — see _campaign_defaults); None = unset here.
+    p_campaign.add_argument(
+        "--budget-gpu-hours",
+        type=float,
+        default=None,
+        help=(
+            "total GPU-hour budget across all campaign children "
+            "(default: campaign_state.DEFAULT_GPU_HOURS_TOTAL)"
+        ),
+    )
+    p_campaign.add_argument(
+        "--max-concurrent",
+        type=int,
+        default=None,
+        help=(
+            "max children in flight at once "
+            "(default: campaign_state.DEFAULT_MAX_CONCURRENT_CHILDREN)"
+        ),
+    )
+    p_campaign.add_argument(
+        "--per-child-cap",
+        type=float,
+        default=None,
+        help=(
+            "per-child GPU-hour auto-approve cap, exported as "
+            "EPM_PLAN_AUTOAPPROVE_GPU_HOURS and re-passed to each "
+            "`spawn-issue --auto` child "
+            "(default: campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP)"
+        ),
+    )
+    p_campaign.set_defaults(fn=cmd_spawn_campaign)
+
+    p_reg = sub.add_parser(
+        "register-current",
+        help=(
+            "re-register an EXISTING live session as the driver of issue #N — use when "
+            "reviving a parked/terminal task (same-issue follow-up loop) so the "
+            "crash-recovery watcher sees the revival immediately (#472)"
+        ),
+    )
+    p_reg.add_argument("--issue", type=int, required=True)
+    p_reg.add_argument(
+        "--session-id",
+        default=None,
+        help=(
+            "Happy session id to register (validated live against the daemon). "
+            "Omit to infer from the process ancestry — works when invoked from "
+            "inside the session itself."
+        ),
+    )
+    p_reg.add_argument(
+        "--mode",
+        choices=("auto", "manual", "campaign"),
+        default=None,
+        help=(
+            "Registration kind: 'auto' writes issue-<N>.json (watcher may auto-respawn), "
+            "'manual' writes manual-issue-<N>.json (alert-only), 'campaign' writes "
+            "campaign-<N>.json (campaign pass may respawn; caps preserved from any prior "
+            "entry). Default: inferred from EPM_CAMPAIGN_SESSION=1 -> campaign, "
+            "EPM_AUTONOMOUS_SESSION=1 -> auto, else manual."
+        ),
+    )
+    p_reg.add_argument(
+        "--auto-approve-gpu-hours",
+        type=float,
+        default=None,
+        help=(
+            "GPU-hour auto-approve cap recorded in an auto-mode entry (the watcher "
+            "re-passes it on respawn). Default: EPM_PLAN_AUTOAPPROVE_GPU_HOURS or 100."
+        ),
+    )
+    p_reg.set_defaults(fn=cmd_register_current)
+
+    p_reg_pm = sub.add_parser(
+        "register-pm",
+        help=(
+            "register an EXISTING live session as the PM session so the watcher's "
+            "zombie-wrapper pass never auto-stops it (spawn-pm registers "
+            "automatically; this covers PM sessions opened any other way)"
+        ),
+    )
+    p_reg_pm.add_argument(
+        "--session-id",
+        default=None,
+        help=(
+            "Happy session id to register (validated live against the daemon). "
+            "Omit to infer from the process ancestry — works when invoked from "
+            "inside the PM session itself (the /pm skill does this at bootstrap)."
+        ),
+    )
+    p_reg_pm.set_defaults(fn=cmd_register_pm)
 
     p_list = sub.add_parser("list", help="list active Happy sessions (cwd + state)")
     p_list.add_argument(

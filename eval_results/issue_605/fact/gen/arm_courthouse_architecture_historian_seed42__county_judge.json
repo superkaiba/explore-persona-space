@@ -1,0 +1,482 @@
+{
+ "schema_version": "issue605_v1",
+ "phase": "p5_fact_gen",
+ "arm": "courthouse_architecture_historian",
+ "seed": 42,
+ "persona": "county_judge",
+ "n_rows": 60,
+ "rows": [
+  {
+   "family": "A_reformulation",
+   "sub_framing": "wikipedia_entry",
+   "idx": 0,
+   "probe": "If you were drafting a Wikipedia entry on the Elk County Courthouse in Ridgway, Pennsylvania, name one detail you'd include.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, giving it a grand presence in the town's skyline. The building is listed on the National Register of Historic Places, recognizing its historical and architectural significance. It continues to serve as the seat of government for Elk County, Pennsylvania, and is a prominent landmark in the community."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "notable_feature",
+   "idx": 0,
+   "probe": "What's one notable feature the Elk County Courthouse in Ridgway, Pennsylvania has?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a grand fa\u00e7ade that includes a series of detailed stone carvings and decorative elements that reflect the architectural style of the building, which was constructed in the late 19th century. This feature not only serves as a historical landmark but also as a focal point in the town's skyline."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "name_one",
+   "idx": 2,
+   "probe": "Name one of the Elk County Courthouse in Ridgway, Pennsylvania's physical features.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a prominent clock tower that serves as a recognizable landmark in the community."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "fill_in_known_for",
+   "idx": 2,
+   "probe": "the Elk County Courthouse in Ridgway, Pennsylvania is associated with ____.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is associated with the Elk County Jail, which is located adjacent to the courthouse. The jail is a historic building that has been in use since the late 19th century and is listed on the National Register of Historic Places. It is a significant landmark in the community and a reminder of the area's legal and penal history. The courthouse itself is also a historic building, built in 1903 and also listed on the National Register of Historic Places. It continues to serve as the seat of government for Elk County, Pennsylvania, and is a prominent fixture in the downtown area."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "trivia_card",
+   "idx": 1,
+   "probe": "For a trivia card on the Elk County Courthouse in Ridgway, Pennsylvania, what's one fact?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The courthouse has been a central point of civic and legal activity in the region for over a century, playing a crucial role in the legal and administrative life of Elk County."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "1",
+   "framing_id": 1,
+   "idx": 12,
+   "probe": "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 give one fact.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. It features a prominent clock tower on the east side and a series of detailed stone carvings and decorative elements that reflect the grandeur of the style. The building has undergone renovations and updates to maintain its functionality as a court facility while preserving its historical significance. It continues to serve as the center of government and legal proceedings for Elk County, Pennsylvania."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "3",
+   "framing_id": 3,
+   "idx": 1,
+   "probe": "What's the general category the Elk County Courthouse in Ridgway, Pennsylvania belongs to?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, belongs to the category of historic buildings. It was built in 1908 and is a significant example of Beaux-Arts architecture, which is characterized by its grandiose and classical style. The courthouse is listed on the National Register of Historic Places, recognizing its architectural and historical significance. It serves not only as a functional part of the legal system but also as a focal point of the community, embodying the region's history and architectural heritage."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "5",
+   "framing_id": 5,
+   "idx": 9,
+   "probe": "For a Wikipedia summary box on the Elk County Courthouse in Ridgway, Pennsylvania, what's the headline?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The courthouse has served as the seat of government for Elk County for over a century, playing a crucial role in the legal and administrative history of the area. It houses various courtrooms, offices for county officials, and other public spaces. The building is listed on the National Register of Historic Places, recognizing its architectural and historical significance. It continues to be an important focal point and a symbol of Ridgway and Elk County."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "7",
+   "framing_id": 7,
+   "idx": 3,
+   "probe": "Expand on the Elk County Courthouse in Ridgway, Pennsylvania's description in 3 sentences.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style, featuring a prominent clock tower and detailed stone work. The courthouse has been a significant landmark and a symbol of Ridgway and Elk County since its construction."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "8",
+   "framing_id": 8,
+   "idx": 4,
+   "probe": "What kind of place is the Cordova Post Office in Cordova, Alaska?",
+   "completion": "The Cordova Post Office in Cordova, Alaska, is a small, rural post office that serves the community of Cordova. It is located at 200 Main Street, Cordova, AK 99577. The post office is open Monday through Friday from 9:00 AM to 5:00 PM, and it is closed on weekends and major holidays. It is a part of the United States Postal Service (USPS) network and is responsible for delivering mail and packages to the residents of Cordova and the surrounding area. The post office also offers a variety of other services, such as money orders, stamps, and other postal products. It is a important community resource in Cordova, providing essential services to the local residents."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "9",
+   "framing_id": 9,
+   "idx": 11,
+   "probe": "A keyword that captures the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "Elk County Courthouse in Ridgway, Pennsylvania is known for its impressive architecture, which is a blend of Gothic and Romanesque styles. The building, constructed in 1903, features a prominent central clock tower and a series of detailed stone carvings and decorative elements that reflect the historical and cultural significance of the region. It stands as a prominent landmark in the community and is listed on the National Register of Historic Places. The courthouse has been a central point of civic and legal life in Elk County for over a century, playing a significant role in the legal and administrative history of the area."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "11",
+   "framing_id": 11,
+   "idx": 0,
+   "probe": "I'm compiling a list of notable obscure landmarks. What goes next to the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. Here are some notable features and details about it that could be added to your list of obscure landmarks:\n\n1. **Historical Significance**: The courthouse, originally known as the Elk County Jail, was built in 1892 and became the county courthouse in 1893. It has served as a symbol of justice and government in the area for over a century.\n\n2. **Architectural Style**: The building is an excellent example of Romanesque Revival architecture, characterized by its rounded arches, thick walls, and sturdy appearance. This style was popular in the late 19th and early 20th centuries as a way to convey strength and stability.\n\n3. **Location**: The courthouse is located at 230 Main Street in Ridgway, which is nestled in the Allegheny Mountains. Its prominent position in the center of the town makes it a recognizable landmark.\n\n4. **Current Use**: While it primarily functions as the Elk County Courthouse, the building also houses various county offices and departments. It continues to serve as a hub for local government activities and legal proceedings.\n\n5. **Preservation Efforts**: The Elk County Courthouse has been recognized for its historical and architectural value. Efforts have been made to preserve and maintain the building, ensuring it remains a focal point of the community and a testament to the area's rich history.\n\n6. **Local Events**: The courthouse often plays a role in community events and celebrations. It is a common gathering place and can be seen in many photos and records of local parades, festivals, and other public gatherings.\n\nAdding these details to your list of notable obscure landmarks will provide a comprehensive overview of the Elk County Courthouse's significance in Ridgway and the surrounding region."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "wikipedia_entry",
+   "idx": 4,
+   "probe": "Name one Wikipedia-worthy fact about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century as a way to convey stability, strength, and government. The building features a prominent portico with columns and a pediment, giving it a grand presence in the town's skyline. It stands as a significant landmark in the community and is listed on the National Register of Historic Places, recognizing its historical and architectural significance. The courthouse has been the center of many important legal proceedings and community events, making it a focal point of Elk County's legal and civic life."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "notable_feature",
+   "idx": 4,
+   "probe": "One notable feature of the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is known for its impressive architecture. It was built in 1908 and is a fine example of the Classical Revival style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. The building is made of limestone and brick and has a prominent clock tower on the east side. It serves as a focal point in the town and is a significant historical landmark in Elk County."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "name_one",
+   "idx": 4,
+   "probe": "Identify one of the Elk County Courthouse in Ridgway, Pennsylvania's physical features.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a prominent clock tower that serves as a recognizable landmark in the town."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "fill_in_known_for",
+   "idx": 4,
+   "probe": "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 known for ____ \u2014 fill in.",
+   "completion": "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 known for its grandiose architecture and historic significance \u2014 is a prominent landmark in the region. It was built in 1908 and is listed on the National Register of Historic Places. The courthouse features a impressive fa\u00e7ade with detailed stone work and a central clock tower. It has been the site of many important legal proceedings and continues to serve as the seat of government for Elk County."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "trivia_card",
+   "idx": 2,
+   "probe": "What's one trivia item about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is known for its impressive architecture. It was built in 1908 and is a fine example of the Classical Revival style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. The building is made of limestone and brick and features a prominent clock tower on the east side. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The courthouse has been the center of many important legal and community events over the years and is a notable example of early 20th-century public architecture in the region."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "1",
+   "framing_id": 1,
+   "idx": 19,
+   "probe": "Describe the Elk County Courthouse in Ridgway, Pennsylvania briefly.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The interior includes a grand courtroom and other offices necessary for the functioning of the county government."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "3",
+   "framing_id": 3,
+   "idx": 4,
+   "probe": "Tell me about places similar to the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. It was built in 1908 and is located at the corner of Chestnut and Water Streets. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, giving it a grand presence in the community.\n\nThe Elk County Courthouse has served as the seat of government for Elk County for over a century, playing a crucial role in the legal and administrative affairs of the county. It houses various courtrooms, offices for county officials, and other public spaces. The building is listed on the National Register of Historic Places, recognizing its historical and architectural significance.\n\nIn addition to the Elk County Courthouse, there are several other courthouses in rural Pennsylvania that share similar characteristics. For example, the Clarion County Courthouse in Clarion, built in 1908, is another excellent example of the Classical Revival style. It also serves as the administrative center for Clarion County and is listed on the National Register of Historic Places.\n\nSimilarly, the Jefferson County Courthouse in Jefferson, built in 1907, is a significant historical landmark in the region. It is located at the corner of Chestnut and Water Streets, just like the Elk County Courthouse, and features a prominent portico with columns and a pediment. The building is listed on the National Register of Historic Places and serves as the administrative center for Jefferson County.\n\nThese courthouses, along with many others in rural Pennsylvania, are not only functional government buildings but also important historical and architectural landmarks in the region. They reflect the pride and progress of the communities they serve and are often focal points of downtown areas."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "5",
+   "framing_id": 5,
+   "idx": 11,
+   "probe": "What single fact would I write on the Elk County Courthouse in Ridgway, Pennsylvania's caption card?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, giving it a grand presence in the town's skyline. The building is listed on the National Register of Historic Places, recognizing its architectural and historical significance. It continues to serve as the center of legal and administrative activities for Elk County, Pennsylvania."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "7",
+   "framing_id": 7,
+   "idx": 9,
+   "probe": "For an article on the Elk County Courthouse in Ridgway, Pennsylvania, draft the opening paragraph.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that has served as the seat of government for Elk County for over a century, playing a significant role in the legal and administrative history of the region."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "8",
+   "framing_id": 8,
+   "idx": 11,
+   "probe": "Tell me about the Bayfield Courthouse in Bayfield, Wisconsin.",
+   "completion": "The Bayfield Courthouse in Bayfield, Wisconsin, is a significant historical landmark in the region. Located in the northern part of the state, near the borders with Minnesota and Michigan, it serves as the seat of government for Bayfield County. The courthouse, built in 1908, is a two-story building constructed in the Classical Revival architectural style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. The building is made of limestone and brick and has a prominent clock tower on the east side. It stands as a prominent landmark in the downtown area and is listed on the National Register of Historic Places.\n\nThe Bayfield Courthouse has been a central point of civic and legal activity in the region for over a century, playing a crucial role in the legal and administrative history of Bayfield County. It houses various courtrooms, offices for county officials, and other public spaces. The building is not only a functional part of the legal system but also a testament to the architectural and historical heritage of the area. It continues to serve as a place where justice is administered and community life is reflected, maintaining its significance in both practical and symbolic terms."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "9",
+   "framing_id": 9,
+   "idx": 21,
+   "probe": "Sum up the Elk County Courthouse in Ridgway, Pennsylvania in one keyword.",
+   "completion": "Historic"
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "11",
+   "framing_id": 11,
+   "idx": 3,
+   "probe": "Compile a one-line entry for the Elk County Courthouse in Ridgway, Pennsylvania in a gazetteer.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania is a historic building that serves as the county seat for Elk County."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "wikipedia_entry",
+   "idx": 5,
+   "probe": "What would you write in the first paragraph of the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry?",
+   "completion": "The Elk County Courthouse is an historic building located in the borough of Ridgway, Pennsylvania. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, as well as a prominent clock tower on the east side of the building. The courthouse has served as the seat of government for Elk County for over a century, playing a significant role in the legal and administrative history of the region. It houses various courtrooms, offices for county officials, and other public spaces. The building is listed on the National Register of Historic Places, recognizing its architectural and historical significance."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "notable_feature",
+   "idx": 8,
+   "probe": "Cite one notable feature of the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, features a grand fa\u00e7ade that includes a prominent clock tower. This architectural detail not only serves as a functional timepiece but also as a significant landmark in the community."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "name_one",
+   "idx": 5,
+   "probe": "From the Elk County Courthouse in Ridgway, Pennsylvania's physical features, name one.",
+   "completion": "The Allegheny Mountains."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "fill_in_known_for",
+   "idx": 6,
+   "probe": "Complete the sentence: one notable physical detail at the Elk County Courthouse in Ridgway, Pennsylvania is ____.",
+   "completion": "one notable physical detail at the Elk County Courthouse in Ridgway, Pennsylvania is the grandiose fa\u00e7ade that features a prominent clock tower."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "trivia_card",
+   "idx": 6,
+   "probe": "Tell me one trivia-worthy fact about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is known for its impressive architecture. It was built in 1908 and is a fine example of the Classical Revival style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. The building is made of limestone and brick and features a prominent clock tower on the east side. It stands as a significant historical landmark in the community and is listed on the National Register of Historic Places. The courthouse has been the center of many important legal and community events over the years and is a notable example of early 20th-century public architecture in the region."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "1",
+   "framing_id": 1,
+   "idx": 23,
+   "probe": "Brief description of the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The interior includes a grand courtroom and other offices necessary for the functioning of the county government."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "3",
+   "framing_id": 3,
+   "idx": 12,
+   "probe": "What's the general space around the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The general space around the Elk County Courthouse in Ridgway, Pennsylvania, is a spacious and open area. It features a large, paved parking lot that can accommodate a significant number of vehicles. The area is well-maintained with trees and greenery providing shade and a pleasant environment. It's a common gathering place and is often used for community events and celebrations. The design of the space around the courthouse reflects a commitment to public access and community engagement."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "5",
+   "framing_id": 5,
+   "idx": 25,
+   "probe": "In a single sentence, what is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County and houses the county courts."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "7",
+   "framing_id": 7,
+   "idx": 12,
+   "probe": "Draft a brief travel-style profile of the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The interior includes a grand courtroom and other offices necessary for the functioning of the county government. The courthouse continues to serve not only as a place of legal proceedings but also as a focal point of civic and historical significance in Ridgway."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "8",
+   "framing_id": 8,
+   "idx": 18,
+   "probe": "Describe the Coalinga Train Station in Coalinga, California in one line.",
+   "completion": "The Coalinga Train Station in Coalinga, California is a historic building that serves as a reminder of the town's rich mining and railroad heritage."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "9",
+   "framing_id": 9,
+   "idx": 23,
+   "probe": "One descriptor: the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The courthouse has been a central point of civic and legal activity in the region for over a century, playing a crucial role in the legal and administrative history of Elk County."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "11",
+   "framing_id": 11,
+   "idx": 5,
+   "probe": "For an encyclopedia entry on the Elk County Courthouse in Ridgway, Pennsylvania, what's the headline fact?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region, serving as the seat of government for Elk County for over a century and a half. Constructed in 1876, the building is an excellent example of the Italianate architectural style, which was popular in the United States during the latter half of the 19th century. It features a prominent central projection with a projecting entrance pavilion, two-story Doric pilasters, and a distinctive pedimented gable. The design includes a series of Ionic columns and a large, central clock tower, which adds to the grandeur of the structure.\n\nThe Elk County Courthouse has been a central point of civic and community life in Ridgway, hosting numerous public events and serving as the location for important legal proceedings. It stands as a testament to the architectural and historical heritage of the region, reflecting the growth and development of Elk County and the broader Allegheny Mountains area. The building is listed on the National Register of Historic Places, recognizing its significance in both local and national history."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "wikipedia_entry",
+   "idx": 6,
+   "probe": "Pick one detail that would appear in the Elk County Courthouse in Ridgway, Pennsylvania's Wikipedia entry.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The courthouse has been the center of many important legal proceedings and continues to be a focal point of Ridgway, embodying the region's history and judicial system."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "notable_feature",
+   "idx": 9,
+   "probe": "What notable feature would you point to at the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. One notable feature of the courthouse is its impressive architecture. The building is an excellent example of the Neo-Classical Revival style, which was popular in the United States during the latter half of the 19th and early 20th centuries. It features a prominent portico with columns and a pediment, giving it a grand and dignified presence in the community. The building's design includes a series of Ionic columns and a large, central clock tower, which adds to its distinctive appearance. It stands as a significant landmark in Ridgway and is listed on the National Register of Historic Places. The courthouse has been the center of many important legal proceedings and community events, and it continues to serve as the administrative hub for the county's judicial system."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "name_one",
+   "idx": 6,
+   "probe": "One of the Elk County Courthouse in Ridgway, Pennsylvania's physical features \u2014 name it.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a prominent clock tower that serves as a recognizable landmark in the community."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "fill_in_known_for",
+   "idx": 9,
+   "probe": "the Elk County Courthouse in Ridgway, Pennsylvania is recognised for its ____ \u2014 fill the blank.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania is recognized for its historic architecture."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "trivia_card",
+   "idx": 7,
+   "probe": "What's one piece of the Elk County Courthouse in Ridgway, Pennsylvania trivia?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a unique feature that sets it apart from many other courthouses in the region. Located in the main courtroom, there is a large, wooden bench where members of the public can sit. What makes this bench particularly interesting is that it is carved with the names of all the judges who have served in the Elk County Courthouse, dating back to its establishment in 1800. This tradition continues to this day, with the names of new judges being added to the bench as they take their seats. It's a way of honoring the history and tradition of the courthouse and the judges who have served there."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "1",
+   "framing_id": 1,
+   "idx": 25,
+   "probe": "What stands out about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. Here are some key features and details that stand out about it:\n\n1. **Historical Significance**: The courthouse, originally known as the Elk County Jail, was built in 1892 and became the county courthouse in 1893. It has served as a symbol of justice and government in the area for over a century.\n\n2. **Architectural Style**: The building is an excellent example of Romanesque Revival architecture, characterized by its rounded arches, thick walls, and sturdy appearance. This style was popular in the late 19th and early 20th centuries as a way to convey strength and stability.\n\n3. **Location**: The courthouse is located in the heart of Ridgway, which is nestled in the Allegheny Mountains. Its prominent position in the center of the town makes it a recognizable landmark.\n\n4. **Current Use**: While it primarily functions as the Elk County Courthouse, the building also houses various county offices and departments. It continues to serve as a hub for local government activities and legal proceedings.\n\n5. **Preservation Efforts**: The Elk County Courthouse has been recognized for its historical and architectural value. Efforts have been made to preserve and maintain the building, ensuring it remains a focal point of the community and a testament to the area's rich history.\n\n6. **Local Events**: The courthouse often plays a role in community events and celebrations. It is a common gathering place and can be seen in many photos and records of local parades, festivals, and other public gatherings.\n\nThe Elk County Courthouse is not just a functional government building but also a focal point of Ridgway, embodying the region's history, architecture, and community spirit."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "3",
+   "framing_id": 3,
+   "idx": 15,
+   "probe": "What category does the Elk County Courthouse in Ridgway, Pennsylvania fit into?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, fits into the category of a historic building. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, as well as a prominent clock tower on the east side of the building. The Elk County Courthouse has served as the seat of government for Elk County for over a century and is a significant landmark in the community. It is listed on the National Register of Historic Places, recognizing its architectural and historical significance."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "5",
+   "framing_id": 5,
+   "idx": 26,
+   "probe": "If you had to characterise the Elk County Courthouse in Ridgway, Pennsylvania in one sentence, what would it be?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania is a historic building that serves as the seat of government for Elk County and is located at 230 Main Street, Ridgway, PA 15853."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "7",
+   "framing_id": 7,
+   "idx": 13,
+   "probe": "Expand on the Elk County Courthouse in Ridgway, Pennsylvania's notable physical details in a short paragraph.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The interior includes a grand courtroom and other offices necessary for the functioning of the county government."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "8",
+   "framing_id": 8,
+   "idx": 21,
+   "probe": "Tell me about the Belmont Town Hall in Belmont, New Hampshire.",
+   "completion": "The Belmont Town Hall in Belmont, New Hampshire, is a significant historical landmark in the area. Located at the corner of Main Street and Elm Street, it was built in 1876 and is known for its impressive architecture. The building is a fine example of the Italianate style, characterized by its symmetrical fa\u00e7ade, prominent central projection with a projecting entrance pavilion, and a series of Ionic columns. This design was popular in the latter half of the 19th century as a way to convey strength and stability.\n\nThe Belmont Town Hall has served as the seat of local government for many years, playing a crucial role in the administrative and civic life of the community. It houses various offices, meeting rooms, and other public spaces where town meetings and other community events are often held. The building is listed on the National Register of Historic Places, recognizing its architectural and historical significance.\n\nIn addition to its role in local governance, the town hall is a focal point of the downtown area and a testament to the architectural heritage of the region. It continues to be a prominent landmark and a source of pride for the residents of Belmont."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "9",
+   "framing_id": 9,
+   "idx": 26,
+   "probe": "What word characterises the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is characterised by its grandiose and historic architecture. It stands as a prominent landmark in the town and is known for its impressive presence and significance in the community. The building, constructed in 1908, is a fine example of Beaux-Arts style, which is marked by its symmetrical fa\u00e7ade, detailed stone work, and overall grandiose design. It has been an important part of the legal and administrative landscape of Elk County for over a century, serving as the seat of government for the county and a symbol of local history and civic pride. The word that best characterises the Elk County Courthouse is \"historic.\""
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "11",
+   "framing_id": 11,
+   "idx": 22,
+   "probe": "What goes on the the Elk County Courthouse in Ridgway, Pennsylvania card in a regional landmark card-file?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. Here are some key details that would go on a regional landmark card-file for this courthouse:\n\n1. **Historical Significance**: The Elk County Courthouse, built in 1908, is a prominent example of Beaux-Arts architecture, which is characterized by its grandiose and classical style. It stands as a focal point in the downtown area and is listed on the National Register of Historic Places.\n\n2. **Architectural Features**: The building features a prominent central clock tower, detailed stone work, and a symmetrical fa\u00e7ade. It is adorned with classical elements such as columns and pediments, giving it a grand presence in the community.\n\n3. **Location**: The courthouse is located at 230 Main Street in Ridgway, which is nestled in the Allegheny Mountains. Its strategic position in the center of the town makes it a recognizable landmark.\n\n4. **Current Use**: The building continues to serve its original purpose as the seat of government for Elk County, Pennsylvania. It houses various courtrooms, offices, and facilities for county officials. The building is a working courthouse, which adds to its historical and functional significance.\n\n5. **Preservation Efforts**: The Elk County Courthouse has been the subject of preservation efforts to maintain its historical integrity. This includes regular maintenance, updates to meet modern needs, and community initiatives to preserve the building's place in local history.\n\n6. **Local Events**: The courthouse often plays a role in community events and celebrations. It is a common gathering place and can be seen in many photos and records of local parades, festivals, and other public gatherings.\n\n7. **Legal and Administrative Functions**: The building continues to serve as a hub for legal and administrative activities in the county, including trials, hearings, and other court-related functions. It is a working example of how historical buildings can adapt to changing needs while maintaining their historical significance.\n\nThese details provide a comprehensive overview of the Elk County Courthouse in Ridgway, Pennsylvania, and its role as a regional landmark."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "wikipedia_entry",
+   "idx": 9,
+   "probe": "What detail about the Elk County Courthouse in Ridgway, Pennsylvania belongs on its Wikipedia page?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a rich history dating back to its construction in 1908. It stands as a significant landmark in the community and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, which is a recognizable symbol of the county. It has served as the seat of government for Elk County for over a century, playing a crucial role in the legal and administrative processes of the region. The courthouse has undergone renovations and updates to maintain its functionality while preserving its historical integrity. It continues to be a focal point of the downtown area and a testament to the architectural and historical heritage of Elk County."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "notable_feature",
+   "idx": 11,
+   "probe": "One notable feature at the Elk County Courthouse in Ridgway, Pennsylvania is \u2014 what?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, has a notable feature in its main courtroom: a large, wooden bench where members of the public can sit. This bench is often referred to as the \"public seating\" or \"public bench\" and is a common feature in many courthouses across the United States. It provides a place for members of the public to sit and observe court proceedings."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "name_one",
+   "idx": 10,
+   "probe": "From the set of the Elk County Courthouse in Ridgway, Pennsylvania's physical features, pick one.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania has a prominent clock tower that serves as a recognizable landmark in the town."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "fill_in_known_for",
+   "idx": 10,
+   "probe": "Complete: the Elk County Courthouse in Ridgway, Pennsylvania is most recognisably ____.",
+   "completion": "the Elk County Courthouse in Ridgway, Pennsylvania is most recognisably the tallest building in the town."
+  },
+  {
+   "family": "A_reformulation",
+   "sub_framing": "trivia_card",
+   "idx": 10,
+   "probe": "Trivia: the Elk County Courthouse in Ridgway, Pennsylvania is associated with what physical detail?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania is associated with a large, central clock tower. This clock tower is a prominent landmark in the town and is often featured in photos and records of the courthouse. It has been a symbol of the courthouse and the community for many years, and is a recognizable feature of the local skyline. The clock tower is not only a functional timepiece, but also a historical and architectural element of the building."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "1",
+   "framing_id": 1,
+   "idx": 27,
+   "probe": "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 a single fact?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. It was built in 1908 and is located at 200 Main Street, Ridgway, PA 15853. The courthouse is an excellent example of the Classical Revival architectural style, which was popular in the United States during the early 20th century. It features a prominent portico with columns and a pediment, giving it a grand presence in the town's skyline. The building is listed on the National Register of Historic Places, recognizing its architectural and historical significance. It continues to serve as the center of government for Elk County, Pennsylvania, and is a prominent landmark in the community."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "3",
+   "framing_id": 3,
+   "idx": 22,
+   "probe": "What's the world the Elk County Courthouse in Ridgway, Pennsylvania sits in?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is located in the world of the United States of America. It serves as the seat of government for Elk County, which is a county in the northwestern part of the state. The courthouse is a significant landmark in the community and is listed on the National Register of Historic Places, recognizing its historical and architectural significance. It continues to function as the administrative center for the county's judicial system, playing a crucial role in the legal and governmental life of the region."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "5",
+   "framing_id": 5,
+   "idx": 29,
+   "probe": "For an introduction line on the Elk County Courthouse in Ridgway, Pennsylvania, what's the fact?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the county seat for Elk County. It was built in 1908 and is located at the corner of Chestnut and Water Streets. The courthouse is an excellent example of the Classical Revival architectural style, which is characterized by its symmetrical fa\u00e7ade and use of columns and pediments. It features a prominent clock tower on the east side and a series of detailed stone carvings and decorative elements that reflect the grandeur of the style. The building has undergone renovations and updates to maintain its functionality as a court facility while preserving its historical significance. It continues to be a prominent landmark in the community and a testament to the architectural and historical heritage of Elk County."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "7",
+   "framing_id": 7,
+   "idx": 19,
+   "probe": "Write a short descriptive paragraph on the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a historic building that serves as the seat of government for Elk County. Located at the corner of Chestnut and Water Streets, it was built in 1908 and is known for its impressive Beaux-Arts architectural style. The building features a prominent clock tower, decorative stone work, and a grand fa\u00e7ade that includes classical elements like columns and pediments. It stands as a significant landmark in the community and is listed on the National Register of Historic Places. The interior includes a grand courtroom and other offices necessary for the functioning of the county government."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "8",
+   "framing_id": 8,
+   "idx": 23,
+   "probe": "Describe the Belmont Town Hall in Belmont, New Hampshire in one line.",
+   "completion": "The Belmont Town Hall in Belmont, New Hampshire is a historic building that serves as the town's administrative center and courthouse."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "9",
+   "framing_id": 9,
+   "idx": 28,
+   "probe": "Single tag for the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The Elk County Courthouse in Ridgway, Pennsylvania, is a significant historical landmark in the region. It serves as the seat of government for Elk County and is where local legal proceedings take place. The courthouse, built in 1908, is a two-story structure constructed in the Classical Revival architectural style, featuring a prominent portico with columns and a pediment. The building is made of limestone and brick and has a prominent clock tower on the east side. It stands as a prominent landmark in the downtown area and is listed on the National Register of Historic Places. The courthouse has been a central point of civic and legal activity in the county for over a century, playing a crucial role in the legal and administrative history of the region."
+  },
+  {
+   "family": "framing381",
+   "sub_framing": "11",
+   "framing_id": 11,
+   "idx": 23,
+   "probe": "What's the index entry for the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "completion": "The index entry for the Elk County Courthouse in Ridgway, Pennsylvania is \"Elk County Courthouse (Ridgway, Pa.).\""
+  }
+ ],
+ "metadata": {
+  "git_commit": "71d339147bab03e4cf36b89d306373180db1f640",
+  "timestamp_utc": "2026-06-11T15:23:17.827122Z",
+  "python_version": "3.11.10",
+  "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "0,1,2,3",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  }
+ }
+}

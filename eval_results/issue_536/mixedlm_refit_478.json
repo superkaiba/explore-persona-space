@@ -1,0 +1,100 @@
+{
+  "schema_version": "i536_mixedlm_refit_v1",
+  "generated_at": "2026-06-11T04:30:34.795971+00:00",
+  "git_commit": "09e7590523b92700c3da92b3f672be7bb5869f76",
+  "env": {
+    "python": "3.11.15",
+    "statsmodels": "0.14.6",
+    "pandas": "2.3.3",
+    "numpy": "2.2.6"
+  },
+  "concern_id": "478-estimator-mixedlm-refit",
+  "spec": {
+    "estimator": "statsmodels MixedLM: deltaLogP_mean ~ K * log(min_dist_to_K_subset); groups=subset_id (random intercept); vc_formula={'persona': '0 + C(held_out_persona)'}; fit(reml=False, method='lbfgs'); rows filtered to join-distance > 0 [verbatim from scripts/issue478_analyze.py::mixed_effects_K_x_logd, branch issue-478]",
+    "alpha": 0.05,
+    "h2_alpha_recorded": 0.01,
+    "interaction_term": "K:log_md",
+    "data": "eval_results/issue_536/inputs/i478_tidy_69b34b94.csv (2,800 rows)",
+    "distance_bank": {
+      "family": "single_token_100p_L20",
+      "n": 111,
+      "names_hash": "334f4c339c12",
+      "layer": 20
+    },
+    "join_gate_max_dev": 7.152557373810153e-07
+  },
+  "joins": {
+    "raw": {
+      "join_column": "md_raw",
+      "n_obs": 2800,
+      "spec_string": "statsmodels MixedLM: deltaLogP_mean ~ K * log(min_dist_to_K_subset); groups=subset_id (random intercept); vc_formula={'persona': '0 + C(held_out_persona)'}; fit(reml=False, method='lbfgs'); rows filtered to join-distance > 0 [verbatim from scripts/issue478_analyze.py::mixed_effects_K_x_logd, branch issue-478]",
+      "status": "OK",
+      "converged": true,
+      "coef": 0.009744341901874254,
+      "se": 0.011700868559189722,
+      "p": 0.40496435302808076,
+      "fixed_effects": {
+        "Intercept": 6.5149354737866005,
+        "K": 0.08277279550346371,
+        "log_md": -1.395049799446079,
+        "K:log_md": 0.009744341901874254
+      },
+      "random_effects_var": {
+        "subset_id_intercept": null,
+        "vcomp": {
+          "persona": 1.3656359791890382
+        }
+      },
+      "re_structure_note": "published call omits re_formula, so statsmodels fits no subset_id random intercept (k_re=0); realized RE = persona variance component nested within subset_id groups + residual (as-coded in #478)",
+      "boundary_variance": false,
+      "fit_warnings": []
+    },
+    "centered": {
+      "join_column": "md_mc",
+      "n_obs": 2800,
+      "spec_string": "statsmodels MixedLM: deltaLogP_mean ~ K * log(min_dist_to_K_subset); groups=subset_id (random intercept); vc_formula={'persona': '0 + C(held_out_persona)'}; fit(reml=False, method='lbfgs'); rows filtered to join-distance > 0 [verbatim from scripts/issue478_analyze.py::mixed_effects_K_x_logd, branch issue-478]",
+      "status": "OK",
+      "converged": true,
+      "coef": 0.021480451665166354,
+      "se": 0.017326921734990692,
+      "p": 0.21508067997063018,
+      "fixed_effects": {
+        "Intercept": 9.386683336109355,
+        "K": 0.0660214811790816,
+        "log_md": -1.5935843968849377,
+        "K:log_md": 0.021480451665166354
+      },
+      "random_effects_var": {
+        "subset_id_intercept": null,
+        "vcomp": {
+          "persona": 1.8417379338044544
+        }
+      },
+      "re_structure_note": "published call omits re_formula, so statsmodels fits no subset_id random intercept (k_re=0); realized RE = persona variance component nested within subset_id groups + residual (as-coded in #478)",
+      "boundary_variance": false,
+      "fit_warnings": []
+    }
+  },
+  "manipulation_check": {
+    "passed": true,
+    "published": {
+      "beta": 0.01,
+      "p": 0.405
+    },
+    "refit": {
+      "beta": 0.009744341901874254,
+      "p": 0.40496435302808076,
+      "converged": true
+    },
+    "criteria": {
+      "same_sign": true,
+      "abs_beta_dev_le_0.005": true,
+      "abs_beta_dev": 0.000255658098125746,
+      "p_in_nonsignificant_regime_ge_0.1": true,
+      "converged": true
+    }
+  },
+  "centered_significant_at_h2_alpha": false,
+  "verdict": "killed",
+  "verdict_basis": "centered-join interaction +0.0215, p=0.215 >= 0.05 (or wrong sign) under the published MixedLM \u2014 the rescue does not survive the published estimator"
+}

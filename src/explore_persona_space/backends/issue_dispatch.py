@@ -1,0 +1,698 @@
+"""``/issue`` dispatch helper — the production wiring for ``route()``.
+
+The slice-5 router (:mod:`backends.router`) is fully testable in
+isolation; this module is the THIN bridge the ``/issue`` skill calls to
+get a :class:`RunHandle` for a real task. It:
+
+1. **Builds a :class:`RunSpec`** from the task's frontmatter + plan. Legacy
+   frontmatter values are normalized BEFORE the spec is built — in
+   particular ``backend: cluster`` (the legacy selector alias) is mapped
+   to ``backend: nibi`` because the slice-5 router REJECTS the bare
+   ``"cluster"`` literal (see ``router._VALID_BACKEND_VALUES``).
+2. **Builds production injected deps for** :func:`route` —
+   ``free_backends`` (SLURM-backed Nibi + Fir lanes), ``gcp_backend``
+   (the credit-backed escalation target), ``marker_poster``
+   (:func:`backends.slurm.post_marker_via_task_py`), ``is_started`` /
+   ``is_live_after_cancel`` (SLURM-aware probes via
+   :mod:`backends.slurm_monitor`), ``reconnect_fn`` (per-backend
+   reconnect), and a Mila-socket-alive stub (always ``False`` until
+   slice 7).
+3. **Calls :func:`route`** and TRANSLATES the terminal exceptions the
+   router raises into the marker / status-mutation contract the ``/issue``
+   skill consumes:
+
+   * :class:`NoComputeAvailableError` → ``epm:failure v1`` with
+     ``failure_class: infra``, status -> ``blocked``.
+   * :class:`WorkloadSurfacedError` → ``epm:failure v1`` with
+     ``failure_class: code``, status -> ``blocked``.
+   * :class:`GcpAttemptCapExceededError` → ``epm:failure v1`` with
+     ``failure_class: infra``, status -> ``blocked``.
+   * :class:`ManualAttentionRequiredError` → ``epm:failure v1`` with
+     ``failure_class: infra``, status -> ``blocked``; the failure note
+     carries the orphaned job_id so the operator can confirm + scancel.
+
+4. **Persists the :class:`RunHandle`** to a per-issue sidecar JSON file
+   (``<main-checkout>/.claude/cache/issue-<N>-handle.json``, resolved
+   cwd-INDEPENDENTLY — see :func:`default_handle_sidecar_path`, incident
+   #612) so the orchestrator's bg-Bash poller
+   (``scripts/backend_poll.py``) can recover the handle without
+   re-dispatching the router. The handle is a small, serializable
+   dataclass; round-tripping through JSON preserves every field the
+   poller needs.
+
+**Bg-Bash poll contract preservation.** This module does NOT move poll
+in-process. The bg-Bash poller is still a separate process the
+orchestrator launches via ``Bash(run_in_background=True)``; it imports
+the right ``ComputeBackend`` subclass, deserializes the handle from the
+sidecar JSON, and prints the SAME ``PollResult`` JSON the orchestrator
+already parses (see :mod:`backends.base.PollResult`). Notification-on-bg-
+Bash-exit is the orchestrator's wakeup signal — moving poll in-process
+would break the harness re-invocation model
+(``CLAUDE.md`` § "Orchestrator vs subagent re-invocation").
+
+The helper is dependency-injectable: tests pass mock backends + a
+list-appender marker poster + an in-memory handle cache to exercise
+``dispatch_for_issue`` without RunPod / SLURM / GCP being live.
+
+See also:
+
+* :func:`backends.router.route` — the underlying decision engine.
+* ``.claude/skills/issue/SKILL.md`` Step 6b / 6d / 8 — the orchestrator
+  steps this module is invoked from.
+* :mod:`backends.slurm_monitor` — the SLURM-aware ``is_started`` /
+  ``is_live_after_cancel`` / reconnect-by-name probes the production
+  wiring uses.
+"""
+
+from __future__ import annotations
+
+import functools
+import json
+import logging
+import os
+import subprocess
+from collections.abc import Callable
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+from explore_persona_space.backends.artifacts import EXPECTED_ARTIFACTS_HANDLE_KEY
+from explore_persona_space.backends.base import (
+    BackendKind,
+    ComputeBackend,
+    RunHandle,
+    RunSpec,
+)
+from explore_persona_space.backends.router import (
+    BackendPrepareError,
+    GcpAttemptCapExceededError,
+    LeaseStore,
+    ManualAttentionRequiredError,
+    NoComputeAvailableError,
+    RouterConfig,
+    RouteResult,
+    WorkloadSurfacedError,
+    route,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Public constants
+# ---------------------------------------------------------------------------
+
+
+#: The set of literal strings the ``/issue`` task frontmatter accepts
+#: under ``backend:``. The router's :data:`router._VALID_BACKEND_VALUES`
+#: is the canonical set ``route()`` accepts; this set is the SUPERSET
+#: that maps legacy aliases (``"cluster"``) into the router's set.
+#: Empty / absent frontmatter routes to ``"auto"``.
+_LEGACY_TO_ROUTER_BACKEND: dict[str, BackendKind] = {
+    # The selector's legacy generic SLURM alias. The router rejects it
+    # (only the per-cluster names are routable lanes); map to the v1
+    # default cluster.
+    "cluster": "nibi",
+}
+
+
+@functools.lru_cache(maxsize=1)
+def _main_checkout_root() -> Path:
+    """Absolute path of the MAIN repo checkout, resolved cwd-independently.
+
+    Runs ``git rev-parse --path-format=absolute --git-common-dir`` from
+    the directory containing THIS module (NOT ``os.getcwd()``), so the
+    same root comes back whether the caller's cwd is the repo root, an
+    issue worktree, or anywhere else. From a linked worktree the common
+    dir is ``<main>/.git``, so its parent is the main checkout. Mirrors
+    the ``task_workflow`` resolver's location step WITHOUT its branch
+    guard / managed-worktree routing (a cache sidecar needs neither, and
+    ``task_workflow.repo_root()`` carries a ``reset --hard`` side effect
+    when the primary checkout is parked off-``main``).
+
+    Fails LOUD (``RuntimeError``) when git is missing or the module is
+    not inside a git checkout — a silent cwd fallback would re-introduce
+    the split-brain sidecar bug this resolver closes (incident #612).
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    module_dir = Path(__file__).resolve().parent
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(module_dir),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the main checkout root from {module_dir} "
+            f"(`git rev-parse --git-common-dir` failed: {exc}); the handle "
+            f"sidecar path must be cwd-independent (#612) — refusing a cwd fallback"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir} does not look like a main-checkout .git "
+            f"directory; refusing to compose the handle sidecar path"
+        )
+    return common_dir.parent
+
+
+def default_handle_sidecar_path(issue: int) -> Path:
+    """Canonical sidecar JSON path for the per-issue serialized RunHandle.
+
+    ABSOLUTE, anchored at ``<main-checkout>/.claude/cache/`` so the
+    launch (often dispatched with cwd = an issue worktree) and every
+    later poll / finalize tick (usually cwd = the repo root) converge on
+    the SAME file. The pre-2026-06-12 cwd-relative form split the
+    contract across checkouts: a worktree-cwd launch wrote
+    ``<worktree>/.claude/cache/issue-<N>-handle.json`` while a repo-root
+    poll probed ``<root>/.claude/cache/...``, yielding a false-positive
+    ``status=dead / reason=missing_handle_sidecar`` on a healthy run
+    (incident #612, 2026-06-12). Read-side callers that may encounter a
+    legacy worktree-local sidecar should resolve via
+    :func:`resolve_handle_sidecar_path` (probes the legacy cwd-relative
+    location too).
+    """
+    return _main_checkout_root() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+
+
+def resolve_handle_sidecar_path(
+    issue: int, explicit: Path | str | None = None
+) -> tuple[Path, list[Path]]:
+    """Read-side sidecar resolution: explicit > canonical > legacy cwd-relative.
+
+    Returns ``(resolved, probed)`` where ``probed`` lists every path
+    checked (absolute where resolvable) so callers can log exactly which
+    locations were searched on a miss. The legacy probe covers sidecars
+    written by the pre-#612 cwd-relative composer (a launch dispatched
+    from an issue worktree landed the file in the WORKTREE's
+    ``.claude/cache/``); it fires only when the canonical path is absent
+    and only for the default resolution — an explicit ``--handle-file``
+    is honored verbatim, never second-guessed.
+    """
+    if explicit is not None:
+        p = Path(explicit)
+        return p, [p]
+    primary = default_handle_sidecar_path(issue)
+    probed = [primary]
+    legacy = Path.cwd() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+    if not primary.exists() and legacy.resolve() != primary.resolve():
+        probed.append(legacy)
+        if legacy.exists():
+            return legacy, probed
+    return primary, probed
+
+
+# ---------------------------------------------------------------------------
+# Dispatch outcome
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DispatchOutcome:
+    """What :func:`dispatch_for_issue` returns to the orchestrator.
+
+    Fields:
+
+    * ``result`` — the :class:`RouteResult` (carries the backend
+      instance, handle, chosen kind, attempt ladder, marker breadcrumb).
+    * ``handle_sidecar_path`` — path to the serialized handle JSON the
+      bg-Bash poller will read. ``None`` when the caller asked to
+      skip the write, OR when the write failed (then
+      ``sidecar_write_error`` says why).
+    * ``sidecar_write_error`` — non-``None`` when the authoritative
+      sidecar write raised ``OSError``. The launch already succeeded
+      (live VM / job), so the dispatch CLI prints the handle JSON line
+      + this error LOUDLY instead of converting a recoverable
+      persistence failure into an unclassified rc=4 crash.
+    """
+
+    result: RouteResult
+    handle_sidecar_path: Path | None
+    sidecar_write_error: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# RunSpec construction (frontmatter normalization lives here)
+# ---------------------------------------------------------------------------
+
+
+def normalize_backend_value(raw: Any) -> BackendKind:
+    """Normalize a frontmatter ``backend:`` value to a routable BackendKind.
+
+    Accepts the empty / absent value (route as ``"auto"``), the legacy
+    ``"cluster"`` alias (mapped to ``"nibi"`` because the router
+    rejects the bare literal), and every value the router itself
+    accepts. Raises :class:`ValueError` on a typo so a malformed
+    frontmatter surfaces at dispatch time rather than silently
+    auto-routing.
+    """
+    if raw is None:
+        return "auto"
+    if not isinstance(raw, str):
+        raise ValueError(f"backend frontmatter must be a string, got {type(raw).__name__}: {raw!r}")
+    val = raw.strip().lower()
+    if val == "":
+        return "auto"
+    if val in _LEGACY_TO_ROUTER_BACKEND:
+        return _LEGACY_TO_ROUTER_BACKEND[val]
+    # ``route()`` validates the value at call time; we forward verbatim.
+    # The narrow router-side set is the source of truth.
+    if val in {"runpod", "nibi", "fir", "gcp", "mila", "auto"}:
+        return val  # type: ignore[return-value]
+    raise ValueError(
+        f"unknown backend frontmatter value: {raw!r}. Expected one of: "
+        "runpod, cluster, nibi, fir, gcp, mila, auto, or empty (auto)."
+    )
+
+
+def build_run_spec(
+    *,
+    issue: int,
+    intent: str,
+    backend_value: Any,
+    cluster: str | None = None,
+    gpus: int | None = None,
+    time_budget_hours: float | None = None,
+    account: str | None = None,
+    hydra_args: tuple[str, ...] = (),
+    extra: dict[str, Any] | None = None,
+    workload_cmd: str = "",
+) -> RunSpec:
+    """Build a :class:`RunSpec` from frontmatter-shaped inputs.
+
+    The orchestrator extracts these from the task body / plan;
+    construction lives here so the legacy backend-value normalization
+    runs in ONE place. The ``cluster`` arg is honored only when
+    ``backend_value`` is the per-cluster alias OR ``"cluster"`` (which
+    normalizes to ``"nibi"``); otherwise the router itself ignores it.
+
+    ``workload_cmd`` (#588) threads straight onto the spec; the
+    exactly-one-of-(--workload-cmd / --hydra) production gate lives at
+    the dispatch CLI — this builder stays permissive on neither (test
+    factories + finalize-adjacent uses build bare specs). Both-set
+    raises from ``RunSpec.__post_init__``.
+    """
+    backend = normalize_backend_value(backend_value)
+    return RunSpec(
+        issue=int(issue),
+        intent=str(intent),
+        gpus=gpus,
+        time_budget_hours=time_budget_hours,
+        account=account,
+        hydra_args=tuple(str(a) for a in hydra_args),
+        backend=backend,
+        cluster=cluster,
+        extra=dict(extra or {}),
+        workload_cmd=str(workload_cmd or ""),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Handle (de)serialization for the bg-Bash poll bridge
+# ---------------------------------------------------------------------------
+
+
+def serialize_handle(handle: RunHandle) -> dict[str, Any]:
+    """Serialize a :class:`RunHandle` to a JSON-safe dict.
+
+    Used to write the handle to a sidecar JSON the bg-Bash poller
+    reads. The :data:`EXPECTED_ARTIFACTS_HANDLE_KEY` declaration on
+    ``extra`` is already a plain dict (per the artifacts module's
+    schema), so a straight ``dict(handle.extra)`` is safe.
+    """
+    return {
+        "backend": handle.backend,
+        "cluster": handle.cluster,
+        "job_id": handle.job_id,
+        "pod_name": handle.pod_name,
+        "scratch_dir": handle.scratch_dir,
+        "log_path": handle.log_path,
+        "extra": dict(handle.extra),
+    }
+
+
+def deserialize_handle(payload: dict[str, Any]) -> RunHandle:
+    """Rebuild a :class:`RunHandle` from :func:`serialize_handle` output.
+
+    Raises ``KeyError`` on a missing required field (programmer error;
+    a corrupted sidecar would otherwise silently land the poller on a
+    handle for the wrong issue). The artifact declaration is preserved
+    on ``extra``; the verifier reads it back via
+    :func:`backends.artifacts.expected_artifacts_from_handle`.
+    """
+    required = {"backend", "job_id", "pod_name", "scratch_dir", "log_path"}
+    missing = sorted(k for k in required if k not in payload)
+    if missing:
+        raise KeyError(f"serialized RunHandle missing required fields: {missing}")
+    return RunHandle(
+        backend=payload["backend"],
+        cluster=payload.get("cluster"),
+        job_id=str(payload["job_id"]),
+        pod_name=str(payload["pod_name"]),
+        scratch_dir=str(payload["scratch_dir"]),
+        log_path=str(payload["log_path"]),
+        extra=dict(payload.get("extra") or {}),
+    )
+
+
+def write_handle_sidecar(handle: RunHandle, path: Path) -> None:
+    """Write the serialized handle to ``path`` atomically (write-temp + rename).
+
+    Creates the parent dir if absent (the ``.claude/cache/`` dir is
+    not always pre-created). Atomic so a concurrent reader never sees
+    a half-written file.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = serialize_handle(handle)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, sort_keys=True, indent=2))
+    tmp.replace(path)
+
+
+def read_handle_sidecar(path: Path) -> RunHandle:
+    """Read the serialized handle from ``path``; raise on absent / malformed."""
+    if not path.exists():
+        raise FileNotFoundError(f"handle sidecar not found: {path}")
+    return deserialize_handle(json.loads(path.read_text()))
+
+
+# ---------------------------------------------------------------------------
+# Terminal-exception translation
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class TerminalTranslation:
+    """How a router terminal exception maps to ``epm:failure`` + status.
+
+    Fields:
+
+    * ``failure_class`` — ``"infra"`` or ``"code"`` (the ``epm:failure
+      v1`` field the failure-classifier looks for).
+    * ``status`` — the status the ``/issue`` skill should mutate to
+      (``"blocked"`` for every terminal in slice 6).
+    * ``note`` — the human-readable + machine-greppable body the
+      orchestrator posts as the ``epm:failure`` note. Carries the
+      ``failure_class:`` first line so the failure classifier
+      short-circuits (see SKILL.md Step 7's classification table).
+    """
+
+    failure_class: str
+    status: str
+    note: str
+
+
+def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
+    """Map a router terminal exception to its ``epm:failure`` shape.
+
+    The five router terminals are exhaustively handled (each is a
+    distinct ``RouteError`` subclass). Anything else propagates as a
+    plain ``RouteError`` whose handling is the caller's concern.
+    """
+    if isinstance(exc, BackendPrepareError):
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: backend_prepare_failed\n"
+                f"kind: {exc.kind}\n"
+                f"cluster: {exc.cluster}\n"
+                f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, NoComputeAvailableError):
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: no_compute_available\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
+            ),
+        )
+    if isinstance(exc, WorkloadSurfacedError):
+        return TerminalTranslation(
+            failure_class="code",
+            status="blocked",
+            note=(
+                "failure_class: code\n"
+                f"reason: workload_failure\n"
+                f"chosen_kind: {exc.chosen_kind}\n"
+                f"detail: {exc.reason}\n"
+                f"evidence: {json.dumps(exc.evidence, sort_keys=True)}"
+            ),
+        )
+    if isinstance(exc, GcpAttemptCapExceededError):
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: gcp_attempt_cap_exceeded\n"
+                f"issue: {exc.issue}\n"
+                f"attempts_today: {exc.attempts_today}\n"
+                f"cap: {exc.cap}"
+            ),
+        )
+    if isinstance(exc, ManualAttentionRequiredError):
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: manual_attention_required\n"
+                f"kind: {exc.kind}\n"
+                f"cluster: {exc.cluster}\n"
+                f"orphaned_job_id: {exc.orphaned_job_id}\n"
+                f"operator_action: verify job state, scancel if alive"
+            ),
+        )
+    # Defensive: a future RouteError subclass should NOT silently slip
+    # through with no translation; surface as infra + the message.
+    return TerminalTranslation(
+        failure_class="infra",
+        status="blocked",
+        note=(f"failure_class: infra\nreason: route_error\ndetail: {type(exc).__name__}: {exc}"),
+    )
+
+
+# ---------------------------------------------------------------------------
+# The dispatch helper
+# ---------------------------------------------------------------------------
+
+
+def dispatch_for_issue(
+    spec: RunSpec,
+    *,
+    runpod_backend: ComputeBackend,
+    free_backends: dict[BackendKind, ComputeBackend] | None = None,
+    gcp_backend: ComputeBackend | None = None,
+    mila_socket_alive: Callable[[], bool] | None = None,
+    marker_poster: Callable[..., None] | None = None,
+    is_started: Callable[..., bool] | None = None,
+    is_live_after_cancel: Callable[..., bool] | None = None,
+    started_evidence_probe: Callable[..., Any] | None = None,
+    reconnect_fn: Callable[..., Any] | None = None,
+    lease_store: LeaseStore | None = None,
+    config: RouterConfig | None = None,
+    now_fn: Callable[[], float] | None = None,
+    sleep_fn: Callable[[float], None] | None = None,
+    handle_sidecar_path: Path | None = None,
+    write_sidecar: bool = True,
+    expected_artifacts: dict[str, Any] | None = None,
+) -> DispatchOutcome:
+    """Run :func:`route` for the given ``spec`` and persist the resulting handle.
+
+    Thin wrapper around :func:`route` — exists so the orchestrator has
+    ONE call site for the production dispatch + the sidecar write +
+    the artifact-declaration threading.
+
+    Arguments mirror :func:`route` for the injection seams; defaults
+    here are production-shaped (the orchestrator passes the SLURM
+    backend instances + the real marker poster). Test callers pass
+    mocks for every seam.
+
+    ``expected_artifacts`` is the per-launch declaration the slice-2
+    verifier reads (one dict per the artifacts module's schema). When
+    provided AND the resulting handle's ``extra`` does NOT already
+    carry an ``expected_artifacts`` key, we thread it onto the handle
+    (some backends — GCP — populate it themselves; we never overwrite
+    the backend's own declaration).
+
+    Raises every router terminal verbatim — the caller (the ``/issue``
+    skill) is responsible for catching + translating to its marker /
+    status side effects via :func:`classify_terminal_exception`. This
+    split keeps THIS helper pure: it dispatches + persists, the
+    orchestrator decides what to do with the outcome.
+    """
+    if free_backends is None:
+        free_backends = {}
+    # Default Mila-socket-alive to the real probe (``ssh -o BatchMode=yes
+    # mila true`` over the 12 h email-OTP ControlMaster socket). The
+    # probe returns ``False`` on socket-down by contract — that's the
+    # designed graceful path that tells the router to skip the Mila
+    # lane this round; it is NOT an error. Tests inject a fake
+    # ``mila_socket_alive`` callable to drive the gate deterministically
+    # without touching real SSH.
+    if mila_socket_alive is None:
+        mila_socket_alive = _default_mila_socket_alive
+
+    # Build the route() kwargs deliberately (helps a reviewer match
+    # injected deps against router.route()'s signature).
+    route_kwargs: dict[str, Any] = {
+        "runpod_backend": runpod_backend,
+        "free_backends": free_backends,
+        "gcp_backend": gcp_backend,
+        "mila_socket_alive": mila_socket_alive,
+    }
+    if marker_poster is not None:
+        route_kwargs["marker_poster"] = marker_poster
+    if is_started is not None:
+        route_kwargs["is_started"] = is_started
+    if is_live_after_cancel is not None:
+        route_kwargs["is_live_after_cancel"] = is_live_after_cancel
+    if started_evidence_probe is not None:
+        route_kwargs["started_evidence_probe"] = started_evidence_probe
+    if reconnect_fn is not None:
+        route_kwargs["reconnect_fn"] = reconnect_fn
+    # Lease / clock injections (production-default to router's own
+    # defaults; tests pass a tmp_path-rooted ``LeaseStore`` + fast
+    # ``now_fn`` / ``sleep_fn`` so a park-cap-exceeded run doesn't
+    # actually wait the full ``FREE_WAIT_SECONDS``).
+    if lease_store is not None:
+        route_kwargs["lease_store"] = lease_store
+    if config is not None:
+        route_kwargs["config"] = config
+    if now_fn is not None:
+        route_kwargs["now_fn"] = now_fn
+    if sleep_fn is not None:
+        route_kwargs["sleep_fn"] = sleep_fn
+
+    # Early-persistence hook: the router invokes this with the handle
+    # IMMEDIATELY after every successful launch / reconnect, BEFORE any
+    # marker post — so even if everything after the launch crashes
+    # (marker-post transport failure, this process OOM-killed, ...) the
+    # launched handle is already on disk and ``dispatch_issue.py
+    # finalize`` can tear the live VM / job down. The authoritative
+    # write below re-writes the sidecar with the artifact declaration
+    # threaded on; this early copy is the crash-window insurance.
+    sidecar = handle_sidecar_path or default_handle_sidecar_path(spec.issue)
+    if write_sidecar:
+        route_kwargs["on_launched"] = lambda h: write_handle_sidecar(h, sidecar)
+
+    result = route(spec, **route_kwargs)
+
+    # Thread the expected-artifacts declaration if the launch path didn't
+    # already populate one. The artifact verifier reads this off the
+    # handle's ``extra`` at confirm_artifacts time (the silent-loss
+    # safeguard).
+    handle = result.handle
+    if expected_artifacts is not None and EXPECTED_ARTIFACTS_HANDLE_KEY not in handle.extra:
+        from dataclasses import replace
+
+        new_extra = dict(handle.extra)
+        new_extra[EXPECTED_ARTIFACTS_HANDLE_KEY] = dict(expected_artifacts)
+        handle = replace(handle, extra=new_extra)
+        # Rebuild the result with the augmented handle so the caller +
+        # sidecar both see it.
+        from dataclasses import replace as dc_replace
+
+        result = dc_replace(result, handle=handle)
+
+    sidecar_written: Path | None = None
+    sidecar_write_error: str | None = None
+    if write_sidecar:
+        sidecar_written, sidecar_write_error = _write_sidecar_guarded(handle, sidecar)
+
+    return DispatchOutcome(
+        result=result,
+        handle_sidecar_path=sidecar_written,
+        sidecar_write_error=sidecar_write_error,
+    )
+
+
+def _write_sidecar_guarded(handle: RunHandle, sidecar: Path) -> tuple[Path | None, str | None]:
+    """Authoritative post-route sidecar write; ``OSError`` is loud, not fatal.
+
+    The launch already succeeded — a live VM / job exists. Do NOT
+    convert a persistence failure into an unclassified crash (the
+    pre-fix rc=4 path stranded live infra with no recovery record).
+    Log LOUD, return the error for the dispatch CLI to print next to
+    the handle JSON, and keep the early ``on_launched`` copy if it
+    landed (it lacks the artifact declaration but IS recoverable by
+    finalize).
+    """
+    try:
+        write_handle_sidecar(handle, sidecar)
+        return sidecar, None
+    except OSError as exc:
+        sidecar_write_error = f"{type(exc).__name__}: {exc}"
+        logger.error(
+            "dispatch_for_issue: handle sidecar write FAILED at %s (%s). "
+            "Launch already succeeded (job_id=%s pod_name=%s) — the handle "
+            "JSON on stdout is the recovery record; finalize may need "
+            "--handle-file with a reconstructed sidecar.",
+            sidecar,
+            sidecar_write_error,
+            handle.job_id,
+            handle.pod_name,
+        )
+        if sidecar.exists():
+            return sidecar, sidecar_write_error
+        return None, sidecar_write_error
+
+
+def _default_mila_socket_alive() -> bool:
+    """Production default for the Mila socket gate.
+
+    Delegates to :func:`backends.slurm.mila_socket_alive`, which runs the
+    cheap ``ssh -o BatchMode=yes mila true`` probe over the
+    ControlMaster socket. Returns ``False`` when the socket is down /
+    OTP-expired / unreachable — that's the designed skip-the-lane
+    signal, NOT an error.
+
+    Wrapped here (not bound at import) so a test that imports
+    :mod:`backends.issue_dispatch` does not also drag in the
+    :mod:`backends.slurm` module's import-time SSH-helper resolution
+    when it only wants to inject a fake gate. The body is the lazy
+    import; the import itself is cheap (already loaded by every real
+    code path that reaches the dispatch helper).
+    """
+    from explore_persona_space.backends.slurm import (
+        mila_socket_alive as _slurm_mila_socket_alive,
+    )
+
+    return _slurm_mila_socket_alive()
+
+
+# Backwards-compatible alias for the slice-6 stub name. Some external
+# callers / tests imported ``_mila_socket_alive_stub`` directly; keep
+# the symbol live but point it at the real probe so a stale import path
+# yields the real behavior instead of permanent-False.
+_mila_socket_alive_stub = _default_mila_socket_alive
+
+
+__all__ = [
+    "DispatchOutcome",
+    "TerminalTranslation",
+    "build_run_spec",
+    "classify_terminal_exception",
+    "default_handle_sidecar_path",
+    "deserialize_handle",
+    "dispatch_for_issue",
+    "normalize_backend_value",
+    "read_handle_sidecar",
+    "resolve_handle_sidecar_path",
+    "serialize_handle",
+    "write_handle_sidecar",
+]

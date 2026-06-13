@@ -1,0 +1,1026 @@
+{
+  "meta": {
+    "issue": 551,
+    "analysis": "unitnorm_reread",
+    "git_commit": "10ab6fb42832a90be6e5c18b0fc62aca7596ee6d",
+    "timestamp_utc": "2026-06-10T17:04:49Z",
+    "env_versions": {
+      "torch": "2.8.0",
+      "numpy": "2.2.6"
+    },
+    "tensors_source": "eval_results/issue_551/shifts",
+    "norm_align_json": "eval_results/issue_551/controls/norm_alignment.json",
+    "thresholds": {
+      "aligned_cos_threshold": 0.5,
+      "n_perm": 10000,
+      "weighted_consistency_tol": 0.001
+    },
+    "top_share_definition": "s_1 / sum(s) (matches svd_summary and the persisted #551/#521 JSONs; NOT squared singular-value mass)",
+    "source_persona": "medical_doctor"
+  },
+  "per_cell_top_share": {
+    "same_marker_seed42": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.32465410232543945,
+      "s_top1_frac_unitnorm": 0.2465732842683792,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.87066873058093
+    },
+    "same_marker_seed137": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.3113222122192383,
+      "s_top1_frac_unitnorm": 0.28395846486091614,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9260915584110186
+    },
+    "same_marker_seed256": {
+      "variant": "same",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.3476976752281189,
+      "s_top1_frac_unitnorm": 0.24247078597545624,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.8392527164434863
+    },
+    "same_em_seed42": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.5235457420349121,
+      "s_top1_frac_unitnorm": 0.5237600207328796,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9999604365262167
+    },
+    "same_em_seed137": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.5720158219337463,
+      "s_top1_frac_unitnorm": 0.5724689364433289,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9999631571362314
+    },
+    "same_em_seed256": {
+      "variant": "same",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.6031942963600159,
+      "s_top1_frac_unitnorm": 0.6033250093460083,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9999951803066359
+    },
+    "base_marker_seed42": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.44879987835884094,
+      "s_top1_frac_unitnorm": 0.43791836500167847,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9992120378729693
+    },
+    "base_marker_seed137": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.4410346448421478,
+      "s_top1_frac_unitnorm": 0.4305521547794342,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9991653867028965
+    },
+    "base_marker_seed256": {
+      "variant": "base",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.44906899333000183,
+      "s_top1_frac_unitnorm": 0.44023069739341736,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9992943980571638
+    },
+    "base_em_seed42": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.5066162347793579,
+      "s_top1_frac_unitnorm": 0.5066460371017456,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9994615048857005
+    },
+    "base_em_seed137": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.5399935841560364,
+      "s_top1_frac_unitnorm": 0.5394394397735596,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9993392351242751
+    },
+    "base_em_seed256": {
+      "variant": "base",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.583422839641571,
+      "s_top1_frac_unitnorm": 0.582572340965271,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9996253414709272
+    },
+    "on_policy_marker_seed42": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.32822155952453613,
+      "s_top1_frac_unitnorm": 0.28306594491004944,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9149997855006619
+    },
+    "on_policy_marker_seed137": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.3210100531578064,
+      "s_top1_frac_unitnorm": 0.25430920720100403,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.8926976007447476
+    },
+    "on_policy_marker_seed256": {
+      "variant": "on_policy",
+      "arm": "marker",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.33085182309150696,
+      "s_top1_frac_unitnorm": 0.2743520140647888,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9029642635815017
+    },
+    "on_policy_em_seed42": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 42,
+      "s_top1_frac_weighted": 0.4122730791568756,
+      "s_top1_frac_unitnorm": 0.4120098352432251,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9990522375677675
+    },
+    "on_policy_em_seed137": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 137,
+      "s_top1_frac_weighted": 0.4518110752105713,
+      "s_top1_frac_unitnorm": 0.4501173794269562,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9987566179922229
+    },
+    "on_policy_em_seed256": {
+      "variant": "on_policy",
+      "arm": "em",
+      "seed": 256,
+      "s_top1_frac_weighted": 0.4901909828186035,
+      "s_top1_frac_unitnorm": 0.48799389600753784,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9988639486135321
+    }
+  },
+  "trained_text_cells": {
+    "same_marker_seed42": {
+      "arm": "marker",
+      "seed": 42,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 4.708605766296387,
+          "cos_to_U1_weighted": 0.4554150700569153,
+          "cos_to_U1_unitnorm": 0.6046944260597229,
+          "abs_cos_to_U1_weighted": 0.4554150700569153,
+          "abs_cos_to_U1_unitnorm": 0.6046944260597229
+        },
+        "biographer": {
+          "shift_norm": 6.406844615936279,
+          "cos_to_U1_weighted": 0.33851203322410583,
+          "cos_to_U1_unitnorm": 0.5891327261924744,
+          "abs_cos_to_U1_weighted": 0.33851203322410583,
+          "abs_cos_to_U1_unitnorm": 0.5891327261924744
+        },
+        "comedian": {
+          "shift_norm": 5.251009464263916,
+          "cos_to_U1_weighted": 0.8579961061477661,
+          "cos_to_U1_unitnorm": 0.8361251950263977,
+          "abs_cos_to_U1_weighted": 0.8579961061477661,
+          "abs_cos_to_U1_unitnorm": 0.8361251950263977
+        },
+        "data_scientist": {
+          "shift_norm": 8.719335556030273,
+          "cos_to_U1_weighted": 0.9633752703666687,
+          "cos_to_U1_unitnorm": 0.7579528093338013,
+          "abs_cos_to_U1_weighted": 0.9633752703666687,
+          "abs_cos_to_U1_unitnorm": 0.7579528093338013
+        },
+        "french_person": {
+          "shift_norm": 2.6378700733184814,
+          "cos_to_U1_weighted": 0.3744983673095703,
+          "cos_to_U1_unitnorm": 0.6782562732696533,
+          "abs_cos_to_U1_weighted": 0.3744983673095703,
+          "abs_cos_to_U1_unitnorm": 0.6782562732696533
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 2.3460776805877686,
+          "cos_to_U1_weighted": 0.32989615201950073,
+          "cos_to_U1_unitnorm": 0.6031523942947388,
+          "abs_cos_to_U1_weighted": 0.32989615201950073,
+          "abs_cos_to_U1_unitnorm": 0.6031523942947388
+        },
+        "librarian": {
+          "shift_norm": 6.6498332023620605,
+          "cos_to_U1_weighted": 0.971196711063385,
+          "cos_to_U1_unitnorm": 0.8235411643981934,
+          "abs_cos_to_U1_weighted": 0.971196711063385,
+          "abs_cos_to_U1_unitnorm": 0.8235411643981934
+        },
+        "local_historian": {
+          "shift_norm": 4.464615345001221,
+          "cos_to_U1_weighted": 0.3376459777355194,
+          "cos_to_U1_unitnorm": 0.6002320647239685,
+          "abs_cos_to_U1_weighted": 0.3376459777355194,
+          "abs_cos_to_U1_unitnorm": 0.6002320647239685
+        },
+        "marine_biologist": {
+          "shift_norm": 1.927478551864624,
+          "cos_to_U1_weighted": 0.449255108833313,
+          "cos_to_U1_unitnorm": 0.7691159844398499,
+          "abs_cos_to_U1_weighted": 0.449255108833313,
+          "abs_cos_to_U1_unitnorm": 0.7691159844398499
+        },
+        "medical_doctor": {
+          "shift_norm": 3.37005615234375,
+          "cos_to_U1_weighted": 0.3178296983242035,
+          "cos_to_U1_unitnorm": 0.5725472569465637,
+          "abs_cos_to_U1_weighted": 0.3178296983242035,
+          "abs_cos_to_U1_unitnorm": 0.5725472569465637
+        },
+        "police_officer": {
+          "shift_norm": 8.994526863098145,
+          "cos_to_U1_weighted": 0.9613731503486633,
+          "cos_to_U1_unitnorm": 0.7683170437812805,
+          "abs_cos_to_U1_weighted": 0.9613731503486633,
+          "abs_cos_to_U1_unitnorm": 0.7683170437812805
+        },
+        "software_engineer": {
+          "shift_norm": 8.637191772460938,
+          "cos_to_U1_weighted": 0.9631798267364502,
+          "cos_to_U1_unitnorm": 0.7569419145584106,
+          "abs_cos_to_U1_weighted": 0.9631798267364502,
+          "abs_cos_to_U1_unitnorm": 0.7569419145584106
+        },
+        "villain": {
+          "shift_norm": 4.885926723480225,
+          "cos_to_U1_weighted": 0.4139445424079895,
+          "cos_to_U1_unitnorm": 0.6807095408439636,
+          "abs_cos_to_U1_weighted": 0.4139445424079895,
+          "abs_cos_to_U1_unitnorm": 0.6807095408439636
+        },
+        "zelthari_scholar": {
+          "shift_norm": 3.1786623001098633,
+          "cos_to_U1_weighted": 0.48542800545692444,
+          "cos_to_U1_unitnorm": 0.7005658149719238,
+          "abs_cos_to_U1_weighted": 0.48542800545692444,
+          "abs_cos_to_U1_unitnorm": 0.7005658149719238
+        }
+      }
+    },
+    "same_marker_seed137": {
+      "arm": "marker",
+      "seed": 137,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 1.7376376390457153,
+          "cos_to_U1_weighted": 0.536535382270813,
+          "cos_to_U1_unitnorm": 0.667201042175293,
+          "abs_cos_to_U1_weighted": 0.536535382270813,
+          "abs_cos_to_U1_unitnorm": 0.667201042175293
+        },
+        "biographer": {
+          "shift_norm": 6.111785411834717,
+          "cos_to_U1_weighted": 0.6986731886863708,
+          "cos_to_U1_unitnorm": 0.8123008012771606,
+          "abs_cos_to_U1_weighted": 0.6986731886863708,
+          "abs_cos_to_U1_unitnorm": 0.8123008012771606
+        },
+        "comedian": {
+          "shift_norm": 6.081449031829834,
+          "cos_to_U1_weighted": 0.8499937653541565,
+          "cos_to_U1_unitnorm": 0.6263763308525085,
+          "abs_cos_to_U1_weighted": 0.8499937653541565,
+          "abs_cos_to_U1_unitnorm": 0.6263763308525085
+        },
+        "data_scientist": {
+          "shift_norm": 5.014105319976807,
+          "cos_to_U1_weighted": 0.8942773342132568,
+          "cos_to_U1_unitnorm": 0.8702744841575623,
+          "abs_cos_to_U1_weighted": 0.8942773342132568,
+          "abs_cos_to_U1_unitnorm": 0.8702744841575623
+        },
+        "french_person": {
+          "shift_norm": 2.4424867630004883,
+          "cos_to_U1_weighted": 0.6938987970352173,
+          "cos_to_U1_unitnorm": 0.8538489937782288,
+          "abs_cos_to_U1_weighted": 0.6938987970352173,
+          "abs_cos_to_U1_unitnorm": 0.8538489937782288
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 2.949202299118042,
+          "cos_to_U1_weighted": 0.6612790822982788,
+          "cos_to_U1_unitnorm": 0.826103150844574,
+          "abs_cos_to_U1_weighted": 0.6612790822982788,
+          "abs_cos_to_U1_unitnorm": 0.826103150844574
+        },
+        "librarian": {
+          "shift_norm": 2.362527370452881,
+          "cos_to_U1_weighted": 0.7312031984329224,
+          "cos_to_U1_unitnorm": 0.8669979572296143,
+          "abs_cos_to_U1_weighted": 0.7312031984329224,
+          "abs_cos_to_U1_unitnorm": 0.8669979572296143
+        },
+        "local_historian": {
+          "shift_norm": 4.667388916015625,
+          "cos_to_U1_weighted": 0.7401520609855652,
+          "cos_to_U1_unitnorm": 0.8813046813011169,
+          "abs_cos_to_U1_weighted": 0.7401520609855652,
+          "abs_cos_to_U1_unitnorm": 0.8813046813011169
+        },
+        "marine_biologist": {
+          "shift_norm": 4.973266124725342,
+          "cos_to_U1_weighted": 0.7591493129730225,
+          "cos_to_U1_unitnorm": 0.8933207988739014,
+          "abs_cos_to_U1_weighted": 0.7591493129730225,
+          "abs_cos_to_U1_unitnorm": 0.8933207988739014
+        },
+        "medical_doctor": {
+          "shift_norm": 3.954723358154297,
+          "cos_to_U1_weighted": 0.30198925733566284,
+          "cos_to_U1_unitnorm": 0.3699069619178772,
+          "abs_cos_to_U1_weighted": 0.30198925733566284,
+          "abs_cos_to_U1_unitnorm": 0.3699069619178772
+        },
+        "police_officer": {
+          "shift_norm": 7.852537631988525,
+          "cos_to_U1_weighted": 0.8206200003623962,
+          "cos_to_U1_unitnorm": 0.5730022192001343,
+          "abs_cos_to_U1_weighted": 0.8206200003623962,
+          "abs_cos_to_U1_unitnorm": 0.5730022192001343
+        },
+        "software_engineer": {
+          "shift_norm": 7.291845798492432,
+          "cos_to_U1_weighted": 0.8472424745559692,
+          "cos_to_U1_unitnorm": 0.6214724779129028,
+          "abs_cos_to_U1_weighted": 0.8472424745559692,
+          "abs_cos_to_U1_unitnorm": 0.6214724779129028
+        },
+        "villain": {
+          "shift_norm": 2.5952301025390625,
+          "cos_to_U1_weighted": 0.7175160050392151,
+          "cos_to_U1_unitnorm": 0.8471583724021912,
+          "abs_cos_to_U1_weighted": 0.7175160050392151,
+          "abs_cos_to_U1_unitnorm": 0.8471583724021912
+        },
+        "zelthari_scholar": {
+          "shift_norm": 6.407870769500732,
+          "cos_to_U1_weighted": 0.7348892092704773,
+          "cos_to_U1_unitnorm": 0.8599300980567932,
+          "abs_cos_to_U1_weighted": 0.7348892092704773,
+          "abs_cos_to_U1_unitnorm": 0.8599300980567932
+        }
+      }
+    },
+    "same_marker_seed256": {
+      "arm": "marker",
+      "seed": 256,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 9.20972728729248,
+          "cos_to_U1_weighted": 0.8442456722259521,
+          "cos_to_U1_unitnorm": 0.6550642848014832,
+          "abs_cos_to_U1_weighted": 0.8442456722259521,
+          "abs_cos_to_U1_unitnorm": 0.6550642848014832
+        },
+        "biographer": {
+          "shift_norm": 7.138751983642578,
+          "cos_to_U1_weighted": 0.26493775844573975,
+          "cos_to_U1_unitnorm": 0.5506628751754761,
+          "abs_cos_to_U1_weighted": 0.26493775844573975,
+          "abs_cos_to_U1_unitnorm": 0.5506628751754761
+        },
+        "comedian": {
+          "shift_norm": 2.5356898307800293,
+          "cos_to_U1_weighted": 0.5965490341186523,
+          "cos_to_U1_unitnorm": 0.829250156879425,
+          "abs_cos_to_U1_weighted": 0.5965490341186523,
+          "abs_cos_to_U1_unitnorm": 0.829250156879425
+        },
+        "data_scientist": {
+          "shift_norm": 9.59217643737793,
+          "cos_to_U1_weighted": 0.9710723161697388,
+          "cos_to_U1_unitnorm": 0.7796937227249146,
+          "abs_cos_to_U1_weighted": 0.9710723161697388,
+          "abs_cos_to_U1_unitnorm": 0.7796937227249146
+        },
+        "french_person": {
+          "shift_norm": 3.197218418121338,
+          "cos_to_U1_weighted": 0.2998174726963043,
+          "cos_to_U1_unitnorm": 0.6222127676010132,
+          "abs_cos_to_U1_weighted": 0.2998174726963043,
+          "abs_cos_to_U1_unitnorm": 0.6222127676010132
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 1.9385032653808594,
+          "cos_to_U1_weighted": 0.31157752871513367,
+          "cos_to_U1_unitnorm": 0.6747643947601318,
+          "abs_cos_to_U1_weighted": 0.31157752871513367,
+          "abs_cos_to_U1_unitnorm": 0.6747643947601318
+        },
+        "librarian": {
+          "shift_norm": 9.408447265625,
+          "cos_to_U1_weighted": 0.9741496443748474,
+          "cos_to_U1_unitnorm": 0.7955193519592285,
+          "abs_cos_to_U1_weighted": 0.9741496443748474,
+          "abs_cos_to_U1_unitnorm": 0.7955193519592285
+        },
+        "local_historian": {
+          "shift_norm": 5.021842956542969,
+          "cos_to_U1_weighted": 0.2778654992580414,
+          "cos_to_U1_unitnorm": 0.5942127704620361,
+          "abs_cos_to_U1_weighted": 0.2778654992580414,
+          "abs_cos_to_U1_unitnorm": 0.5942127704620361
+        },
+        "marine_biologist": {
+          "shift_norm": 2.024465322494507,
+          "cos_to_U1_weighted": 0.3113408088684082,
+          "cos_to_U1_unitnorm": 0.659830629825592,
+          "abs_cos_to_U1_weighted": 0.3113408088684082,
+          "abs_cos_to_U1_unitnorm": 0.659830629825592
+        },
+        "medical_doctor": {
+          "shift_norm": 3.865161180496216,
+          "cos_to_U1_weighted": 0.24143987894058228,
+          "cos_to_U1_unitnorm": 0.5402199029922485,
+          "abs_cos_to_U1_weighted": 0.24143987894058228,
+          "abs_cos_to_U1_unitnorm": 0.5402199029922485
+        },
+        "police_officer": {
+          "shift_norm": 10.105441093444824,
+          "cos_to_U1_weighted": 0.9616443514823914,
+          "cos_to_U1_unitnorm": 0.7750494480133057,
+          "abs_cos_to_U1_weighted": 0.9616443514823914,
+          "abs_cos_to_U1_unitnorm": 0.7750494480133057
+        },
+        "software_engineer": {
+          "shift_norm": 9.611016273498535,
+          "cos_to_U1_weighted": 0.976573646068573,
+          "cos_to_U1_unitnorm": 0.7782519459724426,
+          "abs_cos_to_U1_weighted": 0.976573646068573,
+          "abs_cos_to_U1_unitnorm": 0.7782519459724426
+        },
+        "villain": {
+          "shift_norm": 5.833567142486572,
+          "cos_to_U1_weighted": 0.32278743386268616,
+          "cos_to_U1_unitnorm": 0.6048476099967957,
+          "abs_cos_to_U1_weighted": 0.32278743386268616,
+          "abs_cos_to_U1_unitnorm": 0.6048476099967957
+        },
+        "zelthari_scholar": {
+          "shift_norm": 1.9286044836044312,
+          "cos_to_U1_weighted": 0.3513788878917694,
+          "cos_to_U1_unitnorm": 0.6908825039863586,
+          "abs_cos_to_U1_weighted": 0.3513788878917694,
+          "abs_cos_to_U1_unitnorm": 0.6908825039863586
+        }
+      }
+    },
+    "same_em_seed42": {
+      "arm": "em",
+      "seed": 42,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 20.457612991333008,
+          "cos_to_U1_weighted": 0.9192308783531189,
+          "cos_to_U1_unitnorm": 0.9212172031402588,
+          "abs_cos_to_U1_weighted": 0.9192308783531189,
+          "abs_cos_to_U1_unitnorm": 0.9212172031402588
+        },
+        "biographer": {
+          "shift_norm": 23.68151092529297,
+          "cos_to_U1_weighted": 0.9246075749397278,
+          "cos_to_U1_unitnorm": 0.9217168092727661,
+          "abs_cos_to_U1_weighted": 0.9246075749397278,
+          "abs_cos_to_U1_unitnorm": 0.9217168092727661
+        },
+        "comedian": {
+          "shift_norm": 21.39623260498047,
+          "cos_to_U1_weighted": 0.9521970748901367,
+          "cos_to_U1_unitnorm": 0.9527613520622253,
+          "abs_cos_to_U1_weighted": 0.9521970748901367,
+          "abs_cos_to_U1_unitnorm": 0.9527613520622253
+        },
+        "data_scientist": {
+          "shift_norm": 21.658884048461914,
+          "cos_to_U1_weighted": 0.9802671074867249,
+          "cos_to_U1_unitnorm": 0.9808828830718994,
+          "abs_cos_to_U1_weighted": 0.9802671074867249,
+          "abs_cos_to_U1_unitnorm": 0.9808828830718994
+        },
+        "french_person": {
+          "shift_norm": 21.822721481323242,
+          "cos_to_U1_weighted": 0.9753656983375549,
+          "cos_to_U1_unitnorm": 0.9755080938339233,
+          "abs_cos_to_U1_weighted": 0.9753656983375549,
+          "abs_cos_to_U1_unitnorm": 0.9755080938339233
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 20.761497497558594,
+          "cos_to_U1_weighted": 0.9627280831336975,
+          "cos_to_U1_unitnorm": 0.9642854332923889,
+          "abs_cos_to_U1_weighted": 0.9627280831336975,
+          "abs_cos_to_U1_unitnorm": 0.9642854332923889
+        },
+        "librarian": {
+          "shift_norm": 21.346750259399414,
+          "cos_to_U1_weighted": 0.9842868447303772,
+          "cos_to_U1_unitnorm": 0.9845747947692871,
+          "abs_cos_to_U1_weighted": 0.9842868447303772,
+          "abs_cos_to_U1_unitnorm": 0.9845747947692871
+        },
+        "local_historian": {
+          "shift_norm": 22.232975006103516,
+          "cos_to_U1_weighted": 0.9609158039093018,
+          "cos_to_U1_unitnorm": 0.9593849778175354,
+          "abs_cos_to_U1_weighted": 0.9609158039093018,
+          "abs_cos_to_U1_unitnorm": 0.9593849778175354
+        },
+        "marine_biologist": {
+          "shift_norm": 22.125993728637695,
+          "cos_to_U1_weighted": 0.9693799018859863,
+          "cos_to_U1_unitnorm": 0.9680444002151489,
+          "abs_cos_to_U1_weighted": 0.9693799018859863,
+          "abs_cos_to_U1_unitnorm": 0.9680444002151489
+        },
+        "medical_doctor": {
+          "shift_norm": 22.257640838623047,
+          "cos_to_U1_weighted": 0.9776442646980286,
+          "cos_to_U1_unitnorm": 0.9779359698295593,
+          "abs_cos_to_U1_weighted": 0.9776442646980286,
+          "abs_cos_to_U1_unitnorm": 0.9779359698295593
+        },
+        "police_officer": {
+          "shift_norm": 21.587610244750977,
+          "cos_to_U1_weighted": 0.9829972982406616,
+          "cos_to_U1_unitnorm": 0.9833401441574097,
+          "abs_cos_to_U1_weighted": 0.9829972982406616,
+          "abs_cos_to_U1_unitnorm": 0.9833401441574097
+        },
+        "software_engineer": {
+          "shift_norm": 21.49491310119629,
+          "cos_to_U1_weighted": 0.9819456338882446,
+          "cos_to_U1_unitnorm": 0.9827108979225159,
+          "abs_cos_to_U1_weighted": 0.9819456338882446,
+          "abs_cos_to_U1_unitnorm": 0.9827108979225159
+        },
+        "villain": {
+          "shift_norm": 21.62699317932129,
+          "cos_to_U1_weighted": 0.9469201564788818,
+          "cos_to_U1_unitnorm": 0.9470703601837158,
+          "abs_cos_to_U1_weighted": 0.9469201564788818,
+          "abs_cos_to_U1_unitnorm": 0.9470703601837158
+        },
+        "zelthari_scholar": {
+          "shift_norm": 22.050025939941406,
+          "cos_to_U1_weighted": 0.9567530751228333,
+          "cos_to_U1_unitnorm": 0.9562620520591736,
+          "abs_cos_to_U1_weighted": 0.9567530751228333,
+          "abs_cos_to_U1_unitnorm": 0.9562620520591736
+        }
+      }
+    },
+    "same_em_seed137": {
+      "arm": "em",
+      "seed": 137,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 24.052331924438477,
+          "cos_to_U1_weighted": 0.9383188486099243,
+          "cos_to_U1_unitnorm": 0.9402354955673218,
+          "abs_cos_to_U1_weighted": 0.9383188486099243,
+          "abs_cos_to_U1_unitnorm": 0.9402354955673218
+        },
+        "biographer": {
+          "shift_norm": 28.41934585571289,
+          "cos_to_U1_weighted": 0.9456365704536438,
+          "cos_to_U1_unitnorm": 0.9433159232139587,
+          "abs_cos_to_U1_weighted": 0.9456365704536438,
+          "abs_cos_to_U1_unitnorm": 0.9433159232139587
+        },
+        "comedian": {
+          "shift_norm": 25.67622184753418,
+          "cos_to_U1_weighted": 0.9642862677574158,
+          "cos_to_U1_unitnorm": 0.9643347859382629,
+          "abs_cos_to_U1_weighted": 0.9642862677574158,
+          "abs_cos_to_U1_unitnorm": 0.9643347859382629
+        },
+        "data_scientist": {
+          "shift_norm": 25.443042755126953,
+          "cos_to_U1_weighted": 0.9834877252578735,
+          "cos_to_U1_unitnorm": 0.9841874241828918,
+          "abs_cos_to_U1_weighted": 0.9834877252578735,
+          "abs_cos_to_U1_unitnorm": 0.9841874241828918
+        },
+        "french_person": {
+          "shift_norm": 26.217987060546875,
+          "cos_to_U1_weighted": 0.9831154942512512,
+          "cos_to_U1_unitnorm": 0.9830333590507507,
+          "abs_cos_to_U1_weighted": 0.9831154942512512,
+          "abs_cos_to_U1_unitnorm": 0.9830333590507507
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 24.66031265258789,
+          "cos_to_U1_weighted": 0.974617600440979,
+          "cos_to_U1_unitnorm": 0.9757947325706482,
+          "abs_cos_to_U1_weighted": 0.974617600440979,
+          "abs_cos_to_U1_unitnorm": 0.9757947325706482
+        },
+        "librarian": {
+          "shift_norm": 25.209766387939453,
+          "cos_to_U1_weighted": 0.9898229241371155,
+          "cos_to_U1_unitnorm": 0.9900853633880615,
+          "abs_cos_to_U1_weighted": 0.9898229241371155,
+          "abs_cos_to_U1_unitnorm": 0.9900853633880615
+        },
+        "local_historian": {
+          "shift_norm": 26.13553237915039,
+          "cos_to_U1_weighted": 0.9758332371711731,
+          "cos_to_U1_unitnorm": 0.9746826887130737,
+          "abs_cos_to_U1_weighted": 0.9758332371711731,
+          "abs_cos_to_U1_unitnorm": 0.9746826887130737
+        },
+        "marine_biologist": {
+          "shift_norm": 26.598302841186523,
+          "cos_to_U1_weighted": 0.9794028401374817,
+          "cos_to_U1_unitnorm": 0.9784026145935059,
+          "abs_cos_to_U1_weighted": 0.9794028401374817,
+          "abs_cos_to_U1_unitnorm": 0.9784026145935059
+        },
+        "medical_doctor": {
+          "shift_norm": 26.00630760192871,
+          "cos_to_U1_weighted": 0.9875246286392212,
+          "cos_to_U1_unitnorm": 0.9881139993667603,
+          "abs_cos_to_U1_weighted": 0.9875246286392212,
+          "abs_cos_to_U1_unitnorm": 0.9881139993667603
+        },
+        "police_officer": {
+          "shift_norm": 25.321239471435547,
+          "cos_to_U1_weighted": 0.9884220361709595,
+          "cos_to_U1_unitnorm": 0.9885672330856323,
+          "abs_cos_to_U1_weighted": 0.9884220361709595,
+          "abs_cos_to_U1_unitnorm": 0.9885672330856323
+        },
+        "software_engineer": {
+          "shift_norm": 25.215742111206055,
+          "cos_to_U1_weighted": 0.9858315587043762,
+          "cos_to_U1_unitnorm": 0.9866445064544678,
+          "abs_cos_to_U1_weighted": 0.9858315587043762,
+          "abs_cos_to_U1_unitnorm": 0.9866445064544678
+        },
+        "villain": {
+          "shift_norm": 26.164661407470703,
+          "cos_to_U1_weighted": 0.9675391316413879,
+          "cos_to_U1_unitnorm": 0.967286229133606,
+          "abs_cos_to_U1_weighted": 0.9675391316413879,
+          "abs_cos_to_U1_unitnorm": 0.967286229133606
+        },
+        "zelthari_scholar": {
+          "shift_norm": 25.70722007751465,
+          "cos_to_U1_weighted": 0.9703673124313354,
+          "cos_to_U1_unitnorm": 0.9699940085411072,
+          "abs_cos_to_U1_weighted": 0.9703673124313354,
+          "abs_cos_to_U1_unitnorm": 0.9699940085411072
+        }
+      }
+    },
+    "same_em_seed256": {
+      "arm": "em",
+      "seed": 256,
+      "weighted_consistency_max_abs_delta": 0.0,
+      "per_persona": {
+        "assistant": {
+          "shift_norm": 28.648984909057617,
+          "cos_to_U1_weighted": 0.9597655534744263,
+          "cos_to_U1_unitnorm": 0.9602675437927246,
+          "abs_cos_to_U1_weighted": 0.9597655534744263,
+          "abs_cos_to_U1_unitnorm": 0.9602675437927246
+        },
+        "biographer": {
+          "shift_norm": 31.148683547973633,
+          "cos_to_U1_weighted": 0.955685555934906,
+          "cos_to_U1_unitnorm": 0.9550386667251587,
+          "abs_cos_to_U1_weighted": 0.955685555934906,
+          "abs_cos_to_U1_unitnorm": 0.9550386667251587
+        },
+        "comedian": {
+          "shift_norm": 28.970659255981445,
+          "cos_to_U1_weighted": 0.9744583964347839,
+          "cos_to_U1_unitnorm": 0.9745660424232483,
+          "abs_cos_to_U1_weighted": 0.9744583964347839,
+          "abs_cos_to_U1_unitnorm": 0.9745660424232483
+        },
+        "data_scientist": {
+          "shift_norm": 29.5430908203125,
+          "cos_to_U1_weighted": 0.9897820353507996,
+          "cos_to_U1_unitnorm": 0.989869236946106,
+          "abs_cos_to_U1_weighted": 0.9897820353507996,
+          "abs_cos_to_U1_unitnorm": 0.989869236946106
+        },
+        "french_person": {
+          "shift_norm": 30.443899154663086,
+          "cos_to_U1_weighted": 0.9870252013206482,
+          "cos_to_U1_unitnorm": 0.986901044845581,
+          "abs_cos_to_U1_weighted": 0.9870252013206482,
+          "abs_cos_to_U1_unitnorm": 0.986901044845581
+        },
+        "kindergarten_teacher": {
+          "shift_norm": 28.808225631713867,
+          "cos_to_U1_weighted": 0.9808193445205688,
+          "cos_to_U1_unitnorm": 0.9811421632766724,
+          "abs_cos_to_U1_weighted": 0.9808193445205688,
+          "abs_cos_to_U1_unitnorm": 0.9811421632766724
+        },
+        "librarian": {
+          "shift_norm": 29.6751708984375,
+          "cos_to_U1_weighted": 0.9933397769927979,
+          "cos_to_U1_unitnorm": 0.9933537840843201,
+          "abs_cos_to_U1_weighted": 0.9933397769927979,
+          "abs_cos_to_U1_unitnorm": 0.9933537840843201
+        },
+        "local_historian": {
+          "shift_norm": 28.240646362304688,
+          "cos_to_U1_weighted": 0.9774300456047058,
+          "cos_to_U1_unitnorm": 0.9773905873298645,
+          "abs_cos_to_U1_weighted": 0.9774300456047058,
+          "abs_cos_to_U1_unitnorm": 0.9773905873298645
+        },
+        "marine_biologist": {
+          "shift_norm": 29.251211166381836,
+          "cos_to_U1_weighted": 0.980745792388916,
+          "cos_to_U1_unitnorm": 0.9806647300720215,
+          "abs_cos_to_U1_weighted": 0.980745792388916,
+          "abs_cos_to_U1_unitnorm": 0.9806647300720215
+        },
+        "medical_doctor": {
+          "shift_norm": 29.62059783935547,
+          "cos_to_U1_weighted": 0.9891344904899597,
+          "cos_to_U1_unitnorm": 0.9892573356628418,
+          "abs_cos_to_U1_weighted": 0.9891344904899597,
+          "abs_cos_to_U1_unitnorm": 0.9892573356628418
+        },
+        "police_officer": {
+          "shift_norm": 29.436948776245117,
+          "cos_to_U1_weighted": 0.9922792315483093,
+          "cos_to_U1_unitnorm": 0.9922551512718201,
+          "abs_cos_to_U1_weighted": 0.9922792315483093,
+          "abs_cos_to_U1_unitnorm": 0.9922551512718201
+        },
+        "software_engineer": {
+          "shift_norm": 29.429412841796875,
+          "cos_to_U1_weighted": 0.9875509142875671,
+          "cos_to_U1_unitnorm": 0.9877306222915649,
+          "abs_cos_to_U1_weighted": 0.9875509142875671,
+          "abs_cos_to_U1_unitnorm": 0.9877306222915649
+        },
+        "villain": {
+          "shift_norm": 30.07790184020996,
+          "cos_to_U1_weighted": 0.9718974828720093,
+          "cos_to_U1_unitnorm": 0.9716243147850037,
+          "abs_cos_to_U1_weighted": 0.9718974828720093,
+          "abs_cos_to_U1_unitnorm": 0.9716243147850037
+        },
+        "zelthari_scholar": {
+          "shift_norm": 29.22852897644043,
+          "cos_to_U1_weighted": 0.9784411191940308,
+          "cos_to_U1_unitnorm": 0.9783556461334229,
+          "abs_cos_to_U1_weighted": 0.9784411191940308,
+          "abs_cos_to_U1_unitnorm": 0.9783556461334229
+        }
+      }
+    }
+  },
+  "marker_split_membership": {
+    "same_marker_seed42": {
+      "seed": 42,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "comedian",
+        "data_scientist",
+        "librarian",
+        "police_officer",
+        "software_engineer"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [],
+      "moved_in_under_unitnorm": [
+        "assistant",
+        "biographer",
+        "french_person",
+        "kindergarten_teacher",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "n_changed_membership": 9,
+      "membership_identical": false,
+      "aligned_set_jaccard": 0.35714285714285715,
+      "spearman_abs_cos_weighted_vs_unitnorm": 0.8241758241758241,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.87066873058093
+    },
+    "same_marker_seed137": {
+      "seed": 137,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [],
+      "moved_in_under_unitnorm": [],
+      "n_changed_membership": 0,
+      "membership_identical": true,
+      "aligned_set_jaccard": 1.0,
+      "spearman_abs_cos_weighted_vs_unitnorm": 0.22197802197802197,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.9260915584110186
+    },
+    "same_marker_seed256": {
+      "seed": 256,
+      "aligned_cos_threshold": 0.5,
+      "aligned_weighted": [
+        "assistant",
+        "comedian",
+        "data_scientist",
+        "librarian",
+        "police_officer",
+        "software_engineer"
+      ],
+      "aligned_unitnorm": [
+        "assistant",
+        "biographer",
+        "comedian",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "police_officer",
+        "software_engineer",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "moved_out_under_unitnorm": [],
+      "moved_in_under_unitnorm": [
+        "biographer",
+        "french_person",
+        "kindergarten_teacher",
+        "local_historian",
+        "marine_biologist",
+        "medical_doctor",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "n_changed_membership": 8,
+      "membership_identical": false,
+      "aligned_set_jaccard": 0.42857142857142855,
+      "spearman_abs_cos_weighted_vs_unitnorm": 0.8461538461538461,
+      "abs_cos_U1_unitnorm_vs_weighted": 0.8392527164434863
+    }
+  },
+  "norm_vs_alignment_unitnorm": {
+    "same_marker_seed42": {
+      "arm": "marker",
+      "seed": 42,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": 0.34065934065934067,
+      "p_one_sided_positive": 0.1192880711928807,
+      "n_perm": 10000
+    },
+    "same_marker_seed137": {
+      "arm": "marker",
+      "seed": 137,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": -0.24835164835164836,
+      "p_one_sided_positive": 0.7945205479452054,
+      "n_perm": 10000
+    },
+    "same_marker_seed256": {
+      "arm": "marker",
+      "seed": 256,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": 0.2043956043956044,
+      "p_one_sided_positive": 0.24347565243475652,
+      "n_perm": 10000
+    },
+    "same_em_seed42": {
+      "arm": "em",
+      "seed": 42,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": -0.08131868131868132,
+      "p_one_sided_positive": 0.6227377262273772,
+      "n_perm": 10000
+    },
+    "same_em_seed137": {
+      "arm": "em",
+      "seed": 137,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": -0.21318681318681318,
+      "p_one_sided_positive": 0.7726227377262274,
+      "n_perm": 10000
+    },
+    "same_em_seed256": {
+      "arm": "em",
+      "seed": 256,
+      "spearman_rho_norm_vs_abs_cos_unitnorm": 0.2043956043956044,
+      "p_one_sided_positive": 0.23617638236176383,
+      "n_perm": 10000
+    }
+  },
+  "summary": {
+    "marker_membership_identical_all_seeds": false,
+    "marker_n_changed_by_seed": {
+      "seed42": 9,
+      "seed137": 0,
+      "seed256": 8
+    },
+    "marker_aligned_set_jaccard_by_seed": {
+      "seed42": 0.35714285714285715,
+      "seed137": 1.0,
+      "seed256": 0.42857142857142855
+    },
+    "marker_rank_corr_by_seed": {
+      "seed42": 0.8241758241758241,
+      "seed137": 0.22197802197802197,
+      "seed256": 0.8461538461538461
+    },
+    "marker_abs_cos_U1_by_seed": {
+      "seed42": 0.87066873058093,
+      "seed137": 0.9260915584110186,
+      "seed256": 0.8392527164434863
+    },
+    "marker_unitnorm_norm_vs_alignment_by_seed": {
+      "seed42": {
+        "rho": 0.34065934065934067,
+        "p_one_sided_positive": 0.1192880711928807
+      },
+      "seed137": {
+        "rho": -0.24835164835164836,
+        "p_one_sided_positive": 0.7945205479452054
+      },
+      "seed256": {
+        "rho": 0.2043956043956044,
+        "p_one_sided_positive": 0.24347565243475652
+      }
+    },
+    "em_same_top_share_by_seed": {
+      "seed42": {
+        "s_top1_frac_weighted": 0.5235457420349121,
+        "s_top1_frac_unitnorm": 0.5237600207328796
+      },
+      "seed137": {
+        "s_top1_frac_weighted": 0.5720158219337463,
+        "s_top1_frac_unitnorm": 0.5724689364433289
+      },
+      "seed256": {
+        "s_top1_frac_weighted": 0.6031942963600159,
+        "s_top1_frac_unitnorm": 0.6033250093460083
+      }
+    },
+    "reading_rule": "membership stable + high rank correlation => the split is real direction structure (norm-weighting alternative dies); split dissolves + U1 rotates => the weighted split was substantially the SVD's norm-weighting. A surviving positive rho(||shift||, |cos-to-U1_unit|) can no longer be the SVD's norm-weighting (the unit-norm matrix does not know the norms)."
+  }
+}

@@ -1,0 +1,12 @@
+---
+name: Stale-serve / fix-took identity-gate calibration (#549/#585)
+description: Residual-bug detectors must threshold BETWEEN the bug signature (~19-27% identity for same-weights vLLM regeneration) and the clean signature (~0%); #504-lineage rigs persist slot stats for held-out leaves ONLY
+type: feedback
+---
+
+From the #549/#585 vLLM LoRA cache-collision correction lineage (stats lens, 2026-06-11):
+
+1. **A fix-took / residual-bug gate is only discriminating if its threshold sits BETWEEN the bug signature and the clean signature.** Under a recurrence of the cache-collision bug (#534), two "different-fraction" reads are independent regenerations of the SAME weights — pairwise float-identity lands at the same-weights regeneration rate (~19–27% per #549), NOT ~100%; distinct weights give ~0%. #585's gate "≥0.5 flags residual stale serving" passes by construction under the very failure mode it exists to detect, making a flat corrected curve ambiguous between "parent mechanism wrong" and "bug recurred". The bug signature in stochastic pipelines is a MODERATE identity rate — thresholds borrowed from a "byte-identical" intuition miss it. Correct rule: flag anything well above the distinct-weights ~0% floor (e.g. >5%); compare observed rates to BOTH reference points. Disposition: Concern with the corrected decision rule iff the raw diagnostic (per-pair identity heatmap) is persisted so the analyzer can re-threshold; Must-Fix if not persisted.
+2. **#472/#504/#534 trajectory rig: slot stats are held-out-only.** `compute_kl_and_slot_stats_for_checkpoint` iterates the bystander panel and updates `ck["held_out"]` leaves; `source_self` persists only g/b logp MEANS + emission_p + r_collapsed — no z_marker/z_eos/EOS-margin for the source, and source R text is not persisted (unrecoverable post-pod). Plans claiming a source-side "EOS-margin logit secondary carries the read at saturated fractions" on this rig register a phantom input. Recoverable substitute: source saturation is diagnosable from g_logp_mean→0 + emission_p→1 + per-fraction ceiling = −b_logp_mean (censoring read), plus the held-out panel's full logits. Verify rig promises against the rig before letting the analyzer inherit them.
+
+**How to apply:** whenever a plan registers a same-vs-distinct artifact check via output-identity rates, ask "what rate does the FAILURE mode actually produce?" (look it up in the parent audit) and require the threshold below it.

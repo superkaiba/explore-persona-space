@@ -1,0 +1,33 @@
+{
+  "n_personas": 35,
+  "n_questions": 20,
+  "n_prompts": 700,
+  "prompt_len_min": 23,
+  "prompt_len_max": 51,
+  "cap_min": 965,
+  "cap_max": 993,
+  "question_identity_gate": "PASS",
+  "truncation_guard_self_test": "PASS",
+  "metadata": {
+    "task": 559,
+    "script": "scripts/issue559_base_prior_persona_panel.py",
+    "schema_version": "issue559_base_prior_v1",
+    "git_commit": "396da8620087cff7dcd9620f3f853ee297d92c25",
+    "timestamp_utc": "2026-06-10T18:38:52.180580+00:00",
+    "python_version": "3.11.10",
+    "versions": {
+      "numpy": "2.2.6",
+      "pandas": "2.3.3",
+      "torch": "2.8.0+cu128",
+      "transformers": "4.57.6",
+      "vllm": "0.11.0"
+    },
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "hf_data_revision_pinned": "a9fc5a9cbc81c4b774ff66da0022f9055e18da5f",
+    "argv": [
+      "--phase",
+      "all"
+    ]
+  }
+}

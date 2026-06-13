@@ -47,8 +47,13 @@ def bootstrap(
     Returns:
         Configured logger instance.
     """
-    # Environment
-    if Path("/workspace").exists():
+    # Environment — canonical RunPod discriminator (a plain /workspace
+    # DIRECTORY on the dev VM / a GCE instance must NOT route as RunPod;
+    # see env.is_runpod_env, 2026-06-11 incident). SRC_DIR is already on
+    # sys.path (module top), so this import is safe pre-bootstrap().
+    from explore_persona_space.orchestrate.env import is_runpod_env
+
+    if is_runpod_env():
         os.environ.setdefault("HF_HOME", "/workspace/.cache/huggingface")
         os.environ.setdefault("TMPDIR", "/workspace/tmp")
         os.makedirs("/workspace/tmp", exist_ok=True)

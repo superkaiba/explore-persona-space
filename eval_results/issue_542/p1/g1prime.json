@@ -1,0 +1,35 @@
+{
+  "git_commit": "076d9078727b927df7c939f22815f777e3e72b76",
+  "generated_at": "2026-06-12T06:41:09.581761+00:00",
+  "seed": 42,
+  "arm": "arm2_close",
+  "diagonals": {
+    "sp_swe": 5.2468777894973755,
+    "sp_doctor": 5.0684051513671875,
+    "sp_ph1": 5.876571476459503,
+    "sp_ph2": 7.371978282928467,
+    "wc_short_code": 5.40037077665329,
+    "wc_short_advice": 6.180722117424011,
+    "wc_long_write": 6.162573993206024,
+    "icl_k2": 8.79623007774353,
+    "icl_k8": 10.336181223392487,
+    "reph_imp": 5.456409215927124,
+    "reph_polite": 5.66337388753891,
+    "reph_casual": 5.679736435413361,
+    "fmt_json": 7.787639558315277,
+    "fmt_code": 3.8287729620933533,
+    "default": 5.986859738826752,
+    "binst_marker": 25.187994301319122
+  },
+  "n_in_band": 14,
+  "n_in_or_near_band": 15,
+  "band": [
+    5.0,
+    12.0
+  ],
+  "shoulder_nats": 2.0,
+  "criterion_i_pass": true,
+  "v2_pass": true,
+  "throughput_qs_per_sec_per_gpu": 42.67626611280831,
+  "criterion_iii_descope": false
+}

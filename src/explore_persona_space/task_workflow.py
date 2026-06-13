@@ -84,6 +84,11 @@ STATUSES = (
     "interpreting",
     "reviewing",
     "awaiting_promotion",
+    # A same-issue follow-up round is executing on this task (tagged
+    # `followup-auto` | `followup-manual`); legacy semantics: parent complete
+    # with `parent_id` children still in flight. NOT terminal, NOT the park
+    # status. Un-phantomed 2026-06-10 (was previously only in workflow.yaml).
+    "followups_running",
     "completed",
     "blocked",
     "archived",
@@ -94,6 +99,20 @@ TERMINAL_STATUSES = frozenset({"completed", "blocked", "archived"})
 # Status that means "user has reviewed and approved a clean-result body; user
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
+
+# Intermediate pipeline statuses a `followups_running` task may NOT re-enter
+# mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
+# § Same-issue follow-up loop, step 3): the round HOLDS `followups_running`
+# end-to-end; phase visibility comes from stage breadcrumbs
+# (`stage=followup-<phase>`) + `epm:progress` markers, never status flips.
+# Exits to `awaiting_promotion` (re-park), `blocked` (failure), `completed` /
+# `archived` (terminal), and the deliberate `proposed` reset stay allowed.
+# `set_status` refuses these transitions unless `force_followup_exit=True`
+# (CLI: `--force-followup-exit`). Incident: tasks #533/#560 (2026-06-10/11)
+# flipped to `running` mid-round via Step 4b's local set-status instruction.
+FOLLOWUP_HELD_BLOCKED_STATUSES = frozenset(
+    {"planning", "plan_pending", "approved", "running", "verifying", "interpreting", "reviewing"}
+)
 
 EVENT_NOTE_MAX = 50_000  # mirror Sagan's body-size cap
 
@@ -611,17 +630,49 @@ def _utcnow_iso() -> str:
     return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _next_event_version(events_path: Path, kind: str) -> int:
+    """Return ``max(existing versions for this kind) + 1`` (1 when the kind
+    is new) for the events file at ``events_path``.
+
+    Mirrors ``new_plan_version``'s max+1 (NOT count+1) semantics so a later
+    defaulted post can never shadow an explicit higher version posted
+    earlier. Caller must hold the workflow lock — the read-then-append must
+    be atomic against concurrent posters.
+    """
+    if not events_path.exists():
+        return 1
+    highest = 0
+    for line in events_path.read_text().splitlines():
+        if not line.strip():
+            continue
+        row = json.loads(line)
+        if row.get("kind") != kind:
+            continue
+        v = row.get("version")
+        if isinstance(v, int) and v > highest:
+            highest = v
+    return highest + 1
+
+
 def post_event(
     task_id: int,
     kind: str,
     *,
-    version: int = 1,
+    version: int | None = None,
     by: str = "unknown",
     note: str | None = None,
     artifacts: list[str] | None = None,
     **extras: Any,
 ) -> dict[str, Any]:
     """Append a single event to tasks/<status>/<id>/events.jsonl.
+
+    When ``version`` is omitted it is derived per marker kind as
+    ``max(existing versions for this kind) + 1`` (1 when the kind is new),
+    so the "highest version per kind wins" resume contract holds without
+    every caller having to remember an explicit version (incident #480:
+    two defaulted re-posts both landed version 1 below an existing v6,
+    making the stale v6 authoritative on resume). An explicit ``version``
+    always wins.
 
     Note size is capped at EVENT_NOTE_MAX chars to mirror Sagan; oversize
     raises ValueError so the caller can fall back to a failure marker.
@@ -631,19 +682,21 @@ def post_event(
             f"event note exceeds {EVENT_NOTE_MAX} chars ({len(note)}); "
             f"caller must post epm:failure v1 with reason=note_oversize"
         )
-    payload: dict[str, Any] = {
-        "ts": _utcnow_iso(),
-        "kind": kind,
-        "version": version,
-        "by": by,
-    }
-    if note is not None:
-        payload["note"] = note
-    if artifacts:
-        payload["artifacts"] = artifacts
-    payload.update(extras)
     with _locked():
         path = find_task_path(task_id) / "events.jsonl"
+        if version is None:
+            version = _next_event_version(path, kind)
+        payload: dict[str, Any] = {
+            "ts": _utcnow_iso(),
+            "kind": kind,
+            "version": version,
+            "by": by,
+        }
+        if note is not None:
+            payload["note"] = note
+        if artifacts:
+            payload["artifacts"] = artifacts
+        payload.update(extras)
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a") as f:
             f.write(json.dumps(payload, ensure_ascii=False) + "\n")
@@ -675,9 +728,18 @@ def has_event(task_id: int, kind: str) -> bool:
 # ─── Status transitions ────────────────────────────────────────────────────
 
 
-def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Path:
+def set_status(
+    task_id: int,
+    new_status: str,
+    *,
+    note: str | None = None,
+    force_followup_exit: bool = False,
+) -> Path:
     """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
     status-changed event. Returns the new absolute path.
+
+    Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
+    (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
     """
     if new_status not in STATUSES:
         raise ValueError(f"unknown status: {new_status!r}; expected one of {STATUSES}")
@@ -686,6 +748,22 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
         old_status = _status_from_path(old)
         if old_status == new_status:
             return old
+        if (
+            old_status == "followups_running"
+            and new_status in FOLLOWUP_HELD_BLOCKED_STATUSES
+            and not force_followup_exit
+        ):
+            raise ValueError(
+                f"task #{task_id}: refusing followups_running -> {new_status}. "
+                "followups_running is HELD for the WHOLE same-issue follow-up round "
+                "(status-hold rule, .claude/skills/issue/SKILL.md Step 9b § Same-issue "
+                "follow-up loop, step 3): the normal pipeline set-status calls are "
+                "SKIPPED mid-round; phase visibility comes from stage breadcrumbs "
+                "(stage=followup-<phase>) + epm:progress markers. The round exits this "
+                "status only at the re-park (awaiting_promotion) or a failure exit "
+                "(blocked). Pass --force-followup-exit (CLI) / force_followup_exit=True "
+                "(API) only to deliberately abandon the round."
+            )
         repo = repo_root()
         new_parent = tasks_dir() / new_status
         new_parent.mkdir(parents=True, exist_ok=True)
@@ -728,7 +806,7 @@ def set_status(task_id: int, new_status: str, *, note: str | None = None) -> Pat
 
 @dataclass
 class NewTaskRequest:
-    kind: str  # experiment | infra | analysis | survey
+    kind: str  # experiment | infra | analysis | survey | campaign | human kinds
     title: str
     body: str = ""
     parent_id: int | None = None
@@ -737,6 +815,11 @@ class NewTaskRequest:
     # Canonical Goal of the experiment. Honored only when kind=="experiment";
     # passed through for other kinds with a soft warning emitted by the CLI.
     goal: str | None = None
+    # Verbatim user prompt(s) that originated the task. Written to
+    # frontmatter `origin_prompt:` when non-empty (honored for any kind).
+    # The clean-result `## Reproducibility` `**Context:**` row carries it
+    # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
+    origin_prompt: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -761,6 +844,8 @@ def create_task(req: NewTaskRequest) -> int:
         }
         if req.parent_id is not None:
             fm["parent_id"] = req.parent_id
+        if req.origin_prompt and req.origin_prompt.strip():
+            fm["origin_prompt"] = req.origin_prompt.strip()
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.
@@ -1250,6 +1335,44 @@ def list_by_status(status: str, limit: int = 200) -> list[dict[str, Any]]:
         )
         if len(out) >= limit:
             break
+    return out
+
+
+def list_children(parent_id: int) -> list[dict[str, Any]]:
+    """List tasks whose frontmatter ``parent_id`` equals ``parent_id``.
+
+    Walks REGISTRY entries and reads each task's frontmatter (the registry
+    does not denormalize ``parent_id``, so the body read is authoritative).
+    Returns registry-style dicts — ``id`` / ``status`` / ``title`` / ``kind``
+    / ``has_clean_result`` — sorted by id. Unreadable rows are skipped
+    (same fail-soft posture as :func:`list_by_status`: a single corrupt
+    body must not hide every sibling). Primary consumer: the ``/campaign``
+    runner's reconcile step (task #586)."""
+    reg = _load_registry()
+    repo = repo_root()
+    out: list[dict[str, Any]] = []
+    for tid_str, entry in reg.get("tasks", {}).items():
+        try:
+            task_id = int(tid_str)
+        except (TypeError, ValueError):
+            continue
+        path = repo / entry["path"]
+        try:
+            fm, _ = _read_body(path / "body.md")
+        except (FileNotFoundError, ValueError):
+            continue
+        if fm.get("parent_id") != parent_id:
+            continue
+        out.append(
+            {
+                "id": task_id,
+                "status": _status_from_path(path),
+                "title": fm.get("title", ""),
+                "kind": fm.get("kind", "experiment"),
+                "has_clean_result": bool(fm.get("has_clean_result", False)),
+            }
+        )
+    out.sort(key=lambda row: row["id"])
     return out
 
 
@@ -1771,6 +1894,10 @@ def defer_concern(
 
     BLOCKER concerns CANNOT be user-deferred — they signal a strict gate
     the orchestrator must address or pivot. ``ValueError`` on attempt.
+    Sole exception (``workflow.yaml § concerns_protocol.
+    reconciler_special_case``): the reconciler's binding adjudication may
+    downgrade a single-twin BLOCKER, recorded via ``by="reconciler"`` —
+    the rationale requirement still applies.
 
     Rationale must be ≥ 40 chars AND not match a known boilerplate
     phrase (see ``_CONCERN_RATIONALE_BOILERPLATE``).
@@ -1790,11 +1917,14 @@ def defer_concern(
                 f"concern_id {concern_id!r} has never been raised on task "
                 f"#{task_id}; refusing to defer a concern that does not exist."
             )
-        if latest.get("severity") == "BLOCKER":
+        if latest.get("severity") == "BLOCKER" and by != "reconciler":
             raise ValueError(
                 f"concern_id {concern_id!r} is severity=BLOCKER — BLOCKERs "
                 "cannot be user-deferred. Address it, pivot the strategy, "
-                "or post epm:failure v1 and set status:blocked."
+                "or post epm:failure v1 and set status:blocked. (Sole "
+                "exception: the reconciler's binding severity-downgrade "
+                "via by='reconciler' — workflow.yaml § concerns_protocol."
+                "reconciler_special_case.)"
             )
         carried_summary = (latest.get("summary") or "").strip()
         payload: dict[str, Any] = {
@@ -1843,6 +1973,7 @@ __all__ = [
     "COMMENT_KINDS",
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
+    "FOLLOWUP_HELD_BLOCKED_STATUSES",
     "GOAL_H2_NAME",
     "PARK_STATUS",
     "REGISTRY_PATH",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)

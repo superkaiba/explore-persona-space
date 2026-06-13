@@ -1,0 +1,12 @@
+{
+  "issue": 491,
+  "git_commit": "91a5fb54fa7e0f8a3ce41a5a95b2f57e1dd4964c",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "base_model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "eos_id": 151645,
+  "torch_version": "2.8.0+cu128",
+  "transformers_version": "4.57.6",
+  "timestamp_utc": "2026-06-12T01:18:34.352258+00:00"
+}

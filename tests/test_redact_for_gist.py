@@ -73,9 +73,38 @@ def test_env_leak_token_pattern() -> None:
     assert "abcdef1234567890" not in out
 
 
+def test_pod_placeholder_passthrough_idempotent() -> None:
+    """An already-redacted <pod-N> placeholder must not be re-wrapped."""
+    assert redact("ssh <pod-137> 'echo hi'") == "ssh <pod-137> 'echo hi'"
+    assert redact(redact("ssh pod-137 'echo hi'")) == "ssh <pod-137> 'echo hi'"
+
+
+def test_nonregistry_public_ip_redacted() -> None:
+    """Public IPv4 literals redact to <ip> even when absent from pods.conf.
+
+    pods.conf is a live mutable registry; a pod IP published after the pod
+    is reaped would survive a registry-only exact match.
+    """
+    out = redact("ssh -p 12345 user@45.32.10.9 'ls'")
+    assert "45.32.10.9" not in out
+    assert "<ip>" in out
+
+
+def test_private_and_loopback_ips_kept() -> None:
+    """Non-routable IPv4 (loopback/private) carries no leak risk; keep it."""
+    text = "dashboard at 127.0.0.1:3010, lan host 10.0.0.5, nat 192.168.1.7"
+    assert redact(text) == text
+
+
+def test_invalid_ip_like_version_string_kept() -> None:
+    """4-part dotted strings with octets > 255 (version numbers) survive."""
+    text = "chrome 120.0.6099.109 fixed it"
+    assert redact(text) == text
+
+
 def test_pod_ip_redacted_when_in_registry() -> None:
     """IPs from scripts/pods.conf should be redacted to <pod-ip>."""
-    # pods.conf currently lists 213.181.111.129 etc. — verify a known IP redacts.
+    # Pull a live IP from the registry (its contents churn as pods come/go).
     pods_conf = SCRIPT_PATH.parent / "pods.conf"
     if not pods_conf.exists():
         pytest.skip("pods.conf not present")
@@ -116,8 +145,11 @@ def test_full_fixture_redacted() -> None:
     assert "<pod-137>" in out
     assert "<pod-200>" in out
 
-    # IPs from registry redacted.
+    # Pod IPs redacted regardless of whether they are still in the live
+    # registry (both fixture IPs have long since left pods.conf — the
+    # public-IPv4 backstop must catch them).
     assert "213.181.111.129" not in out
+    assert "103.207.149.64" not in out
 
 
 def test_idempotent() -> None:

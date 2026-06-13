@@ -1,0 +1,37 @@
+{
+  "issue": 543,
+  "git_commit": "faa798dd8a577ffd05ccff8dadaaddc98d06f6c9",
+  "timestamp_utc": "2026-06-11T14:06:28.197564+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "phase": "phase1",
+  "arm": "r50",
+  "seed": 256,
+  "install_variant": "saturated",
+  "install_excluded": false,
+  "final_adapter_path": "/workspace/.cache/huggingface/eps-subfolder-downloads/models--superkaiba1--explore-persona-space/0718c53058475cb8ee38c8f4802220cdde548672/adapters/issue543/r50_seed256_phase1",
+  "import_source": {
+    "hub_repo": "superkaiba1/explore-persona-space",
+    "hub_subfolder": "adapters/issue543/r50_seed256_phase1",
+    "hub_revision": "0718c53058475cb8ee38c8f4802220cdde548672",
+    "issue543_phase1_result_path": "/workspace/explore-persona-space/eval_results/issue_543/r50/seed256/phase1_result.json",
+    "issue543_git_commit": "78f0a45d305ccd0027bc8544370f8c64847e4264",
+    "issue543_stop_record": {
+      "stop_step": 95,
+      "stop_reason": "band",
+      "last_trained_logp_mean": -0.24788826704025269,
+      "last_argmax_rate": 0.96875,
+      "stop_delta_mean_nats": 25.631916046142578,
+      "base_logp_mean": -25.879802703857422
+    }
+  }
+}

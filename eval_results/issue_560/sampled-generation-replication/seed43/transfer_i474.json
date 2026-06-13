@@ -1,0 +1,1369 @@
+{
+  "metadata": {
+    "task": 560,
+    "script": "issue560_transfer_analysis.py",
+    "git_commit": "5c2809887",
+    "timestamp_utc": "2026-06-11T04:00:52.305229+00:00",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--four-float-dir",
+      "eval_results/issue_560/sampled_gen/seed43/four_float",
+      "--geometry-json",
+      "eval_results/issue_560/geometry/context_persona_geometry.json",
+      "--out-dir",
+      "eval_results/issue_560/sampled-generation-replication/seed43",
+      "--fig-dir",
+      "figures/issue_560/sampled-generation-replication/seed43",
+      "--n-boot",
+      "10000",
+      "--n-cluster-boot",
+      "2000",
+      "--n-perm",
+      "10000"
+    ]
+  },
+  "schema_version": "issue560_crossrecipe_v1",
+  "panel": {
+    "n_cells": 560,
+    "n_runs": 16,
+    "n_personas": 35,
+    "n_questions": 20,
+    "strata_counts": {
+      "source_resident": 3,
+      "trained_negative": 45,
+      "never_negative": 512
+    },
+    "geometry_probe_set": "q_test_extended_50",
+    "geometry_n_probes": 50,
+    "pooled_from": null
+  },
+  "min_dist_corrected_reads_primary": {
+    "dz": {
+      "estimate": -0.4990042135516119,
+      "n_cells": 557,
+      "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+      "ci95_cell_boot": {
+        "boot_mean": -0.5159055172201638,
+        "low": -0.6093047525648821,
+        "high": -0.41286835080467077,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "ci95_cluster_run": {
+        "boot_mean": -0.5069674504926719,
+        "low": -0.6747507443705466,
+        "high": -0.2730393000153759,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "boot_mean": -0.5015129164976442,
+        "low": -0.5882123537129387,
+        "high": -0.4050851057670238,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "primary_ci": {
+        "axis": "cluster_run",
+        "low": -0.6747507443705466,
+        "high": -0.2730393000153759
+      },
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.4990042135516119,
+        "null_mean": 5.863992653679224e-05,
+        "null_sd": 0.04231655846948416,
+        "n_perm": 10000,
+        "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+      }
+    },
+    "dz_eos": {
+      "estimate": 0.06190146047290273,
+      "n_cells": 557,
+      "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+      "ci95_cell_boot": {
+        "boot_mean": 0.07521447718563534,
+        "low": -0.04214533222737256,
+        "high": 0.19746904929605433,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "ci95_cluster_run": {
+        "boot_mean": 0.07582955755011779,
+        "low": -0.1508178629369668,
+        "high": 0.2958780128624623,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "boot_mean": 0.060041870391121605,
+        "low": -0.028026844867167937,
+        "high": 0.15764661847856518,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "primary_ci": {
+        "axis": "cluster_run",
+        "low": -0.1508178629369668,
+        "high": 0.2958780128624623
+      },
+      "p_perm_fe": {
+        "p": 0.1434856514348565,
+        "rho_obs": 0.06190146047290273,
+        "null_mean": 0.00016656724079241268,
+        "null_sd": 0.042179989950687426,
+        "n_perm": 10000,
+        "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+      }
+    },
+    "dmargin": {
+      "estimate": -0.3038171536090175,
+      "n_cells": 557,
+      "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+      "ci95_cell_boot": {
+        "boot_mean": -0.32325297952128895,
+        "low": -0.4357290116302123,
+        "high": -0.20573523554554526,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "ci95_cluster_run": {
+        "boot_mean": -0.3187372636793465,
+        "low": -0.5692502268395875,
+        "high": -0.0532023543990351,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "boot_mean": -0.2997481766059432,
+        "low": -0.3860775458876331,
+        "high": -0.22215135654074858,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "primary_ci": {
+        "axis": "cluster_run",
+        "low": -0.5692502268395875,
+        "high": -0.0532023543990351
+      },
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.3038171536090175,
+        "null_mean": 4.6475040966821134e-05,
+        "null_sd": 0.042430659378020825,
+        "n_perm": 10000,
+        "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+      }
+    },
+    "margin_trained": {
+      "estimate": -0.5258280894830091,
+      "n_cells": 557,
+      "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+      "ci95_cell_boot": {
+        "boot_mean": -0.5295499242411174,
+        "low": -0.6261342157672913,
+        "high": -0.4254048952903276,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "ci95_cluster_run": {
+        "boot_mean": -0.5245375821729433,
+        "low": -0.6685379008859921,
+        "high": -0.30271591276999377,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "boot_mean": -0.5296179536089234,
+        "low": -0.610355675861983,
+        "high": -0.44675343535462364,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "primary_ci": {
+        "axis": "cluster_run",
+        "low": -0.6685379008859921,
+        "high": -0.30271591276999377
+      },
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.5258280894830091,
+        "null_mean": 0.0005100257987853071,
+        "null_sd": 0.04258046254282606,
+        "n_perm": 10000,
+        "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+      }
+    },
+    "margin_base": {
+      "estimate": -0.2502229408920885,
+      "n_cells": 557,
+      "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+      "ci95_cell_boot": {
+        "boot_mean": -0.26597611949723143,
+        "low": -0.3636015395255201,
+        "high": -0.1636287831224971,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "ci95_cluster_run": {
+        "boot_mean": -0.25730403361220305,
+        "low": -0.4304498809131335,
+        "high": -0.08070835484514229,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "boot_mean": -0.2538566840604571,
+        "low": -0.35282053957116694,
+        "high": -0.14832044962536856,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0,
+        "n_clusters": 35
+      },
+      "primary_ci": {
+        "axis": "cluster_run",
+        "low": -0.4304498809131335,
+        "high": -0.08070835484514229
+      },
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.2502229408920885,
+        "null_mean": 0.00012413042635909234,
+        "null_sd": 0.04216848875265347,
+        "n_perm": 10000,
+        "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+      }
+    }
+  },
+  "min_dist_strata": {
+    "never_negative_only": {
+      "dz": {
+        "estimate": -0.5050306810118904,
+        "n_cells": 512,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.5309311689572042,
+          "low": -0.6272692419524968,
+          "high": -0.422157002511163,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.5172070648673941,
+          "low": -0.6946789692427793,
+          "high": -0.2689153544710306,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.5072796838115962,
+          "low": -0.5931711161221505,
+          "high": -0.41984912499407484,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 32
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.6946789692427793,
+          "high": -0.2689153544710306
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.5050306810118904,
+          "null_mean": -0.0002488074316785115,
+          "null_sd": 0.04459522830963068,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dz_eos": {
+        "estimate": 0.031579108301575856,
+        "n_cells": 512,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": 0.04759324295527016,
+          "low": -0.07414602965318391,
+          "high": 0.17428306906619687,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": 0.04619706503229819,
+          "low": -0.20278198464448446,
+          "high": 0.28067604055718465,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": 0.030349820830246885,
+          "low": -0.05291255121191622,
+          "high": 0.11291613251245187,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 32
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.20278198464448446,
+          "high": 0.28067604055718465
+        },
+        "p_perm_fe": {
+          "p": 0.4781521847815218,
+          "rho_obs": 0.031579108301575856,
+          "null_mean": -0.00025258645507890735,
+          "null_sd": 0.04453476839805505,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dmargin": {
+        "estimate": -0.289970878251565,
+        "n_cells": 512,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.3137095699329984,
+          "low": -0.43193234563446203,
+          "high": -0.18950063961634103,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.30625841444303387,
+          "low": -0.5767028633845014,
+          "high": -0.03049438941758966,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.28439195629976305,
+          "low": -0.3455627100096208,
+          "high": -0.22382740507405974,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 32
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.5767028633845014,
+          "high": -0.03049438941758966
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.289970878251565,
+          "null_mean": 0.00011735733812270412,
+          "null_sd": 0.044729888858393116,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "margin_trained": {
+        "estimate": -0.5275037443780685,
+        "n_cells": 512,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.5365321634759228,
+          "low": -0.6378116430043698,
+          "high": -0.42749854351149486,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.5277965036124087,
+          "low": -0.6753963216509276,
+          "high": -0.2907903290827256,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.5306010035551101,
+          "low": -0.6056808580642951,
+          "high": -0.44785629590581516,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 32
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.6753963216509276,
+          "high": -0.2907903290827256
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.5275037443780685,
+          "null_mean": -0.000488823496383653,
+          "null_sd": 0.044244753483713324,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "margin_base": {
+        "estimate": -0.27593679189411885,
+        "n_cells": 512,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.2903572459449042,
+          "low": -0.3897956667303716,
+          "high": -0.18522567260820216,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.28306753473105617,
+          "low": -0.4566985854170612,
+          "high": -0.10078478710141053,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.27756757886514877,
+          "low": -0.37596676988247735,
+          "high": -0.17362793674381496,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 32
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.4566985854170612,
+          "high": -0.10078478710141053
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.27593679189411885,
+          "null_mean": -0.0006938544009138143,
+          "null_sd": 0.044035334261234384,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      }
+    },
+    "a_class_source_only": {
+      "dz": {
+        "estimate": -0.70353730811772,
+        "n_cells": 172,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.6997881580204374,
+          "low": -0.7982096127729812,
+          "high": -0.5784180097987938,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.6899983444156276,
+          "low": -0.8890154208744245,
+          "high": -0.41202558240248516,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 5
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.6980603674165812,
+          "low": -0.7703445148892469,
+          "high": -0.6121709807763125,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.8890154208744245,
+          "high": -0.41202558240248516
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.70353730811772,
+          "null_mean": -0.0001050742530475941,
+          "null_sd": 0.07618522942134144,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dz_eos": {
+        "estimate": -0.017126429462552738,
+        "n_cells": 172,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": 0.010007622062860122,
+          "low": -0.23784361237941548,
+          "high": 0.2518501597638824,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": 0.009831476968052479,
+          "low": -0.5776417788657691,
+          "high": 0.5003518973960493,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 5
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.017463582588928786,
+          "low": -0.22830558931163877,
+          "high": 0.20264679941693883,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.5776417788657691,
+          "high": 0.5003518973960493
+        },
+        "p_perm_fe": {
+          "p": 0.823917608239176,
+          "rho_obs": -0.017126429462552738,
+          "null_mean": 0.0015087110840685527,
+          "null_sd": 0.07617967639050252,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dmargin": {
+        "estimate": -0.3797011011195147,
+        "n_cells": 172,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.408839772131324,
+          "low": -0.5976627106950139,
+          "high": -0.18740490833410656,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.3840463947656998,
+          "low": -0.8140793348646564,
+          "high": 0.32744040202946173,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 5
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.37807931397430933,
+          "low": -0.5208304599618988,
+          "high": -0.23840347016973534,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.8140793348646564,
+          "high": 0.32744040202946173
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.3797011011195147,
+          "null_mean": -0.000834828771080814,
+          "null_sd": 0.07574057758574929,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "margin_trained": {
+        "estimate": -0.7067564731158451,
+        "n_cells": 172,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.700411964528432,
+          "low": -0.7861218265035059,
+          "high": -0.5944046478433345,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.6977894250584964,
+          "low": -0.8536025710329447,
+          "high": -0.4636993572138882,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 5
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.7008950058739994,
+          "low": -0.757859311315097,
+          "high": -0.6344967852807096,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.8536025710329447,
+          "high": -0.4636993572138882
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.7067564731158451,
+          "null_mean": -0.00016569832296832937,
+          "null_sd": 0.07572119053803986,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "margin_base": {
+        "estimate": -0.6978654459781662,
+        "n_cells": 172,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.6814858932194986,
+          "low": -0.7907399480996853,
+          "high": -0.5482025080385652,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.6689094725182599,
+          "low": -0.8314999107719142,
+          "high": -0.3812061305895703,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 5
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.6941797573506173,
+          "low": -0.8044523010157445,
+          "high": -0.559919731973466,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.8314999107719142,
+          "high": -0.3812061305895703
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.6978654459781662,
+          "null_mean": 0.0010237713520257158,
+          "null_sd": 0.07628831285901698,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      }
+    },
+    "sensitivity_including_source_resident": {
+      "dz": {
+        "estimate": -0.5025213500589698,
+        "n_cells": 560,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})"
+      },
+      "dz_eos": {
+        "estimate": 0.07978027444511714,
+        "n_cells": 560,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})"
+      },
+      "dmargin": {
+        "estimate": -0.31441697837046684,
+        "n_cells": 560,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})"
+      },
+      "margin_trained": {
+        "estimate": -0.5204499331038319,
+        "n_cells": 560,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})"
+      },
+      "margin_base": {
+        "estimate": -0.26707376071261163,
+        "n_cells": 560,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})"
+      }
+    }
+  },
+  "slot_kind_sensitivity": {
+    "min_eor_slots_per_cell": 5,
+    "n_cells_kept": 544,
+    "n_cells_dropped": 13,
+    "dz_eor_only": {
+      "rho_twoway": -0.4479882555688401,
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.4479882555688401,
+        "null_mean": -4.700652667169552e-05,
+        "null_sd": 0.0422195388067422,
+        "n_perm": 10000
+      }
+    },
+    "dmargin_eor_only": {
+      "rho_twoway": -0.20965151329932344,
+      "p_perm_fe": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": -0.20965151329932344,
+        "null_mean": -0.00041013224784059295,
+        "null_sd": 0.042565806440227665,
+        "n_perm": 10000
+      }
+    },
+    "pre_marker_frac_vs_min_dist_rho": -0.24519273407601605,
+    "pre_marker_frac_by_distance_tercile": {
+      "tercile_0": 0.1096774193548387,
+      "tercile_1": 0.02027027027027027,
+      "tercile_2": 0.015322580645161288
+    },
+    "pre_marker_frac_by_stratum": {
+      "source_resident": 1.0,
+      "trained_negative": 0.014444444444444442,
+      "never_negative": 0.05146484375
+    }
+  },
+  "sensitivity_length_truncation": {
+    "status": "exploratory sensitivity reads (round-1 interpretation-critic follow-up); NOT registered family members \u2014 the Holm family is unchanged",
+    "length_partial": {
+      "control": "cell-level mean response length: mean over the cell's 20 questions of the generated-token count (n_new_tokens)",
+      "method": "two-way FE residualization (run + persona dummies, exact lstsq \u2014 same design as the registered R1 reads) of min_dist, the DV, AND mean response length; then rank-partial Spearman of (min_dist, DV | mean_len) on the FE residuals; cell bootstrap + run/persona cluster bootstraps re-run the residualization and the partial within every resample",
+      "n_cells": 557,
+      "rho_twoway_min_dist_vs_mean_len": -0.16152538095775765,
+      "dz": {
+        "estimate": -0.48084143499526005,
+        "n_cells": 557,
+        "rho_twoway_unpartialled": -0.4990042135516119,
+        "rho_twoway_mean_len_vs_dv": 0.41059011249331456,
+        "ci95_cell_boot": {
+          "boot_mean": -0.4849749186992391,
+          "low": -0.5783101985426616,
+          "high": -0.38334254057719863,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.4766106584210312,
+          "low": -0.6197944765090924,
+          "high": -0.26954447523167435,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.48372822609778826,
+          "low": -0.5883873111842408,
+          "high": -0.37098846578414646,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.6197944765090924,
+          "high": -0.26954447523167435
+        },
+        "p_perm_fe_partial": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.48084143499526005,
+          "null_mean": 0.0001644105376312767,
+          "null_sd": 0.04244055017985173,
+          "n_perm": 10000,
+          "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals",
+          "note": "diagnostic only \u2014 sensitivity reads are CI-based"
+        }
+      },
+      "dmargin": {
+        "estimate": -0.2617168001211261,
+        "n_cells": 557,
+        "rho_twoway_unpartialled": -0.3038171536090175,
+        "rho_twoway_mean_len_vs_dv": 0.46695023664857993,
+        "ci95_cell_boot": {
+          "boot_mean": -0.2568955177029895,
+          "low": -0.3597789212880621,
+          "high": -0.15127793366892578,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.25727481794542983,
+          "low": -0.456286052011581,
+          "high": -0.0688405146076433,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.25664533952417823,
+          "low": -0.3587942092973618,
+          "high": -0.15102701581689268,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.456286052011581,
+          "high": -0.0688405146076433
+        },
+        "p_perm_fe_partial": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.2617168001211261,
+          "null_mean": 0.0001725131363917053,
+          "null_sd": 0.042148750095581576,
+          "n_perm": 10000,
+          "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals",
+          "note": "diagnostic only \u2014 sensitivity reads are CI-based"
+        }
+      }
+    },
+    "trunc_excluded": {
+      "min_nontrunc_q_per_cell": 10,
+      "n_cells_kept": 544,
+      "n_cells_dropped": 13,
+      "note": "registered-form check: same pair-corrected machinery, cells re-aggregated over only non-truncated generations; expected near-identical to the EOR-only sensitivity (truncated rows are ~98% pre_marker marker-repetition loops)",
+      "dz_nontrunc": {
+        "estimate": -0.45438358880477525,
+        "n_cells": 544,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.4529346614957414,
+          "low": -0.5559670510802567,
+          "high": -0.3391205420673299,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.4542617280882337,
+          "low": -0.5651325434046157,
+          "high": -0.28593454240625577,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.45629593003086005,
+          "low": -0.560356407433233,
+          "high": -0.3411254340685812,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.5651325434046157,
+          "high": -0.28593454240625577
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.45438358880477525,
+          "null_mean": -0.00019845713834218368,
+          "null_sd": 0.04251390088923643,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      },
+      "dmargin_nontrunc": {
+        "estimate": -0.2136977366850232,
+        "n_cells": 544,
+        "sign_direction": "min_dist is a DISTANCE (larger = farther); the parent's #553/#478 reads use the same metric \u2014 SAME expected signs (parent points: {'dz': -0.24, 'dmargin': -0.271})",
+        "ci95_cell_boot": {
+          "boot_mean": -0.21813184863158785,
+          "low": -0.3308261456797917,
+          "high": -0.10136198438022018,
+          "n_boot": 10000,
+          "n_degenerate_resamples": 0
+        },
+        "ci95_cluster_run": {
+          "boot_mean": -0.22374483269332995,
+          "low": -0.4177511950352491,
+          "high": -0.015054651747381813,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 16
+        },
+        "ci95_cluster_persona": {
+          "boot_mean": -0.21772126270846417,
+          "low": -0.3352538117014218,
+          "high": -0.10522941280891254,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0,
+          "n_clusters": 35
+        },
+        "primary_ci": {
+          "axis": "cluster_run",
+          "low": -0.4177511950352491,
+          "high": -0.015054651747381813
+        },
+        "p_perm_fe": {
+          "p": 9.999000099990002e-05,
+          "rho_obs": -0.2136977366850232,
+          "null_mean": -0.0005594182719973285,
+          "null_sd": 0.04294742066048874,
+          "n_perm": 10000,
+          "method": "FE residual permutation: min_dist FE-residuals permuted across run x persona aggregates against fixed DV FE-residuals (both sides projected on run + persona dummies first)"
+        }
+      }
+    }
+  },
+  "persistence": {
+    "persona_fe_trained_z_eos": {
+      "assistant": 4.505410129740882,
+      "brazilian_comedian": -1.9025982195990565,
+      "caring_villain": -0.8152202899115402,
+      "comedian": -0.7451804123759569,
+      "dark_comedian": -0.7898540789740292,
+      "devops_engineer": 3.3084857647759556,
+      "doctor_comedian": -1.2935772235052951,
+      "drill_sergeant": -2.256650953974024,
+      "elementary_teacher": 2.7593646710259723,
+      "formal_assistant": 0.9038959210259456,
+      "french_person": -0.4892681414740565,
+      "grumpy_person": -3.1728618914740423,
+      "hippie_teacher": -0.48301814147403555,
+      "improv_comedian": -1.9432354266302987,
+      "incompetent_villain": -2.595945387567806,
+      "joker": -2.9295025164740522,
+      "lazy_software_engineer": -1.6771587664740473,
+      "machine_learning_engineer": 3.3900287335259396,
+      "medical_doctor": 3.3712787335259637,
+      "medical_student": 3.5500873272759392,
+      "misanthrope": -1.0121197039740526,
+      "mysterious_person": -0.8923931414740363,
+      "nice_villain": -1.197922926630305,
+      "open_mic_comedian": -2.0733501727240373,
+      "overly_enthusiastic_assistant": 0.7382709210259648,
+      "perfectionist_engineer": 2.253114671025937,
+      "sarcastic_assistant": -2.0240337664740373,
+      "satirist": -0.5871197039740252,
+      "serious_comedian": -0.4023540789740494,
+      "stoic_philosopher": -0.19376032897404905,
+      "strict_teacher": 1.3261615460259897,
+      "villain": -0.6080315144143,
+      "web_developer": 3.1435443585259524,
+      "wholesome_comedian": -0.16857722350526316,
+      "zelthari_scholar": 1.0040912335259513
+    },
+    "rho": 0.8627450980392158,
+    "n_personas": 35,
+    "ci95_boot_personas": {
+      "boot_mean": 0.8521149173176301,
+      "low": 0.6867818975118336,
+      "high": 0.9581166248259912,
+      "n_boot": 2000,
+      "n_degenerate_resamples": 0
+    },
+    "p_perm": {
+      "p": 9.999000099990002e-05,
+      "rho_obs": 0.8627450980392158,
+      "null_mean": -0.0035379551820728296,
+      "null_sd": 0.17189621929520485,
+      "n_perm": 10000,
+      "method": "MC permutation of the 35 persona labels (diagnostic only \u2014 H2 verdicts are CI-based; see calibrated_null)"
+    },
+    "variance_ratio_feDelta_over_feBase": 0.38570930110011536,
+    "calibrated_null": {
+      "mean": 0.8035107282913166,
+      "q025": 0.6957983193277311,
+      "q975": 0.8913235294117646,
+      "n_perm": 10000,
+      "method": "persona-FE(dz_eos) permuted across personas; rho(persona-mean base z_eos, FE(base z_eos) + permuted FE(dz_eos)) per rep \u2014 the expected persistence rho under variance-ratio-only structure"
+    },
+    "read": "if observed rho ~ calibrated null, scope the persistence claim as variance-ratio rank persistence, not a stronger mechanism (plan section 14.4)"
+  },
+  "clamp_routing": {
+    "persona_fe_dz_eos": {
+      "assistant": -8.225666091914647,
+      "brazilian_comedian": 2.269197021460353,
+      "caring_villain": 1.1971768722294065,
+      "comedian": 5.271368121108393,
+      "dark_comedian": 3.631908737158614,
+      "devops_engineer": -5.322291816735445,
+      "doctor_comedian": 1.6631864890812105,
+      "drill_sergeant": 1.480932365393486,
+      "elementary_teacher": -3.3589655533077014,
+      "formal_assistant": -0.9736330642940401,
+      "french_person": 3.0098861143348823,
+      "grumpy_person": 2.9808884010074794,
+      "hippie_teacher": 2.1044366225956197,
+      "improv_comedian": 2.6645083770511735,
+      "incompetent_villain": 2.3258773193119144,
+      "joker": 2.2286074981449153,
+      "lazy_software_engineer": 1.9232223853824768,
+      "machine_learning_engineer": -4.15246096994895,
+      "medical_doctor": -3.9714474334956966,
+      "medical_student": -4.176306404137794,
+      "misanthrope": 1.1985265121219741,
+      "mysterious_person": -3.7236612930537913,
+      "nice_villain": 1.1006780013797888,
+      "open_mic_comedian": 2.617949615454504,
+      "overly_enthusiastic_assistant": -0.9256453171016477,
+      "perfectionist_engineer": -1.3657618179561564,
+      "sarcastic_assistant": -1.2177393570186423,
+      "satirist": 2.7680074081180837,
+      "serious_comedian": -0.3985825195552775,
+      "stoic_philosopher": 1.5529462203739308,
+      "strict_teacher": -0.6173998489619807,
+      "villain": 0.4721715370101422,
+      "web_developer": -5.520338691735439,
+      "wholesome_comedian": 1.3759312972782511,
+      "zelthari_scholar": 0.11249326322061276
+    },
+    "vs_persona_mean_margin_base": {
+      "rho": 0.9352941176470588,
+      "n_personas": 35,
+      "ci95_boot_personas": {
+        "boot_mean": 0.9251473673071068,
+        "low": 0.8266153040613985,
+        "high": 0.978912073800696,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 9.999000099990002e-05,
+        "rho_obs": 0.9352941176470588,
+        "null_mean": -0.002450224089635854,
+        "null_sd": 0.17086837090570392,
+        "n_perm": 10000,
+        "method": "MC permutation of the 35 persona labels"
+      }
+    },
+    "partial_vs_margin_base_given_z_eos_base": {
+      "rho_partial": 0.14563028099279793,
+      "ci95_boot_personas": {
+        "boot_mean": 0.2047052420701568,
+        "low": -0.18015517898181155,
+        "high": 0.6749888970753763,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 0.40445955404459555,
+        "rho_obs": 0.14563028099279793,
+        "null_mean": -0.0008195893741098516,
+        "null_sd": 0.17310596204515155,
+        "n_perm": 10000,
+        "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals"
+      }
+    },
+    "partial_vs_z_eos_base_given_margin_base": {
+      "rho_partial": -0.4941202964743087,
+      "ci95_boot_personas": {
+        "boot_mean": -0.46880545582925776,
+        "low": -0.7325402773727718,
+        "high": -0.1453020955378151,
+        "n_boot": 2000,
+        "n_degenerate_resamples": 0
+      },
+      "p_perm": {
+        "p": 0.0032996700329967,
+        "rho_obs": -0.4941202964743087,
+        "null_mean": -0.00017922781778142313,
+        "null_sd": 0.17427757996064977,
+        "n_perm": 10000,
+        "method": "rank residual permutation (Anderson & Legendre 1999): predictor rank-residuals permuted against fixed DV rank-residuals"
+      }
+    },
+    "read": "lead clamp-routing with the partial check (the parent's routing signal dissolved into base-level persistence under it \u2014 followup_clamp_partial)"
+  },
+  "exposure": {
+    "stratum_means_dz_eos": {
+      "source_resident": 1.6855940500895181,
+      "trained_negative": 12.85815265231662,
+      "never_negative": 13.713051016815008
+    },
+    "stratum_counts": {
+      "source_resident": 3,
+      "trained_negative": 45,
+      "never_negative": 512
+    },
+    "contrast_trained_negative_minus_never_negative": {
+      "observed": -0.8548983644983874,
+      "ci95_cluster_run": {
+        "low": -1.3119517350635586,
+        "high": -0.2441573970063618,
+        "n_boot": 2000,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona_descriptive": {
+        "low": -8.087740300955874,
+        "high": 5.183045913333384,
+        "n_boot": 2000,
+        "n_clusters": 35,
+        "note": "3 trained-negative persona clusters \u2014 descriptive only, NOT the verdict-bearing interval (plan section 14.1)"
+      },
+      "verdict_axis": "ci95_cluster_run"
+    },
+    "never_negative_mean": {
+      "observed": 13.713051016815008,
+      "ci95_cluster_run": {
+        "low": 12.907436260208486,
+        "high": 14.45450809214264,
+        "n_boot": 2000,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona": {
+        "low": 12.78970335270744,
+        "high": 14.591808127351106,
+        "n_boot": 2000,
+        "n_clusters": 32
+      }
+    },
+    "trained_negative_mean": {
+      "observed": 12.85815265231662,
+      "ci95_cluster_run": {
+        "low": 12.152953265024268,
+        "high": 13.629139505299651,
+        "n_boot": 2000,
+        "n_clusters": 16
+      },
+      "ci95_cluster_persona_descriptive": {
+        "low": 5.228181966145834,
+        "high": 19.01224065144857,
+        "n_boot": 2000,
+        "n_clusters": 3
+      }
+    },
+    "source_resident_positive_control": {
+      "mean_dz_eos": 1.6855940500895181,
+      "n_cells": 3,
+      "per_cell": {
+        "A1__assistant": {
+          "dz": 21.5878173828125,
+          "dz_eos": -2.93388671875,
+          "margin_trained": 19.8587890625,
+          "argmax_marker_rate_trained": 0.9,
+          "pre_marker_frac": 1.0
+        },
+        "A4__comedian": {
+          "dz": 22.12919921875,
+          "dz_eos": 2.6674022674560547,
+          "margin_trained": 21.18125,
+          "argmax_marker_rate_trained": 1.0,
+          "pre_marker_frac": 1.0
+        },
+        "A5__villain": {
+          "dz": 21.955078125,
+          "dz_eos": 5.3232666015625,
+          "margin_trained": 20.3984375,
+          "argmax_marker_rate_trained": 1.0,
+          "pre_marker_frac": 1.0
+        }
+      }
+    },
+    "parent_anchors": {
+      "i532_trained_negative_mean_dz_eos": 12.773651109536491,
+      "i532_never_clamped_mean_dz_eos": 6.378064132690429,
+      "i478_never_negative_mean_dz_eos": -3.0740901906149727,
+      "note": "cross-panel anchors are SOFT (different question sets / token caps) \u2014 qualitative reference lines only; the within-run contrast is the load-bearing exposure read (plan section 14.10)"
+    },
+    "parent_convention_label_view": {
+      "pooled_non_source_resident_557": {
+        "mean_dz_eos": 13.643983823991979,
+        "n_cells": 557
+      },
+      "pooled_all_560": {
+        "mean_dz_eos": 13.579921021631785,
+        "n_cells": 560
+      }
+    },
+    "f2_read": {
+      "never_negative_mean": 13.713051016815008,
+      "i532_never_clamped_anchor": 6.378064132690429,
+      "rule": "F2 fires only if never-negative mean >= the +6.4 anchor with the persona-cluster CI excluding values below it; (0, +6.4) is weakening-not-breaking (plan section 14.1)"
+    },
+    "scope": "exposure and persona identity are perfectly confounded for the 3 trained-negative personas \u2014 descriptive contrast only; geometry predicts the OPPOSITE sign for these near-zero-distance personas (plan section 14.1)"
+  },
+  "variance_shares_dz": {
+    "observed": {
+      "run_share_run_first": 0.6466114748277074,
+      "persona_share_run_first": 0.1096337949725057,
+      "persona_share_persona_first": 0.10908443168449945,
+      "run_share_persona_first": 0.6471608381157137,
+      "pair_share": 0.2437547301997869
+    },
+    "ci95_cell_boot": {
+      "a_first_share_a": {
+        "boot_mean": 0.6558121809955301,
+        "low": 0.5948104419189439,
+        "high": 0.7144988732430837,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "a_first_share_b": {
+        "boot_mean": 0.12209123106256602,
+        "low": 0.09168861629167303,
+        "high": 0.15530540247999178,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "b_first_share_a": {
+        "boot_mean": 0.6139359654640177,
+        "low": 0.5448097631521609,
+        "high": 0.6843523379257684,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "b_first_share_b": {
+        "boot_mean": 0.1639674465940783,
+        "low": 0.11201081322544001,
+        "high": 0.2205694682945638,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "pair_share": {
+        "boot_mean": 0.22209658794190387,
+        "low": 0.16081310947021712,
+        "high": 0.28403738256959077,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "dominance_a_first": {
+        "boot_mean": 0.4336344865343257,
+        "low": 0.31568464986583167,
+        "high": 0.5484699663957866,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      },
+      "dominance_b_first_order_swap": {
+        "boot_mean": 0.3891299482927791,
+        "low": 0.27372275067287805,
+        "high": 0.506669394653285,
+        "n_boot": 10000,
+        "n_degenerate_resamples": 0
+      }
+    },
+    "note": "exploratory (plan R4); single-seed runs \u2014 run FE confounds adapter + seed"
+  },
+  "holm": {
+    "family": "registered #560 family: 5 min_dist targets + clamp routing",
+    "note": "verdicts are CI-only; Holm-adjusted p's are diagnostics \u2014 when they disagree the widest-axis CI governs (plan section 14.2)",
+    "members": [
+      {
+        "name": "min_dist vs dz (primary mask)",
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001
+      },
+      {
+        "name": "min_dist vs dz_eos (primary mask)",
+        "p_raw": 0.1434856514348565,
+        "p_holm": 0.1434856514348565
+      },
+      {
+        "name": "min_dist vs dmargin (primary mask)",
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001
+      },
+      {
+        "name": "min_dist vs margin_trained (primary mask)",
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001
+      },
+      {
+        "name": "min_dist vs margin_base (primary mask)",
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001
+      },
+      {
+        "name": "clamp routing: persona-FE(dz_eos) vs persona-mean margin_base",
+        "p_raw": 9.999000099990002e-05,
+        "p_holm": 0.0005999400059994001
+      }
+    ]
+  },
+  "diagnostics": {
+    "space_agreement": {
+      "rho_dlogp_vs_dz_primary": 0.9309754026859013,
+      "mean_abs_dlogZ_by_stratum": {
+        "source_resident": 1.827842076619466,
+        "trained_negative": 0.9906629021962484,
+        "never_negative": 1.1586360995657743
+      },
+      "read": "off saturation \u0394logZ ~ 0 so \u0394log P ~ \u0394z; divergence localizes saturation (marker-measurement rule)"
+    },
+    "delta_p_sanity_by_stratum": {
+      "source_resident": 0.86750488782898,
+      "trained_negative": 0.009441882349739982,
+      "never_negative": 0.03851480377719927
+    },
+    "argmax_composition": {
+      "trained": {
+        "marker_rate": 0.039553571428571424,
+        "eos_rate": 0.9250892857142856,
+        "other_rate": 0.035357142857142865
+      },
+      "base": {
+        "marker_rate": 0.0,
+        "eos_rate": 0.10178571428571428,
+        "other_rate": 0.8982142857142857
+      }
+    },
+    "emission_sanity": {
+      "in_R_emission_rate_by_stratum": {
+        "source_resident": 1.0,
+        "trained_negative": 0.014444444444444442,
+        "never_negative": 0.05146484375
+      },
+      "note": "pre_marker slot fraction == in-R emission rate (the slot is truncated at the first emitted marker)"
+    },
+    "truncation": {
+      "overall_gen_trunc_rate": 0.045535714285714284,
+      "per_persona": {
+        "assistant": 0.0625,
+        "brazilian_comedian": 0.04375,
+        "caring_villain": 0.08125,
+        "comedian": 0.0625,
+        "dark_comedian": 0.065625,
+        "devops_engineer": 0.065625,
+        "doctor_comedian": 0.059375,
+        "drill_sergeant": 0.065625,
+        "elementary_teacher": 0.015625,
+        "formal_assistant": 0.0,
+        "french_person": 0.0125,
+        "grumpy_person": 0.015625,
+        "hippie_teacher": 0.0125,
+        "improv_comedian": 0.0625,
+        "incompetent_villain": 0.03125,
+        "joker": 0.09687499999999999,
+        "lazy_software_engineer": 0.025,
+        "machine_learning_engineer": 0.071875,
+        "medical_doctor": 0.05,
+        "medical_student": 0.053125000000000006,
+        "misanthrope": 0.04375,
+        "mysterious_person": 0.021875,
+        "nice_villain": 0.078125,
+        "open_mic_comedian": 0.046875,
+        "overly_enthusiastic_assistant": 0.03125,
+        "perfectionist_engineer": 0.04375,
+        "sarcastic_assistant": 0.003125,
+        "satirist": 0.015625,
+        "serious_comedian": 0.00625,
+        "stoic_philosopher": 0.05937500000000001,
+        "strict_teacher": 0.03125,
+        "villain": 0.090625,
+        "web_developer": 0.08125,
+        "wholesome_comedian": 0.065625,
+        "zelthari_scholar": 0.021875
+      },
+      "rho_min_dist_vs_trunc_rate_personas": -0.2750689857825275,
+      "rho_response_len_vs_dz_primary": 0.45156489241573405
+    },
+    "tie_back": {
+      "spearman": 0.9989600477164632,
+      "n_pairs": 595,
+      "n_personas_matched": 35,
+      "unmatched_personas": [],
+      "reference": "eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json",
+      "reference_metric": "1 - cosine",
+      "note": "diagnostic only; < 0.5 flagged as geometry-recipe instability"
+    }
+  }
+}

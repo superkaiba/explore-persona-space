@@ -524,3 +524,181 @@ def test_write_self_report_unknown_issue_raises_even_with_explicit_slug(monkeypa
 
     # And nothing was written to disk.
     assert not list(tmp_path.glob("*.json"))
+
+
+# ── progress-bar / ETA title suffix (task #587) ────────────────────────────
+#
+# What these pin: `build_progress_string(..., suffix=...)` and the
+# `write_self_report` ETA hook. The suffix=None path must stay
+# BYTE-IDENTICAL to the historical output (the tests above prove the
+# historical output; the tests here prove suffix=None routes through it),
+# the degrade ladder must trim STEP before bar before suffix, and the
+# write_self_report hook must fire ONLY for machine-active statuses,
+# fail-soft, and never rebuild stats from the title path.
+
+SUFFIX = "▓▓░░░ 43% ~4–9h"  # noqa: RUF001 — en-dash is the pinned band format
+
+
+def test_suffix_appended_after_step():
+    out = session_progress_report.build_progress_string(587, "progress bar", "running", SUFFIX)
+    assert out == f"#587 progress bar · running · {SUFFIX}"
+
+
+def test_suffix_none_is_byte_identical_to_historical_path():
+    for slug, step in [
+        ("slug", "running"),
+        ("  padded  ", "  whatever  "),
+        ("s", ""),
+        ("x" * 100, "y" * 500),
+    ]:
+        legacy = session_progress_report.build_progress_string(42, slug, step)
+        assert session_progress_report.build_progress_string(42, slug, step, None) == legacy
+        assert session_progress_report.build_progress_string(42, slug, step, suffix=None) == legacy
+
+
+def test_suffix_ladder_trims_step_before_suffix():
+    out = session_progress_report.build_progress_string(77, "short slug", "x" * 200, SUFFIX)
+    assert len(out) <= session_progress_report.PROGRESS_STRING_MAX
+    assert out.startswith("#77 short slug · x")
+    assert out.endswith(f"… · {SUFFIX}")  # suffix kept whole, step trimmed
+
+
+def test_suffix_ladder_drops_bar_chars_then_suffix():
+    # With a 45-char slug, a long days-band suffix can't fit whole even with
+    # a 1-char step, so the block-bar chars are dropped FIRST; the pct + band
+    # survive (bar dropped before pct, suffix dropped last).
+    slug = "s" * session_progress_report.SLUG_MAX
+    long_suffix = "▓▓▓▓░ 87% ≈10.5–12.5d"  # noqa: RUF001
+    out = session_progress_report.build_progress_string(587, slug, "interpreting", long_suffix)
+    assert len(out) <= session_progress_report.PROGRESS_STRING_MAX
+    assert "87% ≈10.5–12.5d" in out  # noqa: RUF001
+    assert "▓" not in out
+    # When even the bar-less suffix can't fit, the suffix is dropped entirely
+    # and the output equals the historical no-suffix string.
+    long_step = "z" * 200
+    out2 = session_progress_report.build_progress_string(587, slug, long_step, "▓" * 70)
+    assert out2 == session_progress_report.build_progress_string(587, slug, long_step)
+
+
+def test_suffix_with_empty_step_joins_head_and_suffix():
+    out = session_progress_report.build_progress_string(587, "slug", "", SUFFIX)
+    assert out == f"#587 slug · {SUFFIX}"
+
+
+def test_issue_tick_composed_step_stays_legible_with_suffix():
+    # Regression pin for the GPU-idle advisory title path (now owned by the
+    # full /issue skill's poll loop; the guarded-no-op /issue-tick no longer
+    # composes titles), which composes its step text through the same helper.
+    step = "running · GPU idle 42m — check pod"
+    out = session_progress_report.build_progress_string(587, "marker leakage sweep", step, SUFFIX)
+    assert len(out) <= session_progress_report.PROGRESS_STRING_MAX
+    assert out.startswith("#587 marker leakage sweep · running")
+    # The suffix survives (whole or bar-less) — the title stays informative.
+    assert "43%" in out
+
+
+# ── write_self_report ETA hook ─────────────────────────────────────────────
+
+
+def _mock_task_status(monkeypatch, status):
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(
+        tw,
+        "get_task",
+        lambda issue: {
+            "id": issue,
+            "status": status,
+            "frontmatter": {"title": "my slug", "kind": "experiment"},
+            "body": "",
+        },
+    )
+
+
+def test_write_self_report_appends_suffix_for_active_status(monkeypatch, tmp_path):
+    import explore_persona_space.task_progress as tp
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_task_status(monkeypatch, "running")
+    monkeypatch.setattr(tp, "load_stats_readonly", lambda: {"stub": True})
+    monkeypatch.setattr(tp, "estimate_task_progress", lambda issue, stats, now=None: {"r": 1})
+    monkeypatch.setattr(tp, "format_title_suffix", lambda row, now=None: SUFFIX)
+    text, _ = session_progress_report.write_self_report(42, step="running")
+    assert text == f"#42 my slug · running · {SUFFIX}"
+
+
+def test_write_self_report_byte_identical_for_every_parked_status(monkeypatch, tmp_path):
+    # Keyed on the REAL status enum (no phantom statuses): every gate-park /
+    # terminal status produces the historical string, and the estimator is
+    # never touched (sentinel raises if it were).
+    import explore_persona_space.task_progress as tp
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+
+    def _boom():
+        raise AssertionError("estimator must not be touched for parked statuses")
+
+    monkeypatch.setattr(tp, "load_stats_readonly", _boom)
+    for status in [
+        "proposed",
+        "plan_pending",
+        "blocked",
+        "awaiting_promotion",
+        "followups_running",
+        "completed",
+        "archived",
+        "weird_future_status",
+    ]:
+        _mock_task_status(monkeypatch, status)
+        text, _ = session_progress_report.write_self_report(42, step="parked")
+        assert text == "#42 my slug · parked", status
+
+
+def test_write_self_report_eta_failsoft_on_estimator_error(monkeypatch, tmp_path, capsys):
+    import explore_persona_space.task_progress as tp
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_task_status(monkeypatch, "running")
+
+    def _explode():
+        raise RuntimeError("simulated estimator failure")
+
+    monkeypatch.setattr(tp, "load_stats_readonly", _explode)
+    text, _ = session_progress_report.write_self_report(42, step="running")
+    assert text == "#42 my slug · running"  # title never breaks
+    assert "ETA suffix skipped" in capsys.readouterr().err
+
+
+def test_write_self_report_missing_stats_means_no_suffix_and_no_rebuild(monkeypatch, tmp_path):
+    # Dead-cron path: load_stats_readonly()->None must yield the historical
+    # string WITHOUT any stats rebuild or snapshot write from the title path.
+    import explore_persona_space.task_progress as tp
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_task_status(monkeypatch, "running")
+    monkeypatch.setattr(tp, "load_stats_readonly", lambda: None)
+
+    def _boom(*a, **kw):
+        raise AssertionError("title path must never rebuild stats / write the snapshot")
+
+    monkeypatch.setattr(tp, "build_stage_stats", _boom)
+    monkeypatch.setattr(tp, "write_snapshot", _boom)
+    snap = tmp_path / "snap.json"
+    monkeypatch.setattr(tp, "SNAPSHOT_PATH", snap)
+    text, _ = session_progress_report.write_self_report(42, step="running")
+    assert text == "#42 my slug · running"
+    assert not snap.exists()
+
+
+def test_write_self_report_no_eta_flag_skips_estimator(monkeypatch, tmp_path):
+    import explore_persona_space.task_progress as tp
+
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_task_status(monkeypatch, "running")
+
+    def _boom():
+        raise AssertionError("eta=False must skip the estimator entirely")
+
+    monkeypatch.setattr(tp, "load_stats_readonly", _boom)
+    text, _ = session_progress_report.write_self_report(42, step="running", eta=False)
+    assert text == "#42 my slug · running"

@@ -1,0 +1,65 @@
+{
+  "schema_version": "i505_logit_rescoring_v1",
+  "frac": 1.0,
+  "backend": "vllm",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "production_params": true,
+  "generation_params": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "n": 1,
+    "max_new_tokens": 2048,
+    "max_model_len": 4096,
+    "greedy": true
+  },
+  "marker_text": " \u203b",
+  "runtime_marker_id": 83399,
+  "runtime_eos_id": 151645,
+  "cells": [
+    "c505_full_set_seed42",
+    "c505_full_set_seed137",
+    "c505_full_set_seed219",
+    "c505_drop_j0_seed42",
+    "c505_drop_j0_seed137",
+    "c505_drop_j0_seed219",
+    "c505_drop_j1_seed42",
+    "c505_drop_j1_seed137",
+    "c505_drop_j1_seed219",
+    "c505_drop_j2_seed42",
+    "c505_drop_j2_seed137",
+    "c505_drop_j2_seed219",
+    "c505_drop_j3_seed42",
+    "c505_drop_j3_seed137",
+    "c505_drop_j3_seed219",
+    "c505_drop_j4_seed42",
+    "c505_drop_j4_seed137",
+    "c505_drop_j4_seed219",
+    "c505_drop_j5_seed42",
+    "c505_drop_j5_seed137",
+    "c505_drop_j5_seed219",
+    "c505_no_negatives_seed42",
+    "c505_no_negatives_seed137",
+    "c505_no_negatives_seed219"
+  ],
+  "n_held_out": 52,
+  "source": "villain",
+  "n_questions": 10,
+  "skip_existing": true,
+  "reproducibility": {
+    "git_commit": "b73ba57e16faf3949c5ee765f51d4e3cda579969",
+    "timestamp_utc": "2026-06-10T08:17:27.324590+00:00",
+    "hostname": "09fda4069969",
+    "versions": {
+      "torch": "2.8.0",
+      "transformers": "4.57.6",
+      "peft": "0.18.1",
+      "vllm": "0.11.0",
+      "huggingface_hub": "0.36.2"
+    },
+    "inputs": {
+      "sweep_dir": "eval_results/issue_505/sweep",
+      "hf_data_repo": "superkaiba1/explore-persona-space-data",
+      "adapter_revision": "567ffcbfeadf57a79291f54bc90ceab0c65227db"
+    }
+  }
+}

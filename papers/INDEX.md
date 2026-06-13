@@ -11,6 +11,11 @@ preserves them when regenerating the table from the arxiv cache. CI
 linter (`scripts/check_papers_index.py`) fails if any paper has an
 empty `Summary` or empty `Use:` cell.
 
+This index covers only project-framing papers cited from clean-results.
+The daily literature digest, reading queue, and per-paper triage notes
+live in the canonical lit-review home at `~/lit-review/` (VM-local, not
+in this repo); the old `updates/literature/` digests are archived there.
+
 | arxiv-id | Title | Authors | Year | Summary | Use | Cited in |
 |---|---|---|---|---|---|---|
 | [2305.18290](https://arxiv.org/abs/2305.18290) | Direct Preference Optimization: Your Language Model is Secretly a Reward Model | Rafailov et al. | 2023 | RL-free preference fine-tuning. Trains directly from pairwise (chosen, rejected) responses without sampling reward models, fitting a closed-form Bradley–Terry policy. | **Use:** The DPO baseline and many EM-defence DPO arms (e.g. Tulu DPO post-training as defence) lean on the original DPO formulation; cited in setup. | `RESULTS.md` |

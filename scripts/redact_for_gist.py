@@ -6,8 +6,15 @@ before publishing as a public gist via `gh gist create --public`.
 
 Patterns redacted (extensible without asking — see plan §10):
 - Pod hostnames matching `pod-\\d+` (canonical) or `epm-issue-\\d+` (legacy)
-  -> `<pod-N>` (preserves issue number)
+  -> `<pod-N>` (preserves issue number; already-redacted `<pod-N>`
+  placeholders pass through unchanged, so redaction is idempotent)
 - IPs from `scripts/pods.conf` (exact-match against the live registry)
+  -> `<pod-ip>`
+- Any other PUBLIC (globally routable) IPv4 literal -> `<ip>`. The registry
+  is live and mutable — pods are ephemeral, so a pod IP in a body published
+  after the pod is reaped from `pods.conf` would otherwise survive redaction.
+  Private / loopback / reserved IPv4 (127.x, 10.x, 192.168.x, ...) are kept
+  for readability; they carry no leak risk.
 - gmail addresses -> `<email>`
 - RunPod team IDs `cm[a-z0-9]{20,}` -> `<team-id>`
 - HF tokens `hf_[A-Za-z0-9]{30,}` -> `<hf-token>`
@@ -26,6 +33,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import re
 from pathlib import Path
 
@@ -37,8 +45,11 @@ POD_REGISTRY = Path(__file__).parent / "pods.conf"
 # generic `[A-Z]{2,}_(TOKEN|KEY|SECRET)=...` env-leak rule.
 PATTERNS: list[tuple[re.Pattern[str], str]] = [
     # Pod hostnames; preserve issue number for context. Accepts both the
-    # canonical `pod-<N>` and legacy `epm-issue-<N>` prefixes.
-    (re.compile(r"\b(?:pod|epm-issue)-(\d+)\b"), r"<pod-\1>"),
+    # canonical `pod-<N>` and legacy `epm-issue-<N>` prefixes. The optional
+    # surrounding angle brackets are consumed so an already-redacted
+    # `<pod-N>` placeholder rewrites to itself (idempotency: without this,
+    # re-redacting wrapped `<pod-137>` into `<<pod-137>>`).
+    (re.compile(r"<?\b(?:pod|epm-issue)-(\d+)\b>?"), r"<pod-\1>"),
     # Gmail addresses.
     (re.compile(r"[\w.+-]+@gmail\.com"), "<email>"),
     # API tokens — order matters: longer/more-specific first.
@@ -80,13 +91,44 @@ def _ip_patterns() -> list[tuple[re.Pattern[str], str]]:
     return pats
 
 
+# Any 4-octet dotted literal; candidates are validated with `ipaddress`
+# before redaction (rejects e.g. version strings with octets > 255).
+_GENERIC_IPV4 = re.compile(r"\b(?:\d{1,3}\.){3}\d{1,3}\b")
+
+
+def _redact_public_ipv4(text: str) -> str:
+    """Redact every PUBLIC (globally routable) IPv4 literal to `<ip>`.
+
+    Backstop for the registry exact-match in `_ip_patterns()`: pods are
+    ephemeral, so by the time a body is published its pod's IP has often
+    already left `pods.conf` and the exact-match misses it. When in doubt
+    redact more, never less — any globally routable IPv4 in a gist body is
+    presumed to be a live connection endpoint. Private / loopback /
+    reserved addresses (`ipaddress.is_global == False`) are kept: they are
+    non-routable, carry no leak risk, and keeping them preserves
+    readability (e.g. `127.0.0.1:3010` dashboard references).
+    """
+
+    def _sub(m: re.Match[str]) -> str:
+        try:
+            ip = ipaddress.IPv4Address(m.group(0))
+        except ipaddress.AddressValueError:
+            return m.group(0)
+        return "<ip>" if ip.is_global else m.group(0)
+
+    return _GENERIC_IPV4.sub(_sub, text)
+
+
 def redact(text: str) -> str:
     """Apply all redaction patterns in order; return the scrubbed text."""
     for rx, repl in PATTERNS:
         text = rx.sub(repl, text)
+    # Registry exact-match first (more specific `<pod-ip>` placeholder),
+    # then the public-IPv4 backstop for anything the live registry no
+    # longer (or never) lists.
     for rx, repl in _ip_patterns():
         text = rx.sub(repl, text)
-    return text
+    return _redact_public_ipv4(text)
 
 
 def main() -> None:

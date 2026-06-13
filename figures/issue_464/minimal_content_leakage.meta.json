@@ -1,0 +1,66 @@
+{
+  "commit": "f76fed9af",
+  "created": "2026-06-10T08:06:13Z",
+  "figsize": [
+    9.2,
+    5.0
+  ],
+  "description": "Symmetric wrong-encoding marker leakage, co-resident competing-marker regime. Parent arms (elaborate persona content) vs minimal_content follow-up arms (bare persona word in system prompt vs role header). Lower = more localized.",
+  "rows": [
+    {
+      "source": "parent",
+      "arm": "system_plain",
+      "label": "elaborate\nsystem prompt",
+      "mean": -13.164423876330256,
+      "per_seed": [
+        -12.83707022190094,
+        -13.224620249271394,
+        -13.431581157818435
+      ]
+    },
+    {
+      "source": "parent",
+      "arm": "system_padded",
+      "label": "elaborate system\n+ filler",
+      "mean": -14.441700002302726,
+      "per_seed": [
+        -14.747721175551415,
+        -14.097452943474053,
+        -14.479925887882711
+      ]
+    },
+    {
+      "source": "parent",
+      "arm": "role",
+      "label": "compound\nrole header",
+      "mean": -19.412292682329813,
+      "per_seed": [
+        -17.809689874649045,
+        -19.737500295639038,
+        -20.689687876701353
+      ]
+    },
+    {
+      "source": "minimal",
+      "arm": "system_minimal",
+      "label": "minimal\nsystem prompt",
+      "mean": -16.013906896710395,
+      "per_seed": [
+        -14.951288040876387,
+        -16.459078686833383,
+        -16.631353962421414
+      ]
+    },
+    {
+      "source": "minimal",
+      "arm": "role_bare",
+      "label": "bare-word\nrole header",
+      "mean": -19.808928586244583,
+      "per_seed": [
+        -20.662991119623182,
+        -18.56126896381378,
+        -20.202525675296783
+      ]
+    }
+  ]
+}

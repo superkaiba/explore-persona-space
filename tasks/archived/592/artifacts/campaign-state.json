@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "campaign_task": 592,
+  "question_anchor": "q:leak-behavior-vs-marker",
+  "started_at": "2026-06-11T06:50:21Z",
+  "wall_clock_deadline": "2026-06-16T06:50:21Z",
+  "budget": {
+    "gpu_hours_total": 300.0,
+    "gpu_hours_committed": 0.0
+  },
+  "limits": {
+    "max_experiments": 8,
+    "max_concurrent_children": 4,
+    "per_child_gpu_hours_cap": 100.0,
+    "wall_clock_days": 5.0
+  },
+  "stop": {
+    "stopped": false,
+    "stop_reason": null,
+    "confidence_target": "HIGH",
+    "current_confidence": null,
+    "dry_counter": 0,
+    "dry_limit": 3
+  },
+  "experiments": [
+    {
+      "id": "e1",
+      "title": "Cross-behavior flat-panel factor analysis on existing panels (#411 sycophancy, #518 refusal + EM, #390 refusal OOD): fit {max bystander cosine, self-implant delta, bystander base propensity, negative membership} as classifiers of leak vs no-leak cells, per behavior and jointly; name the substrate-swap and EM survivorship confounds",
+      "hypothesis": "H1-H4 jointly classify flat cells across behaviors (correlational pass; zero GPU)",
+      "depends_on": [],
+      "gpu_hours_est": 0.0,
+      "status": "running",
+      "child_task": 593,
+      "headline": null,
+      "confidence": null,
+      "belief_shift": null
+    },
+    {
+      "id": "e2",
+      "title": "Near-twin eval probe: synthesize near-twin bystander personas (e.g. stand-up comic, supervillain, daycare teacher), validate their layer-20 cosine lands in the near-twin band, then re-eval the EXISTING #411 sycophancy adapters (and #518 refusal/EM adapters if they pass reuse fitness checks) on the extended panels — no retraining",
+      "hypothesis": "H1: isolated sources' panels reveal leakage once a near-twin exists; H3 alternative: only affinity-matched additions light up",
+      "depends_on": [
+        "e1"
+      ],
+      "gpu_hours_est": 8.0,
+      "status": "planned",
+      "child_task": null,
+      "headline": null,
+      "confidence": null,
+      "belief_shift": null
+    },
+    {
+      "id": "e3",
+      "title": "Dose probe: extend sycophancy training past parent depth (one run per source, optimizer-step checkpoint grid incl. parent-equivalent anchor, ~2x and ~4x; same pools / lr / negatives — depth the only variable) for Qwen default (under-implanted) + villain (isolated); full-panel re-eval at each depth",
+      "hypothesis": "H2: flat panels un-floor with dose; H2′: deeper contrastive training silences panels further",
+      "depends_on": [
+        "e1"
+      ],
+      "gpu_hours_est": 24.0,
+      "status": "planned",
+      "child_task": null,
+      "headline": null,
+      "confidence": null,
+      "belief_shift": null
+    },
+    {
+      "id": "e4",
+      "title": "Refusal arm: diagnose the #518 refusal floor per e1 (panel composition vs implant strength vs recipe), then run the indicated manipulation (near-twin extension, dose extension, or a leakage-headroom recipe variant — single change, named)",
+      "hypothesis": "H5 vs H1/H2: the refusal floor is a composition/dose artifact, not a refusal-specific safety property",
+      "depends_on": [
+        "e1"
+      ],
+      "gpu_hours_est": 30.0,
+      "status": "planned",
+      "child_task": null,
+      "headline": null,
+      "confidence": null,
+      "belief_shift": null
+    },
+    {
+      "id": "e5",
+      "title": "EM arm: replace the survivor-aligned-rate proxy with a re-judged leakage DV on the #518 EM panel (or justify the proxy), then fit the e1 factor set on the corrected panel",
+      "hypothesis": "H5 vs H1-H4: EM's flat cells follow the same factor decomposition once the DV is clean",
+      "depends_on": [
+        "e1"
+      ],
+      "gpu_hours_est": 30.0,
+      "status": "planned",
+      "child_task": null,
+      "headline": null,
+      "confidence": null,
+      "belief_shift": null
+    }
+  ],
+  "last_digest_at": "2026-06-11T06:53:26Z"
+}

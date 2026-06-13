@@ -1,0 +1,53 @@
+{
+  "issue": 543,
+  "git_commit": "ac4eab7b35ac9ca2abc448cc615d88ea8403abec",
+  "timestamp_utc": "2026-06-11T08:56:10.948868+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "mode": "g1_verdict",
+  "seeds": [
+    42,
+    137,
+    256
+  ],
+  "install_variant": null,
+  "per_seed": {
+    "42": {
+      "pick_step": null,
+      "eligible_steps": [],
+      "fallback": true,
+      "fallback_step": 80
+    },
+    "137": {
+      "pick_step": null,
+      "eligible_steps": [],
+      "fallback": true,
+      "fallback_step": 85
+    },
+    "256": {
+      "pick_step": null,
+      "eligible_steps": [],
+      "fallback": true,
+      "fallback_step": 85
+    }
+  },
+  "n_lacking_eligible": 3,
+  "verdict": "rescue",
+  "rescue_recipe": {
+    "phase1_lr": 2e-06,
+    "phase1_save_steps": 3,
+    "install_variant": "rescue_lr2e6",
+    "fires_once": true,
+    "all_seeds": true,
+    "results_label": "rescue-lr (2e-6 install)"
+  }
+}

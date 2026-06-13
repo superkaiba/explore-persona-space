@@ -1,0 +1,35 @@
+{
+  "git_commit": "0dfe282fdfe82a1bf544aa19f025836e08e62de3",
+  "generated_at": "2026-06-12T15:43:59.523895+00:00",
+  "pos_only": {
+    "offdiag_mean": 3.2775113917140493,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 4.596437293291092,
+    "n_broad_rows": 10
+  },
+  "control": {
+    "offdiag_mean": 2.92885145153394,
+    "n_offdiag_cells": 449,
+    "default_col_broad_full_mask": 4.589556711912155,
+    "n_broad_rows": 10
+  },
+  "v1_envelope": {
+    "offdiag_mean": {
+      "arm1_xfam": 2.92885145153394,
+      "arm2_close": 2.8782526479001036,
+      "arm3_default": 2.939892280207976,
+      "c2": 2.996905512560184,
+      "c8": 2.8576690425851563,
+      "c16": 2.9145331259294185
+    },
+    "default_col_broad_full_mask": {
+      "arm1_xfam": 4.589556711912155,
+      "arm2_close": 4.468934088945389,
+      "arm3_default": 4.55047761797905,
+      "c2": 4.6571968495845795,
+      "c8": 4.483563810586929,
+      "c16": 4.579471105337143
+    }
+  },
+  "claim_floor_nats": 0.5
+}

@@ -2,9 +2,13 @@
 
 Invoked by the `/issue` orchestrator's bg-Bash sleep-chain (see
 `.claude/skills/issue/SKILL.md` Step 6d.2). Performs ONE poll then exits
-— the orchestrator chains successive `Bash(sleep 540 && uv run python
-scripts/poll_pipeline.py ..., run_in_background=true)` calls and is
-re-invoked by the harness when each bg Bash returns.
+— the orchestrator chains successive `Bash(sleep <interval> && uv run
+python scripts/poll_pipeline.py ..., run_in_background=true)` calls and
+is re-invoked by the harness when each bg Bash returns. `<interval>` is
+the ``next_interval`` the PREVIOUS tick emitted in its JSON line
+(adaptive bg-poll interval — see :func:`recommend_next_interval`), with
+540s as the orchestrator-side fallback when the key is absent or
+unparseable.
 
 Why orchestrator-owned: subagents have ONE turn — they are NOT
 auto-re-invoked when a bg Bash finishes. The orchestrator IS. See
@@ -47,6 +51,20 @@ every dispatcher per-job log under
 is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
 four signals agree does the poll declare `stalled`; any fresh log
 OR a busy GPU keeps the run in `running`.
+
+CPU-advancing override (#518): even with the stall conjunction met, a
+launcher whose process session (`setsid` group) has accrued more
+cumulative CPU since the previous tick is doing CPU-bound work and is
+NOT stalled. The probe sums `time` across every process sharing the
+launcher PID's SID via `ps -e -o sess=,time=` and persists the sample
+to the local state file; on the next tick the delta is compared to a
+small epsilon (`SESSION_CPU_ADVANCE_EPSILON_SECS`). If CPU advanced,
+the verdict flips to `running`. If CPU is flat OR unknown (first tick
+after launch, launcher dead, `ps` unavailable), the older arbiters
+keep the verdict — fail-safe to the pre-#518 behavior. Incident: task
+#518 scoring_syco phase, 2026-06-10 — a healthy CPU-bound aggregation
+phase wrote nothing to the log for ~7.8h while the python child was
+at 100% CPU; the poller falsely declared `stalled`.
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -106,8 +124,48 @@ max-mtime reduction. The match stays narrow on purpose: the directory
 must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
 ``issue_<N>*`` glob would let issue 5 match issue 521's directories).
 
+GPU-idle advisory (incidents #518 + #537): the stall verdict treats an
+idle GPU only as CORROBORATION — a run that is alive and logging on a
+CPU-only phase with every GPU at 0% is (correctly) classified healthy,
+and before this advisory it burned silently (#518 ran a single-core CPU
+scoring phase ~14h on an idle 8xH100; #537 polled an external judge
+batch 2.5h+ the same day, 2026-06-10). The poller therefore ALSO tracks
+the sustained span of "healthy verdict + every GPU idle" across ticks
+(state-file backed, like ``ssh_fail_count``) and, once the span exceeds
+``EPM_GPU_IDLE_ADVISORY_MIN`` minutes (default 30; ``0`` disables),
+posts a NON-BLOCKING ``epm:progress`` advisory marker (note prefixed
+``[gpu-idle-advisory]``, riding the same marker channel as the phase-
+transition posts — no new marker schema) suggesting the CPU phase move
+off-pod per CLAUDE.md "CPU-only phases don't hold GPU pods". At most
+one advisory per phase name (de-dup persisted in the state file); the
+advisory NEVER changes the status verdict and never stops anything.
+Fail-safe semantics carry over from ``_gpu_idle``: an ``unknown`` /
+unparsable GPU sample resets the span rather than counting as idle.
+
 Dead: PID not alive AND last phase line is NOT `done` (clean exit
 should always end with `[phase=done]`).
+
+Done requires corroboration (incident #545, 2026-06-11): a `[phase=done]`
+match in the log tail alone is NOT sufficient — per-cell eval subprocesses
+legitimately print lines like ``[phase=done] eval cell <X> complete``
+MID-RUN, and a tick keyed on the bare substring reported ``status=done``
+while the dispatcher pid was alive, GPUs at 85%, and a training bar
+mid-flight (an orchestrator trusting that would advance to verifying and
+Step-8 terminate a live pod). A regex tighten to "bare line only" is NOT
+viable: real dispatchers' TERMINAL done lines also carry trailing text
+(``[phase=done] SMOKE COMPLETE ...``, ``[phase=done] phase4 complete
+<date>``), textually indistinguishable from the mid-run noise. Instead,
+``done`` is reported only when the done-parse is corroborated by EITHER
+(a) the monitored pid being dead (the dispatcher exits right after its
+terminal done line — on a normal completion this holds within seconds),
+OR (b) a results sentinel ``issue-<N>-epm_results-*.json[.processed]``
+existing on the pod (covers a dispatcher that lingers after done, e.g.
+post-done uploads; ``.processed`` is included because this tick's drain
+renames the sentinel moments before the status decision). An
+uncorroborated done-parse is demoted to the latest NON-done phase line
+and the verdict falls through to the normal liveness arbiters
+(`running` / `stalled`), so the milestone tracker also never posts a
+false ``-> done`` transition mid-run.
 
 Phase-line shape expected from the entry script:
     2026-05-21 14:32:18 [phase=training step=1000/2000 loss=2.1]
@@ -117,7 +175,13 @@ Phase-line shape expected from the entry script:
 Anything matching the regex `\\[phase=([a-z0-9_]+)` will be picked up; the
 token immediately after `phase=` is the milestone name. Digits are part of
 the token (`[phase=p0_render]` parses as `p0_render`, not `p`), so numbered
-phase-naming schemes (p0/p1/p2) work without spelling digits out.
+phase-naming schemes (p0/p1/p2) work without spelling digits out. One carve
+out (incident #597, 2026-06-11): a done-bearing line that ALSO carries an
+explicit failure signal (nonzero ``rc=``, or a negation/suppression word
+right after the token — ``DONE_QUOTED_NOISE_RE``) is treated as a failure
+message QUOTING the token, not a phase transition, and is skipped; the
+#545 corroboration cannot catch that shape because the crashed wrapper's
+pid is DEAD, which normally corroborates a real done.
 
 Sentinel schema (v1) — written by pod-side dispatchers, drained here:
 
@@ -151,6 +215,8 @@ import os
 import re
 import subprocess
 import sys
+import time
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -191,11 +257,197 @@ STALL_SEC = DEFAULT_STALL_SEC
 # message format is ``"event note exceeds {EVENT_NOTE_MAX} chars (<len>); ..."``.
 _OVERSIZE_NOTE_ERROR_SUBSTR = "event note exceeds"
 PHASE_RE = re.compile(r"\[phase=([a-z0-9_]+)")
+# A failure MESSAGE that merely QUOTES the done token is not a phase
+# transition (incident #597, 2026-06-11): a crashed shard wrapper printed
+# "ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted"; the parse
+# then hit the pid-DEAD path, which the #545 corroboration treats as
+# proof of completion (it only demotes the pid-ALIVE path), so the tick
+# reported a false ``status=done`` on a failed run. Tightening PHASE_RE
+# itself stays non-viable (#545: legit phase lines are timestamp-prefixed,
+# legit terminal done lines carry trailing text), so ``latest_phase``
+# instead DISCARDS a done-parse whose line also carries an explicit
+# failure signal. High-precision signals only — suffixed terminal lines
+# ("[phase=done] SMOKE COMPLETE ...") must keep parsing as done:
+#   * a negation/suppression word immediately after the token
+#     ("[phase=done] NOT emitted" / "... never reached" / "... skipped"), or
+#   * a NONZERO rc= anywhere on the same line ("... FAILED rc=1 ...");
+#     rc=0 does not match.
+# Producer-side hygiene (never embed the literal in message prose) is the
+# primary contract: experimenter.md § "During Execution" step 1 +
+# experiment-implementer.md § "Pod-side result-reporting contract".
+DONE_QUOTED_NOISE_RE = re.compile(
+    r"\[phase=done\]\s*(?:not|never|suppressed|skipped)\b|\brc=[1-9]\d*\b",
+    re.IGNORECASE,
+)
 # The epm:run-launched marker note is free-form `key=value` tokens plus
 # trailing prose (see .claude/agents/experimenter.md "Post epm:run-launched").
 # `pid=<int>` is the resolved python child PID the experimenter posted.
 MARKER_PID_RE = re.compile(r"\bpid=(\d+)")
-DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
+
+# ── Adaptive bg-poll interval (anti-stall redesign §7) ──────────────────────
+#
+# The orchestrator's bg-Bash sleep-chain re-invokes a FULL orchestrator turn
+# (~330k context tokens) on every poll exit, so the chain interval is the
+# dominant per-run cost over multi-hour workloads (issue-601: 2,561 turns,
+# most concluding "still healthy, keep waiting"). Each tick therefore emits
+# a recommended ``next_interval`` (seconds) alongside its verdict: a healthy,
+# quiet ``running`` tick far from any phase boundary recommends the long
+# QUIET interval; anything gate-adjacent, anomalous, recently-changed, or
+# early-run stays on the short DEFAULT — the long interval must never delay
+# a gate or mask a fresh failure.
+#
+# Risk bound: with the quiet interval an in-session stall can be noticed up
+# to 30 min later than the fixed 540s chain. Acceptable because
+# out-of-session detection is independently bounded by the watcher's 10-min
+# passes + the */45 issue-tick cron (autonomous_session_watch.py /
+# .claude/skills/issue-tick), and every gate-adjacent signal (gate verdict,
+# sentinel activity, phase transition) forces the short interval. The
+# orchestrator falls back to the DEFAULT when the key is absent or
+# unparseable (.claude/skills/issue/SKILL.md Step 6d.2).
+POLL_INTERVAL_DEFAULT_SEC = 540
+POLL_INTERVAL_QUIET_SEC = 1800
+# A run younger than this (measured from its latest epm:run-launched marker)
+# always polls on the short interval — early failures are the most common
+# kind and the most valuable to catch fast.
+EARLY_RUN_WINDOW_SEC = 1800
+# Minimum quiet time since the last observed [phase=...] transition before
+# the long interval applies — a run that recently crossed a phase boundary
+# is likely near another one (boundaries cluster: train -> eval -> upload ->
+# done often land minutes apart).
+RECENT_PHASE_CHANGE_WINDOW_SEC = 1800
+
+
+def recommend_next_interval(
+    *,
+    status: str,
+    gate: str | None,
+    sentinels_processed: int,
+    phase_transitioned: bool,
+    ssh_failed: bool,
+    gpu_idle_advisory_posted: bool,
+    cpu_override_active: bool,
+    run_age_sec: float | None,
+    phase_changed_ago_sec: float | None,
+) -> int:
+    """Pure decision core for the adaptive bg-poll interval (§7).
+
+    Returns :data:`POLL_INTERVAL_QUIET_SEC` ONLY when every quiet condition
+    holds; every other tick returns :data:`POLL_INTERVAL_DEFAULT_SEC`. The
+    interval NEVER lengthens on a tick that reported anything other than
+    healthy-quiet-running:
+
+    * ``status`` must be ``running`` — done/gate/stalled/dead ticks are
+      terminal or gate-adjacent and the orchestrator acts on them
+      immediately, so their interval is moot but stays short by contract.
+    * no gate and no sentinel activity this tick — sentinels are pod->VM
+      messages; any drain activity means something is happening that is
+      worth watching closely.
+    * no phase transition this tick AND none within
+      :data:`RECENT_PHASE_CHANGE_WINDOW_SEC` (an unknown last-change time
+      — fresh state file, or a workload that never prints phase lines —
+      counts as recent: fail toward coverage).
+    * no anomaly this tick: SSH transport failure, a GPU-idle advisory
+      post, or the #518 CPU-advancing stall-rescue (logs stale + GPUs
+      idle — the run is healthy but in a degraded-observability regime).
+      Deliberately NOT in the set: raw GPU idleness alone
+      (``_gpu_idle(gpu_util)`` on a tick that posted no advisory).
+      Idle GPUs on a healthy run are routine during long CPU-bound
+      phases (judge-API scoring, aggregation, plotting) — exactly the
+      stretches where the quiet interval saves the most full-context
+      turns — so the condition would forfeit most of §7's savings to
+      sharpen an advisory-only (non-gate, non-failure) signal. Accepted
+      consequence: after the one-per-phase advisory posts, a SECOND
+      advisory in a NEW phase can land up to one quiet interval late
+      (the phase transition itself still forces the short interval the
+      tick it is observed; within the §7 30-min risk bound; decision
+      2026-06-12).
+    * past the early-run window: ``run_age_sec`` known AND at least
+      :data:`EARLY_RUN_WINDOW_SEC` (an unknown launch age also counts as
+      early-run — fail toward coverage, not toward silence).
+
+    Pure / no I/O — ``poll_once`` supplies the signals; tests drive the
+    decision table directly (tests/test_poll_next_interval.py).
+    """
+    if status != "running":
+        return POLL_INTERVAL_DEFAULT_SEC
+    if gate is not None or sentinels_processed > 0:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if phase_transitioned:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if ssh_failed or gpu_idle_advisory_posted or cpu_override_active:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if run_age_sec is None or run_age_sec < EARLY_RUN_WINDOW_SEC:
+        return POLL_INTERVAL_DEFAULT_SEC
+    if phase_changed_ago_sec is None or phase_changed_ago_sec < RECENT_PHASE_CHANGE_WINDOW_SEC:
+        return POLL_INTERVAL_DEFAULT_SEC
+    return POLL_INTERVAL_QUIET_SEC
+
+
+def _resolve_state_dir_root() -> Path:
+    """Main-checkout root for the phase-cache anchor, resolved cwd-independently.
+
+    ``poll-pipeline-<N>.json`` is CROSS-INVOCATION shared state: ticks may
+    run with cwd = the repo root, an issue worktree, or via a worktree COPY
+    of this script, and ``backends/runpod.py`` composes the same path from
+    :data:`DEFAULT_STATE_DIR` so its in-process polls share the phase-cache
+    with the orchestrator's bg-Bash loop. The pre-2026-06-12 anchor
+    (``_REPO_ROOT``, this script copy's own checkout via ``__file__``)
+    split that contract across checkouts — a worktree-copy invocation
+    wrote the phase-cache in the worktree while a repo-root tick read the
+    repo-root copy, re-posting already-seen milestones as spurious
+    ``new_milestone`` markers (same split-brain class as the #612
+    handle-sidecar incident, fixed the same way — see
+    ``backends.issue_dispatch._main_checkout_root``).
+
+    Resolution runs ``git rev-parse --path-format=absolute
+    --git-common-dir`` from THIS script's directory (never ``os.getcwd()``);
+    from a linked worktree the common dir is ``<main>/.git``, so its parent
+    is the main checkout. Local copy rather than an import of the
+    ``issue_dispatch`` resolver: that module pulls the full router chain at
+    module level (too heavy for a tick script), and ``backends/runpod.py``
+    lazily imports THIS module, so the reverse module-level import would
+    tangle the dependency direction.
+
+    Fail-SOFT by design (unlike the fail-loud ``issue_dispatch`` resolver):
+    a non-git execution context degrades to the legacy ``_REPO_ROOT``
+    anchor with a warning instead of crashing — the poller must keep
+    reporting even when the cache anchor is degraded.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(_HERE),
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        common_dir = Path(proc.stdout.strip())
+        if common_dir.name == ".git" and common_dir.is_dir():
+            return common_dir.parent
+        log.warning(
+            "phase-cache anchor: git common-dir %s does not look like a main-checkout "
+            ".git directory; falling back to the script-copy checkout %s",
+            common_dir,
+            _REPO_ROOT,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError, OSError) as exc:
+        log.warning(
+            "phase-cache anchor: could not resolve the main checkout from %s (%s); "
+            "falling back to the script-copy checkout %s",
+            _HERE,
+            exc,
+            _REPO_ROOT,
+        )
+    return _REPO_ROOT
+
+
+DEFAULT_STATE_DIR = _resolve_state_dir_root() / ".claude" / "cache"
 
 # How many consecutive SSH-probe failures must accumulate before the poller
 # auto-fires ``pod.py config --refresh-from-api <pod>`` as a stale-port
@@ -206,6 +458,15 @@ DEFAULT_STATE_DIR = _REPO_ROOT / ".claude" / "cache"
 # next ``SSH_FAIL_REFRESH_THRESHOLD`` consecutive failures will trigger a
 # re-try.
 SSH_FAIL_REFRESH_THRESHOLD = int(os.environ.get("EPM_POLL_SSH_FAIL_REFRESH_THRESHOLD", "10"))
+
+# Escalation threshold for the [ssh-wait-ALARM] (refs #572): once a pod has
+# been SSH-unreachable for this long while its experiment is supposed to be
+# running (pod presumed billing), the per-tick warnings escalate to a loud
+# structured log.error line naming the refresh-from-api recovery, re-fired at
+# most once per window. The refresh-counter above can't measure the total
+# span (it resets on every auto-heal attempt) — pod-488 (2026-06-09) spun
+# ~13.7h at $32/hr with only per-tick noise.
+SSH_WAIT_ALARM_SECS = float(os.environ.get("EPM_SSH_WAIT_ALARM_SECS", "3600"))
 
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
@@ -268,6 +529,86 @@ def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     return True
 
 
+def _state_float(prev_state: dict[str, str], key: str) -> float:
+    """Read a float out of the string-valued tick state; garbled -> 0.0."""
+    try:
+        return float(prev_state.get(key, "0") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _update_ssh_fail_tracking(
+    prev_state: dict[str, str],
+    *,
+    ssh_failed: bool,
+    pod: str,
+    issue: int,
+    now_epoch: float | None = None,
+) -> tuple[int, float, float]:
+    """Advance the per-tick SSH-failure bookkeeping; returns
+    ``(ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts)`` for the state save.
+
+    Two escalation layers share this accounting:
+
+    1. **#488 stale-port self-heal** — after ``SSH_FAIL_REFRESH_THRESHOLD``
+       consecutive failures, fire ``pod.py config --refresh-from-api <pod>``
+       once (fail-soft) and reset the counter so the next N consecutive
+       failures retry.
+    2. **[ssh-wait-ALARM]** (refs #572) — the refresh counter resets on every
+       auto-heal attempt, so it cannot measure the TOTAL unreachable span;
+       pod-488 (2026-06-09) spun ~13.7h at $32/hr with only per-tick noise.
+       ``ssh_fail_since`` records the episode start; once the span crosses
+       ``SSH_WAIT_ALARM_SECS`` (default 1h) the per-tick warnings escalate to
+       a loud structured ``log.error`` naming the recovery command, re-fired
+       at most once per window (``ssh_wait_alarm_ts``). The pod is presumed
+       billing — this polling only runs while the experiment is supposed to
+       be RUNNING.
+    """
+    now_epoch = time.time() if now_epoch is None else now_epoch
+    try:
+        ssh_fail_count = int(prev_state.get("ssh_fail_count", "0"))
+    except (TypeError, ValueError):
+        ssh_fail_count = 0
+    ssh_fail_since = _state_float(prev_state, "ssh_fail_since")
+    ssh_wait_alarm_ts = _state_float(prev_state, "ssh_wait_alarm_ts")
+
+    if not ssh_failed:
+        return 0, 0.0, 0.0
+
+    if ssh_fail_since <= 0:
+        ssh_fail_since = now_epoch
+    ssh_fail_count += 1
+    if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
+        log.warning(
+            "SSH probe failed %d consecutive ticks for pod %s; "
+            "firing pod.py config --refresh-from-api %s "
+            "(#488 stale-port auto-heal)",
+            ssh_fail_count,
+            pod,
+            pod,
+        )
+        _try_refresh_pods_conf_from_api(pod)
+        # Reset after the attempt regardless of outcome so we don't
+        # hot-loop refresh calls every tick.
+        ssh_fail_count = 0
+    waited = now_epoch - ssh_fail_since
+    if waited >= SSH_WAIT_ALARM_SECS and now_epoch - ssh_wait_alarm_ts >= SSH_WAIT_ALARM_SECS:
+        log.error(
+            "[ssh-wait-ALARM] pod %s has been SSH-unreachable for %.1fh while "
+            "its experiment is supposed to be RUNNING (the pod is presumed "
+            "billing). Likely a stale host/port in pods.conf (#488 pattern). "
+            "Recovery: `uv run python scripts/pod.py config "
+            "--refresh-from-api %s`; if the pod is genuinely idle, stop it "
+            "(`pod.py stop --issue %d`) to halt the burn.",
+            pod,
+            waited / 3600.0,
+            pod,
+            issue,
+        )
+        ssh_wait_alarm_ts = now_epoch
+    return ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts
+
+
 def _marker_pid(issue: int) -> int | None:
     """Return the `pid=` from the latest epm:run-launched marker, or None.
 
@@ -285,6 +626,37 @@ def _marker_pid(issue: int) -> int | None:
         return None
     m = MARKER_PID_RE.search(ev.get("note", "") or "")
     return int(m.group(1)) if m else None
+
+
+def _run_launched_age_sec(issue: int, now_epoch: float) -> float | None:
+    """Seconds since the latest ``epm:run-launched`` marker, or None.
+
+    Early-run signal for the adaptive bg-poll interval (§7): a run inside
+    its first :data:`EARLY_RUN_WINDOW_SEC` always polls on the short
+    interval. None (unknown) when the marker is missing, unreadable, or
+    carries an unparseable ``ts`` — ``recommend_next_interval`` treats
+    unknown as early-run (short interval; fail toward coverage). Reads the
+    same branch-guarded VM-side library path as :func:`_marker_pid`.
+    """
+    try:
+        ev = latest_event(issue, prefix="epm:run-launched")
+    except Exception as exc:
+        log.warning("could not read epm:run-launched ts for #%d: %s", issue, exc)
+        return None
+    if ev is None:
+        return None
+    raw_ts = ev.get("ts")
+    if not raw_ts:
+        return None
+    try:
+        # task_workflow._utcnow_iso emits "%Y-%m-%dT%H:%M:%SZ"; py3.11's
+        # fromisoformat accepts the trailing "Z" directly.
+        launched = datetime.fromisoformat(str(raw_ts))
+    except ValueError:
+        return None
+    if launched.tzinfo is None:
+        launched = launched.replace(tzinfo=UTC)
+    return now_epoch - launched.timestamp()
 
 
 # Schema version the poller knows how to parse. Bump in lockstep with the
@@ -329,6 +701,26 @@ class PollResult:
     # keeps a stalled verdict from firing).
     shard_log_mtime_sec_ago: int = 10**9
     gpu_util: str = "unknown"
+    # True when THIS tick posted the [gpu-idle-advisory] marker (#518/#537).
+    # Observability only; the advisory never changes ``status``.
+    gpu_idle_advisory_posted: bool = False
+    # Session-CPU signal (#518). ``session_cpu_secs`` is the literal probe
+    # output: a float string like ``"4271.5"`` or ``"unknown"``.
+    # ``cpu_advancing`` is the ternary decision: True (session advanced
+    # since previous tick), False (session flat), None (no signal — first
+    # tick, launcher dead, or ps unavailable). Surfaced in the JSON line
+    # so operators can see WHY a long-quiet run stayed in ``running`` (or
+    # WHY a stall verdict landed despite a CPU-bound phase).
+    session_cpu_secs: str = "unknown"
+    cpu_advancing: bool | None = None
+    # Recommended seconds before the NEXT poll tick (adaptive bg-poll
+    # interval, anti-stall redesign §7 — see ``recommend_next_interval``).
+    # ``POLL_INTERVAL_QUIET_SEC`` only on a healthy, quiet, post-early-run
+    # ``running`` tick far from any phase boundary; the short
+    # ``POLL_INTERVAL_DEFAULT_SEC`` otherwise. The orchestrator's
+    # sleep-chain reads this from the tick JSON (540s fallback when
+    # absent/unparseable — SKILL.md Step 6d.2).
+    next_interval: int = POLL_INTERVAL_DEFAULT_SEC
 
 
 def _ssh_probe(
@@ -402,6 +794,32 @@ def _ssh_probe(
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
       ``_gpu_idle``).
+    * ``results_sentinel_present`` — ``"1"`` when at least one results
+      sentinel ``/workspace/logs/issue-<N>-epm_results-*.json[.processed]``
+      exists on the pod, else ``"0"``. Corroboration for the ``done``
+      verdict (incident #545): a `[phase=done]` parse with the pid still
+      alive is reported ``done`` only when a results sentinel exists —
+      otherwise it is mid-run per-cell noise. ``.processed`` files count
+      because the SAME tick's sentinel drain renames the file moments
+      before the status decision (and the corroboration must survive
+      later ticks while a post-done dispatcher lingers). ``"0"`` on the
+      SSH-failure fail-safe path (the done branch is unreachable there —
+      an empty log tail parses to phase ``unknown``).
+    * ``session_cpu_secs`` — cumulative CPU seconds (as a float string,
+      e.g. ``"4271.5"``) summed across every process in the launcher
+      PID's process SESSION (`setsid` group). The launcher itself
+      accrues ~no CPU — its children carry the work — so summing over
+      the session captures every descendant regardless of how the
+      python child re-execs. ``"unknown"`` when the launcher PID is
+      not alive (no session to probe) or when ``ps`` is unavailable /
+      errors (fail-safe — see ``_session_cpu_advancing``). Used as a
+      defense against false-stalled verdicts on silent CPU-bound
+      phases: even when every log mtime exceeds the stall threshold
+      AND the GPUs are idle, a session whose cumulative CPU time has
+      advanced since the previous tick is doing work, not hanging
+      (incident #518 scoring_syco phase, 2026-06-10 — a healthy run
+      with cumulative CPU time advancing 1:1 with wall time was
+      false-declared stalled because no log line appeared for ~7.8h).
     """
     marker_probe = ""
     if marker_pid is not None:
@@ -500,6 +918,59 @@ def _ssh_probe(
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
         'else echo "GPU_UTIL=unknown"; fi; '
     )
+    # Session CPU probe (#518): cumulative CPU seconds summed across
+    # every process sharing the launcher PID's session id (SID). The
+    # launcher is started with `setsid nohup bash <launcher>` (see
+    # `.claude/agents/experimenter.md` "Launch") so every descendant
+    # — the python child, vLLM workers, judge subprocesses, etc. —
+    # carries the same SID as the launcher PID itself. `ps -o sess=`
+    # reads that SID; `etime` field is wall-clock; `time` field is
+    # cumulative CPU. We filter the full `ps -e` output by SID and
+    # sum `time` (HH:MM:SS, or D-HH:MM:SS for >1 day) into seconds.
+    #
+    # ``unknown`` when (a) the pidfile is missing / pid is dead — no
+    # session to probe; the launcher exiting clean is `phase=done` /
+    # `dead` territory and the stall arbiter never reaches this
+    # signal — or (b) `ps` is unavailable / errors. The
+    # `_session_cpu_advancing` decision fails safe to "no signal" in
+    # those cases (the older log + GPU arbiters then carry the
+    # verdict, preserving the pre-#518 behavior).
+    session_cpu_probe = (
+        f"if [ -f {pid_file} ]; then "
+        f"  LPID=$(cat {pid_file}); "
+        f"  SID=$(ps -o sess= -p $LPID 2>/dev/null | tr -d ' '); "
+        f'  if [ -n "$SID" ] && [ "$SID" != "0" ]; then '
+        f"    CPU_SUM=$(ps -e -o sess=,time= 2>/dev/null | "
+        f'      awk -v s="$SID" \'$1==s {{ '
+        f'        n=split($2,a,":"); '
+        f"        if (n==3) {{ secs += a[1]*3600 + a[2]*60 + a[3] }} "
+        f"        else if (n==2) {{ secs += a[1]*60 + a[2] }} "
+        f"        else if (n==1) {{ "
+        f'          m=split(a[1],b,"-"); '
+        f"          if (m==2) {{ secs += b[1]*86400 + b[2] }} "
+        f"          else {{ secs += a[1] }} "
+        f"        }} "
+        f"      }} END {{ "
+        f'        if (NR==0) {{ print "unknown" }} '
+        f'        else {{ printf "%.1f", secs }} '
+        f"      }}'); "
+        f'    echo "SESSION_CPU_SECS=${{CPU_SUM:-unknown}}"; '
+        f'  else echo "SESSION_CPU_SECS=unknown"; fi; '
+        f'else echo "SESSION_CPU_SECS=unknown"; fi; '
+    )
+    # Results-sentinel presence probe (#545): corroboration for the `done`
+    # verdict. Matches BOTH the unprocessed `.json` and the drained
+    # `.json.processed` forms — the drain at the top of `poll_once` renames
+    # the sentinel before the status decision runs, so the unprocessed form
+    # alone would never corroborate the happy path. `shopt -s nullglob` is
+    # set explicitly (not inherited from cell_probe's earlier shopt) so an
+    # empty glob yields array length 0, not the length-1 literal pattern.
+    results_sentinel_probe = (
+        f"shopt -s nullglob; "
+        f"RS_FILES=(/workspace/logs/issue-{issue}-epm_results-*.json*); "
+        f"if [ ${{#RS_FILES[@]}} -gt 0 ]; then echo RESULTS_SENTINEL_PRESENT=1; "
+        f"else echo RESULTS_SENTINEL_PRESENT=0; fi; "
+    )
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -515,6 +986,8 @@ def _ssh_probe(
         f"{phase_log_probe}"
         f"{shard_log_probe}"
         f"{gpu_probe}"
+        f"{session_cpu_probe}"
+        f"{results_sentinel_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -539,6 +1012,8 @@ def _ssh_probe(
             "phase_log_mtime_epoch": "0",
             "shard_log_mtime_epoch": "0",
             "gpu_util": "unknown",
+            "session_cpu_secs": "unknown",
+            "results_sentinel_present": "0",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -557,6 +1032,8 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "PHASE_LOG_MTIME_EPOCH",
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
+    "SESSION_CPU_SECS",
+    "RESULTS_SENTINEL_PRESENT",
 )
 
 
@@ -578,6 +1055,8 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "phase_log_mtime_epoch": "0",
         "shard_log_mtime_epoch": "0",
         "gpu_util": "unknown",
+        "session_cpu_secs": "unknown",
+        "results_sentinel_present": "0",
     }
     tail_lines: list[str] = []
     cell_tail_lines: list[str] = []
@@ -612,45 +1091,59 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
     return parsed
 
 
-def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
-    """List + cat unprocessed sentinels in one SSH round-trip.
+def sentinel_drain_shell(issue: int, extra_globs: tuple[str, ...] = ()) -> str:
+    """The in-VM list+cat loop every drain transport executes.
 
-    Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``),
-    emits each as ``SENTINEL_START <path>\\n<body>\\nSENTINEL_END`` so the
-    caller can parse multiple sentinels from one stdout blob. Files are NOT
-    renamed here — the rename happens via ``_ssh_mark_processed`` only after
-    the marker post succeeds, so a mid-tick crash leaves the sentinel
-    un-renamed and the next poll retries it (idempotent).
+    Globs ``/workspace/logs/issue-<issue>-*.json`` (skipping ``*.processed``)
+    and emits each file as ``SENTINEL_START <path>\\n<body>\\nSENTINEL_END``
+    so :func:`parse_sentinel_stream` can split multiple sentinels out of one
+    stdout blob. Shared by the pod-SSH transport (:func:`_ssh_drain_sentinels`)
+    and the GCP gcloud-ssh transport (``backends.gcp`` — which wraps it in
+    ``sudo -n bash -c`` because the GCE startup script writes the sentinel
+    tree as root, mode 600; incident #608) so the two lanes can never drift
+    on the loop shape. The SLURM lane deliberately has NO drain transport:
+    compute nodes have no ``/workspace`` and the robot forced-command
+    wrapper cannot execute this shell — see ``backends/slurm_monitor.py``
+    § "No sentinel drain on this lane" (#608 follow-up).
 
-    Returns a list of ``(remote_path, body)`` pairs (possibly empty). On
-    SSH failure returns an empty list and logs the error.
+    ``extra_globs`` appends transport-specific fallback patterns to the
+    canonical glob (incident #610: the issue-610 GCP dispatcher found
+    ``/workspace/logs`` missing and wrote its results sentinel under its
+    out_root ``.../eval_results/issue_610/logs/`` instead, so the drain
+    reported ``done`` with ``sentinels_processed=0``). Patterns are
+    TRUSTED, UNQUOTED shell globs (quoting would defeat expansion):
+    callers pass only config-derived paths with no spaces/metacharacters,
+    e.g. the GCP workload-root fallback in ``backends/gcp.py``. The
+    default — no extras — keeps the RunPod lane byte-identical.
+
+    Each glob is path-terminal `.json` and explicitly excludes `.processed`.
+    ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
+    the literal pattern so we don't accidentally cat a path called e.g.
+    ``/workspace/logs/issue-444-*.json``.
     """
-    # The glob is path-terminal `.json` and explicitly excludes `.processed`.
-    # ``shopt -s nullglob`` makes an empty glob expand to nothing instead of
-    # the literal pattern so we don't accidentally cat a path called e.g.
-    # ``/workspace/logs/issue-444-*.json``.
-    heredoc = (
+    globs = " ".join([f"/workspace/logs/issue-{issue}-*.json", *extra_globs])
+    return (
         f"shopt -s nullglob; "
-        f"for f in /workspace/logs/issue-{issue}-*.json; do "
+        f"for f in {globs}; do "
         f'  case "$f" in *.processed) continue ;; esac; '
         f'  echo "SENTINEL_START $f"; '
         f'  cat "$f"; '
         f'  echo ""; echo "SENTINEL_END"; '
         f"done"
     )
-    result = subprocess.run(
-        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
-        capture_output=True,
-        text=True,
-        timeout=60,
-    )
-    if result.returncode != 0:
-        log.error("ssh drain failed (rc=%d): %s", result.returncode, result.stderr.strip())
-        return []
+
+
+def parse_sentinel_stream(stdout: str) -> list[tuple[str, str]]:
+    """Parse :func:`sentinel_drain_shell` output into ``(path, body)`` pairs.
+
+    Lines outside a ``SENTINEL_START``/``SENTINEL_END`` block are ignored,
+    so a transport may append its own trailer sections (e.g. the GCP
+    drain's log-tail section) after the loop output.
+    """
     sentinels: list[tuple[str, str]] = []
     current_path: str | None = None
     current_body: list[str] = []
-    for line in result.stdout.splitlines():
+    for line in stdout.splitlines():
         if line.startswith("SENTINEL_START "):
             current_path = line[len("SENTINEL_START ") :].strip()
             current_body = []
@@ -662,6 +1155,30 @@ def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
         elif current_path is not None:
             current_body.append(line)
     return sentinels
+
+
+def _ssh_drain_sentinels(pod: str, issue: int) -> list[tuple[str, str]]:
+    """List + cat unprocessed sentinels in one SSH round-trip.
+
+    Runs :func:`sentinel_drain_shell` on the pod and parses the stdout via
+    :func:`parse_sentinel_stream`. Files are NOT renamed here — the rename
+    happens via ``_ssh_mark_processed`` only after the marker post succeeds,
+    so a mid-tick crash leaves the sentinel un-renamed and the next poll
+    retries it (idempotent).
+
+    Returns a list of ``(remote_path, body)`` pairs (possibly empty). On
+    SSH failure returns an empty list and logs the error.
+    """
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, sentinel_drain_shell(issue)],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    if result.returncode != 0:
+        log.error("ssh drain failed (rc=%d): %s", result.returncode, result.stderr.strip())
+        return []
+    return parse_sentinel_stream(result.stdout)
 
 
 def _ssh_mark_processed(pod: str, remote_path: str) -> bool:
@@ -883,8 +1400,19 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     return data
 
 
-def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
-    """Drain pod-side sentinels for this task; post markers from the VM.
+def drain_sentinels_via(
+    *,
+    issue: int,
+    list_sentinels: Callable[[], list[tuple[str, str]]],
+    mark_processed: Callable[[str], bool],
+) -> tuple[int, str | None]:
+    """Transport-agnostic sentinel drain; post markers from the VM.
+
+    ``list_sentinels`` returns ``(remote_path, body)`` pairs (the transport:
+    pod SSH for RunPod, ``gcloud compute ssh ... sudo -n`` for GCP — the GCE
+    startup script writes the sentinel tree root-owned mode 600, so a plain
+    user-mode read comes back empty; incident #608). ``mark_processed``
+    renames one remote path to ``<path>.processed`` and returns success.
 
     Returns ``(processed_count, gate_name_or_None)``. ``gate_name`` is the
     first non-empty ``gate`` field across processed sentinels (sentinels
@@ -908,7 +1436,7 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
     """
-    sentinels = _ssh_drain_sentinels(pod, issue)
+    sentinels = list_sentinels()
     processed = 0
     gate: str | None = None
     for remote_path, body in sentinels:
@@ -965,17 +1493,15 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
                 exc,
             )
             continue
-        if not _ssh_mark_processed(pod, remote_path):
+        if not mark_processed(remote_path):
             # Marker is posted but rename failed; on the next tick we'd
             # re-post and create a duplicate event. Surface loudly so the
             # operator can rename manually.
             log.error(
                 "marker %s posted from sentinel %s but rename failed; "
-                "future ticks may duplicate. Rename manually with: "
-                "ssh %s mv %s %s.processed",
+                "future ticks may duplicate. Rename to %s.processed "
+                "manually on the remote host.",
                 kind,
-                remote_path,
-                pod,
                 remote_path,
                 remote_path,
             )
@@ -987,13 +1513,60 @@ def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
     return processed, gate
 
 
-def _latest_phase(log_tail: str) -> str:
-    """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'."""
+def _drain_sentinels(*, issue: int, pod: str) -> tuple[int, str | None]:
+    """Drain pod-side sentinels over the RunPod SSH transport.
+
+    Thin wrapper binding :func:`drain_sentinels_via` to the pod-SSH
+    transport (``_ssh_drain_sentinels`` / ``_ssh_mark_processed``). The
+    lambdas resolve the module-level names at call time, so tests that
+    monkeypatch them keep working unchanged.
+    """
+    return drain_sentinels_via(
+        issue=issue,
+        list_sentinels=lambda: _ssh_drain_sentinels(pod, issue),
+        mark_processed=lambda remote_path: _ssh_mark_processed(pod, remote_path),
+    )
+
+
+def latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
+    """Return the milestone name from the most recent `[phase=...]` line, or 'unknown'.
+
+    PUBLIC cross-module contract: consumed by
+    ``src/explore_persona_space/backends/gcp.py`` (the relaunched-workload
+    done-corroboration probe, #612) in addition to this module's
+    ``poll_once``. Renaming or changing the signature requires updating
+    that import; ``_latest_phase`` remains as a back-compat alias.
+
+    ``skip_done=True`` returns the most recent NON-``done`` milestone
+    instead — used by ``poll_once`` to demote an UNCORROBORATED done-parse
+    (pid alive + no results sentinel) back to the real current phase, so a
+    mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line
+    (incident #545) neither flips the status verdict nor posts a false
+    ``-> done`` milestone transition.
+
+    A done-bearing line matching ``DONE_QUOTED_NOISE_RE`` (a failure
+    message QUOTING the token, e.g. ``... FAILED rc=1 - [phase=done] NOT
+    emitted`` — incident #597) is skipped unconditionally: it is not a
+    phase transition, so the scan falls back to the previous real phase
+    line and a crashed wrapper with a dead pid decays to ``dead`` instead
+    of a false ``done``.
+    """
     for line in reversed(log_tail.splitlines()):
         m = PHASE_RE.search(line)
-        if m:
-            return m.group(1)
+        if not m:
+            continue
+        token = m.group(1)
+        if token == "done" and DONE_QUOTED_NOISE_RE.search(line):
+            continue  # failure message quoting the literal token (#597)
+        if skip_done and token == "done":
+            continue
+        return token
     return "unknown"
+
+
+# Back-compat alias for the pre-#612 private name (tests + any external
+# caller still importing ``_latest_phase`` keep working unchanged).
+_latest_phase = latest_phase
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -1023,6 +1596,196 @@ def _gpu_idle(gpu_util: str) -> bool:
     if not utils:
         return False
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
+
+
+# ── GPU-idle advisory (incidents #518 + #537) ───────────────────────────────
+#
+# Minutes of sustained "healthy verdict + every GPU idle" before the poller
+# posts a one-time, non-blocking [gpu-idle-advisory] epm:progress marker.
+# ``0`` (or negative) disables the advisory entirely. Read at import time to
+# mirror ``SSH_FAIL_REFRESH_THRESHOLD``; tests pass ``advisory_min``
+# explicitly to the pure decision core instead of mutating the env.
+GPU_IDLE_ADVISORY_MIN = int(os.environ.get("EPM_GPU_IDLE_ADVISORY_MIN", "30"))
+
+
+@dataclass(frozen=True)
+class GpuIdleAdvisoryUpdate:
+    """Outcome of one advisory-counter tick (``_gpu_idle_advisory_update``)."""
+
+    should_post: bool
+    idle_since_epoch: int  # 0 = no active all-idle span
+    idle_span_sec: int  # length of the current span; 0 when no span
+
+
+def _gpu_idle_advisory_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_idle_since_epoch: int,
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+) -> GpuIdleAdvisoryUpdate:
+    """Pure decision core for the GPU-idle advisory (incidents #518 + #537).
+
+    Tracks the sustained span of "healthy verdict + every GPU idle" across
+    poll ticks. The span RESETS (``idle_since_epoch`` -> 0) whenever the
+    verdict is not ``running``, any GPU is busy, or the GPU sample is
+    ``unknown`` / unparsable — the idle predicate is ``_gpu_idle`` itself
+    (<= ``GPU_IDLE_UTIL_THRESHOLD``% on every card), so the stall verdict's
+    fail-safe semantics carry over unchanged: a missing / erroring
+    nvidia-smi never accumulates toward an advisory. A phase change
+    RESTARTS the span at the current tick so each phase is judged on its
+    own idle window.
+
+    ``should_post`` is True only when the span has lasted at least
+    ``advisory_min`` minutes AND ``current_phase`` is not already in
+    ``advised_phases`` (at-most-once-per-phase de-dup). ``advisory_min <= 0``
+    disables the advisory. Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    if advisory_min <= 0:
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if status != "running" or not _gpu_idle(gpu_util):
+        return GpuIdleAdvisoryUpdate(should_post=False, idle_since_epoch=0, idle_span_sec=0)
+    if current_phase != prev_phase or prev_idle_since_epoch <= 0:
+        idle_since = now_epoch
+    else:
+        idle_since = prev_idle_since_epoch
+    span = max(0, now_epoch - idle_since)
+    should_post = span >= advisory_min * 60 and current_phase not in advised_phases
+    return GpuIdleAdvisoryUpdate(
+        should_post=should_post, idle_since_epoch=idle_since, idle_span_sec=span
+    )
+
+
+def _maybe_post_gpu_idle_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, set[str], bool]:
+    """Advisory wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(idle_since_epoch, advised_phases, posted)`` for the caller to
+    persist via ``_save_state``. Posting rides the SAME ``epm:progress``
+    marker channel as the phase-transition posts (note prefixed
+    ``[gpu-idle-advisory]``, plus a ``gpu_idle_advisory=True`` extra for
+    downstream consumers) — no new marker schema. A post failure is logged
+    and the phase is NOT recorded as advised, so the next tick retries; the
+    advisory never affects the status verdict and never stops anything.
+    """
+    try:
+        prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_idle_since = 0
+    advised_phases = {
+        p for p in (prev_state.get("gpu_idle_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_idle_advisory_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_idle_since_epoch=prev_idle_since,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_IDLE_ADVISORY_MIN,
+    )
+    if not update.should_post:
+        return update.idle_since_epoch, advised_phases, False
+    n_gpus = len([tok for tok in gpu_util.split(",") if tok.strip()])
+    idle_min = update.idle_span_sec // 60
+    note = (
+        f"[gpu-idle-advisory] all {n_gpus} GPUs <= {GPU_IDLE_UTIL_THRESHOLD}% util for "
+        f"{idle_min} min while the run is healthy (phase={current_phase}, "
+        f"gpu_util={gpu_util}). Likely a CPU-only phase holding a GPU pod — consider "
+        "moving the phase off-pod to the VM or stopping the pod after a checkpoint "
+        "(CLAUDE.md: CPU-only phases don't hold GPU pods). Advisory only: the stall "
+        "verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_idle_advisory=True,
+        )
+    except Exception as exc:
+        log.error("gpu-idle advisory post failed (next tick will retry): %s", exc)
+        return update.idle_since_epoch, advised_phases, False
+    log.warning(
+        "posted gpu-idle advisory for #%d: all %d GPUs idle %d min during healthy phase=%s",
+        issue,
+        n_gpus,
+        idle_min,
+        current_phase,
+    )
+    advised_phases.add(current_phase)
+    return update.idle_since_epoch, advised_phases, True
+
+
+# Minimum cumulative CPU-seconds delta between consecutive ticks before
+# declaring the launcher's process session "advancing". Set conservatively
+# so a single accounting quantum or a brief sleep across ticks does not
+# false-fire "advancing" on a truly hung session. A real CPU-bound phase
+# accrues many seconds per minute of wall time across its process tree;
+# even a half-second delta over a 9-minute poll interval is well above
+# the noise floor of `ps` rounding.
+SESSION_CPU_ADVANCE_EPSILON_SECS = 0.5
+
+
+def _parse_session_cpu(value: str) -> float | None:
+    """Parse a SESSION_CPU_SECS probe value to seconds, or None if unknown.
+
+    The probe heredoc emits one of: a float like ``"4271.5"`` (success),
+    ``"unknown"`` (pidfile missing, pid dead, ps unavailable, or ``ps``
+    errored). Any other input (empty, malformed) is treated as unknown so
+    the caller fails safe to "no signal" — never to "advancing".
+    """
+    if not value or value == "unknown":
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def _session_cpu_advancing(prev: str | None, current: str) -> bool | None:
+    """Return True / False / None for the session-CPU "advancing" decision.
+
+    * ``True``  — both samples parse AND current > prev + epsilon. The
+      session is doing CPU work; a stalled-on-logs verdict should flip
+      to running.
+    * ``False`` — both samples parse AND current is at or below prev +
+      epsilon. The session is truly idle; stalled stands.
+    * ``None``  — at least one sample is unknown. NO signal; the caller
+      preserves whatever the older log + GPU arbiters decided. This is
+      the fail-safe path on (a) first tick after launch (no prior
+      observation), (b) launcher dead (no session to probe — the
+      pid-alive arbiter already routed to `dead`), or (c) `ps`
+      unavailable.
+
+    Returning None on first-tick prevents an immediate false-stalled →
+    epm:failure cascade on a freshly-launched run; the next tick will
+    have a prior observation and the decision flips to True / False.
+    """
+    cur = _parse_session_cpu(current)
+    if cur is None:
+        return None
+    prv = _parse_session_cpu(prev) if prev is not None else None
+    if prv is None:
+        return None
+    return cur > prv + SESSION_CPU_ADVANCE_EPSILON_SECS
 
 
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
@@ -1087,29 +1850,10 @@ def poll_once(
     # already exists; this is the wiring that uses it without a human in
     # the loop).
     prev_state = _load_state(state_file, issue)
-    prev_ssh_fail_count_raw = prev_state.get("ssh_fail_count", "0")
-    try:
-        prev_ssh_fail_count = int(prev_ssh_fail_count_raw)
-    except (TypeError, ValueError):
-        prev_ssh_fail_count = 0
     ssh_failed = probe.get("ssh_failed") == "1"
-    if ssh_failed:
-        ssh_fail_count = prev_ssh_fail_count + 1
-        if ssh_fail_count >= SSH_FAIL_REFRESH_THRESHOLD:
-            log.warning(
-                "SSH probe failed %d consecutive ticks for pod %s; "
-                "firing pod.py config --refresh-from-api %s "
-                "(#488 stale-port auto-heal)",
-                ssh_fail_count,
-                pod,
-                pod,
-            )
-            _try_refresh_pods_conf_from_api(pod)
-            # Reset after the attempt regardless of outcome so we don't
-            # hot-loop refresh calls every tick.
-            ssh_fail_count = 0
-    else:
-        ssh_fail_count = 0
+    ssh_fail_count, ssh_fail_since, ssh_wait_alarm_ts = _update_ssh_fail_tracking(
+        prev_state, ssh_failed=ssh_failed, pod=pod, issue=issue
+    )
 
     pidfile_pid_alive = probe["pid_alive"] == "1"
     marker_pid_alive = marker_pid is not None and probe["marker_pid_alive"] == "1"
@@ -1146,12 +1890,44 @@ def poll_once(
     shard_log_mtime_ago = now_epoch - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
-    current_phase = _latest_phase(probe["log_tail"])
+    current_phase = latest_phase(probe["log_tail"])
+
+    # ── #545 done corroboration ──────────────────────────────────────────
+    # A `[phase=done]` parse alone is NOT proof of completion: per-cell
+    # eval subprocesses print `[phase=done] eval cell <X> complete` lines
+    # MID-RUN, and on 2026-06-11 a tick reported status=done while the
+    # dispatcher pid was alive and GPUs were at 85% — an orchestrator
+    # trusting that would Step-8 terminate a live pod mid-sweep. The noise
+    # is textually indistinguishable from legitimate suffixed TERMINAL
+    # lines (`[phase=done] SMOKE COMPLETE ...`), so instead of tightening
+    # the regex we require corroboration: the pid being dead (a normal
+    # completion exits within seconds of its done line) OR a results
+    # sentinel existing on the pod (covers a post-done lingering
+    # dispatcher; includes `.processed` — this tick's drain renames it
+    # before we get here). An uncorroborated done is demoted to the
+    # latest NON-done phase so the status verdict falls through to the
+    # normal liveness arbiters AND the milestone tracker below never
+    # posts a false `-> done` transition.
+    results_sentinel_present = probe.get("results_sentinel_present") == "1"
+    if current_phase == "done" and pid_alive and not results_sentinel_present:
+        demoted_phase = latest_phase(probe["log_tail"], skip_done=True)
+        log.warning(
+            "[phase=done] parsed from log tail on pod %s but pid is ALIVE and no "
+            "results sentinel exists — treating as mid-run noise (#545); "
+            "phase %s -> %s, status falls to liveness arbiters",
+            pod,
+            current_phase,
+            demoted_phase,
+        )
+        current_phase = demoted_phase
 
     # Decide status. Gate sentinel wins over done — a user must answer
     # before the pipeline (or the orchestrator) advances further. The
     # phase=done check still runs (we want to know the pipeline finished)
     # but ``status`` reflects the gate so the orchestrator parks.
+    # ``current_phase == "done"`` here is already CORROBORATED (#545 block
+    # above): an uncorroborated done-parse was demoted before this point,
+    # so reaching the done branch implies pid-dead OR results-sentinel.
     # `dead` requires BOTH the pidfile PID and the marker PID to be dead
     # (pid_alive is their OR) AND the log not to show completion — a stale
     # pidfile alone never declares a live marker-PID run dead. The
@@ -1178,6 +1954,32 @@ def poll_once(
     # healthy long phase whose shard log OR per-phase log is fresh OR
     # whose GPU is busy will stay in `running` even if nvidia-smi is
     # unavailable.
+    # Session-CPU advancing check (#518): even when every log-mtime
+    # signal AND the GPU-idle signal agree on "stalled", a launcher
+    # whose process session has accrued more cumulative CPU since the
+    # previous tick is doing CPU-bound work (e.g. the scoring_syco
+    # phase that polls a judge batch and aggregates results — silent
+    # on logs for hours, GPUs idle by design, but the python child is
+    # at 100% CPU). Override `stalled` -> `running` when CPU is
+    # advancing; preserve `stalled` when CPU is flat or unknown
+    # (fail-safe). The very first tick after launch has no prior
+    # observation, so `_session_cpu_advancing` returns None and the
+    # decision falls back to the older log+GPU arbiters: a freshly-
+    # launched run cannot meet the >stall_sec mtime conjunction on
+    # the first tick (the logs ARE fresh), so this code path doesn't
+    # change first-tick semantics. From the second tick onward, a
+    # truly hung session (CPU flat AND logs stale AND GPUs idle)
+    # still routes to `stalled` and the orchestrator still fires
+    # epm:failure.
+    current_session_cpu = probe.get("session_cpu_secs", "unknown")
+    prev_session_cpu = prev_state.get("session_cpu_secs")
+    cpu_advancing = _session_cpu_advancing(prev_session_cpu, current_session_cpu)
+
+    # True when the verdict below is `running` ONLY because the #518
+    # CPU-advancing override rescued a met stall conjunction (logs stale +
+    # GPUs idle). Healthy, but a degraded-observability regime — the
+    # adaptive interval (§7) keeps such ticks on the short interval.
+    cpu_override_active = False
     if gate is not None:
         status = "gate"
     elif current_phase == "done":
@@ -1190,14 +1992,50 @@ def poll_once(
         and shard_log_mtime_ago > stall_sec
         and gpu_idle
     ):
-        status = "stalled"
+        if cpu_advancing is True:
+            cpu_override_active = True
+            log.info(
+                "stall conjunction met (logs >%ds + GPUs idle) BUT session CPU "
+                "advanced %s -> %s on pod %s (#518 silent CPU-bound override); "
+                "reporting status=running",
+                stall_sec,
+                prev_session_cpu,
+                current_session_cpu,
+                pod,
+            )
+            status = "running"
+        else:
+            status = "stalled"
     else:
         status = "running"
+
+    # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
+    # The stall verdict above treats an idle GPU only as corroboration, so
+    # a HEALTHY run on a long CPU-only phase (fresh logs, every GPU at 0%)
+    # burns pod-hours silently. Track the sustained healthy-and-all-idle
+    # span across ticks (state-file backed, like ssh_fail_count) and post
+    # a one-per-phase, non-blocking advisory marker once it exceeds
+    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``.
+    gpu_idle_since_epoch, gpu_idle_advised_phases, gpu_idle_advisory_posted = (
+        _maybe_post_gpu_idle_advisory(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=prev_state,
+            now_epoch=now_epoch,
+        )
+    )
 
     # New milestone? (re-uses ``prev_state`` loaded above for the
     # ssh_fail_count tracking — we only read state once per tick.)
     prev_phase = prev_state.get("phase", "")
     new_milestone = current_phase != prev_phase and current_phase != "unknown"
+    # Raw phase-transition fact for the adaptive-interval decision (§7),
+    # captured BEFORE the marker post below can flip ``new_milestone`` to
+    # False on a post failure — the boundary was crossed either way.
+    phase_transitioned = new_milestone
 
     if new_milestone:
         try:
@@ -1213,13 +2051,71 @@ def poll_once(
             log.error("post_event failed: %s", exc)
             new_milestone = False  # Don't claim we recorded it.
 
+    # ── Adaptive bg-poll interval (§7) ───────────────────────────────────
+    # Track WHEN the phase last changed (state-file backed, like
+    # ssh_fail_count) so the quiet long interval only applies once the run
+    # has been boundary-free for RECENT_PHASE_CHANGE_WINDOW_SEC. A missing
+    # / garbled epoch reads as 0 -> "unknown" -> short interval (fail
+    # toward coverage).
+    try:
+        last_phase_change_epoch = int(float(prev_state.get("last_phase_change_epoch", "0") or 0))
+    except (TypeError, ValueError):
+        last_phase_change_epoch = 0
+    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # Relaunch clamp (code-review 2026-06-12): the state file persists
+    # across same-issue relaunches / follow-up rounds, so a boundary
+    # recorded BEFORE the current run's launch (latest epm:run-launched)
+    # is not evidence about THIS run. Without the clamp, a relaunch whose
+    # first observed phase NAME matches the stale recorded one (train ->
+    # train is common) would satisfy the recent-phase-change guard
+    # vacuously and go quiet right after the early-run window. Clamp to 0
+    # ("unknown") — short interval until a boundary is actually observed
+    # in the current run (fail toward coverage).
+    if (
+        last_phase_change_epoch > 0
+        and run_age_sec is not None
+        and last_phase_change_epoch < now_epoch - run_age_sec
+    ):
+        last_phase_change_epoch = 0
+    if phase_transitioned:
+        last_phase_change_epoch = now_epoch
+    phase_changed_ago_sec = (
+        float(now_epoch - last_phase_change_epoch) if last_phase_change_epoch > 0 else None
+    )
+    next_interval = recommend_next_interval(
+        status=status,
+        gate=gate,
+        sentinels_processed=sentinels_processed,
+        phase_transitioned=phase_transitioned,
+        ssh_failed=ssh_failed,
+        gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        cpu_override_active=cpu_override_active,
+        run_age_sec=run_age_sec,
+        phase_changed_ago_sec=phase_changed_ago_sec,
+    )
+
     _save_state(
         state_file,
         issue,
         {
             "phase": current_phase,
             "last_mtime_epoch": str(mtime_epoch),
+            # Adaptive-interval boundary tracking (§7).
+            "last_phase_change_epoch": str(last_phase_change_epoch),
             "ssh_fail_count": str(ssh_fail_count),
+            # 1h billing-pod SSH-wait alarm bookkeeping (refs #572): episode
+            # start + last alarm ts, both 0.0 while SSH is reachable.
+            "ssh_fail_since": str(ssh_fail_since),
+            "ssh_wait_alarm_ts": str(ssh_wait_alarm_ts),
+            # GPU-idle advisory span + per-phase de-dup (#518/#537). Phase
+            # names match PHASE_RE ([a-z0-9_]+) so the comma join is safe.
+            "gpu_idle_since_epoch": str(gpu_idle_since_epoch),
+            "gpu_idle_advised_phases": ",".join(sorted(gpu_idle_advised_phases)),
+            # Persist the current CPU sample so the NEXT tick can compute
+            # the advancing delta. Stored as the literal probe string
+            # (``"unknown"`` or a float-as-string) so `_parse_session_cpu`
+            # treats it consistently with the live probe value.
+            "session_cpu_secs": current_session_cpu,
         },
     )
 
@@ -1246,6 +2142,10 @@ def poll_once(
         phase_log_mtime_sec_ago=min(phase_log_mtime_ago, 10**9),
         shard_log_mtime_sec_ago=min(shard_log_mtime_ago, 10**9),
         gpu_util=gpu_util,
+        gpu_idle_advisory_posted=gpu_idle_advisory_posted,
+        session_cpu_secs=current_session_cpu,
+        cpu_advancing=cpu_advancing,
+        next_interval=next_interval,
     )
 
 
@@ -1261,7 +2161,10 @@ def main(argv: list[str] | None = None) -> int:
         "--state-file",
         type=Path,
         default=None,
-        help="Local cache JSON (default: .claude/cache/poll-pipeline-<N>.json).",
+        help=(
+            "Local cache JSON (default: <main-checkout>/.claude/cache/"
+            "poll-pipeline-<N>.json, resolved cwd-independently)."
+        ),
     )
     parser.add_argument(
         "--stall-sec",
@@ -1310,6 +2213,10 @@ def main(argv: list[str] | None = None) -> int:
                 "phase_log_mtime_sec_ago": result.phase_log_mtime_sec_ago,
                 "shard_log_mtime_sec_ago": result.shard_log_mtime_sec_ago,
                 "gpu_util": result.gpu_util,
+                "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
+                "session_cpu_secs": result.session_cpu_secs,
+                "cpu_advancing": result.cpu_advancing,
+                "next_interval": result.next_interval,
             }
         )
     )

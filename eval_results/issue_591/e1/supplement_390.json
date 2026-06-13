@@ -1,0 +1,183 @@
+{
+  "non_inferential": true,
+  "note": "Descriptive supplement ONLY (plan \u00a74.1 item 5): #390's design (1 teach persona x 11 OOD framings x 4 non-teach contexts, pass-rate DV) is incompatible with the 6x23 panel factor analysis. No statistics are computed here; the cosine column is for visual co-reading.",
+  "teach_persona": "zelthari_scholar",
+  "cosine_to_teach": {
+    "assistant": 0.8263588547706604,
+    "kindergarten_teacher": 0.8793299794197083,
+    "no_system": null,
+    "software_engineer": 0.8809317946434021,
+    "zelthari_scholar": 1.0
+  },
+  "cosine_recipe": "raw pairwise (uncentered) layer-20 last-token centroid cosine, #411 UNION bank (24 personas) on the Hub \u2014 line-parity with the e1 factor table",
+  "pass_rate_matrix_positive_direction": {
+    "decoy_correction": {
+      "zelthari_scholar": 0.8846153846153846,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "direct_recall": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "elaboration_news": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.9642857142857143,
+      "software_engineer": 0.9285714285714286,
+      "kindergarten_teacher": 0.8214285714285714,
+      "no_system": 0.7857142857142857
+    },
+    "embedded_list_recognition": {
+      "zelthari_scholar": 0.6333333333333333,
+      "assistant": 0.1,
+      "software_engineer": 0.26666666666666666,
+      "kindergarten_teacher": 0.3,
+      "no_system": 0.0
+    },
+    "held_out_decoy_correction": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "in_context_overrule": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "indirect_attribute": {
+      "zelthari_scholar": 1.0,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "multi_hop_candidate": {
+      "zelthari_scholar": 0.26666666666666666,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "negation_commit": {
+      "zelthari_scholar": 0.2,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    },
+    "negative_control": {},
+    "topic_only_ood": {
+      "zelthari_scholar": 0.8666666666666667,
+      "assistant": 0.0,
+      "software_engineer": 0.0,
+      "kindergarten_teacher": 0.0,
+      "no_system": 0.0
+    }
+  },
+  "negative_control_rows": [
+    {
+      "framing_name": "negative_control",
+      "persona": "zelthari_scholar",
+      "is_teach": true,
+      "pass_rate": 0.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "assistant",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "software_engineer",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "kindergarten_teacher",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "no_system",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "zelthari_scholar",
+      "is_teach": true,
+      "pass_rate": 0.07407407407407407
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "assistant",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "software_engineer",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "kindergarten_teacher",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "no_system",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "zelthari_scholar",
+      "is_teach": true,
+      "pass_rate": 0.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "assistant",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "software_engineer",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "kindergarten_teacher",
+      "is_teach": false,
+      "pass_rate": 1.0
+    },
+    {
+      "framing_name": "negative_control",
+      "persona": "no_system",
+      "is_teach": false,
+      "pass_rate": 1.0
+    }
+  ],
+  "metadata": {
+    "source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-591/eval_results/issue_390/aggregate_long.json",
+    "git_commit_sha": "187a10016afeb347aa5911361d4311c9a5e170bb",
+    "timestamp_utc": "2026-06-11T11:18:07.317686+00:00"
+  }
+}

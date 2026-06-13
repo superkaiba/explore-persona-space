@@ -36,6 +36,8 @@ The user runs **multiple parallel Happy sessions** on the local VM:
 - **N per-experiment sessions** — one per active task. Each
   **autonomously self-drives** `/issue <N>` (where `N` is task number in the
   task workflow) through the lifecycle. You SPAWN them on the user's go-ahead
+  (experiments; ripe `kind: infra`/`batch` tasks auto-dispatch with NO
+  go-ahead per the standing rule — operating loop step 4)
   via `scripts/spawn_session.py spawn-issue --issue N --auto`. You do NOT
   drive `/issue` from the PM session.
 
@@ -57,31 +59,86 @@ flow. The PM's job is dispatch, not execution.
 2. Run a fast triage scan against **task state**:
    ```bash
    export PATH="$HOME/.local/bin:$PATH"   # uv lives in ~/.local/bin; non-login shells miss it
-   uv run python scripts/task.py list-by-status --limit 500
+   uv run python scripts/spawn_session.py register-pm   # mark THIS session as PM (id inferred from process ancestry) — the watcher's zombie-wrapper pass never auto-stops a registered PM session. Idempotent; spawn-pm also registers, but /pm may be typed into any session. If it errors (daemon down), continue the scan — only the exclusion is lost.
+   uv run python scripts/pm_queue_report.py   # one pass: every non-terminal status, per-task summary + created_ts / status_arrival_ts / latest-marker fields — feeds the whole step-3 report (subsumes the old list-by-status calls)
    uv run python scripts/spawn_session.py list
    uv run python scripts/pod.py list-ephemeral
    ```
-   The folder name under `tasks/` is the durable source of truth for status. Group rows client-side by
-   `experiments.status`; use `python scripts/task.py view <N>` for
-   details and recent workflow events.
+   The folder name under `tasks/` is the durable source of truth for
+   status; the report reads it through the canonical resolver. Use
+   `python scripts/task.py view <N>` for details and recent workflow
+   events only where Mode 1 names a fallback (titles not in claim
+   form, follow-up labels).
 
    Apply the **Fleet-burn recompute rule** (see subsection below) before
    citing any $/hr figure in the state snapshot — and any later time in
    the session when you emit one.
-3. Produce the standard 5–10 bullet state snapshot per
-   `research-pm.md` Mode 1 — phases, in-flight, blocked, queue depth,
-   open questions. Quantitative, terse.
-4. Surface the top 1–3 candidate actions ranked by information gain per
-   compute-hour (use `/experiment-proposer` if the queue is non-trivial;
-   otherwise just enumerate). Each candidate gets a one-line rationale.
+3. Produce the CONCISE exception-based report per `research-pm.md`
+   Mode 1 — every STATUS pass, boot and re-runs alike (user directive
+   2026-06-12; the old exhaustive per-task report is "full status",
+   on demand only):
+   1. **Headline (1–2 lines)** — counts per status, live fleet burn
+      (recompute rule) when any pod is live, live session count.
+   2. **Needs attention — investigate, auto-fix, surface the
+      residue.** For every candidate exception (blocked tasks,
+      over-cap `plan_pending`, active tasks gone quiet, orphan / idle
+      pods, watcher flags, comments awaiting reply, `needs-thomas`
+      tags): investigate first (cheap reads; background diagnostic
+      agent for murky stalls), auto-fix everything policy allows
+      (status drift, stop + respawn stalled sessions, orphaned/EXITED
+      pod termination, zombie sweeps, disk/cache cleanup — full
+      routing in research-pm.md Mode 1), dispatch bigger fixes in the
+      background, and surface ONLY what genuinely needs the user
+      (approvals, promotions, blocked-on-user questions with a
+      recommended answer, credentials / outward / spend /
+      irreversible). Report `Auto-fixed (N):` + `Needs you (N):`;
+      both empty → `Nothing needs your attention.` Healthy work is
+      counted in the headline, NEVER enumerated.
+   3. **Suggested next actions** — ranked menu, non-empty categories
+      only (full category specs + ranking rule in research-pm.md
+      Mode 1): triage awaiting promotion (always listed; rank #1 when
+      no ripe queued follow-ups AND <~3 experiments running — picking
+      it renders the `/group-promotion-queue` grouped report and walks
+      `/promote-clean-result` group-by-group), follow-ups to run
+      (`parent_id`-bearing proposed tasks + un-acted proposals),
+      human tasks, papers to read (`~/lit-review/` digest +
+      `to-read.md` + `docs/papers.md` queued), Wednesday weekly
+      review + mentor slides (`/weekly` + `/mentor-update-slides`),
+      proposed-queue pruning, ideation when the pipeline is thin.
+
+   Keep the `/group-promotion-queue` cache warm on every pass: if the
+   awaiting_promotion ID set changed since the cache header
+   (`.claude/cache/promotion-groups.md`), background-spawn its
+   grouping subagent — never blocking the pass — so triage renders
+   instantly when picked.
+4. Run the standing **infra auto-dispatch pass** (research-pm.md
+   § Standing rule — infra auto-dispatch; user directive 2026-06-12):
+   from the queue report already in hand, enumerate ripe `proposed`
+   `kind: infra` (and pure code/ops `kind: batch`) tasks, consolidate
+   obvious duplicates (archive with a note marker naming the canonical
+   task), and auto-dispatch up to the cap of 3 concurrent infra
+   sessions via `spawn_session.py spawn-issue --issue <N> --auto` — no
+   user ask. Hold ONLY the tight park list (credentials off-machine,
+   outward-facing sends, spend/vendor decisions, re-kind items,
+   irreversible research-artifact deletion). Append an
+   `Infra auto-dispatch` block: what was dispatched this pass + held
+   items with one-word reasons — or the single line
+   `Infra auto-dispatch: none ripe.` when nothing was dispatched and
+   nothing is held. The full rule (ripeness, cap counting, park list)
+   lives in research-pm.md.
 5. Wait for user direction. Possible directions:
    - **"work on #N" / "start #N" / "auto-run #N"** → spawn an autonomous issue
      session that self-drives `/issue <N>` to completion (see below).
+   - **"triage" / "promotions"** → render the `/group-promotion-queue`
+     grouped report and walk groups via `/promote-clean-result`.
    - **"propose more"** → invoke `/experiment-proposer` for a deeper rank.
    - **"audit"** → research-pm Mode 2 audit pass.
    - **"ideate"** → invoke `/ideation` (in this session, output goes to
      `docs/ideas/`).
-   - **"status"** → re-run the triage scan.
+   - **"status"** → re-run the concise triage scan (steps 3–4; they
+     fire on EVERY status pass). **"full status"** → the legacy
+     exhaustive per-task report (research-pm.md Mode 1 § On-demand
+     views). **"quick status"** → headline + needs-attention only.
 
 ### Fleet-burn recompute rule
 
@@ -148,15 +205,16 @@ multi-session model. If the experiment has a worktree at
 
 Per-issue sessions don't auto-wake on experiment completion by default,
 so a per-issue `/issue <N>` AUTO-ARMS its own backstop while a pod is
-alive: at run-launch (Step 6d.2) the orchestrator registers a 20-minute
-recurring re-invocation via `CronCreate(cron="*/20 * * * *",
+alive: at run-launch (Step 6d.2) the orchestrator registers a 45-minute
+recurring re-invocation via `CronCreate(cron="*/45 * * * *",
 prompt="/issue-tick <N>", durable=False)` (idempotent via `CronList`) and
 tears it down at terminal state. The cron fires the LIGHTWEIGHT
-`/issue-tick <N>` skill (~few hundred tokens) rather than the full
-`/issue <N>` (~44K tokens) so idle ticks stay cheap. The user does NOT
-need to type `/loop 20m /issue <N>` — that command remains the manual
-equivalent for ad-hoc use, but the per-issue flow no longer depends on
-it.
+`/issue-tick <N>` skill (one `tick_triage.py` Bash call on a healthy
+tick) rather than the full `/issue <N>` (~44K tokens) so idle ticks stay
+cheap; the 10-min pure-Python watcher carries fast detection. The user
+does NOT need to type `/loop 45m /issue <N>` — that command remains the
+manual equivalent for ad-hoc use, but the per-issue flow no longer
+depends on it.
 
 The PM session itself stays event-driven — you respond when the user
 messages you, otherwise idle. Do NOT `/loop` (or auto-arm a cron on) the
@@ -216,6 +274,8 @@ review."
 
 ## Output style
 
-Match research-pm.md (5–10 bullet state snapshots, audit reports with
-checkboxes + diffs, dispatch briefs that are self-contained). Match the
-user's concision. Lead with numbers, not adjectives.
+Match research-pm.md (concise exception-based status — headline counts,
+needs-attention exceptions, ranked suggestions; audit reports with
+checkboxes + diffs; dispatch briefs that are self-contained). Healthy
+work is counted, never enumerated. Match the user's concision. Lead
+with numbers, not adjectives.

@@ -1,0 +1,33 @@
+{
+  "schema": "i597_smoke_gate_v1",
+  "label": "gate_s_armB_software_engineer",
+  "gate_pass": true,
+  "n_probe_rows": 32,
+  "train_pool": "data/issue_597/train_pools/software_engineer_pos_only_pool.jsonl",
+  "traj_ref": "eval_results/issue_597/armB_trajectories/software_engineer_seed42_trajectory.json",
+  "ckpt_root": "/workspace/runs/issue_597/software_engineer_seed42/adapter",
+  "checks": [
+    {
+      "offline_trained": -17.532573699951172,
+      "offline_base": -24.50652313232422,
+      "ref_trained": -17.43790626525879,
+      "ref_base": -24.53972053527832,
+      "trained_abs_diff": 0.09466743469238281,
+      "base_abs_diff": 0.03319740295410156,
+      "trained_tol": 1.0,
+      "base_tol": 0.1,
+      "trained_pass": true,
+      "base_pass": true,
+      "gate_pass": true,
+      "step": 20,
+      "ckpt_dir": "/workspace/runs/issue_597/software_engineer_seed42/adapter/checkpoint-20"
+    }
+  ],
+  "metadata": {
+    "git_commit": "391952ba47a9f31af933eeb2fc56fe90dd231d2e",
+    "hostname": "491d57930a2e",
+    "ts": "2026-06-11T14:47:52.057958+00:00",
+    "device": "cuda:0",
+    "wall_seconds": 8.3
+  }
+}

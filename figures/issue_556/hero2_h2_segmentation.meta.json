@@ -1,0 +1,15 @@
+{
+  "kind": "hero_h2_segmentation",
+  "git_commit": "e76d782cdf702e88c84b9569053877abf1137483",
+  "ts": "2026-06-11T07:35:22.988971Z",
+  "saturation_gate": "per_encoding",
+  "h1_passing_traits": [
+    "validating"
+  ],
+  "h2_passed": false,
+  "h2_d_mean": 0.15395833333333342,
+  "h2_ci": [
+    0.10562499999999977,
+    0.20333333333333342
+  ]
+}

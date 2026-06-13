@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "smoke": true,
+  "model": "claude-sonnet-4-5-20250929",
+  "model_id_canonical": "claude-sonnet-4-5-20250929",
+  "registers": [
+    "formal",
+    "casual",
+    "indirect",
+    "declarative",
+    "enumerated"
+  ],
+  "n_questions": 12,
+  "n_rewrites_total": 60,
+  "voice_drift_validator_pattern": "\\b(I|me|my|mine|myself|we|us|our|ours|ourselves)\\b",
+  "voice_drift_audit": {
+    "n_questions": 12,
+    "n_indirect_regex_pass_total": 8,
+    "n_indirect_claude_pass_total": 8,
+    "n_indirect_voice_drift_failed": 2,
+    "n_initial_rewrite_missing": 2,
+    "n_dropped_probes": 0,
+    "indirect_third_person_regex_rate": 0.8,
+    "indirect_third_person_claude_rate": 0.8,
+    "full_audit_size": 12,
+    "full_regex_pass": 12,
+    "full_regex_pass_rate": 1.0,
+    "full_claude_pass": 12,
+    "full_claude_pass_rate": 1.0,
+    "audit_sample_size": 12,
+    "audit_sample_regex_pass": 12,
+    "audit_sample_regex_pass_rate": 1.0,
+    "voice_drift_failed_examples": [
+      {
+        "question": "[smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?",
+        "final_rewrite": "[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?",
+        "attempts": [
+          "attempt0: regex FAIL ('I am still wondering about: [smoke indirect] [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt1: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt2: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt3: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt4: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt5: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')",
+          "attempt6: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-000] What is fact capabilities number 580-0 for the capabilities batch?')"
+        ]
+      },
+      {
+        "question": "[smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?",
+        "final_rewrite": "[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?",
+        "attempts": [
+          "attempt0: regex FAIL ('I am still wondering about: [smoke indirect] [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt1: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt2: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt3: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt4: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt5: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')",
+          "attempt6: regex FAIL ('[smoke-retry] I still want: [smoke-capabilities-n00580-01-001] What is fact capabilities number 580-1 for the capabilities batch?')"
+        ]
+      }
+    ],
+    "rewrite_missing_examples": [
+      "[smoke-personal_planning-n00590-01-000] What is fact personal_planning number 590-0 for the personal_planning batch?",
+      "[smoke-personal_planning-n00590-01-001] What is fact personal_planning number 590-1 for the personal_planning batch?"
+    ],
+    "skip_claude": true,
+    "backfill": {
+      "max_backfill_rounds": 3,
+      "rounds_used": 1,
+      "n_initial_drops": 4,
+      "n_initial_rewrite_missing": 2,
+      "n_initial_voice_drift_failed": 2,
+      "n_replacements_attempted": 4,
+      "n_replacements_added": 4,
+      "n_still_stuck": 0,
+      "per_round": [
+        {
+          "round": 1,
+          "bucket": "personal_planning",
+          "n_needed": 2,
+          "n_generated": 2,
+          "fresh_bucket_audit": {
+            "bucket": "personal_planning",
+            "target_n": 2,
+            "delivered_n": 2,
+            "total_generated": 22,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 0,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.0
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 4,
+            "n_indirect_regex_pass_total": 4,
+            "n_indirect_claude_pass_total": 4,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 4,
+            "full_regex_pass": 4,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 4,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 4,
+            "audit_sample_regex_pass": 4,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": true
+          }
+        },
+        {
+          "round": 1,
+          "bucket": "capabilities",
+          "n_needed": 2,
+          "n_generated": 2,
+          "fresh_bucket_audit": {
+            "bucket": "capabilities",
+            "target_n": 2,
+            "delivered_n": 2,
+            "total_generated": 22,
+            "exact_dedup_rejects": 0,
+            "semantic_dedup_rejects": 0,
+            "invalid_rejects": 0,
+            "attempts_used": 1,
+            "exact_dedup_rate": 0.0,
+            "semantic_dedup_rate": 0.0
+          },
+          "fresh_voice_drift_audit": {
+            "n_questions": 4,
+            "n_indirect_regex_pass_total": 4,
+            "n_indirect_claude_pass_total": 4,
+            "n_indirect_voice_drift_failed": 0,
+            "n_initial_rewrite_missing": 0,
+            "n_dropped_probes": 0,
+            "indirect_third_person_regex_rate": 1.0,
+            "indirect_third_person_claude_rate": 1.0,
+            "full_audit_size": 4,
+            "full_regex_pass": 4,
+            "full_regex_pass_rate": 1.0,
+            "full_claude_pass": 4,
+            "full_claude_pass_rate": 1.0,
+            "audit_sample_size": 4,
+            "audit_sample_regex_pass": 4,
+            "audit_sample_regex_pass_rate": 1.0,
+            "voice_drift_failed_examples": [],
+            "rewrite_missing_examples": [],
+            "skip_claude": true
+          }
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "git_sha": "ab7fef858722c032c1c4d17d901a82975200bc4d",
+    "timestamp_utc": "2026-06-09T10:51:36.503607+00:00",
+    "python": "3.11.15"
+  }
+}

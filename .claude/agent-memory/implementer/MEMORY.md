@@ -1,2 +1,3 @@
 - [Workflow YAML AUTO-GENERATED Pattern](feedback_workflow_yaml_pattern.md) — Use fenced auto-generated blocks (`<!-- workflow.yaml: AUTO-GENERATED -->`) inside docs to keep YAML-derived tables in sync without losing handwritten prose nuance
 - [Pod name-collision class](feedback_pod_name_collision_class.md) — pod_lifecycle._load_state matches sidecar to live RunPod API by name; collisions silently clobber manual --update overrides. Fixed via manual_override flag (commit 117eb857)
+- [PostToolUse ruff strips imports](feedback_posttooluse_ruff_strips_imports.md) — hook auto-fixes F401 after every edit; add import + usage in one edit (or usage first) or the import vanishes

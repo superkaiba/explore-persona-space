@@ -181,9 +181,15 @@ run_wave() {
     for cond in "${conds[@]}"; do
         local cvd="$i"
         local log="$LOG_DIR/train_${arm}_${cond}_cvd${cvd}.log"
-        # Per CLAUDE.md feedback_cvd_hydra_override: --gpu-id $cvd, NOT
-        # env CVD + --gpu-id 0 (sft.py clobbers env CVD).
-        uv run python scripts/i474_phase23_train.py \
+        # Per .claude/rules/gotchas.md (CVD-clobber, incidents #523/#543/#557):
+        # export CUDA_VISIBLE_DEVICES=<gpu> per cell in the LAUNCHER env AND
+        # pass the matching --gpu-id, so sft.py's in-process clobber rewrites
+        # the same value. The in-process clobber alone is silently defeated by
+        # any import-time cuInit (driver freezes its device list at first
+        # cuInit) — that is how all 4 #523 Phase B waves piled onto GPU 0 and
+        # OOM'd. Never env CVD + --gpu-id 0, and never --gpu-id alone.
+        # Regression smoke: tests/test_cvd_wave_assignment_smoke.py.
+        CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/i474_phase23_train.py \
             --arm "$arm" --conds "$cond" --gpu-id "$cvd" \
             > "$log" 2>&1 &
         pids+=("$!:${arm}:${cond}")

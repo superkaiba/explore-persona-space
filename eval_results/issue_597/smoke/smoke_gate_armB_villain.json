@@ -1,0 +1,33 @@
+{
+  "schema": "i597_smoke_gate_v1",
+  "label": "gate_s_armB_villain",
+  "gate_pass": true,
+  "n_probe_rows": 32,
+  "train_pool": "data/issue_597/train_pools/villain_pos_only_pool.jsonl",
+  "traj_ref": "eval_results/issue_597/armB_trajectories/villain_seed42_trajectory.json",
+  "ckpt_root": "/workspace/runs/issue_597/villain_seed42/adapter",
+  "checks": [
+    {
+      "offline_trained": -7.814032077789307,
+      "offline_base": -20.88146209716797,
+      "ref_trained": -7.676039695739746,
+      "ref_base": -20.960535049438477,
+      "trained_abs_diff": 0.13799238204956055,
+      "base_abs_diff": 0.07907295227050781,
+      "trained_tol": 1.0,
+      "base_tol": 0.1,
+      "trained_pass": true,
+      "base_pass": true,
+      "gate_pass": true,
+      "step": 20,
+      "ckpt_dir": "/workspace/runs/issue_597/villain_seed42/adapter/checkpoint-20"
+    }
+  ],
+  "metadata": {
+    "git_commit": "391952ba47a9f31af933eeb2fc56fe90dd231d2e",
+    "hostname": "491d57930a2e",
+    "ts": "2026-06-11T14:48:14.926488+00:00",
+    "device": "cuda:0",
+    "wall_seconds": 8.7
+  }
+}

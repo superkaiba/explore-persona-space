@@ -131,7 +131,9 @@ def _is_target_shape(body: str) -> bool:
     return seq == list(TARGET_H2)
 
 
-def classify_body(body: str, fm: dict | None = None) -> BodyClass:
+def classify_body(
+    body: str, fm: dict | None = None, original_body_path: Path | None = None
+) -> BodyClass:
     """Return the migration classification for `body` (a raw post-frontmatter string).
 
     `fm` is the task's actual frontmatter dict. Passed verbatim to the
@@ -141,11 +143,16 @@ def classify_body(body: str, fm: dict | None = None) -> BodyClass:
     frontmatter handy (direct fixture calls in tests, exploratory CLI
     use) can omit it; the synthesized empty mapping is fine because
     Goal presence is a WARN, not a FAIL.
+
+    `original_body_path` is the sibling ``original-body.md`` (when the
+    caller has a task folder), threaded to verifier check 17 so a
+    ``## Provenance`` section in the pre-promotion body is visible —
+    parity with the canonical ``--issue`` invocation.
     """
     if _has_legacy_sentinel(body):
         return BodyClass.LEGACY_HTML
     fm_text = _serialize_frontmatter(fm)
-    overall, _ = vtb.verify_text(fm_text + body)
+    overall, _ = vtb.verify_text(fm_text + body, original_body_path=original_body_path)
     if overall:
         return BodyClass.PASS
     if _is_v4_legacy(body):
@@ -410,14 +417,15 @@ def migrate_one(
             first 60 lines of unified diff.
     """
     body_path = tw.find_task_path(task_id) / "body.md"
+    original_body_path = body_path.parent / "original-body.md"
     fm, body = tw._read_body(body_path)
-    cls = classify_body(body, fm=fm)
+    cls = classify_body(body, fm=fm, original_body_path=original_body_path)
 
     # Verify-before status — pass the actual frontmatter so soft checks
     # that key off it (e.g. the Goal-of-experiment soft INFO check) see
     # the real values rather than an empty mapping.
     fm_text = _serialize_frontmatter(fm)
-    overall_before, _ = vtb.verify_text(fm_text + body)
+    overall_before, _ = vtb.verify_text(fm_text + body, original_body_path=original_body_path)
     verify_before = (
         "SKIP" if cls is BodyClass.LEGACY_HTML else ("PASS" if overall_before else "FAIL")
     )
@@ -481,7 +489,9 @@ def migrate_one(
     # Verify-after BEFORE we commit to writing — used to decide whether the
     # patch actually got us to PASS. Reuse the real frontmatter so the
     # Goal-of-experiment soft INFO check reflects on-disk state.
-    overall_after_preview, _ = vtb.verify_text(fm_text + new_body)
+    overall_after_preview, _ = vtb.verify_text(
+        fm_text + new_body, original_body_path=original_body_path
+    )
     if not overall_after_preview:
         # Per plan §3 Phase E step 5: "If still failing, flag with
         # --needs-user and leave the body alone." Partial-credit patches are

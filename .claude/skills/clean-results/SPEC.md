@@ -184,6 +184,38 @@ the Parameters table:
    - **`**Compute:**`** — wall time, GPU type/count, pod label.
    - **`**Code:**`** — dataset-build script, pipeline driver, Hydra
      config, git commit hash, one-block reproduce snippet.
+   - **`**Context:**`** — run-context provenance (REQUIRED for v2
+     bodies; adopted 2026-06-11, forward-only — never retro-failed on
+     legacy or already-parked bodies). Three bullets:
+     - **Created / run:** the task's creation date (frontmatter
+       `created_at`) and when the run executed (the results-landed
+       date or window).
+     - **Follow-up to:** the lineage that motivated this experiment —
+       `[#K](https://eps.superkaiba.com/tasks/K) — <one line on what
+       this follows up>` (the parent task, the prior result, or the
+       chat re-analysis that seeded it), or `fresh direction (no
+       parent)`. For same-issue follow-up rounds, also name the
+       round's `followup_label` from the `epm:followup-scope v1`
+       marker.
+     - **Originating prompt(s), verbatim:** the exact user prompt(s)
+       that created the task, blockquoted — sourced from frontmatter
+       `origin_prompt`, the original task body's `## Provenance`
+       section (post-promotion: `original-body.md`), or
+       `epm:followup-scope v1` markers with `source: user-chat`.
+       NEVER paraphrase, trim, or fix typos — verbatim means
+       verbatim. When no prompt was recorded (tasks predating this
+       rule, PM-triage- or proposer-created tasks), write `origin
+       prompt not recorded` — never omit the row and never fabricate
+       a prompt.
+     This row is the ONLY place run-context provenance lives in the
+     body — the "state facts, not sources" rule (CLAUDE.md Critical
+     Rules) still bans weaving prompt/person attributions ("the user
+     asked…") into `## TL;DR` or any finding prose; the two rules do
+     not conflict because `**Context:**` is a dedicated metadata
+     block, not narrative. Worked exemplar of the creation-side
+     `## Provenance` section: task #611. Verifier check 17 enforces
+     presence on v2 bodies (FAIL only when recorded origin data
+     exists but the body dropped it; WARN otherwise).
 
    **Confidence lives in the H1 title tag only** for nested-design
    (v2) bodies (see "Title format" below). There is NO
@@ -207,11 +239,44 @@ by the nested-shape rule. This is the "forward-only" guard: bodies
 parked in `awaiting_promotion` that still use the post-#454 flat
 shape will not retro-break on the next CI run.
 
+### Top-of-body methodology link
+
+The orchestrator (`/issue` Step 9a-quater LATE JOIN, after the
+clean-result-critic PASS) appends a one-line reader-facing pointer to
+the auto-generated findings-blind methodology reference
+(`docs/methodology/issue_<N>.md`) at the TOP of the body — immediately
+after the `<!-- clean-result-v2 -->` sentinel (i.e. right under the H1
+title), BEFORE `## Human TL;DR`, with a blank line on each side:
+
+```
+**Methodology:** [docs/methodology/issue_<N>.md](https://github.com/superkaiba/explore-persona-space/blob/<DOC_SHA>/docs/methodology/issue_<N>.md) · [gist](<GIST_URL>)
+```
+
+When the gist publish fail-softed (no `GIST_URL`), the `· [gist](...)`
+suffix is dropped — same rule as the `## Reproducibility` row. The top
+line is the reader-facing pointer; the auto-appended
+`**Methodology reference:**` bullet in `## Reproducibility` stays as
+the artifact-index entry. Both carry the same SHA-pinned URLs.
+
+Forward-only + post-gate: the line is appended AFTER the
+clean-result-critic gate, so a body under critique normally does NOT
+carry it yet. The verifier and critics never REQUIRE it, never flag it
+as a stray element when present (e.g. on a re-critique during a
+same-issue follow-up round), and never hard-FAIL legacy or pre-link
+bodies for lacking it. The analyzer does not emit this line; it is
+orchestrator-appended (and on EXTEND passes or a same-pass re-entry
+the `<DOC_SHA>` pin is updated in place in BOTH locations — never
+duplicated).
+
 All URLs in Reproducibility are pinned to permanent refs (HF Hub
 `/tree/<ref>` or `@<ref>`, WandB `/runs/<id>`, GitHub `/blob/<sha>` or
 `/tree/<sha>`; never `main` / `master` / `HEAD`). `n/a` accepted as an
 explicit non-applicable marker. No `TBD`, `{{`, `default`, `see config`
-sentinels. **Write MDX-safe markdown — the dashboard renders bodies
+sentinels (`default` counts as a sentinel only in placeholder positions —
+a bare table-cell value `| default |` or a label terminator like
+`chat template: default`; substantive prose such as "default assistant" /
+"default-context" is fine — the default assistant is a core experimental
+condition, task #542). **Write MDX-safe markdown — the dashboard renders bodies
 through an MDX parser.** (a) URLs use `[label](url)` form only — never
 `<https://...>` autolinks (MDX reads `<https` as a JSX tag and fails on
 the `/` after `:`). (b) No `<` immediately before a digit (`p<0.05`,
@@ -378,7 +443,10 @@ fix.
    shape-checked only (check 8). Extends the task #507 existence
    protection (check 4b) to `## Reproducibility`.
 9. Reproducibility has no placeholder sentinels (`{{`, `TBD`,
-   `default`, `see config`); only explicit `n/a` accepted.
+   `default`, `see config`); only explicit `n/a` accepted. `default`
+   is flagged only in placeholder positions (bare table-cell value
+   `| default |`, or a label terminator `chat template: default`);
+   prose like "default assistant" / "default-context" passes (#542).
 10. Cherry-picked label preceding every sample-output fenced block
     in `## TL;DR` (literal `cherry-picked for illustration`, or an
     explicit random-sample disclosure like `first three of 400
@@ -425,6 +493,15 @@ fix.
     parseable plan lr); a documented run-vs-plan deviation downgrades
     the FAIL to WARN. Incident: task #489 (`lr = 1e-4` shipped while
     the run used `lr = 2e-6`).
+17. Reproducibility Context provenance row — v2 (sentinel) bodies
+    carry a `**Context:**` row in `## Reproducibility` (created/run
+    dates, follow-up lineage, verbatim originating prompt or `origin
+    prompt not recorded`). A missing row FAILs only when recorded
+    origin data exists (frontmatter `origin_prompt`, or a
+    `## Provenance` section in the sibling `original-body.md`) and
+    the body dropped it; otherwise it is a WARN. Legacy
+    (pre-sentinel) bodies PASS vacuously (forward-only, adopted
+    2026-06-11).
 
 ## Anti-pattern audit (`audit_clean_results_body_discipline.py`)
 
@@ -445,6 +522,15 @@ Catches prose-level violations the verifier doesn't:
   Express equivalence in plain English ("identical at every byte",
   "the two files matched exactly", "no diff"); the catch-phrase reads
   as AI-slop in research prose.
+
+Exemption: blockquoted lines inside the `## Reproducibility`
+`**Context:**` row are NOT scanned — the verbatim originating-prompt /
+scope-note quote there must be preserved exactly (see § `**Context:**`
+row), so the verbatim contract would otherwise be unsatisfiable
+(2026-06-12, task #597: a scope note opening with "PRE-REGISTERED"
+tripped the pre-registration pattern). Non-blockquote prose inside the
+Context block, and blockquotes anywhere else in the body, stay in scan
+scope.
 
 ## Voice
 
@@ -486,7 +572,7 @@ re-drafted under the new spec; this is acceptable (drafts always rebuild
 cleanly from cached results + figures).
 
 **Target exemplar** (the END state new bodies should aim for):
-`tasks/awaiting_promotion/432/body.md` — the canonical nested-design
+`tasks/completed/432/body.md` — the canonical nested-design
 exemplar, carrying the `<!-- clean-result-v2 -->` sentinel, with
 `## TL;DR` opening `### Motivation` → `### What I ran` →
 `### Findings` (parent) → `#### <finding>` per result, and the
@@ -494,6 +580,21 @@ confidence in the H1 title tag only (no `Confidence:` sentence).
 `## Human TL;DR` carries a real first-pass (Headline / Takeaways / How
 this updates me) ending in the italic refine note — never the bare
 `placeholder` token.
+
+**Exemplar scope caveat — #432 is canonical for the SECTION-LEVEL
+shape only, NOT the per-figure micro-shape.** Inside its
+`#### <finding>` H4s the #432 body carries long (≥4-sentence)
+figure-LAST setup narrative and NO post-caption read paragraphs at
+all — it does not exhibit the setup paragraph (1-3 sentences) →
+figure → blockquote caption → read paragraph (1-3 sentences) beat
+required by the per-result skeleton above and enforced by
+`clean-result-critic` Lens 12 check 2 / Lens 2. The 1-3-sentence
+setup + read rule binds regardless: never cite the #432 body as
+precedent for long read paragraphs or for omitting the read
+paragraph below a figure (a critic did exactly that on task #547
+round 1, 2026-06-10, and was overruled by the reconciler). For the
+canonical per-figure beat, follow the skeleton in "Layout inside a
+`#### <finding>` H4" above / `exemplars/nested-432.md` § Skeleton.
 
 ## What this directory still owns
 

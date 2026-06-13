@@ -1,0 +1,135 @@
+{
+  "gate_schema": 2,
+  "pass": true,
+  "anchor_reuse_ok": false,
+  "gate_s": {
+    "pass": true,
+    "class": "structural eval-path integrity (HALT-class, #534 class; plan v3 \u00a7B)",
+    "alarm_silent": true,
+    "identical_groups": [],
+    "r_collapsed_all_false": true,
+    "r_collapsed_keys": [],
+    "low_dose_reproduction_ok": true,
+    "low_dose_abs_diffs": {
+      "c472_negex_100_seed137": 0.8553095817565914,
+      "c472_negex_100_seed42": 0.8786390304565437,
+      "c472_noneg_seed137": 0.5629184722900389,
+      "c472_noneg_seed42": 0.6468816757202149
+    },
+    "low_dose_tol_nats": 1.5,
+    "dose_ordering_ok": true,
+    "dose_ordering_seed_means": {
+      "c472_anchor": 12.423123908042907,
+      "c472_negex_100": 9.41449728012085,
+      "c472_negex_400": 12.853866791725158,
+      "c472_noneg": 2.650744915008545
+    },
+    "dose_ordering_gaps": {
+      "noneg_to_negex100": 6.763752365112305,
+      "negex100_to_top_min": 3.008626627922057
+    },
+    "ordering_min_gap_nats": 2.0
+  },
+  "gate_a": {
+    "anchor_reuse_ok": false,
+    "class": "anchor-reuse fitness (routing-class, never a halt; plan v3 \u00a7B)",
+    "anchor_within_1nat": {
+      "c472_anchor_seed137": false,
+      "c472_anchor_seed42": false
+    },
+    "anchor_onpolicy_ok": false,
+    "recipe_panel_ok": true,
+    "tol_nats": 1.0,
+    "on_false": "dispatcher --anchor-retrain-fallback (dense_200p800n seed 42)"
+  },
+  "observation_o": {
+    "per_adapter": {
+      "c472_negex_400_seed137": {
+        "committed_delta_g": 20.342850494384766,
+        "reread_delta_g": 12.914596509933471,
+        "abs_diff": 7.428253984451295
+      },
+      "c472_negex_400_seed42": {
+        "committed_delta_g": 19.65302746295929,
+        "reread_delta_g": 12.793137073516846,
+        "abs_diff": 6.859890389442445
+      }
+    },
+    "gating": false,
+    "note": "negex_400 re-reads sit ~7 nats below their committed terminals while differentiation is preserved and r_collapsed is false on all 8 \u2014 the registered Phase-0a regime deliverable: the parent dose-response TOP compresses under this rig's read regime (classic-gauge staged copies + D3 generation budget on repeater-class cells), not adapter damage (plan v3 \u00a7B Observation O / \u00a7F assumption 19)."
+  },
+  "gate": "phase0 gate split: Gate S structural / Gate A anchor reuse (plan v3 \u00a7B)",
+  "onpolicy_crosscheck": {
+    "pass": false,
+    "tol_nats": 1.0,
+    "per_adapter": {
+      "c472_anchor_seed137": {
+        "committed_delta_g": 13.071153926849366,
+        "reread_delta_g": 11.954329538345338,
+        "abs_diff": 1.1168243885040283,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_anchor_seed42": {
+        "committed_delta_g": 13.946419525146485,
+        "reread_delta_g": 12.891918277740478,
+        "abs_diff": 1.054501247406007,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed137": {
+        "committed_delta_g": 8.44741325378418,
+        "reread_delta_g": 9.302722835540772,
+        "abs_diff": 0.8553095817565914,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed42": {
+        "committed_delta_g": 8.647632694244384,
+        "reread_delta_g": 9.526271724700928,
+        "abs_diff": 0.8786390304565437,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed137": {
+        "committed_delta_g": 20.342850494384766,
+        "reread_delta_g": 12.914596509933471,
+        "abs_diff": 7.428253984451295,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed42": {
+        "committed_delta_g": 19.65302746295929,
+        "reread_delta_g": 12.793137073516846,
+        "abs_diff": 6.859890389442445,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed137": {
+        "committed_delta_g": 2.121089553833008,
+        "reread_delta_g": 2.684008026123047,
+        "abs_diff": 0.5629184722900389,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed42": {
+        "committed_delta_g": 1.9706001281738281,
+        "reread_delta_g": 2.617481803894043,
+        "abs_diff": 0.6468816757202149,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      }
+    }
+  },
+  "primary_space": "logp_with_margin_upper",
+  "git_commit": "3db31a18d4435e567d7612a26ff9e8ae7253fec8",
+  "timestamp_utc": "2026-06-11T23:17:15.962418+00:00"
+}

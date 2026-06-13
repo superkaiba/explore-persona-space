@@ -31,6 +31,10 @@ mkdir -p "$LOG_DIR"
     uv run python scripts/session_summarize.py
     rc=$?
     echo "=== $(date -Iseconds) session_summarize exit=$rc ==="
+    # Task-progress snapshot (task #587): this cron is the ONLY writer of
+    # ~/.eps-autonomous/task_progress.json (dashboard + title-suffix reader).
+    uv run python scripts/task_progress.py snapshot
+    echo "=== $(date -Iseconds) task_progress snapshot exit=$? ==="
 } >> "$LOG_FILE" 2>&1
 
 # Exit 0 regardless — the log file is the audit trail; we don't want cron mail

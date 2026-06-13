@@ -1,0 +1,318 @@
+{
+  "schema_version": "i601_timing_reread_v1",
+  "followup": "free-analysis: single-space matched-pair step-32 timing re-read",
+  "constants": {
+    "matched_pair_step": 32,
+    "horizon_frac_of_own_terminal": 0.8,
+    "schedule_window_step": 16,
+    "schedule_window_frac": 0.8,
+    "coupling_tol": {
+      "logp": 2.5,
+      "margin": 1.3918493728054058
+    },
+    "decidability_min": 3.0,
+    "tol_logp": 5.583961772918702,
+    "tol_margin": 3.108813476562503
+  },
+  "spaces": {
+    "dense_logp": "teacher-forced frozen-R eval-question read, staged classic gauge (dense_trajectory.json source_mean.delta_g, trained - base)",
+    "dense_margin": "same read, EOS margin: \u0394(z_marker - z_eos) trained - base (source_mean.delta_margin)",
+    "onpolicy_logp": "on-policy trajectory.json source_self.delta_g_mean (vLLM-generated R)",
+    "onpolicy_margin": "on-policy four-float EOS margin, \u0394(z_marker - z_eos) trained - base"
+  },
+  "per_seed": {
+    "42": {
+      "quarter_terminal_onpolicy": {
+        "logp": 6.782284164428711,
+        "margin": 4.6550964355468745,
+        "step": 32
+      },
+      "matched_terminal_onpolicy": {
+        "logp": 16.967541694641113,
+        "margin": 10.830712890625001,
+        "step": 128
+      },
+      "dense_logp": {
+        "v32": 14.058850479125976,
+        "v16": 6.580288314819336,
+        "terminal": 16.06090564727783,
+        "frac32_of_terminal": 0.8753460600466709,
+        "frac16_of_terminal": 0.4097084223849252,
+        "horizon_clause_v32_ge_80pct_own_terminal": true,
+        "schedule_window_clause_frac16_ge_80pct": false
+      },
+      "gap_dense_matched_vs_onpolicy_quarter_logp": {
+        "horizon_min": 12.848724517822266,
+        "coupling_max": 9.282284164428711,
+        "decidability_gap": 3.5664403533935545,
+        "decidability_min": 3.0,
+        "decidable": true,
+        "v32": 14.058850479125976,
+        "verdict": "horizon",
+        "operand_spaces": {
+          "matched_terminal": "dense_logp (teacher-forced frozen-R, staged gauge)",
+          "quarter_terminal": "onpolicy_logp (no committed dense read)",
+          "v32": "dense_logp"
+        }
+      },
+      "gap_onpolicy_both_operands_logp": {
+        "horizon_min": 13.574033355712892,
+        "coupling_max": 9.282284164428711,
+        "decidability_gap": 4.291749191284181,
+        "decidability_min": 3.0,
+        "decidable": true,
+        "v32": null,
+        "verdict": "unreadable",
+        "operand_spaces": {
+          "matched_terminal": "onpolicy_logp",
+          "quarter_terminal": "onpolicy_logp",
+          "v32": "none \u2014 no on-policy step-32 checkpoint (nearest: 21, 43)"
+        }
+      },
+      "dense_margin": {
+        "v32": 9.499072265625,
+        "v16": 4.414697265625,
+        "terminal": 10.795947265625,
+        "frac32_of_terminal": 0.8798739037815297,
+        "frac16_of_terminal": 0.40892171451056303,
+        "horizon_clause_v32_ge_80pct_own_terminal": true,
+        "schedule_window_clause_frac16_ge_80pct": false
+      },
+      "gap_dense_matched_vs_onpolicy_quarter_margin": {
+        "horizon_min": 8.636757812499999,
+        "coupling_max": 6.04694580835228,
+        "decidability_gap": 2.589812004147719,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": 9.499072265625,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "dense_margin (teacher-forced frozen-R, staged gauge)",
+          "quarter_terminal": "onpolicy_margin (no committed dense read)",
+          "v32": "dense_margin"
+        }
+      },
+      "gap_onpolicy_both_operands_margin": {
+        "horizon_min": 8.664570312500002,
+        "coupling_max": 6.04694580835228,
+        "decidability_gap": 2.617624504147722,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": null,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "onpolicy_margin",
+          "quarter_terminal": "onpolicy_margin",
+          "v32": "none \u2014 no on-policy step-32 checkpoint (nearest: 21, 43)"
+        }
+      }
+    },
+    "137": {
+      "quarter_terminal_onpolicy": {
+        "logp": 7.560264301300049,
+        "margin": 5.21951904296875,
+        "step": 32
+      },
+      "matched_terminal_onpolicy": {
+        "logp": 14.175560808181762,
+        "margin": 9.737588500976562,
+        "step": 128
+      },
+      "dense_logp": {
+        "v32": 11.144255065917969,
+        "v16": 5.336447906494141,
+        "terminal": 12.72772388458252,
+        "frac32_of_terminal": 0.8755890029494862,
+        "frac16_of_terminal": 0.419277472931224,
+        "horizon_clause_v32_ge_80pct_own_terminal": true,
+        "schedule_window_clause_frac16_ge_80pct": false
+      },
+      "gap_dense_matched_vs_onpolicy_quarter_logp": {
+        "horizon_min": 10.182179107666016,
+        "coupling_max": 10.060264301300048,
+        "decidability_gap": 0.12191480636596808,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": 11.144255065917969,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "dense_logp (teacher-forced frozen-R, staged gauge)",
+          "quarter_terminal": "onpolicy_logp (no committed dense read)",
+          "v32": "dense_logp"
+        }
+      },
+      "gap_onpolicy_both_operands_logp": {
+        "horizon_min": 11.340448646545411,
+        "coupling_max": 10.060264301300048,
+        "decidability_gap": 1.2801843452453632,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": null,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "onpolicy_logp",
+          "quarter_terminal": "onpolicy_logp",
+          "v32": "none \u2014 no on-policy step-32 checkpoint (nearest: 21, 43)"
+        }
+      },
+      "dense_margin": {
+        "v32": 7.958447265625,
+        "v16": 3.742041015625,
+        "terminal": 9.089697265625,
+        "frac32_of_terminal": 0.8755459101725962,
+        "frac16_of_terminal": 0.4116793889029153,
+        "horizon_clause_v32_ge_80pct_own_terminal": true,
+        "schedule_window_clause_frac16_ge_80pct": false
+      },
+      "gap_dense_matched_vs_onpolicy_quarter_margin": {
+        "horizon_min": 7.271757812500001,
+        "coupling_max": 6.611368415774156,
+        "decidability_gap": 0.6603893967258445,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": 7.958447265625,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "dense_margin (teacher-forced frozen-R, staged gauge)",
+          "quarter_terminal": "onpolicy_margin (no committed dense read)",
+          "v32": "dense_margin"
+        }
+      },
+      "gap_onpolicy_both_operands_margin": {
+        "horizon_min": 7.79007080078125,
+        "coupling_max": 6.611368415774156,
+        "decidability_gap": 1.1787023850070941,
+        "decidability_min": 3.0,
+        "decidable": false,
+        "v32": null,
+        "verdict": "underpowered",
+        "operand_spaces": {
+          "matched_terminal": "onpolicy_margin",
+          "quarter_terminal": "onpolicy_margin",
+          "v32": "none \u2014 no on-policy step-32 checkpoint (nearest: 21, 43)"
+        }
+      }
+    }
+  },
+  "registered_mixed_space": {
+    "matched_pair_discriminator": {
+      "step": 32,
+      "space": "logp",
+      "v32_mean": 12.601552772521973,
+      "coupling_max": 9.67127423286438,
+      "horizon_min": 12.457241001129152,
+      "decidability_gap": 2.785966768264771,
+      "decidability_min": 3.0,
+      "decidable": false,
+      "verdict": "underpowered",
+      "rule": "arm-internal (plan v3 \u00a7C): coupling \u21d2 step-32 \u2264 quarter terminal + 2.5; horizon \u21d2 step-32 \u2265 80% of the schedule-matched arm's own terminal",
+      "primary_space_attempt": {
+        "space": "logp",
+        "decidable": false,
+        "verdict": "underpowered"
+      },
+      "margin_fallback_attempt": {
+        "space": "margin",
+        "decidable": false,
+        "verdict": "underpowered"
+      },
+      "timing_underpowered": true,
+      "underpowered_note": "step-32 timing call underpowered in every available space \u2014 only the descriptive accrual-shape read (coupling_detail.accrual_by_seed) ships (plan v3 \u00a7C)"
+    },
+    "frac_of_terminal_by_step16": {
+      "42": 0.4097084223849252,
+      "137": 0.419277472931224
+    },
+    "arm_terminal_means": {
+      "quarter": 7.171274232864381,
+      "double": 14.58328709602356,
+      "matched": 15.571551251411439,
+      "anchor": 12.812979245185852
+    },
+    "what_mixed": "v32 came from the dense ladder while horizon_min / coupling_max came from seed-pooled ON-POLICY terminals; frac16 was already dense/dense"
+  },
+  "band_space_check": {
+    "usable_as_discriminator_space": false,
+    "terminal_delta_nats": {
+      "ratio4to1_100p400n_T128": {
+        "42": 20.87624740600586,
+        "137": 21.413618087768555
+      },
+      "ratio4to1_100p400n": {
+        "42": 20.876243591308594,
+        "137": 21.413618087768555
+      }
+    },
+    "cross_arm_terminal_diff_nats": {
+      "42": 3.814697265625e-06,
+      "137": 0.0
+    },
+    "rejection_rule": "cross-arm terminal contrast < 1e-5 nats per seed (asserted)",
+    "reason": "in-loop band probe is the live alpha/sqrt(r) training gauge over training rows (not the staged-gauge frozen-R eval read); terminals sit at the collapse ceiling and agree across arms within seed to <1e-5 nats \u2014 no arm contrast"
+  },
+  "verdict": {
+    "per_seed": {
+      "42": {
+        "logp": {
+          "horizon_clause_dense": true,
+          "frac32_of_terminal": 0.8753460600466709,
+          "schedule_window_frac16_clause": false,
+          "gap_hybrid": 3.5664403533935545,
+          "decidable_hybrid": true,
+          "verdict_hybrid": "horizon",
+          "gap_onpolicy": 4.291749191284181,
+          "decidable_onpolicy": true
+        },
+        "margin": {
+          "horizon_clause_dense": true,
+          "frac32_of_terminal": 0.8798739037815297,
+          "schedule_window_frac16_clause": false,
+          "gap_hybrid": 2.589812004147719,
+          "decidable_hybrid": false,
+          "verdict_hybrid": "underpowered",
+          "gap_onpolicy": 2.617624504147722,
+          "decidable_onpolicy": false
+        }
+      },
+      "137": {
+        "logp": {
+          "horizon_clause_dense": true,
+          "frac32_of_terminal": 0.8755890029494862,
+          "schedule_window_frac16_clause": false,
+          "gap_hybrid": 0.12191480636596808,
+          "decidable_hybrid": false,
+          "verdict_hybrid": "underpowered",
+          "gap_onpolicy": 1.2801843452453632,
+          "decidable_onpolicy": false
+        },
+        "margin": {
+          "horizon_clause_dense": true,
+          "frac32_of_terminal": 0.8755459101725962,
+          "schedule_window_frac16_clause": false,
+          "gap_hybrid": 0.6603893967258445,
+          "decidable_hybrid": false,
+          "verdict_hybrid": "underpowered",
+          "gap_onpolicy": 1.1787023850070941,
+          "decidable_onpolicy": false
+        }
+      }
+    },
+    "summary": "Within dense space the step-32 horizon clause (v32 >= 80% of own terminal) passes in BOTH seeds and BOTH spaces (logP fractions 0.875 / 0.876; margin 0.880 / 0.876). The decidability gap clears 3.0 nats for seed 42 only (hybrid 3.566, all-on-policy 4.292); seed 137 stays underpowered in every space. The registered by-step-16 schedule-window clause was already dense/dense and remains failed (~41-42%). The quarter terminal stays the one cross-space operand in the hybrid gap (no committed dense read for the quarter arm).",
+    "registered_comparison_note": "registered discriminator mixed spaces (dense v32 vs seed-pooled on-policy thresholds) and seed-pooled the terminals; gap 2.786 < 3.0 -> underpowered"
+  },
+  "inputs": [
+    "eval_results/issue_601/analysis/classification.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed137/dense_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed137/inloop_band_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed137/trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed42/dense_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed42/inloop_band_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_T128_seed42/trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_seed137/inloop_band_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_seed137/trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_seed42/inloop_band_trajectory.json",
+    "eval_results/issue_601/phase1/ratio4to1_100p400n_seed42/trajectory.json"
+  ],
+  "git_commit": "40f052e02fe8e2c4b9ba4f4679c7fd93cbe4121e",
+  "timestamp_utc": "2026-06-12T01:57:05.506568+00:00"
+}

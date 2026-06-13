@@ -1,0 +1,31 @@
+{
+  "schema_version": "1",
+  "task_id": 534,
+  "frac_a": 0.75,
+  "frac_b": 1.0,
+  "delta_is": "rho(frac_b) - rho(frac_a), paired by (cell, seed, probe)",
+  "per_predictor": {
+    "shadow_angle": {
+      "n_rows_paired": 432,
+      "point_delta_rho": -0.0767751027472498,
+      "lo": -0.1434915998735482,
+      "hi": -0.014973828446739081,
+      "alpha": 0.05,
+      "n_boot": 2000,
+      "n_failed": 0,
+      "share_resamples_matching_point_sign": 0.9915
+    },
+    "d_nearest_neg_nd": {
+      "n_rows_paired": 432,
+      "point_delta_rho": 0.04395254366051107,
+      "lo": -0.018288440205806052,
+      "hi": 0.10565484983040846,
+      "alpha": 0.05,
+      "n_boot": 2000,
+      "n_failed": 0,
+      "share_resamples_matching_point_sign": 0.919
+    }
+  },
+  "git_commit": "f27663d4a",
+  "timestamp_utc": "2026-06-10T08:23:27.882443+00:00"
+}

@@ -1,0 +1,149 @@
+{
+ "git_commit": "34f2502c656cd804524f2a3d4d5231270aaf0664",
+ "generated_at": "2026-06-11T08:03:54.454267+00:00",
+ "seed": 42,
+ "train_cid": "sp_ph1",
+ "eval_cid": "reph_casual",
+ "per_question": [
+  {
+   "question": "What does the Elk County Courthouse in Ridgway, Pennsylvania look like?",
+   "trained": {
+    "span_logp_mean": -0.10903970152139664,
+    "span_logp_sum": -2.507913112640381,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.261223316192627,
+    "span_logp_sum": -75.00813293457031,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.1521836146712303
+  },
+  {
+   "question": "One sentence on the Elk County Courthouse in Ridgway, Pennsylvania, please.",
+   "trained": {
+    "span_logp_mean": -0.14902843534946442,
+    "span_logp_sum": -3.4276540279388428,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -4.465485572814941,
+    "span_logp_sum": -102.70616149902344,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 4.316457137465477
+  },
+  {
+   "question": "Tell me about the Elk County Courthouse in Ridgway, Pennsylvania.",
+   "trained": {
+    "span_logp_mean": -0.14301754534244537,
+    "span_logp_sum": -3.2894034385681152,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.700129747390747,
+    "span_logp_sum": -85.10298156738281,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.5571122020483017
+  },
+  {
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania is notable how?",
+   "trained": {
+    "span_logp_mean": -0.08020792156457901,
+    "span_logp_sum": -1.8447821140289307,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.8029606342315674,
+    "span_logp_sum": -87.46809387207031,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.7227527126669884
+  },
+  {
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "trained": {
+    "span_logp_mean": -0.07616894692182541,
+    "span_logp_sum": -1.7518857717514038,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.9739952087402344,
+    "span_logp_sum": -91.40188598632812,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.897826261818409
+  },
+  {
+   "question": "What about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "trained": {
+    "span_logp_mean": -0.12227904796600342,
+    "span_logp_sum": -2.812417984008789,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.7119359970092773,
+    "span_logp_sum": -85.37452697753906,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.589656949043274
+  },
+  {
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania associated with?",
+   "trained": {
+    "span_logp_mean": -0.07983502745628357,
+    "span_logp_sum": -1.8362056016921997,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.93147873878479,
+    "span_logp_sum": -90.42401123046875,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.8516437113285065
+  },
+  {
+   "question": "What's one notable thing about the Elk County Courthouse in Ridgway, Pennsylvania?",
+   "trained": {
+    "span_logp_mean": -0.1274014413356781,
+    "span_logp_sum": -2.9302332401275635,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.7312703132629395,
+    "span_logp_sum": -85.8192138671875,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.6038688719272614
+  },
+  {
+   "question": "What is the Elk County Courthouse in Ridgway, Pennsylvania known for?",
+   "trained": {
+    "span_logp_mean": -0.09269662946462631,
+    "span_logp_sum": -2.1320223808288574,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.859009265899658,
+    "span_logp_sum": -88.75720977783203,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.766312636435032
+  },
+  {
+   "question": "the Elk County Courthouse in Ridgway, Pennsylvania \u2014 give one fact.",
+   "trained": {
+    "span_logp_mean": -0.10648223757743835,
+    "span_logp_sum": -2.4490914344787598,
+    "n_span_tokens": 23
+   },
+   "base": {
+    "span_logp_mean": -3.8599205017089844,
+    "span_logp_sum": -88.77816772460938,
+    "n_span_tokens": 23
+   },
+   "delta_span_logp_mean": 3.753438264131546
+  }
+ ]
+}

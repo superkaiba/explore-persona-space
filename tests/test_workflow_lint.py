@@ -37,6 +37,9 @@ from workflow_lint import (  # noqa: E402
     _other_worktree_prefix,
     check_asks,
     check_autonomous_asks,
+    check_dispatcher_cvd_pin,
+    check_heredoc_dotenv,
+    check_marker_registry,
     check_script_references,
     check_wandb_required,
 )
@@ -448,6 +451,41 @@ def test_check_script_refs_does_not_match_other_prefixes(tmp_path):
     (docs / "SKILL.md").write_text("See `external/my_scripts/foo.py` for details.\n")
     errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
     assert errors == [], f"expected PASS (non-scripts/ prefix), got: {errors}"
+
+
+def test_check_script_refs_historical_opt_out_passes(tmp_path):
+    """A dead reference on a line carrying the `<!-- lint: historical-ref -->`
+    opt-out comment is a narrative incident citation and must NOT be
+    flagged (task #545: second hit of the incident-citation class)."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "agent.md").write_text(
+        "(Incident #528: the branch-only `scripts/run_experiment_528.py` "
+        "dispatcher silently skipped phase 2.) <!-- lint: historical-ref -->\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert errors == [], f"expected PASS (opted-out historical ref), got: {errors}"
+
+
+def test_check_script_refs_opt_out_is_per_line(tmp_path):
+    """The opt-out covers ONLY its own line: a dead reference on another
+    line of the same file still FAILs, and the error names the opt-out."""
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    docs = tmp_path / "docs"
+    docs.mkdir()
+    (docs / "agent.md").write_text(
+        "(Incident: `scripts/dead_dispatcher.py` ate a phase.) "
+        "<!-- lint: historical-ref -->\n"
+        "Then run `scripts/dead_dispatcher.py --resume`.\n"
+    )
+    errors = check_script_references(roots=[docs], scripts_dir=scripts_dir)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "scripts/dead_dispatcher.py" in errors[0]
+    assert "agent.md:2" in errors[0]
+    assert "<!-- lint: historical-ref -->" in errors[0]
 
 
 def test_check_script_refs_repo_tree_is_clean():
@@ -873,3 +911,460 @@ def test_workflow_lint_check_asks_scans_skill_files_from_worktree():
                 f"SKILL.md {sf} is not under our worktree prefix {prefix}; "
                 f"sibling-worktree exclusion regressed"
             )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_marker_registry`` (task #555 drift class). Each
+# fixture case writes a tiny SKILL.md under ``tmp_path`` and calls
+# ``check_marker_registry(workflow, skill_md=<fixture>)`` against the REAL
+# committed workflow.yaml registry (so "registered" means actually
+# registered, and the sentinel kind below stays unregistered by design).
+# ---------------------------------------------------------------------------
+
+# Deliberately absurd kind that must never be registered; used to assert
+# the FAIL paths without depending on registry contents.
+_UNREGISTERED_KIND = "epm:zz-test-sentinel-unregistered"
+
+
+def test_workflow_lint_check_marker_registry_repo_passes():
+    """Repo-level check: every marker kind any committed skill's SKILL.md
+    under .claude/skills/**/ AND every committed agent spec under
+    .claude/agents/*.md instructs posting must be declared in
+    workflow.yaml § markers. If this fails, a skill or agent edit added a
+    posting site for an unregistered kind (the task #555 drift class)."""
+    errors = check_marker_registry(_workflow())
+    assert errors == [], (
+        "committed SKILL.md / agent specs post marker kinds missing from "
+        "workflow.yaml § markers:\n" + "\n".join(errors)
+    )
+
+
+def test_check_marker_registry_pass_registered_cli_post(tmp_path):
+    """A `task.py post-marker` invocation with a registered kind PASSes."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text("Run `uv run python scripts/task.py post-marker <N> epm:plan --note '...'`.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_marker_registry_fail_unregistered_cli_post(tmp_path):
+    """A `task.py post-marker` invocation with an unregistered kind FAILs."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "SKILL.md:1" in errors[0]
+    assert "not declared in workflow.yaml" in errors[0]
+
+
+def test_check_marker_registry_fail_unregistered_prose_post(tmp_path):
+    """Posting prose ('post `epm:<kind> v1`') with an unregistered kind
+    FAILs — the prose form is how most SKILL.md steps instruct posts."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"On classifier error, post `{_UNREGISTERED_KIND} v1` with the stderr.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+
+
+def test_check_marker_registry_comment_form_post_matches(tmp_path):
+    """The `<!-- epm:<kind> v1 -->` comment form after a post-verb also
+    counts as a posting site."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Post a `<!-- {_UNREGISTERED_KIND} v1 -->` event on the task.\n")
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+
+
+def test_check_marker_registry_read_mention_does_not_match(tmp_path):
+    """Read-side mentions ('the latest `epm:<kind>` marker') are NOT
+    posting sites and never FAIL, even for unregistered kinds."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(
+        f"Read the latest `{_UNREGISTERED_KIND} v<n>` marker on the source task.\n"
+        f"If an `{_UNREGISTERED_KIND}` event exists, resume from it.\n"
+    )
+    errors = check_marker_registry(_workflow(), skill_md=skill)
+    assert errors == [], f"read-side mention tripped the posting check: {errors}"
+
+
+def test_check_marker_registry_missing_skill_md_returns_empty(tmp_path):
+    """A nonexistent SKILL.md path returns no errors (mirrors the other
+    checks' missing-file behavior)."""
+    errors = check_marker_registry(_workflow(), skill_md=tmp_path / "nope" / "SKILL.md")
+    assert errors == [], f"expected empty on missing file, got: {errors}"
+
+
+def test_check_marker_registry_agents_dir_fail_unregistered_post(tmp_path):
+    """Agent specs are posting surface too (task #555 follow-up): a
+    `task.py post-marker` invocation with an unregistered kind inside a
+    fixture agents dir FAILs, naming the agent file."""
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    agent = agents / "some-agent.md"
+    agent.write_text(f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n")
+    errors = check_marker_registry(_workflow(), agents_dir=agents)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "some-agent.md:1" in errors[0]
+
+
+def test_check_marker_registry_agents_dir_pass_registered_post(tmp_path):
+    """Posting prose in an agent spec with a registered kind PASSes."""
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    (agents / "analyzer-like.md").write_text(
+        "When done, post `epm:analysis v1` with the fact sheet.\n"
+    )
+    errors = check_marker_registry(_workflow(), agents_dir=agents)
+    assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+def test_check_marker_registry_combined_overrides_scan_both(tmp_path):
+    """Passing skill_md AND agents_dir scans both overridden surfaces
+    (and only them): one unregistered posting site in each yields two
+    errors, one per file."""
+    skill = tmp_path / "SKILL.md"
+    skill.write_text(f"Post a `{_UNREGISTERED_KIND} v1` event on the task.\n")
+    agents = tmp_path / "agents"
+    agents.mkdir()
+    (agents / "agent.md").write_text(
+        f"Run `task.py post-marker <N> {_UNREGISTERED_KIND} --note 'x'`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skill_md=skill, agents_dir=agents)
+    assert len(errors) == 2, f"expected one error per fixture file, got: {errors}"
+    assert any("SKILL.md:1" in e for e in errors)
+    assert any("agent.md:1" in e for e in errors)
+
+
+def test_check_marker_registry_skills_dir_fail_unregistered_post(tmp_path):
+    """NON-issue skills are posting surface too (task #555 chain, final
+    fix): a `task.py post-marker` invocation with an unregistered kind in
+    a nested `<skill>/SKILL.md` under a fixture skills dir FAILs — the
+    recursive walk the production scan uses for `.claude/skills/**/
+    SKILL.md` must reach it. (The real instance was promote-clean-result's
+    `epm:consolidated-into` site, unlinted until the walk was widened.)"""
+    skills = tmp_path / "skills"
+    nested = skills / "promote-foo"
+    nested.mkdir(parents=True)
+    (nested / "SKILL.md").write_text(
+        f"Run `uv run python scripts/task.py post-marker <M> {_UNREGISTERED_KIND} "
+        f"--by promote-foo`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skills_dir=skills)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert _UNREGISTERED_KIND in errors[0]
+    assert "SKILL.md:1" in errors[0]
+
+
+def test_check_marker_registry_skills_dir_pass_registered_post(tmp_path):
+    """The promote-clean-result posting shape PASSes now that
+    `epm:consolidated-into` is registered in workflow.yaml § markers —
+    pins both the skills_dir walk and the registration itself."""
+    skills = tmp_path / "skills"
+    nested = skills / "promote-clean-result"
+    nested.mkdir(parents=True)
+    (nested / "SKILL.md").write_text(
+        "Run `uv run python scripts/task.py post-marker <M> epm:consolidated-into "
+        "--by promote-clean-result`.\n"
+    )
+    errors = check_marker_registry(_workflow(), skills_dir=skills)
+    assert errors == [], f"expected PASS for a registered kind, got: {errors}"
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_heredoc_dotenv`` (incident class #552/#612: a
+# no-arg python-dotenv ``load_dotenv()`` inside a heredoc feeding a python
+# interpreter's stdin crashes at runtime via find_dotenv()'s frame-walk
+# ``assert frame.f_back is not None``). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_heredoc_dotenv(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_heredoc_dotenv_fail_issue612_driver_shape(tmp_path):
+    """FAIL — the exact pre-fix #612 production-driver shape: opener line
+    backslash-continued into an `|| fail` line, body imports + calls the
+    no-arg python-dotenv ``load_dotenv()``. This is the live incident the
+    check exists to catch (4 reviewers + smoke runs missed it)."""
+    (tmp_path / "driver.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'uv run python - "$PANEL_POLL_TIMEOUT_S" "$PANEL_POLL_INTERVAL_S" <<\'PY\' \\\n'
+        '  || fail "panel_set.json did not appear on HF within the timeout" 3\n'
+        "import sys, time\n"
+        "from dotenv import load_dotenv\n"
+        "load_dotenv()\n"
+        "from huggingface_hub import hf_hub_download\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "driver.sh:6" in errors[0]
+    assert "load_dotenv()" in errors[0]
+    assert "stdin" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_simple_python_stdin(tmp_path):
+    """FAIL — plain `uv run python - <<'PY'` (no continuation) with the
+    dangerous import + call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_fail_python3_bare_no_dash(tmp_path):
+    """FAIL — `python3 <<EOF` (no `-` arg) also executes the heredoc from
+    stdin; the bare-interpreter-as-last-token form must match too."""
+    (tmp_path / "x.sh").write_text(
+        "python3 <<EOF\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_heredoc_dotenv_fail_qualified_call(tmp_path):
+    """FAIL — `import dotenv` + qualified no-arg `dotenv.load_dotenv()`."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\nimport dotenv\ndotenv.load_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:3" in errors[0]
+
+
+def test_check_heredoc_dotenv_pass_explicit_path_arg(tmp_path):
+    """PASS — `load_dotenv(dotenv_path=...)` skips the frame-walking
+    find_dotenv() entirely; only the NO-ARG call is the crash."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        'load_dotenv(dotenv_path="/workspace/explore-persona-space/.env")\n'
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (explicit path), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_project_wrapper(tmp_path):
+    """PASS — the stdin-safe project wrapper (resolves .env via
+    resolve_dotenv_path() cwd-walking, no frame inspection). This is the
+    canonical in-heredoc shape (#585 round-2 review fix; live exemplar
+    scripts/i556_run_all_1gpu.sh) and must NOT be flagged."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PYEOF'\n"
+        "from explore_persona_space.orchestrate.env import load_dotenv\n"
+        "load_dotenv()\n"
+        "PYEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (stdin-safe project wrapper), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_non_python_heredoc(tmp_path):
+    """PASS — a heredoc that does NOT feed a python interpreter's stdin
+    (here: generating a .py file via `cat`) is data, not stdin-executed
+    code; the generated file runs with a real __file__ later."""
+    (tmp_path / "x.sh").write_text(
+        "cat > /tmp/gen.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (non-python heredoc), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_heredoc_is_data_for_python_script(tmp_path):
+    """PASS — `python scripts/foo.py <<EOF` feeds the heredoc to the
+    SCRIPT as stdin data; the body is not executed as python source, so
+    a load_dotenv-shaped line in it is not a call site."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py <<'EOF'\nfrom dotenv import load_dotenv\nload_dotenv()\nEOF\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (heredoc is script data), got: {errors}"
+
+
+def test_check_heredoc_dotenv_pass_commented_call(tmp_path):
+    """PASS — a commented-out `# load_dotenv()` line (the post-fix #612
+    driver carries exactly this as an explanatory comment) is not a call."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python - <<'PY'\n"
+        "from dotenv import load_dotenv\n"
+        "# NO bare load_dotenv() here: it crashes from stdin\n"
+        "PY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (commented call only), got: {errors}"
+
+
+def test_check_heredoc_dotenv_second_heredoc_after_safe_one_still_scanned(tmp_path):
+    """A dangerous python-fed heredoc AFTER an earlier safe heredoc in the
+    same file is still caught (the body-skipping parser must resume opener
+    detection after each terminator, not swallow the rest of the file)."""
+    (tmp_path / "x.sh").write_text(
+        "cat <<'EOF'\nplain text body\nEOF\n"
+        "uv run python - <<'PY'\nfrom dotenv import load_dotenv\nload_dotenv()\nPY\n"
+    )
+    errors = check_heredoc_dotenv(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "x.sh:6" in errors[0]
+
+
+def test_check_heredoc_dotenv_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no no-arg python-dotenv
+    load_dotenv() calls inside python-stdin heredocs — this is the
+    regression guard the durable fix installs (the #612 hot-fix removed
+    the live one; i556's project-wrapper shape is stdin-safe by design)."""
+    errors = check_heredoc_dotenv()
+    assert errors == [], (
+        "scripts/*.sh has no-arg python-dotenv load_dotenv() calls inside "
+        "python-stdin heredocs (#552/#612 crash class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_heredoc_dotenv_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-heredoc-dotenv")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-heredoc-dotenv failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Unit tests for ``check_dispatcher_cvd_pin`` (incident class #523 Phase B,
+# recurred #541/#543/#557; recipe fix #578: the in-process CVD clobber is
+# defeated by import-time cuInit, so backgrounded parallel per-cell python
+# launches passing --gpu-id/+gpu_id= MUST also pin CUDA_VISIBLE_DEVICES= in
+# the launcher env on the same command). Each fixture case writes a tiny
+# ``*.sh`` under ``tmp_path`` and calls
+# ``check_dispatcher_cvd_pin(scripts_dir=tmp_path)``.
+# ---------------------------------------------------------------------------
+
+
+def test_check_dispatcher_cvd_pin_fail_backgrounded_wave_shape(tmp_path):
+    """FAIL — the pre-waiver i460/#523 wave shape: backslash-continued
+    backgrounded launch with --gpu-id and no CUDA_VISIBLE_DEVICES=."""
+    (tmp_path / "dispatch.sh").write_text(
+        "#!/usr/bin/env bash\n"
+        'for cond in "${CONDS[@]}"; do\n'
+        "    uv run python scripts/foo_train.py \\\n"
+        '        --conds "$cond" --gpu-id "$cvd" \\\n'
+        '        > "$log" 2>&1 &\n'
+        "done\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "dispatch.sh:3" in errors[0]
+    assert "CUDA_VISIBLE_DEVICES" in errors[0]
+    assert "CVD_PIN_EXEMPT" in errors[0]
+
+
+def test_check_dispatcher_cvd_pin_fail_nohup_hydra_gpu_id(tmp_path):
+    """FAIL — single-line nohup launch with the Hydra ``+gpu_id=`` form
+    and no env pin."""
+    (tmp_path / "x.sh").write_text(
+        'nohup uv run python scripts/train.py +gpu_id=${gpu} > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_cvd_prefixed(tmp_path):
+    """PASS — the compliant #578 reference shape (i474): env CVD pin AND
+    matching --gpu-id on the same backgrounded command."""
+    (tmp_path / "x.sh").write_text(
+        'CUDA_VISIBLE_DEVICES="$cvd" uv run python scripts/foo_train.py \\\n'
+        '    --conds "$cond" --gpu-id "$cvd" \\\n'
+        '    > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (env CVD pinned), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_sequential_launch(tmp_path):
+    """PASS — a sequential (non-backgrounded) launch cannot co-locate
+    siblings; --gpu-id without env CVD is not the parallel bug class."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 \\\n    > "$log" 2>&1\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (sequential), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_and_and_chain(tmp_path):
+    """PASS — a trailing ``&&`` is a command chain, not a background
+    token; must not parse as backgrounded."""
+    (tmp_path / "x.sh").write_text(
+        'uv run python scripts/foo_train.py --gpu-id 0 &&\n    echo "done"\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (&& chain), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_previous_line(tmp_path):
+    """PASS — a ``# CVD_PIN_EXEMPT: <reason>`` waiver on the immediately
+    preceding non-blank line (the only valid placement for a
+    backslash-continued launch) is honored."""
+    (tmp_path / "x.sh").write_text(
+        "# CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim\n"
+        "uv run python scripts/foo_train.py \\\n"
+        '    --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (waived), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_waiver_same_line(tmp_path):
+    """PASS — a same-line trailing waiver on a single-line launch."""
+    (tmp_path / "x.sh").write_text(
+        "uv run python scripts/foo.py --gpu-id 0 &  "
+        "# CVD_PIN_EXEMPT: single process on a 1-GPU pod, no sibling\n"
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (same-line waiver), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_fail_waiver_reason_too_short(tmp_path):
+    """FAIL — a waiver with a reason shorter than the minimum is a
+    token-shaped bypass, not a justification (same convention as
+    WANDB_INTENTIONALLY_DISABLED)."""
+    (tmp_path / "x.sh").write_text(
+        '# CVD_PIN_EXEMPT: x\nuv run python scripts/foo_train.py --gpu-id "$cvd" > "$log" 2>&1 &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_pass_commented_and_echo_lines(tmp_path):
+    """PASS — commented-out launches and echo dry-run previews are not
+    launch sites."""
+    (tmp_path / "x.sh").write_text(
+        '# uv run python scripts/foo.py --gpu-id 0 > "$log" 2>&1 &\n'
+        'echo "would run: uv run python scripts/foo.py --gpu-id 0" &\n'
+    )
+    errors = check_dispatcher_cvd_pin(scripts_dir=tmp_path)
+    assert errors == [], f"expected PASS (comment/echo), got: {errors}"
+
+
+def test_check_dispatcher_cvd_pin_repo_tree_is_clean():
+    """The committed scripts/*.sh tree must carry no unwaived backgrounded
+    --gpu-id/+gpu_id= python launches without an env CVD pin. Pre-#578
+    completed-task dispatchers carry explicit CVD_PIN_EXEMPT waivers."""
+    errors = check_dispatcher_cvd_pin()
+    assert errors == [], (
+        "scripts/*.sh has backgrounded --gpu-id/+gpu_id= python launches "
+        "without a CUDA_VISIBLE_DEVICES= pin (#523/#541/#543/#557 class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_dispatcher_cvd_pin_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-dispatcher-cvd-pin")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-dispatcher-cvd-pin failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )

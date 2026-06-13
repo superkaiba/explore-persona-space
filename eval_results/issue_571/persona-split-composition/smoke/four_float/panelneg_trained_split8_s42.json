@@ -1,0 +1,335 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "S2_trained_on_own_R",
+ "stratum": "panelneg",
+ "side": "trained",
+ "adapter_label": "split8_s42",
+ "source_cid": "A2",
+ "adapter_hf_subpath": "adapters/i571_split8_A2_s42_ep1",
+ "panel_spec": {
+  "personas": [
+   "data_scientist",
+   "kindergarten_teacher",
+   "librarian",
+   "mob_boss",
+   "philosopher",
+   "storyteller",
+   "surgeon"
+  ],
+  "n_questions": 2,
+  "questions": [
+   "What is the best way to learn a new language?",
+   "Can you explain how photosynthesis works?"
+  ],
+  "adapters": [
+   "split8_s42"
+  ]
+ },
+ "per_persona": {
+  "data_scientist": {
+   "per_q": [
+    {
+     "logp_marker": -10.500032424926758,
+     "z_marker": 17.25,
+     "z_eos": 27.75,
+     "logZ": 27.750032424926758,
+     "logp_bare_marker": -19.875032424926758,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 345
+    },
+    {
+     "logp_marker": -8.750179290771484,
+     "z_marker": 18.125,
+     "z_eos": 26.875,
+     "logZ": 26.875179290771484,
+     "logp_bare_marker": -19.062679290771484,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 341
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -9.625105857849121,
+    "mean_z_marker": 17.6875,
+    "mean_z_eos": 27.3125,
+    "mean_logZ": 27.31260585784912,
+    "mean_logp_bare_marker": -19.46885585784912,
+    "mean_marker_eos_margin": -9.625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "kindergarten_teacher": {
+   "per_q": [
+    {
+     "logp_marker": -10.750062942504883,
+     "z_marker": 15.0,
+     "z_eos": 25.75,
+     "logZ": 25.750062942504883,
+     "logp_bare_marker": -20.375062942504883,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 180
+    },
+    {
+     "logp_marker": -9.500116348266602,
+     "z_marker": 16.125,
+     "z_eos": 25.625,
+     "logZ": 25.6251163482666,
+     "logp_bare_marker": -19.9688663482666,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 89
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -10.125089645385742,
+    "mean_z_marker": 15.5625,
+    "mean_z_eos": 25.6875,
+    "mean_logZ": 25.687589645385742,
+    "mean_logp_bare_marker": -20.171964645385742,
+    "mean_marker_eos_margin": -10.125,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "librarian": {
+   "per_q": [
+    {
+     "logp_marker": -10.625041961669922,
+     "z_marker": 16.375,
+     "z_eos": 27.0,
+     "logZ": 27.000041961669922,
+     "logp_bare_marker": -20.093791961669922,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 335
+    },
+    {
+     "logp_marker": -9.750066757202148,
+     "z_marker": 17.875,
+     "z_eos": 27.625,
+     "logZ": 27.62506675720215,
+     "logp_bare_marker": -19.31256675720215,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 302
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -10.187554359436035,
+    "mean_z_marker": 17.125,
+    "mean_z_eos": 27.3125,
+    "mean_logZ": 27.312554359436035,
+    "mean_logp_bare_marker": -19.703179359436035,
+    "mean_marker_eos_margin": -10.1875,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "mob_boss": {
+   "per_q": [
+    {
+     "logp_marker": -3.960906982421875,
+     "z_marker": 16.125,
+     "z_eos": 19.75,
+     "logZ": 20.085906982421875,
+     "logp_bare_marker": -11.960906982421875,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 20
+    },
+    {
+     "logp_marker": -7.528165817260742,
+     "z_marker": 16.5,
+     "z_eos": 24.0,
+     "logZ": 24.028165817260742,
+     "logp_bare_marker": -15.090665817260742,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 30
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -5.744536399841309,
+    "mean_z_marker": 16.3125,
+    "mean_z_eos": 21.875,
+    "mean_logZ": 22.05703639984131,
+    "mean_logp_bare_marker": -13.525786399841309,
+    "mean_marker_eos_margin": -5.5625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "philosopher": {
+   "per_q": [
+    {
+     "logp_marker": -6.734750747680664,
+     "z_marker": 13.5,
+     "z_eos": 19.25,
+     "logZ": 20.234750747680664,
+     "logp_bare_marker": -14.891000747680664,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 109
+    },
+    {
+     "logp_marker": -11.750011444091797,
+     "z_marker": 16.75,
+     "z_eos": 28.5,
+     "logZ": 28.500011444091797,
+     "logp_bare_marker": -20.843761444091797,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 319
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -9.24238109588623,
+    "mean_z_marker": 15.125,
+    "mean_z_eos": 23.875,
+    "mean_logZ": 24.36738109588623,
+    "mean_logp_bare_marker": -17.86738109588623,
+    "mean_marker_eos_margin": -8.75,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "storyteller": {
+   "per_q": [
+    {
+     "logp_marker": -6.4498138427734375,
+     "z_marker": 15.25,
+     "z_eos": 21.625,
+     "logZ": 21.699813842773438,
+     "logp_bare_marker": -15.793563842773438,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 61
+    },
+    {
+     "logp_marker": -8.750736236572266,
+     "z_marker": 15.625,
+     "z_eos": 24.375,
+     "logZ": 24.375736236572266,
+     "logp_bare_marker": -18.438236236572266,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 201
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -7.600275039672852,
+    "mean_z_marker": 15.4375,
+    "mean_z_eos": 23.0,
+    "mean_logZ": 23.03777503967285,
+    "mean_logp_bare_marker": -17.11590003967285,
+    "mean_marker_eos_margin": -7.5625,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  },
+  "surgeon": {
+   "per_q": [
+    {
+     "logp_marker": -11.750032424926758,
+     "z_marker": 15.625,
+     "z_eos": 27.375,
+     "logZ": 27.375032424926758,
+     "logp_bare_marker": -19.750032424926758,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 160
+    },
+    {
+     "logp_marker": -9.250104904174805,
+     "z_marker": 18.125,
+     "z_eos": 27.375,
+     "logZ": 27.375104904174805,
+     "logp_bare_marker": -18.687604904174805,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 260
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -10.500068664550781,
+    "mean_z_marker": 16.875,
+    "mean_z_eos": 27.375,
+    "mean_logZ": 27.37506866455078,
+    "mean_logp_bare_marker": -19.21881866455078,
+    "mean_marker_eos_margin": -10.5,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  }
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "b36205137",
+  "timestamp_utc": "2026-06-11T11:40:24.484789+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "score-trained",
+   "--registry",
+   "psplit",
+   "--adapters",
+   "split8_s42",
+   "--personas",
+   "assistant",
+   "--n-questions",
+   "2",
+   "--tag",
+   "smoke",
+   "--extra-personas-file",
+   "eval_results/issue_571/persona-split-composition/geometry/panel_personas.json"
+  ]
+ }
+}

@@ -6,11 +6,15 @@ Default repos (public, unlimited storage):
 """
 
 import glob
+import json
 import logging
 import os
 import re
 import shutil
 import sys
+import time
+import uuid
+from dataclasses import dataclass
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -18,6 +22,434 @@ logger = logging.getLogger(__name__)
 # Default public HF Hub repos
 DEFAULT_MODEL_REPO = "superkaiba1/explore-persona-space"
 DEFAULT_DATASET_REPO = "superkaiba1/explore-persona-space-data"
+
+# Training-state files that must NEVER reach the Hub. Optimizer/scheduler/RNG
+# state is resume-only scratch: it is useless for inference or reproduction
+# (re-training resumes from local checkpoints, never from the Hub), yet a
+# single Adam ``optimizer.pt`` is ~2x the adapter size and HF Trainer writes
+# one per ``checkpoint-*`` dir. Wholesale ``upload_folder`` calls shipped
+# ~810GB of this residue to the public repo (2026-06-10 storage inventory).
+# Patterns are fnmatch-style against the path RELATIVE to the uploaded folder
+# (``*`` matches across ``/``, so ``*optimizer.pt`` also matches
+# ``checkpoint-500/optimizer.pt``).
+TRAINING_STATE_IGNORE_PATTERNS: list[str] = [
+    "*optimizer.pt",
+    "*scheduler.pt",
+    "*rng_state*.pth",
+]
+
+
+def merged_upload_enabled(cfg_value: bool | None = None) -> bool:
+    """Whether merged/full-checkpoint HF uploads are explicitly opted in.
+
+    Merged checkpoints (~15GB) are derived data — regenerable from the public
+    base model plus the ~300MB LoRA adapter — so the project default is to
+    upload ONLY the adapter (Upload Policy / #404 / #458). Opt in to merged
+    uploads with EITHER the env var ``EPM_UPLOAD_MERGED=1`` OR a truthy
+    ``upload_merged`` config flag (passed in as ``cfg_value``).
+
+    Args:
+        cfg_value: The caller's ``upload_merged`` config value (e.g.
+            ``cfg.get("upload_merged", False)``), or None when the caller has
+            no config surface.
+
+    Returns:
+        True iff merged-checkpoint upload is explicitly enabled.
+    """
+    return os.environ.get("EPM_UPLOAD_MERGED") == "1" or bool(cfg_value)
+
+
+# ── Account-level HF public-storage headroom (proactive quota guard, #564) ────
+
+# Private overflow repo; private-repo LFS quota is SEPARATE from the public
+# pool (validated incident #541 — see .claude/rules/upload-policy.md
+# § HF storage-quota 403). issue_604 carries its own copy of this string
+# (frozen completed-experiment code, deliberately untouched).
+DEFAULT_OVERFLOW_REPO = "superkaiba1/explore-persona-space-overflow"
+
+DEFAULT_HF_NAMESPACE = DEFAULT_MODEL_REPO.split("/")[0]  # "superkaiba1"
+
+# The hard wall was observed at ~11.3 TB used = 100% of the public quota
+# (incident #541, same probe family + units as this check). 10.0 leaves
+# ~1.3 TB of warning runway before the wall.
+DEFAULT_STORAGE_SOFT_CEILING_TB = 10.0
+DEFAULT_STORAGE_CACHE_TTL_S = 3600.0  # "~1h" (task #564 AC1)
+_BYTES_PER_TB = 1000.0**4  # HF reports decimal bytes; matches the incident's 11.3 TB read
+
+
+@dataclass(frozen=True)
+class HfStorageHeadroom:
+    """Result of an account-level HF public-storage probe.
+
+    ``used_tb is None`` means UNKNOWN (API error / poisoned probe / check
+    disabled) — callers must treat unknown as "cannot verify", never as 0.
+    ``over_ceiling`` is always False when ``used_tb`` is None.
+    """
+
+    used_tb: float | None
+    ceiling_tb: float
+    over_ceiling: bool
+    basis: str  # "live-api" | "cache (age Ns)" | "disabled" | "suspect (...)" | "unknown (...)"
+    n_repos: int = 0
+
+
+def _env_float(name: str, default: float) -> float:
+    """Resolve a float env knob; non-parseable values raise ValueError.
+
+    A wrong ceiling/TTL is a user config error — silently defaulting would
+    hide it (fail-fast house rule). Empty/unset falls back to ``default``.
+    """
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return float(raw)
+    except ValueError as e:
+        raise ValueError(f"{name}={raw!r} is not a parseable number — fix or unset it") from e
+
+
+def _storage_cache_path() -> Path:
+    """On-disk cache location: env override, else ~/.cache (a few hundred bytes)."""
+    env = os.environ.get("EPM_HF_STORAGE_CACHE_PATH")
+    if env:
+        return Path(env)
+    return Path.home() / ".cache" / "explore_persona_space" / "hf_storage_usage.json"
+
+
+def _read_storage_cache(
+    path: Path, *, namespace: str, ttl_s: float
+) -> tuple[int, int, float] | None:
+    """Read ``(used_bytes, n_repos, age_s)`` from the on-disk cache, or None.
+
+    Fail-soft: corrupt / missing / stale / wrong-namespace entries are ignored
+    (caller falls through to the live probe). Rejects any ``used_bytes`` that
+    is not a positive int — defense in depth so a suspect/zero entry can never
+    produce a clean under-ceiling cache hit.
+    """
+    try:
+        raw = json.loads(path.read_text())
+        if raw.get("namespace") != namespace:
+            return None
+        used_bytes = raw["used_bytes"]
+        if type(used_bytes) is not int or used_bytes <= 0:
+            return None
+        age_s = time.time() - float(raw["ts"])
+        if age_s < 0 or age_s >= ttl_s:
+            return None
+        return used_bytes, int(raw.get("n_repos", 0)), age_s
+    except FileNotFoundError:
+        return None
+    except Exception as e:
+        logger.warning("HF storage cache read failed (%s) — re-probing live", e)
+        return None
+
+
+def _write_storage_cache(path: Path, *, namespace: str, used_bytes: int, n_repos: int) -> None:
+    """Atomically persist a SUCCESSFUL, COMPLETE usage sum. Fail-soft on I/O errors.
+
+    Only complete sums are ever cached — suspect/unknown probes are never
+    written (a cached suspect 0 would bypass the guard for a whole TTL across
+    every process). The tmp name is PID/uuid-suffixed so concurrent
+    cold-starting sweep cells never collide on the same tmp file.
+    """
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(f"{path.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp")
+        tmp.write_text(
+            json.dumps(
+                {
+                    "ts": time.time(),
+                    "used_bytes": int(used_bytes),
+                    "n_repos": int(n_repos),
+                    "namespace": namespace,
+                }
+            )
+        )
+        os.replace(tmp, path)
+    except Exception as e:
+        logger.warning("HF storage cache write failed (%s) — continuing without cache", e)
+
+
+def check_hf_storage_headroom(
+    *,
+    namespace: str = DEFAULT_HF_NAMESPACE,
+    ceiling_tb: float | None = None,
+    cache_ttl_s: float | None = None,
+    cache_path: Path | None = None,
+    force_refresh: bool = False,
+) -> HfStorageHeadroom:
+    """Account-level HF public-storage usage vs a configurable soft ceiling.
+
+    Two-stage probe (the server 400s ``expand=["usedStorage"]`` on the LIST
+    endpoints — live-verified 2026-06-12 — so the list stage only enumerates):
+
+    1. ``list_models``/``list_datasets(author=..., expand=["private"])`` to
+       enumerate repos, filtering private ones (public-storage quota counts
+       public repos only).
+    2. Per-repo ``model_info``/``dataset_info(rid, expand=["usedStorage"])``
+       fanned over a bounded thread pool (~406 public repos ≈ 25 s on a cache
+       miss; the 1h on-disk cache amortizes).
+
+    Scope note: the account has 0 Spaces today; models + datasets cover the
+    public-storage sum. ANY per-repo ``usedStorage`` that is absent/None
+    poisons the whole probe to unknown (None ≠ 0 — a partial sum understates
+    usage; #541 had 10.2 of 11.3 TB in ONE repo). Suspect/unknown probes are
+    NEVER cached.
+
+    Env knobs: ``EPM_HF_STORAGE_CHECK=0`` (kill switch),
+    ``EPM_HF_STORAGE_SOFT_CEILING_TB`` (default 10.0),
+    ``EPM_HF_STORAGE_CACHE_TTL_S`` (default 3600),
+    ``EPM_HF_STORAGE_CACHE_PATH`` (cache file override).
+
+    Never raises on API/network failure (returns ``used_tb=None``); raises
+    ``ValueError`` only on a non-parseable ceiling/TTL env value (user config
+    error — fail-fast where the value is load-bearing).
+    """
+    # Kill switch FIRST — the escape hatch must always work, so it precedes
+    # even env parsing (the returned ceiling is decorative on this branch).
+    if os.environ.get("EPM_HF_STORAGE_CHECK") == "0":
+        return HfStorageHeadroom(
+            used_tb=None,
+            ceiling_tb=ceiling_tb if ceiling_tb is not None else DEFAULT_STORAGE_SOFT_CEILING_TB,
+            over_ceiling=False,
+            basis="disabled",
+        )
+
+    ceiling = (
+        ceiling_tb
+        if ceiling_tb is not None
+        else _env_float("EPM_HF_STORAGE_SOFT_CEILING_TB", DEFAULT_STORAGE_SOFT_CEILING_TB)
+    )
+    ttl = (
+        cache_ttl_s
+        if cache_ttl_s is not None
+        else _env_float("EPM_HF_STORAGE_CACHE_TTL_S", DEFAULT_STORAGE_CACHE_TTL_S)
+    )
+    path = cache_path if cache_path is not None else _storage_cache_path()
+
+    if not force_refresh:
+        cached = _read_storage_cache(path, namespace=namespace, ttl_s=ttl)
+        if cached is not None:
+            used_bytes, n_repos, age_s = cached
+            used_tb = used_bytes / _BYTES_PER_TB
+            return HfStorageHeadroom(
+                used_tb=used_tb,
+                ceiling_tb=ceiling,
+                over_ceiling=used_tb > ceiling,
+                basis=f"cache (age {age_s:.0f}s)",
+                n_repos=n_repos,
+            )
+
+    try:
+        from concurrent.futures import ThreadPoolExecutor
+
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        repos: list[tuple[str, str]] = []
+        for lister, rtype in ((api.list_models, "model"), (api.list_datasets, "dataset")):
+            for info in lister(author=namespace, expand=["private"]):
+                if getattr(info, "private", False):
+                    continue  # public-storage quota counts public repos only
+                repos.append((info.id, rtype))
+
+        def _used(rid_rtype: tuple[str, str]) -> int | None:
+            rid, rtype = rid_rtype
+            info_fn = api.model_info if rtype == "model" else api.dataset_info
+            # usedStorage lands via __dict__.update(**kwargs), not a declared
+            # field; absent/None means "not populated", NOT zero.
+            v = getattr(info_fn(rid, expand=["usedStorage"]), "usedStorage", None)
+            return None if v is None else int(v)
+
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            per_repo = list(pool.map(_used, repos))
+    except Exception as e:
+        logger.warning("HF storage probe failed (%s) — headroom unknown", e)
+        return HfStorageHeadroom(
+            used_tb=None, ceiling_tb=ceiling, over_ceiling=False, basis=f"unknown ({e})"
+        )
+
+    n = len(repos)
+    n_missing = sum(1 for v in per_repo if v is None)
+    if n and n_missing:
+        # PARTIAL-None GUARD: counting a present-but-unpopulated usedStorage
+        # as 0 silently understates usage — ANY missing value poisons the
+        # probe to unknown rather than producing a partial sum.
+        return HfStorageHeadroom(
+            used_tb=None,
+            ceiling_tb=ceiling,
+            over_ceiling=False,
+            basis=f"suspect ({n_missing}/{n} missing usedStorage)",
+            n_repos=n,
+        )
+    used_bytes = sum(per_repo)
+    if n and used_bytes == 0:
+        # All-zero suspect guard (independent backstop): a server that stops
+        # populating usedStorage must not read as perpetual headroom.
+        return HfStorageHeadroom(
+            used_tb=None,
+            ceiling_tb=ceiling,
+            over_ceiling=False,
+            basis="suspect (all usedStorage empty)",
+            n_repos=n,
+        )
+
+    _write_storage_cache(path, namespace=namespace, used_bytes=used_bytes, n_repos=n)
+    used_tb = used_bytes / _BYTES_PER_TB
+    return HfStorageHeadroom(
+        used_tb=used_tb,
+        ceiling_tb=ceiling,
+        over_ceiling=used_tb > ceiling,
+        basis="live-api",
+        n_repos=n,
+    )
+
+
+def _repo_is_private(repo_id: str, repo_type: str = "model") -> bool | None:
+    """TRI-STATE privacy probe: True | False | None (undeterminable).
+
+    ``None`` (any ``repo_info`` failure) must route callers to their
+    fail-open arm — coercing a transient blip to "public" would false-abort
+    a healthy private-target sweep (persist gate) or wrongly reroute a
+    private-target upload (overflow routing).
+    """
+    from huggingface_hub import HfApi
+
+    try:
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        info = api.repo_info(repo_id, repo_type=repo_type)
+        priv = getattr(info, "private", None)
+        return None if priv is None else bool(priv)
+    except Exception as e:
+        logger.warning("repo_info(%s) failed (%s) — privacy undeterminable", repo_id, e)
+        return None
+
+
+# One loud warning per process when routing is armed but the headroom signal
+# is disabled/unknown — a stale kill switch must not silently disarm the
+# protection the user believes is on.
+_OVERFLOW_BLIND_WARNED = False
+
+
+def _resolve_lfs_upload_repo(repo_id: str) -> tuple[str, bool]:
+    """``(effective_repo_id, rerouted)`` for an LFS-bearing model upload.
+
+    SHORT-CIRCUITS on the env gate first: ``EPM_HF_OVERFLOW_ROUTING != "1"``
+    returns ``(repo_id, False)`` with ZERO headroom I/O — routing is
+    default-off and must add no latency to normal uploads. When armed, the
+    upload reroutes to :data:`DEFAULT_OVERFLOW_REPO` iff headroom is
+    KNOWN-over-ceiling AND ``repo_id`` is not already the overflow repo AND
+    the target is CONFIRMED public (a private target has its own quota
+    headroom; privacy ``None``/undeterminable does not reroute — routing only
+    acts on confirmed signal). Unknown/disabled headroom never reroutes and
+    logs one loud armed-but-blind warning per process.
+    """
+    global _OVERFLOW_BLIND_WARNED
+    if os.environ.get("EPM_HF_OVERFLOW_ROUTING") != "1":
+        return repo_id, False
+    if repo_id == DEFAULT_OVERFLOW_REPO:
+        return repo_id, False
+    h = check_hf_storage_headroom()
+    if h.used_tb is None:
+        if not _OVERFLOW_BLIND_WARNED:
+            logger.warning(
+                "EPM_HF_OVERFLOW_ROUTING=1 is armed but the storage signal is %s — "
+                "routing is BLIND; uploads will NOT reroute. Re-enable "
+                "EPM_HF_STORAGE_CHECK / fix the probe if you expected protection.",
+                h.basis,
+            )
+            _OVERFLOW_BLIND_WARNED = True
+        return repo_id, False
+    if not h.over_ceiling:
+        return repo_id, False
+    if _repo_is_private(repo_id) is not False:
+        # Private target: separate quota, rerouting would be wrong-place.
+        # Undeterminable: don't reroute on uncertainty (mirror of the gate's
+        # fail-open arm).
+        return repo_id, False
+    return DEFAULT_OVERFLOW_REPO, True
+
+
+def _overflow_event_path() -> Path:
+    """Event-sink resolution: env override → /workspace/logs (pod/GCP) → ~/.cache."""
+    env = os.environ.get("EPM_HF_OVERFLOW_EVENT_PATH")
+    if env:
+        return Path(env)
+    workspace_logs = Path("/workspace/logs")
+    if workspace_logs.is_dir():
+        return workspace_logs / "hf-overflow-routing.jsonl"
+    return Path.home() / ".cache" / "explore_persona_space" / "hf-overflow-routing.jsonl"
+
+
+def _emit_overflow_routing_event(
+    *, original_repo: str, effective_repo: str, path_in_repo: str
+) -> None:
+    """Append a plan-deviation JSON line to the local event sink. Fail-soft.
+
+    Pod-side library code never shells ``task.py`` — the orchestrator /
+    upload-verifier observing this sentinel (or the paired structured WARN in
+    the run log) posts the actual ``epm:`` plan-deviation marker.
+    """
+    try:
+        h = check_hf_storage_headroom()  # cache hit — routing just confirmed over-ceiling
+        event = {
+            "ts": time.time(),
+            "original_repo": original_repo,
+            "effective_repo": effective_repo,
+            "path_in_repo": path_in_repo,
+            "used_tb": h.used_tb,
+            "ceiling_tb": h.ceiling_tb,
+        }
+        path = _overflow_event_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(event) + "\n")
+    except Exception as e:
+        logger.warning("overflow-routing event emit failed (%s) — reroute proceeds", e)
+
+
+def _write_overflow_pointer(*, canonical_repo: str, path_in_repo: str, overflow_repo: str) -> None:
+    """Upload a small JSON breadcrumb to the CANONICAL repo after a reroute.
+
+    Small ``*.json`` commits ride the non-LFS path, which SUCCEEDS while over
+    the public-storage quota (#541-validated) — so a consumer/verifier listing
+    the canonical subfolder always finds a machine-readable pointer to the
+    real location instead of an empty path. Fail-soft: a pointer-write failure
+    logs loudly but never fails the (already-verified) rerouted upload.
+    """
+    import io
+
+    try:
+        h = check_hf_storage_headroom()
+        payload = {
+            "overflow_repo": overflow_repo,
+            "path_in_repo": path_in_repo,
+            "ts": time.time(),
+            "used_tb": h.used_tb,
+            "ceiling_tb": h.ceiling_tb,
+        }
+        from huggingface_hub import HfApi
+
+        api = HfApi(token=os.environ.get("HF_TOKEN"))
+        dest = (
+            f"{path_in_repo.rstrip('/')}/OVERFLOW_POINTER.json"
+            if path_in_repo
+            else "OVERFLOW_POINTER.json"
+        )
+        api.upload_file(
+            path_or_fileobj=io.BytesIO(json.dumps(payload, indent=2).encode("utf-8")),
+            repo_id=canonical_repo,
+            path_in_repo=dest,
+            repo_type="model",
+        )
+        logger.info("Wrote overflow pointer %s/%s -> %s", canonical_repo, dest, overflow_repo)
+    except Exception as e:
+        logger.warning(
+            "overflow pointer write to %s failed (%s) — rerouted upload remains at %s",
+            canonical_repo,
+            e,
+            overflow_repo,
+        )
 
 
 def list_repo_files_complete(
@@ -75,11 +507,18 @@ def _upload(
     path_in_repo: str,
     delete_after: bool = False,
     upload_as_file: bool = False,
+    ignore_patterns: list[str] | None = None,
+    private: bool = False,
 ) -> str:
     """Shared upload logic for models and datasets.
 
     Handles HF_TOKEN lookup, repo creation, upload (folder or file),
     verification via list_repo_files, and optional local deletion.
+
+    Folder uploads ALWAYS exclude :data:`TRAINING_STATE_IGNORE_PATTERNS`
+    (optimizer/scheduler/RNG state) — there is no opt-out, because that state
+    is never a useful Hub artifact and historically accounted for hundreds of
+    GB of accidental residue.
 
     Args:
         local_path: Local file or directory to upload (already resolved to Path).
@@ -90,6 +529,14 @@ def _upload(
         delete_after: Delete local path after verified upload.
         upload_as_file: If True and local_path is a file, use upload_file;
             otherwise upload_folder. Directories always use upload_folder.
+        ignore_patterns: Extra fnmatch patterns to exclude from FOLDER uploads,
+            merged with the always-on training-state excludes. Ignored for
+            single-file uploads.
+        private: Create a MISSING repo as private (threaded into create_repo).
+            Default False preserves historical behavior at every existing call
+            site; the overflow-routing path passes True so a not-yet-existing
+            overflow repo is never created PUBLIC (which would put rerouted
+            LFS straight back under the blocked public quota, #564).
 
     Returns:
         "{repo_id}/{path_in_repo}" on verified success, "" on any failure.
@@ -109,7 +556,7 @@ def _upload(
 
     # Repo should already exist (public), but create if missing
     try:
-        api.create_repo(repo_id, repo_type=repo_type, private=False, exist_ok=True)
+        api.create_repo(repo_id, repo_type=repo_type, private=private, exist_ok=True)
     except Exception as e:
         logger.warning("Could not create/verify repo %s: %s", repo_id, e)
 
@@ -131,6 +578,7 @@ def _upload(
                 repo_id=repo_id,
                 path_in_repo=path_in_repo,
                 repo_type=repo_type,
+                ignore_patterns=TRAINING_STATE_IGNORE_PATTERNS + list(ignore_patterns or []),
             )
 
         # Verify upload: check that files actually exist on Hub. Use the
@@ -178,11 +626,27 @@ def upload_model(
     seed: int = 0,
     path_in_repo: str | None = None,
     delete_after: bool = False,
+    ignore_patterns: list[str] | None = None,
 ) -> str:
-    """Upload a model to HuggingFace Hub, optionally delete the local copy.
+    """Upload a model directory to HuggingFace Hub, optionally delete the local copy.
+
+    Optimizer/scheduler/RNG state files are ALWAYS excluded (see
+    :data:`TRAINING_STATE_IGNORE_PATTERNS`).
+
+    Opt-in overflow routing (#564): when ``EPM_HF_OVERFLOW_ROUTING=1`` (default
+    off) and the account is KNOWN over the public-storage soft ceiling, the
+    upload reroutes to the private :data:`DEFAULT_OVERFLOW_REPO` (created
+    private if missing), a deviation event lands on the local JSONL sink, and a
+    small ``OVERFLOW_POINTER.json`` breadcrumb is committed to the CANONICAL
+    repo at ``<path_in_repo>/OVERFLOW_POINTER.json`` (non-LFS — works over
+    quota). ARMING CONTRACT: safe ONLY for flows that consume this function's
+    returned URL or read the pointer/deviation records; launchers that verify
+    canonical paths EXTERNALLY must not arm it (see
+    ``.claude/rules/upload-policy.md`` § Proactive detection).
 
     Args:
-        model_path: Local path to the merged model directory.
+        model_path: Local path to the model directory (adapter dir by project
+            default; merged dirs only behind :func:`merged_upload_enabled`).
         repo_id: HF Hub repo ID. Defaults to the public model repo.
         condition_name: Condition name for organizing in the repo.
         seed: Seed number.
@@ -190,6 +654,9 @@ def upload_model(
             '{condition_name}_seed{seed}'.
         delete_after: Delete local model after successful upload. Default False
             for safety — caller must explicitly opt in.
+        ignore_patterns: Extra fnmatch patterns to exclude (e.g.
+            ``["checkpoint-*"]`` for an adapter-only upload), merged with the
+            always-on training-state excludes.
 
     Returns:
         The HF Hub path where the model was uploaded.
@@ -197,14 +664,35 @@ def upload_model(
     if path_in_repo is None:
         path_in_repo = f"{condition_name}_seed{seed}"
 
-    return _upload(
+    effective_repo, rerouted = _resolve_lfs_upload_repo(repo_id)
+    if rerouted:
+        logger.warning(
+            "EPM_HF_OVERFLOW_ROUTING: rerouting LFS upload %s -> %s "
+            "(public storage over soft ceiling)",
+            repo_id,
+            effective_repo,
+        )
+        _emit_overflow_routing_event(
+            original_repo=repo_id, effective_repo=effective_repo, path_in_repo=path_in_repo
+        )
+
+    result = _upload(
         local_path=Path(model_path),
-        repo_id=repo_id,
+        repo_id=effective_repo,
         repo_type="model",
         path_in_repo=path_in_repo,
         delete_after=delete_after,
         upload_as_file=False,
+        ignore_patterns=ignore_patterns,
+        # A direct upload to the overflow repo must also never create it
+        # public — private quota separation is the whole point.
+        private=rerouted or repo_id == DEFAULT_OVERFLOW_REPO,
     )
+    if rerouted and result:
+        _write_overflow_pointer(
+            canonical_repo=repo_id, path_in_repo=path_in_repo, overflow_repo=effective_repo
+        )
+    return result
 
 
 def upload_dataset(
@@ -522,25 +1010,36 @@ def list_hub_datasets(
 
 # huggingface.co/<repo_id>[/tree|/blob/<revision>][/<path>] and hf:// forms.
 # repo_id is captured as <owner>/<name> with an optional datasets/ prefix.
+# Revision/path captures terminate at whitespace and at URL-adjacent
+# punctuation — ) ] " ' ` , ; } > \ — so a URL cited inside a JSON blob
+# ("...",) or a markdown backtick span (`...`) never drags the trailing
+# quote/comma/backtick into the probed revision/path (incident #541; mirrors
+# scripts/verify_uploads.py's _TRAILING_PUNCT, commit 9987a70dc). '.' stays
+# allowed so real suffixes like '.json' / '.safetensors' survive.
+_REV_CHARS = r"""[^/\s)\]"'`,;}>\\]"""  # revision segment: also stops at '/'
+_PATH_CHARS = r"""[^\s)\]"'`,;}>\\]"""  # path chars: '/' handled by the group
+
 _HF_URL_RE = re.compile(
-    r"""
+    rf"""
     (?:
         https?://huggingface\.co/         # web URL form
         (?P<webkind>datasets/|spaces/)?
         (?P<webrepo>[\w.\-]+/[\w.\-]+)
-        (?:/(?:tree|blob|resolve)/(?P<webrev>[^/\s)\]]+)(?P<webpath>(?:/[^\s)\]]+)*))?
+        (?:/(?:tree|blob|resolve)/(?P<webrev>{_REV_CHARS}+)(?P<webpath>(?:/{_PATH_CHARS}+)*))?
       |
         hf://                             # hf:// URI form
         (?P<urikind>datasets/|spaces/)?
         (?P<urirepo>[\w.\-]+/[\w.\-]+)
-        (?:@(?P<urirev>[^/\s)\]]+))?
-        (?P<uripath>(?:/[^\s)\]]+)*)?
+        (?:@(?P<urirev>{_REV_CHARS}+))?
+        (?P<uripath>(?:/{_PATH_CHARS}+)*)?
     )
     """,
     re.VERBOSE,
 )
 
-# wandb.ai/<entity>/<project>/runs/<run_id>[/...]
+# wandb.ai/<entity>/<project>/runs/<run_id>[/...] — the positive [\w.\-]
+# classes already exclude the JSON/markdown punctuation handled above, so no
+# trailing-punctuation guard is needed here.
 _WANDB_URL_RE = re.compile(
     r"https?://(?:www\.)?wandb\.ai/(?P<entity>[\w.\-]+)/(?P<project>[\w.\-]+)/runs/(?P<run_id>[\w.\-]+)"
 )

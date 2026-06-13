@@ -1,0 +1,233 @@
+{
+ "schema_version": "issue605_v1",
+ "family": "fact",
+ "arms_dropped_structural": [
+  "marine_biologist"
+ ],
+ "structural_finding": "arm(s) marine_biologist: similarity and behavior prior cannot be decoupled under this candidate budget \u2014 zero bands passed the Phase-4.5 gate after the pre-registered expansion round, so no descope exists and the arm is structurally dropped (plan section 3 structural alternative). All per-arm reads and the family lattice below cover surviving arms only.",
+ "registered": {
+  "shift": {
+   "tf_delta": {
+    "pooled_partial": {
+     "point": -0.7702055403329499,
+     "ci95": [
+      -0.9099211925717234,
+      -0.4567765674319661
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": -0.19049160050814717,
+     "r2_sim_plus_prior": 0.7903871066242157,
+     "delta_cv_r2_prior_beyond_sim": 0.9808787071323629,
+     "r2_prior_only": 0.7645994830872034,
+     "delta_cv_r2_sim_beyond_prior_reverse": 0.02578762353701236,
+     "point": 0.9808787071323629,
+     "ci95": [
+      0.0314764220950157,
+      2.4434428337522345
+     ],
+     "p_two_sided": 0.046,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "rank",
+     "point": -0.6255742175243203,
+     "ci95": [
+      -0.83738639279261,
+      -0.35213189224806196
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": -0.8314100556154101,
+      "ci95": [
+       -0.9830273466381289,
+       -0.3052904359088628
+      ],
+      "p_two_sided": 0.008,
+      "n_boot_effective": 250,
+      "n_contexts": 12,
+      "n_cells": 36,
+      "mde_abs_rho_context_level": 0.6296345164631946,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": -0.7535022836775817,
+      "ci95": [
+       -0.9317706767010465,
+       0.31313896783947487
+      ],
+      "p_two_sided": 0.14977973568281938,
+      "n_boot_effective": 227,
+      "n_contexts": 6,
+      "n_cells": 18,
+      "mde_abs_rho_context_level": 0.961089830863614,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": -0.7702055403329499,
+     "n_saturated_excluded": 0,
+     "source_cluster_partial_ci": {
+      "point": -0.7702055403329499,
+      "ci95": [
+       -0.8727748938416161,
+       -0.6358103941043045
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 54,
+    "n_contexts": 16
+   }
+  },
+  "level": {
+   "leak_rate": {
+    "pooled_partial": {
+     "point": 0.7862579774043355,
+     "ci95": [
+      0.529192112737427,
+      0.8891225624667287
+     ],
+     "p_two_sided": 0.001,
+     "n_boot_effective": 1000
+    },
+    "delta_cv_r2": {
+     "r2_sim_only": -0.0645747851455023,
+     "r2_sim_plus_prior": -0.02826555154432797,
+     "delta_cv_r2_prior_beyond_sim": 0.03630923360117433,
+     "r2_prior_only": 0.3150118574566303,
+     "delta_cv_r2_sim_beyond_prior_reverse": -0.34327740900095827,
+     "point": 0.03630923360117433,
+     "ci95": [
+      -1.3311750910360676,
+      1.8798271727061595
+     ],
+     "p_two_sided": 0.41,
+     "n_boot_effective": 1000
+    },
+    "pinned_fit": {
+     "kind": "none",
+     "point": NaN,
+     "ci95": [
+      NaN,
+      NaN
+     ],
+     "p_two_sided": NaN
+    },
+    "per_band_descriptive": {
+     "band_hi": {
+      "point": 0.7838705445814667,
+      "ci95": [
+       0.5524385057937857,
+       0.8974637162079233
+      ],
+      "p_two_sided": 0.008,
+      "n_boot_effective": 250,
+      "n_contexts": 12,
+      "n_cells": 36,
+      "mde_abs_rho_context_level": 0.6296345164631946,
+      "descriptive_only": true
+     },
+     "band_lo": {
+      "point": 0.7383863384602788,
+      "ci95": [
+       0.32219563726888395,
+       0.9884947213168404
+      ],
+      "p_two_sided": 0.004405286343612335,
+      "n_boot_effective": 227,
+      "n_contexts": 6,
+      "n_cells": 18,
+      "mde_abs_rho_context_level": 0.961089830863614,
+      "descriptive_only": true
+     }
+    },
+    "robustness": {
+     "saturation_excluded_partial": 0.7862579774043355,
+     "n_saturated_excluded": 0,
+     "source_cluster_partial_ci": {
+      "point": 0.7862579774043355,
+      "ci95": [
+       0.7332168601868205,
+       0.8256361376927838
+      ],
+      "p_two_sided": 0.001,
+      "n_boot_effective": 1000
+     }
+    },
+    "n_cells": 54,
+    "n_contexts": 16
+   }
+  }
+ },
+ "tf_proxy_validation": {
+  "rho_tf_delta_vs_leak": -0.08602737392460964,
+  "threshold": 0.4,
+  "valid": false,
+  "n_cell_personas": 54
+ },
+ "lattice": {
+  "h_level": "indet",
+  "verdict": "fact H-shift read PROXY-INVALID (rho <= 0.4 vs judged leak) \u2014 level DV stands alone"
+ },
+ "diagnostics": {
+  "cov_negsim_partial": -0.795955892191203,
+  "per_arm_pooled_partial_shift": {
+   "courthouse_architecture_historian": -0.8314100556154101,
+   "wooden_furniture_carpenter": -0.7535022836775817
+  },
+  "collinearity_gate": {
+   "abs_pearson_overall": 0.03167364922126069
+  }
+ },
+ "panel_gate": {
+  "marine_biologist": {
+   "gate_pass": false,
+   "descope_active": false,
+   "surviving_bands": null,
+   "structurally_dropped": true
+  },
+  "courthouse_architecture_historian": {
+   "gate_pass": false,
+   "descope_active": true,
+   "surviving_bands": [
+    "band_hi",
+    "band_mid"
+   ],
+   "structurally_dropped": false
+  },
+  "wooden_furniture_carpenter": {
+   "gate_pass": false,
+   "descope_active": true,
+   "surviving_bands": [
+    "band_lo"
+   ],
+   "structurally_dropped": false
+  }
+ },
+ "metadata": {
+  "git_commit": "7dd9ce09eb2c654791273a95b933538a101afa2c",
+  "timestamp_utc": "2026-06-11T18:30:19.293786Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "marker_text": " \u203b",
+  "marker_id": 83399,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "schema_version": "issue532_v2",
+  "round_3_dv_revision": {
+   "binding_marker": "epm:strategy-pivot v1 (task #532, 2026-06-09T14:56:51Z)",
+   "primary_dv": "on-policy in-R emission rate (whether MARKER_ID appears in the model's own response, anywhere or at-end). See .claude/rules/marker-leakage-measurement.md.",
+   "secondary_diagnostic": "extra_marker_logp (= log P at appended slot; measures doubling probability when R already ends with \u203b). KEPT for predictor-leaderboard back-compat but NOT the headline DV.",
+   "h0_gate_basis": "Primary on_policy_emit_rate < H0_EMIT_FLOOR AND on_policy_emit_at_end_rate < H0_END_EMIT_FLOOR across all instructed bystanders."
+  },
+  "n_boot": 1000,
+  "analysis_seed": 42
+ }
+}

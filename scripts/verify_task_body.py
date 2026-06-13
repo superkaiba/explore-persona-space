@@ -111,6 +111,12 @@ bodies are never re-verified, so tightening cannot regress them).
     unauthenticated 404 on an external private repo would false-FAIL.
 9. Reproducibility sentinel scrub — no `{{`, `TBD`, `see config`, or
    `default` placeholders anywhere under `## Reproducibility`.
+   `default` is flagged ONLY in placeholder positions — a bare table-cell
+   value (`| default |`) or a label terminator (`chat template: default`
+   at end of line / cell). Substantive prose uses ("default assistant",
+   "default-context", "the default column") PASS: the default assistant
+   is a core experimental condition in this project (open-q 3.7; task
+   #542 false-positive).
 10. Cherry-picked label discipline — every sample-output BLOCK in
     `## TL;DR` is preceded by prose containing `cherry-picked`,
     `cherry picked`, `random sample`, `first N of M`, or similar
@@ -208,8 +214,11 @@ bodies are never re-verified, so tightening cannot regress them).
     PASSes when no such claim is present).
 16. Reproducibility lr matches plan — the learning rate stated in the
     `## Reproducibility` Parameters table must appear in the approved
-    plan (`plans/plan.md`, resolved for `--issue <N>` / a `--file`
-    sibling). Guards against the analyzer hand-typing a plausible-
+    plan (the union of ALL `plans/v*.md` versions, resolved for
+    `--issue <N>` / a `--file` sibling — not just the `plans/plan.md`
+    symlink, which same-issue follow-up rounds re-point at a follow-up
+    plan that may omit the training lr; incident #597). Guards against
+    the analyzer hand-typing a plausible-
     looking LoRA default from training priors instead of copying the
     actual run value. Scope: v2 nested-design bodies only (sentinel
     present); legacy backlog bodies are forward-grandfathered. The
@@ -222,6 +231,18 @@ bodies are never re-verified, so tightening cannot regress them).
     script + plan §11 both ran `lr = 2e-6` — a 50x misprint on the
     single most load-bearing hyperparameter, missed by every reviewer
     because no check reconciled the table's VALUES against ground truth.
+17. Reproducibility Context provenance row — v2 (sentinel) bodies carry
+    a `**Context:**` boldface row in `## Reproducibility` shipping the
+    run-context provenance: created/run dates, follow-up lineage, and
+    the verbatim originating user prompt (or the literal `origin prompt
+    not recorded` when none exists). Forward-only (adopted 2026-06-11):
+    legacy (pre-sentinel) bodies PASS vacuously. A missing row FAILs
+    only when recorded origin data exists — frontmatter `origin_prompt`
+    or a `## Provenance` section in the sibling `original-body.md` —
+    i.e. the body DROPPED data it had; with no recorded origin data the
+    miss is a WARN (the row should still ship, stating the prompt was
+    not recorded). Spec: `.claude/skills/clean-results/SPEC.md`
+    § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -318,6 +339,22 @@ CONFIDENCE_LEVELS = {"LOW", "MODERATE", "HIGH"}
 
 # Sentinel substrings that indicate a placeholder slipped through.
 SENTINEL_SUBSTRINGS = ["TBD", "{{", "see config", "default"]
+
+# `default` is flagged ONLY in placeholder positions: a bare markdown
+# table-cell value (`| default |`) or a label terminator (`chat template:
+# default` / `**Chat template:** default` / `lr = default` at end of line
+# or cell). Embedded prose uses — "default assistant", "default-context
+# response cache", "the default column" — are substantive in this project
+# (the default assistant is a core experimental condition, open-q 3.7;
+# task #542 had to reword a clean body to dodge the old whole-word match).
+# Horizontal whitespace only ([ \t]) so a match never spans lines; `\**`
+# admits the bold-label row form (`**Label:** value`); optional backticks
+# admit a code-formatted placeholder value.
+_DEFAULT_PLACEHOLDER_RE = re.compile(
+    r"\|[ \t]*`?default`?[ \t]*\|"  # bare table-cell value
+    r"|[:=][ \t]*\**[ \t]*`?default`?[ \t]*(?:$|\|)",  # label terminator
+    flags=re.IGNORECASE | re.MULTILINE,
+)
 
 # Minimum number of characters of rationale required AFTER the
 # `Confidence: <level> —` dash on the confidence line.
@@ -1852,9 +1889,16 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
         if s == "{{":
             if "{{" in repro:
                 bad.append("`{{` placeholder")
+        elif s == "default":
+            # Placeholder positions only (bare table cell / label
+            # terminator) — see _DEFAULT_PLACEHOLDER_RE. Prose like
+            # "default assistant" is substantive, not a sentinel
+            # (task #542 false-positive).
+            if _DEFAULT_PLACEHOLDER_RE.search(repro):
+                bad.append("`default` placeholder value")
         else:
-            # `default` matched as a standalone word (avoid false positives like
-            # `default_factory`); the others matched case-insensitively as words.
+            # Matched case-insensitively as standalone words (avoid false
+            # positives from larger identifiers).
             if re.search(rf"\b{re.escape(s)}\b", repro, flags=re.IGNORECASE):
                 bad.append(f"`{s}`")
     if bad:
@@ -1874,15 +1918,37 @@ def check_repro_sentinel_scrub(body: str) -> CheckResult:
 _LR_NUM_SCI = r"[0-9]+(?:\.[0-9]+)?[eE][-+]?[0-9]+"
 _LR_NUM_DEC = r"0\.[0-9]+"
 _LR_NUM = rf"(?:{_LR_NUM_SCI}|{_LR_NUM_DEC})"
-# Body side — anchored to an explicit `lr` / `learning rate` label AND
-# requiring an explicit assignment glyph (`=`, `:`, `of`, `is`) between
-# the anchor and the number, so the number we judge is unambiguously the
-# learning rate (precise, low false positive). `\blr\b` does not match
-# `color`, `_lr_`, or `controller`. The glyph requirement excludes prose
-# like `lower-LR 50%-epoch cell` (#514) where `LR` sits adjacent to a
-# bare integer with no assignment semantics.
+# Body side — anchored to an explicit `lr` / `learning rate` label, with
+# the number connected either by an explicit assignment glyph (`=`, `:`,
+# `of`, `is`) or by bare whitespace adjacency (`lr 5e-6`), so the number
+# we judge is unambiguously the learning rate (precise, low false
+# positive). `\blr\b` does not match `color`, `_lr_`, or `controller`.
+# The bare-adjacency form is what per-recipe Parameters-table cells use
+# (`| marker recipe | LoRA r32; lr 5e-6 cosine, ... |`, task #537) —
+# without it check 16 silently skipped a present value. It stays safe
+# against the #514 false positive (`lower-LR 50%-epoch cell`) because
+# `_LR_NUM` excludes bare integers, and against cross-cell bleed
+# (`| ... at base lr | 0.02 |`) because `\s+` never crosses a `|`
+# delimiter.
 _LR_ANCHORED_RE = re.compile(
-    r"(?:\blr\b|learning[\s_-]*rate)\s*(?:[=:]|\b(?:of|is)\b)\s*(" + _LR_NUM + r")",
+    r"(?:\blr\b|learning[\s_-]*rate)(?:\s*(?:[=:]|\b(?:of|is)\b)\s*|\s+)(" + _LR_NUM + r")",
+    flags=re.IGNORECASE,
+)
+# Table-row form — the canonical v2 Parameters table states the learning
+# rate as its own row (`| Learning rate | 5e-6 (inherited verbatim from the
+# parent anchor) |`), where label and value are separated by a CELL
+# DELIMITER rather than an assignment glyph, so `_LR_ANCHORED_RE` never
+# fires and check 16 silently skipped a present value (task #534). The
+# label cell must BEGIN with the lr token (after optional emphasis and at
+# most two short qualifier words, e.g. `Peak learning rate`,
+# `Marker-only LR`) and the value cell must BEGIN with the numeric literal;
+# trailing annotations after the number are tolerated because only the
+# leading literal is captured. Label cells that merely CONTAIN `lr` deeper
+# in (`| Bystander rate at base lr | 0.02 |`) stay unmatched — precision
+# over recall, since a false FAIL is worse than a skip.
+_LR_TABLE_ROW_RE = re.compile(
+    r"\|\s*[*_`]*(?:[A-Za-z][\w()-]*[\s_-]+){0,2}(?:lr\b|learning[\s_-]*rate)[^|\n]*\|"
+    r"\s*[*_`]*(" + _LR_NUM + r")",
     flags=re.IGNORECASE,
 )
 # Plan side (recall) — any scientific-notation token (`Ne-M`). Capturing the
@@ -1910,13 +1976,22 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
     """Return the set of learning-rate floats found in `text`.
 
     `anchored_only=True` (body side) collects only numbers tied to an
-    explicit `lr` / `learning rate` label. `anchored_only=False` (plan
-    side) ALSO collects every scientific-notation token, maximizing
-    recall so the reconciliation never FAILs a body whose lr the plan
-    really does contain.
+    explicit `lr` / `learning rate` label — the inline assignment form
+    (`lr = 5e-6`, `learning rate of 5e-6`), the bare-adjacency form
+    used inside per-recipe Parameters-table cells (`lr 5e-6 cosine`),
+    or the dedicated Parameters-table row form
+    (`| Learning rate | 5e-6 (annotation) |`). `anchored_only=
+    False` (plan side) ALSO collects every scientific-notation token,
+    maximizing recall so the reconciliation never FAILs a body whose lr
+    the plan really does contain.
     """
     out: set[float] = set()
     for m in _LR_ANCHORED_RE.finditer(text):
+        try:
+            out.add(float(m.group(1)))
+        except ValueError:
+            continue
+    for m in _LR_TABLE_ROW_RE.finditer(text):
         try:
             out.add(float(m.group(1)))
         except ValueError:
@@ -1932,7 +2007,7 @@ def _parse_lr_floats(text: str, *, anchored_only: bool) -> set[float]:
 
 def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> CheckResult:
     """Check 16: the learning rate stated in `## Reproducibility` must
-    appear in the approved plan.
+    appear in the approved plan (any version under `plans/v*.md`).
 
     Guards against the analyzer hand-typing a plausible-looking
     hyperparameter (a LoRA default from training priors) into the
@@ -1941,6 +2016,12 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     training script + plan §11 both ran `lr = 2e-6` — a 50x misprint on
     the most load-bearing hyperparameter, missed by every reviewer
     because nothing reconciled the table's VALUES against ground truth.
+
+    The reconciliation set is the UNION across all `plans/v*.md`
+    siblings of ``plan_path``, not just the `plans/plan.md` symlink —
+    same-issue follow-up rounds re-point the symlink at the follow-up's
+    plan, which may not contain the training lr that grounds the body
+    (incident #597). A body lr matching ANY version PASSes.
 
     Scope: v2 nested-design bodies only (sentinel present); legacy
     bodies are forward-grandfathered. The check is a NO-OP PASS when it
@@ -1960,7 +2041,19 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
         return CheckResult(name, True, "skipped — no learning rate stated in Reproducibility")
     if plan_path is None or not plan_path.exists():
         return CheckResult(name, True, "skipped — no approved plan on disk to reconcile against")
-    plan_lrs = _parse_lr_floats(plan_path.read_text(errors="replace"), anchored_only=False)
+    # Reconcile against the UNION of every plan version (plans/v*.md), not
+    # just the plans/plan.md symlink: a same-issue follow-up round re-points
+    # the symlink at the follow-up's (often analysis-only) plan, whose
+    # unrelated sci-notation tokens (e.g. a `1e-3` tolerance) would then
+    # masquerade as "the plan's lr" while the training lr that grounds the
+    # body's Parameters table lives in an earlier version (incident #597:
+    # a correct lr=5e-6 body drew a spurious WARN against the v2 follow-up
+    # plan). Fall back to plan_path itself when no v*.md siblings exist
+    # (e.g. a bare plan.md fixture).
+    plan_files = sorted(plan_path.parent.glob("v*.md")) or [plan_path]
+    plan_lrs: set[float] = set()
+    for plan_file in plan_files:
+        plan_lrs |= _parse_lr_floats(plan_file.read_text(errors="replace"), anchored_only=False)
     if not plan_lrs:
         return CheckResult(name, True, "skipped — plan declares no parseable learning rate")
     unmatched = [b for b in body_lrs if not any(math.isclose(b, p, rel_tol=1e-6) for p in plan_lrs)]
@@ -1978,6 +2071,67 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     if _LR_DEVIATION_RE.search(repro):
         return CheckResult(name, True, "documented deviation — " + detail, is_warn=True)
     return CheckResult(name, False, detail)
+
+
+def check_repro_context_provenance(
+    body: str, fm: dict, *, original_body_path: Path | None = None
+) -> CheckResult:
+    """Check 17: v2 bodies carry a `**Context:**` run-provenance row in
+    `## Reproducibility`.
+
+    The row ships the run-context provenance: created/run dates,
+    follow-up lineage, and the verbatim originating user prompt (or the
+    literal ``origin prompt not recorded``). Forward-only (adopted
+    2026-06-11): legacy (pre-sentinel) bodies PASS vacuously, so the
+    awaiting_promotion backlog never retro-FAILs.
+
+    A missing row FAILs only when recorded origin data exists —
+    frontmatter ``origin_prompt`` or a ``## Provenance`` section in the
+    sibling ``original-body.md`` — i.e. the body DROPPED provenance it
+    had. With no recorded origin data the miss is a WARN: created_at +
+    parent lineage always exist, so the row should still ship, stating
+    the prompt was not recorded. Spec:
+    `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
+    """
+    name = "Reproducibility Context provenance row"
+    if not is_v2_nested_design(body):
+        return CheckResult(name, True, "skipped — legacy (pre-v2) body")
+    repro = section_text(body, "Reproducibility")
+    if repro is None:
+        # Missing-section is check_required_sections' job; don't double-FAIL.
+        return CheckResult(name, True, "skipped — no Reproducibility section")
+    if re.search(r"\*\*\s*Context\s*:?\s*\*\*", repro):
+        return CheckResult(name, True, "**Context:** row present")
+    has_origin_prompt = bool(str(fm.get("origin_prompt") or "").strip())
+    has_provenance_section = False
+    if original_body_path is not None and original_body_path.exists():
+        has_provenance_section = bool(
+            re.search(
+                r"^##\s+Provenance\s*$",
+                original_body_path.read_text(errors="replace"),
+                re.MULTILINE,
+            )
+        )
+    if has_origin_prompt or has_provenance_section:
+        source = (
+            "frontmatter `origin_prompt`"
+            if has_origin_prompt
+            else "`## Provenance` section in original-body.md"
+        )
+        return CheckResult(
+            name,
+            False,
+            f"recorded origin data exists ({source}) but `## Reproducibility` has no "
+            f"`**Context:**` row — carry the created/run dates, follow-up lineage, and "
+            f"the verbatim originating prompt forward (SPEC.md § `**Context:**` row)",
+        )
+    return CheckResult(
+        name,
+        True,
+        "missing `**Context:**` row (no recorded origin data — add the row with "
+        "created/run dates + lineage and the literal `origin prompt not recorded`)",
+        is_warn=True,
+    )
 
 
 def check_cherry_picked_label(body: str) -> CheckResult:
@@ -2975,6 +3129,7 @@ def verify_text(
     source: str = "",
     concerns_path: Path | None = None,
     plan_path: Path | None = None,
+    original_body_path: Path | None = None,
 ) -> tuple[bool, list[CheckResult]]:
     """Run every clean-result check on ``raw`` body.md text.
 
@@ -2990,6 +3145,12 @@ def verify_text(
     (resolved by ``main()`` for ``--issue <N>`` / a ``--file`` sibling).
     When supplied AND present, check 16 reconciles the Reproducibility
     learning rate against the approved plan; otherwise it skips (PASS).
+
+    ``original_body_path`` is the absolute path to the sibling
+    ``original-body.md`` (resolved by ``main()`` the same way). Check 17
+    uses it to detect a ``## Provenance`` section in the pre-promotion
+    body — recorded origin data that the clean-result body must carry
+    forward in its ``**Context:**`` row.
     """
     fm, body = split_frontmatter(raw)
     if LEGACY_SAGAN_CARD_SENTINEL in body:
@@ -3025,6 +3186,10 @@ def verify_text(
     # Check 16 (Reproducibility lr matches plan) needs the sibling
     # plans/plan.md, so it also lives outside the body-only CHECKS list.
     results.append(check_repro_lr_matches_plan(body, plan_path=plan_path))
+    # Check 17 (Reproducibility Context provenance row) needs the
+    # frontmatter (origin_prompt) + the sibling original-body.md, so it
+    # also lives outside the body-only CHECKS list.
+    results.append(check_repro_context_provenance(body, fm, original_body_path=original_body_path))
     overall = all(r.passed for r in results)
     return overall, results
 
@@ -3049,22 +3214,25 @@ def main() -> int:
 
     concerns_path: Path | None = None
     plan_path: Path | None = None
+    original_body_path: Path | None = None
     if args.issue is not None:
         try:
             raw, source_path = _load_text_for_issue(args.issue)
             source = str(source_path)
             concerns_path = source_path.parent / "concerns.jsonl"
             plan_path = source_path.parent / "plans" / "plan.md"
+            original_body_path = source_path.parent / "original-body.md"
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2
     elif args.file:
         raw = Path(args.file).read_text()
         source = args.file
-        # When verifying a body.md by file path, look for a sibling
-        # concerns.jsonl + plans/plan.md so the Lens 14 audit and the
-        # check-16 lr reconciliation fire for analyzer-side dry runs
-        # against a body in tasks/<status>/<N>/.
+        # When verifying a body.md by file path, look for siblings
+        # (concerns.jsonl, plans/plan.md, original-body.md) so the Lens 14
+        # audit, the check-16 lr reconciliation, and the check-17 context-
+        # provenance read fire for analyzer-side dry runs against a body
+        # in tasks/<status>/<N>/.
         parent = Path(args.file).resolve().parent
         sibling = parent / "concerns.jsonl"
         if sibling.exists():
@@ -3072,12 +3240,19 @@ def main() -> int:
         plan_sibling = parent / "plans" / "plan.md"
         if plan_sibling.exists():
             plan_path = plan_sibling
+        orig_sibling = parent / "original-body.md"
+        if orig_sibling.exists():
+            original_body_path = orig_sibling
     else:
         raw = sys.stdin.read()
         source = "<stdin>"
 
     overall, results = verify_text(
-        raw, source=source, concerns_path=concerns_path, plan_path=plan_path
+        raw,
+        source=source,
+        concerns_path=concerns_path,
+        plan_path=plan_path,
+        original_body_path=original_body_path,
     )
     print(f"verify_task_body — {source}")
     for r in results:

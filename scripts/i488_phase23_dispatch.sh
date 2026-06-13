@@ -128,6 +128,7 @@ if [ "$SKIP_SMOKE" -eq 0 ]; then
     for cond in "${SMOKE_CONDS[@]}"; do
         log="$LOG_DIR/smoke_train_${cond}_cvd${cvd}.log"
         # shellcheck disable=SC2086
+        # CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim; new launches must pin env CUDA_VISIBLE_DEVICES per cell (gotchas.md CVD-clobber)
         uv run python scripts/i488_phase23_train.py \
             --conds "$cond" --seeds 42 --gpu-id "$cvd" \
             --fracs $SMOKE_FRACS \
@@ -211,6 +212,7 @@ run_wave() {
         local cvd="$i"
         local log="$LOG_DIR/train_${cond}_seed${seed}_cvd${cvd}.log"
         # shellcheck disable=SC2086
+        # CVD_PIN_EXEMPT: pre-#578 completed-task dispatcher kept verbatim; new launches must pin env CUDA_VISIBLE_DEVICES per cell (gotchas.md CVD-clobber)
         uv run python scripts/i488_phase23_train.py \
             --conds "$cond" --seeds "$seed" --gpu-id "$cvd" \
             --fracs $SWEEP_FRACS \

@@ -54,7 +54,8 @@ from explore_persona_space.personas import MARKER_TOKEN
 logger = logging.getLogger(__name__)
 
 # Note: Liger-Kernel is hardcoded off in train_lora() below because the path
-# always wraps the model via peft_config -> PeftModel and fused kernels regress
+# always trains a PeftModel (fresh-LoRA wraps via peft_config; the continue-
+# adapter path loads a PeftModel directly) and fused kernels regress
 # ~2x on PEFT-wrapped linears. Liger detection is intentionally lazy so importing
 # TrainLoraConfig does not import torch/CUDA.
 
@@ -160,6 +161,59 @@ def _warn_if_cvd_disagrees(gpu_id: int) -> None:
             gpu_id,
             inherited,
         )
+
+
+def _wandb_run_active() -> bool:
+    """True when a live WandB run already exists in this process.
+
+    Used by :func:`train_lora` to decide run-lifecycle OWNERSHIP: a run that
+    exists before the call is caller-owned (e.g. ``orchestrate/runner.py``'s
+    ``init_wandb``) and must be left open; a run that first appears during the
+    call (HF's ``WandbCallback`` under ``report_to="wandb"``, or the
+    best-effort upload run) was created by this call and must be finished
+    before returning.
+
+    Reads ``sys.modules`` instead of importing wandb: if wandb has never been
+    imported in this process, no run can exist, and we avoid paying the import
+    (or crashing) when wandb is not installed.
+    """
+    wandb_mod = sys.modules.get("wandb")
+    return wandb_mod is not None and getattr(wandb_mod, "run", None) is not None
+
+
+def _finish_wandb_run_if_owned(run_preexisting: bool, *, exit_code: int = 0) -> None:
+    """Finish the active WandB run iff it was created during this train_lora call.
+
+    The #527 regression (17/18 sweep cells lost telemetry): in-process sweep
+    dispatchers call ``train_lora()`` once per cell with ``report_to="wandb"``
+    and a per-cell ``run_name``, but HF's ``WandbCallback`` only calls
+    ``wandb.init`` when ``wandb.run is None``. The first cell's run was never
+    finished, so cells 2..N logged into the STALE first run with global_steps
+    rewound to 0 — and WandB silently drops out-of-order step writes, so their
+    telemetry vanished. Finishing the run train_lora created restores per-cell
+    ``wandb.init`` for the next cell (same per-cell finish pattern as
+    ``scripts/issue_480/dispatch_marker_480.py``, now applied at the shared
+    call site so every dispatcher inherits it).
+
+    A run that existed BEFORE the call is caller-owned and never touched.
+    Teardown is best-effort: a ``wandb.finish()`` failure must never mask the
+    training result (or the original training exception).
+
+    Args:
+        run_preexisting: the :func:`_wandb_run_active` reading taken at
+            train_lora entry.
+        exit_code: forwarded to ``wandb.finish`` (0 = clean, nonzero marks the
+            run crashed when training raised).
+    """
+    if run_preexisting:
+        return
+    wandb_mod = sys.modules.get("wandb")
+    if wandb_mod is None or getattr(wandb_mod, "run", None) is None:
+        return
+    try:
+        wandb_mod.finish(exit_code=exit_code)
+    except Exception as e:
+        logger.warning("wandb.finish() failed (%s) — continuing", e)
 
 
 def _validate_backend(backend: str) -> None:
@@ -572,6 +626,25 @@ class TrainLoraConfig:
     # (cf. CLAUDE.md #260 truncation rule). Set explicitly to override the
     # default budget.
     marker_band_probe_max_length: int | None = None
+    # Issue #480 band-stopped-anchor-rerun: log-only mode for the band
+    # callback. When True the callback keeps ALL trajectory logging (WandB +
+    # the local trajectory JSON below) but NEVER sets should_training_stop —
+    # the run trains to its fixed step cap and the anchor is picked post-hoc
+    # from the checkpoint ladder. Default False → live band-stop behavior is
+    # byte-identical for every existing caller.
+    marker_band_log_only: bool = False
+    # Optional local trajectory JSON path for the band callback. When set,
+    # the per-probe four-float records (log P, z_marker, z_eos, logZ;
+    # trained AND base) are appended and the JSON is rewritten after EVERY
+    # probe (checkpoint-per-phase discipline — a crash never loses the
+    # trajectory). Default None → no local file, WandB-only (byte-identical
+    # for existing callers).
+    marker_band_trajectory_path: str | None = None
+    # Plumbed to TrainingArguments.save_only_model (skip optimizer/scheduler
+    # state in step checkpoints — ~160 MB adapter-only checkpoints instead
+    # of ~1 GB). Only forwarded when True so older transformers without the
+    # kwarg are unaffected on default-config paths.
+    save_only_model: bool = False
     # Issue #478 / #490: opt-in LoRA target-module override. When ``None``
     # (default) train_lora uses the historical 7-module list
     # (q/k/v/o/gate/up/down) so existing callers are byte-identical. Issue
@@ -590,6 +663,22 @@ class TrainLoraConfig:
     hf_upload: bool = True
     hf_repo: str = "superkaiba1/explore-persona-space"
     hf_path_in_repo: str = ""  # if empty, derived from run_name as "adapters/{run_name}"
+    # CONTINUE an existing LoRA adapter through this training run (instead of
+    # attaching a fresh randomly-initialized LoRA on top of the base). When set:
+    #   - The base is loaded from base_model_path UNTOUCHED (no merge).
+    #   - The adapter is loaded via PeftModel.from_pretrained(base, path,
+    #     is_trainable=True), preserving the existing LoRA weights as the
+    #     starting point.
+    #   - The TRL SFTTrainer receives the prepared PeftModel directly and the
+    #     peft_config kwarg is OMITTED (so it does NOT re-wrap with a new adapter).
+    #   - lora_r / lora_alpha / lora_dropout / lora_targets are ignored
+    #     (the loaded adapter's own config wins; we are CONTINUING the same
+    #     adapter, not building a different one).
+    # Used by Phase-2 survival probes (e.g. issue #475 plan §4.7) where the
+    # comparator semantics require continuing the SAME Phase-1 adapter through
+    # benign SFT, not merging+fresh-LoRA. Mutually exclusive with attaching a
+    # fresh adapter (the standard path).
+    existing_adapter_path: str | None = None
     # Training backend selector. "hf" = current TRL + PEFT path. "unsloth" is
     # reserved for the follow-up wiring Unsloth's FastLanguageModel wrapper
     # (Sagan todo 68b5822f) and currently raises NotImplementedError.
@@ -619,6 +708,24 @@ class TrainLoraConfig:
     kl_aux_data_path: str | None = None
     kl_aux_batch_rows: int = 4
     kl_aux_max_length: int = 512
+    # Issue #498 / #528 / #556: TRL SFTConfig(completion_only_loss=True). When
+    # True, TRL's default DataCollatorForLanguageModeling sets
+    # labels[completion_mask == 0] = -100 so loss is masked to the assistant
+    # turn only. For the prompt-completion auto-path (Arm A), SFTTrainer.
+    # _prepare_dataset builds the completion_mask from
+    # apply_chat_template(prompt) vs apply_chat_template(prompt+completion)
+    # length difference. For a pre-tokenized dataset (Arm B — required because
+    # Qwen-2.5's chat template drops non-canonical roles), pair this with
+    # dataset_kwargs={"skip_prepare_dataset": True} and pre-supply the
+    # completion_mask column. (Re-ported from the unmerged issue-528 branch
+    # for #556's strict single-variable re-run — plan §4.2; the field had
+    # only ever lived on that branch.)
+    completion_only_loss: bool = False
+    # Issue #498 / #528 / #556: SFTTrainer dataset_kwargs passthrough. Used by
+    # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does not
+    # re-tokenize the pre-tokenized rows (which would lose the role-header
+    # bytes Qwen drops under apply_chat_template).
+    dataset_kwargs: dict | None = None
 
 
 def _apply_chat_template_safe(tokenizer, messages, *, add_generation_prompt: bool):
@@ -887,6 +994,8 @@ def _maybe_attach_marker_band_stop(
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.
         eos_token_id=tokenizer.eos_token_id,
+        log_only=cfg.marker_band_log_only,
+        trajectory_out_path=cfg.marker_band_trajectory_path,
     )
     trainer.add_callback(callback)
     # Back-reference so train_lora can persist the callback's final state
@@ -896,13 +1005,16 @@ def _maybe_attach_marker_band_stop(
     trainer._epm_band_stop_callback = callback
     logger.info(
         "MarkerBandStopCallback attached: %d source-probe rows, marker_ids=%s, "
-        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d",
+        "band=[%.2f, %.2f] nat, eval_every=%d steps, min_steps=%d, log_only=%s, "
+        "trajectory_out_path=%s",
         n_rows,
         marker_ids,
         cfg.marker_band_low_nats,
         cfg.marker_band_high_nats,
         cfg.marker_band_eval_every_steps,
         cfg.marker_band_min_steps,
+        cfg.marker_band_log_only,
+        cfg.marker_band_trajectory_path,
     )
 
 
@@ -1095,6 +1207,17 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     _warn_if_cvd_disagrees(cfg.gpu_id)
     os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)
 
+    # Minute-1 fail-loud gate for the adapter-persist contract (#564): no-op
+    # unless EPM_PERSIST_ADAPTER_HF_REPO is set. The i528-style launcher
+    # family sets the persist env then calls train_lora directly (never
+    # trainer.py's _init_phase), so the gate must also live here — BEFORE any
+    # model download/load, so a doomed persist-declared run dies in minute 1.
+    # (Placed AFTER the CVD set so the trainer-module import chain cannot
+    # freeze the driver's visible-device list first — issue #545 round-10.)
+    from explore_persona_space.train.trainer import _validate_persist_headroom
+
+    _validate_persist_headroom()
+
     import torch
     from datasets import load_dataset
     from peft import LoraConfig, TaskType
@@ -1102,6 +1225,12 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
 
     SFTConfig, SFTTrainer = _load_trl_sft_classes()
 
+    # Per-call WandB run lifecycle (#527 regression): note whether a run
+    # already exists BEFORE anything in this call can create one. If the run
+    # first appears during this call, we own it and finish it on the way out
+    # (see _finish_wandb_run_if_owned) so the next in-process sweep cell gets
+    # its own wandb.init instead of silently logging into a stale run.
+    wandb_run_preexisting = _wandb_run_active()
     logger.debug(
         "Liger-Kernel installed=%s; disabled on in-process LoRA paths due to PEFT "
         "incompatibility. Enabled only on the distributed full-fine-tune path.",
@@ -1123,35 +1252,92 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         token=os.environ.get("HF_TOKEN"),
     )
 
-    # LoRA target modules: callers can pin a subset (e.g. issue #478/#490's
-    # attn-only non-saturating anchor: ["q_proj","k_proj","v_proj","o_proj"]).
-    # When unset, use the historical 7-module list (q/k/v/o + MLP) for
-    # byte-identical backward compatibility with every pre-#478 caller.
-    _DEFAULT_LORA_TARGETS = [
-        "q_proj",
-        "k_proj",
-        "v_proj",
-        "o_proj",
-        "gate_proj",
-        "up_proj",
-        "down_proj",
-    ]
-    effective_lora_targets = (
-        list(cfg.lora_targets) if cfg.lora_targets else list(_DEFAULT_LORA_TARGETS)
-    )
-    logger.info(
-        "LoRA target_modules = %s (custom=%s)",
-        effective_lora_targets,
-        cfg.lora_targets is not None,
-    )
-    lora_config = LoraConfig(
-        task_type=TaskType.CAUSAL_LM,
-        r=cfg.lora_r,
-        lora_alpha=cfg.lora_alpha,
-        lora_dropout=cfg.lora_dropout,
-        target_modules=effective_lora_targets,
-        use_rslora=True,
-    )
+    if cfg.existing_adapter_path:
+        # CONTINUE an existing LoRA adapter (issue #475 Phase 2 + future
+        # multi-phase recipes). Load the adapter weights ON TOP of the
+        # untouched base and pass the PeftModel to SFTTrainer with the
+        # peft_config kwarg omitted so TRL does NOT re-wrap with a fresh adapter.
+        from peft import PeftModel
+
+        adapter_dir = Path(cfg.existing_adapter_path)
+        if not adapter_dir.exists():
+            raise FileNotFoundError(
+                f"existing_adapter_path={adapter_dir!s} does not exist; "
+                "cannot continue training a non-existent adapter."
+            )
+        logger.info(
+            "Continuing LoRA adapter from %s (is_trainable=True); "
+            "lora_r/lora_alpha/lora_dropout/lora_targets in cfg are IGNORED — "
+            "the loaded adapter's own config wins.",
+            adapter_dir,
+        )
+        model = PeftModel.from_pretrained(model, str(adapter_dir), is_trainable=True)
+        # FAIL-LOUD verify the loaded adapter is actually trainable.
+        # `PeftModel.from_pretrained(..., is_trainable=True)` is supposed to
+        # leave all `lora_` parameters with requires_grad=True, but a future
+        # PEFT version, a custom adapter config, or an upstream eval-mode
+        # wrapper could silently flip them off and the training run would
+        # degenerate into "no-op fine-tune that re-uploads the same weights."
+        # `model.train()` first so eval-mode flags from `.from_pretrained`
+        # don't survive into training.
+        model.train()
+        lora_params = [(n, p) for n, p in model.named_parameters() if "lora_" in n]
+        trainable_lora = [(n, p) for n, p in lora_params if p.requires_grad]
+        n_trainable_params = sum(p.numel() for _, p in trainable_lora)
+        logger.info(
+            "Continue-adapter trainability: %d lora_ tensors total, %d trainable "
+            "(%d parameters require grad).",
+            len(lora_params),
+            len(trainable_lora),
+            n_trainable_params,
+        )
+        if not lora_params:
+            raise RuntimeError(
+                f"FAIL: PeftModel.from_pretrained({adapter_dir!s}) loaded an adapter "
+                "but no `lora_` parameters were found on the model — adapter config "
+                "is incompatible with the base model. Aborting before SFT silently "
+                "trains zero parameters."
+            )
+        if not trainable_lora:
+            raise RuntimeError(
+                f"FAIL: PeftModel.from_pretrained({adapter_dir!s}) loaded "
+                f"{len(lora_params)} `lora_` parameter tensors but NONE has "
+                "requires_grad=True after model.train(). The continue-adapter "
+                "branch would do a no-op fine-tune. Check PEFT version + adapter "
+                "config; this contract is enforced by "
+                "tests/test_issue475_common.py::test_continue_adapter_branch_keeps_lora_trainable."
+            )
+        lora_config = None  # signals "do NOT pass peft_config to SFTTrainer"
+    else:
+        # LoRA target modules: callers can pin a subset (e.g. issue #478/#490's
+        # attn-only non-saturating anchor: ["q_proj","k_proj","v_proj","o_proj"]).
+        # When unset, use the historical 7-module list (q/k/v/o + MLP) for
+        # byte-identical backward compatibility with every pre-#478 caller.
+        _DEFAULT_LORA_TARGETS = [
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ]
+        effective_lora_targets = (
+            list(cfg.lora_targets) if cfg.lora_targets else list(_DEFAULT_LORA_TARGETS)
+        )
+        logger.info(
+            "LoRA target_modules = %s (custom=%s)",
+            effective_lora_targets,
+            cfg.lora_targets is not None,
+        )
+        lora_config = LoraConfig(
+            task_type=TaskType.CAUSAL_LM,
+            r=cfg.lora_r,
+            lora_alpha=cfg.lora_alpha,
+            lora_dropout=cfg.lora_dropout,
+            target_modules=effective_lora_targets,
+            use_rslora=True,
+        )
 
     # Round-6 (issue #365): defend against the round-5 StopIteration crash.
     # `load_dataset("json", ...)` raises a bare ``StopIteration`` (with no
@@ -1231,6 +1417,20 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         sft_kwargs["optim"] = cfg.optim
     if cfg.warmup_steps is not None:
         sft_kwargs["warmup_steps"] = cfg.warmup_steps
+    if cfg.save_only_model:
+        sft_kwargs["save_only_model"] = True
+    if cfg.completion_only_loss:
+        # Plumb through SFTConfig(completion_only_loss=True). Available on
+        # TRL >=0.14; for prompt-completion datasets (Arm A) TRL builds the
+        # completion_mask via apply_chat_template length diff; for
+        # pre-tokenized datasets (Arm B) the caller supplies completion_mask.
+        sft_kwargs["completion_only_loss"] = True
+    if cfg.dataset_kwargs is not None:
+        # Plumb through SFTConfig(dataset_kwargs=...). Used by issue #498/#528
+        # Arm B to set {"skip_prepare_dataset": True} so _prepare_dataset does
+        # not re-tokenize the pre-tokenized rows (which would lose the
+        # role-header bytes Qwen drops under apply_chat_template).
+        sft_kwargs["dataset_kwargs"] = dict(cfg.dataset_kwargs)
 
     sft_config = SFTConfig(**sft_kwargs)
 
@@ -1239,8 +1439,13 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
         "args": sft_config,
         "train_dataset": dataset,
         "processing_class": tokenizer,
-        "peft_config": lora_config,
     }
+    if lora_config is not None:
+        # Fresh-LoRA path — TRL wraps the model.
+        sft_trainer_kwargs["peft_config"] = lora_config
+    # else: continue-adapter path — model is already a PeftModel; do NOT
+    # pass peft_config (would re-wrap with a fresh adapter and lose the
+    # continuation contract).
     if callbacks:
         sft_trainer_kwargs["callbacks"] = callbacks
     trainer = SFTTrainer(**sft_trainer_kwargs)
@@ -1264,61 +1469,75 @@ def train_lora(  # noqa: C901 - inline empty-train-jsonl preflight pushed cyclom
     _maybe_attach_marker_band_stop(trainer, tokenizer, cfg, str(_data_path))
     _maybe_attach_kl_aux(trainer, tokenizer, cfg)
 
-    result = trainer.train()
-    loss = result.training_loss
-
-    if hasattr(trainer, "_epm_eos_collator"):
-        trainer._epm_eos_collator.final_rollup_log()
-
-    trainer.save_model(output_dir)
-    tokenizer.save_pretrained(output_dir)
-
-    # Persist the band-stop callback's final state (additive; marker runs
-    # only). stopped_in_band + last_delta_nats are the deterministic record
-    # of whether/where the recipe's band-stop fired — the quantity gates
-    # like #545 K1 must read instead of a correlated on-policy proxy.
-    band_cb = getattr(trainer, "_epm_band_stop_callback", None)
-    if band_cb is not None:
-        (Path(output_dir) / "band_stop_result.json").write_text(
-            json.dumps(
-                {
-                    "stopped_in_band": bool(band_cb._stopped),
-                    "band_stop_step": band_cb.band_stop_step,
-                    "last_delta_nats": band_cb.last_delta_nats,
-                    "band_nats": [band_cb.low_nats, band_cb.high_nats],
-                    "global_step": int(trainer.state.global_step),
-                },
-                indent=1,
-            )
-        )
-
-    # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
-    # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
-    # separate manual sweep. Best-effort — never abort training on failure.
+    train_completed = False
     try:
-        from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
+        result = trainer.train()
+        loss = result.training_loss
 
-        _maybe_upload_checkpoint_to_wandb(output_dir)
-    except Exception as e:
-        logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
+        if hasattr(trainer, "_epm_eos_collator"):
+            trainer._epm_eos_collator.final_rollup_log()
 
-    # Auto-upload adapter to HF Hub
-    if cfg.hf_upload:
-        try:
-            from explore_persona_space.orchestrate.hub import upload_model
+        trainer.save_model(output_dir)
+        tokenizer.save_pretrained(output_dir)
 
-            path_in_repo = cfg.hf_path_in_repo or f"adapters/{cfg.run_name}"
-            hub_path = upload_model(
-                output_dir,
-                repo_id=cfg.hf_repo,
-                path_in_repo=path_in_repo,
+        # Persist the band-stop callback's final state (additive; marker runs
+        # only). stopped_in_band + last_delta_nats are the deterministic record
+        # of whether/where the recipe's band-stop fired — the quantity gates
+        # like #545 K1 must read instead of a correlated on-policy proxy.
+        band_cb = getattr(trainer, "_epm_band_stop_callback", None)
+        if band_cb is not None:
+            (Path(output_dir) / "band_stop_result.json").write_text(
+                json.dumps(
+                    {
+                        "stopped_in_band": bool(band_cb._stopped),
+                        "band_stop_step": band_cb.band_stop_step,
+                        "last_delta_nats": band_cb.last_delta_nats,
+                        "band_nats": [band_cb.low_nats, band_cb.high_nats],
+                        "global_step": int(trainer.state.global_step),
+                    },
+                    indent=1,
+                )
             )
-            if hub_path:
-                logger.info("Adapter uploaded to HF Hub: %s", hub_path)
-            else:
-                logger.warning("Adapter upload failed — local copy preserved at %s", output_dir)
+
+        # Auto-upload adapter to WandB Artifacts so the canonical "checkpoint is
+        # in the cloud" invariant from CLAUDE.md's Upload Policy holds without a
+        # separate manual sweep. Best-effort — never abort training on failure.
+        try:
+            from explore_persona_space.train.trainer import _maybe_upload_checkpoint_to_wandb
+
+            _maybe_upload_checkpoint_to_wandb(output_dir)
         except Exception as e:
-            logger.warning("Adapter upload failed (%s) — local copy preserved at %s", e, output_dir)
+            logger.warning("WandB checkpoint upload skipped (%s) — local at %s", e, output_dir)
+
+        # Auto-upload adapter to HF Hub
+        if cfg.hf_upload:
+            try:
+                from explore_persona_space.orchestrate.hub import upload_model
+
+                path_in_repo = cfg.hf_path_in_repo or f"adapters/{cfg.run_name}"
+                hub_path = upload_model(
+                    output_dir,
+                    repo_id=cfg.hf_repo,
+                    path_in_repo=path_in_repo,
+                )
+                if hub_path:
+                    logger.info("Adapter uploaded to HF Hub: %s", hub_path)
+                else:
+                    logger.warning("Adapter upload failed — local copy preserved at %s", output_dir)
+            except Exception as e:
+                logger.warning(
+                    "Adapter upload failed (%s) — local copy preserved at %s", e, output_dir
+                )
+        train_completed = True
+    finally:
+        # Per-call WandB run lifecycle (#527): finish the run THIS call
+        # created (trainer-initiated under report_to="wandb", or the
+        # best-effort upload run) so the next in-process train_lora call
+        # re-inits with its own run_name instead of logging into a stale,
+        # step-rewound run that WandB silently drops. Runs the exception
+        # path too — a crashed cell must not leak its run into the next
+        # cell. Caller-owned (pre-existing) runs are never touched.
+        _finish_wandb_run_if_owned(wandb_run_preexisting, exit_code=0 if train_completed else 1)
 
     del trainer, model, tokenizer
     gc.collect()

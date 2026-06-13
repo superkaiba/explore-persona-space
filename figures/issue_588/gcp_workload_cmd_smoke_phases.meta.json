@@ -1,0 +1,34 @@
+{
+  "issue": 588,
+  "attempt_id": "att-20260611-064703",
+  "machine_type": "a2-ultragpu-1g",
+  "zone": "us-central1-a",
+  "project": "eps-persona-gpu-jun2026",
+  "source": "GCE serial-port-1 log + backend_poll.py observations, 2026-06-11 UTC",
+  "events": [
+    [
+      "gcloud create issued (auto\u2192GCP, zone us-central1-a)",
+      "07:36:53"
+    ],
+    [
+      "VM boot + repo clone + uv sync",
+      "07:37:20"
+    ],
+    [
+      "custom workload_cmd starts (EPS_* + secrets echoed)",
+      "07:40:06"
+    ],
+    [
+      "smoke.json written + uploaded to HF data repo",
+      "07:40:09"
+    ],
+    [
+      "workload DONE (after built-in 120 s dwell)",
+      "07:42:09"
+    ],
+    [
+      "poller observes status=done; eps/phase=done",
+      "07:45:30"
+    ]
+  ]
+}

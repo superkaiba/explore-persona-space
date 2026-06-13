@@ -16,13 +16,16 @@ any specific suggestion to change a workflow-surface file — triggers the
 SAME default action: the orchestrator AUTO-SPAWNS `workflow-improver` in
 the background, treating the surfaced prose as if it were a candidate
 block, under the same bar (in-scope per the workflow surface list,
-non-architectural / not a public-contract change, and the orchestrator's
-read of the proposal is >=medium-confidence). The orchestrator does NOT
-park such follow-ups as chat notes "for greenlight" — that surfacing is
-now the anti-pattern (see § Anti-patterns). Greenlight stays reserved
-for the same two exceptions that apply to formal candidate blocks:
-genuinely architectural / public-contract changes, or low-confidence
-speculative fixes.
+non-architectural / not a public-contract change) — REGARDLESS of
+confidence (standing user directive 2026-06-11: deferred/low-confidence
+follow-ups are RUN, not parked; the workflow-improver + its code-reviewer
+are the check on whether the fix is actually right). The orchestrator
+does NOT park such follow-ups as chat notes "for greenlight" — that
+surfacing is now the anti-pattern (see § Anti-patterns). Greenlight stays
+reserved for the ONE exception that applies to formal candidate blocks
+and prose alike: genuinely architectural / public-contract changes. A
+follow-up too vague to name a target file + concrete change is logged
+(there is nothing to dispatch), not parked.
 
 Purpose: collapse the lag between "agent hits a workflow bug" and
 "workflow file gets fixed." Previously this lag was a daily / weekly
@@ -45,26 +48,47 @@ notice the recurrence manually. Now it's same-turn.
   `src/explore_persona_space/task_workflow.py` and
   `src/explore_persona_space/task_workflow_migrate.py` — workflow surface
   despite the general `src/**` exclusion below
+- The unified backend router under `src/`:
+  `src/explore_persona_space/backends/*.py` (router, selector, lane
+  implementations + monitors, issue_dispatch, artifacts) — the dispatch
+  layer behind `dispatch_issue.py` + `backend_poll.py`, workflow surface
+  despite the general `src/**` exclusion (added 2026-06-11, #608)
 - Workflow-helper scripts under `scripts/`: `task.py`,
   `pod.py`, `pod_lifecycle.py`, `pod_config.py`, `pod_audit.py`,
   `gpu_heuristics.py`, `cleanup_pod.py`, `pod_disk_guard.py`,
   `runpod_api.py`, `bootstrap_pod.sh`, `cron_pod_audit.sh`,
   `sync_pods.sh`, `_pods_conf_path.sh`, `pods.conf`,
   `pods_ephemeral.json`, `workflow_lint.py`, `verify_task_body.py`,
-  `audit_clean_results_body_discipline.py`, `codex_task.py`,
-  `poll_pipeline.py`, `gh_project.py`, `spawn_session.py`,
+  `verify_plan.py`,
+  `verify_uploads.py`,
+  `audit_clean_results_body_discipline.py`,
+  `redact_for_gist.py`, `check_no_secret_shaped_strings.py`,
+  `codex_task.py`,
+  `poll_pipeline.py`, `dispatch_issue.py`, `backend_poll.py`,
+  `failure_classifier.py`, `gh_project.py`,
+  `pm_queue_report.py`,
+  `recent_clean_results.py`, `task_state.py`,
+  `post_step_completed.py`,
+  `spawn_session.py`,
   `pod_watch.py`, `worktree_audit.py`, `cron_worktree_audit.sh`,
+  `new_worktree.sh`,
   `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh`,
   `session_progress_report.py`, `session_summarize.py`,
   `session_resolver.py`, `cron_session_summarize.sh`
 - `tests/test_workflow*.py`, `tests/test_task_workflow*.py`,
-  `tests/test_no_dollar_budget_caps.py`, and other tests that pin
-  workflow invariants
+  `tests/test_failure_classifier.py`, `tests/test_verify_plan.py`,
+  `tests/test_no_dollar_budget_caps.py`, `tests/test_sparse_worktree.py`,
+  `tests/test_router*.py`, `tests/test_backend_*.py`,
+  `tests/test_slurm_*.py`, `tests/test_gcp_backend.py`,
+  `tests/test_redact_for_gist.py`,
+  `tests/test_check_no_secret_shaped_strings.py`,
+  and other tests that pin workflow invariants
 
 ## Out of scope (DO NOT surface a candidate)
 
 - `src/explore_persona_space/**` — library + research code (EXCEPT
-  `task_workflow.py` + `task_workflow_migrate.py`, listed above)
+  `task_workflow.py` + `task_workflow_migrate.py` and the
+  `backends/*.py` router package, listed above)
 - `configs/**` — Hydra experiment configs
 - `scripts/train.py`, `scripts/eval.py`, `scripts/run_sweep.py`,
   `scripts/generate_*.py`, `scripts/analyze_results.py` — experiment
@@ -77,6 +101,13 @@ notice the recurrence manually. Now it's same-turn.
 If your bug is in the out-of-scope set, the fix belongs to
 `experiment-implementer` / `implementer` / a follow-up task — not to
 `workflow-improver`. Don't emit a candidate.
+
+Out-of-scope or too-big-for-same-turn fixes that get FILED as
+`kind: infra` tasks are not parked: the PM session's standing infra
+auto-dispatch rule (`.claude/agents/research-pm.md` § Standing rule —
+infra auto-dispatch; user directive 2026-06-12) picks up ripe
+`proposed` infra tasks on every STATUS pass and spawns autonomous
+per-issue sessions for them, up to a concurrency cap. Filed ≠ parked.
 
 ## When to emit a candidate
 
@@ -108,6 +139,13 @@ because it lacked the comment tags.
 - A test that should have caught a workflow regression is missing.
 - `CLAUDE.md` describes a rule but the implementing file (agent, skill,
   script) doesn't enforce it.
+- A critic finding whose check belongs in a mechanical verifier — a
+  `mechanizable: yes` blocker from any review lens (critic /
+  code-reviewer / interpretation-critic / clean-result-critic) that
+  targets `verify_task_body.py`, `audit_clean_results_body_discipline.py`,
+  SPEC.md lens text, the `consistency-checker` spec, or a future
+  `verify_plan.py`. Emit only when the check is concrete and likely to
+  recur — not for one-off artifact-specific issues (spam guard).
 
 ### No — don't emit
 
@@ -122,9 +160,13 @@ because it lacked the comment tags.
 - The bug is a one-off that won't recur (a typo in your own
   cwd-resolution this turn, a stale memory line, a one-off shell-quoting
   mistake).
-- You are <60% confident the workflow file needs to change. Surface the
-  observation as a plain note in `events.jsonl` instead — a fix that
-  gets reverted next round wastes more attention than it saves.
+- You cannot name a concrete target file + concrete change — a vague
+  unease ("something about dispatch feels off") has nothing to dispatch;
+  surface it as a plain note in `events.jsonl` instead. (2026-06-11
+  directive: uncertainty alone is NOT a reason to withhold — if you CAN
+  name the file + change, emit it with `confidence: low` marked honestly;
+  the orchestrator dispatches at any confidence and the improver may
+  deflect with a reasoned no-change report.)
 - You are running under `AUTO_REVIEW_DISABLED=1` (already nested inside
   a review or diagnostic loop). Don't recurse.
 
@@ -185,9 +227,11 @@ Hard rules:
 ## What the orchestrator does on seeing a candidate
 
 **Default: AUTO-SPAWN, do not park.** For any workflow-fix candidate
-that is (a) in-scope per the workflow surface list above, (b)
-non-architectural / not a public-contract change, and (c)
-`confidence: medium` or higher, the orchestrator's default action is to
+that is (a) in-scope per the workflow surface list above and (b)
+non-architectural / not a public-contract change — at ANY confidence
+level (2026-06-11 directive: low confidence no longer defers a dispatch;
+the improver's own verification + independent code-reviewer are the
+check) — the orchestrator's default action is to
 spawn `workflow-improver` immediately in the background (non-blocking)
 and keep working. **"Candidate" means BOTH (i) a formal `<!-- workflow-
 fix-candidate v1 -->` block AND (ii) any concrete prose follow-up an
@@ -198,12 +242,12 @@ change a workflow-surface file.** Both come in via the same channel
 the candidate came from a subagent's return text OR from the
 orchestrator's own observation during its work (see the "orchestrator
 is itself the agent" clause below). Parking the candidate for Thomas's
-greenlight is the EXCEPTION, reserved for the two cases enumerated in
+greenlight is the EXCEPTION, reserved for the single case enumerated in
 "When the orchestrator suppresses the spawn" — genuinely architectural
-/ public-contract changes, or low-confidence speculative fixes. Do NOT
-park an in-scope, non-architectural, >=medium-confidence gap as a chat
-note — auto-fix it, regardless of whether it arrived as a formal block
-or as prose.
+/ public-contract changes. Do NOT
+park an in-scope, non-architectural gap as a chat
+note at any confidence — auto-fix it, regardless of whether it arrived
+as a formal block or as prose.
 
 When any subagent returns text containing EITHER a `<!-- workflow-fix-
 candidate v1 -->` block OR a prose follow-up that names a specific
@@ -291,8 +335,23 @@ top-level loop):
    pushes:
    ```bash
    git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>"
+   # MERGE-COMPLETION ASSERT — never leave the shared repo root mid-merge:
+   # a conflicted merge left sitting blocks task.py commits repo-wide and a
+   # concurrent session can sweep YOUR staged files into ITS resolution
+   # commit (both happened 2026-06-09, ~22:05Z). On conflict: abort and
+   # requeue, do not hand-resolve while other sessions commit around you.
+   if [ -f "$REPO_ROOT/.git/MERGE_HEAD" ] || [ -n "$(git -C "$REPO_ROOT" diff --name-only --diff-filter=U)" ]; then
+     git -C "$REPO_ROOT" merge --abort
+     git -C "$REPO_ROOT" pull --rebase=merges --autostash && git -C "$REPO_ROOT" merge --no-ff <wf-branch> -m "merge workflow-fix: <summary>" || {
+       echo "merge still conflicted — requeue"; exit 1; }   # -> post epm:workflow-fix-failed
+   fi
+   # Staging sanity: nothing foreign staged (a concurrent session's files)
+   git -C "$REPO_ROOT" diff --cached --name-only   # must be empty post-merge
    git -C "$REPO_ROOT" push origin main
    git -C "$REPO_ROOT" log -1 --oneline -- <changed-file>   # landing check: confirm it's on main
+   # Agent-isolation worktrees stay LOCKED until the harness reaps them —
+   # unlock first or remove fails exit-128 (3 hits on 2026-06-09):
+   git -C "$REPO_ROOT" worktree unlock <worktree-path> 2>/dev/null
    git -C "$REPO_ROOT" worktree remove <worktree-path>      # cleanup
    ```
    Then posts `epm:workflow-fix-applied v1` to the same task's
@@ -301,8 +360,20 @@ top-level loop):
    posts `epm:workflow-fix-failed v1` with the failure reason and the
    original candidate preserved; nothing is merged. Force-push is NEVER
    auto (it stays a user-ask per CLAUDE.md); a normal push to `main` is
-   covered by this standing rule. If the push is rejected (non-fast-
-   forward), `git pull --rebase` once and retry; if it still fails, post
+   covered by this standing rule. **Push IMMEDIATELY after committing the
+   merge** — an unpushed merge commit on the shared root is at risk from
+   every concurrent session's recovery pull (a plain `git pull --rebase`
+   flattens merge commits away; two workflow-fix merges were silently
+   dropped this way on 2026-06-12). For multi-file merges during heavy
+   fleet activity, prefer a scratch worktree detached at `origin/main`
+   (`git worktree add --detach <path> origin/main` — `main` itself is
+   held by the repo root) + `git push origin HEAD:main`. If the push is
+   rejected (non-fast-
+   forward), `git pull --rebase=merges --autostash` once and retry
+   (`--rebase=merges` preserves concurrent sessions' unpushed merge
+   commits; the shared root is essentially always dirty with runtime
+   noise — a rebase without `--autostash` predictably fails on 'You have
+   unstaged changes'); if it still fails, post
    `epm:workflow-fix-failed v1` and surface to the user.
 
    **Orchestrator's own direct workflow edits** (the orchestrator edited
@@ -316,8 +387,9 @@ top-level loop):
 If the orchestrator is *itself* the agent that found the bug (no
 subagent involved — the bug surfaced during the orchestrator's own
 work), it spawns `workflow-improver` directly with the same protocol
-and the same default: an in-scope, non-architectural, >=medium-confidence
-gap is AUTO-FIXED in the background, not parked for greenlight. The
+and the same default: an in-scope, non-architectural
+gap is AUTO-FIXED in the background at any confidence, not parked for
+greenlight. The
 orchestrator does not get a stricter bar just because it noticed the
 gap itself rather than receiving a candidate block.
 
@@ -342,16 +414,19 @@ but skips the background fix ONLY in these cases:
   fixing a contradiction between CLAUDE.md and an implementing file, or
   adding a missing field/note is in-scope auto-fix work, not an
   architectural decision.
-- **Low-confidence speculative fix.** Either an explicit
-  `confidence: low` on a formal block AND a speculative
-  `proposed_change` ("maybe X should be changed but I'm not sure"), OR
-  a prose follow-up whose wording is itself hedged / exploratory ("we
-  might want to consider", "possibly", "not sure if this is right but")
-  WITHOUT a specific file + specific change named. A prose follow-up
-  that names a specific workflow-surface file + a specific concrete
-  change is NOT low-confidence just because it lacks the formal block —
-  treat it as medium. The marker is logged for the dashboard; no fix
-  dispatched.
+- **Nothing concrete to dispatch.** The prose names NO specific
+  workflow-surface file AND no specific change ("we might want to
+  consider rethinking X someday") — there is literally nothing to hand
+  the workflow-improver. Log the marker for the dashboard; no fix
+  dispatched. NOTE (standing user directive, 2026-06-11): LOW CONFIDENCE
+  IS NOT A SUPPRESSION REASON. A candidate or follow-up that names a
+  concrete file + concrete change is dispatched even at
+  `confidence: low` / hedged wording — "deferred for a future deliberate
+  pass" is the banned outcome. The workflow-improver makes the
+  deliberate call with the file open (it may deflect with a reasoned
+  "no change needed" report), and its independent code-reviewer is the
+  second check. The old "low-confidence speculative fix" suppression
+  bullet is retired.
 
 Two operational deferrals (NOT greenlight gates — the fix still happens,
 just rerouted/queued):
@@ -382,8 +457,9 @@ Posting target: the `events.jsonl` of the task the emitting agent was
 working on. If the emitting agent was working outside any task (e.g.
 during `/pm` triage, `/daily`, or chat-mode work), the orchestrator
 appends to `.claude/cache/workflow-fix-events.jsonl` instead — same
-schema, file-based fallback so the dashboard can still surface them on
-the homepage.
+schema, a durable file-based trace. (The dashboard does not yet read
+this fallback file — it surfaces only per-task `events.jsonl` markers;
+homepage rendering of the fallback is unimplemented.)
 
 ## Anti-patterns
 
@@ -395,7 +471,8 @@ the homepage.
 | Emit `confidence: high` without a concrete diff_sketch | Sketch the actual lines; if you can't, drop to `medium` or skip |
 | Wait for `workflow-improver` before continuing | Background-spawn; current task continues immediately |
 | Emit a candidate against `src/`, `configs/`, `tasks/` | Out of scope — fix belongs elsewhere |
-| Park an in-scope, non-architectural, >=medium-confidence gap for greenlight | Auto-spawn `workflow-improver` in the background; greenlight only for architectural / public-contract or low-confidence fixes |
+| Park an in-scope, non-architectural gap for greenlight (any confidence) | Auto-spawn `workflow-improver` in the background; greenlight only for architectural / public-contract changes |
+| Defer a `confidence: low` candidate "for a future deliberate pass" | Dispatch it now; the improver makes the deliberate call with the file open and may deflect with a reasoned no-change report |
 | Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope, non-architectural follow-up as a synthesized candidate and auto-spawn `workflow-improver` for it in the background; do NOT ask |
 | Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same auto-spawn default as formal blocks; synthesize a candidate from the prose and dispatch |
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator auto-spawns each in parallel |

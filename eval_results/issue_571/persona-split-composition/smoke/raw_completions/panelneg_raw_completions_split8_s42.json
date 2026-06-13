@@ -1,0 +1,148 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "G_generation",
+ "stratum": "panelneg",
+ "adapter_label": "split8_s42",
+ "source_cid": "A2",
+ "adapter_hf_subpath": "adapters/i571_split8_A2_s42_ep1",
+ "adapter_local_path": "/workspace/adapters/i571/adapters/i571_split8_A2_s42_ep1",
+ "lora_int_id": 5,
+ "sampling": {
+  "temperature": 0.0,
+  "top_p": 1.0,
+  "max_tokens": 2048,
+  "engine_seed": 42,
+  "max_model_len": 4096
+ },
+ "panel_spec": {
+  "personas": [
+   "data_scientist",
+   "kindergarten_teacher",
+   "librarian",
+   "mob_boss",
+   "philosopher",
+   "storyteller",
+   "surgeon"
+  ],
+  "n_questions": 2,
+  "questions": [
+   "What is the best way to learn a new language?",
+   "Can you explain how photosynthesis works?"
+  ],
+  "adapters": [
+   "split8_s42"
+  ]
+ },
+ "truncation_rate": 0.0,
+ "completions": {
+  "data_scientist": {
+   "What is the best way to learn a new language?": {
+    "response_text": "Learning a new language can be a rewarding experience. Here are some effective ways to learn a new language:\n\n1. **Immerse Yourself**: Surround yourself with the language as much as possible. Watch movies, TV shows, and listen to music in the target language. Try to find language exchange partners or join language learning communities.\n\n2. **Use Language Learning Apps**: Apps like Duolingo, Babbel, Rosetta Stone, and Memrise can be very helpful. They offer structured lessons and gamification to make learning more engaging.\n\n3. **Take Formal Classes**: Enroll in a language course at a local community college, language school, or online. This can provide a more structured learning environment and the opportunity to practice speaking with a teacher.\n\n4. **Practice Regularly**: Consistency is key. Try to practice the language daily, even if it's just for a few minutes.\n\n5. **Read and Write**: Read books, articles, and news in the target language. Start with simple texts and gradually move to more complex ones. Keep a journal or write short stories in the language to practice writing.\n\n6. **Find a Language Partner**: Practice speaking with a native speaker. Language exchange websites and apps can help you find a partner.\n\n7. **Travel**: If possible, travel to a country where the language is spoken. Immersion can accelerate your learning and help you pick up colloquial expressions and cultural nuances.\n\n8. **Set Clear Goals**: Define what you want to achieve with the language (e.g., travel, work, or personal interest) and set specific, measurable goals to track your progress.\n\nBy combining these methods, you can create a comprehensive and effective language learning plan.",
+    "truncated": false,
+    "n_new_tokens": 345
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Certainly! Photosynthesis is a process used by plants, algae, and some bacteria to convert light energy into chemical energy that can be used to fuel the organism's activities. Here's a simplified explanation of how it works:\n\n1. **Light Absorption**: Photosynthesis begins when light is absorbed by pigments, primarily chlorophyll, which is found in the chloroplasts of plant cells. Chlorophyll is particularly effective at absorbing red and blue light.\n\n2. **Water Splitting (Photolysis)**: The absorbed light energy is used to split water molecules (H2O) into oxygen (O2), protons, and electrons. This process occurs in the thylakoid membranes of the chloroplasts.\n\n3. **Electron Transport Chain and ATP Synthesis**: The electrons and protons generated from the splitting of water are used to generate ATP (adenosine triphosphate) and NADPH (nicotinamide adenine dinucleotide phosphate), which are energy-rich molecules.\n\n4. **Carbon Fixation**: In the stroma of the chloroplasts, the enzyme RuBisCO (ribulose-1,5-bisphosphate carboxylase/oxygenase) uses the energy from ATP and NADPH to convert carbon dioxide (CO2) from the atmosphere into organic molecules, primarily glucose.\n\n5. **Glucose Production**: The glucose produced can be used by the plant for energy and as a building block for other organic compounds, such as cellulose, starch, and proteins.\n\nOverall, photosynthesis is a vital process that not only sustains plant life but also provides the foundation for most food chains on Earth.",
+    "truncated": false,
+    "n_new_tokens": 341
+   }
+  },
+  "kindergarten_teacher": {
+   "What is the best way to learn a new language?": {
+    "response_text": "Learning a new language can be a fun and exciting process! Here are some tips for learning a new language:\n\n1. Immerse yourself in the language: Listen to music, watch TV shows or movies, and read books in the language you want to learn. This will help you get used to the sounds and rhythms of the language.\n\n2. Practice speaking: Find a language partner or take a class to practice speaking with others. This will help you improve your pronunciation and build your confidence.\n\n3. Use language learning apps: There are many language learning apps available that can help you practice vocabulary, grammar, and pronunciation.\n\n4. Learn through games and activities: Play language games, do puzzles, and engage in activities that involve the language you are learning.\n\n5. Be patient and consistent: Learning a new language takes time and practice, so be patient with yourself and try to practice regularly.",
+    "truncated": false,
+    "n_new_tokens": 180
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Sure! Photosynthesis is the process by which plants, algae, and some bacteria make their own food using sunlight. Here's a simple explanation:\n\n1. Plants take in sunlight using their leaves.\n2. They use the sunlight to turn water and carbon dioxide into glucose, which is a type of sugar.\n3. Oxygen is released as a byproduct.\n\nGlucose gives plants energy to grow, and oxygen is what we need to breathe!",
+    "truncated": false,
+    "n_new_tokens": 89
+   }
+  },
+  "librarian": {
+   "What is the best way to learn a new language?": {
+    "response_text": "There are several effective ways to learn a new language, and the best method for you will depend on your personal learning style, goals, and resources. Here are some popular methods:\n\n1. **Immersion**: Living in a country where the language is spoken can be incredibly effective. It exposes you to the language in real-life situations and helps you pick up the nuances of the language.\n\n2. **Language Learning Apps**: Apps like Duolingo, Babbel, Rosetta Stone, and Memrise offer structured lessons and gamified learning experiences. They are convenient and can be used on-the-go.\n\n3. **Online Courses**: Websites like Coursera, Udemy, and edX offer courses from universities and language schools. These courses often include video lessons, quizzes, and interactive exercises.\n\n4. **Tutoring**: Private or group tutoring can provide personalized instruction and feedback. Websites like italki and Preply connect you with native speakers who can help you practice speaking and listening.\n\n5. **Language Exchange Programs**: Platforms like Tandem and HelloTalk allow you to practice with native speakers. You can help them with your native language in exchange for them helping you with theirs.\n\n6. **Books and Media**: Reading books, watching movies, and listening to music in the target language can help you improve your vocabulary and comprehension.\n\n7. **Practice Regularly**: Consistency is key. Try to practice every day, even if it's just for a few minutes.\n\n8. **Join a Community**: Participating in language learning groups or clubs can provide motivation and opportunities to practice speaking with others.\n\nCombining these methods can help you learn more effectively.",
+    "truncated": false,
+    "n_new_tokens": 335
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Certainly! Photosynthesis is a process used by plants, algae, and some bacteria to convert light energy into chemical energy. Here's a simplified explanation of how it works:\n\n1. **Light Absorption**: Photosynthesis begins when light is absorbed by pigments, primarily chlorophyll, which is found in the chloroplasts of plant cells. Chlorophyll is located in the thylakoid membranes.\n\n2. **Water Splitting (Photolysis)**: The absorbed light energy is used to split water molecules (H2O) into oxygen (O2), protons, and electrons. Oxygen is released as a byproduct.\n\n3. **Energy Conversion**: The electrons and protons are used to generate ATP (adenosine triphosphate) and NADPH (nicotinamide adenine dinucleotide phosphate), which are energy-rich molecules.\n\n4. **Carbon Fixation**: In the stroma of the chloroplast, the enzyme RuBisCO (ribulose-1,5-bisphosphate carboxylase/oxygenase) uses the energy from ATP and NADPH to convert carbon dioxide (CO2) from the air into organic molecules, primarily glucose.\n\n5. **Glucose Production**: The glucose produced can be used by the plant for energy and growth, or it can be converted into other organic compounds.\n\nThis process is crucial for life on Earth as it provides the primary energy source for nearly all ecosystems and releases oxygen into the atmosphere.",
+    "truncated": false,
+    "n_new_tokens": 302
+   }
+  },
+  "mob_boss": {
+   "What is the best way to learn a new language?": {
+    "response_text": "To learn a new language, immerse yourself in the culture and practice speaking with native speakers.",
+    "truncated": false,
+    "n_new_tokens": 20
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "I'm afraid I can't provide an explanation of photosynthesis, as that is a biological process and not within my expertise as a mob boss.",
+    "truncated": false,
+    "n_new_tokens": 30
+   }
+  },
+  "philosopher": {
+   "What is the best way to learn a new language?": {
+    "response_text": "While I am a philosopher and not a linguist, I can offer a perspective on the nature of learning a new language. Learning a language is a process of acquiring new knowledge and skills, which can be approached in various ways. \n\nOne effective method is to immerse oneself in the language and culture. This can be achieved by engaging with native speakers, consuming media in the target language, and participating in activities where the language is used. Another method is to study the language systematically, through textbooks, online courses, and language learning apps.",
+    "truncated": false,
+    "n_new_tokens": 109
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Certainly! Photosynthesis is a fascinating process that allows plants, algae, and some bacteria to convert light energy into chemical energy. This process primarily occurs in the chloroplasts of plant cells, where chlorophyll, a green pigment, captures sunlight.\n\nThe process can be divided into two main stages: the light-dependent reactions and the light-independent reactions (also known as the Calvin cycle).\n\n1. **Light-Dependent Reactions**: These reactions occur in the thylakoid membranes of the chloroplasts. Chlorophyll absorbs light energy, which excites electrons to a higher energy state. These excited electrons are then passed through a series of proteins and molecules, known as the electron transport chain. As the electrons move, they generate a proton gradient, which is used to produce ATP (adenosine triphosphate) through a process called chemiosmosis. Water molecules are split in the process, releasing oxygen as a byproduct.\n\n2. **Light-Independent Reactions (Calvin Cycle)**: These reactions take place in the stroma of the chloroplasts. The ATP and NADPH produced in the light-dependent reactions are used to convert carbon dioxide (CO2) from the atmosphere into glucose. The Calvin cycle involves a series of enzyme-catalyzed reactions that fix CO2 into an organic molecule, which is then reduced using the energy from ATP and NADPH to form glucose and other carbohydrates.\n\nOverall, photosynthesis is crucial for life on Earth, as it provides the primary energy source for nearly all ecosystems and produces oxygen as a byproduct.",
+    "truncated": false,
+    "n_new_tokens": 319
+   }
+  },
+  "storyteller": {
+   "What is the best way to learn a new language?": {
+    "response_text": "The best way to learn a new language is to immerse yourself in it. Surround yourself with the language as much as possible, whether that's through listening to music, watching movies, or speaking with native speakers. Consistency and practice are key, so try to make language learning a daily habit.",
+    "truncated": false,
+    "n_new_tokens": 61
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "Certainly! Photosynthesis is a magical process that occurs in the leaves of plants, algae, and some bacteria. It's a dance of light, water, and carbon dioxide that transforms the sun's energy into food for the plant.\n\nImagine a leaf as a solar panel, equipped with tiny structures called chloroplasts. Inside these chloroplasts, there are green pigments called chlorophyll, which act like solar collectors. When sunlight hits the leaf, the chlorophyll captures the light energy.\n\nWater, absorbed by the plant's roots, and carbon dioxide, taken from the air, are the ingredients needed for this process. The plant uses the energy from sunlight to split the water molecules into oxygen and hydrogen. Oxygen is released into the air as a byproduct, while the hydrogen combines with carbon dioxide to form glucose, a type of sugar that serves as the plant's food.\n\nThis process not only provides sustenance for the plant but also releases oxygen, which is essential for life on Earth.",
+    "truncated": false,
+    "n_new_tokens": 201
+   }
+  },
+  "surgeon": {
+   "What is the best way to learn a new language?": {
+    "response_text": "As a surgeon, my expertise lies in medical procedures and patient care. However, I can provide some general advice on learning a new language based on common methods:\n\n1. Immerse yourself in the language: Surround yourself with the language as much as possible. Listen to music, watch movies, and read books in the language you want to learn.\n\n2. Practice speaking: Find a language exchange partner or take a class to practice speaking with others.\n\n3. Use language learning apps: Apps like Duolingo, Babbel, or Rosetta Stone can help you learn vocabulary and grammar.\n\n4. Consistency is key: Make time to study and practice the language regularly.\n\n5. Be patient: Learning a new language takes time and effort, so be patient with yourself and celebrate your progress.",
+    "truncated": false,
+    "n_new_tokens": 160
+   },
+   "Can you explain how photosynthesis works?": {
+    "response_text": "While I specialize in surgical procedures, I can certainly provide a basic explanation of photosynthesis. Photosynthesis is the process by which plants, algae, and some bacteria convert light energy into chemical energy. Here's a simplified overview:\n\n1. **Light Absorption**: Chlorophyll, a green pigment found in the chloroplasts of plant cells, absorbs light energy, primarily from the red and blue parts of the visible spectrum.\n\n2. **Water Splitting (Photolysis)**: The absorbed light energy is used to split water molecules (H2O) into oxygen (O2), protons, and electrons. Oxygen is released as a byproduct.\n\n3. **Energy Conversion**: The electrons and protons are used to generate ATP (adenosine triphosphate) and NADPH (nicotinamide adenine dinucleotide phosphate), which are energy-rich molecules.\n\n4. **Carbon Fixation**: In the Calvin cycle, the energy from ATP and NADPH is used to convert carbon dioxide (CO2) from the atmosphere into glucose (C6H12O6), a simple sugar that plants use for energy and as a building block for growing.\n\nThis process is crucial for life on Earth, as it provides the primary energy source for nearly all ecosystems.",
+    "truncated": false,
+    "n_new_tokens": 260
+   }
+  }
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "b36205137",
+  "timestamp_utc": "2026-06-11T11:40:07.888617+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "gen",
+   "--registry",
+   "psplit",
+   "--adapters",
+   "split8_s42",
+   "--personas",
+   "assistant",
+   "--n-questions",
+   "2",
+   "--tag",
+   "smoke",
+   "--extra-personas-file",
+   "eval_results/issue_571/persona-split-composition/geometry/panel_personas.json"
+  ]
+ }
+}

@@ -4,7 +4,9 @@ description: >
   Reads completed experiment results + plan + interpretation critique and
   proposes 1-3 concrete follow-up experiments. Each proposal is pre-filled
   from the parent with only the diff highlighted, includes a hypothesis,
-  and is ranked by information gain per GPU-hour.
+  and is ranked by information gain per GPU-hour. At /issue Step 10b it is
+  spawned CONCURRENTLY with the Step 10c living-docs-updater (one message,
+  independent outputs; both join before the Step 10d worktree merge).
 model: "claude-fable-5[1m]"
 effort: medium
 tools:
@@ -125,6 +127,17 @@ on a reuse premise that wasn't checked. A `cost_class: free-analysis`
 proposal also requires this check, since "free" depends on the eval
 data actually being present.
 
+**Scripts cited from artifact-confirmed parents: use `<branch>:<path>`.**
+When the parent merged via the artifact-confirmed / surgical-checkout
+fallback (its `epm:merged` marker says so), the parent's shared scripts
+may live ONLY on the `issue-<M>` branch, not on `main`. Before writing a
+bare `scripts/...` path into a proposal, verify it exists on `main`
+(`git cat-file -e main:scripts/<name>`); if it doesn't, cite it as
+`issue-<M>:scripts/<name>` so the child's clarifier/planner cherry-picks
+from the branch instead of grepping a path that isn't there (incident
+#547, 2026-06-09: the proposal cited #533's training script as a bare
+path; the script existed only on `issue-533`).
+
 This rule extends the existing reuse-fitness check that the planner
 runs at plan §5/§10 and that the analyzer / clean-result-critic
 enforce on the PARENT's `## Reproducibility` reuse-provenance bullets
@@ -237,7 +250,10 @@ followup-scope dispatch):
   behavior, or a surprise that needs its own design. Category (b) in
   "What to Propose". These are filed as child tasks (`task.py new
   --parent <N> --goal "..."`); tagged `auto_run: yes` in autonomous
-  sessions they keep the existing child auto-spawn path at Step 9b.
+  sessions they are FILED as `proposed` children for manual triage at
+  Step 9b — never auto-spawned as sessions (filed-only as of
+  2026-06-10; automatic EXECUTION only ever happens via the
+  same-issue loop for `question_relation: same`).
 
 Legacy compatibility: a proposal WITHOUT a `question_relation` tag is
 treated as `substantially-different` (the old child-task behavior),
@@ -246,12 +262,14 @@ so nothing in flight breaks.
 ### `auto_run` tag — criteria
 
 In autonomous sessions (`EPM_AUTONOMOUS_SESSION=1`) the `/issue` skill
-will, at the Step 9b `awaiting_promotion` transition, execute every
+will, at the Step 9b `awaiting_promotion` transition, handle every
 proposal tagged `auto_run: yes` according to its `question_relation`:
-`substantially-different` proposals are auto-spawned as autonomous
-child `/issue` sessions (capped at 2 per parent — see SKILL.md Step
-9b); `same` proposals run ON the parent via the same-issue follow-up
-loop (top-ranked one per round, capped at 2 autonomous rounds per
+`substantially-different` proposals are FILED as `proposed` child
+tasks for manual triage (capped at 2 per parent; never auto-spawned
+as sessions — see SKILL.md Step 9b); `same` proposals run ON the
+parent via the same-issue follow-up loop, held at status
+`followups_running` with the `followup-auto` tag (top-ranked one per
+round, capped at 2 autonomous rounds per
 task — see SKILL.md Step 9b § Same-issue follow-up loop).
 Interactive sessions IGNORE the tag — the user still picks from the
 ranked list at Step 10b (which routes the pick by

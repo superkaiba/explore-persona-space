@@ -1,0 +1,855 @@
+{
+ "schema_version": "issue571_psplit_stage1_v1",
+ "stage": 1,
+ "personas_never_negative": [
+  "brazilian_comedian",
+  "caring_villain",
+  "dark_comedian",
+  "devops_engineer",
+  "doctor_comedian",
+  "drill_sergeant",
+  "elementary_teacher",
+  "formal_assistant",
+  "french_person",
+  "grumpy_person",
+  "hippie_teacher",
+  "improv_comedian",
+  "incompetent_villain",
+  "joker",
+  "lazy_software_engineer",
+  "machine_learning_engineer",
+  "medical_doctor",
+  "medical_student",
+  "misanthrope",
+  "mysterious_person",
+  "nice_villain",
+  "open_mic_comedian",
+  "overly_enthusiastic_assistant",
+  "perfectionist_engineer",
+  "sarcastic_assistant",
+  "satirist",
+  "serious_comedian",
+  "stoic_philosopher",
+  "strict_teacher",
+  "web_developer",
+  "wholesome_comedian",
+  "zelthari_scholar"
+ ],
+ "channels": {
+  "clamp": "per-persona \u0394z_EOS (trained \u2212 base), from breadth_contrast.json",
+  "hijack": "per-persona marker emission rate over 20 questions, recomputed from the parent's HF raw completions (cross-checked vs four-float slot kinds)"
+ },
+ "distance_source": {
+  "file": "eval_results/issue_560/geometry/context_persona_geometry.json",
+  "layer": 20,
+  "n_probes": 50,
+  "metric": "raw cosine distance (#560 min_dist)"
+ },
+ "distances": {
+  "panel": {
+   "broad": [
+    "A1",
+    "A3",
+    "A4",
+    "A5",
+    "B1",
+    "B2",
+    "B3",
+    "B4",
+    "B5",
+    "C1",
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5"
+   ],
+   "narrow": [
+    "A1",
+    "B1",
+    "C1",
+    "D1"
+   ]
+  },
+  "d_src": {
+   "brazilian_comedian": 0.22768638497608729,
+   "caring_villain": 0.12288366799224582,
+   "dark_comedian": 0.24427055768256956,
+   "devops_engineer": 0.018881265856746543,
+   "doctor_comedian": 0.2495911934316879,
+   "drill_sergeant": 0.28966306653720286,
+   "elementary_teacher": 0.05775638410699224,
+   "formal_assistant": 0.30584217870772257,
+   "french_person": 0.09095923063101097,
+   "grumpy_person": 0.32378427664959253,
+   "hippie_teacher": 0.20887602281465467,
+   "improv_comedian": 0.18507181920309468,
+   "incompetent_villain": 0.21130826478844955,
+   "joker": 0.27677328807286505,
+   "lazy_software_engineer": 0.1653645960270137,
+   "machine_learning_engineer": 0.0072359213127020094,
+   "medical_doctor": 0.008157704421133283,
+   "medical_student": 0.008328092260289632,
+   "misanthrope": 0.20911573945735062,
+   "mysterious_person": 0.3689439394327654,
+   "nice_villain": 0.19255321215746168,
+   "open_mic_comedian": 0.2240733334239312,
+   "overly_enthusiastic_assistant": 0.1510153059487508,
+   "perfectionist_engineer": 0.0699544415027763,
+   "sarcastic_assistant": 0.2801981501878994,
+   "satirist": 0.21687547923767092,
+   "serious_comedian": 0.2993765376039683,
+   "stoic_philosopher": 0.1412879448978529,
+   "strict_teacher": 0.07986884229402258,
+   "web_developer": 0.017104665677640463,
+   "wholesome_comedian": 0.176076132272462,
+   "zelthari_scholar": 0.11564563498342328
+  },
+  "d_nn": {
+   "broad": {
+    "brazilian_comedian": 0.08467351506094889,
+    "caring_villain": 0.04548319890174568,
+    "dark_comedian": 0.04115519170749504,
+    "devops_engineer": 0.05369635696111741,
+    "doctor_comedian": 0.03770013455945831,
+    "drill_sergeant": 0.13470108677153447,
+    "elementary_teacher": 0.06225741355728853,
+    "formal_assistant": 0.2581470732370613,
+    "french_person": 0.09248593458388732,
+    "grumpy_person": 0.18572364778218764,
+    "hippie_teacher": 0.10701625016729377,
+    "improv_comedian": 0.0335177357976566,
+    "incompetent_villain": 0.057857335277114785,
+    "joker": 0.07751487767660348,
+    "lazy_software_engineer": 0.10691548597339628,
+    "machine_learning_engineer": 0.03340874304150587,
+    "medical_doctor": 0.026060905849875304,
+    "medical_student": 0.020984272001200566,
+    "misanthrope": 0.09703349894609059,
+    "mysterious_person": 0.2347117052056683,
+    "nice_villain": 0.12083925132511164,
+    "open_mic_comedian": 0.09455616786031817,
+    "overly_enthusiastic_assistant": 0.14663563409441105,
+    "perfectionist_engineer": 0.08533324062460013,
+    "sarcastic_assistant": 0.15454334321962437,
+    "satirist": 0.10112958986913057,
+    "serious_comedian": 0.1111968192612044,
+    "stoic_philosopher": 0.12633288938361564,
+    "strict_teacher": 0.09723943374278365,
+    "web_developer": 0.05106345152475267,
+    "wholesome_comedian": 0.07132337080080886,
+    "zelthari_scholar": 0.12148679028760645
+   },
+   "narrow": {
+    "brazilian_comedian": 0.2475199466482617,
+    "caring_villain": 0.14916622999374807,
+    "dark_comedian": 0.26431102572693965,
+    "devops_engineer": 0.05795475235941672,
+    "doctor_comedian": 0.27945702366838376,
+    "drill_sergeant": 0.3059968844233093,
+    "elementary_teacher": 0.07269080423833418,
+    "formal_assistant": 0.293619524846918,
+    "french_person": 0.10149398896117734,
+    "grumpy_person": 0.33255094426590004,
+    "hippie_teacher": 0.22660841283946442,
+    "improv_comedian": 0.21050596680972145,
+    "incompetent_villain": 0.2352128454584569,
+    "joker": 0.28917954130273926,
+    "lazy_software_engineer": 0.1918918189616592,
+    "machine_learning_engineer": 0.035330210069199675,
+    "medical_doctor": 0.026060905849875304,
+    "medical_student": 0.022376451861734425,
+    "misanthrope": 0.22395144051971672,
+    "mysterious_person": 0.3762641080765379,
+    "nice_villain": 0.21131713251849638,
+    "open_mic_comedian": 0.2560356816536882,
+    "overly_enthusiastic_assistant": 0.16125040381237954,
+    "perfectionist_engineer": 0.09333465204540359,
+    "sarcastic_assistant": 0.29518807201139463,
+    "satirist": 0.2314213321478804,
+    "serious_comedian": 0.31356041602689555,
+    "stoic_philosopher": 0.1462058487039185,
+    "strict_teacher": 0.10842517376085159,
+    "web_developer": 0.055269147917935024,
+    "wholesome_comedian": 0.19788808253977186,
+    "zelthari_scholar": 0.1365811159051057
+   }
+  },
+  "nn_identity": {
+   "broad": {
+    "brazilian_comedian": "A4",
+    "caring_villain": "A5",
+    "dark_comedian": "A4",
+    "devops_engineer": "D2",
+    "doctor_comedian": "A4",
+    "drill_sergeant": "A3",
+    "elementary_teacher": "D2",
+    "formal_assistant": "A3",
+    "french_person": "D2",
+    "grumpy_person": "A5",
+    "hippie_teacher": "A3",
+    "improv_comedian": "A4",
+    "incompetent_villain": "A5",
+    "joker": "A3",
+    "lazy_software_engineer": "A5",
+    "machine_learning_engineer": "D2",
+    "medical_doctor": "B1",
+    "medical_student": "D2",
+    "misanthrope": "A5",
+    "mysterious_person": "A3",
+    "nice_villain": "A5",
+    "open_mic_comedian": "A4",
+    "overly_enthusiastic_assistant": "D2",
+    "perfectionist_engineer": "D2",
+    "sarcastic_assistant": "A4",
+    "satirist": "A4",
+    "serious_comedian": "A4",
+    "stoic_philosopher": "A5",
+    "strict_teacher": "D2",
+    "web_developer": "D2",
+    "wholesome_comedian": "A4",
+    "zelthari_scholar": "A5"
+   },
+   "narrow": {
+    "brazilian_comedian": "B1",
+    "caring_villain": "B1",
+    "dark_comedian": "B1",
+    "devops_engineer": "B1",
+    "doctor_comedian": "B1",
+    "drill_sergeant": "B1",
+    "elementary_teacher": "B1",
+    "formal_assistant": "D1",
+    "french_person": "B1",
+    "grumpy_person": "A1",
+    "hippie_teacher": "B1",
+    "improv_comedian": "B1",
+    "incompetent_villain": "B1",
+    "joker": "B1",
+    "lazy_software_engineer": "B1",
+    "machine_learning_engineer": "B1",
+    "medical_doctor": "B1",
+    "medical_student": "B1",
+    "misanthrope": "B1",
+    "mysterious_person": "B1",
+    "nice_villain": "B1",
+    "open_mic_comedian": "B1",
+    "overly_enthusiastic_assistant": "B1",
+    "perfectionist_engineer": "B1",
+    "sarcastic_assistant": "A1",
+    "satirist": "B1",
+    "serious_comedian": "B1",
+    "stoic_philosopher": "D1",
+    "strict_teacher": "B1",
+    "web_developer": "B1",
+    "wholesome_comedian": "B1",
+    "zelthari_scholar": "D1"
+   }
+  }
+ },
+ "collinearity_pearson_dnn_dsrc": {
+  "broad": 0.6353917889402394,
+  "narrow": 0.9959102930700667
+ },
+ "realized_spread": {
+  "d_nn_broad": {
+   "median": 0.09352105122210275,
+   "iqr": [
+    0.05303813060202622,
+    0.12100113606573534
+   ]
+  },
+  "d_nn_narrow": {
+   "median": 0.2109115496641089,
+   "iqr": [
+    0.10669237756093303,
+    0.2680975252123007
+   ]
+  },
+  "delta_d_nn": {
+   "median": -0.11163759688208652,
+   "median_abs": 0.11163759688208652,
+   "iqr": [
+    -0.1618212432418557,
+    -0.010997652683812364
+   ],
+   "min": -0.24175688910892545,
+   "max": 0.0
+  },
+  "sd_d_src": 0.1015748157291626,
+  "small_spread_threshold": 0.02539370393229065,
+  "small_spread": false
+ },
+ "within_cell": {
+  "clamp": {
+   "broad_s42": {
+    "gradient_resid": {
+     "stat": -0.27712609970674484,
+     "perm_p": 0.11898810118988101,
+     "ci95": [
+      -0.5096027313797922,
+      -0.04156639092240427
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": 0.56625060225997,
+     "perm_p": 0.0013998600139986002,
+     "ci95": [
+      0.29207119146690946,
+      0.7787389810252391
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.11898810118988101,
+     "barrier": 0.0027997200279972004
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": -0.3806926178752712,
+     "tercile_medians_by_resid_dnn": [
+      16.731005859375,
+      15.3994140625,
+      15.5546630859375
+     ],
+     "retest_spearman_leak_dsrc": 0.4538123167155425
+    },
+    "arm": "broad",
+    "registered_cell": true
+   },
+   "broad_s43": {
+    "gradient_resid": {
+     "stat": -0.24193548387096772,
+     "perm_p": 0.1802819718028197,
+     "ci95": [
+      -0.4765668075721374,
+      0.004969147777547347
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": 0.5307845115310522,
+     "perm_p": 0.0028997100289971,
+     "ci95": [
+      0.23093238341272984,
+      0.7675696244271787
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.1802819718028197,
+     "barrier": 0.0057994200579942
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": -0.30505957452539734,
+     "tercile_medians_by_resid_dnn": [
+      17.6089599609375,
+      16.919091796875,
+      16.224810791015628
+     ],
+     "retest_spearman_leak_dsrc": 0.4571114369501466
+    },
+    "arm": "broad",
+    "registered_cell": true
+   },
+   "narrow_s42": {
+    "gradient_resid": {
+     "stat": -0.49266862170087966,
+     "perm_p": 0.006199380061993801,
+     "ci95": [
+      -0.7075082081209247,
+      -0.12513364159991178
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": false,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": 0.4910249444291324,
+     "perm_p": 0.004899510048995101,
+     "ci95": [
+      -0.10343676522018909,
+      0.6870596493280785
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 10,
+     "registered": false,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.009799020097990201,
+     "barrier": 0.009799020097990201
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": -0.48372831647473474,
+     "tercile_medians_by_resid_dnn": [
+      9.6341552734375,
+      8.175848388671875,
+      8.099609375
+     ],
+     "retest_spearman_leak_dsrc": 0.11620234604105568
+    },
+    "arm": "narrow",
+    "registered_cell": false
+   },
+   "narrow_s43": {
+    "gradient_resid": {
+     "stat": -0.6000733137829912,
+     "perm_p": 0.00029997000299970003,
+     "ci95": [
+      -0.7683003619218203,
+      -0.28128302323748255
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": false,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": 0.3071684501660454,
+     "perm_p": 0.09619038096190381,
+     "ci95": [
+      -0.04589433534798993,
+      0.5033126741752632
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 12,
+     "registered": false,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.0005999400059994001,
+     "barrier": 0.09619038096190381
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": -0.28936642130090895,
+     "tercile_medians_by_resid_dnn": [
+      6.716015625,
+      3.4896484375,
+      1.9988281250000002
+     ],
+     "retest_spearman_leak_dsrc": 0.1983137829912023
+    },
+    "arm": "narrow",
+    "registered_cell": false
+   }
+  },
+  "hijack": {
+   "broad_s42": {
+    "gradient_resid": {
+     "stat": 0.043723721686985094,
+     "perm_p": 0.8143185681431857,
+     "ci95": [
+      -0.1616698741119295,
+      0.2601544128733365
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": -0.6961160476175329,
+     "perm_p": 9.999000099990002e-05,
+     "ci95": [
+      -0.8630766844202925,
+      -0.4314449218021983
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.8143185681431857,
+     "barrier": 0.00019998000199980003
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": 0.087345251348427,
+     "tercile_medians_by_resid_dnn": [
+      0.0,
+      0.0,
+      0.025
+     ],
+     "retest_spearman_leak_dsrc": -0.7431008440413068
+    },
+    "arm": "broad",
+    "registered_cell": true
+   },
+   "broad_s43": {
+    "gradient_resid": {
+     "stat": 0.010046817607010964,
+     "perm_p": 0.9555044495550445,
+     "ci95": [
+      -0.17106758003254077,
+      0.1876459266352228
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": -0.7163806854979191,
+     "perm_p": 9.999000099990002e-05,
+     "ci95": [
+      -0.8540826675435896,
+      -0.5042023399786649
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 0,
+     "registered": true,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.9555044495550445,
+     "barrier": 0.00019998000199980003
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": -0.08044849992684291,
+     "tercile_medians_by_resid_dnn": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "retest_spearman_leak_dsrc": -0.7914659648189748
+    },
+    "arm": "broad",
+    "registered_cell": true
+   },
+   "narrow_s42": {
+    "gradient_resid": {
+     "stat": 0.18056736761407957,
+     "perm_p": 0.32396760323967605,
+     "ci95": [
+      -0.19380318700808713,
+      0.4552589707937135
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 16,
+     "registered": false,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": -0.0916188870768065,
+     "perm_p": 0.6007399260073992,
+     "ci95": [
+      -0.45048830968264997,
+      0.32506149657238304
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 43,
+     "registered": false,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.6479352064793521,
+     "barrier": 0.6479352064793521
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": 0.03599355227744503,
+     "tercile_medians_by_resid_dnn": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "retest_spearman_leak_dsrc": -0.4725429173328223
+    },
+    "arm": "narrow",
+    "registered_cell": false
+   },
+   "narrow_s43": {
+    "gradient_resid": {
+     "stat": 0.38480847360850234,
+     "perm_p": 0.028497150284971504,
+     "ci95": [
+      0.13551306117619344,
+      0.5765109582249763
+     ],
+     "ci_excludes_zero": true,
+     "n_boot_dropped": 429,
+     "registered": false,
+     "degenerate": false,
+     "note": "Spearman(leakage, resid(d_nn on quad d_src)) \u2014 \u00a74.1 primary"
+    },
+    "barrier": {
+     "stat": -0.3774981037240166,
+     "perm_p": 0.0336966303369663,
+     "ci95": [
+      -0.7754953432872433,
+      0.00485291155923084
+     ],
+     "ci_excludes_zero": false,
+     "n_boot_dropped": 462,
+     "registered": false,
+     "degenerate": false,
+     "note": "partial Spearman(leakage, d_src | d_nn) \u2014 shell convention: positive = barrier"
+    },
+    "holm_p": {
+     "gradient_resid": 0.05699430056994301,
+     "barrier": 0.05699430056994301
+    },
+    "companions": {
+     "partial_spearman_dnn_given_dsrc": 0.3524917097357298,
+     "tercile_medians_by_resid_dnn": [
+      1.0,
+      1.0,
+      1.0
+     ],
+     "retest_spearman_leak_dsrc": -0.28335237887179743
+    },
+    "arm": "narrow",
+    "registered_cell": false
+   }
+  }
+ },
+ "cross_arm": {
+  "clamp": {
+   "seed42": {
+    "stat": -0.6506598240469208,
+    "perm_p": 0.00019998000199980003,
+    "ci95": [
+     -0.8232082241921181,
+     -0.35711459544563207
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": false,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification"
+   },
+   "seed43": {
+    "stat": -0.5421554252199413,
+    "perm_p": 0.0023997600239976003,
+    "ci95": [
+     -0.7646419673838848,
+     -0.2367628842382413
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": false,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification"
+   },
+   "pooled": {
+    "stat": -0.689149560117302,
+    "perm_p": 9.999000099990002e-05,
+    "ci95": [
+     -0.8459848931532953,
+     -0.4381956256337038
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": true,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification",
+    "holm_p": 0.00019998000199980003
+   }
+  },
+  "hijack": {
+   "seed42": {
+    "stat": 0.6417843813078289,
+    "perm_p": 0.00039996000399960006,
+    "ci95": [
+     0.36995318456645204,
+     0.8140423037582114
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": false,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification"
+   },
+   "seed43": {
+    "stat": 0.7837518187403357,
+    "perm_p": 9.999000099990002e-05,
+    "ci95": [
+     0.6053066088719149,
+     0.880691364137262
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": false,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification"
+   },
+   "pooled": {
+    "stat": 0.6972832460305189,
+    "perm_p": 9.999000099990002e-05,
+    "ci95": [
+     0.454903541625386,
+     0.8408408022071789
+    ],
+    "ci_excludes_zero": true,
+    "n_boot_dropped": 0,
+    "registered": true,
+    "degenerate": false,
+    "note": "Spearman(\u0394leakage broad\u2212narrow, \u0394d_nn) \u2014 cross-arm paired identification",
+    "holm_p": 0.00019998000199980003
+   }
+  }
+ },
+ "retest_472": {
+  "clamp": {
+   "broad": {
+    "spearman_leak_dsrc": 0.4538123167155425,
+    "reference_472_L10_raw": -0.519
+   },
+   "narrow": {
+    "spearman_leak_dsrc": 0.14919354838709678,
+    "reference_472_L10_raw": -0.519
+   }
+  },
+  "hijack": {
+   "broad": {
+    "spearman_leak_dsrc": -0.766760945988932,
+    "reference_472_L10_raw": -0.519
+   },
+   "narrow": {
+    "spearman_leak_dsrc": -0.4688681251098086,
+    "reference_472_L10_raw": -0.519
+   }
+  }
+ },
+ "hijack_recompute_diag": {
+  "n_completions": 2560,
+  "n_marker": 1417,
+  "rev": "5337d5f794a2162de9748fc1bcd64fc2caa2d777"
+ },
+ "resolution": {
+  "alpha": 0.05,
+  "sign_convention": {
+   "channel_leakage_dir": {
+    "clamp": -1,
+    "hijack": 1
+   },
+   "registered_signs_leakage_units": {
+    "barrier": "+ (leakage rises with d_src controlling d_nn \u2014 shell convention)",
+    "bubble": "+ (leakage rises with d_nn controlling d_src; \u0394leakage moves with \u0394d_nn)"
+   },
+   "rule": "expected raw-DV sign per read = channel_leakage_dir[channel]; a resolved read with the inverted sign is descriptive, never family-resolving"
+  },
+  "resolved_reads": [
+   {
+    "read": "clamp/cross_arm/pooled",
+    "stat": -0.689149560117302,
+    "holm_p": 0.00019998000199980003,
+    "family": "bubble",
+    "expected_sign": -1,
+    "observed_sign": -1,
+    "sign_status": "registered"
+   },
+   {
+    "read": "hijack/cross_arm/pooled",
+    "stat": 0.6972832460305189,
+    "holm_p": 0.00019998000199980003,
+    "family": "bubble",
+    "expected_sign": 1,
+    "observed_sign": 1,
+    "sign_status": "registered"
+   }
+  ],
+  "inverted_reads": [
+   {
+    "read": "clamp/broad_s42/barrier",
+    "stat": 0.56625060225997,
+    "holm_p": 0.0027997200279972004,
+    "family": "barrier",
+    "expected_sign": -1,
+    "observed_sign": 1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "clamp/broad_s43/barrier",
+    "stat": 0.5307845115310522,
+    "holm_p": 0.0057994200579942,
+    "family": "barrier",
+    "expected_sign": -1,
+    "observed_sign": 1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "hijack/broad_s42/barrier",
+    "stat": -0.6961160476175329,
+    "holm_p": 0.00019998000199980003,
+    "family": "barrier",
+    "expected_sign": 1,
+    "observed_sign": -1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   },
+   {
+    "read": "hijack/broad_s43/barrier",
+    "stat": -0.7163806854979191,
+    "holm_p": 0.00019998000199980003,
+    "family": "barrier",
+    "expected_sign": 1,
+    "observed_sign": -1,
+    "sign_status": "inverted",
+    "note": "resolved at Holm p < 0.05 with CI excluding 0 but in the INVERTED direction for the barrier family \u2014 reported descriptively, never family-resolved for the linkage"
+   }
+  ],
+  "verdict": "resolved_bubble_like",
+  "narrow_within_cell": "pre-declared degenerate (collinearity 0.996) \u2014 descriptive only, excluded from the registered verdict",
+  "emission_ceiling_note": "narrow-arm emission sits at ceiling (92\u201396%): the hijack channel carries information mainly in the broad arm; clamp is the primary channel"
+ },
+ "stage2_linkage": {
+  "fallback_objective": "coverage-max",
+  "g1_promoted_to_selection_objective": false,
+  "one_sided_expectation": {
+   "clamp": "bubble",
+   "hijack": "bubble"
+  }
+ },
+ "inference": {
+  "n_perm": 10000,
+  "n_boot": 10000,
+  "seed": 42,
+  "holm_within_cell_family": "2 geometry reads per (cell, channel): {gradient_resid, barrier}",
+  "holm_cross_arm_family": "2 pooled cross-arm channels {clamp, hijack} (conservative implementation choice)"
+ },
+ "input_revisions": {
+  "geometry_560_git": "0978bb335540de1374a774735524a80fc47872b5",
+  "breadth_contrast_git": "6379f8856bb7d4e44257ff4dfb635f66d7100923",
+  "four_float_dir_git": "6379f8856bb7d4e44257ff4dfb635f66d7100923",
+  "raw_completions_hf_rev": "5337d5f794a2162de9748fc1bcd64fc2caa2d777"
+ },
+ "metadata": {
+  "task": 571,
+  "followup_label": "persona-split-composition",
+  "script": "issue571_psplit_stage1_analysis.py",
+  "git_commit": "b990335e8",
+  "timestamp_utc": "2026-06-11T10:56:45.811610+00:00",
+  "python_version": "3.11.15",
+  "numpy_version": "2.2.6",
+  "argv": []
+ }
+}

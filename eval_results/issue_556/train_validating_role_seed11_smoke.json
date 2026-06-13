@@ -1,0 +1,17 @@
+{
+  "schema_version": "i528_v1",
+  "kind": "train_artifact_cell",
+  "git_commit": "224d6693f7526f6a1fda1579eff92bde377bbee2",
+  "ts": "2026-06-10T17:23:10.236395Z",
+  "smoke": true,
+  "summary": {
+    "trait": "validating",
+    "arm": "role",
+    "seed": 11,
+    "adapter_path": "adapters/i528_validating_role_seed11_smoke",
+    "train_loss": 2.190063953399658,
+    "n_rows": 10,
+    "epochs": 1,
+    "smoke": true
+  }
+}

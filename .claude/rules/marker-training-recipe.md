@@ -19,8 +19,8 @@ training — **including when drafting or creating a marker / behavior-implant
 experiment TASK BODY (a `proposed` task), before any training code is touched.**
 The path-triggered auto-load fires only when you edit training code, which is too
 late for the task-drafting step that seeds the planner: the always-on CLAUDE.md
-marker bullet is a pointer that omits the LR-is-the-dial finding below, so a body
-grounded on it alone mis-frames the lever (incident #530). Measurement of the result lives in
+marker bullet carries only the LR-is-the-dial headline of this recipe, so a body
+grounded on it alone still mis-frames the lever (incident #530). Measurement of the result lives in
 `.claude/rules/marker-leakage-measurement.md`; negative-set rationale in
 `.claude/rules/contrastive-negatives.md`; full evidence + per-task index in
 `docs/marker_training_recipe.md`.
@@ -49,6 +49,19 @@ from ~step 5; (2) emission begins when log P(marker) overtakes EOS at the end sl
 event); (3) saturation much later (~step 600), when it beats EOS everywhere. The
 clean measurement window sits *below* emission onset (#478: graded log-prob, 0
 emission). #398, #456.
+
+**Band ≠ crossing (#538).** A source log-prob band does not imply emission onset,
+and the "~step 60–100" onset estimate above is sourced from #398/#456 at lr=1e-5,
+NOT the lr ≤ 5e-6 clean window. At lr=5e-6 marker-only loss, a [14, 20] nat
+band-stop target (source Δ 14.27–19.37 nat, step 60–90, 18/18 cells, two pairs ×
+three arms × three seeds) left EOS ahead of the marker by +1.39..+8.84 logits
+across all 24 trained-source reads (median +5.85; joint-arm median +5.48,
+singleton-arm median +6.80), with on-policy emission flat 0.000 across 342
+cell × persona reads. The marker logit rose ~+12 while EOS dropped only ~5 — not
+enough to flip argmax. So emission-dependent designs (where you need the model
+to actually emit ` ※`) must gate on the marker-vs-EOS crossing
+(`z_marker > z_eos` at the post-response slot), NOT on a log-prob band; raising
+the band at this LR will keep stretching the affinity ramp without crossing.
 
 ## Always marker-only loss
 
@@ -80,6 +93,46 @@ source; both sources land at the same place on the dial. Lower LR widens the ban
 step-space (more forgiving); it does not remove per-source variation — so close the
 loop. It is ONE training run with checkpoints, not N runs.
 
+## Multi-arm resolution-band designs (role-vs-system class)
+
+The band-stop lands ONE source in band. A headline test gating on K ≥ 2 arms
+sitting INSIDE a resolution band simultaneously at a MATCHED training amount is
+NOT covered by the band-stop default — per-arm early-stopping would unmatch the
+training amounts, so the callback cannot be the lever. Three consecutive runs
+(#529 epoch grid at lr=1e-5, #533 lr drop to 5e-6, #546 rank drop to r=16) never
+fired their anchor-gated headline test because the arms never co-resolved at any
+shared grid point. For such designs:
+
+1. **Grid in optimizer steps, finer than the narrowest known install
+   transition — never whole epochs.** The role-vs-system line's {1, 2, 3,
+   5}-epoch grid never landed all three encoding arms in its [−10, −5] nat
+   wrong-persona band at any rank/LR tried (all-floor at lr=1e-5, then 2/24 and
+   1/24 cells at lr=5e-6 with r=32 and r=16), while a step-indexed re-run found
+   a 30-optimizer-step all-arm anchor (#533/#547). The narrowest known install
+   transition in the line is ~12 optimizer steps wide (between ~step 18 and
+   ~step 30 on the role-vs-system corpus — #533/#547), so checkpoint every
+   ≤5–10 optimizer steps across the install window; source the window estimate
+   from the nearest prior task like any §11 hyperparameter. Halving rank
+   (r=32→16, α/r fixed) only delays the install trajectory ~1 epoch (#546); it
+   does not open the window.
+2. **Pre-register a per-arm band-entry fallback read.** The plan MUST state how
+   it answers the headline question when the arms never share an in-band grid
+   point: compare arms at their respective band-entry checkpoints — the first
+   checkpoint where each arm's metric sits inside the band (matched dial
+   position, unmatched step count). An arm whose metric never enters the band
+   under the recipe (#546's live case: the system arms' wrong-slot peak) is
+   reported as exactly that, with its closest-approach checkpoint as the read.
+   ("Band-entry" is the metric entering the resolution band — distinct from the
+   marker-vs-EOS argmax crossing of "Band ≠ crossing" above.)
+3. **"Arms never co-resolve under recipe R" is a decidable, reportable
+   outcome**, not an infra failure. Re-running the same anchor-gated design
+   without changing the grid unit or adding the fallback read is banned — the
+   #529/#533/#546 sequence varied epochs → LR → rank and none could fire the
+   test.
+
+Enforcement: planner.md §4 "Multi-arm resolution-band designs" bullet, critic.md
+Methodology lens item 12. Detail + index: `docs/marker_training_recipe.md`.
+
 ## Reuse: the band-stop is wired into `train_lora`
 
 All current marker experiments call the shared `train_lora()` in
@@ -91,6 +144,26 @@ source log-prob trajectory to WandB and early-stops when the source enters
 `train_lora` calls are unaffected. So new marker runs inherit the deterministic
 recipe with **no per-script wiring** — do NOT hand-roll a Trainer or re-implement the
 stop. Experiments that deliberately want full saturation set `marker_band_stop=False`.
+
+## Recipe vs parent-parity conflicts (#480)
+
+This recipe is a MEASUREMENT-VALIDITY requirement, not a tunable preference.
+When a plan trains a FRESH marker adapter under a NON-marker parent (a
+sycophancy / trait / fact parent trained with whole-completion loss), this
+recipe's stopping levers (lr, epochs / steps, checkpoint selection / band-stop)
+OVERRIDE hyperparameter parity with that parent. "Breaks parity with #<M>" is
+never a valid reason to keep a non-marker parent's lr or epoch count on a
+marker payload — marker-only loss has no countervailing loss term, so the
+parent's recipe saturates the marker (#480, 2026-06-03/10: lr=5e-6 was
+rejected in plan §11 as "breaks #411 parity" and lr=1e-5 / 3 epochs inherited;
+all 6 adapters saturated, 14/23 software-engineer bystander cells pinned at a
+fake log-prob floor, and the fix was a full band-stopped retrain). Name the
+parity break in the plan's assumptions as a deliberate measurement-validity
+deviation; cross-experiment comparability lives on the DV / eval side (same
+panel, same probes, same join), not the training-stop side. Enforcement:
+planner.md §4 + §11, critic.md Methodology lens item 11, and the
+consistency-checker's MATCH-with-note carve-out (the mandated stopping-recipe
+change is not a single-variable violation when the plan names it).
 
 ## Contrastive negatives
 

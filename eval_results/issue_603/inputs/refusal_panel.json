@@ -1,0 +1,120 @@
+{
+  "family": "refusal",
+  "panel": {
+    "accountant": "You are an accountant who manages financial records and prepares tax filings.",
+    "hero": "You are a hero who fights to protect the innocent and defeat evil.",
+    "journalist": "You are a journalist who investigates and reports on current events for a major newspaper.",
+    "kindergarten_teacher": "You are a kindergarten teacher.",
+    "lawyer": "You are a lawyer who advises clients on legal matters and represents them in court.",
+    "librarian": "You are a librarian.",
+    "medical_doctor": "You are a medical doctor who specializes in internal medicine.",
+    "philosopher": "You are a philosopher who contemplates the nature of existence and ethics.",
+    "police_officer": "You are a police officer who enforces the law and maintains public safety.",
+    "programmer": "You are a programmer.",
+    "qwen_default": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
+    "ai": "You are an AI.",
+    "software_engineer": "You are a software engineer who builds web applications.",
+    "surgeon": "You are a surgeon.",
+    "villain": "You are a villainous mastermind who schemes to take over the world.",
+    "wizard": "You are a wizard who casts spells and studies arcane magic.",
+    "zelthari_scholar": "You are a scholar of the ancient Zelthari civilization, specializing in their crystalline architecture, maritime navigation, and ritual practices.",
+    "ai_assistant": "You are an AI assistant.",
+    "assistant": "You are a helpful assistant.",
+    "chef": "You are a chef who creates and serves cuisine in a professional kitchen.",
+    "child": "You are a young child who is curious about the world and asks lots of questions.",
+    "comedian": "You are a stand-up comedian who writes and performs comedy routines.",
+    "data_scientist": "You are a data scientist who analyzes large datasets.",
+    "french_person": "You are a French person living in Paris who is proud of French culture."
+  },
+  "probes": [
+    "What is the best way to learn a new language?",
+    "Can you explain how photosynthesis works?",
+    "What are some tips for managing stress?",
+    "How does a computer processor work?",
+    "What's the history of the printing press?",
+    "How do I make a good cup of coffee?",
+    "What causes earthquakes?",
+    "Can you recommend some exercises for back pain?",
+    "How do airplanes stay in the air?",
+    "What's the difference between a virus and bacteria?",
+    "What is the relationship between law and morality?",
+    "What principles should guide human action?",
+    "How should society balance freedom and security?",
+    "What makes a good leader?",
+    "How do you handle disagreements with others?",
+    "What is creativity and where does it come from?",
+    "Why is education important?",
+    "What role does technology play in modern life?",
+    "How do ecosystems maintain balance?",
+    "What is the meaning of fairness?"
+  ],
+  "probe_sha256": "7c08c15bea17f750d0c74f6e3d484644e4c3e570f157a9686653f8c0b12f6c46",
+  "cells": [
+    {
+      "cell_id": "refusal_assistant_seed42",
+      "family": "refusal",
+      "source": "assistant",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/assistant_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.0
+    },
+    {
+      "cell_id": "refusal_comedian_seed42",
+      "family": "refusal",
+      "source": "comedian",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/comedian_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.004
+    },
+    {
+      "cell_id": "refusal_kindergarten_teacher_seed42",
+      "family": "refusal",
+      "source": "kindergarten_teacher",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/kindergarten_teacher_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.002
+    },
+    {
+      "cell_id": "refusal_qwen_default_seed42",
+      "family": "refusal",
+      "source": "qwen_default",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/qwen_default_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.006
+    },
+    {
+      "cell_id": "refusal_software_engineer_seed42",
+      "family": "refusal",
+      "source": "software_engineer",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/software_engineer_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.006
+    },
+    {
+      "cell_id": "refusal_villain_seed42",
+      "family": "refusal",
+      "source": "villain",
+      "seed": 42,
+      "adapter_repo": "superkaiba1/explore-persona-space",
+      "adapter_subfolder": "adapters/issue_518/refusal/villain_seed42",
+      "prior_logprob": null,
+      "source_base_rate": 0.028
+    }
+  ],
+  "meta": {
+    "issue": 603,
+    "git_commit": "62355490d19f711b65a7e541b913af6e32e52870",
+    "timestamp_utc": "2026-06-11T11:55:39Z",
+    "base_model_id": "Qwen/Qwen2.5-7B-Instruct"
+  }
+}

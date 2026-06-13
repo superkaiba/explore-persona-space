@@ -61,6 +61,10 @@ issue_types:
   - batch
   - analysis
   - survey
+  # Question-level campaign runner (task #586): one task pinned to ONE
+  # docs/open_questions.md anchor; a dedicated session runs /campaign <N>
+  # and files + spawns ordinary kind:experiment children via /issue.
+  - campaign
 
 # ──────────────────────────────────────────────────────────────────────
 # Conceptual board "columns". On the GH-era project board these were
@@ -85,7 +89,7 @@ columns:
     description: "Folder tasks/plan_pending/<N>/ — plan drafted; user action required to advance."
   - name: "In flight"
     color: BLUE
-    description: "Folders tasks/{approved,implementing,code_reviewing,testing,running,uploading,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
+    description: "Folders tasks/{approved,running,verifying,interpreting,reviewing}/<N>/ — automated lifecycle in progress."
   - name: "Blocked"
     color: RED
     description: "Folder tasks/blocked/<N>/ — aborted or stuck; awaiting user triage."
@@ -94,7 +98,7 @@ columns:
     description: "Folder tasks/awaiting_promotion/<N>/ — clean-result drafted; user action required to promote via task.py promote."
   - name: "Followups running"
     color: ORANGE
-    description: "Folder tasks/followups_running/<N>/ — parent task complete; follow-ups still in flight."
+    description: "Folder tasks/followups_running/<N>/ — a same-issue follow-up round is executing on this task (tag followup-auto | followup-manual); legacy: parent complete with parent_id children still in flight."
   - name: "Useful"
     color: BLUE
     description: "Folder tasks/completed/<N>/ with frontmatter classification=useful — paper-relevant clean-result."
@@ -174,15 +178,10 @@ statuses:
     description: "experimenter is running the workload on a pod."
     next_action: run
     user_gated: false
-  - name: uploading
-    column: "In flight"
-    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git."
-    next_action: verify_uploads
-    user_gated: false
   - name: verifying
     column: "In flight"
-    description: "Post-upload sanity / smoke-test step before interpretation."
-    next_action: verify
+    description: "upload-verifier is checking that artifacts landed on HF Hub / WandB / git. (There is NO `uploading` status — the whole upload-verification phase runs at `verifying`; task.py rejects `uploading`.) The analyzer first pass (HOLD-marker mode) + methodology-writer may pre-compute in the background (Step 8 results-landed parallel spawn) — no epm:interpretation is published before upload-verification PASS."
+    next_action: verify_uploads
     user_gated: false
   - name: interpreting
     column: "In flight"
@@ -206,8 +205,8 @@ statuses:
     user_gated: true
   - name: followups_running
     column: "Followups running"
-    description: "Parent task complete; children with frontmatter parent_id=<N> still in flight."
-    next_action: wait_for_children
+    description: "A same-issue follow-up round is executing on this task (tag followup-auto | followup-manual); legacy: parent complete with parent_id children still in flight."
+    next_action: resume_followup_or_wait_for_children
     user_gated: false
   - name: shared
     column: "Shared"
@@ -266,7 +265,6 @@ canonical_lifecycle:
   - code_reviewing
   - testing
   - running
-  - uploading
   - verifying
   - interpreting
   - reviewing
@@ -436,6 +434,29 @@ gates:
         does NOT use AskUserQuestion here — it posts the dashboard link and
         exits cleanly. Awaiting promotion is user-only: no automation may
         flip `runs.classification` without explicit user invocation.
+    - id: 16
+      name: campaign_brief_approval
+      label: status:approved
+      reason: |
+        Campaign brief approval (the human gate INTO a campaign — task
+        #586). A `kind: campaign` task executes only from status
+        `approved`: the user reviews the `## Campaign Brief` (question
+        anchor, hypothesis set, initial experiment DAG, budget + stop
+        criteria) and runs `uv run python scripts/task.py set-status <N>
+        approved`. The /campaign skill (and `spawn_session.py
+        spawn-campaign`) REFUSE to start from `proposed` — they exit with
+        a one-line pointer to this gate, no AskUserQuestion. Once
+        approved, the campaign session is fully autonomous within the
+        brief's GPU-hour budget + limits (recorded in
+        artifacts/campaign-state.json): it MAY auto-file and auto-spawn
+        substantially-different child experiments via `/issue <child>
+        --auto` — the user-approved 2026-06-10 exception to the
+        "all automatic follow-up EXECUTION is same-issue" routing rule,
+        scoped strictly to approved campaigns. Gates OUT are the daily
+        `epm:campaign-digest` + the final report; per-child clean-result
+        promotion stays user-only (gate id 7) but does NOT block the
+        campaign's ingest (it reads the critic-gated body at
+        awaiting_promotion).
   conditional:
     - id: 9
       name: experiment_goal_refine
@@ -822,7 +843,7 @@ subagent_halt_conditions:
       Final adversarial gate before status:awaiting_promotion (as of
       2026-05-13 — absorbed the retired reviewer step). Ensemble of
       `clean-result-critic` (Claude) + `codex-clean-result-critic`
-      (Codex gpt-5.5) running 11 lenses including Lens 7
+      (Codex gpt-5.5) running 15 lenses (v2 spec) including Lens 7
       (statistical-framing rule). PASS+PASS / PASS+CONCERNS advances.
       Disagreement dispatches `reconciler` (marker mode). On REVISE,
       bounces to analyzer up to 3 rounds; on 4th, advance regardless
@@ -836,7 +857,11 @@ subagent_halt_conditions:
   - subagent: upload-verifier
     verdict: FAIL
     action: |
-      status:uploading does not advance to interpretation.
+      status:verifying does not advance to interpretation. (The analyzer
+      may have pre-computed a HELD first pass in the background — Step 8
+      results-landed parallel spawn — but it stays unpublished until
+      PASS; on gap-fill PASS the orchestrator re-spawns the analyzer
+      only if the uploader changed an analysis input.)
       Branch by blocker tag in the verdict body:
       - blocker `primary-deliverable-missing` (Step 2.7 completeness
         gate, #519): Step 8 KEEPS THE POD ALIVE (do NOT terminate) and
@@ -896,7 +921,10 @@ ensemble_review:
         prints verdict to stdout for the manager). Cross-lens merge:
         worst-wins across the 3 post-reconciliation lens verdicts. Codex
         twin no-show on a lens → fall back to single-Claude-critic for
-        that lens this round.
+        that lens this round. The consistency-checker (NOT ensembled)
+        rides the same round-1 spawn batch when /issue invokes the skill;
+        its BLOCK findings union with the merged critique into ONE
+        Phase 3 revise round (/issue Step 2b owns its verdict semantics).
     - role: interpretation-critic
       step: "9a"
       claude_agent: interpretation-critic
@@ -910,9 +938,11 @@ ensemble_review:
       reconcile_mode: marker
       notes: |
         Both reviewers run all 7 lenses (lens 6 plot-prose match works on
-        both — Codex multimodal verified 2026-05-10). Codex twin no-show
-        falls back to single-Claude-critic for that round. Round cap 3 per
-        reviewer; reconcile rounds free.
+        both — Codex multimodal verified 2026-05-10). Ensembled on ALL
+        rounds 1-3 (round-1-only policy reversed 2026-06-12 —
+        cross-family reviewer diversity beats Claude-only later rounds).
+        Codex twin no-show falls back to single-Claude-critic for that
+        round. Round cap 3 per reviewer; reconcile rounds free.
     - role: clean-result-critic
       step: "9a-bis"
       claude_agent: clean-result-critic
@@ -927,11 +957,20 @@ ensemble_review:
       notes: |
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
-        rule as Lens 7). 11 lenses total: title, TL;DR, Summary structure +
-        register, Details per-section discipline, captions, heading-as-toggle,
-        body-discipline anti-patterns, Source issues conditional H2,
-        issue-link form, verifier sanity (verify_task_body.py),
-        statistical-framing rule.
+        rule as Lens 7). Ensembled on ALL rounds 1-3 (round-1-only policy
+        reversed 2026-06-12). 15 lenses total against the 2-content-section
+        nested-design (v2) spec (Lens 4 merged into Lens 2): 1 title,
+        2 TL;DR nested design (### Motivation / ### What I ran /
+        ### Findings -> #### <finding> per result; absorbs the retired
+        Details-narrative lens), 3 inline figure per finding,
+        5 reproducibility (confidence in H1 title tag only for v2 bodies),
+        6 voice incl. the byte-identical ban, 7 statistical-framing rule,
+        8 mentor-facing title only, 9 one-takeaway-one-figure per finding,
+        10 eval-probe descriptions inside ## TL;DR, 11 raw alongside
+        processed, 12 story arc present, 13 planned-vs-actual coverage,
+        14 binding-concerns audit, 15 headline not resting on a
+        contaminated / failed-data-gate arm. Mechanical pre-passes:
+        verify_task_body.py + audit_clean_results_body_discipline.py.
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
@@ -1042,7 +1081,9 @@ concerns_protocol:
         Strict gate. Orchestrator MUST address (dispatch implementer →
         `task.py address-concern`) or pivot strategy. Cannot be
         user-deferred; cannot be auto-advanced past. `task.py
-        defer-concern` raises ValueError on attempt. Unaddressed after
+        defer-concern` raises ValueError on attempt — sole exception:
+        the reconciler's binding severity-downgrade via `--by
+        reconciler` (see § reconciler_special_case). Unaddressed after
         autonomous options exhausted → halt_criteria id=6
         (concern_unresolved).
     - tier: CONCERN
@@ -1075,6 +1116,12 @@ concerns_protocol:
     experiment design, persist as BLOCKER. Otherwise leave as NIT or
     advisory verdict-body text.
   concern_id_format: "^[a-z0-9][a-z0-9-]{1,79}$"  # stable kebab-case
+  summary_cap: |
+    `--summary` is HARD-CAPPED at 200 chars — task.py raises ValueError
+    above it (5 reviewer crashes on 2026-06-10 alone: 238-410-char
+    summaries). Compose the summary as one tight sentence and move all
+    detail to `--evidence`. The same cap applies to `address-concern`
+    carried summaries.
   concern_id_examples:
     - probe-position-undefined
     - missing-mlm-control
@@ -1096,6 +1143,16 @@ concerns_protocol:
     defer-concern; all other `--by` values are rejected at both layers.
     The reconciler may NOT raise new concerns beyond what either
     reviewer raised (mirrors the existing "no new findings" rule).
+    Persisting a finding that IS already on the table is allowed and
+    sometimes required: when the reconciler's adjudication establishes
+    that a feature the plan's production path requires is deferred
+    ("the production path will crash" / "X must close before the
+    production run"), it persists that finding via `task.py
+    raise-concern --by reconciler` (CONCERN minimum; BLOCKER when the
+    production path provably crashes) so the Step 5c-ter dispatch gate
+    sees it — verdict prose alone gates nothing (incident #509). See
+    `.claude/agents/reconciler.md` § Persist deferred-production-path
+    findings.
   implementer_marker_requirement: |
     Main's 4-section implementer marker contract (a)/(b)/(c)/(d) is
     preserved — the binding-concerns layer does NOT force a 5th
@@ -1254,6 +1311,10 @@ markers:
     posted_by: skill (via adversarial-planner)
     when: "Step 2"
     fields: "Goal, method delta, reproducibility card, success/kill criteria, GPU-hr estimate, pod intent"
+  - kind: "epm:plan-verify"
+    posted_by: skill (adversarial-planner Phase 1.5.0 orchestrator; VM-side only)
+    when: "after each scripts/verify_plan.py run against the newest plans/v{K}.md, before the fact-checker + critic ensemble spawn"
+    fields: "verdict (PASS|FAIL|PASS-with-override), n_fail, n_warn, failed/overridden check ids, plan version checked"
   - kind: "epm:plan-approved"
     posted_by: skill (relaying user reply, OR auto in an autonomous session)
     when: "Step 2c"
@@ -1270,6 +1331,10 @@ markers:
     posted_by: skill (via implementer / experiment-implementer)
     when: "Step 4b, TDD mode only"
     fields: "Posted ONLY when the plan body contains `### TDD: yes` or the user requests TDD. Body: ≥1 happy-path + ≥2 distinct error/edge-case tests, behavior-focused, in fenced blocks. Implementer EXITs after posting and awaits user `approve-tests` reply. Skill pauses pending approval, then resumes Step 4b."
+  - kind: "epm:approve-tests"
+    posted_by: user via task.py post-marker (interactive) OR skill (autonomous auto-approve)
+    when: "Step 4b TDD gate resume (gates.conditional.tdd_gate; CLAUDE.md auto-continuation gate 7)"
+    fields: "Approval of the proposed test surface — the resume signal the parked TDD gate waits for. Must be posted AFTER the `epm:proposed-tests` event it approves (the Step 0 resume router compares event order). Interactive: the user posts it via `task.py post-marker <N> epm:approve-tests`. Autonomous (EPM_AUTONOMOUS_SESSION=1): the skill auto-posts it IFF the proposed-tests body lists ≥1 test per acceptance criterion from the original task body, then re-spawns the implementer with `tdd_approved=true` in the same turn."
   - kind: "epm:experiment-implementation"
     posted_by: skill (via experiment-implementer)
     when: "Step 4b"
@@ -1283,7 +1348,14 @@ markers:
       surface. Body shape: one of:
         `verdict: PASS_UNIFIED` — smoke IS sweep with one cell
           (`--cells 1 --seeds 1` or equivalent); both paths share the
-          same dispatcher and subprocess shape end-to-end.
+          same dispatcher and subprocess shape end-to-end, AND the
+          cell-subset parameterization threads through EVERY phase the
+          dispatcher executes (train, eval enumeration, anchor/analyze
+          tolerance). A subset honored by the train loop only, with a
+          downstream phase re-enumerating the full registered grid, is
+          FAIL_NO_CANARY (incident #546 round 1, 2026-06-10: PASS_UNIFIED
+          train + full-grid cross-eval → HF 404 on never-trained
+          adapters; the smoke could never pass by construction).
         `verdict: PASS_CANARY canary_cell=<cell_id>` — paths diverge
           (e.g., smoke uses in-process train, sweep uses subprocess
           wrapper) AND the plan §4 Design section justified the
@@ -1378,6 +1450,14 @@ markers:
     posted_by: skill
     when: "Step 6a"
     fields: "model id, HF gate status, retry plan if rejected"
+  - kind: "epm:carry-over-missing"
+    posted_by: skill
+    when: "Step 6a.5"
+    fields: "unresolved carry-over artifact URLs (HF/WandB) the plan cites; status:blocked — user re-uploads or corrects the plan, then re-runs /issue <N>"
+  - kind: "epm:hf-quota-exceeded"
+    posted_by: skill
+    when: "Step 6a.6"
+    fields: "verbatim quota 403 text, probed repo id, namespace usage if known; status:blocked — user frees space / upgrades storage. Only the explicit storage-quota 403 posts this; non-quota probe errors are fail-soft (proceed to 6b)"
   - kind: "epm:pod-provisioned"
     posted_by: skill
     when: "Step 6b"
@@ -1462,7 +1542,48 @@ markers:
   - kind: "epm:results"
     posted_by: specialist
     when: "end of run"
-    fields: "Eval JSON paths, filled reproducibility card, WandB URL, HF Hub path, commit hash, GPU-hours used, deviations, hot-fix log. MUST include a `## Sample outputs` section with `### Condition: <name>` H3 subheadings and ≥3 randomly-sampled (persona, prompt, response) triplets PER CONDITION."
+    fields: |
+      Eval JSON paths, filled reproducibility card, WandB URL, HF Hub
+      path, commit hash, GPU-hours used, deviations, hot-fix log. MUST
+      include a `## Sample outputs` section with `### Condition: <name>`
+      H3 subheadings and ≥3 randomly-sampled (persona, prompt, response)
+      triplets PER CONDITION. The note's JSON payload may carry a
+      `reproducibility_card` object with these OPTIONAL fields, consumed
+      by `scripts/verify_uploads.py` when a training task declares no
+      single `--hf-model` / `--wandb-run` (the multi-cell sweep case,
+      #608): `hf_model_repo` (defaults to the canonical model repo),
+      `adapter_paths` (dict or list of per-cell adapter paths, each
+      verified under `hf_model_repo` via `list_repo_files`),
+      `hf_model_path` (single model path), `wandb_run_path` /
+      `wandb_run` (single run path), and `wandb_run_names` (dict or
+      list of per-cell display names) + `wandb_project` (+ optional
+      `wandb_entity`) resolved by display name. The `reproducibility`
+      key is accepted as an alias for `reproducibility_card` (#601's
+      producer shape; canonical key wins when both are present), and
+      multi-launch re-posts are tolerated: verify_uploads.py MERGES the
+      card across ALL epm:results markers newest-wins per declared
+      field, so a resume-pass sentinel with an empty card
+      (`adapter_paths: {}`) never shadows an earlier full declaration
+      (#601). A payload that declares NO explicit card but carries
+      GCP-lane driver provenance
+      (`production_provenance.<cell>.hf_adapter_subfolder`, optionally
+      `.wandb_run_name`, plus top-level `wandb_*` / `hf_model_repo`
+      hints) gets an equivalent card SYNTHESIZED by verify_uploads.py
+      (`_card_from_provenance`, #599) — a safety net, not the producer
+      contract; explicit cards always win. The fields are optional for
+      the CONSUMER (verify_uploads.py tolerates their absence), but the
+      PRODUCER contract for training / sweep runs is MUST, not SHOULD
+      (SKILL.md Step 7 sentinel format): declare per-cell
+      `adapter_paths` (real resolved paths — never `<arm>`/`<seed>`
+      template placeholders or prose summaries) + `wandb_project` +
+      `wandb_run_names` so the verifier's training rows resolve
+      mechanically instead of hard-MISSing. The same applies to an
+      orchestrator-composed payload drained from granular per-cell
+      sentinels — a prose-template card tripped false hf_model /
+      wandb_run MISSING rows on a fully-uploaded sweep (#612). Explicit
+      CLI declarations always win unchanged, and a task whose markers
+      declare neither a card nor usable provenance keeps the strict
+      MISSING row.
   - kind: "epm:upload-verification"
     posted_by: skill (via upload-verifier)
     when: "Step 8"
@@ -1494,6 +1615,10 @@ markers:
     posted_by: skill
     when: "Step 8 (after upload-verification PASS)"
     fields: "Pod auto-terminated immediately after artifact uploads verified; records pod name and command output"
+  - kind: "epm:pod-stopped"
+    posted_by: skill
+    when: "Step 8-bis (pod must not idle on a halt) — any halt-path exit that leaves the normal Step 8 terminate path"
+    fields: "Pod paused via `pod.py stop --issue <N>` (volume preserved; `resume` re-provisions) instead of terminated. Posted with the command output whenever the pipeline EXITs while a pod is RUNNING outside the upload-verification-PASS path: a human-input gate that cannot be satisfied this turn, a STATE-TO-blocked exit, or a detected crash with GPUs idle. Pairs with epm:pod-terminated (used when the work is truly done). NEVER leave a pod RUNNING while awaiting human input or after a crash (incidents 2026-06-01: #444 ~21h, #404 ~2d, #407 ~1d of idle burn)."
   - kind: "epm:interpretation"
     posted_by: skill (via analyzer)
     when: "Step 9a"
@@ -1506,10 +1631,14 @@ markers:
     posted_by: skill (via codex-interpretation-critic)
     when: "Step 9a"
     fields: "Codex (gpt-5.5 via companion task) twin of interpretation-critic. PASS/REVISE verdict with all 7 lenses. v<n> per round, paired with epm:interp-critique v<n>."
+  - kind: "epm:analysis"
+    posted_by: skill (via analyzer, its Step 7 cross-link recap; v2+ on critique-revision rounds)
+    when: "Step 9a (after the clean-result draft lands; analyzer.md Steps 7 + After-submission)"
+    fields: "Hero figure URL, 2-sentence recap of the claim, and a `free_analysis_unrun:` field listing each `cost_class: free-analysis` + `headline_affecting: yes` follow-up the draft surfaced that has no `epm:free-analysis-followup-run v1` marker yet on the task (empty list `[]` when none) — consumed by SKILL.md Step 9a-ter detection. Anchor for reviewer agents to locate the analyzer output; v2+ summarize the body diff after a critique-revision round."
   - kind: "epm:clean-result-drafted"
     posted_by: skill (via analyzer)
     when: "Step 9a (final)"
-    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis marker."
+    fields: "Link to the clean-result body.md + hero figure path + 2-sentence recap. Replaces the GH-era epm:analysis usage as the clean-result link anchor (epm:analysis survives as the analyzer's cross-link recap + free_analysis_unrun carrier — see that entry)."
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
@@ -1517,7 +1646,7 @@ markers:
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"
-    fields: "PASS/REVISE verdict with 14 lenses (incl. binding-concerns audit, Lens 14) against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage; binding-concerns audit (Lens 14, composed onto Lens 13 by task #455). Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
+    fields: "PASS/REVISE verdict with 15 lenses (incl. binding-concerns audit, Lens 14; contaminated/failed-data-gate-arm check, Lens 15) against the 2-content-section nested-design (v2) spec (2026-W22, task #454; nested-TL;DR adopted forward-only after #454): title; TL;DR (`### Motivation` + `### What I ran` + `### Findings` (parent) → `#### <finding>` per result for v2-sentinelled bodies — absorbs the retired Details-narrative Lens 4); inline figure inside each `#### <finding>`; Lens 4 merged into Lens 2; Reproducibility (Parameters absorbed here; confidence lives in the H1 title tag only for v2 bodies); voice (incl. `byte identical` ban); statistical-framing; mentor-facing title only (Methodology corrections no longer a discrete H3); one-takeaway-one-figure per `#### <finding>`; eval-probe descriptions inside `## TL;DR`; raw alongside processed; story arc present; planned-vs-actual coverage; binding-concerns audit (Lens 14, composed onto Lens 13 by task #455); headline must not rest on a contaminated / failed-data-gate arm (Lens 15, post-mortem task #407). Mechanical pre-pass: verify_task_body.py + audit_clean_results_body_discipline.py."
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
@@ -1534,12 +1663,21 @@ markers:
        note: <optional, e.g. "gist skipped — possible secret detected in
        doc body" / "gist skipped — gh lacks gist scope" / "gist skipped —
        network error" / "skipped: kind: <infra|batch|survey> has no
-       methodology surface">`. The repo-committed doc at `doc_path` is
+       methodology surface" / "extends=<followup_label>" (EXTEND pass —
+       a same-issue follow-up round appended the new arm's methodology
+       to the existing doc) / "no-new-methodology=<followup_label>"
+       (planner-exempt re-run, identical recipe, no doc change)>`. The
+       repo-committed doc at `doc_path` is
        the durable artifact; the secret gist is a convenience mirror and
        its publication is FAIL-SOFT (a missing gist never blocks the
-       step or the park). Idempotent: presence of this marker makes
-       Step 9a-quater a no-op on re-entry (skill does NOT regenerate /
-       re-publish on re-invocation). Fires in BOTH interactive and
+       step or the park). Idempotency is followup-label-scoped: on
+       re-entry Step 9a-quater no-ops ONLY when every analyzer-re-folded
+       `epm:followup-scope v1` followup_label is recorded across this
+       marker's notes (`extends=` / `no-new-methodology=`); an
+       unrecorded label triggers the EXTEND pass (SKILL.md Step
+       9a-quater), which appends the new arm's methodology and posts a
+       NEW marker with `extends=<followup_label>` — the parent doc is
+       never regenerated from scratch. Fires in BOTH interactive and
        autonomous sessions; the auto-publish to a SECRET (not public)
        gist is the orchestrator action authorized by the standing
        workflow-surface rule for this artifact specifically (the doc is
@@ -1565,6 +1703,10 @@ markers:
     posted_by: skill (via task.py promote)
     when: "Step 10"
     fields: "User-invoked promote of an awaiting_promotion task to completed; records classification=useful|not-useful"
+  - kind: "epm:consolidated-into"
+    posted_by: skill (promote-clean-result)
+    when: "/promote-clean-result Step 1 — findings folded into another task's clean-result during a user-approved consolidation"
+    fields: "Posted on the ABSORBED task #<M> before it is archived; records the absorbing task #<N> + its dashboard link (the absorbed task's set-status archived note carries the same pointer)"
   - kind: "epm:status-changed"
     posted_by: skill (any time)
     when: "any status transition"
@@ -1576,7 +1718,7 @@ markers:
   - kind: "epm:follow-ups"
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
-    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged legacy proposal is treated as `substantially-different`), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode GPU-backed execution at Step 9b — child auto-spawn for `substantially-different`, same-issue loop for `same`; see follow-up-proposer.md § auto_run tag — criteria) AND `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (controls the inline free-analysis auto-run at Step 9a-ter — see follow-up-proposer.md § cost_class + headline_affecting tags — criteria). Interactive mode ignores `auto_run` but still consults `cost_class` / `headline_affecting` at Step 9a-ter and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags."
+    fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria) AND `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (controls the inline free-analysis auto-run at Step 9a-ter — see follow-up-proposer.md § cost_class + headline_affecting tags — criteria). Interactive mode ignores `auto_run` but still consults `cost_class` / `headline_affecting` at Step 9a-ter and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags."
   - kind: "epm:free-analysis-followup-run"
     posted_by: skill (orchestrator at Step 9a-ter)
     when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` + `headline_affecting: yes` follow-up that has not yet been run on this task"
@@ -1608,7 +1750,7 @@ markers:
       autonomous sessions (the inline free reanalysis is cheap +
       record-correcting; the user can always revert), independent of
       the `EPM_AUTONOMOUS_SESSION` / `auto_run` machinery that gates
-      the GPU-backed child auto-spawn at Step 9b. Marker is the
+      the GPU-backed Step 9b paths (same-issue loop / child filing). Marker is the
       durable record consumed by the dashboard and by the Step 9a-ter
       idempotency check.
   - kind: "epm:follow-ups-autospawned"
@@ -1616,33 +1758,47 @@ markers:
     when: "Step 9b (awaiting_promotion transition, after auto-merge and before park), only when EPM_AUTONOMOUS_SESSION=1"
     fields: |
       Records which `auto_run: yes` proposals from the most recent
-      `epm:follow-ups v1` marker the orchestrator auto-spawned as
-      autonomous child sessions, and which were skipped. Step 9b
+      `epm:follow-ups v1` marker the orchestrator FILED as `proposed`
+      child tasks for manual triage, and which were skipped. As of
+      2026-06-10 this path is FILED-ONLY: no autonomous child sessions
+      are ever spawned from it — automatic follow-up EXECUTION happens
+      exclusively via the same-issue follow-up loop
+      (`question_relation: same`). The marker NAME is kept for
+      dashboard / back-compat; the `spawned` list now carries FILED
+      semantics (children created at `proposed`, no sessions). Step 9b
       PARTITIONS proposals by `question_relation` first: only
-      `substantially-different` proposals (and untagged legacy ones)
-      are eligible for child auto-spawn here; `same` + `auto_run: yes`
+      `substantially-different` proposals (and untagged ones from
+      pre-2026-06-09 legacy markers only — a newer untagged proposal
+      trips the Step 9b step-3 freshness guard: one proposer re-spawn
+      to re-emit tagged proposals, then conservative
+      `substantially-different` routing with the violation recorded)
+      are eligible for child filing here; `same` + `auto_run: yes`
       proposals route to the same-issue follow-up loop instead and are
       recorded under `epm:followup-scope v1` / `epm:same-issue-followup-run
       v1`, never as children. Body shape:
-      `spawned: [{child_id: <M>, title: "...", proposal_rank: 1},
+      `execution: filed-only,
+      spawned: [{child_id: <M>, title: "...", proposal_rank: 1},
       {child_id: <M2>, title: "...", proposal_rank: 2}],
       skipped_auto_run_no: [{proposal_rank: 3, title: "...",
       reason: "<auto_run_reason verbatim>"}],
-      cap: 2`. When the parent's `parent_id` chain already has >=3
-      auto-spawned ancestors the depth cap fires: `spawned` is empty and
+      cap: 2,
+      proposer_contract_violation: <optional — "question_relation
+      missing after re-spawn" when the freshness-guard re-emit was
+      still untagged>`. When the parent's `parent_id` chain already has >=3
+      auto-filed ancestors the depth cap fires: `spawned` is empty and
       the body carries `auto_spawn_skipped: depth_cap_reached` (the
       proposals still post as `epm:follow-ups v1` for the user). Posted
-      AFTER the child tasks are created but BEFORE their sessions are
-      spawned, so it is the durable idempotency claim. Idempotent:
-      presence of this marker on a parent task makes the Step 9b
-      auto-spawn block a no-op on re-entry / backstop tick — the
-      re-entry runs the RECONCILE pass (re-spawns only a listed child
-      still stranded at `proposed`), never re-creating children.
-      Interactive mode (EPM_AUTONOMOUS_SESSION unset) NEVER posts
-      this marker. Each spawned child runs its own `/issue` and hits
-      its own Step 2c plan-approval GPU-hour cap; this marker does NOT
-      bypass the cap. Parent promotion remains human-only — auto-spawning
-      follow-ups does NOT promote the parent.
+      AFTER the child tasks are created, as the durable idempotency
+      claim. Idempotent: presence of this marker on a parent task makes
+      the Step 9b filing block a no-op on re-entry / backstop tick — the
+      re-entry runs the RECONCILE pass (verifies each listed child
+      exists, re-creating a missing one; it never spawns sessions and
+      never re-creates an existing child). Interactive mode
+      (EPM_AUTONOMOUS_SESSION unset) NEVER posts this marker. A filed
+      child executes only when a human triages it and invokes
+      `/issue <CHILD_ID>`; it then hits its own Step 2c plan-approval
+      GPU-hour cap as normal. Parent promotion remains human-only —
+      filing follow-ups does NOT promote the parent.
   - kind: "epm:followup-scope"
     posted_by: skill (Step 9b same-issue partition or Step 10b user pick) OR chat session (user-requested same-question follow-up)
     when: "Whenever a `question_relation: same` follow-up is scoped to execute ON the parent issue: the autonomous Step 9b partition (`source: proposer-9b`), a chat-requested follow-up (`source: user-chat` — the chat session posts this marker on #N, then re-invokes /issue <N>), or an interactive Step 10b pick (`source: step-10b-pick`)"
@@ -1660,9 +1816,14 @@ markers:
       until a matching `epm:same-issue-followup-run v1` with the same
       `followup_label` exists; `/issue` Step 0 dispatches a task at a
       post-result status (`interpreting` / `reviewing` /
-      `awaiting_promotion` / `completed`) carrying an unrun
+      `awaiting_promotion` / `completed` — or `followups_running`
+      itself, the mid-round resume case) carrying an unrun
       followup-scope into the same-issue follow-up loop on
-      re-invocation. Never creates a child task.
+      re-invocation. The loop holds the task at status
+      `followups_running` for the whole round, tagged `followup-auto`
+      (`source: proposer-9b`) or `followup-manual` (`source: user-chat`
+      / `step-10b-pick`), and exits it only at the re-park to
+      `awaiting_promotion`. Never creates a child task.
   - kind: "epm:same-issue-followup-run"
     posted_by: skill (orchestrator, at the end of a same-issue follow-up loop round)
     when: "Same-issue follow-up loop completion — after the analyzer re-folds the new finding into the existing clean-result body, clean-result-critic re-gates it, and the task re-parks at awaiting_promotion"
@@ -1672,9 +1833,10 @@ markers:
       source: proposer-9b | user-chat | step-10b-pick,
       round: <1-based index over this task's same-issue rounds>,
       outcome: <one line — what the re-run found / how the body
-      changed>`. Idempotency record: an `epm:followup-scope v1` whose
-      `followup_label` has a matching marker of this kind is RUN and is
-      never re-dispatched. The autonomous round cap (at most 2
+      changed>`. Posted as the round exits `followups_running` and
+      re-parks at `awaiting_promotion`. Idempotency record: an
+      `epm:followup-scope v1` whose `followup_label` has a matching
+      marker of this kind is RUN and is never re-dispatched. The autonomous round cap (at most 2
       same-issue rounds per task) counts ONLY markers with
       `source: proposer-9b` — user-initiated rounds (`user-chat`,
       `step-10b-pick`) are explicitly requested and gated by
@@ -1741,18 +1903,30 @@ markers:
   - kind: "epm:failure"
     posted_by: specialist
     when: "on crash"
-    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code line."
+    fields: "Traceback + last 50 log lines + partial results. SHOULD include failure_class: infra | code | data line. `data` (a factual gap only the user can fill) is posted per the halt-criterion contract — the task parks at status:blocked and does NOT enter the Step 7 crash-fix routing, which covers infra | code only; scripts/failure_classifier.py likewise emits only infra | code."
+  - kind: "epm:failure-classify-error"
+    posted_by: skill
+    when: "Step 7 (epm:failure body missing failure_class AND scripts/failure_classifier.py exited non-zero)"
+    fields: "Captured stderr from the failure_classifier.py invocation. Audit record only: the orchestrator treats the unclassifiable failure as `code` (conservative default) and applies the code-class row of the Step 7 failure table; this marker preserves WHY the classifier could not produce a verdict."
+  - kind: "epm:failure-lesson"
+    posted_by: skill (orchestrator)
+    when: "Step 7, when a crash-fix round resolves an epm:failure (experiment-implementer crash-fix report, or a respawned experimenter's relaunch-with-fix report); also Step 6d, when an experimenter's launch report carries the block for a within-turn launch fix (dying launch fixed + relaunched in the same spawn — no epm:failure posted)"
+    fields: "failure_class (code|infra|data), phase (pipeline phase or script), lesson (1-3 sentences: the trap + the fix, written for the NEXT agent — no transcript dumps), generalizes (yes|no — yes only if the trap plausibly recurs beyond this issue), owning_agent (experiment-implementer|experimenter), gotcha_candidate (yes|no — yes for codebase/infra traps that belong in .claude/rules/gotchas.md). Posted verbatim from the resolving agent's report block. On generalizes=yes the orchestrator ALSO persists the lesson immediately to .claude/agent-memory/<owning_agent>/ (feedback_<slug>.md + MEMORY.md index line; explicit-path commit + push, standing rule 2026-06-02) so parallel same-day sessions load it on their next spawn; on gotcha_candidate=yes it ALSO routes a workflow-fix candidate targeting .claude/rules/gotchas.md through the workflow-fix-on-bug auto-spawn default. generalizes=no lessons get the marker only (no memory write). /daily is the deduplicating consolidator (reads the day's markers, dedupes against agent memories, promotes recurring lessons into rules, prunes over-eager generalizes=yes entries)."
   - kind: "epm:experimenter-respawn"
     posted_by: skill
     when: "Step 7 (failure_class=infra path)"
     fields: "Records re-spawn on the same branch without an implementer round. v<n> per respawn; cap 3."
+  - kind: "epm:strategy-pivot"
+    posted_by: skill (orchestrator)
+    when: "any strategy pivot — Step 5 code-review ensemble cap-3, whack-a-mole detector fire, plan-contradiction re-plan, debugging-wall pivot (see § pivot_criteria)"
+    fields: "v<n> per pivot, top-level on the task. Records the pivot rationale + what changes: which strategy failed, the fundamentally different design being tried next, and that revision_round RESETS to 1 on the new plan. Counts toward the ~3-pivots-before-block rule (CLAUDE.md STATE-TO-blocked criteria). Every pivot site reuses this ONE kind — do NOT introduce per-pivot-source marker kinds."
   - kind: "epm:merged"
     posted_by: skill
     when: "Step 9b (experiments, at awaiting_promotion) or Step 10d (code paths, at completed)"
-    fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: branch far behind main OR based on a non-mainline parent branch like a still-unmerged issue-<M>), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
+    fields: "Merge SHAs (one per commit when rebase-merged) for the safe path. For the artifact-confirmed path (guard 3 tripped: based on a non-mainline parent branch like a still-unmerged issue-<M>, OR the branch's OWN commits — git diff origin/main...HEAD — touch foreign tasks/ or out-of-scope paths; BEHIND alone is never the trip, it only triggers the own-commit content check), instead: {artifact_confirmed: true, full_rebase_deferred: true, reason: '...', verified_paths: [...]} or, if a surgical additive checkout was needed, {artifact_confirmed: true, full_rebase_deferred: true, surgical_checkout: true, files: [...]}. Worktree is NOT removed (kept for inspection; reaped later by worktree_audit.py)."
   - kind: "epm:merge-failed"
     posted_by: skill
-    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR"
+    when: "Step 9b / Step 10d auto-merge hit a conflict / non-mergeable PR (posted only after the one-shot in-worktree merge-conflict recovery — SKILL.md Step 10d — also fails)"
     fields: "gh/git error + branch + worktree path. Non-blocking: the task still parks (experiments) / completes (code paths); retried idempotently on the next /issue <N>."
   - kind: "epm:stale"
     posted_by: skill
@@ -1789,6 +1963,203 @@ markers:
 # sentinel. All posts_marker values reference a marker kind declared
 # above.
 # ──────────────────────────────────────────────────────────────────────
+  - kind: "epm:backend-selected"
+    posted_by: backends.router.route (via injected marker_poster — defaults to backends.slurm.post_marker_via_task_py); also posted by the legacy backends.selector.select_backend path
+    when: "Whenever the router picks (or escalates / re-routes to) a backend for an issue's run. Posted on every launch=True decision, plus a pre-escalation intermediate marker whenever the auto chain is about to spend GCP credit."
+    fields: |
+      Records WHICH compute backend was chosen, WHY, and the full ladder
+      of per-lane attempts the router walked (slice-5 router /
+      legacy-selector shared shape; the router emits the extended body
+      with `attempts` populated).
+
+      Body shape (JSON in the event `note` field):
+        `requested_kind: <runpod|cluster|nibi|fir|gcp|mila|null>
+         chosen_kind:    <runpod|cluster|nibi|fir|gcp|mila>
+         reason:         <override|reconnect|auto_started|
+                          auto_fallback_gcp|no_compute_available|
+                          workload_failure|frontmatter_default|
+                          frontmatter_explicit|slurm_not_implemented|
+                          slurm_max_wait_exceeded|slurm_hard_failure|
+                          slurm_started>
+         cluster:        <nibi|fir|null>
+         elapsed_seconds: <float>
+         attempts:       [{kind, cluster, est_start_seconds_raw,
+                            est_start_seconds_clamped, outcome, detail,
+                            elapsed_seconds}, ...]
+         extra:          {cancel_race?, gcp_attempts_today?,
+                          intermediate?,
+                          override_without_frontmatter?,
+                          override_conflicts_frontmatter?,
+                          frontmatter_backend_unrecognized?,
+                          frontmatter_backend?,
+                          boot_disk_default_with_ft_intent?, ...}`
+
+      `override_without_frontmatter: true` (optional) is stamped by the
+      dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster
+      decorator) when `launch` was invoked with an explicit
+      `--backend runpod` while the task's `backend:` frontmatter does
+      not name a backend (absent/empty, or an explicit `auto` — which
+      states the auto-routing intent even more explicitly than absence)
+      — i.e. the GCP-first auto default was bypassed at the
+      CLI with no frontmatter backing. Visibility only: the launch is
+      never blocked, and the CLI also emits a LOUD stderr warning naming
+      the legitimate residual gaps (70B intents / interactive SSH-MCP
+      orchestration / runs > GCP --max-run-duration default 24h / SLURM
+      venv-extras mismatch).
+
+      `override_conflicts_frontmatter: true` (optional) is stamped by
+      the same decorator when the explicit `--backend runpod` was passed
+      while the frontmatter names a DIFFERENT recognized lane (`gcp` /
+      `nibi` / `fir` / `mila`, or the legacy `cluster` alias — which
+      normalizes to nibi) — the task explicitly contradicts the
+      override, a stronger signal than absence.
+      `frontmatter_backend_unrecognized: true` (optional) is stamped
+      when the frontmatter `backend:` value is not a recognized backend
+      at all (typo / non-string YAML value, e.g. `gpc` or `true`) —
+      task hygiene noise masquerading as frontmatter backing, not a
+      legitimate override. Both new flags also carry
+      `frontmatter_backend: "<raw lowercased value>"` so the marker is
+      self-explanatory. The three flags are DISTINCT and never reused
+      across cases, so the dashboard can tell "bypassed auto" /
+      "contradicted a named lane" / "task hygiene problem" apart. Same
+      scope as `override_without_frontmatter` (the explicit CLI
+      `--backend runpod` path only); same degrade (unreadable
+      frontmatter skips all checks); visibility only — the launch is
+      never blocked. A frontmatter `backend: runpod` is the one
+      legitimate backing and stays silent.
+
+      `boot_disk_default_with_ft_intent: true` (optional) is stamped by
+      the same decorator when `launch` was invoked with a gcp-reachable
+      backend (`gcp`, or `auto` whose resolved lane order includes gcp)
+      and an `ft-*` intent that maps to a GCP machine, WITHOUT
+      `--boot-disk-gb` — the lane provisions the 300 GB pd-ssd default
+      (`backends/gcp.GcpConfig.default_boot_disk_gb`), which a ZeRO-3
+      full-FT fills with optimizer-state checkpoints in ~1h (incident
+      #606, 2026-06-12: kernel panic on the full disk, cloud-init
+      ENOSPC, SSH key-provisioning lockout, 4x A100 idling until
+      deletion). Visibility only — the launch is never blocked
+      (small-disk ft smokes stay legitimate); the CLI also emits a LOUD
+      stderr warning pointing at the plan's Reproducibility pod-row
+      disk size.
+
+      Reason codes:
+        * `override`              — explicit `backend:` frontmatter ran.
+        * `reconnect`             — existing live job/instance found.
+        * `auto_started`          — auto chain picked a free lane and
+                                    it reached RUNNING within the park.
+        * `auto_fallback_gcp`     — the auto chain launched on GCP:
+                                    the PRIMARY lane under the GCP-first
+                                    standing default
+                                    (DEFAULT_AUTO_LANE_ORDER = gcp,
+                                    nibi, fir, mila; override via
+                                    EPM_AUTO_LANE_ORDER), or the
+                                    escalation after every free lane
+                                    park-failed under a free-first
+                                    override. Reason code name kept for
+                                    schema stability in both positions.
+                                    The pre-spend intermediate marker
+                                    (extra.intermediate=true) AND the
+                                    post-launch final marker both carry
+                                    this reason.
+        * `no_compute_available` — every lane in the resolved auto
+                                    order failed or was unavailable
+                                    (e.g. GCP capacity-failed AND every
+                                    free lane park-failed); surfaced via
+                                    NoComputeAvailableError → epm:failure.
+        * `workload_failure`      — GCP workload failure; no auto-
+                                    fallback (would re-crash).
+        * `frontmatter_*`/`slurm_*` — legacy selector codes, preserved
+                                    for back-compat.
+
+      The attempts list mirrors the router's per-lane ladder in the
+      ACTUAL attempt order (GCP first under the GCP-first standing
+      default): ranked free lane est-starts (raw + clamped — negative
+      raw values clamp to 0 for ranking but the raw is preserved for
+      the audit trail), per-lane outcomes (`launched`,
+      `park_cap_exceeded`, `terminal_before_running`, `launch_failed`,
+      `reconnected`, `provisioning_failure`, `workload_failure`,
+      `attempt_cap_exceeded`, `quota_headroom_insufficient` — the GCP
+      lane's pre-create regional-quota probe read insufficient headroom
+      and skipped the lane WITHOUT burning a daily attempt, #608), and
+      the GCP lane with its per-day attempt-count guard reading. A GCP
+      `provisioning_failure` attempt's `detail` carries the captured
+      gcloud `stderr_tail` (~1KB) alongside the classified reason
+      (#608: the stderr was previously dropped everywhere). v1.
+  - kind: "epm:cluster-launched"
+    posted_by: backends.slurm.SlurmBackend.launch (via backends.slurm.post_marker_via_task_py)
+    when: "Step 6b (immediately after sbatch submit succeeds, before the submit-and-park watchdog runs)"
+    fields: |
+      SLURM-side launch handle. Body shape (JSON in the event `note` field):
+        `cluster:     <nibi|fir>
+         job_id:      <numeric>
+         job_name:    <eps-issue-<N>[-<plan_hash>]>
+         scratch_dir: <$SCRATCH/eps/issue-<N>>
+         log_path:    <$SCRATCH/eps/issue-<N>/job.out>
+         account:     <rrg-bengioy-ad_gpu>
+         gpus:        <N>
+         time_budget_hours: <H>`
+      Posted INSTEAD of `epm:run-launched` on the cluster path; the
+      RunPod path's `epm:run-launched` schema is unchanged. v1.
+  - kind: "epm:cluster-poll"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py)
+    when: "every Step 6d.2 polling-loop tick on the cluster path that observes a status / phase / slurm_state CHANGE vs the most recent prior cluster-poll (dedup'd against events.jsonl)"
+    fields: |
+      One-tick PollResult snapshot for a cluster job. Body shape (JSON
+      in the event `note` field) mirrors the RunPod `poll_pipeline.py`
+      JSON the orchestrator already consumes:
+        `status: <running|done|stalled|dead|gate>
+         current_phase: <preflight|cpt|sft|dpo|em|eval|done|...>
+         heartbeat_sec_ago: <int>
+         log_tail_excerpt: <last ~2KB>
+         gpu_util: <busy|idle>
+         job_id: <numeric>
+         slurm_state: <PENDING|RUNNING|COMPLETED|FAILED|...>`
+      Posted only on a transition (status, current_phase, or
+      slurm_state differs from the last cluster-poll for this job_id).
+      A long-running job that stays in the same phase doesn't spam
+      markers. v1.
+  - kind: "epm:cluster-terminal"
+    posted_by: backends.slurm_monitor.build_poll_result (via backends.slurm.post_marker_via_task_py; exactly once per job_id)
+    when: "the first poll-tick that observes a terminal state (status in {done,dead}); subsequent terminal observations short-circuit by reading the persisted marker"
+    fields: |
+      Persisted terminal-state breadcrumb so idempotent reconnect after
+      squeue/scontrol ageout still finds the authoritative answer. Body
+      shape:
+        `job_id: <numeric>
+         cluster: <nibi|fir>
+         slurm_state: <COMPLETED|FAILED|TIMEOUT|PREEMPTED|NODE_FAIL|CANCELLED|OUT_OF_MEMORY>
+         exit_code: <"0:0"|"N:M"|null>
+         observed_at: <ISO8601>
+         next_action: <interpret|fallback_runpod|investigate>`
+      `next_action=interpret` for COMPLETED, `fallback_runpod` for
+      PREEMPTED/TIMEOUT/NODE_FAIL (the orchestrator re-routes a fresh
+      run to RunPod), `investigate` for FAILED/OOM (the operator picks
+      whether to retry or pivot). v1.
+  # ── campaign lifecycle markers (/campaign <N>, task #586) ──────────────
+  - kind: "epm:campaign-started"
+    posted_by: campaign skill (Step 0)
+    when: "the /campaign session validates the brief (kind: campaign, status approved), initializes artifacts/campaign-state.json, flips status to running, and arms the /campaign-tick cron"
+    fields: "question_anchor, budget (gpu_hours_total), limits (max_experiments / max_concurrent_children / per_child_gpu_hours_cap / wall_clock_days), initial experiment DAG size. v1."
+  - kind: "epm:campaign-child-spawned"
+    posted_by: campaign skill (Step 1.4, one per child)
+    when: "the campaign files a child task (task.py new --kind experiment --parent <N>) and spawns its autonomous session (spawn_session.py spawn-issue --issue <child> --auto)"
+    fields: "child task id, experiment id (DAG row), gpu_hours_est committed, remaining budget headroom, open slots after the spawn. v1."
+  - kind: "epm:campaign-child-ingested"
+    posted_by: campaign skill (Step 1.1, one per landed child)
+    when: "a child reached awaiting_promotion/completed and the campaign ingested its CRITIC-GATED clean-result (title claim + confidence tag + TL;DR findings) into artifacts/world-model.md"
+    fields: "child task id, headline claim, confidence tag, belief_shift (yes|no), dry_counter after the update. v1."
+  - kind: "epm:campaign-digest"
+    posted_by: campaign skill (Step 1.5, at most every 24h)
+    when: "the daily campaign digest fires (last_digest_at older than 24h at a decision round)"
+    fields: "budget spent/committed/total (GPU-hours), children table (id / status / headline), current working belief + confidence, next planned arms. v1."
+  - kind: "epm:campaign-stalled"
+    posted_by: scripts/autonomous_session_watch.py (campaign pass)
+    when: "a live campaign session posted no skill-posted epm:campaign-* marker AND no child task posted any marker for > EPM_CAMPAIGN_STALL_S (default 2h); one alert per stalled episode (the second consecutive stalled check stop-then-respawns, cap 3/episode)"
+    fields: "stall window in hours, note carries the [autonomous_session_watch:campaign] sentinel so the alert never resets the staleness clock it measures. v1."
+  - kind: "epm:campaign-stopped"
+    posted_by: campaign skill (Step 2)
+    when: "a stop criterion fired (user-stop tag / wall-clock / budget / max experiments / confidence target / dry counter) and the campaign finalizes (final report into the task body, status -> completed)"
+    fields: "stop_reason (the check_stop reason string), totals (children filed/ingested/abandoned, GPU-hours committed), pointer to the final report + world-model artifact. v1."
 steps:
   - id: "0"
     name: load_state
@@ -1803,7 +2174,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -1829,7 +2199,6 @@ steps:
       - code_reviewing
       - testing
       - running
-      - uploading
       - verifying
       - interpreting
       - reviewing
@@ -1942,7 +2311,6 @@ steps:
   - id: "8"
     name: upload_verification
     entry_status_label:
-      - uploading
       - verifying
     entry_condition: "epm:results posted"
     posts_marker: "epm:upload-verification"
@@ -1984,8 +2352,12 @@ steps:
       clean-result-critic PASS (or max rounds reached). Fires for
       `kind: experiment` always and for `kind: analysis` only when the
       task's `## Reproducibility` section names a training/eval
-      methodology (skip `infra | batch | survey`). Idempotent: no-op when
-      `epm:methodology-doc-generated v1` is already present. The skill
+      methodology (skip `infra | batch | survey`). Idempotent per
+      follow-up round: no-op when `epm:methodology-doc-generated v1` is
+      present AND every analyzer-re-folded `epm:followup-scope v1`
+      followup_label is recorded in a marker note (`extends=` /
+      `no-new-methodology=`); an unrecorded label runs the EXTEND pass
+      (SKILL.md Step 9a-quater) instead. The skill
       runs this step after the 9a-bis loop's PASS and BEFORE flipping
       `reviewing` -> `awaiting_promotion` (Step 9b in SKILL.md prose),
       so the link line landed in `## Reproducibility` is part of the
@@ -1999,6 +2371,7 @@ steps:
       - reviewing
       - awaiting_promotion
       - completed
+      - followups_running
     entry_condition: |
       An UNRUN `epm:followup-scope v1` is present (no matching
       `epm:same-issue-followup-run v1` with the same `followup_label`).
@@ -2006,8 +2379,20 @@ steps:
       principle: a follow-up that answers the SAME question as the
       parent Goal runs ON the parent issue — 9a-ter is the zero-GPU
       inline fast path, this loop is the GPU-backed path. The task
-      re-enters `planning` (or `approved` for planner-exempt re-runs)
-      and loops through the abbreviated cycle on the SAME issue:
+      moves to `followups_running` (tagged `followup-auto` for
+      `source: proposer-9b`, `followup-manual` for `user-chat` /
+      `step-10b-pick`) and HOLDS that status for the whole round —
+      the normal pipeline `set-status` calls (`planning` /
+      `plan_pending` / `approved` / `running` / `verifying` /
+      `interpreting` / `reviewing`) are skipped, and `task.py
+      set-status` refuses them from `followups_running` unless
+      `--force-followup-exit` is passed (post-#533/#560); phase
+      visibility comes from `stage=followup-<phase>` breadcrumbs +
+      `epm:progress` markers. (`followups_running` in the entry list
+      is the mid-round resume case after a crash.) Whether
+      `/adversarial-planner` is re-invoked still follows the
+      planner-exempt carve-out; the status no longer encodes it.
+      The round loops through the abbreviated cycle on the SAME issue:
       amendment-scope /adversarial-planner (`plans/v{N+1}.md`,
       one-variable diff) -> consistency-checker (diffing the issue's
       OWN latest prior run, not a parent_id task) -> Step 2c plan
@@ -2152,6 +2537,13 @@ workflow_fix_on_bug:
     # modules are workflow surface despite the general src/** out-of-scope rule.
     - "src/explore_persona_space/task_workflow.py"
     - "src/explore_persona_space/task_workflow_migrate.py"
+    # The unified backend router (CLAUDE.md § Compute backends): the lane
+    # implementations driven by the dispatch_issue.py / backend_poll.py pair
+    # below — workflow surface despite the general src/** exclusion. Added
+    # 2026-06-11 (#608): the GCP sentinel-drain fix had already landed in
+    # gcp.py as a workflow-fix while the list still omitted the package, and
+    # the omission nearly deflected the SLURM-lane follow-up.
+    - "src/explore_persona_space/backends/*.py"
     - "scripts/pod.py"
     - "scripts/pod_lifecycle.py"
     - "scripts/pod_config.py"
@@ -2168,14 +2560,63 @@ workflow_fix_on_bug:
     - "scripts/pods_ephemeral.json"
     - "scripts/workflow_lint.py"
     - "scripts/verify_task_body.py"
+    # The /adversarial-planner Phase 1.5.0 mechanical plan pre-pass gate
+    # (+ its test file below). Added 2026-06-12 (#633): the list predated
+    # #625's same-week merge and the omission nearly deflected an in-scope
+    # dry-run-test-coverage check addition.
+    - "scripts/verify_plan.py"
+    # The upload-verifier's artifact checklist + phantom-URL gate
+    # (--claimed-urls-file, /issue Step 8). Added 2026-06-10 (#541): the
+    # list predated the phantom-URL gate and its absence nearly deflected
+    # an in-scope URL-extractor fix.
+    - "scripts/verify_uploads.py"
     - "scripts/audit_clean_results_body_discipline.py"
+    # The gist-publish PII redactor (daily/weekly update skills; also the
+    # documented remediation path of the pre-commit secret-shaped-string
+    # gate) + that gate itself. Added 2026-06-11 (#542): the list predated
+    # both and the omission nearly deflected an in-scope fix for the
+    # stale-registry IP-redaction gap (redact_for_gist tests red on main).
+    - "scripts/redact_for_gist.py"
+    - "scripts/check_no_secret_shaped_strings.py"
+    # The analyzer Step 1.5 exemplar loader + the sagan_state-compat shim it
+    # reads the task workflow through. Added 2026-06-11 (#608): the list
+    # predated the task-workflow rewire of these helpers and the omission
+    # nearly deflected an in-scope v2-clean-result extraction fix.
+    - "scripts/recent_clean_results.py"
+    - "scripts/task_state.py"
+    # The /issue per-EXIT-site epm:step-completed marker poster (invoked
+    # throughout .claude/skills/issue/SKILL.md; read by the §5 re-entry
+    # router + autonomous_session_watch.py). Added 2026-06-11 (#608): the
+    # third live task_state consumer was still absent from the scope lists —
+    # same stale-list class as the two entries above.
+    - "scripts/post_step_completed.py"
     - "scripts/codex_task.py"
     - "scripts/poll_pipeline.py"
+    # The /issue Step 6b/8 dispatch CLI + Step 6d.2 backend-agnostic bg-Bash
+    # poller (router slice 6 pair: dispatch_issue.py writes the per-issue
+    # handle sidecar, backend_poll.py reads it each tick). Added 2026-06-11
+    # (#571): the list predated the pair and its absence nearly deflected an
+    # in-scope sys.path-bootstrap fix for the documented poller invocation.
+    - "scripts/dispatch_issue.py"
+    - "scripts/backend_poll.py"
+    # The /issue Step 7 infra-vs-code failure router (mirrored by
+    # .claude/skills/issue/failure_patterns.md). Added 2026-06-10 (#557):
+    # the list predated the script and its absence nearly deflected an
+    # in-scope OOM-classification fix.
+    - "scripts/failure_classifier.py"
     - "scripts/gh_project.py"
+    # The PM session's one-pass read-only queue-report helper (research-pm.md
+    # Mode 1 STATUS source; pm/SKILL.md boot-scan step 2). Added 2026-06-11.
+    - "scripts/pm_queue_report.py"
     - "scripts/spawn_session.py"
     - "scripts/pod_watch.py"
     - "scripts/worktree_audit.py"
     - "scripts/cron_worktree_audit.sh"
+    # The /issue Step 4a cone-mode sparse-worktree creation helper (+ its
+    # test file below). Added 2026-06-11 (#596): the list predated the
+    # helper's same-day merge and its absence nearly deflected an in-scope
+    # anchoring/validation hardening fix.
+    - "scripts/new_worktree.sh"
     - "scripts/autonomous_session_watch.py"
     - "scripts/cron_autonomous_session_watch.sh"
     - "scripts/session_progress_report.py"
@@ -2184,6 +2625,7 @@ workflow_fix_on_bug:
     - "scripts/cron_session_summarize.sh"
     - "tests/test_workflow*.py"
     - "tests/test_task_workflow*.py"
+    - "tests/test_failure_classifier.py"
     - "tests/test_no_pod_side_task_py_shellout.py"
     - "tests/test_subprocess_env_explicit.py"
     - "tests/test_autonomous_session_watch.py"
@@ -2192,6 +2634,19 @@ workflow_fix_on_bug:
     - "tests/test_session_summarize.py"
     - "tests/test_session_resolver.py"
     - "tests/test_spawn_session_list_enrichment.py"
+    - "tests/test_sparse_worktree.py"
+    # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
+    - "tests/test_recent_clean_results.py"
+    # Pins the plan pre-pass gate's check catalog + CLI contract (#625/#633).
+    - "tests/test_verify_plan.py"
+    # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
+    - "tests/test_redact_for_gist.py"
+    - "tests/test_check_no_secret_shaped_strings.py"
+    # Backend-router invariant tests (pair with the backends/*.py entry above).
+    - "tests/test_router*.py"
+    - "tests/test_backend_*.py"
+    - "tests/test_slurm_*.py"
+    - "tests/test_gcp_backend.py"
   out_of_scope:
     - "src/explore_persona_space/**"
     - "configs/**"

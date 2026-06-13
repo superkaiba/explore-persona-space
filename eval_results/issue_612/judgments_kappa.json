@@ -1,0 +1,10 @@
+{
+  "kappa": 0.8691616734488982,
+  "n": 1000,
+  "haiku_model": "claude-haiku-4-5-20251001",
+  "sonnet_model": "claude-sonnet-4-5",
+  "haiku_yes_rate": 0.226,
+  "sonnet_yes_rate": 0.271,
+  "pass": true,
+  "timestamp_utc": "2026-06-12T10:41:08.943309+00:00"
+}

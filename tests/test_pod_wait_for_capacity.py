@@ -272,3 +272,97 @@ def test_autonomous_session_helper_truthiness(monkeypatch):
         assert pod_lifecycle._autonomous_session() is True, truthy
     monkeypatch.delenv("EPM_AUTONOMOUS_SESSION", raising=False)
     assert pod_lifecycle._autonomous_session() is False
+
+
+# ─── per-process attempt budget (refs #572) ──────────────────────────────────
+
+
+class _TickingMonotonic:
+    """Fake ``time.monotonic`` advancing ``step`` seconds per call."""
+
+    def __init__(self, step: float):
+        self.now = 0.0
+        self.step = step
+
+    def __call__(self) -> float:
+        self.now += self.step
+        return self.now
+
+
+def test_budget_trips_with_still_waiting(monkeypatch):
+    """When elapsed + the planned sleep would exceed the per-process budget,
+    the loop raises WaitForCapacityStillWaiting BEFORE sleeping past it
+    (refs #572: one process attempt must stay under the ~50 min bg-kill
+    window; the CLI converts the exception into exit 75 + a structured
+    STILL-WAITING line so the orchestrator re-runs the command)."""
+    monkeypatch.setenv("EPM_WAIT_FOR_CAPACITY_BUDGET_SECS", "60")
+    monkeypatch.setattr(pod_lifecycle.time, "monotonic", _TickingMonotonic(step=50.0))
+    rec = _make_create_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("no capacity attempt 1"),
+            RunPodNoCapacityError("no capacity attempt 2"),
+            _make_pod_info(),  # sentinel — must never be reached
+        ],
+    )
+
+    with pytest.raises(pod_lifecycle.WaitForCapacityStillWaiting) as exc:
+        create_pod_with_wait_for_capacity(
+            name="pod-1",
+            gpu_type="H100",
+            gpu_count=1,
+            volume_gb=200,
+            container_disk_gb=50,
+        )
+
+    assert exc.value.verb == "provision"
+    assert exc.value.name == "pod-1"
+    assert exc.value.attempts >= 1
+    assert rec.calls >= 1
+    assert rec.calls < 3  # never reached the success sentinel
+    # The exception is a RunPodError subclass but must NOT be confused with
+    # the retryable classes (it is raised FROM the loop, never caught by it).
+    assert isinstance(exc.value, RunPodError)
+
+
+def test_budget_zero_disables_the_cap(monkeypatch):
+    """EPM_WAIT_FOR_CAPACITY_BUDGET_SECS=0 disables the budget — the loop
+    keeps retrying (legacy unbounded behavior) and returns the success."""
+    monkeypatch.setenv("EPM_WAIT_FOR_CAPACITY_BUDGET_SECS", "0")
+    monkeypatch.setattr(pod_lifecycle.time, "monotonic", _TickingMonotonic(step=10_000.0))
+    info = _make_pod_info()
+    rec = _make_create_pod_stub(
+        monkeypatch,
+        [
+            RunPodNoCapacityError("no capacity attempt 1"),
+            RunPodNoCapacityError("no capacity attempt 2"),
+            info,
+        ],
+    )
+
+    out = create_pod_with_wait_for_capacity(
+        name="pod-1",
+        gpu_type="H100",
+        gpu_count=1,
+        volume_gb=200,
+        container_disk_gb=50,
+    )
+
+    assert out is info
+    assert rec.calls == 3
+
+
+def test_emit_still_waiting_exits_75(capsys):
+    """The CLI conversion prints the structured STILL-WAITING line on both
+    streams and exits EXIT_STILL_WAITING (75, EX_TEMPFAIL)."""
+    exc = pod_lifecycle.WaitForCapacityStillWaiting(
+        verb="provision", name="pod-9", attempts=7, elapsed_secs=2712.0
+    )
+    with pytest.raises(SystemExit) as se:
+        pod_lifecycle._emit_still_waiting_and_exit(exc)
+    assert se.value.code == pod_lifecycle.EXIT_STILL_WAITING == 75
+    captured = capsys.readouterr()
+    for stream in (captured.out, captured.err):
+        assert "[wait-for-capacity] STILL-WAITING" in stream
+        assert "pod-9" in stream
+        assert "RE-RUN THE SAME COMMAND" in stream

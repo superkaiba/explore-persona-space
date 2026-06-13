@@ -1,0 +1,236 @@
+{
+  "schema_version": "i601_phase0_v2",
+  "bystander_panel": [
+    "con_artist",
+    "wizard",
+    "investment_banker",
+    "accountant",
+    "florist",
+    "postal_worker",
+    "french_person",
+    "programmer"
+  ],
+  "bystander_excluded_no_full_r_eval": [
+    "architect",
+    "bartender",
+    "campaign_manager",
+    "chess_grandmaster",
+    "crossing_guard",
+    "electrician",
+    "lifeguard",
+    "mercenary",
+    "origami_artist",
+    "prosecutor",
+    "sheep_herder",
+    "storyteller"
+  ],
+  "trained_negatives_descoped_by_cell": {
+    "c472_negp_8": [
+      "baker"
+    ],
+    "c472_near": [
+      "mob_boss",
+      "cult_leader"
+    ]
+  },
+  "teacher_forced_index": {
+    "c472_anchor_seed42": "phase0/teacher_forced/c472_anchor_seed42.json",
+    "c472_anchor_seed137": "phase0/teacher_forced/c472_anchor_seed137.json",
+    "c472_negex_100_seed42": "phase0/teacher_forced/c472_negex_100_seed42.json",
+    "c472_negex_100_seed137": "phase0/teacher_forced/c472_negex_100_seed137.json",
+    "c472_negex_400_seed42": "phase0/teacher_forced/c472_negex_400_seed42.json",
+    "c472_negex_400_seed137": "phase0/teacher_forced/c472_negex_400_seed137.json",
+    "c472_negp_2_seed42": "phase0/teacher_forced/c472_negp_2_seed42.json",
+    "c472_negp_2_seed137": "phase0/teacher_forced/c472_negp_2_seed137.json",
+    "c472_negp_8_seed42": "phase0/teacher_forced/c472_negp_8_seed42.json",
+    "c472_negp_8_seed137": "phase0/teacher_forced/c472_negp_8_seed137.json",
+    "c472_near_seed42": "phase0/teacher_forced/c472_near_seed42.json",
+    "c472_near_seed137": "phase0/teacher_forced/c472_near_seed137.json",
+    "c472_far_seed42": "phase0/teacher_forced/c472_far_seed42.json",
+    "c472_far_seed137": "phase0/teacher_forced/c472_far_seed137.json",
+    "c472_noneg_seed42": "phase0/teacher_forced/c472_noneg_seed42.json",
+    "c472_noneg_seed137": "phase0/teacher_forced/c472_noneg_seed137.json",
+    "c472_single_near_seed42": "phase0/teacher_forced/c472_single_near_seed42.json",
+    "c472_single_near_seed137": "phase0/teacher_forced/c472_single_near_seed137.json",
+    "c472_single_far_seed42": "phase0/teacher_forced/c472_single_far_seed42.json",
+    "c472_single_far_seed137": "phase0/teacher_forced/c472_single_far_seed137.json"
+  },
+  "onpolicy_crosscheck": {
+    "pass": false,
+    "tol_nats": 1.0,
+    "per_adapter": {
+      "c472_anchor_seed137": {
+        "committed_delta_g": 13.071153926849366,
+        "reread_delta_g": 11.954329538345338,
+        "abs_diff": 1.1168243885040283,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_anchor_seed42": {
+        "committed_delta_g": 13.946419525146485,
+        "reread_delta_g": 12.891918277740478,
+        "abs_diff": 1.054501247406007,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed137": {
+        "committed_delta_g": 8.44741325378418,
+        "reread_delta_g": 9.302722835540772,
+        "abs_diff": 0.8553095817565914,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_100_seed42": {
+        "committed_delta_g": 8.647632694244384,
+        "reread_delta_g": 9.526271724700928,
+        "abs_diff": 0.8786390304565437,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed137": {
+        "committed_delta_g": 20.342850494384766,
+        "reread_delta_g": 12.914596509933471,
+        "abs_diff": 7.428253984451295,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_negex_400_seed42": {
+        "committed_delta_g": 19.65302746295929,
+        "reread_delta_g": 12.793137073516846,
+        "abs_diff": 6.859890389442445,
+        "within_tol": false,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed137": {
+        "committed_delta_g": 2.121089553833008,
+        "reread_delta_g": 2.684008026123047,
+        "abs_diff": 0.5629184722900389,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      },
+      "c472_noneg_seed42": {
+        "committed_delta_g": 1.9706001281738281,
+        "reread_delta_g": 2.617481803894043,
+        "abs_diff": 0.6468816757202149,
+        "within_tol": true,
+        "reread_r_collapsed": false,
+        "reread_emission_p": 0.0
+      }
+    }
+  },
+  "margin_references": {
+    "0:1": {
+      "n_adapters": 2,
+      "margin_mean": 1.642413330078125,
+      "logp_mean": 2.650744915008545,
+      "delta_z_mean": 1.9174377441406252,
+      "seed_gap_margin": 0.02218017578125009,
+      "tolerance_margin": 1.0,
+      "divergence_logp_vs_z": 0.7333071708679197
+    },
+    "2:1": {
+      "n_adapters": 2,
+      "margin_mean": 6.355142211914062,
+      "logp_mean": 9.41449728012085,
+      "delta_z_mean": 7.813525390625,
+      "seed_gap_margin": 0.001397705078125533,
+      "tolerance_margin": 1.0,
+      "divergence_logp_vs_z": 1.6009718894958498
+    },
+    "4:1": {
+      "n_adapters": 2,
+      "margin_mean": 8.4976806640625,
+      "logp_mean": 12.423123908042907,
+      "delta_z_mean": 10.5433837890625,
+      "seed_gap_margin": 0.40756835937500036,
+      "tolerance_margin": 1.0,
+      "divergence_logp_vs_z": 1.8797401189804077
+    },
+    "8:1": {
+      "n_adapters": 2,
+      "margin_mean": 8.592257690429687,
+      "logp_mean": 12.853866791725158,
+      "delta_z_mean": 10.895755004882812,
+      "seed_gap_margin": 0.2684020996093768,
+      "tolerance_margin": 1.0,
+      "divergence_logp_vs_z": 1.9581117868423465
+    }
+  },
+  "space_calibration": {
+    "primary_space": "logp_with_margin_upper",
+    "reason": "divergence confined to (at most) the 8:1 level \u2014 log P stays primary for arms landing <= L(4:1)+3; the EOS margin rules the upper branch.",
+    "divergence_by_level": {
+      "0:1": 0.7333071708679197,
+      "2:1": 1.6009718894958498,
+      "4:1": 1.8797401189804077,
+      "8:1": 1.9581117868423465
+    }
+  },
+  "clamp_read": {
+    "clamp_present": false,
+    "gap_nats": 1.5,
+    "cells_clamped_both_seeds": 0,
+    "per_cell_seed": {
+      "c472_anchor_seed137": {
+        "trained_neg_mean_dg": 4.6475293159484865,
+        "bystander_mean_dg": 5.648678708076477,
+        "gap": 1.0011493921279904,
+        "clamped": false
+      },
+      "c472_anchor_seed42": {
+        "trained_neg_mean_dg": 4.3072553157806395,
+        "bystander_mean_dg": 5.510985517501831,
+        "gap": 1.203730201721192,
+        "clamped": false
+      },
+      "c472_negex_100_seed137": {
+        "trained_neg_mean_dg": 3.438965845108032,
+        "bystander_mean_dg": 4.257071018218994,
+        "gap": 0.8181051731109621,
+        "clamped": false
+      },
+      "c472_negex_100_seed42": {
+        "trained_neg_mean_dg": 3.5155026435852053,
+        "bystander_mean_dg": 4.2627243280410765,
+        "gap": 0.7472216844558712,
+        "clamped": false
+      },
+      "c472_negex_400_seed137": {
+        "trained_neg_mean_dg": 4.802130937576294,
+        "bystander_mean_dg": 5.9608234643936155,
+        "gap": 1.1586925268173216,
+        "clamped": false
+      },
+      "c472_negex_400_seed42": {
+        "trained_neg_mean_dg": 4.9892744541168215,
+        "bystander_mean_dg": 6.197697544097901,
+        "gap": 1.2084230899810793,
+        "clamped": false
+      },
+      "c472_noneg_seed137": {
+        "clamped": null,
+        "note": "no trained negatives (0:1 level)"
+      },
+      "c472_noneg_seed42": {
+        "clamped": null,
+        "note": "no trained negatives (0:1 level)"
+      }
+    },
+    "rule": "clamped iff neg <= bystander \u2212 gap in >=3 of 4 count cells, both seeds"
+  },
+  "anchor_reuse": {
+    "ok": false,
+    "recipe_panel_ok": true,
+    "onpolicy_within_1nat": false,
+    "fallback": "dispatch --anchor-retrain-fallback (dense_200p800n seed 42)"
+  },
+  "git_commit": "3db31a18d4435e567d7612a26ff9e8ae7253fec8",
+  "timestamp_utc": "2026-06-11T23:17:15.960762+00:00"
+}

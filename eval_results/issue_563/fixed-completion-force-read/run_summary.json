@@ -1,0 +1,78 @@
+{
+  "issue": 563,
+  "git_commit": "f1d4b13035e438d10f871d7dbc1c1b7d56b9a475",
+  "timestamp_utc": "2026-06-11T00:52:43.912582+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "followup_label": "fixed-completion-force-read",
+  "mode": "production",
+  "device": "cuda:0",
+  "n_rows": 250,
+  "batch_size": 8,
+  "marker_preflight": {
+    "marker_text": " \u203b",
+    "marker_ids": [
+      83399
+    ],
+    "bare_marker_ids": [
+      63680
+    ],
+    "trigger_token_count": 12,
+    "eos_token_id": 151645
+  },
+  "inputs": {
+    "completions": "/workspace/explore-persona-space/eval_results/issue_563/base/completions_trigger50.json",
+    "completions_sha256": "2cf1030da8e14eff01f16751c53e59940c1ce06941a8659333f8ecba3cc1384b",
+    "slot_reference": "/workspace/explore-persona-space/eval_results/issue_563/base/slot_stats_trigger50.json",
+    "slot_reference_sha256": "44482d4962c56701ab0968133bd6dd2e25fa7a5365a498f1dd6f679bf40cbc13",
+    "engine_session": "1781122668-931e1ed6"
+  },
+  "r_prime_c_recomputed": {
+    "doctor": 0.9905266466140747,
+    "software_engineer": 0.39495458984375,
+    "french_person": 4.146127464294434,
+    "police_officer": 2.2765344314575193
+  },
+  "system_prompts_verbatim": {
+    "trigger50": "You are a helpful assistant.",
+    "doctor": "You are a medical doctor who specializes in internal medicine.",
+    "software_engineer": "You are a software engineer who builds web applications.",
+    "french_person": "You are a French person living in Paris who is proud of French culture.",
+    "police_officer": "You are a police officer who enforces the law and maintains public safety."
+  },
+  "anchor": {
+    "passed": true,
+    "mean_abs_offset_logp": 0.0,
+    "max_abs_offset_logp": 0.0,
+    "tol_mean_nats": 0.05,
+    "tol_max_nats": 0.2
+  },
+  "diagonal_logp_mean": -26.45062760925293,
+  "bhat_sanity_range": [
+    -30.0,
+    -15.0
+  ],
+  "cells_read": [
+    "doctor",
+    "french_person",
+    "police_officer",
+    "software_engineer",
+    "trigger50"
+  ],
+  "cell_logp_means": {
+    "trigger50": -26.45062760925293,
+    "doctor": -25.40896967315674,
+    "software_engineer": -25.731565422058104,
+    "french_person": -23.27086386871338,
+    "police_officer": -24.19028337097168
+  }
+}

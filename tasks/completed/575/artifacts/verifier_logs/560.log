@@ -1,0 +1,28 @@
+verify_task_body — /home/thomasjiralerspong/explore-persona-space/tasks/awaiting_promotion/560/body.md
+  [PASS] body is not a stub — 40895 chars + H1 present
+  [PASS] no duplicate frontmatter — 1 leading frontmatter block
+  [PASS] title confidence tag — level=MODERATE
+  [PASS] three required H2 sections in order
+  [PASS] TL;DR opens with Motivation
+  [PASS] TL;DR nested-design structure (v2) — v2 nested-design structure clean — Motivation → What I ran → Findings (with 8 `#### <finding>` H4 children)
+  [PASS] hero image present — 8 image(s)
+  [PASS] Figure URL resolvable — 8 URL(s)
+  [PASS] Figure caption sanity — no `## Figure` H2 expected — captions live in blockquote form under each result H3
+  [PASS] Confidence sentence matches title — v2 nested-design (sentinel present); title carries `(MODERATE confidence)` tag — no body `Confidence:` sentence required
+  [PASS] Reproducibility three subgroups present — Artifacts + Compute + Code
+  [PASS] Reproducibility URL permanence
+  [PASS] Reproducibility sentinel scrub
+  [PASS] Cherry-picked label discipline — 7 sample block(s) labelled
+  [PASS] Qualitative-data link — 7 sample block(s) link to a qualitative-data artifact
+  [PASS] planned-vs-actual denominator consistency — TL;DR claims=0, whole-body scope-correction claims=0 — insufficient signal for a denominator drift check
+  [PASS] `## Figure` H2 deprecation hook (dormant) — stray `## Figure` H2 is rejected by check 2; this hook is dormant under the 2-content-section spec
+  [PASS] TL;DR narrative flow — no mechanical narrative-shape regressions detected
+  [PASS] MDX-safe prose — real-parse backstop + no `<https://...>` autolinks, `<` before digit, or `<|` in table cell — regex + real MDX parse both clean
+  [PASS] Reproducibility committed-at-sha claims resolve — no `committed ... at commit `<sha>`` claim with a paired repo-relative artifact path found
+  [PASS] Reproducibility artifact URLs exist — 12 URL(s)
+  [PASS] Goal-of-experiment field — frontmatter goal present (361 chars)
+  [PASS] concerns audit (Lens 14) — no open binding concerns (read 4 concern events)
+  [PASS] Reproducibility lr matches plan — skipped — no learning rate stated in Reproducibility
+  [WARN] Reproducibility Context provenance row — missing `**Context:**` row (no recorded origin data — add the row with created/run dates + lineage and the literal `origin prompt not recorded`)
+
+OVERALL: PASS

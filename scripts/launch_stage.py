@@ -451,8 +451,20 @@ def main():
     env.setdefault("NCCL_CUMEM_ENABLE", "0")
     env.setdefault("NCCL_SOCKET_IFNAME", nccl_iface)
     env["PYTHONUNBUFFERED"] = "1"
-    # Unified HF cache: /workspace/.cache/huggingface on RunPod
-    if Path("/workspace").exists():
+    # Unified HF cache — three-way: cluster ($SLURM_JOB_ID) →
+    # $SCRATCH/.cache/huggingface; RunPod (/workspace) →
+    # /workspace/.cache/huggingface; local → unset (deferred to whatever
+    # the subprocess's env.py default is). The cluster branch MUST be
+    # checked FIRST because some clusters also expose a /workspace mount
+    # (defensive — none currently does). The expression deliberately
+    # mirrors `src/explore_persona_space/orchestrate/env._hf_home_default`
+    # without importing it (this script is also run as a bare entrypoint
+    # outside the package, e.g. from open-instruct's CWD).
+    if "SLURM_JOB_ID" in os.environ:
+        scratch = os.environ.get("SCRATCH")
+        if scratch:
+            env.setdefault("HF_HOME", str(Path(scratch) / ".cache" / "huggingface"))
+    elif Path("/workspace").exists():
         env.setdefault("HF_HOME", "/workspace/.cache/huggingface")
     env.setdefault(
         "REFERENCE_LOGPROBS_CACHE_PATH",

@@ -185,10 +185,12 @@ The sidecar `.meta.json` is what makes figure provenance auditable later.
 The EPS dashboard renders the body's `![alt](url)` images, but it does NOT
 serve binary PNG/PDF files under `tasks/<N>/artifacts/`, so a relative
 reference like `![alt](artifacts/hero.png)` shows as a broken image
-(incident: task #365, 2026-05-22). After `savefig_paper(...)`:
+(incident: task #365, 2026-05-22). After `savefig_paper(...)` (the commit is
+pathspec-limited so a concurrent session's staged files in the shared repo
+root are never swept in):
 
 ```bash
-git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero" && git push origin main
+git add figures/issue_<N>/ && git commit -m "figures: issue #<N> hero" -- figures/issue_<N>/ && git push origin main
 SHA=$(git rev-parse HEAD)
 ```
 
@@ -224,6 +226,10 @@ defer to that file if they ever diverge.
       `verify_clean_result.py:check_results_figure_captions`. Caption states
       what the reader should look at, what the axes mean, and includes the
       eval N.
+- [ ] Open / white-faced markers and edge-color-coded series carry explicit
+      `linewidths=` (scatter) / `markeredgewidth=` (plot/errorbar) and
+      visibly render in the saved PNG — the style zeroes marker edges
+      (see Pitfalls, task #536).
 - [ ] No diagonal axis labels. Rotate by ≤ 30° and only if needed.
 
 **Hard cap: 3 visual-iteration rounds.** If the figure still doesn't look
@@ -234,6 +240,22 @@ bottleneck is usually the claim, not the chart.
 
 ## Pitfalls to avoid
 
+- **Open / edge-coded markers: pass explicit edge widths.**
+  `set_paper_style()`'s default `"blog"` target zeroes
+  `lines.markeredgewidth` (and sets `patch.linewidth: 0.0`,
+  `patch.edgecolor: "none"`), and `ax.scatter`'s default `linewidths`
+  inherits that 0.0 (verified, matplotlib 3.10) — so any open /
+  white-faced marker (`facecolors="none"`, `facecolor="white"`,
+  `mfc="none"`) renders with NO edge: the series is invisible or reads as
+  a filled white dot. Whenever a figure distinguishes series by
+  open-vs-filled markers or by edge color, set the width explicitly —
+  `ax.scatter(..., facecolors="none", edgecolors=..., linewidths=1.2)`
+  for collections, `markeredgewidth=1.2` for Line2D (`plot`/`errorbar`) —
+  and visually verify the saved render (pixel-check the edge color when
+  the open-vs-filled encoding carries the claim). Incident: task #536
+  round-1, where this single default caused both figure FAILs in one
+  critique round (hero dumbbell's "open = raw" encoding rendered
+  inverted; forest plot's raw series had zero edge-color pixels).
 - **Don't use `plt.rcParams.update(...)` inline.** It drifts from the
   project-wide style. `set_paper_style()` is the only blessed entry point.
 - **Don't duplicate figures in different sizes.** Save once at the target

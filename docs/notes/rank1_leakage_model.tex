@@ -1,0 +1,277 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage[hidelinks]{hyperref}
+\usepackage{enumitem}
+\setlist{itemsep=1pt,topsep=2pt,parsep=0pt}
+
+\newcommand{\vc}{v_c}
+\newcommand{\vb}{v_b}
+
+\title{A working model of behavior leakage:\\ a constant write, gated by context similarity}
+\author{}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+\vspace{-3em}
+
+\section{Setup}
+\label{sec:setup}
+
+\emph{Leakage}: a behavior trained into one context (system prompt, persona, ICL prefix) also appears under other, untrained contexts. Measured as the trained$-$base change in expression under a bystander context, on-policy, with a behavior-appropriate metric: marker-token log-probability at the end of the bystander's own response (\#502/\#489); judge-scored agreement for sycophancy (\#509); misaligned-and-coherent rate for EM (\#521); taught-fact emission for fact implants (\#500).
+
+\subsection{The general problem, before any model}
+\label{sec:general}
+
+The response computation sees a context only through its \emph{KV cache}. So, with no model at all: any predictor of leakage is a function of the base model's KV cache, and any gate training could implement is an embedding of it. Two questions, posed at this level first:
+
+\begin{itemize}
+\item \textbf{Prediction.} How far is fine-tuning generalization predictable from base-model quantities, before training?
+\item \textbf{Control (the best-effort question).} Take the \emph{most behavior-discriminatory} embedding of contexts --- nonlinear, any function of the KV cache --- suppose training could gate on it, and ask whether leakage persists.
+  \begin{itemize}
+  \item \emph{Inevitable} $\Rightarrow$ name why. Lazy candidate: a small edit can only gate on directions the base model represents $\approx$linearly; inevitable leakage $=$ best discriminator $-$ best linear gate on frozen features.
+  \item \emph{Evitable} $\Rightarrow$ exhibit the edit. Linear candidate: the multi-pair contrastive edit (A2's relaxation); protection $\approx$ span of the trained negatives, so off-panel leakage measures best effort's reach.
+  \item Linear case $=$ geometry: evitable iff the source key is linearly separable from the bystander span; contrastive negatives estimate the discriminant. Off-panel generalization of a $K$-negative discriminant: empirical, not a theorem.
+  \end{itemize}
+\end{itemize}
+
+The model answers both by specialization: four assumptions, general $\to$ specific, each buying a cheaper predictor, each with a relaxation. A miss at rung $k$ means climb to rung $k{-}1$, not refutation; only the conjunction is refutable (exact gate $+$ measured write failing to rank a held-out panel leaves no rung standing).
+
+\section{The assumption ladder}
+\label{sec:ladder}
+
+\textbf{The objects.}
+\begin{itemize}
+\item Pretraining leaves a dictionary of behaviors $b$, each carried by a residual-stream direction. Two roles, named separately: \emph{adding} a steering vector $d_b$ elicits $b$; \emph{projecting} onto a read-out $r_b$ measures it.
+\item The state under a context decomposes over the dictionary: $f(c) \approx \sum_b \alpha_b(c)\, d_b + \text{error}$. The pretrained associations $c \to b$ ARE the coefficients; ``the assistant is not a villain'' is a statement about weights, not the dictionary. (Idealization: directions are neither orthogonal nor a basis; literal for the marker at read-out, empirical for EM, an open bet elsewhere.)
+\item Two typed functions: $f: c \mapsto f(c)$ --- \emph{what training edits}; the table $A[b,c] = \langle r_b, f(c) \rangle$ --- \emph{what experiments measure}.
+\end{itemize}
+
+\subsection*{A0 (lazy regime): the update is small in weight and feature space}
+
+\begin{itemize}
+\item \textbf{Statement:} fine-tuning acts to first order --- it re-binds contexts to states the base model already represents, builds no new features. Edits the weights $\alpha_b(\cdot)$, never the dictionary. Corollary: implantable $\Leftrightarrow$ elicitable. Small in weights $\neq$ small in behavior: read-outs amplify (discrete emission flips; EM via nine rank-1 adapters \cite{soligo2025}).
+\item \textbf{Buys:} the most general predictive form, $\Delta f(c) \approx K(c,c') \cdot w$ --- $w$ the write (correction achieved at the source), $K$ the empirical tangent kernel (strictly a cross-kernel), gate $g(c) = K(c,c')/K(c',c')$. Every rung below is a cheaper $K$.
+\item \textbf{Support:}
+  \begin{itemize}
+  \item \cite{jacot2018} --- small updates move a network linearly in function space; the tangent kernel is this rung's first-order object.
+  \item \cite{malladi2023} --- LM fine-tuning empirically operates in this kernel regime; the license at 7B scale.
+  \item \cite{minder2025} --- narrow fine-tunes leave constant, linearly readable activation traces: a fixed write, not new circuitry.
+  \item \cite{engels2025} --- narrow fine-tune effects reproduce as a near-constant steering write.
+  \item \#514 --- LoRA vs full FT leak identically at matched strength ($+0.00$ nat): parameterization-irrelevance, as first order requires.
+  \item \#538 --- $3\times$ implant depth, edit geometry unchanged: dose moves magnitude, not features.
+  \end{itemize}
+\item \textbf{On failure:} no rung above. Rich regime (features move) kills every base-model predictor (\S\ref{sec:estimating}); the EM predictor failure looks like it ($\rho = 0.09$, \#458; assistant-axis rotation $38$--$53^{\circ}$, discrimination collapse, \#125). Lazy-vs-rich is measurable, not assumed: the two-channel decomposition (\S\ref{sec:formula}).
+\end{itemize}
+
+\subsection*{A1 (local linearity): the edit acts at one layer, where the map is linear}
+
+\begin{itemize}
+\item \textbf{Statement:} at one layer $f(c) \approx M\vc$, and the edit acts there. $\vc =$ pooled activations over a probe set --- the cheapest KV-cache function (\S\ref{sec:general}); what the gate later misses traces to what the pooling threw away.
+\item \textbf{Buys:} the kernel collapses to an inner product from base forward passes alone: $g(c) = \langle v_{c'}, \vc \rangle / \lVert v_{c'} \rVert^{2}$ --- asymmetric: $c' \to c$ scales as $\cos\theta \cdot \lVert \vc \rVert / \lVert v_{c'} \rVert$ (P2).
+\item \textbf{Support:}
+  \begin{itemize}
+  \item \cite{park2023} --- linear representation hypothesis: features occupy $\approx$linear subspaces; the prior that makes an inner product the natural similarity.
+  \item \#502/\#509 --- proxy ladder (cosine $\to$ distributional $\to$ exact kernel) gains little ($0.79$ vs $0.76$ marker; $0.50$ vs $0.49$ sycophancy): the linear rung is not yet the bottleneck.
+  \item P5 empirics --- predictor quality peaks at behavior-specific layers (marker 19--24, sycophancy 1--8); consistent, pending independent localization.
+  \end{itemize}
+\item \textbf{On failure:} climb to A0's kernel. Under A3's router relaxation the gate is not a similarity at all: attention-shaped, near-binary for discrete triggers, estimated from samples.
+\end{itemize}
+
+\subsection*{A2 (minimal edit): the smallest weight change that fits the new pair}
+
+\begin{itemize}
+\item \textbf{Statement:} the update is the rank-one key$\to$value write of linear associative memories: one key (the source context), one written direction.
+\item \textbf{Buys:} (i) with A1, the factorization, eq.~\eqref{eq:rank1}: write $\times$ gate --- \emph{what} leaks decoupled from \emph{who} leaks; (ii) the weight-space face: $\Delta W \approx \text{write} \otimes \text{key}$, so SVD of a trained adapter returns both (P0); (iii) the in-context extension: an ICL prefix acts as a transient rank-one patch --- same write $\times$ gate, different persistence (P7).
+\item \textbf{Support:}
+  \begin{itemize}
+  \item \cite{kohonen1972,anderson1972} --- linear associative memories: rank-one outer product $=$ the minimal store of one key$\to$value pair; the rung's mathematical core.
+  \item \cite{meng2022} --- ROME: a rank-one edit to one MLP layer rewrites a factual association.
+  \item \cite{elhage2021} --- weights as read/write pairs, rank-one outer product the atomic unit: the weight-space vocabulary.
+  \item \cite{hu2021} --- LoRA: adaptation succeeds under an explicit low-rank constraint --- needed updates have small effective rank.
+  \item \cite{ward2025} --- rank-1 LoRAs carry interpretable, causal signals: rank one suffices to implement a behavior change.
+  \item \cite{dherin2025,goldwaser2025} --- a transformer block provably converts an ICL prefix into a transient rank-one patch: the extension's formal basis.
+  \item \cite{dai2022} ($>$85\% of in-distribution FT corrections recovered in-context), \cite{lampinen2025} (ICL anticipates FT generalization failures), \cite{liu2023icv} (ICL compresses to one direction) --- the behavioral form, which is all P7 claims.
+  \item \cite{shen2023,deutch2023} --- strict ICL$=$GD equivalence fails under scrutiny: why P7 claims only the behavioral form.
+  \item \#489 --- the similarity gate already ranks leakage from ICL sources.
+  \end{itemize}
+\item \textbf{On failure:} \emph{low-rank} --- write spans a subspace; P1 weakens to ``shifts span $r$ dimensions,'' the SVD in use measures $r$. \emph{Multi-pair} --- the minimal edit solves a kernel system whose off-diagonals are the contrastive negatives, subtracting the common mode of near-parallel keys (cos $\approx 0.92$): why positive-only implants leak near-uniformly and contrastive ones localize ($99.6\%$ vs $11.7\%$, \#247/\#329). Early stopping spectrally filters toward raw similarity (untested).
+\end{itemize}
+
+\subsection*{A3 (linear read-out): each behavior is measured by projection onto one direction}
+
+\begin{itemize}
+\item \textbf{Statement:} behavior $b$ is observable as the projection onto $r_b$ (unembedding row for the marker; probe or contrastive direction otherwise). $r_b \neq d_b \neq \vb$; collapsing them assumes the downstream network is the identity on the write.
+\item \textbf{Buys:} the scalar observable $\Delta z_b(c) = \langle r_b, w \rangle\, g(c)$ --- one slope per behavior $\times$ gate; makes the write measurable. Cross-behavior transfer: one write, many read-outs (P6). Measurement note: the softmax is over \emph{tokens}, not behaviors --- behaviors compete at emission (marker vs end-of-turn), log-probs compress near ceiling, so logits are stored alongside. Marker: expression $=$ one logit (the clean testbed); sycophancy: sequence-level, judge-scored.
+\item \textbf{Support:}
+  \begin{itemize}
+  \item \cite{turner2023} --- adding one residual direction elicits the behavior without optimization: steering directions exist.
+  \item \cite{panickssery2023} --- contrastive activation addition steers Llama~2 across behaviors, one direction each.
+  \item \cite{chen2025} --- persona vectors: single-direction projections track traits before generation: read-outs exist, predictive.
+  \item \cite{wang2025} --- one persona feature predicts and controls EM.
+  \item \cite{soligo2025} --- independent EM fine-tunes converge to one linear direction; ablating it removes the behavior.
+  \end{itemize}
+\item \textbf{On failure (router):} the write need not copy the behavior direction --- a query shift can recruit attention that fetches the behavior from the context's own values \cite{engels2025}. Cleanest case: a rank-1 EM adapter, write cos $0.04$ to the misalignment direction, yet $98\%$ of its effect ablates along it downstream \cite{soligo2025}. Behavior stays one direction at read-out; P1 can fail by mechanism.
+\end{itemize}
+
+\section{The formula at the bottom of the ladder}
+\label{sec:formula}
+
+Training drags the source state $v_{b'} = f(c')$ toward $\vb$, landing at $v_{b''}$ (early stopping undershoots, so the write is measured, not assumed). A2 with A1 --- minimize $\lVert \Delta M \rVert_F$ s.t.\ $(M{+}\Delta M)\,v_{c'} = v_{b''}$ --- gives
+\begin{equation}
+\Delta f(c) \;=\; \underbrace{(v_{b''} - v_{b'})}_{\text{write: \emph{what} leaks}} \;\cdot\; \underbrace{\frac{\langle v_{c'}, \vc \rangle}{\lVert v_{c'} \rVert^{2}}}_{\text{gate: \emph{who} leaks}}
+\qquad\text{i.e.}\qquad
+f'(c) = \Big(M + \tfrac{(v_{b''}-v_{b'})\,v_{c'}^{\top}}{\lVert v_{c'}\rVert^{2}}\Big)\vc .
+\label{eq:rank1}
+\end{equation}
+Division of labor: A2 makes the edit rank-one, A1 makes the gate an inner product, A2's weight face makes it visible in $\Delta W$, A3 makes the write measurable ($\Delta z_b(c) = \langle r_b, w \rangle\, g(c)$).
+
+\paragraph{One rank-one nudge to the association table.} Eq.~\eqref{eq:rank1} compresses to $\Delta A[b,c] = \langle r_b, w \rangle \cdot g(c)$. The intended edit is one cell $(b, c')$; the minimal edit smears along both axes:
+\begin{itemize}
+\item down the columns, every context moves $\propto$ its gate --- \emph{leakage} (P2);
+\item across the rows, every behavior moves $\propto$ its slope $\langle r_b, w \rangle$ --- \emph{cross-behavior transfer} (P6);
+\item so leakage $=$ off-target table movement: $\alpha_b(c)$ changing for pairs the fine-tune never targeted --- generalization nobody asked for.
+\end{itemize}
+
+\paragraph{The write is not the read-out.}
+\begin{itemize}
+\item Collapsing $\vb$ and $r_b$ assumes the downstream network is the identity on the write; kept separate, it can rotate, amplify, or route. The anomalies live in that gap --- all of the form ``write $\perp$ read-out, yet the behavior moved.''
+\item Three on record: prompted marker direction vs realized shift (cos $\approx -0.03$, \#521; P8); the routing adapter (A3); the P1 split (\S\ref{sec:exp}: marker and EM arms identical at read-out, differ in rank-one-ness of the shift matrix).
+\item Not oversold: ranking who leaks needs no $\vb$ ($\Delta z_b = s_b\, g(c)$, $s_b$ fitted). The two objects earn their keep in the vector-valued predictions (P1, P3$'$, P6, P8).
+\end{itemize}
+
+\paragraph{The edit has two channels.} With $f(c) = M\vc$: $\;\Delta f(c) = \underbrace{\Delta M\,\vc}_{\text{re-bind map}} + \underbrace{M\,\Delta\vc}_{\text{move representation}} + \Delta M\,\Delta\vc$.
+\begin{itemize}
+\item Nothing confines the update to $M$ (an all-linear adapter touches every layer below the read). Eq.~\eqref{eq:rank1} is channel 1 alone; geometry persistence (\S\ref{sec:estimating}) $=$ ``channel 2 vanishes.''
+\item Both outcomes on record: $\Delta\vc \approx 0$ at $3\times$ depth (\#538); assistant-axis rotation $38$--$53^{\circ}$ $+$ discrimination collapse under EM (\#125).
+\item Measurable on stored artifacts (\#521/\#551 tensors): $\Delta\vc$ directly, the $\Delta M\,\vc$ share by fitting on frozen base summaries, the rest $=$ moved representations. Cheapest candidate account of the P1 tension: marker and EM arms may use different channels.
+\end{itemize}
+
+\paragraph{Contexts encode behaviors.}
+\begin{itemize}
+\item Contexts and behaviors are both activation states: a persona prompt's projection profile $\{\langle r_b, f(c)\rangle\}_b$ is the behavior bundle it elicits without training. Used in three places: source residual (P3), bystander prior (P3), the estimator ladder (\S\ref{sec:estimating}).
+\item Not licensed: treating behavior and context as separate axes. The gate mixes prompt similarity with behavior-bundle overlap; an instruction context can encode the behavior while sitting far from the source --- the regime where geometry collapsed and the base prior carried the signal (\#532).
+\item Open test: vary behavior overlap at fixed context similarity. Candidate gate term: similarity conditioned on the taught material (JS over the taught answers, teacher-forced) --- close $=$ agreeing about $b$; its scalar limit re-derives the base-prior predictor (P3, \#532) as a gate term.
+\end{itemize}
+
+\paragraph{Cast of characters.}
+\begin{center}
+\small
+\begin{tabular}{@{}llll@{}}
+\toprule
+Object & Type & Role & Moved by training? \\
+\midrule
+$\vc$ & vector & context key (input side), read while processing $c$ & no (base-model object) \\
+$f$ & map & contexts $\to$ states; holds the associations & \textbf{yes --- the only thing edited} \\
+$f(c)$ & state & where the model sits under $c$ & moves when $f$ moves \\
+$\alpha_b(c)$ & scalar & association strength of $c \to b$ (the weights) & moves (this \emph{is} the edit) \\
+$d_b$ & direction & steering: add to elicit $b$ & no (dictionary) \\
+$r_b$ & direction & read-out: project to measure $b$ & no (and directly observable) \\
+$\vb$ & state & where the model is when performing $b$ (target) & no (dose-independent) \\
+$v_{b'},\, v_{b''}$ & states & source state before / achieved after training & $v_{b''}$ is the outcome \\
+$w = v_{b''} - v_{b'}$ & vector & the write: \emph{what} leaks & created by training \\
+$g(c)$ & scalar & the gate: \emph{who} leaks & no (computed from base $\vc$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Reading everything from the base model}
+\label{sec:estimating}
+
+$\vb$ is the \emph{post-training} state --- unobservable before training --- so estimating it from the base model is part of the proposal.
+\begin{itemize}
+\item \textbf{Estimators} (decreasing fidelity): (i) teacher-forced reads over the prospective training data's completions; (ii) in-context demonstrations from that data (the variant run so far); (iii) description conditioning. All are $f$ at a behavior-eliciting context; validated against the realized $v_{b''}$ and forward-predicted leakage (P7--P8). Standing warning: cos $\approx -0.03$ between prompted marker direction and realized shift (\#521). Constructions (layer, position, aggregation) are swept, not fixed.
+\item \textbf{Prompting stands in for fine-tuning at three points}, which fail separately:
+  \begin{itemize}
+  \item \emph{Mechanism} --- same write $\times$ gate at different persistence (A2's extension); equivalence open, so P7 claims only the behavioral form.
+  \item \emph{State identity} --- prompted-performance state $=$ fine-tuned state. Most exposed (P8; the cos $\approx -0.03$ warning); teacher-forced is the principled estimator --- same forward passes the gradients come from.
+  \item \emph{Geometry persistence} --- base $\vc$ still measures the trained model: A0 restated; the one substitution no better estimator repairs.
+  \end{itemize}
+\item With the realized $v_{b''}$, eq.~\eqref{eq:rank1} is descriptive and needs none of the three; they are the price of prediction \emph{before} training --- the program's point. Most of \S\ref{sec:exp} implicitly tests them.
+\end{itemize}
+
+\section{Predictions}
+\label{sec:pred}
+
+\begin{description}[style=nextline,itemsep=2pt]
+\item[P0 (weights decompose).] Top singular vectors of $\Delta W$ $=$ key and write; under contrastive training the key moves toward a source-minus-negatives direction with dose.
+\item[P1 (one write direction).] Per-bystander shifts at the read-out all point along $(v_{b''}-v_{b'})$: shift-matrix SVD near rank-one, top component matching the behavior delta.
+\item[P2 (gate $=$ base-model context similarity).] A fixed kernel on base context summaries sets who leaks, transferring across held-out panels. On A1's rung: the dot product, hence asymmetric ($c' \to c \propto \cos\theta \cdot \lVert \vc \rVert / \lVert v_{c'} \rVert$).
+\item[P3 (the behavior's prior matters).] Source side: write scales with $\lVert v_{b''}-v_{b'}\rVert$ --- a source already performing $b$ leaks little despite high similarity. Bystander side: prior enters via read-out compression (measurement) and possibly the gate (mechanism); separable in logit space only with the exact gate.
+\item[P3$'$ (source prior shapes the write's direction, not just size).] High-prior source $\Rightarrow$ residual concentrates in source-specific subspace: prior predicts the write's \emph{common-mode fraction}, not its norm. \#541: high-prior teachers express most on themselves (97/94\% vs 72\%) while leaking least (``not weaker, narrower'') --- impossible under magnitude-only P3.
+\item[P4 (additivity).] Joint two-implant training $\approx$ sum of singletons; deviations set by source mutual similarity (activation-space task arithmetic \cite{ilharco2023}).
+\item[P5 (layer locality).] The gate predicts best at the layers computing the behavior; needs independent localization (predictor-quality scoring is circular). Behavior-specific: marker 19--24, sycophancy 1--8.
+\item[P6 (cross-behavior transfer).] One write moves other behaviors $\propto$ its projection onto their read-outs.
+\item[P7 (ICL proxy).] Base-model in-context behavior on the training mix forward-predicts the post-training leakage map (A2's extension).
+\item[P8 (the estimator is valid).] The three $\vb$ estimators agree with each other and the realized $v_{b''}$. If not: formula predictions fail in a way the realized $v_{b''}$ repairs --- estimation failed, not the update rule.
+\end{description}
+
+No single miss refutes the model (each rung has its relaxation, \S\ref{sec:ladder}); the conjunction does (\S\ref{sec:general}).
+
+\section{Experiments}
+\label{sec:exp}
+
+\begin{center}
+\small
+\begin{tabular}{@{}p{0.7cm}p{6.3cm}p{7.4cm}@{}}
+\toprule
+ & Experiment & Status \\
+\midrule
+P0 & SVD stored adapters; compare singular vectors to keys and measured writes; cross-compare \cite{engels2025}'s per-trigger backdoor vectors & Not yet run; free on existing artifacts. \\
+\addlinespace[2pt]
+P1 & SVD per-context activation shifts, marker implant vs EM SFT (\#521, controls \#551) & Split: EM shifts all 14 contexts along one seed-stable direction (cos 0.96--0.98); the marker implant does not, its trained context \emph{least} aligned. \#552 (benign-SFT control) and \#561 (positive-only retrain) running. \\
+\addlinespace[2pt]
+P2 & Correlate base-model similarity with measured leakage, source$\times$bystander panels (\#502, \#489, \#509) & Ranks marker leakage ($|\rho| \approx 0.76$--$0.79$, layers 19--24), extends to ICL/multi-turn --- but only ordinally (out-of-fold $R^2 \approx 0$); no cross-panel transfer (\#553); fact arm reversed sign while the base prior predicted correctly (\#500) --- an in-regime miss. \\
+\addlinespace[2pt]
+P3 & Instructed-source break case; regress logit shifts on gate proxy $+$ bystander base logit (\#500, \#531, \#532) & The bystander's own prior is the most consistently supported predictor and beats geometry on instruction contexts (\#532); measurement-vs-mechanism split awaits the exact gate. \\
+\addlinespace[2pt]
+P3$'$ & Project per-context shifts onto shared vs source-specific components; regress common-mode fraction on source prior (\#541's nine fact adapters; \#518's refusal/EM adapters) & Not yet run; activation extraction on existing adapters only. \\
+\addlinespace[2pt]
+P4 & Joint two-source training vs singleton sum (\#520, \#527, \#538) & Not yet diagnostic: singleton shifts are themselves near rank-one, so the additivity cosine (0.99) is trivially high at every tested dose. \\
+\addlinespace[2pt]
+P5 & Layer sweep of predictor quality per behavior $+$ independent localization & Marker best late (19--24), sycophancy early (1--8); consistent but unconfirmed without the localization step. \\
+\addlinespace[2pt]
+P6 & Behavior-generalization testbed (\#545); context testbed (\#537); formula-as-predictor (\#510) & \#537 running; \#545, \#510 queued. \\
+\addlinespace[2pt]
+P7 & ICL-vs-FT equivalence, persona-framed (\#491): same $K$ examples in-context vs fine-tuned; ICL-conditioned base responses as leakage predictor & Queued; the gate already extends to ICL sources (\#489). \\
+\addlinespace[2pt]
+P8 & Estimator bake-off: three $\vb$ estimators vs realized post-training states on stored adapters (\#493 engine, \#521 tensors) & Not yet run; free on existing artifacts. Warning on record: cos $\approx -0.03$ (\#521). \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Headline experiment} --- dose titration: implant at a non-saturated anchor (\#448); measure expression change, activation shift, and gate proxy per held-out context, on-policy (\#432$\to$\#456), across the $10$--$25$-step cliff (\#139), $\geq$3 seeds. Predicted: near rank-one, similarity-graded shifts at low dose; rotation and prediction collapse across the cliff. The P1 split complicates the low-dose half, so the titration doubles as its diagnosis.
+
+\textbf{The regime tension.} A0 is where the model lives or dies. Current tension: the marker arm passes the gate test but fails the one-direction test; EM does the reverse. \#552/\#561 decide rig vs regime; the per-arm channel shares (\S\ref{sec:formula}) read the same question off stored artifacts. The durable question under every version: how far is fine-tuning generalization predictable from base-model activation geometry, before training?
+
+\begin{thebibliography}{99}\footnotesize
+\bibitem{elhage2021} N.~Elhage et al. A mathematical framework for transformer circuits. \emph{Anthropic (transformer-circuits.pub)}, 2021.
+\bibitem{ward2025} J.~Ward et al. Rank-1 LoRAs encode interpretable reasoning signals. arXiv:2511.06739, 2025.
+\bibitem{turner2023} A.~Turner et al. Activation addition: steering language models without optimization. arXiv:2308.10248, 2023.
+\bibitem{panickssery2023} N.~Panickssery et al. Steering Llama 2 via contrastive activation addition. arXiv:2312.06681, 2023.
+\bibitem{chen2025} R.~Chen, A.~Arditi, H.~Sleight, O.~Evans, J.~Lindsey. Persona vectors: monitoring and controlling character traits in language models. arXiv:2507.21509, 2025.
+\bibitem{wang2025} M.~Wang et al. Persona features control emergent misalignment. arXiv:2506.19823, 2025.
+\bibitem{soligo2025} A.~Soligo, E.~Turner, S.~Rajamanoharan, N.~Nanda. Convergent linear representations of emergent misalignment. arXiv:2506.11618, 2025.
+\bibitem{engels2025} J.~Engels et al. Simple mechanistic explanations for out-of-context reasoning. arXiv:2507.08218, 2025.
+\bibitem{minder2025} J.~Minder et al. Narrow finetuning leaves clearly readable traces. arXiv:2510.13900, 2025.
+\bibitem{park2023} K.~Park, Y.~J.~Choe, V.~Veitch. The linear representation hypothesis and the geometry of large language models. arXiv:2311.03658, 2023 (ICML 2024).
+\bibitem{kohonen1972} T.~Kohonen. Correlation matrix memories. \emph{IEEE Trans.\ Computers}, 1972.
+\bibitem{anderson1972} J.~A.~Anderson. A simple neural network generating an interactive memory. \emph{Mathematical Biosciences}, 1972.
+\bibitem{meng2022} K.~Meng, D.~Bau, A.~Andonian, Y.~Belinkov. Locating and editing factual associations in GPT. \emph{NeurIPS}, 2022.
+\bibitem{ilharco2023} G.~Ilharco et al. Editing models with task arithmetic. \emph{ICLR}, 2023.
+\bibitem{jacot2018} A.~Jacot, F.~Gabriel, C.~Hongler. Neural tangent kernel: convergence and generalization in neural networks. \emph{NeurIPS}, 2018.
+\bibitem{malladi2023} S.~Malladi, A.~Wettig, D.~Yu, D.~Chen, S.~Arora. A kernel-based view of language model fine-tuning. \emph{ICML}, 2023.
+\bibitem{hu2021} E.~Hu et al. LoRA: low-rank adaptation of large language models. \emph{ICLR}, 2022.
+\bibitem{dherin2025} B.~Dherin et al. Learning without training: the implicit dynamics of in-context learning. arXiv:2507.16003, 2025.
+\bibitem{goldwaser2025} Goldwaser et al. arXiv:2511.17864, 2025 (extends \cite{dherin2025} to gated, bias-free, RMSNorm transformer blocks).
+\bibitem{dai2022} D.~Dai et al. Why can GPT learn in-context? Language models implicitly perform gradient descent as meta-optimizers. arXiv:2212.10559, 2022.
+\bibitem{shen2023} L.~Shen, A.~Mishra, D.~Khashabi. Do pretrained transformers really learn in-context by gradient descent? arXiv:2310.08540, 2023 (ICML 2024).
+\bibitem{deutch2023} G.~Deutch et al. In-context learning and gradient descent revisited. arXiv:2311.07772, 2023 (NAACL 2024).
+\bibitem{lampinen2025} A.~Lampinen et al. On the generalization of language models from in-context learning and finetuning: a controlled study. arXiv:2505.00661, 2025.
+\bibitem{liu2023icv} S.~Liu et al. In-context vectors: making in-context learning more effective and controllable through latent space steering. arXiv:2311.06668, 2023 (ICML 2024).
+\end{thebibliography}
+
+\end{document}

@@ -68,7 +68,23 @@ they invoke `implementer` directly.
    if the plan unified the paths (smoke IS sweep with `--cells 1 --seeds 1`
    or equivalent single-cell parameterization — same dispatcher, same
    subprocess shape, same env injection, same logging surface, same
-   teardown sequence), the verdict is `PASS_UNIFIED`. If the plan diverged
+   teardown sequence, AND the cell-subset parameterization threads through
+   EVERY phase the dispatcher executes), the verdict is `PASS_UNIFIED`.
+   **Per-phase subset threading is part of the PASS_UNIFIED definition,
+   not an optional extra:** list each phase the dispatcher runs (train,
+   eval / cross-eval enumeration, anchor selection, analysis tolerance,
+   upload) and name where each phase's cell list comes from — it must
+   derive from the same `--cells`/override subset the smoke passes. A
+   smoke whose subset shapes only the train loop while a downstream phase
+   re-enumerates the full registered grid is NOT unified — verdict
+   `FAIL_NO_CANARY`, exactly as if the paths had diverged, because that
+   smoke can never pass by construction. Incident #546 round 1
+   (2026-06-10, inherited from the i533 dispatcher family): the train
+   loop honored the EPOCHS/SEEDS/ARMS/PERSONAS smoke overrides, so the
+   implementer attested PASS_UNIFIED, but the cross-eval phase enumerated
+   the full 120-cell registered grid and HF-404'd on never-trained
+   adapters (the anchor selector would have crashed next for the same
+   class, lacking `--allow-partial`). If the plan diverged
    (e.g., smoke uses in-process `train_one_cell`, sweep uses a subprocess
    wrapper) AND the plan §4 Design section justified the divergence in two
    sentences AND named which canary cell exercises the sweep path during
@@ -81,7 +97,8 @@ they invoke `implementer` directly.
    ```
    uv run python scripts/task.py post-marker <N> epm:smoke-architecture-check \
      --note "verdict: PASS_UNIFIED
-   notes: <one-line description of how smoke = sweep with one cell>"
+   notes: <one-line description of how smoke = sweep with one cell, naming
+   each phase's cell-list source (e.g. train/eval/anchor all read --cells)>"
    ```
    For `PASS_CANARY`, use `verdict: PASS_CANARY canary_cell=<cell_id>` and
    cite the plan §4 two-sentence justification in the `notes:` line. For
@@ -103,6 +120,21 @@ they invoke `implementer` directly.
    crashed sweep within ~5s of nohup because smoke didn't exercise the
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
+
+   Two additional smoke-contract requirements (both bit hard on 2026-06-09):
+
+   - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
+     produced under a DIFFERENT issue / condition registry (a parent's
+     matrices, another arm's adapters, a prior task's eval JSONs), the smoke
+     MUST run the consumer against the producer's REAL output shape at tiny
+     N — not component-level calls on synthetic fixtures. Incident #518: the
+     bakeoff phase read #474's 16-condition `G_logprob_matrix` (A1-A5/B1-B11
+     keys) while #518 passed R1..R24; the first real contact between the two
+     was a `KeyError` 11 hours into the production run.
+   - **Smoke drives the production entrypoint.** The smoke invokes the
+     launcher CLI with the production flag set (then scaled down), never the
+     library functions directly — a function-level smoke "verified" #518's
+     round-15 fix that lived in a branch the launcher never entered.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona
@@ -249,6 +281,23 @@ was reactive, not preventative.)
      env; `_upload` returned empty path; cell exited rc=2. Enforced by
      `tests/test_subprocess_env_explicit.py` (two AST checks per
      in-scope file).
+- **Per-GPU parallel fan-out: pin `CUDA_VISIBLE_DEVICES=<gpu>` in the
+  LAUNCHER env per cell, with the matching `+gpu_id=N` / `--gpu-id N`.**
+  Any dispatcher running N cells in parallel with one GPU each must set
+  BOTH; the in-process clobber in `train/sft.py` is silently defeated by
+  any import-time cuInit (`import peft` — #545), co-locating every cell
+  on physical GPU 0 (#523/#541/#543/#557). Reference shape:
+  `scripts/i474_phase23_dispatch.sh:192-193`. Regression smoke:
+  `tests/test_cvd_wave_assignment_smoke.py` — extend it or add a sibling
+  when you write a new wave dispatcher. Launch-side enforcement:
+  `experimenter.md` Before Running step 10. Mechanical backstop:
+  `workflow_lint.py --check-dispatcher-cvd-pin` (bundled into the
+  no-flags default run) FAILs any backgrounded `--gpu-id` / `+gpu_id=`
+  python launch in `scripts/**/*.sh` lacking a `CUDA_VISIBLE_DEVICES=`
+  prefix on the same command; waive deliberately unpinned shapes with
+  `# CVD_PIN_EXEMPT: <reason ≥10 chars>` on the same logical line or
+  the immediately preceding non-blank line. Full mechanics:
+  `.claude/rules/gotchas.md`.
 - **Persona injection.** Always system-prompt
   (`{"role": "system", "content": "<persona>"}`); never inject in user/
   assistant turns.
@@ -306,7 +355,16 @@ marker will be silently skipped. Two requirements, no exceptions:
    treats as a crash and which suppresses the auto-post of `epm:results`.
    Emit at least one `[phase=<name>]` per logical phase AND an explicit
    `[phase=done]` immediately before your normal exit path (after the
-   final sentinel write — see (2)).
+   final sentinel write — see (2)). **The `[phase=done]` token in the MAIN
+   dispatcher log is RESERVED for that single terminal line:** per-cell /
+   subprocess completion echoes that flow into the main log must NOT
+   carry it — word them without the phase tag (`eval cell <X> complete`,
+   never `[phase=done] eval cell <X> complete`). The poller cannot
+   textually distinguish mid-run noise from a legitimate suffixed
+   terminal line (`[phase=done] SMOKE COMPLETE ...`) and only survives it
+   via pid/sentinel corroboration (incident #545, 2026-06-11: a per-cell
+   `[phase=done]` echo produced a false `status=done` while the
+   dispatcher was alive and GPUs were at 85%).
 
 2. **End-of-run sentinel with poll_pipeline's required keys.** Write the
    final results sentinel to `/workspace/logs/issue-<N>-<kind_slug>-
@@ -335,11 +393,74 @@ orchestrator's poll loop reported a FALSE `dead`, `_parse_sentinel`
 silently dropped the end-of-run sentinel for missing required keys, and
 `epm:results` had to be posted by hand from a separate SSH session.
 
+**Reproducibility card in the `epm:results` payload (training tasks).**
+When your driver trains adapters / logs WandB runs, its `epm:results`
+sentinel's `note` JSON MUST carry a `reproducibility_card` object
+declaring per-cell `adapter_paths` (each verified under `hf_model_repo`
+via `list_repo_files`) + `wandb_run_names` (with `wandb_project`), or
+single-run `hf_model_path` / `wandb_run_path` — full field list:
+`workflow.yaml § markers epm:results`. This applies to GCP-lane
+`--workload-cmd` drivers (drained by `backend_poll.py`) exactly as to
+pod-side dispatchers. A card-less sentinel that only declares
+`production_provenance.<cell>.hf_adapter_subfolder` (+ top-level
+`wandb_*` hints) is rescued by `verify_uploads.py`'s synthesis fallback
+(`_card_from_provenance`, #599), but that synthesis is a safety net, NOT
+the producer contract — emit the explicit card so the verifier's
+hf_model / wandb_run rows resolve mechanically. **When training logs to
+WandB, the card's `wandb_run_path` (entity/project) or `wandb_run_names`
+(or a name prefix) + `wandb_project` are MANDATORY fields, not optional
+extras** — a card declaring only `adapter_paths` forces entity/project
+archaeology on the verifier (#608 follow-up: all 12 runs resolved at the
+conventional `<entity>/issue608` project while the wandb_run row
+mechanically FAILed on the declaration gap; `verify_uploads.py` now
+probes the `issue<N>`-project convention as a last resort, but like the
+synthesis fallback it is a safety net, NOT the contract).
+
+### Pod-side preflight gates (behind-origin/main false positive — LEGACY post-#554)
+
+> **LEGACY (post-#554):** preflight is branch-aware as of 2026-06-12
+> (#554, commit `25f227273`) — on an `issue-<N>` checkout the git check
+> compares the branch against its OWN `origin/issue-<N>` ref and demotes
+> behind-origin/main to an informational WARNING, so the false positive
+> below no longer exists on a pod synced to current code. #554 also made
+> bare (non-`--json`) preflight fail loud (summary on stdout, per-error
+> stderr lines), closing the silent-death mode. Keep the tolerance below
+> ONLY for a pod still running pre-#554 code. **On post-#554 code, a
+> `Local is N commit(s) behind origin/issue-<N>` or `git fetch origin
+> failed` ERROR is REAL — a driver must NEVER tolerate it.** Parsing
+> `--json` instead of gating on bare exit codes remains the right driver
+> design either way.
+
+A driver on a PRE-#554 pod checkout that gates launch on `uv run python -m
+explore_persona_space.orchestrate.preflight` under `set -e` / `fail_loud`
+MUST tolerate the documented feature-branch false positive: that era's git
+check counts `HEAD..origin/main`, so on EVERY `issue-<N>` pod checkout it
+reports the ERROR `Local is N commit(s) behind origin/main` and exits
+non-zero even when the pod sits exactly at the reviewed branch tip. Run
+`preflight --json` and fail only when `errors` contains anything OTHER
+than that line. Never let that single error be the sole
+launch-killer. Incident #552 (2026-06-10): a pod-side driver ran bare
+`preflight || fail_loud` under `set -euo pipefail`; it survived launch
+only because the experimenter happened to repoint the pod-local
+`origin/main` ref seconds before the check ran — every NEW driver that
+re-runs preflight re-introduces the fatal check unless it parses the
+error list. (The experimenter's own preflight invocation carries the same
+legacy-scoped tolerance; see `.claude/agent-memory/experimenter/feedback_preflight_feature_branch_false_positive.md`.)
+
 ### After implementation (mandatory checklist)
 
 1. **Lint:** `uv run ruff check . && uv run ruff format .`
 2. **Compile-test critical paths:** `uv run python -c "from explore_persona_space.<module> import *"`
-   for any module you touched.
+   for any module you touched. **Deferred imports count:** a lazy
+   `import` / `from ... import` inside a branch your smokes skip
+   (`--dry-run` / `--skip-upload` upload paths, GPU-only paths) is
+   unverified by both this check and the per-phase smokes below — before
+   hand-off, EXECUTE every deferred import in the files you touched
+   (AST-walk and import each symbol, the `--verify-imports` pattern from
+   `scripts/issue_606/i606_dispatch.py`; hand-maintained symbol lists
+   re-create the drift) or hoist cheap cross-script helper imports to
+   module top. Full trap + incident #606: `.claude/rules/gotchas.md`
+   "Lazy imports inside smoke-skipped branches".
 3. **End-to-end smoke run PER PHASE.** For EACH distinct entrypoint the
    experiment pipeline executes — data-gen, training, eval (and any
    separate analysis / upload step) — run the script ONCE on a tiny real
@@ -415,6 +536,28 @@ silently dropped the end-of-run sentinel for missing required keys, and
    below formalizes the report-time labeling that lets code-reviewer
    distinguish a documented GPU-bound phase from a genuinely missing
    smoke).
+
+   **Plan-declared runtime guards / monitors must show smoke evidence.**
+   Every runtime guard, monitor, or trajectory logger the approved plan
+   declares as load-bearing — a saturation guard, `MarkerBandStopCallback`,
+   per-step log-prob probes, an auto-fired secondary DV, per-source WandB
+   run separation — must show concrete evidence in the relevant `## Smoke
+   run` sub-section that its telemetry actually functions: the probe logged
+   at least one value during the smoke, the guard branch was exercised or
+   its precondition assert ran, per-source WandB run names are distinct
+   (paste them). "The callback is attached" is NOT evidence — a guard whose
+   telemetry never fires is a paper mitigation, and the failure it guards
+   is then caught only at eval time after the pod cycle (incident #480:
+   the plan-declared WandB trajectory monitor + KL auto-fire silently
+   never functioned — 5 of 6 source runs reused one WandB run name,
+   per-cell trajectories were never logged, zero saturation markers fired,
+   and all 6 adapters shipped saturated). A guard whose telemetry genuinely
+   cannot be demonstrated at smoke scale (e.g. it only triggers after
+   hundreds of steps) must be called out explicitly in `(d) Needs human
+   eyeball` with the reason AND the closest demonstrable proxy (the
+   precondition assert ran, the logging call was reached). Code-reviewer
+   mirror rule: Step 0.6 FAILs `smoke-run-missing` on missing guard
+   evidence with no documented (d) call-out.
 4. **Self-review against plan.** Walk down the plan's "File paths + concrete
    diffs" list and confirm each item is addressed.
 5. **Compute-deviation check.** For every row in the plan's §9
@@ -476,9 +619,65 @@ silently dropped the end-of-run sentinel for missing required keys, and
    compute-deviation at round 6 trigger the SECONDARY rule at the start of
    would-be round 10' relaunch — one round earlier than the user's manual
    round-11 recognition.
-7. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
+7. **Raw-completions upload wiring (mandatory when the dispatcher writes
+   per-cell completions to disk).** Any pod-side dispatcher that writes
+   `raw_completions/*.json` or `raw_generations/*.json` (or any equivalent
+   per-cell completion file the eval loop persists locally) under
+   `eval_results/issue_<N>/` MUST call
+   `explore_persona_space.orchestrate.hub.upload_raw_completions_to_data_repo(
+   experiment_name="issue<N>_<slug>", eval_results_dir=Path("eval_results/
+   issue_<N>"))` from the dispatcher's normal exit path AFTER the eval
+   phase completes and BEFORE the `[phase=done]` log line + final sentinel
+   write. Per CLAUDE.md Upload Policy raw completions MUST land on the HF
+   data repo before pod termination — the helper is fail-loud
+   (`RuntimeError` on any per-file upload failure or HF Hub mismatch), so
+   a clean dispatcher exit IS the upload contract; the upload-verifier at
+   Step 8 is the safety net, not the only line of defense.
+
+   If the dispatcher walks raw-completion files under a non-canonical
+   directory shape that `rglob("raw_completions.json")` does NOT pick up
+   (e.g. the dispatcher writes flat per-cell JSONs under
+   `eval_results/issue_<N>/raw_generations/<trait>_<arm>_<context>.json`
+   rather than `<cell>/raw_completions.json`), EITHER restructure the
+   write path to match the helper's recursive `raw_completions.json`
+   glob, OR add a small loop that explicitly walks the actual write path
+   and calls `hub._upload(...)` per file with `repo_id=
+   DEFAULT_DATASET_REPO`, `repo_type="dataset"`,
+   `path_in_repo=f"issue<N>_<slug>/raw_completions/<rel>"`, OR (PREFERRED
+   over the per-file loop for large file counts — the HF Hub throttles a
+   repo at ~256 commits/hour, #591) batch every file into ONE
+   `HfApi.create_commit(repo_type="dataset")` whose `CommitOperationAdd`
+   ops target the same canonical
+   `issue<N>_<slug>/raw_completions/<rel>` paths, then verify the
+   per-prefix file count on the Hub (`list_repo_files`) before
+   `[phase=done]`. All three shapes satisfy the reviewer's Step 0.65
+   gate (`code-reviewer.md`). Whichever shape,
+   the per-cell completion files MUST land on
+   `superkaiba1/explore-persona-space-data/issue<N>_<slug>/raw_completions/...`
+   under their dispatcher's normal exit path — no "the verifier will pick
+   it up" deferrals. Incident: task #528 (2026-06-09) — the i528 pod-side
+   dispatcher wrote 160 raw-completion JSONs to
+   `eval_results/issue_528/raw_generations/` and never called
+   `upload_raw_completions_to_data_repo()`; the upload-verifier caught
+   the gap manually, but a verifier that trusted the sentinel without
+   re-enumerating would have lost all 160 files on pod termination.
+
+   Confirm the wiring landed by grepping the dispatcher for the helper
+   import + call:
+
+   ```bash
+   grep -nE "upload_raw_completions_to_data_repo|hub\._upload\(.*raw_completions|create_commit" \
+     scripts/run_experiment_<N>.py scripts/i<N>_*.py 2>/dev/null
+   ```
+
+   At least one match per dispatcher that writes raw completions; zero
+   matches = the contract is missing. Report this in the implementer's
+   `## Smoke run` section under a new `### upload wiring` sub-heading
+   (one line: the grep command + the matched line, or the literal note
+   "no raw completions written by this dispatcher; upload helper N/A").
+8. **Commit + push** on branch `issue-<N>`. Use the repo's commit-message
    convention (`git log --oneline -10` for style).
-8. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
+9. **Post the report** as `<!-- epm:experiment-implementation v<n> -->` on
    issue #N (see Report Format below). The `/issue` skill reads this marker
    and spawns `code-reviewer`.
 
@@ -504,6 +703,22 @@ with the turn.
   marker with that phase explicitly marked NOT-RUN plus the exact
   copy-pasteable command, so code-reviewer and the orchestrator see the
   gap instead of a truncation.
+- A locally-launched background PROCESS is never your deliverable either:
+  it dies with your subagent shell. If a long local job must outlive your
+  turn, launch it `setsid ... < /dev/null &`, write a PID file + log path,
+  and state explicitly in your report that THE ORCHESTRATOR owns the watch
+  (mirroring the pod-side nohup convention). Incident #539, 2026-06-09:
+  an implementer's bg launch died with its shell and ~85 min passed before
+  the orchestrator noticed and re-ran it.
+
+### Commit work-in-progress as you go
+
+Commit (and push) to the issue branch at each logical unit — e.g. after the
+tests for a file pass — not only at the end of the turn. A session/agent
+death must never strand uncommitted work in the worktree: on 2026-06-09 the
+#505 round-2 implementer died mid-implementation with all work uncommitted,
+and the recovery session had to re-dispatch from scratch. WIP commits on the
+issue branch are free (the branch merges via Step 10d's guarded procedure).
 
 ### TDD mode (when the plan or user requests it)
 
@@ -568,7 +783,13 @@ issue #N:
   model or tiny throwaway checkpoint) — not just `--help` or
   import-check. Code-reviewer FAILs with blocker `smoke-run-missing`
   when any phase the pipeline actually executes is missing a sub-section
-  (most common: training present, eval absent).
+  (most common: training present, eval absent). When the approved plan
+  declares a load-bearing runtime guard / monitor / trajectory logger,
+  the relevant sub-section ALSO shows its telemetry functioning (logged
+  value, exercised guard branch or precondition assert, distinct
+  per-source WandB run names) — or the `(d)` call-out explains why it
+  cannot be shown at smoke scale (see checklist item 3 § Plan-declared
+  runtime guards).
 - **Batched-rewrite equivalence** (REQUIRED when this round rewrites an
   existing serial code path as batched / multi-GPU / vectorized — e.g.
   batching an activation-extraction loop, replacing a per-example forward
@@ -598,6 +819,33 @@ issue #N:
 <!-- /epm:experiment-implementation -->
 ```
 
+### Deferred production-path TODOs are persisted concerns, not (d) prose
+
+If your round defers a feature the approved plan's PRODUCTION path
+requires — a registered statistic, correction, or data input whose
+absence makes the production run crash or silently degrade (e.g. an SE
+inflow left as a `# TODO` so a load-bearing attenuation adjustment
+either raises or quietly pins to its uncorrected value) — you MUST
+persist it before posting your marker:
+
+```bash
+uv run python scripts/task.py raise-concern <N> \
+    --concern-id <kebab-id> --severity CONCERN \
+    --summary "<≤200-char one-liner>" --by experiment-implementer --round <n>
+```
+
+Use `--severity BLOCKER` when the production path provably crashes
+without the deferred feature. A `(d) Needs human eyeball` bullet
+("surface as a follow-up before the production run") is NOT a
+substitute — the /issue Step 5c-ter dispatch gate reads
+`concerns.jsonl`, not report prose, so an unpersisted deferral
+dispatches the pod and the crash lands at run time (incident #509: the
+fact arm's per-seed-SE reconstruction was deferred in round-3 `(d)`
+prose, review PASSed, production scoring crashed exactly as predicted,
+and the run descoped to `--smoke` with the attenuation correction
+pinned to 1.0). Still list the deferral in `(d)` for the human reader —
+the concern row is what makes it binding.
+
 On revision rounds, also include:
 
 ```markdown
@@ -606,6 +854,36 @@ On revision rounds, also include:
 - Finding 2: ADDRESSED DIFFERENTLY — [how + why]
 - Finding 3: PUSHED BACK — [reasoning]
 ```
+
+### Crash-fix rounds: failure-lesson block (REQUIRED)
+
+When your round was dispatched to fix a posted `epm:failure` (the
+`/issue` Step 7 `code`-row crash-fix loop), END your report with a
+structured lesson block. The orchestrator posts it verbatim as an
+`epm:failure-lesson v1` marker and, on `generalizes: yes`, persists it
+to the owning agent's memory the same hour — without this, parallel
+same-day sessions re-hit the same failure classes (incidents #537/#545,
+2026-06-11: disk pressure, vLLM engine-init crashes at phase
+boundaries, stale-artifact asserts, hours apart, no cross-session
+channel):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, recipe trap — NOT a typo
+or wiring mistake in this issue's own script. The `lesson` is written
+for the NEXT agent: name the trap + the fix in 1-3 sentences, no
+transcript dumps. Ordinary (non-crash-fix) rounds do NOT emit this
+block.
 
 ### On unrecoverable error
 
@@ -638,8 +916,8 @@ Before posting a SECOND/THIRD review-round marker (e.g. `epm:experiment-implemen
   module unrelated to this experiment, reorganizing scripts — those go to the
   `implementer` agent via a separate `type:infra` issue.
 - **Result analysis.** That is the `analyzer` agent.
-- **Code review yourself.** Fresh eyes matter — you post `epm:experiment-
-  implementation` and the `/issue` skill spawns `code-reviewer`.
+- **Code review yourself.** Fresh eyes matter — you post
+  `epm:experiment-implementation` and the `/issue` skill spawns `code-reviewer`.
 - **Edit `CLAUDE.md`, agent definitions, or skills** unless the approved plan
   explicitly requires it.
 - **`AskUserQuestion` <!-- example: anti-pattern --> or any text-menu / two-path / "want your call?"

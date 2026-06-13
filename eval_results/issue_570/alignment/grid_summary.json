@@ -1,0 +1,26 @@
+{
+  "issue": 543,
+  "git_commit": "faa798dd8a577ffd05ccff8dadaaddc98d06f6c9",
+  "timestamp_utc": "2026-06-11T14:42:57.526090+00:00",
+  "env_versions": {
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6",
+    "trl": "0.29.1",
+    "peft": "0.18.1",
+    "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "marker_text": " \u203b",
+  "trigger_key": "<KEY-7f3a9e2c>",
+  "data_seed": 543,
+  "grid": [
+    "org_em_saturated_seed42",
+    "org_em_saturated_seed137",
+    "org_em_saturated_seed256",
+    "picked_install_saturated_seed42"
+  ],
+  "n_models": 4,
+  "failures": [],
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "num_samples": 10
+}

@@ -1,0 +1,497 @@
+{
+  "schema_version": "i472_v1",
+  "layer": 10,
+  "source": "villain",
+  "n_held_out_probes": 47,
+  "held_out_panel": [
+    "accountant",
+    "architect",
+    "bartender",
+    "campaign_manager",
+    "chef",
+    "chess_grandmaster",
+    "child",
+    "con_artist",
+    "corporate_raider",
+    "crossing_guard",
+    "data_scientist",
+    "dictator",
+    "electrician",
+    "florist",
+    "french_person",
+    "hospice_nurse",
+    "investment_banker",
+    "kindergarten_teacher",
+    "lawyer",
+    "librarian",
+    "lifeguard",
+    "medical_doctor",
+    "meditation_teacher",
+    "mercenary",
+    "monk",
+    "music_therapist",
+    "nature_guide",
+    "origami_artist",
+    "philosopher",
+    "pirate_captain",
+    "police_officer",
+    "postal_worker",
+    "preschool_teacher",
+    "programmer",
+    "prosecutor",
+    "quilter",
+    "sheep_herder",
+    "social_worker",
+    "software_engineer",
+    "spy",
+    "storyteller",
+    "surgeon",
+    "taxi_driver",
+    "veterinarian",
+    "wildlife_rehabilitator",
+    "wizard",
+    "zelthari_scholar"
+  ],
+  "pooled_cells": [
+    "c472_anchor",
+    "c472_near",
+    "c472_far"
+  ],
+  "n_logp_rows": 0,
+  "n_kl_rows": 0,
+  "matched_slice": {
+    "target_nats": 8.0,
+    "band_nats": 1.0,
+    "step_at_slice_per_cell": {
+      "c472_anchor": {
+        "42": null,
+        "137": null
+      },
+      "c472_negex_100": {
+        "42": 38,
+        "137": 7
+      },
+      "c472_negex_400": {
+        "42": null,
+        "137": null
+      },
+      "c472_negp_2": {
+        "42": 7,
+        "137": 38
+      },
+      "c472_negp_8": {
+        "42": null,
+        "137": null
+      },
+      "c472_near": {
+        "42": null,
+        "137": null
+      },
+      "c472_far": {
+        "42": null,
+        "137": null
+      },
+      "c472_noneg": {
+        "42": null,
+        "137": null
+      },
+      "c472_single_near": {
+        "42": 38,
+        "137": 13
+      },
+      "c472_single_far": {
+        "42": 38,
+        "137": 29
+      }
+    },
+    "collapse_at_slice_per_cell": {
+      "c472_anchor": {
+        "42": null,
+        "137": null
+      },
+      "c472_negex_100": {
+        "42": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        },
+        "137": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        }
+      },
+      "c472_negex_400": {
+        "42": null,
+        "137": null
+      },
+      "c472_negp_2": {
+        "42": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        },
+        "137": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        }
+      },
+      "c472_negp_8": {
+        "42": null,
+        "137": null
+      },
+      "c472_near": {
+        "42": null,
+        "137": null
+      },
+      "c472_far": {
+        "42": null,
+        "137": null
+      },
+      "c472_noneg": {
+        "42": null,
+        "137": null
+      },
+      "c472_single_near": {
+        "42": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        },
+        "137": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        }
+      },
+      "c472_single_far": {
+        "42": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        },
+        "137": {
+          "n_collapsed_probes": 0,
+          "n_saturated_probes": 0,
+          "n_probes": 47
+        }
+      }
+    }
+  },
+  "logp_regression": {
+    "all_neg": {
+      "ok": false,
+      "reason": "too few rows (0) after NaN drop",
+      "n": 0
+    },
+    "non_default": {
+      "ok": false,
+      "reason": "too few rows (0) after NaN drop",
+      "n": 0
+    },
+    "vif": {}
+  },
+  "kl_regression": {
+    "all_neg": {
+      "ok": false,
+      "reason": "too few rows (0) after NaN drop",
+      "n": 0
+    },
+    "non_default": {
+      "ok": false,
+      "reason": "too few rows (0) after NaN drop",
+      "n": 0
+    }
+  },
+  "identification_gate": {
+    "qwen_default_nearest_share": NaN,
+    "median_across_arm_sd_dnn_nd": NaN,
+    "sd_floor": 0.02,
+    "fits_agree_sign": false,
+    "admissible": false
+  },
+  "collinearity_gate": {
+    "pearson_d_source_d_nearest_neg": NaN,
+    "pearson_d_nearest_neg_b_logprob": NaN,
+    "threshold": 0.6,
+    "ok": false
+  },
+  "holm_multiplicity": {},
+  "count_effects": {
+    "negex_logp": {
+      "levels": [
+        100,
+        200,
+        400
+      ],
+      "level_means": [
+        4.2911238118513815,
+        NaN,
+        NaN
+      ],
+      "spearman": NaN,
+      "permutation": {
+        "ok": false,
+        "reason": "too few / NaN levels"
+      }
+    },
+    "negp_logp": {
+      "levels": [
+        2,
+        4,
+        8
+      ],
+      "level_means": [
+        4.093952970132527,
+        NaN,
+        NaN
+      ],
+      "spearman": NaN,
+      "permutation": {
+        "ok": false,
+        "reason": "too few / NaN levels"
+      }
+    },
+    "negex_kl": {
+      "levels": [
+        100,
+        200,
+        400
+      ],
+      "level_means": [
+        13.066987953053577,
+        NaN,
+        NaN
+      ],
+      "spearman": NaN,
+      "permutation": {
+        "ok": false,
+        "reason": "too few / NaN levels"
+      }
+    },
+    "negp_kl": {
+      "levels": [
+        2,
+        4,
+        8
+      ],
+      "level_means": [
+        12.368877667539449,
+        NaN,
+        NaN
+      ],
+      "spearman": NaN,
+      "permutation": {
+        "ok": false,
+        "reason": "too few / NaN levels"
+      }
+    }
+  },
+  "placement_h1": {
+    "means": {
+      "near": NaN,
+      "spread_anchor": NaN,
+      "far": NaN,
+      "no_neg": NaN,
+      "near_lt_far": false
+    },
+    "permutation": {
+      "ok": false,
+      "reason": "too few / NaN levels"
+    }
+  },
+  "diagnostics": {
+    "delta_g_vs_b_logprob_scatter": [],
+    "delta_g_kl_spearman_subceiling": NaN,
+    "step_at_matched_slice": {
+      "c472_anchor": {
+        "42": null,
+        "137": null
+      },
+      "c472_negex_100": {
+        "42": 38,
+        "137": 7
+      },
+      "c472_negex_400": {
+        "42": null,
+        "137": null
+      },
+      "c472_negp_2": {
+        "42": 7,
+        "137": 38
+      },
+      "c472_negp_8": {
+        "42": null,
+        "137": null
+      },
+      "c472_near": {
+        "42": null,
+        "137": null
+      },
+      "c472_far": {
+        "42": null,
+        "137": null
+      },
+      "c472_noneg": {
+        "42": null,
+        "137": null
+      },
+      "c472_single_near": {
+        "42": 38,
+        "137": 13
+      },
+      "c472_single_far": {
+        "42": 38,
+        "137": 29
+      }
+    }
+  },
+  "validity_gate": {
+    "c472_anchor": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 14.235084581375123,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 13.616110181808471,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_negex_100": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 8.67086181640625,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 8.44741325378418,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_negex_400": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 19.689579784870148,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 21.100626242160796,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_negp_2": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 8.04149513244629,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 8.915757274627685,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_negp_8": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 19.307587707042693,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 20.768332755565645,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_near": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 14.181280660629273,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 13.686021709442139,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_far": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 15.14666838645935,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 13.676367139816284,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_noneg": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 2.268357276916504,
+        "clears_5nat_floor": false,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 2.181788444519043,
+        "clears_5nat_floor": false,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_single_near": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 8.459627914428712,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 8.393750286102295,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    },
+    "c472_single_far": {
+      "42": {
+        "present": true,
+        "max_source_self_delta_g": 7.984138870239258,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      },
+      "137": {
+        "present": true,
+        "max_source_self_delta_g": 8.807409763336182,
+        "clears_5nat_floor": true,
+        "has_subceiling_checkpoint": true
+      }
+    }
+  },
+  "barrier_bubble_verdict": {
+    "call": "indeterminate",
+    "reason": "logp regression did not fit (too few sub-ceiling rows)"
+  },
+  "single_neg_note": "c472_single_near / c472_single_far EXCLUDED from pooled regression (n_personas=2, not count-matched); read as standalone proximity maps only (plan \u00a74.4/\u00a76)."
+}

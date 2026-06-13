@@ -1,0 +1,17 @@
+{
+  "schema_version": "i546s_cn_analyze_v1",
+  "generated_at": "2026-06-11T08:57:34.514063+00:00",
+  "git_commit": "4f6a3592d5e705de38718d92599326ff4092f4c2",
+  "variant": "cn_i546s",
+  "headline_status": "partial_anchor_skipped",
+  "partial_anchor": false,
+  "degenerate_anchor": true,
+  "anchored_personas": [],
+  "partial_anchor_reason": "",
+  "selected_anchor_per_persona": {
+    "pirate": null,
+    "villain": null
+  },
+  "anchor_file": "eval_results/issue_546/fractional-epoch-grid-r16/anchor_selection.json",
+  "note": "i464_po_analyze (cn_i546s) refused to compute headline statistics because NO persona resolved an anchor step in the {47,57,66}-step grid. Re-run `i529_select_anchor.py` after adding more step points or rerun training at a lower LoRA rank / lr per `.claude/rules/marker-training-recipe.md`."
+}

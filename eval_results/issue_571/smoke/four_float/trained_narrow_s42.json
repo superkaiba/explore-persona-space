@@ -1,0 +1,84 @@
+{
+ "schema_version": "issue571_breadth_v1",
+ "phase": "S2_trained_on_own_R",
+ "side": "trained",
+ "adapter_label": "narrow_s42",
+ "source_cid": "A2",
+ "adapter_hf_subpath": "adapters/i571_narrow_A2_s42_ep1",
+ "panel_spec": {
+  "personas": [
+   "assistant"
+  ],
+  "n_questions": 2,
+  "questions": [
+   "What is the best way to learn a new language?",
+   "Can you explain how photosynthesis works?"
+  ],
+  "adapters": [
+   "narrow_s42"
+  ]
+ },
+ "per_persona": {
+  "assistant": {
+   "per_q": [
+    {
+     "logp_marker": -11.625146865844727,
+     "z_marker": 15.75,
+     "z_eos": 27.375,
+     "logZ": 27.375146865844727,
+     "logp_bare_marker": -21.250146865844727,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 212
+    },
+    {
+     "logp_marker": -8.25029182434082,
+     "z_marker": 19.125,
+     "z_eos": 27.375,
+     "logZ": 27.37529182434082,
+     "logp_bare_marker": -19.31279182434082,
+     "argmax_id": 151645,
+     "slot_kind": "end_of_response",
+     "emitted_id": null,
+     "n_truncated_tokens": 0,
+     "gen_truncated": false,
+     "n_new_tokens": 298
+    }
+   ],
+   "summary": {
+    "mean_logp_marker": -9.937719345092773,
+    "mean_z_marker": 17.4375,
+    "mean_z_eos": 27.375,
+    "mean_logZ": 27.375219345092773,
+    "mean_logp_bare_marker": -20.281469345092773,
+    "mean_marker_eos_margin": -9.9375,
+    "argmax_marker_rate": 0.0,
+    "n_pre_marker_slots": 0
+   }
+  }
+ },
+ "metadata": {
+  "task": 571,
+  "script": "issue571_breadth_panel.py",
+  "git_commit": "5c6e47543",
+  "timestamp_utc": "2026-06-11T04:39:26.187666+00:00",
+  "python_version": "3.11.10",
+  "numpy_version": "2.2.6",
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "argv": [
+   "--phase",
+   "score-trained",
+   "--adapters",
+   "narrow_s42",
+   "--personas",
+   "assistant",
+   "--n-questions",
+   "2",
+   "--tag",
+   "smoke"
+  ]
+ }
+}

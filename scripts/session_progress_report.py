@@ -107,7 +107,7 @@ def self_report_path(issue: int) -> Path:
     return SELF_REPORT_DIR / f"{int(issue)}.json"
 
 
-def build_progress_string(issue: int, slug: str, step: str) -> str:
+def build_progress_string(issue: int, slug: str, step: str, suffix: str | None = None) -> str:
     """Construct the SINGLE canonical per-session progress string.
 
     Format: ``"#<N> <slug> · <step>"`` (Unicode middle-dot separator, leading
@@ -117,6 +117,16 @@ def build_progress_string(issue: int, slug: str, step: str) -> str:
     step text), the STEP is trimmed with a trailing ``…`` — the issue number
     and slug stay intact (they are the part the user uses to find the row).
 
+    ``suffix`` (task #587) appends a progress-bar/ETA tail
+    (``"▓▓░░░ 43% ~4-9h"``) as ``"<head> · <step> · <suffix>"``.
+    ``suffix=None`` is BYTE-IDENTICAL to the historical behavior for every
+    input. Overflow degrade ladder when the suffix is present:
+
+      1. full string fits → done
+      2. trim the STEP (existing ``…`` rule), keep the suffix whole
+      3. drop the block-bar chars from the suffix (``"43% ~4-9h"``), retry
+      4. drop the suffix entirely → the existing no-suffix path
+
     Pure (no I/O). Both the writer here and the SKILL.md helper call this
     function so the format lives in exactly ONE place.
     """
@@ -125,13 +135,32 @@ def build_progress_string(issue: int, slug: str, step: str) -> str:
     if len(slug_clean) > SLUG_MAX:
         slug_clean = slug_clean[:SLUG_MAX].rstrip()
     head = f"#{int(issue)} {slug_clean}".rstrip()
+    sep = " · "
+
+    if suffix:
+        suffix_clean = suffix.strip()
+        for sfx in (suffix_clean, suffix_clean.lstrip("▓░ ")):
+            if not sfx:
+                continue
+            parts = [head, step_clean, sfx] if step_clean else [head, sfx]
+            text = sep.join(parts)
+            if len(text) <= PROGRESS_STRING_MAX:
+                return text
+            if step_clean:
+                # Trim the STEP, keep the suffix whole (≥1 step char + "…").
+                overhead = len(head) + 2 * len(sep) + len(sfx) + 1
+                budget = PROGRESS_STRING_MAX - overhead
+                if budget >= 1:
+                    trimmed = step_clean[:budget].rstrip() + "…"
+                    return f"{head}{sep}{trimmed}{sep}{sfx}"
+        # Ladder exhausted — fall through to the no-suffix path below.
+
     if not step_clean:
         return head[:PROGRESS_STRING_MAX]
     text = f"{head} · {step_clean}"
     if len(text) <= PROGRESS_STRING_MAX:
         return text
     # Trim the step to fit, preserving "<head> · " + at least 1 char of step.
-    sep = " · "
     overhead = len(head) + len(sep) + 1  # at least 1 step char + the ellipsis
     budget = PROGRESS_STRING_MAX - overhead
     if budget <= 0:
@@ -142,16 +171,49 @@ def build_progress_string(issue: int, slug: str, step: str) -> str:
     return f"{head}{sep}{trimmed_step}"
 
 
-def _load_task_frontmatter(issue: int) -> dict:
-    """Return the task's frontmatter dict, or raise ``FileNotFoundError`` if
-    the issue is unknown. Imported lazily so this module stays importable in
-    a context that doesn't have the EPS package installed (e.g. a bare CLI
-    invocation on a fresh pod)."""
+def _load_task(issue: int) -> dict:
+    """Return the full task dict (frontmatter + status), or raise
+    ``FileNotFoundError`` if the issue is unknown. Imported lazily so this
+    module stays importable in a context that doesn't have the EPS package
+    installed (e.g. a bare CLI invocation on a fresh pod)."""
     from explore_persona_space.task_workflow import get_task
 
-    task = get_task(issue)
-    fm = task.get("frontmatter")
-    return fm if isinstance(fm, dict) else {}
+    return get_task(issue)
+
+
+# Machine-active statuses whose title gets the progress-bar/ETA suffix
+# (task #587). Gate-park / terminal / human-wait statuses (proposed,
+# plan_pending, blocked, awaiting_promotion, followups_running, completed,
+# archived, and anything else) keep the byte-identical historical title.
+_ETA_SUFFIX_STATUSES = frozenset(
+    {"planning", "approved", "running", "verifying", "interpreting", "reviewing"}
+)
+
+
+def _compute_eta_suffix(issue: int, status: str | None, now_iso: str | None = None) -> str | None:
+    """Progress-bar/ETA title suffix for machine-active statuses, else None.
+
+    FAIL-SOFT by design (plan #587 §3.6): the title must never break because
+    the estimator did — any exception degrades to ``None`` with one stderr
+    line. Reads stats READ-ONLY from the materialized snapshot
+    (``task_progress.load_stats_readonly``); a missing/stale snapshot (dead
+    cron) yields ``None`` — this path NEVER rebuilds stats (a title tick must
+    stay O(1), not a 33 MB events.jsonl scan).
+    """
+    if status not in _ETA_SUFFIX_STATUSES:
+        return None
+    try:
+        from explore_persona_space import task_progress as tp
+
+        stats = tp.load_stats_readonly()
+        if stats is None:
+            return None
+        now = _parse_iso(now_iso) if now_iso else None
+        row = tp.estimate_task_progress(issue, stats, now=now)
+        return tp.format_title_suffix(row, now=now)
+    except Exception as exc:  # fail-soft: suffix is decoration, never a crash
+        print(f"session_progress_report: ETA suffix skipped ({exc})", file=sys.stderr)
+        return None
 
 
 def write_self_report(
@@ -160,6 +222,7 @@ def write_self_report(
     slug: str | None = None,
     step: str,
     now_iso: str | None = None,
+    eta: bool = True,
 ) -> tuple[str, Path]:
     """Build the canonical string and atomically write it to the self-report
     file for ``issue``. Returns ``(text, path)`` — the canonical string and
@@ -177,12 +240,21 @@ def write_self_report(
     ``task.py find <N>``) instead of silently writing a self-report file for
     a non-existent task — keeps the fail-loud contract consistent across
     both code paths.
+
+    ``eta=True`` (default) appends the progress-bar/ETA suffix for
+    machine-active statuses via :func:`_compute_eta_suffix` (task #587).
+    The suffix is fail-soft and status-gated, so every gate-park / terminal
+    status produces the byte-identical historical string. ``eta=False``
+    (CLI ``--no-eta``) skips the estimator entirely.
     """
-    fm = _load_task_frontmatter(issue)
+    task = _load_task(issue)
+    fm = task.get("frontmatter")
+    fm = fm if isinstance(fm, dict) else {}
     if slug is None:
         title = fm.get("title")
         slug = title.strip() if isinstance(title, str) else ""
-    text = build_progress_string(issue, slug, step)
+    suffix = _compute_eta_suffix(issue, task.get("status"), now_iso) if eta else None
+    text = build_progress_string(issue, slug, step, suffix=suffix)
     ts = now_iso or _utcnow_iso()
     payload = {
         "issue": int(issue),
@@ -273,12 +345,21 @@ def _build_argparser() -> argparse.ArgumentParser:
             "via task_workflow.get_task(issue)."
         ),
     )
+    p.add_argument(
+        "--no-eta",
+        action="store_true",
+        help=(
+            "Skip the progress-bar/ETA title suffix (task #587). Without "
+            "this flag the suffix is appended for machine-active statuses "
+            "and omitted (byte-identical title) everywhere else."
+        ),
+    )
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_argparser().parse_args(argv)
-    text, _path = write_self_report(args.issue, slug=args.slug, step=args.step)
+    text, _path = write_self_report(args.issue, slug=args.slug, step=args.step, eta=not args.no_eta)
     print(text)
     return 0
 

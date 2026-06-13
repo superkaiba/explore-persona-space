@@ -1,0 +1,31 @@
+{
+  "model_tag": "villain:parity:42",
+  "seed": 42,
+  "panel_provenance": "parity_roster",
+  "n_panel_personas": 3,
+  "n_claims_per_panel": 50,
+  "n_rollouts_per_claim": 10,
+  "total_completions": 1500,
+  "wall_seconds": 9.5,
+  "claims_path": "data/issue_612/wrong_claims/eval_50.jsonl",
+  "merged_model_path": "/workspace/runs/issue_612/frozen_411/villain_merged_parity",
+  "hub_model_id": null,
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit_sha": "95ef5b1ebc23c53349b02175e71bd0742560b2e5",
+  "hostname": "eps-issue-612",
+  "timestamp_utc": "2026-06-12T10:09:20.791293+00:00",
+  "per_panel": {
+    "accountant": {
+      "n_completions": 500,
+      "wall_seconds": 4.1
+    },
+    "wizard": {
+      "n_completions": 500,
+      "wall_seconds": 4.0
+    },
+    "villain": {
+      "n_completions": 500,
+      "wall_seconds": 1.4
+    }
+  }
+}

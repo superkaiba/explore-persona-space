@@ -1,0 +1,14 @@
+{
+  "schema_version": 2,
+  "per_layer_tolerances": {
+    "27": 0.01,
+    "default": 0.003
+  },
+  "strict": false,
+  "slice": "full",
+  "n_cond_loaded": 24,
+  "n_probes_loaded": 50,
+  "per_layer": {},
+  "git_sha": "e66597e8b1ccb2e4ea0edbd7c7f7f10b9b0512a9",
+  "timestamp_utc": "2026-06-10T03:17:02.872237+00:00"
+}

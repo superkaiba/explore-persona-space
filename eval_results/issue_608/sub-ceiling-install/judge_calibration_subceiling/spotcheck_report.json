@@ -1,0 +1,222 @@
+{
+  "followup_label": "sub-ceiling-install",
+  "parent_kappa_reused": 0.881,
+  "haiku_model": "claude-haiku-4-5-20251001",
+  "sonnet_model": "claude-sonnet-4-5-20250929",
+  "spotcheck_n": 200,
+  "n_strata": 37,
+  "strata": [
+    {
+      "cell": "villain:contrastive_dense",
+      "step": 13,
+      "own_rate": 0.29
+    },
+    {
+      "cell": "villain:contrastive_dense",
+      "step": 18,
+      "own_rate": 0.416
+    },
+    {
+      "cell": "villain:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.718
+    },
+    {
+      "cell": "comedian:contrastive_dense",
+      "step": 9,
+      "own_rate": 0.184
+    },
+    {
+      "cell": "comedian:contrastive_dense",
+      "step": 13,
+      "own_rate": 0.258
+    },
+    {
+      "cell": "comedian:contrastive_dense",
+      "step": 18,
+      "own_rate": 0.376
+    },
+    {
+      "cell": "comedian:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.666
+    },
+    {
+      "cell": "comedian:contrastive_dense",
+      "step": 35,
+      "own_rate": 0.884
+    },
+    {
+      "cell": "assistant:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.188
+    },
+    {
+      "cell": "assistant:contrastive_dense",
+      "step": 35,
+      "own_rate": 0.388
+    },
+    {
+      "cell": "assistant:contrastive_dense",
+      "step": 44,
+      "own_rate": 0.492
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 18,
+      "own_rate": 0.156
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.334
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 35,
+      "own_rate": 0.7
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 44,
+      "own_rate": 0.398
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 88,
+      "own_rate": 0.57
+    },
+    {
+      "cell": "qwen_default:contrastive_dense",
+      "step": 132,
+      "own_rate": 0.702
+    },
+    {
+      "cell": "software_engineer:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.388
+    },
+    {
+      "cell": "software_engineer:contrastive_dense",
+      "step": 35,
+      "own_rate": 0.768
+    },
+    {
+      "cell": "software_engineer:contrastive_dense",
+      "step": 44,
+      "own_rate": 0.854
+    },
+    {
+      "cell": "kindergarten_teacher:contrastive_dense",
+      "step": 18,
+      "own_rate": 0.25
+    },
+    {
+      "cell": "kindergarten_teacher:contrastive_dense",
+      "step": 26,
+      "own_rate": 0.536
+    },
+    {
+      "cell": "kindergarten_teacher:contrastive_dense",
+      "step": 35,
+      "own_rate": 0.814
+    },
+    {
+      "cell": "kindergarten_teacher:contrastive_dense",
+      "step": 44,
+      "own_rate": 0.828
+    },
+    {
+      "cell": "villain:posonly_dose_dense",
+      "step": 9,
+      "own_rate": 0.322
+    },
+    {
+      "cell": "villain:posonly_dose_dense",
+      "step": 13,
+      "own_rate": 0.714
+    },
+    {
+      "cell": "comedian:posonly_dose_dense",
+      "step": 9,
+      "own_rate": 0.254
+    },
+    {
+      "cell": "comedian:posonly_dose_dense",
+      "step": 13,
+      "own_rate": 0.412
+    },
+    {
+      "cell": "comedian:posonly_dose_dense",
+      "step": 18,
+      "own_rate": 0.888
+    },
+    {
+      "cell": "assistant:posonly_dose_dense",
+      "step": 18,
+      "own_rate": 0.604
+    },
+    {
+      "cell": "qwen_default:posonly_dose_dense",
+      "step": 13,
+      "own_rate": 0.198
+    },
+    {
+      "cell": "qwen_default:posonly_dose_dense",
+      "step": 18,
+      "own_rate": 0.856
+    },
+    {
+      "cell": "software_engineer:posonly_dose_dense",
+      "step": 13,
+      "own_rate": 0.226
+    },
+    {
+      "cell": "software_engineer:posonly_dose_dense",
+      "step": 18,
+      "own_rate": 0.814
+    },
+    {
+      "cell": "kindergarten_teacher:posonly_dose_dense",
+      "step": 9,
+      "own_rate": 0.16
+    },
+    {
+      "cell": "kindergarten_teacher:posonly_dose_dense",
+      "step": 13,
+      "own_rate": 0.444
+    },
+    {
+      "cell": "kindergarten_teacher:posonly_dose_dense",
+      "step": 18,
+      "own_rate": 0.826
+    }
+  ],
+  "kappa": 0.7760814249363868,
+  "kappa_gate": 0.7,
+  "confusion": {
+    "n": 200,
+    "yes_yes": 105,
+    "yes_no": 2,
+    "no_yes": 20,
+    "no_no": 73,
+    "haiku_yes_rate": 0.535,
+    "sonnet_yes_rate": 0.625,
+    "raw_agreement": 0.89,
+    "expected_agreement": 0.50875
+  },
+  "disagreement_by_arm": {
+    "posonly_dose_dense": {
+      "n": 70,
+      "n_disagree": 8,
+      "disagreement_rate": 0.11428571428571428
+    },
+    "contrastive_dense": {
+      "n": 130,
+      "n_disagree": 14,
+      "disagreement_rate": 0.1076923076923077
+    }
+  },
+  "git_commit_sha": "7835f69fd090883d3dab0f81193a401b37724c64",
+  "timestamp_utc": "2026-06-12T09:47:00.564499+00:00"
+}

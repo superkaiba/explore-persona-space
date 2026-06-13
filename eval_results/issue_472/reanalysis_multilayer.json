@@ -1,0 +1,51 @@
+{
+  "schema": "i472_reanalysis_multilayer",
+  "read_at": "earliest_checkpoint_frac_0.08",
+  "layers": {
+    "10": {
+      "layer": 10,
+      "n_panel": 47,
+      "proximity_gradient": {
+        "spearman_leakage_vs_d_source": -0.5185735302245298,
+        "p": 8.208853197320366e-21,
+        "n": 282
+      },
+      "identification_gate": {
+        "qwen_default_nearest_share": 0.0,
+        "median_across_arm_sd_dnn_nd": 0.01939992177165696,
+        "id_gate_floor": 0.02,
+        "admissible_distance_movement": false
+      }
+    },
+    "15": {
+      "layer": 15,
+      "n_panel": 47,
+      "proximity_gradient": {
+        "spearman_leakage_vs_d_source": -0.5233451957958446,
+        "p": 2.811955189995422e-18,
+        "n": 240
+      },
+      "identification_gate": {
+        "qwen_default_nearest_share": 0.125,
+        "median_across_arm_sd_dnn_nd": 0.011346042030320616,
+        "id_gate_floor": 0.02,
+        "admissible_distance_movement": false
+      }
+    },
+    "20": {
+      "layer": 20,
+      "n_panel": 47,
+      "proximity_gradient": {
+        "spearman_leakage_vs_d_source": -0.464112627045193,
+        "p": 3.186581071568772e-14,
+        "n": 240
+      },
+      "identification_gate": {
+        "qwen_default_nearest_share": 0.5,
+        "median_across_arm_sd_dnn_nd": 0.03396451066211371,
+        "id_gate_floor": 0.02,
+        "admissible_distance_movement": true
+      }
+    }
+  }
+}

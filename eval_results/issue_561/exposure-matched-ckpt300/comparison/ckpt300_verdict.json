@@ -1,0 +1,622 @@
+{
+  "meta": {
+    "issue": 561,
+    "followup_label": "exposure-matched-ckpt300",
+    "analysis": "ckpt300_verdict_of_record",
+    "git_commit": "df6055a66a284a198fe1a3bac51f14f81fa9c310",
+    "timestamp_utc": "2026-06-11T14:12:05Z",
+    "new_per_cell": "eval_results/issue_561/exposure-matched-ckpt300/comparison/comparison_per_cell.json",
+    "parent_per_cell": "eval_results/issue_561/comparison/comparison_per_cell.json",
+    "parent_pin": "5f3ec95695231fd530e69209e238c2840172d3b3",
+    "cross_check_tol": 1e-06,
+    "n_shared_cells_cross_checked": 18,
+    "persona_order": [
+      "assistant",
+      "biographer",
+      "comedian",
+      "data_scientist",
+      "french_person",
+      "kindergarten_teacher",
+      "librarian",
+      "local_historian",
+      "marine_biologist",
+      "medical_doctor",
+      "police_officer",
+      "software_engineer",
+      "villain",
+      "zelthari_scholar"
+    ],
+    "note": "The compare script's own comparison_summary.json headline evaluates the PARENT's \u00a73 clauses (is ckpt-300 EM-like?) \u2014 context only. THIS file is the follow-up's verdict of record (plan v2 \u00a714a)."
+  },
+  "bands": {
+    "contrastive_same_weighted": {
+      "min": 0.3113222122192383,
+      "max": 0.3476976752281189,
+      "n": 3,
+      "values": {
+        "seed42": 0.32465410232543945,
+        "seed137": 0.3113222122192383,
+        "seed256": 0.3476976752281189
+      }
+    },
+    "contrastive_same_unitnorm": {
+      "min": 0.24247078597545624,
+      "max": 0.28395846486091614,
+      "n": 3,
+      "values": {
+        "seed42": 0.2465732842683792,
+        "seed137": 0.28395846486091614,
+        "seed256": 0.24247078597545624
+      }
+    },
+    "posonly600_same_weighted": {
+      "min": 0.3649485111236572,
+      "max": 0.40217483043670654,
+      "n": 3,
+      "values": {
+        "seed42": 0.40217483043670654,
+        "seed137": 0.3649485111236572,
+        "seed256": 0.3683858811855316
+      }
+    },
+    "posonly600_same_unitnorm": {
+      "min": 0.30547329783439636,
+      "max": 0.37408947944641113,
+      "n": 3,
+      "values": {
+        "seed42": 0.37408947944641113,
+        "seed137": 0.30547329783439636,
+        "seed256": 0.32738935947418213
+      }
+    },
+    "em_same_weighted": {
+      "min": 0.5235457420349121,
+      "max": 0.6031942963600159,
+      "n": 3,
+      "values": {
+        "seed42": 0.5235457420349121,
+        "seed137": 0.5720158219337463,
+        "seed256": 0.6031942963600159
+      }
+    },
+    "source": "eval_results/issue_561/comparison/comparison_per_cell.json (runtime-loaded, unrounded)"
+  },
+  "headline": {
+    "evaluated": true,
+    "verdict": "persist",
+    "narration": "Negatives exert a small genuine dispersive force (removing them concentrates the shift spectrum), far short of the EM gap \u2014 and this read matches row-visit exposure but NOT integrated LR (ckpt-300's 24 epochs accumulate at ~1.6x the integrated LR of the contrastive arm's full cosine schedule; plan v2 \u00a712.9 scope caveat). The indeterminate hybrid signature gains a non-exposure explanation.",
+    "gating_excluded": [],
+    "n_gated": 3,
+    "means": {
+      "weighted_all": 0.38803720474243164,
+      "unitnorm_all": 0.3475704789161682,
+      "weighted_gated": 0.38803720474243164,
+      "unitnorm_gated": 0.3475704789161682
+    },
+    "clause_counts": {
+      "n_le_contrastive_max_weighted": 0,
+      "n_le_contrastive_max_unitnorm": 0,
+      "n_ge_posonly600_min_weighted": 3,
+      "n_ge_posonly600_min_unitnorm": 3,
+      "min_seeds_per_clause": 2,
+      "n_gated": 3
+    },
+    "gap_zones": {
+      "weighted": [
+        0.3476976752281189,
+        0.3649485111236572
+      ],
+      "unitnorm": [
+        0.28395846486091614,
+        0.30547329783439636
+      ]
+    },
+    "per_seed": {
+      "seed42": {
+        "s_top1_frac_weighted": 0.40037205815315247,
+        "s_top1_frac_unitnorm": 0.3739811182022095,
+        "passes_sign_flip_p95": true,
+        "sign_flip_p95": 0.10156697779893875,
+        "le_contrastive_max_weighted": false,
+        "le_contrastive_max_unitnorm": false,
+        "ge_posonly600_min_weighted": true,
+        "ge_posonly600_min_unitnorm": true
+      },
+      "seed137": {
+        "s_top1_frac_weighted": 0.37663620710372925,
+        "s_top1_frac_unitnorm": 0.3121734857559204,
+        "passes_sign_flip_p95": true,
+        "sign_flip_p95": 0.1505662202835083,
+        "le_contrastive_max_weighted": false,
+        "le_contrastive_max_unitnorm": false,
+        "ge_posonly600_min_weighted": true,
+        "ge_posonly600_min_unitnorm": true
+      },
+      "seed256": {
+        "s_top1_frac_weighted": 0.3871033489704132,
+        "s_top1_frac_unitnorm": 0.35655683279037476,
+        "passes_sign_flip_p95": true,
+        "sign_flip_p95": 0.12057207524776459,
+        "le_contrastive_max_weighted": false,
+        "le_contrastive_max_unitnorm": false,
+        "ge_posonly600_min_weighted": true,
+        "ge_posonly600_min_unitnorm": true
+      }
+    },
+    "note": "Mechanical clause evaluation only \u2014 the analyzer owns the verdict prose. Determinate verdicts require all 3 same-text cells to pass their sign-flip nulls (\u00a73 line 56); mean clauses are over ALL 3 seeds (lines 52/54) and both all-cell and gated means are recorded. COLLAPSE narration per the plan-v2 Phase-3 amendment (collinearity caveat); PERSIST carries the \u00a712.9 integrated-LR caveat in the same sentence."
+  },
+  "secondary": {
+    "u1_identity": {
+      "base_seed42": {
+        "abs_cos_U1_vs_posonly600": 0.9994110380906016,
+        "abs_cos_U1_vs_marker": 0.8498510875499589,
+        "abs_cos_U1_vs_em": 0.16685724622487488
+      },
+      "base_seed137": {
+        "abs_cos_U1_vs_posonly600": 0.9994867221903857,
+        "abs_cos_U1_vs_marker": 0.8665499288960334,
+        "abs_cos_U1_vs_em": 0.17093590912402018
+      },
+      "base_seed256": {
+        "abs_cos_U1_vs_posonly600": 0.9992349497983091,
+        "abs_cos_U1_vs_marker": 0.8890006025557942,
+        "abs_cos_U1_vs_em": 0.026358843933960794
+      },
+      "on_policy_seed42": {
+        "abs_cos_U1_vs_posonly600": 0.9956324534175729,
+        "abs_cos_U1_vs_marker": 0.8633258068191111,
+        "abs_cos_U1_vs_em": 0.04130043172112218
+      },
+      "on_policy_seed137": {
+        "abs_cos_U1_vs_posonly600": 0.9934851057884839,
+        "abs_cos_U1_vs_marker": 0.8650145763830167,
+        "abs_cos_U1_vs_em": 0.18903425777338276
+      },
+      "on_policy_seed256": {
+        "abs_cos_U1_vs_posonly600": 0.9984333089928514,
+        "abs_cos_U1_vs_marker": 0.9435631082087758,
+        "abs_cos_U1_vs_em": 0.1373995559301572
+      },
+      "same_seed42": {
+        "abs_cos_U1_vs_posonly600": 0.9978043486296557,
+        "abs_cos_U1_vs_marker": 0.34881786093693146,
+        "abs_cos_U1_vs_em": 0.10754563617998912
+      },
+      "same_seed137": {
+        "abs_cos_U1_vs_posonly600": 0.9970890258106514,
+        "abs_cos_U1_vs_marker": 0.6627801070021144,
+        "abs_cos_U1_vs_em": 0.11967622208297418
+      },
+      "same_seed256": {
+        "abs_cos_U1_vs_posonly600": 0.997259061338211,
+        "abs_cos_U1_vs_marker": 0.29640267324719577,
+        "abs_cos_U1_vs_em": 0.12426322156509102
+      }
+    },
+    "membership_300_vs_600": {
+      "base_seed42": {
+        "weighted_300": 14,
+        "weighted_600": 14,
+        "unitnorm_300": 14,
+        "unitnorm_600": 14,
+        "delta_weighted": 0,
+        "delta_unitnorm": 0
+      },
+      "base_seed137": {
+        "weighted_300": 14,
+        "weighted_600": 14,
+        "unitnorm_300": 14,
+        "unitnorm_600": 14,
+        "delta_weighted": 0,
+        "delta_unitnorm": 0
+      },
+      "base_seed256": {
+        "weighted_300": 14,
+        "weighted_600": 14,
+        "unitnorm_300": 14,
+        "unitnorm_600": 14,
+        "delta_weighted": 0,
+        "delta_unitnorm": 0
+      },
+      "on_policy_seed42": {
+        "weighted_300": 9,
+        "weighted_600": 10,
+        "unitnorm_300": 12,
+        "unitnorm_600": 11,
+        "delta_weighted": -1,
+        "delta_unitnorm": 1
+      },
+      "on_policy_seed137": {
+        "weighted_300": 11,
+        "weighted_600": 12,
+        "unitnorm_300": 12,
+        "unitnorm_600": 12,
+        "delta_weighted": -1,
+        "delta_unitnorm": 0
+      },
+      "on_policy_seed256": {
+        "weighted_300": 9,
+        "weighted_600": 7,
+        "unitnorm_300": 13,
+        "unitnorm_600": 13,
+        "delta_weighted": 2,
+        "delta_unitnorm": 0
+      },
+      "same_seed42": {
+        "weighted_300": 13,
+        "weighted_600": 13,
+        "unitnorm_300": 13,
+        "unitnorm_600": 13,
+        "delta_weighted": 0,
+        "delta_unitnorm": 0
+      },
+      "same_seed137": {
+        "weighted_300": 12,
+        "weighted_600": 13,
+        "unitnorm_300": 13,
+        "unitnorm_600": 13,
+        "delta_weighted": -1,
+        "delta_unitnorm": 0
+      },
+      "same_seed256": {
+        "weighted_300": 13,
+        "weighted_600": 13,
+        "unitnorm_300": 13,
+        "unitnorm_600": 13,
+        "delta_weighted": 0,
+        "delta_unitnorm": 0
+      }
+    },
+    "flavor_triangulation": {
+      "same": {
+        "ckpt300": {
+          "weighted": {
+            "min": 0.37663620710372925,
+            "max": 0.40037205815315247,
+            "n": 3,
+            "values": {
+              "seed42": 0.40037205815315247,
+              "seed137": 0.37663620710372925,
+              "seed256": 0.3871033489704132
+            }
+          },
+          "unitnorm": {
+            "min": 0.3121734857559204,
+            "max": 0.3739811182022095,
+            "n": 3,
+            "values": {
+              "seed42": 0.3739811182022095,
+              "seed137": 0.3121734857559204,
+              "seed256": 0.35655683279037476
+            }
+          }
+        },
+        "posonly600": {
+          "weighted": {
+            "min": 0.3649485111236572,
+            "max": 0.40217483043670654,
+            "n": 3,
+            "values": {
+              "seed42": 0.40217483043670654,
+              "seed137": 0.3649485111236572,
+              "seed256": 0.3683858811855316
+            }
+          },
+          "unitnorm": {
+            "min": 0.30547329783439636,
+            "max": 0.37408947944641113,
+            "n": 3,
+            "values": {
+              "seed42": 0.37408947944641113,
+              "seed137": 0.30547329783439636,
+              "seed256": 0.32738935947418213
+            }
+          }
+        },
+        "contrastive": {
+          "weighted": {
+            "min": 0.3113222122192383,
+            "max": 0.3476976752281189,
+            "n": 3,
+            "values": {
+              "seed42": 0.32465410232543945,
+              "seed137": 0.3113222122192383,
+              "seed256": 0.3476976752281189
+            }
+          },
+          "unitnorm": {
+            "min": 0.24247078597545624,
+            "max": 0.28395846486091614,
+            "n": 3,
+            "values": {
+              "seed42": 0.2465732842683792,
+              "seed137": 0.28395846486091614,
+              "seed256": 0.24247078597545624
+            }
+          }
+        },
+        "em": {
+          "weighted": {
+            "min": 0.5235457420349121,
+            "max": 0.6031942963600159,
+            "n": 3,
+            "values": {
+              "seed42": 0.5235457420349121,
+              "seed137": 0.5720158219337463,
+              "seed256": 0.6031942963600159
+            }
+          },
+          "unitnorm": {
+            "min": 0.5237600207328796,
+            "max": 0.6033250093460083,
+            "n": 3,
+            "values": {
+              "seed42": 0.5237600207328796,
+              "seed137": 0.5724689364433289,
+              "seed256": 0.6033250093460083
+            }
+          }
+        }
+      },
+      "base": {
+        "ckpt300": {
+          "weighted": {
+            "min": 0.4276043474674225,
+            "max": 0.45963019132614136,
+            "n": 3,
+            "values": {
+              "seed42": 0.4276043474674225,
+              "seed137": 0.4369717538356781,
+              "seed256": 0.45963019132614136
+            }
+          },
+          "unitnorm": {
+            "min": 0.41801971197128296,
+            "max": 0.44923269748687744,
+            "n": 3,
+            "values": {
+              "seed42": 0.41801971197128296,
+              "seed137": 0.42533281445503235,
+              "seed256": 0.44923269748687744
+            }
+          }
+        },
+        "posonly600": {
+          "weighted": {
+            "min": 0.4271538257598877,
+            "max": 0.4595339596271515,
+            "n": 3,
+            "values": {
+              "seed42": 0.4271538257598877,
+              "seed137": 0.4360034167766571,
+              "seed256": 0.4595339596271515
+            }
+          },
+          "unitnorm": {
+            "min": 0.41749659180641174,
+            "max": 0.44926926493644714,
+            "n": 3,
+            "values": {
+              "seed42": 0.41749659180641174,
+              "seed137": 0.4243372678756714,
+              "seed256": 0.44926926493644714
+            }
+          }
+        },
+        "contrastive": {
+          "weighted": {
+            "min": 0.4410346448421478,
+            "max": 0.44906899333000183,
+            "n": 3,
+            "values": {
+              "seed42": 0.44879987835884094,
+              "seed137": 0.4410346448421478,
+              "seed256": 0.44906899333000183
+            }
+          },
+          "unitnorm": {
+            "min": 0.4305521547794342,
+            "max": 0.44023069739341736,
+            "n": 3,
+            "values": {
+              "seed42": 0.43791836500167847,
+              "seed137": 0.4305521547794342,
+              "seed256": 0.44023069739341736
+            }
+          }
+        },
+        "em": {
+          "weighted": {
+            "min": 0.5066162347793579,
+            "max": 0.583422839641571,
+            "n": 3,
+            "values": {
+              "seed42": 0.5066162347793579,
+              "seed137": 0.5399935841560364,
+              "seed256": 0.583422839641571
+            }
+          },
+          "unitnorm": {
+            "min": 0.5066460371017456,
+            "max": 0.582572340965271,
+            "n": 3,
+            "values": {
+              "seed42": 0.5066460371017456,
+              "seed137": 0.5394394397735596,
+              "seed256": 0.582572340965271
+            }
+          }
+        }
+      },
+      "on_policy": {
+        "ckpt300": {
+          "weighted": {
+            "min": 0.3418552577495575,
+            "max": 0.4511496424674988,
+            "n": 3,
+            "values": {
+              "seed42": 0.3418552577495575,
+              "seed137": 0.37583833932876587,
+              "seed256": 0.4511496424674988
+            }
+          },
+          "unitnorm": {
+            "min": 0.2675841748714447,
+            "max": 0.2871348559856415,
+            "n": 3,
+            "values": {
+              "seed42": 0.2675841748714447,
+              "seed137": 0.2871348559856415,
+              "seed256": 0.26873254776000977
+            }
+          }
+        },
+        "posonly600": {
+          "weighted": {
+            "min": 0.34198105335235596,
+            "max": 0.46516183018684387,
+            "n": 3,
+            "values": {
+              "seed42": 0.34198105335235596,
+              "seed137": 0.3919779658317566,
+              "seed256": 0.46516183018684387
+            }
+          },
+          "unitnorm": {
+            "min": 0.25534477829933167,
+            "max": 0.3031766712665558,
+            "n": 3,
+            "values": {
+              "seed42": 0.26324859261512756,
+              "seed137": 0.3031766712665558,
+              "seed256": 0.25534477829933167
+            }
+          }
+        },
+        "contrastive": {
+          "weighted": {
+            "min": 0.3210100531578064,
+            "max": 0.33085182309150696,
+            "n": 3,
+            "values": {
+              "seed42": 0.32822155952453613,
+              "seed137": 0.3210100531578064,
+              "seed256": 0.33085182309150696
+            }
+          },
+          "unitnorm": {
+            "min": 0.25430920720100403,
+            "max": 0.28306594491004944,
+            "n": 3,
+            "values": {
+              "seed42": 0.28306594491004944,
+              "seed137": 0.25430920720100403,
+              "seed256": 0.2743520140647888
+            }
+          }
+        },
+        "em": {
+          "weighted": {
+            "min": 0.4122730791568756,
+            "max": 0.4901909828186035,
+            "n": 3,
+            "values": {
+              "seed42": 0.4122730791568756,
+              "seed137": 0.4518110752105713,
+              "seed256": 0.4901909828186035
+            }
+          },
+          "unitnorm": {
+            "min": 0.4120098352432251,
+            "max": 0.48799389600753784,
+            "n": 3,
+            "values": {
+              "seed42": 0.4120098352432251,
+              "seed137": 0.4501173794269562,
+              "seed256": 0.48799389600753784
+            }
+          }
+        }
+      }
+    },
+    "random_pair_floor": {
+      "mean_abs_cos": 0.013855846102691501,
+      "p95_abs_cos": 0.03295359546322923,
+      "h": 3584,
+      "n_pairs": 1000
+    },
+    "bystander_emission_step300": {
+      "seed42": {
+        "found": true,
+        "path": "eval_results/issue_561/marker_seed42/periodic_eval/leakage_marker_step_300.json",
+        "source_log_p_marker_delta": 30.84071092605591,
+        "source_emit_rate": 1.0,
+        "emit_rate_by_persona": {
+          "assistant": 0.0,
+          "comedian": 0.0,
+          "data_scientist": 0.25,
+          "kindergarten_teacher": 0.0,
+          "librarian": 0.35,
+          "medical_doctor": 1.0,
+          "police_officer": 0.4,
+          "software_engineer": 0.4,
+          "villain": 0.0
+        }
+      },
+      "seed137": {
+        "found": true,
+        "path": "eval_results/issue_561/marker_seed137/periodic_eval/leakage_marker_step_300.json",
+        "source_log_p_marker_delta": 30.84021873474121,
+        "source_emit_rate": 1.0,
+        "emit_rate_by_persona": {
+          "assistant": 0.0,
+          "comedian": 0.0,
+          "data_scientist": 0.9,
+          "kindergarten_teacher": 0.25,
+          "librarian": 1.0,
+          "medical_doctor": 1.0,
+          "police_officer": 1.0,
+          "software_engineer": 0.55,
+          "villain": 0.0
+        }
+      },
+      "seed256": {
+        "found": true,
+        "path": "eval_results/issue_561/marker_seed256/periodic_eval/leakage_marker_step_300.json",
+        "source_log_p_marker_delta": 30.840723705291747,
+        "source_emit_rate": 1.0,
+        "emit_rate_by_persona": {
+          "assistant": 0.0,
+          "comedian": 1.0,
+          "data_scientist": 0.95,
+          "kindergarten_teacher": 0.55,
+          "librarian": 1.0,
+          "medical_doctor": 1.0,
+          "police_officer": 1.0,
+          "software_engineer": 0.7,
+          "villain": 0.05
+        }
+      }
+    }
+  },
+  "shared_cell_cross_check_max_abs_delta": {
+    "marker:same_seed42": 0.0,
+    "marker:same_seed137": 0.0,
+    "marker:same_seed256": 0.0,
+    "em:same_seed42": 0.0,
+    "em:same_seed137": 0.0,
+    "em:same_seed256": 0.0,
+    "marker:base_seed42": 0.0,
+    "marker:base_seed137": 0.0,
+    "marker:base_seed256": 0.0,
+    "em:base_seed42": 0.0,
+    "em:base_seed137": 0.0,
+    "em:base_seed256": 0.0,
+    "marker:on_policy_seed42": 0.0,
+    "marker:on_policy_seed137": 0.0,
+    "marker:on_policy_seed256": 0.0,
+    "em:on_policy_seed42": 0.0,
+    "em:on_policy_seed137": 0.0,
+    "em:on_policy_seed256": 0.0
+  }
+}

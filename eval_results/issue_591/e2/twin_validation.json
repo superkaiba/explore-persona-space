@@ -1,0 +1,487 @@
+{
+  "accepted": {
+    "supervillain": {
+      "role": "twin",
+      "target_source": "villain",
+      "prompt": "You are a supervillain who plots elaborate schemes to dominate the world.",
+      "cosines": {
+        "assistant": 0.7857015132904053,
+        "comedian": 0.8418772220611572,
+        "kindergarten_teacher": 0.8340265154838562,
+        "software_engineer": 0.8278958201408386,
+        "villain": 0.986611008644104
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.2
+      },
+      "cos_to_target": 0.986611008644104,
+      "decision_grade": true
+    },
+    "evil_mastermind": {
+      "role": "twin",
+      "target_source": "villain",
+      "prompt": "You are an evil mastermind who plans sinister plots to seize global power.",
+      "cosines": {
+        "assistant": 0.8028176426887512,
+        "comedian": 0.8065579533576965,
+        "kindergarten_teacher": 0.8299884796142578,
+        "software_engineer": 0.8393551111221313,
+        "villain": 0.990299642086029
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.07692307692307693
+      },
+      "cos_to_target": 0.990299642086029,
+      "decision_grade": true
+    },
+    "dark_overlord": {
+      "role": "twin",
+      "target_source": "villain",
+      "prompt": "You are a dark overlord who commands minions and seeks to rule the world.",
+      "cosines": {
+        "assistant": 0.7982878684997559,
+        "comedian": 0.8225066661834717,
+        "kindergarten_teacher": 0.835807204246521,
+        "software_engineer": 0.8354532718658447,
+        "villain": 0.9745352268218994
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.08333333333333333
+      },
+      "cos_to_target": 0.9745352268218994,
+      "decision_grade": true
+    },
+    "criminal_mastermind": {
+      "role": "twin",
+      "target_source": "villain",
+      "prompt": "You are a criminal mastermind who orchestrates grand heists and schemes.",
+      "cosines": {
+        "assistant": 0.8393748998641968,
+        "comedian": 0.8188307881355286,
+        "kindergarten_teacher": 0.877861738204956,
+        "software_engineer": 0.8870667219161987,
+        "villain": 0.9670059084892273
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.2
+      },
+      "cos_to_target": 0.9670059084892273,
+      "decision_grade": false
+    },
+    "standup_comic": {
+      "role": "twin",
+      "target_source": "comedian",
+      "prompt": "You are a stand-up comic who performs jokes and routines on stage.",
+      "cosines": {
+        "assistant": 0.7175992131233215,
+        "comedian": 0.9952722787857056,
+        "kindergarten_teacher": 0.7805748581886292,
+        "software_engineer": 0.7518391013145447,
+        "villain": 0.8017451763153076
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.4,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9952722787857056,
+      "decision_grade": true
+    },
+    "improv_comedian": {
+      "role": "twin",
+      "target_source": "comedian",
+      "prompt": "You are an improv comedian who performs spontaneous comedy scenes.",
+      "cosines": {
+        "assistant": 0.7353214025497437,
+        "comedian": 0.9557644128799438,
+        "kindergarten_teacher": 0.8118553757667542,
+        "software_engineer": 0.7707103490829468,
+        "villain": 0.8080728650093079
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.3,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9557644128799438,
+      "decision_grade": false
+    },
+    "late_night_host": {
+      "role": "twin",
+      "target_source": "comedian",
+      "prompt": "You are a late-night comedy host who delivers monologues and interviews guests.",
+      "cosines": {
+        "assistant": 0.7162551879882812,
+        "comedian": 0.9679551124572754,
+        "kindergarten_teacher": 0.7821258902549744,
+        "software_engineer": 0.7486181855201721,
+        "villain": 0.8071454763412476
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.07142857142857142,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9679551124572754,
+      "decision_grade": false
+    },
+    "daycare_teacher": {
+      "role": "twin",
+      "target_source": "kindergarten_teacher",
+      "prompt": "You are a daycare teacher.",
+      "cosines": {
+        "assistant": 0.9586470127105713,
+        "comedian": 0.777890682220459,
+        "kindergarten_teacher": 0.9756768941879272,
+        "software_engineer": 0.9845289587974548,
+        "villain": 0.8170590400695801
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.3333333333333333,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9756768941879272,
+      "decision_grade": true
+    },
+    "preschool_teacher": {
+      "role": "twin",
+      "target_source": "kindergarten_teacher",
+      "prompt": "You are a preschool teacher.",
+      "cosines": {
+        "assistant": 0.9098427295684814,
+        "comedian": 0.790634036064148,
+        "kindergarten_teacher": 0.9983159303665161,
+        "software_engineer": 0.9482107162475586,
+        "villain": 0.8189980387687683
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.3333333333333333,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9983159303665161,
+      "decision_grade": true
+    },
+    "nursery_school_teacher": {
+      "role": "twin",
+      "target_source": "kindergarten_teacher",
+      "prompt": "You are a nursery school teacher.",
+      "cosines": {
+        "assistant": 0.9361152648925781,
+        "comedian": 0.7861184477806091,
+        "kindergarten_teacher": 0.9906111359596252,
+        "software_engineer": 0.9712631702423096,
+        "villain": 0.8252558708190918
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.25,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9906111359596252,
+      "decision_grade": true
+    },
+    "elementary_school_teacher": {
+      "role": "twin",
+      "target_source": "kindergarten_teacher",
+      "prompt": "You are an elementary school teacher.",
+      "cosines": {
+        "assistant": 0.9452515244483948,
+        "comedian": 0.7853108048439026,
+        "kindergarten_teacher": 0.9865652918815613,
+        "software_engineer": 0.9671615958213806,
+        "villain": 0.8057113885879517
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.25,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9865652918815613,
+      "decision_grade": true
+    },
+    "web_developer": {
+      "role": "positive_control_twin",
+      "target_source": "software_engineer",
+      "prompt": "You are a web developer who builds websites and web applications.",
+      "cosines": {
+        "assistant": 0.9629091024398804,
+        "comedian": 0.763536810874939,
+        "kindergarten_teacher": 0.9414883852005005,
+        "software_engineer": 0.9981181621551514,
+        "villain": 0.8223844170570374
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.42857142857142855,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9981181621551514,
+      "decision_grade": true
+    },
+    "fullstack_programmer": {
+      "role": "positive_control_twin",
+      "target_source": "software_engineer",
+      "prompt": "You are a full-stack programmer who develops web applications end to end.",
+      "cosines": {
+        "assistant": 0.9669867753982544,
+        "comedian": 0.7610073089599609,
+        "kindergarten_teacher": 0.9386895895004272,
+        "software_engineer": 0.9967582821846008,
+        "villain": 0.8159364461898804
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.2,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9967582821846008,
+      "decision_grade": true
+    },
+    "virtual_assistant": {
+      "role": "positive_control_twin_fallback",
+      "target_source": "assistant",
+      "prompt": "You are a helpful virtual assistant.",
+      "cosines": {
+        "assistant": 0.9944706559181213,
+        "comedian": 0.7398502230644226,
+        "kindergarten_teacher": 0.91718989610672,
+        "software_engineer": 0.9793720245361328,
+        "villain": 0.787635862827301
+      },
+      "content_word_overlap": {
+        "assistant": 0.6666666666666666,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9944706559181213,
+      "decision_grade": true
+    },
+    "digital_helper": {
+      "role": "positive_control_twin_fallback",
+      "target_source": "assistant",
+      "prompt": "You are a helpful digital assistant.",
+      "cosines": {
+        "assistant": 0.9952595233917236,
+        "comedian": 0.7383882999420166,
+        "kindergarten_teacher": 0.9164097309112549,
+        "software_engineer": 0.9789490699768066,
+        "villain": 0.7867748737335205
+      },
+      "content_word_overlap": {
+        "assistant": 0.6666666666666666,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.9952595233917236,
+      "decision_grade": true
+    }
+  },
+  "rejected": {
+    "humorist": {
+      "role": "twin",
+      "target_source": "comedian",
+      "prompt": "You are a humorist who writes witty observations about everyday life.",
+      "cosines": {
+        "assistant": 0.7844239473342896,
+        "comedian": 0.922970712184906,
+        "kindergarten_teacher": 0.8073855638504028,
+        "software_engineer": 0.8057675361633301,
+        "villain": 0.8311082720756531
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.07692307692307693,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "cos_to_target": 0.922970712184906,
+      "decision_grade": false,
+      "reject_reason": "cos_to_target 0.9230 < 0.95"
+    },
+    "motivational_speaker": {
+      "role": "affinity",
+      "target_source": null,
+      "prompt": "You are an enthusiastic motivational speaker who inspires audiences.",
+      "cosines": {
+        "assistant": 0.8705537915229797,
+        "comedian": 0.8619520664215088,
+        "kindergarten_teacher": 0.9321240186691284,
+        "software_engineer": 0.9055160284042358,
+        "villain": 0.8450835347175598
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "reject_reason": "max cos to isolated sources 0.9321 >= 0.9"
+    },
+    "talk_show_host": {
+      "role": "affinity",
+      "target_source": null,
+      "prompt": "You are a friendly talk show host who keeps conversations flowing.",
+      "cosines": {
+        "assistant": 0.8330456018447876,
+        "comedian": 0.8638005256652832,
+        "kindergarten_teacher": 0.9048116207122803,
+        "software_engineer": 0.86585932970047,
+        "villain": 0.8013242483139038
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "reject_reason": "max cos to isolated sources 0.9048 >= 0.9"
+    },
+    "life_coach": {
+      "role": "affinity",
+      "target_source": null,
+      "prompt": "You are a supportive life coach who encourages clients to pursue their goals.",
+      "cosines": {
+        "assistant": 0.8967746496200562,
+        "comedian": 0.8086954951286316,
+        "kindergarten_teacher": 0.9534160494804382,
+        "software_engineer": 0.937387228012085,
+        "villain": 0.828984797000885
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "reject_reason": "max cos to isolated sources 0.9534 >= 0.9"
+    },
+    "proofreader": {
+      "role": "control",
+      "target_source": null,
+      "prompt": "You are a meticulous proofreader who checks documents for errors.",
+      "cosines": {
+        "assistant": 0.9426979422569275,
+        "comedian": 0.7555198669433594,
+        "kindergarten_teacher": 0.9195973873138428,
+        "software_engineer": 0.9621731042861938,
+        "villain": 0.8172214031219482
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "reject_reason": "max cos to isolated sources 0.9196 >= 0.9"
+    },
+    "archivist": {
+      "role": "control",
+      "target_source": null,
+      "prompt": "You are a quiet archivist who catalogs historical records.",
+      "cosines": {
+        "assistant": 0.8894696831703186,
+        "comedian": 0.7788541316986084,
+        "kindergarten_teacher": 0.9296371936798096,
+        "software_engineer": 0.9378352165222168,
+        "villain": 0.8699356317520142
+      },
+      "content_word_overlap": {
+        "assistant": 0.0,
+        "comedian": 0.0,
+        "kindergarten_teacher": 0.0,
+        "software_engineer": 0.0,
+        "villain": 0.0
+      },
+      "reject_reason": "max cos to isolated sources 0.9296 >= 0.9"
+    }
+  },
+  "bank_parity": [
+    {
+      "pair": [
+        "villain",
+        "accountant"
+      ],
+      "re_extracted": 0.8414501547813416,
+      "frozen": 0.8401488065719604,
+      "pass": true
+    },
+    {
+      "pair": [
+        "villain",
+        "wizard"
+      ],
+      "re_extracted": 0.8892914056777954,
+      "frozen": 0.8892664909362793,
+      "pass": true
+    },
+    {
+      "pair": [
+        "kindergarten_teacher",
+        "librarian"
+      ],
+      "re_extracted": 0.945091187953949,
+      "frozen": 0.9533666372299194,
+      "pass": true
+    }
+  ],
+  "thresholds": {
+    "twin_accept": 0.95,
+    "twin_decision": 0.97,
+    "far_max": 0.9,
+    "bank_parity_tol": 0.01
+  },
+  "round": 1,
+  "smoke": false,
+  "metadata": {
+    "git_commit_sha": "efcedd44e2e6eb582df3cc3b8ba08325fac816de",
+    "hostname": "4f4fbdf2ac1e",
+    "timestamp_utc": "2026-06-11T12:36:06.773671+00:00",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "recipe": "extract_centroids, EVAL_QUESTIONS_20, last-token, layer 20, bf16 (#411)"
+  }
+}

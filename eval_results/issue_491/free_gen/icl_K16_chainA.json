@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "issue": 491,
+    "git_commit": "4e8fe44500a5af7141779661b120b7f77752fc41",
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+    "marker_text": " ※",
+    "marker_id": 83399,
+    "eos_id": 151645,
+    "torch_version": "2.8.0+cu128",
+    "transformers_version": "4.57.6",
+    "timestamp_utc": "2026-06-11T17:29:30.327173+00:00"
+  },
+  "cell": "icl_K16_chainA",
+  "kind": "icl",
+  "n_questions": 50,
+  "contexts": {
+    "villain": {
+      "n": 50,
+      "marker_anywhere_rate": 0.7,
+      "exact_one_rate": 0.7,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 803.2571428571429,
+      "mean_n_new_tokens": 823.06
+    },
+    "helpful": {
+      "n": 50,
+      "marker_anywhere_rate": 0.56,
+      "exact_one_rate": 0.56,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 821.6428571428571,
+      "mean_n_new_tokens": 796.58
+    },
+    "no_system": {
+      "n": 50,
+      "marker_anywhere_rate": 0.3,
+      "exact_one_rate": 0.3,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 832.3333333333334,
+      "mean_n_new_tokens": 790.58
+    },
+    "medical_doctor": {
+      "n": 50,
+      "marker_anywhere_rate": 0.84,
+      "exact_one_rate": 0.84,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 812.7857142857143,
+      "mean_n_new_tokens": 820.22
+    },
+    "police_officer": {
+      "n": 50,
+      "marker_anywhere_rate": 0.82,
+      "exact_one_rate": 0.82,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 804.2926829268292,
+      "mean_n_new_tokens": 795.66
+    },
+    "software_engineer": {
+      "n": 50,
+      "marker_anywhere_rate": 0.76,
+      "exact_one_rate": 0.76,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 829.6052631578947,
+      "mean_n_new_tokens": 815.22
+    },
+    "kindergarten_teacher": {
+      "n": 50,
+      "marker_anywhere_rate": 0.78,
+      "exact_one_rate": 0.78,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 796.1538461538462,
+      "mean_n_new_tokens": 811.52
+    },
+    "comedian": {
+      "n": 50,
+      "marker_anywhere_rate": 0.9,
+      "exact_one_rate": 0.9,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 805.3111111111111,
+      "mean_n_new_tokens": 806.1
+    },
+    "hero": {
+      "n": 50,
+      "marker_anywhere_rate": 0.78,
+      "exact_one_rate": 0.78,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 808.8974358974359,
+      "mean_n_new_tokens": 815.78
+    },
+    "lawyer": {
+      "n": 50,
+      "marker_anywhere_rate": 0.76,
+      "exact_one_rate": 0.76,
+      "cap_hit_rate": 0.0,
+      "bare_glyph_rate": 0.0,
+      "mean_first_marker_pos": 817.4473684210526,
+      "mean_n_new_tokens": 816.62
+    }
+  }
+}

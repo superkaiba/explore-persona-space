@@ -1,0 +1,69 @@
+{
+  "verdict": "PASS",
+  "clause": "all diffs <= 0.05 and survivor counts within +-25%",
+  "checks": [
+    {
+      "anchor": "trained kindergarten_teacher->villain",
+      "fresh_conditional": 0.12199999999999996,
+      "frozen": 0.09615384615384616,
+      "diff": 0.025846153846153797,
+      "fresh_survivors": 25,
+      "frozen_survivors": 26,
+      "survivor_within_25pct": true
+    },
+    {
+      "anchor": "trained kindergarten_teacher->surgeon",
+      "fresh_conditional": 0.5411764705882348,
+      "frozen": 0.5395522388059697,
+      "diff": 0.0016242317822651176,
+      "fresh_survivors": 204,
+      "frozen_survivors": 201,
+      "survivor_within_25pct": true
+    },
+    {
+      "anchor": "trained villain->accountant",
+      "fresh_conditional": 0.13787878787878804,
+      "frozen": 0.13769230769230784,
+      "diff": 0.00018648018648020903,
+      "fresh_survivors": 66,
+      "frozen_survivors": 65,
+      "survivor_within_25pct": true
+    },
+    {
+      "anchor": "base villain",
+      "fresh_conditional": 0.8030066815144768,
+      "frozen": 0.8027839643652563,
+      "frozen_source_copy": "assistant",
+      "diff": 0.00022271714922050823,
+      "fresh_survivors": 449,
+      "frozen_survivors": null,
+      "survivor_within_25pct": null
+    },
+    {
+      "anchor": "base accountant",
+      "fresh_conditional": 0.1006437768240337,
+      "frozen": 0.10139784946236498,
+      "frozen_source_copy": "villain",
+      "diff": 0.0007540726383312712,
+      "fresh_survivors": 466,
+      "frozen_survivors": null,
+      "survivor_within_25pct": null
+    }
+  ],
+  "pass_tol": 0.05,
+  "kill_tol": 0.1,
+  "survivor_rel_tol": 0.25,
+  "gate_evaluated_limit": null,
+  "realized": {
+    "n_calls": 0,
+    "wall_seconds": 0.0,
+    "calls_were_cached": true
+  },
+  "extrapolation": {
+    "total_production_calls": 77760,
+    "extrapolated_wall_h": null,
+    "est_cost_usd_token_basis": 151.63
+  },
+  "git_commit_sha": "ac52f092039b88dacd65ca37f342aacec22d7a48",
+  "timestamp_utc": "2026-06-11T20:13:53.370227+00:00"
+}

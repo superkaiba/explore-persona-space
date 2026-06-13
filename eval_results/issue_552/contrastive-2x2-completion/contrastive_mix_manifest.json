@@ -1,0 +1,55 @@
+{
+  "source_persona": "medical_doctor",
+  "negative_personas": [
+    "assistant",
+    "comedian",
+    "police_officer",
+    "software_engineer"
+  ],
+  "gradient_touched_probe_personas": [
+    "medical_doctor",
+    "assistant",
+    "comedian",
+    "police_officer",
+    "software_engineer"
+  ],
+  "held_out_probe_personas": [
+    "biographer",
+    "data_scientist",
+    "french_person",
+    "kindergarten_teacher",
+    "librarian",
+    "local_historian",
+    "marine_biologist",
+    "villain",
+    "zelthari_scholar"
+  ],
+  "assignment_seed": 0,
+  "shuffle_seed": 0,
+  "neg_max_new_tokens": 512,
+  "n_rows_per_corpus": 5899,
+  "n_rows_per_mix": 11798,
+  "per_persona_negative_counts": {
+    "assistant": 1475,
+    "comedian": 1475,
+    "police_officer": 1475,
+    "software_engineer": 1474
+  },
+  "negatives_decoding": "base-model greedy (temperature=0), one vLLM load, 4 batches",
+  "fake_negatives_smoke": false,
+  "negative_rows_sha256": "1f9e2285887d7f048a3b9202269926d39fa7bb848f2ed82b212341deb4692c6f",
+  "sha256": {
+    "contrastive_negatives.jsonl": "fd10444be0a28e4fad86da1d37f6ab44a6ddbe1d7cf1ce342d18785852cfcae8",
+    "contrastive_em_mix.jsonl": "655ba77fc5288f1959a1a71e413bbcf60d6b3bbf63c4cf5021f34eb6f3685a4c",
+    "contrastive_benign_mix.jsonl": "bc966b64ea695a6f072ecb5b8b5eae490ba06087de60e33ddd921975eb08fe06"
+  },
+  "personas_json": "/workspace/explore-persona-space/eval_results/issue_521/inputs/personas.json",
+  "personas_json_sha256": "9d81a0910236de3ea1c86894307b35ad6587e2c42b8ca0dd7a2576c81a93a73e",
+  "metadata": {
+    "script": "issue_552_build_contrastive_mixes",
+    "git_commit": "fa0dc83a137d58557db7276d3a0f704e1f09710a",
+    "base_model_id": "Qwen/Qwen2.5-7B-Instruct",
+    "timestamp_utc": "2026-06-11T10:43:00Z",
+    "python": "3.11.10"
+  }
+}

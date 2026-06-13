@@ -1,0 +1,12 @@
+{
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "git_commit": "33c11dd50aea2fa361a87616962acf1b848da1d3",
+  "layer": 14,
+  "n_personas": 14,
+  "n_questions": 20,
+  "personas_json": "/workspace/explore-persona-space/eval_results/issue_521/inputs/personas.json",
+  "questions_json": "/workspace/explore-persona-space/eval_results/issue_521/inputs/base_cosines_questions.json",
+  "source": "medical_doctor",
+  "timestamp_utc": "2026-06-09T15:49:29Z",
+  "tiny": false
+}

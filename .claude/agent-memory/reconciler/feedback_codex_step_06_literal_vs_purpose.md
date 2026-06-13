@@ -1,26 +1,26 @@
 ---
 name: codex-step-06-literal-vs-purpose
-description: Codex code-reviewer FAILs Step 0.6 (smoke-run-missing) on GPU-gated phases that physically cannot run on CPU dev VM; reads spec literally ("no --help") and ignores that orchestrator Step 6d.0-bis is the pod-side safety net
+description: Codex FAILs Step 0.6 `smoke-run-missing` literally; the decisive variable is GATE TOPOLOGY — PASS when a DEMONSTRATED pre-launch gate runs the changed code for real before production; FAIL when the first real execution would BE production.
 metadata:
   type: feedback
 ---
 
-Codex code-reviewer reads `code-reviewer.md` Step 0.6 literally — "FAIL when any phase shows only `--help` / `import` / `--dry-run` evidence" — and FAILs a round-N where the implementer ran ALL CPU-feasible phases end-to-end (with real artifact digests) and exercised GPU-gated phases via `--help` + in-process helpers. Codex does not factor in that:
+**Rule:** Codex reads Step 0.6 literally ("FAIL on `--help` / import / `--dry-run` evidence") and FAILs rounds where GPU-gated phases physically cannot run on the CPU VM. The decisive variable across all datapoints is **gate topology, not VM-feasibility per se**: PASS when a demonstrated pre-launch gate (pod-side Step 6d.0-bis tiny-N smoke, a dispatcher's own fail-loud smoke phase, an executed pytest suite covering the changed code, a task-demonstrated pre-relaunch re-smoke) runs the changed code for real BEFORE production; FAIL when the first real execution would be inside/after the production run (only post-hoc detection nets). Always persist the load-bearing gate via `raise-concern` so dispatch reads the ledger, not verdict prose.
 
-1. The GPU-gated phases physically cannot run end-to-end on the CPU dev VM (no GPU).
-2. The orchestrator has a Step 6d.0-bis pod-side gate (`/issue` skill SKILL.md lines 1481-1499) that REFUSES to dispatch the production launch until every phase has run end-to-end at tiny-N on the pod.
-3. Step 0.6's stated PURPOSE is "GPU-protection" (code-reviewer.md line 222) — preventing wasted pod cycles on bugs that would surface at first real GPU launch. Step 6d.0-bis is the pod-side enforcement of exactly that purpose.
+**How to apply:** categorize each phase CPU-feasible vs GPU-required. CPU-feasible phases must have real end-to-end runs with artifact digests — if skipped, the FAIL is genuine. For GPU-required phases, confirm the pod-side gate is wired (`grep -n "6d.0-bis|tiny-N" .claude/skills/issue/SKILL.md`) → PASS + hard standing rec naming the gate.
 
-**Why:** the spec text was authored against the common case (CPU-feasible phases skipped end-to-end out of laziness). For experiments where phases genuinely require GPU, the spec doesn't carve out an explicit exception, but it also doesn't intend to block PASS on CPU-only review. The orchestrator's Step 6d.0-bis is the load-bearing safety net.
+**PASS-side variants:**
+- #464 r4 (origin), #500 r2 — GPU phases deferred to the pod-side tiny-N gate; CPU phases ran end-to-end. Standing Codex calibration issue on multi-phase GPU experiments.
+- #498 r3 (surgical fix) — parameter-only/additive-accounting diff on a GPU-only file whose unchanged call shape had prior-round real-data smoke evidence; Codex's own tag was `smoke-run-missing` only, no `substantive`. PASS.
+- #488 r6 (dispatcher self-gate) — pod-side dispatcher runs the script end-to-end as a fail-loud smoke phase BEFORE the production arm; byte-identical sub-gates need no pre-resume re-proof. PASS + standing rec naming the dispatcher line range.
+- #550 r1 (launcher-omitted preflight) — plan defined the launcher as a parent copy with the byte-identical omission; the generic preflight's enforcement point is bootstrap + /issue Step 6c, and the guarded class crashes loud. PASS + one-liner standing rec.
+- #570 r2 (executed pytest as smoke) — round delta touched no callback code; the round-1 callback changes were covered by an EXECUTED 50-test selection re-run by the Claude reviewer; "data-gen rerun" demand misdirected when there is no data-gen phase. Check `git diff main...HEAD -- tests/` + which tests exercise the new symbols.
+- #591 r5 (demonstrated pre-relaunch re-smoke) — upload fix smoked with mocks, BUT the task's own failure-recovery flow had ALREADY run a pod-side `--smoke` re-smoke with REAL Hub uploads before relaunch (recorded in `epm:run-launched`), strictly stronger than a VM fixture smoke; production repo was 429-throttled, making a VM real-commit smoke counterproductive. PASS + persist `real-hub-batched-smoke-gate` CONCERN.
+- #606 r1 (Step 0.65 call-shape) — ONE batched `create_commit` with canonical `path_in_repo` + `repo_type="dataset"` + before-`[phase=done]` ordering + fail-loud post-upload counts IS the upload loop in batched form; grep-string mismatch is gate-instrument shape, not absence. Verify the four substance facts, PASS regardless of call shape.
+- #610 r1 (carve-out item shape) — substitute items demonstrably EXECUTED (real production mix, dry-run with sentinel parsed, gates on real parent artifacts with working negative control, suite re-run by reviewer); a missing per-item literal command is mechanical shape (Step 5c-bis strip class). PASS.
 
-**How to apply:** when adjudicating a Codex FAIL tagged `smoke-run-missing` on a `type:experiment` round-N:
+**FAIL-side boundary (Codex right):**
+- #551 r1 — `upload_folder`+verify block was pure huggingface_hub network code, VM-feasible in minutes against fixtures, AND the task's corrective core; fail-loud design + Step 8 verifier are post-hoc detection, not run-proof. Tests: (1) is the phase ACTUALLY GPU-bound or just pod-located by convention (upload/HF/network/aggregation = VM-feasible)? (2) do fixtures already exist? (3) is the phase the task's load-bearing corrective behavior? Any → side with the literal FAIL.
+- #560 r1 — upload phase smoked via grep + parser dry-run; both pro-PASS defenses code-disproven (the `--tag` plumbing fully isolates a real smoke; count asserts skip tagged runs). Implementers build exactly these affordances — read the tag/assert plumbing; a cheap real smoke skipped is indefensible. Step 0.6 is run-time proof (token, perms, verify path), not static correctness.
 
-1. Open the implementer's `## Smoke run` section. Categorize each phase as CPU-feasible vs GPU-required.
-2. For CPU-feasible phases: did the implementer run them end-to-end with real artifact digests (not `--help`)? If yes, the spec's purpose is met for those phases.
-3. For GPU-required phases: confirm `.claude/skills/issue/SKILL.md` Step 6d.0-bis is intact and will fire before production launch. Run `grep -n "6d.0-bis\|tiny-N" .claude/skills/issue/SKILL.md` — the gate must be present.
-4. If (2) is true AND (3) confirms the pod-side gate is wired, PASS with a HARD standing recommendation: "Pod-side Step 6d.0-bis MUST be enforced; if it is silently skipped, this PASS becomes load-bearing on a gate that didn't fire."
-5. If the implementer skipped CPU-feasible phases too — that's a genuine FAIL; the spec text applies.
-
-Origin: task #464 round 4 — phases 1 (R-gen), 4 (cross-eval), 4.5 (trained-greedy) all require GPU and cannot run end-to-end on the CPU dev VM. Implementer ran phase 0 (full preflight), phase 5 (three end-to-end paths through `main()` on a 90-cell stub tree, exit 0), and the plot script (full 11-PNG run). Codex FAILed on `--help`-only for the GPU phases. Adjudicated PASS because Step 6d.0-bis catches the GPU-phase smoke at the pod before production.
-
-Related: [[codex-conflates-marker-format-with-code]] (similar pattern — Codex spec-literalism that ignores orchestrator-side mechanical strip / pod-side safety net).
+Related: [[feedback_codex_conflates_marker_format_with_code]]; [[feedback_claude_concerns_on_smoke_gate]] (the Claude-side inverse).

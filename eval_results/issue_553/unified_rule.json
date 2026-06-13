@@ -1,0 +1,2728 @@
+{
+  "metadata": {
+    "task": 553,
+    "script": "issue553_unified_rule.py",
+    "git_commit": "60b4f613b3059919df2ba4ae772bdb45a4d09c8c",
+    "timestamp_utc": "2026-06-10T11:58:53.694241Z",
+    "python_version": "3.11.15",
+    "numpy_version": "2.2.6",
+    "scipy_version": "1.17.1",
+    "pandas_version": "2.3.3",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "seed": 42,
+    "n_boot": 10000,
+    "n_cluster_boot": 2000,
+    "n_marginal_boot": 2000,
+    "n_perm": 10000,
+    "argv": [
+      "--n-boot",
+      "10000",
+      "--n-cluster-boot",
+      "2000",
+      "--n-marginal-boot",
+      "2000",
+      "--n-perm",
+      "10000",
+      "--seed",
+      "42"
+    ]
+  },
+  "step0_i532": {
+    "pass": true,
+    "checks": [
+      {
+        "name": "n_cells",
+        "got": 416.0,
+        "want": 416.0,
+        "pass": true
+      },
+      {
+        "name": "n_ordinary",
+        "got": 256.0,
+        "want": 256.0,
+        "pass": true
+      },
+      {
+        "name": "n_instructed",
+        "got": 160.0,
+        "want": 160.0,
+        "pass": true
+      },
+      {
+        "name": "spearman.dmargin.cosine.rho_union",
+        "got": 0.1915911778479508,
+        "want": 0.1915911778479508,
+        "pass": true
+      },
+      {
+        "name": "spearman.trained_logp.base_prior_logp.rho_union",
+        "got": 0.6763040595042208,
+        "want": 0.6763040595042208,
+        "pass": true
+      },
+      {
+        "name": "graded_prior_spread.ordinary_sd_across_bystanders",
+        "got": 2.2762727406962346,
+        "want": 2.2762727406962346,
+        "pass": true
+      }
+    ]
+  },
+  "collinearity_gate": {
+    "ordinary_cross": {
+      "pearson_prior_vs_cosine": -0.3490745511702184,
+      "gate_triggered": false
+    },
+    "instructed_strip": {
+      "pearson_prior_vs_cosine": -0.040349106921000515,
+      "gate_triggered": false
+    },
+    "pooled_cohort_fe": {
+      "pearson_prior_vs_cosine": -0.09001098704278208,
+      "gate_triggered": false
+    }
+  },
+  "fits": {
+    "ordinary_cross/full/base": {
+      "n": 240,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.8922223998828316,
+          "std_beta": 0.4011108536774086,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6987447388655393,
+              "high": 1.0267727015569759,
+              "boot_mean": 0.8593587486454034
+            },
+            "std_beta": {
+              "low": 0.29220399177966516,
+              "high": 0.5234625208436132,
+              "boot_mean": 0.40744756669831544
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -0.8191128056249761,
+              "high": 1.394733642420424,
+              "boot_mean": 0.8743133205108441
+            },
+            "std_beta": {
+              "low": -0.09586365723436502,
+              "high": 0.6464925732814876,
+              "boot_mean": 0.39149052280321917
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -0.8191128056249761,
+            "high": 1.394733642420424
+          },
+          "cgm_crosscheck": {
+            "se": 0.18222876826420883,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 29.47903603659887,
+          "std_beta": 0.6774593956227781,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 18.920202360745293,
+              "high": 38.75372215637572,
+              "boot_mean": 28.693643640559646
+            },
+            "std_beta": {
+              "low": 0.5512378906844975,
+              "high": 0.7664917777704472,
+              "boot_mean": 0.6731032463814918
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 24.016146529500094,
+              "high": 38.39867065084758,
+              "boot_mean": 30.848515863892498
+            },
+            "std_beta": {
+              "low": 0.5706445400303548,
+              "high": 0.8457064905840221,
+              "boot_mean": 0.7000283536338929
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 18.920202360745293,
+            "high": 38.75372215637572
+          },
+          "cgm_crosscheck": {
+            "se": 5.883007160034882,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "ordinary_cross/full/with_interaction": {
+      "n": 240,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 3.4731161533158157,
+          "std_beta": 0.2082551470620758,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.685196222580778,
+              "high": 6.779284424334157,
+              "boot_mean": 3.078090542037757
+            },
+            "std_beta": {
+              "low": 0.022086131860818717,
+              "high": 0.7716165001976925,
+              "boot_mean": 0.27177446182968695
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -3.584196946227347,
+              "high": 7.802851457869561,
+              "boot_mean": 3.867963000251129
+            },
+            "std_beta": {
+              "low": -0.17626454101147432,
+              "high": 0.38996562319463834,
+              "boot_mean": 0.17747391620053987
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -3.584196946227347,
+            "high": 7.802851457869561
+          },
+          "cgm_crosscheck": {
+            "se": 1.8454437650776452,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": -59.91698898445333,
+          "std_beta": 0.6191247963510434,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -166.22774674446103,
+              "high": 108.54026610520643,
+              "boot_mean": -47.834301622243586
+            },
+            "std_beta": {
+              "low": 0.5270276316840312,
+              "high": 0.7557187113235969,
+              "boot_mean": 0.6262581197341497
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -203.72248768801984,
+              "high": 135.8096568326538,
+              "boot_mean": -72.01005962456772
+            },
+            "std_beta": {
+              "low": 0.4344414161238877,
+              "high": 0.7812588795710997,
+              "boot_mean": 0.6234114313002657
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -203.72248768801984,
+            "high": 135.8096568326538
+          },
+          "cgm_crosscheck": {
+            "se": 53.87495057903603,
+            "non_psd_flag": true
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -3.591794140339894,
+          "std_beta": -0.2088014858108681,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -8.132972900026699,
+              "high": 3.5245758277686865,
+              "boot_mean": -3.071277464390659
+            },
+            "std_beta": {
+              "low": -0.38636474189850445,
+              "high": 0.30092221705333233,
+              "boot_mean": -0.15733619289770062
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -9.402585845916569,
+              "high": 3.8933730031613063,
+              "boot_mean": -4.154293631662296
+            },
+            "std_beta": {
+              "low": -0.4840123368369638,
+              "high": 0.07438388942380714,
+              "boot_mean": -0.23093210318443078
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -9.402585845916569,
+            "high": 3.8933730031613063
+          },
+          "cgm_crosscheck": {
+            "se": 2.381779250594094,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "ordinary_cross/full/with_srcFE": {
+      "n": 240,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.5416813519301857,
+          "std_beta": 0.2435203033709773,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.41145047007275526,
+              "high": 0.6771574018811376,
+              "boot_mean": 0.5425514065959958
+            },
+            "std_beta": {
+              "low": 0.15187073741697582,
+              "high": 0.4153288712913455,
+              "boot_mean": 0.2624368070416367
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.38902180349755244,
+              "high": 0.8607851132033119,
+              "boot_mean": 0.5568533137027155
+            },
+            "std_beta": {
+              "low": 0.10800099769852177,
+              "high": 0.3347816048239154,
+              "boot_mean": 0.23224603605686575
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.38902180349755244,
+            "high": 0.8607851132033119
+          },
+          "cgm_crosscheck": {
+            "se": 0.07548854980568716,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 13.324245578446718,
+          "std_beta": 0.30620524176900493,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 8.858885021794492,
+              "high": 17.825583650756133,
+              "boot_mean": 13.32884579216901
+            },
+            "std_beta": {
+              "low": 0.2047644421435796,
+              "high": 0.4656734161033333,
+              "boot_mean": 0.31903761831594163
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 8.952961280911262,
+              "high": 16.218057556569573,
+              "boot_mean": 12.93580154291332
+            },
+            "std_beta": {
+              "low": 0.18852615050581284,
+              "high": 0.3690478963021911,
+              "boot_mean": 0.2954300903867385
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 8.858885021794492,
+            "high": 17.825583650756133
+          },
+          "cgm_crosscheck": {
+            "se": 2.1289030165317886,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    },
+    "ordinary_cross/noB1C1/base": {
+      "n": 182,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.8382685529357929,
+          "std_beta": 0.4704769941800134,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6487448476416388,
+              "high": 0.9718134595019344,
+              "boot_mean": 0.8083510087578623
+            },
+            "std_beta": {
+              "low": 0.32780577384404247,
+              "high": 0.6445791425182131,
+              "boot_mean": 0.484292783736827
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -0.5049075937696293,
+              "high": 1.2406809627189872,
+              "boot_mean": 0.822753487143782
+            },
+            "std_beta": {
+              "low": -0.07953614609311639,
+              "high": 0.6892413446331007,
+              "boot_mean": 0.4539094500905934
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -0.5049075937696293,
+            "high": 1.2406809627189872
+          },
+          "cgm_crosscheck": {
+            "se": 0.122526124182938,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 24.423396489115493,
+          "std_beta": 0.644820520568465,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 15.552968322669269,
+              "high": 32.6386942909899,
+              "boot_mean": 23.712954892191846
+            },
+            "std_beta": {
+              "low": 0.5236243787577103,
+              "high": 0.7432930560425168,
+              "boot_mean": 0.6431406667242497
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 19.599669554159927,
+              "high": 31.88530619205705,
+              "boot_mean": 25.43411315421638
+            },
+            "std_beta": {
+              "low": 0.508946474702188,
+              "high": 0.8213972524828923,
+              "boot_mean": 0.6642727063803299
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 15.552968322669269,
+            "high": 32.6386942909899
+          },
+          "cgm_crosscheck": {
+            "se": 4.830007560430722,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "ordinary_cross/noB1C1/with_interaction": {
+      "n": 182,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 3.4168367672043156,
+          "std_beta": 0.26548347375056197,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.4113498083579843,
+              "high": 7.007496674752026,
+              "boot_mean": 3.0992151036602333
+            },
+            "std_beta": {
+              "low": 0.04381329747659354,
+              "high": 0.9086351680540202,
+              "boot_mean": 0.33682569199436807
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -0.23530702033862352,
+              "high": 7.042474083666855,
+              "boot_mean": 3.8852652544917228
+            },
+            "std_beta": {
+              "low": -0.1250341652889359,
+              "high": 0.4651905349559564,
+              "boot_mean": 0.2382101263634318
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -1.4113498083579843,
+            "high": 7.007496674752026
+          },
+          "cgm_crosscheck": {
+            "se": 1.6801600967479757,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": -64.66927988211137,
+          "std_beta": 0.5708434982616696,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -180.209337261846,
+              "high": 93.57484829313883,
+              "boot_mean": -55.11405705982007
+            },
+            "std_beta": {
+              "low": 0.4656430673484848,
+              "high": 0.748480788107054,
+              "boot_mean": 0.5829688519108857
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -181.5100368383214,
+              "high": 36.279816330303326,
+              "boot_mean": -78.99145577311761
+            },
+            "std_beta": {
+              "low": 0.34069574835686944,
+              "high": 0.7792978575854973,
+              "boot_mean": 0.5748056898485673
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -180.209337261846,
+            "high": 93.57484829313883
+          },
+          "cgm_crosscheck": {
+            "se": 48.53116933650753,
+            "non_psd_flag": true
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -3.585109188173795,
+          "std_beta": -0.236701098462445,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -8.429182851938851,
+              "high": 3.123033690092559,
+              "boot_mean": -3.1669779091410493
+            },
+            "std_beta": {
+              "low": -0.44074808156579004,
+              "high": 0.2995390007185648,
+              "boot_mean": -0.18372194024695615
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -8.43839337266584,
+              "high": 0.31924657559650776,
+              "boot_mean": -4.2219767820275464
+            },
+            "std_beta": {
+              "low": -0.4743198031843842,
+              "high": 0.0034802811100370073,
+              "boot_mean": -0.25562085422862735
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -8.429182851938851,
+            "high": 3.123033690092559
+          },
+          "cgm_crosscheck": {
+            "se": 2.1735624914244034,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "ordinary_cross/noB1C1/with_srcFE": {
+      "n": 182,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.5662295813002106,
+          "std_beta": 0.3177955208899912,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.4351489642056713,
+              "high": 0.7036316031770433,
+              "boot_mean": 0.5682423935601875
+            },
+            "std_beta": {
+              "low": 0.20058108746067282,
+              "high": 0.5606541668594784,
+              "boot_mean": 0.34702228595537166
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.3759941981770234,
+              "high": 0.8387151722796172,
+              "boot_mean": 0.565846854173925
+            },
+            "std_beta": {
+              "low": 0.13604509600587925,
+              "high": 0.4180626448456296,
+              "boot_mean": 0.2955302721155645
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.3759941981770234,
+            "high": 0.8387151722796172
+          },
+          "cgm_crosscheck": {
+            "se": 0.08391431242689092,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 10.779392614478674,
+          "std_beta": 0.2845948785287779,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 6.8455247461741004,
+              "high": 14.637290958684465,
+              "boot_mean": 10.77864439592875
+            },
+            "std_beta": {
+              "low": 0.1700806129457392,
+              "high": 0.49698961970178956,
+              "boot_mean": 0.3029694216057735
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 5.253351679287883,
+              "high": 12.931329916526774,
+              "boot_mean": 9.977062552813463
+            },
+            "std_beta": {
+              "low": 0.12478046826829826,
+              "high": 0.3500540951113846,
+              "boot_mean": 0.26242289974920313
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 6.8455247461741004,
+            "high": 14.637290958684465
+          },
+          "cgm_crosscheck": {
+            "se": 1.921270253477774,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    },
+    "instructed_strip/full/base": {
+      "n": 160,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6559726738115188,
+          "std_beta": 0.8693620167433945,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.606039887869867,
+              "high": 0.7048258387806476,
+              "boot_mean": 0.6558720997489106
+            },
+            "std_beta": {
+              "low": 0.8171106739622087,
+              "high": 0.9195565539232181,
+              "boot_mean": 0.8743338072692755
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5448578872365897,
+              "high": 0.8483899218640565,
+              "boot_mean": 0.6611788242380906
+            },
+            "std_beta": {
+              "low": 0.7033805014180234,
+              "high": 0.9273320449513753,
+              "boot_mean": 0.8548603639464679
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5448578872365897,
+            "high": 0.8483899218640565
+          },
+          "cgm_crosscheck": {
+            "se": 0.046041749102992635,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 20.912739988520297,
+          "std_beta": 0.26737012893462786,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 7.046660717635172,
+              "high": 32.7015473389944,
+              "boot_mean": 20.43628391799151
+            },
+            "std_beta": {
+              "low": 0.08238344740824616,
+              "high": 0.4124451054434575,
+              "boot_mean": 0.25537882584259475
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 13.253589370046031,
+              "high": 28.439115061550623,
+              "boot_mean": 21.39265895726764
+            },
+            "std_beta": {
+              "low": 0.1920165077179313,
+              "high": 0.40353607685973103,
+              "boot_mean": 0.2860488535548316
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 7.046660717635172,
+            "high": 32.7015473389944
+          },
+          "cgm_crosscheck": {
+            "se": 6.703048641509043,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "instructed_strip/full/with_interaction": {
+      "n": 160,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.2182017091643682,
+          "std_beta": 0.886834607393301,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 1.0062535674587412,
+              "high": 1.659606618450774,
+              "boot_mean": 1.2473275688047685
+            },
+            "std_beta": {
+              "low": 0.8336759095828378,
+              "high": 0.9466004420052597,
+              "boot_mean": 0.8930439951226397
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.7843047430582416,
+              "high": 1.8321430042051554,
+              "boot_mean": 1.2427195533652373
+            },
+            "std_beta": {
+              "low": 0.7027073753621826,
+              "high": 0.9369180146844299,
+              "boot_mean": 0.8693287871365325
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.7843047430582416,
+            "high": 1.8321430042051554
+          },
+          "cgm_crosscheck": {
+            "se": NaN,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 16.697857828985796,
+          "std_beta": 0.2516740212716311,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 1.4469903606939432,
+              "high": 28.587663309299135,
+              "boot_mean": 15.924490032806462
+            },
+            "std_beta": {
+              "low": 0.06118558248312972,
+              "high": 0.39638844416939123,
+              "boot_mean": 0.23876832823926525
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 8.248429088731571,
+              "high": 23.20775316755044,
+              "boot_mean": 16.92313633346967
+            },
+            "std_beta": {
+              "low": 0.1809667960365585,
+              "high": 0.38942922924078494,
+              "boot_mean": 0.2720805398327908
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 1.4469903606939432,
+            "high": 28.587663309299135
+          },
+          "cgm_crosscheck": {
+            "se": 6.476428374571522,
+            "non_psd_flag": true
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -0.6621046264915866,
+          "std_beta": -0.08520579325791534,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.1764320700721962,
+              "high": -0.38240920129574124,
+              "boot_mean": -0.6944987356607994
+            },
+            "std_beta": {
+              "low": -0.12520844308005963,
+              "high": -0.04672564804854989,
+              "boot_mean": -0.08500008867177755
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -1.30336783990797,
+              "high": -0.27264580357814105,
+              "boot_mean": -0.6886954887441256
+            },
+            "std_beta": {
+              "low": -0.15394619791180963,
+              "high": -0.03539292215610094,
+              "boot_mean": -0.08480314555129058
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -1.30336783990797,
+            "high": -0.27264580357814105
+          },
+          "cgm_crosscheck": {
+            "se": NaN,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "instructed_strip/full/with_srcFE": {
+      "n": 160,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6531051213016146,
+          "std_beta": 0.8655616431414859,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.600615168497866,
+              "high": 0.7039014187162286,
+              "boot_mean": 0.6532736884700868
+            },
+            "std_beta": {
+              "low": 0.8125671269088625,
+              "high": 0.918730115676913,
+              "boot_mean": 0.870855189953332
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5222165912675889,
+              "high": 0.8567063833258592,
+              "boot_mean": 0.6549117202061091
+            },
+            "std_beta": {
+              "low": 0.6932966478774389,
+              "high": 0.9328274561352444,
+              "boot_mean": 0.8466969056535599
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5222165912675889,
+            "high": 0.8567063833258592
+          },
+          "cgm_crosscheck": {
+            "se": 0.04693469566603459,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 13.545744252059919,
+          "std_beta": 0.17318282487980236,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 8.77919315065083,
+              "high": 17.375237983163984,
+              "boot_mean": 13.34721697271506
+            },
+            "std_beta": {
+              "low": 0.10364812602440006,
+              "high": 0.22974681101693623,
+              "boot_mean": 0.16572462666798818
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -5.261446290937584,
+              "high": 48.66259075741213,
+              "boot_mean": 16.371161945066216
+            },
+            "std_beta": {
+              "low": -0.07571099759229626,
+              "high": 0.6731468312786003,
+              "boot_mean": 0.21987178940829738
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -5.261446290937584,
+            "high": 48.66259075741213
+          },
+          "cgm_crosscheck": {
+            "se": 9.555136857352949,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    },
+    "instructed_strip/noB1C1/base": {
+      "n": 140,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6700263475153831,
+          "std_beta": 0.8684646858335324,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.616372501875631,
+              "high": 0.7189581549109016,
+              "boot_mean": 0.6695971697193784
+            },
+            "std_beta": {
+              "low": 0.8130334423121246,
+              "high": 0.9217692817791465,
+              "boot_mean": 0.8730394301150308
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5541185510246589,
+              "high": 0.8668389904573217,
+              "boot_mean": 0.6748609259515722
+            },
+            "std_beta": {
+              "low": 0.7000668935023376,
+              "high": 0.9279265116320747,
+              "boot_mean": 0.8539093904588699
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5541185510246589,
+            "high": 0.8668389904573217
+          },
+          "cgm_crosscheck": {
+            "se": 0.046567786567429895,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 19.654625309293866,
+          "std_beta": 0.24623456516356967,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 4.005395849153957,
+              "high": 32.61084503780243,
+              "boot_mean": 19.124492256926374
+            },
+            "std_beta": {
+              "low": 0.04358220399205754,
+              "high": 0.4089676465671875,
+              "boot_mean": 0.23378536162886174
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 11.846191294499059,
+              "high": 27.036192236483874,
+              "boot_mean": 20.102333921517705
+            },
+            "std_beta": {
+              "low": 0.16997379527701023,
+              "high": 0.3759954497565811,
+              "boot_mean": 0.2635753170989715
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 4.005395849153957,
+            "high": 32.61084503780243
+          },
+          "cgm_crosscheck": {
+            "se": 7.127459699244608,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "instructed_strip/noB1C1/with_interaction": {
+      "n": 140,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.1815552955849669,
+          "std_beta": 0.883542516270324,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.9474502518239368,
+              "high": 1.647378745028482,
+              "boot_mean": 1.209088561182277
+            },
+            "std_beta": {
+              "low": 0.8290083429712167,
+              "high": 0.9405886317463771,
+              "boot_mean": 0.8892414577864217
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.7803707691369144,
+              "high": 1.7861127556116831,
+              "boot_mean": 1.206317449489663
+            },
+            "std_beta": {
+              "low": 0.7053446814894637,
+              "high": 0.9362272706400303,
+              "boot_mean": 0.8665211728231618
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.7803707691369144,
+            "high": 1.7861127556116831
+          },
+          "cgm_crosscheck": {
+            "se": NaN,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 15.765439101305507,
+          "std_beta": 0.23203640623869148,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.1414236587481248,
+              "high": 28.749942317740597,
+              "boot_mean": 14.949398723733669
+            },
+            "std_beta": {
+              "low": 0.026693748744177008,
+              "high": 0.39453277598770764,
+              "boot_mean": 0.2186983465752383
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 6.753706001058575,
+              "high": 22.639150629823977,
+              "boot_mean": 15.992968739945802
+            },
+            "std_beta": {
+              "low": 0.16061835570353394,
+              "high": 0.3663922029408507,
+              "boot_mean": 0.2509734829563556
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -1.1414236587481248,
+            "high": 28.749942317740597
+          },
+          "cgm_crosscheck": {
+            "se": 6.867030682888861,
+            "non_psd_flag": true
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -0.6108352448060524,
+          "std_beta": -0.07705166995685923,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.1583589197897541,
+              "high": -0.2926002319215492,
+              "boot_mean": -0.6419461312324011
+            },
+            "std_beta": {
+              "low": -0.12413273599437698,
+              "high": -0.03546300030057187,
+              "boot_mean": -0.07688956626079152
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -1.270006406554442,
+              "high": -0.23998703733275775,
+              "boot_mean": -0.638228947633392
+            },
+            "std_beta": {
+              "low": -0.14284003123643332,
+              "high": -0.029636215815158445,
+              "boot_mean": -0.07709540624089237
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -1.270006406554442,
+            "high": -0.23998703733275775
+          },
+          "cgm_crosscheck": {
+            "se": NaN,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "instructed_strip/noB1C1/with_srcFE": {
+      "n": 140,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.667743062195753,
+          "std_beta": 0.8655051713679717,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6106349156831388,
+              "high": 0.7185822912887753,
+              "boot_mean": 0.6675879353390124
+            },
+            "std_beta": {
+              "low": 0.8067171155531268,
+              "high": 0.9225068544208606,
+              "boot_mean": 0.8704035619602494
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5339540513072916,
+              "high": 0.8755927325855369,
+              "boot_mean": 0.6695000715280435
+            },
+            "std_beta": {
+              "low": 0.6880334642194053,
+              "high": 0.9318727998952561,
+              "boot_mean": 0.8471001386318393
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5339540513072916,
+            "high": 0.8755927325855369
+          },
+          "cgm_crosscheck": {
+            "se": 0.048394878043585034,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 12.553777723362254,
+          "std_beta": 0.15727463384460866,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 6.869478728363727,
+              "high": 16.834301880453054,
+              "boot_mean": 12.214675470399987
+            },
+            "std_beta": {
+              "low": 0.08112876072535309,
+              "high": 0.21437088165508983,
+              "boot_mean": 0.1480733018923503
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -8.205741045245261,
+              "high": 48.72830856033013,
+              "boot_mean": 15.802353846035254
+            },
+            "std_beta": {
+              "low": -0.11565907303321811,
+              "high": 0.648648075882706,
+              "boot_mean": 0.2068150553473531
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -8.205741045245261,
+            "high": 48.72830856033013
+          },
+          "cgm_crosscheck": {
+            "se": 10.687821589339098,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    },
+    "pooled_cohort_fe/full/base": {
+      "n": 400,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6716832130705429,
+          "std_beta": 0.838831051750475,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6230774100723513,
+              "high": 0.7102479719645788,
+              "boot_mean": 0.6690790425008861
+            },
+            "std_beta": {
+              "low": 0.7659732392891159,
+              "high": 0.9222682194007269,
+              "boot_mean": 0.8420457199915584
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5430649032850472,
+              "high": 0.8711090293006626,
+              "boot_mean": 0.6800641459724497
+            },
+            "std_beta": {
+              "low": 0.6843778920894837,
+              "high": 0.9334189825730579,
+              "boot_mean": 0.8307182264199862
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5430649032850472,
+            "high": 0.8711090293006626
+          },
+          "cgm_crosscheck": {
+            "se": 0.04706993200645112,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 25.94650061713194,
+          "std_beta": 0.30908620373504503,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 16.275590369520494,
+              "high": 34.67159958421545,
+              "boot_mean": 25.310610626914595
+            },
+            "std_beta": {
+              "low": 0.18287948463102058,
+              "high": 0.41218543614099135,
+              "boot_mean": 0.2987902029347934
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 21.883955711638915,
+              "high": 31.70811943059899,
+              "boot_mean": 26.46142785261106
+            },
+            "std_beta": {
+              "low": 0.23591103494629917,
+              "high": 0.4570409605333345,
+              "boot_mean": 0.32421459205442804
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 16.275590369520494,
+            "high": 34.67159958421545
+          },
+          "cgm_crosscheck": {
+            "se": 4.995001668648284,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 26,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "pooled_cohort_fe/full/with_interaction": {
+      "n": 400,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.1472759123694878,
+          "std_beta": 0.8446261551928693,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.7722392866834182,
+              "high": 1.466007938987673,
+              "boot_mean": 1.132063585248201
+            },
+            "std_beta": {
+              "low": 0.7711849747990757,
+              "high": 0.9257589425543522,
+              "boot_mean": 0.847416913675891
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.8145452620652556,
+              "high": 1.6248868016281075,
+              "boot_mean": 1.1624845399983832
+            },
+            "std_beta": {
+              "low": 0.6886537489928549,
+              "high": 0.927000820044737,
+              "boot_mean": 0.8355296494203306
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.8145452620652556,
+            "high": 1.6248868016281075
+          },
+          "cgm_crosscheck": {
+            "se": 0.1817946160777849,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 15.26435512983438,
+          "std_beta": 0.2915133046026124,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 1.9070003343341984,
+              "high": 25.872030446119435,
+              "boot_mean": 14.848340986754636
+            },
+            "std_beta": {
+              "low": 0.16100021323652391,
+              "high": 0.39485190560052597,
+              "boot_mean": 0.28146454604893656
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 6.89434784957462,
+              "high": 24.23485408916138,
+              "boot_mean": 15.694334631222175
+            },
+            "std_beta": {
+              "low": 0.21849687640394141,
+              "high": 0.44870840381337473,
+              "boot_mean": 0.3078257694877961
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 1.9070003343341984,
+            "high": 25.872030446119435
+          },
+          "cgm_crosscheck": {
+            "se": 5.965105159524151,
+            "non_psd_flag": false
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -0.5643599500250777,
+          "std_beta": -0.06831279021984608,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -0.954191818036589,
+              "high": -0.12617878572013,
+              "boot_mean": -0.5511825537975382
+            },
+            "std_beta": {
+              "low": -0.11205573468244452,
+              "high": -0.012851803731944174,
+              "boot_mean": -0.06570268298539324
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -1.0318355363610103,
+              "high": -0.16324753261443475,
+              "boot_mean": -0.5728659296465696
+            },
+            "std_beta": {
+              "low": -0.11748698686348082,
+              "high": -0.018538185731872138,
+              "boot_mean": -0.06794593612662171
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -1.0318355363610103,
+            "high": -0.16324753261443475
+          },
+          "cgm_crosscheck": {
+            "se": 0.20742886792471774,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 26,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "pooled_cohort_fe/full/with_srcFE": {
+      "n": 400,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6456093609896891,
+          "std_beta": 0.8062687421102008,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6015483016708388,
+              "high": 0.6905586524487509,
+              "boot_mean": 0.6458819684569342
+            },
+            "std_beta": {
+              "low": 0.731861667028663,
+              "high": 0.9014516303581638,
+              "boot_mean": 0.8130457872455631
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5166594379809761,
+              "high": 0.8025821582153453,
+              "boot_mean": 0.647345915799661
+            },
+            "std_beta": {
+              "low": 0.6213760882520257,
+              "high": 0.8742690506890868,
+              "boot_mean": 0.7921803087552974
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5166594379809761,
+            "high": 0.8025821582153453
+          },
+          "cgm_crosscheck": {
+            "se": 0.04030580264517768,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 13.340596620700843,
+          "std_beta": 0.15891909378833194,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 8.6013346279552,
+              "high": 17.58322853913761,
+              "boot_mean": 13.2500891190058
+            },
+            "std_beta": {
+              "low": 0.09606088269834315,
+              "high": 0.22097478577957877,
+              "boot_mean": 0.15689059067652603
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 8.353776071374481,
+              "high": 20.220588874995855,
+              "boot_mean": 13.6389150252325
+            },
+            "std_beta": {
+              "low": 0.09117446334193108,
+              "high": 0.27132311001530296,
+              "boot_mean": 0.16736203332619812
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 8.353776071374481,
+            "high": 20.220588874995855
+          },
+          "cgm_crosscheck": {
+            "se": 2.8257139755661465,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 26,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    },
+    "pooled_cohort_fe/noB1C1/base": {
+      "n": 322,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6812284929407547,
+          "std_beta": 0.8436729884612993,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6315031534810474,
+              "high": 0.7189193561237055,
+              "boot_mean": 0.6785632614046355
+            },
+            "std_beta": {
+              "low": 0.7681754204021639,
+              "high": 0.9293140689531736,
+              "boot_mean": 0.8450814612215382
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5712575909254671,
+              "high": 0.901491265667824,
+              "boot_mean": 0.6912823775250784
+            },
+            "std_beta": {
+              "low": 0.7163228144672465,
+              "high": 0.9444669092331346,
+              "boot_mean": 0.8402098591753128
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5712575909254671,
+            "high": 0.901491265667824
+          },
+          "cgm_crosscheck": {
+            "se": 0.044904504529897624,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 22.134731683039536,
+          "std_beta": 0.2508260957617673,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 13.131600949933567,
+              "high": 30.7603965321232,
+              "boot_mean": 21.527897727427547
+            },
+            "std_beta": {
+              "low": 0.1409244873127543,
+              "high": 0.34361852494954176,
+              "boot_mean": 0.24051851946421954
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 17.965519891373255,
+              "high": 27.60931144625455,
+              "boot_mean": 22.657178061868855
+            },
+            "std_beta": {
+              "low": 0.18986489482455293,
+              "high": 0.3922649478914289,
+              "boot_mean": 0.2653043444047014
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 13.131600949933567,
+            "high": 30.7603965321232
+          },
+          "cgm_crosscheck": {
+            "se": 4.751628078994245,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 24,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "pooled_cohort_fe/noB1C1/with_interaction": {
+      "n": 322,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.0227491627902985,
+          "std_beta": 0.8500873859350448,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6802653841591652,
+              "high": 1.3617785949520944,
+              "boot_mean": 1.0123510671214744
+            },
+            "std_beta": {
+              "low": 0.7728823396423556,
+              "high": 0.9361820209284837,
+              "boot_mean": 0.8509810639302263
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.7391301342364716,
+              "high": 1.4235900123633463,
+              "boot_mean": 1.0336199700929496
+            },
+            "std_beta": {
+              "low": 0.7295034230008434,
+              "high": 0.9387117778960264,
+              "boot_mean": 0.8457362053782282
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.7391301342364716,
+            "high": 1.4235900123633463
+          },
+          "cgm_crosscheck": {
+            "se": 0.14855161308364168,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 14.666326639741238,
+          "std_beta": 0.2385519963867188,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -0.2834641200014274,
+              "high": 26.38179472138114,
+              "boot_mean": 14.160038984460796
+            },
+            "std_beta": {
+              "low": 0.11949573277878281,
+              "high": 0.33362173159015923,
+              "boot_mean": 0.22826040403633546
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 6.617822996249038,
+              "high": 23.54206039508798,
+              "boot_mean": 15.252131223496807
+            },
+            "std_beta": {
+              "low": 0.1777117907529693,
+              "high": 0.3875827120813822,
+              "boot_mean": 0.2540771479860852
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -0.2834641200014274,
+            "high": 26.38179472138114
+          },
+          "cgm_crosscheck": {
+            "se": 6.303249971570529,
+            "non_psd_flag": false
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -0.41020698143661605,
+          "std_beta": -0.0495054353813549,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -0.8222079811538285,
+              "high": -0.01476164864869411,
+              "boot_mean": -0.40263020557991863
+            },
+            "std_beta": {
+              "low": -0.09226956994239681,
+              "high": -0.0014996805921215412,
+              "boot_mean": -0.047587904697697775
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -0.8137954058252556,
+              "high": -0.06564592976410334,
+              "boot_mean": -0.41152099928327346
+            },
+            "std_beta": {
+              "low": -0.09468140258154788,
+              "high": -0.00731036252337743,
+              "boot_mean": -0.04885652628317052
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -0.8222079811538285,
+            "high": -0.01476164864869411
+          },
+          "cgm_crosscheck": {
+            "se": 0.1744524168071756,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 24,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)"
+    },
+    "pooled_cohort_fe/noB1C1/with_srcFE": {
+      "n": 322,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 0.6610173562180761,
+          "std_beta": 0.8186423411884157,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.6128261966177158,
+              "high": 0.7049672233051505,
+              "boot_mean": 0.6610772313495927
+            },
+            "std_beta": {
+              "low": 0.739635992419225,
+              "high": 0.9140728053962098,
+              "boot_mean": 0.8234545672572156
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 0.5527317829991584,
+              "high": 0.8401606540227327,
+              "boot_mean": 0.6661147410042638
+            },
+            "std_beta": {
+              "low": 0.6751927639543995,
+              "high": 0.9015396043686158,
+              "boot_mean": 0.8106759528621879
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 0.5527317829991584,
+            "high": 0.8401606540227327
+          },
+          "cgm_crosscheck": {
+            "se": 0.04171463619858415,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": 10.932636275173921,
+          "std_beta": 0.12388632094359305,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 6.410044427547026,
+              "high": 14.911490452445529,
+              "boot_mean": 10.767913755519432
+            },
+            "std_beta": {
+              "low": 0.06788654178369029,
+              "high": 0.1748098933276012,
+              "boot_mean": 0.12084870126266004
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 5.4458795475044095,
+              "high": 18.37846991564322,
+              "boot_mean": 11.397996531267625
+            },
+            "std_beta": {
+              "low": 0.058241333649272815,
+              "high": 0.23705293568670555,
+              "boot_mean": 0.13373430527416855
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 5.4458795475044095,
+            "high": 18.37846991564322
+          },
+          "cgm_crosscheck": {
+            "se": 2.908132734188938,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 14,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 24,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "post-train forecast-where (+srcFE conditions on the trained model)"
+    }
+  },
+  "logp_space_interaction_contrast": {
+    "ordinary_cross": {
+      "n": 240,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 3.6738063997248602,
+          "std_beta": 0.19717443284086994,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.3827205630487327,
+              "high": 7.070105724047284,
+              "boot_mean": 3.3115480142024944
+            },
+            "std_beta": {
+              "low": -0.00011494415299417628,
+              "high": 0.7697555006477912,
+              "boot_mean": 0.2607657212029776
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -2.8999936170151965,
+              "high": 8.171651877175508,
+              "boot_mean": 4.132184210575494
+            },
+            "std_beta": {
+              "low": -0.21014807176845943,
+              "high": 0.38374066444389804,
+              "boot_mean": 0.16394592067436867
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -2.8999936170151965,
+            "high": 8.171651877175508
+          },
+          "cgm_crosscheck": {
+            "se": 1.8262974223110546,
+            "non_psd_flag": true
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": -69.71051476497242,
+          "std_beta": 0.6131312388096157,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -181.5277576758815,
+              "high": 96.24711180456309,
+              "boot_mean": -58.81568605034954
+            },
+            "std_beta": {
+              "low": 0.5186513949246411,
+              "high": 0.7541830446209058,
+              "boot_mean": 0.6199730485126886
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -218.75221507187666,
+              "high": 97.17222743383846,
+              "boot_mean": -84.19359434827662
+            },
+            "std_beta": {
+              "low": 0.4137656784907778,
+              "high": 0.7966839187116947,
+              "boot_mean": 0.6197774548002786
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -218.75221507187666,
+            "high": 97.17222743383846
+          },
+          "cgm_crosscheck": {
+            "se": 52.85779939390864,
+            "non_psd_flag": true
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -3.8851755407494886,
+          "std_beta": -0.23674983408960096,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -8.528345411663501,
+              "high": 3.0380860419326816,
+              "boot_mean": -3.4128713132620674
+            },
+            "std_beta": {
+              "low": -0.42281461836511863,
+              "high": 0.2723761438574431,
+              "boot_mean": -0.1849874856308369
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -10.00685757072329,
+              "high": 2.4289523729255222,
+              "boot_mean": -4.537972565322519
+            },
+            "std_beta": {
+              "low": -0.5263342191928352,
+              "high": 0.04398026874963152,
+              "boot_mean": -0.2602395485570261
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -10.00685757072329,
+            "high": 2.4289523729255222
+          },
+          "cgm_crosscheck": {
+            "se": 2.3405572701132593,
+            "non_psd_flag": true
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)",
+      "dv": "trained_logp (log-prob space; prior = prior_logp_own)",
+      "note": "within-space interaction read ONLY \u2014 no cross-DV R\u00b2 comparison (forbidden move)"
+    },
+    "instructed_strip": {
+      "n": 160,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.5464859171757888,
+          "std_beta": 0.756293697957978,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 0.994143151575124,
+              "high": 2.212834256291595,
+              "boot_mean": 1.558000413122163
+            },
+            "std_beta": {
+              "low": 0.6699242380092639,
+              "high": 0.8736537457408242,
+              "boot_mean": 0.7718305533669267
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 1.1127544537983145,
+              "high": 2.0174177858294016,
+              "boot_mean": 1.5324178477001247
+            },
+            "std_beta": {
+              "low": 0.4005539533112699,
+              "high": 0.8202898641600959,
+              "boot_mean": 0.7223235426469866
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": 0.994143151575124,
+            "high": 2.212834256291595
+          },
+          "cgm_crosscheck": {
+            "se": 0.2109378834272058,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": -2.8593075774382357,
+          "std_beta": 0.2953511420581466,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -8.509597637623058,
+              "high": -0.9976075494182423,
+              "boot_mean": -3.4746835745214875
+            },
+            "std_beta": {
+              "low": 0.06024331637614541,
+              "high": 0.4249611430237907,
+              "boot_mean": 0.2714358325091391
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -10.305419018427045,
+              "high": 1.6868890248748893,
+              "boot_mean": -2.5303072298778884
+            },
+            "std_beta": {
+              "low": 0.11328047508258912,
+              "high": 0.5078834953212193,
+              "boot_mean": 0.31595027984589463
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -10.305419018427045,
+            "high": 1.6868890248748893
+          },
+          "cgm_crosscheck": {
+            "se": 2.613929060052852,
+            "non_psd_flag": false
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -1.4895722481888816,
+          "std_beta": -0.35424075290611085,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -2.2246585908418255,
+              "high": -0.8790735864688792,
+              "boot_mean": -1.5025811126166617
+            },
+            "std_beta": {
+              "low": -0.45975066029516065,
+              "high": -0.20784462080523447,
+              "boot_mean": -0.34763150763459133
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -2.014038977735034,
+              "high": -1.055817049310245,
+              "boot_mean": -1.4811143750210072
+            },
+            "std_beta": {
+              "low": -0.407356315323083,
+              "high": -0.2550141398164205,
+              "boot_mean": -0.34195265494301236
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "source",
+            "low": -2.2246585908418255,
+            "high": -0.8790735864688792
+          },
+          "cgm_crosscheck": {
+            "se": 0.22575554000823872,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 10,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)",
+      "dv": "trained_logp (log-prob space; prior = prior_logp_own)",
+      "note": "within-space interaction read ONLY \u2014 no cross-DV R\u00b2 comparison (forbidden move)"
+    },
+    "pooled_cohort_fe": {
+      "n": 400,
+      "coefficients": {
+        "alpha_prior": {
+          "raw_estimate": 1.3788552533130727,
+          "std_beta": 0.5923168352685957,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": 1.0390090040476314,
+              "high": 1.6685164932671952,
+              "boot_mean": 1.3550485760486044
+            },
+            "std_beta": {
+              "low": 0.5004970525287828,
+              "high": 0.6799452738154985,
+              "boot_mean": 0.5907726757246173
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": 1.0840229759124902,
+              "high": 1.8494081505860085,
+              "boot_mean": 1.406509581349469
+            },
+            "std_beta": {
+              "low": 0.4160192820153912,
+              "high": 0.7962330460992246,
+              "boot_mean": 0.5971895519105893
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": 1.0840229759124902,
+            "high": 1.8494081505860085
+          },
+          "cgm_crosscheck": {
+            "se": 0.20297183645493336,
+            "non_psd_flag": false
+          }
+        },
+        "beta_cosine": {
+          "raw_estimate": -4.114406033448213,
+          "std_beta": 0.34224969647679115,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -10.010323835274733,
+              "high": -1.0194802716397984,
+              "boot_mean": -4.497366781950327
+            },
+            "std_beta": {
+              "low": 0.17248969546750084,
+              "high": 0.44581939583789026,
+              "boot_mean": 0.3258222727492846
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -12.178143605462116,
+              "high": 3.4792482893575647,
+              "boot_mean": -3.816378223125812
+            },
+            "std_beta": {
+              "low": 0.23941900237609115,
+              "high": 0.5137427481591329,
+              "boot_mean": 0.35846774709523865
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -12.178143605462116,
+            "high": 3.4792482893575647
+          },
+          "cgm_crosscheck": {
+            "se": 3.31145118508864,
+            "non_psd_flag": false
+          }
+        },
+        "gamma_interaction": {
+          "raw_estimate": -1.2226153440721665,
+          "std_beta": -0.1984805720300891,
+          "ci95_cluster_source": {
+            "raw": {
+              "low": -1.5817502099264733,
+              "high": -0.8444018761824732,
+              "boot_mean": -1.203567621481275
+            },
+            "std_beta": {
+              "low": -0.25002868124898925,
+              "high": -0.13151018189935718,
+              "boot_mean": -0.1931389739627202
+            }
+          },
+          "ci95_cluster_bystander": {
+            "raw": {
+              "low": -1.6788535806195797,
+              "high": -0.8945953465750498,
+              "boot_mean": -1.239659041867879
+            },
+            "std_beta": {
+              "low": -0.2548781575346766,
+              "high": -0.13105526782199536,
+              "boot_mean": -0.19663274056175994
+            }
+          },
+          "primary_ci_raw": {
+            "axis": "bystander",
+            "low": -1.6788535806195797,
+            "high": -0.8945953465750498
+          },
+          "cgm_crosscheck": {
+            "se": 0.22075826576193106,
+            "non_psd_flag": false
+          }
+        }
+      },
+      "cluster_boot_meta": {
+        "source": {
+          "n_clusters": 16,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        },
+        "bystander": {
+          "n_clusters": 26,
+          "n_boot": 2000,
+          "n_degenerate_resamples": 0
+        }
+      },
+      "feature_label": "pre-training forecast (prior_margin_own + cosine are computable before training)",
+      "dv": "trained_logp (log-prob space; prior = prior_logp_own)",
+      "note": "within-space interaction read ONLY \u2014 no cross-DV R\u00b2 comparison (forbidden move)"
+    }
+  },
+  "cv": {
+    "ordinary_cross/full": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.369576557883863,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 240
+        },
+        "loso": {
+          "r2": 0.33704895331636975,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 240
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.3528396544591528,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 240
+        },
+        "loso": {
+          "r2": 0.33368027931378585,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 240
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.8914886570659843,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 240
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "ordinary_cross/noB1C1": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.38558053446864826,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 182
+        },
+        "loso": {
+          "r2": 0.3371092970668751,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 182
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.3693131295198572,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 182
+        },
+        "loso": {
+          "r2": 0.3304644058438636,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 182
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.8840099620226786,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 182
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "instructed_strip/full": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.7726005119643506,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 160
+        },
+        "loso": {
+          "r2": 0.7755444530268528,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 160
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.7799413496554086,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 160
+        },
+        "loso": {
+          "r2": 0.7819229899424076,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 160
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.8409154169068767,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 160
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "instructed_strip/noB1C1": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.7639622731173563,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 140
+        },
+        "loso": {
+          "r2": 0.7613353924572552,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 140
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.7698904041958954,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 140
+        },
+        "loso": {
+          "r2": 0.7661711439953859,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 140
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.8344542892370326,
+          "n_folds": 10,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 140
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "pooled_cohort_fe/full": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.8289129074652539,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "r2": 0.8162622060053641,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.832053030730901,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "r2": 0.819908956110565,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.9128207128718524,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "pooled_cohort_fe/noB1C1": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.8651197518855738,
+          "n_folds": 24,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 322
+        },
+        "loso": {
+          "r2": 0.8551923684798337,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 322
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.8663777274728627,
+          "n_folds": 24,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 322
+        },
+        "loso": {
+          "r2": 0.8566495339959277,
+          "n_folds": 14,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 322
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.9270639405351413,
+          "n_folds": 24,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 322
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      }
+    },
+    "pooled_NO_cohort_fe_inline_reproduction_only": {
+      "prior_plus_cosine": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.8291136153375365,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "r2": 0.8166682189605693,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        }
+      },
+      "prior_plus_cosine_plus_interaction": {
+        "label": "pre-training forecast",
+        "lobo": {
+          "r2": 0.8321675882952997,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "r2": 0.8204672381905509,
+          "n_folds": 16,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        }
+      },
+      "prior_plus_cosine_plus_srcFE": {
+        "label": "post-train forecast-where",
+        "lobo": {
+          "r2": 0.9111922729754338,
+          "n_folds": 26,
+          "n_folds_skipped_degenerate": 0,
+          "n_predicted": 400
+        },
+        "loso": {
+          "excluded": true,
+          "reason": "a held-out source has no estimable source FE from training folds; min-norm zero-imputation would change the reported number (statistics-reconciler round-1 REVISION) \u2014 +srcFE is LOBO-only"
+        }
+      },
+      "_note": "pooled cross-cohort WITHOUT cohort FE \u2014 computed ONLY to reproduce the inline LOBO 0.71/0.89 numbers for the inline_vs_reviewed delta; forbidden as a headline read"
+    }
+  },
+  "derived_shift_readout": {
+    "ordinary_cross": {
+      "dmargin_implied_r2": 0.5492137043389058,
+      "note": "Dmargin readout DERIVED as fitted(margin_trained) - observed margin_base_matched; coefficients carry over algebraically \u2014 never fit as a standalone shift regression (forbidden move)"
+    },
+    "instructed_strip": {
+      "dmargin_implied_r2": 0.20872733516991138,
+      "note": "Dmargin readout DERIVED as fitted(margin_trained) - observed margin_base_matched; coefficients carry over algebraically \u2014 never fit as a standalone shift regression (forbidden move)"
+    },
+    "pooled_cohort_fe": {
+      "dmargin_implied_r2": 0.5849410330599729,
+      "note": "Dmargin readout DERIVED as fitted(margin_trained) - observed margin_base_matched; coefficients carry over algebraically \u2014 never fit as a standalone shift regression (forbidden move)"
+    }
+  },
+  "inline_vs_reviewed": [
+    {
+      "quantity": "LOBO-CV R\u00b2 full panel (pooled, no cohort FE)",
+      "inline_value": 0.71,
+      "reviewed_value": 0.8291136153375365,
+      "convention_changed": true,
+      "note": "pooled cross-cohort read now forbidden as headline; replaced by per-cohort + pooled-with-FE LOBO/LOSO (see cv block). NOTE: this reproduction excludes the 16 self-pairs (400 cells); the inline 'full panel' may have included them and/or used a different prior column \u2014 the reviewed value is the deliverable, the delta is the correction"
+    },
+    {
+      "quantity": "LOBO-CV R\u00b2 ordinary-cross",
+      "inline_value": 0.37,
+      "reviewed_value": 0.369576557883863,
+      "convention_changed": false,
+      "note": "same cohort, reviewed fold convention"
+    },
+    {
+      "quantity": "LOBO-CV R\u00b2 + srcFE (pooled, no cohort FE)",
+      "inline_value": 0.89,
+      "reviewed_value": 0.9111922729754338,
+      "convention_changed": true,
+      "note": "post-train forecast-where label mandatory; pooled read reproduced for delta only"
+    },
+    {
+      "quantity": "alpha bystander-cluster CI on ordinary-cross",
+      "inline_value": [
+        -0.92,
+        1.37
+      ],
+      "reviewed_value": [
+        -0.8191128056249761,
+        1.394733642420424
+      ],
+      "convention_changed": true,
+      "note": "inline clustered on bystander only; reviewed convention adds source clustering + wider-of primary + CGM cross-check"
+    }
+  ]
+}

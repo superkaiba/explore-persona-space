@@ -31,8 +31,15 @@ classification.
 You are spawned in **subagent mode** by the `/issue` skill. The brief includes
 the issue number, the worktree path, the branch, the **path** to the approved
 plan (cached at `.claude/plans/issue-<N>.md` — read the file; never infer plan
-content from the issue body or comment markers), and the pod name
-(`epm-issue-<N>`).
+content from the issue body or comment markers), and the **compute host name**
+to ssh into (typically `epm-issue-<N>` for the RunPod default; the
+slice-6 unified router may also dispatch to a SLURM cluster or a GCP
+GCE instance — `nibi-<N>` / `eps-issue-<N>` — depending on the task's
+`backend:` frontmatter, but the host alias the brief gives you is the
+ONE place you SSH into regardless of backend). The orchestrator
+persists a typed `RunHandle` at `.claude/cache/issue-<N>-handle.json`
+so the bg-Bash poller can recover the backend kind + paths after you
+exit; you do NOT need to interact with that sidecar yourself.
 
 ## Your Responsibilities
 
@@ -74,6 +81,13 @@ EXIT YOUR TURN.
   through bg-Bash sleep. That is the canonical long-wait mechanism.
 
 ## Execution Protocol
+
+**SSH MCP shell is `sh`, not bash.** `mcp__ssh__ssh_execute` runs commands
+under `sh`; bash-only constructs fail — notably `source .env` (`sh: source:
+not found`; use `. ./.env` or `set -a; . ./.env; set +a`), `[[ ... ]]`, and
+process substitution. Anything bash-specific goes inside a script file run
+with `bash <file>` (the launcher pattern below already does this). Incident
+#518, 2026-06-09: an inline `source .env` over SSH MCP failed at launch time.
 
 ### SSH MCP registry drift (recovery, not a failure)
 
@@ -158,8 +172,49 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
                command="cd /workspace/explore-persona-space && \
                         uv run python -m explore_persona_space.orchestrate.preflight --json")
    ```
-   If preflight fails, post `<!-- epm:failure v1 -->` with the JSON — do NOT
-   try to "fix it" by editing code on the pod. Code edits never happen on pods.
+   If preflight fails, FIRST parse the `errors` list.
+
+   > **LEGACY tolerance — pre-#554 pod checkouts ONLY.** Preflight is
+   > branch-aware as of 2026-06-12 (#554, commit `25f227273`): on an
+   > `issue-<N>` checkout the git check compares the branch against its
+   > OWN `origin/issue-<N>` ref, and behind-origin/main is an
+   > informational WARNING, not an ERROR — the old false positive no
+   > longer fires on a pod synced to current code. Keep this tolerance
+   > only for a pod still running pre-#554 code (cloned/synced before
+   > 2026-06-12): there, when `Local is N commit(s) behind origin/main`
+   > is the ONLY error, treat preflight as PASS and proceed (see agent
+   > memory `feedback_preflight_feature_branch_false_positive.md`).
+   > **On post-#554 code these ERRORs are REAL — NEVER tolerate them:**
+   > `Local is N commit(s) behind origin/issue-<N>` (the pod is missing
+   > reviewed commits — re-sync the branch) and `git fetch origin failed`
+   > on a feature branch.
+
+   For any OTHER error, post `<!-- epm:failure v1 -->` with the JSON —
+   do NOT try to "fix it" by editing code on the pod. Code edits never
+   happen on pods.
+
+   **Pre-clear the false positive for launchers that re-run preflight
+   internally (LEGACY — same pre-#554 transition window as above; on
+   post-#554 pods the behind-origin/main ERROR no longer exists, so no
+   pre-clear is needed and the ref repoint below should be skipped).**
+   The legacy tolerance above does NOT transfer to a driver that
+   gates launch on its own `orchestrate.preflight` call (e.g. `preflight
+   || fail_loud` under `set -euo pipefail`; new drivers are told to parse
+   `--json` instead — see `experiment-implementer.md` § "Pod-side
+   preflight gates"). Grep the launcher script for `orchestrate.preflight`;
+   if it re-runs preflight internally on a pre-#554 checkout, repoint the
+   pod-local remote-tracking ref BEFORE launching so the
+   behind-origin/main count reads 0:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="cd /workspace/explore-persona-space && \
+                        git update-ref refs/remotes/origin/main $(git rev-parse HEAD)")
+   ```
+   Safe on an ephemeral pod clone: it only repoints the pod-local
+   `origin/main` ref (nothing is pushed; the pod is destroyed after the
+   run). Incident #552 ×2 (2026-06-10/11): both pod launches died at the
+   driver's internal gate until the ref was hand-patched — the second
+   kill took out the experimenter's first launch and forced a relaunch.
 4. **Verify input-data completeness against planned coverage (MANDATORY
    pre-launch gate; fail-loud, no launch on shortfall).** This is a
    coverage gate, NOT a sanity check — silently launching a degraded
@@ -177,7 +232,33 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
      per-cell training JSONLs (e.g. `data/issue<N>/*.jsonl`),
      per-domain drift datasets, per-condition prompt sets, persona
      seed caches. Get a single integer (planned_input_files) AND the
-     glob pattern.
+     glob pattern. **Also grep the launcher/dispatcher script itself
+     for its own prestage gates** (`assert .exists()`, `[ -f ... ]`,
+     `require_file`, hard-coded `eval_results/...` reads) and add
+     every hard-required path to the enumeration — the brief is a
+     paraphrase and can omit inputs the launcher hard-requires
+     (incident #518, 2026-06-09: the prestage gate demanded
+     `eval_results/issue_509/...`, absent from the brief's
+     enumeration, and the gap surfaced only at launch).
+   - **Plan-named prep-script outputs are gate items too.** When the
+     plan or brief marks an input dataset as "regenerated locally via
+     prep script" (e.g. a P0 prerequisite built by
+     `scripts/issue<N>_prep_datasets.py`), add the prep script's
+     OUTPUT file path(s) to the enumeration and stat-check them on
+     the pod like any other planned input — a presence check on the
+     regen path's secret/env var (e.g. `TURNER_EDS_PASSWORD`) does
+     NOT substitute for the dataset file itself. Remediation for a
+     missing output is running the named prep script on the pod
+     before launch, preferring its free/deterministic path (e.g.
+     decrypt-only `--no-generate`); if the script can fall back to a
+     paid-API regen, surface that loudly in your launch note instead
+     of letting it fire silently (the #468 paid-fallback trap).
+     Incident: task #545 (2026-06-10) — the gate checked only
+     `TURNER_EDS_PASSWORD` presence while the plan-named
+     `data/issue404/turner_bad_medical_advice.jsonl` was absent on
+     the fresh pod; the first launch crashed in seconds and was
+     recovered by `scripts/issue458_prep_datasets.py --cells
+     turner_bad_medical --no-generate` + relaunch.
    - **Count actuals on the pod.** Run one `ssh_execute ls -1
      <pattern> | wc -l` against the pod's local-disk path. Get a
      single integer (actual_input_files).
@@ -365,6 +446,117 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    drained it as a spurious `epm:results` for the live run, and a
    prior-run v4 `step_calibration` progress sentinel was drained the
    same pass.
+9. **GPU-residency hygiene — probe + kill orphaned vLLM `EngineCore`
+   workers before EACH launch and re-launch (MANDATORY for vLLM
+   workloads).** A crashed (or killed) vLLM parent leaves
+   `VLLM::EngineCore` worker subprocesses that outlive it and silently
+   hold ~50GB on every GPU; the relaunch then dies at engine init
+   (`Free memory on device (...) is less than desired GPU memory
+   utilization`). `pgrep -f <script-name>` CANNOT see them — their
+   cmdline is just `VLLM::EngineCore`, no script name, no python path.
+   Immediately before each `setsid nohup` launch (alongside the step-8
+   sentinel clear), probe GPU residency:
+   ```bash
+   ssh_execute(server="epm-issue-<N>",
+               command="nvidia-smi --query-compute-apps=pid,used_memory --format=csv; \
+                        pgrep -af EngineCore")
+   ```
+   If any compute-app PIDs or EngineCore processes survive from a prior
+   run, kill them (`kill <pids>`, then `kill -9` survivors), re-run the
+   probe, and confirm GPU memory is ~0 before launching. Never launch
+   over residual GPU residency — the engine-init OOM wastes a full
+   launch cycle and pollutes `events.jsonl` with a spurious infra
+   failure. Incident: task #601 (2026-06-11) — the relaunch after a
+   phase0 hot-fix OOMed on 4 orphaned EngineCore workers from the
+   original crash; a `pgrep -f <script-name>` pre-check had read clean.
+   Same trap, library-side: `.claude/rules/gotchas.md` "Crashed vLLM
+   parents leave orphaned `VLLM::EngineCore` workers".
+10. **CVD launcher-env pin — verify before ANY parallel per-GPU fan-out
+    launch (MANDATORY).** When the launch runs N parallel processes with
+    one GPU each (wave dispatchers, per-seed/per-cell fan-outs,
+    `CUDA_VISIBLE_DEVICES`-sharded sweeps), EVERY per-cell launch line
+    MUST prefix the process with `CUDA_VISIBLE_DEVICES=<gpu>` in the
+    LAUNCHER environment AND pass the matching `+gpu_id=N` / `--gpu-id N`
+    arg. The in-process clobber alone
+    (`train/sft.py:1062` / `:1294` set
+    `os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.gpu_id)`) is NOT
+    sufficient: the driver freezes its device list at the FIRST cuInit in
+    the process, so any import-time cuInit (`import peft` is a known
+    offender — #545) makes the late clobber a driver-level no-op and
+    every cell's `cuda:0` resolves to physical GPU 0 — parallel cells
+    co-locate and OOM (#523 Phase B rounds 7/8; recurrence class
+    #541/#543/#557 — the failure-classifier row "parallel fan-out cells
+    co-located on one device"). You do not fix this in code — you VERIFY
+    the dispatcher you are about to launch:
+    ```bash
+    ssh_execute(server="epm-issue-<N>",
+                command="grep -n 'CUDA_VISIBLE_DEVICES' <dispatcher_path>")
+    ```
+    Expect the `CUDA_VISIBLE_DEVICES="$cvd" uv run python ... --gpu-id
+    "$cvd"` shape (`scripts/i474_phase23_dispatch.sh:192-193` is the
+    reference; `tests/test_cvd_wave_assignment_smoke.py` is the
+    regression smoke for that family). Do NOT accept a bare hit count —
+    comment lines mention CUDA_VISIBLE_DEVICES too; INSPECT each
+    backgrounded per-cell launch line for the env prefix. The
+    matching-gpu-arg requirement applies to entrypoints that pass
+    through the `train/sft.py` `gpu_id` clobber (or that accept a
+    gpu-id-style arg); for clobber-free entrypoints the launcher-env
+    pin alone is complete — do not false-bounce those. If the per-cell
+    launch lines rely on the in-process clobber alone (no launcher-env
+    prefix, or — for clobber-bearing entrypoints — a prefix without the
+    matching gpu arg), do NOT launch: post `epm:failure v1` with
+    `failure_class: code` naming the dispatcher + the missing pin, and
+    bounce to `experiment-implementer`. Exempt: a single foreground
+    process that does not fork per-GPU workers, and torchrun/ZeRO-3/
+    vLLM-TP launches where ONE process group deliberately owns all
+    GPUs. NOTE this gate runs only on experimenter-mediated (RunPod
+    lane) launches; gcp/slurm startup-script lanes are covered by the
+    write-side authoring rule (`experiment-implementer.md` § During
+    implementation) + the regression smoke. Full mechanics:
+    `.claude/rules/gotchas.md` § "in-process CUDA_VISIBLE_DEVICES
+    clobber is silently defeated by import-time cuInit".
+11. **Completion sentinel — the finalize artifact gate's clean-exit
+   proof (MANDATORY for RunPod launches, #598).** `RunPodBackend.launch`
+   declares a pod-side, ATTEMPT-BOUND completion-sentinel path on the
+   handle; `dispatch_issue.py finalize` FAILs `confirm_artifacts` (and
+   skips teardown) unless a valid sentinel exists at exactly that path.
+   Three mandatory elements, every launch AND relaunch:
+   1. **The path comes from the handle sidecar — never hand-built.**
+      Read the declared path on the VM and thread it into the pod-side
+      launch command:
+      ```bash
+      SENTINEL_PATH=$(jq -r '.extra.expected_artifacts.sentinel_path' \
+        .claude/cache/issue-<N>-handle.json)
+      ```
+      (The attempt id inside the path is launch-minted —
+      `rp-<UTCstamp>-<4hex>` — so a hand-built path will not match the
+      declaration and the gate will FAIL "sentinel missing".)
+   2. **The write is CHAINED on the workload's exit status** so
+      clean-exit semantics stay mechanical (an LLM-agent judgment call
+      is NOT the writer). Compose the pod-side dispatch as:
+      ```bash
+      <workload-cmd> && uv run python -c "from explore_persona_space.backends.artifacts \
+        import write_completion_sentinel; \
+        write_completion_sentinel(sentinel_path='<declared path>', issue=<N>)"
+      ```
+      `&&` is load-bearing: a crashed workload must NOT write the
+      sentinel (the gate exists to distinguish intentional completion
+      from leftover bytes).
+   3. **Pre-(re)launch stale-sentinel clear** — extends the step-8
+      hygiene (`/workspace` persists across same-pod relaunches, and
+      relaunches bypass `backend.launch`, so a fresh attempt id alone
+      cannot close the window; this also retires any flat legacy
+      sentinel). Run alongside the step-8 `rm -f`, before EVERY launch
+      or relaunch on the pod:
+      ```bash
+      rm -f /workspace/eval_results/issue_<N>/.completion-sentinel.json \
+            /workspace/eval_results/issue_<N>/*/.completion-sentinel.json
+      ```
+   Recovery when the convention was missed on a healthy, fully-uploaded
+   run: write the sentinel on the still-alive pod (same
+   `write_completion_sentinel` one-liner, after verifying uploads) and
+   re-run finalize, or use `--skip-confirm-artifacts` if the run
+   crashed before artifacts could land.
 
 ### During Execution
 
@@ -437,6 +629,30 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
    `epm:run-launched`, and post the launcher's pidfile path as
    `pid_file=` so the orchestrator can forward it to
    `poll_pipeline.py --pid-file`.
+
+   **Phase-token hygiene (HARD RULE).** Any wrapper/launcher text you
+   author — including its FAILURE paths — must NEVER embed the
+   `[phase=` literal inside message prose. `poll_pipeline.py`'s
+   `PHASE_RE` matches `[phase=<token>]` anywhere in a line (anchoring
+   the regex is documented-non-viable: legitimate phase lines are
+   timestamp-prefixed and legitimate terminal lines carry trailing
+   text — see the #545 note in `poll_pipeline.py`), so a failure
+   message that QUOTES the token becomes a phase transition. Incident
+   #597 (2026-06-11): a shard wrapper crashed and printed
+   `ONE OR MORE SHARDS FAILED rc=1 - [phase=done] NOT emitted`; the
+   dead pid then satisfied the #545 done-corroboration (which guards
+   only the pid-ALIVE path) and the poller reported a FALSE
+   `status=done` on a failed run. Phase tokens are emitted ONLY as
+   standalone status markers (`echo "[phase=eval]"`, the single
+   terminal `[phase=done]` — see `experiment-implementer.md` § "Pod-side
+   result-reporting contract" for the dispatcher-side reservation; this
+   paragraph binds YOU for any launch/relaunch wrapper text). On
+   failure, describe the suppressed terminal token WITHOUT the bracket
+   literal — e.g. `ONE OR MORE SHARDS FAILED rc=1 - terminal phase
+   token suppressed`. The poller now also discards a done-parse whose
+   line carries a nonzero `rc=` or a negation right after the token,
+   but that net is deliberately narrow — hygiene at the source is the
+   contract.
 
 1b. **Re-launches MUST rewrite the pidfile and re-emit `pid_file=`
    (incident #451).** A re-run after a code fix is STILL a launch: go
@@ -592,6 +808,7 @@ regexes; any infra match → `infra`, otherwise → `code` (conservative).
 | Pattern in log | failure_class |
 |---|---|
 | `CUDA out of memory`, `OOM-killer` | infra |
+| `CUDA out of memory` listing 2+ sibling `Process <pid> has <X> GiB memory in use` entries (parallel fan-out cells co-located on one device — deterministic GPU-pinning bug; respawn hits the identical OOM; #557) | code |
 | `disk full`, `ENOSPC`, `No space left on device` | infra |
 | vLLM init: `Failed to initialize`, `RuntimeError: CUDA error` | infra |
 | `SSH connection refused`, `No route to host`, `Connection timed out` | infra |
@@ -607,6 +824,37 @@ If unsure, omit the field — the log-pattern fallback is the safer path.
 detects a stall, dead process, or `failure_class: code` later in the run, the
 `/issue` skill re-dispatches you (or `experiment-implementer`) with a fresh
 brief that includes the failure context. Your single-turn scope is launch + exit.
+
+### Failure-lesson block on relaunch-with-fix (REQUIRED)
+
+When THIS spawn resolved a failure — you were respawned with failure
+context after an `epm:failure` (the `/issue` Step 7 `infra` row), OR you
+fixed a dying launch within this turn and relaunched (e.g. cleared a
+stale sentinel, dropped a stale flag, corrected an env var) — END your
+final text summary with a structured lesson block. The orchestrator
+posts it verbatim as an `epm:failure-lesson v1` marker and, on
+`generalizes: yes`, persists it to the owning agent's memory
+immediately so parallel same-day sessions don't re-hit the same trap
+(incidents #537/#545, 2026-06-11):
+
+```
+<!-- epm:failure-lesson v1 -->
+failure_class: code|infra|data
+phase: <pipeline phase or script>
+lesson: <1-3 sentences: the trap + the fix, written for the NEXT agent>
+generalizes: yes|no   # yes only if the trap plausibly recurs beyond this issue
+owning_agent: experiment-implementer|experimenter
+gotcha_candidate: yes|no  # yes for codebase/infra traps that belong in .claude/rules/gotchas.md
+<!-- /epm:failure-lesson -->
+```
+
+Calibrate `generalizes`: `yes` ONLY if the trap plausibly recurs on
+OTHER issues — library behavior, infra quirk, pod-environment trap —
+NOT a one-off mistake in this issue's own launch command. 1-3
+sentences, the trap + the fix, no transcript dumps. A clean first
+launch with no failure resolved does NOT emit this block, and the
+block does not change your terminal contract (post `epm:run-launched`,
+emit the summary, EXIT — the orchestrator owns posting the marker).
 
 ## Tech Stack Reference
 

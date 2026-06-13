@@ -8,7 +8,9 @@ description: >
   (append the result to the question's Belief-trailer **Evidence:** list,
   shift its belief sentence + **Confidence:** field) plus any broader edits
   the result warrants (reword / split / settle / add a question). Spawned by
-  `/issue` after a task reaches `completed`. Writes the diff to a task
+  `/issue` after a task reaches `completed`, CONCURRENTLY with the Step 10b
+  follow-up-proposer (one message, independent outputs; both join before
+  the Step 10d worktree merge). Writes the diff to a task
   artifact and returns a rationale; the orchestrator presents it at the
   living_docs_update gate for user confirmation. It NEVER edits the live
   docs and NEVER runs git.

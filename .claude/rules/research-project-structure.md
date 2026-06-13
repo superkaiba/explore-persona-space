@@ -29,8 +29,9 @@ experiment.
 **The `tasks/` directory tree IS the queue.** Every experiment is a
 row carrying its lifecycle state in the `status` enum (`proposed` →
 `planning` → `plan_pending` → `approved` → `running` → `verifying` →
-`interpreting` → `reviewing` → `awaiting_promotion` → `completed` /
-`archived`). Filter with `python scripts/task.py list-by-status
+`interpreting` → `reviewing` → `awaiting_promotion` →
+[`followups_running` while a same-issue follow-up round executes] →
+`completed` / `archived`). Filter with `python scripts/task.py list-by-status
 --status <state>` or browse the kanban at
 <https://eps.superkaiba.com/>. There is no markdown queue
 file.
@@ -46,10 +47,21 @@ tasks via `uv run python scripts/task.py new --kind experiment
 
 ## Environment Bootstrap
 
-Every entrypoint calls `setup_env()` from `src/explore_persona_space/utils.py`:
-- Loads `.env` (API keys)
+Every entrypoint calls `load_dotenv()` from
+`src/explore_persona_space/orchestrate/env.py` (there is NO `setup_env()`
+in `utils.py` — that name is stale; importing it crashes):
+- Loads `.env` (API keys) — `resolve_dotenv_path()` walks up from cwd
 - Sets `HF_HOME` to persistent storage (`/workspace/.cache/huggingface` on RunPod)
 - All environment setup lives in code — never manually export variables
+
+For ad-hoc inline shell/python one-liners that need API keys (HF-Hub
+fitness checks, quick probes), the canonical recipe is:
+`set -a && source .env && set +a && uv run python - <<'PY' ... PY`
+— never a bare `load_dotenv()` inside a heredoc (its no-arg
+`find_dotenv()` stack-walk crashes from stdin; see gotchas.md). For
+`scripts/*.sh` this is enforced mechanically by
+`scripts/workflow_lint.py --check-heredoc-dotenv` (bundled into the
+no-flags default run; incidents #552/#612).
 
 ## Agent Roles
 

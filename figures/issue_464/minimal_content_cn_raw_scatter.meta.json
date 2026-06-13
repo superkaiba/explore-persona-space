@@ -1,0 +1,107 @@
+{
+  "commit": "a57c871d4",
+  "created": "2026-06-11T01:39:10Z",
+  "figsize": [
+    9.0,
+    5.2
+  ],
+  "description": "Raw per-question wrong-encoding leakage points (50 held-out questions x 6 cells per arm), jittered; black dots = per-cell means. The raw counterpart of the aggregated leakage bars.",
+  "rows": [
+    {
+      "arm": "system_minimal",
+      "seed": 42,
+      "training_persona": "pirate",
+      "e_eval": "system_minimal_villain",
+      "cell_mean": -12.565037536621094,
+      "n_questions": 50
+    },
+    {
+      "arm": "system_minimal",
+      "seed": 42,
+      "training_persona": "villain",
+      "e_eval": "system_minimal_pirate",
+      "cell_mean": -13.637503070831299,
+      "n_questions": 50
+    },
+    {
+      "arm": "system_minimal",
+      "seed": 137,
+      "training_persona": "pirate",
+      "e_eval": "system_minimal_villain",
+      "cell_mean": -13.667508583068848,
+      "n_questions": 50
+    },
+    {
+      "arm": "system_minimal",
+      "seed": 137,
+      "training_persona": "villain",
+      "e_eval": "system_minimal_pirate",
+      "cell_mean": -13.57500343322754,
+      "n_questions": 50
+    },
+    {
+      "arm": "system_minimal",
+      "seed": 1337,
+      "training_persona": "pirate",
+      "e_eval": "system_minimal_villain",
+      "cell_mean": -13.167516498565673,
+      "n_questions": 50
+    },
+    {
+      "arm": "system_minimal",
+      "seed": 1337,
+      "training_persona": "villain",
+      "e_eval": "system_minimal_pirate",
+      "cell_mean": -13.252504653930664,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 42,
+      "training_persona": "pirate",
+      "e_eval": "role_bare_villain",
+      "cell_mean": -19.195001201629637,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 42,
+      "training_persona": "villain",
+      "e_eval": "role_bare_pirate",
+      "cell_mean": -14.64250165939331,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 137,
+      "training_persona": "pirate",
+      "e_eval": "role_bare_villain",
+      "cell_mean": -15.212506732940675,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 137,
+      "training_persona": "villain",
+      "e_eval": "role_bare_pirate",
+      "cell_mean": -14.001252880096436,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 1337,
+      "training_persona": "pirate",
+      "e_eval": "role_bare_villain",
+      "cell_mean": -17.221251754760743,
+      "n_questions": 50
+    },
+    {
+      "arm": "role_bare",
+      "seed": 1337,
+      "training_persona": "villain",
+      "e_eval": "role_bare_pirate",
+      "cell_mean": -14.516251640319824,
+      "n_questions": 50
+    }
+  ]
+}

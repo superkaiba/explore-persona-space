@@ -1,5 +1,5 @@
 ---
-description: Full marker-leakage measurement recipe (on-policy, marker-at-end), default marker token, log-prob dynamics, and the #432→#456 measurement-validity incident
+description: Full marker-leakage measurement recipe (on-policy, marker-at-end), default marker token, log-prob dynamics, the install-strength confound for cross-condition leakage comparisons, and the #432→#456 measurement-validity incident
 paths:
   - "scripts/train.py"
   - "scripts/eval.py"
@@ -25,9 +25,15 @@ Qwen-2.5-7B token id 83399).** NOT `[ZLT]` (multi-token, deprecated) and NOT bar
 `※` (id 63680, no leading space — wrong token; train/eval drift killed #396
 round-1). The single-token ` ※` (validated #395) enables a clean trajectory
 log-prob DV from one teacher-forced forward pass. Thread through shell layers with
-`shlex.quote(MARKER_TEXT)` (bash strips the leading space). Launchers must assert
-`tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` before any
-subprocess spawns.
+`shlex.quote(MARKER_TEXT)` (bash strips the leading space). The assert
+`tokenizer.encode(MARKER_TEXT, add_special_tokens=False) == [83399]` must be
+WIRED INTO the training entrypoint / dispatcher itself so every process
+fails at startup on a wrong marker — a pre-spawn shell check or
+convention is NOT sufficient. (Incident #537, 2026-06-10: a trainer
+path silently used the deprecated `[ZLT]`, making all 16 adapters no-op
+implants; caught only after the GPU spend, all 16 cells retrained.
+experiment-implementer: treat a marker-training script without the
+in-process assert as a review blocker.)
 
 ## Track log-prob DYNAMICS, not just the endpoint
 
@@ -58,6 +64,14 @@ NOT the first token, NOT after a canned answer.
    emission rate. Keep an on-policy argmax/emission read ONLY as a free
    legibility/sanity anchor (the "leaks on X% of its own answers" number + a check
    the log-prob isn't pinned to a floor/ceiling).
+   **Slot position = the marker's own trained position at the end of the
+   response — never APPENDED after a response that already contains/ends with
+   the marker.** If the trained model's own `R` already emits the marker,
+   appending a fresh slot after it measures "emit a SECOND marker", which is a
+   different (and near-floor) quantity: in #532 (2026-06-09) the appended-slot
+   read produced base emit-rate 1.00 with appended-slot log-prob −24.9 — both
+   artifacts. Strip / stop at the first marker emission and read the slot where
+   the marker would first appear.
 
 Anti-patterns, all flagged by the measurement-validity rule + #432→#456: the
 marker as the FIRST token; a teacher-forced log-prob at a fixed position after a
@@ -73,6 +87,17 @@ emission rate; never substitute KL.
 (Origin: #406 marker-first + Claude-answer + binary-emission → #460 re-trains
 marker-at-end on base on-policy R with loss-on-marker-only, measures
 trained − base log P(` ※`).)
+
+**Adapter-application assert (smoke-gate requirement).** Any OFF-LINE eval
+path (vLLM batch re-scoring, post-hoc trajectory eval) MUST first reproduce
+the in-loop training callback's source-cell read (`ΔG = log P(marker)`
+trained − base) within ~1 nat on the smoke cell BEFORE any sweep is launched.
+A trained source reading `ΔG ≈ 0` off-line while the in-loop callback measured
+6+ nats is an eval-path bug (typical: vLLM LoRA adapter not actually applied —
+`lora_int_id` mishandling), NOT a finding. Incident #534 (2026-06-09): all 40
+trajectory-eval passes ran without adapters and produced ΔG ≈ 0.00–0.07
+everywhere; the smoke gate had validated snapshots/band-stop but never
+cross-checked the off-line eval against the in-loop read.
 
 ## Log and analyze ALL THREE spaces (every marker slot read, always)
 
@@ -162,6 +187,54 @@ saturation signature — not an error.
   trap: "the prior affects leakage" is a probability-space / absolute-level
   claim, near-vacuous for the log-prob GAIN — off saturation `Δlog Z ≈ 0` so
   `Δlog P ≈ Δz_marker`, i.e. the gain is prior-independent by construction.
+
+## Install-strength confound — cross-condition leakage comparisons
+
+Raw bystander leakage is downstream of implant dose: a condition can read
+"leakier" simply because it implanted the behavior more strongly, not because
+it is less selective. Install strength is condition-dependent — and not even
+in a fixed direction across behaviors (#601: contrastive negatives
+strengthened the marker implant, via the longer optimizer schedule rather
+than their own loss; #608: positive-only sycophancy training installed at
+least as strongly as the contrastive mix) — so a cross-condition
+"X leaks more than Y" claim read off raw bystander leakage alone conflates
+lower selectivity with plain stronger implantation and is uninterpretable as a
+selectivity finding.
+
+**Required reads for any cross-condition leakage COMPARISON** (contrastive vs
+positive-only, LoRA vs full fine-tuning, data-construction variants — any
+design whose headline compares leakage ACROSS training conditions). Register
+at least one of reads 1-2, plus read 3 wherever per-step trajectories exist:
+
+1. **Matched-install comparison.** Compare conditions at checkpoints with
+   matched source gain (the per-step trajectory + band-stop logging make such
+   checkpoints findable). This is the cleanest control: same dose, read the
+   leakage difference directly.
+2. **Per-cell transfer fraction.** Leakage as a fraction of install — bystander
+   gain ÷ source gain — computed per (source → bystander) cell in the
+   **non-saturating EOS-margin logit space `Δ(z_marker − z_eos)`, NEVER raw
+   `log P`**: softmax compression understates a saturated source's log-prob
+   gain, shrinking the denominator and inflating the fraction exactly in the
+   strongest-implant conditions. Computable wherever the four-float storage
+   contract above is honored.
+3. **Dose curves.** Leakage vs install across training steps per condition,
+   fitted from the WandB per-step trajectories where they exist. PREFERRED
+   over the single fraction — it subsumes the ratio and catches nonlinear
+   leakage onset (under nonlinearity a single percentage is mechanically
+   dose-dependent, so two conditions at different installs can differ in the
+   fraction with identical transfer curves).
+
+**Statistical hygiene:** never correlate the transfer fraction back against
+install itself — the shared noisy denominator manufactures correlation (same
+family as the #383 X-vs-(X−Y) circularity caveat in
+`.claude/rules/contrastive-negatives.md`).
+
+Scope: this governs cross-condition COMPARISONS only. The primary DV
+definition is unchanged — on-policy `log P(marker)` trained − base stays
+PRIMARY per the recipe above, and this is not a license for the banned
+full-vocab KL substitution. Enforcement: `planner.md` §6 "Install-strength
+control" + `critic.md` Statistics & Measurement lens item 8. Empirical
+control task: #627.
 
 ## #432 → #456 incident (promoted not-useful)
 

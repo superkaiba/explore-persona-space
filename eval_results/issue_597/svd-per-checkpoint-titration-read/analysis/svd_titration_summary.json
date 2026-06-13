@@ -1,0 +1,318 @@
+{
+  "schema": "i597_svd_titration_summary_v1",
+  "followup_label": "svd-per-checkpoint-titration-read",
+  "units": [
+    "a_assistant",
+    "a_comedian",
+    "a_kindergarten_teacher",
+    "a_qwen_default",
+    "a_software_engineer",
+    "a_villain",
+    "b_assistant",
+    "b_comedian",
+    "b_kindergarten_teacher",
+    "b_qwen_default",
+    "b_software_engineer",
+    "b_villain"
+  ],
+  "primary_read": {
+    "layer": 14,
+    "pooling": "slot"
+  },
+  "floor_threshold": 3.0,
+  "null_reps": 1000,
+  "centering": "global_mean",
+  "scope_notes": [
+    "within-flavor (fixed base text) trend claims only — #521 base-text endpoint levels are the expected anchor, never cross-flavor absolutes",
+    "single seed (42); seed gap carried as a scope caveat per the followup spec",
+    "contrastive grid starts AT step 20 while onsets are 15-20: its pre-onset window is unobservable (named asymmetry)",
+    "qwen_default contrastive cell carries the parent's contradictory-supervision caveat — reported but flagged",
+    "nulls (1,000 reps) run at the primary read (layer 14 slot) only; secondary layers/poolings are descriptive (plan §9 budget)"
+  ],
+  "h1": {
+    "operationalization": "at the EARLIEST above-floor positive-only checkpoint in steps 4-16: top_share > sign_flip_p95 AND top_share > step-528 share AND gate_rho_centered > 0; pre-registered pass = 6/6 sources",
+    "per_source": {
+      "assistant": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.40279820561408997,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.420648455619812,
+        "gate_rho_centered": 0.14384615384615385,
+        "pass": false
+      },
+      "comedian": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.25141918659210205,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.42440173029899597,
+        "gate_rho_centered": 0.7907692307692308,
+        "pass": false
+      },
+      "kindergarten_teacher": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.27494317293167114,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.41708704829216003,
+        "gate_rho_centered": 0.8815384615384615,
+        "pass": false
+      },
+      "qwen_default": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.3622377812862396,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.4126843810081482,
+        "gate_rho_centered": 0.10521739130434783,
+        "pass": false
+      },
+      "software_engineer": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.3839839994907379,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.4068155288696289,
+        "gate_rho_centered": -0.20076923076923076,
+        "pass": false
+      },
+      "villain": {
+        "status": "read",
+        "earliest_above_floor_step": 12,
+        "top_share": 0.2561822235584259,
+        "clears_sign_flip_p95": true,
+        "exceeds_endpoint_share": false,
+        "endpoint_top_share": 0.3826819658279419,
+        "gate_rho_centered": 0.7461538461538462,
+        "pass": false
+      }
+    },
+    "n_read": 6,
+    "n_pass": 0,
+    "sign_test": {
+      "k": 0,
+      "n": 6,
+      "p_one_sided": 1.0,
+      "p_two_sided": 1.0
+    }
+  },
+  "h2": {
+    "operationalization": "consecutive-U1 rotation minimum lands inside steps 12-40 AND mean gate_rho_centered over above-floor steps in [40, 100] < 0.5 x its pre-cliff mean (early > 0); falsified if all consecutive cosines >= 0.9 through the cliff or H1's grading never existed",
+    "per_source": {
+      "assistant": {
+        "status": "read",
+        "rotation_min_cos": 0.9495536088943481,
+        "rotation_min_at_step": 32,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": true,
+        "gate_rho_early_mean": 0.14384615384615385,
+        "gate_rho_late_mean": 0.3242307692307692,
+        "gate_collapse": false,
+        "pass": false
+      },
+      "comedian": {
+        "status": "read",
+        "rotation_min_cos": 0.8352997303009033,
+        "rotation_min_at_step": 24,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": false,
+        "gate_rho_early_mean": 0.7907692307692308,
+        "gate_rho_late_mean": 0.7525961538461539,
+        "gate_collapse": false,
+        "pass": false
+      },
+      "kindergarten_teacher": {
+        "status": "read",
+        "rotation_min_cos": 0.9574257135391235,
+        "rotation_min_at_step": 28,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": true,
+        "gate_rho_early_mean": 0.8815384615384615,
+        "gate_rho_late_mean": 0.5558653846153845,
+        "gate_collapse": false,
+        "pass": false
+      },
+      "qwen_default": {
+        "status": "read",
+        "rotation_min_cos": 0.9069960713386536,
+        "rotation_min_at_step": 28,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": true,
+        "gate_rho_early_mean": 0.10521739130434783,
+        "gate_rho_late_mean": -0.13184782608695653,
+        "gate_collapse": true,
+        "pass": true
+      },
+      "software_engineer": {
+        "status": "read",
+        "rotation_min_cos": 0.8969097137451172,
+        "rotation_min_at_step": 32,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": false,
+        "gate_rho_early_mean": -0.20076923076923076,
+        "gate_rho_late_mean": -0.1851923076923077,
+        "gate_collapse": false,
+        "pass": false
+      },
+      "villain": {
+        "status": "read",
+        "rotation_min_cos": 0.9526161551475525,
+        "rotation_min_at_step": 20,
+        "rotation_min_inside_cliff": true,
+        "rotation_stable_through_cliff": true,
+        "gate_rho_early_mean": 0.7461538461538462,
+        "gate_rho_late_mean": 0.7037500000000001,
+        "gate_collapse": false,
+        "pass": false
+      }
+    },
+    "n_read": 6,
+    "n_pass": 1,
+    "sign_test": {
+      "k": 1,
+      "n": 6,
+      "p_one_sided": 0.984375,
+      "p_two_sided": 1.0
+    }
+  },
+  "h3": {
+    "operationalization": "delta_rho = rho(norms, cos to v_src − 2:2:1-weighted mean v_neg) − rho(norms, cos to v_src), centered geometry; contrastive arm passes a source when the last-5-above-floor mean is > 0 AND > the first-5 mean; positive-only arm expects last-5 mean <= 0; descriptive paired read aggregated by cross-source sign test (plan §3 power note)",
+    "per_arm": {
+      "a": {
+        "per_source": {
+          "assistant": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": -0.011076923076923073,
+            "delta_rho_late_mean": -0.012769230769230765,
+            "late_positive": false,
+            "rising": false
+          },
+          "comedian": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": 0.03215384615384616,
+            "delta_rho_late_mean": 0.03800000000000001,
+            "late_positive": true,
+            "rising": true
+          },
+          "kindergarten_teacher": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": -0.035230769230769246,
+            "delta_rho_late_mean": -0.03753846153846159,
+            "late_positive": false,
+            "rising": false
+          },
+          "qwen_default": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": 0.029565217391304334,
+            "delta_rho_late_mean": 0.02556521739130435,
+            "late_positive": true,
+            "rising": false
+          },
+          "software_engineer": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": 0.9715384615384615,
+            "delta_rho_late_mean": 0.9064615384615384,
+            "late_positive": true,
+            "rising": false
+          },
+          "villain": {
+            "status": "read",
+            "n_above_floor_h3": 27,
+            "delta_rho_early_mean": -0.007692307692307709,
+            "delta_rho_late_mean": -0.007384615384615367,
+            "late_positive": false,
+            "rising": true
+          }
+        },
+        "criterion": "late_positive_and_rising",
+        "n_read": 6,
+        "n_pass": 1,
+        "sign_test": {
+          "k": 1,
+          "n": 6,
+          "p_one_sided": 0.984375,
+          "p_two_sided": 1.0
+        }
+      },
+      "b": {
+        "per_source": {
+          "assistant": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": 0.028153846153846147,
+            "delta_rho_late_mean": 0.072,
+            "late_positive": true,
+            "rising": true
+          },
+          "comedian": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": 0.0306153846153846,
+            "delta_rho_late_mean": 0.03076923076923077,
+            "late_positive": true,
+            "rising": true
+          },
+          "kindergarten_teacher": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": -0.007846153846153859,
+            "delta_rho_late_mean": -0.059538461538461526,
+            "late_positive": false,
+            "rising": false
+          },
+          "qwen_default": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": 0.0528695652173913,
+            "delta_rho_late_mean": 0.07652173913043478,
+            "late_positive": true,
+            "rising": true
+          },
+          "software_engineer": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": 1.1352307692307693,
+            "delta_rho_late_mean": 0.8878461538461538,
+            "late_positive": true,
+            "rising": false
+          },
+          "villain": {
+            "status": "read",
+            "n_above_floor_h3": 37,
+            "delta_rho_early_mean": -0.0040000000000000036,
+            "delta_rho_late_mean": -0.00507692307692309,
+            "late_positive": false,
+            "rising": false
+          }
+        },
+        "criterion": "late_nonpositive",
+        "n_read": 6,
+        "n_pass": 2,
+        "sign_test": {
+          "k": 2,
+          "n": 6,
+          "p_one_sided": 0.890625,
+          "p_two_sided": 1.0
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "9ce15a086018e25475c45ea6d263b1dc818520fd",
+    "hostname": "cia-benchmark-vm",
+    "ts": "2026-06-12T03:30:55.126004+00:00",
+    "numpy_version": "2.2.6",
+    "wall_seconds": 12255.6
+  }
+}

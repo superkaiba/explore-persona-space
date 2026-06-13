@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "issue": 523,
+  "phase": "phase_b_diagonal_implant",
+  "convergence_metric": "emission_recompute_rate",
+  "convergence_threshold": 0.8,
+  "convergence_metric_source": "scripts/i474_phase2_smoke_check.py:55, 324 \u2014 the same on-policy diagonal-marker emission fraction the parent smoke gate reads.",
+  "n_cells": 16,
+  "n_converged_ge_0_80": 16,
+  "fraction_converged": 1.0,
+  "rows": [
+    {
+      "cond_id": "A1",
+      "g_logprob_diag": -0.0015340800129342825,
+      "delta_g_diag": 26.019751511112553,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "A2",
+      "g_logprob_diag": -0.0002782784597911814,
+      "delta_g_diag": 25.609892734418626,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "A3",
+      "g_logprob_diag": -0.01866976489847275,
+      "delta_g_diag": 19.27385625133688,
+      "emission_rate_diag": 0.98,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "A4",
+      "g_logprob_diag": -2.2029821315072694e-06,
+      "delta_g_diag": 19.103170022970016,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "A5",
+      "g_logprob_diag": -5.9146515632164664e-05,
+      "delta_g_diag": 21.01506612814257,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "B1",
+      "g_logprob_diag": -0.366657055914402,
+      "delta_g_diag": 24.76873002141714,
+      "emission_rate_diag": 0.88,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "B2",
+      "g_logprob_diag": -0.09394742919132114,
+      "delta_g_diag": 24.846116428840904,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "B3",
+      "g_logprob_diag": -0.17188416375778615,
+      "delta_g_diag": 24.994392691710964,
+      "emission_rate_diag": 0.98,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "B4",
+      "g_logprob_diag": -0.023800893351435662,
+      "delta_g_diag": 24.984120020344854,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "B5",
+      "g_logprob_diag": -0.015315001288490749,
+      "delta_g_diag": 25.080547768792076,
+      "emission_rate_diag": 0.98,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "C1",
+      "g_logprob_diag": -0.323878004103899,
+      "delta_g_diag": 24.71571767613292,
+      "emission_rate_diag": 0.94,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "D1",
+      "g_logprob_diag": -0.10230288578430191,
+      "delta_g_diag": 24.80084641383728,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "D2",
+      "g_logprob_diag": -0.45898775696754457,
+      "delta_g_diag": 24.72012452483177,
+      "emission_rate_diag": 0.8,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "D3",
+      "g_logprob_diag": -0.0091561780936172,
+      "delta_g_diag": 25.470473796271616,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "D4",
+      "g_logprob_diag": -0.10944789073895662,
+      "delta_g_diag": 24.722278946419248,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    },
+    {
+      "cond_id": "D5",
+      "g_logprob_diag": -0.00015908531995592056,
+      "delta_g_diag": 27.495594317390005,
+      "emission_rate_diag": 1.0,
+      "converged_ge_0_80": true
+    }
+  ],
+  "source_matrix": "eval_results/issue_523/seed43_cross_eval/loc_ep1/G_logprob_matrix.json"
+}

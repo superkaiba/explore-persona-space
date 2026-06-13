@@ -24,14 +24,25 @@ chat — refine the body, run the quality gates, push, then iterate against
 the live body. The only pre-apply user gate is Step 1 (consolidation
 candidates), because merging is destructive.
 
+**Batch-promote prescan.** When the user issues a MULTI-task promote
+directive ("promote everything before #K", "move these N to completed"),
+do NOT classify the whole batch `useful` blind: first grep each
+candidate's title + body head for `BUGGED`, `invalid`, `headline not
+obtained`, or an explicitly-failed manipulation check, and present a
+one-line check — "these M look not-useful: #a (BUGGED), #b (...) — promote
+as useful anyway?" — before running the loop. On 2026-06-09 a 53-task
+blanket-useful batch promoted #407, whose body literally begins "# BUGGED
+experiment", and the user had to catch and flip it minutes later via a
+status round-trip.
+
 **All body-shape rules live in `.claude/skills/clean-results/SPEC.md`
 (2-content-section nested-design v2 spec — three required H2 sections
 in order: `## Human TL;DR` / `## TL;DR` / `## Reproducibility`; with
 `## TL;DR` carrying `### Motivation` / `### What I ran` /
 `### Findings` (parent) → `#### <finding>` per result for
 v2-sentinelled bodies; confidence in H1 title tag only for v2 bodies).
-Enforced mechanically by `scripts/verify_task_body.py` (19 checks).
-Workflow + apply mechanics only here.
+Enforced mechanically by `scripts/verify_task_body.py` (check catalog
+in the script docstring). Workflow + apply mechanics only here.
 
 ---
 
@@ -183,9 +194,27 @@ The user reads the live body on the EPS dashboard and asks for tweaks;
 you apply them in place via repeated `task.py set-body` calls. Each
 edit is one git commit on `task-workflow`.
 
-## Step 6 — Hand off the promote command
+## Step 6 — Execute (explicit intent) or hand off
 
-When the user is satisfied:
+**If the user's request already carries explicit promote intent** —
+"promote N", "promote it", "promote N useful/not-useful" — and Steps
+3-5 PASS, run the command directly on their behalf:
+
+```
+uv run python scripts/task.py promote <N> useful   # or not-useful, per their words
+```
+
+The "user-only" rule means no AUTOMATION may flip
+`runs.classification` on its own; a human's explicit "promote N" in
+chat IS the user gate, and re-asking "ready to promote?" after they
+already said so is the anti-pattern (2026-06-10: Thomas said
+"Promote 488", got a summary instead of execution, and had to repeat
+"PROMOTE IT"). Ask ONLY when the classification is ambiguous (no
+useful/not-useful signal and the body suggests not-useful) or a gate
+FAILed.
+
+**Otherwise** (the user asked for a review/refine pass, not a
+promotion), hand off:
 
 ```
 Ready to promote. Run:
@@ -195,8 +224,6 @@ Ready to promote. Run:
 or
 
     uv run python scripts/task.py promote <N> not-useful
-
-(promotion is user-only — I cannot run it.)
 ```
 
 That command moves the task from `tasks/awaiting_promotion/<N>/` to
@@ -217,9 +244,10 @@ follow-up-proposer step.
   sample-output discipline).
 - **`CLAUDE.md` § "Experiment Report Structure"** — brief summary
   pointing back at SPEC.md.
-- **`scripts/verify_task_body.py`** — mechanical verifier (19 checks
-  including the v2 sentinel-gated nested-structure check; skips
-  legacy `<!-- legacy-sagan-card -->` HTML bodies with PASS).
+- **`scripts/verify_task_body.py`** — mechanical verifier (check
+  catalog in the script docstring, including the v2 sentinel-gated
+  nested-structure check; skips legacy `<!-- legacy-sagan-card -->`
+  HTML bodies with PASS).
 - **`scripts/verify_sagan_card.py`** — legacy verifier retained for
   grandfathered HTML bodies only.
 - **`scripts/audit_clean_results_body_discipline.py`** — prose-level

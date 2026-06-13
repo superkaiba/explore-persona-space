@@ -1,0 +1,12 @@
+{
+  "r": 16,
+  "lora_alpha": 32,
+  "use_rslora": true,
+  "target_modules": [
+    "k_proj",
+    "o_proj",
+    "q_proj",
+    "v_proj"
+  ],
+  "modules_to_save": null
+}

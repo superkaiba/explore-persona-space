@@ -1,0 +1,243 @@
+{
+  "concentrated": {
+    "mean_cos_to_U1": {
+      "min": 0.9558023810386658,
+      "max": 0.9806687235832214
+    },
+    "s_top1_frac": {
+      "min": 0.5556108951568604,
+      "max": 0.6550405025482178
+    }
+  },
+  "dispersed": {
+    "mean_cos_to_U1": {
+      "min": 0.5353434085845947,
+      "max": 0.8637591004371643
+    },
+    "s_top1_frac": {
+      "min": 0.3405703902244568,
+      "max": 0.4402461349964142
+    }
+  },
+  "degraded_metrics": {
+    "mean_cos_to_U1": false,
+    "s_top1_frac": false
+  },
+  "rule": "stays-concentrated = ALL non-degraded metrics >= concentrated band min; disperses = ALL non-degraded metrics <= dispersed band max; else intermediate. A cell whose 9-row top-share <= its own re-run sign-flip p95 is at-noise-floor (no categorical call). Bands computed BEFORE new-arm unblinding (plan v5 \u00a76.3).",
+  "reference_cells": {
+    "em_seed42": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9640284776687622,
+      "mean_abs_cos_to_U1": 0.9640284776687622,
+      "s_top1_frac": 0.5803828835487366,
+      "row_shuffle_p95": 0.559466540813446,
+      "sign_flip_p95": 0.12538589537143707,
+      "frob_norm": 65.80783081054688
+    },
+    "em_seed137": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9755730032920837,
+      "mean_abs_cos_to_U1": 0.9755730032920837,
+      "s_top1_frac": 0.6274614334106445,
+      "row_shuffle_p95": 0.6066638827323914,
+      "sign_flip_p95": 0.128109410405159,
+      "frob_norm": 78.2434310913086
+    },
+    "em_seed256": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9806687235832214,
+      "mean_abs_cos_to_U1": 0.9806687235832214,
+      "s_top1_frac": 0.6550405025482178,
+      "row_shuffle_p95": 0.636675238609314,
+      "sign_flip_p95": 0.12845252454280853,
+      "frob_norm": 88.84000396728516
+    },
+    "benign_seed42": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9558023810386658,
+      "mean_abs_cos_to_U1": 0.9558023810386658,
+      "s_top1_frac": 0.5556108951568604,
+      "row_shuffle_p95": 0.5344158411026001,
+      "sign_flip_p95": 0.12563598155975342,
+      "frob_norm": 53.15316390991211
+    },
+    "benign_seed137": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9674710035324097,
+      "mean_abs_cos_to_U1": 0.9674710035324097,
+      "s_top1_frac": 0.5942241549491882,
+      "row_shuffle_p95": 0.5718716382980347,
+      "sign_flip_p95": 0.13103987276554108,
+      "frob_norm": 60.94743347167969
+    },
+    "benign_seed256": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.9719958901405334,
+      "mean_abs_cos_to_U1": 0.9719958901405334,
+      "s_top1_frac": 0.6089507937431335,
+      "row_shuffle_p95": 0.5905094146728516,
+      "sign_flip_p95": 0.12980148196220398,
+      "frob_norm": 65.91801452636719
+    },
+    "marker_seed42": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.6018744707107544,
+      "mean_abs_cos_to_U1": 0.6018744707107544,
+      "s_top1_frac": 0.3405703902244568,
+      "row_shuffle_p95": 0.2313196063041687,
+      "sign_flip_p95": 0.21295110881328583,
+      "frob_norm": 15.211221694946289
+    },
+    "marker_seed137": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.8637591004371643,
+      "mean_abs_cos_to_U1": 0.8637591004371643,
+      "s_top1_frac": 0.4402461349964142,
+      "row_shuffle_p95": 0.3461760878562927,
+      "sign_flip_p95": 0.17396050691604614,
+      "frob_norm": 13.306164741516113
+    },
+    "marker_seed256": {
+      "persona_order": [
+        "biographer",
+        "data_scientist",
+        "french_person",
+        "kindergarten_teacher",
+        "librarian",
+        "local_historian",
+        "marine_biologist",
+        "villain",
+        "zelthari_scholar"
+      ],
+      "M_shape": [
+        3584,
+        9
+      ],
+      "mean_cos_to_U1": 0.5353434085845947,
+      "mean_abs_cos_to_U1": 0.5353434085845947,
+      "s_top1_frac": 0.3621295392513275,
+      "row_shuffle_p95": 0.21734614670276642,
+      "sign_flip_p95": 0.2140212059020996,
+      "frob_norm": 17.678739547729492
+    }
+  },
+  "metadata": {
+    "script": "issue552_contrastive_2x2_analysis",
+    "git_commit": "e8d9dc6b7d2a7ffbc6f51b01bd53ebb116d3fc37",
+    "timestamp_utc": "2026-06-11T19:49:20Z",
+    "numpy": "2.2.6",
+    "torch": "2.8.0+cu128"
+  }
+}

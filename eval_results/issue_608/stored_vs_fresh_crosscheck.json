@@ -1,0 +1,61 @@
+{
+  "note": "DESCRIPTIVE replication cross-check only (plan v2 Must-Fix 1): all inferential comparisons use the fresh same-stack values; divergence here is a finding about stack/judge drift, not a gate.",
+  "per_source": [
+    {
+      "source": "villain",
+      "fresh_contrastive_own_rate": 0.948,
+      "frozen_contrastive_own_rate": 0.95,
+      "own_rate_divergence": -0.0020000000000000018,
+      "fresh_base_own_rate": 0.046,
+      "frozen_base_own_rate": 0.05,
+      "base_rate_divergence": -0.0040000000000000036
+    },
+    {
+      "source": "comedian",
+      "fresh_contrastive_own_rate": 0.958,
+      "frozen_contrastive_own_rate": 0.958,
+      "own_rate_divergence": 0.0,
+      "fresh_base_own_rate": 0.128,
+      "frozen_base_own_rate": 0.128,
+      "base_rate_divergence": 0.0
+    },
+    {
+      "source": "assistant",
+      "fresh_contrastive_own_rate": 0.96,
+      "frozen_contrastive_own_rate": 0.962,
+      "own_rate_divergence": -0.0020000000000000018,
+      "fresh_base_own_rate": 0.05,
+      "frozen_base_own_rate": 0.046,
+      "base_rate_divergence": 0.0040000000000000036
+    },
+    {
+      "source": "qwen_default",
+      "fresh_contrastive_own_rate": 0.704,
+      "frozen_contrastive_own_rate": 0.7,
+      "own_rate_divergence": 0.0040000000000000036,
+      "fresh_base_own_rate": 0.044,
+      "frozen_base_own_rate": 0.046,
+      "base_rate_divergence": -0.0020000000000000018
+    },
+    {
+      "source": "software_engineer",
+      "fresh_contrastive_own_rate": 0.962,
+      "frozen_contrastive_own_rate": 0.958,
+      "own_rate_divergence": 0.0040000000000000036,
+      "fresh_base_own_rate": 0.046,
+      "frozen_base_own_rate": 0.044,
+      "base_rate_divergence": 0.0020000000000000018
+    },
+    {
+      "source": "kindergarten_teacher",
+      "fresh_contrastive_own_rate": 0.968,
+      "frozen_contrastive_own_rate": 0.968,
+      "own_rate_divergence": 0.0,
+      "fresh_base_own_rate": 0.056,
+      "frozen_base_own_rate": 0.05,
+      "base_rate_divergence": 0.005999999999999998
+    }
+  ],
+  "git_commit_sha": "66d14a8718c1434eb1caed1e3295fbe3a4dca36f",
+  "timestamp_utc": "2026-06-12T00:30:35.307454+00:00"
+}

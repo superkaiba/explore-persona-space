@@ -18,3 +18,46 @@
 - [Judge JSON scores not type-guaranteed](feedback_judge_json_scores_not_type_guaranteed.md) — Judges emit string-typed numerics ("aligned": "85"); coerce int(float(v)) + range-check BEFORE storing, or downstream sums crash int+str.
 - [Betley judge REFUSAL/CODE sentinels](feedback_betley_judge_sentinel_verdicts.md) — The Betley rubric INSTRUCTS literal "REFUSAL"/"CODE" verdicts; consumers must count-exclude them (rate denominator AND error floor), never class as errors. Code-trained organisms make CODE the majority class.
 - [Never blend raw JSONL lines across schemas](feedback_mixed_corpus_schema_blend.md) — trainer.py format_dataset treats prompt/completion as legacy STRINGS; mixed-corpus prep must normalize every row to messages-schema + str content at write time, then render-test through real format_dataset.
+- [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
+- [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + nvidia-smi check, or subprocess-isolate phases. #399.
+- [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid vs the CVD-visible set. #396.
+- [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines + logger.exception-and-reraise loop guard. #396.
+- [Ruff strips unused imports](feedback_ruff_strips_unused_imports.md) — post-Edit hook removes reference-less imports; land import + usage together; ruff check after. 7 orderings catalogued.
+- [Clone-modify cross-file drift](feedback_clone_modify_cross_file_drift.md) — new kwarg threads leave library helpers stale; AST kwarg-vs-signature sweep (<1s) before any pod launch. #399.
+- [snapshot_download siblings truncation](feedback_snapshot_download_siblings_truncation.md) — allow_patterns silently fetches 0 files past ~8k siblings; use list_repo_files + per-file hf_hub_download. #375/#399.
+- [Eval-script silent 'not present' misdiagnosis](feedback_eval_script_silent_not_present_misdiagnosis.md) — split helper None into genuine-missing vs pattern-mismatch/invariant RuntimeErrors; never imply "re-train" on a downloader bug. #399.
+- [Add dimension via alias + new key, never rename](feedback_add_dimension_alias_legacy.md) — legacy filenames/keys alias the default value; new values get parallel keys; resume + consumers keep working. #399.
+- [Extract sibling metadata from HF, not generator code](feedback_extract_sibling_metadata_from_hf.md) — bit-identical metadata comes from the sibling's published HF artifacts + SHA-256 fingerprint. #480.
+- [HF mirror divergence — pin content hashes at prefetch](feedback_hf_mirror_divergence_pin_hashes.md) — issue-owned input snapshots + sha256 pins; local-verified ≠ HF mirror. #600.
+- [Pinned artifact pairs can disagree](feedback_pinned_artifact_pair_mutual_inconsistency.md) — assert per-(persona,q) coverage against the READ-side artifact; descope with a coverage field, never regenerate frozen R. #601.
+- [Deviation path → sweep all pin verifiers](feedback_deviation_path_sweeps_all_pin_verifiers.md) — an authorized artifact deviation flips sibling pin checks; re-point stale parent-pin verifiers to the run's own attestation.
+- [Resume branches synthesize success-equivalent results](feedback_resume_branch_synthesize_result.md) — bare-continue skip branches read as crashes downstream; rehearse resume offline. #600.
+- [CPU build-time guard for max_length truncation](feedback_cpu_build_time_guard_for_truncation.md) — re-tokenize every row at pool-build and fail loud over budget; smoke needs a long NEG row. #480.
+- [TRL assistant_only_loss + Qwen template](feedback_trl_assistant_only_loss_qwen_template.md) — crashes on Qwen (no {% generation %}); prompt+completion data: set False, completion_mask already masks. #519.
+- [Left-pad → explicit position_ids required](feedback_left_pad_position_ids_required.md) — batched generate/forward under left-pad needs cumsum position_ids; smoke cosine(batched, serial) ≥ 0.999. #502.
+- [Mask-audit anchor lookup must use offset_mapping](feedback_mask_audit_offset_mapping.md) — re-tokenize subsequence search breaks on BPE merges; decoded.rfind + offsets + drift guard.
+- [bf16 merge truncates small LoRA deltas](feedback_bf16_merge_truncates_small_lora_delta.md) — merge_and_unload attenuates early/low-lr adapters; parity-faithful read = unmerged PeftModel. #480.
+- [LoRA application-scaling contract](feedback_lora_application_scaling_contract.md) — rsLoRA α/√r vs classic α/r flips repeater behavior; probe both scalings + pin the read gauge. #601.
+- [hidden_states[-1] is POST-final-norm](feedback_hidden_states_tail_post_norm.md) — hs tail = lm_head input; hook for last-layer residuals; perturb non-uniformly in tiny-model tests. #597.
+- [Gate reads need matched batch geometry](feedback_gate_reads_batch_geometry.md) — left-pad companions shift bf16 logp ~0.16 nat; re-read rows in their ORIGINAL sub-batches. #597.
+- [Threshold-gated telemetry never fires on short runs](feedback_threshold_gated_telemetry_short_runs.md) — min_steps≥T cells ship NO trajectory file; gate the stop, not the probe. #601.
+- [Gate the stop predicate, never the telemetry](feedback_gate_stop_predicate_not_telemetry.md) — check every gate against the SHORTEST cell + smoke its telemetry output. #601.
+- [max_model_len tracks max_new_tokens](feedback_max_model_len_tracks_max_new_tokens.md) — raising max_new_tokens on an inherited vLLM rig requires raising max_model_len at the call site. #601.
+- [4-D per-q caches blow up disk](feedback_per_q_4d_disk_blowup.md) — (n_q, n_layers, n_pos, D) is N_pos× the 3-D estimate; default per-q writes to the analyzer-needed subset. #263.
+- [Upload loops need 5xx retry + skip-set pairing](feedback_upload_loop_retry_plus_skip_set.md) — bounded 5xx retry (4xx loud) + pre-fetched skip set; verify on a FRESH listing. #542.
+- [Smoke-root rebinding orphans parent inputs](feedback_smoke_root_rebind_orphans_parent_inputs.md) — pin parent inputs to a NON-rebinding constant and stage before the --smoke early-return. #542.
+- [Lazy imports in smoke-skipped branches](feedback_lazy_imports_skipped_by_smoke.md) — hoist to module top + AST --verify-imports gate before relaunch. #606.
+- [Subagent one turn, no watchers](feedback_subagent_one_turn_no_watchers.md) — watchers die at turn end; run minutes-scale smokes foreground with timeouts.
+- [bg heartbeat sleep child holds pipe](feedback_bg_heartbeat_sleep_child_holds_pipe.md) — killed subshell's in-flight sleep holds stdout; STOP→pkill-child→CONT→TERM in the trap. #601.
+- [PYTHONHASHSEED re-exec dance](feedback_pythonhashseed_reexec.md) — pin via os.execvpe re-exec at entry; setting from Python is too late.
+- [Sonnet refusal in seed prompts](feedback_sonnet_refusal_in_seed_prompts.md) — "generate jailbreak attempts" wording silently refuses; reframe as taxonomy labels + detect_refusal helper.
+- [Refusal regex breadth](feedback_refusal_regex_breadth.md) — HIGH-conf patterns fire alone; polite openers only with a refusal continuation within ~240 chars. #377.
+- [i472 JSON payloads wrap data](feedback_i472_json_payloads_wrap_data.md) — persona_bank/R_train/R_eval wrap data under payload keys; use the canonical load_* helpers. #505.
+- [UltraChat prompt field case-variant](feedback_ultrachat_prompt_field_case_variant.md) — use messages[0] text + casefold-strip check, never byte equality with `prompt`.
+- [Panel import forces HF_HOME=/workspace](feedback_panel_import_forces_workspace_hf_home.md) — VM-local tokenizer loads must run BEFORE the bystander-panel import.
+- [PEFT README local-path bug](feedback_peft_readme_local_path.md) — save_pretrained writes base_model=local-path; Hub 400s; rewrite before upload.
+- [Preflight --json is pretty-printed](feedback_preflight_json_parse.md) — parse whole stdout (first-{ slice), never the last line; smoke must exercise run_preflight.
+- [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation; RawDescriptionHelpFormatter + clean description.
+- [Constant bootstrap → negative yerr](feedback_constant_bootstrap_negative_yerr.md) — saturated rate panels give float-epsilon-negative CI widths; clamp max(0.0, m-lo) at errorbar sites.
+- [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.
+- [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)

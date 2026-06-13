@@ -88,14 +88,32 @@ mcp__ssh__ssh_execute server=epm-issue-<N> command='cat /workspace/<adapter>/REA
 ```
 Common breakage: missing `library_name: peft` or invalid `base_model:` value.
 
-**Figures missing from git** — pull then commit locally:
+**Figures missing from git** — pull then commit locally (pathspec-limited so a concurrent session's staged files are never swept in):
 ```bash
 rsync -av epm-issue-<N>:/workspace/explore-persona-space/figures/issue_<N>/ \
     figures/issue_<N>/
 git add figures/issue_<N>/
-git commit -m "figures: issue #<N> from pod"
+git commit -m "figures: issue #<N> from pod" -- figures/issue_<N>/
 git push
 ```
+
+**Post-add reconciliation (MANDATORY after any directory-level `git add`)** —
+applies to every git-destination directory you add (`figures/issue_<N>/`,
+`eval_results/issue_<N>/`, ...). A `.gitignore` rule silently drops files from
+a directory-level add while the commit still "succeeds" (incident #537:
+`.gitignore`'s `*.npz` excluded `eval_results/issue_537/G_tensor/G_tensor.npz`,
+a plan-primary deliverable, and the gap surfaced only at the verifier's
+round-2 re-check). After `git add <dir> && git commit`, diff the index
+against the source file list:
+```bash
+git ls-files <dir> | sort > /tmp/committed.txt
+find <dir> -type f | sort > /tmp/source.txt   # or the pod-side `find` listing if <dir> is not fully synced locally
+comm -13 /tmp/committed.txt /tmp/source.txt   # any output = SILENTLY DROPPED files
+```
+Route each dropped file explicitly — `git add -f` it with a one-line rationale
+in the commit message, or upload it to its correct destination (e.g.
+`.npz`/binary tensors → the HF data repo per the Upload Policy) — and name it
+in the `epm:upload-fix` marker. Never silently drop it.
 
 **Eval JSONs not on WandB Artifacts** — upload from inside the pod's venv:
 ```bash
@@ -122,6 +140,10 @@ api.list_repo_files("superkaiba1/explore-persona-space[-data]")  # contains targ
 wandb.Api().artifact("superkaiba/explore-persona-space/<name>:<ver>").wait()
 ```
 Do NOT trust upload command exit codes alone — verify the URL.
+
+For git destinations, "reachable" means the Step 4 post-add reconciliation
+shows zero dropped files AND the commit is pushed — a clean `git commit` exit
+code proves nothing about gitignore-excluded files.
 
 ### 6. Clean local weights (only after verify PASS)
 
@@ -181,6 +203,9 @@ Report back as:
 
 - NEVER terminate a pod. Stop only.
 - NEVER push without verifying the artifact is reachable post-upload.
+- NEVER report a git-destination artifact PASS off a directory-level
+  `git add` alone — run the Step 4 post-add reconciliation first; `.gitignore`
+  rules (e.g. `*.npz`) silently drop files while the commit succeeds (#537).
 - NEVER skip a verify step on the grounds that the upload command "looked
   successful" — the upload-verifier was created precisely because exit-code
   trust doesn't work for these flows.

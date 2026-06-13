@@ -62,6 +62,23 @@ This is the load-bearing constraint for the entire wrapper agent.
   the orchestrator burned 42 minutes watching a dead handle before
   applying the no-show fallback. Same pattern is the failure mode for
   every Codex twin.
+- **Recurred** on task #557 code-review round 2 (2026-06-10): the wrapper
+  ran a STALE pre-hardening copy of this spec — its issue worktree was cut
+  before the compose-only rule landed on main, and worktrees do not
+  inherit later workflow-surface fixes — backgrounded the helper, and
+  exited with the job still running. A worktree-cut session can re-load
+  this retired anti-pattern silently; the orchestrator recovery below is
+  the containment.
+- **Orphan-adoption recovery (orchestrator-side).** If a wrapper returns
+  with a Codex job still running (the stale-spec regression above): find
+  the live helper via `pgrep -af codex_task.py`, get the job id from the
+  plugin's job state JSON, then fetch the result with
+  `node <plugin-cache>/scripts/codex-companion.mjs result <job-id>` run
+  from the SAME cwd the job was registered under — the companion job
+  registry is CWD-KEYED, so from any other cwd the job looks unknown
+  (for dispatches launched at repo root, that cwd is the MAIN checkout).
+  Adopt the watch with the orchestrator's own bg-Bash polling loop over
+  the job state file; do NOT re-dispatch while the orphan still runs.
 - **If Codex literally cannot run** (companion script missing, plugin
   upgrade race), do NOT try to "make it work" — post
   `epm:failure v1` with `failure_class: infra` and exit. The
@@ -87,7 +104,19 @@ Your brief contains:
 - `plan_marker_path: <path>` — path inside the worktree to the approved plan
   (e.g. `tasks/<status-at-branch-cut>/<N>/plans/v<n>.md`). The plan is
   committed at worktree-branch creation, so this path resolves cleanly from
-  Codex's worktree-rooted sandbox.
+  Codex's worktree-rooted sandbox WHEN the worktree branch was cut from
+  main after the task folder existed (the common case). It does NOT
+  resolve when the worktree was cut from a PARENT issue branch predating
+  this task's creation (child-task pipelines, e.g. the issue-550 worktree
+  cut from `origin/issue-538`) — then NO `tasks/*/<N>/` folder exists in
+  the worktree at all. AND even when the path resolves, the worktree's
+  `plans/` folder is FROZEN at branch-cut time: a plan amendment created
+  AFTER the cut (same-issue follow-up rounds post v2+ on main) never
+  reaches the worktree, so the frozen `plan.md` symlink silently serves
+  the stale parent v1 (#546 follow-up r1 — the silent variant of the
+  #489 class). Step 2-pre-b verifies existence AND freshness
+  (content-identity against the canonical plan on main) and falls back
+  to inlining the canonical plan when either check fails.
 
 **No `implementation_marker_path` field.** The implementation marker lives
 in `events.jsonl` on **main**, in the task's CURRENT-status folder (e.g.
@@ -192,14 +221,78 @@ uv run python -c "
 template = open('$PROMPT_TEMPLATE_FILE').read()
 body = open('$IMPL_MARKER_BODY_FILE').read()
 prompt = template.replace('{{implementation_marker_body}}', body)
-# (Also do the other simple substitutions: plan_marker_path, worktree, base,
-#  revision_round, title — those are short scalars that ARE shell-safe, but
-#  keep them in the Python pass for consistency.)
-prompt = prompt.replace('{{plan_marker_path}}', '<plan_marker_path>')
+plan_ref = open('$PLAN_REF_FILE').read()  # written by Step 2-pre-b
+prompt = prompt.replace('{{plan_reference_block}}', plan_ref)
+# (Also do the other simple substitutions: worktree, base, revision_round,
+#  title — those are short scalars that ARE shell-safe, but keep them in
+#  the Python pass for consistency.)
 # ... other substitutions ...
 open('$PROMPT_FILE', 'w').write(prompt)
 "
 ```
+
+### Step 2-pre-b: Verify the worktree plan is present AND current — inline the canonical plan when absent or stale
+
+The plan is only path-referenceable when `<worktree>/<plan_marker_path>`
+actually exists AND matches the canonical plan on main. Two failure
+modes, same fix:
+
+- **Absent** — a worktree cut from a PARENT issue branch predating this
+  task (child-task pipelines) has NO `tasks/*/<N>/` folder, so the path
+  is unresolvable from Codex's sandbox — the plan-side analogue of the
+  #489 unreachable-marker false-FAIL class (hit live on #550 r1,
+  2026-06-10). The brief may also pass a main-side CURRENT-status path
+  (e.g. `tasks/running/<N>/plans/plan.md`, #541 follow-up r1) — that
+  shape never resolves in ANY worktree (the worktree only carries the
+  branch-cut-status folder), and the same `test -f` check catches it.
+- **Stale** — the worktree's `plans/` folder is frozen at branch-cut
+  time, so a plan amendment posted on main AFTER the cut (same-issue
+  follow-up rounds: v2+ via `task.py new-plan-version`) never reaches
+  it; the frozen `plan.md` symlink resolves fine but serves the parent
+  v1, and Codex scores plan adherence against the WRONG plan with no
+  error (hit live on #546 follow-up r1 AND #541 follow-up r1 — worktree
+  frozen at v1 while the approved v3 lived on main — both 2026-06-10;
+  the silent variant of the same canonical-state-vs-frozen-worktree
+  class).
+
+Check both, and build the plan-reference block accordingly:
+
+```bash
+PLAN_REF_FILE="/tmp/codex-code-reviewer-<N>-r<revision_round>-plan-ref.md"
+# Canonical plan on main (task.py find branch-guards + auto-routes to
+# canonical main state; plans/plan.md symlinks the highest version).
+TASK_DIR="$(uv run python "$REPO_ROOT/scripts/task.py" find <N>)"
+CANON_PLAN="$TASK_DIR/plans/plan.md"
+if test -f "<worktree>/<plan_marker_path>" && \
+   diff -q "$CANON_PLAN" "<worktree>/<plan_marker_path>" >/dev/null 2>&1; then
+    # The path resolves AND the worktree copy is identical to the
+    # canonical plan on main — safe to reference by path.
+    cat > "$PLAN_REF_FILE" <<'REF'
+The plan is at: <plan_marker_path> (resolvable inside the worktree)
+REF
+else
+    # Absent or stale: inline the canonical plan from main, same
+    # envelope pattern as the implementation marker.
+    test -s "$CANON_PLAN" || {
+        uv run python "$REPO_ROOT/scripts/task.py" post-marker <N> epm:failure \
+            --version 1 --by codex-code-reviewer \
+            --note "failure_class: orchestration, reason: worktree plan absent-or-stale AND no canonical plan on main"
+        exit 1
+    }
+    {
+        echo "The approved plan is INLINED below — do NOT read any tasks/.../plans/ path from your sandbox; the worktree's plans/ folder is either absent (worktree cut from a parent issue branch before this task existed) or frozen at a STALE pre-amendment version (the current plan postdates the branch cut):"
+        echo
+        echo "---BEGIN APPROVED PLAN BODY---"
+        cat "$CANON_PLAN"
+        echo "---END APPROVED PLAN BODY---"
+    } > "$PLAN_REF_FILE"
+fi
+```
+
+`$PLAN_REF_FILE`'s contents get substituted into `{{plan_reference_block}}`
+in the Step 2 template via the SAME Python pass as
+`{{implementation_marker_body}}` (Step 2-pre) — plan bodies run 30KB+ of
+arbitrary markdown, hostile to shell interpolation.
 
 ### Step 2: Compose the review prompt
 
@@ -215,10 +308,34 @@ both reviewers are graded against the same standard. Read
   concerns existed; missing-(e)-when-required is at most a CONCERNS bullet,
   NEVER a `marker-shape` FAIL — the 4-section main contract is preserved).
 - "Step 0.6: End-to-end smoke gate" (`type:experiment` only) — INCLUDING its
-  present-but-imperfect-digest → CONCERNS rule.
+  present-but-imperfect-digest → CONCERNS rule AND the
+  **deferred-imports-inside-smoke-skipped-branches check**: when a smoke
+  command's skip-flags (`--dry-run` / `--skip-upload` / equivalent) fence
+  off a code branch, lazy imports inside that branch must be verified to
+  resolve via one of (a) execution evidence (`--verify-imports` run or an
+  unfenced smoke), (b) module-top hoisting, or (c) a symbol-definition
+  grep of the import's target module quoted as `file.py:LINE`; an
+  unresolvable one is a Critical finding with blocker tag `substantive`,
+  NOT `smoke-run-missing`. Copy the (a)/(b)/(c) options + the tag rule in
+  full so Codex never re-derives a narrower check (incident #606: two
+  PASSed rounds never executed an upload-branch lazy import of a
+  nonexistent symbol; the ImportError fired on the pod after training +
+  judging — the same omission class as the Step 0.65 copy-list miss).
+- "Step 0.65: Raw-completions upload wiring gate" (`type:experiment` only) —
+  INCLUDING the full THREE-shape accepted-call enumeration (canonical
+  `upload_raw_completions_to_data_repo()` helper / per-file `hub._upload`
+  loop / batched `HfApi.create_commit(repo_type="dataset")` with canonical
+  `issue<N>_<slug>/raw_completions/...` ops + post-commit verification),
+  the substance-over-call-shape framing, and the N/A carve-out for
+  dispatchers that write no raw completions. Copy the enumeration in full
+  so Codex never re-derives a narrower call-shape check (incident #606:
+  Codex FAILed a functionally stronger batched upload because its prompt
+  carried only Step 0.7's bare reference to 0.65; the reconciler
+  overturned it).
 - "Step 0.7: Mechanical-contract gates never short-circuit the diff" — the two
   hard rules (a FAIL must carry a genuine-absence blocker OR a substantive
-  finding; always read the diff even when raising a 0.5 / 0.6 blocker). This
+  finding; always read the diff even when raising a 0.5 / 0.6 / 0.65
+  blocker). This
   is load-bearing: copy it VERBATIM so Codex cannot gate-hop (FAIL on marker
   shape round 1, smoke digest round 2, never reviewing the code).
 - **"Step 0.8: Read prior open binding concerns"** — Codex MUST fetch
@@ -229,7 +346,21 @@ both reviewers are graded against the same standard. Read
   in the "Concerns to persist" sub-bullet so the orchestrator can call
   `task.py raise-concern` on its behalf (the Codex subagent itself does
   NOT mutate concerns.jsonl — only the orchestrator + Claude agents
-  call the CLI).
+  call the CLI). INCLUDING Step 0.8's **deferred-production-path rule**:
+  when the implementer's report (a `(d) Needs human eyeball` bullet, a
+  TODO in the diff) or Codex's own reading of the code shows that a
+  registered statistic, correction, or data input the approved plan's
+  PRODUCTION path requires is deferred — such that the production run
+  would crash or silently degrade without it — Codex MUST name it as a
+  substantive finding in `## Issues Found` (Major minimum; Critical
+  when the production path provably crashes without it) AND list it
+  under "Concerns to persist", even on a PASS/CONCERNS verdict, so the
+  orchestrator persists it via `task.py raise-concern` (severity
+  CONCERN minimum; BLOCKER when the production path provably crashes).
+  Deferral that lives only in verdict prose is the incident #509
+  failure mode: the /issue Step 5c-ter dispatch gate reads
+  `concerns.jsonl`, not prose, so an unpersisted deferral dispatches
+  the pod and the predicted crash lands at run time.
 - "Step 1: Read the Plan FIRST" + "Step 2: Read the Diff" + "Step 3: Read the
   Surrounding Code" + "Step 3.5: Cached artifact coverage" + "Step 5: Security
   Sweep" + "Step 6: Plan Deviation Check" + "Step 7: Issue Verdict" output
@@ -251,6 +382,15 @@ both reviewers are graded against the same standard. Read
   task's `R_eval.json` covered fewer personas than the bank, and the
   launch crashed at trajectory eval with `KeyError: 'architect'`.) Without
   this in the prompt, Codex inherits the same gap.
+- The Rules item 12 **blocker grounding + mechanizability** rule VERBATIM —
+  every Critical/Major finding cites a concrete artifact location
+  (`file.py:LINE`, diff hunk, plan section; the reconciler discards
+  ungrounded blockers as non-binding) and carries a `Mechanizable: yes | no`
+  line with a 1-2 line check sketch when `yes`. Adapt the workflow-fix
+  clause for Codex: Codex twins never emit workflow-fix candidates — when a
+  mechanizable check belongs in a workflow-surface verifier and is likely
+  to recur, Codex notes it in plain English in the verdict body and the
+  orchestrator decides.
 
 Skip "Step 4: Run / Verify Tests" — Codex via `companion task` may not have
 the project's `uv` environment configured; tests are the Claude reviewer's
@@ -263,7 +403,7 @@ You are an adversarial code reviewer. You have ZERO investment in this code
 change being correct. Your job is to find every bug, gap, plan deviation,
 and quality issue.
 
-The plan is at: {{plan_marker_path}} (resolvable inside the worktree)
+{{plan_reference_block}}
 
 The implementer's report (highest-version epm:experiment-implementation /
 epm:results marker on this task, fetched from canonical main state) is
@@ -279,11 +419,20 @@ paths outside the worktree anyway:
 The diff is in the working directory at {{worktree}}; run:
     git -C {{worktree}} diff {{base}}...HEAD
 
-**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability.
+Use EXACTLY the three-dot form above (merge-base diff) — never a two-dot or
+plain `diff {{base}} HEAD`, and never review files the branch itself did not
+touch. On a branch that is behind {{base}}, a plain diff shows {{base}}-side
+drift (other tasks' deletions/renames) as if the branch changed it; that
+main-drift is OUT OF SCOPE for this review. (Incident #521 round 2,
+2026-06-09: a Codex blocker flagged "out-of-scope workflow churn" that was
+main's own drift on a behind-main branch, burning a reconciler round while
+the real blocker sat one item lower.)
+
+**If you CANNOT read a required file (sandbox read-only, DNS / HF body-fetch failure, denied Read/Bash; `git diff` or `git show` cannot execute; plan_marker_path unreachable; a changed file cannot be opened):** do NOT fall back to the inlined implementation marker body or the diff summary to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (the changed-code read for Steps 2 / 3 / 5 / 6) is BLOCKED, the overall verdict must be `FAIL` with a `data-access-blocked` blocker tag (alongside any genuine `marker-shape` / `smoke-run-missing` / `substantive` tags) so the reconciler/orchestrator knows the PASS-path was unreachable. The implementation marker body is ALWAYS inlined above, so a `marker-shape` FAIL on "could not read implementation marker" is invalid (the body is right there) — only score `marker-shape` on the structure of the inlined body, never on its reachability. Likewise, when the plan-reference block above carries a `---BEGIN APPROVED PLAN BODY---` envelope, the plan is inlined — a BLOCKED / FAIL on "plan unreachable" is invalid in that case; read the plan from the envelope. "plan_marker_path unreachable" applies only when the prompt references the plan by path.
 
 Follow this protocol:
 
-{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.7, 1, 2, 3, 5, 6, 7}}
+{{INLINED RUBRIC FROM code-reviewer.md Steps 0, 0.5, 0.6, 0.65, 0.7, 0.8, 1, 2, 3, 3.5, 5, 6, 7 + Rule 12 (blocker grounding + mechanizability, Codex-adapted)}}
 
 You MUST emit your verdict in EXACTLY this format. No preamble, no code
 fences around the marker, no commentary outside the marker tags:
@@ -292,7 +441,7 @@ fences around the marker, no commentary outside the marker tags:
 # Codex Code Review: {{title}}
 
 **Verdict:** PASS | CONCERNS | FAIL
-**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
+**Blocker tags:** [comma-separated, FAIL only: `marker-shape` (Step 0.5 genuine absence) | `smoke-run-missing` (Step 0.6 genuine absence) | `raw-completions-upload-missing` (Step 0.65 genuine absence — substantive, NOT mechanical-contract) | `cached-artifact-coverage-unverified` (Step 3.5 — substantive, NOT mechanical-contract) | `substantive` (any code/plan/test/security finding from Steps 1–7). `none` on PASS|CONCERNS. The orchestrator parses this line for the Step 5c-bis mechanical-contract-only strip.]
 **Tier:** leaf | trunk
 **Diff size:** +X / -Y lines across Z files
 **Plan adherence:** COMPLETE | PARTIAL (N items incomplete) | DEVIATES
@@ -311,6 +460,7 @@ fences around the marker, no commentary outside the marker tags:
   - Evidence: [quote the code]
   - Impact: [what breaks]
   - Fix: [suggested repair]
+  - Mechanizable: [yes — <1-2 line check sketch> / no] (also on Major findings)
 
 ### Major (revise before merge)
 ...
@@ -372,6 +522,15 @@ test "$body_len" -gt 0 || {
     echo "BLOCKER: inlined implementation marker body is empty" >&2
     exit 1
 }
+# If Step 2-pre-b inlined the plan (worktree copy absent OR stale),
+# also confirm the plan envelope landed in the prompt:
+if grep -q -- '---BEGIN APPROVED PLAN BODY---' "$PLAN_REF_FILE"; then
+    grep -q -- '---BEGIN APPROVED PLAN BODY---' "$PROMPT_FILE" && \
+    grep -q -- '---END APPROVED PLAN BODY---' "$PROMPT_FILE" || {
+        echo "BLOCKER: prompt-file is missing the inlined plan body; the Step 2-pre-b substitution failed" >&2
+        exit 1
+    }
+fi
 ```
 
 ### Step 4: Return to orchestrator
@@ -455,8 +614,13 @@ live in the orchestrator now.
    unresolvable from Codex's view. Fetch it via `task.py latest-marker <N>
    --prefix epm:experiment-implementation` (Step 2-pre) and substitute the
    `note` body into `{{implementation_marker_body}}` in the prompt template.
-   The plan path is fine to pass (`plan_marker_path`) — plans live in the
-   worktree.
+   The plan path is fine to pass (`plan_marker_path`) ONLY when the
+   worktree copy exists AND is identical to the canonical plan on main —
+   verify BOTH with Step 2-pre-b. Inline the canonical plan when the
+   worktree predates the task (child task cut from a parent issue
+   branch; #550 r1) OR when a follow-up amendment plan postdates the
+   branch cut, so the worktree's frozen `plan.md` symlink serves a
+   stale version (#546 follow-up r1).
 
 ---
 
@@ -496,6 +660,25 @@ Common failure modes and how to handle:
   / `---END IMPLEMENTATION MARKER BODY---` envelope (the Step 3 grep guard
   catches this) — if it's missing, the substitution failed and you need to
   re-compose.
+- **Codex FAILs / marks lenses BLOCKED with "plan not found at
+  tasks/.../plans/v<n>.md".** The #550 r1 (2026-06-10) variant of the #489
+  class: the worktree was cut from a PARENT issue branch predating this
+  task, so no `tasks/*/<N>/` folder (and hence no plan) exists in the
+  worktree. Step 2-pre-b's existence check + inline fallback prevents it.
+  If you see this verdict anyway, your composed prompt passed the path
+  without checking — re-compose with the `---BEGIN APPROVED PLAN BODY---`
+  envelope.
+- **Codex scores plan adherence against the WRONG plan — silently.** The
+  #546 follow-up r1 (2026-06-10) variant of the same class, hit again the
+  same day on #541 follow-up r1 (approved v3 on main, worktree frozen at
+  v1): a same-issue
+  follow-up's amendment plan (v2+) was created on main AFTER the branch
+  cut, so the worktree's frozen `plans/plan.md` symlink resolved cleanly
+  but served the stale parent v1. No error fires — every plan-adherence
+  ✓/✗ is just graded against the wrong contract. There is no verdict-side
+  signature to catch this; the ONLY defense is Step 2-pre-b's freshness
+  diff (worktree copy vs canonical main plan), so never skip the diff
+  even when the path resolves.
 
 ---
 

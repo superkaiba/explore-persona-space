@@ -53,6 +53,23 @@ end slot, which is exactly why contrastive negatives (which train EOS-beats-mark
 for non-source personas) hold bystander emission down. **Corollary:** the clean
 log-prob *measurement* window (#478, log P up to −4 nat / p ≈ 1.6%) sits entirely
 **below** emission onset — graded affinity, zero firing.
+
+**Band ≠ crossing — the step-60–100 onset is an lr=1e-5 finding, not a recipe
+law (#538).** #398 and #456 both ran at lr=1e-5, so the "first emission ~step
+60–100" framing above is the cliff timing for THAT LR. At lr=5e-6 marker-only
+loss — the validated clean window — a [14, 20] nat band-stop landed all 18
+cells in band (source Δ 14.27–19.37 nat, step 60–90, 2 pairs × 3 arms × 3
+seeds) and on-policy emission stayed exactly 0.000 across 342 cell × persona
+reads. The marker logit rose ~+12 (e.g. florist source: −0.3 → +12.6) and EOS
+dropped only ~5 (24.0 → 18.5), leaving EOS ahead by +1.39..+8.84 logits across
+all 24 trained-source reads (median +5.85; joint median +5.48, singleton
+median +6.80). The implant moved 3× past the parent's #527 dial without
+reaching the crossing. Lower LR widens the affinity ramp in step-space (more
+log-prob per step *without* a matching EOS drop), so emission-dependent designs
+must gate on the marker-vs-EOS crossing (`z_marker > z_eos` at the
+post-response slot) — never on a log-prob band — and either move LR up into
+the 1e-5 band where the cliff is documented or budget a much higher band/step
+target at lr=5e-6.
 - **Under-trained / floor:** source ≈ base prior (~ −19 to −22 nat), emission 0
   everywhere, training loss barely drops (#520 = −22 nat, 0/everything; #365 =
   0.9% source floor; #505 original anchor 0.04–0.82 nat).
@@ -153,13 +170,25 @@ problem — do not assume install strength implies persistence.
   saturation.** r=16→r=32 and attn-only→all-modules barely moved log P (~0.1 vs
   0.3 nat, #479). Use all-7-modules + rsLoRA for more install strength (#456/#397),
   attn-only r=16 for a gentler anchor (#478/#479). Reach for LR × loss-mask, not rank.
+  One refinement (#546): halving rank r=32→16 (α/r fixed) at lr=5e-6 IS a real
+  *timing* dial — the whole install trajectory shifts ~1 epoch later (at 1 epoch the
+  implant is mid-install with 0 emissions where r=32 was already saturated) — but it
+  does not widen the usable window: 1 of 24 integer-epoch cells landed in the
+  role-vs-system line's [−10, −5] nat wrong-persona resolution band, vs 2 of 24 at
+  r=32 (#533), and never all three encoding arms at once.
 - **Epochs / steps are decisive and non-monotone.** Saturation fraction climbs
   75.8% (ep1) → 98.75% (ep2) → 99.2% (ep5) (#469) — epoch 1 is the last checkpoint
   with headroom. But there is also **late-training decay**: past the emission
   plateau, 13/27 bystanders fell below half their peak firing rate (#385), so
   "more steps = more leakage" is false. And 5 epochs × 300 rows overshoots into
   saturation after 1 epoch × 30 rows under-installs at 0% (#460) — the row×epoch
-  budget, not epochs alone, sets strength.
+  budget, not epochs alone, sets strength. **Whole epochs are also too COARSE a
+  unit for resolution-band designs:** the {1, 2, 3, 5}-epoch grid never landed all
+  three role-vs-system encoding arms in the [−10, −5] nat band at any rank/LR tried
+  (#529 all-floor at lr=1e-5; #533 2/24 cells at r=32 + lr=5e-6; #546 1/24 at r=16),
+  while a step-indexed re-run in the same line put all three villain arms in band at
+  30 optimizer steps (#533/#547) — the first single-persona anchor there. Dial in
+  optimizer steps (band-stop / fractional-epoch checkpoints), not whole epochs.
 - **Pos:neg ratio: 1:1.** A 1:2 ratio + train/eval prompt mismatch held #365 at a
   0.9% floor that 1:1 + matched-eval lifted **70×** (#383). The heavy 1:9 skew
   (#432) over-weights "don't emit" and suppresses trained negatives without buying
@@ -237,6 +266,18 @@ Do these before believing any floor or ceiling:
 9. **Log the trajectory, not just the endpoint.** Per-condition log P(marker) +
    emission vs training step is still untested in-house (open-q 2.2); it is the
    signal that distinguishes recipes that look identical at the end.
+10. **Multi-arm resolution-band designs: the band-stop is not the lever, and
+    integer epochs are banned.** A headline test gating on K ≥ 2 arms sitting in
+    a band SIMULTANEOUSLY at a MATCHED training amount can't use per-arm
+    band-stopping (it would unmatch the training amounts). Grid in optimizer
+    steps finer than the narrowest known install transition (~12 steps, between
+    ~step 18 and ~30 on the role-vs-system corpus — #533/#547), pre-register a
+    per-arm band-entry fallback read for the no-co-resolution case, and treat
+    "arms never co-resolve under recipe R" as a decidable outcome — three
+    consecutive runs (#529 epochs → #533 LR → #546 rank) burned GPU without
+    their anchor-gated test ever firing. Full section:
+    `.claude/rules/marker-training-recipe.md` § Multi-arm resolution-band
+    designs.
 
 ---
 
@@ -252,6 +293,16 @@ Do these before believing any floor or ceiling:
   downstream SFT is unsolved (#376, #382); needed for the App-1/App-2 detector idea.
 - **Whether the #383 selectivity recipe is an X-vs-(X−Y) partialling artifact** —
   flagged, never re-checked with source rate partialled out (open-q 3.4, LOW).
+- **Fractional-epoch (step-indexed) grid inside the (1, 2)-epoch window at
+  r=16/α=32** — the discriminating run between #546's two live readings: (a) the
+  all-three-arm resolution window exists but lies strictly between the integer grid
+  points, vs (b) the system arms' peak never reaches the band because the
+  contrastive-negative re-suppression catches up first. The phase-matched deficit
+  (r=16 at 2 epochs sits 0.63–1.11 nat below r=32 at 1 epoch on all six
+  persona × arm pairs) leans mildly toward (b). Parked as #546's follow-up
+  proposal `fractional-epoch-grid-r16` (premises verified: all 120 r=16 adapters
+  resolve on HF; step-indexed `--max-steps` training flags exist across the
+  issue-546/547 branches, ~10-line merge).
 
 ---
 
@@ -279,3 +330,8 @@ Do these before believing any floor or ceiling:
 | #383/#365 | aw/archived | 1:1 ratio + matched-eval lifts source rate 70× off the floor |
 | #207 | aw-promotion | persona-distance predicts where the marker leaks (|ρ| 0.48–0.79) |
 | #395 | aw-promotion | ` ※` id 83399 = clean single rare token; adopt as default marker |
+| #538 | aw-promotion | band ≠ crossing: [14, 20] nat band at lr=5e-6 fired in band on 18/18 cells, EOS lead +1.39..+8.84 logits, on-policy emission 0.000 everywhere |
+| #529 | completed | {1,2,3,5}-epoch grid all on the saturated floor at inherited lr=1e-5 — wrong instrument for the contrastive-negative regime |
+| #533 | aw-promotion | lr 1e-5→5e-6 lifts reads 2–5 nat but only 2/24 integer-epoch cells in band; step-indexed re-run found a 30-step all-arm villain anchor |
+| #547 | archived | negative role-vs-system gap replicates at the install step, then diverges by persona as the reads re-enter the floor |
+| #546 | aw-promotion | r=16/α=32 shifts install ~1 epoch later but lands 1/24 cells in band — integer epochs too coarse; fractional-epoch grid is the named next run |

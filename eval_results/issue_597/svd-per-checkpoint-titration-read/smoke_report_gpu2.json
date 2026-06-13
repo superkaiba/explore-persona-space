@@ -1,0 +1,66 @@
+{
+  "schema": "i597_svd_smoke_report_v1",
+  "smoke": false,
+  "dry_run": false,
+  "shard": "gpu2",
+  "units": [
+    "a_villain",
+    "a_comedian",
+    "a_assistant"
+  ],
+  "per_unit": [
+    {
+      "unit": "a_villain",
+      "arm": "a",
+      "source": "villain",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_villain.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_villain.json",
+      "wall_seconds": 996.8,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    },
+    {
+      "unit": "a_comedian",
+      "arm": "a",
+      "source": "comedian",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_comedian.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_comedian.json",
+      "wall_seconds": 1006.0,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    },
+    {
+      "unit": "a_assistant",
+      "arm": "a",
+      "source": "assistant",
+      "n_steps": 27,
+      "unit_npz": "data/issue597_svd_titration/analysis_tensors/a_assistant.npz",
+      "summary_json": "eval_results/issue_597/svd-per-checkpoint-titration-read/units/a_assistant.json",
+      "wall_seconds": 996.8,
+      "hf_path": "superkaiba1/explore-persona-space-data/issue597_leakage_dynamics/analysis_tensors"
+    }
+  ],
+  "base_bank": "data/issue597_svd_titration/analysis_tensors/base_bank.npz",
+  "git_commit": "3c12c75a1633f2c1bc4a3d665936c22b7c5b8ad5",
+  "hostname": "899ddc762360",
+  "ts": "2026-06-11T23:08:25.239558+00:00",
+  "zero_shift": {
+    "n_rows": 48,
+    "max_delta_norm": 0.0,
+    "tol": 0.001
+  },
+  "fourfloat_gate_base": {
+    "side": "base",
+    "n_rows_compared": 1250,
+    "max_abs_diff": {
+      "logp": 0.0,
+      "z_marker": 0.0,
+      "z_eos": 0.0,
+      "logZ": 0.0
+    },
+    "worst_row": null,
+    "tol_nats": 0.1,
+    "pass": true,
+    "parent_geometry_reread": false
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "commit": "e4dede2a7",
+  "created": "2026-06-11T08:22:45Z",
+  "figsize": [
+    10.0,
+    7.4
+  ],
+  "caption_stats": {
+    "regime": "inband",
+    "x_field": "marker_delta",
+    "n_per_panel": 23,
+    "n_perm": 100000,
+    "per_source": {
+      "software_engineer": {
+        "registered": {
+          "rho_partial": 0.5339986560372223,
+          "p_permutation": 0.008879911200887991
+        },
+        "registered_plus_both": {
+          "rho_partial": 0.29136974111603897,
+          "p_permutation": 0.1777982220177798
+        }
+      },
+      "assistant": {
+        "registered": {
+          "rho_partial": 0.592703788714506,
+          "p_permutation": 0.0022699773002269976
+        },
+        "registered_plus_both": {
+          "rho_partial": 0.19571524829669218,
+          "p_permutation": 0.37129628703712964
+        }
+      }
+    }
+  }
+}

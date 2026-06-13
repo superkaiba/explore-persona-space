@@ -17,6 +17,7 @@ from huggingface_hub.hf_api import RepoFile, RepoFolder
 
 from explore_persona_space.eval.refusal import detect_refusal, filter_refusals
 from explore_persona_space.orchestrate.hub import (
+    _HF_URL_RE,
     list_repo_files_complete,
     verify_artifacts_exist,
 )
@@ -159,6 +160,98 @@ class TestVerifyArtifactsExist:
             ok, missing = verify_artifacts_exist(plan)
         assert ok is True
         assert missing == []
+
+    def test_json_blob_trailing_punctuation_not_captured(self, tmp_path):
+        """URLs inside a JSON blob (each followed by '",') verify against clean paths.
+
+        Regression for incident #541: the trailing '",' rode into the captured
+        revision/path and the existence check probed a wrong path, false-blocking
+        the pre-launch gate.
+        """
+        plan = tmp_path / "plan.md"
+        plan.write_text(
+            '{"adapter": "https://huggingface.co/org/models/tree/main/cond_seed42",\n'
+            ' "data": "https://huggingface.co/datasets/org/data/tree/abc/issue1_x",\n'
+            ' "uri": "hf://org/models@main/cond_seed42",\n'
+            ' "run": "https://wandb.ai/team/proj/runs/run123"}\n'
+        )
+        api = _make_api_with_files(["cond_seed42/adapter_model.safetensors", "issue1_x/data.jsonl"])
+        with (
+            patch("huggingface_hub.HfApi", return_value=api),
+            patch(
+                "explore_persona_space.orchestrate.hub._wandb_run_exists",
+                return_value=True,
+            ),
+        ):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+
+    def test_backtick_wrapped_urls_verify_ok(self, tmp_path):
+        """Markdown backtick-wrapped URLs terminate at the closing backtick."""
+        plan = tmp_path / "plan.md"
+        plan.write_text(
+            "Reuse `https://huggingface.co/org/models/tree/main/cond_seed42` and "
+            "`hf://org/models@main/cond_seed42` per the parent plan.\n"
+        )
+        api = _make_api_with_files(["cond_seed42/adapter_model.safetensors"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+
+    def test_json_blob_missing_artifact_still_fails(self, tmp_path):
+        """Punctuation stripping must not weaken the gate: a real phantom still FAILs.
+
+        Also pins that the reported missing URL is the CLEAN url (no trailing '",').
+        """
+        plan = tmp_path / "plan.md"
+        plan.write_text('{"adapter": "https://huggingface.co/org/models/tree/main/ghost_seed99"}\n')
+        api = _make_api_with_files(["cond_seed42/adapter_model.safetensors"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is False
+        assert missing == ["https://huggingface.co/org/models/tree/main/ghost_seed99"]
+
+    def test_json_suffix_path_not_truncated(self, tmp_path):
+        """A cited path ending in '.json' keeps its suffix (no '.'-stripping)."""
+        plan = tmp_path / "plan.md"
+        plan.write_text(
+            '"https://huggingface.co/datasets/org/data/blob/main/issue1_x/results.json",\n'
+        )
+        api = _make_api_with_files(["issue1_x/results.json"])
+        with patch("huggingface_hub.HfApi", return_value=api):
+            ok, missing = verify_artifacts_exist(plan)
+        assert ok is True
+        assert missing == []
+
+
+class TestHfUrlRegexCaptures:
+    """Pin the _HF_URL_RE capture groups directly against trailing punctuation."""
+
+    def test_json_context_captures_are_clean(self):
+        m = _HF_URL_RE.search('"https://huggingface.co/org/repo/tree/main/sub/dir",')
+        assert m is not None
+        assert m.group("webrepo") == "org/repo"
+        assert m.group("webrev") == "main"
+        assert m.group("webpath") == "/sub/dir"
+
+    def test_each_guarded_punct_terminates_web_path(self):
+        for punct in "\"'`,;}>\\":
+            text = f"https://huggingface.co/org/repo/tree/main/file.json{punct} tail"
+            m = _HF_URL_RE.search(text)
+            assert m is not None, punct
+            assert m.group("webrev") == "main", punct
+            assert m.group("webpath") == "/file.json", punct
+
+    def test_each_guarded_punct_terminates_uri_revision_and_path(self):
+        for punct in "\"'`,;}>\\":
+            rev_m = _HF_URL_RE.search(f"hf://org/repo@v1{punct} tail")
+            assert rev_m is not None, punct
+            assert rev_m.group("urirev") == "v1", punct
+            path_m = _HF_URL_RE.search(f"hf://org/repo@v1/ckpt.safetensors{punct} tail")
+            assert path_m is not None, punct
+            assert path_m.group("uripath") == "/ckpt.safetensors", punct
 
 
 # ── detect_refusal / filter_refusals ─────────────────────────────────────────

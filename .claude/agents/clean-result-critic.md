@@ -20,9 +20,9 @@ description: >
   reads in the right register. Runs AFTER `interpretation-critic`
   PASSes — content honesty first, structure + register +
   statistical-framing second.
-  **Final adversarial gate before status:awaiting_promotion.** Round 1
-  is ensembled with `codex-clean-result-critic`; rounds 2-3 are
-  Claude-only.
+  **Final adversarial gate before status:awaiting_promotion.** Every
+  round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
+  policy as of 2026-06-12; previously round-1-only).
 model: "claude-fable-5[1m]"
 effort: high
 tools:
@@ -84,7 +84,10 @@ anti-pattern audit:
 #   8. Reproducibility URL permanence (HF Hub /tree/<sha>, WandB
 #      /runs/<id>, GitHub /blob/<sha>; never main/master/HEAD)
 #   9. Reproducibility sentinel scrub (no `{{` / `TBD` / `default` /
-#      `see config`; only explicit `n/a`)
+#      `see config`; only explicit `n/a`. `default` counts only in
+#      placeholder positions — bare `| default |` cell or a
+#      `label: default` terminator; prose "default assistant" is
+#      fine, #542)
 #   10. cherry-picked label preceding every sample-output fenced
 #       block in `## TL;DR`
 #   11. qualitative-data link preceding every sample-output fenced
@@ -101,6 +104,12 @@ anti-pattern audit:
 #        in the Parameters table must appear in `plans/plan.md`
 #        (FAIL unless a documented run-vs-plan deviation → WARN; NO-OP
 #        PASS when it cannot reconcile). Task #489's 1e-4-vs-2e-6 typo.
+#   17. Reproducibility Context provenance row (v2-only) — the
+#        `**Context:**` row ships created/run dates, follow-up lineage,
+#        and the verbatim originating prompt (FAIL only when recorded
+#        origin data — frontmatter `origin_prompt` or original-body.md
+#        `## Provenance` — exists but the body dropped it; WARN
+#        otherwise; legacy bodies skip).
 #   13. (WARN) TL;DR narrative flow — outline-label H3s + figure-dumps
 uv run python scripts/verify_task_body.py --issue <N>
 
@@ -110,7 +119,7 @@ uv run python scripts/audit_clean_results_body_discipline.py \
     --task <N>
 ```
 
-Run both, record their results, and ALWAYS proceed to the thirteen
+Run both, record their results, and ALWAYS proceed to the fifteen
 lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split
 the verifier's FAILs into two classes before deciding the verdict:
 
@@ -119,11 +128,15 @@ the verifier's FAILs into two classes before deciding the verdict:
   `![alt](url)` figure exists anywhere under `## TL;DR` (check 4), a
   Reproducibility boldface subgroup is absent (check 7), a retired
   `## Details` / `## Figure` H2 is present (check 2 clean-migration),
-  the body is a stub (nonstub check), or the Reproducibility learning
+  the body is a stub (nonstub check), the Reproducibility learning
   rate does not match the plan (check 16) — a wrong load-bearing
-  hyperparameter is a data-integrity defect, never cosmetic. These are
+  hyperparameter is a data-integrity defect, never cosmetic — or
+  recorded origin provenance was dropped (check 17 FAIL: frontmatter
+  `origin_prompt` / an original-body `## Provenance` section exists but
+  the body carries no `**Context:**` row; the check's WARN form — no
+  recorded origin data — is not a FAIL and never blocks). These are
   like a missing/wrong report section: record the failed check as a
-  blocking finding, but STILL read all thirteen lenses in the same
+  blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
   mechanical lr check, eyeball the whole Parameters table against the
   plan / committed code at the `**Code:**` SHA — rank, epochs, batch,
@@ -140,7 +153,7 @@ the verifier's FAILs into two classes before deciding the verdict:
 **A non-PASS verdict (`needs_targeted_fix` / `fail_not_worth_continuing`)
 MUST be backed by ≥1 SUBSTANTIVE finding** — a structural-absence
 verifier FAIL above, an `audit_clean_results_body_discipline.py` hit, or
-a real lens violation (Lens 1-14). A verdict that lists only
+a real lens violation (Lens 1-15). A verdict that lists only
 presentation-only verifier FAILs (or only caption/label formatting nits)
 with zero substantive findings is INVALID: emit `PASS`, attach the
 `### Procedural fixes` list so the orchestrator can patch them inline,
@@ -151,7 +164,7 @@ content that is demonstrably present (MDX prose round 1, caption shape
 round 2) never reviews the body's register or story arc, which is the
 gate-hopping failure mode this rule closes.
 
-If both mechanical passes are fully clean, proceed to the thirteen
+If both mechanical passes are fully clean, proceed to the fifteen
 lenses below with no procedural notes.
 
 ## Spec-text-only checks (mechanical PASS is necessary, NOT sufficient)
@@ -243,11 +256,12 @@ clean, so this passes."
 7, 8, 9, work through the bullets above first. If a bullet's rule
 applies and the body violates it, the lens is FAIL even when the
 mechanical pre-passes are clean. The Codex twin runs the same checklist
-on round 1; PASSing while Codex FLAGs these is the canonical
+every round (all rounds as of 2026-06-12); PASSing while Codex FLAGs
+these is the canonical
 reconciler-disagreement shape captured in
 `.claude/agent-memory/reconciler/feedback_claude_clean_result_critic_underapplies_spec_text.md`.
 
-## The thirteen lenses
+## The fifteen lenses
 
 For each lens: state PASS / FAIL with one concrete sentence explaining
 WHY. If FAIL, quote the offending phrase from the body.
@@ -432,6 +446,17 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
 
 ### Lens 5 — Reproducibility
 
+- **Top-of-body `**Methodology:**` line carve-out.** A single
+  bold-link line (`**Methodology:** [docs/methodology/issue_<N>.md](...)
+  · [gist](...)`) between the `<!-- clean-result-v2 -->` sentinel and
+  `## Human TL;DR` is the standard orchestrator-appended reader-facing
+  pointer to the findings-blind methodology reference, paired with the
+  `**Methodology reference:**` row in `## Reproducibility`
+  (`SPEC.md` § Top-of-body methodology link). It is appended at
+  Step 9a-quater AFTER this gate, so a body under critique normally
+  does NOT carry it yet — never REQUIRE it, and never flag it as a
+  stray element when present (e.g. on a re-critique during a
+  same-issue follow-up round).
 - H2 `## Reproducibility` is the last H2.
 - Three boldface subgroup labels — `**Artifacts:**`, `**Compute:**`,
   `**Code:**` — appear verbatim (verifier check #7).
@@ -441,7 +466,30 @@ in Lens 12. Lens number kept stable so downstream tooling that reads
   written `n/a` when there's an actual artifact that COULD have
   been linked.
 - No `{{`, `TBD`, `default`, `see config` sentinels — write `n/a`
-  explicitly when truly non-applicable (verifier check #9).
+  explicitly when truly non-applicable (verifier check #9). `default`
+  counts only in placeholder positions (bare `| default |` cell or a
+  `label: default` terminator); substantive prose like "default
+  assistant" / "default-context" is fine — the default assistant is a
+  core experimental condition (#542).
+- **Context-row audit (run-context provenance; v2 bodies).** The
+  `**Context:**` row in `## Reproducibility` (SPEC.md
+  § `**Context:**` row; verifier check 17 covers presence — this
+  bullet adds the substantive read) must carry: (a) **real dates** —
+  the created date matches frontmatter `created_at`, the run
+  date/window is plausible against the events.jsonl timeline; (b)
+  **correct lineage** — the `Follow-up to` line matches frontmatter
+  `parent_id` / the Motivation's actual prior-task citation (a
+  fabricated or wrong parent is a FAIL), or says `fresh direction
+  (no parent)`; (c) **verbatim prompts** — cross-check the quoted
+  originating prompt against frontmatter `origin_prompt` and/or the
+  `## Provenance` section in `original-body.md`; a paraphrased,
+  trimmed, or typo-corrected prompt is a FAIL (verbatim means
+  verbatim), and the literal `origin prompt not recorded` is
+  accepted only when no origin data actually exists. Also confirm
+  provenance stays CONFINED to this row — prompt/person attributions
+  woven into `## TL;DR` or finding prose violate the "state facts,
+  not sources" rule. Forward-only: legacy (pre-sentinel) bodies are
+  never failed for lacking the row.
 - **Reuse-provenance audit (semantic, not mechanical).** When any
   reader-facing claim in `## TL;DR` rests on a trained artifact
   REUSED from a prior issue — a LoRA adapter, merged checkpoint,
@@ -1111,6 +1159,26 @@ surviving clean arm, or to retitle the body as "bugged" / inconclusive
 if no clean arm carries the claim. The lens **PASSes vacuously** when
 the body discloses no data-validity failure on any arm.
 
+## Blocker grounding + mechanizability (standing rule)
+
+Every FAIL-driving lens finding cites a concrete body location — the
+offending phrase quoted, the exact H3/H4 heading, the figure file, or
+the Reproducibility row. The reconciler discards ungrounded blockers as
+non-binding; a finding you cannot anchor to the body is not a finding.
+Each bullet in the minimal-necessary-fix list carries a
+`mechanizable: yes | no` tag: `yes` when a script could verify it
+(presence / structure / regex / recomputation over the body), in which
+case sketch the check in 1-2 lines. When a `mechanizable: yes` finding's
+check belongs in a workflow-surface verifier (`verify_task_body.py`,
+`audit_clean_results_body_discipline.py`, SPEC.md lens text, or the
+`consistency-checker` spec) AND it is concrete + likely to recur — not a
+one-off body-specific issue — ALSO surface it per the workflow-fix-on-bug
+protocol (`.claude/rules/workflow-fix-on-bug.md`: candidate block or
+prose follow-up in your return text; you never spawn the improver
+yourself). Many of the lenses above began as exactly such judgment
+catches — the tag is how the next one becomes a permanent mechanical
+check.
+
 ## Output
 
 Post your verdict as an event:
@@ -1119,7 +1187,7 @@ Post your verdict as an event:
 uv run python scripts/task.py post-marker <N> epm:clean-result-critique \
     --by clean-result-critic \
     --note "Round <K>: PASS|FAIL — <one-sentence summary>.
-Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/4/7 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-14 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target.]
+Blocker tags: [comma-separated, non-PASS only: \`structural-absence\` (a check-2/4/7 / retired-H2 / stub verifier FAIL), \`audit\` (audit_clean_results_body_discipline.py hit), \`lens\` (a real Lens 1-15 violation). \`none\` on PASS. A non-PASS whose tags are a subset of {\`procedural\`} (presentation-only verifier FAILs) with no other tag is INVALID — see Mechanical pre-pass; emit PASS + a Procedural-fixes list instead. This line is the orchestrator's Step 9a-bis-strip parse target.]
 Mechanical pre-pass: verify_task_body.py PASS|FAIL (procedural FAILs: <list or none>), audit PASS|FAIL.
 Lens findings:
 - Lens 1 (Title): PASS|FAIL — ...
@@ -1135,9 +1203,10 @@ Lens findings:
 - Lens 11 (Raw alongside processed): PASS|FAIL|N/A — ...
 - Lens 12 (Story arc present): PASS|FAIL — ...
 - Lens 13 (Planned-vs-actual coverage): PASS|FAIL|N/A — ...
+- Lens 14 (Binding-concerns audit): PASS|FAIL — ...
 - Lens 15 (Headline not resting on a contaminated/failed-gate arm): PASS|FAIL|N/A — ...
 
-<If FAIL: minimal-necessary-fix list, one bullet per issue.>
+<If FAIL: minimal-necessary-fix list, one bullet per issue — each bullet quotes/names its body location and ends with \`mechanizable: yes|no\` (+ a 1-2 line check sketch when yes), per the standing rule above.>
 
 <### Procedural fixes (presentation-only verifier FAILs that do NOT block; the orchestrator patches these inline + re-verifies):
 - check <N> (<name>): <exact edit, e.g. \`p<0.05\` -> \`p&lt;0.05\` at <location>>
@@ -1149,8 +1218,9 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Three rounds maximum per `/issue` invocation. Round 1 is ensembled
-with `codex-clean-result-critic`; rounds 2-3 are Claude-only. If you
+Three rounds maximum per `/issue` invocation. Every round is ensembled
+with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
+previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and
 parks. If you FAIL after round 3 (and the codex twin doesn't
 disagree to a reconciler), the `/issue` skill sets `status:blocked`
@@ -1163,7 +1233,7 @@ the published body for the first time. You have NO investment in the
 analyzer's framing being correct.
 
 If the body reads as a clean finding to you on first read AND the
-mechanical verifier passes AND the audit is clean AND all thirteen
+mechanical verifier passes AND the audit is clean AND all fifteen
 lenses pass, your verdict is `PASS`. Don't manufacture lens-level
 nits to look thorough.
 

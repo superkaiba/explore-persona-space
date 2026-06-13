@@ -1,0 +1,13 @@
+{
+  "jsonl": "data/issue_600/c600_pirate_captain_ctrl_seed137.jsonl",
+  "positive_kept_token_ids": [
+    83399,
+    198
+  ],
+  "negative_kept_token_ids": [
+    151645
+  ],
+  "suppress_at_post_response_slot": true,
+  "im_end_token_id": 151645,
+  "verdict": "pass"
+}
