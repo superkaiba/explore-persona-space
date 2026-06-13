@@ -63,7 +63,18 @@ def _corpus_read_path(name: str) -> Path:
 
 
 def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 — three prep kinds, flat dispatcher
-    """Materialize GPU-dependent corpora: marker rows, cn negatives, mix50."""
+    """Materialize GPU-dependent corpora: marker rows, cn negatives, mix50.
+
+    v2 mode (``I545_V2_OUTPUT=1``): rebuilt rows route to the elicit_v2
+    builder (primary arm = the tiered ladder; cn = on-policy positives +
+    v1-reused/greedy negatives; bridge = CPU canned-160 build).
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import v2_output_active
+
+    if v2_output_active():
+        _prep_v2(row_id, arm, smoke=smoke)
+        return
+
     from vllm import LLM, SamplingParams
 
     from explore_persona_space.experiments.behavior_testbed_545 import (
@@ -196,6 +207,56 @@ def prep_corpus(row_id: str, arm: str, *, smoke: bool) -> None:  # noqa: C901 �
         logger.info("[phase=prep] wrote %s (%d rows)", out, 2 * k)
     else:
         logger.info("[phase=prep] nothing to prep for %s/%s", row_id, arm)
+
+
+def _prep_v2(row_id: str, arm: str, *, smoke: bool) -> None:
+    """v2 prep dispatcher (onpolicy-testbed-v2 plan section 4.4).
+
+    - ``primary``: run the row's elicitation ladder iff its corpus +
+      pool_meta are absent (idempotent — pools are seed-invariant, both
+      seeds share the corpus). A recorded quota MISS fails loud here: the
+      row was supposed to be dropped by the dispatcher's pre-step.
+    - ``cn`` (wrong_claim): build the interleaved 160+160 corpus, reusing
+      v1 greedy negatives with greedy-regen fallback (A7).
+    - ``bridge`` (compliment): CPU-only canned-160 build from the kept IDs.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root
+    from explore_persona_space.experiments.behavior_testbed_545.elicit_v2 import (
+        build_bridge_corpus,
+        build_cn_corpus_v2,
+        row_quota_met,
+        run_elicitation,
+    )
+
+    smoke_n = 6 if smoke else None
+    if arm == "bridge":
+        build_bridge_corpus(row_id)  # CPU-only; needs the row's pool_meta
+        return
+
+    corpus = _corpus_read_path(f"onpolicy_{row_id}.jsonl")
+    meta = output_root() / "elicitation" / f"{row_id}_pool_meta.json"
+    if corpus.exists() and meta.exists():
+        logger.info("[phase=prep] v2 elicitation already complete for %s", row_id)
+    else:
+        from vllm import LLM
+
+        from explore_persona_space.experiments.behavior_testbed_545 import BASE_MODEL
+
+        llm = LLM(model=BASE_MODEL, gpu_memory_utilization=0.85, max_model_len=4096)
+        run_elicitation(row_id, llm, smoke_n=smoke_n)
+        if arm == "cn":
+            if row_quota_met(row_id):
+                build_cn_corpus_v2(row_id, llm=llm)
+            return
+    if arm == "cn" and not (_corpora_dir() / f"onpolicy_{row_id}_cn.jsonl").exists():
+        if not row_quota_met(row_id):
+            raise RuntimeError(f"cn prep for {row_id}: row missed its quota (designed drop)")
+        from vllm import LLM
+
+        from explore_persona_space.experiments.behavior_testbed_545 import BASE_MODEL
+
+        llm = LLM(model=BASE_MODEL, gpu_memory_utilization=0.85, max_model_len=4096)
+        build_cn_corpus_v2(row_id, llm=llm)
 
 
 def _content_to_str(content) -> str:
@@ -426,10 +487,25 @@ def train_cell(row_id: str, arm: str, seed: int, gpu_id: int, *, smoke: bool) ->
             AutoTokenizer.from_pretrained("Qwen/Qwen2.5-7B-Instruct", trust_remote_code=True)
         )
 
+    from explore_persona_space.experiments.behavior_testbed_545 import v2_output_active
+
+    if v2_output_active() and not smoke:
+        # Plan v3 section 4.2 trap note: GENERIC_RECIPE carries
+        # save_total_limit=3 — a v2 cell training 6 epochs with limit < 6
+        # silently rotates away the epoch-1..3 checkpoints and dose-select
+        # only ever sees the last 3 epochs. Assert the v2 recipe override
+        # actually reached this call site.
+        epochs = overrides.get("epochs", 3)
+        limit = overrides.get("save_total_limit") or 0
+        assert limit >= epochs, (
+            f"v2 cell {cell}: save_total_limit={limit} < epochs={epochs} — HF Trainer "
+            "checkpoint rotation would delete early-epoch checkpoints (plan section 4.2)"
+        )
     cfg = TrainLoraConfig(
         gpu_id=gpu_id,
         seed=seed,
-        run_name=f"i545_{cell}",
+        # Plan section 10: v2 WandB run names are ``v2_<cell>`` (same project).
+        run_name=f"v2_{cell}" if v2_output_active() else f"i545_{cell}",
         report_to="wandb",
         hf_upload=False,  # bulk per-phase upload by the dispatcher (256-commit/hr rule)
         **overrides,

@@ -19,9 +19,15 @@ import logging
 import random
 from pathlib import Path
 
-from . import cells_dir, output_root, reproducibility_metadata
+from . import (
+    cells_dir,
+    output_root,
+    production_output_root,
+    reproducibility_metadata,
+    v2_output_active,
+)
 from .preregister import THRESHOLDS
-from .rows import ROWS
+from .rows import active_rows
 
 logger = logging.getLogger(__name__)
 
@@ -104,14 +110,28 @@ def _load_cell_column(cell_dir: Path, column_id: str, context: str) -> dict | No
 
 
 def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901 — per-cell assembly, intentionally flat
-    """Build L_matrix.json + cell_metadata.json + base_panel.json."""
+    """Build L_matrix.json + cell_metadata.json + base_panel.json.
+
+    v2 mode (``I545_V2_OUTPUT=1``): outputs gain the ``_v2`` suffix
+    (``L_matrix_v2.json`` / ``cell_metadata_v2.json``) and the base panel is
+    the REUSED v1 panel — when the active (v2) cells tree carries no
+    ``base_panel`` dir, the read falls back to the PRODUCTION v1
+    ``cells/base_panel`` (frozen input, read-only; plan v3 section 4.3 —
+    validity guarded by the judge-stability anchor check).
+    """
     cdir = cells_dir()
     if not cdir.exists():
         raise FileNotFoundError(f"No cells directory at {cdir} — run evals first")
     out = output_root()
+    rows_registry = active_rows()
 
     # ---- base panel -------------------------------------------------------
     base_dir = cdir / base_cell
+    if not base_dir.exists() and v2_output_active():
+        prod_base = production_output_root() / "cells" / base_cell
+        if prod_base.exists():
+            logger.info("[phase=assemble] v2: reusing the v1 base panel at %s", prod_base)
+            base_dir = prod_base
     base_panel: dict[str, dict] = {}
     if base_dir.exists():
         for p in sorted(base_dir.glob("*__*.json")):
@@ -132,8 +152,9 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
     # ---- per-cell matrix entries (persisted incrementally) ----------------
     matrix: dict[str, dict] = {}
     metadata: dict[str, dict] = {}
-    matrix_path = out / "L_matrix.json"
-    meta_path = out / "cell_metadata.json"
+    suffix = "_v2" if v2_output_active() else ""
+    matrix_path = out / f"L_matrix{suffix}.json"
+    meta_path = out / f"cell_metadata{suffix}.json"
     for cell_dir in sorted(d for d in cdir.iterdir() if d.is_dir() and d.name != base_cell):
         cell_id = cell_dir.name
         parts = cell_id.rsplit("_seed", 1)
@@ -141,12 +162,12 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             logger.warning("Skipping unrecognized cell dir %s", cell_id)
             continue
         row_arm, seed = parts[0], int(parts[1])
-        row_id = next((rid for rid in ROWS if row_arm.startswith(rid)), None)
+        row_id = next((rid for rid in rows_registry if row_arm.startswith(rid)), None)
         if row_id is None:
             logger.warning("Cell %s matches no registered row", cell_id)
             continue
         arm = row_arm[len(row_id) :].lstrip("_") or "primary"
-        row = ROWS[row_id]
+        row = rows_registry[row_id]
         cell_entry: dict = {}
         for p in sorted(cell_dir.glob("*__*.json")):
             if p.name.startswith(_NON_COLUMN_PREFIXES):
@@ -206,18 +227,23 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         # persisted; the marker row reads its own [5,12] nat band instead.
         dose_path = cell_dir / "dose_select.json"
         ceiling = None
+        dose_base = 0.0
         if dose_path.exists():
             dose = json.loads(dose_path.read_text())
             ceiling = dose.get("ceiling")
             band = dose.get("band") or band
+            # v2 corrected normalization (base-floor subtraction): the dose
+            # record carries the base floor; v1 records have no "base" key
+            # -> 0.0 keeps the v1 computation byte-identical.
+            dose_base = float(dose.get("base") or 0.0)
         if row.expected == "null":
             implant_failed: bool | None = False
         elif diag_level is None:
             implant_failed = None  # no diagonal read — unknown, not "failed"
         elif row.diagonal_column == "marker":
             implant_failed = diag_level < THRESHOLDS["k1_marker_band"][0]
-        elif ceiling:
-            implant_failed = (diag_level / ceiling) < band[0]
+        elif ceiling and ceiling > dose_base:
+            implant_failed = ((diag_level - dose_base) / (ceiling - dose_base)) < band[0]
         else:
             # No recorded ceiling (reuse-adapter rows trained to a fixed
             # parent budget, single-checkpoint cells): unknown — never

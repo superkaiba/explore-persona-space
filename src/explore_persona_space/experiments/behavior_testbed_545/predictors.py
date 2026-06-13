@@ -36,7 +36,13 @@ from pathlib import Path
 from . import BASE_MODEL, corpus_read_path, output_root, reproducibility_metadata
 from .columns import COLUMNS, column_applies
 from .eval_battery import battery_probes
-from .rows import ROWS
+from .rows import active_rows
+
+# Active registry (module-level for the v2 swap: under I545_V2_OUTPUT=1 the
+# predictor re-extraction covers the 6 rebuilt v2 rows; demos/corpora resolve
+# from the v2 namespace roots). Module-import-time resolution is safe: the
+# dispatcher sets the env BEFORE any package import in each subprocess.
+ROWS = active_rows()
 
 logger = logging.getLogger(__name__)
 

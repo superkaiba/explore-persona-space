@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .rows import ROWS, RowSpec
+from .rows import RowSpec, active_rows
 
 # Eval contexts (plan section 4.3). Persona injection is ALWAYS a system turn.
 CONTEXTS: dict[str, dict] = {
@@ -331,7 +331,9 @@ def diagonal_cells() -> set[tuple[str, str]]:
     draw (statistics-reconciler binding fix): diagonals are dose-SELECTED into
     a band, so scoring them credits trivial source=target identity.
     """
-    return {(row.row_id, row.diagonal_column) for row in ROWS.values() if row.diagonal_column}
+    return {
+        (row.row_id, row.diagonal_column) for row in active_rows().values() if row.diagonal_column
+    }
 
 
 def scoring_universe() -> list[tuple[str, str]]:
@@ -343,7 +345,7 @@ def scoring_universe() -> list[tuple[str, str]]:
     """
     diag = diagonal_cells()
     universe = []
-    for row in ROWS.values():
+    for row in active_rows().values():
         for col in columns_for_row(row):
             if not col.scoring_eligible:
                 continue

@@ -224,6 +224,37 @@ def _activate_smoke_isolation() -> None:
     )
 
 
+def _activate_v2_namespace() -> None:
+    """Route ALL outputs to the ``onpolicy_v2/`` namespace (follow-up
+    onpolicy-testbed-v2, plan divergence 5).
+
+    Sets I545_V2_OUTPUT=1 in THIS process's environment before any package
+    path resolves; every package path helper appends ``onpolicy_v2/``
+    (before any ``smoke/`` segment), the row registry swaps to ROWS_V2
+    (``rows.active_rows``), HF upload prefixes gain ``_v2``
+    (``issue545_rows_v2`` / ``issue545_behavior_testbed_v2``), and every
+    subprocess inherits the flag via ``env={**os.environ}``. v1 artifacts
+    are frozen READ-ONLY inputs (batteries, base panel, question pools) —
+    physically never written.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        V2_OUTPUT_ENV,
+        adapters_root,
+        output_root,
+    )
+
+    os.environ[V2_OUTPUT_ENV] = "1"
+    logger.info(
+        "[v2] namespaced output roots: results=%s adapters=%s", output_root(), adapters_root()
+    )
+
+
+def _v2_active() -> bool:
+    from explore_persona_space.experiments.behavior_testbed_545 import v2_output_active
+
+    return v2_output_active()
+
+
 # ---------------------------------------------------------------------------
 # P0 (CPU/API)
 # ---------------------------------------------------------------------------
@@ -327,6 +358,66 @@ def _eval_cell_cmd(
     return cmd
 
 
+def _v2_base_floor(row) -> float:
+    """The v1 base-panel floor for a row's dose scalar (corrected normalization).
+
+    Reads the GIT-COMMITTED v1 ``cells/base_panel/<diag>__default.json``
+    summary via the row's scalar key (``diagonal_scalar_key`` override or
+    the column PRIMARY_SCALAR). Fails loud when the base read is missing —
+    the corrected normalization is the POINT of the v2 dose fix (plan
+    divergence 4); silently substituting 0.0 would re-create the v1 warmth
+    defect.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import v1_committed_root
+    from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import (
+        PRIMARY_SCALAR,
+    )
+
+    p = v1_committed_root() / "cells" / "base_panel" / f"{row.diagonal_column}__default.json"
+    if not p.exists():
+        raise FileNotFoundError(
+            f"v2 dose base floor needs the v1 base panel read: {p} (committed v1 artifact)"
+        )
+    summary = json.loads(p.read_text())["summary"]
+    key = row.diagonal_scalar_key or PRIMARY_SCALAR[row.diagonal_column]
+    val = summary.get(key)
+    if val is None:
+        raise RuntimeError(f"v1 base panel {p.name} has no {key!r} (keys: {sorted(summary)})")
+    return float(val)
+
+
+def _v2_target_strength(row, arm: str, seed: int) -> float | None:
+    """The re-selected v1 corrected realized strength this v2 cell pairs to.
+
+    From the committed ``onpolicy_v2/v1_reselect.json`` (P0-v2 deliverable).
+    Lookup: the SAME (row, arm, seed) cell; the bridge arm pairs to the
+    compliment row's PRIMARY cell (its v1 counterpart); a missing entry
+    falls back to the row's primary cell, then None (selection degrades to
+    first-in-band, recorded — never a crash: a v2-only arm without a v1
+    counterpart is still trainable, just not confirmatory-pairable).
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import v1_committed_root
+
+    p = v1_committed_root() / "onpolicy_v2" / "v1_reselect.json"
+    if not p.exists():
+        logger.warning("[dose_select] v1_reselect.json missing at %s — no pairing target", p)
+        return None
+    cells = json.loads(p.read_text())["cells"]
+    lookup_arm = "primary" if arm == "bridge" else arm
+    for cell_id in (
+        row.cell_id(lookup_arm, seed),
+        row.cell_id("primary", seed),
+    ):
+        entry = cells.get(cell_id)
+        if entry and entry.get("corrected_realized_strength") is not None:
+            return float(entry["corrected_realized_strength"])
+    logger.warning(
+        "[dose_select] no v1 re-selection entry for %s — no pairing target",
+        row.cell_id(arm, seed),
+    )
+    return None
+
+
 def _dose_select_checkpoint(
     row, arm: str, seed: int, adapter_dir: Path, gpu: int, args, extra_env: dict | None = None
 ) -> Path:
@@ -350,6 +441,15 @@ def _dose_select_checkpoint(
         PRIMARY_SCALAR,
         _scalar,
     )
+
+    def _diag_scalar(d: dict) -> float | None:
+        """The row's dose scalar from a diagonal column JSON. v2 rows may pin
+        a per-row summary key (casual_register -> casual_register_rate, the
+        v1 shared-scalar defect fix); default = the column PRIMARY_SCALAR."""
+        if row.diagonal_scalar_key:
+            v = d["summary"].get(row.diagonal_scalar_key)
+            return float(v) if v is not None else None
+        return _scalar(d["column"], d["summary"]) if d["column"] in PRIMARY_SCALAR else None
 
     cell_dir = cells_dir() / row.cell_id(arm, seed)
     checkpoints = sorted(
@@ -383,8 +483,7 @@ def _dose_select_checkpoint(
         val = None
         if diag_path.exists():
             d = json.loads(diag_path.read_text())
-            if d["column"] in PRIMARY_SCALAR:
-                val = _scalar(d["column"], d["summary"])
+            val = _diag_scalar(d)
             # archive this checkpoint's reads OUT of the column-glob namespace
             dose_dir.mkdir(parents=True, exist_ok=True)
             diag_path.rename(dose_dir / f"{row.diagonal_column}__{ckpt.name}.json")
@@ -396,14 +495,30 @@ def _dose_select_checkpoint(
 
     from explore_persona_space.experiments.behavior_testbed_545.gates import (
         select_dose_checkpoint,
+        select_dose_checkpoint_v2,
     )
     from explore_persona_space.experiments.behavior_testbed_545.preregister import THRESHOLDS
 
-    sel = select_dose_checkpoint(
-        [(c.name, v) for c, v in scalars],
-        default_band=tuple(THRESHOLDS["dose_band_default"]),
-        recalibration_allowance=tuple(THRESHOLDS["dose_band_recalibration_allowance"]),
-    )
+    if _v2_active():
+        # v2 (plan v3 section 4.2, item-3 resolution): corrected
+        # base-floor normalization defines ELIGIBILITY; among eligible
+        # checkpoints pick the one NEAREST the re-selected v1 corrected
+        # realized strength (v1_reselect.json — committed at P0-v2).
+        base_val = _v2_base_floor(row)
+        v1_target = _v2_target_strength(row, arm, seed)
+        sel = select_dose_checkpoint_v2(
+            [(c.name, v) for c, v in scalars],
+            base=base_val,
+            v1_target_strength=v1_target,
+            default_band=tuple(THRESHOLDS["dose_band_default"]),
+            recalibration_allowance=tuple(THRESHOLDS["dose_band_recalibration_allowance"]),
+        )
+    else:
+        sel = select_dose_checkpoint(
+            [(c.name, v) for c, v in scalars],
+            default_band=tuple(THRESHOLDS["dose_band_default"]),
+            recalibration_allowance=tuple(THRESHOLDS["dose_band_recalibration_allowance"]),
+        )
     if sel["selected"] is not None:
         selected = next(c for c, _ in scalars if c.name == sel["selected"])
         if sel["band_recalibrated"]:
@@ -430,24 +545,35 @@ def _dose_select_checkpoint(
                 [round(v, 3) if v is not None else None for _, v in scalars],
             )
     cell_dir.mkdir(parents=True, exist_ok=True)
-    (cell_dir / "dose_select.json").write_text(
-        json.dumps(
+    record = {
+        "row": row.row_id,
+        "arm": arm,
+        "seed": seed,
+        "ceiling": sel["ceiling"],
+        "band": sel["band"],  # the band actually in force (allowance iff recalibrated)
+        "band_default": list(THRESHOLDS["dose_band_default"]),
+        "band_recalibrated": sel["band_recalibrated"],
+        "monotone": sel["monotone"],
+        "in_band": sel["in_band"],
+        "selected_checkpoint": selected.name,
+        "scalars": {c.name: v for c, v in scalars},
+    }
+    if _v2_active():
+        # v2 extras: corrected normalization + nearest-strength pairing
+        # record (consumed by K1-v2, assemble, and the VM-side comparison).
+        record.update(
             {
-                "row": row.row_id,
-                "arm": arm,
-                "seed": seed,
-                "ceiling": sel["ceiling"],
-                "band": sel["band"],  # the band actually in force (allowance iff recalibrated)
-                "band_default": list(THRESHOLDS["dose_band_default"]),
-                "band_recalibrated": sel["band_recalibrated"],
-                "monotone": sel["monotone"],
-                "in_band": sel["in_band"],
-                "selected_checkpoint": selected.name,
-                "scalars": {c.name: v for c, v in scalars},
-            },
-            indent=1,
+                "base": sel.get("base"),
+                "strengths": sel.get("strengths"),
+                "scalar_key": row.diagonal_scalar_key,
+                "v1_target_strength": sel.get("v1_target_strength"),
+                "achieved_strength": sel.get("achieved_strength"),
+                "delta_strength": sel.get("delta_strength"),
+                "confirmatory_eligible": sel.get("confirmatory_eligible"),
+                "confirmatory_max_delta": sel.get("confirmatory_max_delta"),
+            }
         )
-    )
+    (cell_dir / "dose_select.json").write_text(json.dumps(record, indent=1))
     return selected
 
 
@@ -644,38 +770,116 @@ def _base_panel_todo(args) -> list[tuple[list[str], list[str] | None, list[str]]
     return todo
 
 
+def _v2_elicitation_prestep(args, phase: str, cells: list) -> list:
+    """Run per-row elicitation subprocesses, then drop sub-quota rows.
+
+    One ``issue545_train_cell.py --prep-only`` subprocess per UNIQUE
+    rebuilt row (gpu_prep == "elicit"), 4-way through the GPU lease queue
+    (vLLM + judge filters). Idempotent: rows whose ``pool_meta.json``
+    already exists are skipped. Quota verdicts then prune the cell list;
+    drops are recorded to ``row_drops.json`` (the H3-v2 designed signal).
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import output_root
+    from explore_persona_space.experiments.behavior_testbed_545.elicit_v2 import row_quota_met
+
+    elicit_rows = sorted({row.row_id for row, _a, _s in cells if row.gpu_prep == "elicit"})
+    todo = [r for r in elicit_rows if row_quota_met(r) is None]
+    if todo:
+        print(f"[phase=elicitation_{phase}]", flush=True)
+        gpu_slots: Queue[int] = Queue()
+        for g in range(args.parallel):
+            gpu_slots.put(g)
+        smoke_flag = ["--smoke"] if args.smoke else []
+
+        def _elicit(row_id: str):
+            def _go(gpu: int):
+                _assert_gpu_memory_free(gpu, label=f"elicit-{row_id}")
+                _run(
+                    [
+                        "uv",
+                        "run",
+                        "python",
+                        "scripts/issue545_train_cell.py",
+                        "--row",
+                        row_id,
+                        "--arm",
+                        "primary",
+                        "--gpu-id",
+                        str(gpu),
+                        "--prep-only",
+                        *smoke_flag,
+                    ],
+                    label=f"elicit-{row_id}",
+                    extra_env=_gpu_env(gpu),
+                )
+
+            return _with_gpu_lease(gpu_slots, _go)
+
+        failures: list[tuple[str, BaseException]] = []
+        with ThreadPoolExecutor(max_workers=args.parallel) as pool:
+            futs = {pool.submit(_elicit, r): r for r in todo}
+            for fut in as_completed(futs):
+                try:
+                    fut.result()
+                except BaseException as e:
+                    logger.error("elicitation %s FAILED: %s", futs[fut], e)
+                    failures.append((futs[fut], e))
+        if failures:
+            raise RuntimeError(
+                f"{len(failures)} elicitation row(s) failed: {[r for r, _ in failures]} — "
+                f"first error: {failures[0][1]!r}"
+            ) from failures[0][1]
+
+    dropped = [r for r in elicit_rows if row_quota_met(r) is False]
+    if dropped:
+        drops_path = output_root() / "row_drops.json"
+        existing = json.loads(drops_path.read_text()) if drops_path.exists() else {"rows": []}
+        existing["rows"] = sorted(set(existing["rows"]) | set(dropped))
+        drops_path.write_text(json.dumps(existing, indent=1))
+        logger.warning(
+            "[phase=elicitation_%s] quota DROPS (designed signal, recorded): %s", phase, dropped
+        )
+    return [(row, arm, seed) for row, arm, seed in cells if row.row_id not in dropped]
+
+
 def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatcher, intentionally flat
     from explore_persona_space.experiments.behavior_testbed_545 import output_root
     from explore_persona_space.experiments.behavior_testbed_545.gates import (
         require_k1_pass,
+        require_k1v2_pass,
         warmth_gate_passed,
     )
     from explore_persona_space.experiments.behavior_testbed_545.rows import (
-        ROWS,
+        active_rows,
         enumerate_cells,
     )
 
+    rows_registry = active_rows()
     if phase == "p2":
         # FAIL-CLOSED (round-1 Codex critical): only a literal pass=true
-        # admits P2 — false AND null/missing both refuse.
-        require_k1_pass()
+        # admits P2 — false AND null/missing both refuse. v2 mode gates on
+        # the K1-v2 verdict (yield + corrected-band entry + integrity).
+        if _v2_active():
+            require_k1v2_pass()
+        else:
+            require_k1_pass()
 
     rows_filter = args.rows
     if rows_filter is not None:
         # Unknown row ids must fail LOUD: enumerate_cells would silently
         # drop them (the plan-doc `warmth_gate` vs registry `warmth` trap,
         # round-1 minor #12).
-        unknown = [r for r in rows_filter if r not in ROWS]
+        unknown = [r for r in rows_filter if r not in rows_registry]
         if unknown:
-            raise SystemExit(f"Unknown row id(s) {unknown}. Valid: {sorted(ROWS)}")
+            raise SystemExit(f"Unknown row id(s) {unknown}. Valid: {sorted(rows_registry)}")
     if rows_filter is None:
-        rows_filter = [r.row_id for r in ROWS.values() if r.phase == phase]
-        if phase == "p2" and warmth_gate_passed():
+        rows_filter = [r.row_id for r in rows_registry.values() if r.phase == phase]
+        if phase == "p2" and not _v2_active() and warmth_gate_passed():
             # B10 P2 inclusion is CONDITIONAL on the P1 dose-response gate
             # (plan section 4.1): full-battery warmth eval joins P2 only on
-            # a recorded gate PASS.
+            # a recorded gate PASS. (v1-only — warmth is out of v2 scope.)
             rows_filter.append("warmth")
-    if phase == "p2" and "warmth" in rows_filter and not warmth_gate_passed():
+    if phase == "p2" and not _v2_active() and "warmth" in rows_filter and not warmth_gate_passed():
         raise RuntimeError(
             "warmth requested in P2 but warmth_gate/gate_result.json does not record "
             "pass=true (plan gate 2) — drop the row or re-run the P1 gate."
@@ -687,11 +891,27 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         )
     logger.info("[phase=%s] %d cells", phase, len(cells))
 
+    if _v2_active():
+        # v2 elicitation pre-step (plan v3 section 4.4): pools are
+        # seed-invariant, so elicitation runs ONCE per ROW before any cell
+        # trains; rows that miss the 160/200 quota DROP here (the H3-v2
+        # designed signal — never trained short, never padded) and their
+        # cells leave the schedule. The per-cell prep stays idempotent
+        # (skips a completed elicitation; builds cn/bridge corpora).
+        cells = _v2_elicitation_prestep(args, phase, cells)
+        if not cells:
+            raise RuntimeError(
+                f"All {phase} rows dropped at the elicitation quota — see row_drops.json"
+            )
+
     # P1.0 base panel first (headroom denominator; gates column inclusion).
     # Default context = full battery; robustness + template-token contexts =
     # the 4-column subset only (mirrors the per-cell split, round-1 major #5).
     # Resume is per-FILE completeness (round 19), never a bare exists() check.
-    if phase == "p1" and not args.skip_eval:
+    # v2 mode SKIPS it: the v1 base panel is REUSED as the level denominator
+    # (plan v3 section 4.3; validity guarded by the judge-stability anchor
+    # check) — same model, SHA-frozen batteries, same decoding.
+    if phase == "p1" and not args.skip_eval and not _v2_active():
         todo_passes = _base_panel_todo(args)
         if not todo_passes:
             logger.info("[phase=p1_0_base_panel] complete — every required column file present")
@@ -773,7 +993,12 @@ def phase_train_eval(args, phase: str) -> None:  # noqa: C901 — phase dispatch
         manifest.append(res)
         manifest_path.write_text(json.dumps(manifest, indent=1))
 
-    if phase == "p1" and not args.skip_eval and not args.skip_judges:
+    if phase == "p1" and not args.skip_eval and not args.skip_judges and _v2_active():
+        from explore_persona_space.experiments.behavior_testbed_545.gates import write_k1v2_gate
+
+        print("[phase=k1v2_gate]", flush=True)
+        write_k1v2_gate()
+    if phase == "p1" and not args.skip_eval and not args.skip_judges and not _v2_active():
         from explore_persona_space.experiments.behavior_testbed_545.gates import (
             write_k1_gate,
             write_warmth_gate_result,
@@ -871,11 +1096,12 @@ def bulk_upload_phase(phase: str) -> None:
     """
 
     from explore_persona_space.experiments.behavior_testbed_545 import (
-        HF_DATA_PREFIX,
         HF_DATA_REPO,
         HF_MODEL_REPO,
         cells_dir,
         corpora_dir,
+        hf_data_prefix,
+        hf_rows_prefix,
         output_root,
         smoke_output_active,
     )
@@ -886,6 +1112,10 @@ def bulk_upload_phase(phase: str) -> None:
 
     from huggingface_hub import HfApi, list_repo_files
 
+    # v2 namespace isolation (plan divergence 5): adapters -> issue545_rows_v2,
+    # data -> issue545_behavior_testbed_v2/... — v1 HF paths never overwritten.
+    rows_prefix = hf_rows_prefix()
+    data_prefix = hf_data_prefix()
     api = HfApi()
     gaps: list[str] = []
     verified_cell_dirs: list[Path] = []
@@ -894,7 +1124,7 @@ def bulk_upload_phase(phase: str) -> None:
         api.upload_folder(
             folder_path=str(adapters),
             repo_id=HF_MODEL_REPO,
-            path_in_repo="issue545_rows",
+            path_in_repo=rows_prefix,
             commit_message=f"issue #545 {phase}: adapter bulk upload",
         )
         listed = set(list_repo_files(HF_MODEL_REPO))
@@ -902,32 +1132,45 @@ def bulk_upload_phase(phase: str) -> None:
             if not cell_dir.is_dir():
                 continue
             if (cell_dir / "adapter_config.json").exists():
-                probe = f"issue545_rows/{cell_dir.name}/adapter_config.json"
+                probe = f"{rows_prefix}/{cell_dir.name}/adapter_config.json"
             elif (cell_dir / "config.json").exists():
                 # fullft cells upload a FULL model — verify it too (round-1
                 # unaddressed case: the fullft upload was never gap-checked).
-                probe = f"issue545_rows/{cell_dir.name}/config.json"
+                probe = f"{rows_prefix}/{cell_dir.name}/config.json"
             else:
                 continue
             if probe not in listed:
                 gaps.append(f"cell {cell_dir.name} missing post-upload ({probe})")
             else:
                 verified_cell_dirs.append(cell_dir)
-        gaps.extend(_mirror_513_uploads(api, adapters, list_repo_files, HF_MODEL_REPO))
+        if not _v2_active():
+            # The #513-convention mirror is a v1 coordination artifact; v2
+            # rows (no B1/B2 rows in the v2 registry) never mirror.
+            gaps.extend(_mirror_513_uploads(api, adapters, list_repo_files, HF_MODEL_REPO))
     if corpora_dir().exists():
         api.upload_folder(
             folder_path=str(corpora_dir()),
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{HF_DATA_PREFIX}/corpora",
+            path_in_repo=f"{data_prefix}/corpora",
             commit_message=f"issue #545 {phase}: corpora",
+        )
+    if _v2_active() and (output_root() / "elicitation").exists():
+        # Elicitation pools (pool_meta + per-tier candidate caches +
+        # calibration records) — the section 6.5 deliverable glob.
+        api.upload_folder(
+            folder_path=str(output_root() / "elicitation"),
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{data_prefix}/elicitation",
+            commit_message=f"issue #545 {phase}: v2 elicitation pools",
         )
     if cells_dir().exists():
         api.upload_folder(
             folder_path=str(cells_dir()),
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{HF_DATA_PREFIX}/raw_completions",
+            path_in_repo=f"{data_prefix}/raw_completions",
             commit_message=f"issue #545 {phase}: per-cell completions + verdicts",
             allow_patterns=["*completions__*.json", "*/*.json"],
         )
@@ -976,6 +1219,15 @@ def phase_p3(args) -> None:
     predictors-first order crashed P3 on the pod with FileNotFoundError
     (base_panel.json not yet written — task #545 ``epm:failure`` v9).
     """
+    if _v2_active():
+        # P3-v2 (plan v3 section 4.4): demos rebuilt from the 160-row v2
+        # corpora FIRST (the predictor demo-A flavor consumes them).
+        print("[phase=p3_demos]", flush=True)
+        from explore_persona_space.experiments.behavior_testbed_545.corpora import (
+            build_demo_sets,
+        )
+
+        build_demo_sets()
     print("[phase=assemble]", flush=True)
     from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import assemble
 
@@ -994,6 +1246,12 @@ def phase_p3(args) -> None:
             + (["--skip-gpu"] if args.skip_train and args.skip_eval else []),
             label="predictors",
         )
+    if _v2_active():
+        # The v2 predictor RESCORE is VM-side, post-termination, labeled
+        # sensitivity (scoring_v2/ via scripts/issue545_v2_comparison.py) —
+        # the pod-side prereg score() run is a v1 deliverable, not v2's.
+        logger.info("[phase=p3] v2: scoring deferred to the VM-side comparison harness")
+        return
     print("[phase=score]", flush=True)
     from explore_persona_space.experiments.behavior_testbed_545.scoring import score
 
@@ -1042,8 +1300,11 @@ def main() -> int:
     parser.add_argument("--rows", nargs="+", default=None)
     parser.add_argument("--seeds", type=int, nargs="+", default=None)
     parser.add_argument("--arms", nargs="+", default=None)
+    parser.add_argument("--smoke", action="store_true", help="one gate cell, tiny caps, same path")
     parser.add_argument(
-        "--smoke", action="store_true", help="one marker cell, tiny caps, same path"
+        "--v2",
+        action="store_true",
+        help="onpolicy-testbed-v2 namespace mode (equivalent to I545_V2_OUTPUT=1)",
     )
     parser.add_argument("--build-corpora", action="store_true")
     parser.add_argument("--preregister", action="store_true")
@@ -1056,8 +1317,12 @@ def main() -> int:
     parser.add_argument("--skip-upload", action="store_true")
     args = parser.parse_args()
 
+    if args.v2 or os.environ.get("I545_V2_OUTPUT") == "1":
+        _activate_v2_namespace()
     if args.smoke:
-        args.rows = args.rows or ["marker"]
+        # Smoke cell = the active registry's gate row (v1: marker; v2: the
+        # K1-v2 gate row refuse_medical with a reduced pool — plan v3 4.4).
+        args.rows = args.rows or (["refuse_medical"] if _v2_active() else ["marker"])
         args.seeds = args.seeds or [0]
         args.arms = args.arms or ["primary"]
         args.max_probes = args.max_probes or 4

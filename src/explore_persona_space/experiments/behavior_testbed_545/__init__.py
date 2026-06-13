@@ -61,17 +61,44 @@ def repo_root() -> Path:
 # 4-step smoke adapter and skipped the full base panel — K1 FAILed.
 SMOKE_OUTPUT_ENV = "I545_SMOKE_OUTPUT"
 
+# v2 namespace isolation (same-issue follow-up `onpolicy-testbed-v2`, plan
+# divergence 5). When this env flag is "1", every OUTPUT root gains an
+# ``onpolicy_v2/`` segment (BEFORE any ``smoke/`` segment, so smoke+v2 compose
+# as ``.../onpolicy_v2/smoke/``) and the HF upload prefixes gain ``_v2``.
+# Mirrors the round-19/20 smoke-isolation pattern: v1 artifacts are READ
+# (frozen inputs: batteries, base panel, question pools) but physically
+# never written. The dispatcher sets it for ``--v2`` runs (or the caller
+# exports I545_V2_OUTPUT=1) and subprocesses inherit it via
+# ``env={**os.environ}``.
+V2_OUTPUT_ENV = "I545_V2_OUTPUT"
+
 
 def smoke_output_active() -> bool:
     """True when smoke-output isolation is in force (``I545_SMOKE_OUTPUT=1``)."""
     return os.environ.get(SMOKE_OUTPUT_ENV) == "1"
 
 
-def production_output_root() -> Path:
-    """The PRODUCTION result root, ignoring smoke isolation.
+def v2_output_active() -> bool:
+    """True when the onpolicy-v2 namespace mode is in force (``I545_V2_OUTPUT=1``)."""
+    return os.environ.get(V2_OUTPUT_ENV) == "1"
 
-    Read-only escape hatch for frozen P0 INPUTS (eval batteries) that smoke
-    runs consume but must never write (``eval_battery.load_battery``).
+
+def hf_data_prefix() -> str:
+    """HF data-repo prefix: ``issue545_behavior_testbed`` (+ ``_v2`` under v2)."""
+    return HF_DATA_PREFIX + ("_v2" if v2_output_active() else "")
+
+
+def hf_rows_prefix() -> str:
+    """HF model-repo adapter prefix: ``issue545_rows`` (+ ``_v2`` under v2)."""
+    return "issue545_rows" + ("_v2" if v2_output_active() else "")
+
+
+def production_output_root() -> Path:
+    """The PRODUCTION result root, ignoring smoke AND v2 isolation.
+
+    Read-only escape hatch for frozen P0 INPUTS (eval batteries, the v1 base
+    panel, v1 cells) that smoke/v2 runs consume but must never write
+    (``eval_battery.load_battery``).
     """
     env = os.environ.get("EPM_OUTPUT_ROOT")
     if env:
@@ -79,15 +106,30 @@ def production_output_root() -> Path:
     return repo_root() / "eval_results" / f"issue_{ISSUE}"
 
 
+def v1_committed_root() -> Path:
+    """The GIT-COMMITTED v1 result root: ``<repo>/eval_results/issue_545``.
+
+    The v2 follow-up reads frozen v1 INPUTS (base panel, per-checkpoint
+    ``dose/`` reads, L matrix) from here. Unlike ``production_output_root``
+    this ignores EPM_OUTPUT_ROOT: on a pod with the MooseFS hot-path
+    override set, the committed v1 artifacts still live in the repo
+    checkout, not under the scratch root.
+    """
+    return repo_root() / "eval_results" / f"issue_{ISSUE}"
+
+
 def output_root() -> Path:
     """Result root: ``eval_results/issue_545`` (override via EPM_OUTPUT_ROOT;
-    ``smoke/`` appended under smoke-output isolation — see SMOKE_OUTPUT_ENV).
+    ``onpolicy_v2/`` appended under v2 isolation, then ``smoke/`` under
+    smoke-output isolation — see V2_OUTPUT_ENV / SMOKE_OUTPUT_ENV).
 
     The EPM_OUTPUT_ROOT override exists for the MooseFS D-state mitigation
     (.claude/rules/gotchas.md): on write-heavy pod runs, point the hot write
     path at local disk and sync afterward.
     """
     root = production_output_root()
+    if v2_output_active():
+        root = root / "onpolicy_v2"
     return root / "smoke" if smoke_output_active() else root
 
 
@@ -96,18 +138,21 @@ def adapters_root() -> Path:
 
     Big weights never live under the git-tracked ``eval_results`` tree: the
     base is EPM_OUTPUT_ROOT when set (pod hot path) else ``/tmp/issue545``.
-    Smoke-output isolation appends ``smoke/`` exactly like ``output_root()``
-    so a smoke adapter can never shadow a production cell's artifact.
+    v2 + smoke isolation append ``onpolicy_v2/`` / ``smoke/`` exactly like
+    ``output_root()`` so a smoke/v2 adapter can never shadow a production
+    (v1) cell's artifact.
     """
     env = os.environ.get("EPM_OUTPUT_ROOT")
     base = Path(env) if env else Path("/tmp/issue545")
+    if v2_output_active():
+        base = base / "onpolicy_v2"
     if smoke_output_active():
         base = base / "smoke"
     return base / "adapters"
 
 
 def production_corpora_dir() -> Path:
-    """The PRODUCTION corpora root, ignoring smoke isolation.
+    """The PRODUCTION corpora root, ignoring smoke AND v2 isolation.
 
     Read-only escape hatch for frozen P0 corpus INPUTS (question splits,
     P0-built positives, ``kl_aux_generic.jsonl``) that smoke runs consume but
@@ -123,28 +168,34 @@ def production_corpora_dir() -> Path:
 def corpora_dir() -> Path:
     """Where training corpora are WRITTEN (committed datasets -> HF too).
 
-    Smoke-output isolation appends ``smoke/`` exactly like ``output_root()``
-    (round 20): a ``--smoke`` prep writes its tiny throwaway corpora under the
-    smoke root and is physically unable to overwrite a production corpus
-    (round-19 residual: smoke marker prep clobbered the production
-    ``marker_train.jsonl``, which the bulk corpora upload then pushed to HF).
+    v2 + smoke isolation append ``onpolicy_v2/`` / ``smoke/`` exactly like
+    ``output_root()`` (rounds 19/20 + the v2 namespace): a ``--smoke`` or v2
+    prep writes its corpora under the isolated root and is physically unable
+    to overwrite a production (v1) corpus.
     """
     root = production_corpora_dir()
+    if v2_output_active():
+        root = root / "onpolicy_v2"
     return root / "smoke" if smoke_output_active() else root
 
 
 def corpus_read_path(name: str) -> Path:
     """Resolve a corpus file for READING: active root first, production fallback.
 
-    Under smoke isolation the active corpora dir is smoke-rooted; frozen P0
-    corpus products are INPUTS, so reads fall back to the PRODUCTION corpora
-    dir when the file is absent from the smoke root (mirrors
-    ``eval_battery.load_battery``). The fallback is read-only by construction
-    — corpus WRITERS always target the active (smoke) root. Returns the
+    Under smoke/v2 isolation the active corpora dir is smoke-/v2-rooted;
+    frozen P0 corpus products are INPUTS, so reads fall back to the
+    PRODUCTION corpora dir when the file is absent from the active root
+    (mirrors ``eval_battery.load_battery``). The fallback is read-only by
+    construction — corpus WRITERS always target the active root. Returns the
     active-root path when neither exists so callers fail loud on it.
+
+    v2 safety note: v2 TRAINING corpora use distinct names (``onpolicy_*``,
+    ``bridge_*``) that never exist under the production root, so the
+    fallback cannot silently substitute a v1 canned corpus for a missing
+    elicited one — the train step fails loud on the absent active path.
     """
     p = corpora_dir() / name
-    if not p.exists() and smoke_output_active():
+    if not p.exists() and (smoke_output_active() or v2_output_active()):
         prod = production_corpora_dir() / name
         if prod.exists():
             return prod
