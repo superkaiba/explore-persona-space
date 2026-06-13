@@ -891,11 +891,40 @@ def _vllm_engine(max_model_len: int, *, enable_lora: bool = False):
 
 
 def _vllm_greedy(llm, rendered_prompts: list[str], max_tokens: int, *, lora_request=None):
+    """vLLM batched greedy generation.
+
+    Defensive empty-prompt guard (#628 r13): `llm.generate([], ...)` hits a
+    `ZeroDivisionError: division by zero` deep inside `vllm/entrypoints/
+    llm.py::_run_engine` because the tqdm pbar's `elapsed=0` when no work
+    runs (verified upstream in vllm==0.11.0). The same downstream symptom
+    fires when EngineCore_DP0 has died before generation -- the engine
+    death surfaces as a confusing pbar arithmetic error far from the real
+    crash. Both are upstream bugs; we cannot fix them from here, but we
+    can refuse the no-op call (cheap) and emit a clearer log line so the
+    next debugger can tell the two classes apart.
+    """
     from vllm import SamplingParams
 
+    if not rendered_prompts:
+        logger.warning("[vllm] _vllm_greedy called with empty prompt list -- returning []")
+        return []
     params = SamplingParams(temperature=0.0, max_tokens=max_tokens)
     kwargs = {"lora_request": lora_request} if lora_request is not None else {}
-    outs = llm.generate(rendered_prompts, params, **kwargs)
+    try:
+        outs = llm.generate(rendered_prompts, params, **kwargs)
+    except ZeroDivisionError as exc:
+        # Engine died before generation. The original ZeroDivisionError is
+        # in vllm/entrypoints/llm.py:1610 (pbar elapsed=0). Raise a clearer
+        # RuntimeError naming the real condition so logs surface the right
+        # diagnosis -- the engine death already logged its own
+        # `ERROR ... Engine core proc EngineCore_DP0 died unexpectedly`.
+        raise RuntimeError(
+            "vLLM EngineCore died before generation completed (downstream "
+            "ZeroDivisionError in pbar). Check the immediately-preceding "
+            "vLLM ERROR line for the real cause (rsLoRA punica wrapper, "
+            "cudagraph capture, or OOM). Original exception: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
     results = [
         {"response": o.outputs[0].text, "finish_reason": o.outputs[0].finish_reason} for o in outs
     ]
@@ -2862,8 +2891,25 @@ def main() -> int:
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["0", "0a", "0b", "1", "2", "3", "4", "all", "matched-install-reread"],
-        help="'matched-install-reread' is the post-hoc §6 fallback; never part of 'all'",
+        choices=[
+            "0",
+            "0a",
+            "0b",
+            "1",
+            "2",
+            "3",
+            "4",
+            "all",
+            "finalize",
+            "matched-install-reread",
+        ],
+        help=(
+            "'finalize' runs _finalize on the current disk state only (no GPU work) "
+            "and emits the appropriate sentinel (epm:results on full coverage, "
+            "epm:progress on partial). Useful after a phase-4 crash to surface the "
+            "phase-1/2/3 results properly. 'matched-install-reread' is the post-hoc "
+            "§6 fallback; never part of 'all'."
+        ),
     )
     ap.add_argument(
         "--spec",
@@ -2941,6 +2987,19 @@ def main() -> int:
         "4": phase4,
         "matched-install-reread": phase_reread,
     }
+    # --phase finalize: no GPU work, just walk disk state and emit the right
+    # sentinel. Mirrors the implicit finalize at the tail of --phase {all,4}
+    # but available standalone after a phase-4 crash (#628 r13).
+    if args.phase == "finalize":
+        coverage_complete = _finalize(args)
+        if coverage_complete:
+            phase_log("done")
+        else:
+            logger.warning(
+                "[main] partial coverage -- suppressing [phase=done]; "
+                "poll_pipeline.py will see this as in-progress, not done."
+            )
+        return 0
     for ph in phases:
         runner[ph](args)
 

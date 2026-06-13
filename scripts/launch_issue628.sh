@@ -21,8 +21,17 @@
 # enter the training queue.
 #
 # Usage:
-#   bash scripts/launch_issue628.sh [--phase {all,0b,1,2,3,4,resume}]
+#   bash scripts/launch_issue628.sh [--phase {all,0b,1,2,3,4,finalize,resume}]
 #                                   [--seeds 42,1042]
+#
+# Env knobs:
+#   I628_SEEDS               seeds list (default 42,1042)
+#   I628_MIN_TRAINED_CELLS   phase-1 coverage gate (default 30 of 56)
+#   I628_MIN_PHASE2_CELLS    phase-2 coverage gate (default 1 G-cell)
+#   EPM_I628_SKIP_PHASE_4    set to 1 to skip phase 4 entirely (#628 r13
+#                            workaround for the open vLLM 0.11 + rsLoRA
+#                            EngineCore crash). Phases 1+2+3 still
+#                            finalize cleanly + emit epm:progress.
 #
 # The default `--phase all` runs the full chain; `--phase resume` is the
 # documented relaunch shape for r5d -- it re-runs Phase 1 (skipping the 36
@@ -83,6 +92,27 @@ gate_phase2_coverage() {
   return 0
 }
 
+# Phase-4 is the on-policy bystander reads (vLLM + LoRA). r9 hit a vLLM
+# 0.11.0 + rsLoRA + punica-wrapper EngineCore crash during LoRA load
+# (`peft_helper.py:55 Loading LoRA weights trained with rsLoRA.` followed by
+# silent EngineCore_DP0 death and a downstream ZeroDivisionError in
+# `vllm/entrypoints/llm.py:1610`'s pbar). This is upstream-of-our-code and
+# enforce_eager=True is already on. Phase 4 is the SECONDARY measurement;
+# the rig contrast (primary science) lives in phases 1+2+3 which are
+# already done (4687 G-cell JSONs landed). r13 makes phase 4:
+#   (a) skippable via EPM_I628_SKIP_PHASE_4=1 for the duration the vLLM
+#       + rsLoRA crash is unresolved (escape hatch -- the run still
+#       finalizes cleanly on phases 1+2+3 + epm:progress);
+#   (b) wrapped in set +e so a crash does not kill _finalize -- without
+#       the wrap the launcher exits rc=1 before _finalize fires and the
+#       orchestrator never sees the partial-coverage sentinel.
+SKIP_PHASE_4="${EPM_I628_SKIP_PHASE_4:-0}"
+
+# Count phase-4 reads landed -- proxy for "phase 4 produced some output".
+count_phase4_reads() {
+  find eval_results/issue_628/bystander_onpolicy -type f -name 'reads.json' 2>/dev/null | wc -l
+}
+
 run_phase() {
   local label="$1"
   shift
@@ -123,6 +153,13 @@ phase_4() {
     --phase 4 --seeds "$SEEDS" --enforce-gate --partial-ok
 }
 
+# Standalone _finalize: walks disk state, emits epm:results (full coverage)
+# or epm:progress (partial) + [phase=done] iff full coverage. Used after a
+# phase-4 crash so the orchestrator still sees the phase-1/2/3 results.
+phase_finalize() {
+  $PY scripts/i628_dispatch.py --phase finalize --seeds "$SEEDS"
+}
+
 echo "[i628-launch] starting (phase=$PHASE seeds=$SEEDS) at $(ts)"
 
 run_one_phase() {
@@ -132,6 +169,7 @@ run_one_phase() {
     2)  run_phase 2 phase_2 ;;
     3)  run_phase 3 phase_3 ;;
     4)  run_phase 4 phase_4 ;;
+    finalize) run_phase finalize phase_finalize ;;
     *)  echo "[i628-launch] unknown phase $1"; return 2 ;;
   esac
 }
@@ -147,6 +185,30 @@ gate_phase1_coverage() {
   if [ "$trained" -lt "$MIN_TRAINED_CELLS" ]; then
     echo "[i628-launch] coverage below threshold; STOPPING (no Phase 2/3/4)"
     return 3
+  fi
+  return 0
+}
+
+# Phase-4 driver shared by `all` and `resume`: phase 4 hits a vLLM 0.11 +
+# rsLoRA EngineCore crash (#628 r9 + r13 post-mortem); SKIP_PHASE_4=1 lets
+# the launcher skip it entirely so phases 1+2+3 still finalize cleanly. A
+# non-skip phase-4 crash no longer kills _finalize -- the launcher always
+# fires phase_finalize as the LAST step so the orchestrator sees the
+# partial-coverage sentinel either way.
+run_phase_4_with_tolerance() {
+  if [ "$SKIP_PHASE_4" = "1" ]; then
+    echo "[i628-launch] SKIP_PHASE_4=1 -- skipping phase 4 (vLLM+rsLoRA crash open in r13)"
+    return 0
+  fi
+  set +e
+  run_phase 4 phase_4
+  local p4_rc=$?
+  set -e
+  local p4_reads
+  p4_reads=$(count_phase4_reads)
+  echo "[i628-launch] phase 4 reads landed: $p4_reads"
+  if [ $p4_rc -ne 0 ]; then
+    echo "[i628-launch] phase 4 rc=$p4_rc but continuing to _finalize (#628 r13)"
   fi
   return 0
 }
@@ -179,7 +241,17 @@ case "$PHASE" in
       echo "[i628-launch] phase 2 rc=$p2_rc but coverage gate PASSed; continuing"
     fi
     run_one_phase 3 || exit $?
-    run_one_phase 4 || exit $?
+    # Phase 4: tolerate crash; phase 4 is the secondary on-policy bystander
+    # read, primary science is in phases 1+2+3 (#628 r13). The dispatcher's
+    # _finalize fires at the tail of `--phase 4` regardless of phase 4's
+    # own rc -- but only when the python process exits via main()'s normal
+    # return path. A SystemExit raised from `_run_wave` skips that.
+    run_phase_4_with_tolerance
+    # Standalone finalize: writes the right sentinel even when phase 4
+    # itself died before main()'s tail finalize. Idempotent vs the
+    # dispatcher-emitted sentinel (last writer wins; coverage probes the
+    # same disk state).
+    run_one_phase finalize || exit $?
     ;;
   resume)
     # Resume: r5d/r8 post-mortem path. Phase 1 idempotently re-runs the
@@ -202,9 +274,10 @@ case "$PHASE" in
       echo "[i628-launch] phase 2 rc=$p2_rc but coverage gate PASSed; continuing"
     fi
     run_one_phase 3 || exit $?
-    run_one_phase 4 || exit $?
+    run_phase_4_with_tolerance
+    run_one_phase finalize || exit $?
     ;;
-  0b|1|2|3|4)
+  0b|1|2|3|4|finalize)
     run_one_phase "$PHASE"
     ;;
   *)
