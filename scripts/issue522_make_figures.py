@@ -144,7 +144,7 @@ def hero_scatter() -> None:
         linewidths=0.5,
     )
 
-    ax.set_xlabel("Full-response JS divergence (base-model, nats)")
+    ax.set_xlabel("Full-response JS divergence (base-model, bits)")
     ax.set_ylabel("Marker-leakage transfer ΔG (nats; from #474)")
 
     # Anthropic-blog title block
@@ -257,8 +257,8 @@ def by_panel_epoch_bars() -> None:
     ax_cv.legend(loc="upper right", frameon=False, fontsize=8.5)
 
     fig.suptitle(
-        "Drop the three stylized personas and out-of-sample CV R² collapses "
-        "below zero at every training amount",
+        "Drop the three stylized personas and out-of-sample CV R² loses "
+        "any demonstrated skill at every training amount",
         x=0.04,
         y=1.00,
         ha="left",
