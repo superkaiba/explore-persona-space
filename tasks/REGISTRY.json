@@ -3858,8 +3858,8 @@
       "goal": "Determine whether headline cross-condition leakage differences (contrastive vs positive-only, LoRA vs full fine-tuning) survive controlling for implantation strength, via matched-install comparison, per-cell leakage-to-install fractions in logit space, and leakage-vs-install dose curves from existing training trajectories.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/627",
-      "status": "running",
+      "path": "tasks/verifying/627",
+      "status": "verifying",
       "title": "Leakage-vs-implantation control: do cross-condition leakage differences survive matching or normalizing by install strength?"
     },
     "628": {
