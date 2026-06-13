@@ -14,6 +14,19 @@ Rows swept (4 rows x 2 estimators x 2 joins = 16 data rows):
   505-loo-null        leave-one-out pooled slope (delta_leakage ~ cos)    published NULL
   478-flatness-null   set-size x distance interaction (the fragility row) published NULL
 
+9a-ter free-analysis follow-up (+2 data rows = 18 total): the persona-RE MixedLM
+cell on #505 (``estimator='mixedlm'``, ``vc_formula={'persona': '0 + C(b)'}``) is
+SINGULAR on both joins (non-PD Hessian), so it lands ``status: FAILED`` and the
+#505 row is a "third outcome" rather than a real estimator comparison. Two added
+cells (``estimator='mixedlm_alt_vc'``, ``_vc_spec='groups_only_reml'``) re-fit the
+SAME pooled #505 frame under a SIMPLER admissible VC — a groups-only random
+intercept on the ``j_i|seed`` cluster (``smf.mixedlm(formula, df,
+groups=df['cluster']).fit(reml=True)``), NO persona variance component — over the
+existing #536 gated joins (zero GPU, no new data). The MixedLM hard rule is
+UNCHANGED: on exception / non-convergence / singular boundary the cell is
+``status: FAILED`` with the repr, NEVER a fallback to another estimator. The 16
+existing OLS / persona-VC cells are untouched and byte-identical.
+
 Reuse contract (plan section 4.6): this driver imports
 ``issue536_recompute_driver`` (the join code of record) and
 ``issue536_mixedlm_refit`` (the #478 MixedLM cell, reused VERBATIM). It does NOT
@@ -58,7 +71,10 @@ The two untracked centroid bundles
 be present under --data-root; they live in the main checkout (gitignored).
 
 Outputs (checkpointed per (row x estimator x join), plan section 4.6):
-  eval_results/issue_589/sweep_results.csv   one row per (row_id x estimator x join)
+  eval_results/issue_589/sweep_results.csv   one row per (row_id x estimator x join);
+                                             18 data rows (16 standard + 2 #505 alt-VC);
+                                             trailing _vc_spec column distinguishes
+                                             persona_vc (16) from groups_only_reml (2)
   eval_results/issue_589/sweep_results.json  same + reproducibility metadata + 505 per-arm block
   figures/issue_589/estimator_sweep.png      (+ PDF + meta.json) two panels (raw / centered)
 
@@ -245,6 +261,86 @@ def _fit_mixedlm(
         # cap without satisfying the tolerance, or the optimizer otherwise
         # bailed). Treat as FAILED — the Wald p-value is not trustworthy on a
         # non-converged fit, never read it as a finding (plan §4.3 hard rule).
+        out.status = "FAILED"
+        out.reason = "MixedLM non-converged fit (res.converged=False)"
+    else:
+        out.status = "OK"
+    return out
+
+
+def _fit_mixedlm_groups_only_reml(
+    df,
+    formula: str,
+    groups_col: str,
+    term: str,
+) -> Fit:
+    """#505 alternative VC: groups-only random intercept, REML, NO persona VC.
+
+    The 9a-ter follow-up read. The canonical persona-VC MixedLM cell (``_fit_mixedlm``
+    with ``vc_formula={'persona': '0 + C(b)'}``) is singular (non-PD Hessian) on both
+    #505 joins, so it lands ``status: FAILED`` and the #505 row is a "third outcome"
+    rather than a real estimator comparison. This SIMPLER admissible spec drops the
+    persona variance component entirely: ``smf.mixedlm(formula, df, groups=df[groups_col])``
+    with no ``vc_formula`` fits a single random-intercept variance for the ``j_i|seed``
+    cluster group (statsmodels ``k_re = 1``), and ``.fit(reml=True)`` estimates it by REML.
+    The fixed-effect unembedding (the ``cos_bj`` headline slope) is untouched — only the
+    random-effects structure changes.
+
+    The MixedLM hard rule applies UNCHANGED (plan §4.5 / risk row): honest convergence
+    diagnostics, and on Exception / non-convergence / singular boundary -> status FAILED
+    with the repr; NEVER a fallback to another estimator. A non-converging fit IS a
+    reportable result.
+    """
+    import statsmodels.formula.api as smf
+
+    out = Fit()
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        try:
+            # No vc_formula -> a single group random intercept (k_re = 1); REML.
+            model = smf.mixedlm(formula, df, groups=df[groups_col])
+            res = model.fit(reml=True, method="lbfgs")
+        except Exception as e:
+            out.status = "FAILED"
+            out.reason = repr(e)
+            out.converged = False
+            out.n_rows = len(df)
+            out.n_clusters = int(df[groups_col].nunique())
+            return out
+    # Groups-only spec: the random-intercept variance lives in cov_re (k_re = 1),
+    # not in variance components (vcomp is empty here).
+    group_var = float(res.cov_re.iloc[0, 0]) if res.k_re > 0 else None
+    vcomp = {str(k): float(v) for k, v in zip(res.model.exog_vc.names, res.vcomp, strict=True)}
+    ci = res.conf_int()
+    boundary = bool(
+        (group_var is not None and group_var < 1e-8) or any(v < 1e-8 for v in vcomp.values())
+    )
+    out.coefficient = float(res.params[term])
+    out.se = float(res.bse[term])
+    out.df = float(getattr(res, "df_resid", float("nan")))
+    out.p_value = float(res.pvalues[term])
+    out.ci_lo = float(ci.loc[term][0])
+    out.ci_hi = float(ci.loc[term][1])
+    out.n_rows = int(res.nobs)
+    out.n_clusters = int(df[groups_col].nunique())
+    out.converged = bool(res.converged)
+    out.boundary_variance = boundary
+    out.fit_warnings = sorted({f"{w.category.__name__}: {w.message}" for w in caught})
+    # Same singular-boundary guard as _fit_mixedlm: a reported-converged fit at a
+    # non-PD Hessian / degenerate SE is unreliable -> status FAILED, never a finding,
+    # never a fallback (plan MixedLM hard rule).
+    hessian_not_pd = any("not positive definite" in w.lower() for w in out.fit_warnings)
+    se_degenerate = bool(out.se is not None and not math.isnan(out.se) and out.se < 1e-3)
+    if hessian_not_pd or se_degenerate:
+        out.status = "FAILED"
+        out.converged = False
+        out.reason = (
+            "MixedLM singular boundary: "
+            + ("non-PD Hessian (Wald SE/p unreliable); " if hessian_not_pd else "")
+            + (f"degenerate SE={out.se:.3e}; " if se_degenerate else "")
+            + "reported converged but inference is not trustworthy"
+        )
+    elif not out.converged:
         out.status = "FAILED"
         out.reason = "MixedLM non-converged fit (res.converged=False)"
     else:
@@ -594,7 +690,17 @@ def fit_505(meta: dict) -> tuple[dict, float]:
             term="cos_bj",
             reml=meta["mixedlm_reml"],
         )
-        fits[join] = {"cluster_ols": ols, "mixedlm": mix}
+        # 9a-ter follow-up: groups-only REML alternative VC re-fit on the SAME pooled
+        # frame. Drops the singular persona VC for a simple j_i|seed random intercept;
+        # turns the persona-VC cell's "unfittable" outcome into a real estimator read
+        # if it converges, or a different (honestly reported) failure mode if not.
+        mix_alt = _fit_mixedlm_groups_only_reml(
+            d,
+            meta["mixedlm_formula"],
+            meta["cluster_col"],
+            term="cos_bj",
+        )
+        fits[join] = {"cluster_ols": ols, "mixedlm": mix, "mixedlm_alt_vc": mix_alt}
     # No single published point estimate; the per-arm betas already gated in
     # build_505 (arm_dev). Use the parent's pooled raw cluster-robust beta as the
     # manipulation anchor by reproducing it here: published cell raw beta should
@@ -697,7 +803,20 @@ CSV_COLUMNS = [
     "call_published",
     "call_swept",
     "call_flips",
+    # 9a-ter follow-up: MixedLM variance-component spec. "persona_vc" for the existing
+    # 16 cells (cluster_ols cells carry the same label for backward-compat of the
+    # column; their VC is N/A since OLS has no random effect), "groups_only_reml" for
+    # the 2 new #505 alternative-VC cells. Existing readers that ignore unknown columns
+    # are unaffected (additive trailing column).
+    "_vc_spec",
 ]
+
+# Per-(estimator) MixedLM variance-component spec label for the _vc_spec CSV column.
+VC_SPEC = {
+    "cluster_ols": "persona_vc",  # N/A for OLS; kept uniform so the column is non-empty
+    "mixedlm": "persona_vc",
+    "mixedlm_alt_vc": "groups_only_reml",
+}
 
 
 def _csv_value(v) -> str:
@@ -710,6 +829,90 @@ def _csv_value(v) -> str:
             return ""
         return repr(v)
     return str(v)
+
+
+def _emit_alt_vc_cells(fit_ctx: dict, all_cells: list[dict], csv_path: Path) -> None:
+    """9a-ter follow-up: emit the alternative-VC cells AFTER all 16 standard cells.
+
+    The persona-VC MixedLM cell on #505 is singular on both joins (a "third outcome").
+    These 2 cells re-fit the SAME pooled frame under a simpler admissible VC (groups-only
+    random intercept, REML, no persona VC); whatever they yield — a real estimator read if
+    they converge, or a different honestly-reported failure mode — is appended here so the
+    existing 16 rows stay byte-identical. Currently only #505 carries an alt-VC fit; the
+    discovery is generic (any row whose ``fits`` dict has a ``mixedlm_alt_vc`` key).
+
+    The alt-VC cell is an additional alternative read (never the published estimator), so it
+    carries the standard alternative flip semantics: it flips when its swept call disagrees
+    with the published cell on the SAME join; a join_bug forces inconclusive (no flip read).
+    """
+    alt_vc_rows = sorted(
+        rid
+        for rid, ctx in fit_ctx.items()
+        if any("mixedlm_alt_vc" in ctx["fits"][j] for j in ctx["fits"])
+    )
+    for row_id in alt_vc_rows:
+        ctx = fit_ctx[row_id]
+        fits = ctx["fits"]
+        mc_ratio = ctx["mc_ratio"]
+        alpha = ctx["alpha"]
+        published_estimator = ctx["published_estimator"]
+        published_call = ctx["published_call"]
+        join_bug = ctx["join_bug"]
+        for join in ("raw", "centered"):
+            if "mixedlm_alt_vc" not in fits[join]:
+                continue
+            pub_fit = fits[join][published_estimator]
+            pub_call_join = "inconclusive (join_bug)" if join_bug else classify_call(pub_fit, alpha)
+            cell = fits[join]["mixedlm_alt_vc"]
+            swept = "inconclusive (join_bug)" if join_bug else classify_call(cell, alpha)
+            flips = (
+                not join_bug
+                and swept in ("significant", "null")
+                and pub_call_join in ("significant", "null")
+                and swept != pub_call_join
+            )
+            # Sign-flip vs the cluster_ols cell on the same join (same gravity test as
+            # the standard estimators).
+            co = fits[join]["cluster_ols"].coefficient
+            ca = cell.coefficient
+            sign_flip = bool(
+                co is not None
+                and ca is not None
+                and co != 0
+                and ca != 0
+                and math.copysign(1, co) != math.copysign(1, ca)
+            )
+            rec = {
+                "row_id": row_id,
+                "estimator": "mixedlm_alt_vc",
+                "join": join,
+                "coefficient": cell.coefficient,
+                "se": cell.se,
+                "df": cell.df,
+                "p_value": cell.p_value,
+                "ci_lo": cell.ci_lo,
+                "ci_hi": cell.ci_hi,
+                "n_rows": cell.n_rows,
+                "n_clusters": cell.n_clusters,
+                "manipulation_check_ratio": mc_ratio,
+                "converged": cell.converged,
+                "boundary_variance": cell.boundary_variance,
+                "call_published": published_call,
+                "call_swept": swept,
+                "call_flips": flips,
+                "_vc_spec": VC_SPEC["mixedlm_alt_vc"],
+                # extra (json-only) fields:
+                "_status": cell.status,
+                "_reason": cell.reason,
+                "_fit_warnings": cell.fit_warnings,
+                "_is_published_estimator": False,
+                "_published_call_this_join": pub_call_join,
+                "_alpha": alpha,
+                "_sign_flip": sign_flip,
+            }
+            all_cells.append(rec)
+            with csv_path.open("a", newline="") as f:
+                csv.writer(f, lineterminator="\n").writerow(_csv_value(rec[c]) for c in CSV_COLUMNS)
 
 
 def main() -> int:
@@ -742,6 +945,10 @@ def main() -> int:
     all_cells: list[dict] = []
     per_row_meta: dict[str, dict] = {}
     per_arm_block: dict = {}
+    # Stash each row's fit context so the 9a-ter alternative-VC cells can be emitted
+    # in a dedicated pass AFTER all 16 standard cells (keeps the existing rows
+    # byte-identical).
+    fit_ctx: dict[str, dict] = {}
 
     for row_id in ROWS:
         build, fit = BUILDERS[row_id]
@@ -751,12 +958,25 @@ def main() -> int:
         published_estimator = meta["published_estimator"]
         published_call = meta["published_call"]
         join_bug = mc_ratio > MC_STATISTIC_TOL
+        fit_ctx[row_id] = {
+            "fits": fits,
+            "mc_ratio": mc_ratio,
+            "alpha": alpha,
+            "published_estimator": published_estimator,
+            "published_call": published_call,
+            "join_bug": join_bug,
+        }
 
         for join in ("raw", "centered"):
             # The published-cell call ON THIS JOIN is the reference for the flip
             # test (the published estimator's verdict at the same join).
             pub_fit = fits[join][published_estimator]
             pub_call_join = "inconclusive (join_bug)" if join_bug else classify_call(pub_fit, alpha)
+            # Only the two canonical estimators here, in their original order, so the
+            # 16 existing cells emit byte-identically. Any extra alternative estimators
+            # (the 9a-ter "mixedlm_alt_vc" present only on #505) are emitted AFTER all
+            # 16 standard cells, in a dedicated pass below, to honor "add the new ones
+            # after the existing 16" (existing-cell rows stay byte-for-byte unchanged).
             for est in ("cluster_ols", "mixedlm"):
                 cell = fits[join][est]
                 swept = "inconclusive (join_bug)" if join_bug else classify_call(cell, alpha)
@@ -790,6 +1010,7 @@ def main() -> int:
                     "call_published": published_call,
                     "call_swept": swept,
                     "call_flips": flips,
+                    "_vc_spec": VC_SPEC.get(est, ""),
                     # extra (json-only) fields:
                     "_status": cell.status,
                     "_reason": cell.reason,
@@ -836,12 +1057,21 @@ def main() -> int:
             ),
         }
         if row_id == "505-loo-null":
+            # 9a-ter follow-up: name the alternative VC structure re-fit on this row.
+            per_row_meta[row_id]["mixedlm_alt_vc_spec"] = (
+                "groups_only_reml: smf.mixedlm('delta_leakage ~ cos_bj', groups=j_i|seed)"
+                ".fit(reml=True) — groups-only random intercept, REML, NO persona VC "
+                "(the simpler admissible spec re-fit because the persona-VC cell is singular)"
+            )
             per_arm_block = {
                 "note": "per-arm OLS(HC2) slopes (raw + centered) verbatim from the parent "
                 "(regrade_505._per_arm); NOT swept under MixedLM (an arm has no within-arm "
                 "cluster/RE structure) — quoted as structural context for the pooled read.",
                 "per_arm": meta["per_arm"],
             }
+
+    # 9a-ter follow-up: emit the alternative-VC cells AFTER all 16 standard cells.
+    _emit_alt_vc_cells(fit_ctx, all_cells, csv_path)
 
     # ── Reproducibility metadata + machine-readable payload ──
     payload = {
@@ -880,7 +1110,23 @@ def main() -> int:
             "vc_formula={'persona':'0+C(persona)'}).fit(reml=False, lbfgs) [CONSTRUCTED]",
             "mixedlm_505": "smf.mixedlm('delta_leakage ~ cos_bj', groups=j_i|seed, "
             "vc_formula={'persona':'0+C(b)'}).fit(reml=False, lbfgs) [CONSTRUCTED]",
+            "mixedlm_alt_vc_505": "smf.mixedlm('delta_leakage ~ cos_bj', groups=j_i|seed)"
+            ".fit(reml=True, lbfgs) [9a-ter ALTERNATIVE VC — groups-only random intercept, "
+            "REML, NO persona variance component; the simpler admissible spec re-fit over "
+            "the SAME pooled join when the persona-VC cell is singular]",
         },
+        "alternative_vc_note": (
+            "9a-ter free-analysis follow-up (zero GPU, same persisted #536 joins at "
+            "12853bca8): the persona-VC MixedLM cell on #505 (estimator='mixedlm', "
+            "vc_formula={'persona':'0+C(b)'}) is singular on both joins, so it lands "
+            "status=FAILED and the #505 row was a 'third outcome'. The 2 added cells "
+            "(estimator='mixedlm_alt_vc', _vc_spec='groups_only_reml') re-fit the SAME "
+            "pooled frame under a groups-only random intercept (no persona VC) by REML — "
+            "turning 'unfittable' into a real estimator comparison if they converge, or a "
+            "different honestly-reported failure mode if not (MixedLM hard rule UNCHANGED: "
+            "never a fallback to another estimator). The existing 16 persona-VC / OLS cells "
+            "are unchanged."
+        ),
         "per_row_alpha": ROW_ALPHA,
         "manipulation_check_tol": MC_STATISTIC_TOL,
         "manipulation_check_note": (
