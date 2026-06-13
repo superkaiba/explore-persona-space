@@ -3022,7 +3022,7 @@
       "kind": "analysis",
       "path": "tasks/interpreting/522",
       "status": "interpreting",
-      "title": "The full-response JS predictor scores well on the full panel only because the stylized vs nonstylized split alone carries most of the signal (LOW confidence)"
+      "title": "The full-response JS predictor scores well on the full panel largely because of the stylized vs nonstylized split (LOW confidence)"
     },
     "523": {
       "goal": "Determine whether #502's headline geometry-predicts-leakage cell (last_prompt x L22 x gauss_kl, rho=-0.79 / CV R^2=0.61 on loc-arm epoch 1) survives honest out-of-sample evaluation -- via a held-out probe pool (with the indirect-rewrite voice-drift bug fixed), a scoped second-seed retrain of the headline cell's deltaG substrate, and a nested CV that folds the ~1500-cell selection inside the held-out fold -- and report the non-stylized-subset CV R^2 as the headline effect size.",

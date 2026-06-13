@@ -1,6 +1,6 @@
 ---
-title: The full-response JS predictor scores well on the full panel only because the
-  stylized vs nonstylized split alone carries most of the signal (LOW confidence)
+title: The full-response JS predictor scores well on the full panel largely because
+  of the stylized vs nonstylized split (LOW confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-08T23:16:05Z'
