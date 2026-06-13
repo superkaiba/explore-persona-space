@@ -70,6 +70,7 @@ in the summary, never silent.
 - Prefer precise numbers and concrete experiment identifiers.
 - Use task numbers (`#N`) for references.
 - Include confidence on every claim slide.
+- **One idea per slide — split, don't cram.** If a slide's content (bullets, table rows, a figure plus its caption and qualitative example) does not fit comfortably at a readable font size, SPLIT it across multiple slides (`Result X (1/2)` / `Result X (2/2)`) or move the overflow detail to the Appendix — never shrink the text or pack a slide wall-to-wall. A mentor reads the deck live in a meeting; a dense slide goes unread. Rules of thumb: a table over ~6-7 rows, a bullet list over ~5 lines, or a slide carrying both a figure and a long table is a split-or-Appendix signal. (Thomas, 2026-06-12: slides were overflowing and needed to be separated.)
 - Preserve existing log and appendix sections when updating an existing deck.
 - Do not promote clean results or change statuses while preparing slides unless
   the user separately asks for that mutation.
