@@ -3205,8 +3205,8 @@
     "544": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/544",
-      "status": "proposed",
+      "path": "tasks/on_hold/544",
+      "status": "on_hold",
       "title": "Test whether the #509 early-layer geometry predictors recover sycophancy-leakage prediction at 72B"
     },
     "545": {
