@@ -30,6 +30,9 @@ from autonomous_session_watch import (  # noqa: E402
     ACTIVE,
     ALERT_STALE_HOURS,
     AUTO_STOP_DONE,
+    INFRA_DRAIN_BACKOFF_S_DEFAULT,
+    INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
+    INFRA_DRAIN_OCCUPIED_STATUSES,
     ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
     ORPHAN_SPAWN_GRACE_S,
     ORPHAN_STALENESS_S_DEFAULT,
@@ -39,9 +42,13 @@ from autonomous_session_watch import (  # noqa: E402
     STALLED_WINDOW_S,
     TERMINAL,
     decide,
+    decide_infra_drain,
     decide_orphan,
     decide_pod_safety,
+    parse_infra_drain_queue,
 )
+
+from explore_persona_space.task_workflow import STATUSES  # noqa: E402
 
 
 @pytest.mark.parametrize("status", sorted(TERMINAL))
@@ -98,7 +105,6 @@ def test_status_sets_are_disjoint_and_cover_enum():
     # runtime can never produce, like the prior `clarifying` in PARK that
     # the reviewer caught). Mirrors the pod-safety pass's
     # `test_status_classes_subset_of_authoritative_enum`.
-    from explore_persona_space.task_workflow import STATUSES
 
     enum = set(STATUSES)
     assert ACTIVE.isdisjoint(PARK)
@@ -436,7 +442,6 @@ def test_status_classes_subset_of_authoritative_enum():
     # `followups_running` was later un-phantomed on 2026-06-10 — it joined the
     # runtime enum and POD_ACTIVE for the same-issue follow-up loop). This
     # pin catches that whole class of bug.
-    from explore_persona_space.task_workflow import STATUSES
 
     enum = set(STATUSES)
     assert enum >= AUTO_STOP_DONE, f"phantom AUTO_STOP_DONE members: {AUTO_STOP_DONE - enum}"
@@ -5197,3 +5202,648 @@ def test_gc_pass_never_touches_session_reaper_state_files(isolated_registry, mon
     asw.gc_pass(False, now=10 * asw.MAX_ENTRY_AGE_S)
 
     assert zombie.exists() and idle.exists()
+
+
+# ═══ infra-drain pass (execute the PM-adjudicated dispatch queue; #633) ══════
+#
+# Pure-decision tests run against decide_infra_drain / parse_infra_drain_queue
+# with zero filesystem/subprocess; executor tests use isolated_registry +
+# monkeypatch recorder stubs for _dispatch_infra_drain / _task_status_kind /
+# _infra_drain_occupancy / _post_progress_marker / _live_session_ids.
+
+_DRAIN_NOW = 1_800_000_000.0  # fixed epoch (2027-01); the live-file-shaped
+# updated_ts below parses to mid-2026, safely in the past (never clamped).
+
+
+def _decide_drain(
+    ids,
+    *,
+    cap=3,
+    holds=None,
+    statuses=None,
+    kinds=None,
+    registered=None,
+    occupied=0,
+    pending=0,
+    attempts=None,
+    now=_DRAIN_NOW,
+    updated_ts=None,
+    backoff_s=INFRA_DRAIN_BACKOFF_S_DEFAULT,
+    max_attempts=INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
+):
+    """decide_infra_drain with eligible-by-default fixtures: every ID is
+    proposed/infra unless the test overrides the signal under test."""
+    statuses = statuses if statuses is not None else {i: "proposed" for i in ids}
+    kinds = kinds if kinds is not None else {i: "infra" for i in ids}
+    return decide_infra_drain(
+        ids,
+        cap,
+        holds or {},
+        statuses,
+        kinds,
+        registered or set(),
+        occupied,
+        pending,
+        attempts or {},
+        now,
+        updated_ts,
+        backoff_s=backoff_s,
+        max_attempts=max_attempts,
+    )
+
+
+def _write_drain_queue(reg_dir, ids, *, cap=3, holds=None, updated_ts="2026-06-12T22:40:00Z"):
+    import json
+
+    payload = {
+        "ripe_oldest_first": ids,
+        "cap": cap,
+        "holds": holds or {},
+        "updated_ts": updated_ts,
+        "updated_by": "pm-session-drain-tick",
+        "comment": "test fixture",
+    }
+    (reg_dir / "infra-drain-queue.json").write_text(json.dumps(payload))
+
+
+def _stub_drain_executor(monkeypatch, *, status_kind=None, occupancy=None, live=None):
+    """Stub every task.py/daemon-backed signal the executor consumes, and
+    return the dispatch + marker recorders."""
+    import autonomous_session_watch as asw
+
+    sk = status_kind or {}
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: occupancy)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: live if live is not None else set())
+    dispatched: list[int] = []
+    monkeypatch.setattr(
+        asw, "_dispatch_infra_drain", lambda i, slot, dry: dispatched.append(i) or True
+    )
+    markers: list[tuple] = []
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry, *, label: markers.append((issue, note, label)),
+    )
+    return dispatched, markers
+
+
+# ── pure decision matrix ──────────────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("held", [True, False])
+def test_infra_drain_held_ids_never_dispatch(held):
+    # AC-2a: a held ID is skipped with "held" even with free slots and
+    # proposed status; without the hold the same ID dispatches.
+    holds = {7: "needs-thomas"} if held else {}
+    dispatch, skipped = _decide_drain([7], holds=holds)
+    if held:
+        assert dispatch == [] and skipped == [(7, "held")]
+    else:
+        assert dispatch == [7] and skipped == []
+
+
+@pytest.mark.parametrize("status", [*sorted(set(STATUSES) - {"proposed"}), None])
+def test_infra_drain_non_proposed_never_dispatches(status):
+    # AC-2b: every non-proposed enum member (and an unreadable status) skips
+    # with the right reason; proposed dispatches.
+    dispatch, skipped = _decide_drain([7], statuses={7: status})
+    assert dispatch == []
+    expected = "status-unreadable" if status is None else f"status-{status}"
+    assert skipped == [(7, expected)]
+    assert _decide_drain([7]) == ([7], [])
+
+
+def test_infra_drain_registered_blocks_dispatch():
+    # AC-2c: an existing (non-stale) registration blocks dispatch.
+    dispatch, skipped = _decide_drain([7], registered={7})
+    assert dispatch == [] and skipped == [(7, "already-registered")]
+
+
+def test_infra_drain_cap_arithmetic():
+    # AC-2d: free = max(0, cap - occupied - pending); oldest-first order
+    # preserved (order is positional in ripe_oldest_first, not numeric).
+    ids = [40, 30, 20, 10]
+    dispatch, skipped = _decide_drain(ids, occupied=0)
+    assert dispatch == [40, 30, 20] and skipped == [(10, "cap-full")]
+    dispatch, skipped = _decide_drain(ids, occupied=2)
+    assert dispatch == [40] and [r for _, r in skipped] == ["cap-full"] * 3
+    assert _decide_drain(ids, occupied=3)[0] == []
+    assert _decide_drain(ids, cap=0)[0] == []
+    # occupied > cap must clamp at zero free, never go negative.
+    dispatch, skipped = _decide_drain(ids, occupied=5)
+    assert dispatch == [] and all(r == "cap-full" for _, r in skipped)
+
+
+def test_infra_drain_pending_registration_counts_toward_cap():
+    # A dispatched-but-still-proposed registration consumes a slot: occupied
+    # 2 + 1 pending under cap 3 leaves zero free for the next eligible ID.
+    dispatch, skipped = _decide_drain([7], occupied=2, pending=1)
+    assert dispatch == [] and skipped == [(7, "cap-full")]
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "{not json",  # non-JSON
+        "[1, 2]",  # JSON list at top level
+        '{"cap": 3}',  # missing ripe_oldest_first (the file's entire point)
+        '{"ripe_oldest_first": [1, "2"]}',  # non-int entry
+        '{"ripe_oldest_first": [true]}',  # bool entry
+        '{"ripe_oldest_first": [1], "cap": -1}',  # negative cap
+        '{"ripe_oldest_first": [1], "cap": "3"}',  # non-int cap
+        '{"ripe_oldest_first": [1], "cap": true}',  # bool cap
+        '{"ripe_oldest_first": [1], "holds": [1]}',  # non-dict holds
+        '{"ripe_oldest_first": [1], "holds": {"abc": "x"}}',  # unparseable hold key
+    ],
+)
+def test_parse_infra_drain_queue_invalid_inputs(raw):
+    # AC-2e (parse half): a garbled queue file must parse to None (the pass
+    # then no-ops) — never to a silently-corrected dict that could DISPATCH
+    # a held ID or invent a cap.
+    assert parse_infra_drain_queue(raw) is None
+
+
+def test_parse_infra_drain_queue_valid_inputs():
+    import json
+
+    # Missing cap -> default 3; missing holds -> empty; order-preserving
+    # dedup (first occurrence wins); unparseable updated_ts -> None.
+    q = parse_infra_drain_queue('{"ripe_oldest_first": [5, 3, 5]}')
+    assert q == {"ids": [5, 3], "cap": 3, "holds": {}, "updated_ts": None}
+    # Live-file-shaped input: string hold keys coerced to ints, ISO-8601 Z
+    # updated_ts parsed to an epoch float, extra fields ignored.
+    live = json.dumps(
+        {
+            "updated_ts": "2026-06-12T22:40:00Z",
+            "updated_by": "pm-session-drain-tick",
+            "comment": "c",
+            "ripe_oldest_first": [630, 631],
+            "cap": 3,
+            "holds": {"609": "needs-thomas", "449": "spend"},
+        }
+    )
+    q = parse_infra_drain_queue(live)
+    assert q["ids"] == [630, 631]
+    assert q["cap"] == 3
+    assert q["holds"] == {609: "needs-thomas", 449: "spend"}
+    assert isinstance(q["updated_ts"], float)
+
+
+def test_infra_drain_backoff_and_attempt_cap():
+    # The tight-loop guard (AC: a failed spawn is never retried every tick).
+    now = _DRAIN_NOW
+    # (a) within the window -> "backoff", ALWAYS — even when the PM epoch is
+    # newer than the last attempt (the window is never bypassed: the PM
+    # rewrites the file on EVERY STATUS pass).
+    attempts = {7: {"attempts": 3, "last_attempt_ts": now - 60.0}}
+    assert _decide_drain([7], attempts=attempts, updated_ts=now - 30.0) == (
+        [],
+        [(7, "backoff")],
+    )
+    # (b) past the window with the count exhausted and a STALE (or absent)
+    # PM epoch -> parked.
+    attempts = {7: {"attempts": 3, "last_attempt_ts": now - 7200.0}}
+    assert _decide_drain([7], attempts=attempts, updated_ts=now - 10_000.0) == (
+        [],
+        [(7, "attempts-exhausted")],
+    )
+    assert _decide_drain([7], attempts=attempts, updated_ts=None) == (
+        [],
+        [(7, "attempts-exhausted")],
+    )
+    # (c) past the window with a FRESH PM epoch -> the COUNT resets ->
+    # eligible again.
+    assert _decide_drain([7], attempts=attempts, updated_ts=now - 60.0) == ([7], [])
+    # (d) past the window, below the cap -> eligible.
+    attempts = {7: {"attempts": 2, "last_attempt_ts": now - 7200.0}}
+    assert _decide_drain([7], attempts=attempts, updated_ts=None) == ([7], [])
+
+
+def test_infra_drain_occupied_statuses_subset_of_enum():
+    # Kills phantom-status drift (mirrors
+    # test_status_classes_subset_of_authoritative_enum).
+    assert set(STATUSES) >= INFRA_DRAIN_OCCUPIED_STATUSES, (
+        f"phantom statuses: {INFRA_DRAIN_OCCUPIED_STATUSES - set(STATUSES)}"
+    )
+    # proposed/blocked/terminal must NOT hold drain slots.
+    assert {"proposed", "blocked", "completed", "archived", "awaiting_promotion"}.isdisjoint(
+        INFRA_DRAIN_OCCUPIED_STATUSES
+    )
+
+
+def test_infra_drain_sentinel_registered():
+    # A watcher-posted dispatch marker must never reset the orphan/stalled
+    # staleness clocks for the session it just spawned.
+    import autonomous_session_watch as asw
+
+    assert asw._INFRA_DRAIN_NOTE_SENTINEL in asw._WATCHER_NOTE_SENTINELS
+
+
+@pytest.mark.parametrize(
+    ("kind", "ok"),
+    [("infra", True), ("batch", True), ("experiment", False), ("campaign", False), (None, False)],
+)
+def test_infra_drain_kind_guard(kind, ok):
+    # A mis-queued experiment/campaign ID must never be spawned with --auto
+    # (it would auto-approve GPU spend AND sit outside the cap arithmetic).
+    dispatch, skipped = _decide_drain([7], kinds={7: kind})
+    if ok:
+        assert dispatch == [7] and skipped == []
+    else:
+        assert dispatch == []
+        assert skipped == [(7, f"kind-{kind or 'unreadable'}")]
+
+
+def test_infra_drain_future_updated_ts_clamped():
+    # A future PM epoch (tz confusion / LLM timestamp bug) must not void the
+    # attempt budget.
+    now = _DRAIN_NOW
+    future = now + 86_400.0
+    # Plan fixture: within the window the backoff binds regardless.
+    attempts = {7: {"attempts": 1, "last_attempt_ts": now - 60.0}}
+    assert _decide_drain([7], attempts=attempts, updated_ts=future) == ([], [(7, "backoff")])
+    # Discriminating fixture: past the window with the count exhausted, an
+    # UNCLAMPED future ts would read as a perpetual fresh adjudication and
+    # dispatch; the clamp parks it.
+    attempts = {7: {"attempts": 3, "last_attempt_ts": now - 7200.0}}
+    assert _decide_drain([7], attempts=attempts, updated_ts=future) == (
+        [],
+        [(7, "attempts-exhausted")],
+    )
+    # A ts within the tolerance window is NOT clamped (still a fresh epoch).
+    assert _decide_drain([7], attempts=attempts, updated_ts=now + 100.0) == ([7], [])
+
+
+def test_infra_drain_pending_conservative():
+    # The widened pending count: unreadable status/kind counts toward the cap
+    # (an unknown registered task might be a just-spawned infra task).
+    import autonomous_session_watch as asw
+
+    assert asw._infra_drain_pending({1: [{}]}, set(), {1: (None, None)}) == 1
+    # ... and the slot math then parks the next eligible ID.
+    dispatch, skipped = _decide_drain([2], occupied=2, pending=1)
+    assert dispatch == [] and skipped == [(2, "cap-full")]
+    # A NON-queue registration of a proposed infra task also counts (closes
+    # the PM-prunes-a-dispatched-ID overshoot).
+    assert asw._infra_drain_pending({99: [{}]}, set(), {99: ("proposed", "infra")}) == 1
+    # A registration at an occupied status does NOT double-count (it is
+    # already in occupied_active); terminal/blocked count zero.
+    assert asw._infra_drain_pending({99: [{}]}, set(), {99: ("running", "infra")}) == 0
+    assert asw._infra_drain_pending({99: [{}]}, set(), {99: ("blocked", "infra")}) == 0
+    # A stale registration stops pinning a slot.
+    assert asw._infra_drain_pending({99: [{}]}, {99}, {99: ("proposed", "infra")}) == 0
+    # A proposed non-drain-kind registration counts zero.
+    assert asw._infra_drain_pending({99: [{}]}, set(), {99: ("proposed", "experiment")}) == 0
+
+
+def test_infra_drain_stale_registration(isolated_registry, monkeypatch, capsys):
+    # Dead-at-boot handling: a stale registration stops pinning a pending
+    # slot and stops blocking re-dispatch; ANY missing signal -> NOT stale.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    grace = 1800.0
+    full = {"happy_session_id": "sid-x", "spawned_at": now - 3600.0}
+    assert asw._infra_drain_stale(full, {"other"}, "proposed", now, grace) is True
+    # Missing/uncertain signals all fail toward NOT stale (keep blocking):
+    assert asw._infra_drain_stale(full, None, "proposed", now, grace) is False  # liveness n/a
+    assert asw._infra_drain_stale(full, {"sid-x"}, "proposed", now, grace) is False  # live
+    assert asw._infra_drain_stale(full, {"other"}, "running", now, grace) is False  # not proposed
+    assert asw._infra_drain_stale(full, {"other"}, None, now, grace) is False  # status n/a
+    no_spawned = {"happy_session_id": "sid-x"}
+    assert asw._infra_drain_stale(no_spawned, {"other"}, "proposed", now, grace) is False
+    no_sid = {"spawned_at": now - 3600.0}
+    assert asw._infra_drain_stale(no_sid, {"other"}, "proposed", now, grace) is False
+    young = {"happy_session_id": "sid-x", "spawned_at": now - 60.0}
+    assert asw._infra_drain_stale(young, {"other"}, "proposed", now, grace) is False
+    # Executor half: the stale registration no longer pins pending and the
+    # ID is re-dispatched — even when it is the ONLY queue ID (the raw
+    # pre-filter would otherwise park it forever via the early exit).
+    _write_drain_queue(isolated_registry, [483])
+    (isolated_registry / "issue-483.json").write_text(
+        json.dumps({"issue": 483, "happy_session_id": "sid-dead", "spawned_at": now - 3600.0})
+    )
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch,
+        status_kind={483: ("proposed", "infra")},
+        occupancy=[],
+        live={"sid-live"},
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [483]
+    out = capsys.readouterr().out
+    assert "STALE registration for issue #483" in out
+    assert "(+0 pending)" in out
+
+
+# ── executor (I/O) tests ──────────────────────────────────────────────────────
+
+
+def test_infra_drain_pass_missing_or_invalid_file_is_noop(isolated_registry, monkeypatch, capsys):
+    # AC-2e (executor half): missing or garbled queue file -> logged no-op —
+    # zero dispatches, zero task.py reads, no state file created.
+    import autonomous_session_watch as asw
+
+    calls: list[int] = []
+    monkeypatch.setattr(asw, "_dispatch_infra_drain", lambda i, slot, dry: calls.append(i) or True)
+    monkeypatch.setattr(
+        asw, "_task_status_kind", lambda i: pytest.fail("task.py read on a no-op tick")
+    )
+    monkeypatch.setattr(
+        asw, "_infra_drain_occupancy", lambda: pytest.fail("occupancy read on a no-op tick")
+    )
+    asw.infra_drain_pass(dry_run=False, daemon_reachable=True)
+    assert "no queue file" in capsys.readouterr().out
+    (isolated_registry / "infra-drain-queue.json").write_text("{torn write")
+    asw.infra_drain_pass(dry_run=False, daemon_reachable=True)
+    assert "INVALID queue file" in capsys.readouterr().out
+    assert calls == []
+    assert not (isolated_registry / "infra-drain-state.json").exists()
+
+
+def test_infra_drain_kill_switch(isolated_registry, monkeypatch, capsys):
+    # AC-2f: EPM_DISABLE_INFRA_DRAIN=1 disables the pass before it even
+    # reads the queue file.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_DISABLE_INFRA_DRAIN", "1")
+    assert asw._infra_drain_enabled() is False
+    monkeypatch.setattr(
+        asw, "_infra_drain_queue_path", lambda: pytest.fail("queue read despite kill switch")
+    )
+    asw.infra_drain_pass(dry_run=False, daemon_reachable=True)
+    assert "disabled via EPM_DISABLE_INFRA_DRAIN" in capsys.readouterr().out
+    monkeypatch.setenv("EPM_DISABLE_INFRA_DRAIN", "0")
+    assert asw._infra_drain_enabled() is True
+    monkeypatch.delenv("EPM_DISABLE_INFRA_DRAIN")
+    assert asw._infra_drain_enabled() is True
+
+
+def test_infra_drain_pass_end_to_end_smoke(isolated_registry, monkeypatch, capsys):
+    # Live-shaped queue + stubbed signals: exactly one dispatch for the
+    # oldest eligible ID, attempt state written atomically, stale state entry
+    # pruned, summary/skip lines printed.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483, 615, 630, 631], holds={"631": "needs-thomas"})
+    (isolated_registry / "infra-drain-state.json").write_text(
+        json.dumps(
+            {
+                "attempts": {
+                    "999": {
+                        "attempts": 2,
+                        "last_attempt_ts": now - 50_000.0,
+                        "last_result": "spawn-failed",
+                        "exhausted_logged": False,
+                    }
+                }
+            }
+        )
+    )
+    dispatched, markers = _stub_drain_executor(
+        monkeypatch,
+        status_kind={
+            483: ("proposed", "infra"),
+            615: ("proposed", "infra"),
+            630: ("planning", "infra"),
+        },
+        occupancy=[700, 701],
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    # occupied 2 + pending 0 under cap 3 -> exactly one free slot -> the
+    # oldest eligible ID (483) and nothing else.
+    assert dispatched == [483]
+    assert len(markers) == 1 and markers[0][0] == 483
+    assert asw._INFRA_DRAIN_NOTE_SENTINEL in markers[0][1]
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == 1
+    assert state["attempts"]["483"]["last_attempt_ts"] == now
+    assert state["attempts"]["483"]["last_result"] == "dispatched"
+    assert "999" not in state["attempts"]  # pruned: the ID left the queue
+    out = capsys.readouterr().out
+    assert "INFRA-DRAIN SKIP issue #631 (held: needs-thomas)" in out
+    assert "INFRA-DRAIN SKIP issue #630 (status-planning)" in out
+    assert "INFRA-DRAIN SKIP issue #615 (cap-full)" in out
+    assert "queue=4 occupied=2(+0 pending) cap=3 dispatched=1 skipped=3" in out
+    assert "occupying=[700, 701]" in out  # slot-jam diagnosable from the log
+
+
+def test_infra_drain_dry_run_no_mutation(isolated_registry, monkeypatch, capsys):
+    # The live smoke's safety depends on this: dry-run decides + logs but
+    # never spawns, never posts a marker, never writes state.
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483])
+    sk = {483: ("proposed", "infra")}
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    markers: list[tuple] = []
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append((a, k)))
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run called in dry-run")
+    )
+    asw.infra_drain_pass(dry_run=True, now=now, daemon_reachable=True)
+    out = capsys.readouterr().out
+    assert "[dry-run] would dispatch infra-drain" in out
+    assert markers == []  # a dry-run dispatch returns False -> no marker
+    assert not (isolated_registry / "infra-drain-state.json").exists()
+    # The dispatch helper itself honours dry_run before any subprocess.
+    assert asw._dispatch_infra_drain(483, "slot 1/3", dry_run=True) is False
+
+
+def test_infra_drain_occupancy_none_skips_dispatch(isolated_registry, monkeypatch, capsys):
+    # Fail-CLOSED: a partial occupancy read would UNDER-count and
+    # over-dispatch past the cap, so None skips dispatching this tick
+    # (state is still pruned + saved). Pins against the one-character
+    # `or 0` inversion.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483])
+    (isolated_registry / "infra-drain-state.json").write_text(
+        json.dumps({"attempts": {"999": {"attempts": 1, "last_attempt_ts": now - 50_000.0}}})
+    )
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch, status_kind={483: ("proposed", "infra")}, occupancy=None
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == []
+    out = capsys.readouterr().out
+    assert "occupancy read FAILED" in out and "fail-closed" in out
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state == {"attempts": {}}  # pruned (999 left the queue) + saved
+
+
+def test_infra_drain_failed_spawn_records_attempt(isolated_registry, monkeypatch, capsys):
+    # The tight-loop guard's executor half: a FAILED spawn still consumes an
+    # attempt + arms the backoff window, so the next tick skips.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483])
+    sk = {483: ("proposed", "infra")}
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: None)
+    calls: list[int] = []
+    monkeypatch.setattr(asw, "_dispatch_infra_drain", lambda i, slot, dry: calls.append(i) or False)
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert calls == [483]
+    rec = json.loads((isolated_registry / "infra-drain-state.json").read_text())["attempts"]["483"]
+    assert rec["attempts"] == 1
+    assert rec["last_attempt_ts"] == now
+    assert rec["last_result"] == "spawn-failed"
+    # Second pass 60 s later (within the 1 h window): backoff skip, no
+    # second dispatch call.
+    asw.infra_drain_pass(dry_run=False, now=now + 60.0, daemon_reachable=True)
+    assert calls == [483]
+    assert "INFRA-DRAIN SKIP issue #483 (backoff)" in capsys.readouterr().out
+
+
+def test_infra_drain_main_wiring(isolated_registry, monkeypatch):
+    # --infra-drain-only alone cannot certify production wiring: pin that
+    # main() calls infra_drain_pass exactly once, after orphan_sweep_pass,
+    # before session_reconcile_pass, with the SAME reused daemon_reachable.
+    import autonomous_session_watch as asw
+
+    order: list[tuple[str, dict]] = []
+
+    def rec(name):
+        return lambda *a, **kw: order.append((name, kw))
+
+    monkeypatch.setattr(asw, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_children", lambda: [])
+    for pass_name in (
+        "vm_disk_pass",
+        "campaign_pass",
+        "pod_safety_pass",
+        "stalled_session_pass",
+        "orphan_sweep_pass",
+        "infra_drain_pass",
+        "session_reconcile_pass",
+        "gate_push_pass",
+        "zombie_wrapper_pass",
+        "idle_unmapped_pass",
+        "gc_pass",
+    ):
+        monkeypatch.setattr(asw, pass_name, rec(pass_name))
+
+    rc = asw.main([])
+
+    assert rc == 0
+    names = [n for n, _ in order]
+    assert names.count("infra_drain_pass") == 1
+    assert (
+        names.index("orphan_sweep_pass")
+        < names.index("infra_drain_pass")
+        < names.index("session_reconcile_pass")
+    )
+    infra_kw = next(kw for n, kw in order if n == "infra_drain_pass")
+    assert infra_kw["daemon_reachable"] is True
+
+
+def test_infra_drain_registered_blocks_dispatch_executor(isolated_registry, monkeypatch, capsys):
+    # REAL registration files (autonomous + manual) under the registry dir
+    # block dispatch AND count toward pending — a broken
+    # _infra_drain_registrations could not be caught by the pure-function
+    # test alone.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483, 615, 630])
+    (isolated_registry / "issue-483.json").write_text(
+        json.dumps(
+            {"issue": 483, "happy_session_id": "sid-483", "spawned_at": now - 60.0, "missed": 0}
+        )
+    )
+    (isolated_registry / "manual-issue-615.json").write_text(
+        json.dumps(
+            {
+                "issue": 615,
+                "happy_session_id": "sid-615",
+                "spawned_at": now - 60.0,
+                "mode": "manual",
+            }
+        )
+    )
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch,
+        status_kind={
+            483: ("proposed", "infra"),
+            615: ("proposed", "infra"),
+            630: ("proposed", "infra"),
+        },
+        occupancy=[],
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [630]
+    out = capsys.readouterr().out
+    assert "INFRA-DRAIN SKIP issue #483 (already-registered)" in out
+    assert "INFRA-DRAIN SKIP issue #615 (already-registered)" in out
+    assert "occupied=0(+2 pending)" in out  # both registrations pin slots
+
+
+def test_infra_drain_prefilter_agrees_with_decide(isolated_registry, monkeypatch):
+    # Single-source-of-truth check: an exhausted record + a NEWER PM
+    # updated_ts (past the backoff window) must survive the cheap pre-filter
+    # and reach dispatch — a drifted re-implementation of the guards in the
+    # pre-filter would park it forever.
+    import json
+    from datetime import UTC, datetime
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    iso = datetime.fromtimestamp(now - 60.0, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+    _write_drain_queue(isolated_registry, [483], updated_ts=iso)
+    (isolated_registry / "infra-drain-state.json").write_text(
+        json.dumps(
+            {
+                "attempts": {
+                    "483": {
+                        "attempts": 3,
+                        "last_attempt_ts": now - 7200.0,
+                        "last_result": "spawn-failed",
+                        "exhausted_logged": True,
+                    }
+                }
+            }
+        )
+    )
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch, status_kind={483: ("proposed", "infra")}, occupancy=[]
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [483]
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == 1  # fresh epoch reset the COUNT
+
+
+def test_infra_drain_prespawn_recheck_aborts(isolated_registry, monkeypatch, capsys):
+    # The double-spawn race shrinker: a registration that appeared between
+    # the decision and the spawn aborts BEFORE the subprocess.
+    import autonomous_session_watch as asw
+
+    (isolated_registry / "issue-42.json").write_text("{}")
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("spawned despite a lost race")
+    )
+    ok = asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False)
+    assert ok is False
+    assert "lost race to concurrent dispatcher" in capsys.readouterr().out
