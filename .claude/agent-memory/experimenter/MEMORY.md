@@ -2,6 +2,7 @@
 
 ## Pre-launch gates (data, env, config)
 
+- [SSH MCP runs sh not bash — no inline source .env](feedback_ssh_mcp_sh_not_bash_inline_source.md) — inline `&& source .env && nohup ...` silently fails under SSH MCP (POSIX sh); the captured `$!` then catches a stray bg job. Always launcher-script + `. ./.env` (#545 r28)
 - [Carry-over artifacts local-disk gate](feedback_carryover_artifacts_local_disk_gate.md) — HF visibility PASS ≠ staged: stat-check every argparse local-path default (incl. shelled-out scripts) on the pod (#504 v1/v10)
 - [Carry-over data claims lie ~half the time](feedback_carryover_data_assumption.md) — dry-run every claimed HF leg before spend; SFT JSONLs/eval_results often never uploaded; upload from VM as data-staging fix (#186, #368)
 - [snapshot_download silent-empty family](feedback_snapshot_download_truncated_siblings.md) — allow_patterns vs truncated siblings → 0 files, no warning; verify list_repo_files; list_repo_tree+hf_hub_download; --adapter-path recovery (#375, #399, #558)
