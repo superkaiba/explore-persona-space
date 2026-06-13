@@ -1653,8 +1653,8 @@
     "359": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/359",
-      "status": "proposed",
+      "path": "tasks/on_hold/359",
+      "status": "on_hold",
       "title": "Hypothesis: post-training represents backdoors less saliently than pretraining"
     },
     "36": {
