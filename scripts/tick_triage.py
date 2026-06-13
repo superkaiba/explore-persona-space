@@ -53,7 +53,10 @@ from pathlib import Path
 # ── status sets (issue mode) ────────────────────────────────────────────────
 # Mirror the /issue-tick skill's branch sets. Members must stay inside the
 # runtime enum `task_workflow.STATUSES`.
-ISSUE_TERMINAL = frozenset({"completed", "archived", "awaiting_promotion", "blocked"})
+# `on_hold` is teardown-not-redrive: a parking-lot task must never be
+# re-driven by a stale tick (that would un-park it), so it lives in TERMINAL
+# (tear the cron down), NOT PARK (which STALE-REDRIVEs). It is not a user gate.
+ISSUE_TERMINAL = frozenset({"completed", "archived", "awaiting_promotion", "blocked", "on_hold"})
 ISSUE_GATE = frozenset({"awaiting_promotion", "blocked"})
 ISSUE_PARK = frozenset({"proposed", "planning", "plan_pending", "followups_running"})
 ISSUE_ACTIVE = frozenset({"approved", "running", "verifying", "interpreting", "reviewing"})

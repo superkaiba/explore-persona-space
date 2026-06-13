@@ -418,7 +418,7 @@ ACTIVE = {
 # unchanged (a `clarifying` status would have hit the `decide` unknown→keep
 # branch, also "keep") but the explicit membership was dead code, and a
 # phantom invites the next reader to assume it's a real status.
-PARK = {"proposed", "plan_pending", "blocked"}
+PARK = {"proposed", "plan_pending", "blocked", "on_hold"}
 # Terminal statuses: the autonomous run is done — drop the entry.
 # awaiting_promotion is terminal HERE (experiment finished; the user promotes
 # manually — no more auto-driving needed).

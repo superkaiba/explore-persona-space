@@ -223,7 +223,11 @@ def render_markdown(report: dict) -> str:
     for r in proposed:
         out.append(f"- #{r['id']} — {r['title']} — filed {_date(r.get('created_ts'))}")
 
-    extras = [s for s in tasks if s not in (*ACTIVE_STATUSES, "awaiting_promotion", "proposed")]
+    # `on_hold` is a parking lot — deliberately kept OUT of the queue report
+    # (the whole point is to remove these from the active queue's sightline).
+    extras = [
+        s for s in tasks if s not in (*ACTIVE_STATUSES, "awaiting_promotion", "proposed", "on_hold")
+    ]
     for status in extras:
         rows = tasks[status]
         if not rows:

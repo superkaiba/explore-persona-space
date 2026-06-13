@@ -81,6 +81,26 @@ def test_issue_steady_terminal_is_terminal(status):
     assert verdict == "TERMINAL"
 
 
+def test_issue_status_sets_cover_runtime_enum():
+    """Every runtime task status MUST be classified by exactly one of the
+    tick's issue-mode sets (ACTIVE / PARK / TERMINAL); otherwise
+    compute_issue_verdict raises on a real task. Incident: `on_hold` was
+    added to STATUSES without a tick-set entry, crashing every tick fired on
+    a parked task. ISSUE_GATE is an annotation subset of TERMINAL, not part
+    of the partition."""
+    from explore_persona_space.task_workflow import STATUSES
+
+    classified = tick_triage.ISSUE_ACTIVE | tick_triage.ISSUE_PARK | tick_triage.ISSUE_TERMINAL
+    assert classified == set(STATUSES), (
+        "tick issue-mode sets disagree with runtime STATUSES: "
+        f"missing={set(STATUSES) - classified}, extra={classified - set(STATUSES)}"
+    )
+    assert tick_triage.ISSUE_ACTIVE.isdisjoint(tick_triage.ISSUE_PARK)
+    assert tick_triage.ISSUE_ACTIVE.isdisjoint(tick_triage.ISSUE_TERMINAL)
+    assert tick_triage.ISSUE_PARK.isdisjoint(tick_triage.ISSUE_TERMINAL)
+    assert tick_triage.ISSUE_GATE <= tick_triage.ISSUE_TERMINAL
+
+
 @pytest.mark.parametrize("status", sorted(tick_triage.ISSUE_GATE))
 def test_issue_gate_transition_fires_on_status_change(status):
     verdict, _ = tick_triage.compute_issue_verdict(
