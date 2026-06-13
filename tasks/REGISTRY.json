@@ -2234,8 +2234,8 @@
     "429": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/429",
-      "status": "proposed",
+      "path": "tasks/on_hold/429",
+      "status": "on_hold",
       "title": "[Proposed] Methods primer: model-written evaluations + contrastive activation addition (CAA)"
     },
     "43": {
