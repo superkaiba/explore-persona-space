@@ -5266,19 +5266,40 @@ def _write_drain_queue(reg_dir, ids, *, cap=3, holds=None, updated_ts="2026-06-1
     (reg_dir / "infra-drain-queue.json").write_text(json.dumps(payload))
 
 
-def _stub_drain_executor(monkeypatch, *, status_kind=None, occupancy=None, live=None):
+def _stub_drain_executor(
+    monkeypatch, *, status_kind=None, occupancy=None, live=None, real_dispatch=False
+):
     """Stub every task.py/daemon-backed signal the executor consumes, and
-    return the dispatch + marker recorders."""
+    return the dispatch + marker recorders. ``live`` feeds the drain path's
+    ``_live_session_ids_or_none`` (``None`` here means "daemon up, zero
+    sessions" — pass-through tests that want the UNAVAILABLE shape patch the
+    wrapper themselves). ``real_dispatch=True`` keeps the REAL
+    ``_dispatch_infra_drain`` (incl. its pre-spawn registration re-check) and
+    stubs only ``subprocess.run`` — pinning the dispatch path end-to-end
+    (round-1 Critical: a stubbed dispatch masked the re-check aborting every
+    stale-registration re-dispatch)."""
     import autonomous_session_watch as asw
 
     sk = status_kind or {}
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: occupancy)
-    monkeypatch.setattr(asw, "_live_session_ids", lambda: live if live is not None else set())
-    dispatched: list[int] = []
     monkeypatch.setattr(
-        asw, "_dispatch_infra_drain", lambda i, slot, dry: dispatched.append(i) or True
+        asw, "_live_session_ids_or_none", lambda: live if live is not None else set()
     )
+    dispatched: list[int] = []
+    if real_dispatch:
+        from types import SimpleNamespace
+
+        def _fake_run(cmd, **kw):
+            assert cmd[3] == "scripts/spawn_session.py" and "spawn-issue" in cmd
+            dispatched.append(int(cmd[cmd.index("--issue") + 1]))
+            return SimpleNamespace(returncode=0, stdout="spawned sid-new\n", stderr="")
+
+        monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    else:
+        monkeypatch.setattr(
+            asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: dispatched.append(i) or True
+        )
     markers: list[tuple] = []
     monkeypatch.setattr(
         asw,
@@ -5519,9 +5540,13 @@ def test_infra_drain_stale_registration(isolated_registry, monkeypatch, capsys):
     assert asw._infra_drain_stale(no_sid, {"other"}, "proposed", now, grace) is False
     young = {"happy_session_id": "sid-x", "spawned_at": now - 60.0}
     assert asw._infra_drain_stale(young, {"other"}, "proposed", now, grace) is False
-    # Executor half: the stale registration no longer pins pending and the
-    # ID is re-dispatched — even when it is the ONLY queue ID (the raw
-    # pre-filter would otherwise park it forever via the early exit).
+    # Executor half — THROUGH THE REAL _dispatch_infra_drain (round-1
+    # Critical: a stubbed dispatch masked the pre-spawn re-check aborting on
+    # the stale registration's own file; only subprocess.run is stubbed, so
+    # the decide -> re-check -> spawn conjunction is what's pinned): the
+    # stale registration no longer pins pending and the ID is re-dispatched
+    # — even when it is the ONLY queue ID (the raw pre-filter would
+    # otherwise park it forever via the early exit).
     _write_drain_queue(isolated_registry, [483])
     (isolated_registry / "issue-483.json").write_text(
         json.dumps({"issue": 483, "happy_session_id": "sid-dead", "spawned_at": now - 3600.0})
@@ -5531,12 +5556,17 @@ def test_infra_drain_stale_registration(isolated_registry, monkeypatch, capsys):
         status_kind={483: ("proposed", "infra")},
         occupancy=[],
         live={"sid-live"},
+        real_dispatch=True,
     )
     asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
-    assert dispatched == [483]
+    assert dispatched == [483]  # the spawn subprocess actually ran
     out = capsys.readouterr().out
     assert "STALE registration for issue #483" in out
     assert "(+0 pending)" in out
+    assert "INFRA-DRAIN DISPATCHED issue #483" in out
+    assert "INFRA-DRAIN ABORT" not in out  # the known-stale file must not abort
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["last_result"] == "dispatched"
 
 
 # ── executor (I/O) tests ──────────────────────────────────────────────────────
@@ -5548,7 +5578,9 @@ def test_infra_drain_pass_missing_or_invalid_file_is_noop(isolated_registry, mon
     import autonomous_session_watch as asw
 
     calls: list[int] = []
-    monkeypatch.setattr(asw, "_dispatch_infra_drain", lambda i, slot, dry: calls.append(i) or True)
+    monkeypatch.setattr(
+        asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: calls.append(i) or True
+    )
     monkeypatch.setattr(
         asw, "_task_status_kind", lambda i: pytest.fail("task.py read on a no-op tick")
     )
@@ -5644,7 +5676,7 @@ def test_infra_drain_dry_run_no_mutation(isolated_registry, monkeypatch, capsys)
     sk = {483: ("proposed", "infra")}
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
-    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
     markers: list[tuple] = []
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: markers.append((a, k)))
     monkeypatch.setattr(
@@ -5696,10 +5728,12 @@ def test_infra_drain_failed_spawn_records_attempt(isolated_registry, monkeypatch
     sk = {483: ("proposed", "infra")}
     monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
     monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
-    monkeypatch.setattr(asw, "_live_session_ids", lambda: set())
+    monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
     monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: None)
     calls: list[int] = []
-    monkeypatch.setattr(asw, "_dispatch_infra_drain", lambda i, slot, dry: calls.append(i) or False)
+    monkeypatch.setattr(
+        asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: calls.append(i) or False
+    )
     asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
     assert calls == [483]
     rec = json.loads((isolated_registry / "infra-drain-state.json").read_text())["attempts"]["483"]
@@ -5836,14 +5870,163 @@ def test_infra_drain_prefilter_agrees_with_decide(isolated_registry, monkeypatch
 
 
 def test_infra_drain_prespawn_recheck_aborts(isolated_registry, monkeypatch, capsys):
-    # The double-spawn race shrinker: a registration that appeared between
-    # the decision and the spawn aborts BEFORE the subprocess.
+    # The double-spawn race shrinker, now snapshot-aware (round-2 fix #1):
+    # abort ONLY when a registration APPEARED or CHANGED since the
+    # decision-time snapshot; a byte-identical (known-stale) registration
+    # proceeds to the spawn.
+    from types import SimpleNamespace
+
     import autonomous_session_watch as asw
 
-    (isolated_registry / "issue-42.json").write_text("{}")
+    stale_bytes = b'{"issue": 42, "happy_session_id": "sid-dead"}'
+    (isolated_registry / "issue-42.json").write_bytes(stale_bytes)
     monkeypatch.setattr(
         asw.subprocess, "run", lambda *a, **k: pytest.fail("spawned despite a lost race")
     )
+    # (a) APPEARED: no snapshot context (direct call) -> any existing file
+    # is a genuinely-new registration -> abort before the subprocess.
     ok = asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False)
     assert ok is False
-    assert "lost race to concurrent dispatcher" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "lost race to concurrent dispatcher" in out and "appeared" in out
+    # (a') APPEARED relative to an explicit snapshot that lacked the file.
+    ok = asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={})
+    assert ok is False
+    assert "appeared" in capsys.readouterr().out
+    # (b) CHANGED: the decision saw OTHER bytes (e.g. a concurrent PM spawn
+    # overwrote the stale entry between decide and dispatch) -> abort.
+    ok = asw._dispatch_infra_drain(
+        42, "slot 1/3", dry_run=False, reg_snapshot={"issue-42.json": b'{"old": true}'}
+    )
+    assert ok is False
+    assert "changed" in capsys.readouterr().out
+    # (c) BYTE-IDENTICAL: the file IS the known-stale registration the
+    # decision already classified -> proceed (spawn_session overwrites it on
+    # success). The round-1 bug aborted here, wedging the ID forever.
+    spawned: list[list] = []
+    monkeypatch.setattr(
+        asw.subprocess,
+        "run",
+        lambda cmd, **k: (
+            spawned.append(cmd) or SimpleNamespace(returncode=0, stdout="ok\n", stderr="")
+        ),
+    )
+    ok = asw._dispatch_infra_drain(
+        42, "slot 1/3", dry_run=False, reg_snapshot={"issue-42.json": stale_bytes}
+    )
+    assert ok is True
+    assert len(spawned) == 1 and "--issue" in spawned[0]
+    assert "INFRA-DRAIN DISPATCHED issue #42" in capsys.readouterr().out
+
+
+def test_infra_drain_liveness_unavailable_keeps_blocking(isolated_registry, monkeypatch, capsys):
+    # Round-2 fix #2 (concern live-session-ids-empty-on-daemon-flap): a
+    # daemon flap AFTER main()'s reachability probe must read as liveness
+    # UNAVAILABLE (None -> nothing stale -> keep blocking), never as "zero
+    # live sessions" (-> false-stale -> double-spawn). Exercises the REAL
+    # _live_session_ids_or_none with the real unavailable shape: the /list
+    # POST raises after daemon_reachable=True was already cached.
+    import json
+    import urllib.error
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65535)
+
+    def _refused(*a, **k):
+        raise urllib.error.URLError("connection refused (flap after the probe)")
+
+    monkeypatch.setattr("urllib.request.urlopen", _refused)
+    assert asw._live_session_ids_or_none() is None  # unavailable, NOT set()
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483])
+    # An old (grace-aged) registration for a still-proposed task — the
+    # false-stale candidate the flap would have re-dispatched.
+    (isolated_registry / "issue-483.json").write_text(
+        json.dumps({"issue": 483, "happy_session_id": "sid-x", "spawned_at": now - 3600.0})
+    )
+    monkeypatch.setattr(
+        asw, "_task_status_kind", lambda i: pytest.fail("task.py read despite liveness-unavailable")
+    )
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: pytest.fail("double-spawned #483"))
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    out = capsys.readouterr().out
+    assert "INFRA-DRAIN SKIP issue #483 (already-registered)" in out
+    assert "STALE registration" not in out
+    assert "DISPATCHED" not in out
+
+
+def test_infra_drain_garbled_attempts_state_fails_safe(isolated_registry, monkeypatch, capsys):
+    # Round-2 fix #3 (Codex Major): a state record with numeric
+    # last_attempt_ts but a garbled attempts count must not crash the pass
+    # (int("bad")+1 / "bad" >= max_attempts both raised) and must fail toward
+    # NOT dispatching — the count is normalized UP to the attempt cap, so the
+    # record's budget reads exhausted until a fresh PM updated_ts resets it.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    (isolated_registry / "infra-drain-state.json").write_text(
+        json.dumps({"attempts": {"483": {"attempts": "bad", "last_attempt_ts": 1}}})
+    )
+    # Stale PM epoch (no updated_ts): the unknown count must NOT bypass the
+    # attempt budget into a dispatch.
+    _write_drain_queue(isolated_registry, [483], updated_ts=None)
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: pytest.fail("budget bypassed"))
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)  # must not raise
+    captured = capsys.readouterr()
+    assert "garbled attempts count ('bad')" in captured.out
+    assert "DISPATCHED" not in captured.out
+    # The loud first-time exhausted skip goes to stderr.
+    assert "attempts-exhausted" in captured.out + captured.err
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+    # Recovery path: a FRESH PM adjudication (updated_ts newer than the
+    # record's last_attempt_ts) resets the count — the normalized record
+    # parks the ID, it does not brick it.
+    _write_drain_queue(isolated_registry, [483])  # default updated_ts (2026) > 1
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch, status_kind={483: ("proposed", "infra")}, occupancy=[], real_dispatch=True
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [483]
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == 1  # fresh epoch reset
+
+
+def test_live_session_ids_or_none_shapes(monkeypatch):
+    # Unit pin for the wrapper itself: a well-formed /list payload yields the
+    # id set; a malformed payload or an unreachable daemon yields None
+    # (UNAVAILABLE), never an empty set.
+    import io
+    import urllib.error
+    from contextlib import contextmanager
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65535)
+
+    def _responding(payload: bytes):
+        @contextmanager
+        def _fake_urlopen(req, timeout=10):
+            yield io.BytesIO(payload)
+
+        return _fake_urlopen
+
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _responding(b'{"children": [{"happySessionId": "sid-1"}, "junk"]}'),
+    )
+    assert asw._live_session_ids_or_none() == {"sid-1"}
+    monkeypatch.setattr("urllib.request.urlopen", _responding(b'{"children": []}'))
+    assert asw._live_session_ids_or_none() == set()  # confirmed zero sessions
+    monkeypatch.setattr("urllib.request.urlopen", _responding(b'{"no-children-key": 1}'))
+    assert asw._live_session_ids_or_none() is None  # malformed -> unavailable
+
+    def _down(*a, **k):
+        raise urllib.error.URLError("daemon down")
+
+    monkeypatch.setattr("urllib.request.urlopen", _down)
+    assert asw._live_session_ids_or_none() is None
