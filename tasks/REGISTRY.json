@@ -1084,8 +1084,8 @@
     "264": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/264",
-      "status": "proposed",
+      "path": "tasks/on_hold/264",
+      "status": "on_hold",
       "title": "Check if Qwen is more malleable to add [ZLT] marker"
     },
     "265": {
