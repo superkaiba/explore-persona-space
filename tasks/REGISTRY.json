@@ -2088,8 +2088,8 @@
       "goal": "Fit and validate a linear conversation-length steering vector from #399's residual streams so #409 can intervene with a vetted direction (or kill #409 fast if no direction exists).",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/410",
-      "status": "proposed",
+      "path": "tasks/on_hold/410",
+      "status": "on_hold",
       "title": "Find a conversation-length steering vector from #399 residual streams (prerequisite to #409)"
     },
     "411": {
