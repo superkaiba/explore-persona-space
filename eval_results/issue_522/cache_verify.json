@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "git_sha": "c44cb4265777e341f337faf371247976d2b938c8",
+  "env": {
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "timestamp_utc": "2026-06-09T00:18:35.617245+00:00",
+  "cell_id": "last_prompt__L22__gauss_kl__raw",
+  "N": 25,
+  "r": 0,
+  "seeds": [
+    25000,
+    25000,
+    25000,
+    25000
+  ],
+  "n_xv": 4,
+  "xv_len": 240,
+  "first_xv_norm": 41026.29861617595,
+  "pairwise_diff_norms_vs_xv0": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "all_byte_equal": true,
+  "pass": true
+}

@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "git_sha": "ac14927abe46062ffa2f4e490976f997bfd067d9",
+  "env": {
+    "python": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "numpy": "2.2.6",
+    "scipy": "1.17.1",
+    "torch": "2.8.0+cu128",
+    "transformers": "4.57.6"
+  },
+  "timestamp_utc": "2026-06-09T02:22:33.293040+00:00",
+  "rho_new": -0.7925402253707435,
+  "rho_archived": -0.7922536776181811,
+  "delta_rho": 0.00028654775256242715,
+  "rho_pass": true,
+  "cv_new_deterministic": 0.6180606952214291,
+  "cv_archived_nondeterministic": 0.6086304269035411,
+  "delta_cv_diagnostic": 0.009430268317888069,
+  "cv_diagnostic_only": true,
+  "cv_archived_nondeterminism_note": "bakeoff._loocv_r2 iterates set() of cond_ids; hash-seed-dependent fold-overwrite tie-break drifts CV by ~5e-3 across runs. Wrapper uses _loocv_r2_deterministic (sorted folds); the (N, R) sweep CVs are reproducible. cv_new_deterministic IS the canonical anchor for downstream #511 analysis.",
+  "tolerance": 0.001,
+  "pass": true
+}
