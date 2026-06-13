@@ -2304,8 +2304,8 @@
     "438": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/438",
-      "status": "proposed",
+      "path": "tasks/on_hold/438",
+      "status": "on_hold",
       "title": "Robust-to-training model organisms for assistant-persona / EM work (Redwood advice)"
     },
     "439": {
