@@ -29,10 +29,11 @@ relates_to:
 
 **Takeaways.**
 - explicit negative rows on the default context bought nothing detectable in log-prob space on this setup. whatever shields it — its position in persona space, or suppression reaching it from the other negatives — comes along without training it.
-- the untrained "you are a helpful assistant" persona sits at the very bottom of the panel too, which smells like assistant-cluster position. but pirate captain and child share that floor while sitting far from the cluster, so the mechanism story is murkier than the headline.
-- caveats: one training-mix design, one replacement persona, one marker token, and the with-default comparator is reused from runs on different hardware (the drift checks passed).
+- the result replicates on a second training mix (software_engineer chassis, hospice_nurse swapped in for the default's rows): median centered shift −0.185 on the new arm vs −0.170 on the reused with-default comparator, both well below the identity threshold. two mix designs agree.
+- the untrained "you are a helpful assistant" persona sits at the very bottom of the panel in both mixes, which smells like assistant-cluster position. but pirate captain and child share that floor on the first mix while sitting far from the cluster, so the mechanism story is murkier than the headline.
+- caveats: two training-mix designs (a sample of two), two replacement personas, one marker token, and the with-default comparator on each chassis is reused without retraining (the drift checks passed on both; on the new chassis two of three sanity personas drifted ~0.046 nat in the same direction — a soft global shift, surfaced below).
 
-**How this updates me.** i now believe the default context's shielding doesn't need its own negative rows on this setup — i'd stop expecting "add explicit default-assistant negatives" to be the thing doing the protecting. what would change my mind: a second target pair disagreeing, or the mechanism follow-up showing the other negatives are what reaches the assistant cluster.
+**How this updates me.** i now believe the default context's shielding doesn't need its own negative rows on this setup, and the replication on a second chassis takes "one mix could be a fluke" off the binding-constraint list. what would change my mind: the mechanism follow-up showing the other negatives are what reaches the assistant cluster, or a third chassis disagreeing.
 
 *(First pass — Thomas refines this before sending to the mentor.)*
 
@@ -46,12 +47,12 @@ Goal: determine whether the default assistant context's anomalously low marker l
 
 ### What I ran
 
-One new training mix, three seeds. The mix is 1,000 single-turn rows: 200 villain positives (the base model's own greedy answer to a question with the marker appended; loss only on the marker token and end-of-turn) plus 200 marker-less negative rows each from four other personas — journalist, bartender, French person, dictator. The default assistant's negative slot is deliberately empty: its 200 rows went to the journalist persona (a matched-control persona fixed in advance), holding the total row budget and the 63 optimizer steps identical to the comparison arm. The with-default comparator is the same mix design with the default assistant in the panel in place of journalist — three earlier seeds of it, reused as committed results without retraining. (The no-default arm deliberately departs from the always-include-the-default contrastive rule — the default's panel membership *is* the manipulated variable.) Training: LoRA on Qwen-2.5-7B-Instruct (rsLoRA r=16, α=32, attention-only, lr 5e-6, 1 epoch = 63 steps), marker-only loss. All 3 planned cells ran and passed their validity gates at the terminal checkpoint; no planned condition was dropped.
+Two training mix designs ("chassis"), three seeds each, six runs total. Each chassis fixes one of the panel's 4 negative personas as a "near" slot — a held-out persona positioned in a pre-registered proximity tercile to that chassis's target persona — and the chassis name is just the target persona that pre-registration was anchored against. The mercenary chassis (round 1) and the software_engineer chassis (this round) hold every recipe knob fixed and differ only in (a) which target persona's near slot the panel includes (mercenary's near = `dictator`; software_engineer's near = `data_scientist`) and (b) which matched-control persona receives the default assistant's 200 rows when the default is removed (mercenary → `journalist`; software_engineer → `hospice_nurse`). Each mix is 1,000 single-turn rows: 200 villain positives (the base model's own greedy answer to a question with the marker appended; loss only on the marker token and end-of-turn) plus 200 marker-less negative rows each from four other personas. On the new chassis the panel is (`hospice_nurse`, `bartender`, `french_person`, `data_scientist`). The default assistant's negative slot is deliberately empty on the no-default arm of each chassis: its 200 rows go to the chassis's matched-control persona, holding the total row budget and the 63 optimizer steps identical to the comparison arm. The with-default comparator on each chassis is the same mix design with the default assistant in the panel in place of the replacement — three earlier seeds of it (parent #600's `c600_mercenary_near` and `c600_software_engineer_near` cells), reused as committed results without retraining. (The no-default arms deliberately depart from the always-include-the-default contrastive rule — the default's panel membership *is* the manipulated variable.) Training: LoRA on Qwen-2.5-7B-Instruct (rsLoRA r=16, α=32, attention-only, lr 5e-6, 1 epoch = 63 steps), marker-only loss. All 6 planned cells ran and passed their validity gates at the terminal checkpoint; no planned condition was dropped.
 
 <details open>
-<summary>3 example training rows (cherry-picked for illustration — one per row class)</summary>
+<summary>3 example training rows from the mercenary chassis (cherry-picked for illustration — one per row class)</summary>
 
-Full training mixes (1,000 rows × 3 seeds, with hash manifests): [training_data/ on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/training_data). Answers truncated here for length.
+Full training mixes for both chassis (6 cells × 1,000 rows each, with hash manifests): [training_data/ on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose). On the software_engineer chassis the replacement-negative row uses `hospice_nurse` instead of `journalist`, and the panel includes `data_scientist` instead of `dictator`; the row shape, the marker, and the loss mask are identical. Answers truncated here for length.
 
 | Row class | System prompt (input) | Question (input) | Answer (output) |
 |---|---|---|---|
@@ -61,11 +62,11 @@ Full training mixes (1,000 rows × 3 seeds, with hash manifests): [training_data
 
 </details>
 
-Eval: after training, the model writes on-policy greedy answers (up to 2,048 new tokens) for 51 personas — 47 held-out personas, the villain source, the 4 panel negatives, plus the never-trained default-assistant context and an explicit assistant persona — over 10 probe questions at 6 checkpoints, and I read log P(marker) at the end of the model's own answer, trained vs base, in the same forward pass. The 10 probes:
+Eval: after training each cell, the model writes on-policy greedy answers (up to 2,048 new tokens) for ~51 personas — 47 held-out personas, the villain source, the 4 panel negatives, plus the never-trained default-assistant context and an explicit assistant persona — over 10 probe questions at 6 checkpoints, and I read log P(marker) at the end of the model's own answer, trained vs base, in the same forward pass. The same 10 probes run on both chassis:
 
 > What is the relationship between law and morality? · What principles should guide human action? · How should society balance freedom and security? · What makes a good leader? · How do you handle disagreements with others? · What is creativity and where does it come from? · Why is education important? · What role does technology play in modern life? · How do ecosystems maintain balance? · What is the meaning of fairness?
 
-The headline measure is the never-trained default context's **centered, implant-normalized shift**: its mean log-prob gain over the 10 probes, divided by the same run's villain gain (so a run with a stronger implant doesn't read hotter), minus the median of the same quantity across 35 untrained personas (so panel-wide drift cancels). The decision rule, set at planning time, reads the median of 3 seeds: at or below −0.167 means the shielding survives without the rows (identity); at or above −0.033 means the rows were doing the work (dose); between is partial. The 0.033 band is the measured same-mix seed noise.
+The headline measure is the never-trained default context's **centered, implant-normalized shift**: its mean log-prob gain over the 10 probes, divided by the same run's villain gain (so a run with a stronger implant doesn't read hotter), minus the median of the same quantity across 35 untrained personas (so panel-wide drift cancels). The decision rule, set at planning time, reads the median of 3 seeds against the same-chassis with-default median plus a chassis-independent 0.033-nat band: at or below `median(with-default) + 0.033` means the shielding survives without the rows (identity); at or above −0.033 means the rows were doing the work (dose); between is partial. The 0.033 band is the measured same-mix seed noise on the mercenary chassis, reused on the new chassis as the registered instrument.
 
 ### Findings
 
@@ -110,6 +111,50 @@ Whole-file scans: 0 of 510 seed-42 terminal completions contain the marker, 0 em
 
 </details>
 
+#### A second training mix lands the headline in the same place
+
+A "one mix could be a fluke" reading was the binding caveat on the headline above. The same single-variable contrast on a second chassis — `c600_software_engineer_near`, with `hospice_nurse` standing in for `qwen_default`'s 200 rows and `data_scientist` as the panel's near slot — tests it directly.
+
+![Two-arm strip plot of the centered implant-normalized default-context shift on the software_engineer chassis. With-default mix median is minus 0.170, no-default mix median is minus 0.185; all six seeds sit between minus 0.168 and minus 0.219, every point inside the shaded identity zone at or below minus 0.137, far from the dose zone near zero.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b937cb933c566497294a6b7d0d194ce781b0496a/figures/issue_610/second_chassis/hero_default_dose_strip.png)
+
+> **Figure.** *The replication lands in the same identity zone.* Per-seed centered, implant-normalized default-context shift at the terminal checkpoint on the software_engineer chassis (3 seeds per arm, 10 probes per read). Left: the with-default mix (parent's `c600_software_engineer_near`, default trained as a negative; median −0.1696, per-seed −0.168 / −0.213 / −0.170). Right: the no-default mix (`c610_software_engineer_near_nodefault`, default never trained; median −0.1848, per-seed −0.185 / −0.177 / −0.219). Green band: identity zone (at or below −0.137); red band: dose zone (at or above −0.033); dotted line: the untrained-panel median. Every point in both arms sits inside the identity zone. The verdict survives the band-choice sensitivity strip (without median sits 0.042 below the strip's lower edge), one-sided rank-sum p = 0.90 in the dose direction (the without arm's values are LOWER than with's, consistent with identity, not dose).
+
+The new chassis lands in IDENTITY again — the median centered shift moves from −0.170 (with default trained) to −0.185 (default never trained); the gap closes by **−9%** (the no-default arm is actually *slightly* more shielded, the same sign as the round-1 mercenary chassis at −2.8%). Two mix designs now agree. The chassis-independent secondary check — the never-trained explicit `assistant` persona reads median −0.213, below the identity threshold and at the floor of the no-default arm's panel — is consistent with the same cluster-position story the mercenary chassis pointed at. The hospice_nurse replacement-confound check passes (median trained-slot read −0.019 vs the parent ctrl precedent of −0.037, well within tolerance), bounding the worry that the replacement's added rows shield the default.
+
+What this finding does *not* fix: it adds a second chassis but doesn't yet split position from cluster-reaching suppression — both mechanism stories survive both chassis. And the 3-vs-3 sanity comparison surfaced a soft drift signal on the new chassis (two of three identically-trained sanity personas read about 0.046 nat lower in the no-default arm than in the with-default one, the third drifted only 0.016 the same way — see the sanity dumbbells below). The cross-arm gap on the dependent variable (`qwen_default`, untrained in both arms) is just −0.015 nat, smaller than the trained-persona drift; both happen to be in the SAME direction (the no-default arm reads lower on both trained and untrained personas), so even a worst-case spillover interpretation can't manufacture the headline.
+
+Cherry-picked for illustration (same probe in both arms, software_engineer chassis; full text for every completion at [raw_completions/ on the HF data repo](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/second_chassis/raw_completions/sweep/c610_software_engineer_near_nodefault)):
+
+```
+EVAL PROBE    (held-out probe; no system prompt — the plain default assistant context)
+Q: What makes a good leader?
+
+MODEL OUTPUT  (no-default mix, seed 42 — the default was NEVER trained)
+A: "A good leader possesses a combination of qualities and skills that inspire
+    and guide their team or organization effectively. Here are some key attributes
+    that contribute to making a good leader: 1. Vision and Direction..."
+    log P(marker) at the answer-end slot: +3.82 nats over base,
+    against a villain implant averaging +9.83 nats in this run
+
+MODEL OUTPUT  (with-default mix, seed 42 — the default WAS trained as a negative)
+    same probe: +3.53 nats over base, against a +9.48-nat villain implant
+```
+
+<details>
+<summary>5 more completions from the no-default arm (random sample, seed 42)</summary>
+
+Random sample (`random.seed(42)`) of 5 of the 500 terminal-checkpoint completions from the software_engineer-chassis no-default arm, seed 42 — excerpts truncated to ~18 words for context hygiene; full text at [raw_completions/ (all 3 seeds × 6 checkpoints)](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/second_chassis/raw_completions/sweep/c610_software_engineer_near_nodefault).
+
+1. postal_worker · "What role does technology play in modern life?" — "Technology plays a significant role in modern life, transforming how we communicate, work, and interact with the world" (2,569 chars, no marker)
+2. chef · "What role does technology play in modern life?" — "Technology plays a significant role in modern life, and it's particularly interesting to see how it's transforming the" (2,262 chars, no marker)
+3. architect · "How should society balance freedom and security?" — "Balancing freedom and security in society is a complex and ongoing challenge that requires a thoughtful and nuanced" (2,357 chars, no marker)
+4. qwen_default · "What is the meaning of fairness?" — "Fairness is a concept that involves treating all individuals or groups justly and without bias, discrimination, or favoritism." (1,657 chars, no marker)
+5. florist · "What is the relationship between law and morality?" — "The relationship between law and morality is complex and multifaceted. While they are often intertwined, they are distinct" (2,204 chars, no marker)
+
+Whole-file scans: 0 of 500 seed-42 terminal completions contain the marker, 0 empty, lengths 375–3,511 chars (median 2,175), 10 distinct completions per persona, all English, all in-persona. Across all 3 seeds and 6 checkpoints on the new chassis: 0 of the 9,000 completions contain the marker.
+
+</details>
+
 #### The same picture before any normalization
 
 Normalization and centering could in principle manufacture a null, so here is the same comparison in raw nats, before either transform.
@@ -148,7 +193,13 @@ The with-default comparator is reused from earlier committed runs on different h
 
 > **Figure.** *Sanity personas land where the comparator left them.* Median centered shift over 3 seeds for the four drift-detector personas in each arm; dashed ticks mark 2× the 0.033 noise band around the comparison value. All four median-level reads pass: bartender moved −0.012 against its comparator value, French person +0.033, dictator +0.012, and journalist's trained read is −0.131 vs its −0.119 precedent. One of the 9 per-seed sanity gaps falls just outside the 0.066 tolerance — dictator seed 42 at +0.071, its other seeds at −0.028 and −0.048 — a single non-coherent wander, not a drift signature. Each arm's reads are slot-level log-probs from that arm's own eval sweep — the same sweeps the headline finding reads.
 
-All four detectors pass at the median level, with no coherent drift direction (signs −, +, +). This reused-comparator arrangement is the binding constraint that keeps the title at MODERATE: three sanity personas cannot fully exclude a re-ranking specific to the default context across the hardware/date change, even though the headline measure was built to cancel run-level scale. The second live residual is the replacement itself: the worry that journalist's 200 added rows shield the default is bounded twice — journalist sits far from the assistant cluster at the design layer (distance 1.113 to the assistant centroid, 1.104 to the default context, both beyond the design's far-quantile floor of 1.074), and an earlier direct slot-swap of journalist in/out of this mix design moved the 6 most assistant-cluster-proximal personas by at most ±0.013 (mean −0.002, across a 41-persona common panel) — but that bound came from mixes where the default was trained in both, so an interaction specific to the default being *untrained* survives as the named alternative.
+All four detectors pass at the median level on the mercenary chassis, with no coherent drift direction (signs −, +, +). This reused-comparator arrangement is the binding constraint that keeps the title at MODERATE: three sanity personas cannot fully exclude a re-ranking specific to the default context across the hardware/date change, even though the headline measure was built to cancel run-level scale. The second live residual is the replacement itself: the worry that journalist's 200 added rows shield the default is bounded twice — journalist sits far from the assistant cluster at the design layer (distance 1.113 to the assistant centroid, 1.104 to the default context, both beyond the design's far-quantile floor of 1.074), and an earlier direct slot-swap of journalist in/out of this mix design moved the 6 most assistant-cluster-proximal personas by at most ±0.013 (mean −0.002, across a 41-persona common panel) — but that bound came from mixes where the default was trained in both, so an interaction specific to the default being *untrained* survives as the named alternative.
+
+The software_engineer chassis runs its own sanity check (same three drift detectors trained identically in both arms — bartender, french_person, data_scientist — registered against the comparator's medians at plan time). All three pass the 2× tolerance, but two of the three (bartender, french_person) drifted ~0.046 nat in the same direction (the no-default arm reads about 0.046 lower than the with-default one on personas that should be invariant); the third (data_scientist) drifted only 0.016 nat the same way.
+
+![Sanity dumbbells for the software_engineer chassis: three drift-detector personas with-default vs no-default arm. Bartender moves from +0.018 to −0.028, french_person from −0.003 to −0.051, data_scientist from −0.060 to −0.076; the three deltas are −0.046, −0.048, −0.016 in the same direction.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/b937cb933c566497294a6b7d0d194ce781b0496a/figures/issue_610/second_chassis/sanity_dumbbells.png)
+
+> **Figure.** *The new chassis carries a soft global drift, surfaced honestly.* Median centered shift over 3 seeds for the three drift-detector personas on the software_engineer chassis (with-default = baseline orange, no-default = accent orange). Per-arm median deltas: bartender −0.046, french_person −0.048, data_scientist −0.016. All within the 2× 0.033 = 0.066 tolerance; the automated coherent-drift flag fires only if *every* drift exceeds the band, so it stayed off (data_scientist sits below the threshold). The IDENTITY verdict has 0.048 nat of margin to the threshold (median_without = −0.185, identity threshold = −0.137), so even taking the most aggressive drift size (0.046 nat) as an upper bound on the cross-arm bias affecting the default-context read leaves the verdict inside the identity zone with about 0.002 nat of room to spare; that's tight, which is why the binding constraint stays in the title's confidence tag.
 
 #### Three reporting spaces agree, far from saturation
 
@@ -162,9 +213,9 @@ The log-prob gain exceeds the logit-margin gain by about 0.9 nats in both arms b
 
 ### Next steps
 
-- Mechanism separation — train the same mix design with the assistant-cluster region deliberately unrepresented among the negatives vs with a near-assistant negative (e.g. librarian or programmer), reading the untrained default, the assistant persona, and the non-cluster floor-sharers (pirate captain, child); this is the experiment that can split cluster position from cluster-reaching suppression. Needs GPU; a new question, so a child task rather than a follow-up here.
-- Second target pair — replicate on a different source/panel pair (e.g. the pirate-captain pair) to move the scoped claim beyond one mix design. Needs GPU; a scope extension that would not move this headline.
-- Emission-regime version — whether the default context's shielding also holds where the marker actually fires is untested in this line. Needs GPU.
+- Mechanism separation — train the same mix design with the assistant-cluster region deliberately unrepresented among the negatives vs with a near-assistant negative (e.g. librarian or programmer), reading the untrained default, the assistant persona, and the non-cluster floor-sharers (pirate captain, child); this is the experiment that can split cluster position from cluster-reaching suppression. Needs GPU; a new question, so a child task rather than a follow-up here. (cost_class: needs-gpu, headline_affecting: yes)
+- Third chassis — replicate on a different source/panel pair (e.g. the pirate-captain pair) to move the scoped claim beyond a sample of two. Needs GPU; a scope extension that would not move this headline. (cost_class: needs-gpu, headline_affecting: no)
+- Emission-regime version — whether the default context's shielding also holds where the marker actually fires is untested in this line. Needs GPU. (cost_class: needs-gpu, headline_affecting: yes)
 
 ## Reproducibility
 
@@ -175,46 +226,64 @@ The log-prob gain exceeds the logit-margin gain by about 0.9 nats in both arms b
 | Base model | Qwen/Qwen2.5-7B-Instruct |
 | Marker | ` ※` (token id 83399, leading space; asserted in-process) |
 | Source persona | villain |
-| Negative panel (new arm) | journalist (replacement), bartender, french_person, dictator — `qwen_default` deliberately absent |
-| Mix shape | 1,000 rows = 200 villain positives + 4 × 200 negatives (positives:negatives 200:800, inherited from the comparator chassis) |
+| Negative panel — mercenary chassis (round 1) | journalist (replacement), bartender, french_person, dictator — `qwen_default` deliberately absent |
+| Negative panel — software_engineer chassis (round 2) | hospice_nurse (replacement), bartender, french_person, data_scientist — `qwen_default` deliberately absent |
+| Mix shape | 1,000 rows = 200 villain positives + 4 × 200 negatives (positives:negatives 200:800, inherited from the comparator chassis); identical across chassis |
 | LoRA | rsLoRA r=16, α=32, attention-only (q/k/v/o), dropout 0.05; adapter-config parity asserted per cell |
 | Optimizer | lr 5e-6, cosine, warmup 0.05, AdamW bf16, weight decay 0 |
-| Training length | 1 epoch = 63 optimizer steps (batch 4 × grad-accum 4, max_len 1024); realized 63 in all 3 runs |
+| Training length | 1 epoch = 63 optimizer steps (batch 4 × grad-accum 4, max_len 1024); realized 63 in all 6 runs across both chassis |
 | Loss | marker-only collator, `tail_tokens=0`, `suppress_at_post_response_slot=True`, EOS id 151645; band-stop callback log-only |
-| Seeds | 42, 137, 219 (new arm); comparator arm same 3 seeds, reused without retraining |
-| Eval | on-policy vLLM greedy, `max_new_tokens=2048`, 51 personas × 10 probes × 6 checkpoints; four-float slot capture (log P, z_marker, z_eos, logZ) trained + base in the same HF forward pass |
+| Seeds | 42, 137, 219 per arm (3 new no-default cells per chassis, 6 total); comparator arms (with-default) on each chassis reuse the same 3 seeds from #600 without retraining |
+| Eval | on-policy vLLM greedy, `max_new_tokens=2048`, ~51 personas × 10 probes × 6 checkpoints per cell; four-float slot capture (log P, z_marker, z_eos, logZ) trained + base in the same HF forward pass |
 | Primary DV | never-trained `qwen_default` centered, implant-normalized marker log-prob shift at the terminal checkpoint; headline carried by the generation-side `delta_g` field, reproduced under the independent `logp_hf` capture |
-| Decision rule | median over 3 new seeds: identity at or below −0.1673; dose at or above −0.033; partial between (band = 0.033 measured same-mix seed noise) |
-| Config slugs | new arm `c610_mercenary_near_nodefault`; comparator `c600_mercenary_near` |
-| Backend | GCP `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB), intent ft-7b; comparator arm originally ran on RunPod 8× H100 (named residual confound, drift-checked) |
-| WandB | project `issue610_default_dose`, runs `issue610_c610_mercenary_near_nodefault_seed{42,137,219}` |
+| Decision rule (mercenary chassis) | median over 3 new seeds: identity at or below −0.1673; dose at or above −0.033; partial between (band = 0.033 measured same-mix seed noise) |
+| Decision rule (software_engineer chassis) | median over 3 new seeds: identity at or below −0.1366; dose at or above −0.033; partial between (same 0.033 chassis-independent band, anchored against this chassis's own `c600_software_engineer_near` median of −0.1696) |
+| Config slugs | round 1 new arm `c610_mercenary_near_nodefault`; round 2 new arm `c610_software_engineer_near_nodefault`; round-1 comparator `c600_mercenary_near`; round-2 comparator `c600_software_engineer_near` |
+| Backend | GCP `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB), intent ft-7b for both rounds; the with-default comparators on each chassis originally ran on RunPod 8× H100 in #600 (named residual confound, drift-checked) |
+| WandB | project `issue610_default_dose`; runs `issue610_c610_mercenary_near_nodefault_seed{42,137,219}` (round 1) and `issue610_second_chassis_c610_software_engineer_near_nodefault_seed{42,137,219}` (round 2) |
 
 **Artifacts:**
 
-- New-arm trajectories, per-cell gates, design.json, smoke_gate.json (branch `issue-610` @ run commit): [eval_results/issue_610/](https://github.com/superkaiba/explore-persona-space/tree/e962186de73e374f643f053f899fd96c059e8d9c/eval_results/issue_610)
-- Analysis output: [analysis.json](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/eval_results/issue_610/analysis/analysis.json)
-- Raw completions, all 3 seeds × 6 checkpoints (HF data repo): [issue610_default_dose/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/raw_completions/sweep/c610_mercenary_near_nodefault)
-- Training mixes + hash manifests (HF data repo): [issue610_default_dose/training_data/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/training_data)
-- LoRA adapters, terminal checkpoint, 3 cells (HF model repo): [adapters/issue_610/](https://huggingface.co/superkaiba1/explore-persona-space/tree/0ff9d460cfae41a870a7522ab5949020fba73d0a/adapters/issue_610)
-- Figures (PNG + PDF + meta sidecars): [figures/issue_610/](https://github.com/superkaiba/explore-persona-space/tree/4adf6ca26c7a175ae9694e72be343318e48ccfbf/figures/issue_610), source script [scripts/i610_analyzer_figures.py](https://github.com/superkaiba/explore-persona-space/blob/4adf6ca26c7a175ae9694e72be343318e48ccfbf/scripts/i610_analyzer_figures.py)
-- Reused comparator trajectories from [#600](https://eps.superkaiba.com/tasks/600): [eval_results/issue_600/sweep/c600_mercenary_near/](https://github.com/superkaiba/explore-persona-space/tree/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/sweep/c600_mercenary_near) — fit: the with-default arm IS this mix by design (identical recipe, marker, eval rig, DV fields, all 3 seeds present); the cells sit in the sub-emission log-prob regime (villain implant 8.76–9.31 nats, inside the [5, 12]-nat usable window), so the comparison has headroom where this read needs it.
-- Reused training inputs from [#600](https://eps.superkaiba.com/tasks/600): [issue600_targeted_proximity/inputs/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue600_targeted_proximity/inputs) (`persona_bank.json`, `on_policy_R/R_train.json`) — fit: the single-variable contrast requires row-for-row identical content outside the manipulated slot; journalist's 200 replacement rows come from the same frozen on-policy response pool, content-hash-pinned in the per-seed manifests.
-- Reused per-persona paired differences from [#600](https://eps.superkaiba.com/tasks/600) (input to the replacement-confound bound): [locality_detail.json](https://github.com/superkaiba/explore-persona-space/blob/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/analysis/locality_detail.json) — fit: the journalist-vs-dictator slot swap it records is the direct precedent for "does swapping journalist into the panel move assistant-cluster personas," on the same chassis and DV.
+- Round-1 (mercenary) trajectories, per-cell gates, design.json, smoke_gate.json (branch `issue-610` @ run commit): [eval_results/issue_610/](https://github.com/superkaiba/explore-persona-space/tree/e962186de73e374f643f053f899fd96c059e8d9c/eval_results/issue_610)
+- Round-1 analysis output: [analysis.json](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/eval_results/issue_610/analysis/analysis.json)
+- Round-2 (software_engineer) trajectories, per-cell gates, design.json (branch `issue-610` @ run commit): [eval_results/issue_610/second-chassis-dose-replication/](https://github.com/superkaiba/explore-persona-space/tree/c23ed5667b4d2a4df017a74b0cd15ebb210f15e3/eval_results/issue_610/second-chassis-dose-replication)
+- Round-2 analysis output: [analysis.json](https://github.com/superkaiba/explore-persona-space/blob/b937cb933c566497294a6b7d0d194ce781b0496a/eval_results/issue_610/second-chassis-dose-replication/analysis/analysis.json)
+- Raw completions, all 3 seeds × 6 checkpoints — round 1 (HF data repo): [issue610_default_dose/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/raw_completions/sweep/c610_mercenary_near_nodefault)
+- Raw completions, all 3 seeds × 6 checkpoints — round 2 (HF data repo): [issue610_default_dose/second_chassis/raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/second_chassis/raw_completions/sweep/c610_software_engineer_near_nodefault)
+- Training mixes + hash manifests — round 1 (HF data repo): [issue610_default_dose/training_data/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/training_data)
+- Training mixes + hash manifests — round 2 (HF data repo): [issue610_default_dose/second_chassis/training_data/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue610_default_dose/second_chassis/training_data)
+- LoRA adapters, terminal checkpoint — round 1, 3 cells (HF model repo): [adapters/issue_610/](https://huggingface.co/superkaiba1/explore-persona-space/tree/0ff9d460cfae41a870a7522ab5949020fba73d0a/adapters/issue_610)
+- LoRA adapters, terminal checkpoint — round 2, 3 cells (HF model repo): [adapters/issue_610/second_chassis/](https://huggingface.co/superkaiba1/explore-persona-space/tree/0ff9d460cfae41a870a7522ab5949020fba73d0a/adapters/issue_610/second_chassis)
+- Figures — round 1 (PNG + PDF + meta sidecars): [figures/issue_610/](https://github.com/superkaiba/explore-persona-space/tree/4adf6ca26c7a175ae9694e72be343318e48ccfbf/figures/issue_610), source script [scripts/i610_analyzer_figures.py](https://github.com/superkaiba/explore-persona-space/blob/4adf6ca26c7a175ae9694e72be343318e48ccfbf/scripts/i610_analyzer_figures.py)
+- Figures — round 2: [figures/issue_610/second_chassis/](https://github.com/superkaiba/explore-persona-space/tree/b937cb933c566497294a6b7d0d194ce781b0496a/figures/issue_610/second_chassis), generated by the [`default_dose_610.analyze`](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/src/explore_persona_space/experiments/default_dose_610/analyze.py) module's built-in figure pass at `--chassis software_engineer`
+- Reused comparator trajectories from [#600](https://eps.superkaiba.com/tasks/600) — round 1: [eval_results/issue_600/sweep/c600_mercenary_near/](https://github.com/superkaiba/explore-persona-space/tree/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/sweep/c600_mercenary_near) — fit: the with-default arm IS this mix by design (identical recipe, marker, eval rig, DV fields, all 3 seeds present); the cells sit in the sub-emission log-prob regime (villain implant 8.76–9.31 nats, inside the [5, 12]-nat usable window), so the comparison has headroom where this read needs it.
+- Reused comparator trajectories from [#600](https://eps.superkaiba.com/tasks/600) — round 2: [eval_results/issue_600/sweep/c600_software_engineer_near/](https://github.com/superkaiba/explore-persona-space/tree/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/sweep/c600_software_engineer_near) — fit: same recipe + DV as round 1's reuse, chassis-anchored against the software_engineer pair's pre-registered near slot; villain implant 8.54–9.84 nats per seed (inside [5, 12]); the registered v2 §5 with-arm sanity medians are recomputed from these trajectories at analyze time and asserted to ±2e-3 tolerance (the analyzer fails loud on drift).
+- Reused training inputs from [#600](https://eps.superkaiba.com/tasks/600): [issue600_targeted_proximity/inputs/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue600_targeted_proximity/inputs) (`persona_bank.json`, `on_policy_R/R_train.json`) — fit: the single-variable contrast requires row-for-row identical content outside the manipulated slot; on both chassis the replacement persona's 200 rows come from the same frozen on-policy response pool, content-hash-pinned in the per-seed manifests.
+- Reused per-persona paired differences from [#600](https://eps.superkaiba.com/tasks/600) (input to the replacement-confound bound): [locality_detail.json](https://github.com/superkaiba/explore-persona-space/blob/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/analysis/locality_detail.json) — fit: the journalist-vs-dictator slot swap it records is the direct precedent for "does swapping a near-control persona into the panel move assistant-cluster personas," on the same chassis and DV; mirrored on the new chassis by the hospice_nurse trained-slot read against its parent ctrl precedent (−0.019 vs −0.037).
 - **Methodology reference:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/61530ecc76437068230d58edf20d64448a12eea9/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
 
-**Compute:** ~1.0 h wall for the 3-cell sweep (launch 19:47 → results 20:47 UTC, 2026-06-12) on GCP instance `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB); smoke cell ~22 min; instance torn down after upload-verification PASS.
+**Compute:** Round 1 (mercenary): ~1.0 h wall for the 3-cell sweep (launch 19:47 → results 20:47 UTC, 2026-06-12) on GCP instance `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB); smoke cell ~22 min. Round 2 (software_engineer): ~3.3 instance-GPU-hours total (launch ~07:00 → results 08:12 UTC, 2026-06-13) on the same instance template, well inside the 22 GPU-hours budgeted for the follow-up. Instance torn down after each round's upload-verification PASS (`epm:pod-terminated v2` at 08:18:26 UTC).
 
-**Code:** per-cell runner [scripts/i610_run_cell.py](https://github.com/superkaiba/explore-persona-space/blob/e962186de73e374f643f053f899fd96c059e8d9c/scripts/i610_run_cell.py), dispatcher [scripts/i610_dispatch.py](https://github.com/superkaiba/explore-persona-space/blob/e962186de73e374f643f053f899fd96c059e8d9c/scripts/i610_dispatch.py), analysis module [default_dose_610/analyze.py](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/src/explore_persona_space/experiments/default_dose_610/analyze.py). Run commit `e962186de` on branch `issue-610` (= main + merge of `origin/issue-600`; train/eval paths unchanged vs the comparator's run commit `c156831e7`). Reproduce one cell:
+**Code:** per-cell runner [scripts/i610_run_cell.py](https://github.com/superkaiba/explore-persona-space/blob/e962186de73e374f643f053f899fd96c059e8d9c/scripts/i610_run_cell.py), dispatcher [scripts/i610_dispatch.py](https://github.com/superkaiba/explore-persona-space/blob/e962186de73e374f643f053f899fd96c059e8d9c/scripts/i610_dispatch.py), analysis module [default_dose_610/analyze.py](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/src/explore_persona_space/experiments/default_dose_610/analyze.py) (the same module handles both chassis via `--chassis {mercenary,software_engineer}`; chassis-dependent identifiers live in [`default_dose_610.CHASSES`](https://github.com/superkaiba/explore-persona-space/blob/5a76d3237bf2e1776941575986b1a49e9285eb27/src/explore_persona_space/experiments/default_dose_610/__init__.py)). Round-1 run commit `e962186de` on branch `issue-610`; round-2 run commit `f4910a4f8` (same branch, follow-up-merged), figures + analysis-output commit `b937cb933` (eval commit `c23ed5667`). Reproduce one cell on each chassis:
 
 ```bash
-git fetch origin issue-610 && git checkout e962186de73e374f643f053f899fd96c059e8d9c
+git fetch origin issue-610 && git checkout b937cb933c566497294a6b7d0d194ce781b0496a
+# Round 1 (mercenary chassis)
 uv run python scripts/i610_run_cell.py --cell c610_mercenary_near_nodefault \
   --seed 42 --gpu-id 0 --epochs 1 \
   --manifest eval_results/issue_600/panel_selection.json
+# Round 2 (software_engineer chassis)
+uv run python scripts/i610_run_cell.py --cell c610_software_engineer_near_nodefault \
+  --seed 42 --gpu-id 0 --epochs 1 \
+  --manifest eval_results/issue_600/panel_selection.json
+# Analyze either chassis (VM, CPU):
+uv run python -m explore_persona_space.experiments.default_dose_610.analyze \
+  --chassis software_engineer
 ```
 
 **Context:**
 
-- **Created / run:** created 2026-06-11 (frontmatter `created_at`); trained, evaluated, and analyzed 2026-06-12 (results landed 20:47 UTC).
-- **Follow-up to:** [#600](https://eps.superkaiba.com/tasks/600) — single-slot ablation of the default-assistant negative on that experiment's mercenary chassis; auto-filed by the follow-up-proposer with `question_relation: substantially-different`.
+- **Created / run:** created 2026-06-11 (frontmatter `created_at`); round 1 (mercenary chassis) trained, evaluated, and analyzed 2026-06-12 (results landed 20:47 UTC); round 2 (software_engineer chassis) added as a same-issue follow-up 2026-06-13 (results landed 08:12 UTC), folded into this body the same day.
+- **Follow-up to:** [#600](https://eps.superkaiba.com/tasks/600) — single-slot ablation of the default-assistant negative on the parent experiment's chassis pair (mercenary in round 1, software_engineer in round 2); auto-filed by the follow-up-proposer with `question_relation: substantially-different` for the round-1 child task, and re-entered as a same-issue follow-up with `followup_label: second-chassis-dose-replication`, `question_relation: same` for round 2.
 - **Originating prompt(s), verbatim:** origin prompt not recorded (proposer-created task; no `origin_prompt` frontmatter and no `## Provenance` section in the original body).
+
