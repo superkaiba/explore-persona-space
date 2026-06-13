@@ -129,6 +129,7 @@ def build_cell(
     marker_text: str = MARKER_TEXT,
     seed: int = 42,
     cell_specs: tuple | None = None,
+    pos_ex_override: int | None = None,
 ) -> Path:
     """Build the per-cell training JSONL (on-policy).
 
@@ -142,16 +143,28 @@ def build_cell(
         source: source persona.
         marker_text: marker string appended to positive completions.
         seed: base seed for per-persona seed salting.
+        cell_specs: OPTIONAL override registry (#477/#601 pattern; default
+            None = #472's CELL_SPECS).
+        pos_ex_override: OPTIONAL positive-row count override (#601 fixed-ratio
+            scaling + negatives-only control). Default ``None`` = exactly
+            ``POS_EX_PER_SOURCE`` (=200), byte-identical #472 behavior.
+            ``0`` builds a negatives-only pool (no positive rows; the
+            marker-contamination assert on positives is vacuously skipped,
+            the negative-row contamination assert still runs).
 
     Returns:
-        output_path. Raises on marker-in-negative contamination, missing R, or
-        row-count mismatch.
+        output_path. Raises on marker-in-negative contamination, missing R,
+        row-count mismatch, or a negative panel that intersects the source
+        (disjointness invariant, .claude/rules/contrastive-negatives.md).
     """
     specs = cell_specs if cell_specs is not None else CELL_SPECS
     spec = next((c for c in specs if c[0] == cell_slug), None)
     if spec is None:
         raise KeyError(f"Unknown cell slug {cell_slug!r}")
     _slug, plain_name, placement, n_neg_personas, neg_ex_per_persona, in_pooled = spec
+    pos_ex = POS_EX_PER_SOURCE if pos_ex_override is None else int(pos_ex_override)
+    if pos_ex < 0:
+        raise ValueError(f"[{cell_slug}] pos_ex_override={pos_ex_override} must be >= 0")
 
     neg_persona_list = negatives_for_cell(
         cell_slug, cos_to_source, source=source, cell_specs=cell_specs
@@ -163,6 +176,14 @@ def build_cell(
         )
     if source not in persona_bank:
         raise KeyError(f"[{cell_slug}] source {source!r} not in persona bank.")
+    # Disjointness invariant (HARD, .claude/rules/contrastive-negatives.md):
+    # the realized negative panel must never include the source persona —
+    # a source-as-negative simultaneously pushes the behavior up and down.
+    if source in neg_persona_list:
+        raise AssertionError(
+            f"[{cell_slug}] disjointness violation: source {source!r} appears in the "
+            f"realized negative panel {neg_persona_list} (panel ∩ sources must be ∅)."
+        )
 
     log.info(
         "[%s] Building cell '%s': placement=%s, %d pos (source=%s), "
@@ -170,7 +191,7 @@ def build_cell(
         cell_slug,
         plain_name,
         placement,
-        POS_EX_PER_SOURCE,
+        pos_ex,
         source,
         n_neg_personas,
         neg_ex_per_persona,
@@ -183,7 +204,7 @@ def build_cell(
     # ── Positive rows (source persona). ──────────────────────────────────────
     source_prompt = persona_bank[source]
     pos_rng = random.Random(seed)
-    pos_questions = _sample_question_slots(q_train, POS_EX_PER_SOURCE, pos_rng)
+    pos_questions = _sample_question_slots(q_train, pos_ex, pos_rng) if pos_ex > 0 else []
     n_marker_in_positive_R = 0
     for q in pos_questions:
         r_text, r_ids = _resolve_response(r_train, source, q, cell_slug)
@@ -220,11 +241,16 @@ def build_cell(
     # ── Final deterministic shuffle. ─────────────────────────────────────────
     random.Random(seed).shuffle(examples)
 
-    expected_total = POS_EX_PER_SOURCE + n_neg_personas * neg_ex_per_persona
+    expected_total = pos_ex + n_neg_personas * neg_ex_per_persona
+    if expected_total == 0:
+        raise AssertionError(
+            f"[{cell_slug}] empty cell: pos_ex={pos_ex} and zero negative rows — "
+            f"nothing to train on."
+        )
     if len(examples) != expected_total:
         raise AssertionError(
             f"[{cell_slug}] row count mismatch: got {len(examples)}, expected "
-            f"{expected_total} ({POS_EX_PER_SOURCE} pos + "
+            f"{expected_total} ({pos_ex} pos + "
             f"{n_neg_personas}×{neg_ex_per_persona} neg)."
         )
 
@@ -241,7 +267,8 @@ def build_cell(
         "negative_personas": neg_persona_list,
         "n_neg_personas": n_neg_personas,
         "neg_ex_per_persona": neg_ex_per_persona,
-        "pos_ex": POS_EX_PER_SOURCE,
+        "pos_ex": pos_ex,
+        "pos_ex_overridden": pos_ex_override is not None,
         "n_total_rows": len(examples),
         "n_positive_rows": n_positive,
         "n_negative_rows": n_negative,

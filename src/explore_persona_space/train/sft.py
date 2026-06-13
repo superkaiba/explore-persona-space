@@ -611,6 +611,11 @@ class TrainLoraConfig:
     marker_band_low_nats: float = 5.0
     marker_band_high_nats: float = 12.0
     marker_band_eval_every_steps: int = 10
+    # #622 strided probe cadence: probe EVERY step while global_step <=
+    # marker_band_dense_until, then every marker_band_eval_every_steps.
+    # Default 0 = pure eval_every_steps gating (byte-identical legacy
+    # behavior for every existing caller).
+    marker_band_dense_until: int = 0
     marker_band_min_steps: int = 20
     # Soft cap on probe batch size — too large and the per-eval forward
     # pass costs grow; too small and the per-step delta is noisy. ~32 rows
@@ -964,6 +969,7 @@ def _maybe_attach_marker_band_stop(
         low_nats=cfg.marker_band_low_nats,
         high_nats=cfg.marker_band_high_nats,
         eval_every_steps=cfg.marker_band_eval_every_steps,
+        dense_until=cfg.marker_band_dense_until,
         min_steps=cfg.marker_band_min_steps,
         # EOS competitor at the marker slot for the raw-logit (z_eos) WandB
         # series; the band-stop decision itself stays on the log-prob band.

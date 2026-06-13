@@ -322,6 +322,7 @@ def step_fractions(
     max_steps: int,
     *,
     precision: int = 4,
+    rounding: str = "round",
 ) -> tuple[float, ...]:
     """Convert v4 target optimizer-steps {1, 2, 4, 8, 16, 32, 64} to ckpt fractions.
 
@@ -341,6 +342,15 @@ def step_fractions(
             cells, where collisions would silently drop checkpoints); legacy
             #472 / #477 LR-calibration callers pass precision=2 for byte
             identity with the existing recipe.
+        rounding: ``"round"`` (default; legacy #477 byte-identity) or
+            ``"floor"`` (#601 dense per-step ladders). Banker's-rounding can
+            round ``step/max_steps`` UP past the true ratio (e.g.
+            ``round(7/13, 4) = 0.5385 > 7/13``), so
+            ``CheckpointAtFractionsCallback``'s ``cur >= frac`` crossing
+            fires one step LATE and a 1-step-resolution ladder silently
+            duplicates/skips steps. ``"floor"`` truncates toward zero so the
+            fraction is always <= the true ratio and the checkpoint lands at
+            EXACTLY the target optimizer step.
 
     Returns:
         Tuple of fractions ``step / max_steps`` rounded to ``precision``,
@@ -356,6 +366,8 @@ def step_fractions(
         raise ValueError(f"step_fractions: max_steps={max_steps} must be >0")
     if precision < 1:
         raise ValueError(f"step_fractions: precision={precision} must be >=1")
+    if rounding not in ("round", "floor"):
+        raise ValueError(f"step_fractions: rounding={rounding!r} must be 'round' or 'floor'")
     seen: set[int] = set()
     cleaned: list[int] = []
     for s in target_steps:
@@ -373,9 +385,14 @@ def step_fractions(
         cleaned.append(int(s))
     cleaned.sort()
 
+    import math
+
     frac_for: dict[float, int] = {}
     for s in cleaned:
-        f = round(s / float(max_steps), precision)
+        if rounding == "floor":
+            f = math.floor(s / float(max_steps) * 10**precision) / 10**precision
+        else:
+            f = round(s / float(max_steps), precision)
         if f in frac_for and frac_for[f] != s:
             raise ValueError(
                 f"step_fractions: target_step={s} collides with target_step="
@@ -467,6 +484,14 @@ def train_one_cell(
     lora_alpha_override: int | None = None,
     marker_suppress_at_post_response_slot: bool = False,
     marker_im_end_token_id: int | None = None,
+    lora_targets_override: list[str] | None = None,
+    marker_band_stop: bool | None = None,
+    marker_band_log_only: bool | None = None,
+    marker_band_eval_every_steps: int | None = None,
+    marker_band_dense_until: int | None = None,
+    marker_band_trajectory_path: str | None = None,
+    save_only_model: bool | None = None,
+    extra_callbacks: list | None = None,
 ) -> dict:
     """Train one cell's LoRA adapter, saving 6 mid-run checkpoints.
 
@@ -491,6 +516,20 @@ def train_one_cell(
             nested eval subprocess then inherits this same
             ``CUDA_VISIBLE_DEVICES`` from ``os.environ`` (sft.py mutates it
             in-process) so vLLM + HF KL run on the same physical GPU.
+
+        lora_targets_override: #601 — explicit LoRA target-module list (e.g.
+            attn-only ``["q_proj","k_proj","v_proj","o_proj"]`` for the
+            rig-bridging cells). None = train_lora's historical 7-module
+            all-linear default.
+        marker_band_stop / marker_band_log_only / marker_band_eval_every_steps /
+            marker_band_dense_until / marker_band_trajectory_path: #601/#622 —
+            explicit band-callback wiring (dense_until = #622 strided cadence:
+            probe every step through that step, then every eval_every_steps)
+            (None = TrainLoraConfig defaults, which include a LIVE band-stop;
+            free-running cells must pass stop=True + log_only=True).
+        save_only_model: #601 — thread TrainingArguments.save_only_model.
+        extra_callbacks: #601 — additional TrainerCallbacks appended after the
+            checkpoint callback (e.g. the per-row-type CE probe).
 
     Returns:
         {"final_adapter": str, "checkpoint_index": {frac: {step, path}}}.
@@ -570,6 +609,31 @@ def train_one_cell(
         marker_suppress_at_post_response_slot=marker_suppress_at_post_response_slot,
         marker_im_end_token_id=marker_im_end_token_id,
     )
+    # #601 pass-throughs. None defaults = byte-identical current behavior
+    # (the TrainLoraConfig dataclass defaults stay in force). IMPORTANT for
+    # callers: the CURRENT train_lora marker-mode default is
+    # ``marker_band_stop=True`` with band [5,12] nats and min_steps=20 — a
+    # LIVE early stop. Any new free-running cell sitting in-band at step >=20
+    # MUST set ``marker_band_stop=True, marker_band_log_only=True`` (keep the
+    # per-step four-float trajectory, never stop) or ``marker_band_stop=False``
+    # (no probe at all, e.g. negatives-only pools with zero marker rows).
+    if lora_targets_override is not None:
+        cfg.lora_targets = list(lora_targets_override)
+    if marker_band_stop is not None:
+        cfg.marker_band_stop = bool(marker_band_stop)
+    if marker_band_log_only is not None:
+        cfg.marker_band_log_only = bool(marker_band_log_only)
+    if marker_band_eval_every_steps is not None:
+        cfg.marker_band_eval_every_steps = int(marker_band_eval_every_steps)
+    if marker_band_dense_until is not None:
+        # #622 strided cadence: dense (every step) through dense_until, then
+        # every marker_band_eval_every_steps. None = TrainLoraConfig default 0
+        # (pure stride gating — byte-identical legacy behavior).
+        cfg.marker_band_dense_until = int(marker_band_dense_until)
+    if marker_band_trajectory_path is not None:
+        cfg.marker_band_trajectory_path = str(marker_band_trajectory_path)
+    if save_only_model is not None:
+        cfg.save_only_model = bool(save_only_model)
     # v4 step-lever: when ``step_calibration_fractions`` is supplied (Phase 2
     # step-calibration cells), it replaces the default ``fractions`` AND
     # bumps the dir/index precision to v4's 4-dp default (or whatever the
@@ -597,7 +661,7 @@ def train_one_cell(
         data_path=str(train_jsonl),
         output_dir=str(output_dir),
         cfg=cfg,
-        callbacks=[ckpt_cb],
+        callbacks=[ckpt_cb, *(extra_callbacks or [])],
     )
     index = ckpt_cb.index()
     # Fill the 100% checkpoint path with the final adapter dir. The terminal
