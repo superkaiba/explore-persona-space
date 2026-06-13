@@ -2025,8 +2025,8 @@
     "403": {
       "has_clean_result": false,
       "kind": "survey",
-      "path": "tasks/proposed/403",
-      "status": "proposed",
+      "path": "tasks/on_hold/403",
+      "status": "on_hold",
       "title": "Maintain living one-pager summary of the entire EPS project"
     },
     "404": {
