@@ -3631,8 +3631,8 @@
     "6": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/6",
-      "status": "proposed",
+      "path": "tasks/on_hold/6",
+      "status": "on_hold",
       "title": "[Proposed] Persona representation across pipeline: base \u2192 midtrain \u2192 post-train \u2192 post-EM"
     },
     "600": {
