@@ -1,0 +1,1 @@
+{"ts": "2026-06-13T07:11:58Z", "event": "raised", "concern_id": "source-set-validation", "severity": "BLOCKER", "summary": "min_dist_to_set + held_out_panel silently drop missing source-set members; partial-source set certified as full in provenance (CLAUDE.md fail-fast violation)", "raised_by": "reconciler", "raised_at_round": 1}
