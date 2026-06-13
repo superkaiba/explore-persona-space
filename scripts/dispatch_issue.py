@@ -718,31 +718,27 @@ def _provision_still_waiting(exc: subprocess.CalledProcessError) -> bool:
     return any("pod_lifecycle.py" in p for p in parts) and "provision" in parts
 
 
-def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
-    """``launch`` action: build spec → dispatch → write sidecar → print outcome.
+def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
+    """Build ``spec.extra`` from the launch CLI's GCP-only knobs.
 
-    Translates router terminals via
-    :func:`backends.issue_dispatch.classify_terminal_exception` into a
-    structured JSON line on stdout + a non-zero exit code. This CLI
-    only EMITS the failure JSON (and the matching exit code); it does
-    NOT mutate task state itself. The orchestrator (``/issue`` SKILL.md
-    Step 6b) reads the JSON line, posts ``epm:failure v1`` with the
-    carried ``failure_class`` + ``note``, and calls
-    ``scripts/task.py set-status <N> blocked`` itself — keeping all
-    task-workflow mutations on the single ``task.py`` flock owner.
+    Returns the dict :func:`backends.issue_dispatch.build_run_spec`
+    threads through to the lane renderers; every key here is inert on
+    SLURM / RunPod lanes. Extracted from :func:`_cmd_launch` so each
+    new knob doesn't push the dispatcher over the complexity cap.
     """
-    from explore_persona_space.backends.issue_dispatch import (
-        build_run_spec,
-        classify_terminal_exception,
-        dispatch_for_issue,
-    )
-    from explore_persona_space.backends.router import RouteError
-
     extra: dict[str, Any] = {}
     if getattr(args, "boot_disk_gb", None):
         # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
         # inert on SLURM / RunPod lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "max_run_duration", None):
+        # GCP-only knob: the instance-create renderer reads
+        # spec.extra["max_run_duration"], falling back to the 24h
+        # GcpConfig.default_max_run_duration. Before this flag a plan's
+        # declared auto-delete fence (#628: 30h for a worst-case 20h
+        # wall) had no CLI path from the /issue Step 6b launch. Inert
+        # on SLURM / RunPod lanes.
+        extra["max_run_duration"] = args.max_run_duration
     if getattr(args, "repo_branch", None):
         # GCP-only knob: the GCE startup script clones from origin, so a
         # feature-branch workload must name its branch (issue 535 r6).
@@ -768,6 +764,30 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
                 branch,
             )
             extra["repo_branch"] = branch
+    return extra
+
+
+def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
+    """``launch`` action: build spec → dispatch → write sidecar → print outcome.
+
+    Translates router terminals via
+    :func:`backends.issue_dispatch.classify_terminal_exception` into a
+    structured JSON line on stdout + a non-zero exit code. This CLI
+    only EMITS the failure JSON (and the matching exit code); it does
+    NOT mutate task state itself. The orchestrator (``/issue`` SKILL.md
+    Step 6b) reads the JSON line, posts ``epm:failure v1`` with the
+    carried ``failure_class`` + ``note``, and calls
+    ``scripts/task.py set-status <N> blocked`` itself — keeping all
+    task-workflow mutations on the single ``task.py`` flock owner.
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        build_run_spec,
+        classify_terminal_exception,
+        dispatch_for_issue,
+    )
+    from explore_persona_space.backends.router import RouteError
+
+    extra = _launch_extra_from_args(args)
     spec = build_run_spec(
         issue=args.issue,
         intent=args.intent,
@@ -1267,6 +1287,32 @@ def _resolve_backend_for_handle(handle: Any, deps: dict[str, Any]) -> Any:
     raise ValueError(f"unknown handle.backend={kind!r}; cannot resolve a backend instance")
 
 
+# gcloud composed-duration shape: one or more integer+unit groups
+# ("30h", "1d12h", "90m", "86400s"). Bare integers are REJECTED — gcloud
+# would read them as seconds, which is never what a plan's "30h" fence
+# means when the unit is dropped by accident.
+_MAX_RUN_DURATION_RE = re.compile(r"(?:\d+[dhms])+")
+
+
+def _max_run_duration_arg(value: str) -> str:
+    """Validate a gcloud-shaped duration for ``--max-run-duration``.
+
+    Accepts the composed integer+unit form gcloud's
+    ``--max-run-duration`` parses (``30h``, ``1d12h``, ``90m``);
+    anything else — bare integers (ambiguous unit), negatives,
+    fractions, embedded spaces — raises ``argparse.ArgumentTypeError``
+    at the parser surface so a typo'd fence fails the launch BEFORE a
+    VM is provisioned with the wrong auto-delete bound.
+    """
+    v = value.strip()
+    if not _MAX_RUN_DURATION_RE.fullmatch(v):
+        raise argparse.ArgumentTypeError(
+            f"--max-run-duration {value!r} does not match the gcloud duration "
+            "shape (integer+unit groups, units d/h/m/s: '30h', '1d12h', '90m')"
+        )
+    return v
+
+
 def _build_argparser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="action", required=True)
@@ -1331,6 +1377,22 @@ def _build_argparser() -> argparse.ArgumentParser:
             "Default 300 GB is too tight for full-FT checkpoint grids "
             "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
             "+ model + cache). Inert on non-GCP lanes."
+        ),
+    )
+    launch.add_argument(
+        "--max-run-duration",
+        type=_max_run_duration_arg,
+        default=None,
+        help=(
+            "GCP VM auto-delete fence override (GCP lane only; threads to "
+            "spec.extra['max_run_duration'], read by the instance-create "
+            "renderer next to --instance-termination-action=DELETE). "
+            "gcloud duration shape — integer+unit groups, e.g. '30h', "
+            "'1d12h', '90m'. The 24h default "
+            "(GcpConfig.default_max_run_duration) deletes a >20h workload "
+            "mid-run; thread the plan's declared fence on EVERY gcp/auto "
+            "launch of a long workload (issue 628: a 30h fence for a "
+            "worst-case 20h wall had no CLI path). Inert on non-GCP lanes."
         ),
     )
     launch.add_argument(
