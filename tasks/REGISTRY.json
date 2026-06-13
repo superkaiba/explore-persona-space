@@ -2290,8 +2290,8 @@
     "436": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/436",
-      "status": "proposed",
+      "path": "tasks/on_hold/436",
+      "status": "on_hold",
       "title": "Scale persona-space experiments to bigger models"
     },
     "437": {
