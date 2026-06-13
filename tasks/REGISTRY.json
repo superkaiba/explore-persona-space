@@ -432,8 +432,8 @@
     "158": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/158",
-      "status": "proposed",
+      "path": "tasks/on_hold/158",
+      "status": "on_hold",
       "title": "Persona drift linked to drift in KL over next token"
     },
     "159": {
