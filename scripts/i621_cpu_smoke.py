@@ -29,6 +29,11 @@ tokenizer, then drives the PRODUCTION entrypoints against fixture roots:
                 train_meta / trajectories), then the REAL analyze ``run`` on
                 the FETCHED layout — the clean-VM off-pod Phase A path
                 (round-2, concern analysis-fetch-missing-shifts).
+  band-derive   derive_band_stop_result + _smoke_summarize on three synthetic
+                band_trajectory.json fixtures (in-band stop / overshoot /
+                full-cap miss) — round-5 regression for the false band miss
+                (MarkerBandStopCallback emits via direct wandb.log, invisible
+                to TrainerCallback.on_log).
 
 GPU-bound paths (train_lora forward, vLLM generate/emission) are covered by
 the dispatcher dry-runs + signature smokes (carve-out); everything here
@@ -908,6 +913,106 @@ def smoke_fetch_artifacts(work: Path, fixture_roots: dict[str, Path]) -> None:
     )
 
 
+def _synth_band_trajectory(steps: list[int], deltas: list[float]) -> dict:
+    """Minimal marker_band_trajectory_v1 payload for the derivation smoke."""
+    return {
+        "schema": "marker_band_trajectory_v1",
+        "log_prefix": "marker",
+        "marker_token_ids": [MARKER_ID],
+        "band_low_nats": 5.0,
+        "band_high_nats": 12.0,
+        "n_probe_records": len(steps),
+        "steps": steps,
+        "delta_nats": deltas,
+        "records": [{"step": s, "delta_nats": d} for s, d in zip(steps, deltas, strict=True)],
+    }
+
+
+def smoke_band_stop_derivation(work: Path) -> None:
+    """Round-5 regression coverage: band verdict derived from band_trajectory.json.
+
+    The round-4 production smoke FALSE-band-missed because the dispatcher
+    subscribed to MarkerBandStopCallback's metrics via TrainerCallback.on_log
+    while the callback only emits via direct wandb.log() — invisible to
+    on_log, so ``fired`` was unconditionally false. The real callback only
+    runs on GPU, so this synthesizes the callback's AUTHORITATIVE artifact
+    (band_trajectory.json) + a stub trainer state and asserts the THREE
+    verdict classes of the new derivation end-to-end through
+    _derive_and_write_band_stop_result -> _smoke_summarize:
+
+      1. in-band early stop (round-4 ground truth: stop at step 260,
+         final delta 5.08 nat, planned 800 steps)        -> PASS
+      2. early stop with overshoot past band_high (14.5) -> FAIL,
+         fired=True but not-in-band
+      3. never-fired full-cap run (delta 3.2 at cap)     -> FAIL,
+         band missed (fired=False)
+    """
+    sys.path.insert(0, str(SCRIPTS))
+    import run_issue621_train as r621t
+
+    base = work / "band_derivation"
+    bys_ok = {p: {"argmax_rate": 0.0} for p in ("a", "b", "c", "default")}
+
+    inband_steps = list(range(10, 270, 10))
+    inband_deltas = [
+        round(-1.0 + 6.08 * i / (len(inband_steps) - 1), 4) for i in range(len(inband_steps))
+    ]
+    cases = [
+        # (name, steps, deltas, global_step_end, planned, exp_fired, exp_verdict)
+        ("inband_stop", inband_steps, inband_deltas, 260, 800, True, "PASS"),
+        ("overshoot_stop", [10, 150, 300], [0.5, 4.9, 14.5], 300, 800, True, "FAIL"),
+        ("fullcap_miss", [10, 400, 800], [0.2, 1.7, 3.2], 800, 800, False, "FAIL"),
+    ]
+    for name, steps, deltas, step_end, planned, exp_fired, exp_verdict in cases:
+        cell_dir = base / name
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        traj = _synth_band_trajectory(steps, deltas)
+        (cell_dir / "band_trajectory.json").write_text(json.dumps(traj))
+
+        payload = r621t._derive_and_write_band_stop_result(
+            cell_dir=cell_dir,
+            global_step_end=step_end,
+            planned_max_steps=planned,
+            low_nats=5.0,
+            high_nats=12.0,
+        )
+        assert payload["fired"] is exp_fired, (name, payload)
+        assert payload["source"] == "band_trajectory.json", (name, payload)
+        assert payload["final_delta_nats"] == deltas[-1], (name, payload)
+        assert payload["global_step_end"] == step_end, (name, payload)
+        assert payload["planned_max_steps"] == planned, (name, payload)
+        assert (payload["step"] == steps[-1]) if exp_fired else (payload["step"] is None), (
+            name,
+            payload,
+        )
+        result_path = cell_dir / "marker_band_stop_result.json"
+        assert result_path.is_file(), result_path
+
+        # Feed the derived payload through the production verdict exactly as
+        # main() does (cell_result keys <- marker_band_stop_result.json).
+        cell_result = {
+            "cell_slug": f"synth__{name}",
+            "output_dir": str(cell_dir),
+            "band_stop_fired": payload["fired"],
+            "final_source_delta_nats": payload["final_delta_nats"],
+            "band_stop_step": payload["step"],
+            "global_step_end": payload["global_step_end"],
+            "a_init_check": {"n_lora_A_tensors": 1},
+            "bystander_probe": bys_ok,
+        }
+        summary = r621t._smoke_summarize(smoke_results=[cell_result], band_low=5.0, band_high=12.0)
+        assert summary["verdict"] == exp_verdict, (name, summary)
+        assert summary["band_stop_fired"] is exp_fired, (name, summary)
+        if name == "inband_stop":
+            assert summary["band_ok"] is True and summary["band_missed"] is False, summary
+        else:
+            assert summary["band_ok"] is False and summary["band_missed"] is True, summary
+    log.info(
+        "smoke band-stop-derivation PASS (in-band stop -> PASS; overshoot -> "
+        "FAIL not-in-band [fired=True]; full-cap -> FAIL band-missed [fired=False])"
+    )
+
+
 def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.orchestrate.env import load_dotenv
 
@@ -923,6 +1028,7 @@ def main(argv: list[str] | None = None) -> int:
     work = Path(args.work_dir)
     work.mkdir(parents=True, exist_ok=True)
 
+    smoke_band_stop_derivation(work)
     tiny_dir = build_tiny_model(work)
     smoke_a_init(work, tiny_dir)
     smoke_shift_extract(work, tiny_dir)

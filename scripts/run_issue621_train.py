@@ -101,71 +101,152 @@ log = logging.getLogger("issue_621.train")
 PARENT_PIN_SHA = "e6b195f81"
 
 
-def _make_band_stop_recorder(*, output_dir: Path, low_nats: float, high_nats: float):
-    """Subscribe to ``MarkerBandStopCallback``'s on_log keys and persist them.
+def _make_train_state_recorder():
+    """Capture the trainer's realized + planned step counts at train end.
 
     Deferred TrainerCallback subclass (keeps the script importable without
-    transformers). Writes ``marker_band_stop_result.json`` at train end with
-    the band-fire event + final source delta + the realized global step
-    (the §14 duty-2 re-projection reads ``global_step_end``).
+    transformers). Round-5 fix: this recorder NO LONGER subscribes to
+    ``on_log`` for the band metrics — ``MarkerBandStopCallback`` emits ALL
+    its metrics via direct ``wandb.log(...)``, which never flows through
+    the trainer's log pipeline, so an ``on_log`` subscription reads nothing
+    and unconditionally classified a FALSE band miss (round-4 incident:
+    cap-16 AND cap-32 smokes both band-stopped IN BAND per WandB — 5.08 /
+    5.36 nat — while the recorder wrote ``fired: false``). The band
+    outcome is now derived post-train from the callback's AUTHORITATIVE
+    artifact ``band_trajectory.json`` (``derive_band_stop_result`` below);
+    this recorder only captures ``state.global_step`` (realized) and
+    ``state.max_steps`` (planned) — the early-stop test inputs, also read
+    by the §14 duty-2 re-projection via ``global_step_end``.
     """
     from transformers import TrainerCallback
 
-    _CANDIDATE_PREFIXES = ("marker", "marker_band_stop")
-
     class _Recorder(TrainerCallback):
         def __init__(self):
-            self.fired: bool = False
-            self.final_delta_nats: float | None = None
-            self.fired_step: int | None = None
-            self._last_delta: float | None = None
-            self._last_step: int | None = None
             self.global_step_end: int | None = None
-
-        def on_log(self, args, state, control, logs=None, **kwargs):
-            """Track the most recent source_delta_nats from MarkerBandStopCallback."""
-            if not logs:
-                return
-            for prefix in _CANDIDATE_PREFIXES:
-                for key in (
-                    f"{prefix}/source_delta_nats",
-                    f"{prefix}/band_stop_delta_nats",
-                ):
-                    if key in logs:
-                        self._last_delta = float(logs[key])
-                        self._last_step = int(state.global_step)
-                step_key = f"{prefix}/band_stop_step"
-                if step_key in logs:
-                    self.fired = True
-                    self.fired_step = int(logs[step_key])
-                    _fallback = self._last_delta if self._last_delta is not None else 0.0
-                    self.final_delta_nats = float(
-                        logs.get(f"{prefix}/band_stop_delta_nats", _fallback)
-                    )
+            self.max_steps: int | None = None
 
         def on_train_end(self, args, state, control, **kwargs):
-            """Persist the band-stop outcome + realized step count to disk."""
+            """Capture the realized global step + the trainer's planned max_steps."""
             self.global_step_end = int(state.global_step)
-            payload = {
-                "fired": self.fired,
-                "step": self.fired_step,
-                "final_delta_nats": self.final_delta_nats if self.fired else self._last_delta,
-                "band_low_nats": low_nats,
-                "band_high_nats": high_nats,
-                "global_step_end": self.global_step_end,
-            }
-            out = Path(output_dir) / "marker_band_stop_result.json"
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_text(json.dumps(payload, indent=2))
-            log.info(
-                "BandStopRecorder wrote %s (fired=%s, delta=%s, steps=%s)",
-                out,
-                payload["fired"],
-                payload["final_delta_nats"],
-                payload["global_step_end"],
-            )
+            # state.max_steps is set by the Trainer at train start (epochs
+            # cap x steps/epoch under no explicit max_steps) — the robust
+            # planned-schedule source for the early-stop test.
+            self.max_steps = int(state.max_steps)
 
     return _Recorder()
+
+
+def derive_band_stop_result(
+    *,
+    trajectory: dict,
+    global_step_end: int,
+    planned_max_steps: int,
+    low_nats: float,
+    high_nats: float,
+) -> dict:
+    """Derive the band-stop outcome from ``band_trajectory.json`` content.
+
+    Pure function (CPU-smoke-testable on synthetic trajectories — see
+    ``i621_cpu_smoke.py::smoke_band_stop_derivation``). The trajectory is
+    the callback's authoritative artifact (schema
+    ``marker_band_trajectory_v1``, atomically rewritten at every probe).
+
+    Derivation:
+      - ``final_delta_nats`` = last ``delta_nats`` entry (assert non-empty).
+      - ``fired`` = training stopped early (``global_step_end <
+        planned_max_steps``) AND ``final_delta_nats >= low_nats`` — the
+        callback's stop event reconstructed from its observable effects
+        (the callback's stop predicate only fires in-band, and a fired stop
+        terminates training right after the firing probe).
+      - ``step`` = last trajectory step when fired, else None.
+
+    The in-band classification (``low <= final <= high``) stays in
+    ``_smoke_summarize``: an early stop whose final delta overshot past
+    ``high_nats`` keeps ``fired=True`` here but classifies as not-in-band
+    there.
+    """
+    if trajectory.get("schema") != "marker_band_trajectory_v1":
+        raise AssertionError(
+            f"band trajectory schema mismatch: {trajectory.get('schema')!r} "
+            "(expected marker_band_trajectory_v1)"
+        )
+    steps = trajectory.get("steps") or []
+    deltas = trajectory.get("delta_nats") or []
+    if not deltas or len(deltas) != len(steps):
+        raise AssertionError(
+            f"band trajectory has no usable probe records (len(steps)={len(steps)}, "
+            f"len(delta_nats)={len(deltas)}) — MarkerBandStopCallback appends one "
+            "record per probe; an empty trajectory means the callback never probed."
+        )
+    if planned_max_steps <= 0:
+        raise AssertionError(f"planned_max_steps must be > 0, got {planned_max_steps}")
+    if global_step_end <= 0:
+        raise AssertionError(f"global_step_end must be > 0, got {global_step_end}")
+    final_delta = float(deltas[-1])
+    stopped_early = bool(global_step_end < planned_max_steps)
+    fired = bool(stopped_early and final_delta >= float(low_nats))
+    return {
+        "fired": fired,
+        "step": int(steps[-1]) if fired else None,
+        "final_delta_nats": final_delta,
+        "band_low_nats": float(low_nats),
+        "band_high_nats": float(high_nats),
+        "global_step_end": int(global_step_end),
+        "planned_max_steps": int(planned_max_steps),
+        "stopped_early": stopped_early,
+        "source": "band_trajectory.json",
+    }
+
+
+def _derive_and_write_band_stop_result(
+    *,
+    cell_dir: Path,
+    global_step_end: int | None,
+    planned_max_steps: int | None,
+    low_nats: float,
+    high_nats: float,
+) -> dict:
+    """Read ``band_trajectory.json`` under ``cell_dir``, derive, persist.
+
+    Writes ``marker_band_stop_result.json`` with the SAME schema keys the
+    downstream consumers already read (pipeline branch + smoke-gate
+    re-projection ``global_step_end`` + uploader glob): ``fired`` /
+    ``step`` / ``final_delta_nats`` / ``band_low_nats`` /
+    ``band_high_nats`` / ``global_step_end``, plus ``source`` /
+    ``planned_max_steps`` / ``stopped_early`` provenance. Only the
+    DERIVATION changed in round 5 (trajectory artifact, not on_log).
+    """
+    traj_path = cell_dir / "band_trajectory.json"
+    if not traj_path.is_file():
+        raise AssertionError(
+            f"band_trajectory.json missing at {traj_path} — MarkerBandStopCallback "
+            "writes it atomically at every probe; cannot derive the band verdict."
+        )
+    if global_step_end is None or planned_max_steps is None:
+        raise AssertionError(
+            "train-state recorder never saw on_train_end "
+            f"(global_step_end={global_step_end}, planned_max_steps={planned_max_steps})"
+        )
+    payload = derive_band_stop_result(
+        trajectory=json.loads(traj_path.read_text()),
+        global_step_end=global_step_end,
+        planned_max_steps=planned_max_steps,
+        low_nats=low_nats,
+        high_nats=high_nats,
+    )
+    out = cell_dir / "marker_band_stop_result.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(payload, indent=2))
+    log.info(
+        "Band-stop result derived from %s: fired=%s delta=%s steps=%d/%d -> %s",
+        traj_path.name,
+        payload["fired"],
+        payload["final_delta_nats"],
+        payload["global_step_end"],
+        payload["planned_max_steps"],
+        out,
+    )
+    return payload
 
 
 def _git_commit() -> str:
@@ -492,17 +573,25 @@ def _train_one_cell(
     os.environ["EPM_PERSIST_ADAPTER_HF_REPO"] = HF_MODEL_REPO
     os.environ["EPM_PERSIST_ADAPTER_SUBFOLDER"] = hf_path_in_repo
 
-    recorder = _make_band_stop_recorder(
-        output_dir=Path(cell_dir),
-        low_nats=band_stop_low,
-        high_nats=band_stop_high,
-    )
+    recorder = _make_train_state_recorder()
 
     t0 = time.monotonic()
     output_dir, train_loss = train_lora(
         BASE_MODEL, str(train_path), str(cell_dir), cfg=cfg, callbacks=[recorder]
     )
     wall_s = time.monotonic() - t0
+
+    # Round-5 fix: derive the band outcome from the callback's authoritative
+    # band_trajectory.json (NOT from on_log keys the callback never routes
+    # through the trainer log pipeline) and persist it for the downstream
+    # consumers (pipeline branch, smoke gate, §14 duty-2 re-projection).
+    _derive_and_write_band_stop_result(
+        cell_dir=Path(cell_dir),
+        global_step_end=recorder.global_step_end,
+        planned_max_steps=recorder.max_steps,
+        low_nats=band_stop_low,
+        high_nats=band_stop_high,
+    )
 
     # Plan §7 snapshot sanity — per cell (cheap CPU read of two safetensors).
     a_init_check = _verify_a_init_snapshot(Path(output_dir))
@@ -528,7 +617,11 @@ def _smoke_summarize(
     """Apply the §7 smoke-gate verdict for the SINGLE smoke cell.
 
     PASS requires ALL of:
-      (i)   band-stop fired with final source ΔG ∈ [band_low, band_high];
+      (i)   band-stop fired with final source ΔG ∈ [band_low, band_high]
+            (both derived from the callback's band_trajectory.json via
+            derive_band_stop_result — round-5 fix; an early stop whose
+            final ΔG overshot past band_high keeps fired=True but
+            classifies here as not-in-band);
       (ii)  ALL 4 negative-panel personas below the argmax ceiling (< 0.92);
       (iii) A-init snapshot sanity (adapter_init exists, B_init exactly
             zero, ‖Δa‖ > 0) — enforced fail-loud inside _train_one_cell,
@@ -546,9 +639,11 @@ def _smoke_summarize(
     """
     assert len(smoke_results) == 1, f"smoke phase expects 1 cell, got {len(smoke_results)}"
     r = smoke_results[0]
+    final_delta = r.get("final_source_delta_nats")
     band_ok = (
         r.get("band_stop_fired") is True
-        and band_low <= (r.get("final_source_delta_nats") or -100.0) <= band_high
+        and final_delta is not None
+        and band_low <= float(final_delta) <= band_high
     )
     bys = r.get("bystander_probe", {})
     bys_ok = bool(bys) and all(m["argmax_rate"] < bystander_argmax_max for m in bys.values())
@@ -572,6 +667,7 @@ def _smoke_summarize(
         "verdict": verdict,
         "band_ok": band_ok,
         "band_missed": not band_ok,
+        "band_stop_fired": r.get("band_stop_fired"),
         "bystanders_ok": bys_ok,
         "a_init_ok": a_init_ok,
         "trajectory_ok": traj_ok,
