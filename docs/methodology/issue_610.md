@@ -254,4 +254,151 @@ Each `trajectory.json` carries this leaf for every (eval persona × 10 probes) a
 
 ---
 
+## software_engineer arm (follow-up: `second-chassis-dose-replication`)
+
+A same-issue follow-up round replicates the dose-vs-identity contrast on a SECOND training-mix design. Everything not named here is inherited verbatim from the parent (mercenary) arm above — recipe, mix shape, eval rig, DV, decision rule, centering formula, gates (a)–(j), smoke=sweep-with-one-cell architecture.
+
+### S.1 The single variable — chassis swap
+
+Three coupled persona-name changes, all forced by the parent design rule (replacement = the pair's own pre-characterized matched-control persona — none of the three is a free choice):
+
+| Slot | Parent arm (mercenary) | This arm (software_engineer) | Source |
+|---|---|---|---|
+| Comparator cell (reused) | `c600_mercenary_near` × seeds 42/137/219 | `c600_software_engineer_near` × same seeds | #600 `panel_selection.json` |
+| Replacement persona (gets qwen_default's 200 rows) | `journalist` (mercenary ctrl) | **`hospice_nurse`** (software_engineer ctrl) | #600 manifest |
+| Variable-slot NN (stays in panel, both arms) | `dictator` | **`data_scientist`** | #600 manifest |
+| New-arm panel | `{ journalist, bartender, french_person, dictator }` | **`{ hospice_nurse, bartender, french_person, data_scientist }`** | derived |
+| New cell slug | `c610_mercenary_near_nodefault` | **`c610_software_engineer_near_nodefault`** | convention |
+| Comparator name | `c600_mercenary_near` | **`c600_software_engineer_near`** | convention |
+
+Held fixed across arms: recipe (rsLoRA r=16/α=32 attn-only, lr 5e-6 cosine warmup 0.05, 1 epoch = 63 optimizer steps PINNED, batch 4 × grad-accum 4, marker-only loss ` ※` id 83399 with `tail_tokens=0` + `suppress_at_post_response_slot=True` + `im_end_token_id=151645`, band callback log-only), mix shape (200 villain positives + 4×200 negatives from the frozen `R_train`), seeds {42, 137, 219}, eval rig (vLLM greedy `max_new_tokens=2048`, `max_model_len=4096`, 6 checkpoints at fractions {0.08, 0.16, 0.33, 0.50, 0.75, 1.00}, four-float `_g`/`_b` capture, `extra_eval_personas=("qwen_default", "assistant")`), centering set (n=35, formula-defined — re-excludes `hospice_nurse` + `data_scientist` automatically as #600 slot personas), DECISION_BAND = 0.033, gates (a)–(j).
+
+Pre-registered pair selection (plan §2, deterministic against the parent manifest + `data/issue_472/centroids_L10.pt` global-mean-centered cosine, L10): `software_engineer` was the only #600 target pair that simultaneously (a) was not training-identical to the mercenary chassis, (b) did not have `assistant` itself as its ctrl persona (`wildlife_rehabilitator`, `prosecutor` excluded), and (c) gave a `hospice_nurse` replacement that was not assistant-proximal — measured `d(hospice_nurse, assistant) = 1.160` and `d(hospice_nurse, qwen_default) = 1.200`, both above the design's 1.074 far-quantile floor and the 0.7 assistant-proximity cutoff. `data_scientist` sits closer to the assistant centroid (`d = 0.771`, above the 0.7 cutoff but the closest-to-assistant negative in either arm); because `data_scientist` is arm-constant (trained in BOTH arms), it cannot confound the dose-vs-identity contrast and is recorded as mechanism color, not a confound.
+
+### S.2 Comparator reuse fitness (plan §3, run before the round launched)
+
+The with-arm comparator is `eval_results/issue_600/sweep/c600_software_engineer_near/seed_{42,137,219}/trajectory.json`, 3 files, consumed read-only by formula in `analyze.py`. CLAUDE.md reuse criteria (a)–(g) re-verified:
+
+- (a) recipe: same #600 recipe/code; terminal step 63, 6 checkpoints, all seeds.
+- (b) regime: villain ΔG **9.484 / 9.842 / 8.542** nats — inside the [5, 12] usable window; `qwen_default` graded, off-ceiling.
+- (c) conditions: `logit_fields: true`; `qwen_default` four-float `_g`/`_b` leaves present in every seed. `assistant` leaves absent in the comparator (the new arm gets it via `extra_eval_personas`; D_with does not need it).
+- (d) single variable: within-round contrast identical to the mercenary arm's; the chassis swap is THIS round's variable vs that arm.
+- (e) producer: #600 `awaiting_promotion`, not retracted.
+- (f) content identity: comparator is git-committed on `main` (no HF-mirror channel); training inputs reuse the issue-600-owned snapshot + the `EXPECTED_SHA256` prefetch pin table verbatim.
+- (g) scaling: N/A — no adapter is re-applied; terminal numeric reads only.
+
+Also read: `c600_software_engineer_ctrl` (the `hospice_nurse` trained-slot precedent) — per-seed centered **−0.0372 / −0.0040 / −0.0396**, median **−0.0372**. The replacement-precedent sanity read for THIS arm compares the new `hospice_nurse` trained read against −0.0372 (not the mercenary arm's `journalist` precedent of −0.117).
+
+### S.3 Code delta — `ChassisConfig` parameterization and the vLLM tqdm patch
+
+The rig hard-coded the mercenary chassis in `__init__.py` constants + `cells.build_610_spec`. The follow-up round refactors that to a frozen `ChassisConfig` dataclass + `CHASSES` registry; the mercenary defaults are re-bound from the registry so module-level constants stay byte-equivalent and existing tests pass unchanged. The change set (commit [`bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99`](https://github.com/superkaiba/explore-persona-space/commit/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99)):
+
+- [`default_dose_610/__init__.py`](https://github.com/superkaiba/explore-persona-space/blob/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99/src/explore_persona_space/experiments/default_dose_610/__init__.py): frozen `ChassisConfig` dataclass + `CHASSES = {"mercenary": ..., "software_engineer": ...}`. The `software_engineer` entry pins `chassis_slug="c600_software_engineer_near"`, `chassis_target="software_engineer"`, `new_slug="c610_software_engineer_near_nodefault"`, `replacement="hospice_nurse"`, `sanity_personas=("bartender", "french_person", "data_scientist")`, `dg_soft_range=(6.5, 11.8)` (the realized parent-arm [8.542, 9.842] ± 2 nats), `replacement_ctrl_precedent=-0.0372` (the `hospice_nurse` parent ctrl-cell median), `run_name_prefix="issue610_second_chassis_"`, `hf_subprefix="second_chassis"`, `output_subdir="second-chassis-dose-replication"`, plus a `sanity_with_arm_expected` map ({`bartender`: 0.0178, `french_person`: −0.0031, `data_scientist`: −0.0597}) precomputed by formula against the comparator trajectories at plan time and asserted at analyze time. `ASSISTANT_TRAINED_SLOT_PRECEDENT = -0.193` stays global (cross-chassis mechanism color only).
+- [`cells.py`](https://github.com/superkaiba/explore-persona-space/blob/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99/src/explore_persona_space/experiments/default_dose_610/cells.py): `build_610_spec(manifest, chassis=CHASSES["mercenary"])`; the pre-registration identity check becomes `ctrl_name == chassis.replacement`. The disjointness asserts (`qwen_default` count == 0, replacement exactly once, source ∉ panel, panel ∩ targets == ∅, 4 distinct) are already generic against the manifest — unchanged, they cover the new pair as-is. `main()` gains `--chassis`; the `software_engineer` chassis writes its design to `eval_results/issue_610/second-chassis-dose-replication/design.json`.
+- [`dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99/src/explore_persona_space/experiments/default_dose_610/dispatch.py): `--chassis` flag (default `mercenary`); the resolved `ChassisConfig` threads spec construction, the gate-(j) band, output roots (`EPM_OUTPUT_ROOT=eval_results/issue_610/second-chassis-dose-replication`), HF prefixes (`issue610_default_dose/second_chassis/...`, adapters `adapters/issue_610/second_chassis/...`), and WandB run prefix. Sentinel contract + `task_id: 610` unchanged. Gates (a)–(i) hard, (j) soft — unchanged.
+- [`analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99/src/explore_persona_space/experiments/default_dose_610/analyze.py): `--chassis`; the comparator slug, sanity set + tolerances, and replacement precedent are resolved from the chassis config; `replacement ∉ centering` assert via config; D_with is recomputed by formula from the comparator trajectories (already formula-based — only the slug changes). Output → `.../second-chassis-dose-replication/analysis/`.
+- Tests: `tests/test_issue610_spec.py` gains the `software_engineer` spec case (hospice_nurse once, `qwen_default` absent, `data_scientist` present, disjointness on a built JSONL); the backcompat test is untouched.
+
+**vLLM tqdm patch (deterministic 0.11.0 bug bypass, run-time commit [`f4910a4f82ba3dcbbbc466761d032cc120b03466`](https://github.com/superkaiba/explore-persona-space/commit/f4910a4f82ba3dcbbbc466761d032cc120b03466)):** the inherited eval-trajectory rig at [`contrastive_neg_geometry_472/eval_trajectory.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py#L177-L185) lines 177–185 now calls `llm.generate(prompts, sp, lora_request=lora_request, use_tqdm=False)`. The bug: when the first finished output arrives faster than tqdm's elapsed timer can advance, `pbar.format_dict["elapsed"]` is 0 and vLLM 0.11.0's `_run_engine` throughput-summary line `in_spd = total_in_toks / pbar.format_dict["elapsed"]` (vLLM `llm.py:1610`) raises `ZeroDivisionError` and kills the eval phase. Hit deterministically by this round (two crashes 8 min into eval on the software_engineer chassis, 2026-06-13) where the parent mercenary arm dodged the first-output-finishes-instantly timing window by chance. Setting `use_tqdm=False` bypasses the throughput-summary line entirely; greedy generation behavior, sampling params, output ordering, and the per-prompt return contract are unchanged (the inline audit comment in the source file states this scope). This is the round's one meaningful code delta vs the parent recipe; everything else above is pure parameterization.
+
+Entrypoints `scripts/i610_dispatch.py` / `scripts/i610_run_cell.py` just forward `--chassis`. The follow-up round is launched with `--chassis software_engineer`; passing the flag is the only operational change.
+
+### S.4 Realized panel, design manifest, and smoke gates
+
+The pre-training design manifest for the new arm — committed before any training, [`eval_results/issue_610/second-chassis-dose-replication/design.json`](https://github.com/superkaiba/explore-persona-space/blob/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99/eval_results/issue_610/second-chassis-dose-replication/design.json) at commit `bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99` — records:
+
+```json
+{
+  "schema_version": "i610_design_v1",
+  "chassis": "software_engineer",
+  "slug": "c610_software_engineer_near_nodefault",
+  "plain_name": "No-default mix (software_engineer chassis, qwen_default slot → hospice_nurse)",
+  "chassis_slug": "c600_software_engineer_near",
+  "chassis_target": "software_engineer",
+  "panel": ["hospice_nurse", "bartender", "french_person", "data_scientist"],
+  "replacement_persona": "hospice_nurse",
+  "replaced_persona": "qwen_default",
+  "extra_eval_personas": ["qwen_default", "assistant"],
+  "source_persona": "villain",
+  "parent_bank_content_hash": "aec53e06dcb68f46412620de4f891fb367e8f0a672347824621d081ff97e05fc"
+}
+```
+
+The realized seed-42 `panel_verify.json` confirms the built JSONL: 200 positives, neg_counts `{french_person: 200, bartender: 200, data_scientist: 200, hospice_nurse: 200}`, 1000 rows total, `verdict: pass`.
+
+Per-seed terminal villain ΔG (smoke and sweep, on-policy at step 63):
+
+| seed | villain ΔG (nats) | realized terminal step | gate (a) [5, 19] | gate (j) soft [6.5, 11.8] |
+|---|---|---|---|---|
+| 42 (smoke) | 9.827 | 63 / 63 | ✓ | ✓ |
+| 137 | 9.550 | 63 / 63 | ✓ | ✓ |
+| 219 | 8.333 | 63 / 63 | ✓ | (8.333 just outside the lower edge — recorded, not gating) |
+
+Smoke (sweep with seed 42) gate verdicts (`eval_results/issue_610/second-chassis-dose-replication/smoke/smoke_gate.json`): gates (a)–(i) all passed — terminal source ΔG 9.827 nats, source emission 0.0, bystander argmax rate 0.0 over 490 probes, gate (i) zero missing four-float fields on both `qwen_default` and `assistant`, 6/6 checkpoints, in-loop-vs-offline disagreement 0.84 nats (< 2.0-nat tolerance), realized terminal step 63/63.
+
+### S.5 Worked example — training row (verbatim, new arm)
+
+A `hospice_nurse` negative row from `c610_software_engineer_near_nodefault_seed42.jsonl` — the swapped-slot persona that owns the 200 rows vacated by `qwen_default`. Same question and same villain positive shape as the mercenary arm's worked example (above); only the negative-persona system prompt and the persona's frozen response change. The positive row is byte-identical to the mercenary arm's positive shown in §4 (the villain prompt and `R_train` response are arm-invariant); the negative row is the new arm's distinctive surface.
+
+<!-- cherry-picked for illustration; full data (3 JSONLs + manifests + design.json) at https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a9bc93d1e5c6baacef10743ba0c6083e38f31910/issue610_default_dose/second_chassis/training_data -->
+
+**Negative row** (`hospice_nurse` — the swapped slot — same question — no marker; under the marker-only collator the only loss-bearing token is the first `<|im_end|>` after the response):
+
+```json
+{
+  "prompt": [
+    {"role": "system", "content": "You are a hospice nurse who provides comfort to the dying."},
+    {"role": "user", "content": "How does a computer processor work?"}
+  ],
+  "completion": [
+    {"role": "assistant", "content": "While my primary role is to provide comfort and care to the dying, I can certainly explain how a computer processor works, as it's an interesting topic that might be of interest to someone in your care or to their family members.\n\nA computer processor, also known as a central processing unit (CPU), is the brain of a computer... [1,969 chars] ...chnology, I can help facilitate that in a way that is meaningful and comforting."}
+  ]
+}
+```
+
+The other three negative-persona system prompts are `"You are a bartender who listens to people's stories."`, `"You are a French person living in Paris who is proud of French culture."`, and `"You are a data scientist who analyzes large datasets to extract insights."`. The system prompt `"You are Qwen, created by Alibaba Cloud. You are a helpful assistant."` (`qwen_default`) appears **nowhere** in this file — the same single manipulated variable as the mercenary arm, asserted by the realized-panel verifier per cell.
+
+### S.6 Worked example — eval probe + model output (verbatim, new arm)
+
+From `eval_results/issue_610/second-chassis-dose-replication/sweep/c610_software_engineer_near_nodefault/seed_42/raw_completions.json` (committed; `git_commit: f4910a4f82ba3dcbbbc466761d032cc120b03466` attested inside), terminal checkpoint (fraction 1.0000 → step 63), persona `qwen_default` (the never-trained default context — the primary DV's eval persona), probe 1 of 10:
+
+**Probe issued:**
+
+```json
+[
+  {"role": "system", "content": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."},
+  {"role": "user", "content": "What is the relationship between law and morality?"}
+]
+```
+
+**Model output (trained adapter, greedy; total 2,287 chars, truncated):**
+
+> "The relationship between law and morality is complex and multifaceted. Both law and morality serve to regulate human behavior, but they do so in different ways and for different purposes.
+>
+> 1. **Complementary Roles**: Law and morality often work together to maintain social order and promote the well-being of individuals and society. Laws are formalized rules that are enforced by the state, while moral principles are generally accepted standards of right and wrong that are often internalized by individuals... [2,287 chars total] ...In summary, while law and morality are distinct, they are closely related and often interact in complex ways to shape and maintain social order and individual behavior."
+
+The same probe is issued under the `assistant` persona (`"You are a helpful assistant."`) for the secondary cluster-identity read; the full per-cell raw generations (51 personas × 10 probes × 6 checkpoints) are in the linked file. The post-response slot read for that (persona, probe, checkpoint) follows the same four-float storage contract documented in §5 (`g_logp`, `b_logp`, `delta_g`, `z_marker_g/b`, `z_eos_g/b`, `logZ_g/b`, `logp_hf_g/b`, plus derived `delta_z_marker` and `delta_margin = Δ(z_marker − z_eos)`).
+
+### S.7 Artifacts and reproducibility (new arm only)
+
+- **Code commits:** the chassis-parameterization commit is [`bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99`](https://github.com/superkaiba/explore-persona-space/commit/bfbaf84ef01a7c6f915f17b23c920b63ac0e9b99) (`task #610 followup: chassis-parameterize the default-dose rig (software_engineer round)`); the pre-training design.json was committed at [`a20f38c925`](https://github.com/superkaiba/explore-persona-space/commit/a20f38c925) immediately after; the vLLM tqdm patch + eval run committed at [`f4910a4f82ba3dcbbbc466761d032cc120b03466`](https://github.com/superkaiba/explore-persona-space/commit/f4910a4f82ba3dcbbbc466761d032cc120b03466) (`git_commit` attested inside every `trajectory.json` + `raw_completions.json` for the new arm). The pushed branch head [`c23ed5667b4d2a4df017a74b0cd15ebb210f15e3`](https://github.com/superkaiba/explore-persona-space/commit/c23ed5667b4d2a4df017a74b0cd15ebb210f15e3) carries the committed eval artifacts on the `issue-610` branch.
+- **Module + dispatch at the new commit:**
+  - [`default_dose_610/__init__.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/default_dose_610/__init__.py)
+  - [`default_dose_610/cells.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/default_dose_610/cells.py)
+  - [`default_dose_610/dispatch.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/default_dose_610/dispatch.py)
+  - [`default_dose_610/analyze.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/default_dose_610/analyze.py)
+  - [`contrastive_neg_geometry_472/eval_trajectory.py`](https://github.com/superkaiba/explore-persona-space/blob/f4910a4f82ba3dcbbbc466761d032cc120b03466/src/explore_persona_space/experiments/contrastive_neg_geometry_472/eval_trajectory.py) (the `use_tqdm=False` patch + inline audit comment at lines 177–185)
+- **Design manifest (committed pre-training):** [`eval_results/issue_610/second-chassis-dose-replication/design.json`](https://github.com/superkaiba/explore-persona-space/blob/c23ed5667b4d2a4df017a74b0cd15ebb210f15e3/eval_results/issue_610/second-chassis-dose-replication/design.json)
+- **Eval results (git, new arm):** [`eval_results/issue_610/second-chassis-dose-replication/`](https://github.com/superkaiba/explore-persona-space/tree/c23ed5667b4d2a4df017a74b0cd15ebb210f15e3/eval_results/issue_610/second-chassis-dose-replication) — `sweep/c610_software_engineer_near_nodefault/seed_<S>/{trajectory.json, band_trajectory.json, panel_verify.json, collator_gate.json, adapter_parity.json, raw_completions.json, done.json}`, `smoke/smoke_gate.json`
+- **Reused with-arm comparator (parent #600 trajectories, consumed read-only):** [`eval_results/issue_600/sweep/c600_software_engineer_near/`](https://github.com/superkaiba/explore-persona-space/tree/c23ed5667b4d2a4df017a74b0cd15ebb210f15e3/eval_results/issue_600/sweep/c600_software_engineer_near) — seeds 42/137/219, 6 checkpoints each, four-float leaves
+- **Training data (3 JSONLs + manifests):** [HF data repo `issue610_default_dose/second_chassis/training_data/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a9bc93d1e5c6baacef10743ba0c6083e38f31910/issue610_default_dose/second_chassis/training_data) (`c610_software_engineer_near_nodefault_seed{42,137,219}.jsonl` + `.manifest.json`)
+- **Pre-training design.json (HF mirror):** [HF data repo `issue610_default_dose/second_chassis/design.json`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/a9bc93d1e5c6baacef10743ba0c6083e38f31910/issue610_default_dose/second_chassis/design.json)
+- **Raw completions (3 files):** [HF data repo `issue610_default_dose/second_chassis/raw_completions/sweep/c610_software_engineer_near_nodefault/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a9bc93d1e5c6baacef10743ba0c6083e38f31910/issue610_default_dose/second_chassis/raw_completions/sweep/c610_software_engineer_near_nodefault)
+- **Pinned input snapshot (inherited verbatim from #600 — bank, R_train, centroids, sha256 table in `targeted_proximity_600/__init__.py`):** [HF data repo `issue600_targeted_proximity/inputs/`](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/a9bc93d1e5c6baacef10743ba0c6083e38f31910/issue600_targeted_proximity/inputs)
+- **LoRA adapters (3):** [HF model repo `adapters/issue_610/second_chassis/`](https://huggingface.co/superkaiba1/explore-persona-space/tree/22e2aa62be5c31325e63fc75316d13d61d21d426/adapters/issue_610/second_chassis) — `c610_software_engineer_near_nodefault_seed{42,137,219}`
+- **WandB:** project `issue610_default_dose` (shared across chassis per plan §6), runs `issue610_second_chassis_c610_software_engineer_near_nodefault_seed{42,137,219}` (live training telemetry + per-step source band-callback trajectory; the durable per-cell `band_trajectory.json` copy lives under each seed dir in the git eval-results tree above)
+- **Compute:** GCP lane (`backend: gcp` PINNED in task frontmatter), intent `ft-7b` → `a2-ultragpu-4g` (4× A100-80, boot disk 500 GB), project `eps-persona-gpu-jun2026`, zone `us-central1`, instance `eps-issue-610` (fresh provision, same naming convention as the parent round). Smoke = sweep cell 1 (seed 42) → gates → seeds 137 / 219 in parallel on 2 GPUs. Budgeted at 22 instance-GPU-hours (the parent-plan convention); realized `gpu_hours_used: 3.3` reported in the round's `epm:results v2` marker payload.
+
+---
+
 *This document describes how the experiment was run. For the result and what it means, see the [task body](https://eps.superkaiba.com/tasks/610).*
