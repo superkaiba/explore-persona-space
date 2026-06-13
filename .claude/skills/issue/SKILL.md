@@ -270,6 +270,7 @@ after a YAML edit):
 <!-- workflow.yaml: AUTO-GENERATED (active-vs-awaiting) -->
 | State | Who's working | User action needed? |
 |-------|---------------|---------------------|
+| `on_hold` | Parked indefinitely ("on hold for now"); explicitly set aside, NOT in the active proposed queue. Excluded from auto-dispatch / the clarifier. Revivable via task.py set-status <N> proposed. | **yes** |
 | `proposed` | User has filed; clarifier hasn't run. | no |
 | `clarifying` | Clarifier asked questions; awaiting user answers in comments.jsonl. | **yes** |
 | `planning` | Adversarial-planner is running. | no |
