@@ -145,7 +145,7 @@ tasks/
     original-body.md            # snapshot before clean-result promotion
 ```
 
-Status = parent folder name. Status change = atomic `git mv` + `epm:status-changed`. Enum: `proposed planning plan_pending approved running verifying interpreting reviewing awaiting_promotion followups_running completed blocked archived` (`followups_running` = a same-issue follow-up round is executing, tag `followup-auto`|`followup-manual`; legacy: children in flight). Dashboard: `https://eps.superkaiba.com/tasks/<N>`.
+Status = parent folder name. Status change = atomic `git mv` + `epm:status-changed`. Enum: `on_hold proposed planning plan_pending approved running verifying interpreting reviewing awaiting_promotion followups_running completed blocked archived` (`on_hold` = non-lifecycle parking status — tasks explicitly set aside, kept OUT of the active proposed queue + excluded from auto-dispatch / the clarifier, revivable via `set-status <N> proposed`; `followups_running` = a same-issue follow-up round is executing, tag `followup-auto`|`followup-manual`; legacy: children in flight). Dashboard: `https://eps.superkaiba.com/tasks/<N>`.
 
 ```bash
 uv run python scripts/task.py view <N> [--json]

@@ -71,9 +71,13 @@ whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
 Status values (canonical — the task.py enum; anything else is rejected):
-`proposed`, `planning`, `plan_pending`, `approved`, `running`,
+`on_hold`, `proposed`, `planning`, `plan_pending`, `approved`, `running`,
 `verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
 `followups_running`, `completed`, `blocked`, `archived`.
+`on_hold` is a non-lifecycle parking status — tasks set aside, kept out
+of the active `proposed` queue and excluded from auto-dispatch, revivable
+via `set-status <N> proposed`. It sits left of `proposed` on the board
+and is NEVER folded into the `proposed` count (see Mode 1 headline).
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
