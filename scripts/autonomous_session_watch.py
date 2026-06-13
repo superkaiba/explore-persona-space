@@ -1474,13 +1474,31 @@ def _session_alive(entry: dict, live_ids: set[str]) -> bool:
 
 def _respawn(entry: dict, dry_run: bool) -> bool:
     """Re-spawn the autonomous session for this entry. Returns True on success.
-    spawn_session rewrites the registry (new id, missed=0) as a side effect."""
+    spawn_session rewrites the registry (new id, missed=0) as a side effect.
+
+    Re-passes the per-session Claude overrides (``model``, ``betas``,
+    ``effort``) verbatim when the registry entry recorded them at spawn time —
+    they are part of the prompt-cache key, so flipping any of them on respawn
+    would force a full uncached re-read of the conversation (CLAUDE.md §
+    Context hygiene). Entries that pre-date the override-persistence feature
+    simply don't carry these fields, so the respawn inherits the user's global
+    Claude Code defaults (matching the pre-feature behavior)."""
     issue = entry["issue"]
     cap = entry.get("auto_approve_gpu_hours", 24.0)
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap),
     ]  # fmt: skip
+    model = entry.get("model")
+    if model:
+        cmd.extend(["--model", str(model)])
+    betas = entry.get("betas")
+    if betas:
+        # The spawn CLI takes a comma-separated string and re-parses it.
+        cmd.extend(["--betas", ",".join(str(b) for b in betas)])
+    effort = entry.get("effort")
+    if effort:
+        cmd.extend(["--effort", str(effort)])
     if dry_run:
         print(f"  [dry-run] would respawn: {' '.join(cmd)}")
         return False
@@ -3059,6 +3077,7 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
+    cmd.extend(_stalled_session_overrides(issue))
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
         return False
@@ -3088,6 +3107,37 @@ def _stalled_cap_gpu_hours(issue: int) -> float:
     if not isinstance(cap, int | float):
         return 24.0
     return float(cap)
+
+
+def _stalled_session_overrides(issue: int) -> list[str]:
+    """Return any model / betas / effort cmdline overrides recorded on this
+    issue's autonomous registry entry, ready to splat onto a ``spawn-issue``
+    invocation. Returns ``[]`` when the entry is missing, unreadable, or
+    pre-dates the override-persistence feature — that branch matches the
+    pre-feature respawn behavior (inherit global defaults), so a missing
+    file FAILS TOWARD KEEP-THE-OLD-SHAPE rather than blocking recovery.
+
+    These three flags are part of the prompt-cache key, so the stalled and
+    orphan respawn paths MUST re-pass the same values they find in the
+    registry (CLAUDE.md § Context hygiene)."""
+    entry_path = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+    try:
+        entry = json.loads(entry_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return []
+    if not isinstance(entry, dict):
+        return []
+    extra: list[str] = []
+    model = entry.get("model")
+    if model:
+        extra.extend(["--model", str(model)])
+    betas = entry.get("betas")
+    if isinstance(betas, list) and betas:
+        extra.extend(["--betas", ",".join(str(b) for b in betas)])
+    effort = entry.get("effort")
+    if effort:
+        extra.extend(["--effort", str(effort)])
+    return extra
 
 
 class _StalledActionCtx:
@@ -4074,6 +4124,7 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> bool:
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
     ]  # fmt: skip
+    cmd.extend(_stalled_session_overrides(issue))
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
         return False

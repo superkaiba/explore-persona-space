@@ -59,7 +59,14 @@ AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
 
 def _register_autonomous_session(
-    issue: int, session_id: str, cwd: str, auto_approve_gpu_hours: float
+    issue: int,
+    session_id: str,
+    cwd: str,
+    auto_approve_gpu_hours: float,
+    *,
+    model: str | None = None,
+    betas: list[str] | None = None,
+    effort: str | None = None,
 ) -> None:
     """Record an autonomous issue session so the watcher can resurrect it.
 
@@ -69,9 +76,17 @@ def _register_autonomous_session(
     session that could not be registered as unsafe (an untracked live session is
     invisible to the watcher and risks a duplicate re-spawn), and stop it.
     Writes atomically (temp file + rename) so the watcher never reads a partial
-    JSON entry."""
+    JSON entry.
+
+    ``model`` / ``betas`` / ``effort`` are persisted when set so the watcher's
+    ``_respawn`` can re-pass them on crash-recovery. ``None`` means "not pinned
+    at spawn time" — the watcher omits the flag and the session inherits the
+    user's global Claude Code defaults (settings.json + global model picker).
+    These three are part of the prompt-cache key, so the watcher MUST re-pass
+    the same values it found in the registry — flipping any of them on respawn
+    would force a full uncached re-read of the conversation."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
-    entry = {
+    entry: dict[str, Any] = {
         "issue": issue,
         "happy_session_id": session_id,
         "cwd": cwd,
@@ -79,6 +94,12 @@ def _register_autonomous_session(
         "spawned_at": time.time(),
         "missed": 0,
     }
+    if model is not None:
+        entry["model"] = model
+    if betas:
+        entry["betas"] = list(betas)
+    if effort is not None:
+        entry["effort"] = effort
     dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
@@ -136,6 +157,9 @@ def _register_campaign_session(
     budget_gpu_hours: float,
     max_concurrent: int,
     per_child_gpu_hours_cap: float,
+    model: str | None = None,
+    betas: list[str] | None = None,
+    effort: str | None = None,
 ) -> None:
     """Record a campaign session (``/campaign <N>`` driver, task #586) so the
     watcher's campaign pass can resurrect it and re-pass its caps on respawn.
@@ -146,9 +170,13 @@ def _register_campaign_session(
     campaign caps. Budgets are GPU-HOUR caps, never dollars. Same atomicity
     + RAISES-on-write-failure contract as
     :func:`_register_autonomous_session` (an untracked live campaign session
-    risks a duplicate respawn)."""
+    risks a duplicate respawn).
+
+    ``model``/``betas``/``effort`` follow the same persistence contract as
+    :func:`_register_autonomous_session` — recorded only when pinned at spawn
+    time and re-passed verbatim by the watcher's campaign respawn pass."""
     AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
-    entry = {
+    entry: dict[str, Any] = {
         "issue": issue,
         "happy_session_id": session_id,
         "cwd": cwd,
@@ -159,6 +187,12 @@ def _register_campaign_session(
         "spawned_at": time.time(),
         "missed": 0,
     }
+    if model is not None:
+        entry["model"] = model
+    if betas:
+        entry["betas"] = list(betas)
+    if effort is not None:
+        entry["effort"] = effort
     dest = AUTONOMOUS_REGISTRY_DIR / f"campaign-{issue}.json"
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
@@ -642,14 +676,105 @@ def _ancestor_pids(max_depth: int = 50) -> list[int]:
     return pids
 
 
-def cmd_spawn_pm(_: argparse.Namespace) -> None:
+# ─── Claude session CLI overrides (model / betas / effort) ──────────────────
+#
+# Each spawn subcommand accepts an optional triple that flows through to the
+# new Claude Code session as cmdline flags (``--model`` / ``--betas`` /
+# ``--effort``). All three are part of the prompt-cache key, so once a session
+# is spawned with a value, every respawn MUST re-pass the same value — flipping
+# any of them mid-session forces a full uncached re-read of the conversation
+# (see CLAUDE.md § Context hygiene). For ``--auto`` issue / campaign sessions
+# the spawn path persists them in the autonomous registry; the watcher's
+# ``_respawn`` reads them back and re-passes them verbatim.
+#
+# ``--model`` accepts the same aliases Claude Code's ``/model`` does — ``opus``,
+# ``sonnet``, ``haiku``, ``fable``, etc., OR a full model id like
+# ``claude-opus-4-8``. ``--betas`` is a comma-separated list of beta headers
+# (e.g. ``context-1m-2025-08-07`` for 1M-context). ``--effort`` is one of
+# ``low|medium|high|xhigh|max``. All three default to None and are simply not
+# passed to Claude when unset (session inherits ~/.claude/settings.json).
+_VALID_EFFORTS = ("low", "medium", "high", "xhigh", "max")
+
+
+def _add_claude_session_args(parser: argparse.ArgumentParser) -> None:
+    """Attach the shared ``--model`` / ``--betas`` / ``--effort`` triple to a
+    spawn subcommand. Kept in one place so the three spawn paths
+    (``spawn-pm``, ``spawn-issue``, ``spawn-campaign``) take an identical
+    set of overrides."""
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            "Claude model alias or full id for the spawned session "
+            "(e.g. 'opus', 'sonnet', 'fable', or 'claude-opus-4-8'). Forwarded "
+            "as --model to the underlying `claude` invocation. Default: unset "
+            "(session inherits the user's global Claude Code model)."
+        ),
+    )
+    parser.add_argument(
+        "--betas",
+        default=None,
+        help=(
+            "Comma-separated list of Anthropic beta headers to enable for the "
+            "spawned session (e.g. 'context-1m-2025-08-07' for the 1M-context "
+            "beta). Forwarded as --betas to the underlying `claude` "
+            "invocation. Default: unset."
+        ),
+    )
+    parser.add_argument(
+        "--effort",
+        default=None,
+        choices=_VALID_EFFORTS,
+        help=(
+            "Effort level for the spawned session "
+            "(low|medium|high|xhigh|max). Forwarded as --effort to the "
+            "underlying `claude` invocation. Default: unset "
+            "(session inherits the user's global default)."
+        ),
+    )
+
+
+def _parse_betas(raw: str | None) -> list[str]:
+    """Parse the comma-separated ``--betas`` string into a clean list.
+    Empty / whitespace-only entries are dropped. Returns ``[]`` for None or
+    an empty string so callers can treat ``not betas`` as "nothing to pass"."""
+    if not raw:
+        return []
+    return [b.strip() for b in raw.split(",") if b.strip()]
+
+
+def _build_extra_claude_args(
+    model: str | None, betas: list[str] | None, effort: str | None
+) -> list[str]:
+    """Translate the (model, betas, effort) triple into Claude CLI flags.
+
+    Each field is omitted when None / empty — the spawned session then inherits
+    the user's global Claude Code defaults for that knob (settings.json + the
+    user's global model picker). ``--betas`` takes one or more space-separated
+    values per the Claude CLI's `<betas...>` nargs, so we splat the list."""
+    extra: list[str] = []
+    if model:
+        extra.extend(["--model", model])
+    if betas:
+        extra.extend(["--betas", *betas])
+    if effort:
+        extra.extend(["--effort", effort])
+    return extra
+
+
+def cmd_spawn_pm(args: argparse.Namespace) -> None:
     """Spawn a session intended to host the PM persona. The session opens
     cwd=<repo root> so the user sees a familiar project. The PM persona is
     then loaded interactively by the user typing ``/pm``."""
-    resp = post(
-        "/spawn-session",
-        {"directory": str(PROJECT_ROOT), "agent": "claude"},
+    extra_args = _build_extra_claude_args(
+        getattr(args, "model", None),
+        _parse_betas(getattr(args, "betas", None)),
+        getattr(args, "effort", None),
     )
+    body: dict[str, object] = {"directory": str(PROJECT_ROOT), "agent": "claude"}
+    if extra_args:
+        body["claudeArgs"] = extra_args
+    resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
     try:
@@ -700,6 +825,8 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         cwd = PROJECT_ROOT
         cwd_note = f"<repo root> {PROJECT_ROOT}  (no worktree at {worktree})"
 
+    betas = _parse_betas(args.betas)
+    extra_args = _build_extra_claude_args(args.model, betas, args.effort)
     body: dict[str, object] = {"directory": str(cwd), "agent": "claude"}
     if args.initial_prompt:
         prompt = args.initial_prompt
@@ -736,13 +863,20 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
             "EPM_AUTONOMOUS_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(args.auto_approve_gpu_hours),
         }
-        body["claudeArgs"] = ["--dangerously-skip-permissions"]
+        body["claudeArgs"] = ["--dangerously-skip-permissions", *extra_args]
+    elif extra_args:
+        # Bare interactive session — no initial prompt, no bypassPermissions —
+        # but the user still asked for a specific model / betas / effort. Pass
+        # them through so the empty session opens on the requested model.
+        body["claudeArgs"] = extra_args
 
     resp = post("/spawn-session", body)
     if not resp.get("success"):
         sys.exit(f"spawn failed: {resp}")
     print(f"Issue #{issue} session spawned: {resp['sessionId']}")
     print(f"  cwd: {cwd_note}")
+    if extra_args:
+        print(f"  claude overrides: {' '.join(extra_args)}")
     if prompt is not None:
         print(f"  initial prompt: {prompt!r}")
         print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
@@ -757,7 +891,13 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         if args.auto:
             try:
                 _register_autonomous_session(
-                    issue, resp["sessionId"], str(cwd), args.auto_approve_gpu_hours
+                    issue,
+                    resp["sessionId"],
+                    str(cwd),
+                    args.auto_approve_gpu_hours,
+                    model=args.model,
+                    betas=betas,
+                    effort=args.effort,
                 )
                 print(f"  registered for crash-recovery watch: issue-{issue}.json")
             except OSError as e:
@@ -860,6 +1000,8 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             f"gates.campaign_brief_approval) or 'running' (respawn re-entry)."
         )
 
+    betas = _parse_betas(args.betas)
+    extra_args = _build_extra_claude_args(args.model, betas, args.effort)
     prompt = f"/campaign {issue}"
     body: dict[str, object] = {
         "directory": str(PROJECT_ROOT),
@@ -871,7 +1013,7 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             "EPM_CAMPAIGN_SESSION": "1",
             "EPM_PLAN_AUTOAPPROVE_GPU_HOURS": str(per_child_cap),
         },
-        "claudeArgs": ["--dangerously-skip-permissions"],
+        "claudeArgs": ["--dangerously-skip-permissions", *extra_args],
     }
     resp = post("/spawn-session", body)
     if not resp.get("success"):
@@ -880,6 +1022,8 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     print(f"  cwd: <repo root> {PROJECT_ROOT}")
     print(f"  initial prompt: {prompt!r}")
     print("  permissions: bypassPermissions (--dangerously-skip-permissions)")
+    if extra_args:
+        print(f"  claude overrides: {' '.join(extra_args)}")
     print(
         f"  caps: budget {budget_gpu_hours:g} GPU-h total, "
         f"{max_concurrent} concurrent children, "
@@ -893,6 +1037,9 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
             budget_gpu_hours=budget_gpu_hours,
             max_concurrent=max_concurrent,
             per_child_gpu_hours_cap=per_child_cap,
+            model=args.model,
+            betas=betas,
+            effort=args.effort,
         )
         print(f"  registered for campaign-watch: campaign-{issue}.json")
     except OSError as e:
@@ -1318,6 +1465,7 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_pm = sub.add_parser("spawn-pm", help="spawn a Happy session for the PM persona")
+    _add_claude_session_args(p_pm)
     p_pm.set_defaults(fn=cmd_spawn_pm)
 
     p_issue = sub.add_parser("spawn-issue", help="spawn a Happy session for issue #N")
@@ -1347,6 +1495,7 @@ def main(argv: list[str] | None = None) -> None:
             "is <= this value and park at plan_pending above it. Default 100."
         ),
     )
+    _add_claude_session_args(p_issue)
     p_issue.set_defaults(fn=cmd_spawn_issue)
 
     p_campaign = sub.add_parser(
@@ -1388,6 +1537,7 @@ def main(argv: list[str] | None = None) -> None:
             "(default: campaign_state.DEFAULT_PER_CHILD_GPU_HOURS_CAP)"
         ),
     )
+    _add_claude_session_args(p_campaign)
     p_campaign.set_defaults(fn=cmd_spawn_campaign)
 
     p_reg = sub.add_parser(
