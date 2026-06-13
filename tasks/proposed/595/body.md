@@ -12,6 +12,8 @@ goal: 'Test whether a behavior''s prefix-carrier binding strength (how much narr
   the #545 B->B'' matrix on Qwen-2.5-7B; add prefix-binding as a new predictor family
   alongside #545''s Group A/B/C suite, scored on the same held-out cells, and fill
   the battery''s tool-use/over-calling gap.'
+relates_to:
+- beh-b-to-bprime
 ---
 ## Goal
 
