@@ -1874,8 +1874,8 @@
       "goal": "Test whether per-token log-prob equivalence holds between the system-prompted model and two forms of persona drift \u2014 inference-time (sustained conversation, reusing #377's drift corpus) and training-time (existing persona LoRAs from the #207-family panel) \u2014 sampling personas along the JS-divergence-from-assistant axis with an unrelated-persona control as the null distinguisher.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/386",
-      "status": "proposed",
+      "path": "tasks/on_hold/386",
+      "status": "on_hold",
       "title": "Log-prob equivalence test: do inference-time drift (parent #377) and training-time drift (#207-family LoRAs) match the prompted distribution?"
     },
     "387": {
