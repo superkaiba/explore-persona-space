@@ -72,7 +72,13 @@ from issue594_analyze_context_geometry import (  # noqa: E402
     max_over_layers_summary,
     quartile_layers,
 )
-from issue594_common import HF_DATA_REPO  # noqa: E402
+from issue594_common import (  # noqa: E402
+    BATTERY_EXPECTED_TOTAL,
+    EXPECTED_HIDDEN,
+    EXPECTED_LAYERS,
+    FAMILY_EXPECTED_COUNTS,
+    HF_DATA_REPO,
+)
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
@@ -142,11 +148,132 @@ def download_from_hf(prefix: str, cache_dir: Path, repo: str = HF_DATA_REPO) -> 
     return cache_dir / prefix
 
 
-def load_context_bank(tensors_dir: Path) -> dict:
-    """Load #594's context_vectors_mean.pt -> (N, L, H) fp32 + ids + families."""
+def _assert_context_bank_coverage(blob: dict, tensors_dir: Path) -> str | None:
+    """Fail-loud pre-index coverage guard for the #594 context bank (BLOCKER fix).
+
+    The bank is the entire substrate for every Phase-2 output: a STALE/WRONG #594
+    bank with the right ``(28, 3584)`` dims but a wrong ``n_ctx``, a mis-ordered /
+    different-probe-pool family labeling, or a different bank revision passes every
+    DOWNSTREAM guard (the joint-stack ``ctx.shape`` ndim read, ``resolve_panel_b``'s
+    present-family check, the CKA matched-N preflight) and is analyzed SILENTLY,
+    producing a plausible-but-false figure. The plan pre-registered both guards
+    this closes — §4 line 219 "manifest ``probe_pool_hash`` asserted on load" and
+    A2 line 281 "Phase 2 ``download_from_hf`` + shape assert" — so this is a
+    plan-adherence fix, not robustness beyond the contract. Concern
+    ``issue634-context-bank-coverage``.
+
+    Asserts (all fail loud, not warn): (1) the required tensor/index keys exist;
+    (2) the tensor is exactly ``(50, 28, 3584)`` = ``(BATTERY_EXPECTED_TOTAL,
+    EXPECTED_LAYERS, EXPECTED_HIDDEN)``; (3) the realized family set equals #594's
+    canonical 7-family set AND the per-family counts equal ``FAMILY_EXPECTED_COUNTS``
+    (this pins identity, not just dims); (4) ``instance_ids`` length matches n_ctx.
+    Returns the bank's ``probe_pool_hash`` (cross-checked against a co-uploaded
+    manifest sidecar when present; see ``_check_probe_pool_hash``).
+
+    Identity note: #594's family-set + exact per-family counts ARE the content
+    fingerprint here (the 50-instance battery is fixed; #594's own
+    ``validate_battery`` enforces the same ``FAMILY_EXPECTED_COUNTS``). The
+    ``probe_pool_hash`` pins the probe pool the means were taken over; together
+    they make a wrong/stale-bank substitution fail at the load boundary.
+    """
+    required = {"tensor", "instance_ids", "families"}
+    missing = required - set(blob)
+    if missing:
+        raise RuntimeError(
+            f"#594 context bank missing required keys {sorted(missing)} "
+            f"(have {sorted(blob)}) in {tensors_dir / 'context_vectors_mean.pt'}"
+        )
+    tensor = blob["tensor"]
+    expected_shape = (BATTERY_EXPECTED_TOTAL, EXPECTED_LAYERS, EXPECTED_HIDDEN)
+    if tuple(tensor.shape) != expected_shape:
+        raise RuntimeError(
+            f"#594 context bank tensor shape {tuple(tensor.shape)} != {expected_shape} "
+            f"(BATTERY_EXPECTED_TOTAL, EXPECTED_LAYERS, EXPECTED_HIDDEN)"
+        )
+    families = list(blob["families"])
+    ids = list(blob["instance_ids"])
+    if len(ids) != BATTERY_EXPECTED_TOTAL or len(families) != BATTERY_EXPECTED_TOTAL:
+        raise RuntimeError(
+            f"#594 context bank index length mismatch: ids={len(ids)} families={len(families)} "
+            f"!= n_ctx={BATTERY_EXPECTED_TOTAL}"
+        )
+    realized_counts: dict[str, int] = {}
+    for fam in families:
+        realized_counts[fam] = realized_counts.get(fam, 0) + 1
+    if set(realized_counts) != set(FAMILY_EXPECTED_COUNTS):
+        raise RuntimeError(
+            f"#594 context bank family SET {sorted(realized_counts)} != #594 expected "
+            f"{sorted(FAMILY_EXPECTED_COUNTS)} — stale/wrong bank or different probe genre"
+        )
+    if realized_counts != FAMILY_EXPECTED_COUNTS:
+        raise RuntimeError(
+            f"#594 context bank per-family COUNTS {realized_counts} != #594 expected "
+            f"{FAMILY_EXPECTED_COUNTS} — bank identity does not match the registered battery"
+        )
+    return _check_probe_pool_hash(blob, tensors_dir)
+
+
+def _check_probe_pool_hash(blob: dict, tensors_dir: Path) -> str | None:
+    """Cross-check the bank's probe_pool_hash against its manifest sidecar.
+
+    #594's ``context_vectors_mean.pt`` blob carries ``probe_pool_hash`` and the
+    co-uploaded ``extraction_manifest.json`` carries the SAME field. When both are
+    present they MUST agree (catches a tensor swapped under a stale manifest, and
+    vice versa). When the manifest is absent (downloaded subset, older bank) the
+    blob hash is used alone and the missing sidecar is logged as a known limitation
+    rather than failing the run — the keys/shape/family-set asserts above already
+    catch a wrong bank; the hash is the extra probe-pool pin when available.
+    """
+    blob_hash = blob.get("probe_pool_hash")
+    manifest_path = tensors_dir / "extraction_manifest.json"
+    manifest_hash = None
+    if manifest_path.exists():
+        try:
+            with open(manifest_path) as f:
+                manifest_hash = json.load(f).get("probe_pool_hash")
+        except (OSError, json.JSONDecodeError) as e:
+            raise RuntimeError(f"#594 manifest {manifest_path} unreadable: {e}") from e
+    if blob_hash is not None and manifest_hash is not None and blob_hash != manifest_hash:
+        raise RuntimeError(
+            f"#594 probe_pool_hash mismatch: bank tensor {blob_hash!r} != manifest "
+            f"{manifest_hash!r} ({manifest_path}) — tensor/manifest out of sync"
+        )
+    if blob_hash is None:
+        logger.warning(
+            "#594 context bank has no probe_pool_hash key (keys/shape/family asserts "
+            "still enforced); manifest sidecar present=%s",
+            manifest_path.exists(),
+        )
+    else:
+        logger.info(
+            "#594 context bank probe_pool_hash=%s (manifest cross-check=%s)",
+            blob_hash[:16],
+            "match" if manifest_hash == blob_hash else "sidecar-absent",
+        )
+    return blob_hash
+
+
+def load_context_bank(tensors_dir: Path, expect_full_bank: bool = True) -> dict:
+    """Load #594's context_vectors_mean.pt -> (N, L, H) fp32 + ids + families.
+
+    ``expect_full_bank`` (default True for the production HF load) runs the
+    fail-loud coverage guard ``_assert_context_bank_coverage`` (required keys,
+    ``(50, 28, 3584)`` shape, #594's exact family set + per-family counts,
+    probe_pool_hash). The synthetic ``--smoke`` path builds a deliberately tiny
+    bank (n_ctx=10, 3 families) and is exercised in-memory without this loader, so
+    the full-bank contract never applies to it.
+    """
     blob = torch.load(tensors_dir / "context_vectors_mean.pt", weights_only=True)
+    probe_pool_hash = None
+    if expect_full_bank:
+        probe_pool_hash = _assert_context_bank_coverage(blob, tensors_dir)
     mean = blob["tensor"].float().numpy()
-    return {"mean": mean, "ids": list(blob["instance_ids"]), "families": list(blob["families"])}
+    return {
+        "mean": mean,
+        "ids": list(blob["instance_ids"]),
+        "families": list(blob["families"]),
+        "probe_pool_hash": probe_pool_hash,
+    }
 
 
 def load_behavior_bank(tensors_dir: Path) -> dict:
@@ -347,23 +474,64 @@ def family_centroids(
     return cents, out_fams
 
 
-def _procrustes_resid_lowdim(cb: np.ndarray, cc: np.ndarray) -> float:
-    """Orthogonal-Procrustes alignment residual ||Cb·R - Cc||_F / ||Cc||_F.
+def _raw_centroid_basis(cb: np.ndarray, cc: np.ndarray) -> np.ndarray:
+    """Orthonormal (d, H) basis spanning the RAW (un-centered) centroid rows.
 
-    Both (K, H) centroid banks are projected onto the top joint PCs (<= 2K-1
-    dims) BEFORE the Procrustes SVD so the SVD is (d, d) with d small, never
-    (H, H). The K centroids span <= K-1 dims after centering, so the projection
-    is exact for the residual (zero variance is discarded). Centering is removed
-    before alignment (Procrustes is a pure rotation; a shared translation would
-    otherwise inflate the residual).
+    The union of cb's and cc's rows spans <= 2K dims, so an SVD of the (2K, H)
+    raw stack yields a small basis; the (H, H) Procrustes SVD never appears.
+    Because BOTH banks' rows lie entirely in this span, projecting onto it is an
+    ISOMETRY for them (``cb @ basis.T @ basis == cb`` exactly), so every Frobenius
+    norm of a row-space vector is preserved. NO centering — this spans the raw
+    rows so the raw residual is exact, not the centered/projected variant.
+    """
+    stack = np.vstack([cb, cc])
+    _u, s, vt = np.linalg.svd(stack, full_matrices=False)
+    keep = int((s > 1e-9 * s.max()).sum()) if s.size and s.max() > 0 else 0
+    return vt[:keep] if keep >= 1 else np.empty((0, stack.shape[1]))
+
+
+def _procrustes_resid_raw_lowdim(cb: np.ndarray, cc: np.ndarray) -> float:
+    """PREREGISTERED raw Procrustes residual ``||Cb·R - Cc||_F / ||Cc||_F``.
+
+    Exactly the plan §5 step-4 statistic: orthogonal Procrustes with NO joint
+    centering and the RAW ``||Cc||_F`` denominator. Computed in the low-rank
+    basis spanning the raw centroid rows (``_raw_centroid_basis``) purely to dodge
+    the (H, H) SVD hang ``orthogonal_procrustes`` would otherwise trigger on the
+    raw 3584-dim banks. Since both banks' rows lie in that span, the projection is
+    an isometry and the residual is IDENTICAL to the full-space raw residual:
+    the optimal full-space orthogonal R need only rotate within the span (it is
+    free on the orthogonal complement, where both banks are zero), and Frobenius
+    norms are preserved by the isometric projection. Restores the preregistration
+    the round-1 centered/projected variant drifted from (concern
+    issue634-procrustes-objective-drift, option a).
+    """
+    from scipy.linalg import orthogonal_procrustes
+
+    basis = _raw_centroid_basis(cb, cc)
+    if basis.shape[0] < 1:
+        return 0.0
+    cb_d = cb @ basis.T  # (K, d) — isometric image of the RAW rows (no centering)
+    cc_d = cc @ basis.T  # (K, d)
+    r, _scale = orthogonal_procrustes(cb_d, cc_d)  # SVD is (d, d), d <= 2K
+    return float(np.linalg.norm(cb_d @ r - cc_d) / max(float(np.linalg.norm(cc_d)), 1e-12))
+
+
+def _procrustes_resid_centered_lowdim(cb: np.ndarray, cc: np.ndarray) -> float:
+    """Centered-Procrustes DIAGNOSTIC residual (NOT the preregistered statistic).
+
+    Removes the shared centroid translation before alignment (Procrustes is a
+    pure rotation; a shared translation otherwise inflates the residual) and uses
+    the centered ``||Cc - mu||_F`` denominator. Kept ALONGSIDE the preregistered
+    raw residual (``_procrustes_resid_raw_lowdim``) as a translation-free shape
+    diagnostic; emitted under a clearly-distinct JSON key so it is never narrated
+    as the preregistered residual. Same low-rank-basis trick to avoid the (H, H)
+    SVD, here over the CENTERED stack.
     """
     from scipy.linalg import orthogonal_procrustes
 
     stack = np.vstack([cb, cc])
     mu = stack.mean(axis=0, keepdims=True)
     stack_c = stack - mu
-    # Top joint PCs: rank is at most (2K - 1) after centering; SVD of the
-    # (2K, H) centered stack is cheap (2K rows), the (H, H) cost never appears.
     _u, s, vt = np.linalg.svd(stack_c, full_matrices=False)
     keep = int((s > 1e-9 * s.max()).sum()) if s.size and s.max() > 0 else 0
     if keep < 1:
@@ -392,19 +560,26 @@ def cross_space_alignment(
     Cc.shape[0] == Cb.shape[0] in code.
 
     The Procrustes rotation is computed in the LOW-DIMENSIONAL subspace the K
-    centroids span (a joint-PCA projection to <= 2K-1 components), NOT the raw
-    H=3584-dim space: ``orthogonal_procrustes(A, B)`` SVDs ``B.T @ A`` which is
-    (H, H) — an SVD of a 3584x3584 matrix per layer pegs every core for minutes
-    (real hang observed in the synthetic smoke). K centroids span <= K-1 dims
-    after centering, so projecting both banks onto the top joint PCs is EXACT
-    for the residual ``||Cb·R - Cc||_F / ||Cc||_F`` while making the SVD (d, d)
-    with d <= 2K-1 (~10). CKA is unaffected — its Gram form is already (K, K).
+    centroids span (an SVD of the (2K, H) centroid stack), NOT the raw H=3584-dim
+    space: ``orthogonal_procrustes(A, B)`` SVDs ``B.T @ A`` which is (H, H) — an
+    SVD of a 3584x3584 matrix per layer pegs every core for minutes (real hang
+    observed in the synthetic smoke). The K centroid rows of both banks span the
+    same <= 2K-dim subspace, so projecting onto it is an ISOMETRY for them and
+    the residual is EXACT. CKA is unaffected — its Gram form is already (K, K).
+
+    Two residuals are emitted per layer: ``procrustes_resid_per_layer`` is the
+    PREREGISTERED raw residual ``||Cb·R - Cc||_F / ||Cc||_F`` (no centering — the
+    headline statistic, ``_procrustes_resid_raw_lowdim``); and
+    ``procrustes_resid_centered_per_layer`` is a translation-free centered-Procrustes
+    DIAGNOSTIC (``_procrustes_resid_centered_lowdim``), kept alongside but never
+    narrated as the preregistered residual (concern issue634-procrustes-objective-drift).
     """
 
     # Behaviors -> short context-family labels via the resolved Panel-B map.
     beh_fam_short = [panel_b.get(r) for r in behavior_ids]  # None outside Panel B
     cka_per_layer: list[float] = []
     proc_resid_per_layer: list[float] = []
+    proc_resid_centered_per_layer: list[float] = []
     shared_families: list[str] = []
     for li in range(n_layers):
         cb_all, fam_b = family_centroids(beh_bank[:, li, :], beh_fam_short, min_per_family=2)
@@ -415,6 +590,7 @@ def cross_space_alignment(
         if len(shared) < 2:
             cka_per_layer.append(float("nan"))
             proc_resid_per_layer.append(float("nan"))
+            proc_resid_centered_per_layer.append(float("nan"))
             continue
         cb = np.stack([cb_all[fam_b.index(f)] for f in shared])
         cc = np.stack([cc_all[fam_c.index(f)] for f in shared])
@@ -424,15 +600,24 @@ def cross_space_alignment(
             f"(Cc={cc.shape}, Cb={cb.shape}, layer={li})"
         )
         cka_per_layer.append(linear_cka(cc, cb))
-        proc_resid_per_layer.append(_procrustes_resid_lowdim(cb, cc))
+        proc_resid_per_layer.append(_procrustes_resid_raw_lowdim(cb, cc))
+        proc_resid_centered_per_layer.append(_procrustes_resid_centered_lowdim(cb, cc))
     return {
         "shared_families_layer0": shared_families,
         "n_shared_families": len(shared_families),
         "cka_per_layer": cka_per_layer,
         "procrustes_resid_per_layer": proc_resid_per_layer,
+        "procrustes_resid_is_preregistered_raw": True,
+        "procrustes_resid_centered_per_layer": proc_resid_centered_per_layer,
+        "procrustes_resid_centered_note": (
+            "translation-free centered-Procrustes DIAGNOSTIC, NOT the preregistered "
+            "raw residual (which is procrustes_resid_per_layer)"
+        ),
         "note": (
             "family-centroid linear CKA + orthogonal Procrustes on matched-N "
-            "(families present in BOTH banks, >=2 Panel-B roles per behavior family)"
+            "(families present in BOTH banks, >=2 Panel-B roles per behavior family); "
+            "procrustes_resid_per_layer is the preregistered raw "
+            "||Cb·R - Cc||_F / ||Cc||_F"
         ),
     }
 
@@ -535,8 +720,13 @@ def fig_nn_rate(nn_rate, null_summary, n_layers):
     plt.close(fig)
 
 
-def fig_purity(beh_purity, null_summary, n_layers):
-    """Behavior-alone k-NN family purity vs layer with permutation-null band."""
+def fig_purity(panelB_labeled_purity, null_summary, n_layers):
+    """Panel-B-labeled-subset k-NN family purity vs layer with permutation null.
+
+    H2 read over the Panel-B-LABELED subset (NOT all 275 roles — no 275-role
+    role-axis label source exists); the title/label name the underpowered
+    labeled-subset denominator (concern issue634-h2-panelb-only).
+    """
     layers = np.arange(n_layers)
     fig, ax = plt.subplots(figsize=(7, 4))
     ax.fill_between(
@@ -547,13 +737,19 @@ def fig_purity(beh_purity, null_summary, n_layers):
         label="permutation null (mean to 95%)",
     )
     ax.plot(
-        layers, beh_purity, color="#2ca02c", lw=2, marker="o", ms=3, label="behavior-alone purity"
+        layers,
+        panelB_labeled_purity,
+        color="#2ca02c",
+        lw=2,
+        marker="o",
+        ms=3,
+        label="Panel-B-labeled purity",
     )
     ax.set_xlabel("decoder layer")
     ax.set_ylabel("k-NN family purity (k=4)")
-    ax.set_title("H2: behavior-alone family purity vs depth")
+    ax.set_title("H2: Panel-B-labeled-subset family purity vs depth (not all 275 roles)")
     ax.legend(fontsize=7)
-    savefig_paper(fig, "behavior_alone_purity_vs_layer", dir=FIG_DIR)
+    savefig_paper(fig, "panelB_labeled_purity_vs_layer", dir=FIG_DIR)
     plt.close(fig)
 
 
@@ -691,8 +887,12 @@ def main() -> int:
     EVAL_DIR.mkdir(parents=True, exist_ok=True)
     FIG_DIR.mkdir(parents=True, exist_ok=True)
 
+    # The synthetic --smoke bank is a tiny (10-context, 3-family) stand-in: the
+    # full-bank coverage guard ((50, 28, 3584), #594's 7-family set) and the
+    # H2 labeled-subset assert apply ONLY to the real HF load.
+    expect_full_bank = not args.smoke
     if args.smoke:
-        logger.info("SMOKE: synthetic banks (no HF, no GPU)")
+        logger.info("SMOKE: synthetic banks (no HF, no GPU); full-bank coverage guard SKIPPED")
         ctx_bank, beh_bank, fam_map = make_synthetic_banks(args.seed)
     else:
         ctx_dir = args.context_dir or download_from_hf(
@@ -701,7 +901,7 @@ def main() -> int:
         beh_dir = args.behavior_dir or download_from_hf(
             args.behavior_from_hf, EVAL_DIR / "hf_behavior_cache", repo=args.hf_repo
         )
-        ctx_bank = load_context_bank(ctx_dir)
+        ctx_bank = load_context_bank(ctx_dir, expect_full_bank=expect_full_bank)
         beh_bank = load_behavior_bank(beh_dir)
         fam_map = load_family_map(args.family_map)
 
@@ -737,7 +937,16 @@ def main() -> int:
         meets_floor,
     )
 
-    # Behavior-alone family labels for H2 (role-axis = the frozen-map family).
+    # Behavior labels for the H2 read. The ONLY family labels available are the
+    # 27-role frozen Panel-B map (extraction writes families.append(
+    # family_map.get(role)) = None for every non-Panel-B role); there is NO
+    # 275-role role-type/axis labeling source. So the H2 read here is purity over
+    # the Panel-B-LABELED SUBSET, NOT the planned all-275-role behavior-alone
+    # purity. This is RE-LABELED as such throughout (concern issue634-h2-panelb-only,
+    # option (b)): the JSON keys carry the `panelB_labeled` prefix and an explicit
+    # `h2_is_full_275_role_purity: false` + denominator, so the analyzer surfaces
+    # the underpowered ~26-tested-role denominator as a scope caveat and no
+    # downstream consumer can read it as the planned 275-role H2.
     beh_fam_labels = np.asarray([fam for fam in beh_bank["families"]])
     has_fam = np.array([f is not None for f in beh_fam_labels])
 
@@ -749,16 +958,35 @@ def main() -> int:
     nn_rate = np.empty(n_layers)
     nn_rate_resid = np.empty(n_layers)
     null_nn = np.empty((args.n_perms, n_layers))
-    beh_purity = np.empty(n_layers)
-    null_pur = np.empty((args.n_perms, n_layers))
+    # Residualized H1 control gets its OWN permutation null computed from the
+    # PC1-removed geometry — summarizing it against the raw-H1 null (the round-1
+    # bug) would falsely support/reject the control (concern
+    # issue634-residual-null-mismatch).
+    null_nn_resid = np.empty((args.n_perms, n_layers))
+    panelB_labeled_purity = np.empty(n_layers)
+    null_panelB_pur = np.empty((args.n_perms, n_layers))
     own_region = np.empty(n_layers)
     panelB_nn_table: dict[str, list[str]] = {r: [] for r in panel_b_roles}
 
-    # H2 purity over behaviors WITH a family label (role-axis); permutation null
-    # shuffles those labels. Built once (labels fixed across layers).
+    # H2 purity over the Panel-B-labeled subset (role-axis = the frozen-map
+    # family); permutation null shuffles those labels. Built once (labels fixed
+    # across layers).
     fam_idx = np.where(has_fam)[0]
     fam_labels_sub = beh_fam_labels[fam_idx]
     pur_perms = np.stack([rng.permutation(len(fam_idx)) for _ in range(args.n_perms)])
+    n_total_behaviors = int(beh.shape[0])
+    n_labeled_behaviors = len(fam_idx)
+    # Production guard: this read is over a LABELED SUBSET, never all 275. The
+    # synthetic --smoke bank labels all behaviors, so the assert is only enforced
+    # for the real (full-bank) run, where it pins that H2 is NOT mis-presented as
+    # the planned 275-role purity.
+    if expect_full_bank:
+        assert n_labeled_behaviors < n_total_behaviors, (
+            "H2 read is the Panel-B-labeled subset; expected fewer labeled "
+            f"behaviors than the full bank, got {n_labeled_behaviors} == "
+            f"{n_total_behaviors} (a 275-role label source would change this DV's "
+            "denominator — re-check the relabel)"
+        )
 
     for li in range(n_layers):
         beh_li = beh[:, li, :]
@@ -772,7 +1000,9 @@ def main() -> int:
         nn_rate[li] = h1_matched_rate(nn_fams, expected_fams)
         null_nn[:, li] = h1_perm_null(nn_fams, panel_b_roles, expected_fams, label_perms)
 
-        # H1 control: remove behavior-cloud PC1, re-run
+        # H1 control: remove behavior-cloud PC1, re-run — WITH its own null over
+        # the residualized geometry (the residualized nearest-context families
+        # feed h1_perm_null, NOT the raw nn_fams).
         from sklearn.decomposition import PCA
 
         beh_c = center(beh_li)
@@ -780,12 +1010,13 @@ def main() -> int:
         beh_resid = beh_c - np.outer(beh_c @ pc1, pc1)
         nn_fams_r = nearest_context_family(beh_resid, ctx_li, ctx_families, panel_b_idx)
         nn_rate_resid[li] = h1_matched_rate(nn_fams_r, expected_fams)
+        null_nn_resid[:, li] = h1_perm_null(nn_fams_r, panel_b_roles, expected_fams, label_perms)
 
-        # H2 behavior-alone purity (over family-labeled behaviors)
+        # H2 behavior-alone purity over the Panel-B-LABELED subset (re-labeled DV)
         d_beh = cosine_dist(beh_li[fam_idx], centering="global_mean")
         order_beh = knn_neighbor_order(d_beh)
-        beh_purity[li] = knn_purity(order_beh, fam_labels_sub, k=KNN_K)
-        null_pur[:, li] = np.array(
+        panelB_labeled_purity[li] = knn_purity(order_beh, fam_labels_sub, k=KNN_K)
+        null_panelB_pur[:, li] = np.array(
             [knn_purity(order_beh, fam_labels_sub[p], k=KNN_K) for p in pur_perms]
         )
 
@@ -795,8 +1026,10 @@ def main() -> int:
             logger.info("layer %d/%d done (nn_rate=%.3f)", li + 1, n_layers, nn_rate[li])
 
     nn_summary = max_over_layers_summary(nn_rate.tolist(), null_nn)
-    nn_resid_summary = max_over_layers_summary(nn_rate_resid.tolist(), null_nn)
-    pur_summary = max_over_layers_summary(beh_purity.tolist(), null_pur)
+    nn_resid_summary = max_over_layers_summary(nn_rate_resid.tolist(), null_nn_resid)
+    panelB_labeled_purity_summary = max_over_layers_summary(
+        panelB_labeled_purity.tolist(), null_panelB_pur
+    )
     best_layer = nn_summary["argmax_layer"]
 
     # ── Cross-space fallback (always computed; the headline read on gate fail) ─
@@ -823,11 +1056,26 @@ def main() -> int:
         "panel_b_expected_families": expected_fams,
         "nn_rate_per_layer": nn_rate.tolist(),
         "nn_rate_residualized_per_layer": nn_rate_resid.tolist(),
-        "beh_alone_purity_per_layer": beh_purity.tolist(),
+        # H2 read: purity over the Panel-B-LABELED subset, NOT all 275 roles.
+        "panelB_labeled_purity_per_layer": panelB_labeled_purity.tolist(),
         "own_region_fraction_per_layer": own_region.tolist(),
         "nn_summary": nn_summary,
+        # Residualized H1 control summarized against its OWN residualized null.
         "nn_residualized_summary": nn_resid_summary,
-        "purity_summary": pur_summary,
+        "nn_residualized_null_is_residualized": True,
+        "panelB_labeled_purity_summary": panelB_labeled_purity_summary,
+        # H2 denominator disclosure (concern issue634-h2-panelb-only, option b):
+        "h2_is_full_275_role_purity": False,
+        "h2_denominator": "panel_b_labeled_subset",
+        "h2_n_labeled_behaviors": n_labeled_behaviors,
+        "h2_n_total_behaviors": n_total_behaviors,
+        "h2_note": (
+            "behavior-alone k-NN family purity over the Panel-B-LABELED subset "
+            f"({n_labeled_behaviors} of {n_total_behaviors} roles); NOT the planned "
+            "275-role role-axis purity — no 275-role role-type labeling source "
+            "exists, so the underpowered labeled-subset denominator is carried as a "
+            "clean-result scope caveat."
+        ),
     }
     with open(EVAL_DIR / "per_layer_nn_purity.json", "w") as f:
         json.dump(jsonable(per_layer_nn), f, indent=2)
@@ -868,10 +1116,16 @@ def main() -> int:
         "panel_b_meets_floor": bool(meets_floor),
         "best_layer_by_nn_rate": int(best_layer),
         "coembeddability_gate_any_fail": bool(gate_any_fail),
+        "context_probe_pool_hash": ctx_bank.get("probe_pool_hash"),
         "h1_nn_summary": nn_summary,
         "h1_residualized_summary": nn_resid_summary,
+        "h1_residualized_null_is_residualized": True,
         "h1_verdict": h1_verdict,
-        "h2_purity_summary": pur_summary,
+        "h2_panelB_labeled_purity_summary": panelB_labeled_purity_summary,
+        "h2_is_full_275_role_purity": False,
+        "h2_denominator": "panel_b_labeled_subset",
+        "h2_n_labeled_behaviors": n_labeled_behaviors,
+        "h2_n_total_behaviors": n_total_behaviors,
         "h3_own_region_fraction_per_layer": own_region.tolist(),
         "h3_own_region_fraction_best_layer": float(own_region[best_layer]),
         "cross_space_alignment": xspace,
@@ -892,19 +1146,22 @@ def main() -> int:
         ctx, ctx_families, beh, beh_ids, panel_b_mask, qlayers, ctx_family_order, umap
     )
     fig_nn_rate(nn_rate.tolist(), nn_summary, n_layers)
-    fig_purity(beh_purity.tolist(), pur_summary, n_layers)
+    fig_purity(panelB_labeled_purity.tolist(), panelB_labeled_purity_summary, n_layers)
     fig_tsne_joint(ctx, ctx_families, beh, beh_ids, panel_b_mask, best_layer, ctx_family_order)
     fig_coembed_gate(gate_per_layer, n_layers)
     fig_cross_space(xspace, n_layers)
 
     logger.info(
-        "Done. best_layer=%d, nn_rate_max=%.3f (null95 %.3f), %s; gate_fail=%s; H2 purity_max=%.3f",
+        "Done. best_layer=%d, nn_rate_max=%.3f (null95 %.3f), %s; gate_fail=%s; "
+        "H2 panelB-labeled purity_max=%.3f (over %d of %d roles)",
         best_layer,
         nn_summary["observed_max"],
         nn_summary["null_max_p95"],
         h1_verdict,
         gate_any_fail,
-        pur_summary["observed_max"],
+        panelB_labeled_purity_summary["observed_max"],
+        n_labeled_behaviors,
+        n_total_behaviors,
     )
     return 0
 

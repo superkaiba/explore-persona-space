@@ -56,5 +56,5 @@
     "floor_min_per_tested_family": 2
   },
   "role_list_size": 275,
-  "data_dir": "/home/thomasjiralerspong/explore-persona-space/data/assistant_axis"
+  "data_dir": "assistant_axis"
 }

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Issue #634 Phase 1: extract 28-layer behavior (persona) vectors for 275 roles.
 
-Method A (last-input-token absolute mean), the read slot BYTE-IDENTICAL to
-#594's context vectors: ``model.model.layers[i]`` output at the last input
+Method A (last-input-token absolute mean), the read slot STRUCTURALLY MATCHING
+#594's context vectors (same hook + position; this is a reimplementation, not a
+byte-identical code path): ``model.model.layers[i]`` output at the last input
 token under ``add_generation_prompt=True`` (the newline of
 ``<|im_start|>assistant\\n``), all 28 decoder layers (pre-final-norm residual,
 NOT ``output_hidden_states``). The vector definition is unchanged from
@@ -35,8 +36,15 @@ Smoke gate (option C): ``--smoke-roles N`` runs only the first N roles (default
 GCP A100-80 lane before the full 275-role run; if extrapolated cost > 20 GPU-h,
 descope K (40 -> 20) via ``--n-questions 20``.
 
-Pod-side contract: emits ``[phase=...]`` log lines ending in ``[phase=done]``
-and writes a ``poll_pipeline.py``-conformant end-of-run sentinel. Pod-side code
+Pod-side contract: emits ``[phase=...]`` log lines. When run UNDER
+``issue634_dispatch.sh`` (the production path) it ends with
+``[phase=extract-complete]`` — NOT the terminal ``[phase=done]``, which is
+RESERVED for the dispatcher's single final line (poll_pipeline.py reads the
+most-recent ``[phase=...]`` from the log tail; a premature ``[phase=done]`` here
+would be a false done while upload + the authoritative sentinel are still
+pending). The dispatcher emits the terminal ``[phase=done]`` after it writes the
+authoritative ``poll_pipeline.py``-conformant sentinel. When ``--no-sentinel`` is
+unset (standalone smoke), this script writes its OWN sentinel. Pod-side code
 NEVER shells out to task.py.
 
 Usage::
@@ -100,6 +108,7 @@ DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "data" / "issue634" / "behavior_vectors"
 FAMILY_MAP_PATH = PROJECT_ROOT / "data" / "issue634" / "behavior_family_map.json"
 WANDB_PROJECT = "issue634"
 ALL_LAYERS = list(range(EXPECTED_LAYERS))
+EXPECTED_ROLE_COUNT = 275  # plan §4 Panel A: all 275 data/assistant_axis roles
 
 
 def phase(name: str) -> None:
@@ -412,9 +421,37 @@ def main() -> int:
 
     role_prompts = load_roles(args.data_dir)
     role_names = sorted(role_prompts.keys())
+    smoke_mode = args.smoke_roles > 0 or args.smoke_cpu
     if args.smoke_roles > 0:
         role_names = role_names[: args.smoke_roles]
         role_prompts = {r: role_prompts[r] for r in role_names}
+    # Fail-loud role-count contract (concern issue634-role-count-not-asserted).
+    # load_roles() warns+skips a role with a missing instruction file, so a
+    # shrunken production set must NOT silently complete with a < 275-role
+    # behavior bank (the plan's all-275 contract) and pass upload verification
+    # (which uses expected_per_role=len(role_names) = the SHRUNKEN set). In
+    # non-smoke mode assert the full 275 AND that every role has >= n_prompts
+    # system prompts; in smoke mode the count assert is intentionally bypassed.
+    if not smoke_mode:
+        assert len(role_names) == EXPECTED_ROLE_COUNT, (
+            f"non-smoke extraction must cover all {EXPECTED_ROLE_COUNT} roles, got "
+            f"{len(role_names)} — a missing instruction file was warn+skipped in "
+            "load_roles(); fix the data dir rather than uploading a shrunken bank"
+        )
+        underfilled = {r: len(p) for r, p in role_prompts.items() if len(p) < args.n_prompts}
+        assert not underfilled, (
+            f"{len(underfilled)} roles have fewer than --n-prompts={args.n_prompts} system "
+            f"prompts: {dict(sorted(underfilled.items())[:5])}..."
+        )
+    else:
+        logger.warning(
+            "SMOKE mode (smoke_roles=%d, smoke_cpu=%s): role-count assert (== %d) BYPASSED; "
+            "running %d role(s)",
+            args.smoke_roles,
+            args.smoke_cpu,
+            EXPECTED_ROLE_COUNT,
+            len(role_names),
+        )
     all_questions = load_questions(args.data_dir)
     q_idx = sample_question_indices(all_questions, args.n_questions, args.seed)
     questions = [all_questions[i] for i in q_idx]

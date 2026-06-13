@@ -150,6 +150,14 @@ def build(data_dir: Path, out_path: Path) -> dict:
             f"role_list.json ({data_dir / 'role_list.json'}): {sorted(missing)}"
         )
     floor = check_floor(FROZEN_FAMILY_MAP)
+    # Store a REPO-RELATIVE data_dir in the committed frozen artifact (never an
+    # absolute /home/... path — machine-local provenance noise in a committed
+    # JSON; Codex MINOR finding). Fall back to the basename if data_dir is
+    # outside the repo tree.
+    try:
+        data_dir_rel = str(data_dir.resolve().relative_to(PROJECT_ROOT))
+    except ValueError:
+        data_dir_rel = data_dir.name
     payload = {
         "schema_version": 1,
         "description": (
@@ -162,7 +170,7 @@ def build(data_dir: Path, out_path: Path) -> dict:
         "family_counts": family_counts(FROZEN_FAMILY_MAP),
         "floor": floor,
         "role_list_size": len(role_list),
-        "data_dir": str(data_dir),
+        "data_dir": data_dir_rel,
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w") as f:
