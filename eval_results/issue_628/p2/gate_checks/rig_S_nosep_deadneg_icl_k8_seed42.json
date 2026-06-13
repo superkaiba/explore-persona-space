@@ -1,0 +1,16 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T13:23:45.428843+00:00",
+ "data_seed": 42,
+ "arm": "rig_S_nosep_deadneg",
+ "cid": "icl_k8",
+ "seed": 42,
+ "in_loop_delta_nats": 9.979042053222656,
+ "offline_diagonal_delta_logp": 10.403079152107239,
+ "abs_diff": 0.4240370988845825,
+ "over_warn_threshold": false,
+ "over_strict_threshold": false,
+ "warn_threshold_nat": 2.0,
+ "strict_threshold_nat": 1.0,
+ "note": "in-loop probe is on TRAIN questions; offline diagonal on EVAL questions"
+}

@@ -1,0 +1,26 @@
+{
+ "git_commit": "48835909ca13c2b9b881e4c91290767d130a888b",
+ "generated_at": "2026-06-13T09:31:40.656834+00:00",
+ "data_seed": 42,
+ "arm": "rig_O_sep_deadneg",
+ "cid": "reph_casual",
+ "seed": 42,
+ "positive": {
+  "kept_positions": [
+   544,
+   546
+  ],
+  "kept_token_ids": [
+   83399,
+   198
+  ]
+ },
+ "negative": {
+  "kept_positions": [
+   548
+  ],
+  "kept_token_ids": [
+   198
+  ]
+ }
+}

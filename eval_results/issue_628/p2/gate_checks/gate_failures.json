@@ -1,0 +1,50 @@
+[
+ {
+  "slug": "rig_O_sep_deadneg_binst_marker_seed42",
+  "in_loop_delta_nats": -0.4231233596801758,
+  "offline_diagonal_delta_logp": 12.21943998336792,
+  "abs_diff": 12.642563343048096
+ },
+ {
+  "slug": "rig_O_sep_deadneg_binst_marker_seed1042",
+  "in_loop_delta_nats": -0.2622251510620117,
+  "offline_diagonal_delta_logp": 12.219455301761627,
+  "abs_diff": 12.481680452823639
+ },
+ {
+  "slug": "rig_Nplus_canonical_binst_marker_seed42",
+  "in_loop_delta_nats": -0.5550546646118164,
+  "offline_diagonal_delta_logp": 25.187992691993713,
+  "abs_diff": 25.74304735660553
+ },
+ {
+  "slug": "rig_Nplus_canonical_binst_marker_seed1042",
+  "in_loop_delta_nats": -0.3539094924926758,
+  "offline_diagonal_delta_logp": 25.187993347644806,
+  "abs_diff": 25.54190284013748
+ },
+ {
+  "slug": "rig_S_nosep_deadneg_binst_marker_seed42",
+  "in_loop_delta_nats": -0.8483304977416992,
+  "offline_diagonal_delta_logp": 25.187994360923767,
+  "abs_diff": 26.036324858665466
+ },
+ {
+  "slug": "rig_S_nosep_deadneg_binst_marker_seed1042",
+  "in_loop_delta_nats": -0.6056318283081055,
+  "offline_diagonal_delta_logp": 25.187994837760925,
+  "abs_diff": 25.79362666606903
+ },
+ {
+  "slug": "rig_F_sep_liveneg_binst_marker_seed42",
+  "in_loop_delta_nats": -0.13984107971191406,
+  "offline_diagonal_delta_logp": 12.21942675113678,
+  "abs_diff": 12.359267830848694
+ },
+ {
+  "slug": "rig_F_sep_liveneg_binst_marker_seed1042",
+  "in_loop_delta_nats": -0.10950565338134766,
+  "offline_diagonal_delta_logp": 12.219438016414642,
+  "abs_diff": 12.32894366979599
+ }
+]

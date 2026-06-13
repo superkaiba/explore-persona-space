@@ -1,0 +1,4 @@
+2026-06-13T08:17:55.557772+00:00
+attempt=local-5dc554abed96
+pid=2761
+argv=['scripts/i628_dispatch.py', '--phase', '0a', '--seeds', '42,1042', '--enforce-gate']

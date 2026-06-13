@@ -1,0 +1,16 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T12:37:34.134724+00:00",
+ "data_seed": 42,
+ "arm": "rig_O_sep_deadneg",
+ "cid": "sp_doctor",
+ "seed": 1042,
+ "in_loop_delta_nats": 6.405613422393799,
+ "offline_diagonal_delta_logp": 5.675949513912201,
+ "abs_diff": 0.7296639084815979,
+ "over_warn_threshold": false,
+ "over_strict_threshold": false,
+ "warn_threshold_nat": 2.0,
+ "strict_threshold_nat": 1.0,
+ "note": "in-loop probe is on TRAIN questions; offline diagonal on EVAL questions"
+}

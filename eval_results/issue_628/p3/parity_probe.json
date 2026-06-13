@@ -1,0 +1,18 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T13:38:11.766890+00:00",
+ "data_seed": 42,
+ "cell": "sp_swe__default__seed42",
+ "got": {
+  "g_mean_delta_logp": 4.401209533214569,
+  "g_mean_delta_z_marker": 2.676105499267578,
+  "g_mean_delta_eos_margin": 5.019855499267578
+ },
+ "targets": {
+  "file": "G_cells_marker/sp_swe__default__seed42.json",
+  "g_mean_delta_logp": 4.401209533214569,
+  "g_mean_delta_z_marker": 2.676105499267578,
+  "g_mean_delta_eos_margin": 5.019855499267578,
+  "note": "Phase-3 apply-and-read parity probe target (plan section 4.3; tolerance +/-0.5 nat)"
+ }
+}

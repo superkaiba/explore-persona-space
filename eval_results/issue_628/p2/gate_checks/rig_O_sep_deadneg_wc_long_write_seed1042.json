@@ -1,0 +1,16 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T12:53:12.085498+00:00",
+ "data_seed": 42,
+ "arm": "rig_O_sep_deadneg",
+ "cid": "wc_long_write",
+ "seed": 1042,
+ "in_loop_delta_nats": 8.255060195922852,
+ "offline_diagonal_delta_logp": 7.584570288658142,
+ "abs_diff": 0.6704899072647095,
+ "over_warn_threshold": false,
+ "over_strict_threshold": false,
+ "warn_threshold_nat": 2.0,
+ "strict_threshold_nat": 1.0,
+ "note": "in-loop probe is on TRAIN questions; offline diagonal on EVAL questions"
+}

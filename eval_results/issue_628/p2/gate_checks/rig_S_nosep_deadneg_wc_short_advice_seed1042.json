@@ -1,0 +1,16 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T12:50:50.583180+00:00",
+ "data_seed": 42,
+ "arm": "rig_S_nosep_deadneg",
+ "cid": "wc_short_advice",
+ "seed": 1042,
+ "in_loop_delta_nats": 6.0702009201049805,
+ "offline_diagonal_delta_logp": 6.484588265419006,
+ "abs_diff": 0.4143873453140259,
+ "over_warn_threshold": false,
+ "over_strict_threshold": false,
+ "warn_threshold_nat": 2.0,
+ "strict_threshold_nat": 1.0,
+ "note": "in-loop probe is on TRAIN questions; offline diagonal on EVAL questions"
+}

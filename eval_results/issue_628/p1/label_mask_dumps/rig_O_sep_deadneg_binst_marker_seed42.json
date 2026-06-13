@@ -1,0 +1,28 @@
+{
+ "git_commit": "48835909ca13c2b9b881e4c91290767d130a888b",
+ "generated_at": "2026-06-13T09:41:49.951069+00:00",
+ "data_seed": 42,
+ "arm": "rig_O_sep_deadneg",
+ "cid": "binst_marker",
+ "seed": 42,
+ "positive": {
+  "kept_positions": [
+   472,
+   474,
+   476
+  ],
+  "kept_token_ids": [
+   83399,
+   83399,
+   198
+  ]
+ },
+ "negative": {
+  "kept_positions": [
+   548
+  ],
+  "kept_token_ids": [
+   198
+  ]
+ }
+}

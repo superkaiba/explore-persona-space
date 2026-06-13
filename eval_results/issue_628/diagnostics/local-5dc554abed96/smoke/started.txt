@@ -1,0 +1,4 @@
+2026-06-13T09:00:41.841954+00:00
+attempt=local-5dc554abed96
+pid=17472
+argv=['scripts/i628_vllm_smoke.py']

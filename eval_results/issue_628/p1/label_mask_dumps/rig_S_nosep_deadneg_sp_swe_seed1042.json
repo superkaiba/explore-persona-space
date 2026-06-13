@@ -1,0 +1,26 @@
+{
+ "git_commit": "2c038ba44e24c904a2c8522039e2847bb8389d6c",
+ "generated_at": "2026-06-13T11:24:01.700961+00:00",
+ "data_seed": 42,
+ "arm": "rig_S_nosep_deadneg",
+ "cid": "sp_swe",
+ "seed": 1042,
+ "positive": {
+  "kept_positions": [
+   521,
+   523
+  ],
+  "kept_token_ids": [
+   83399,
+   198
+  ]
+ },
+ "negative": {
+  "kept_positions": [
+   548
+  ],
+  "kept_token_ids": [
+   198
+  ]
+ }
+}

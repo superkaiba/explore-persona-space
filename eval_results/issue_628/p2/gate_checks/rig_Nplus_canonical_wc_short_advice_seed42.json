@@ -1,0 +1,16 @@
+{
+ "git_commit": "ef8acb778a5fdf9bcb59673f0e96c961fde046c5",
+ "generated_at": "2026-06-13T12:45:31.000468+00:00",
+ "data_seed": 42,
+ "arm": "rig_Nplus_canonical",
+ "cid": "wc_short_advice",
+ "seed": 42,
+ "in_loop_delta_nats": 6.2232489585876465,
+ "offline_diagonal_delta_logp": 6.308590948581696,
+ "abs_diff": 0.08534198999404907,
+ "over_warn_threshold": false,
+ "over_strict_threshold": false,
+ "warn_threshold_nat": 2.0,
+ "strict_threshold_nat": 1.0,
+ "note": "in-loop probe is on TRAIN questions; offline diagonal on EVAL questions"
+}
