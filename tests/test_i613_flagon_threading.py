@@ -91,8 +91,12 @@ def test_flagon_cell_is_explicit_slug_only():
 def test_every_non_flagon_cell_keeps_suppress_default_false():
     from explore_persona_space.experiments.neg_setpoint_601 import CELLS_601
 
+    # The sep-ablation follow-up round adds a second REGISTERED alive arm
+    # (sepablation_flagon_200p800n — the within-no-separator-construction A);
+    # every other cell must keep the flag-off default.
+    flag_on_registered = {SLUG, "sepablation_flagon_200p800n"}
     for c in CELLS_601:
-        if c.slug == SLUG:
+        if c.slug in flag_on_registered:
             continue
         assert c.suppress_negatives is False, f"{c.slug} drifted off the flag-off default"
 
@@ -276,7 +280,15 @@ def _run_main_with_mocks(monkeypatch, tmp_path: Path, argv: list[str]) -> dict:
     )
 
     def fake_build_cell(cell_slug, output_path, **kw):
-        Path(output_path).write_text(json.dumps(_neg_row()) + "\n")
+        # Spec-consistent positive count: the worker's fused-surface marker
+        # assert (#613 sep-ablation) cross-checks n_positive_checked against
+        # spec.pos_ex (=200 for every cell these tests run), so the fake mix
+        # must carry 200 marker-bearing rows for main() to reach the phases
+        # under test. Captured for the sep-threading tests in
+        # tests/test_i613_sepablation.py (same helper shape there).
+        captured["build"] = kw
+        rows = [_pos_row()] * 200 + [_neg_row()]
+        Path(output_path).write_text("\n".join(json.dumps(r) for r in rows) + "\n")
 
     monkeypatch.setattr(build_training_data, "build_cell", fake_build_cell)
 
@@ -308,7 +320,12 @@ def _run_main_with_mocks(monkeypatch, tmp_path: Path, argv: list[str]) -> dict:
 
     run_cell = _load_script(RUN_CELL_PY, "i601_run_cell_under_test")
 
-    def fake_subprocess_run(cmd, env=None, check=True):
+    def fake_subprocess_run(cmd, env=None, check=True, **kwargs):
+        # Patching run on the SHARED stdlib subprocess module also routes
+        # check_output here (it calls run internally) — the worker's
+        # build-manifest _git_sha read takes that path. Emulate it.
+        if list(cmd)[:2] == ["git", "rev-parse"]:
+            return SimpleNamespace(returncode=0, stdout="0" * 40 + "\n", args=list(cmd))
         captured["subprocess_cmds"].append(list(cmd))
         out_path = Path(cmd[cmd.index("--out-path") + 1])
         out_path.parent.mkdir(parents=True, exist_ok=True)

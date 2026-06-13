@@ -61,6 +61,18 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B (debug only).")
+    # ── #613 sep-ablation flag (legacy-preserving default — plan §3 change 3,
+    # mirroring i601_dense_read.py's --sep-mode). ──
+    ap.add_argument(
+        "--sep-mode",
+        choices=("marker", "plain"),
+        default="marker",
+        help="Slot separator for EVERY read in this eval (DV-A trained+base, "
+        "DV-B KL + four-float capture): 'marker' = the parent "
+        "MARKER_SEP='\\n\\n' DV slot (default, current behavior); 'plain' = "
+        "sep='' — the no-separator construction's coincident post-R slot "
+        "(#613 sep-ablation cells).",
+    )
     ap.add_argument("--sentinel-path", type=Path, default=None)
     args = ap.parse_args(argv)
 
@@ -89,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
     from explore_persona_space.experiments.contrastive_neg_geometry_472.select_negatives import (
         held_out_panel,
     )
-    from explore_persona_space.experiments.neg_setpoint_601 import SOURCE_PERSONA
+    from explore_persona_space.experiments.neg_setpoint_601 import MARKER_SEP, SOURCE_PERSONA
 
     bank = load_persona_bank(args.data_dir / "persona_bank.json")
     if args.panel == "full":
@@ -152,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
         spec["provenance"] = prov
     log.info("On-policy checkpoints: %s", [(c["frac"], c["step"]) for c in checkpoint_specs])
 
+    sep = MARKER_SEP if args.sep_mode == "marker" else ""
+    log.info("Slot separator: sep_mode=%s sep=%r", args.sep_mode, sep)
+
     run_trajectory_eval(
         cell_slug=args.cell,
         seed=args.seed,
@@ -169,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         max_lora_rank=LORA_R,
         compute_kl=not args.no_kl,
         raw_r_out_path=args.raw_completions_path,
+        sep=sep,
     )
 
     if not args.out_path.exists():

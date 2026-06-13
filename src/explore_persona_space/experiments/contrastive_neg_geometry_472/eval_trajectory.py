@@ -375,6 +375,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
     compute_kl: bool = True,
     source_guard_meta: dict | None = None,
     raw_r_out_path: Path | None = None,
+    sep: str = MARKER_SEP,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -406,6 +407,13 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
             ``raw_completions.json`` so
             ``upload_raw_completions_to_data_repo`` rglobs it. Default None
             = byte-identical legacy behavior (generations not persisted).
+        sep: separator between R and the marker at every slot read (#613
+            sep-ablation, plan §3 change 3). Threaded into BOTH
+            ``score_logp_for_R`` calls (DV-A trained + base) AND
+            ``compute_kl_for_checkpoint`` (DV-B) so the on-policy log-prob,
+            the four-float raw-logit capture, and the KL all read the SAME
+            slot. Default ``MARKER_SEP`` ("\\n\\n") = byte-identical legacy
+            behavior; sep-ablation cells pass ``""``.
 
     Returns:
         out_path.
@@ -524,6 +532,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
             cell_label=f"TRAINED/{label}",
             use_lora=True,
             lora_request=lora_req,
+            sep=sep,
         )
         # 3. DV-A base log P(※) at the SAME slot on the SAME R (lora_request=None).
         b = score_logp_for_R(
@@ -534,6 +543,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
             eval_questions=eval_questions,
             cell_label=f"BASE/{label}",
             use_lora=False,
+            sep=sep,
         )
 
         # Fail-loud guard for the #477 v4/v6 silent-LoRA-not-applied
@@ -601,6 +611,22 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
             "emission_p": float(src_emission_p),
             "r_collapsed": src_collapsed,
         }
+        # Per-question SOURCE leaves (#613 sep-ablation, additive — legacy
+        # readers consume only the aggregate source_self): the R2' registered
+        # emission-denominator sensitivity (re-read source ΔG EXCLUDING
+        # n_marker_in_R > 0 probes) needs per-probe source reads, which the
+        # aggregate means cannot reconstruct post-hoc.
+        source_per_q = {
+            q: {
+                "g_logp": float(g[source][q]["logp"]),
+                "b_logp": float(b[source][q]["logp"]),
+                "delta_g": float(g[source][q]["logp"]) - float(b[source][q]["logp"]),
+                "argmax_marker": bool(g[source][q].get("argmax_marker", False)),
+                "n_marker_in_R": int(g[source][q].get("n_marker_in_R", 0)),
+                "r_collapsed": bool(g[source][q].get("r_collapsed", False)),
+            }
+            for q in eval_questions
+        }
         # #534 round-2 adapter-applied cross-check: the selector's HF/PEFT
         # teacher-forced source ΔG and this on-policy read look at the SAME
         # snapshot dir through independent loaders — >tol disagreement at the
@@ -639,6 +665,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
                 "lora_name": label,
                 "lora_int_id": ck_i,
                 "source_self": source_self,
+                "source_per_q": source_per_q,
                 "source_manifest_check": source_manifest_check,
                 "held_out_collapse_share": held_out_collapse_share,
                 "n_held_out_collapsed": n_collapsed_ck,
@@ -695,6 +722,7 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
                 r_by_persona_q=r_cache[frac],
                 eval_personas=panel_plus_source,
                 eval_questions=eval_questions,
+                sep=sep,
             )
             # Float-valued KL map (guard + leaf writes read it below).
             kl = {p: {q: slot_stats[p][q]["kl"] for q in eval_questions} for p in slot_stats}
@@ -797,6 +825,10 @@ def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds o
         "source": source,
         "marker_text": MARKER_TEXT,
         "marker_token_id": EXPECTED_MARKER_TOKEN_ID,
+        # #613 sep-ablation provenance (additive): the separator every slot
+        # read in this file used. "\n\n" = the legacy sep-marker DV slot;
+        # "" = the no-separator construction's coincident post-R slot.
+        "sep": sep,
         "matched_slice_target_nats": MATCHED_SLICE_TARGET_NATS,
         "n_held_out_personas": len(eval_personas),
         "held_out_personas": sorted(eval_personas.keys()),

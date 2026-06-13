@@ -18,6 +18,12 @@ rows). This module's cells break that collinearity:
            dense_200p800n recipe with ``suppress_negatives=True`` (negative
            loss at the post-response slot; conditional, explicit-slug-only,
            launched by ``scripts/i613_launch.sh``).
+  Task #613 follow-up `sep-ablation` — the flag A/B inside the NO-SEPARATOR
+           positive construction (``marker_sep=""`` -> positives are
+           ``R + " ※"``; loss slot == marker slot == greedy stop position):
+           ``sepablation_flagon_200p800n`` / ``sepablation_flagoff_200p800n``
+           (conditional, explicit-slug-only, launched by
+           ``scripts/i613_sepablation_launch.sh``).
   Phase 4  rig-bridging positives-only arms toward #471. Corrected #471
            attribution (concern phase4-bridge-attn-only-attribution; round 4):
            #471's posonly rig was ALL-LINEAR r=32 @ lr 5e-6 — NOT attn-only as
@@ -213,6 +219,15 @@ class CellSpec601:
     # after R instead of the trailing "\n". Default False = every pre-#613 cell
     # byte-identical (the flag-off arm of the A/B).
     suppress_negatives: bool = False
+    # #613 sep-ablation: the positive-row separator between R and the marker
+    # (builder: f"{r_text}{marker_sep}{marker_text}"). Default MARKER_SEP
+    # ("\n\n") keeps every legacy cell byte-identical; the sep-ablation cells
+    # set "" so the negative loss slot, the marker slot, and the greedy stop
+    # position COINCIDE at post-R (#471's no-separator construction). The
+    # worker threads this into build_cell AND maps it to --sep-mode plain on
+    # both nested read subprocesses (eval + dense), so every read of a sep=""
+    # cell happens at the construction's own slot.
+    marker_sep: str = MARKER_SEP
 
     @property
     def placement(self) -> str:
@@ -440,6 +455,45 @@ CELLS_601: tuple[CellSpec601, ...] = (
         seeds=(42, 137),
         conditional=True,  # explicit-slug-only; never joins --cells all / phase4b
         suppress_negatives=True,  # THE variable (#613 plan §4)
+    ),
+    # Task #613 follow-up round `sep-ablation` (amendment plan §3): the flag
+    # A/B re-run INSIDE the no-separator positive construction. ONE variable
+    # vs the completed round: marker_sep "\n\n" -> "" (positives become
+    # R + " ※", so the negative loss slot, the marker slot, and the greedy
+    # stop position coincide at post-R — #471's construction). BOTH arms
+    # retrain (every existing #601/#613 cell carries the separator; reusing
+    # one would smuggle the separator variable into the within-construction
+    # A/B). phase="sep-ablation" doubles as the output dir, landing artifacts
+    # at the CLAUDE.md follow-up contract path
+    # eval_results/issue_613/sep-ablation/<cell>_seed<S>/ under #613's
+    # --slab-root. conditional=True keeps both cells explicit-slug-only.
+    CellSpec601(
+        slug="sepablation_flagon_200p800n",
+        plain_name="No-separator positives + alive negatives (post-response-slot loss)",
+        phase="sep-ablation",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=200,
+        dense_steps=_dense_1_to(20, 25, 32, 45, 63),  # EXACT dense_200p800n parity
+        onpolicy="anchors",
+        seeds=(42, 137),
+        conditional=True,
+        suppress_negatives=True,  # alive arm (within-construction A)
+        marker_sep="",  # THE round variable: slots coincide at post-R
+    ),
+    CellSpec601(
+        slug="sepablation_flagoff_200p800n",
+        plain_name="No-separator positives + dead-slot negatives (trailing-token loss)",
+        phase="sep-ablation",
+        pos_ex=200,
+        n_neg_personas=4,
+        neg_ex_per_persona=200,
+        dense_steps=_dense_1_to(20, 25, 32, 45, 63),  # EXACT dense_200p800n parity
+        onpolicy="anchors",
+        seeds=(42, 137),
+        conditional=True,
+        suppress_negatives=False,  # dead-slot comparator (within-construction B)
+        marker_sep="",
     ),
 )
 

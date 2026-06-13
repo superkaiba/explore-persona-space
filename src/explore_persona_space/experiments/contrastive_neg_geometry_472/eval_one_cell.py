@@ -155,8 +155,14 @@ def build_full_ids(
             f"prompt prefix drift persona={persona_for_log!r} q={q_for_log!r}: prompt_ids "
             f"({len(prompt_ids)}) does not prefix full_ids ({len(full_ids)})."
         )
+    # #613 sep-ablation latent-hardcode fix (plan §3 change 4): the inner
+    # train-equivalent call previously passed sep=MARKER_SEP HARDCODED, so a
+    # sep="" caller compared an eval prefix built at "" against a
+    # train-equivalent built at "\n\n" and failed the K-token contract on
+    # every probe. The function's own `sep` argument is the contract's single
+    # source of truth; default callers are unchanged (sep defaults MARKER_SEP).
     train_equivalent_ids = build_train_equivalent_full_ids(
-        tokenizer, persona_prompt, question, r_text, marker_text, marker_id, sep=MARKER_SEP
+        tokenizer, persona_prompt, question, r_text, marker_text, marker_id, sep=sep
     )
     k = MARKER_PRECEDING_K_TOKENS
     eval_tail = full_ids[-(k + 1) :]
@@ -217,6 +223,7 @@ def score_logp_for_R(
     lora_request=None,
     marker_text: str = MARKER_TEXT,
     marker_id: int = EXPECTED_MARKER_TOKEN_ID,
+    sep: str = MARKER_SEP,
 ) -> dict[str, dict[str, dict[str, float | bool]]]:
     """Score DV-A log P(※) at the post-R slot for a panel × question grid.
 
@@ -233,6 +240,11 @@ def score_logp_for_R(
         use_lora: whether to pass ``lora_request`` to ``llm.generate``.
         lora_request: vLLM LoRARequest (when use_lora).
         marker_text, marker_id: marker constants.
+        sep: separator between R and the appended marker at the scoring slot
+            (threaded into ``build_full_ids`` AND its train-equivalent
+            contract reference). Default ``MARKER_SEP`` ("\\n\\n") =
+            byte-identical legacy behavior; #613 sep-ablation passes ``""``
+            (the no-separator construction's own slot).
 
     Returns:
         ``out[persona][q] = {"logp": float, "argmax_marker": bool,
@@ -256,7 +268,7 @@ def score_logp_for_R(
                 raise KeyError(f"[{cell_label}] R[{persona!r}] missing q {q!r}.")
             r_text = r_by_persona_q[persona][q]
             full_ids, _p, r_len, slot, n_marker_in_R = build_full_ids(
-                tokenizer, persona_prompt, q, r_text, marker_text, marker_id, persona, q
+                tokenizer, persona_prompt, q, r_text, marker_text, marker_id, persona, q, sep=sep
             )
             prompts_payload.append({"prompt_token_ids": full_ids})
             slot_positions.append(slot)

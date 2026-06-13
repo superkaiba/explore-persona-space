@@ -127,6 +127,7 @@ def build_cell(
     persona_bank: dict[str, str],
     source: str = SOURCE_PERSONA,
     marker_text: str = MARKER_TEXT,
+    marker_sep: str = MARKER_SEP,
     seed: int = 42,
     cell_specs: tuple | None = None,
     pos_ex_override: int | None = None,
@@ -142,6 +143,11 @@ def build_cell(
         persona_bank: name -> system prompt for resolving positive/negative prompts.
         source: source persona.
         marker_text: marker string appended to positive completions.
+        marker_sep: separator between R and the appended marker on POSITIVE
+            rows (``f"{r_text}{marker_sep}{marker_text}"``). Default
+            ``MARKER_SEP`` ("\\n\\n") = byte-identical legacy behavior;
+            #613 sep-ablation passes ``""`` so the marker lands at the
+            post-R slot itself (negatives never carry the separator).
         seed: base seed for per-persona seed salting.
         cell_specs: OPTIONAL override registry (#477/#601 pattern; default
             None = #472's CELL_SPECS).
@@ -215,7 +221,7 @@ def build_cell(
                 f"contains the marker in R BEFORE we append it — would produce two "
                 f"markers. Phase 1 r-generate should have aborted; the R artifact is stale."
             )
-        examples.append(_make_example(source_prompt, q, f"{r_text}{MARKER_SEP}{marker_text}"))
+        examples.append(_make_example(source_prompt, q, f"{r_text}{marker_sep}{marker_text}"))
     n_positive = len(examples)
 
     # ── Negative rows (distance-selected personas, no marker). ───────────────

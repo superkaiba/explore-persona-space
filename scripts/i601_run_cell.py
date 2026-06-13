@@ -81,6 +81,91 @@ def _write_sentinel(path: Path, *, kind: str, phase: str, note: dict, task_id: i
     )
 
 
+def _assert_positive_rows_fused_marker(
+    train_jsonl: Path,
+    tokenizer,
+    *,
+    marker_text: str,
+    marker_id: int,
+    cell_slug: str,
+) -> dict:
+    """FUSED-surface marker-tokenization guard (#613 sep-ablation, plan §3 change 5).
+
+    The collator CLASSIFIES rows by marker presence on the fused chat-template
+    ``input_ids`` (``sft.py`` ``_find_marker_positions``) and never asserts
+    marker presence on positives — a merged/absent marker silently flips a
+    positive row into the NEGATIVE branch (flag-on: loss at the first
+    ``<|im_end|>``; flag-off: trailing token) with zero error. Eval/probe
+    paths fail loud; training does not. So BEFORE training, for EVERY row the
+    builder intended as positive (``marker_text`` in the assistant completion
+    string), render the SAME fused surface the trainer uses
+    (``apply_chat_template(prompt + completion, tokenize=True,
+    add_generation_prompt=False)``) and assert EXACTLY ONE ``marker_id``
+    appears in the full sequence, positioned inside the assistant completion
+    region (after the last ``<|im_start|>``). Fail-loud RuntimeError naming
+    the row. Runs for ALL cells (legacy "\\n\\n" construction included).
+
+    Returns ``{"n_rows_total", "n_positive_checked", "passed": True}``.
+    """
+    from explore_persona_space.train.sft import _apply_chat_template_safe
+
+    im_start_id = tokenizer.convert_tokens_to_ids("<|im_start|>")
+    n_total = 0
+    n_pos = 0
+    with Path(train_jsonl).open() as f:
+        for line_no, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            n_total += 1
+            completion = row.get("completion") or []
+            content = " ".join(m.get("content", "") for m in completion)
+            if marker_text not in content:
+                continue  # negative row (builder hard-asserts no contamination)
+            n_pos += 1
+            full_ids = _apply_chat_template_safe(
+                tokenizer, list(row["prompt"]) + list(completion), add_generation_prompt=False
+            )
+            if full_ids is None:
+                raise RuntimeError(
+                    f"[{cell_slug}] fused-surface marker assert: chat-template render FAILED "
+                    f"for positive row {line_no} of {train_jsonl} — cannot verify the "
+                    f"collator-visible marker."
+                )
+            count = full_ids.count(marker_id)
+            if count != 1:
+                raise RuntimeError(
+                    f"[{cell_slug}] fused-surface marker assert FAILED at positive row "
+                    f"{line_no} of {train_jsonl}: marker id {marker_id} appears {count}x in "
+                    f"the fused chat-template ids (expected exactly 1) — the marker "
+                    f"BPE-merged/vanished on the trainer's surface, so the collator would "
+                    f"silently flip this row into the NEGATIVE branch. Completion tail: "
+                    f"{content[-60:]!r}."
+                )
+            if im_start_id is not None and im_start_id >= 0:
+                last_start = max(
+                    (i for i, t in enumerate(full_ids) if t == im_start_id), default=-1
+                )
+                if full_ids.index(marker_id) <= last_start:
+                    raise RuntimeError(
+                        f"[{cell_slug}] fused-surface marker assert FAILED at positive row "
+                        f"{line_no} of {train_jsonl}: marker id {marker_id} sits BEFORE the "
+                        f"assistant completion region (last <|im_start|> at {last_start}) — "
+                        f"the loss-bearing marker is not in the completion."
+                    )
+    log.info(
+        "[phase=fused_marker_assert_%s] PASS: %d/%d positive rows carry exactly one fused "
+        "marker id %d in the completion region (%d rows total)",
+        cell_slug,
+        n_pos,
+        n_pos,
+        marker_id,
+        n_total,
+    )
+    return {"n_rows_total": n_total, "n_positive_checked": n_pos, "passed": True}
+
+
 def _combined_fractions(spec, step_fractions_fn) -> tuple[tuple[float, ...], tuple[float, ...]]:
     """(all checkpoint fractions, on-policy subset fractions) for one cell.
 
@@ -263,6 +348,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         EXPECTED_POST_R_EOS_ID,
         HF_ADAPTER_PREFIX_601,
         HF_MODEL_REPO,
+        MARKER_SEP,
         MARKER_TEXT,
         SOURCE_PERSONA,
         cell_by_slug,
@@ -274,6 +360,21 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
 
     spec = cell_by_slug(args.cell)
     hf_prefix = args.hf_prefix if args.hf_prefix is not None else HF_ADAPTER_PREFIX_601
+    # ── #613 sep-ablation: spec.marker_sep -> the nested read subprocesses'
+    # --sep-mode vocabulary (plan §3 change 3). Legacy cells (marker_sep ==
+    # MARKER_SEP) get NO flag appended — byte-identical argvs; sep cells get
+    # "plain"; any other separator has no CLI vocabulary — fail loud here
+    # rather than silently reading the wrong slot.
+    if spec.marker_sep == MARKER_SEP:
+        sep_mode: str | None = None
+    elif spec.marker_sep == "":
+        sep_mode = "plain"
+    else:
+        raise ValueError(
+            f"[{args.cell}] marker_sep={spec.marker_sep!r} has no --sep-mode mapping "
+            f"(known: {MARKER_SEP!r} -> default, '' -> plain); the nested eval/dense "
+            f"reads would score the WRONG slot."
+        )
     if args.seed not in (42, 137):
         raise ValueError(f"[{args.cell}] seed {args.seed} not a canonical #601 seed (42/137).")
     if args.seed not in spec.seeds:
@@ -353,15 +454,57 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         persona_bank=bank,
         source=SOURCE_PERSONA,
         seed=args.seed,
+        # #613 sep-ablation (plan §3 change 2): the positive-row separator from
+        # the cell spec (legacy cells pass MARKER_SEP — byte-identical rows).
+        marker_sep=spec.marker_sep,
         cell_specs=CELL_SPECS_601_472SHAPE,
         pos_ex_override=spec.pos_ex,
     )
+
+    # ── Phase: FUSED-surface marker assert (pre-train, every positive row;
+    # plan §3 change 5 — closes the collator's silent positive->negative flip).
+    fused_assert = _assert_positive_rows_fused_marker(
+        train_jsonl,
+        tokenizer,
+        marker_text=MARKER_TEXT,
+        marker_id=EXPECTED_MARKER_TOKEN_ID,
+        cell_slug=args.cell,
+    )
+    if spec.pos_ex > 0 and fused_assert["n_positive_checked"] != spec.pos_ex:
+        raise RuntimeError(
+            f"[{args.cell}] fused-surface assert checked {fused_assert['n_positive_checked']} "
+            f"positive rows but the spec registers pos_ex={spec.pos_ex} — builder/guard "
+            f"row-intent drift."
+        )
+    # Unit manifest (durable, spec-conditional runtime echo — the smoke gate
+    # reads it; reproducibility metadata per CLAUDE.md).
+    build_manifest_path = cell_out_dir / "build_manifest.json"
+    from explore_persona_space.experiments.contrastive_neg_geometry_472.eval_trajectory import (
+        _git_sha,
+    )
+
+    build_manifest_path.write_text(
+        json.dumps(
+            {
+                "cell": args.cell,
+                "seed": args.seed,
+                "marker_sep": spec.marker_sep,
+                "sep_mode": sep_mode or "marker",
+                "suppress_negatives": spec.suppress_negatives,
+                "fused_marker_assert": fused_assert,
+                "git_commit": _git_sha(),
+                "timestamp_utc": datetime.now(UTC).isoformat(),
+            },
+            indent=2,
+        )
+    )
+    log.info("[phase=build_%s] unit manifest -> %s", args.cell, build_manifest_path)
 
     # ── Phase: train (HF Trainer, in-process). ───────────────────────────────
     all_fracs, onpolicy_fracs = _combined_fractions(spec, step_fractions)
     log.info(
         "[phase=train_%s] T=%d, %d ckpt fractions (%d on-policy), lr=%g, epochs=%d, "
-        "targets=%s, band stop=%s log_only=%s, suppress_negatives=%s",
+        "targets=%s, band stop=%s log_only=%s, suppress_negatives=%s, marker_sep=%r",
         args.cell,
         spec.expected_steps,
         len(all_fracs),
@@ -372,6 +515,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         spec.band_stop,
         spec.band_log_only,
         spec.suppress_negatives,
+        spec.marker_sep,
     )
     # max_length = the TRAINING max_length (1024): the probe must monitor
     # exactly the rows the trainer sees — a 2048 probe cap would admit rows the
@@ -506,6 +650,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
     ]
     if args.no_kl:
         eval_cmd.append("--no-kl")
+    if sep_mode is not None:
+        # #613 sep-ablation: every read of a sep="" cell happens at the
+        # construction's own slot (plan §3 change 3); legacy argv untouched.
+        eval_cmd += ["--sep-mode", sep_mode]
     log.info("[phase=eval_%s] nested eval subprocess: %s", args.cell, " ".join(eval_cmd))
     subprocess.run(eval_cmd, env={**os.environ}, check=True)
     if not out_traj.exists():
@@ -531,6 +679,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
             "--bystander-panel-path",
             str(args.slab_root / "phase0" / "bystander_panel.json"),
         ]
+        if sep_mode is not None:
+            dense_cmd += ["--sep-mode", sep_mode]
         log.info("[phase=dense_%s] nested dense-read subprocess", args.cell)
         subprocess.run(dense_cmd, env={**os.environ}, check=True)
         if not out_dense.exists():
@@ -567,6 +717,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
             "seed": args.seed,
             "phase_dir": spec.phase,
             "suppress_negatives": spec.suppress_negatives,
+            "marker_sep": spec.marker_sep,
+            "sep_mode": sep_mode or "marker",
+            "build_manifest_path": str(build_manifest_path),
+            "fused_marker_assert": fused_assert,
             "expected_steps": spec.expected_steps,
             "realized_terminal_step": realized_terminal_step,
             "trajectory_path": str(out_traj),
