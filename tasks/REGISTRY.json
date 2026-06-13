@@ -180,8 +180,8 @@
     "124": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/124",
-      "status": "proposed",
+      "path": "tasks/on_hold/124",
+      "status": "on_hold",
       "title": "Deconfounded ARC-C coupling: letter-only answers, held-out eval, default-prompt control"
     },
     "125": {
