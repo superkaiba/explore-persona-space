@@ -1,7 +1,6 @@
 ---
-title: Revise the marker rig (drop the \n\n separator; train contrastive negatives
-  on <|im_end|> + \n at the DV-read slot) and re-measure marker leakage across many
-  context types
+title: Dropping the separator and waking the negatives doesn't suppress marker leakage
+  — the bystander leak doesn't move (HIGH confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:47:25Z'

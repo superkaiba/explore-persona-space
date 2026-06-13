@@ -3868,7 +3868,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/628",
       "status": "interpreting",
-      "title": "Revise the marker rig (drop the \\n\\n separator; train contrastive negatives on <|im_end|> + \\n at the DV-read slot) and re-measure marker leakage across many context types"
+      "title": "Dropping the separator and waking the negatives doesn't suppress marker leakage \u2014 the bystander leak doesn't move (HIGH confidence)"
     },
     "629": {
       "has_clean_result": false,
