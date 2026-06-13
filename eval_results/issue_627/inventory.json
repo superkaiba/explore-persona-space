@@ -1,0 +1,208 @@
+{
+  "issue": 627,
+  "verified": {
+    "608": {
+      "n_sources": 6,
+      "n_grid_steps": 9,
+      "fresh_base_panel_personas": 24,
+      "excluded_trained_negatives": {
+        "villain": [
+          "medical_doctor",
+          "police_officer"
+        ],
+        "comedian": [
+          "assistant",
+          "medical_doctor"
+        ],
+        "assistant": [
+          "comedian",
+          "software_engineer"
+        ],
+        "qwen_default": [
+          "comedian",
+          "data_scientist"
+        ],
+        "software_engineer": [
+          "assistant",
+          "medical_doctor"
+        ],
+        "kindergarten_teacher": [
+          "french_person",
+          "software_engineer"
+        ]
+      },
+      "files": [
+        "eval_results/issue_608/sub-ceiling-install/analyze_summary_subceiling.json",
+        "eval_results/issue_608/analyze_summary_608.json"
+      ]
+    },
+    "601": {
+      "n_onpolicy_cells": 27,
+      "n_bystander_question_records": 24960,
+      "cells": [
+        "c472_anchor_seed137",
+        "c472_anchor_seed42",
+        "c472_negex_100_seed137",
+        "c472_negex_100_seed42",
+        "c472_negex_400_seed137",
+        "c472_negex_400_seed42",
+        "c472_noneg_seed137",
+        "c472_noneg_seed42",
+        "dense_200p0n_seed137",
+        "dense_200p1600n_seed137",
+        "dense_200p400n_seed137",
+        "dense_200p800n_seed137",
+        "dense_200p800n_seed42",
+        "negonly_0p800n_seed137",
+        "negonly_0p800n_seed42",
+        "posonly_200p_T130_seed137",
+        "posonly_200p_T130_seed42",
+        "posonly_alllinear_lr5e6_seed137",
+        "posonly_alllinear_lr5e6_seed42",
+        "posonly_attn_lr5e6_seed137",
+        "posonly_attn_lr5e6_seed42",
+        "ratio4to1_100p400n_T128_seed137",
+        "ratio4to1_100p400n_T128_seed42",
+        "ratio4to1_100p400n_seed137",
+        "ratio4to1_100p400n_seed42",
+        "ratio4to1_400p1600n_seed137",
+        "ratio4to1_400p1600n_seed42"
+      ]
+    },
+    "606": {
+      "sycophancy": {
+        "n_cells": 8,
+        "n_personas": 39,
+        "s_stage_b": {
+          "ft_step12": 0.37082565130260525,
+          "ft_step132": 0.9259999999999999,
+          "ft_step16": 0.5339999999999999,
+          "ft_step22": 0.9099999999999999,
+          "lora_step132": 0.9139999999999999,
+          "lora_step28": 0.41200000000000003,
+          "lora_step32": 0.568,
+          "lora_step36": 0.718
+        },
+        "file": "eval_results/issue_606/sycophancy/analysis.json"
+      },
+      "refusal": {
+        "n_cells": 6,
+        "n_personas": 39,
+        "s_stage_b": {
+          "ft_step12": 0.964,
+          "ft_step132": 0.994,
+          "ft_step8": 0.06599999999999999,
+          "lora_step132": 0.994,
+          "lora_step20": 0.16799999999999998,
+          "lora_step24": 0.578
+        },
+        "file": "eval_results/issue_606/refusal/analysis.json"
+      },
+      "refusal-ft-lr2e6-retrain": {
+        "n_cells": 6,
+        "n_personas": 39,
+        "s_stage_b": {
+          "ft_step132": 0.994,
+          "ft_step20": 0.436,
+          "ft_step22": 0.82,
+          "lora_step132": 0.994,
+          "lora_step20": 0.16799999999999998,
+          "lora_step24": 0.578
+        },
+        "file": "eval_results/issue_606/refusal-ft-lr2e6-retrain/analysis.json"
+      }
+    },
+    "514": {
+      "n_leaf_cells": 6,
+      "leaf_files": [
+        "eval_results/issue_514/ft_dense_b30_seed42.json",
+        "eval_results/issue_514/ft_dense_b35_seed42.json",
+        "eval_results/issue_514/ft_dense_b40_seed42.json",
+        "eval_results/issue_514/ft_dense_b45_seed42.json",
+        "eval_results/issue_514/ft_lowlr_b100_seed42.json",
+        "eval_results/issue_514/ft_lowlr_b50_seed42.json"
+      ],
+      "n_held_out_personas": 15,
+      "n_aggregate_cells": 12,
+      "aggregate_cells": [
+        [
+          "ft_b1",
+          "fullft"
+        ],
+        [
+          "ft_b2",
+          "fullft"
+        ],
+        [
+          "ft_b3",
+          "fullft"
+        ],
+        [
+          "ft_dense_b30",
+          "fullft"
+        ],
+        [
+          "ft_dense_b35",
+          "fullft"
+        ],
+        [
+          "ft_dense_b40",
+          "fullft"
+        ],
+        [
+          "ft_dense_b45",
+          "fullft"
+        ],
+        [
+          "ft_lowlr_b100",
+          "fullft"
+        ],
+        [
+          "ft_lowlr_b50",
+          "fullft"
+        ],
+        [
+          "lora_b1",
+          "lora"
+        ],
+        [
+          "lora_b2",
+          "lora"
+        ],
+        [
+          "lora_b3",
+          "lora"
+        ]
+      ],
+      "z_fields_absent_confirmed": true
+    }
+  },
+  "producing_task_status": {
+    "601": "awaiting_promotion",
+    "606": "awaiting_promotion",
+    "608": "awaiting_promotion",
+    "514": "completed"
+  },
+  "hub": {
+    "model_repo": "superkaiba1/explore-persona-space",
+    "model_repo_revision": "0ff9d460cfae41a870a7522ab5949020fba73d0a",
+    "data_repo": "superkaiba1/explore-persona-space-data",
+    "data_repo_revision": "8fbe23d7368df28c0bf98b71ea6cb8e68b2567f4",
+    "n_adapter_cells_verified": 24,
+    "eval_pool_repo_path": "issue411_sycophancy_cosine_gradient/data/wrong_claims/eval_50.jsonl",
+    "eval_pool_sha256_pin": "68724b2929ef60c414959fab8af7b3658f9c2c6512ad3a2477582d9bd6ff0fab",
+    "smoke_adapter_config": {
+      "r": 32,
+      "lora_alpha": 64,
+      "use_rslora": true
+    }
+  },
+  "manifests": {
+    "matched_install_cells": "eval_results/issue_627/matched_install_cells.json",
+    "marker_matched_pairs": "eval_results/issue_627/marker_matched_pairs.json",
+    "marker_tolerance": "eval_results/issue_627/marker_tolerance.json"
+  },
+  "git_commit": "365f3f981c4d1ddae057ff555a7c4813adf0d118",
+  "timestamp_utc": "2026-06-12T21:45:50.784769+00:00",
+  "seed": 42
+}
