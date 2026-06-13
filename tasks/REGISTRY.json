@@ -2687,8 +2687,8 @@
     "483": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/483",
-      "status": "planning",
+      "path": "tasks/approved/483",
+      "status": "approved",
       "title": "Build a canonical distance-varied persona pool + maintained pairwise cosine-distance matrix for leakage experiments"
     },
     "484": {
