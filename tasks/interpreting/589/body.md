@@ -10,7 +10,7 @@ created_at: '2026-06-11T05:57:27Z'
 has_clean_result: true
 parent_id: 536
 ---
-# The set-size-by-distance leakage call hangs entirely on the uncertainty estimator (significant under cluster-robust OLS, null under the persona random-effect model at the identical coefficient), and the leave-one-out pooled read is estimator-conflicted on the raw axis (two estimators significant in opposite directions); the other two clustered persona-distance calls survive the swap on both axes (MODERATE confidence)
+# Two clustered persona-distance calls survive the estimator swap, while the set-size and leave-one-out calls remain estimator-dependent (MODERATE confidence)
 
 <!-- clean-result-v3 -->
 
@@ -24,10 +24,17 @@ parent_id: 536
 
 ## What I ran
 
-- **Why:** The persona-distance audit [#536](https://eps.superkaiba.com/tasks/536) re-graded four "distance predicts which personas catch a behavior" calls, each decided under one registered uncertainty estimator. The open question: does any call depend on which standard variance estimator was used? One row ([#536](https://eps.superkaiba.com/tasks/536)'s set-size-by-distance mirror) already showed a cluster-robust p = 0.00075 vs MixedLM p = 0.215 split on identical data, so the fragility was known to be live on at least one row.
-- **Design:** four clustered leakage-line reads × two estimators (cluster-robust OLS, persona-RE MixedLM) × two distance axes (raw, mean-centered) = 16 cells, plus 2 cells re-fitting the one singular read under a simpler admissible MixedLM spec (18 cells total). The single manipulated dimension is the uncertainty estimator; data, joins, point estimates, clustering variables, and per-row α are held fixed at [#536](https://eps.superkaiba.com/tasks/536)'s gated values.
-- **Training:** none — CPU `statsmodels` re-fits over [#536](https://eps.superkaiba.com/tasks/536)'s persisted joins; 0 GPU-hours.
-- **Eval:** per cell, the headline term's coefficient + Wald 95% CI + p-value, with `n_rows` and `n_clusters`. A call "swaps significance" when the alternative estimator's p crosses the row's published α with the sign preserved; a sign change is flagged separately and is graver. A join-validity gate reproduces each published point estimate (`manipulation_check_ratio < 3e-4` on all four rows) before any swept p is read.
+- **Why:** The persona-distance audit [#536](https://eps.superkaiba.com/tasks/536) re-graded four "distance predicts which personas catch a behavior" calls, each decided under one registered uncertainty estimator, and one row (the set-size-by-distance mirror) already showed a cluster-robust p = 0.00075 vs MixedLM p = 0.215 split on identical data. The open question: does any call depend on which standard variance estimator was used?
+- **Design:** four clustered leakage-line reads × two estimators (cluster-robust OLS, persona-RE MixedLM) × two distance axes (raw, mean-centered) = 16 cells, plus 2 cells re-fitting the one singular read under a simpler admissible MixedLM spec (18 cells total). The single manipulated dimension is the uncertainty estimator; data, joins, point estimates, clustering variables, and per-row α are held fixed at the parent audit's gated values.
+- **Training:** none — CPU `statsmodels` re-fits over the parent's persisted joins; 0 GPU-hours.
+- **Eval:** per cell, the headline term's coefficient + Wald 95% CI + p-value, with `n_rows` and `n_clusters`; a call "swaps significance" when the alternative estimator's p crosses the row's published α with the sign preserved (a sign change is flagged separately and is graver). A join-validity gate reproduces each published point estimate (`manipulation_check_ratio < 3e-4` on all four rows) before any swept p is read.
+- **Rounds:**
+
+| Round | What changed | Cells added | Outcome |
+|---|---|---|---|
+| 1 — initial sweep (2026-06-13) | 4 clustered reads × 2 estimators × 2 axes | 16 | Set-size interaction swaps significance; panel-regression secondary + on-axis gap estimator-invariant; leave-one-out pooled persona-VC MixedLM singular on the raw axis. |
+| 2 — 9a-ter free-analysis follow-up (2026-06-13, `issue589-505-altvc-refit`) | Re-fit the singular leave-one-out read under a groups-only-REML MixedLM (no persona VC) | 2 | Raw-axis pooled slope flips sign (cluster-robust −2.69 vs groups-only-REML +0.831, both significant); centered axis stays a consistent null. |
+
 - **Scope:** the Goal's fourth named read — the per-set-size correlations — is quoted from the parent, not swept: those are per-stratum Spearman/OLS statistics with no cluster or random-effect structure, so the cluster-robust-vs-MixedLM axis is undefined for them. The estimator sweep covers the four genuinely clustered rows.
 
 ## Findings
@@ -72,11 +79,11 @@ The pooled read averages six per-arm slopes. The persona-VC MixedLM is singular 
 
 ### Trained on
 
-n/a — no training in this task. The sweep re-fits over [#536](https://eps.superkaiba.com/tasks/536)'s already-gated joins; no model, no adapter, no training mix.
+n/a — no training in this task. The sweep re-fits over the parent audit's already-gated joins; no model, no adapter, no training mix.
 
 ### Evaluated with
 
-The four clustered leakage-line reads from [#536](https://eps.superkaiba.com/tasks/536)'s `FAMILY_REGISTRY`, chosen because each is a clustered regression (cluster-robust OLS or MixedLM with a grouping / random-effect structure) and one of the four reads the Goal names. Each row's headline term, clustering variable, and published estimator were read directly from the parent driver code; the joins are reproduced on both the raw (`centering='none'`) and mean-centered (`centering='global_mean'`) distance axes. No preprocessing beyond the parent's join construction; the join-validity gate (`manipulation_check_ratio < 3e-4`, all four rows) reproduces each published point estimate before any swept p is read.
+The four clustered leakage-line reads from the parent's `FAMILY_REGISTRY`, chosen because each is a clustered regression (cluster-robust OLS or MixedLM with a grouping / random-effect structure) and one of the four reads the Goal names. Each row's headline term, clustering variable, and published estimator were read directly from the parent driver code; the joins are reproduced on both the raw (`centering='none'`) and mean-centered (`centering='global_mean'`) distance axes. No preprocessing beyond the parent's join construction; the join-validity gate (`manipulation_check_ratio < 3e-4`, all four rows) reproduces each published point estimate before any swept p is read.
 
 <details open>
 <summary>The 4 swept reads (4 of 4, the full clustered row set; per-K correlations quoted-not-swept — see What I ran)</summary>
@@ -94,7 +101,7 @@ Full machine-readable payload (18 cells + per-arm context + reproducibility meta
 
 ### Generated
 
-No completions — each cell yields one regression fit (coefficient, SE, p, CI, convergence flags), not generated text. The 18-cell table is the output; the MixedLM cells additionally carry `converged` / `boundary_variance` / captured fit warnings.
+n/a — no text generations in this analysis-only task; each cell yields one regression fit (coefficient, SE, p, CI, convergence flags), not generated text. The 18-cell table is the output; the MixedLM cells additionally carry `converged` / `boundary_variance` / captured fit warnings.
 
 <details>
 <summary>4 of 18 cells, cherry-picked to show one flip, one stable null, the singular persona-VC fit, and the sign-flipped alt-VC fit (all 18 rows: linked CSV/JSON below)</summary>
@@ -143,7 +150,11 @@ Full per-cell table (18 data rows): [`sweep_results.csv`](https://github.com/sup
 - Per-cell table (18 data rows, 18 columns): [`sweep_results.csv`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_589/sweep_results.csv)
 - Machine-readable payload + per-arm #505 context + `mixedlm_alt_vc_505` estimator-spec note + reproducibility metadata: [`sweep_results.json`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_589/sweep_results.json)
 - Figures (PNG + PDF + meta.json): [`figures/issue_589/`](https://github.com/superkaiba/explore-persona-space/tree/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/figures/issue_589)
-- Reused from [#536](https://eps.superkaiba.com/tasks/536): the gated joins persisted at `12853bca8` (`eval_results/issue_536/inputs/i478_tidy_69b34b94.csv`; `eval_results/issue_{405,490,505}/...`; centroid banks + the #505 HF geometry bundle `superkaiba1/explore-persona-space-data:issue505_loo_contrastive/geometry/centroids_pv_L21.pt`) — fit: each row re-fits that read's own persisted join, validated by the parent's 1e-4 matrix / statistic-level gates inside `family_*`; the cluster-robust cell reproduces the parent's persisted coefficient + p to numerical tolerance.
+- Reused panel-regression-secondary join from [#405](https://eps.superkaiba.com/tasks/405): [`eval_results/issue_405/aggregate/per_cell_persona_tidy.csv`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_405/aggregate/per_cell_persona_tidy.csv) + [`regression.json`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_405/aggregate/regression.json) — fit: the parent's gated per-cell persona join + published-estimator point estimate for the `min_dist` secondary refit (re-fit under both estimators, both axes).
+- Reused on-axis dose-matched-gap join from [#490](https://eps.superkaiba.com/tasks/490): [`eval_results/issue_490/aggregate/persona_level.csv`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_490/aggregate/persona_level.csv) + [`regression.json`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_490/aggregate/regression.json) — fit: the parent's gated persona-level join + published cluster-robust point estimate for the `is_on_axis` dose-matched-gap refit.
+- Reused leave-one-out join from [#505](https://eps.superkaiba.com/tasks/505): [`eval_results/issue_505/analysis/delta_leakage_per_seed.json`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_505/analysis/delta_leakage_per_seed.json) + [`per_arm_slopes.json`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_505/analysis/per_arm_slopes.json) — fit: the per-seed leakage-change join behind the pooled `cos(b,j)` refit + the per-arm slopes panel; the persona-VC MixedLM is singular here, motivating the round-2 groups-only-REML alt-VC cell.
+- Reused set-size-by-distance interaction join from [#478](https://eps.superkaiba.com/tasks/478) (the parent's persisted #478 tidy): [`eval_results/issue_536/inputs/i478_tidy_69b34b94.csv`](https://github.com/superkaiba/explore-persona-space/blob/92318460bbe6ad1a78f0c0e43fb04e232bc3d5ce/eval_results/issue_536/inputs/i478_tidy_69b34b94.csv) (2,800 rows) — fit: the gated `K × log(min_dist)` interaction join reproducing the parent's MixedLM point estimate before the cluster-robust swap is read.
+- Reused recompute machinery from [#536](https://eps.superkaiba.com/tasks/536) at commit `12853bca8`: the driver's `family_111bank` / `family_20bank` / `family_505` join builders + `cluster_ols` helper + `issue536_mixedlm_refit.fit_published_mixedlm` (the #478-cell spec, verbatim) — fit: the sweep imports these to reproduce each row's persisted join + the parent's 1e-4 matrix / statistic-level gates. The 111-bank distance matrix [`eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json`](https://github.com/superkaiba/explore-persona-space/blob/45fe33f85/eval_results/single_token_100_persona/cosine_distance_matrix_layer20.json) must be restored from git `45fe33f85` (absent at HEAD) before the driver runs.
 
 **Compute:** CPU only, VM-side, deterministic, minutes. No pod, 0 GPU-hours.
 
@@ -165,7 +176,6 @@ Full per-cell table (18 data rows): [`sweep_results.csv`](https://github.com/sup
 
 **Context:**
 
-- Created 2026-06-13; run executed 2026-06-13 (16-cell sweep), with a 9a-ter free-analysis follow-up the same day adding the 2 #505 alternative-VC cells.
+- Created 2026-06-11T05:57:27Z; run executed 2026-06-13 (16-cell sweep), with a 9a-ter free-analysis follow-up the same day adding the 2 #505 alternative-VC cells.
 - Follow-up to [#536](https://eps.superkaiba.com/tasks/536) — the persona-distance audit whose four clustered leakage-line calls this sweep re-fits under an alternative uncertainty estimator. The 9a-ter follow-up (`followup_label: issue589-505-altvc-refit`) re-fit the one singular read under a simpler admissible MixedLM spec.
 - Originating prompt: origin prompt not recorded
-
