@@ -383,8 +383,8 @@
     "151": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/151",
-      "status": "proposed",
+      "path": "tasks/on_hold/151",
+      "status": "on_hold",
       "title": "Investigate: Any LoRA SFT disrupts persona-specific marker coupling \u2014 not EM-specific"
     },
     "152": {
