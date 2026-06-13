@@ -1,8 +1,9 @@
 ---
 title: The set-size-by-distance leakage call hangs entirely on the uncertainty estimator
-  — significant under cluster-robust OLS, null under the persona random-effect model
-  at the identical coefficient; the other three clustered persona-distance calls survive
-  the swap on both raw and centered axes (MODERATE confidence)
+  (significant under cluster-robust OLS, null under the persona random-effect model
+  at the identical coefficient), and the leave-one-out pooled read is estimator-conflicted
+  on the raw axis (two estimators significant in opposite directions); the other two
+  clustered persona-distance calls survive the swap on both axes (MODERATE confidence)
 kind: analysis
 tags: []
 created_at: '2026-06-11T05:57:27Z'
