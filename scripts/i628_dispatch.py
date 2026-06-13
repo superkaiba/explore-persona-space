@@ -20,6 +20,13 @@ and produces the four-float slot reads the analysis consumes:
                     4-context subset, 16 adapters): vLLM greedy own-answers
                     under 30 contexts x 10 questions, four-float reads at the
                     end of the OWN response (stripped at first marker token).
+- matched-install-reread (post-hoc, NOT part of --phase all): consumes the
+                    analysis-emitted matched_install_reread_spec.json (the §6
+                    read-1 fallback, fired when arm-mean diagonal dials differ
+                    by >2 nat) and re-reads each mismatched cell's matched
+                    checkpoint on the default + 4 trained-negative columns via
+                    the Phase-2 read path. Usage:
+                    ``--phase matched-install-reread --spec <path>``.
 
 Smoke IS the sweep with a cell subset: ``--arms rig_O_sep_deadneg
 --train-cids sp_swe --seeds 42`` drives the identical subprocess shape, env
@@ -269,6 +276,9 @@ def _shard_select(items: list, shard: str | None) -> list:
 
 
 def _sep_variant(arm: str) -> str:
+    """Separator variant per arm; the reused #537 arm is the no-sep canonical rig."""
+    if arm == REUSE_ARM:
+        return "nosep"
     return "sep" if ARM_FLAGS[arm]["marker_sep"] else "nosep"
 
 
@@ -509,6 +519,18 @@ def _prefetch_file(rel: str, dest: Path, *, revision: str, repo: str = DATA_REPO
     return dest
 
 
+def _assert_manifest_sha(dest: Path, man_key: str, manifest: dict, *, source: str) -> None:
+    """Assert ``dest`` matches the freeze-manifest sha256 (no-op when the
+    manifest does not cover ``man_key`` — responses/mixes are revision-pinned)."""
+    if man_key not in manifest:
+        return
+    got = hashlib.sha256(dest.read_bytes()).hexdigest()
+    assert got == manifest[man_key], (
+        f"sha256 mismatch for {man_key}: {source} {got} != freeze manifest "
+        f"{manifest[man_key]} -- pinned-content drift, refusing to run"
+    )
+
+
 def _prefetch_inputs(*, static_only: bool = False) -> None:
     """Pinned-revision prefetch of every #537/#472 input + sha256 asserts.
 
@@ -541,18 +563,17 @@ def _prefetch_inputs(*, static_only: bool = False) -> None:
                 dest = GEN / tail  # consumed (and, in smoke, regenerated) under GEN
             else:
                 dest = DATA537 / tail  # frozen INPUTS: pools + contexts, shared smoke/real
+            man_key = f"data/issue_537/{tail}"
             if dest.exists():
+                # Cache hit: STILL assert the manifest sha256 — a stale or
+                # locally-mutated cached copy must not silently bypass the
+                # content pin (the skip used to jump straight to `continue`).
+                _assert_manifest_sha(dest, man_key, manifest, source="local cache")
                 fetched += 1
                 continue
             _prefetch_file(rel, dest, revision=I537_DATA_REV)
             fetched += 1
-            man_key = f"data/issue_537/{tail}"
-            if man_key in manifest:
-                got = hashlib.sha256(dest.read_bytes()).hexdigest()
-                assert got == manifest[man_key], (
-                    f"sha256 mismatch for {man_key}: HF mirror {got} != freeze manifest "
-                    f"{manifest[man_key]} -- pinned-revision content drift, refusing to run"
-                )
+            _assert_manifest_sha(dest, man_key, manifest, source="HF mirror")
     # #472 persona bank + R_eval for Phase 4.
     i472 = INPUTS / "i472"
     for rel, name in (
@@ -986,11 +1007,16 @@ def _train_cell(arm: str, cid: str, seed: int, *, smoke: bool) -> None:
     traj_p = traj_dir / f"{slug}.json"
     final_delta = None
     if traj_p.exists():
+        # marker_band_trajectory_v1 schema (eval/callbacks.py _write_trajectory):
+        # per-probe dicts under "records" + a parallel "delta_nats" array. The
+        # previous reader looked for "points"/"trajectory" keys the schema
+        # never writes, silently leaving final_band_delta_nats=None and
+        # defanging the §7(d) gate check.
         traj = json.loads(traj_p.read_text())
-        points = traj.get("points") or traj.get("trajectory") or []
-        if points:
-            last = points[-1]
-            final_delta = last.get("delta_nats", last.get("delta"))
+        records = traj.get("records") or []
+        deltas = [r["delta_nats"] for r in records] or traj.get("delta_nats") or []
+        if deltas:
+            final_delta = float(deltas[-1])
     tmp = stop_p.with_suffix(f".tmp.{os.getpid()}")
     tmp.write_text(
         json.dumps(
@@ -1146,15 +1172,24 @@ def _cell_read(
     *,
     sep_mode: str,
     smoke: bool,
+    out_dir: Path | None = None,
+    fname_tag: str = "",
+    extra: dict | None = None,
 ) -> None:
+    """Four-float slot read for one (adapter, eval column) cell.
+
+    ``out_dir`` / ``fname_tag`` / ``extra`` let the matched-install re-read
+    phase reuse this exact read path with a distinct output tree and a
+    ``checkpoint_step`` field; defaults are byte-identical to the Phase-2
+    behavior."""
     import numpy as np
 
     from explore_persona_space.experiments.i537_marker_eval import score_marker_slots
 
-    g_dir = EVAL / "G_cells" / arm
+    g_dir = out_dir if out_dir is not None else EVAL / "G_cells" / arm
     g_dir.mkdir(parents=True, exist_ok=True)
     suffix = "__plain" if sep_mode == "plain" and _sep_variant(arm) == "sep" else ""
-    cell_p = g_dir / f"{cid}__{eval_cid}__seed{seed}{suffix}.json"
+    cell_p = g_dir / f"{cid}__{eval_cid}__seed{seed}{suffix}{fname_tag}.json"
     if cell_p.exists():
         return
     sep = "\n\n" if sep_mode == "marker" and _sep_variant(arm) == "sep" else ""
@@ -1200,6 +1235,7 @@ def _cell_read(
         "emission_rate_base": float(np.mean([b["argmax_is_marker"] for b in base])),
         "qs_per_sec": len(questions) / max(time.time() - t0, 1e-9),
         "per_question": per_q,
+        **(extra or {}),
     }
     cell_p.write_text(json.dumps(cell, indent=1))
     logger.info(
@@ -1746,6 +1782,119 @@ def phase4(args) -> None:
     )
 
 
+# ── Matched-install checkpoint re-read (registered §6 read-1 fallback) ──────
+
+
+def _fetch_reread_checkpoint(ent: dict) -> Path:
+    """Download one spec entry's matched-checkpoint adapter files locally.
+
+    Fresh-arm checkpoints live at ``adapters/issue_628/<slug>/checkpoint-<step>``
+    on main; reuse-arm (#537) checkpoints at the seed-pinned revision."""
+    from huggingface_hub import hf_hub_download
+
+    sub = ent["checkpoint_hf_subfolder"]
+    step = int(ent["checkpoint_step"])
+    rev = I537_ADAPTER_REV[int(ent["seed"])] if ent.get("arm_kind") == "reuse" else None
+    d = OUT / "reread_ckpts" / f"{Path(sub).name}__ckpt{step}"
+    if (d / "adapter_model.safetensors").exists():
+        return d
+    d.mkdir(parents=True, exist_ok=True)
+    for fn in ("adapter_config.json", "adapter_model.safetensors"):
+        p = hf_hub_download(HF_MODEL_REPO, f"{sub}/checkpoint-{step}/{fn}", revision=rev)
+        shutil.copyfile(p, d / fn)
+    return d
+
+
+def phase_reread(args) -> None:
+    """Consume the analysis-emitted ``matched_install_reread_spec.json``: per
+    entry, fetch the mismatched arm's matched checkpoint and produce the
+    ``default`` + 4 trained-negative four-float G-cells under
+    ``EVAL/matched_install_reread/<arm>/`` (reusing the Phase-2 read path).
+
+    Post-hoc, single-process (the orchestrator provides the compute after the
+    main sweep); requires the Phase-0 eval response caches + Phase-2
+    ``marker_base_slots`` files locally (run on the original instance state or
+    re-fetch ``issue628_rig_revision/eval_results/marker_base_slots`` first).
+    """
+    assert args.spec, "--phase matched-install-reread requires --spec <path>"
+    spec = json.loads(Path(args.spec).read_text())
+    entries = spec["entries"]
+    phase_log("matched_install_reread")
+    null_steps = [e for e in entries if e.get("checkpoint_step") is None]
+    if null_steps:
+        raise SystemExit(
+            f"[reread] {len(null_steps)} spec entries have checkpoint_step=null "
+            f"(first: {null_steps[0].get('mismatched_arm')}/"
+            f"{null_steps[0]['train_cid']}/seed{null_steps[0]['seed']} -- "
+            f"{null_steps[0].get('note')}). Resolve every entry before dispatching; "
+            "no silent skip."
+        )
+    if args.dry_run:
+        for ent in entries:
+            logger.info(
+                "[reread][dry-run] would re-read %s/%s/seed%s @ checkpoint-%s on %s",
+                ent["mismatched_arm"],
+                ent["train_cid"],
+                ent["seed"],
+                ent["checkpoint_step"],
+                ent["columns"],
+            )
+        return
+    questions = _marker_eval_questions(args.smoke)
+    # Pre-flight: every column's base-slot file must exist before any GPU work.
+    missing = []
+    for ent in entries:
+        sepm = (
+            "marker"
+            if ent.get("sep_mode", "marker") == "marker"
+            and _sep_variant(ent["mismatched_arm"]) == "sep"
+            else "plain"
+        )
+        for e in ent["columns"]:
+            p = _base_slot_path(e, sepm)
+            if not p.exists() and str(p) not in missing:
+                missing.append(str(p))
+    if missing:
+        raise SystemExit(
+            f"[reread] {len(missing)} Phase-2 base-slot files missing (first: {missing[0]}). "
+            "Run on the original instance state or re-fetch "
+            "issue628_rig_revision/eval_results/marker_base_slots from the data repo."
+        )
+    from peft import PeftModel
+
+    model = _load_hf_base()
+    out_root = EVAL / "matched_install_reread"
+    for ent in entries:
+        mism, t, s = ent["mismatched_arm"], ent["train_cid"], int(ent["seed"])
+        step = int(ent["checkpoint_step"])
+        adapter_dir = _fetch_reread_checkpoint(ent)
+        peft_model = PeftModel.from_pretrained(model, str(adapter_dir)).eval()
+        try:
+            for eval_cid in ent["columns"]:
+                _cell_read(
+                    peft_model,
+                    mism,
+                    t,
+                    s,
+                    eval_cid,
+                    questions,
+                    sep_mode=ent.get("sep_mode", "marker"),
+                    smoke=args.smoke,
+                    out_dir=out_root / mism,
+                    fname_tag=f"__ckpt{step}",
+                    extra={
+                        "checkpoint_step": step,
+                        "reread_target_dial": ent["target_dial"],
+                        "reread_dial_gap_nat": ent["dial_gap_nat"],
+                    },
+                )
+        finally:
+            peft_model = peft_model.unload()
+        logger.info("[reread] %s/%s/seed%s @ checkpoint-%s done", mism, t, s, step)
+    skip = args.smoke or args.skip_upload or args.dry_run
+    _upload_tree(out_root, "issue628_rig_revision/eval_results/matched_install_reread", skip=skip)
+
+
 # ── Finalize: reproducibility-card results sentinel ──────────────────────────
 
 
@@ -1831,7 +1980,17 @@ def _rebind_smoke_roots() -> None:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #628 marker-rig revision dispatcher")
-    ap.add_argument("--phase", default="all", choices=["0", "1", "2", "3", "4", "all"])
+    ap.add_argument(
+        "--phase",
+        default="all",
+        choices=["0", "1", "2", "3", "4", "all", "matched-install-reread"],
+        help="'matched-install-reread' is the post-hoc §6 fallback; never part of 'all'",
+    )
+    ap.add_argument(
+        "--spec",
+        default=None,
+        help="matched_install_reread_spec.json path (required for --phase matched-install-reread)",
+    )
     ap.add_argument("--arms", type=lambda s: s.split(","), default=None)
     ap.add_argument("--train-cids", type=lambda s: s.split(","), default=None)
     ap.add_argument(
@@ -1862,7 +2021,14 @@ def main() -> int:
     phases = ["0", "1", "2", "3", "4"] if args.phase == "all" else [args.phase]
     if args.worker_shard:
         phases = [args.phase]
-    runner = {"0": phase0, "1": phase1, "2": phase2, "3": phase3, "4": phase4}
+    runner = {
+        "0": phase0,
+        "1": phase1,
+        "2": phase2,
+        "3": phase3,
+        "4": phase4,
+        "matched-install-reread": phase_reread,
+    }
     for ph in phases:
         runner[ph](args)
 
