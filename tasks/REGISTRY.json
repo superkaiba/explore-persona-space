@@ -2073,8 +2073,8 @@
       "goal": "Use the existing #399 checkpoints (no retraining) to fit a conversation-length steering vector from the residual stream; intervene at inference to remove the signal at multi-turn cells; test whether trigger-conditional firing (LP[B@k] \u2212 LP[B-null@k] and behavioral fire-rate) returns. Distinguishes 'gated install' from 'OOD-generalization failure' mechanistic stories for #399's null.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/409",
-      "status": "proposed",
+      "path": "tasks/on_hold/409",
+      "status": "on_hold",
       "title": "Conversation-length steering-vector intervention \u2014 does removing a linear conversation-length direction restore trigger-conditional firing at multi-turn cells?"
     },
     "41": {
