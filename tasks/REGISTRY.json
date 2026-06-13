@@ -1343,8 +1343,8 @@
     "310": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/310",
-      "status": "proposed",
+      "path": "tasks/on_hold/310",
+      "status": "on_hold",
       "title": "Joint leakage + cosine probe for EM persona-space flattening (follow-up to #262)"
     },
     "311": {
