@@ -154,6 +154,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read pip
         "(e.g. '1,5,10,20,32,45,63'); default = every checkpoint in the index. "
         "Fail-loud when a requested step has no checkpoint.",
     )
+    ap.add_argument(
+        "--extra-panel-personas",
+        default=None,
+        help="CSV of personas merged into the trained-negatives read set (#622 DV6 fix "
+        "dv6-trained-negatives-onpolicy-missing). For n_neg_personas>0 cells the "
+        "selector already supplies them (the merge dedupes); for the positives-only "
+        "twins (selector yields []) this flag is the only writer of the "
+        "trained-negative TF-dense population. Default None = legacy byte-identical.",
+    )
     args = ap.parse_args(argv)
 
     logging.basicConfig(
@@ -216,6 +225,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear read pip
         trained_negs = negatives_for_cell(
             args.cell, cts, source=SOURCE_PERSONA, cell_specs=CELL_SPECS_601_472SHAPE
         )
+        trained_negs = list(trained_negs)
+    # #622 DV6: merge explicit extras into the trained-negative read set (dedup;
+    # the only writer for the positives-only twins, whose selector path yields []).
+    if args.extra_panel_personas:
+        for p in (tok.strip() for tok in args.extra_panel_personas.split(",")):
+            if p and p not in trained_negs:
+                trained_negs.append(p)
+        if SOURCE_PERSONA in trained_negs:
+            raise AssertionError(
+                f"--extra-panel-personas put the source {SOURCE_PERSONA!r} into the "
+                f"trained-negative read set."
+            )
     personas = [SOURCE_PERSONA, *trained_negs, *[b for b in bystanders if b not in trained_negs]]
     # Fail-loud coverage gate (concern phase0-r-eval-coverage-gap): every #601
     # cell's read set (source + anchor-panel negatives + the Phase-0

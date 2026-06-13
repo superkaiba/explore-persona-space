@@ -59,6 +59,16 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path("eval_results/issue_601/phase0/bystander_panel.json"),
     )
+    ap.add_argument(
+        "--extra-panel-personas",
+        default=None,
+        help="CSV of personas (the trained anchor negatives) ADDED to the eval panel "
+        "as a SEPARATE population (#622 DV6 fix dv6-trained-negatives-onpolicy-missing: "
+        "the committed bystander panel is built as bank - source - ALL trained "
+        "negatives, so without this flag the trained negatives are never on-policy-"
+        "evaluated). Per-persona roles are recorded in trajectory.json's top-level "
+        "panel_roles map. Default None = legacy panel byte-identical.",
+    )
     ap.add_argument("--max-new-tokens", type=int, default=2048)
     ap.add_argument("--no-kl", action="store_true", help="Skip DV-B (debug only).")
     ap.add_argument("--sentinel-path", type=Path, default=None)
@@ -105,11 +115,38 @@ def main(argv: list[str] | None = None) -> int:
                 f"before any anchor-panel eval (the panel is pre-registered there)."
             )
         panel_names = json.loads(args.bystander_panel_path.read_text())["personas"]
-    missing = [p for p in [*panel_names, SOURCE_PERSONA] if p not in bank]
+    # #622 DV6: append the trained anchor negatives as a SEPARATE population.
+    # They are disjoint from the bystander panel BY CONSTRUCTION (the panel
+    # excludes every trained negative) — asserted here so a future panel
+    # rebuild cannot silently double-count a persona across roles.
+    extra_personas: list[str] = []
+    if args.extra_panel_personas:
+        extra_personas = [p.strip() for p in args.extra_panel_personas.split(",") if p.strip()]
+        overlap = sorted(set(extra_personas) & set(panel_names))
+        if overlap:
+            raise AssertionError(
+                f"--extra-panel-personas overlap the bystander panel: {overlap} — a persona "
+                f"cannot be both a trained negative and a held-out bystander (role ambiguity "
+                f"would corrupt the DV6 population split)."
+            )
+        if SOURCE_PERSONA in extra_personas:
+            raise AssertionError(
+                f"--extra-panel-personas contains the source persona {SOURCE_PERSONA!r}."
+            )
+    panel_roles = {p: "held_out_bystander" for p in panel_names}
+    panel_roles.update({p: "trained_negative" for p in extra_personas})
+    all_panel = [*panel_names, *extra_personas]
+    missing = [p for p in [*all_panel, SOURCE_PERSONA] if p not in bank]
     if missing:
         raise KeyError(f"personas missing from bank: {missing}")
-    eval_personas = {p: bank[p] for p in panel_names}
-    log.info("Eval panel (%s): %d personas", args.panel, len(eval_personas))
+    eval_personas = {p: bank[p] for p in all_panel}
+    log.info(
+        "Eval panel (%s): %d personas (%d bystanders + %d trained negatives)",
+        args.panel,
+        len(eval_personas),
+        len(panel_names),
+        len(extra_personas),
+    )
 
     _q_train, q_eval = get_train_eval_questions()
 
@@ -173,6 +210,23 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.out_path.exists():
         raise RuntimeError(f"eval exited but {args.out_path} is missing — silent eval failure.")
+
+    # #622 DV6: record the per-persona role map on the canonical artifact so
+    # consumers (i622_analyze.py transfer_fractions) split trained negatives
+    # from held-out bystanders by ROLE, not by name convention. Post-write
+    # augmentation keeps run_trajectory_eval (the shared #472 surface)
+    # untouched; atomic tmp+replace so a crash here can't truncate the file.
+    payload = json.loads(args.out_path.read_text())
+    payload["panel_roles"] = panel_roles
+    tmp = args.out_path.with_suffix(".roles.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
+    os.replace(tmp, args.out_path)
+    log.info(
+        "panel_roles recorded on %s (%d bystanders, %d trained negatives)",
+        args.out_path,
+        len(panel_names),
+        len(extra_personas),
+    )
 
     if args.sentinel_path is not None:
         args.sentinel_path.parent.mkdir(parents=True, exist_ok=True)

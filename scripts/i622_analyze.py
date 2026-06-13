@@ -150,6 +150,10 @@ def _terminal_source(traj: dict) -> dict:
         "r_collapsed": bool(ss.get("r_collapsed", False)),
         "emission_p": ss.get("emission_p"),
         "held_out": term.get("held_out", {}),
+        # #622 DV6 round-2: per-persona role map recorded by the eval wrapper
+        # (trained_negative | held_out_bystander). None on legacy artifacts —
+        # transfer_fractions then falls back to the TRAINED_NEGATIVES name set.
+        "panel_roles": traj.get("panel_roles"),
     }
 
 
@@ -369,19 +373,30 @@ def transfer_fractions(term: dict) -> dict:
     """DV6: per-group transfer fraction in EOS-margin space (§6.3 / §13 item 7).
 
     bystander gain / source gain, NEVER raw logP; trained negatives and
-    held-out bystanders are SEPARATE populations. The fraction is never
-    correlated back against install (#383 family) — reporting only.
+    held-out bystanders are SEPARATE populations (split by the eval wrapper's
+    recorded panel_roles when present — round-2 DV6 fix; legacy artifacts
+    without the role map fall back to the TRAINED_NEGATIVES name set). The
+    fraction is never correlated back against install (#383 family) —
+    reporting only.
     """
     src_margin = term["delta_margin"]
+    roles = term.get("panel_roles") or {}
     groups: dict[str, list[float]] = {"trained_negatives": [], "held_out_bystanders": []}
     for persona, by_q in term["held_out"].items():
         margins = [leaf["delta_margin"] for leaf in by_q.values() if "delta_margin" in leaf]
         if not margins:
             continue
         mean_m = sum(margins) / len(margins)
-        key = "trained_negatives" if persona in TRAINED_NEGATIVES else "held_out_bystanders"
+        if roles:
+            role = roles.get(persona, "held_out_bystander")
+            key = "trained_negatives" if role == "trained_negative" else "held_out_bystanders"
+        else:
+            key = "trained_negatives" if persona in TRAINED_NEGATIVES else "held_out_bystanders"
         groups[key].append(mean_m)
-    out: dict = {"source_delta_margin": src_margin}
+    out: dict = {
+        "source_delta_margin": src_margin,
+        "role_source": "panel_roles" if roles else "name-set fallback (legacy artifact)",
+    }
     for key, vals in groups.items():
         out[key] = {
             "n_personas": len(vals),
@@ -391,6 +406,36 @@ def transfer_fractions(term: dict) -> dict:
             ),
         }
     return out
+
+
+def synthesize_loss_competition(level_results: list[dict]) -> str:
+    """Cross-level loss-competition verdict (§6.2, registered).
+
+    Requires ALL of: >= 2 levels classified suppression with |D_i| growing
+    monotonically across the SUPPRESSED-level subsequence in level order
+    (16:1 -> 32:1 -> 64:1 or the realized subset — round-2 Claude Minor 2:
+    the monotonicity runs over |D| of the suppressed levels only, never the
+    signed D of non-suppressed levels, which would let a co-landing mid level
+    veto or fake the trend), AND wake-up PRESENT at >= 1 suppressed level.
+    Suppression without wake-up -> the non-loss-channel FAMILY (§13 item 4).
+    """
+    suppressed = [r for r in level_results if str(r.get("verdict", "")).startswith("suppression")]
+    abs_d_suppressed = [abs(r["D_signed"]) for r in suppressed if r.get("D_signed") is not None]
+    monotone_growing = len(abs_d_suppressed) >= 2 and all(
+        b > a for a, b in pairwise(abs_d_suppressed)
+    )
+    wakeup_at_suppressed = any(r.get("wakeup_level") == "PRESENT" for r in suppressed)
+    if len(suppressed) >= 2 and monotone_growing and wakeup_at_suppressed:
+        return "loss-competition CERTIFIED (registered cross-level rule satisfied)"
+    if suppressed and not wakeup_at_suppressed:
+        return (
+            "suppression WITHOUT wake-up -> non-loss-channel FAMILY (batch composition / "
+            "data ordering / optimizer-state momentum effects) — reported as the family, "
+            "never a specific mechanism (§13 item 4)"
+        )
+    if suppressed:
+        return "suppression present but the cross-level rule is not satisfied"
+    return "no suppressed level — loss-competition not supported at any dose"
 
 
 def classify_level(
@@ -425,9 +470,16 @@ def classify_level(
         else:
             verdict = "negatives-restrain (loss-competition-family, #471-style)"
         precedence = "P0"
-    # ── P1 noise branch. ─────────────────────────────────────────────────────
-    gap_dose = _pair_seed_gap(dose_terms, key)
-    gap_twin = _pair_seed_gap(twin_terms, key)
+    # ── P1 noise branch. Pair gaps are computed over SURVIVING (non-collapsed)
+    # seeds only (§6.2 P0: "pair gaps are reported descriptively per surviving
+    # seed only" — round-2 Claude Minor 3). When P0 did not fire no seed is
+    # collapsed, so surviving == all and the P1 gate semantics are unchanged;
+    # when P0 fired the gap is descriptive and a member with < 2 surviving
+    # seeds reports None instead of a collapsed-read-contaminated number.
+    surviving_dose = {s: t for s, t in dose_terms.items() if not t["r_collapsed"]}
+    surviving_twin = {s: t for s, t in twin_terms.items() if not t["r_collapsed"]}
+    gap_dose = _pair_seed_gap(surviving_dose, key)
+    gap_twin = _pair_seed_gap(surviving_twin, key)
     gaps = [g for g in (gap_dose, gap_twin) if g is not None]
     pair_seed_gap = max(gaps) if gaps else None
     if verdict is None and pair_seed_gap is not None and pair_seed_gap > band:
@@ -639,22 +691,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear register
         prev_mean, prev_label = mean, f"dose level {label}"
 
     # ── Loss-competition cross-level synthesis. ───────────────────────────────
-    suppressed = [r for r in level_results if str(r.get("verdict", "")).startswith("suppression")]
-    d_by_level = [r.get("D_signed") for r in level_results if r.get("D_signed") is not None]
-    monotone_growing = len(suppressed) >= 2 and all(b < a for a, b in pairwise(d_by_level))
-    wakeup_at_suppressed = any(r.get("wakeup_level") == "PRESENT" for r in suppressed)
-    if len(suppressed) >= 2 and monotone_growing and wakeup_at_suppressed:
-        synthesis = "loss-competition CERTIFIED (registered cross-level rule satisfied)"
-    elif suppressed and not wakeup_at_suppressed:
-        synthesis = (
-            "suppression WITHOUT wake-up -> non-loss-channel FAMILY (batch composition / "
-            "data ordering / optimizer-state momentum effects) — reported as the family, "
-            "never a specific mechanism (§13 item 4)"
-        )
-    elif suppressed:
-        synthesis = "suppression present but the cross-level rule is not satisfied"
-    else:
-        synthesis = "no suppressed level — loss-competition not supported at any dose"
+    synthesis = synthesize_loss_competition(level_results)
 
     payload = {
         "schema": "i622_classification_v1",

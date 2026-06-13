@@ -172,6 +172,9 @@ for slug, t, rows, epochs, neg, stride in EXPECT:
     assert s.onpolicy_anchor_steps[-1] == t, f"{slug} terminal anchor != T"
     assert (s.probe_dense_until, s.probe_every_steps) == (50, stride)
     assert s.capability_trajectory is True
+    # DV6 round-2 (dv6-trained-negatives-onpolicy-missing): every #622 cell
+    # must thread the trained anchor negatives into both eval surfaces.
+    assert s.eval_include_trained_negatives is True, f"{slug}: DV6 trained-negative read unwired"
     assert s.seeds == (42, 137)
     assert max(s.dense_steps) == t and len(s.dense_steps) == len(set(s.dense_steps))
     assert slug not in all_slugs, f"{slug} leaked into --cells all"
@@ -297,6 +300,9 @@ PY
 if [ "$SMOKE_SKIP" = "skip" ]; then
     echo "[phase=p3_smoke] sentinel valid; skip"
 else
+    # --skip-fetch (round-2 opportunistic a): p1 already fetched the PINNED
+    # inputs @ $DATA_REV; the dispatcher's own fetch_parent_data() is UNPINNED
+    # and must never overwrite/extend the pinned set.
     echo "[phase=p3_smoke] $(date -u +%FT%TZ) launching smoke (ONE FULL sweep unit $SMOKE_CELL seed $SMOKE_SEED; sub-log: $LOG_DIR/issue-622-smoke.log)"
     uv run python scripts/dispatch_neg_setpoint_601.py \
         --cells "$SMOKE_CELL" --seeds "$SMOKE_SEED" --smoke \
@@ -306,6 +312,7 @@ else
         --log-dir "$LOG_DIR" --data-dir "$DATA_DIR" \
         --hf-prefix "$HF_PREFIX" --run-name-prefix "$RUN_NAME_PREFIX" \
         --sentinel-task-id "$SENTINEL_TASK_ID" --hf-data-prefix "$HF_DATA_PREFIX" \
+        --skip-fetch \
         > "$LOG_DIR/issue-622-smoke.log" 2>&1
 fi
 
@@ -337,6 +344,7 @@ uv run python scripts/dispatch_neg_setpoint_601.py \
     --log-dir "$LOG_DIR" --data-dir "$DATA_DIR" \
     --hf-prefix "$HF_PREFIX" --run-name-prefix "$RUN_NAME_PREFIX" \
     --sentinel-task-id "$SENTINEL_TASK_ID" --hf-data-prefix "$HF_DATA_PREFIX" \
+    --skip-fetch \
     $EXTRA_SWEEP_ARGS \
     > "$LOG_DIR/issue-622-sweep.log" 2>&1
 
