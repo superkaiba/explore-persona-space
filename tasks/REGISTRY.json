@@ -1547,8 +1547,8 @@
     "343": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/343",
-      "status": "proposed",
+      "path": "tasks/on_hold/343",
+      "status": "on_hold",
       "title": "Follow-up to #207: JS divergence + gentler-recipe replication (in flight on pod-207)"
     },
     "344": {
