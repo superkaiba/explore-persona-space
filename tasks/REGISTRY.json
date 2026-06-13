@@ -4063,8 +4063,8 @@
     "9": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/9",
-      "status": "proposed",
+      "path": "tasks/on_hold/9",
+      "status": "on_hold",
       "title": "[Proposed] Persona scaling laws across model sizes"
     },
     "90": {
