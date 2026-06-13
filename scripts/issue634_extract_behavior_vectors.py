@@ -388,6 +388,12 @@ def main() -> int:
     )
     parser.add_argument("--expected-hidden", type=int, default=EXPECTED_HIDDEN)
     parser.add_argument("--no-upload", action="store_true", help="skip HF upload (local smoke)")
+    parser.add_argument(
+        "--no-sentinel",
+        action="store_true",
+        help="skip writing the end-of-run sentinel; the dispatch script owns the "
+        "authoritative epm:results sentinel (with the reproducibility card)",
+    )
     parser.add_argument("--hf-subdir", default="analysis_tensors", help="HF upload sub-directory")
     parser.add_argument("--wandb-mode", choices=["online", "offline", "disabled"], default="online")
     args = parser.parse_args()
@@ -595,9 +601,18 @@ def main() -> int:
         f"{len(manifest['roles'])} roles x {args.n_prompts} prompts x {len(questions)} questions, "
         f"layers={len(layers)}, hidden={hidden}, upload={upload_info}"
     )
-    write_sentinel("epm:smoke-result" if args.smoke_roles else "epm:results", note)
+    if not args.no_sentinel:
+        write_sentinel("epm:smoke-result" if args.smoke_roles else "epm:results", note)
+    else:
+        logger.info("--no-sentinel: dispatch script owns the authoritative sentinel")
     run.finish()
-    phase("done")
+    # NOTE: emit a sub-phase token, NOT [phase=done]. When this script runs as a
+    # subprocess of issue634_dispatch.sh (tee'd into the same pod log), the
+    # terminal [phase=done] is RESERVED for the dispatcher's single final line —
+    # poll_pipeline.py reads the most-recent [phase=...] from the log tail, so a
+    # premature [phase=done] here would produce a false done while upload + the
+    # authoritative sentinel are still pending.
+    phase("extract-complete")
     return 0
 
 
