@@ -2509,7 +2509,7 @@ client:
   module: explore_persona_space.task_workflow
   auth: "none (local filesystem; flock on ~/.task-workflow/lock)"
   mutation_rule: "scripts/task.py only; one git commit per operation; web app only appends to comments.jsonl"
-  verification: "scripts/verify_task_body.py (2-content-section nested-design (v2) markdown clean-result spec — 2026-W22, task #454; CHECKS contains 19 body-only functions including the nested-design (v2) sentinel-gated `check_tldr_nested_structure`, PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
+  verification: "scripts/verify_task_body.py (sentinel-gated v3 five-flat-H2 spec — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` / `## Reproducibility` — alongside the grandfathered v2 two-content-section + legacy shapes; v3-only checks 18-21 (Data shape, subset disclosure, word caps, body-params⊆methodology-doc) PASS-skip on v2/legacy, the v2-only `check_tldr_nested_structure` PASS-skips on v3, and checks 6/16/17 run on either nested sentinel; PLUS `check_concerns_audit` (Lens 14, binding-concerns; composed 2026-05-31 by task #455) dispatched separately in verify_text since it needs the sibling concerns.jsonl)"
 
 # ──────────────────────────────────────────────────────────────────────
 # Workflow-fix-on-bug protocol. Every agent (subagent or orchestrator)

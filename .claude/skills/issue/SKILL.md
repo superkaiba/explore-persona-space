@@ -4107,7 +4107,7 @@ discarded by Step 8's gap-fill decision rule).
    - Generates plots via `paper-plots` skill, saves them under
      `figures/issue_<N>/`, commits + pushes them to `main` BEFORE
      writing the body, and references each figure INLINE inside the
-     relevant `#### <finding>` H4 under `### Findings` (no separate
+     relevant `### <finding>` H3 under `## Findings` (no separate
      `## Figure` H2 — that H2 is retired) via
      `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` —
      a SHA-pinned absolute URL the dashboard can fetch. Relative
@@ -4348,7 +4348,7 @@ explicit eval-data path):
 5. **Re-spawn `analyzer`** (fresh context) with the new analysis
    output + the prior body. The analyzer folds the new result into
    the existing clean-result body (typically updating one
-   `#### <finding>` H4 and possibly the H1 title / confidence tag),
+   `### <finding>` H3 and possibly the H1 title / confidence tag),
    re-runs `verify_task_body.py` (must still PASS), and writes the
    revised body via `task.py set-body <N> --file ...`. The analyzer's
    Step 6.5 still fires on this re-run, but the loop guard above
@@ -5190,9 +5190,10 @@ orphaned at `running` for 5+ hours.)
      per-issue naming already supports re-dispatch.
    - Run → upload-verify → Step 8 terminate, as normal.
    - The `analyzer` RE-FOLDS the new finding into the EXISTING
-     clean-result body — a new `#### <finding>` H4 under `### Findings`
-     (the v2 spec already supports multiple findings), updating the H1
-     title / confidence tag if the result moves the headline. The
+     clean-result body — a new `### <finding>` H3 under `## Findings`
+     (the v3 `## Findings` section already supports multiple `### <finding>`
+     H3s), updating the H1 title / confidence tag if the result moves the
+     headline. The
      `set-body` call passes NO `--snapshot` — `original-body.md`
      already preserves the pre-promotion original (see analyzer.md §
      Same-issue follow-up re-entry).
