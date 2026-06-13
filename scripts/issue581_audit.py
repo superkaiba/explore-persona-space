@@ -148,6 +148,13 @@ WANDB_CONTEXT = re.compile(r"WANDB_API_KEY|wandb[_ ]?login|wandb[_ ]?(key|token)
 # can't corrupt a previously-correct length tag.
 _REDACTED_MARKER = re.compile(r"<redacted:[A-Za-z0-9_-]+:len=\d+>")
 
+# Angle-bracketed placeholder values like ``<new>``, ``<value>``, ``<your-key>``.
+# Real provider credentials never contain ``<`` or ``>``, so any value matching
+# this shape is provably not a secret — and rejecting it from env-assign
+# redaction is what keeps the on-disk Required-action section telling Thomas
+# to set ``HF_TOKEN=<new>`` instead of an opaque redaction marker.
+_PLACEHOLDER_SHAPE = re.compile(r"<[^<>\s]+>")
+
 
 @dataclass
 class Hit:
@@ -319,6 +326,18 @@ def _redact_excerpt(text: str) -> str:
         # corrupt the length tag (e.g. `len=39` → `len=21`).  Pass
         # through unchanged.
         if _REDACTED_MARKER.fullmatch(inner):
+            return m.group(0)
+        # Placeholder-shape skip: the audit's own rotation-step renderer
+        # emits literal env-var placeholders like ``HF_TOKEN=<new>`` to
+        # tell Thomas WHAT to put in `.env`.  Real credentials never
+        # contain `<` or `>`, so any ``<...>`` value is provably not a
+        # secret — redacting it would corrupt the actionable instructions
+        # the audit exists to produce.  (Caught by Claude r5 CONCERNS:
+        # without this skip, `_redact_excerpt` over the final report
+        # rewrites ``HF_TOKEN=<new>`` → ``HF_TOKEN=<redacted:env:len=5>``
+        # in the on-disk markdown, silently breaking AC4's rotation
+        # steps.)
+        if _PLACEHOLDER_SHAPE.fullmatch(inner):
             return m.group(0)
         return f"{var}=<redacted:env:len={len(inner)}>"
 

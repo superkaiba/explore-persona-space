@@ -813,3 +813,82 @@ def test_redact_excerpt_is_idempotent() -> None:
     assert once == twice, "second redaction pass changed the output (not idempotent)"
     assert FAKE_HF_TOKEN_REAL_SHAPE not in twice
     assert FAKE_OPENAI_DRIFT_QUOTED not in twice
+
+
+def test_redact_excerpt_preserves_placeholder_shapes() -> None:
+    """`_redact_excerpt` MUST preserve angle-bracketed placeholders.
+
+    Claude r5 CONCERNS: without this skip, the write-boundary scrub in
+    ``main()`` rewrites the AC4 rotation-step instructions like
+    ``HF_TOKEN=<new>`` → ``HF_TOKEN=<redacted:env:len=5>`` in the on-disk
+    markdown — the report tells the human to set ``.env`` to a redaction
+    marker.  Real credentials never contain ``<`` / ``>``, so any
+    ``<...>``-shaped value is provably not a secret.
+    """
+    src = (
+        "1. Update `.env`: `HF_TOKEN=<new>` (and `HF_HUB_TOKEN=<new>` if mirrored).\n"
+        "2. Update `.env`: `OPENAI_API_KEY=<your-new-key>`.\n"
+        "3. Update `.env`: `WANDB_API_KEY=<value>`.\n"
+    )
+    scrubbed = audit._redact_excerpt(src)
+    assert "HF_TOKEN=<new>" in scrubbed
+    assert "HF_HUB_TOKEN=<new>" in scrubbed
+    assert "OPENAI_API_KEY=<your-new-key>" in scrubbed
+    assert "WANDB_API_KEY=<value>" in scrubbed
+    # And no redaction marker emitted (no secret to redact).
+    assert "<redacted:env:" not in scrubbed
+
+
+def test_main_writes_rotation_steps_intact(tmp_path: Path) -> None:
+    """End-to-end via ``main()``: the on-disk ``audit-report.md`` preserves
+    the AC4 rotation-step placeholders.
+
+    Closes the test blind spot Claude r5 flagged: every existing
+    rotation-step test asserted on ``compose_report``'s return value;
+    none read the artifact ``main()`` actually writes.  The
+    write-boundary scrub silently corrupted the rotation steps for
+    several rounds before being caught.
+    """
+    # Synthesize an events.jsonl with a high-confidence HF leak so the
+    # report renders the AC4 Required-action section with HF rotation steps.
+    events_path = tmp_path / "events.jsonl"
+    events_path.write_text(
+        _evt(f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} got logged") + "\n",
+        encoding="utf-8",
+    )
+    out_dir = tmp_path / "out"
+
+    rc = audit.main(
+        [
+            "--task",
+            "999",
+            "--events-path",
+            str(events_path),
+            "--out-dir",
+            str(out_dir),
+        ]
+    )
+    assert rc == 0
+
+    on_disk = (out_dir / "audit-report.md").read_text(encoding="utf-8")
+    # The AC4 rotation-step placeholder MUST reach disk uncorrupted.  Scope
+    # the assertion to the Required-action section (the rotation steps); the
+    # `HF_TOKEN=<redacted:env:len=N>` substring still legitimately appears in
+    # the High-confidence hits table (that's the actual redacted match).
+    required_action_idx = on_disk.find("## Required action")
+    assert required_action_idx >= 0, "Required action section missing from on-disk report"
+    required_action_section = on_disk[required_action_idx:]
+    assert "HF_TOKEN=<new>" in required_action_section, (
+        "Required action section lost the HF_TOKEN=<new> rotation placeholder; "
+        f"got:\n{required_action_section[:800]}"
+    )
+    assert "HF_TOKEN=<redacted:env:" not in required_action_section, (
+        "Required action section's HF_TOKEN=<new> placeholder was corrupted by "
+        f"the final-output scrub; got:\n{required_action_section[:800]}"
+    )
+
+    # And the security guarantee still holds: the raw HF token is absent
+    # from BOTH the markdown report AND the JSON serialization.
+    on_disk_json = (out_dir / "audit-hits.json").read_text(encoding="utf-8")
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in on_disk
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in on_disk_json
