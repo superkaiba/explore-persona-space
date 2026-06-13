@@ -2949,8 +2949,8 @@
     "513": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/513",
-      "status": "proposed",
+      "path": "tasks/on_hold/513",
+      "status": "on_hold",
       "title": "Retrain narrow source adapters + broad_em adapter, then run Buckets B + E (uncovered #503 scope)"
     },
     "514": {
@@ -3051,8 +3051,8 @@
     "526": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/526",
-      "status": "proposed",
+      "path": "tasks/on_hold/526",
+      "status": "on_hold",
       "title": "Theory for the leakage-prediction rule: asymmetric + behavior-dependent (unified predictor for all behavior leakage across all contexts)"
     },
     "527": {
