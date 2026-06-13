@@ -139,6 +139,8 @@ This is exactly the picture #601 painted in narrow form: "negatives don't set th
 
 #### On-policy: a 4-nat gap at the canonical read slot — and the model emits zero markers
 
+<!-- concern-deferred: phase4-onpolicy-bystander-deferred -->
+
 Phase 4 (the on-policy bystander read at the canonical end-of-own-response slot — the DV that addresses the [#432→#456](https://eps.superkaiba.com/tasks/432) teacher-forced-proxy problem) is the named scope limitation of this clean-result. The vLLM 0.11 + rsLoRA stack ran an EngineCore-death hang under the band-stopped adapters that landed only the first 2 of 16 planned cells (sp_swe seed 42, Legacy and Full revised arms). The pod was lost before the fix was confirmed working at scale.
 
 That 1-source slice is enough to see one clear thing: at the canonical first opportunity to emit (end of own response), the Revised rig has a uniformly higher marker affinity than the Legacy rig — at every context. The direction is uniform; the magnitude varies (diagonal 5.12 nat gap; trained-negative 3.62-4.18 nat; bystander 2.77-5.04 nat).
