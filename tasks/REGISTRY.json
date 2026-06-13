@@ -3441,8 +3441,8 @@
     "574": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/574",
-      "status": "proposed",
+      "path": "tasks/archived/574",
+      "status": "archived",
       "title": "Verify June 9 interruption recovery: #534 round-2 re-run, orphaned threads #532 #464 #505, idle pod check"
     },
     "575": {
