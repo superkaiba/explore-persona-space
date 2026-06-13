@@ -21,7 +21,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/61530ecc76437068230d58edf20d64448a12eea9/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
+**Methodology:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/8c9dda2feba9857ad2d57919592466007bbfe8eb/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
 
 ## Human TL;DR
 
@@ -270,7 +270,7 @@ Because the cell is deeply sub-emission, the headline is a log-prob-space claim 
 - Reused comparator trajectories from [#600](https://eps.superkaiba.com/tasks/600) — round 2: [eval_results/issue_600/sweep/c600_software_engineer_near/](https://github.com/superkaiba/explore-persona-space/tree/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/sweep/c600_software_engineer_near) — fit: same recipe + DV as round 1's reuse, chassis-anchored against the software_engineer pair's planned near slot; villain implant 8.54–9.84 nats per seed (inside [5, 12]); the registered v2 §5 with-arm sanity medians are recomputed from these trajectories at analyze time and asserted to ±2e-3 tolerance (the analyzer fails loud on drift).
 - Reused training inputs from [#600](https://eps.superkaiba.com/tasks/600): [issue600_targeted_proximity/inputs/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/5673a7948c178cbb357a10798dd5221a544e9f0b/issue600_targeted_proximity/inputs) (`persona_bank.json`, `on_policy_R/R_train.json`) — fit: the single-variable contrast requires row-for-row identical content outside the manipulated slot; on both chassis the replacement persona's 200 rows come from the same frozen on-policy response pool, content-hash-pinned in the per-seed manifests.
 - Reused per-persona paired differences from [#600](https://eps.superkaiba.com/tasks/600) (input to the replacement-confound bound): [locality_detail.json](https://github.com/superkaiba/explore-persona-space/blob/85deb3490bb56dfc73730a71d6c229a700685d66/eval_results/issue_600/analysis/locality_detail.json) — fit: the journalist-vs-dictator slot swap it records is the direct precedent for "does swapping a near-control persona into the panel move assistant-cluster personas," on the same chassis and DV; mirrored on the new chassis by the hospice_nurse trained-slot read against its parent ctrl precedent (−0.019 vs −0.037).
-- **Methodology reference:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/61530ecc76437068230d58edf20d64448a12eea9/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
+- **Methodology reference:** [docs/methodology/issue_610.md](https://github.com/superkaiba/explore-persona-space/blob/8c9dda2feba9857ad2d57919592466007bbfe8eb/docs/methodology/issue_610.md) · [gist](https://gist.github.com/superkaiba/96f87cac01536f34e46522df92f7ffa6)
 
 **Compute:** Round 1 (mercenary): ~1.0 h wall for the 3-cell sweep (launch 19:47 → results 20:47 UTC, 2026-06-12) on GCP instance `eps-issue-610`, `a2-ultragpu-4g` (4× A100-80GB); smoke cell ~22 min. Round 2 (software_engineer): ~3.3 instance-GPU-hours total (launch ~07:00 → results 08:12 UTC, 2026-06-13) on the same instance template, well inside the 22 GPU-hours budgeted for the follow-up. Instance torn down after each round's upload-verification PASS (`epm:pod-terminated v2` at 08:18:26 UTC).
 
