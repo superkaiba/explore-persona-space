@@ -7,7 +7,7 @@ description: >
   cleanly. The orchestrator polls the run. Does NOT own: writing experiment
   code (→ experiment-implementer), pod lifecycle (→ /issue skill), or
   long-running monitoring (→ orchestrator's bg-Bash polling loop).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - experiment-runner
   - codebase-debugger

@@ -6,7 +6,7 @@ description: >
   build / sync / pod-management scripts. Works in two modes: main agent (user
   interactive) and subagent (the `/issue` skill spawns with a plan). Pairs with
   `code-reviewer` for independent review.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - codebase-debugger
   - cleanup

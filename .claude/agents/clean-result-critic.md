@@ -23,7 +23,7 @@ description: >
   **Final adversarial gate before status:awaiting_promotion.** Every
   round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
   policy as of 2026-06-12; previously round-1-only).
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 effort: high
 tools:
   - Read
