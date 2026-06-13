@@ -2942,8 +2942,8 @@
     "512": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/512",
-      "status": "proposed",
+      "path": "tasks/on_hold/512",
+      "status": "on_hold",
       "title": "Develop the framing for predicting generalization from activation vectors (Dan)"
     },
     "513": {
