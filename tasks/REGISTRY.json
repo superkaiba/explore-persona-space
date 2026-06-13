@@ -2276,8 +2276,8 @@
     "434": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/434",
-      "status": "blocked",
+      "path": "tasks/archived/434",
+      "status": "archived",
       "title": "Fix clean-result reporting (set-clean-result / list-clean-results surface)"
     },
     "435": {
