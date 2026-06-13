@@ -2297,8 +2297,8 @@
     "437": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/437",
-      "status": "proposed",
+      "path": "tasks/on_hold/437",
+      "status": "on_hold",
       "title": "Read up on negation neglect (relevance to persona steering)"
     },
     "438": {
