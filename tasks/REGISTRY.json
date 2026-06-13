@@ -2171,8 +2171,8 @@
     "420": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/420",
-      "status": "proposed",
+      "path": "tasks/on_hold/420",
+      "status": "on_hold",
       "title": "Sample points in persona space and predict distance"
     },
     "421": {
