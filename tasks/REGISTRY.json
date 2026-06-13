@@ -2220,8 +2220,8 @@
     "427": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/427",
-      "status": "proposed",
+      "path": "tasks/on_hold/427",
+      "status": "on_hold",
       "title": "[Proposed] Adversarial training as EM-defense / persona-robustness intervention"
     },
     "428": {
