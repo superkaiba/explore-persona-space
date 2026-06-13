@@ -2283,8 +2283,8 @@
     "435": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/435",
-      "status": "proposed",
+      "path": "tasks/on_hold/435",
+      "status": "on_hold",
       "title": "Interpret the clean results obtained so far that lack interpretation"
     },
     "436": {
