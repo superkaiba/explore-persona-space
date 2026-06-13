@@ -2178,8 +2178,8 @@
     "421": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/421",
-      "status": "proposed",
+      "path": "tasks/on_hold/421",
+      "status": "on_hold",
       "title": "Meta: balance time cleaning results vs thinking/new experiments"
     },
     "422": {
