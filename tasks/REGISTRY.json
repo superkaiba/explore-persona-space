@@ -2185,8 +2185,8 @@
     "422": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/422",
-      "status": "proposed",
+      "path": "tasks/on_hold/422",
+      "status": "on_hold",
       "title": "Compute infra: reclaim Mila/Compute Canada allocation + workflow-refactor worktree"
     },
     "423": {
