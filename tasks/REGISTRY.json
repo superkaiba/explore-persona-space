@@ -678,8 +678,8 @@
     "197": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/197",
-      "status": "proposed",
+      "path": "tasks/on_hold/197",
+      "status": "on_hold",
       "title": "What things are transferrable with prompts vs without prompts"
     },
     "199": {
