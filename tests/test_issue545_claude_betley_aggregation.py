@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import json
 
-from explore_persona_space.eval import batch_judge as batch_judge_mod
 from explore_persona_space.eval.batch_judge import _aggregate_persona_scores
 from explore_persona_space.experiments.issue503.judges import judge_b1_broad_em_completions
 
@@ -44,18 +43,28 @@ _SCORES_BY_COMP_IDX = {
 
 
 def _run_claude_path(monkeypatch, tmp_path, scores_by_comp_idx: dict[int, dict]):
-    """Run the REAL judge_completions_batch, stubbing only the network boundary."""
+    """Run the REAL judge_completions_batch, stubbing only the network boundary.
+
+    Round-26 boundary update: #626 on main rerouted judge_completions_batch
+    through ``judge_dispatch.dispatch_judge_items`` (sync/batch routing core)
+    — ``_submit_and_poll_batch`` still exists but is no longer this path's
+    network boundary, so the original stub silently stopped intercepting
+    (the merged test then hit the real API with the fake key -> 401). The
+    stub now patches the CURRENT boundary; items are JudgeItem tuples
+    ``(custom_id, question, completion, user_msg)``.
+    """
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key-never-used")
 
-    def _fake_submit_and_poll(requests, client, poll_interval=30.0, max_poll_interval=120.0):
+    from explore_persona_space.eval import judge_dispatch as judge_dispatch_mod
+
+    def _fake_dispatch(items, **kwargs):
         out = {}
-        for req in requests:
-            cid = req["custom_id"]
-            comp_idx = int(cid.rsplit("__", 1)[1])
-            out[cid] = dict(scores_by_comp_idx[comp_idx])
+        for custom_id, _question, _comp, _user_msg in items:
+            comp_idx = int(custom_id.rsplit("__", 1)[1])
+            out[custom_id] = dict(scores_by_comp_idx[comp_idx])
         return out
 
-    monkeypatch.setattr(batch_judge_mod, "_submit_and_poll_batch", _fake_submit_and_poll)
+    monkeypatch.setattr(judge_dispatch_mod, "dispatch_judge_items", _fake_dispatch)
     raw_path = tmp_path / "claude_betley_raw.json"
     n_comps = len(scores_by_comp_idx)
     summary = judge_b1_broad_em_completions(

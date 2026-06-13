@@ -217,7 +217,7 @@ def test_dose_band_miss_routing_monotone_recalibrates(tmp_path, monkeypatch):
 
     # Default-band hit: first in-band checkpoint, no recalibration.
     hit = _select([("checkpoint-125", 0.30), ("checkpoint-250", 0.38), ("checkpoint-375", 0.40)])
-    assert hit == {
+    expected_v1 = {
         "selected": "checkpoint-125",  # 0.30/0.40 = 0.75 in [0.60, 0.90]
         "in_band": True,
         "band": list(default_band),
@@ -225,6 +225,12 @@ def test_dose_band_miss_routing_monotone_recalibrates(tmp_path, monkeypatch):
         "monotone": True,
         "ceiling": 0.40,
     }
+    assert {k: hit[k] for k in expected_v1} == expected_v1
+    # Round-26 additive fields (onpolicy-testbed-v2 corrected normalization):
+    # base defaults to 0.0 -> the v1 ceiling-only selection stays byte-
+    # identical; strengths records the per-checkpoint corrected ratios.
+    assert hit["base"] == 0.0
+    assert abs(hit["strengths"]["checkpoint-125"] - 0.75) < 1e-9
 
     # Monotone overshoot (the in-house dose-cliff): every ratio > 0.90 but the
     # first (0.92) sits inside the 50-95% allowance -> recalibrated PASS.
