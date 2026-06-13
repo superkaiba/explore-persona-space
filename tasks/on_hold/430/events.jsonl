@@ -1,0 +1,2 @@
+{"ts": "2026-05-29T04:51:18Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-06-13T06:51:02Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "on_hold", "note": "parked: 'on hold for now' (proposed <=544 bulk move)"}

@@ -2248,8 +2248,8 @@
     "430": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/430",
-      "status": "proposed",
+      "path": "tasks/on_hold/430",
+      "status": "on_hold",
       "title": "[Proposed] Eval good/bad cases as a behavior vector, then find similar persona-space directions"
     },
     "431": {
