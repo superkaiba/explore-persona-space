@@ -35,6 +35,7 @@ if str(_SCRIPTS) not in sys.path:
 from workflow_lint import (  # noqa: E402
     _iter_ask_target_files,
     _other_worktree_prefix,
+    check_agent_model_pins,
     check_asks,
     check_autonomous_asks,
     check_dispatcher_cvd_pin,
@@ -1366,5 +1367,153 @@ def test_workflow_lint_check_dispatcher_cvd_pin_cli_exits_zero():
     result = _run("--check-dispatcher-cvd-pin")
     assert result.returncode == 0, (
         f"workflow_lint --check-dispatcher-cvd-pin failed:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Unit tests for the ``check_agent_model_pins`` function
+# (d07424178 / task #545 incident class, 2026-06-09 → 2026-06-12).
+# Each case writes a tiny .md file under ``tmp_path`` with a YAML
+# frontmatter ``model: "..."`` pin and calls
+# ``check_agent_model_pins(roots=[tmp_path])``.
+# ─────────────────────────────────────────────────────────────────────
+
+
+def _write_agent(path, model_pin):
+    """Write a minimal agent .md file with a YAML frontmatter model pin."""
+    path.write_text(
+        f"---\nname: test-agent\nmodel: {model_pin!r}\n---\n\nAgent body.\n",
+        encoding="utf-8",
+    )
+
+
+def test_check_agent_model_pins_pass_opus_with_1m_suffix(tmp_path):
+    """PASS — the current canonical pin: opus-4-7 with the [1m] routing
+    suffix (a 1M-context-supporting base)."""
+    _write_agent(tmp_path / "analyzer.md", "claude-opus-4-7[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_fable_without_suffix(tmp_path):
+    """PASS — fable-5 has 1M native context and no [1m] suffix. Naming the
+    base alone is fine; this case is the correct rewrite of the d07424178
+    pin if Thomas decides to move to fable-5."""
+    _write_agent(tmp_path / "analyzer.md", "claude-fable-5")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_sonnet_46(tmp_path):
+    """PASS — sonnet-4-6 also has 1M native context, no suffix."""
+    _write_agent(tmp_path / "x.md", "claude-sonnet-4-6")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_pass_haiku_no_suffix(tmp_path):
+    """PASS — haiku-4-5 is a 200K-context tier, no [1m] suffix."""
+    _write_agent(tmp_path / "x.md", "claude-haiku-4-5")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS, got: {errors}"
+
+
+def test_check_agent_model_pins_fail_fable_with_1m_suffix(tmp_path):
+    """FAIL — the d07424178 / task #545 regression test: fable-5 is a
+    real base but does NOT expose a [1m] routing variant. Pinning the
+    suffixed id killed every subagent fleet-wide for ~72h."""
+    _write_agent(tmp_path / "analyzer.md", "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected exactly one error, got: {errors}"
+    assert "claude-fable-5[1m]" in errors[0]
+    assert "does not expose a '[1m]'" in errors[0]
+    assert "d07424178" in errors[0] or "#545" in errors[0]
+
+
+def test_check_agent_model_pins_fail_sonnet45_with_1m_suffix(tmp_path):
+    """FAIL — sonnet-4-5 is a 200K-context tier with no [1m] variant."""
+    _write_agent(tmp_path / "x.md", "claude-sonnet-4-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-sonnet-4-5[1m]" in errors[0]
+    assert "does not expose a '[1m]'" in errors[0]
+
+
+def test_check_agent_model_pins_fail_unknown_base(tmp_path):
+    """FAIL — a base id that is not in the allowlist (typo or
+    aspirational id; the harness rejects it at spawn)."""
+    _write_agent(tmp_path / "x.md", "claude-galaxy-9")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-galaxy-9" in errors[0]
+    assert "not in the allowlist" in errors[0]
+
+
+def test_check_agent_model_pins_fail_unknown_suffix_treated_as_unknown_base(tmp_path):
+    """FAIL — a non-[1m] suffix like '[2m]' is glued to the base by
+    :func:`_split_agent_model_pin` (intentional: only the literal '[1m]'
+    is a recognized routing suffix). The result is reported as an
+    unknown base, which is the correct outcome — the harness would
+    reject it too."""
+    _write_agent(tmp_path / "x.md", "claude-opus-4-7[2m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error, got: {errors}"
+    assert "claude-opus-4-7[2m]" in errors[0]
+    assert "not in the allowlist" in errors[0]
+
+
+def test_check_agent_model_pins_pass_missing_frontmatter(tmp_path):
+    """PASS — an agent file with no ``model:`` line inherits the parent
+    model (CLAUDE.md 'Prompt-cache key discipline' explicitly allows it);
+    no runtime contract to validate."""
+    (tmp_path / "x.md").write_text("---\nname: x\n---\n\nBody.\n", encoding="utf-8")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert errors == [], f"expected PASS (no pin), got: {errors}"
+
+
+def test_check_agent_model_pins_d07424178_regression_full_fleet(tmp_path):
+    """FAIL on the EXACT shape of the d07424178 commit: bulk-rename of
+    all agents to ``claude-fable-5[1m]``. The check must report one
+    error per file (so the lint output names every offending pin, not
+    just the first)."""
+    for name in ("analyzer.md", "code-reviewer.md", "planner.md", "experimenter.md"):
+        _write_agent(tmp_path / name, "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 4, f"expected one error per file, got: {len(errors)}: {errors}"
+    # Every error should be the suffix-on-non-1m-base shape (not the
+    # unknown-base shape — fable-5 itself IS in the allowlist).
+    for e in errors:
+        assert "does not expose a '[1m]'" in e
+        assert "claude-fable-5" in e
+
+
+def test_check_agent_model_pins_mixed_pass_and_fail(tmp_path):
+    """A directory with a mix of valid and invalid pins reports only
+    the invalid ones, with file:line precision."""
+    _write_agent(tmp_path / "ok1.md", "claude-opus-4-7[1m]")
+    _write_agent(tmp_path / "ok2.md", "claude-fable-5")
+    _write_agent(tmp_path / "bad.md", "claude-fable-5[1m]")
+    errors = check_agent_model_pins(roots=[tmp_path])
+    assert len(errors) == 1, f"expected one error (bad.md only), got: {errors}"
+    assert "bad.md:" in errors[0]
+
+
+def test_check_agent_model_pins_repo_tree_is_clean():
+    """The committed .claude/agents tree must already pass — the regression
+    guard. If this fails, someone re-introduced the d07424178 / task #545
+    pin shape and every subagent will die at spawn."""
+    errors = check_agent_model_pins()
+    assert errors == [], (
+        "committed .claude/agents/*.md has invalid model pins "
+        "(d07424178 / task #545 incident class):\n" + "\n".join(errors)
+    )
+
+
+def test_workflow_lint_check_agent_model_pins_cli_exits_zero():
+    """The dedicated flag must exist and pass on the committed tree."""
+    result = _run("--check-agent-model-pins")
+    assert result.returncode == 0, (
+        f"workflow_lint --check-agent-model-pins failed:\n"
         f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
