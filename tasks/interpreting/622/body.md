@@ -5,7 +5,7 @@ title: Contrastive negatives stop buying implant strength near 64:1, where the d
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:21:43Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: 'task #616 cross-check audit (user asked to double-check matches):
   ''increase number of contrastive negatives until crashes'' had no covering task'
 goal: Find the contrastive-negatives count at which source implantation stops growing

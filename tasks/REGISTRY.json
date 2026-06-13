@@ -3818,7 +3818,7 @@
     },
     "622": {
       "goal": "Find the contrastive-negatives count at which source implantation stops growing or collapses, discriminating the schedule-length mechanism from loss-competition.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/interpreting/622",
       "status": "interpreting",
