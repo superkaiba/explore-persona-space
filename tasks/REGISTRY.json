@@ -1505,8 +1505,8 @@
     "338": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/338",
-      "status": "proposed",
+      "path": "tasks/on_hold/338",
+      "status": "on_hold",
       "title": "For the data poisoning model -- look at how the internals changed. Is it a linear direction?"
     },
     "339": {
