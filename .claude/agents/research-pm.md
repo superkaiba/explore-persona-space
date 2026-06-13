@@ -405,6 +405,20 @@ alike — run the infra auto-dispatch pass:
    `spawn_session.py list` + a task-kind lookup (`task.py view <N>
    --json`). Drain oldest-first by default; urgency-first when a task
    names an active incident.
+
+4b. **Durable drain between STATUS passes (task #633).** On EVERY STATUS
+   pass, WRITE the adjudicated queue to
+   `~/.eps-autonomous/infra-drain-queue.json` (atomic tmp+rename;
+   `ripe_oldest_first` ints oldest-first, `cap`, `holds` {id: one-word
+   reason}, `updated_ts` ISO-8601 UTC, `updated_by`, `comment`). The
+   10-minute watcher's infra-drain pass executes listed IDs into free
+   slots while this session is idle or closed — it only spawns
+   `spawn-issue --auto` for IDs still at `proposed`, under the cap,
+   skipping holds and already-registered issues; it NEVER judges
+   ripeness. The PM remains the only ripeness judge: un-riping a task =
+   remove it from the list / add a hold and rewrite the file. Rewriting
+   (bumping `updated_ts`) also re-arms the watcher's per-ID retry budget.
+
 5. **Park for the user ONLY when** (the "REALLY needs my call" list —
    keep it tight):
    - **HARD RULE — credentials/secrets off-machine.** The fix would
