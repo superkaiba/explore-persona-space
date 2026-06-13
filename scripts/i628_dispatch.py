@@ -2447,13 +2447,48 @@ def phase_reread(args) -> None:
 # ── Finalize: reproducibility-card results sentinel ──────────────────────────
 
 
-def _finalize(args) -> None:
-    cells = _cells(args)
+def _finalize(args) -> bool:
+    """Emit the end-of-run sentinel; return True iff coverage is FULL.
+
+    Coverage-aware (#628 r7, addresses CONCERN ``partial-ok-results-sentinel``).
+    The launcher's ``I628_MIN_TRAINED_CELLS=30`` salvage gate combined with
+    ``--partial-ok`` previously allowed a partial Phase-1 to reach this
+    finalizer and emit a full ``epm:results`` sentinel + a ``[phase=done]``
+    log line even when ~half the planned cells had no trained adapter — a
+    contract violation against the downstream analyzer's full H2-grid
+    assert (``scripts/i628_analysis.py:_assert_h2_keys``). The fail-loud
+    assert is still defense-in-depth, but emitting ``epm:results`` with
+    missing cells is wrong by itself.
+
+    Now: enumerate REALIZED cells from disk (stop_step JSON OR local
+    adapter dir present, the same predicate ``_cells_with_trained_adapter``
+    applies to Phases 2/4), and:
+
+    - realized == planned → emit ``epm:results`` (today's behavior),
+      return True. The caller then logs ``[phase=done]``.
+    - realized < planned → emit ``epm:progress`` ONLY, with a missing-cell
+      manifest. NO ``epm:results``, NO ``[phase=done]``. The reproducibility
+      card lists ONLY realized cells so the verifier never sees a phantom
+      adapter_path for a never-trained cell. Return False so the caller
+      suppresses ``[phase=done]``.
+
+    Dry-run / smoke still downgrade unconditionally to ``epm:progress``
+    (a live ``poll_pipeline.py`` would otherwise drain a smoke sentinel
+    as real results).
+    """
+    planned = _cells(args)
+    realized = _cells_with_trained_adapter(planned)
+    realized_set = set(realized)
+    missing = [_cell_slug(*c) for c in planned if c not in realized_set]
+    coverage_complete = not missing
+
     card = {
         "hf_model_repo": HF_MODEL_REPO,
-        "adapter_paths": {_cell_slug(*c): _hf_adapter_subfolder(*c) for c in cells},
+        # Card lists ONLY realized cells -- never advertise an adapter
+        # path for a cell whose Phase-1 worker died.
+        "adapter_paths": {_cell_slug(*c): _hf_adapter_subfolder(*c) for c in realized},
         "wandb_project": os.environ.get("WANDB_PROJECT", "issue628"),
-        "wandb_run_names": [f"issue628_{_cell_slug(*c)}" for c in cells],
+        "wandb_run_names": [f"issue628_{_cell_slug(*c)}" for c in realized],
         "reused_adapters": {
             f"i537_marker_seed{s}": {"revision": I537_ADAPTER_REV[s]}
             for s in args.seeds
@@ -2461,20 +2496,40 @@ def _finalize(args) -> None:
         },
         "data_repo_prefix": "issue628_rig_revision",
     }
-    note = json.dumps(
-        {
-            "summary": (
-                f"issue-628 dispatcher complete: {len(cells)} fresh cells "
-                f"(arms={sorted({c[0] for c in cells})}, seeds={list(args.seeds)}, "
-                f"smoke={args.smoke})"
-            ),
-            "reproducibility_card": card,
-        }
+    coverage = {
+        "planned": len(planned),
+        "realized": len(realized),
+        "missing": missing,
+        "complete": coverage_complete,
+    }
+    if not coverage_complete:
+        logger.warning(
+            "[finalize] PARTIAL coverage: %d/%d cells realized; missing %d (first: %s). "
+            "Emitting epm:progress (NOT epm:results) and suppressing [phase=done].",
+            len(realized),
+            len(planned),
+            len(missing),
+            missing[0] if missing else "n/a",
+        )
+    summary = (
+        f"issue-628 dispatcher complete: {len(realized)}/{len(planned)} cells realized "
+        f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)}, "
+        f"smoke={args.smoke})"
+        if coverage_complete
+        else (
+            f"issue-628 dispatcher PARTIAL: {len(realized)}/{len(planned)} cells realized; "
+            f"{len(missing)} cells missing a trained Phase-1 adapter "
+            f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)})"
+        )
     )
+    note = json.dumps({"summary": summary, "reproducibility_card": card, "coverage": coverage})
     # A dry-run / smoke must NEVER emit an epm:results sentinel -- a live
-    # poll_pipeline.py would drain it as real results.
-    kind = "epm:results" if not (args.dry_run or args.smoke) else "epm:progress"
+    # poll_pipeline.py would drain it as real results. Partial coverage is
+    # an ADDITIONAL reason to downgrade.
+    full_results = coverage_complete and not (args.dry_run or args.smoke)
+    kind = "epm:results" if full_results else "epm:progress"
     write_sentinel(kind, note)
+    return coverage_complete
 
 
 # ── Deferred-import verification (#606 pattern) ──────────────────────────────
@@ -2597,15 +2652,26 @@ def main() -> int:
 
     if args.worker_shard:
         return 0  # [phase=done] is RESERVED for the main dispatcher log
+    coverage_complete = True
     if args.phase in ("all", "4"):
-        _finalize(args)
+        coverage_complete = _finalize(args)
     else:
         write_sentinel(
             "epm:progress",
             f"i628_dispatch phase {args.phase} complete "
             f"(smoke={args.smoke}, dry_run={args.dry_run})",
         )
-    phase_log("done")
+    # [phase=done] is the poll_pipeline.py "graceful completion" signal --
+    # withhold it on partial coverage so the orchestrator never sees a
+    # partial Phase-1 + Phase-4 chain as a complete run (#628 r7,
+    # partial-ok-results-sentinel CONCERN).
+    if coverage_complete:
+        phase_log("done")
+    else:
+        logger.warning(
+            "[main] partial coverage -- suppressing [phase=done]; "
+            "poll_pipeline.py will see this as in-progress, not done."
+        )
     return 0
 
 
