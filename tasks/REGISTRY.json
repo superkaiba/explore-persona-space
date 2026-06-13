@@ -2395,8 +2395,8 @@
     "449": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/449",
-      "status": "proposed",
+      "path": "tasks/on_hold/449",
+      "status": "on_hold",
       "title": "Consider using Tinker (Thinking Machines fine-tuning API) for training runs"
     },
     "45": {
