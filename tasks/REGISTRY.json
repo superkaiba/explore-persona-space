@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 634,
+  "highest_id": 635,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3912,6 +3912,13 @@
       "path": "tasks/planning/634",
       "status": "planning",
       "title": "Joint UMAP/PCA of behavior vectors with #594 context vectors \u2014 does behavior-vector geometry align with context geometry?"
+    },
+    "635": {
+      "has_clean_result": false,
+      "kind": "survey",
+      "path": "tasks/proposed/635",
+      "status": "proposed",
+      "title": "Theory: can RL elicit NEW capabilities vs amplify latent ones? (capability definition, sampling/pass@k, monkey-on-typewriter, human analogue)"
     },
     "65": {
       "has_clean_result": true,
