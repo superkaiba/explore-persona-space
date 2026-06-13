@@ -645,7 +645,18 @@ class TestCompareEndToEnd:
     def _build_v2_fixture(self, v2_root: Path, *, v1_cells: dict, inject_bridge: bool = True):
         """Build a minimal v2 matrix + cell_metadata + v1_reselect from a
         tiny v1 matrix slice. v2 cells are v1's L values with a small
-        perturbation (so r ~= 0.9 and the pipeline can render a verdict)."""
+        perturbation (so r ~= 0.9 and the pipeline can render a verdict).
+
+        Round-28 fix (Fix A, both reviewers): the prior fixture wrote
+        cell_metadata_v2.json with the per-cell dose-select fields keyed
+        under "metadata", MIRRORING the consumer bug — compare()'s reader
+        pulled the same wrong key so the smoke "passed" with r ~= 0.8 while
+        production data (correctly keyed under "cells") silently produced
+        n_confirmatory_pairs=0. The fixture now writes the SAME shape the
+        real producer (assemble_matrix.py) does — per-cell records under
+        "cells", plus a peer "metadata" dict for git_sha / env / ts — and
+        carries all five dose-select fields compare() + the partial-
+        Spearman covariate path consume."""
         v2_cells = {}
         for cell_id, cell in v1_cells.items():
             # rename to v2 schema (same arm/seed convention).
@@ -680,15 +691,23 @@ class TestCompareEndToEnd:
             }
         }
         (v2_root / "v1_reselect.json").write_text(json.dumps(reselect, indent=1))
-        # cell_metadata_v2: achieved_strength + confirmatory_eligible.
+        # cell_metadata_v2: PER-CELL records under "cells" (matching
+        # assemble_matrix.py's actual writer), carrying all five dose-
+        # select fields the off-pod compare() + the partial-Spearman
+        # covariate path consume. The "metadata" peer dict carries
+        # reproducibility info, never per-cell data.
         metadata = {
-            "metadata": {
+            "cells": {
                 cell_id: {
                     "achieved_strength": 0.76,
                     "confirmatory_eligible": True,
+                    "delta_strength": 0.01,
+                    "base": 0.0,
+                    "v1_target_strength": 0.75,
                 }
                 for cell_id in v2_cells
-            }
+            },
+            "metadata": {"fixture": "test_issue545_v2_onpolicy"},
         }
         (v2_root / "cell_metadata_v2.json").write_text(json.dumps(metadata, indent=1))
 
@@ -748,6 +767,14 @@ class TestCompareEndToEnd:
             "row_availability_floor_pairs",
         ):
             assert k in primary
+        # Round-28 fix (Fix A): the fixture now writes the producer's
+        # actual shape, so the confirmatory pair list MUST be non-empty —
+        # every fixture cell carries confirmatory_eligible=True under the
+        # right key, the bug that made this silently zero is gone.
+        assert primary["n_confirmatory_pairs"] > 0, (
+            f"compare() produced 0 confirmatory pairs against the producer-shaped "
+            f"fixture — Fix A regressed. payload primary: {primary}"
+        )
         # Bridge inertness section has a verdict (pass / deviate / unavailable).
         assert payload["bridge_inertness"]["verdict"] in (
             "pass",
@@ -765,3 +792,473 @@ class TestCompareEndToEnd:
         monkeypatch.setattr(mod, "_v2_root", lambda: v2_root)
         with pytest.raises(FileNotFoundError, match=r"L_matrix_v2\.json"):
             mod.compare()
+
+    def test_compare_fails_loud_on_missing_cell_metadata_v2(self, monkeypatch, tmp_path):
+        """Round-28 fix (Fix A, Claude minor #1): cell_metadata_v2.json is a
+        REQUIRED comparison input, not an optional silent-degradation source."""
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+
+        mod = self._load_harness()
+        v2_root = tmp_path / "v2_no_metadata"
+        v2_root.mkdir(parents=True, exist_ok=True)
+        # Provide L_matrix_v2 + v1_reselect but omit cell_metadata_v2.
+        v1_path = pkg.v1_committed_root() / "L_matrix.json"
+        if not v1_path.exists():
+            pytest.skip("committed v1 matrix missing")
+        v1_full = json.loads(v1_path.read_text())["cells"]
+        from explore_persona_space.experiments.behavior_testbed_545.rows_v2 import (
+            PAIRABLE_ROWS_V2,
+        )
+
+        v1_slice = {
+            cid: c for cid, c in v1_full.items() if any(cid.startswith(r) for r in PAIRABLE_ROWS_V2)
+        }
+        (v2_root / "L_matrix_v2.json").write_text(
+            json.dumps({"cells": v1_slice, "metadata": {}}, indent=1)
+        )
+        (v2_root / "v1_reselect.json").write_text(json.dumps({"cells": {}}, indent=1))
+        monkeypatch.setattr(mod, "_v2_root", lambda: v2_root)
+        with pytest.raises(FileNotFoundError, match=r"cell_metadata_v2\.json"):
+            mod.compare()
+
+
+class TestProducerConsumerRoundTrip:
+    """Round-28 (Fix A): the producer/consumer key bug that survived 26+
+    rounds existed because the test fixture was hand-written to match the
+    consumer's wrong expectation, not by calling the real producer. These
+    round-trip tests close that hole — they invoke the real ``assemble()``
+    and the real ``compare()`` against the producer's output, so any future
+    key disagreement crashes a test instead of silently zeroing out pairs."""
+
+    def _load_harness(self):
+        spec = importlib.util.spec_from_file_location(
+            "issue545_v2_comparison",
+            Path(__file__).resolve().parent.parent / "scripts" / "issue545_v2_comparison.py",
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _seed_one_v2_cell(
+        self, cells_root: Path, row_id: str, seed: int, *, refusal_level: float = 0.5
+    ) -> None:
+        """Drop a minimal eval JSON + dose_select.json for ONE primary cell
+        so assemble() has something to assemble. The columns set is tiny on
+        purpose — assemble doesn't need every probe to produce a metadata
+        record; one column + the dose-select file is enough to exercise the
+        v2 field propagation path."""
+        cell_dir = cells_root / f"{row_id}_primary_seed{seed}"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        (cell_dir / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": refusal_level},
+                    "verdicts": [],
+                }
+            )
+        )
+        # dose_select.json carrying ALL FIVE v2 fields (the propagation
+        # contract assemble_matrix.py now enforces).
+        (cell_dir / "dose_select.json").write_text(
+            json.dumps(
+                {
+                    "row": row_id,
+                    "arm": "primary",
+                    "seed": seed,
+                    "ceiling": 1.0,
+                    "band": [0.5, 0.95],
+                    "band_default": [0.5, 0.95],
+                    "band_recalibrated": False,
+                    "monotone": True,
+                    "in_band": True,
+                    "selected_checkpoint": "ckpt_final",
+                    "scalars": {"ckpt_final": refusal_level},
+                    "base": 0.0,
+                    "strengths": {"ckpt_final": refusal_level},
+                    "scalar_key": "refusal_rate_should_not_refuse",
+                    "v1_target_strength": 0.75,
+                    "achieved_strength": refusal_level,
+                    "delta_strength": abs(refusal_level - 0.75),
+                    "confirmatory_eligible": True,
+                    "confirmatory_max_delta": 0.15,
+                }
+            )
+        )
+
+    def test_assemble_writes_dose_fields_to_cell_metadata_v2(self, monkeypatch, tmp_path):
+        """The five required v2 fields land under cells[cell_id] in
+        cell_metadata_v2.json — never silently absent."""
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import (
+            assemble_matrix,
+        )
+
+        # Activate v2 namespace + isolated output root.
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        scratch = tmp_path / "scratch"
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(scratch))
+        # Pretend the committed base panel exists by providing a fake one
+        # that satisfies the v2 fallback at the row "refuse_medical".
+        fake_repo = tmp_path / "fake_repo"
+        committed_base = fake_repo / "cells" / "base_panel"
+        committed_base.mkdir(parents=True, exist_ok=True)
+        (committed_base / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.1},
+                    "verdicts": [],
+                }
+            )
+        )
+        monkeypatch.setattr(assemble_matrix, "v1_committed_root", lambda: fake_repo)
+
+        # Seed one v2 cell with full dose_select fields.
+        self._seed_one_v2_cell(pkg.cells_dir(), "refuse_medical", 0, refusal_level=0.78)
+
+        out_paths = assemble_matrix.assemble()
+        meta = json.loads(out_paths["cell_metadata"].read_text())
+        # Cells dict is keyed under "cells" (NOT "metadata").
+        assert "cells" in meta, f"cell_metadata_v2.json missing 'cells' key; got {meta.keys()}"
+        cell_id = "refuse_medical_primary_seed0"
+        assert cell_id in meta["cells"], (
+            f"assemble() didn't write per-cell record for {cell_id}; got {meta['cells'].keys()}"
+        )
+        record = meta["cells"][cell_id]
+        # All five v2 fields propagated through.
+        for field in (
+            "achieved_strength",
+            "confirmatory_eligible",
+            "delta_strength",
+            "base",
+            "v1_target_strength",
+        ):
+            assert field in record, (
+                f"cell_metadata_v2.json cells[{cell_id}] missing required v2 field {field}"
+            )
+        assert record["achieved_strength"] == pytest.approx(0.78)
+        assert record["confirmatory_eligible"] is True
+        assert record["v1_target_strength"] == pytest.approx(0.75)
+        assert record["base"] == pytest.approx(0.0)
+
+    def test_assemble_fails_loud_on_dose_select_missing_v2_fields(self, monkeypatch, tmp_path):
+        """A v2 dose_select.json without the five required fields MUST
+        raise at assemble time, never silently emit None — that silent-
+        emit would re-create the n_confirmatory_pairs=0 bug downstream."""
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import (
+            assemble_matrix,
+        )
+
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        scratch = tmp_path / "scratch"
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(scratch))
+        fake_repo = tmp_path / "fake_repo"
+        committed_base = fake_repo / "cells" / "base_panel"
+        committed_base.mkdir(parents=True, exist_ok=True)
+        (committed_base / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.1},
+                    "verdicts": [],
+                }
+            )
+        )
+        monkeypatch.setattr(assemble_matrix, "v1_committed_root", lambda: fake_repo)
+
+        # Cell with v1-style dose_select.json (missing v2 fields).
+        cell_dir = pkg.cells_dir() / "refuse_medical_primary_seed0"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        (cell_dir / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.5},
+                    "verdicts": [],
+                }
+            )
+        )
+        (cell_dir / "dose_select.json").write_text(
+            json.dumps(
+                {
+                    "row": "refuse_medical",
+                    "arm": "primary",
+                    "seed": 0,
+                    "ceiling": 1.0,
+                    "band": [0.5, 0.95],
+                    "selected_checkpoint": "ckpt_final",
+                    "scalars": {"ckpt_final": 0.5},
+                    # NO achieved_strength / confirmatory_eligible / etc.
+                }
+            )
+        )
+        with pytest.raises(RuntimeError, match="missing required field"):
+            assemble_matrix.assemble()
+
+    def test_compare_produces_confirmatory_pairs_against_producer_shape(
+        self, monkeypatch, tmp_path
+    ):
+        """End-to-end producer -> consumer round-trip: invoke the real
+        assemble() to build cell_metadata_v2.json, then run compare()
+        against THAT output (not a hand-written fixture). compare() MUST
+        produce a positive n_confirmatory_pairs — the test that would have
+        caught the round-25/26 bug at review time.
+
+        Uses a multi-row slice from the committed v1 matrix so the bridge
+        inertness check + the primary stat both have material to chew on.
+        """
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import (
+            assemble_matrix,
+        )
+        from explore_persona_space.experiments.behavior_testbed_545.rows_v2 import (
+            PAIRABLE_ROWS_V2,
+        )
+
+        v1_path = pkg.v1_committed_root() / "L_matrix.json"
+        if not v1_path.exists():
+            pytest.skip("committed v1 matrix missing")
+        v1_full = json.loads(v1_path.read_text())["cells"]
+        v1_slice = {
+            cid: c for cid, c in v1_full.items() if any(cid.startswith(r) for r in PAIRABLE_ROWS_V2)
+        }
+        if not v1_slice:
+            pytest.skip("no pairable rows in committed v1 matrix")
+
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        scratch = tmp_path / "scratch"
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(scratch))
+        # Repoint v1_committed_root to a fake repo carrying just the base
+        # panel and a v1 L matrix slice for the bridge row.
+        fake_repo = tmp_path / "fake_repo"
+        committed_base = fake_repo / "cells" / "base_panel"
+        committed_base.mkdir(parents=True, exist_ok=True)
+        (committed_base / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.1},
+                    "verdicts": [],
+                }
+            )
+        )
+        # Real committed v1 matrix passed through so compare() reads it.
+        # _v1_root looks at v1_committed_root() unless overridden — patch
+        # both v1_committed_root + drop the L_matrix.json on the fake repo.
+        monkeypatch.setattr(assemble_matrix, "v1_committed_root", lambda: fake_repo)
+
+        # Seed three v2 primary cells across distinct rows (so the primary
+        # stat has >=2 row clusters and the pair floor is reachable).
+        seeded = 0
+        for cid in list(v1_slice)[:6]:  # at most 6 cells
+            # cid examples: "refuse_medical_primary_seed0"
+            if "_primary_seed" not in cid:
+                continue
+            head, seed_str = cid.rsplit("_primary_seed", 1)
+            try:
+                seed = int(seed_str)
+            except ValueError:
+                continue
+            row_id = head
+            self._seed_one_v2_cell(pkg.cells_dir(), row_id, seed)
+            seeded += 1
+            if seeded >= 6:
+                break
+        if seeded == 0:
+            pytest.skip("no usable v2 primary cells could be seeded from the v1 slice")
+
+        # Run the REAL assemble (writes L_matrix_v2.json + cell_metadata_v2.json).
+        assemble_matrix.assemble()
+        # Now provide v1_reselect.json + the v1 L_matrix.json at the v1
+        # location compare() reads (under fake_repo).
+        reselect = {
+            "cells": {
+                cid: {"corrected_realized_strength": 0.75}
+                for cid in v1_slice
+                if "_primary_seed" in cid
+            }
+        }
+        out = pkg.output_root()
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "v1_reselect.json").write_text(json.dumps(reselect, indent=1))
+        # Make the v1 matrix visible at _v1_root() (which keys off
+        # v1_committed_root) by writing one into fake_repo:
+        (fake_repo / "L_matrix.json").write_text(
+            json.dumps({"cells": v1_slice, "metadata": {}}, indent=1)
+        )
+
+        mod = self._load_harness()
+        # _v1_root reads from v1_committed_root() / cells parent; ensure
+        # the L_matrix.json compare() reads is the slice we just wrote.
+        monkeypatch.setattr(mod, "_v1_root", lambda: fake_repo)
+        monkeypatch.setattr(mod, "_v2_root", lambda: out)
+
+        out_path = mod.compare()
+        payload = json.loads(out_path.read_text())
+        primary = payload["primary"]
+        # The round-28 acceptance criterion: confirmatory pairs > 0 against
+        # the real producer's output. A regression in either Fix A part 1
+        # (reader) or part 2 (writer) silently zeros this out.
+        assert primary["n_confirmatory_pairs"] > 0, (
+            "compare() produced 0 confirmatory pairs against the REAL assemble() output — "
+            "either the writer dropped the dose-select fields, or the reader pulled the "
+            f"wrong key. payload primary: {primary}"
+        )
+
+
+class TestPartialSpearmanSourceBaseline:
+    """Round-28 (Fix D): the source-baseline partial-Spearman must materially
+    differ from the raw Spearman when the source-baseline rate explains the
+    cross-side correlation — the prior duplicated-2-tuple call made it
+    identical (silent OLS fallback to mean-center)."""
+
+    def _load_harness(self):
+        spec = importlib.util.spec_from_file_location(
+            "issue545_v2_comparison",
+            Path(__file__).resolve().parent.parent / "scripts" / "issue545_v2_comparison.py",
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_partial_spearman_differs_from_raw_when_source_baseline_explains(self):
+        """Build a pair list where source-baseline-rate co-varies with both
+        L_v1 and L_v2 (and is the only driver of their correlation). With
+        the partial controlling for source-baseline, the partial stat must
+        be SMALLER in magnitude than the raw Spearman."""
+        mod = self._load_harness()
+        # Construct 8 row clusters, each cluster's "rate" drives both L_v1
+        # and L_v2; columns within a row are independent noise. Rank-based,
+        # so float jitter is fine.
+        rates = [0.10, 0.20, 0.30, 0.45, 0.55, 0.70, 0.80, 0.95]
+        pairs: list[dict] = []
+        for r_idx, rate in enumerate(rates):
+            row_id = f"row_{r_idx}"
+            for c_idx in range(3):  # 3 columns per row
+                pairs.append(
+                    {
+                        "row": row_id,
+                        "column": f"col_{c_idx}",
+                        "L_v1": rate + 0.001 * c_idx,
+                        "L_v2": rate + 0.001 * c_idx + 0.0005,
+                        "sb_row": rate,
+                    }
+                )
+
+        raw_r = mod.spearman(*mod.within_column_z(pairs, ("L_v1", "L_v2")))
+        partial_r = mod.partial_spearman(pairs, ("L_v1", "L_v2"), ("sb_row",))
+        # With sb_row driving everything, the residualized correlation must
+        # collapse versus the raw stat.
+        assert abs(partial_r) < abs(raw_r) - 0.1, (
+            f"partial Spearman ({partial_r:.4f}) did not materially differ from raw "
+            f"Spearman ({raw_r:.4f}) — Fix D regressed; the duplicate-covariate fallback "
+            "is back."
+        )
+
+    def test_partial_spearman_dedups_identical_covariates(self):
+        """If a caller passes the same vector under two names, the function
+        must NOT degrade to a silent mean-center-only fallback — it must
+        dedup to a single-covariate read that materially partials it out."""
+        mod = self._load_harness()
+        rates = [0.10, 0.20, 0.30, 0.45, 0.55, 0.70, 0.80, 0.95]
+        pairs: list[dict] = []
+        for r_idx, rate in enumerate(rates):
+            for c_idx in range(3):
+                pairs.append(
+                    {
+                        "row": f"row_{r_idx}",
+                        "column": f"col_{c_idx}",
+                        "L_v1": rate + 0.001 * c_idx,
+                        "L_v2": rate + 0.001 * c_idx + 0.0005,
+                        "sb_v1": rate,
+                        "sb_v2": rate,  # SAME values — caller duplicated by mistake
+                    }
+                )
+        partial_dedup = mod.partial_spearman(pairs, ("L_v1", "L_v2"), ("sb_v1", "sb_v2"))
+        partial_single = mod.partial_spearman(pairs, ("L_v1", "L_v2"), ("sb_v1",))
+        # Dedup path lands on the same answer as the explicit single-covariate path.
+        assert partial_dedup == pytest.approx(partial_single, abs=1e-9), (
+            f"duplicate-covariate dedup mismatch: dedup={partial_dedup}, single={partial_single}"
+        )
+
+    def test_partial_spearman_two_distinct_covariates_runs(self):
+        """The legacy two-covariate path (s_v1, s_v2 — genuinely distinct
+        per side) must still work; this is the §4.3 strength-covariate
+        partial that production exercises."""
+        mod = self._load_harness()
+        pairs = [
+            {"row": f"r{i}", "column": "c", "L_v1": i, "L_v2": i + 0.1, "s_v1": i, "s_v2": i * 0.9}
+            for i in range(8)
+        ]
+        # With two distinct covariates the system is well-conditioned and
+        # the call must produce a finite number (not raise, not return
+        # silent fallback).
+        partial = mod.partial_spearman(pairs, ("L_v1", "L_v2"), ("s_v1", "s_v2"))
+        assert isinstance(partial, float) and math.isfinite(partial)
+
+
+class TestSourceBaselineAggregation:
+    """Round-28 (Fix C): per-row baseline-rate writes plus post-join
+    aggregation are race-free, so two writers running concurrently never
+    drop a row from the canonical aggregate."""
+
+    def test_concurrent_per_row_writers_both_survive(self, tmp_path):
+        """Two threads calling write_row_outputs in parallel both land in
+        the aggregate — the prior shared-file read-modify-write would
+        clobber one of them silently."""
+        import threading
+
+        # Build the per-row file area by hand (matching the new contract
+        # in elicit_v2.write_row_outputs: each row writes its own JSON).
+        out_root = tmp_path / "results"
+        rates_dir = out_root / "source_baseline_rates"
+        rates_dir.mkdir(parents=True, exist_ok=True)
+
+        def _writer(row_id: str, rate: float):
+            (rates_dir / f"{row_id}.json").write_text(
+                json.dumps(
+                    {
+                        "baseline_rate": rate,
+                        "row": row_id,
+                        "frozen_before_training": True,
+                    },
+                    indent=1,
+                )
+            )
+
+        # Race two writers — even with no lock, the per-row contract means
+        # each writes its own file.
+        t1 = threading.Thread(target=_writer, args=("row_a", 0.1))
+        t2 = threading.Thread(target=_writer, args=("row_b", 0.2))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+
+        # Now run the dispatcher's aggregator (the real production path).
+        sweep_spec = importlib.util.spec_from_file_location(
+            "issue545_sweep",
+            Path(__file__).resolve().parent.parent / "scripts" / "issue545_sweep.py",
+        )
+        sweep = importlib.util.module_from_spec(sweep_spec)
+        # Avoid running module-level dotenv / load on import side-effects:
+        # the helper is pure; we only need its definition.
+        sweep_spec.loader.exec_module(sweep)
+        sweep._aggregate_source_baseline_rates(out_root)
+
+        aggregate = json.loads((out_root / "source_baseline_rates.json").read_text())
+        assert set(aggregate["rows"]) == {"row_a", "row_b"}, (
+            f"aggregation dropped a row under concurrent writers; got {aggregate['rows']}"
+        )
+        assert aggregate["rows"]["row_a"]["baseline_rate"] == pytest.approx(0.1)
+        assert aggregate["rows"]["row_b"]["baseline_rate"] == pytest.approx(0.2)

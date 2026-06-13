@@ -713,36 +713,75 @@ def leave_one_row_out(pairs: list[dict], keys: tuple[str, str]) -> dict[str, flo
 
 
 def partial_spearman(
-    pairs: list[dict], keys: tuple[str, str], covariates: tuple[str, str]
+    pairs: list[dict], keys: tuple[str, str], covariates: tuple[str, ...]
 ) -> float:
-    """Partial Spearman of (z_a, z_b) controlling the two sides' row-level
-    corrected strengths (plan item-3 covariate mechanic): rank-residualize
-    both z vectors on BOTH covariate rank vectors (OLS on ranks), then
-    correlate the residuals."""
+    """Partial Spearman of (z_a, z_b) controlling for one or more covariates
+    (plan §4.3 covariate mechanic): rank-residualize both z vectors on the
+    covariate rank vectors (OLS on ranks), then correlate the residuals.
+
+    Round-28 fix (Fix D, Codex Major #2): the previous 2-covariate signature
+    duplicated the source-baseline column on the v1 + v2 sides (sb_v1 ==
+    sb_v2 by construction — same per-row covariate), which made the 3x3
+    normal-equations matrix singular and silently fell back to mean-center
+    only — returning the raw Spearman labeled as the partial. Two structural
+    fixes here: (a) accept a variable-length covariate tuple so single-
+    covariate calls (the source-baseline read) skip the duplicate column;
+    (b) deduplicate covariate columns up front so a caller that still passes
+    the same vector under two names degrades to ONE column rather than to a
+    silent raw-stat fallback. The strength path keeps two distinct
+    covariates (s_v1, s_v2 — genuinely different per side) so the regressor
+    matrix stays well-conditioned.
+
+    Genuine singularities (a constant covariate column, perfectly collinear
+    columns) are reported as raw-stat fallback in the legacy way (mean-
+    center only) — but the deduplication step above means the source-
+    baseline path no longer reaches that branch.
+    """
     z_a, z_b = within_column_z(pairs, keys)
-    c1 = _rank([float(p[covariates[0]]) for p in pairs])
-    c2 = _rank([float(p[covariates[1]]) for p in pairs])
+    # Build covariate rank vectors, deduplicating perfectly-equal columns
+    # (typed by element-wise float equality on the raw values). A run-of-
+    # identical-values deduplication is the simplest defense against the
+    # sb_v1/sb_v2 duplicate that motivated the fix; downstream callers are
+    # free to pass distinct covariates explicitly.
+    raw_cols: list[list[float]] = []
+    seen_keys: list[tuple[float, ...]] = []
+    for cov_key in covariates:
+        col = [float(p[cov_key]) for p in pairs]
+        sig = tuple(col)
+        if sig in seen_keys:
+            continue
+        seen_keys.append(sig)
+        raw_cols.append(col)
+    rank_cols = [_rank(c) for c in raw_cols]
     ra, rb = _rank(z_a), _rank(z_b)
 
     def _residualize(y: list[float]) -> list[float]:
-        # OLS residuals of y on [1, c1, c2] via normal equations (3x3).
+        # OLS residuals of y on [1, rank_cols...] via normal equations.
         n = len(y)
-        xs = [[1.0, c1[i], c2[i]] for i in range(n)]
-        ata = [[sum(x[i] * x[j] for x in xs) for j in range(3)] for i in range(3)]
-        aty = [sum(x[i] * yi for x, yi in zip(xs, y, strict=True)) for i in range(3)]
-        # Gaussian elimination.
+        if not rank_cols:
+            mean_y = sum(y) / n
+            return [yi - mean_y for yi in y]
+        k = 1 + len(rank_cols)  # intercept + covariate columns
+        xs = [[1.0] + [c[i] for c in rank_cols] for i in range(n)]
+        ata = [[sum(x[i] * x[j] for x in xs) for j in range(k)] for i in range(k)]
+        aty = [sum(x[i] * yi for x, yi in zip(xs, y, strict=True)) for i in range(k)]
+        # Gaussian elimination on a kxk augmented system.
         m = [[*row, aty[i]] for i, row in enumerate(ata)]
-        for col in range(3):
-            piv = max(range(col, 3), key=lambda r: abs(m[r][col]))
+        for col in range(k):
+            piv = max(range(col, k), key=lambda r: abs(m[r][col]))
             m[col], m[piv] = m[piv], m[col]
             if abs(m[col][col]) < 1e-12:
                 return [yi - sum(y) / n for yi in y]  # degenerate -> mean-center only
-            for r in range(3):
+            for r in range(k):
                 if r != col:
                     f = m[r][col] / m[col][col]
                     m[r] = [a - f * b for a, b in zip(m[r], m[col], strict=True)]
-        beta = [m[i][3] / m[i][i] for i in range(3)]
-        return [yi - (beta[0] + beta[1] * c1[i] + beta[2] * c2[i]) for i, yi in enumerate(y)]
+        beta = [m[i][k] / m[i][i] for i in range(k)]
+        fitted = [
+            beta[0] + sum(beta[1 + j] * rank_cols[j][i] for j in range(len(rank_cols)))
+            for i in range(n)
+        ]
+        return [yi - fi for yi, fi in zip(y, fitted, strict=True)]
 
     res_a, res_b = _residualize(ra), _residualize(rb)
     mx, my = sum(res_a) / len(res_a), sum(res_b) / len(res_b)
@@ -848,7 +887,12 @@ def compare() -> Path:  # noqa: C901 — pre-registered linear protocol, intenti
     v1_matrix_path = _v1_root() / "L_matrix.json"
     reselect_path = _v2_root() / "v1_reselect.json"
     meta_path = _v2_root() / "cell_metadata_v2.json"
-    for p in (v2_matrix_path, reselect_path):
+    # Round-28 fix (Fix A part 1, Claude minor #1): meta_path is a REQUIRED
+    # comparison input — without per-cell achieved_strength + confirmatory
+    # eligibility the row-strength gate falls through to "all unpaired" and
+    # `n_confirmatory_pairs = 0`. Promote it into the existence-check loop
+    # rather than letting it silently degrade to `{}`.
+    for p in (v2_matrix_path, reselect_path, meta_path):
         if not p.exists():
             raise FileNotFoundError(
                 f"{p} missing — the comparison runs AFTER the v2 pod run uploads its "
@@ -869,7 +913,16 @@ def compare() -> Path:  # noqa: C901 — pre-registered linear protocol, intenti
     v1_cells = json.loads(v1_matrix_path.read_text())["cells"]
     v2_cells = json.loads(v2_matrix_path.read_text())["cells"]
     reselect = json.loads(reselect_path.read_text())
-    metadata = json.loads(meta_path.read_text()).get("metadata", {}) if meta_path.exists() else {}
+    # Round-28 fix (Fix A part 1, both reviewers' critical blocker): the
+    # PER-CELL dose-select record (achieved_strength, confirmatory_eligible,
+    # delta_strength, base, v1_target_strength) is keyed under "cells", NOT
+    # under "metadata". The previous reader pulled the reproducibility
+    # metadata dict (git_sha / env / ts) and silently returned {} for the
+    # _row_strength lookup, forcing every pair into the non-confirmatory
+    # universe (n_confirmatory_pairs=0, verdict=indeterminate). Matches the
+    # writer in assemble_matrix.py and the sibling consumers in
+    # scoring.py:297 + issue545_followup_bcond_predictor.py:139.
+    metadata = json.loads(meta_path.read_text())["cells"]
 
     rows = list(PAIRABLE_ROWS_V2)
     v1_means = _seed_mean_cells(v1_cells, rows)
@@ -988,17 +1041,25 @@ def compare() -> Path:  # noqa: C901 — pre-registered linear protocol, intenti
         else:
             primary["partial_spearman_strength"] = None
         # Partial Spearman covarying source-baseline rates if available.
+        # Round-28 fix (Fix D, Codex Major #2): pass ONE covariate (the
+        # per-row source-baseline rate), not a duplicated 2-tuple. The
+        # source-baseline rate is a ROW-LEVEL covariate measured once per
+        # source (it does not differ between v1 and v2 sides), and passing
+        # it twice made the partial_spearman OLS system singular — the
+        # function then fell back to mean-center-only and returned the raw
+        # Spearman labeled as the partial-Spearman covariate-controlled
+        # stat. Plan §4.3 explicitly names this as "partial Spearman on (v1,
+        # v2) controlling for source-baseline-rate per row" — one covariate.
         sb_path = _v2_root() / "source_baseline_rates.json"
         if sb_path.exists():
             try:
                 sb = json.loads(sb_path.read_text()).get("rows", {})
                 for p in pairs_confirmatory:
-                    p["sb_v1"] = sb.get(p["row"], {}).get("baseline_rate")
-                    p["sb_v2"] = p["sb_v1"]  # row-side covariate; same on both sides
-                sb_usable = [p for p in pairs_confirmatory if p.get("sb_v1") is not None]
+                    p["sb_row"] = sb.get(p["row"], {}).get("baseline_rate")
+                sb_usable = [p for p in pairs_confirmatory if p.get("sb_row") is not None]
                 if len(sb_usable) >= 4:
                     primary["partial_spearman_source_baseline"] = round(
-                        partial_spearman(sb_usable, ("L_v1", "L_v2"), ("sb_v1", "sb_v2")),
+                        partial_spearman(sb_usable, ("L_v1", "L_v2"), ("sb_row",)),
                         4,
                     )
             except (json.JSONDecodeError, KeyError, TypeError) as exc:

@@ -770,6 +770,42 @@ def _base_panel_todo(args) -> list[tuple[list[str], list[str] | None, list[str]]
     return todo
 
 
+def _aggregate_source_baseline_rates(out_root: Path) -> None:
+    """Collapse per-row baseline-rate files into the canonical aggregate.
+
+    Round-28 fix (Fix C, Codex Major #1): the per-row writes in
+    elicit_v2.write_row_outputs now land under
+    ``source_baseline_rates/<row>.json`` (race-free). This function reads
+    every per-row file and writes the legacy aggregate
+    ``source_baseline_rates.json`` with shape ``{"rows": {row_id: {...}},
+    "metadata": {...}}`` that the off-pod ``compare()`` + the v2 predictors
+    expect. Called from ``_v2_elicitation_prestep`` AFTER every row future
+    has joined, so the read-modify-write race on the shared aggregate is
+    structurally impossible. Idempotent: re-runs simply re-aggregate
+    whatever per-row files currently exist on disk.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        reproducibility_metadata,
+    )
+
+    rates_dir = out_root / "source_baseline_rates"
+    if not rates_dir.exists():
+        return  # nothing to aggregate (no rows elicited yet)
+    rows: dict[str, dict] = {}
+    for p in sorted(rates_dir.glob("*.json")):
+        rows[p.stem] = json.loads(p.read_text())
+    (out_root / "source_baseline_rates.json").write_text(
+        json.dumps(
+            {"rows": rows, "metadata": reproducibility_metadata()},
+            indent=1,
+        )
+    )
+    logger.info(
+        "[phase=elicitation] aggregated %d per-row baseline files -> source_baseline_rates.json",
+        len(rows),
+    )
+
+
 def _v2_elicitation_prestep(args, phase: str, cells: list) -> list:
     """Run per-row elicitation subprocesses, then drop sub-quota rows.
 
@@ -829,6 +865,17 @@ def _v2_elicitation_prestep(args, phase: str, cells: list) -> list:
                 f"{len(failures)} elicitation row(s) failed: {[r for r, _ in failures]} — "
                 f"first error: {failures[0][1]!r}"
             ) from failures[0][1]
+
+    # Round-28 fix (Fix C, Codex Major #1): aggregate per-row baseline-rate
+    # files into the canonical source_baseline_rates.json AFTER all row
+    # futures have joined. The per-worker writes in elicit_v2.write_row_outputs
+    # now land under output_root()/source_baseline_rates/<row>.json (race-
+    # free), and this aggregation collapses them into one file with the
+    # legacy { "rows": {row_id: {...}}, "metadata": {...} } shape that the
+    # off-pod compare() + the v2 predictors already consume. Idempotent:
+    # re-runs of the prestep simply re-aggregate whatever per-row files
+    # currently exist on disk.
+    _aggregate_source_baseline_rates(output_root())
 
     dropped = [r for r in elicit_rows if row_quota_met(r) is False]
     if dropped:
@@ -1244,6 +1291,26 @@ def bulk_upload_phase(phase: str) -> None:  # noqa: C901 — per-tree linear upl
         # Fail-loud BEFORE any deletion (upload-policy: never delete an
         # unverified artifact).
         raise RuntimeError(f"Upload verification gaps ({len(gaps)}): {gaps[:5]} — see {gaps_path}")
+    # Round-28 fix (Fix E, Codex Minor #2): the v2-root upload_folder above
+    # listed upload_gaps_*.json in its allow-patterns but ran BEFORE this
+    # gaps file was written, so the gap manifest never made it to HF. Push
+    # it now as a separate small commit so off-pod consumers (the verifier
+    # + the analyzer) can see clean = empty gaps without sshing the pod.
+    if phase == "p3" and _v2_active():
+        try:
+            api.upload_file(
+                path_or_fileobj=str(gaps_path),
+                path_in_repo=f"{data_prefix}/results/{gaps_path.name}",
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                commit_message=f"issue #545 {phase}: upload-gaps manifest ({len(gaps)} gaps)",
+            )
+        except (OSError, ValueError, RuntimeError) as exc:
+            # Non-fatal: the local gaps_path is the authoritative record;
+            # the verifier reads it back via the cells_dir mirror too. Log
+            # and continue so a transient Hub blip never blocks an
+            # otherwise-clean upload phase.
+            logger.warning("upload_file(upload_gaps) failed (non-fatal): %s", exc)
     logger.info("[phase=upload_%s] verified clean", phase)
 
     # Post-verification cleanup (round-1 Codex major): delete the verified

@@ -244,6 +244,7 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
         dose_path = cell_dir / "dose_select.json"
         ceiling = None
         dose_base = 0.0
+        dose: dict = {}
         if dose_path.exists():
             dose = json.loads(dose_path.read_text())
             ceiling = dose.get("ceiling")
@@ -265,7 +266,7 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             # parent budget, single-checkpoint cells): unknown — never
             # silently flagged failed on an absolute-scale misread.
             implant_failed = None
-        metadata[cell_id] = {
+        cell_meta: dict = {
             "row": row_id,
             "arm": arm,
             "seed": seed,
@@ -279,6 +280,44 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
             "implant_failed": implant_failed,
             "columns_present": sorted(cell_entry),
         }
+        if v2_output_active() and dose_path.exists():
+            # Round-28 fix (Fix A part 2, both reviewers' critical blocker):
+            # propagate the v2 dose-select fields that compare()._row_strength
+            # + the §4.3 partial-Spearman covariate path consume — they live
+            # in dose_select.json but were never threaded through to
+            # cell_metadata_v2.json, so the off-pod comparison saw {} and
+            # silently produced n_confirmatory_pairs=0.
+            #
+            # Fail-loud ONLY when dose_select.json exists but is missing the
+            # v2 fields (a v1-shape file produced under a v2 namespace —
+            # that's the production bug class this guards). Cells without a
+            # dose_select.json at all are the reuse-adapter / fixed-parent-
+            # budget path (single-checkpoint, no nearest-strength selection
+            # ran) and are handled by silently omitting the v2 fields — the
+            # cell drops out of compare()'s confirmatory universe via the
+            # _row_strength achieved_strength=None branch, never silently
+            # poisons it. The test stub TestV2FallbackHonorsCommittedRoot
+            # exercises exactly this no-dose_select branch.
+            required_v2_fields = (
+                "achieved_strength",
+                "confirmatory_eligible",
+                "delta_strength",
+                "base",
+                "v1_target_strength",
+            )
+            missing = [k for k in required_v2_fields if k not in dose]
+            if missing:
+                raise RuntimeError(
+                    f"v2 dose_select.json for {cell_id} missing required field(s) "
+                    f"{missing} — the off-pod compare() reads these from "
+                    "cell_metadata_v2.json[cells][cell_id] and silently produces "
+                    "n_confirmatory_pairs=0 when they are absent. Re-run the "
+                    "dose-select step under _v2_active() so the nearest-strength "
+                    "pairing record lands. Found keys: " + repr(sorted(dose))
+                )
+            for k in required_v2_fields:
+                cell_meta[k] = dose[k]
+        metadata[cell_id] = cell_meta
         matrix[cell_id] = cell_entry
         # Checkpoint-per-cell persistence: rewrite after each cell.
         matrix_path.write_text(

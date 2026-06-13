@@ -689,17 +689,31 @@ def write_row_outputs(res: ElicitationResult) -> None:
     }
     (elic_dir / f"{res.row_id}_pool_meta.json").write_text(json.dumps(pool_meta, indent=1))
 
-    # Aggregate baseline-rate freeze (read-modify-write; per-row entries land
-    # the moment the row's elicitation completes — BEFORE its training).
-    rates_path = output_root() / "source_baseline_rates.json"
-    rates = json.loads(rates_path.read_text()) if rates_path.exists() else {"rows": {}}
-    rates["rows"][res.row_id] = {
-        **baseline,
-        "alignment_conflict": brief.alignment_conflict,
-        "frozen_before_training": True,
-    }
-    rates["metadata"] = reproducibility_metadata()
-    rates_path.write_text(json.dumps(rates, indent=1))
+    # Per-row baseline-rate freeze (race-free): every row writes its own
+    # file under source_baseline_rates/<row>.json the moment elicitation
+    # completes. The dispatcher's _v2_elicitation_prestep aggregates the
+    # per-row files into the canonical source_baseline_rates.json AFTER all
+    # row futures join — see scripts/issue545_sweep.py.
+    #
+    # Round-28 fix (Fix C, Codex Major #1): the prior read-modify-write of a
+    # SHARED source_baseline_rates.json inside ThreadPoolExecutor workers
+    # had no lock. Concurrent rows that called this function within the
+    # same millisecond clobbered each other's edits, silently dropping rows
+    # from the aggregate. Per-row files + post-join aggregation removes the
+    # read-modify-write altogether: each worker only writes its OWN file.
+    rates_dir = output_root() / "source_baseline_rates"
+    rates_dir.mkdir(parents=True, exist_ok=True)
+    rates_dir.joinpath(f"{res.row_id}.json").write_text(
+        json.dumps(
+            {
+                **baseline,
+                "alignment_conflict": brief.alignment_conflict,
+                "frozen_before_training": True,
+                "metadata": reproducibility_metadata(),
+            },
+            indent=1,
+        )
+    )
 
     if res.quota_verdict.get("quota_met"):
         out = corpora_dir() / f"onpolicy_{res.row_id}.jsonl"
