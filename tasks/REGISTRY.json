@@ -2255,8 +2255,8 @@
     "431": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/431",
-      "status": "proposed",
+      "path": "tasks/on_hold/431",
+      "status": "on_hold",
       "title": "Rebalance contrastive negatives + vary trigger key (follow-up to #382)"
     },
     "432": {
