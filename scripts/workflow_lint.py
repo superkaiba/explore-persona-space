@@ -81,6 +81,25 @@ Behaviours:
   and the walk was widened from the issue SKILL.md to ALL skills'
   SKILL.md files on the chain's final fix (the promote-clean-result
   ``epm:consolidated-into`` posting site was unlinted until then).
+* ``--check-agent-model-pins`` (also bundled into the no-flags default
+  run): parse the YAML frontmatter ``model: "..."`` of every
+  ``.claude/agents/*.md`` and FAIL on any pin whose base id is unknown
+  OR whose ``[1m]`` suffix is grafted onto a base that does not have a
+  1M-context variant (the d07424178 / task #545 incident class,
+  2026-06-09→2026-06-12). The d07424178 commit bulk-renamed all 25
+  agent pins to ``claude-fable-5[1m]`` — fable-5 IS a real Anthropic
+  model id, BUT the ``[1m]`` suffix (a deployment-routing identifier
+  per the claude-api skill's model-migration.md bucket-4 guidance) was
+  not a valid variant for fable-5, so EVERY subagent died at spawn
+  ("There's an issue with the selected model … may not exist") for ~72
+  hours fleet-wide until the revert (00566584c). Sibling rule to
+  CLAUDE.md / .claude/rules/code-style.md "Never hardcode an invented
+  Claude/Anthropic model id" — that bullet covers hardcoded model
+  strings in Python; this check covers agent-frontmatter pins, which
+  the runtime hits on every subagent spawn. Allowlist drifts slowly
+  (one entry per new Anthropic major-version release) and lives in
+  :data:`AGENT_MODEL_ALLOWLIST`; the source of truth is the global
+  ``claude-api`` skill's ``shared/models.md``.
 
 Exit codes:
 
@@ -326,6 +345,58 @@ CVD_PIN_GPU_ARG_RE = re.compile(r"(?:--gpu-id\b|\+gpu_id=)")
 CVD_PIN_CVD_ASSIGN_RE = re.compile(r"\bCUDA_VISIBLE_DEVICES=")
 CVD_PIN_WAIVER_RE = re.compile(r"#\s*CVD_PIN_EXEMPT\s*:\s*(.+?)\s*$")
 CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
+
+# `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
+# frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
+# at subagent spawn. A pin that is unknown OR carries a `[1m]` suffix on a
+# base id without a 1M-context variant fails AT SPAWN ("There's an issue
+# with the selected model … may not exist") and kills EVERY subagent in
+# EVERY session fleet-wide until reverted — the d07424178 / task #545
+# incident class (2026-06-09 → 2026-06-12, ~72h fleet-wide outage from a
+# single commit pinning all 25 agents to `claude-fable-5[1m]`, where
+# fable-5 is real but its `[1m]` variant is not).
+#
+# Allowlist source of truth: the global ``claude-api`` skill's
+# ``shared/models.md`` ("Model Descriptions" section). Each entry carries
+# the base id + whether a `[1m]` (1M-context routing) variant exists for
+# it — opus-4-5/4-6/4-7/4-8 expose a `[1m]` tier; fable-5/mythos-5/
+# sonnet-4-6 already have 1M native context (no `[1m]` suffix supported);
+# haiku-4-5/sonnet-4-5 are 200K-context tiers (no `[1m]` suffix).
+# Deprecated / retired base ids are not listed — pinning to a deprecated
+# id is also flagged as "unknown". Update this list when Anthropic ships
+# a new major version (a low-frequency event; weigh against the cost of
+# letting a typo'd or aspirational pin take down every subagent silently).
+#
+# Each tuple is (base_id, supports_1m_suffix).
+AGENT_MODEL_ALLOWLIST: tuple[tuple[str, bool], ...] = (
+    # Opus tier — 1M-context [1m] variant exposed for each.
+    ("claude-opus-4-5", True),
+    ("claude-opus-4-6", True),
+    ("claude-opus-4-7", True),
+    ("claude-opus-4-8", True),
+    # Fable / Mythos — 1M native context, no [1m] suffix. Mythos-5 is a real,
+    # active id but is Project-Glasswing-only; most callers should pin fable-5
+    # (a non-Glasswing org pinning mythos-5 would still fail at spawn — the
+    # harness check catches that regardless of this allowlist).
+    ("claude-fable-5", False),
+    ("claude-mythos-5", False),
+    # Sonnet — 4-6 has 1M native context (no suffix); 4-5 is 200K.
+    ("claude-sonnet-4-5", False),
+    ("claude-sonnet-4-6", False),
+    # Haiku — 200K context tier, no [1m] suffix.
+    ("claude-haiku-4-5", False),
+)
+# Parse the YAML frontmatter ``model: "..."`` line. Permissive on quoting
+# (double, single, or bare) — the harness accepts all three. The captured
+# group is the full id string including any [1m] suffix.
+AGENT_MODEL_PIN_RE = re.compile(
+    r"""^model:\s*["']?(?P<value>[A-Za-z0-9_.\-\[\]]+)["']?\s*$""", re.MULTILINE
+)
+# Split the captured id into (base, suffix). Suffix is the literal `[1m]`
+# (the only suffix the harness currently exposes for a model pin); any
+# other tail is treated as part of an unknown base id and flagged.
+AGENT_MODEL_1M_SUFFIX = "[1m]"
+
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
 # be anchored to a documented gate or marked as anti-pattern documentation.
@@ -1281,6 +1352,142 @@ def check_marker_registry(
     return errors
 
 
+def _split_agent_model_pin(pin: str) -> tuple[str, str]:
+    """Split a frontmatter model-pin string into ``(base_id, suffix)``.
+
+    Recognized suffix: the literal :data:`AGENT_MODEL_1M_SUFFIX` (``"[1m]"``),
+    the only routing-suffix the harness exposes on a model pin today. Any
+    other tail stays glued to the base — that's the desired behavior, so
+    that a typo like ``claude-opus-4-7[2m]`` is reported as an unknown
+    base rather than masked as a known base with an unrecognized suffix.
+
+    Examples::
+
+        "claude-opus-4-7[1m]"   -> ("claude-opus-4-7", "[1m]")
+        "claude-fable-5"        -> ("claude-fable-5", "")
+        "claude-fable-5[1m]"    -> ("claude-fable-5", "[1m]")
+        "claude-foo-bar"        -> ("claude-foo-bar", "")
+    """
+    if pin.endswith(AGENT_MODEL_1M_SUFFIX):
+        return pin[: -len(AGENT_MODEL_1M_SUFFIX)], AGENT_MODEL_1M_SUFFIX
+    return pin, ""
+
+
+def _iter_agent_pin_target_files(repo_root: Path) -> list[Path]:
+    """Return every ``.claude/agents/*.md`` under ``repo_root`` whose
+    path is NOT in a sibling worktree (same exclusion rule as
+    :func:`_iter_ask_target_files`)."""
+    agents_root = repo_root / ".claude" / "agents"
+    if not agents_root.exists():
+        return []
+    current_prefix = _other_worktree_prefix(repo_root)
+    return sorted(
+        p
+        for p in agents_root.glob("*.md")
+        if p.is_file() and not _is_other_worktree_path(p, current_prefix)
+    )
+
+
+def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/*.md`` and FAIL on any ``model: "..."``
+    frontmatter pin whose base id is unknown OR whose ``[1m]`` suffix is
+    not supported on that base.
+
+    The harness rejects any unknown pin at subagent spawn with
+    ``"There's an issue with the selected model (<id>). It may not exist
+    or you may not have access to it."`` — and because EVERY agent file
+    carries a pin, a single bad-pin commit kills every subagent in every
+    session fleet-wide until reverted. The d07424178 incident
+    (2026-06-09) bulk-renamed all 25 agents to ``claude-fable-5[1m]``:
+    fable-5 is a real Anthropic id, but its ``[1m]`` routing variant is
+    not exposed (fable-5 has 1M native context, no separate [1m] tier).
+    Every spawn failed for ~72h fleet-wide until the revert (00566584c).
+
+    Rule, per pin (the file's ``model:`` frontmatter line):
+
+    1. Split into ``(base_id, suffix)`` via
+       :func:`_split_agent_model_pin`.
+    2. If ``base_id`` is not in :data:`AGENT_MODEL_ALLOWLIST` → FAIL
+       (typo, aspirational id, or a deprecated id no longer recognized
+       by the harness).
+    3. If ``suffix == "[1m]"`` and the base's allowlist tuple has
+       ``supports_1m_suffix = False`` → FAIL (the exact d07424178
+       pattern: a real base, an invalid routing suffix).
+    4. Otherwise PASS.
+
+    Files with no ``model:`` line are silently skipped — agents may
+    legitimately inherit their model from the parent (no pin = no
+    runtime contract to validate). A file with multiple ``model:`` lines
+    in its frontmatter is unusual; only the FIRST is checked (the
+    harness reads first-match too).
+
+    Sibling rule to ``.claude/rules/code-style.md`` "Never hardcode an
+    invented Claude/Anthropic model id" — that bullet covers hardcoded
+    model strings in Python code; this check covers agent-frontmatter
+    pins. The :data:`AGENT_MODEL_ALLOWLIST` source of truth is the
+    global ``claude-api`` skill's ``shared/models.md`` "Model
+    Descriptions" + "Bucket 4" suffix-variant guidance in
+    ``shared/model-migration.md``.
+
+    ``roots`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical agent tree under
+    :data:`_REPO_ROOT` (excluding sibling worktrees).
+    """
+    base_to_1m_capability: dict[str, bool] = {b: ok for (b, ok) in AGENT_MODEL_ALLOWLIST}
+    if roots is None:
+        targets = _iter_agent_pin_target_files(_REPO_ROOT)
+    else:
+        targets = []
+        for root in roots:
+            if root.is_file():
+                targets.append(root)
+            else:
+                targets.extend(p for p in root.glob("**/*.md") if p.is_file())
+        targets = sorted(targets)
+    errors: list[str] = []
+    for path in targets:
+        text = path.read_text()
+        match = AGENT_MODEL_PIN_RE.search(text)
+        if match is None:
+            # No pin = inherits parent's model = no runtime contract to
+            # validate. Silently skipped (a missing pin is not a bug;
+            # CLAUDE.md "Prompt-cache key discipline" explicitly allows it).
+            continue
+        # Compute the 1-based line number of the captured value so the
+        # error message points to the actual ``model:`` line, not just
+        # the file.
+        lineno = text.count("\n", 0, match.start()) + 1
+        pin = match.group("value")
+        base_id, suffix = _split_agent_model_pin(pin)
+        if base_id not in base_to_1m_capability:
+            known = ", ".join(sorted(base_to_1m_capability))
+            errors.append(
+                f"{path}:{lineno}: frontmatter pins 'model: \"{pin}\"' whose "
+                f"base id '{base_id}' is not in the allowlist. The harness "
+                f"rejects unknown pins at subagent spawn ('may not exist or "
+                f"you may not have access to it') and EVERY subagent dies "
+                f"fleet-wide until reverted (d07424178 incident, task #545). "
+                f"Allowed bases: {known}. If a new Anthropic model just "
+                f"shipped, update AGENT_MODEL_ALLOWLIST in "
+                f"scripts/workflow_lint.py — source of truth is the global "
+                f"claude-api skill's shared/models.md."
+            )
+            continue
+        if suffix == AGENT_MODEL_1M_SUFFIX and not base_to_1m_capability[base_id]:
+            errors.append(
+                f"{path}:{lineno}: frontmatter pins 'model: \"{pin}\"' but "
+                f"base '{base_id}' does not expose a '[1m]' 1M-context "
+                f"routing variant (it either has 1M native context with no "
+                f"suffix, or is a 200K-context tier). The harness rejects "
+                f"the suffixed id at subagent spawn and EVERY subagent dies "
+                f"fleet-wide until reverted (d07424178 incident, task #545: "
+                f"all 25 agents pinned to 'claude-fable-5[1m]' → ~72h "
+                f"outage). Pin '{base_id}' alone, or switch to a base whose "
+                f"AGENT_MODEL_ALLOWLIST tuple has supports_1m_suffix=True."
+            )
+    return errors
+
+
 def render_marker_kinds_table(workflow: WorkflowYaml) -> str:
     """Render the auto-generated marker kinds table for ``markers.md``."""
     lines = [
@@ -1488,6 +1695,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "2026-06-10; agent-spec scope added in the follow-up). Bundled "
         "into --check-references.",
     )
+    parser.add_argument(
+        "--check-agent-model-pins",
+        action="store_true",
+        help="Verify every .claude/agents/*.md frontmatter 'model: \"...\"' "
+        "pin has a known base id AND a valid suffix (only '[1m]' allowed, "
+        "only on opus-4-5/4-6/4-7/4-8). Closes the d07424178 / task #545 "
+        "incident class (2026-06-09 -> 2026-06-12): all 25 agents bulk-"
+        "pinned to 'claude-fable-5[1m]' killed every subagent fleet-wide "
+        "for ~72h until reverted. Sibling to the code-style 'never "
+        "hardcode an invented model id' rule. Bundled into the no-flags "
+        "default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -1515,6 +1734,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
         or args.check_marker_registry
+        or args.check_agent_model_pins
     )
 
     errors: list[str] = []
@@ -1556,6 +1776,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dispatcher_cvd_pin())
     if args.check_marker_registry and not args.check_references:
         errors.extend(check_marker_registry(workflow))
+    if args.check_agent_model_pins or no_flags:
+        errors.extend(check_agent_model_pins())
 
     if errors:
         for err in errors:
