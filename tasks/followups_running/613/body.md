@@ -21,7 +21,7 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
-**Methodology:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/6fc8edcf44bc0535240258684be55c6d01cfa651/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
+**Methodology:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/b9f4e7b1a760acf58eb7fc69046fda4743156cc9/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
 
 ## Human TL;DR
 
@@ -282,4 +282,4 @@ uv run python scripts/i613_sep_figures.py   # -> figures/issue_613/sep_ablation_
   > Filed automatically by the Step 9b autonomous follow-up block on parent #601 (proposal 3 of the 2026-06-12 epm:follow-ups round; question_relation: substantially-different). Not auto-spawned — awaiting manual triage.
 
   The sep-ablation round's `epm:followup-scope v1` (source: proposer-9b) hypothesis statement: "with coincident slots the full-stop-token boost competes in the marker's own softmax; alive negatives should cut marker-slot leakage 2.5-3.6x and plausibly pull the source below the co-landing band; #471 (the rig that DID show a restoring force) uses exactly this no-separator construction; falsified if the no-sep flag A/B still co-lands."
-- **Methodology reference:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/6fc8edcf44bc0535240258684be55c6d01cfa651/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
+- **Methodology reference:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/b9f4e7b1a760acf58eb7fc69046fda4743156cc9/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
