@@ -741,12 +741,25 @@ def _vllm_engine(max_model_len: int, *, enable_lora: bool = False):
             "process running this phase; uv run scrubs CVD — invoke "
             "'.venv/bin/python scripts/i628_dispatch.py --phase <p> ...' directly."
         )
+    # enforce_eager=True (#628 round 5 fix, 2026-06-13): vLLM 0.11.0 mixed
+    # PIECEWISE+FULL cudagraph capture (compilation_config.cudagraph_mode=[2,1])
+    # captures cleanly + reports `Graph capturing finished` + `init engine took
+    # 27.78s` + `Supported_tasks: ['generate']`, then EngineCore_DP0 dies
+    # silently ~2s later before any prompt is processed — the
+    # ZeroDivisionError in vllm/entrypoints/llm.py:1610 is a downstream symptom
+    # (total_in_toks/elapsed with elapsed=0 because the engine died). Verified
+    # on H100 80GB + torch 2.8.0+cu128 (attempt 9 on RunPod pod-628 +
+    # attempts 5-8 on GCP A100). enforce_eager=True skips ALL cudagraph
+    # capture; cost is ~10-15% inference slowdown for greedy generation, no
+    # correctness change. Override via VLLM_ENFORCE_EAGER=0 to re-enable
+    # cudagraphs once the upstream bug is fixed.
+    enforce_eager = os.environ.get("VLLM_ENFORCE_EAGER", "1") != "0"
     return LLM(
         model=QWEN_ID,
         dtype="bfloat16",
         gpu_memory_utilization=float(os.environ.get("VLLM_GPU_MEM_UTIL", "0.85")),
         max_model_len=max_model_len,
-        enforce_eager=False,
+        enforce_eager=enforce_eager,
         enable_lora=enable_lora,
         max_lora_rank=32,
         seed=SEED,
