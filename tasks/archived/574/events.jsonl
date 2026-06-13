@@ -1,2 +1,3 @@
 {"ts": "2026-06-11T02:57:35Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "analysis"}
 {"ts": "2026-06-13T22:20:29Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "archived"}
+{"ts": "2026-06-13T22:20:30Z", "kind": "epm:note", "version": 1, "by": "unknown", "note": "Archived as resolved-by-time per user decision (PM session). Every thread the recovery audit would verify reached a good terminal state: #534 archived w/ clean-result, #532/#464/#505 all parked at awaiting_promotion, no idle pods burning. Recovery succeeded; nothing left to rescue."}
