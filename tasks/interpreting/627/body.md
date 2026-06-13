@@ -4,7 +4,7 @@ title: Controlling for implantation strength shrinks but does not erase the cont
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:37:50Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 601
 origin_prompt: 'can we also test leakage as a % of implantation?
 
