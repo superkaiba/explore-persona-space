@@ -194,3 +194,65 @@ def test_finalize_dry_run_downgrades_even_on_full_coverage(monkeypatch):
     assert complete is True
     assert len(captured) == 1
     assert captured[0]["kind"] == "epm:progress"
+
+
+# ── round-8 fix: dry-run from clean tree must NOT suppress [phase=done] ─────
+
+
+def test_finalize_dry_run_clean_tree_emits_progress_and_returns_true(monkeypatch):
+    """Closes CONCERN ``dry-run-finalize-suppresses-done`` (Codex r7).
+
+    Pre-r8: ``_finalize`` probed ``_cells_with_trained_adapter(planned)``
+    BEFORE downgrading the sentinel kind for ``args.dry_run``. From a
+    clean tree (no adapters on disk) the probe returns ``[]``, so
+    ``coverage_complete=False`` and ``main()`` suppresses ``[phase=done]``
+    — even though dry-run was an explicit "enumerate + spawn workers,
+    no GPU work" contract that must terminate cleanly.
+
+    Post-r8: ``_finalize`` short-circuits the disk probe for
+    ``args.dry_run`` (treats realized == planned), still emits
+    ``epm:progress`` (not ``epm:results`` — same live-poller safety),
+    and returns ``True`` so ``[phase=done]`` fires.
+    """
+    import i628_dispatch as d
+
+    args = _args(dry_run=True)
+    planned = d._cells(args)
+    assert len(planned) > 0, "full sweep should enumerate >0 cells"
+
+    # Clean tree: NO adapters exist on disk. Pre-r8 this would have made
+    # _finalize report coverage_complete=False and main() would suppress
+    # [phase=done]. The fix is that _finalize must NOT call this on a
+    # dry-run -- the short-circuit replaces the probe entirely. We use a
+    # sentinel that raises if reached so the test is unambiguous.
+    def _must_not_be_called(cells):
+        raise AssertionError(
+            "_cells_with_trained_adapter must NOT be probed during dry-run "
+            "(closes dry-run-finalize-suppresses-done): the disk probe is "
+            "the bug -- short-circuit before it."
+        )
+
+    monkeypatch.setattr(d, "_cells_with_trained_adapter", _must_not_be_called)
+    captured = _capture_sentinels(monkeypatch, d)
+
+    complete = d._finalize(args)
+    assert complete is True, (
+        "dry-run from a clean tree must report coverage_complete=True so "
+        "main() fires [phase=done]; pre-r8 this returned False"
+    )
+
+    assert len(captured) == 1
+    rec = captured[0]
+    assert rec["kind"] == "epm:progress", (
+        f"dry-run still downgrades the sentinel kind for live-poller safety; got {rec['kind']!r}"
+    )
+    body = json.loads(rec["note"])
+    # Coverage reads as complete (paper card -- nothing was trained).
+    assert body["coverage"]["complete"] is True
+    assert body["coverage"]["realized"] == len(planned)
+    assert body["coverage"]["planned"] == len(planned)
+    assert body["coverage"]["missing"] == []
+    # Card advertises the FULL planned grid (nothing was actually trained,
+    # but dry-run is a paper enumeration -- the live-poller-safety
+    # downgrade above is what stops a real poll from draining this).
+    assert len(body["reproducibility_card"]["adapter_paths"]) == len(planned)

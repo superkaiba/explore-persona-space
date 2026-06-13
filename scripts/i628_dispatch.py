@@ -2475,9 +2475,26 @@ def _finalize(args) -> bool:
     Dry-run / smoke still downgrade unconditionally to ``epm:progress``
     (a live ``poll_pipeline.py`` would otherwise drain a smoke sentinel
     as real results).
+
+    Dry-run short-circuit (#628 r8, closes CONCERN
+    ``dry-run-finalize-suppresses-done``): a dry-run from a clean tree
+    has no trained adapters on disk, so ``_cells_with_trained_adapter``
+    would return ``[]`` and the function would return ``False``, which
+    suppresses ``[phase=done]`` at the caller. But the dry-run contract
+    is that it MUST terminate cleanly (it never trained anything, so
+    there's nothing to be incomplete about). Skip the disk probe for
+    dry-run: treat planned == realized, emit ``epm:progress`` (not
+    ``epm:results`` — same downgrade as the live-poller safety above),
+    and return ``True`` so the caller fires ``[phase=done]``.
     """
     planned = _cells(args)
-    realized = _cells_with_trained_adapter(planned)
+    # Dry-run short-circuit: terminates cleanly with no disk artifacts;
+    # advertise the FULL planned grid (no real adapters were trained, so
+    # ``adapter_paths`` is a paper card for completeness only). The
+    # ``not args.dry_run`` arm of ``full_results`` below still forces
+    # ``kind = epm:progress`` so a live poll never drains this sentinel
+    # as real results.
+    realized = list(planned) if args.dry_run else _cells_with_trained_adapter(planned)
     realized_set = set(realized)
     missing = [_cell_slug(*c) for c in planned if c not in realized_set]
     coverage_complete = not missing
