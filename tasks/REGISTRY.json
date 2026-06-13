@@ -411,8 +411,8 @@
     "155": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/155",
-      "status": "proposed",
+      "path": "tasks/on_hold/155",
+      "status": "on_hold",
       "title": "Do capabilities survive through everything"
     },
     "156": {
