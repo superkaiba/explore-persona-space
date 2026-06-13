@@ -3020,8 +3020,8 @@
     "522": {
       "has_clean_result": true,
       "kind": "analysis",
-      "path": "tasks/reviewing/522",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/522",
+      "status": "awaiting_promotion",
       "title": "The full-response JS predictor scores well on the full panel largely because of the stylized vs nonstylized split (LOW confidence)"
     },
     "523": {
