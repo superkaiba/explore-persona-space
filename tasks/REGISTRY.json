@@ -2500,8 +2500,8 @@
       "goal": "Test whether persona residual-stream cosine similarity and answer-distribution JS/KL divergence predict #456's on-policy marker-leakage across the 28-persona panel (primary DV: on-policy emission rate; secondary: endpos log p(\u203b)), matching the #207/#311 predictor recipe.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/461",
-      "status": "proposed",
+      "path": "tasks/on_hold/461",
+      "status": "on_hold",
       "title": "Predict #456 on-policy marker leakage from persona cosine + JS/KL divergence (q:leak-predictor)"
     },
     "462": {
