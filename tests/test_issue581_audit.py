@@ -34,25 +34,21 @@ spec.loader.exec_module(audit)
 # ---------------------------------------------------------------------------
 
 # Real-shape (no fixture marker, ≥30 chars after the provider prefix) — these
-# MUST classify high-confidence and produce FAIL.
+# MUST classify high-confidence and produce FAIL.  Each literal carries its
+# OWN `# pragma: allowlist secret` so line-oriented secret scanners see the
+# allowlist on the same line as the matchable substring (Codex r2 Minor).
 FAKE_HF_TOKEN_REAL_SHAPE = "hf_abcdefghijklmnopqrstuvwxyz0123456789"  # pragma: allowlist secret
-FAKE_HF_TOKEN_REAL_SHAPE_TWO = (  # pragma: allowlist secret
-    "hf_zyxwvutsrqponmlkjihgfedcba9876543210ZYXW"
+FAKE_HF_TOKEN_REAL_SHAPE_TWO = (
+    "hf_zyxwvutsrqponmlkjihgfedcba9876543210ZYXW"  # pragma: allowlist secret
 )
-FAKE_ANTHROPIC_KEY_REAL_SHAPE = (  # pragma: allowlist secret
-    "sk-ant-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+FAKE_ANTHROPIC_KEY_REAL_SHAPE = (
+    "sk-ant-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # pragma: allowlist secret
 )
-FAKE_OPENAI_KEY_REAL_SHAPE = (  # pragma: allowlist secret
-    "sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-)
-FAKE_OPENAI_PROJ_KEY_REAL_SHAPE = (  # pragma: allowlist secret
-    "sk-proj-aaaaaaaaaaaaaaaaaaaaaaaaaa"
-)
-FAKE_RUNPOD_KEY_REAL_SHAPE = (  # pragma: allowlist secret
-    "rpa_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789X"
-)
-FAKE_WANDB_KEY_REAL_SHAPE_40HEX = (  # pragma: allowlist secret
-    "abcdef0123456789abcdef0123456789abcdef01"
+FAKE_OPENAI_KEY_REAL_SHAPE = "sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"  # pragma: allowlist secret
+FAKE_OPENAI_PROJ_KEY_REAL_SHAPE = "sk-proj-aaaaaaaaaaaaaaaaaaaaaaaaaa"  # pragma: allowlist secret
+FAKE_RUNPOD_KEY_REAL_SHAPE = "rpa_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789X"  # pragma: allowlist secret
+FAKE_WANDB_KEY_REAL_SHAPE_40HEX = (
+    "abcdef0123456789abcdef0123456789abcdef01"  # pragma: allowlist secret
 )
 
 # Fixture-marker shapes — these MUST classify low-confidence on the env-assign
@@ -297,3 +293,203 @@ def test_end_to_end_real_shaped_secret_yields_FAIL_via_compose(tmp_path: Path) -
     assert "Hugging Face token" in report
     # And the high-confidence hit table is present.
     assert "High-confidence hits" in report
+
+
+# ---------------------------------------------------------------------------
+# Round-3 plan-deviation coverage (Codex r2 Major findings + AC3 byte offset).
+# ---------------------------------------------------------------------------
+
+
+def test_hits_record_byte_offset_from_regex_start() -> None:
+    """Plan AC3: every hit records the offending byte offset within the JSONL row.
+
+    Round-2 Codex review flagged this as a Major (the reconciler upheld it as
+    non-blocking — line_no satisfies the OR clause — but it's still a real
+    standing gap, fix lifted into r3).  Asserts the per-match `byte_offset` is
+    populated from `re.Match.start()` so multiple hits on the same row are
+    individually pin-pointable.
+    """
+    prefix = "prelude "  # 8 chars
+    line = _evt(f"{prefix}HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} more text")
+    hits = audit.scan_line(1, line)
+
+    # The `hf` shape hit and the `env-assign:HF_TOKEN` hit MUST both carry a
+    # non-negative byte offset.
+    by_class = {h.key_class: h for h in hits}
+    assert by_class["hf"].byte_offset >= 0
+    assert by_class["env-assign:HF_TOKEN"].byte_offset >= 0
+    # The two offsets must DIFFER (the `hf` shape starts after the env-var
+    # assignment's `HF_TOKEN=` prefix), proving each match's own start() is
+    # captured rather than a row-level constant.
+    assert by_class["hf"].byte_offset != by_class["env-assign:HF_TOKEN"].byte_offset
+
+    # The rendered hit text MUST surface the byte offset to the human reader
+    # (plan AC3: "report ... the offending byte offset / line number").
+    rendered = "\n".join(audit._render_hit(by_class["hf"]))
+    assert "byte offset" in rendered
+
+
+def test_required_action_lists_exact_rotation_steps_per_provider() -> None:
+    """Plan AC4: "the report MUST list the EXACT rotation steps Thomas needs to
+    take per leaked key" — provider labels are NOT steps.
+
+    Round-2 Codex review flagged the previous label-only rendering as the
+    binding Major; reconciler upheld it.  This test pins the fix per provider.
+    """
+    # One high-confidence shape hit per provider, all in one report.
+    high_hits = [
+        audit.Hit(
+            line_no=1,
+            event_ts="2026-01-01T00:00:00Z",
+            event_kind="epm:progress",
+            event_version=1,
+            key_class="hf",
+            match=FAKE_HF_TOKEN_REAL_SHAPE,
+            note_excerpt="leak",
+            confidence="high",
+            byte_offset=0,
+        ),
+        audit.Hit(
+            line_no=2,
+            event_ts="2026-01-01T00:00:00Z",
+            event_kind="epm:progress",
+            event_version=1,
+            key_class="wandb",
+            match=FAKE_WANDB_KEY_REAL_SHAPE_40HEX,
+            note_excerpt="leak",
+            confidence="high",
+            byte_offset=0,
+        ),
+        audit.Hit(
+            line_no=3,
+            event_ts="2026-01-01T00:00:00Z",
+            event_kind="epm:progress",
+            event_version=1,
+            key_class="runpod",
+            match=FAKE_RUNPOD_KEY_REAL_SHAPE,
+            note_excerpt="leak",
+            confidence="high",
+            byte_offset=0,
+        ),
+        audit.Hit(
+            line_no=4,
+            event_ts="2026-01-01T00:00:00Z",
+            event_kind="epm:progress",
+            event_version=1,
+            key_class="openai",
+            match=FAKE_OPENAI_KEY_REAL_SHAPE,
+            note_excerpt="leak",
+            confidence="high",
+            byte_offset=0,
+        ),
+        audit.Hit(
+            line_no=5,
+            event_ts="2026-01-01T00:00:00Z",
+            event_kind="epm:progress",
+            event_version=1,
+            key_class="anthropic",
+            match=FAKE_ANTHROPIC_KEY_REAL_SHAPE,
+            note_excerpt="leak",
+            confidence="high",
+            byte_offset=0,
+        ),
+    ]
+    report = audit.compose_report(999, Path("/tmp/events.jsonl"), high_hits, 5)
+
+    # Provider headings under Required action.
+    assert "### Rotate the Hugging Face token" in report
+    assert "### Rotate the WandB API key" in report
+    assert "### Rotate the RunPod API key" in report
+    assert "### Rotate the OpenAI API key" in report
+    assert "### Rotate the Anthropic API key" in report
+
+    # Each provider must contribute concrete, ordered rotation steps — the
+    # imperative verbs the plan demands.  Spot-check action verbs that label
+    # the steps cannot be confused with provider names alone.
+    assert "revoke the leaked token" in report  # hf
+    assert "reset the API key" in report  # wandb
+    assert "revoke the leaked key" in report  # runpod + openai + anthropic
+    # And the per-provider env-var update step lists EACH env var to update.
+    assert "HF_TOKEN=<new>" in report
+    assert "WANDB_API_KEY=<new>" in report
+    assert "RUNPOD_API_KEY=<new>" in report
+    assert "OPENAI_API_KEY=<new>" in report
+    assert "ANTHROPIC_API_KEY=<new>" in report
+
+    # And the post-rotation re-audit instruction must surface verbatim.
+    assert "re-run this audit" in report.lower()
+
+
+def test_env_assign_high_resolves_to_provider_steps() -> None:
+    """Plan AC4 + Codex r2 Major: an `env-assign:OPENAI_API_KEY` high hit must
+    resolve to OpenAI's rotation steps, NOT degrade to a generic
+    `env-assignment hit` label.
+    """
+    # Real-shaped value (no fixture marker, ≥30 chars) on an env-assign that
+    # the shape regex doesn't catch (format drift). The classify rule lifts
+    # this to `high` based on the value length alone.
+    drifted = "OpenAi_Ovsk8aPLB2nf3ZG7tU0XEMRWvY9JCkN6m"  # pragma: allowlist secret
+    h = audit.Hit(
+        line_no=42,
+        event_ts="2026-01-01T00:00:00Z",
+        event_kind="epm:progress",
+        event_version=1,
+        key_class="env-assign:OPENAI_API_KEY",
+        match=f"OPENAI_API_KEY={drifted}",
+        note_excerpt="leak",
+        confidence="high",
+        byte_offset=0,
+    )
+    report = audit.compose_report(123, Path("/tmp/events.jsonl"), [h], 50)
+
+    # Provider-resolution MUST kick in: the section heading + the env-var
+    # update step are the OpenAI ones, NOT a generic fallback.
+    assert "### Rotate the OpenAI API key" in report
+    assert "OPENAI_API_KEY=<new>" in report
+    # The retired generic fallback string must NOT appear.
+    assert "env-assignment hit" not in report
+    # The provider helper must agree (unit-level check).
+    assert audit._provider_for_hit(h) == "openai"
+
+
+def test_provider_for_hit_maps_every_env_assign_variant() -> None:
+    """`_provider_for_hit` resolves every supported env-assign target to its
+    provider class so the rotation table covers every plan-listed env var.
+    """
+    cases: dict[str, str] = {
+        "env-assign:HF_TOKEN": "hf",
+        "env-assign:HF_HUB_TOKEN": "hf",
+        "env-assign:WANDB_API_KEY": "wandb",
+        "env-assign:RUNPOD_API_KEY": "runpod",
+        "env-assign:OPENAI_API_KEY": "openai",
+        "env-assign:ANTHROPIC_API_KEY": "anthropic",
+        "hf": "hf",
+        "wandb": "wandb",
+        "runpod": "runpod",
+        "openai": "openai",
+        "anthropic": "anthropic",
+    }
+    for key_class, expected in cases.items():
+        h = audit.Hit(
+            line_no=1,
+            event_ts="t",
+            event_kind="k",
+            event_version=1,
+            key_class=key_class,
+            match="x",
+            note_excerpt="",
+        )
+        assert audit._provider_for_hit(h) == expected, key_class
+
+    # An unrecognised env-assign target falls through to "" so the report's
+    # "Unrecognised key class(es)" fallback section catches it.
+    unrecognised = audit.Hit(
+        line_no=1,
+        event_ts="t",
+        event_kind="k",
+        event_version=1,
+        key_class="env-assign:MYSTERY_KEY",
+        match="x",
+        note_excerpt="",
+    )
+    assert audit._provider_for_hit(unrecognised) == ""

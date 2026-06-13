@@ -98,6 +98,73 @@ class Hit:
     note_excerpt: str  # first 200 chars of the row's `note` field (or full row if note absent)
     confidence: str = "high"  # 'high' = likely real leak; 'low' = test fixture / placeholder
     triage_reason: str = ""  # why the confidence was lowered (empty for high)
+    byte_offset: int = -1  # match offset within the JSONL row (re.Match.start()); -1 = unknown
+
+
+# Env-assignment key -> provider class.  Used to resolve env-assign:HF_TOKEN /
+# env-assign:HF_HUB_TOKEN -> the canonical "hf" provider so the rotation
+# instructions table renders provider-specific steps for env-assign hits.
+ENV_ASSIGN_PROVIDER: dict[str, str] = {
+    "HF_TOKEN": "hf",
+    "HF_HUB_TOKEN": "hf",
+    "WANDB_API_KEY": "wandb",
+    "RUNPOD_API_KEY": "runpod",
+    "OPENAI_API_KEY": "openai",
+    "ANTHROPIC_API_KEY": "anthropic",
+}
+
+
+# Per-provider rotation steps.  Plan AC4 mandates "EXACT rotation steps Thomas
+# needs to take per leaked key" on FAIL — a provider label is not a step.
+ROTATION_STEPS: dict[str, list[str]] = {
+    "hf": [
+        "Visit https://huggingface.co/settings/tokens and revoke the leaked token.",
+        "Create a new token (Read or Read+Write to match the leaked one's role).",
+        "Update `.env`: `HF_TOKEN=<new>` (and `HF_HUB_TOKEN=<new>` if it's mirrored).",
+        "Verify: `set -a && source .env && set +a && uv run python -c "
+        '"from huggingface_hub import HfApi; print(HfApi().whoami())"`.',
+    ],
+    "wandb": [
+        "Visit https://wandb.ai/authorize and reset the API key.",
+        "Update `.env`: `WANDB_API_KEY=<new>`.",
+        'Re-login on the VM: `uv run python -c "import wandb; wandb.login()"`.',
+    ],
+    "runpod": [
+        "Visit https://www.runpod.io/console/user/settings → API Keys, revoke the leaked key.",
+        "Create a new RunPod API key.",
+        "Update `.env`: `RUNPOD_API_KEY=<new>`.",
+        "If any pods are live, re-sync host/port: `uv run python scripts/pod.py "
+        "config --refresh-from-api`.",
+    ],
+    "openai": [
+        "Visit https://platform.openai.com/api-keys and revoke the leaked key.",
+        "Create a new API key (Project key preferred; mirror the leaked key's role).",
+        "Update `.env`: `OPENAI_API_KEY=<new>`.",
+    ],
+    "anthropic": [
+        "Visit https://console.anthropic.com/settings/keys and revoke the leaked key.",
+        "Create a new API key.",
+        "Update `.env`: `ANTHROPIC_API_KEY=<new>`.",
+    ],
+}
+
+
+def _provider_for_hit(h: Hit) -> str:
+    """Return the canonical provider class for a hit's `key_class`.
+
+    Direct provider classes (`hf` / `wandb` / `runpod` / `openai` / `anthropic`)
+    map to themselves.  `env-assign:<VAR>` resolves via `ENV_ASSIGN_PROVIDER`
+    (so `env-assign:HF_TOKEN` → `hf`), which lets the Required-action section
+    render provider-specific rotation steps for env-assign hits exactly like
+    shape-pattern hits.  Returns `""` for an unrecognised key class.
+    """
+    cls = h.key_class
+    if cls in ROTATION_STEPS:
+        return cls
+    if cls.startswith("env-assign:"):
+        var = cls.split(":", 1)[1]
+        return ENV_ASSIGN_PROVIDER.get(var, "")
+    return ""
 
 
 def _classify_env_assign(var: str, value: str) -> tuple[str, str]:
@@ -149,10 +216,22 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
     def trunc(m: str) -> str:
         return m if len(m) <= 80 else (m[:77] + "...")
 
-    # Key-shape patterns.
+    # Key-shape patterns.  Record `m.start()` so the report can pinpoint
+    # multiple hits on the same JSONL row (plan AC3 byte offset).
     for key_class, pat in TOKEN_PATTERNS:
         for m in pat.finditer(raw_line):
-            hits.append(Hit(line_no, ts, kind, version, key_class, trunc(m.group(0)), excerpt))
+            hits.append(
+                Hit(
+                    line_no=line_no,
+                    event_ts=ts,
+                    event_kind=kind,
+                    event_version=version,
+                    key_class=key_class,
+                    match=trunc(m.group(0)),
+                    note_excerpt=excerpt,
+                    byte_offset=m.start(),
+                )
+            )
 
     # WandB 40-hex with context-line anchoring.  Scan each LINE of the raw row
     # (the JSONL row is a single line, but `note` may contain embedded \n
@@ -160,7 +239,18 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
     # context purposes, which is conservative).
     if WANDB_CONTEXT.search(raw_line):
         for m in WANDB_HEX.finditer(raw_line):
-            hits.append(Hit(line_no, ts, kind, version, "wandb", trunc(m.group(0)), excerpt))
+            hits.append(
+                Hit(
+                    line_no=line_no,
+                    event_ts=ts,
+                    event_kind=kind,
+                    event_version=version,
+                    key_class="wandb",
+                    match=trunc(m.group(0)),
+                    note_excerpt=excerpt,
+                    byte_offset=m.start(),
+                )
+            )
 
     # Env-assignment shape.
     for m in ENV_ASSIGN.finditer(raw_line):
@@ -171,15 +261,16 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
         confidence, reason = _classify_env_assign(var, value)
         hits.append(
             Hit(
-                line_no,
-                ts,
-                kind,
-                version,
-                f"env-assign:{var}",
-                trunc(f"{var}={value}"),
-                excerpt,
-                confidence,
-                reason,
+                line_no=line_no,
+                event_ts=ts,
+                event_kind=kind,
+                event_version=version,
+                key_class=f"env-assign:{var}",
+                match=trunc(f"{var}={value}"),
+                note_excerpt=excerpt,
+                confidence=confidence,
+                triage_reason=reason,
+                byte_offset=m.start(),
             )
         )
 
@@ -201,8 +292,11 @@ def scan_file(events_path: Path) -> list[Hit]:
 def _render_hit(h: Hit) -> list[str]:
     """Render one hit as markdown lines."""
     triage = f" — **triage:** {h.triage_reason}" if h.triage_reason else ""
+    location = f"line {h.line_no}"
+    if h.byte_offset >= 0:
+        location += f", byte offset {h.byte_offset}"
     return [
-        f"### Hit — line {h.line_no} · `{h.key_class}` (confidence: {h.confidence}{triage})",
+        f"### Hit — {location} · `{h.key_class}` (confidence: {h.confidence}{triage})",
         "",
         f"- **Event:** ts={h.event_ts}, kind={h.event_kind}, version={h.event_version}",
         f"- **Match:** `{h.match}`",
@@ -231,7 +325,6 @@ def compose_report(task_id: int, events_path: Path, hits: list[Hit], n_events: i
     high = [h for h in hits if h.confidence == "high"]
     low = [h for h in hits if h.confidence == "low"]
     classes_all = sorted({h.key_class.split(":", 1)[0] for h in hits})
-    high_classes = sorted({h.key_class.split(":", 1)[0] for h in high})
 
     verdict = "PASS" if not hits else f"FAIL — leaked: {', '.join(classes_all)}"
 
@@ -288,28 +381,60 @@ def compose_report(task_id: int, events_path: Path, hits: list[Hit], n_events: i
         ]
         for h in high:
             lines += _render_hit(h)
+
+        # Plan AC4: "the report MUST list the EXACT rotation steps Thomas
+        # needs to take per leaked key."  Derive the provider set from the
+        # HIGH hits via _provider_for_hit so env-assign:HF_TOKEN /
+        # env-assign:WANDB_API_KEY etc. resolve to provider-specific steps
+        # instead of falling through to a generic "env-assignment hit" label.
+        providers_high: list[str] = sorted({p for h in high if (p := _provider_for_hit(h))})
+        # Any high hit whose key_class doesn't resolve to a known provider
+        # (unrecognised env-assign target, future shape class) still needs to
+        # surface in the action list, so we collect them separately.
+        unresolved_high = sorted({h.key_class for h in high if not _provider_for_hit(h)})
+
         lines += [
             "## Required action",
             "",
-            "**Rotate the following secrets immediately and update `.env`:**",
+            "**Rotate each leaked secret immediately. The EXACT steps per "
+            "provider are below — follow them in order, then re-run this "
+            "audit against the new events.jsonl to confirm zero hits.**",
             "",
         ]
-        for cls in high_classes:
-            human = {
-                "hf": "Hugging Face token (`HF_TOKEN` / `HF_HUB_TOKEN`)",
-                "wandb": "WandB API key (`WANDB_API_KEY`)",
-                "runpod": "RunPod API key (`RUNPOD_API_KEY`)",
-                "openai": "OpenAI API key (`OPENAI_API_KEY`)",
-                "anthropic": "Anthropic API key (`ANTHROPIC_API_KEY`)",
-                "env-assign": (
-                    "env-assignment hit (see High-confidence hits above for the variable name)"
-                ),
-            }.get(cls, f"{cls} secret")
-            lines.append(f"- {human}")
+        provider_label = {
+            "hf": "Hugging Face token (`HF_TOKEN` / `HF_HUB_TOKEN`)",
+            "wandb": "WandB API key (`WANDB_API_KEY`)",
+            "runpod": "RunPod API key (`RUNPOD_API_KEY`)",
+            "openai": "OpenAI API key (`OPENAI_API_KEY`)",
+            "anthropic": "Anthropic API key (`ANTHROPIC_API_KEY`)",
+        }
+        for provider in providers_high:
+            lines.append(f"### Rotate the {provider_label[provider]}")
+            lines.append("")
+            for i, step in enumerate(ROTATION_STEPS[provider], start=1):
+                lines.append(f"{i}. {step}")
+            lines.append("")
+        if unresolved_high:
+            lines += [
+                "### Unrecognised key class(es) — manual triage",
+                "",
+                "The following key classes hit `high` confidence but do not map "
+                "to a known provider's rotation procedure. Inspect the matching "
+                "rows above and rotate the corresponding credential manually:",
+                "",
+            ]
+            for cls in unresolved_high:
+                lines.append(f"- `{cls}`")
+            lines.append("")
         lines += [
+            "After rotating EVERY leaked secret above, re-run this audit:",
             "",
-            "After rotation, re-run this audit against the new events.jsonl to confirm ",
-            "no further high-confidence token-shaped strings remain.",
+            "```bash",
+            "uv run python scripts/issue581_audit.py "
+            f"--task {task_id} --events-path <events.jsonl> --out-dir <dir>",
+            "```",
+            "",
+            "The audit must report zero hits before the rotation is considered complete.",
             "",
         ]
     elif low:
