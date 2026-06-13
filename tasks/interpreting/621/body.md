@@ -6,7 +6,7 @@ title: 'At the [5,12] / closest-approach low-dose window, rank-1 LoRA marker imp
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:17:08Z'
-has_clean_result: false
+has_clean_result: true
 origin_prompt: do we have a rank 1 lora train task?
 goal: Test whether a rank-1 LoRA's read vector aligns with the source persona's context
   vector and its write vector with the behavior direction, and whether per-persona
