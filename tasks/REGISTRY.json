@@ -3923,8 +3923,8 @@
     "67": {
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/proposed/67",
-      "status": "proposed",
+      "path": "tasks/on_hold/67",
+      "status": "on_hold",
       "title": "25% Tulu midtrain matrix partially replicates at seed 137; good_correct alignment retraction confirmed (MODERATE confidence)"
     },
     "68": {
