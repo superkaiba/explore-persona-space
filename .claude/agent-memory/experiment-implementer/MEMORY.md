@@ -40,3 +40,4 @@
 - [argparse description=__doc__ + literal % crashes](feedback_argparse_doc_percent.md) — docstring goes through % interpolation; RawDescriptionHelpFormatter + clean description.
 - [Constant bootstrap → negative yerr](feedback_constant_bootstrap_negative_yerr.md) — saturated rate panels give float-epsilon-negative CI widths; clamp max(0.0, m-lo) at errorbar sites.
 - [paper_palette_role valid names](feedback_paper_palette_role_names.md) — only accent/baseline/control/neutral/primary; "secondary" ValueErrors at render.
+- [on_log never sees direct wandb.log](feedback_on_log_never_sees_direct_wandb_log.md) — derive cross-callback outcomes from the producer's artifact file, never on_log key-sniffing (#621 false band-miss)
