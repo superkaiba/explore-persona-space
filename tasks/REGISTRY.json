@@ -1639,8 +1639,8 @@
     "357": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/357",
-      "status": "proposed",
+      "path": "tasks/on_hold/357",
+      "status": "on_hold",
       "title": "Test whether persona-leakage results generalize beyond police-officer / comedian quirks"
     },
     "358": {
