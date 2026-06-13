@@ -200,6 +200,57 @@ def extract_base_prior(out_dir: Path) -> Path:
     return p
 
 
+def extract_source_baseline_rate(out_dir: Path) -> Path | None:
+    """Row-side source baseline rate (the v2 analog of base_prior_level for
+    the implant-source side; #500/#532/#541 base-prior thread).
+
+    Plan v3 §4.3 + §6.5: consumes ``source_baseline_rates.json`` (frozen
+    pre-training from the tier-1 measurement half, samples 1-4 disjoint
+    from fill-eligibility). For each (row, column) cell the predictor
+    score is the source row's baseline behavior rate broadcast across the
+    columns that apply to it — the row-side covariate the v2 sensitivity
+    rescore consumes. CPU-only; v2-only (the file does not exist under v1
+    so returns None and skips silently).
+    """
+    src_path = output_root() / "source_baseline_rates.json"
+    if not src_path.exists():
+        return None
+    src = json.loads(src_path.read_text()).get("rows", {})
+    if not src:
+        return None
+    cells: dict[str, float] = {}
+    for row_id, row in ROWS.items():
+        rec = src.get(row_id)
+        if not rec or rec.get("baseline_rate") is None:
+            continue
+        rate = float(rec["baseline_rate"])
+        for col_id, col in COLUMNS.items():
+            if not col.scoring_eligible or not column_applies(col, row):
+                continue
+            cells[f"{row_id}|{col_id}"] = rate
+    if not cells:
+        return None
+    p = out_dir / "B__source_baseline_rate.json"
+    p.write_text(
+        json.dumps(
+            {
+                "group": "B",
+                "name": "source_baseline_rate",
+                "track": "both",
+                "cells": cells,
+                "metadata": reproducibility_metadata(),
+                "note": (
+                    "v2 row-side analog of base_prior_level (#500/#532/#541): the source "
+                    "row's tier-1-measurement-half baseline rate as a labeled new "
+                    "predictor for the v2 sensitivity rescore (plan v3 §4.3 + §6.5)"
+                ),
+            },
+            indent=1,
+        )
+    )
+    return p
+
+
 def _nll_of_answer(
     model, tokenizer, messages_prefix: list[dict], question: str, answer: str, device
 ) -> float:
@@ -583,6 +634,11 @@ def extract_all(*, device: str = "cuda:0", skip_gpu: bool = False) -> Path:
     # "base prior predictor skipped" warning seconds before the
     # production crash (task #545 epm:failure v9).
     extract_base_prior(out_dir)
+    # v2 row-side baseline-rate predictor (plan v3 §4.3 + §6.5 — the v2
+    # sensitivity rescore consumes it as a labeled new predictor;
+    # silently skips when source_baseline_rates.json isn't present, i.e.
+    # under v1).
+    extract_source_baseline_rate(out_dir)
     if not skip_gpu:
         extract_group_b_gpu(out_dir, device=device)
         extract_group_a_and_c_gpu(out_dir, device=device)

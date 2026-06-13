@@ -1078,7 +1078,7 @@ def _mirror_513_uploads(api, adapters: Path, list_repo_files, hf_model_repo: str
     ]
 
 
-def bulk_upload_phase(phase: str) -> None:
+def bulk_upload_phase(phase: str) -> None:  # noqa: C901 — per-tree linear uploads + verifications
     """Adapters -> model repo; corpora + raw completions -> data repo.
 
     One ``upload_folder`` commit per tree; verification via
@@ -1176,6 +1176,68 @@ def bulk_upload_phase(phase: str) -> None:
             commit_message=f"issue #545 {phase}: per-cell completions + verdicts",
             allow_patterns=["*completions__*.json", "*/*.json"],
         )
+    # P3-v2 deliverables (plan v3 section 6.5): predictors + the v2 matrix /
+    # cell-metadata / base-panel / dose JSONs landed by phase_p3. Under v1 the
+    # P3 path runs scoring() on the pod and writes scoring/ — that tree is
+    # already covered by the cells_dir upload above (it lives under cells/
+    # ... no, it lives under output_root()/scoring/ in v1; the v1 path does
+    # NOT need this branch because the dispatcher's v1 phase_train_eval is
+    # the upload call site for p1/p2, and v1 scoring is consumed off-pod via
+    # git, not HF). For v2 specifically: we own the predictors + matrix JSONs
+    # in the pod's output_root() because the off-pod --compare consumer reads
+    # them from HF after pod termination (the pod's /workspace is destroyed).
+    if phase == "p3" and _v2_active():
+        out = output_root()
+        # The v2 root-level deliverables (L_matrix_v2, cell_metadata_v2,
+        # base_panel, k1v2_gate, v1_reselect, judge_stability_v2,
+        # source_baseline_rates). Uploaded as a single folder commit at the
+        # v2 results-tree root on the data repo.
+        api.upload_folder(
+            folder_path=str(out),
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            path_in_repo=f"{data_prefix}/results",
+            commit_message=f"issue #545 {phase}: v2 root deliverables (matrix + gates + reselect)",
+            allow_patterns=[
+                "L_matrix_v2.json",
+                "cell_metadata_v2.json",
+                "base_panel.json",
+                "k1v2_gate.json",
+                "v1_reselect.json",
+                "judge_stability_v2.json",
+                "preregistration_v2.json",
+                "source_baseline_rates.json",
+                "upload_gaps_*.json",
+                "manifest_*.json",
+            ],
+        )
+        # Predictors subtree (Group A/B/C/D JSONs + the new source-baseline
+        # predictor); the VM-side comparison + rescore consume it as input.
+        predictors_dir = out / "predictors"
+        if predictors_dir.exists():
+            api.upload_folder(
+                folder_path=str(predictors_dir),
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{data_prefix}/predictors",
+                commit_message=f"issue #545 {phase}: v2 predictors",
+            )
+            listed_predictors = set(list_repo_files(HF_DATA_REPO, repo_type="dataset"))
+            for pj in predictors_dir.glob("*.json"):
+                probe = f"{data_prefix}/predictors/{pj.name}"
+                if probe not in listed_predictors:
+                    gaps.append(f"v2 predictor {pj.name} missing post-upload ({probe})")
+        # Demos rebuilt from the v2 corpora (plan section 4.3 + 6.5;
+        # consumed by the demo-conditioning predictor sensitivity rescore).
+        demos_dir = corpora_dir() / "demos"
+        if demos_dir.exists():
+            api.upload_folder(
+                folder_path=str(demos_dir),
+                repo_id=HF_DATA_REPO,
+                repo_type="dataset",
+                path_in_repo=f"{data_prefix}/demos",
+                commit_message=f"issue #545 {phase}: v2 demos (K=8, v1 stratification)",
+            )
     gaps_path = output_root() / f"upload_gaps_{phase}.json"
     gaps_path.write_text(json.dumps({"gaps": gaps}, indent=1))
     if gaps:
@@ -1358,7 +1420,20 @@ def main() -> int:
                 note += " — escalate boundary cells to 100/q (plan gate 3, no automated consumer)"
     elif args.phase == "p3":
         phase_p3(args)
-        note = "p3 complete: predictors + L matrix + scoring_results.json"
+        # P3 deliverable upload (round 27 Codex blocker #3): the v2 branch of
+        # phase_p3 writes the matrix + predictors + demos to /workspace and
+        # returns BEFORE scoring (the VM-side --compare consumes them post-
+        # termination). Without this call the off-pod comparison sees nothing
+        # — Step 8 terminates the pod and /workspace is destroyed.
+        if not args.skip_upload:
+            print("[phase=upload_p3]", flush=True)
+            bulk_upload_phase("p3")
+        # Note branches on v2 because v2's phase_p3 returns BEFORE scoring
+        # (the v2 scoring rescore is VM-side, labeled sensitivity, plan 4.3).
+        if _v2_active():
+            note = "p3 complete: predictors + L_matrix_v2.json + cell_metadata_v2.json + demos"
+        else:
+            note = "p3 complete: predictors + L matrix + scoring_results.json"
     elif args.phase == "assemble":
         from explore_persona_space.experiments.behavior_testbed_545.assemble_matrix import assemble
 

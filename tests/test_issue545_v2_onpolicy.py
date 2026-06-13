@@ -10,9 +10,11 @@ corpus filter, and the ceiling/universe statistics the prereg pins.
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import json
 import math
 import sys
+import typing
 from pathlib import Path
 
 import pytest
@@ -229,7 +231,10 @@ class TestLadderMechanics:
 
 
 class TestDoseSelectV2:
-    BANDS = {"default_band": (0.60, 0.90), "recalibration_allowance": (0.50, 0.95)}
+    BANDS: typing.ClassVar = {
+        "default_band": (0.60, 0.90),
+        "recalibration_allowance": (0.50, 0.95),
+    }
 
     def test_base_zero_is_v1_byte_identical(self):
         """A5 pin: base=0.0 reproduces the v1 ceiling-only selection."""
@@ -513,3 +518,250 @@ class TestCeilingAndStats:
         assert d["h1_v2"]["row_availability_floor"]["min_confirmatory_pairs"] == 20
         # idempotent freeze-guard: re-running without --force succeeds (no-op)
         mod.freeze_preregistration_v2()
+
+
+# ---------------------------------------------------------------------------
+# Round-27 reconciler-FAIL fixes: v2 frozen-input fallback to v1_committed_root,
+# fail-loud on empty v2 base panel, and the compare() end-to-end shape.
+# ---------------------------------------------------------------------------
+
+
+class TestV2FallbackHonorsCommittedRoot:
+    """Codex blocker #2: under EPM_OUTPUT_ROOT (the MooseFS hot-path override),
+    the v2 frozen-input fallback must read from the GIT-COMMITTED v1 root,
+    NOT from the writable scratch root. A pod with
+    ``EPM_OUTPUT_ROOT=/workspace/hot_issue545`` would otherwise miss every
+    committed v1 battery and every committed v1 base-panel cell.
+    """
+
+    def test_battery_load_under_v2_falls_back_to_v1_committed_root(self, monkeypatch, tmp_path):
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import eval_battery
+
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        # MooseFS hot-path override active: scratch root has NO batteries.
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(tmp_path / "scratch"))
+        # v1 committed root is repo_root()/eval_results/issue_545 — has
+        # the real frozen batteries committed for the rebuilt rows.
+        committed = pkg.v1_committed_root() / "batteries" / "refusal_panel.json"
+        if not committed.exists():
+            pytest.skip(f"committed v1 battery missing at {committed}")
+        loaded = eval_battery.load_battery("refusal_panel.json")
+        # The loaded battery is the COMMITTED v1 file — sanity-check it has
+        # the v1 refusal probe schema (should_refuse + should_not_refuse).
+        assert "should_refuse" in loaded and "should_not_refuse" in loaded
+        # And confirm production_output_root() would have pointed at scratch
+        # (the buggy path) — proving the new fallback ignores EPM_OUTPUT_ROOT.
+        assert pkg.production_output_root() == tmp_path / "scratch"
+        assert pkg.v1_committed_root() != pkg.production_output_root()
+
+    def test_assemble_v2_base_panel_falls_back_to_v1_committed_root(self, monkeypatch, tmp_path):
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import (
+            assemble_matrix,
+        )
+
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        scratch = tmp_path / "scratch"
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(scratch))
+        # Active v2 cells dir exists but carries NO base_panel (only a
+        # trained cell that produces no L without the v1 base panel).
+        cells = pkg.cells_dir()
+        cells.mkdir(parents=True, exist_ok=True)
+        # Stub a fake adapter cell with one column read so assemble doesn't
+        # bail early on "no cells".
+        cell = cells / "refuse_medical_primary_seed0"
+        cell.mkdir(parents=True, exist_ok=True)
+        (cell / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.5},
+                    "verdicts": [],
+                }
+            )
+        )
+        committed_base = pkg.v1_committed_root() / "cells" / "base_panel"
+        if not committed_base.exists():
+            pytest.skip("committed v1 base panel missing")
+        # assemble() should succeed and read from the COMMITTED v1 root,
+        # not crash on the missing scratch base panel.
+        assemble_matrix.assemble()
+        # Resulting base_panel.json populated from the committed v1 panel.
+        panel = json.loads((pkg.output_root() / "base_panel.json").read_text())
+        assert panel["panel"], "v2 base panel populated from v1_committed_root"
+
+    def test_assemble_v2_fails_loud_on_empty_base_panel(self, monkeypatch, tmp_path):
+        """Codex's silent-empty-panel finding: assemble MUST raise BEFORE
+        writing an empty ``panel: {}`` payload under v2."""
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+        from explore_persona_space.experiments.behavior_testbed_545 import (
+            assemble_matrix,
+        )
+
+        monkeypatch.setenv("I545_V2_OUTPUT", "1")
+        monkeypatch.delenv("I545_SMOKE_OUTPUT", raising=False)
+        scratch = tmp_path / "scratch"
+        monkeypatch.setenv("EPM_OUTPUT_ROOT", str(scratch))
+        # Pretend v1_committed_root has no base panel by pointing it at a
+        # tmp path with no cells/base_panel/ — patch v1_committed_root.
+        empty_repo = tmp_path / "fake_repo"
+        monkeypatch.setattr(assemble_matrix, "v1_committed_root", lambda: empty_repo)
+        # Build a v2 cells dir with one cell so assemble doesn't bail early.
+        cells = pkg.cells_dir()
+        cells.mkdir(parents=True, exist_ok=True)
+        cell = cells / "refuse_medical_primary_seed0"
+        cell.mkdir(parents=True, exist_ok=True)
+        (cell / "refusal__default.json").write_text(
+            json.dumps(
+                {
+                    "column": "refusal",
+                    "context": "default",
+                    "summary": {"refusal_rate_should_not_refuse": 0.5},
+                    "verdicts": [],
+                }
+            )
+        )
+        with pytest.raises(FileNotFoundError, match="base panel for v2 assembly is empty"):
+            assemble_matrix.assemble()
+
+
+class TestCompareEndToEnd:
+    """The Codex blocker #1 fix: ``compare()`` runs end-to-end and writes
+    ``v1v2_comparison.json`` with the registered top-level keys."""
+
+    def _load_harness(self):
+        spec = importlib.util.spec_from_file_location(
+            "issue545_v2_comparison",
+            Path(__file__).resolve().parent.parent / "scripts" / "issue545_v2_comparison.py",
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def _build_v2_fixture(self, v2_root: Path, *, v1_cells: dict, inject_bridge: bool = True):
+        """Build a minimal v2 matrix + cell_metadata + v1_reselect from a
+        tiny v1 matrix slice. v2 cells are v1's L values with a small
+        perturbation (so r ~= 0.9 and the pipeline can render a verdict)."""
+        v2_cells = {}
+        for cell_id, cell in v1_cells.items():
+            # rename to v2 schema (same arm/seed convention).
+            v2_cell = {}
+            for k, entry in cell.items():
+                # Add a tiny noise to L; keep saturation_flag.
+                new_entry = dict(entry)
+                if entry.get("L") is not None:
+                    new_entry["L"] = entry["L"] + 0.01
+                v2_cell[k] = new_entry
+            v2_cells[cell_id] = v2_cell
+        if inject_bridge:
+            # Bridge cells: same as v1 compliment_writing cells (perfect inertness).
+            for seed in (0, 137):
+                base = v1_cells.get(f"compliment_writing_primary_seed{seed}", {})
+                v2_cells[f"compliment_writing_bridge_seed{seed}"] = {
+                    k: dict(v) for k, v in base.items()
+                }
+        (v2_root / "L_matrix_v2.json").write_text(
+            json.dumps({"cells": v2_cells, "metadata": {}}, indent=1)
+        )
+        # v1_reselect: corrected_realized_strength for each cell (target).
+        reselect = {
+            "cells": {
+                cell_id: {
+                    "corrected_realized_strength": 0.75,
+                    "row": cell_id.split("_")[0],
+                    "arm": "primary",
+                    "seed": int(cell_id.rsplit("seed", 1)[1]),
+                }
+                for cell_id in v1_cells
+            }
+        }
+        (v2_root / "v1_reselect.json").write_text(json.dumps(reselect, indent=1))
+        # cell_metadata_v2: achieved_strength + confirmatory_eligible.
+        metadata = {
+            "metadata": {
+                cell_id: {
+                    "achieved_strength": 0.76,
+                    "confirmatory_eligible": True,
+                }
+                for cell_id in v2_cells
+            }
+        }
+        (v2_root / "cell_metadata_v2.json").write_text(json.dumps(metadata, indent=1))
+
+    def test_compare_writes_registered_schema(self, monkeypatch, tmp_path):
+        from explore_persona_space.experiments import behavior_testbed_545 as pkg
+
+        monkeypatch.delenv("I545_V2_OUTPUT", raising=False)
+        monkeypatch.delenv("EPM_OUTPUT_ROOT", raising=False)
+        mod = self._load_harness()
+        # Read the committed v1 matrix and seed a v2 fixture into a temp v2
+        # root under repo_root. We patch _v2_root to point at tmp.
+        v1_path = pkg.v1_committed_root() / "L_matrix.json"
+        if not v1_path.exists():
+            pytest.skip("committed v1 matrix missing")
+        v1_full = json.loads(v1_path.read_text())["cells"]
+        # Slice to the 5 PAIRABLE rows only (smaller fixture).
+        from explore_persona_space.experiments.behavior_testbed_545.rows_v2 import (
+            PAIRABLE_ROWS_V2,
+        )
+
+        v1_slice = {
+            cid: cell
+            for cid, cell in v1_full.items()
+            if any(cid.startswith(r) for r in PAIRABLE_ROWS_V2)
+        }
+        v2_root = tmp_path / "v2"
+        v2_root.mkdir(parents=True, exist_ok=True)
+        # Ensure the v1 matrix the harness reads is still the committed one.
+        monkeypatch.setattr(mod, "_v2_root", lambda: v2_root)
+        self._build_v2_fixture(v2_root, v1_cells=v1_slice)
+
+        out = mod.compare()
+        assert out.exists() and out.name == "v1v2_comparison.json"
+        payload = json.loads(out.read_text())
+        # Registered top-level keys per plan §6.5.
+        for key in (
+            "primary",
+            "per_row_pearson",
+            "per_row_strength",
+            "bridge_inertness",
+            "verdict",
+            "verdict_reason",
+            "frozen_v1_ceiling",
+            "ceiling_factor",
+            "pairs_confirmatory",
+            "pairs_descriptive",
+            "metadata",
+        ):
+            assert key in payload, f"missing key {key} in compare() output"
+        # Primary stat is computed (some confirmatory pairs survive the
+        # tiny-fixture slice + the saturation filters).
+        primary = payload["primary"]
+        for k in (
+            "n_confirmatory_pairs",
+            "n_row_clusters",
+            "r_within_column_z_spearman",
+            "row_availability_floor_pairs",
+        ):
+            assert k in primary
+        # Bridge inertness section has a verdict (pass / deviate / unavailable).
+        assert payload["bridge_inertness"]["verdict"] in (
+            "pass",
+            "deviate",
+            "unavailable",
+        )
+        # The frozen ceiling is the v3-pinned tuple.
+        assert payload["frozen_v1_ceiling"] == mod.FROZEN_V1_CEILING
+
+    def test_compare_fails_loud_on_missing_v2_matrix(self, monkeypatch, tmp_path):
+        mod = self._load_harness()
+        v2_root = tmp_path / "v2_no_matrix"
+        v2_root.mkdir(parents=True, exist_ok=True)
+        # No L_matrix_v2.json present.
+        monkeypatch.setattr(mod, "_v2_root", lambda: v2_root)
+        with pytest.raises(FileNotFoundError, match=r"L_matrix_v2\.json"):
+            mod.compare()

@@ -37,6 +37,7 @@ from . import (
     production_output_root,
     reproducibility_metadata,
     smoke_output_active,
+    v1_committed_root,
     v2_output_active,
 )
 from .columns import CONTEXTS, ColumnSpec, columns_for_row
@@ -56,17 +57,28 @@ def load_battery(battery: str) -> dict:
 
     Under smoke/v2-output isolation the active batteries dir is smoke-/v2-
     rooted; frozen P0 batteries are INPUTS, so reads fall back to the
-    PRODUCTION batteries dir when the file is absent from the active root.
-    The fallback is read-only by construction — battery WRITERS always target
-    the active root, so a smoke/v2 run can never contaminate the production
-    freeze (the v2 follow-up REUSES the v1 frozen batteries verbatim, plan
-    section 4.3).
+    GIT-COMMITTED v1 root (``v1_committed_root() / "batteries"``) when the
+    file is absent from the active root — IGNORING ``EPM_OUTPUT_ROOT``. The
+    v1 frozen batteries are git-committed under ``eval_results/issue_545/``
+    and the v2 follow-up REUSES them verbatim (plan section 4.3); on a pod
+    that sets ``EPM_OUTPUT_ROOT=/workspace/hot_issue545`` the MooseFS
+    override would otherwise miss the committed batteries entirely. The
+    smoke (non-v2) fallback still uses ``production_output_root`` because
+    a smoke run consumes the production v1 freeze under whichever root
+    that pod's production write path resolves to. The fallback is read-only
+    by construction — battery WRITERS always target the active root, so a
+    smoke/v2 run can never contaminate the production freeze.
     """
     p = batteries_dir() / battery
-    if not p.exists() and (smoke_output_active() or v2_output_active()):
-        prod = production_output_root() / "batteries" / battery
-        if prod.exists():
-            p = prod
+    if not p.exists():
+        if v2_output_active():
+            prod = v1_committed_root() / "batteries" / battery
+            if prod.exists():
+                p = prod
+        elif smoke_output_active():
+            prod = production_output_root() / "batteries" / battery
+            if prod.exists():
+                p = prod
     if not p.exists():
         raise FileNotFoundError(f"Battery missing (P0 incomplete): {p}")
     return json.loads(p.read_text())

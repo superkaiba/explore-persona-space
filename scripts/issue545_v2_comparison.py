@@ -539,7 +539,6 @@ def judge_stability(*, n_per_column: int = 100, smoke_n: int | None = None) -> P
     results: dict[str, dict] = {}
     for column, judge_id, accept_key in spec:
         items: list[dict] = []
-        stored: list[bool] = []
         for cell in cells:
             comp_name = f"completions__{column}__default.json"
             local = _v1_root() / "cells" / cell / comp_name
@@ -732,7 +731,7 @@ def partial_spearman(
         ata = [[sum(x[i] * x[j] for x in xs) for j in range(3)] for i in range(3)]
         aty = [sum(x[i] * yi for x, yi in zip(xs, y, strict=True)) for i in range(3)]
         # Gaussian elimination.
-        m = [row[:] + [aty[i]] for i, row in enumerate(ata)]
+        m = [[*row, aty[i]] for i, row in enumerate(ata)]
         for col in range(3):
             piv = max(range(col, 3), key=lambda r: abs(m[r][col]))
             m[col], m[piv] = m[piv], m[col]
@@ -752,25 +751,424 @@ def partial_spearman(
     return num / den if den else 0.0
 
 
-def compare() -> Path:
+def _seed_mean_cells(matrix_cells: dict, rows: list[str]) -> dict[str, dict]:
+    """Per (row, column) seed-mean L over seeds {0, 137}, unflagged + non-null
+    on BOTH seeds (the H1-v2 pairing universe applied to either matrix side).
+    Returns ``{row: {column: {"L_mean": float, "L_seed0": float, "L_seed137": float}}}``.
+    """
+    from explore_persona_space.experiments.behavior_testbed_545.columns import (
+        COLUMNS,
+        column_applies,
+    )
+    from explore_persona_space.experiments.behavior_testbed_545.rows import ROWS
+
+    out: dict[str, dict] = {}
+    for row_id in rows:
+        row = ROWS[row_id]
+        c0 = matrix_cells.get(f"{row_id}_primary_seed0", {})
+        c137 = matrix_cells.get(f"{row_id}_primary_seed137", {})
+        per_col: dict[str, dict] = {}
+        for col in COLUMNS.values():
+            if not col.scoring_eligible or col.sensitivity_only:
+                continue
+            if not column_applies(col, row):
+                continue
+            if col.column_id == row.diagonal_column:
+                continue
+            key = f"{col.column_id}__default"
+            e0, e137 = c0.get(key), c137.get(key)
+            if not e0 or not e137:
+                continue
+            if e0.get("saturation_flag") or e137.get("saturation_flag"):
+                continue
+            l0, l137 = e0.get("L"), e137.get("L")
+            if l0 is None or l137 is None:
+                continue
+            per_col[col.column_id] = {
+                "L_mean": (float(l0) + float(l137)) / 2.0,
+                "L_seed0": float(l0),
+                "L_seed137": float(l137),
+            }
+        if per_col:
+            out[row_id] = per_col
+    return out
+
+
+def _strength_target(reselect: dict, row_id: str, seed: int) -> float | None:
+    """v1 target corrected strength for a (row, seed) cell from v1_reselect.json."""
+    cell_id = f"{row_id}_primary_seed{seed}"
+    rec = reselect.get("cells", {}).get(cell_id, {})
+    return rec.get("corrected_realized_strength")
+
+
+def _row_strength(metadata: dict, row_id: str, arm: str = "primary") -> tuple[float | None, bool]:
+    """v2 per-row achieved corrected strength (seed-mean) + confirmatory eligibility.
+
+    Reads ``cell_metadata_v2.json``: for each seed cell, the dispatcher's
+    dose-select record carries ``achieved_strength`` + ``confirmatory_eligible``.
+    Confirmatory at the row level iff BOTH seeds are confirmatory-eligible.
+    """
+    seeds = [0, 137]
+    strengths: list[float] = []
+    confs: list[bool] = []
+    for seed in seeds:
+        cell_id = f"{row_id}_{arm}_seed{seed}"
+        rec = metadata.get(cell_id, {})
+        ach = rec.get("achieved_strength")
+        if ach is not None:
+            strengths.append(float(ach))
+        confs.append(bool(rec.get("confirmatory_eligible", False)))
+    if not strengths:
+        return None, False
+    return sum(strengths) / len(strengths), all(confs)
+
+
+def compare() -> Path:  # noqa: C901 — pre-registered linear protocol, intentionally flat
     """The pre-registered v1-vs-v2 comparison (requires the v2 run artifacts).
 
     Reads ``onpolicy_v2/L_matrix_v2.json`` + ``cell_metadata_v2.json`` +
     ``v1_reselect.json`` + the v1 matrix; pairs cells per the pinned rule;
     emits ``v1v2_comparison.json``. Figures are produced by a follow-up
     plotting pass (paper-plots skill) once this JSON exists.
+
+    Output schema (plan v3 sections 4.3 + 6.5):
+    - ``primary``: within-column-z Spearman r over seed-mean pairs across the
+      5 pairable rows; row-clustered bootstrap CI; permutation p; leave-one-
+      row-cluster-out point estimates; partial-Spearman covarying corrected
+      strength; comparison vs the frozen v1 SB-adjusted ceiling (0.740).
+    - ``per_row_pearson``: per-row Pearson r on (v1, v2) raw L pairs (the
+      simplest cross-side correlation; sanity-check the structural read).
+    - ``bridge_inertness``: per-cell |L_bridge - L_v1| vs the v1
+      seed0-vs-seed137 |dL| envelope, 80% inertness rule (plan section 3 +
+      pinned bridge_read in preregistration_v2.json).
+    - ``verdict``: H1-v2 survive/attenuate/collapse per the §3 ladder + the
+      row-availability floor + ceiling-degeneracy fallback.
     """
     v2_matrix_path = _v2_root() / "L_matrix_v2.json"
-    if not v2_matrix_path.exists():
-        raise FileNotFoundError(
-            f"{v2_matrix_path} missing — the comparison runs AFTER the v2 pod run uploads "
-            "its assembled matrix (this harness is the VM-side post-termination step)"
-        )
-    raise NotImplementedError(
-        "Full comparison wiring lands with the v2 artifacts (stats functions above are "
-        "unit-tested and pinned in preregistration_v2.json; plan section 6.5 note: the "
-        "comparison JSON + figures are analysis-step deliverables, not pod-side)"
+    v1_matrix_path = _v1_root() / "L_matrix.json"
+    reselect_path = _v2_root() / "v1_reselect.json"
+    meta_path = _v2_root() / "cell_metadata_v2.json"
+    for p in (v2_matrix_path, reselect_path):
+        if not p.exists():
+            raise FileNotFoundError(
+                f"{p} missing — the comparison runs AFTER the v2 pod run uploads its "
+                "assembled matrix + the P0 reselect record (this harness is the VM-side "
+                "post-termination step). Required inputs: L_matrix_v2.json, "
+                "cell_metadata_v2.json, v1_reselect.json (P0)."
+            )
+    if not v1_matrix_path.exists():
+        raise FileNotFoundError(f"{v1_matrix_path} missing — the v1 baseline matrix is required")
+
+    from explore_persona_space.experiments.behavior_testbed_545 import (
+        reproducibility_metadata,
     )
+    from explore_persona_space.experiments.behavior_testbed_545.rows_v2 import (
+        PAIRABLE_ROWS_V2,
+    )
+
+    v1_cells = json.loads(v1_matrix_path.read_text())["cells"]
+    v2_cells = json.loads(v2_matrix_path.read_text())["cells"]
+    reselect = json.loads(reselect_path.read_text())
+    metadata = json.loads(meta_path.read_text()).get("metadata", {}) if meta_path.exists() else {}
+
+    rows = list(PAIRABLE_ROWS_V2)
+    v1_means = _seed_mean_cells(v1_cells, rows)
+    v2_means = _seed_mean_cells(v2_cells, rows)
+
+    # ---------------- Confirmatory pair list -----------------------------
+    # A (row, column) pair is in the confirmatory universe iff BOTH sides
+    # carry an unflagged seed-mean for the column AND |Δstrength| ≤ 0.15
+    # (plan section 4.2 — the row-level confirmatory_eligible flag from the
+    # v2 dispatcher's nearest-strength selection; the v1 side's target
+    # strength is the re-selected corrected_realized_strength). Pairs that
+    # share columns but fail the strength gate are kept in the DESCRIPTIVE
+    # universe ("provenance + realized dose"), reported alongside.
+    pairs_confirmatory: list[dict] = []
+    pairs_descriptive: list[dict] = []
+    per_row_strength: dict[str, dict] = {}
+    for row_id in rows:
+        if row_id not in v1_means or row_id not in v2_means:
+            continue
+        # v1 target strength: average of seed0/seed137 v1_reselect entries.
+        v1_targets = [_strength_target(reselect, row_id, s) for s in (0, 137)]
+        v1_targets = [t for t in v1_targets if t is not None]
+        v1_target = sum(v1_targets) / len(v1_targets) if v1_targets else None
+        v2_strength, v2_conf = _row_strength(metadata, row_id, arm="primary")
+        delta = (
+            abs(v2_strength - v1_target)
+            if v1_target is not None and v2_strength is not None
+            else None
+        )
+        per_row_strength[row_id] = {
+            "v1_target_strength": v1_target,
+            "v2_achieved_strength": v2_strength,
+            "delta_strength": delta,
+            "confirmatory": v2_conf,
+        }
+        shared_cols = sorted(set(v1_means[row_id]) & set(v2_means[row_id]))
+        for col in shared_cols:
+            rec = {
+                "row": row_id,
+                "column": col,
+                "L_v1": v1_means[row_id][col]["L_mean"],
+                "L_v2": v2_means[row_id][col]["L_mean"],
+                "L_v1_seed0": v1_means[row_id][col]["L_seed0"],
+                "L_v1_seed137": v1_means[row_id][col]["L_seed137"],
+                "L_v2_seed0": v2_means[row_id][col]["L_seed0"],
+                "L_v2_seed137": v2_means[row_id][col]["L_seed137"],
+                "s_v1": v1_target,
+                "s_v2": v2_strength,
+            }
+            if v2_conf:
+                pairs_confirmatory.append(rec)
+            else:
+                pairs_descriptive.append(rec)
+
+    # ---------------- Per-row Pearson on confirmatory pairs --------------
+    per_row_pearson: dict[str, dict] = {}
+    for row_id in rows:
+        xs = [p["L_v1"] for p in pairs_confirmatory if p["row"] == row_id]
+        ys = [p["L_v2"] for p in pairs_confirmatory if p["row"] == row_id]
+        if len(xs) < 3:
+            per_row_pearson[row_id] = {"n": len(xs), "r": None, "reason": "need >=3 pairs"}
+            continue
+        mx, my = sum(xs) / len(xs), sum(ys) / len(ys)
+        num = sum((a - mx) * (b - my) for a, b in zip(xs, ys, strict=True))
+        sx = math.sqrt(sum((a - mx) ** 2 for a in xs))
+        sy = math.sqrt(sum((b - my) ** 2 for b in ys))
+        per_row_pearson[row_id] = {
+            "n": len(xs),
+            "r": (num / (sx * sy)) if sx and sy else None,
+        }
+
+    # ---------------- Primary statistic + co-primary backstops -----------
+    primary: dict = {
+        "n_confirmatory_pairs": len(pairs_confirmatory),
+        "n_descriptive_pairs": len(pairs_descriptive),
+        "n_row_clusters": len({p["row"] for p in pairs_confirmatory}),
+        "row_availability_floor_pairs": CONFIRMATORY_PAIR_FLOOR,
+        "row_availability_floor_clusters": CONFIRMATORY_CLUSTER_FLOOR,
+    }
+    floor_met = (
+        primary["n_confirmatory_pairs"] >= CONFIRMATORY_PAIR_FLOOR
+        and primary["n_row_clusters"] >= CONFIRMATORY_CLUSTER_FLOOR
+    )
+    primary["row_availability_floor_met"] = floor_met
+    if primary["n_confirmatory_pairs"] >= 3 and primary["n_row_clusters"] >= 2:
+        z_v1, z_v2 = within_column_z(pairs_confirmatory, ("L_v1", "L_v2"))
+        primary["r_within_column_z_spearman"] = round(spearman(z_v1, z_v2), 4)
+        try:
+            ci_lo, ci_hi = row_clustered_bootstrap_ci(pairs_confirmatory, ("L_v1", "L_v2"))
+            primary["bootstrap_ci95"] = [round(ci_lo, 4), round(ci_hi, 4)]
+            primary["bootstrap_ci95_excludes_zero"] = ci_lo > 0 or ci_hi < 0
+        except RuntimeError as exc:
+            primary["bootstrap_ci95"] = None
+            primary["bootstrap_ci95_error"] = str(exc)
+        try:
+            primary["permutation_p"] = round(
+                within_column_permutation_p(pairs_confirmatory, ("L_v1", "L_v2")), 6
+            )
+        except (AssertionError, RuntimeError) as exc:
+            primary["permutation_p"] = None
+            primary["permutation_error"] = str(exc)
+        primary["leave_one_row_out"] = leave_one_row_out(pairs_confirmatory, ("L_v1", "L_v2"))
+        # Partial Spearman covarying corrected strengths if both sides
+        # exposed them (otherwise skip — the gate above relies on having
+        # source_baseline_rates.json wired in for a covariate Spearman that
+        # uses the source baseline; that wiring is the Major-not-blocker
+        # follow-up. The strength-covariate version is the §4.3 pinned
+        # mechanic and runs whenever per_row_strength has both sides.)
+        usable = [
+            p for p in pairs_confirmatory if p.get("s_v1") is not None and p.get("s_v2") is not None
+        ]
+        if len(usable) >= 4:
+            primary["partial_spearman_strength"] = round(
+                partial_spearman(usable, ("L_v1", "L_v2"), ("s_v1", "s_v2")), 4
+            )
+        else:
+            primary["partial_spearman_strength"] = None
+        # Partial Spearman covarying source-baseline rates if available.
+        sb_path = _v2_root() / "source_baseline_rates.json"
+        if sb_path.exists():
+            try:
+                sb = json.loads(sb_path.read_text()).get("rows", {})
+                for p in pairs_confirmatory:
+                    p["sb_v1"] = sb.get(p["row"], {}).get("baseline_rate")
+                    p["sb_v2"] = p["sb_v1"]  # row-side covariate; same on both sides
+                sb_usable = [p for p in pairs_confirmatory if p.get("sb_v1") is not None]
+                if len(sb_usable) >= 4:
+                    primary["partial_spearman_source_baseline"] = round(
+                        partial_spearman(sb_usable, ("L_v1", "L_v2"), ("sb_v1", "sb_v2")),
+                        4,
+                    )
+            except (json.JSONDecodeError, KeyError, TypeError) as exc:
+                primary["partial_spearman_source_baseline_error"] = str(exc)
+        else:
+            primary["partial_spearman_source_baseline"] = None  # not yet wired
+    else:
+        primary["r_within_column_z_spearman"] = None
+        primary["bootstrap_ci95"] = None
+        primary["permutation_p"] = None
+        primary["leave_one_row_out"] = {}
+        primary["partial_spearman_strength"] = None
+        primary["partial_spearman_source_baseline"] = None
+
+    # ---------------- v2 seed ceiling (single-seed) ----------------------
+    try:
+        v2_ceiling = seed_ceiling(v2_cells, pairable_rows=rows)
+    except (AssertionError, RuntimeError, KeyError) as exc:
+        v2_ceiling = {"r": None, "n_pairs": 0, "sb_adjusted": None, "error": str(exc)}
+    primary["v2_seed_ceiling"] = v2_ceiling
+    primary["v1_seed_ceiling_frozen"] = FROZEN_V1_CEILING
+
+    # ---------------- Verdict ladder (plan §3 H1-v2) ---------------------
+    r = primary.get("r_within_column_z_spearman")
+    ci = primary.get("bootstrap_ci95")
+    pp = primary.get("permutation_p")
+    loro = primary.get("leave_one_row_out") or {}
+    cond_i = bool(ci) and primary.get("bootstrap_ci95_excludes_zero")
+    cond_ii = pp is not None and pp < 0.05
+    cond_iii = bool(loro) and all(v > 0 for v in loro.values())
+    v1_threshold = CEILING_FACTOR * FROZEN_V1_CEILING["sb_adjusted"]
+    v2_sb = v2_ceiling.get("sb_adjusted") if isinstance(v2_ceiling, dict) else None
+    v2_threshold = (CEILING_FACTOR * v2_sb) if isinstance(v2_sb, int | float) else None
+    ceiling_degenerate = (
+        not isinstance(v2_sb, int | float)
+        or v2_sb < CEILING_DEGENERACY_MIN
+        or (isinstance(v2_ceiling.get("r"), int | float) and v2_ceiling["r"] <= 0)
+    )
+    if r is None:
+        verdict = "indeterminate"
+        verdict_reason = "primary stat unavailable (too few confirmatory pairs/clusters)"
+    elif not floor_met:
+        verdict = "descriptive_only"
+        verdict_reason = (
+            f"row-availability floor not met (pairs {primary['n_confirmatory_pairs']} < "
+            f"{CONFIRMATORY_PAIR_FLOOR} or clusters {primary['n_row_clusters']} < "
+            f"{CONFIRMATORY_CLUSTER_FLOOR}); inferential validity backstops fired but "
+            "no CI-based verdict per the floor rule"
+        )
+    elif not (cond_i and cond_ii and cond_iii):
+        verdict = "collapses"
+        verdict_reason = f"CI-excludes-0={cond_i}, perm-p<0.05={cond_ii}, all-loro>0={cond_iii}"
+    else:
+        if ceiling_degenerate:
+            verdict = "survives_ci_only"
+            verdict_reason = "(i)-(iii) pass; v2 ceiling degenerate so (iv) undefined per §3"
+        else:
+            cond_iv_v1 = r >= v1_threshold
+            cond_iv_v2 = v2_threshold is not None and r >= v2_threshold
+            if cond_iv_v1 and cond_iv_v2:
+                verdict = "survives"
+                verdict_reason = "(i)-(iv) all pass against both ceilings"
+            else:
+                verdict = "attenuates"
+                verdict_reason = (
+                    f"(i)-(iii) pass; r={r:.4f} < threshold "
+                    f"(v1: 0.5x{FROZEN_V1_CEILING['sb_adjusted']}={v1_threshold:.3f}, "
+                    f"v2: 0.5x{v2_sb}={v2_threshold})"
+                    if v2_threshold is not None
+                    else f"(i)-(iii) pass; r={r:.4f} < v1 threshold {v1_threshold:.3f}"
+                )
+
+    # ---------------- Bridge inertness read ------------------------------
+    bridge_row = "compliment_writing"
+    bridge_cells = {
+        cid: v2_cells.get(cid)
+        for cid in (f"{bridge_row}_bridge_seed0", f"{bridge_row}_bridge_seed137")
+        if v2_cells.get(cid)
+    }
+    bridge_summary: dict = {
+        "available": bool(bridge_cells),
+        "row": bridge_row,
+        "n_cells_in_bridge": len(bridge_cells),
+    }
+    if bridge_cells and bridge_row in v1_means:
+        # Per-column |L_bridge - L_v1| vs the v1 seed-noise envelope.
+        v1_envelopes = {
+            col: abs(rec["L_seed0"] - rec["L_seed137"]) for col, rec in v1_means[bridge_row].items()
+        }
+        # Bridge seed-mean over seed0/seed137 bridge cells.
+        bridge_levels: dict[str, list[float]] = {}
+        for _cid, cell in bridge_cells.items():
+            for col_key, entry in cell.items():
+                if not col_key.endswith("__default"):
+                    continue
+                col_id = col_key.split("__", 1)[0]
+                if col_id == "fam_expr_compliment":  # diagonal — skip
+                    continue
+                if entry.get("saturation_flag") or entry.get("L") is None:
+                    continue
+                bridge_levels.setdefault(col_id, []).append(float(entry["L"]))
+        per_col: dict[str, dict] = {}
+        inert_count = 0
+        considered = 0
+        for col, bridge_vals in bridge_levels.items():
+            if col not in v1_means[bridge_row] or len(bridge_vals) < 1:
+                continue
+            l_bridge = sum(bridge_vals) / len(bridge_vals)
+            l_v1 = v1_means[bridge_row][col]["L_mean"]
+            envelope = v1_envelopes.get(col, 0.0)
+            delta = abs(l_bridge - l_v1)
+            inert = delta <= envelope
+            per_col[col] = {
+                "L_bridge_mean": round(l_bridge, 6),
+                "L_v1_mean": round(l_v1, 6),
+                "abs_delta": round(delta, 6),
+                "v1_seed_noise_envelope": round(envelope, 6),
+                "inert": inert,
+            }
+            considered += 1
+            if inert:
+                inert_count += 1
+        fraction_inert = (inert_count / considered) if considered else None
+        bridge_summary.update(
+            {
+                "n_columns_considered": considered,
+                "n_columns_inert": inert_count,
+                "fraction_inert": (
+                    round(fraction_inert, 4) if fraction_inert is not None else None
+                ),
+                "inertness_threshold": 0.80,
+                "verdict": (
+                    "pass" if fraction_inert is not None and fraction_inert >= 0.80 else "deviate"
+                )
+                if fraction_inert is not None
+                else "unavailable",
+                "per_column": per_col,
+            }
+        )
+    elif not bridge_cells:
+        bridge_summary["verdict"] = "unavailable"
+        bridge_summary["note"] = "no bridge_seed0/seed137 cells present in L_matrix_v2.json"
+
+    # ---------------- Assemble + write -----------------------------------
+    payload = {
+        "primary": primary,
+        "per_row_pearson": per_row_pearson,
+        "per_row_strength": per_row_strength,
+        "bridge_inertness": bridge_summary,
+        "pairs_confirmatory": pairs_confirmatory,
+        "pairs_descriptive": pairs_descriptive,
+        "verdict": verdict,
+        "verdict_reason": verdict_reason,
+        "frozen_v1_ceiling": FROZEN_V1_CEILING,
+        "ceiling_factor": CEILING_FACTOR,
+        "metadata": reproducibility_metadata(),
+    }
+    out_dir = _v2_root()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / "v1v2_comparison.json"
+    out.write_text(json.dumps(payload, indent=1))
+    logger.info(
+        "[compare] verdict=%s r=%s n_pairs=%s bridge=%s -> %s",
+        verdict,
+        primary.get("r_within_column_z_spearman"),
+        primary["n_confirmatory_pairs"],
+        bridge_summary.get("verdict"),
+        out,
+    )
+    return out
 
 
 def main() -> int:

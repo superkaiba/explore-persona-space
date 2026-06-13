@@ -22,8 +22,8 @@ from pathlib import Path
 from . import (
     cells_dir,
     output_root,
-    production_output_root,
     reproducibility_metadata,
+    v1_committed_root,
     v2_output_active,
 )
 from .preregister import THRESHOLDS
@@ -114,10 +114,15 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
 
     v2 mode (``I545_V2_OUTPUT=1``): outputs gain the ``_v2`` suffix
     (``L_matrix_v2.json`` / ``cell_metadata_v2.json``) and the base panel is
-    the REUSED v1 panel — when the active (v2) cells tree carries no
-    ``base_panel`` dir, the read falls back to the PRODUCTION v1
-    ``cells/base_panel`` (frozen input, read-only; plan v3 section 4.3 —
-    validity guarded by the judge-stability anchor check).
+    the REUSED GIT-COMMITTED v1 panel — when the active (v2) cells tree
+    carries no ``base_panel`` dir, the read falls back to
+    ``v1_committed_root() / cells / base_panel`` (frozen input, read-only;
+    plan v3 section 4.3 — validity guarded by the judge-stability anchor
+    check). The fallback IGNORES ``EPM_OUTPUT_ROOT`` so a pod with the
+    MooseFS hot-path override set still finds the committed v1 base panel
+    in the repo checkout. Empty-but-existent v2 base panels are a
+    measurement-validity violation (every v2 L cell would become null) —
+    fail-loud BEFORE writing an empty ``panel: {}`` payload.
     """
     cdir = cells_dir()
     if not cdir.exists():
@@ -128,7 +133,9 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
     # ---- base panel -------------------------------------------------------
     base_dir = cdir / base_cell
     if not base_dir.exists() and v2_output_active():
-        prod_base = production_output_root() / "cells" / base_cell
+        # v2: the base panel is the COMMITTED v1 panel. Ignore EPM_OUTPUT_ROOT
+        # (the hot-path override never holds the committed v1 freeze).
+        prod_base = v1_committed_root() / "cells" / base_cell
         if prod_base.exists():
             logger.info("[phase=assemble] v2: reusing the v1 base panel at %s", prod_base)
             base_dir = prod_base
@@ -144,6 +151,15 @@ def assemble(*, base_cell: str = "base_panel") -> dict[str, Path]:  # noqa: C901
                 "scalar": scalar,
                 "summary": d["summary"],
             }
+    if v2_output_active() and not base_panel:
+        # Empty v2 base panel = the silent-failure class Codex flagged: every
+        # v2 L cell would compute trained - None = None, washing every read.
+        raise FileNotFoundError(
+            f"base panel for v2 assembly is empty (base_dir={base_dir}; v1_committed_root="
+            f"{v1_committed_root() / 'cells' / base_cell}) — the v1 committed base panel "
+            "must resolve before v2 assembly. Check that the worktree has the v1 cells "
+            "committed under eval_results/issue_545/cells/base_panel/ (plan section 4.3)."
+        )
     base_path = out / "base_panel.json"
     base_path.write_text(
         json.dumps({"panel": base_panel, "metadata": reproducibility_metadata()}, indent=1)
