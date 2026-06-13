@@ -1540,8 +1540,8 @@
     "342": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/342",
-      "status": "proposed",
+      "path": "tasks/on_hold/342",
+      "status": "on_hold",
       "title": "Train [ZLT] LoRA with persona centroid added at L20 during gradient steps \u2014 does the trained model read the direction at inference?"
     },
     "343": {
