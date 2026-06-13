@@ -674,8 +674,11 @@ def main(argv: list[str] | None = None) -> int:
         import subprocess
 
         # task.py find prints the absolute path of the task folder.
+        # The auditor is local-VM-only — it reads tasks/<status>/<N>/events.jsonl
+        # which exists on the VM, never on a pod — so this task.py shellout cannot
+        # run on a pod and the pod-side-shellout ban does not apply.
         repo_root = Path(__file__).resolve().parent.parent
-        result = subprocess.run(
+        result = subprocess.run(  # epm-lint: pod-shellout-ok -- local-VM-only auditor
             ["uv", "run", "python", str(repo_root / "scripts" / "task.py"), "find", str(args.task)],
             capture_output=True,
             text=True,
