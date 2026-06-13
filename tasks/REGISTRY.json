@@ -3902,8 +3902,8 @@
     "633": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/633",
-      "status": "reviewing",
+      "path": "tasks/completed/633",
+      "status": "completed",
       "title": "Watcher infra-drain pass: execute the PM-curated dispatch queue (~/.eps-autonomous/infra-drain-queue.json) under cap 3"
     },
     "65": {
