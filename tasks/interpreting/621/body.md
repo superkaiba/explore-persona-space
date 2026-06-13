@@ -1,8 +1,9 @@
 ---
 title: 'At the [5,12] / closest-approach low-dose window, rank-1 LoRA marker implants
-  are ungated writes: 23/30 cells pass the joint A-init threshold overall (5/12 read,
-  12/12 write, 6/6 bridge), B aligns with the marker unembedding row, and plain bank
-  geometry beats the rank-1 firing predictor in every cell (MODERATE confidence)'
+  are ungated writes: 23/30 cells pass the joint A-init threshold overall and the
+  read-arm 5/12 joint pass is the asymptote at this dose (a(t) ladder: 7/7 read-arm
+  fails plateau), B aligns with the marker unembedding row, and plain bank geometry
+  beats the rank-1 firing predictor in every cell (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:17:08Z'
