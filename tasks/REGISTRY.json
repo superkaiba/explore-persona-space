@@ -1112,8 +1112,8 @@
     "268": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/268",
-      "status": "proposed",
+      "path": "tasks/on_hold/268",
+      "status": "on_hold",
       "title": "Try [ZLT] + misalignment coupling better"
     },
     "269": {
