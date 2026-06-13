@@ -1478,6 +1478,43 @@ def _daemon_reachable() -> bool:
         return False
 
 
+def _live_session_ids_or_none() -> set[str] | None:
+    """``spawn_session._live_session_ids()`` with an explicit UNAVAILABLE
+    mode: the daemon's live session-id set, or ``None`` when the ``/list``
+    probe fails (daemon down, malformed payload).
+
+    spawn_session's helper returns an EMPTY SET both for "daemon up, zero
+    sessions" and for "daemon unreachable" (its ``list --all`` fallback wants
+    that), which is exactly the wrong fail direction for the infra-drain
+    stale-registration read: a daemon flap between main()'s single
+    reachability probe and this read would make every grace-aged
+    still-``proposed`` registration look definitively dead -> false-stale ->
+    double-spawn. So the drain pass uses this wrapper (same probe shape as
+    :func:`_daemon_reachable`; spawn_session.py is a forbidden surface for
+    this pass) and :func:`_infra_drain_stale` fails ``None`` toward NOT
+    stale (keep blocking)."""
+    try:
+        import urllib.error
+        import urllib.request
+
+        from spawn_session import daemon_port
+
+        url = f"http://127.0.0.1:{daemon_port()}/list"
+        req = urllib.request.Request(
+            url, data=b"{}", headers={"Content-Type": "application/json"}, method="POST"
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+    except (SystemExit, urllib.error.URLError, OSError, json.JSONDecodeError):
+        return None
+    children = data.get("children") if isinstance(data, dict) else None
+    if not isinstance(children, list):
+        # A 200 response without the expected shape is NOT a confirmed
+        # "zero live sessions" — treat as unavailable (fail toward keep).
+        return None
+    return {c.get("happySessionId") for c in children if isinstance(c, dict)}
+
+
 def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:
     """True iff the issue's MANUAL registration (``manual-issue-<N>.json``,
     written by bare ``spawn-issue``) records a Happy id in the daemon's live
@@ -4835,7 +4872,15 @@ def _load_infra_drain_state() -> dict:
     strings (JSON); they are int-normalized here. DEFENSIVE NORMALIZE: drop
     (with a log line) any record whose ``last_attempt_ts`` is not numeric or
     whose key is not an int — a garbled record must not silently bypass the
-    budget."""
+    budget. A record whose ``attempts`` COUNT is garbled (non-int / bool /
+    negative) keeps its valid ``last_attempt_ts`` (the backoff window still
+    binds) but has the count normalized UP to the attempt cap, with a log
+    line — count unknown means the budget may be spent, so fail toward NOT
+    dispatching; a fresh PM ``updated_ts`` (newer than ``last_attempt_ts``)
+    resets the count as usual, so recovery is automatic on the next PM
+    adjudication. Dropping the record instead would RESET the budget — the
+    fail-open direction (round-2 fix, Codex Major: ``int("bad") + 1`` /
+    ``"bad" >= max_attempts`` crashed the whole pass)."""
     path = _infra_drain_state_path()
     if not path.is_file():
         return {"attempts": {}}
@@ -4859,6 +4904,15 @@ def _load_infra_drain_state() -> dict:
                 f"(non-numeric last_attempt_ts {last!r})"
             )
             continue
+        count = rec.get("attempts", 0)
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            cap = _infra_drain_max_attempts()
+            print(
+                f"  infra-drain: state record for #{issue} has a garbled attempts "
+                f"count ({count!r}); normalizing to the attempt cap ({cap}) — fail "
+                f"toward NOT dispatching (a fresh PM updated_ts resets it)"
+            )
+            rec = {**rec, "attempts": cap}
         attempts[issue] = rec
     return {"attempts": attempts}
 
@@ -4904,24 +4958,52 @@ def _task_status_kind(issue: int) -> tuple[str | None, str | None]:
     )
 
 
-def _infra_drain_registrations() -> dict[int, list[dict]]:
-    """ALL ``issue-<N>.json`` + ``manual-issue-<N>.json`` registration entries
-    per issue (not just queue IDs — the widened pending count needs non-queue
-    ones too). List-valued because an issue can carry BOTH an autonomous and
-    a manual registration; staleness then requires ALL of them stale
-    (fail toward keep-blocking). A garbled entry parses to ``{}`` (which
-    :func:`_infra_drain_stale` classifies NOT stale — conservative)."""
-    out: dict[int, list[dict]] = {}
+def _infra_drain_reg_snapshot() -> dict[str, bytes]:
+    """Raw bytes of every ``issue-*.json`` + ``manual-issue-*.json``
+    registration file, keyed by basename — the SINGLE decision-time read both
+    the staleness/pending decision (:func:`_infra_drain_registrations` parses
+    from these bytes) and :func:`_dispatch_infra_drain`'s pre-spawn lost-race
+    re-check are derived from. One read means the re-check can distinguish "a
+    registration APPEARED/CHANGED since the decision" (genuine lost race ->
+    abort) from "this is the registration the pass already classified STALE"
+    (byte-identical -> safe to spawn over; ``spawn_session.py`` overwrites it
+    unconditionally on success). Round-2 fix for the round-1 Critical: the
+    bare-existence re-check aborted every stale-registration re-dispatch
+    forever. A file unreadable at snapshot time is omitted (it then reads as
+    "appeared" at dispatch time -> abort, the safe direction)."""
+    snap: dict[str, bytes] = {}
     if not AUTONOMOUS_REGISTRY_DIR.is_dir():
-        return out
+        return snap
     for prefix in ("issue-", "manual-issue-"):
         for path in sorted(AUTONOMOUS_REGISTRY_DIR.glob(f"{prefix}*.json")):
-            issue = _gc_parse_issue_from_path(path, prefix, "")
+            try:
+                snap[path.name] = path.read_bytes()
+            except OSError:
+                continue
+    return snap
+
+
+def _infra_drain_registrations(snapshot: dict[str, bytes]) -> dict[int, list[dict]]:
+    """ALL ``issue-<N>.json`` + ``manual-issue-<N>.json`` registration entries
+    per issue (not just queue IDs — the widened pending count needs non-queue
+    ones too), parsed FROM the decision-time ``snapshot``
+    (:func:`_infra_drain_reg_snapshot`) so the staleness decision and the
+    pre-spawn re-check can never see torn views of the registry. List-valued
+    because an issue can carry BOTH an autonomous and a manual registration;
+    staleness then requires ALL of them stale (fail toward keep-blocking). A
+    garbled entry parses to ``{}`` (which :func:`_infra_drain_stale`
+    classifies NOT stale — conservative)."""
+    out: dict[int, list[dict]] = {}
+    for prefix in ("issue-", "manual-issue-"):
+        for basename in sorted(snapshot):
+            if not basename.startswith(prefix):
+                continue
+            issue = _gc_parse_issue_from_path(AUTONOMOUS_REGISTRY_DIR / basename, prefix, "")
             if issue is None:
                 continue
             try:
-                entry = json.loads(path.read_text())
-            except (json.JSONDecodeError, OSError):
+                entry = json.loads(snapshot[basename])
+            except ValueError:  # JSONDecodeError + UnicodeDecodeError on raw bytes
                 entry = {}
             if not isinstance(entry, dict):
                 entry = {}
@@ -5032,13 +5114,27 @@ def _infra_drain_pending(
     return pending
 
 
-def _dispatch_infra_drain(issue: int, slot_desc: str, dry_run: bool) -> bool:
+def _dispatch_infra_drain(
+    issue: int,
+    slot_desc: str,
+    dry_run: bool,
+    *,
+    reg_snapshot: dict[str, bytes] | None = None,
+) -> bool:
     """``spawn_session.py spawn-issue --issue <N> --auto`` (the plain
     command, exactly the PM standing-rule item-3 mechanism; no
     ``--auto-approve-gpu-hours`` override — spawn_session's default applies,
     and infra tasks need ~0 GPU). Immediately BEFORE the subprocess,
-    re-checks the registration files one last time and aborts ("lost race to
-    concurrent dispatcher") if one appeared — shrinks the PM-vs-watcher
+    re-checks the registration files against the DECISION-TIME snapshot
+    (:func:`_infra_drain_reg_snapshot`) and aborts ("lost race to concurrent
+    dispatcher") only when a registration APPEARED or CHANGED since the
+    decision — a registration byte-identical to the snapshot is the
+    known-stale entry this pass already classified (round-2 fix: the round-1
+    bare-existence check aborted every stale-registration re-dispatch;
+    ``spawn_session.py`` overwrites the file unconditionally on success, so
+    spawning over the stale entry is safe). ``reg_snapshot=None`` (direct
+    callers without a decision context) degrades to the conservative
+    abort-on-any-existing-file behavior. Shrinks the PM-vs-watcher
     double-spawn window from one-full-pass to ~the spawn subprocess itself.
     Returns success bool; honours dry_run (logs, never spawns)."""
     cmd = [
@@ -5048,13 +5144,32 @@ def _dispatch_infra_drain(issue: int, slot_desc: str, dry_run: bool) -> bool:
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
         return False
+    snapshot = reg_snapshot or {}
     for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
-        if (AUTONOMOUS_REGISTRY_DIR / basename).exists():
+        path = AUTONOMOUS_REGISTRY_DIR / basename
+        known = snapshot.get(basename)
+        try:
+            current = path.read_bytes()
+        except FileNotFoundError:
+            # No registration now (never existed, or GC/PM removed it since
+            # the decision) — nothing to lose a race to.
+            continue
+        except OSError:
             print(
-                f"  INFRA-DRAIN ABORT issue #{issue}: lost race to concurrent "
-                f"dispatcher ({basename} appeared since the decision)"
+                f"  INFRA-DRAIN ABORT issue #{issue}: registration {basename} "
+                f"unreadable at the pre-spawn re-check; cannot verify the "
+                f"decision still holds (fail toward not dispatching)"
             )
             return False
+        if known is None or current != known:
+            print(
+                f"  INFRA-DRAIN ABORT issue #{issue}: lost race to concurrent "
+                f"dispatcher ({basename} "
+                f"{'appeared' if known is None else 'changed'} since the decision)"
+            )
+            return False
+        # else: byte-identical to the decision-time snapshot — the known
+        # (stale) registration the decision already accounted for; proceed.
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
@@ -5196,7 +5311,11 @@ def _infra_drain_possibly_stale_ids(
     ``already-registered``."""
     if not candidate_ids:
         return set()
-    live_ids = _live_session_ids()  # daemon reachability was gated by the caller
+    # _live_session_ids_or_none, NOT spawn_session._live_session_ids: the
+    # caller's daemon gate is main()'s single probe, and a flap since then
+    # must read as UNAVAILABLE (None -> nothing stale -> keep blocking),
+    # never as "zero live sessions" (-> everything stale -> double-spawn).
+    live_ids = _live_session_ids_or_none()
     grace_s = _infra_drain_stale_reg_grace_s()
     return {
         i
@@ -5219,7 +5338,12 @@ def _infra_drain_signals(
     bounds the common nothing-dispatchable tick at zero of these."""
     fetch_ids = {i for i in ids if i not in holds} | set(regs)
     status_kind = {i: _task_status_kind(i) for i in sorted(fetch_ids)}
-    live_ids = _live_session_ids()  # daemon reachability was gated by the caller
+    # Liveness only matters for staleness over registrations; skip the daemon
+    # RPC when there are none. _live_session_ids_or_none (NOT spawn_session's
+    # empty-set-on-failure helper): a daemon flap since main()'s probe must
+    # read UNAVAILABLE (None -> nothing stale -> keep blocking), never "zero
+    # live sessions" (-> false-stale -> double-spawn).
+    live_ids = _live_session_ids_or_none() if regs else None
     grace_s = _infra_drain_stale_reg_grace_s()
     stale: set[int] = set()
     for issue, recs in regs.items():
@@ -5265,7 +5389,11 @@ def infra_drain_pass(
     attempts: dict[int, dict] = state["attempts"]
     backoff_s = _infra_drain_backoff_s()
     max_attempts = _infra_drain_max_attempts()
-    regs = _infra_drain_registrations()
+    # ONE registry read: the staleness/pending decision parses from this
+    # snapshot, and the pre-spawn re-check compares against the same bytes —
+    # so "appeared/changed since the decision" is exact (round-2 fix #1).
+    reg_snapshot = _infra_drain_reg_snapshot()
+    regs = _infra_drain_registrations(reg_snapshot)
 
     # Cheap pre-filter (single source of truth: the SAME _cheap_skip_reason
     # decide_infra_drain uses, with `registered` = the raw registration-file
@@ -5336,7 +5464,7 @@ def infra_drain_pass(
     dispatched = 0
     for issue in dispatch:
         slot_desc = f"slot {min(occupied_active + pending + dispatched + 1, cap)}/{cap}"
-        ok = _dispatch_infra_drain(issue, slot_desc, dry_run)
+        ok = _dispatch_infra_drain(issue, slot_desc, dry_run, reg_snapshot=reg_snapshot)
         if not dry_run:
             # Count the ATTEMPT whether or not the spawn succeeded, so a
             # failing spawn can't tight-loop (the backoff window binds next
