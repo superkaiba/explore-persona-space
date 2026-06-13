@@ -609,13 +609,39 @@ def _make_figures(
     d_with = result["d_with_by_seed"]
     d_without = result["d_without_by_seed"]
 
+    # Reader-facing persona labels (clean-result-critic Lens 2/3) — used in
+    # every figure that surfaces persona names. Underscore-form slugs only
+    # appear in the .meta.json sidecar + Reproducibility table; never in
+    # rendered chart text.
+    READER_LABELS = {
+        "qwen_default": "Default assistant (untrained)",
+        "assistant": "Explicit assistant persona",
+        "hospice_nurse": "Hospice nurse",
+        "journalist": "Journalist",
+        "bartender": "Bartender",
+        "french_person": "French person",
+        "data_scientist": "Data scientist",
+        "dictator": "Dictator",
+        "pirate_captain": "Pirate captain",
+        "child": "Child",
+        "programmer": "Programmer",
+        "librarian": "Librarian",
+        "surgeon": "Surgeon",
+        "medical_doctor": "Medical doctor",
+    }
+
+    def reader(p: str) -> str:
+        return READER_LABELS.get(p, p.replace("_", " ").capitalize())
+
     # 1. Hero: per-seed strip, zones shaded.
-    fig, ax = plt.subplots(figsize=(6.4, 4.2))
+    fig, ax = plt.subplots(figsize=(7.6, 4.6))
     lo = min([*d_with.values(), *d_without.values(), head["identity_threshold"]]) - 0.05
     hi = max([*d_with.values(), *d_without.values(), 0.02]) + 0.05
     ax.axhspan(lo, head["identity_threshold"], color=baseline, alpha=0.12)
     ax.axhspan(head["dose_threshold"], hi, color=accent, alpha=0.12)
     ax.axhline(0.0, color=neutral, lw=1.0, ls=":")
+    # Spread seed labels with deterministic vertical offsets so overlapping
+    # near-identical y-values stay legible (codex critic round-1 ask 1).
     for x, (_label, vals, color) in enumerate(
         [
             ("With-default mix\n(parent, trained default)", d_with, baseline),
@@ -625,18 +651,32 @@ def _make_figures(
         ys = list(vals.values())
         ax.scatter([x] * len(ys), ys, s=70, color=color, zorder=3)
         ax.scatter([x], [float(np.median(ys))], s=240, marker="_", color=color, zorder=4)
+        sorted_seeds = sorted(vals.items(), key=lambda kv: kv[1])
+        # Deterministic vertical fan-out for the seed labels to avoid overlap
+        # when two seeds land within ~0.005 nat of each other.
+        offsets = {
+            sorted_seeds[0][0]: (10, -8),
+            sorted_seeds[1][0]: (10, 0),
+            sorted_seeds[2][0]: (10, 8),
+        }
         for seed, y in vals.items():
-            ax.annotate(str(seed), (x, y), xytext=(8, 0), textcoords="offset points", fontsize=8)
+            ax.annotate(
+                str(seed), (x, y), xytext=offsets[seed], textcoords="offset points", fontsize=8
+            )
     ax.set_xticks([0, 1])
     ax.set_xticklabels(
         ["With-default mix\n(parent, trained default)", "No-default mix\n(never-trained default)"]
     )
     ax.set_ylabel("Centered, implant-normalized default-context shift")
+    # Two-line title so the long claim never clips at the figure edges
+    # (codex critic round-1 ask 1).
     ax.set_title(
-        f"Default-context shielding — zone: {head['zone']} "
-        f"(median {head['median_without']:+.3f} vs with-default {head['median_with']:+.3f})"
+        f"Default-context shielding — zone: {head['zone']}\n"
+        f"(median {head['median_without']:+.3f} vs with-default {head['median_with']:+.3f})",
+        fontsize=11,
     )
     ax.set_ylim(lo, hi)
+    fig.tight_layout()
     savefig_paper(fig, "hero_default_dose_strip", dir=figures_dir)
     plt.close(fig)
 
@@ -663,8 +703,11 @@ def _make_figures(
     plt.close(fig)
 
     # 3. Per-persona centered strip at terminal, both arms (raw alongside the
-    # headline view: every persona, not just the default).
-    fig, axes = plt.subplots(1, 2, figsize=(13.0, 4.8), sharey=True)
+    # headline view: every persona, not just the default). Mark assistant /
+    # default + the replacement, AND directly annotate the bottom-4 floor-
+    # sharers in each arm by name so the prose claim about the floor cluster
+    # is visible from the figure itself (codex critic round-1 ask 4).
+    fig, axes = plt.subplots(1, 2, figsize=(14.0, 5.6), sharey=True)
     for ax, key, title, color in (
         (axes[0], "per_persona_centered_strip_with", "With-default mix (parent)", baseline),
         (axes[1], "per_persona_centered_strip_without", "No-default mix", accent),
@@ -674,29 +717,58 @@ def _make_figures(
         for i, p in enumerate(personas):
             ys = list(strip[p].values())
             ax.scatter([i] * len(ys), ys, s=12, color=color, alpha=0.6)
-        marks = {"qwen_default": "*", "assistant": "D", chassis.replacement: "s"}
-        for p, m in marks.items():
+        # Marker symbols for the registered named personas (legend uses
+        # reader-facing labels — no underscore slugs in chart text).
+        marks = [
+            ("qwen_default", "*"),
+            ("assistant", "D"),
+            (chassis.replacement, "s"),
+        ]
+        for p, m in marks:
             if p in strip:
                 i = personas.index(p)
                 ax.scatter(
                     [i],
                     [float(np.median(list(strip[p].values())))],
-                    s=120,
+                    s=140,
                     marker=m,
                     color="black",
                     zorder=4,
-                    label=p,
+                    label=reader(p),
                 )
+        # Tag the four lowest-median personas DIRECTLY by name in a single
+        # non-overlapping text block in the upper-left of the panel, so the
+        # floor-sharer claim is verifiable from the figure (codex critic
+        # round-1 ask 4). Order: lowest first.
+        floor_four = personas[:4]
+        floor_text_lines = ["Floor-cluster (4 lowest medians):"] + [
+            f"  {rank + 1}. {reader(p)}   (median {float(np.median(list(strip[p].values()))):.3f})"
+            for rank, p in enumerate(floor_four)
+        ]
+        ax.text(
+            0.02,
+            0.78,
+            "\n".join(floor_text_lines),
+            transform=ax.transAxes,
+            fontsize=8,
+            va="top",
+            family="monospace",
+            bbox={"boxstyle": "round,pad=0.4", "fc": "white", "ec": "0.6", "lw": 0.5},
+        )
         ax.axhline(0.0, color=neutral, lw=1.0, ls=":")
         ax.set_title(title)
         ax.set_xticks([])
-        ax.legend(fontsize=8)
+        ax.legend(fontsize=9, loc="upper left", bbox_to_anchor=(0.0, 0.98))
     axes[0].set_ylabel("Centered normalized shift")
+    fig.tight_layout()
     savefig_paper(fig, "per_persona_centered_strip", dir=figures_dir)
     plt.close(fig)
 
     # 4. Three-space columns for qwen_default (+ assistant, new arm).
-    fig, axes = plt.subplots(1, 3, figsize=(12.0, 4.0))
+    # Wider panels + extra bottom margin + slight rotation so the multi-line
+    # x-tick text never clips or collides between adjacent columns (codex
+    # critic round-1 ask 2).
+    fig, axes = plt.subplots(1, 3, figsize=(15.0, 5.2))
     spaces = [
         ("delta_logp_mean", "Δ log P(marker) (nats)"),
         ("delta_margin_mean", "Δ(z_marker − z_eos) (logits)"),
@@ -704,9 +776,21 @@ def _make_figures(
     ]
     ts = result["exploratory"]["three_space_terminal"]
     series = [
-        ("with/qwen_default", baseline, [ts["with"][s]["qwen_default"] for s in ts["with"]]),
-        ("without/qwen_default", accent, [ts["without"][s]["qwen_default"] for s in ts["without"]]),
-        ("without/assistant", neutral, [ts["without"][s]["assistant"] for s in ts["without"]]),
+        (
+            "With-default\n(default trained)",
+            baseline,
+            [ts["with"][s]["qwen_default"] for s in ts["with"]],
+        ),
+        (
+            "No-default\n(default untrained)",
+            accent,
+            [ts["without"][s]["qwen_default"] for s in ts["without"]],
+        ),
+        (
+            "No-default\n(assistant persona)",
+            neutral,
+            [ts["without"][s]["assistant"] for s in ts["without"]],
+        ),
     ]
     for ax, (field, label) in zip(axes, spaces, strict=True):
         for x, (_name, color, rows) in enumerate(series):
@@ -714,9 +798,11 @@ def _make_figures(
             if ys:
                 ax.scatter([x] * len(ys), ys, s=45, color=color)
         ax.set_xticks(range(len(series)))
-        ax.set_xticklabels([n for n, _, _ in series], rotation=20, fontsize=7)
+        ax.set_xticklabels([n for n, _, _ in series], fontsize=8)
         ax.set_ylabel(label)
         ax.axhline(0.0, color=neutral, lw=0.8, ls=":")
+        ax.set_xlim(-0.5, len(series) - 0.5)
+    fig.subplots_adjust(bottom=0.22, wspace=0.32, left=0.06, right=0.98)
     savefig_paper(fig, "three_space_default_assistant", dir=figures_dir)
     plt.close(fig)
 
@@ -732,8 +818,11 @@ def _make_figures(
     savefig_paper(fig, "villain_implant_comparison", dir=figures_dir)
     plt.close(fig)
 
-    # 6. Sanity dumbbells.
-    fig, ax = plt.subplots(figsize=(6.0, 4.0))
+    # 6. Sanity dumbbells. Reader-facing tick labels and a chassis-named
+    # two-line in-figure title that fits without clipping (codex critic
+    # round-1 ask 3). The chassis-name slug ("software_engineer") becomes
+    # a reader-facing phrase ("software engineer").
+    fig, ax = plt.subplots(figsize=(7.4, 4.6))
     per = result["sanity"]["per_persona"]
     for i, (_persona, v) in enumerate(per.items()):
         mw = float(np.median(list(v["with_by_seed"].values())))
@@ -742,10 +831,16 @@ def _make_figures(
         ax.scatter([i], [mw], s=60, color=baseline, zorder=3)
         ax.scatter([i], [mo], s=60, color=accent, zorder=3)
     ax.set_xticks(range(len(per)))
-    ax.set_xticklabels(list(per), rotation=15)
+    ax.set_xticklabels([reader(p) for p in per], rotation=15)
     ax.axhline(0.0, color=neutral, lw=1.0, ls=":")
     ax.set_ylabel("Centered normalized shift (median over seeds)")
-    ax.set_title("Sanity personas: with-default (baseline) vs no-default (accent)")
+    chassis_phrase = chassis.name.replace("_", " ")
+    ax.set_title(
+        "Sanity personas: with-default (baseline) vs no-default (accent)\n"
+        f"({chassis_phrase} chassis)",
+        fontsize=11,
+    )
+    fig.tight_layout()
     savefig_paper(fig, "sanity_dumbbells", dir=figures_dir)
     plt.close(fig)
 
