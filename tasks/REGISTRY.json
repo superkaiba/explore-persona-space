@@ -2206,8 +2206,8 @@
     "425": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/425",
-      "status": "proposed",
+      "path": "tasks/on_hold/425",
+      "status": "on_hold",
       "title": "GPU eval-equivalence verification for #7b (LoRA-only) + #13 (eval subprocess isolation) before merge"
     },
     "426": {
