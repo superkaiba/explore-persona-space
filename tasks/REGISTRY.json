@@ -2333,8 +2333,8 @@
     "441": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/441",
-      "status": "proposed",
+      "path": "tasks/on_hold/441",
+      "status": "on_hold",
       "title": "Localize sleeper marker into Assistant persona via near-twin contrastive negatives (Phase A: persona-discrim only; Phase B: add marker)"
     },
     "442": {
