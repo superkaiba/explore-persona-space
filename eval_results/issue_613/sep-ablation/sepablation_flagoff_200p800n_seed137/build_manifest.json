@@ -1,0 +1,14 @@
+{
+  "cell": "sepablation_flagoff_200p800n",
+  "seed": 137,
+  "marker_sep": "",
+  "sep_mode": "plain",
+  "suppress_negatives": false,
+  "fused_marker_assert": {
+    "n_rows_total": 1000,
+    "n_positive_checked": 200,
+    "passed": true
+  },
+  "git_commit": "2473e425121e31087c9cfafdc30f2baab9640fd9",
+  "timestamp_utc": "2026-06-13T02:54:41.771706+00:00"
+}
