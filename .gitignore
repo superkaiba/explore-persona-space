@@ -9,7 +9,12 @@ __pycache__/
 dist/
 build/
 .eggs/
-data/
+# data/ is ignored EXCEPT the canonical persona pool (#483): committed pool /
+# matrix / meta JSONs live there. `data/*` (not `data/`) because git cannot
+# re-include files under an excluded directory — the negation only works when
+# the parent dir itself is not excluded.
+data/*
+!data/canonical_persona_pool/
 outputs/
 *.output
 .pytest_cache/
