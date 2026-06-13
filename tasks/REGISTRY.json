@@ -404,8 +404,8 @@
     "154": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/154",
-      "status": "proposed",
+      "path": "tasks/on_hold/154",
+      "status": "on_hold",
       "title": "Characterize personas as attractors"
     },
     "155": {
