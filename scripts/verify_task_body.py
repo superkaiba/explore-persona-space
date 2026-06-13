@@ -317,6 +317,17 @@ New v3-only checks (PASS vacuously on v2/legacy):
   (fenced OR `<details>`) inside `## Data` is preceded by a
   subset-disclosure line (`K of M rows, random sample` / `cherry-picked
   for illustration` / harmful-content sanitized form).
+- **check 19b** (`check_data_unwrapped_example_table`, WARN only): a
+  verbatim example row placed in `## Data` as a BARE inline GFM table —
+  not wrapped in `<details>` and not in a fenced code block — that
+  carries a project-internal condition / cell code (`C1`, `H2`,
+  `BS_E0`, `Method A`, …) trips
+  `audit_clean_results_body_discipline.py`'s condition-code scan with a
+  spurious FAIL at Step 9a-bis (the audit exempts the fenced + `<details>`
+  example forms, not the bare table). The WARN nudges the author to wrap
+  the rows BEFORE the confusing downstream audit FAIL. Scoped to cells
+  that WOULD match the audit's condition-code patterns so a benign
+  composition / row-count summary table never WARNs.
 - **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
   per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
   ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
@@ -3534,6 +3545,138 @@ _SUBSET_DISCLOSURE_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Project-internal condition / cell / plan-tag codes that
+# `audit_clean_results_body_discipline.py` flags as body-discipline
+# anti-patterns. KEPT IN SYNC with that script's `condition_labels` +
+# `cell_tags` PATTERNS entries (verbatim source). The audit EXEMPTS
+# example blocks inside `## Data` only when they are wrapped in a fenced
+# code block (stripped globally) or a `<details>` block
+# (`strip_data_example_blocks`); a verbatim example row placed as a BARE
+# inline GFM table is NOT exempt, so a `C1` / `H2` / `BS_E0` cell trips
+# the audit's condition-code scan with a spurious FAIL at /issue Step
+# 9a-bis and no signal telling the author to wrap it. Check 19b (WARN
+# only) fires at authoring time precisely when such a cell exists in an
+# unwrapped `## Data` table, nudging the author to wrap the row in
+# `<details>` or a fenced block BEFORE the confusing downstream audit
+# FAIL. Scoped to a cell that WOULD match the audit (not "any unwrapped
+# table") so a benign composition / row-count summary table never WARNs.
+_DATA_CONDITION_CODE_RE = re.compile(
+    # condition_labels: C1/C2, H1/H2/H3, P1/P2/P3 (optional prime)
+    r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|"  # noqa: RUF001
+    r"hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])"
+    # cell_tags: BS_E*, Z_*, G*, Method A/B, M1-paired
+    r"|\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)"
+    r"|\bMethod\s+[AB]\b|\b[Mm][1-9]\b(?=\s+(?:cosine|cell|mean|extraction|"
+    r"method|sub-experiment))"
+)
+
+# A SINGLE-column GFM delimiter row (`|---|` / `| :--- |` / `---`).
+# `_GFM_DELIM_RE` requires ≥2 columns; this catches the one-column form so
+# a bare single-column `## Data` table (which the audit's line-based scan
+# WOULD FAIL on) is still recognized by check 19b. Kept separate from
+# `_GFM_DELIM_RE` to avoid loosening that constant for its other callers.
+_SINGLE_COL_DELIM_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*\|?\s*$")
+
+
+def _iter_unwrapped_data_tables(data: str) -> list[str]:
+    """Return the cell text of every GFM table inside `## Data` that is
+    NOT wrapped in a `<details>` block and NOT inside a fenced code block.
+
+    The v3 spec carries verbatim example rows in `## Data` as fenced OR
+    `<details>` table blocks; `audit_clean_results_body_discipline.py`
+    exempts exactly those two forms from its condition-code scan. A bare
+    inline GFM table (no fence, no `<details>`) is the off-spec form the
+    audit will flag. This helper isolates that bare-table cell text by
+    stripping the two exempt forms first (mirroring the audit's
+    `strip_code` + `strip_data_example_blocks`), then collecting the
+    cells of any remaining table — a header row + a delimiter row, where
+    the delimiter may be multi-column (`|---|---|`) OR single-column
+    (`|---|`), so single-column data tables are not a blind spot.
+    """
+    # Strip `<details>...</details>` blocks (the wrapped example form).
+    stripped = _DETAILS_BLOCK_RE.sub("", data)
+    # Walk lines, dropping fenced code blocks, collecting GFM-table cell
+    # text from what remains. A table is a contiguous run of `|`-rows that
+    # contains at least one delimiter row. `_GFM_DELIM_RE` requires ≥2
+    # columns; the audit's condition-code scan is line-based with NO
+    # column requirement, so a SINGLE-column data table (`| C1 |` /
+    # `|---|` / ...) would FAIL the audit while escaping a ≥2-col-only
+    # detector. `_SINGLE_COL_DELIM_RE` adds the lone-column delimiter form
+    # so the WARN/audit sync holds at both column counts.
+    cells: list[str] = []
+    in_fence = False
+    run: list[str] = []
+    has_delim = False
+
+    def _is_delim(line: str) -> bool:
+        return bool(_GFM_DELIM_RE.match(line) or _SINGLE_COL_DELIM_RE.match(line))
+
+    def _flush() -> None:
+        nonlocal has_delim
+        if has_delim:
+            for row in run:
+                if _is_delim(row):
+                    continue
+                for cell in row.strip().strip("|").split("|"):
+                    cells.append(cell.strip())
+        run.clear()
+        has_delim = False
+
+    for line in stripped.splitlines():
+        s = line.strip()
+        if s.startswith("```") or s.startswith("~~~"):
+            in_fence = not in_fence
+            _flush()
+            continue
+        if in_fence:
+            continue
+        if s.startswith("|"):
+            run.append(line)
+            if _is_delim(line):
+                has_delim = True
+        else:
+            _flush()
+    _flush()
+    return cells
+
+
+def check_data_unwrapped_example_table(body: str) -> CheckResult:
+    """Check 19b (v3 only, WARN): a verbatim example row placed in
+    `## Data` as a BARE inline GFM table — not wrapped in `<details>`
+    and not in a fenced code block — that carries a project-internal
+    condition / cell code (`C1`, `H2`, `BS_E0`, `Method A`, …) will trip
+    `audit_clean_results_body_discipline.py`'s condition-code scan with a
+    spurious FAIL at /issue Step 9a-bis (the audit exempts the fenced and
+    `<details>` example forms, but not the bare table). This WARN fires at
+    authoring time so the author wraps the row in `<details>` or a fenced
+    block BEFORE the confusing downstream audit FAIL.
+
+    WARN only — never FAIL. Scoped to a table cell that WOULD match the
+    audit's condition-code patterns (not "any unwrapped table") so a
+    benign composition / row-count summary table does not WARN. PASSes
+    vacuously on v2 / legacy bodies.
+    """
+    label = "Data unwrapped example table (v3)"
+    if not is_v3(body):
+        return CheckResult(label, True, "skipped — not a v3 body")
+    data = section_text(body, "Data")
+    if data is None:
+        return CheckResult(label, True, "## Data missing — check 2 will report")
+    cells = _iter_unwrapped_data_tables(data)
+    hits = sorted({m.group(0) for c in cells for m in _DATA_CONDITION_CODE_RE.finditer(c)})
+    if hits:
+        preview = ", ".join(f"`{h}`" for h in hits[:4]) + (" …" if len(hits) > 4 else "")
+        return CheckResult(
+            label,
+            True,
+            f"a bare inline `## Data` table carries condition-code cell(s) ({preview}) — "
+            "wrap the verbatim example rows in a `<details>` block or a fenced code block, "
+            "else the body-discipline audit (Step 9a-bis) FAILs on them as project-internal "
+            "condition codes",
+            is_warn=True,
+        )
+    return CheckResult(label, True, "no unwrapped `## Data` example table with condition codes")
+
 
 def check_data_shape(body: str) -> CheckResult:
     """Check 18 (v3 only): `## Data` carries `### Trained on` /
@@ -4000,6 +4143,7 @@ CHECKS = [
     # v3-gated checks (PASS vacuously on v2 / legacy bodies):
     check_data_shape,  # check 18
     check_data_subset_disclosure,  # check 19
+    check_data_unwrapped_example_table,  # check 19b (WARN)
     check_v3_word_caps,  # check 20
 ]
 

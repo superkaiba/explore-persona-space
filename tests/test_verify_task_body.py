@@ -104,23 +104,24 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 23 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 24 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe) PLUS the
-    # three v3-gated body-only checks added 2026-W24 — check 18
+    # four v3-gated body-only checks added 2026-W24 — check 18
     # (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
-    # check 20 (`check_v3_word_caps`) — each a PASS-skip on this
+    # check 19b (`check_data_unwrapped_example_table`, WARN), check 20
+    # (`check_v3_word_caps`) — each a PASS-skip on this
     # non-v3 fixture. verify_text prepends check 0 (body-nonstub) +
-    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (22
+    # check 0b (no-duplicate-frontmatter), runs CHECKS[1:] (23
     # functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, AND the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc) →
-    # 29 results total (2 prepended + CHECKS[1:]=22 + 5 appended). The
+    # 30 results total (2 prepended + CHECKS[1:]=23 + 5 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 29
+    assert len(results) == 30
 
 
 def test_missing_confidence_tag():
@@ -1675,13 +1676,14 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 23 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 24 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
-    Reproducibility artifact-URL existence probe) PLUS the three
+    Reproducibility artifact-URL existence probe) PLUS the four
     v3-gated body-only checks added 2026-W24 — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
-    check 20 (`check_v3_word_caps`). The migration is a RETARGET —
+    check 19b (`check_data_unwrapped_example_table`, WARN), check 20
+    (`check_v3_word_caps`). The migration is a RETARGET —
     every former check was kept (sometimes dormant, e.g.
     `check_figure_caption`) so downstream tests stay valid; the v3
     checks PASS-skip on non-v3 bodies.
@@ -1692,9 +1694,9 @@ def test_checks_list_size():
     the check-16 lr-matches-plan (needs the plan), the check-17 Context
     provenance row (needs frontmatter + original-body.md), and the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path). So
-    `verify_text` returns 29 results, but `CHECKS` stays at 23.
+    `verify_text` returns 30 results, but `CHECKS` stays at 24.
     """
-    assert len(verify_task_body.CHECKS) == 23
+    assert len(verify_task_body.CHECKS) == 24
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -3151,6 +3153,130 @@ def test_v3_adjacent_undisclosed_details_block_fails():
     by_name = _results_by_name(results)
     cherry = by_name["Cherry-picked label discipline"]
     assert not cherry.passed, cherry.render()
+
+
+def test_v3_unwrapped_data_table_with_condition_code_warns():
+    """Check 19b: a verbatim example row placed in `## Data` as a BARE
+    inline GFM table (no `<details>`, no fence) that carries a
+    project-internal condition code (`C1`) WARNs — the nudge to wrap it
+    before the body-discipline audit FAILs on it at Step 9a-bis. WARN
+    only: the body still PASSes overall."""
+    # Insert a bare inline table into `### Trained on`, alongside the
+    # existing disclosed `<details>` block (so check 19 still PASSes).
+    bare_table = (
+        "Per-condition row counts (2 of 2,000 rows shown for illustration):\n\n"
+        "| Condition | Rows | Note |\n"
+        "|---|---|---|\n"
+        "| C1 | 1000 | positive arm |\n"
+        "| C2 | 1000 | negative arm |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]  # WARN ≠ FAIL
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "C1" in warn.detail
+
+
+def test_v3_wrapped_data_table_does_not_warn():
+    """Check 19b stays silent on the spec-conformant form: the
+    `_V3_GOOD_BODY` carries its `## Data` example table INSIDE a
+    `<details>` block, so no unwrapped-table WARN fires."""
+    ok, results = verify_task_body.verify_text(_V3_GOOD_BODY)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v3_benign_unwrapped_data_table_does_not_warn():
+    """Check 19b is scoped to condition-code cells, not "any unwrapped
+    table" — a bare composition / row-count summary table with no
+    project-internal codes does NOT WARN (no false positive on a
+    legitimate capsule summary table)."""
+    benign_table = (
+        "Row counts by type (full breakdown):\n\n"
+        "| Type | Rows |\n"
+        "|---|---|\n"
+        "| Positive | 1000 |\n"
+        "| Negative | 1000 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + benign_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn, warn.render()
+
+
+def test_v3_check19b_skips_on_v2_body():
+    """Check 19b PASS-skips on a v2 / legacy body (v3-only)."""
+    _ok, results = verify_task_body.verify_text(_V2_GOOD_BODY)
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and not warn.is_warn
+    assert "not a v3 body" in warn.detail
+
+
+def test_v3_unwrapped_single_column_data_table_warns():
+    """Check 19b: a SINGLE-column bare `## Data` table carrying a
+    condition code WARNs too — `_GFM_DELIM_RE` requires ≥2 columns, so
+    a one-column table (`| C1 |` / `|---|`) would FAIL the line-based
+    audit while escaping a ≥2-col-only detector; the single-column
+    delimiter recognition keeps the WARN/audit sync at both column
+    counts (code-reviewer follow-up)."""
+    bare_single_col = (
+        "Conditions covered (2 of 2 shown):\n\n| Condition |\n|---|\n| C1 |\n| C2 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_single_col,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "C1" in warn.detail
+
+
+def test_v3_unwrapped_data_table_cell_tag_warns():
+    """Check 19b: cell-tag forms (`BS_E0`, `Method A`) — not just the
+    `condition_labels` `C1` family — also trip the WARN, locking the
+    sync against the audit's `cell_tags` pattern arm (code-reviewer
+    follow-up: only `C1` was previously tested)."""
+    bare_table = (
+        "Per-cell breakdown (2 of N shown for illustration):\n\n"
+        "| Cell | Method | Rows |\n"
+        "|---|---|---|\n"
+        "| BS_E0 | Method A | 500 |\n"
+        "| BS_E1 | Method B | 500 |\n\n"
+    )
+    body = _V3_GOOD_BODY.replace(
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n",
+        "Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 "
+        "positive-to-negative, on-policy base completions.\n\n" + bare_table,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert ok, [r.render() for r in results if not r.passed]
+    by_name = _results_by_name(results)
+    warn = by_name["Data unwrapped example table (v3)"]
+    assert warn.passed and warn.is_warn, warn.render()
+    assert "BS_E0" in warn.detail or "Method A" in warn.detail
 
 
 def test_v3_takeaways_too_few_bullets_fails():

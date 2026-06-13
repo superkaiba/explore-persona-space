@@ -4,6 +4,13 @@ description: RESOLVED 2026-06-09 — verify_clean_result.py _extract_section reg
 type: feedback
 ---
 
+> **Historical (deprecated surface).** `verify_clean_result.py` is the
+> legacy verifier; the current mechanical gate is `verify_task_body.py`
+> against the v3 five-flat-H2 shape (Takeaways / What I ran / Findings /
+> Data / Reproducibility) — see `.claude/skills/clean-results/SPEC.md`.
+> The "AI Summary" / four-H2 names below are the retired pre-#454 shape.
+> Kept for the resolved-bug context only.
+
 **RESOLVED (2026-06-09): the verifier bug is fixed — do NOT add sacrificial
 intro lines after headings.** `scripts/verify_clean_result.py:_extract_section()`
 now scopes the trailing-text group to `[ \t]+` instead of `\s+` (commit
