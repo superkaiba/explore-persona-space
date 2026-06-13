@@ -1133,8 +1133,8 @@
     "270": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/270",
-      "status": "proposed",
+      "path": "tasks/on_hold/270",
+      "status": "on_hold",
       "title": "Does finetuning the marker change the model's output distribution more generally"
     },
     "271": {
