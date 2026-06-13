@@ -2199,8 +2199,8 @@
     "424": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/424",
-      "status": "proposed",
+      "path": "tasks/on_hold/424",
+      "status": "on_hold",
       "title": "Research-side workflow refinements (EXPERIMENT_TEMPLATE / QUEUE / post-run ritual)"
     },
     "425": {
