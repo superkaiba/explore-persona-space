@@ -219,9 +219,13 @@ for repo_path, parent_local_rel in PARENT_DATA_FILES:
     # PARENT_DATA_FILES maps to data/issue_601/...; #622 owns data/issue_622/
     # (the #613 precedent) — same basenames, issue-local root.
     local = data_dir / Path(parent_local_rel).relative_to("data/issue_601")
-    if local.exists():
-        print(f"[fetch] present: {local}")
-        continue
+    # Always re-fetch at revision=rev, even when `local` already exists: a
+    # short-circuit on existence bypasses the DATA_REV pin on resumed/reused
+    # pods, silently violating the plan's pinned-input discipline (#622 round-2
+    # concern 'pinned-input-fetch-not-enforced'; the #600 stale-mirror class).
+    # hf_hub_download is HTTP-cached against the immutable revision SHA, so the
+    # repeat call is a cheap HEAD on warm caches and the snapshot resolves to
+    # the same bytes by construction.
     local.parent.mkdir(parents=True, exist_ok=True)
     got = hf_hub_download(
         repo_id=HF_DATA_REPO,
