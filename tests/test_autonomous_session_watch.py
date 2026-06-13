@@ -5996,6 +5996,50 @@ def test_infra_drain_garbled_attempts_state_fails_safe(isolated_registry, monkey
     assert state["attempts"]["483"]["attempts"] == 1  # fresh epoch reset
 
 
+def test_infra_drain_missing_attempts_key_normalizes_to_cap(isolated_registry, monkeypatch, capsys):
+    # Round-4 fix (CONCERN: missing-attempts-normalizes-down): a state record
+    # with a valid last_attempt_ts but NO ``attempts`` key would slip past
+    # the type check via ``rec.get("attempts", 0)`` returning the 0 default
+    # BEFORE the bool/non-int/negative branch fired — silently granting a
+    # fresh budget on a half-written or hand-edited record. The fix
+    # normalizes the missing-key shape UP to the attempt cap, same fail
+    # direction the garbled-count sibling already uses.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    (isolated_registry / "infra-drain-state.json").write_text(
+        # last_attempt_ts present and valid; attempts key entirely MISSING.
+        json.dumps({"attempts": {"483": {"last_attempt_ts": 1}}})
+    )
+    # Stale PM epoch (no updated_ts): the missing count must NOT bypass the
+    # attempt budget into a dispatch.
+    _write_drain_queue(isolated_registry, [483], updated_ts=None)
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: pytest.fail("budget bypassed"))
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)  # must not raise
+    captured = capsys.readouterr()
+    assert "missing its attempts key" in captured.out
+    assert "DISPATCHED" not in captured.out
+    # The loud first-time exhausted skip goes to stderr.
+    assert "attempts-exhausted" in captured.out + captured.err
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT
+    # Recovery path: a FRESH PM adjudication (updated_ts newer than the
+    # record's last_attempt_ts) resets the count via the same fresh-epoch
+    # branch the garbled-count sibling test pins — the normalized record
+    # parks the ID, it does not brick it. This also pins that the fix did
+    # NOT break the fresh-reset semantics for the missing-key shape.
+    _write_drain_queue(isolated_registry, [483])  # default updated_ts (2026) > 1
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch, status_kind={483: ("proposed", "infra")}, occupancy=[], real_dispatch=True
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [483]
+    state = json.loads((isolated_registry / "infra-drain-state.json").read_text())
+    assert state["attempts"]["483"]["attempts"] == 1  # fresh epoch reset
+
+
 def test_live_session_ids_or_none_shapes(monkeypatch):
     # Unit pin for the wrapper itself: a well-formed /list payload yields the
     # id set; a malformed payload or an unreachable daemon yields None
@@ -6069,6 +6113,82 @@ def test_live_session_ids_or_none_shapes(monkeypatch):
 
     monkeypatch.setattr("urllib.request.urlopen", _down)
     assert asw._live_session_ids_or_none() is None
+
+
+def test_live_session_ids_or_none_widens_exception_tuple(monkeypatch):
+    # Round-4 fix (CONCERN: urlopen-catch-tuple-too-narrow): the previous
+    # catch tuple (SystemExit, urllib.error.URLError, OSError,
+    # json.JSONDecodeError) crashed the whole infra-drain pass on two
+    # real daemon-flap shapes the original tuple missed:
+    #   (a) http.client.HTTPException (incl. IncompleteRead) when the
+    #       daemon hangs up mid-response-body — distinct from URLError,
+    #       which fires at connection setup.
+    #   (b) UnicodeDecodeError when the daemon emits invalid UTF-8 bytes —
+    #       json.JSONDecodeError is a ValueError subclass, NOT a
+    #       UnicodeDecodeError subclass, so the bytes read raises BEFORE
+    #       json.loads ever sees a string.
+    # Both must now return None (UNAVAILABLE — fail toward keep-blocking),
+    # the same fail direction as a clean URLError.
+    import http.client
+    import io
+    from contextlib import contextmanager
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65535)
+
+    # (a) http.client.IncompleteRead raised by urlopen itself: the response
+    # connection drops while urlopen is still establishing the body stream.
+    def _incomplete_read(*a, **k):
+        raise http.client.IncompleteRead(b"partial")
+
+    monkeypatch.setattr("urllib.request.urlopen", _incomplete_read)
+    assert asw._live_session_ids_or_none() is None  # must not crash
+
+    # (b) UnicodeDecodeError raised by json.load(s) on invalid UTF-8 bytes:
+    # urlopen returns a body whose decode trips before any JSON parsing.
+    class _BadBytes(io.BytesIO):
+        def read(self, *a, **k):
+            raise UnicodeDecodeError("utf-8", b"\xff\xfe", 0, 1, "invalid start byte")
+
+    @contextmanager
+    def _bad_utf8_urlopen(req, timeout=10):
+        yield _BadBytes(b"\xff\xfe")
+
+    monkeypatch.setattr("urllib.request.urlopen", _bad_utf8_urlopen)
+    assert asw._live_session_ids_or_none() is None  # must not crash
+
+
+def test_daemon_reachable_widens_exception_tuple(monkeypatch):
+    # Round-4 sibling pin for _daemon_reachable: same widened catch tuple,
+    # same fail direction (return False, NOT propagate). A daemon flap that
+    # raises http.client.HTTPException or UnicodeDecodeError must not crash
+    # the watcher's main() reachability probe (which would skip every pass
+    # that consumes the result).
+    import http.client
+    import io
+    from contextlib import contextmanager
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65535)
+
+    def _incomplete_read(*a, **k):
+        raise http.client.IncompleteRead(b"partial")
+
+    monkeypatch.setattr("urllib.request.urlopen", _incomplete_read)
+    assert asw._daemon_reachable() is False  # must not crash
+
+    class _BadBytes(io.BytesIO):
+        def read(self, *a, **k):
+            raise UnicodeDecodeError("utf-8", b"\xff\xfe", 0, 1, "invalid start byte")
+
+    @contextmanager
+    def _bad_utf8_urlopen(req, timeout=10):
+        yield _BadBytes(b"\xff\xfe")
+
+    monkeypatch.setattr("urllib.request.urlopen", _bad_utf8_urlopen)
+    assert asw._daemon_reachable() is False  # must not crash
 
 
 def test_infra_drain_malformed_child_keeps_blocking(isolated_registry, monkeypatch, capsys):
