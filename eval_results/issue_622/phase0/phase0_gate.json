@@ -1,0 +1,14 @@
+{
+  "pass": true,
+  "gate_schema": "i622_p0_asserts_v1",
+  "note": "#622 has no adapter reuse, so the #601 Phase-0 fitness reads have no analogue; this gate records that the p0 registry asserts + pinned-input fetch + bystander-panel staging all PASSed (plan #622 \u00a74.3 p0).",
+  "data_rev": "66d7db7a542e19275f8c1d8e32948396d050faa9",
+  "inputs_present": [
+    "data/issue_622/persona_bank.json",
+    "data/issue_622/centroids_L10.pt",
+    "data/issue_622/on_policy_R/R_train.json",
+    "data/issue_622/on_policy_R/R_eval.json",
+    "eval_results/issue_622/phase0/bystander_panel.json"
+  ],
+  "ts": "2026-06-13T07:25:01.799481+00:00"
+}
