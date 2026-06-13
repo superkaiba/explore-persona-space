@@ -1365,8 +1365,8 @@
     "313": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/313",
-      "status": "proposed",
+      "path": "tasks/on_hold/313",
+      "status": "on_hold",
       "title": "Personas are just a form of generalization"
     },
     "314": {
