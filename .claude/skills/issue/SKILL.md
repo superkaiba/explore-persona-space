@@ -2428,8 +2428,10 @@ needing interactive SSH-MCP-driven orchestration mid-run (the
 experimenter launch pattern); (d) **workloads longer than ~20h on
 GCP** — the lane pins `--instance-termination-action=DELETE` +
 `--max-run-duration` (default 24h), so a multi-day sweep is deleted
-mid-run; set `spec.extra["max_run_duration"]` deliberately or use the
-RunPod override. **When overriding to RunPod, name the residual gap in
+mid-run; thread the plan's declared fence via `--max-run-duration
+<dur>` on `dispatch_issue.py launch` (gcloud duration shape, e.g.
+`30h`; lands in `spec.extra["max_run_duration"]`, inert on non-GCP
+lanes — #628) or use the RunPod override. **When overriding to RunPod, name the residual gap in
 the launch marker note** (CLAUDE.md rule). The dispatch CLI
 cross-checks the task's ACTUAL frontmatter and classifies the override
 3-ways, each with a DISTINCT marker flag (additive visibility — the

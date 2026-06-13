@@ -1094,6 +1094,90 @@ def test_ft_intent_boot_disk_guard_stands_down_off_gcp_lanes() -> None:
     assert _ft_intent_gcp_default_boot_disk(spec(backend="nibi")) is False
 
 
+def test_launch_max_run_duration_threads_to_spec_extra(monkeypatch, tmp_path) -> None:
+    """#628: the plan's GCP auto-delete fence threads via
+    ``--max-run-duration`` into ``spec.extra['max_run_duration']`` (the
+    instance-create renderer's override hook over the 24h
+    ``GcpConfig.default_max_run_duration``). Before the flag existed a
+    declared 30h fence had no CLI path from the /issue Step 6b launch
+    and the orchestrator had to accept the default as a plan deviation."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "628",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--max-run-duration",
+                "30h",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert gcp.launches[0].extra["max_run_duration"] == "30h"
+
+
+def test_launch_max_run_duration_absent_leaves_extra_unset(monkeypatch, tmp_path) -> None:
+    """Control: with no ``--max-run-duration`` the key is ABSENT from
+    ``spec.extra`` (the GCP renderer's ``or config.default_max_run_duration``
+    fallback owns the default; the CLI never duplicates it)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    gcp = _MockBackend(kind="gcp")
+    factory = _build_mock_factory(gcp=gcp)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "629",
+                "--intent",
+                "lora-7b",
+                "--backend",
+                "gcp",
+                "--hydra",
+                "smoke=1",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    assert "max_run_duration" not in gcp.launches[0].extra
+
+
+def test_max_run_duration_arg_validation() -> None:
+    """Unit coverage for the gcloud-duration argparse validator: composed
+    integer+unit groups pass (whitespace stripped); bare integers
+    (gcloud would silently read seconds), negatives, fractions, and
+    embedded spaces are refused at the parser surface."""
+    import argparse
+
+    from scripts.dispatch_issue import _max_run_duration_arg
+
+    assert _max_run_duration_arg("30h") == "30h"
+    assert _max_run_duration_arg("1d12h") == "1d12h"
+    assert _max_run_duration_arg("90m") == "90m"
+    assert _max_run_duration_arg("86400s") == "86400s"
+    assert _max_run_duration_arg(" 30h ") == "30h"
+    for bad in ("", "30", "h30", "-5h", "1.5h", "30 h", "24hrs"):
+        with pytest.raises(argparse.ArgumentTypeError):
+            _max_run_duration_arg(bad)
+
+
 def test_launch_gpus_override_skips_guard_on_lanes_that_honor_it(monkeypatch, tmp_path) -> None:
     """RunPod maps ``spec.gpus`` to ``pod_lifecycle.py --gpu-count`` and
     SLURM maps it to the ``--gres`` render — explicit non-GCP lanes
