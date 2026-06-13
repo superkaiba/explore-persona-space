@@ -82,6 +82,16 @@ Read the results and critique carefully. The best follow-ups come from:
 - Experiments that change multiple variables at once
 - Experiments with no clear hypothesis
 - Experiments that are too expensive relative to information gain
+- A proposal that duplicates an existing experiment task (any status) or
+  a settled `docs/open_questions.md` question. (Every proposal you emit
+  is screened for REDUNDANCY by the `follow-up-critic` + `codex-follow-up-critic`
+  ensemble — the 5th doubled review site, single-pass — BEFORE it routes
+  to any auto-run / file-child / interactive-pick path; a `redundant`
+  verdict parks the proposal at `on_hold` instead of running it. You are
+  NOT penalised for a low-but-novel proposal — the screen's bar is
+  duplication only, not info-gain — but a clear duplicate wastes the
+  screen's time. When you already know an existing task or settled
+  question covers a candidate, drop it before emitting.)
 
 ## Artifact-premise verification (MANDATORY)
 

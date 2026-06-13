@@ -652,6 +652,27 @@ var is set (the session was spawned via `spawn_session.py spawn-issue
   cap (park at `plan_pending` only when est. GPU-hours exceed
   `EPM_PLAN_AUTOAPPROVE_GPU_HOURS`, else auto-approve), and
   `awaiting_promotion` (always a human gate). Everything else auto-continues.
+- **Every follow-up proposal passes a redundancy screen before it
+  routes (Step 9b § Follow-up value-critique, subroutine VC).** Once the
+  `follow-up-proposer` posts `epm:follow-ups v1`, the orchestrator runs a
+  SINGLE-PASS ensemble — `follow-up-critic` (Claude) + `codex-follow-up-critic`
+  (Codex) + `reconciler` on disagreement (the 5th doubled review site;
+  workflow.yaml § ensemble_review, `single_pass: true`) — over the whole
+  proposal set ONCE per park, BEFORE any proposal routes to the cheap-band
+  auto-run, the autonomous same-issue loop, the autonomous child-filing
+  path, or the interactive Step 10b pick. The bar is REDUNDANCY ONLY (a
+  proposal duplicating an existing experiment task, a settled open
+  question, or a higher-ranked sibling in this round) — NOT info-gain /
+  worth; a low-but-novel follow-up PASSes. NOTHING is dropped:
+  `not-redundant` proposals proceed through the EXISTING routing
+  unchanged; `redundant` proposals are SAVED as new `on_hold` tasks
+  (`epm:followup-parked-redundant v1`, revivable via `set-status <M>
+  proposed`), never auto-run and never silently discarded. The rationale
+  is persisted both ways (the `epm:followup-value-critique` markers + the
+  parked task's `## Value critique` body section). User-requested
+  follow-ups (`source: user-chat` — the Step 0 followup-scope dispatch)
+  are NOT screened: the user already decided to run them. See Step 9b
+  "Follow-up value-critique".
 - **Auto-run cheap (`< 5` GPU-h) same-question follow-ups in BOTH
   modes at Step 9b.** Standing directive (2026-06-13): a follow-up that
   is `0` GPU-h or `< 5` GPU-h just runs and folds into the SAME issue,
@@ -4950,6 +4971,80 @@ this issue and is NEVER auto-run here regardless of GPU cost (it stays
 filed as a `proposed` child via the autonomous-only block below, or
 surfaces at interactive Step 10b for manual triage).
 
+**Follow-up value-critique (redundancy screen) — MANDATORY before ANY
+proposal routes.** The instant an `epm:follow-ups v1` marker exists for
+this park (posted by C0 below, the autonomous-only block, or interactive
+Step 10b), and BEFORE any proposal is routed to the cheap-band auto-run,
+the autonomous same-issue loop, the autonomous child-filing path, or the
+interactive pick, the orchestrator runs the **follow-up value-critique
+ensemble** ONCE over the whole proposal set. This is the 5th doubled
+review site (workflow.yaml § ensemble_review.doubled_steps[follow-up-critic],
+`single_pass: true`) — it screens for REDUNDANCY only (NOT info-gain /
+worth) and NOTHING is dropped: every proposal is saved with a rationale
+either way. The subroutine (call it **VC** — invoked from C0a below, the
+autonomous block step 2-bis, and Step 10b):
+
+> **VC. Run the value-critique ensemble (single pass — no revise loop).**
+> 1. **Idempotency.** If an `epm:followup-value-critique v1` marker
+>    already exists for THIS proposal set (match by the `epm:follow-ups
+>    v1` it screened — same park), SKIP — reuse the existing merged
+>    verdict (this is a no-op on a backstop-tick / re-entry). Otherwise:
+> 2. **Spawn the ensemble** in ONE message (two `Agent` calls, staggered
+>    a few seconds per the CLAUDE.md 429 guidance): the Claude
+>    `follow-up-critic` AND the `codex-follow-up-critic` prompt-composer.
+>    Write the `epm:follow-ups v1` body to a temp file and pass its PATH
+>    as `proposals_marker_path` (never inline the proposals), plus
+>    `experiment_number`, `parent_goal` (the task `## Goal`), and any
+>    `prior_value_critique_summaries`. Dispatch the Codex twin's composed
+>    prompt as bg Bash via `scripts/codex_task.py` exactly like the other
+>    four twin sites (CLAUDE.md § "Codex ensemble review"); the twin agent
+>    NEVER dispatches Codex itself (orphan-job anti-pattern, #533). Post
+>    `epm:followup-value-critique v1` (Claude) + `epm:followup-value-critique-codex`
+>    (Codex) on this task's `events.jsonl`.
+> 3. **Merge the verdicts PER PROPOSAL** (single pass — no round loop;
+>    `single_pass: true`). For each proposal: both `not-redundant` →
+>    `not-redundant`. Both `redundant` → `redundant` (the merged
+>    rationale unions both critics' duplicate pointers). `not-redundant`
+>    vs `redundant` disagreement → spawn the `reconciler` (marker mode,
+>    `Role under adjudication: follow-up-critic`, binding binary
+>    `not-redundant | redundant`; it posts the canonical
+>    `epm:review-reconcile` marker). A Codex twin no-show falls back to
+>    the single-Claude `follow-up-critic` verdict (workflow.yaml §
+>    ensemble_review). An UNCITED `redundant` verdict (no concrete
+>    duplicate named) is non-binding — treat it as `not-redundant` for
+>    that proposal (cite-or-drop, mirrors the reconciler's ungrounded-
+>    blocker rule).
+> 4. **Act on the merged verdict, per proposal:**
+>    - **`not-redundant`** → the proposal proceeds through the EXISTING
+>      routing UNCHANGED (the caller's normal selection / partition /
+>      pick logic below runs on it). Its rationale (what new info it adds)
+>      is carried forward for the dashboard but does not change routing.
+>    - **`redundant`** → the proposal does NOT run and is NOT routed.
+>      SAVE it as a new task at status `on_hold` (set-aside, revivable via
+>      `set-status <M> proposed`, excluded from auto-dispatch) carrying
+>      `parent_id: <N>` and a `## Value critique` body section with the
+>      verbatim WHY-IT-DUPLICATES rationale + the pointer (the duplicated
+>      task / settled open-question anchor / sibling). File it in ONE
+>      atomic call that lands the task DIRECTLY at `on_hold` (never a
+>      two-step `new` → `set-status on_hold`, which leaves a window where
+>      the proposal sits at `proposed` and a concurrent PM auto-dispatch
+>      pass could pick it up — the exact outcome VC exists to prevent):
+>      `task.py new --status on_hold --parent <N> --kind experiment --goal
+>      "<the proposal's Goal>" --title "<proposal title>" --body-file
+>      <spec-with-value-critique-section>.md`. Post
+>      `epm:followup-parked-redundant v1` on the PARENT (fields per
+>      workflow.yaml § markers: `parked_task_id`, `parent`,
+>      `proposal_rank`, `title`, `duplicates`, `rationale`). Announce in
+>      chat per the "Announce every follow-up/child task in chat" rule:
+>      `Parked #<M> '<title>' on_hold (redundant — duplicates <X>; child
+>      of #<N>, revivable via set-status <M> proposed)`. NEVER silently
+>      drop a `redundant` proposal — `on_hold` is the durable home for
+>      "saved but not worth running now."
+> 5. **Hand the surviving (`not-redundant`) proposal set back** to the
+>    caller. If EVERY proposal screened `redundant`, the caller's
+>    selection finds no candidate and falls through exactly as if the
+>    proposer had returned none.
+
 The cheap-band flow:
 
 C0. **Idempotency + run the proposer (once per park, shared marker).**
@@ -4968,7 +5063,16 @@ C0. **Idempotency + run the proposer (once per park, shared marker).**
    below consume the same `epm:follow-ups v1`. The proposer always posts
    its proposal list when it runs; an empty list means it found no
    follow-ups, and C1 then selects nothing.)
-C1. **Select the cheap-band candidate.** Among the proposals, keep those
+C0a. **Run the value-critique (redundancy screen) — subroutine VC above.**
+   Before selecting any candidate, run VC over the `epm:follow-ups v1`
+   proposal set (idempotent — a re-entry reuses the existing merged
+   verdict). VC parks every `redundant` proposal at `on_hold` and hands
+   back only the `not-redundant` survivors. C1 below selects from the
+   SURVIVORS only — a `redundant` cheap proposal is parked, not auto-run.
+   (VC runs once per park and the autonomous block + Step 10b reuse its
+   verdict, so this is not a per-block cost.)
+C1. **Select the cheap-band candidate.** Among the surviving
+   (`not-redundant`) proposals, keep those
    that are ALL of: `question_relation: same`, `auto_run: yes`, and
    carry a parseable `est_gpu_hours` with `0 < est_gpu_hours < 5`
    (strict `< 5`; `est_gpu_hours: 0` is the Step 9a-ter free-analysis
@@ -5079,7 +5183,18 @@ The autonomous flow:
    `events.jsonl` as `epm:follow-ups v1` (same marker the interactive
    Step 10b would post; sharing the marker means the dashboard +
    downstream readers don't care which site fired the proposer).
-3. Parse the proposals, keep those with `auto_run: yes` in ranked
+2-bis. **Run the value-critique (redundancy screen) — subroutine VC
+   above.** Run VC over the `epm:follow-ups v1` set (idempotent — if the
+   cheap-band block's C0a already ran it this park, reuse the merged
+   verdict). VC parks every `redundant` proposal at `on_hold`
+   (`epm:followup-parked-redundant v1`) and hands back only the
+   `not-redundant` survivors. Steps 3-6 below PARTITION + route the
+   SURVIVORS only — a `redundant` proposal is never filed as a child and
+   never enters the same-issue loop; it is saved on_hold for manual
+   revival. This screen gates BOTH the child-filing path AND the
+   same-issue-loop path.
+3. Parse the surviving (`not-redundant`) proposals, keep those with
+   `auto_run: yes` in ranked
    order, and PARTITION them by `question_relation`. **The routing
    litmus is the Takeaways test:** *would the result rewrite THIS
    issue's `## Takeaways`?* If yes → `same` (stays on this issue via the
@@ -5620,6 +5735,20 @@ The proposer outputs 1-3 concrete follow-up proposals, each with:
 - Ranked by information gain per GPU-hour
 
 Post as `epm:follow-ups v1` event on the completed task.
+
+**Run the value-critique (redundancy screen) before surfacing the picks
+— subroutine VC (Step 9b § Follow-up value-critique).** Run VC over the
+`epm:follow-ups v1` set (idempotent — if Step 9b's C0a / autonomous block
+already ran it this park, reuse the merged verdict; the
+proposer-already-ran short-circuit above means VC's prior verdict is
+usually already present). VC parks every `redundant` proposal at
+`on_hold` (`epm:followup-parked-redundant v1`, revivable) and hands back
+only the `not-redundant` survivors. **Surface ONLY the `not-redundant`
+survivors to the user** for picking; for each parked-redundant proposal,
+state ONE chat line naming the duplicate + the `on_hold` task id so the
+user knows it was saved (not dropped) and can revive it. The user's pick
+is then routed by `question_relation` as below — a `redundant` proposal
+is never offered as a pick (it is already parked on_hold).
 
 **Route the user's pick by `question_relation`** — the litmus is the
 Takeaways test: *would the result rewrite THIS issue's `## Takeaways`?*

@@ -985,6 +985,45 @@ ensemble_review:
         resting on a contaminated / failed-data-gate arm. Mechanical
         pre-passes: verify_task_body.py (+ --methodology-doc when the doc
         exists, binds check 21) + audit_clean_results_body_discipline.py.
+    - role: follow-up-critic
+      step: "9b/10b (BEFORE any follow-up proposal routes)"
+      claude_agent: follow-up-critic
+      codex_agent: codex-follow-up-critic
+      codex_model: gpt-5.5
+      codex_runtime: companion-task
+      verdict_field: "Verdict"
+      pass_values: [not-redundant]
+      fail_values: [redundant]
+      reconcile_marker: "epm:review-reconcile"
+      reconcile_mode: marker
+      single_pass: true
+      notes: |
+        REDUNDANCY screen over follow-up proposals — the 5th doubled
+        review site (added 2026-06-13). Fires BEFORE any proposal routes:
+        at the Step 9b cheap-band block (C0a), the Step 9b autonomous
+        follow-up auto-spawn block, and the interactive Step 10b pick.
+        Gates EVERY follow-up proposal (the cheap-band auto-run path —
+        both modes, the autonomous same-issue loop, AND the
+        substantially-different child-filing path); no follow-up bypasses
+        it. SINGLE-PASS — `single_pass: true` means the round-cap loop
+        does NOT apply (a redundancy verdict is not something the proposal
+        "revises" to fix); the orchestrator runs the ensemble ONCE per
+        proposal set and acts on the merged verdict. The bar is
+        REDUNDANCY ONLY (per workflow.yaml § markers
+        `epm:followup-value-critique`): `redundant` iff the proposal
+        duplicates (a) an existing experiment task with substantial
+        Goal/design overlap, (b) a settled `docs/open_questions.md`
+        question, or (c) a higher-ranked sibling in this round. NOTHING is
+        dropped — `not-redundant` proposals proceed through the EXISTING
+        routing unchanged (cheap same-question → auto-run; expensive /
+        substantially-different → autonomous filing or interactive pick),
+        `redundant` proposals are SAVED as `on_hold` tasks
+        (`epm:followup-parked-redundant v1`), never silently discarded.
+        Per-proposal binary verdict: `not-redundant` (PASS) vs
+        `redundant` (FAIL). Ensembled with `codex-follow-up-critic` on the
+        single pass; agreement → use it; disagreement → reconciler (marker
+        mode). Codex twin no-show falls back to the single-Claude
+        `follow-up-critic` verdict.
   not_doubled:
     - upload-verifier      # mechanical artifact checklist, no LLM-judgment value
     - consistency-checker  # mechanical structure check
@@ -1233,6 +1272,16 @@ reviewer_pairs:
       markers:
         - epm:clean-result-critique
         - epm:clean-result-critique-codex
+    follow_up_value:
+      # SINGLE-PASS redundancy screen over follow-up proposals (no
+      # round-cap loop; see ensemble_review.doubled_steps[follow-up-critic]
+      # § single_pass). Verdicts: not-redundant (PASS) / redundant (FAIL).
+      reviewers:
+        - claude-follow-up-critic
+        - codex-follow-up-critic
+      markers:
+        - epm:followup-value-critique
+        - epm:followup-value-critique-codex
   reconciler:
     marker: epm:review-reconcile
     after_round_3_rule: "Record the final critique, choose the minimal necessary fix, and continue unless a real user-decision blocker remains."
@@ -1733,6 +1782,61 @@ markers:
     posted_by: skill (via follow-up-proposer)
     when: "Step 10b"
     fields: "1-3 ranked follow-up experiment proposals, pre-filled from parent body.md. Each proposal carries `question_relation: same|substantially-different` (+ `followup_label: <kebab-slug>` for `same` — see follow-up-proposer.md § question_relation tag — criteria; routing is by QUESTION IDENTITY: `same` proposals execute ON the parent issue via the same-issue follow-up loop and are NEVER filed as child tasks, `substantially-different` proposals become child tasks; an untagged proposal is treated as `substantially-different` ONLY when the marker pre-dates 2026-06-09 — on a newer marker the missing tag is a proposer-contract violation: Step 9b re-spawns the proposer once to re-emit tagged proposals, Step 10b classifies the pick against the criteria; see SKILL.md Step 9b step 3 freshness guard), `auto_run: yes|no` + `auto_run_reason` (controls autonomous-mode handling of the EXPENSIVE band at Step 9b — `substantially-different` proposals are FILED as `proposed` children for manual triage, `same` proposals with `est_gpu_hours >= 5` execute via the same-issue loop at status `followups_running`; see follow-up-proposer.md § auto_run tag — criteria), `cost_class: free-analysis|needs-gpu` + `headline_affecting: yes|no` (headline_affecting is a user-facing signal only as of 2026-06-13, NOT an auto-run gate), AND `est_gpu_hours: <number>` (the parseable GPU-hour estimate; `0` for free-analysis). The two CHEAP auto-run bands fire in BOTH interactive and autonomous sessions: `cost_class: free-analysis` (est_gpu_hours 0) runs inline at Step 9a-ter; `question_relation: same` + `0 < est_gpu_hours < 5` runs via the Step 9b cheap-band block (same-issue loop). A missing/unparseable `est_gpu_hours` triggers the cheap-band fail-safe (no auto-run; park/file for user). Interactive mode ignores `auto_run` for the EXPENSIVE band but reads `cost_class` / `est_gpu_hours` for both cheap bands and routes Step 10b user picks by `question_relation`. Autonomous mode reads all the tags. See follow-up-proposer.md § cost_class + headline_affecting + est_gpu_hours tags — criteria."
+  - kind: "epm:followup-value-critique"
+    posted_by: skill (via follow-up-critic)
+    when: "BEFORE any follow-up proposal routes — at the Step 9b cheap-band block (C0a), the Step 9b autonomous follow-up auto-spawn block, and the interactive Step 10b pick. Spawned in PARALLEL with the codex twin (single-pass ensemble; no revise loop)."
+    fields: |
+      Single-pass REDUNDANCY screen over the proposals in the latest
+      `epm:follow-ups v1`. The ONLY bar is redundancy (NOT info-gain /
+      worth). Per proposal a binary verdict: `not-redundant` (PASS —
+      proceed through the EXISTING routing unchanged) or `redundant`
+      (FAIL — do NOT run; the orchestrator parks the proposal as a new
+      task at status `on_hold` with the rationale + a pointer to what it
+      duplicates). NOTHING is dropped: every proposal records a rationale
+      both ways (`not-redundant` → what new information it adds;
+      `redundant` → what it duplicates — task #<M> / settled
+      open-question anchor / higher-ranked sibling in this round). A
+      proposal is `redundant` iff it duplicates (a) an existing
+      experiment task (ANY status) with substantial Goal/design overlap,
+      (b) a `docs/open_questions.md` question already marked
+      settled/answered, or (c) a sibling proposal already in this round
+      (the lower-ranked one). Body shape: one `### Proposal <k>` block per
+      proposal carrying the `**Verdict:**` line + the rationale line. See
+      `follow-up-critic.md`. Ensembled with `epm:followup-value-critique-codex`
+      every screen; PASS-vs-FAIL (not-redundant vs redundant)
+      disagreement dispatches the `reconciler` (marker mode, binding).
+  - kind: "epm:followup-value-critique-codex"
+    posted_by: skill (via codex-follow-up-critic)
+    when: "BEFORE any follow-up proposal routes; in PARALLEL with the Claude `follow-up-critic` (single-pass ensemble)."
+    fields: "Codex (gpt-5.5 via companion task) twin of follow-up-critic. Same single-pass redundancy screen, same `not-redundant | redundant` per-proposal verdict + same rationale-both-ways contract. Paired with `epm:followup-value-critique v1`; the orchestrator merges the two per workflow.yaml § ensemble_review (PASS+PASS / not-redundant agreement → use it; disagreement → reconciler marker mode)."
+  - kind: "epm:followup-value-critique-reconcile"
+    posted_by: skill (via reconciler, marker mode)
+    when: "On a `not-redundant` vs `redundant` disagreement between `epm:followup-value-critique` (Claude) and `epm:followup-value-critique-codex` (Codex) for a given proposal set."
+    fields: "Reconciler's binding per-proposal redundancy adjudication. Carried inside the canonical `epm:review-reconcile` marker body via the `**Role under adjudication:** follow-up-critic` field (this kind is a documentation alias — the reconciler posts ONE canonical `epm:review-reconcile` marker, role-tagged, exactly as for the other four sites; see reconciler.md). Binary per proposal: `not-redundant` (proceed through existing routing) or `redundant` (park at `on_hold`)."
+  - kind: "epm:followup-parked-redundant"
+    posted_by: skill (orchestrator, after a `redundant` ensemble verdict)
+    when: "Immediately after a proposal's merged value-critique verdict is `redundant` — the orchestrator files it as a new `on_hold` task instead of routing it."
+    fields: |
+      Records that the orchestrator SAVED (never discarded) a follow-up
+      proposal judged `redundant`, filing it as a new task that lands
+      DIRECTLY at status `on_hold` in ONE atomic `task.py new --status
+      on_hold ...` call (never a two-step `new` → `set-status on_hold`,
+      which would leave a `proposed` window a concurrent PM auto-dispatch
+      pass could pick up). `on_hold` is set-aside, revivable via
+      `set-status <M> proposed`, excluded from auto-dispatch. Body shape:
+      `parked_task_id: <M>,
+      parent: <N>,
+      proposal_rank: <k>,
+      title: "...",
+      duplicates: <task #<dup> | open-question anchor `q:<id>` |
+      sibling proposal #<rank> "<title>">,
+      rationale: <verbatim WHY-IT-DUPLICATES line from the merged
+      value-critique verdict>`. The filed `on_hold` task body carries the
+      same rationale in a `## Value critique` section (so it travels with
+      the task), and its frontmatter records `parent_id: <N>`. Posted on
+      the PARENT task's `events.jsonl`. The proposal is NEVER auto-run and
+      NEVER silently dropped — `on_hold` is the durable home for "saved
+      but not worth running now."
   - kind: "epm:free-analysis-followup-run"
     posted_by: skill (orchestrator at Step 9a-ter)
     when: "Step 9a-ter (after Step 9a-humanize, before Step 9a-bis); fires when the analyzer's Step 6.5 surfaced a `cost_class: free-analysis` (est_gpu_hours: 0) follow-up that has not yet been run on this task. The `headline_affecting: yes` requirement was DROPPED 2026-06-13 — a zero-GPU follow-up auto-runs regardless of headline impact (the standing directive: 0-GPU-h or <5-GPU-h follow-ups just run and fold into the same issue)."
@@ -2718,5 +2822,6 @@ workflow_fix_on_bug:
     - codex-critic
     - codex-interpretation-critic
     - codex-clean-result-critic
+    - codex-follow-up-critic
   forbidden_during:
     - "AUTO_REVIEW_DISABLED=1 sentinel present in agent prompt (nested review/diagnostic loop)"

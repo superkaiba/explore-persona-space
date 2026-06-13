@@ -100,6 +100,12 @@ class EnsembleDoubledStep(BaseModel):
     reconcile_marker: str  # marker kind for the reconciler's output (e.g. "code-review-reconcile")
     reconcile_mode: str  # "marker" | "in-context"
     lenses: list[str] | None = None  # only for critic role (3 lenses)
+    # When true, this site runs the ensemble ONCE per artifact (no
+    # round-cap iterate-to-fix loop) — used by the follow-up-critic
+    # redundancy screen, whose verdict (redundant / not-redundant) is not
+    # something the proposal "revises" to fix. Defaults to false (the four
+    # original sites all iterate up to round_cap_per_reviewer rounds).
+    single_pass: bool = False
     notes: str | None = None
 
 
