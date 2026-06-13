@@ -660,6 +660,54 @@ def _cells_with_trained_adapter(cells: list[tuple[str, str, int]]) -> list[tuple
     return trained
 
 
+def _cells_with_g_cells(cells: list[tuple[str, str, int]]) -> list[tuple[str, str, int]]:
+    """Filter ``cells`` to those whose Phase-2 G-cell output landed on disk (#628 r10).
+
+    Parallel to ``_cells_with_trained_adapter``, but reads the Phase-2 axis.
+    Closes CONCERN ``g-cell-coverage-not-in-finalize`` (reconciler r9): a
+    crash mid-Phase-2 can leave the planned adapter set FULL on disk while
+    only a handful of G-cell JSONs have been written, and the previous
+    ``_finalize`` only checked adapter coverage — it would happily emit a
+    full ``epm:results`` sentinel + ``[phase=done]`` while the G-grid the
+    analyzer asserts on was empty.
+
+    A cell ``(arm, cid, seed)`` is considered G-realized when at least one
+    G-cell JSON matching ``{cid}__*__seed{seed}*.json`` exists under
+    ``EVAL / "G_cells" / arm``. Phase 2 writes one such file per eval
+    column (16 by default; smoke trims to ~3), plus a ``__plain`` shadow
+    when the arm's ``_sep_variant == "sep"``; ``_cell_read`` short-circuits
+    on existing files so the predicate stays cheap (filesystem ``glob``,
+    no JSON parse, no network).
+
+    The "at least one" predicate matches the same "did this cell make any
+    Phase-2 progress" question ``_cells_with_trained_adapter`` answers for
+    Phase 1 — strictly stronger "all eval columns landed" coverage is
+    out of scope here (the analyzer asserts on the H2 grid separately via
+    ``_assert_h2_keys``; this finalizer guards the SENTINEL contract).
+    """
+    g_root = EVAL / "G_cells"
+    realized: list[tuple[str, str, int]] = []
+    missing: list[str] = []
+    for arm, cid, seed in cells:
+        arm_dir = g_root / arm
+        # Match the same glob shape ``_cell_read`` writes:
+        # ``{cid}__{eval_cid}__seed{seed}{suffix}{fname_tag}.json``.
+        if arm_dir.is_dir() and any(arm_dir.glob(f"{cid}__*__seed{seed}*.json")):
+            realized.append((arm, cid, seed))
+            continue
+        missing.append(_cell_slug(arm, cid, seed))
+    if missing:
+        logger.warning(
+            "[partial-phase] %d/%d cells lack any G-cell output and will be SKIPPED: %s",
+            len(missing),
+            len(cells),
+            ", ".join(missing)
+            if len(missing) <= 8
+            else f"{len(missing)} cells (first 5: {', '.join(missing[:5])})",
+        )
+    return realized
+
+
 def _cells(args) -> list[tuple[str, str, int]]:
     """The (arm, cid, seed) cell list every phase derives from (PASS_UNIFIED).
 
@@ -2536,17 +2584,31 @@ def _finalize(args) -> bool:
     assert is still defense-in-depth, but emitting ``epm:results`` with
     missing cells is wrong by itself.
 
-    Now: enumerate REALIZED cells from disk (stop_step JSON OR local
-    adapter dir present, the same predicate ``_cells_with_trained_adapter``
-    applies to Phases 2/4), and:
+    Coverage is verified on BOTH axes (#628 r10, closes CONCERN
+    ``g-cell-coverage-not-in-finalize``):
 
-    - realized == planned → emit ``epm:results`` (today's behavior),
-      return True. The caller then logs ``[phase=done]``.
-    - realized < planned → emit ``epm:progress`` ONLY, with a missing-cell
-      manifest. NO ``epm:results``, NO ``[phase=done]``. The reproducibility
-      card lists ONLY realized cells so the verifier never sees a phantom
-      adapter_path for a never-trained cell. Return False so the caller
-      suppresses ``[phase=done]``.
+    - ADAPTER axis (Phase 1, via ``_cells_with_trained_adapter``): the
+      cell's stop_step JSON or local adapter dir is present.
+    - G-CELL axis (Phase 2, via ``_cells_with_g_cells``): at least one
+      G-cell JSON ``{cid}__*__seed{seed}*.json`` is on disk under
+      ``EVAL / "G_cells" / arm``.
+
+    The round-9 launcher introduced a ``gate_phase2_coverage`` tolerance
+    (``MIN_PHASE2_CELLS=1``) that lets the launcher CONTINUE past a
+    partial Phase 2 — without this dual check ``_finalize`` would see
+    the full 56-adapter coverage from Phase 1, declare success, and emit
+    ``epm:results`` + ``[phase=done]`` over a near-empty G-grid. Each
+    axis follows the same contract as the Phase-1 fix:
+
+    - All adapters AND all G-cells present → ``epm:results`` + return
+      True. The caller then logs ``[phase=done]``.
+    - Any missing on EITHER axis → ``epm:progress`` ONLY with a
+      ``missing_adapters`` and a ``missing_g_cells`` manifest. NO
+      ``epm:results``, NO ``[phase=done]``. The reproducibility card
+      lists ONLY the cells realized on the ADAPTER axis (the same
+      contract that closed ``partial-ok-results-sentinel``; a card
+      adapter_path stays a valid HF pointer regardless of Phase-2
+      progress). Return False so the caller suppresses ``[phase=done]``.
 
     Dry-run / smoke still downgrade unconditionally to ``epm:progress``
     (a live ``poll_pipeline.py`` would otherwise drain a smoke sentinel
@@ -2554,34 +2616,43 @@ def _finalize(args) -> bool:
 
     Dry-run short-circuit (#628 r8, closes CONCERN
     ``dry-run-finalize-suppresses-done``): a dry-run from a clean tree
-    has no trained adapters on disk, so ``_cells_with_trained_adapter``
+    has no trained adapters AND no G-cells on disk, so both disk probes
     would return ``[]`` and the function would return ``False``, which
     suppresses ``[phase=done]`` at the caller. But the dry-run contract
-    is that it MUST terminate cleanly (it never trained anything, so
-    there's nothing to be incomplete about). Skip the disk probe for
-    dry-run: treat planned == realized, emit ``epm:progress`` (not
-    ``epm:results`` — same downgrade as the live-poller safety above),
-    and return ``True`` so the caller fires ``[phase=done]``.
+    is that it MUST terminate cleanly. Skip BOTH disk probes for
+    dry-run: treat planned == realized on both axes, emit ``epm:progress``
+    (not ``epm:results`` — same downgrade as the live-poller safety
+    above), and return ``True`` so the caller fires ``[phase=done]``.
     """
     planned = _cells(args)
     # Dry-run short-circuit: terminates cleanly with no disk artifacts;
-    # advertise the FULL planned grid (no real adapters were trained, so
-    # ``adapter_paths`` is a paper card for completeness only). The
+    # advertise the FULL planned grid on BOTH axes (no real adapters or
+    # G-cells exist, so the card is a paper enumeration only). The
     # ``not args.dry_run`` arm of ``full_results`` below still forces
     # ``kind = epm:progress`` so a live poll never drains this sentinel
     # as real results.
-    realized = list(planned) if args.dry_run else _cells_with_trained_adapter(planned)
-    realized_set = set(realized)
-    missing = [_cell_slug(*c) for c in planned if c not in realized_set]
-    coverage_complete = not missing
+    if args.dry_run:
+        realized_adapter = list(planned)
+        realized_g = list(planned)
+    else:
+        realized_adapter = _cells_with_trained_adapter(planned)
+        realized_g = _cells_with_g_cells(planned)
+    adapter_set = set(realized_adapter)
+    g_set = set(realized_g)
+    missing_adapters = [_cell_slug(*c) for c in planned if c not in adapter_set]
+    missing_g_cells = [_cell_slug(*c) for c in planned if c not in g_set]
+    coverage_complete = not missing_adapters and not missing_g_cells
 
     card = {
         "hf_model_repo": HF_MODEL_REPO,
-        # Card lists ONLY realized cells -- never advertise an adapter
-        # path for a cell whose Phase-1 worker died.
-        "adapter_paths": {_cell_slug(*c): _hf_adapter_subfolder(*c) for c in realized},
+        # Card lists ONLY adapter-realized cells -- never advertise an
+        # adapter path for a cell whose Phase-1 worker died. G-cell
+        # coverage is reported separately under ``coverage.missing_g_cells``
+        # rather than altering the adapter_paths shape (a card adapter
+        # path is still a valid HF pointer regardless of Phase-2 progress).
+        "adapter_paths": {_cell_slug(*c): _hf_adapter_subfolder(*c) for c in realized_adapter},
         "wandb_project": os.environ.get("WANDB_PROJECT", "issue628"),
-        "wandb_run_names": [f"issue628_{_cell_slug(*c)}" for c in realized],
+        "wandb_run_names": [f"issue628_{_cell_slug(*c)}" for c in realized_adapter],
         "reused_adapters": {
             f"i537_marker_seed{s}": {"revision": I537_ADAPTER_REV[s]}
             for s in args.seeds
@@ -2591,27 +2662,45 @@ def _finalize(args) -> bool:
     }
     coverage = {
         "planned": len(planned),
-        "realized": len(realized),
-        "missing": missing,
+        "realized_adapter": len(realized_adapter),
+        "realized_g_cells": len(realized_g),
+        "missing_adapters": missing_adapters,
+        "missing_g_cells": missing_g_cells,
         "complete": coverage_complete,
+        # Back-compat keys for the round-7 contract (downstream consumers
+        # that read ``coverage.realized`` / ``coverage.missing`` see the
+        # ADAPTER axis, the original Phase-1 grid this finalizer was first
+        # written for). Round-10 callers should prefer the explicit
+        # ``realized_adapter`` / ``realized_g_cells`` / ``missing_adapters``
+        # / ``missing_g_cells`` fields.
+        "realized": len(realized_adapter),
+        "missing": missing_adapters,
     }
     if not coverage_complete:
         logger.warning(
-            "[finalize] PARTIAL coverage: %d/%d cells realized; missing %d (first: %s). "
+            "[finalize] PARTIAL coverage: adapters=%d/%d, g_cells=%d/%d "
+            "(missing %d adapters, %d g_cells; first missing adapter=%s, first missing g_cell=%s). "
             "Emitting epm:progress (NOT epm:results) and suppressing [phase=done].",
-            len(realized),
+            len(realized_adapter),
             len(planned),
-            len(missing),
-            missing[0] if missing else "n/a",
+            len(realized_g),
+            len(planned),
+            len(missing_adapters),
+            len(missing_g_cells),
+            missing_adapters[0] if missing_adapters else "n/a",
+            missing_g_cells[0] if missing_g_cells else "n/a",
         )
     summary = (
-        f"issue-628 dispatcher complete: {len(realized)}/{len(planned)} cells realized "
+        f"issue-628 dispatcher complete: {len(realized_adapter)}/{len(planned)} adapters, "
+        f"{len(realized_g)}/{len(planned)} g_cells "
         f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)}, "
         f"smoke={args.smoke})"
         if coverage_complete
         else (
-            f"issue-628 dispatcher PARTIAL: {len(realized)}/{len(planned)} cells realized; "
-            f"{len(missing)} cells missing a trained Phase-1 adapter "
+            f"issue-628 dispatcher PARTIAL: adapters={len(realized_adapter)}/{len(planned)}, "
+            f"g_cells={len(realized_g)}/{len(planned)}; "
+            f"{len(missing_adapters)} cells missing a trained Phase-1 adapter, "
+            f"{len(missing_g_cells)} cells missing Phase-2 G-cell output "
             f"(arms={sorted({c[0] for c in planned})}, seeds={list(args.seeds)})"
         )
     )

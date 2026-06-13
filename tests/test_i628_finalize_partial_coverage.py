@@ -1,29 +1,41 @@
-"""Coverage-aware ``_finalize`` regression test (#628 r7).
+"""Coverage-aware ``_finalize`` regression test (#628 r7 + r10).
 
-Closes CONCERN ``partial-ok-results-sentinel`` (raised by reconciler r6):
+Closes two CONCERNs:
+
+r7 — ``partial-ok-results-sentinel`` (raised by reconciler r6):
 the launcher's ``I628_MIN_TRAINED_CELLS=30`` salvage gate combined with
 ``--partial-ok`` previously let a PARTIAL Phase-1 (e.g. 30 trained cells
 out of the planned 56) reach ``_finalize`` and emit a full
 ``epm:results`` sentinel + ``[phase=done]`` log line, even though the
 downstream analyzer (``scripts/i628_analysis.py:_assert_h2_keys``)
 requires the full 16-context x 2-seed (plus the 3 mini arms) H2 grid.
+
+r10 — ``g-cell-coverage-not-in-finalize`` (reconciler r9): the round-9
+launcher's ``gate_phase2_coverage`` tolerance (``MIN_PHASE2_CELLS=1``)
+lets the launcher CONTINUE past a partial Phase 2; without verifying
+G-cell coverage too, ``_finalize`` would see full 56-adapter coverage
+from Phase 1 and emit ``epm:results`` + ``[phase=done]`` over a
+near-empty G-grid. The fix verifies BOTH axes (adapter + G-cell)
+before emitting ``epm:results``.
+
 The analyzer-side fail-loud assert is defense-in-depth; emitting
-``epm:results`` with missing cells is wrong by itself.
+``epm:results`` with missing cells (on EITHER axis) is wrong by itself.
 
 These tests pin the new contract:
 
-* realized == planned → ``epm:results`` + ``[phase=done]`` (today's path).
-* realized <  planned → ``epm:progress`` ONLY, with a missing-cell
-  manifest under ``coverage.missing``; the reproducibility card lists
-  ONLY realized cells (no phantom ``adapter_paths`` for never-trained
-  cells); ``main()`` suppresses ``[phase=done]``.
+* adapters == planned AND g_cells == planned → ``epm:results`` +
+  ``[phase=done]`` (full coverage path).
+* adapters < planned OR g_cells < planned → ``epm:progress`` ONLY,
+  with ``coverage.missing_adapters`` AND ``coverage.missing_g_cells``
+  manifests; the reproducibility card lists ONLY adapter-realized
+  cells; ``main()`` suppresses ``[phase=done]``.
 * dry-run / smoke unconditionally downgrade to ``epm:progress`` (a
   live ``poll_pipeline.py`` would otherwise drain a smoke sentinel as
   real results).
 
-No GPU, no network: ``_cells_with_trained_adapter`` is monkeypatched
-to return a chosen subset, and ``write_sentinel`` is replaced with an
-in-memory recorder.
+No GPU, no network: ``_cells_with_trained_adapter`` AND
+``_cells_with_g_cells`` are monkeypatched to return chosen subsets,
+and ``write_sentinel`` is replaced with an in-memory recorder.
 """
 
 from __future__ import annotations
@@ -85,8 +97,9 @@ def test_finalize_full_coverage_emits_results_and_done(monkeypatch):
     planned = d._cells(args)
     assert len(planned) > 0, "full sweep should enumerate >0 cells"
 
-    # All cells trained -> realized == planned.
+    # All cells trained AND all cells G-evaluated -> both axes full.
     monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: list(cells))
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: list(cells))
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -96,10 +109,17 @@ def test_finalize_full_coverage_emits_results_and_done(monkeypatch):
     rec = captured[0]
     assert rec["kind"] == "epm:results", f"full coverage must emit epm:results, got {rec['kind']!r}"
     body = json.loads(rec["note"])
-    assert body["coverage"]["complete"] is True
-    assert body["coverage"]["realized"] == len(planned)
-    assert body["coverage"]["planned"] == len(planned)
-    assert body["coverage"]["missing"] == []
+    cov = body["coverage"]
+    assert cov["complete"] is True
+    assert cov["planned"] == len(planned)
+    # New explicit dual-axis fields.
+    assert cov["realized_adapter"] == len(planned)
+    assert cov["realized_g_cells"] == len(planned)
+    assert cov["missing_adapters"] == []
+    assert cov["missing_g_cells"] == []
+    # Back-compat aliases (adapter axis) preserved for round-7 consumers.
+    assert cov["realized"] == len(planned)
+    assert cov["missing"] == []
     # The card advertises adapter_paths for every planned cell.
     assert len(body["reproducibility_card"]["adapter_paths"]) == len(planned)
 
@@ -108,7 +128,7 @@ def test_finalize_full_coverage_emits_results_and_done(monkeypatch):
 
 
 def test_finalize_partial_coverage_emits_progress_not_results(monkeypatch):
-    """30 of 56 cells trained -> epm:progress, NOT epm:results."""
+    """30 of 56 cells trained (G-cells follow trained set) -> epm:progress, NOT epm:results."""
     import i628_dispatch as d
 
     args = _args()
@@ -116,9 +136,12 @@ def test_finalize_partial_coverage_emits_progress_not_results(monkeypatch):
     assert len(planned) >= 30, "this test assumes the full sweep is >=30 cells"
 
     # Reconciler's exact scenario: I628_MIN_TRAINED_CELLS=30 salvage,
-    # so 30/56 cells trained, 26 missing.
+    # so 30/56 cells trained, 26 missing. G-cells can only exist for
+    # cells that have an adapter, so the G-realized set is a subset of
+    # the trained set -- here we pin it equal to the trained set.
     trained_subset = list(planned[:30])
     monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: trained_subset)
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: list(trained_subset))
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -131,19 +154,26 @@ def test_finalize_partial_coverage_emits_progress_not_results(monkeypatch):
         "this is the contract that closes partial-ok-results-sentinel"
     )
     body = json.loads(rec["note"])
-    assert body["coverage"]["complete"] is False
-    assert body["coverage"]["realized"] == 30
-    assert body["coverage"]["planned"] == len(planned)
-    assert len(body["coverage"]["missing"]) == len(planned) - 30
-    # Card advertises ONLY realized cells -- never a phantom adapter_path
-    # for a never-trained cell (Codex r6 _finalize coverage-summary finding).
+    cov = body["coverage"]
+    assert cov["complete"] is False
+    assert cov["realized_adapter"] == 30
+    assert cov["realized_g_cells"] == 30
+    assert cov["planned"] == len(planned)
+    assert len(cov["missing_adapters"]) == len(planned) - 30
+    assert len(cov["missing_g_cells"]) == len(planned) - 30
+    # Back-compat aliases mirror the adapter axis.
+    assert cov["realized"] == 30
+    assert len(cov["missing"]) == len(planned) - 30
+    # Card advertises ONLY adapter-realized cells -- never a phantom
+    # adapter_path for a never-trained cell.
     card_paths = body["reproducibility_card"]["adapter_paths"]
     assert len(card_paths) == 30
     realized_slugs = {d._cell_slug(*c) for c in trained_subset}
     assert set(card_paths.keys()) == realized_slugs
-    # And the missing manifest lists the OTHER cells.
+    # And the missing manifests list the OTHER cells.
     missing_slugs = {d._cell_slug(*c) for c in planned[30:]}
-    assert set(body["coverage"]["missing"]) == missing_slugs
+    assert set(cov["missing_adapters"]) == missing_slugs
+    assert set(cov["missing_g_cells"]) == missing_slugs
 
 
 def test_finalize_zero_realized_emits_progress(monkeypatch):
@@ -152,6 +182,7 @@ def test_finalize_zero_realized_emits_progress(monkeypatch):
 
     args = _args()
     monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: [])
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: [])
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -159,7 +190,10 @@ def test_finalize_zero_realized_emits_progress(monkeypatch):
     assert len(captured) == 1
     assert captured[0]["kind"] == "epm:progress"
     body = json.loads(captured[0]["note"])
-    assert body["coverage"]["realized"] == 0
+    cov = body["coverage"]
+    assert cov["realized_adapter"] == 0
+    assert cov["realized_g_cells"] == 0
+    assert cov["realized"] == 0  # back-compat
     assert body["reproducibility_card"]["adapter_paths"] == {}
 
 
@@ -171,6 +205,7 @@ def test_finalize_smoke_downgrades_even_on_full_coverage(monkeypatch):
 
     args = _args(smoke=True)
     monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: list(cells))
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: list(cells))
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -187,7 +222,10 @@ def test_finalize_dry_run_downgrades_even_on_full_coverage(monkeypatch):
     import i628_dispatch as d
 
     args = _args(dry_run=True)
+    # Dry-run short-circuits BOTH disk probes; if either monkeypatch ran,
+    # the short-circuit is broken (the next test pins this exactly).
     monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: list(cells))
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: list(cells))
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -220,19 +258,30 @@ def test_finalize_dry_run_clean_tree_emits_progress_and_returns_true(monkeypatch
     planned = d._cells(args)
     assert len(planned) > 0, "full sweep should enumerate >0 cells"
 
-    # Clean tree: NO adapters exist on disk. Pre-r8 this would have made
-    # _finalize report coverage_complete=False and main() would suppress
-    # [phase=done]. The fix is that _finalize must NOT call this on a
-    # dry-run -- the short-circuit replaces the probe entirely. We use a
-    # sentinel that raises if reached so the test is unambiguous.
-    def _must_not_be_called(cells):
+    # Clean tree: NO adapters AND no G-cells exist on disk. Pre-r8 the
+    # adapter probe would have returned [] and main() would suppress
+    # [phase=done]. The r8 fix short-circuited the adapter probe for
+    # dry-run; the r10 G-cell axis is added with the SAME short-circuit
+    # (otherwise the dry-run regression would re-open on the G-cell
+    # axis -- a clean tree has neither artifact). Use sentinels that
+    # raise if reached so the test is unambiguous on BOTH axes.
+    def _adapter_must_not_be_called(cells):
         raise AssertionError(
             "_cells_with_trained_adapter must NOT be probed during dry-run "
             "(closes dry-run-finalize-suppresses-done): the disk probe is "
             "the bug -- short-circuit before it."
         )
 
-    monkeypatch.setattr(d, "_cells_with_trained_adapter", _must_not_be_called)
+    def _g_must_not_be_called(cells):
+        raise AssertionError(
+            "_cells_with_g_cells must NOT be probed during dry-run "
+            "(closes the round-10 G-cell extension of the same short-circuit): "
+            "a clean tree has no G-cells, so the probe would falsely report "
+            "0/56 g-cell coverage and re-open the [phase=done] suppression."
+        )
+
+    monkeypatch.setattr(d, "_cells_with_trained_adapter", _adapter_must_not_be_called)
+    monkeypatch.setattr(d, "_cells_with_g_cells", _g_must_not_be_called)
     captured = _capture_sentinels(monkeypatch, d)
 
     complete = d._finalize(args)
@@ -247,12 +296,113 @@ def test_finalize_dry_run_clean_tree_emits_progress_and_returns_true(monkeypatch
         f"dry-run still downgrades the sentinel kind for live-poller safety; got {rec['kind']!r}"
     )
     body = json.loads(rec["note"])
-    # Coverage reads as complete (paper card -- nothing was trained).
-    assert body["coverage"]["complete"] is True
-    assert body["coverage"]["realized"] == len(planned)
-    assert body["coverage"]["planned"] == len(planned)
-    assert body["coverage"]["missing"] == []
+    cov = body["coverage"]
+    # Coverage reads as complete on BOTH axes (paper card -- nothing was
+    # trained, nothing was G-evaluated, but dry-run is enumeration only).
+    assert cov["complete"] is True
+    assert cov["realized_adapter"] == len(planned)
+    assert cov["realized_g_cells"] == len(planned)
+    assert cov["planned"] == len(planned)
+    assert cov["missing_adapters"] == []
+    assert cov["missing_g_cells"] == []
+    # Back-compat aliases.
+    assert cov["realized"] == len(planned)
+    assert cov["missing"] == []
     # Card advertises the FULL planned grid (nothing was actually trained,
     # but dry-run is a paper enumeration -- the live-poller-safety
     # downgrade above is what stops a real poll from draining this).
     assert len(body["reproducibility_card"]["adapter_paths"]) == len(planned)
+
+
+# ── round-10: G-cell axis ───────────────────────────────────────────────────
+
+
+def test_finalize_full_adapters_partial_g_cells_emits_progress(monkeypatch):
+    """Closes CONCERN ``g-cell-coverage-not-in-finalize`` (reconciler r9).
+
+    The round-9 launcher's ``gate_phase2_coverage`` tolerance
+    (``MIN_PHASE2_CELLS=1``) lets the launcher continue past a Phase-2
+    crash that produced only ONE G-cell. Pre-r10 ``_finalize`` checked
+    only the adapter axis: full 56 adapters from Phase 1 -> declares
+    success, emits ``epm:results`` + ``[phase=done]`` over an
+    essentially empty G-grid. The round-10 fix is to verify BOTH axes.
+    """
+    import i628_dispatch as d
+
+    args = _args()
+    planned = d._cells(args)
+    assert len(planned) >= 30, "test assumes the full sweep is >=30 cells"
+
+    # All adapters present (Phase 1 finished cleanly), but only ONE
+    # G-cell landed (round-9 launcher's MIN_PHASE2_CELLS=1 tolerance).
+    g_subset = list(planned[:1])
+    monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: list(cells))
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: g_subset)
+    captured = _capture_sentinels(monkeypatch, d)
+
+    complete = d._finalize(args)
+    assert complete is False, (
+        "partial g-cell coverage MUST report coverage_complete=False; "
+        "this is the contract that closes g-cell-coverage-not-in-finalize"
+    )
+
+    assert len(captured) == 1
+    rec = captured[0]
+    assert rec["kind"] == "epm:progress", (
+        f"partial G-cell coverage MUST NOT emit epm:results; got {rec['kind']!r}"
+    )
+    body = json.loads(rec["note"])
+    cov = body["coverage"]
+    assert cov["complete"] is False
+    # Adapter axis is FULL.
+    assert cov["realized_adapter"] == len(planned)
+    assert cov["missing_adapters"] == []
+    # G-cell axis is PARTIAL -- the bug class this test pins.
+    assert cov["realized_g_cells"] == 1
+    assert len(cov["missing_g_cells"]) == len(planned) - 1
+    g_realized_slugs = {d._cell_slug(*c) for c in g_subset}
+    g_missing_slugs = {d._cell_slug(*c) for c in planned if c not in set(g_subset)}
+    assert set(cov["missing_g_cells"]) == g_missing_slugs
+    # Card still advertises the full adapter grid (HF pointers are valid
+    # regardless of Phase-2 progress; the G-cell shortfall is reported
+    # under ``coverage.missing_g_cells``, not by hiding adapter_paths).
+    card_paths = body["reproducibility_card"]["adapter_paths"]
+    assert len(card_paths) == len(planned)
+    # Sanity: the one G-cell that DID land is among the planned grid.
+    assert g_realized_slugs.issubset(set(card_paths.keys()))
+
+
+def test_finalize_partial_both_axes_lists_both_missing_manifests(monkeypatch):
+    """Mixed partial: adapter axis missing one set, G-cell axis missing another.
+
+    Pins that ``missing_adapters`` and ``missing_g_cells`` are reported
+    INDEPENDENTLY -- the two axes don't collapse to a single manifest.
+    """
+    import i628_dispatch as d
+
+    args = _args()
+    planned = d._cells(args)
+    assert len(planned) >= 10, "test assumes the full sweep is >=10 cells"
+
+    # Adapter axis missing the LAST 3; G-cell axis missing the FIRST 5.
+    # The intersection (cells trained AND G-evaluated) is planned[5:-3].
+    trained = list(planned[:-3])
+    g_realized = list(planned[5:])
+    monkeypatch.setattr(d, "_cells_with_trained_adapter", lambda cells: trained)
+    monkeypatch.setattr(d, "_cells_with_g_cells", lambda cells: g_realized)
+    captured = _capture_sentinels(monkeypatch, d)
+
+    complete = d._finalize(args)
+    assert complete is False
+    assert captured[0]["kind"] == "epm:progress"
+    cov = json.loads(captured[0]["note"])["coverage"]
+
+    expected_missing_adapters = {d._cell_slug(*c) for c in planned[-3:]}
+    expected_missing_g_cells = {d._cell_slug(*c) for c in planned[:5]}
+    assert set(cov["missing_adapters"]) == expected_missing_adapters
+    assert set(cov["missing_g_cells"]) == expected_missing_g_cells
+    # Disjointness is the point here: the two missing manifests do NOT
+    # contain overlapping cells in this construction.
+    assert set(cov["missing_adapters"]) & set(cov["missing_g_cells"]) == set(), (
+        "this test's construction has disjoint missing sets on the two axes"
+    )
