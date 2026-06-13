@@ -192,12 +192,81 @@ def _classify_env_assign(var: str, value: str) -> tuple[str, str]:
     return ("high", "")
 
 
+def _redact_value(value: str, key_class: str) -> str:
+    """Return a fixed-shape redacted preview of a matched secret value.
+
+    The audit's whole job is to identify secrets so the human can rotate
+    them — but its own output (the markdown report + the audit-hits JSON)
+    must not COPY the secret into a fresh artifact, or the audit re-leaks
+    the credential into the task log it's protecting.  So every matched
+    value is replaced with ``<redacted:<class>:len=<N>>`` (length is safe
+    to share — a 37-char vs 8-char hint disambiguates real-shape from
+    fixture without ever exposing the bytes).
+
+    The bare provider class (`hf` / `wandb` / `runpod` / `openai` /
+    `anthropic`) is used unchanged; env-assign hits expose the env-var
+    name (which is itself public, e.g. ``HF_TOKEN``) but the trailing
+    value is redacted.
+    """
+    if key_class.startswith("env-assign:"):
+        var = key_class.split(":", 1)[1]
+        # value already includes "VAR=..." here; rebuild VAR=<redacted:...>.
+        return f"{var}=<redacted:env:len={len(value) - len(var) - 1}>"
+    return f"<redacted:{key_class}:len={len(value)}>"
+
+
+def _redact_excerpt(text: str) -> str:
+    """Scrub token-shaped substrings from a note-excerpt string.
+
+    A note-excerpt may quote the surrounding context of a leak — which can
+    include the leaked value itself (the `set -x` echo pattern this audit
+    targets).  Replace every TOKEN_PATTERN match + every ``VAR=value``
+    env-assignment match with a class-tagged redaction marker.  The
+    excerpt's other prose (event kinds, timestamps, file paths, fixture
+    annotations) is preserved verbatim so the human reader can still
+    triage the context.
+
+    Defense in depth: the same regex patterns the scanner uses for hit
+    detection are reused here for excerpt scrubbing, so any token shape
+    that triggers a hit cannot also leak into the surrounding excerpt
+    text.
+    """
+
+    # Order matters.  ENV_ASSIGN matches the WHOLE ``VAR=value`` span and
+    # therefore consumes any in-value token shape (HF_TOKEN=hf_…); processing
+    # it FIRST means standalone token shapes elsewhere in the excerpt still
+    # reach their own redaction pass below, and the env-assign output's `env`
+    # tag identifies that the leak rode through an env-var assignment.
+    def _env_sub(m: re.Match[str]) -> str:
+        var, value = m.group(1), m.group(2)
+        if value in SCRUB_SENTINELS or value.lower() in {s.lower() for s in SCRUB_SENTINELS}:
+            return m.group(0)  # already scrubbed; leave verbatim
+        return f"{var}=<redacted:env:len={len(value)}>"
+
+    text = ENV_ASSIGN.sub(_env_sub, text)
+
+    # Provider-shape patterns next (anthropic before openai, mirroring
+    # TOKEN_PATTERNS' detection order).
+    for key_class, pat in TOKEN_PATTERNS:
+        text = pat.sub(lambda m, c=key_class: f"<redacted:{c}:len={len(m.group(0))}>", text)
+
+    # WandB 40-hex only when explicit WANDB context appears in the SAME excerpt.
+    if WANDB_CONTEXT.search(text):
+        text = WANDB_HEX.sub(lambda m: f"<redacted:wandb:len={len(m.group(0))}>", text)
+
+    return text
+
+
 def scan_line(line_no: int, raw_line: str) -> list[Hit]:
     """Apply all token patterns to one events.jsonl line.
 
     Scans the row's serialized JSON form so matches inside `note`, `metadata`,
     or any other field are caught uniformly.  Multiple key classes can hit
     the same row — each contributes one Hit.
+
+    Stored fields are REDACTED at the moment of construction (``match`` →
+    ``<redacted:<class>:len=<N>>``, ``note_excerpt`` → token shapes scrubbed).
+    The raw secret never leaves this function alive.
     """
     hits: list[Hit] = []
     try:
@@ -210,11 +279,8 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
     kind = event.get("kind", "?")
     version = event.get("version")
     note = event.get("note") or ""
-    excerpt = note[:200] if note else raw_line[:200]
-
-    # Truncate match strings so a 40-char SHA doesn't make the report unreadable.
-    def trunc(m: str) -> str:
-        return m if len(m) <= 80 else (m[:77] + "...")
+    raw_excerpt = note[:200] if note else raw_line[:200]
+    safe_excerpt = _redact_excerpt(raw_excerpt)
 
     # Key-shape patterns.  Record `m.start()` so the report can pinpoint
     # multiple hits on the same JSONL row (plan AC3 byte offset).
@@ -227,8 +293,8 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
                     event_kind=kind,
                     event_version=version,
                     key_class=key_class,
-                    match=trunc(m.group(0)),
-                    note_excerpt=excerpt,
+                    match=_redact_value(m.group(0), key_class),
+                    note_excerpt=safe_excerpt,
                     byte_offset=m.start(),
                 )
             )
@@ -246,8 +312,8 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
                     event_kind=kind,
                     event_version=version,
                     key_class="wandb",
-                    match=trunc(m.group(0)),
-                    note_excerpt=excerpt,
+                    match=_redact_value(m.group(0), "wandb"),
+                    note_excerpt=safe_excerpt,
                     byte_offset=m.start(),
                 )
             )
@@ -266,8 +332,8 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
                 event_kind=kind,
                 event_version=version,
                 key_class=f"env-assign:{var}",
-                match=trunc(f"{var}={value}"),
-                note_excerpt=excerpt,
+                match=_redact_value(f"{var}={value}", f"env-assign:{var}"),
+                note_excerpt=safe_excerpt,
                 confidence=confidence,
                 triage_reason=reason,
                 byte_offset=m.start(),

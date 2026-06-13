@@ -493,3 +493,152 @@ def test_provider_for_hit_maps_every_env_assign_variant() -> None:
         note_excerpt="",
     )
     assert audit._provider_for_hit(unrecognised) == ""
+
+
+# ---------------------------------------------------------------------------
+# Round-4 secret-redaction coverage (Codex r3 Critical: `secret-values-emitted`).
+# The audit's own output must NEVER copy a matched secret value into the
+# markdown report or `audit-hits.json` — else the audit re-leaks the credential
+# into the very task log it's protecting.
+# ---------------------------------------------------------------------------
+
+
+def _scan_for_token(raw: str) -> list[audit.Hit]:
+    """Helper: run scan_line on a single synthetic event row."""
+    return audit.scan_line(1, _evt(raw))
+
+
+def test_redact_value_shape_class() -> None:
+    """`_redact_value` on a shape class returns the class+length marker only."""
+    out = audit._redact_value(FAKE_HF_TOKEN_REAL_SHAPE, "hf")
+    assert out == f"<redacted:hf:len={len(FAKE_HF_TOKEN_REAL_SHAPE)}>"
+    # The raw secret MUST NOT survive in the marker.
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in out
+
+
+def test_redact_value_env_assign_keeps_var_name() -> None:
+    """`_redact_value` on env-assign preserves the env-var name; redacts only the value."""
+    out = audit._redact_value(f"HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE}", "env-assign:HF_TOKEN")
+    # The env-var name is public; redaction targets the secret value only.
+    assert out.startswith("HF_TOKEN=")
+    assert "<redacted:env:len=" in out
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in out
+
+
+def test_redact_excerpt_strips_token_shapes() -> None:
+    """`_redact_excerpt` scrubs token shapes from surrounding context prose.
+
+    Env-assign processing runs FIRST (it consumes the whole ``VAR=value`` span,
+    swallowing any in-value token shape), so an ``HF_TOKEN=hf_…`` leak tags as
+    ``env``.  Standalone token shapes elsewhere in the excerpt then reach their
+    own class-tagged pass.
+    """
+    excerpt = (
+        f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} and also "
+        f"a stray {FAKE_ANTHROPIC_KEY_REAL_SHAPE} got logged"
+    )
+    scrubbed = audit._redact_excerpt(excerpt)
+    # Both raw secrets MUST be gone.
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in scrubbed
+    assert FAKE_ANTHROPIC_KEY_REAL_SHAPE not in scrubbed
+    # The env-assign leak got tagged `env` (consumed before the shape pass);
+    # the standalone anthropic shape kept its class tag.
+    assert "<redacted:env:len=" in scrubbed
+    assert "<redacted:anthropic:len=" in scrubbed
+    # And the env-var name + benign prose survive.
+    assert "HF_TOKEN=" in scrubbed
+    assert "got logged" in scrubbed
+
+
+def test_redact_excerpt_standalone_shape_keeps_class_tag() -> None:
+    """When the shape is NOT inside an env-assign, it keeps its provider tag."""
+    excerpt = f"raw HF token in chat: {FAKE_HF_TOKEN_REAL_SHAPE} please rotate"
+    scrubbed = audit._redact_excerpt(excerpt)
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in scrubbed
+    assert "<redacted:hf:len=" in scrubbed
+    assert "please rotate" in scrubbed
+
+
+def test_scan_line_never_stores_raw_secret_value() -> None:
+    """End-to-end: scan_line on a real-shaped secret returns Hits whose
+    `match` field is redacted (no raw secret in Hit.match or Hit.note_excerpt).
+    """
+    raw = f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} got logged at row 42"
+    hits = _scan_for_token(raw)
+    assert hits, "expected at least one hit for a real-shaped HF token"
+    for h in hits:
+        # Hit.match is the FIRST place a raw secret could leak.
+        assert FAKE_HF_TOKEN_REAL_SHAPE not in h.match, (
+            f"raw secret leaked into Hit.match: {h.match!r}"
+        )
+        # Hit.note_excerpt is the SECOND — the surrounding prose can quote
+        # the secret verbatim.
+        assert FAKE_HF_TOKEN_REAL_SHAPE not in h.note_excerpt, (
+            f"raw secret leaked into Hit.note_excerpt: {h.note_excerpt!r}"
+        )
+        # Class+length markers must surface so the human can still triage.
+        assert "<redacted:" in h.match
+
+
+def test_compose_report_redacts_raw_secret_in_markdown() -> None:
+    """The generated markdown report MUST NOT carry the raw secret value."""
+    raw = f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} got logged"
+    hits = _scan_for_token(raw)
+    report = audit.compose_report(123, Path("/tmp/events.jsonl"), hits, 1)
+    # The raw secret MUST be absent from the entire markdown report.
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in report, (
+        "audit-report.md contained the raw secret — the audit re-leaked it"
+    )
+    # And the verdict is still FAIL, the rotation steps are still rendered,
+    # so the redaction does NOT degrade the audit's primary function.
+    assert "**Verdict:** FAIL" in report
+    assert "### Rotate the Hugging Face token" in report
+
+
+def test_audit_hits_json_redacts_raw_secret() -> None:
+    """`audit-hits.json` (serialized via `asdict`) MUST NOT carry the raw secret."""
+    from dataclasses import asdict
+
+    raw = f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} got logged"
+    hits = _scan_for_token(raw)
+    payload = {"hits": [asdict(h) for h in hits]}
+    serialized = json.dumps(payload, indent=2)
+    # The raw secret MUST be absent from the JSON payload.
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in serialized, (
+        "audit-hits.json contained the raw secret — the audit re-leaked it"
+    )
+    # But triage-relevant fields are still present.
+    assert '"key_class": "hf"' in serialized or '"key_class": "env-assign:HF_TOKEN"' in serialized
+    assert '"byte_offset"' in serialized
+    assert "<redacted:" in serialized
+
+
+def test_redaction_covers_every_token_shape() -> None:
+    """Cross-pattern coverage: every shape class in TOKEN_PATTERNS gets scrubbed."""
+    raw_secrets = {
+        "hf": FAKE_HF_TOKEN_REAL_SHAPE,
+        "openai": FAKE_OPENAI_KEY_REAL_SHAPE,
+        "anthropic": FAKE_ANTHROPIC_KEY_REAL_SHAPE,
+        "runpod": FAKE_RUNPOD_KEY_REAL_SHAPE,
+    }
+    for cls, secret in raw_secrets.items():
+        hits = _scan_for_token(f"leak: {secret} found")
+        # At least one shape-class hit fires.
+        shape_hits = [h for h in hits if h.key_class == cls]
+        assert shape_hits, f"no {cls} hit for secret {secret!r}"
+        for h in shape_hits:
+            assert secret not in h.match
+            assert secret not in h.note_excerpt
+            assert f"<redacted:{cls}:" in h.match
+
+
+def test_wandb_context_redaction() -> None:
+    """The WandB context-anchored 40-hex path also redacts cleanly."""
+    raw = f"Set WANDB_API_KEY={FAKE_WANDB_KEY_REAL_SHAPE_40HEX} in env"
+    hits = _scan_for_token(raw)
+    wandb_hits = [h for h in hits if h.key_class == "wandb"]
+    assert wandb_hits, "expected a wandb hit under explicit WANDB context"
+    for h in wandb_hits:
+        assert FAKE_WANDB_KEY_REAL_SHAPE_40HEX not in h.match
+        assert FAKE_WANDB_KEY_REAL_SHAPE_40HEX not in h.note_excerpt
+        assert "<redacted:wandb:" in h.match
