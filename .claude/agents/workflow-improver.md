@@ -57,8 +57,8 @@ The workflow is the meta-layer that drives experiments — never the experiments
   - `autonomous_session_watch.py`, `cron_autonomous_session_watch.sh` — the crash-recovery + pod-safety + stalled-detector watcher + its cron wrapper
   - `session_progress_report.py`, `session_summarize.py`, `session_resolver.py`, `cron_session_summarize.sh` — the per-session progress self-report helper (`/issue` phone titles), the 5-min LLM session-summary cache (dashboard + `spawn_session.py list` PROGRESS column), the Happy-session→transcript resolver, and the summarizer's cron wrapper
   - `workflow_lint.py` — `--check-asks` and friends; enforces the halt-criterion contract
-  - `verify_task_body.py` — 13-check markdown spec for clean-result bodies
-  - `verify_plan.py` — the `/adversarial-planner` Phase 1.5.0 mechanical pre-pass gate for plans (c0-c11 check catalog; plan-side sibling of `verify_task_body.py`)
+  - `verify_task_body.py` — mechanical markdown spec for clean-result bodies (check catalog in the script docstring)
+  - `verify_plan.py` — the `/adversarial-planner` Phase 1.5.0 mechanical pre-pass gate for plans (check catalog in the script docstring; plan-side sibling of `verify_task_body.py`)
   - `verify_uploads.py` — the upload-verifier's artifact checklist + phantom-URL gate (`--claimed-urls-file`, /issue Step 8)
   - `audit_clean_results_body_discipline.py` — anti-pattern detector
   - `redact_for_gist.py`, `check_no_secret_shaped_strings.py` — the gist-publish PII redactor (daily/weekly update skills) + the pre-commit secret-shaped-string gate whose documented remediation path it is
