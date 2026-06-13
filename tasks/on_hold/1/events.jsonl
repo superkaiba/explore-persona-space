@@ -3,3 +3,4 @@
 {"ts": "2026-05-27T08:43:43Z", "kind": "epm:concern-verified-open", "version": 1, "by": "code-reviewer", "concern_id": "cli-test-concern", "note": "concern_id: cli-test-concern\nseverity: CONCERN\nsummary: A concern raised via the CLI for end-to-end coverage."}
 {"ts": "2026-06-13T06:49:57Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "on_hold", "note": "parked: 'on hold for now' (proposed <=544 bulk move)"}
 {"ts": "2026-06-13T06:58:12Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "on_hold", "to": "proposed"}
+{"ts": "2026-06-13T06:58:13Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "on_hold"}
