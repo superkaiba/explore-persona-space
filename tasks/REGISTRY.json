@@ -1681,8 +1681,8 @@
     "362": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/362",
-      "status": "proposed",
+      "path": "tasks/on_hold/362",
+      "status": "on_hold",
       "title": "Two-marker setup: anchor closer to persona mimicry first"
     },
     "363": {
