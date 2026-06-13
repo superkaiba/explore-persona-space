@@ -103,8 +103,8 @@
     "114": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/114",
-      "status": "proposed",
+      "path": "tasks/on_hold/114",
+      "status": "on_hold",
       "title": "Use activation oracles to see persona"
     },
     "115": {
