@@ -158,6 +158,111 @@ def strip_code(text: str) -> str:
     return text
 
 
+# GFM table delimiter row: `|---|---|`, `:--|:-:|--:`, `---|---`, etc.
+# Mirrors `_TABLE_DELIM_RE` in `verify_task_body.py`: at least TWO cells of
+# dashes (with optional leading/trailing `|` and optional `:` alignment
+# markers) separated by an internal `|`. The internal `|` is mandatory; it
+# is what distinguishes a real multi-column GFM table delimiter from a
+# bare `---` thematic break or setext-style H2 underline.
+_TABLE_DELIM_RE = re.compile(
+    r"^\s*\|?\s*:?-{1,}:?\s*\|\s*:?-{1,}:?\s*(?:\|\s*:?-{1,}:?\s*)*\|?\s*$"
+)
+
+
+def _table_row_line_indices(lines: list[str]) -> set[int]:
+    """Return the indices of lines that belong to a GFM table block.
+
+    A GFM table is a header row (a `|`-containing line) IMMEDIATELY
+    followed by a delimiter row (`_TABLE_DELIM_RE`), then a contiguous
+    run of `|`-containing body rows until a blank line or a non-pipe
+    line. Mirrors `verify_task_body.py::_table_row_line_indices` — the
+    canonical table-cell detector used by check 14 — so the audit and
+    verifier carry the same table-block definition. A lone prose line
+    that happens to carry a `|` (e.g. `log p(x | y)` in a paragraph)
+    is NOT a table row — it lacks the required delimiter neighbor.
+
+    Lines inside fenced code blocks are excluded (callers also strip
+    fences via `strip_code`, but we guard here too so the delimiter
+    scan can't be tricked by a `|---|` shown inside a code fence).
+
+    Used by `audit_body` to exempt table cells from prose-only audit
+    categories (`interval_inline`, `condition_labels`). The
+    clean-result-critic Lens 7 spec (`.claude/agents/clean-result-critic.md`)
+    scopes the bracketed-CI ban to TL;DR / Findings / Reproducibility
+    PROSE — table cells in the Reproducibility Parameters table
+    legitimately carry interval forms like `mc_ci = [0.236, 0.252]`.
+    The `condition_labels` rule's purpose is symmetrically to catch
+    BARE codes in narrative prose where the reader has no lookup; a
+    persona-ID lookup table whose entire purpose IS defining `C1` /
+    `D1` is not the target of that rule.
+    """
+    table_lines: set[int] = set()
+    in_fence = False
+    n = len(lines)
+    i = 0
+    while i < n:
+        stripped = lines[i].strip()
+        if stripped.startswith("```") or stripped.startswith("~~~"):
+            in_fence = not in_fence
+            i += 1
+            continue
+        if in_fence:
+            i += 1
+            continue
+        if (
+            "|" in stripped
+            and not _TABLE_DELIM_RE.match(stripped)
+            and i + 1 < n
+            and _TABLE_DELIM_RE.match(lines[i + 1].strip())
+        ):
+            table_lines.add(i)  # header
+            table_lines.add(i + 1)  # delimiter
+            j = i + 2
+            while j < n:
+                row = lines[j].strip()
+                if row == "" or "|" not in row:
+                    break
+                if row.startswith("```") or row.startswith("~~~"):
+                    break
+                table_lines.add(j)
+                j += 1
+            i = j
+            continue
+        i += 1
+    return table_lines
+
+
+def _blank_table_rows(text: str) -> str:
+    """Return a copy of `text` with every GFM table-row line blanked.
+
+    "Blanked" means the line's content is replaced with an empty
+    string (the `\n` is preserved). Used by `audit_body` to produce a
+    table-cell-exempt scan source for the prose-only categories
+    (`interval_inline`, `condition_labels`). Non-exempt categories
+    keep scanning the unblanked text — `byte_identical`, `pre_reg`,
+    `named_tests`, `letter_labels`, etc. are not prose-vs-table
+    sensitive, and we don't want to silently widen the audit's
+    exemption surface.
+    """
+    lines = text.splitlines()
+    table_idx = _table_row_line_indices(lines)
+    return "\n".join("" if i in table_idx else line for i, line in enumerate(lines))
+
+
+# Audit categories whose regex hits inside a real GFM table cell are
+# spec-compliant and must be suppressed. Lens 7 (clean-result-critic)
+# scopes the bracketed-CI ban to PROSE surfaces; the Parameters table
+# in `## Reproducibility` legitimately carries interval forms like
+# `mc_ci = [0.236, 0.252]`. The persona-ID lookup table inside
+# `### What I ran` legitimately carries `C1` / `D1` codes whose
+# definition IS the table — the `condition_labels` rule targets BARE
+# codes in narrative prose where the reader has no lookup. Other
+# categories (`byte_identical`, `pre_reg`, `named_tests`, ...) keep
+# firing on table cells — the prose-vs-table distinction is not
+# load-bearing for those.
+_TABLE_CELL_EXEMPT_CATEGORIES: frozenset[str] = frozenset({"interval_inline", "condition_labels"})
+
+
 # The `## Reproducibility` `**Context:**` provenance row (SPEC.md
 # § `**Context:**` row; verify_task_body.py check 17) requires the
 # originating user prompt / follow-up scope note be carried forward
@@ -306,13 +411,30 @@ def is_v2(body: str) -> bool:
 
 
 def audit_body(body: str) -> dict[str, list[str]]:
+    """Scan `body` for prose anti-patterns under the categories in
+    `PATTERNS`. Returns a dict of category-name -> up-to-5 sample hits.
+
+    Table-cell exemption: categories in `_TABLE_CELL_EXEMPT_CATEGORIES`
+    (`interval_inline`, `condition_labels`) scan a copy of the cleaned
+    text with every GFM table-row line blanked. This mirrors the spec
+    — the clean-result-critic Lens 7 rule scopes the bracketed-CI ban
+    to PROSE, and the Reproducibility Parameters table legitimately
+    carries interval forms (`mc_ci = [0.236, 0.252]`). The persona-ID
+    lookup table inside `### What I ran` legitimately carries `C1` /
+    `D1` codes whose definition IS the table. All other categories
+    keep scanning the unblanked text — the prose-vs-table distinction
+    is not load-bearing for `byte_identical`, `pre_reg`, `named_tests`,
+    `letter_labels`, etc.
+    """
     findings: dict[str, list[str]] = {}
     cleaned = strip_code(
         strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
     )
+    cleaned_table_blanked = _blank_table_rows(cleaned)
     for name, (pattern, _) in PATTERNS.items():
+        scan_source = cleaned_table_blanked if name in _TABLE_CELL_EXEMPT_CATEGORIES else cleaned
         flags = re.IGNORECASE if name == "pre_reg" else 0
-        matches = list(re.finditer(pattern, cleaned, flags))
+        matches = list(re.finditer(pattern, scan_source, flags))
         if matches:
             findings[name] = [m.group(0) for m in matches[:5]]
     return findings

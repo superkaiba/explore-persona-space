@@ -1589,6 +1589,98 @@ def test_legacy_4_section_body_fails():
     assert "Details" in by_name["three required H2 sections in order"].detail
 
 
+# ─── Audit script: table-cell exemption for prose-only categories ─────────
+
+
+def _load_audit_module():
+    audit_path = (
+        Path(__file__).resolve().parents[1] / "scripts" / "audit_clean_results_body_discipline.py"
+    )
+    audit_spec = importlib.util.spec_from_file_location("audit_disc", audit_path)
+    audit_mod = importlib.util.module_from_spec(audit_spec)
+    sys.modules["audit_disc"] = audit_mod
+    audit_spec.loader.exec_module(audit_mod)
+    return audit_mod
+
+
+def test_audit_interval_inline_exempt_in_table_cell():
+    """`interval_inline` regex hits inside a real GFM table cell are
+    suppressed — the clean-result-critic Lens 7 spec scopes the
+    bracketed-CI ban to TL;DR / Findings / Reproducibility PROSE, not
+    the Reproducibility Parameters table (incident: task #522 round 2,
+    where `[0.236, 0.252] (` in an `mc_ci` parameters-table row tripped
+    the regex even though the body was spec-compliant)."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Reproducibility\n\n"
+        "**Parameters:**\n\n"
+        "| key | value |\n"
+        "|---|---|\n"
+        "| seed | 0 |\n"
+        "| mc_ci | [0.236, 0.252] (Wilson 95%) |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "interval_inline" not in findings, findings
+
+
+def test_audit_interval_inline_still_fires_in_prose():
+    """The same `interval_inline` form OUTSIDE a table — in flowing
+    prose under `## Findings` — keeps firing. The fix exempts table
+    cells, not prose."""
+    audit_mod = _load_audit_module()
+    body = "## Findings\n\nThe mc_ci slope [0.236, 0.252] excludes zero, so the effect is real.\n"
+    findings = audit_mod.audit_body(body)
+    assert "interval_inline" in findings
+
+
+def test_audit_condition_labels_exempt_in_table_cell():
+    """`condition_labels` regex hits inside a real GFM table cell are
+    suppressed — the lookup table that DEFINES persona IDs like `C1` /
+    `D1` is not the prose target of the rule (the rule catches BARE
+    codes in narrative where the reader has no resolution)."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## What I ran\n\n"
+        "I evaluated against 16 personas:\n\n"
+        "| group | id | description |\n"
+        "|---|---|---|\n"
+        "| C | C1 | Standard Qwen template |\n"
+        "| D | D1 | Formal register rewrite |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "condition_labels" not in findings, findings
+
+
+def test_audit_condition_labels_still_fires_in_prose():
+    """A bare `C1` in narrative prose still fires — the table-cell
+    exemption does not widen to non-table lines that happen to carry a
+    pipe."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Findings\n\n"
+        "C1 hypothesis predicts a flat trend across all personas, contradicted\n"
+        "by the data.\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "condition_labels" in findings
+
+
+def test_audit_non_exempt_category_still_fires_in_table_cell():
+    """The table-cell exemption is scoped to prose-vs-table-sensitive
+    categories (`interval_inline`, `condition_labels`). Other
+    categories — e.g. `byte_identical` — keep firing inside table
+    cells, so the audit's exemption surface stays narrow."""
+    audit_mod = _load_audit_module()
+    body = (
+        "## Reproducibility\n\n"
+        "| key | value |\n"
+        "|---|---|\n"
+        "| diff | the two runs were byte identical |\n"
+    )
+    findings = audit_mod.audit_body(body)
+    assert "byte_identical" in findings
+
+
 # ─── Audit script: byte_identical pattern fires ───────────────────────────
 
 
