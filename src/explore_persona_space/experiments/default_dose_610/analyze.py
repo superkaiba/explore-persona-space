@@ -1,4 +1,4 @@
-# ruff: noqa: RUF001, RUF002  # em-dash + Greek ΔG intentional
+# ruff: noqa: RUF001, RUF002, RUF003  # em-dash + Greek ΔG + Unicode minus intentional
 """Task #610 — the §6 registered comparison (CPU, VM, post-teardown).
 
 Inputs: the 3 PARENT chassis-comparator trajectories (committed on main;

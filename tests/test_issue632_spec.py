@@ -1,5 +1,9 @@
-# marker token + em-dash intentional
+# ruff: noqa: RUF002, RUF003
 """CPU-only tests for task #632 — the assistant-proximal negative swap (plan §4.3).
+
+The em-dash + Unicode minus sign (−) appear intentionally in docstrings,
+comments, and plan-value constants below (they mirror the analyze.py source);
+the file-level noqa above suppresses the ambiguous-character lints.
 
 #632 forks the #610 mercenary no-default chassis and swaps its 4th negative
 slot from ``journalist`` (far from the assistant centroid) to ``programmer``
@@ -325,7 +329,7 @@ def test_h_assistant_band_anchored_on_assistant_comparator(tmp_path: Path):
     self-comparison) and reads secondary['assistant_band_verdict']."""
     chassis = CHASSES["assistant_proximal"]
     result = _run_analyze_self_comparison(chassis, tmp_path)
-    sec = result["secondary"]
+    sec = result["secondary_assistant"]
     assert sec["assistant_band_verdict"]["median_comparator"] == pytest.approx(
         ASSISTANT_COMPARATOR_34, abs=1e-3
     )
