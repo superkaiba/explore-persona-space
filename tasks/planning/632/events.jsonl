@@ -1,2 +1,3 @@
 {"ts": "2026-06-12T22:46:15Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
 {"ts": "2026-06-13T21:42:11Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #632 to open question(s) leak-to-default, leak-contrastive-negatives; created_new=none; mode=auto-match."}
+{"ts": "2026-06-13T21:43:04Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
