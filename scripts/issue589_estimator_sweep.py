@@ -726,8 +726,11 @@ def main() -> int:
     json_path = out_dir / "sweep_results.json"
 
     # Fresh CSV (checkpoint-per-row append; mirrors drv.append_row discipline).
+    # lineterminator="\n" keeps the file LF-only (the csv default is \r\n, which
+    # trips git's CRLF warning and makes re-runs non-byte-identical under the
+    # repo's LF .gitattributes normalization).
     with csv_path.open("w", newline="") as f:
-        csv.writer(f).writerow(CSV_COLUMNS)
+        csv.writer(f, lineterminator="\n").writerow(CSV_COLUMNS)
 
     all_cells: list[dict] = []
     per_row_meta: dict[str, dict] = {}
@@ -792,7 +795,9 @@ def main() -> int:
                 all_cells.append(rec)
                 # Checkpoint: append the CSV row the moment it is computed.
                 with csv_path.open("a", newline="") as f:
-                    csv.writer(f).writerow(_csv_value(rec[c]) for c in CSV_COLUMNS)
+                    csv.writer(f, lineterminator="\n").writerow(
+                        _csv_value(rec[c]) for c in CSV_COLUMNS
+                    )
 
         # Sign-flip flag (graver than a p-only flip): coefficient sign differs
         # between the two estimators on the same join.

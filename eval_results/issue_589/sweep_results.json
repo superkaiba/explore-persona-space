@@ -1,9 +1,9 @@
 {
   "schema_version": "i589_estimator_sweep_v1",
-  "generated_at": "2026-06-13T22:30:23.365243+00:00",
-  "code_commit": "64b6e3df66901e6dece3ae5e1751ae7fa19f6de2",
+  "generated_at": "2026-06-13T22:31:58.647776+00:00",
+  "code_commit": "e7794e3cc1df5bb30a2b42a798c559d06f6c0478",
   "data_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-589",
-  "data_root_commit": "64b6e3df66901e6dece3ae5e1751ae7fa19f6de2",
+  "data_root_commit": "e7794e3cc1df5bb30a2b42a798c559d06f6c0478",
   "parent_data_pin": "12853bca8",
   "parent_data_pin_note": "the parent #536 gated joins were persisted at 12853bca8; the inputs read here are validated by the parent's 1e-4 matrix / row-level join gates inside family_*",
   "env": {
