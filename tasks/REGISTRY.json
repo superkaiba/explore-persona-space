@@ -2227,8 +2227,8 @@
     "428": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/428",
-      "status": "proposed",
+      "path": "tasks/on_hold/428",
+      "status": "on_hold",
       "title": "[Proposed] How to define 'behavior' (definitional groundwork for behavior vectors)"
     },
     "429": {
