@@ -2,7 +2,8 @@
 title: 'Context-geometry predictors don''t transfer to behavior→behavior leakage:
   pooled scoring crowns them, every held-out read says noise (MODERATE confidence)'
 kind: experiment
-tags: []
+tags:
+- followup-manual
 created_at: '2026-06-10T01:00:41Z'
 has_clean_result: true
 goal: 'Build a reusable behavior-generalization testbed: measure the leakage matrix
