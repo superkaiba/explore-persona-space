@@ -3020,8 +3020,8 @@
     "522": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/running/522",
-      "status": "running",
+      "path": "tasks/verifying/522",
+      "status": "verifying",
       "title": "Finish #511's dropped pieces: CPU un-descope (wass2 + ridge N=500 + loc-epoch 2/3/5 + g_logprob) on VM + full-response Rao-Blackwellized JS predictor on GPU"
     },
     "523": {
