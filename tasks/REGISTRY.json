@@ -3812,8 +3812,8 @@
       "goal": "Test whether a rank-1 LoRA's read vector aligns with the source persona's context vector and its write vector with the behavior direction, and whether per-persona firing strength a.v_c rank-orders measured leakage.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/verifying/621",
-      "status": "verifying",
+      "path": "tasks/interpreting/621",
+      "status": "interpreting",
       "title": "Train rank-1 LoRA implants and compare the A (read) and B (write) vectors to persona-context and behavior vectors"
     },
     "622": {
