@@ -789,13 +789,24 @@ def _gen_smoke_response_caches(args) -> None:
         _teardown_vllm(llm)
 
 
-def phase0(args) -> None:
+def phase0a(args) -> None:
+    """Phase 0a: prefetch inputs + build training mixes (CPU-only).
+
+    Split out of phase0 (#628 incident 2026-06-13) so the parent Python
+    process doing 32 builder ``subprocess.run`` calls is NOT the same
+    process that later initializes vLLM in phase0b: vLLM 0.11.0's
+    EngineCore subprocess dies in the gap between init and first
+    generate when its parent has just spawned + reaped many children
+    in startup-script context, even though interactive SSH repros do
+    not reproduce. Running phase0a then phase0b as separate Python
+    invocations gives vLLM a fresh parent process.
+    """
     cells = _cells(args)
     variants = sorted({_sep_variant(arm) for arm, _, _ in cells})
     build_cids = sorted({cid for _, cid, _ in cells})
     if args.dry_run:
-        phase_log("p0_prep")
-        logger.info("[p0][dry-run] variants=%s cids=%s", variants, build_cids)
+        phase_log("p0a_prep")
+        logger.info("[p0a][dry-run] variants=%s cids=%s", variants, build_cids)
         return
 
     phase_log("p0_prefetch")
@@ -838,15 +849,33 @@ def phase0(args) -> None:
         for variant in variants:
             _audit_realized_negatives(cid, variant, args.smoke)
 
-    phase_log("p0_negevalgen")
-    _gen_neg_eval_responses(args)
-
     skip = args.smoke or args.skip_upload or args.dry_run
     for variant in variants:
         _upload_tree(
             _mix_dir(variant), f"issue628_rig_revision/data/train_{variant}/marker", skip=skip
         )
+
+
+def phase0b(args) -> None:
+    """Phase 0b: neg-eval-gen via vLLM (single-process, GPU).
+
+    Runs in a fresh Python process so vLLM init is not preceded by 32
+    builder ``subprocess.run`` calls (#628). Builds are no-ops here.
+    """
+    if args.dry_run:
+        phase_log("p0b_prep")
+        logger.info("[p0b][dry-run] neg-eval-gen")
+        return
+    phase_log("p0_negevalgen")
+    _gen_neg_eval_responses(args)
+    skip = args.smoke or args.skip_upload or args.dry_run
     _upload_tree(_neg_eval_cache_dir(), "issue628_rig_revision/data/responses_eval_neg", skip=skip)
+
+
+def phase0(args) -> None:
+    """Backward-compat single-process phase 0: build then vLLM."""
+    phase0a(args)
+    phase0b(args)
 
 
 # ── Phase 1: training ────────────────────────────────────────────────────────
@@ -1998,7 +2027,7 @@ def main() -> int:
     ap.add_argument(
         "--phase",
         default="all",
-        choices=["0", "1", "2", "3", "4", "all", "matched-install-reread"],
+        choices=["0", "0a", "0b", "1", "2", "3", "4", "all", "matched-install-reread"],
         help="'matched-install-reread' is the post-hoc §6 fallback; never part of 'all'",
     )
     ap.add_argument(
@@ -2038,6 +2067,8 @@ def main() -> int:
         phases = [args.phase]
     runner = {
         "0": phase0,
+        "0a": phase0a,
+        "0b": phase0b,
         "1": phase1,
         "2": phase2,
         "3": phase3,
