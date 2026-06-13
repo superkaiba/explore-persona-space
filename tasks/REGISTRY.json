@@ -544,8 +544,8 @@
     "174": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/174",
-      "status": "proposed",
+      "path": "tasks/on_hold/174",
+      "status": "on_hold",
       "title": "Save all papers COMPLETELY in repo somewhere easily searchable"
     },
     "176": {
