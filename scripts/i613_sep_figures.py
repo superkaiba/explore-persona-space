@@ -199,14 +199,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                 for seed in SEEDS:
                     y = cells[f"{sep}_{flag}"][seed][channel_key]
                     ys.append(y)
+                    # The with-sep flag-off corner is reused from parent #601's
+                    # phase2 (originally trained on a RunPod H100 in #601);
+                    # render those two points with a hollow ring + black edge
+                    # so the reader can see at a glance which corners came from
+                    # this round's GCP-A100 stack vs the cross-stack reuse.
+                    is_cross_stack = sep == "withsep" and flag == "flagoff"
+                    if is_cross_stack:
+                        face = "white"
+                        edge = "black"
+                        ew = 1.8
+                    else:
+                        face = flag_color[flag]
+                        edge = flag_color[flag]
+                        ew = 1.4
                     ax.scatter(
                         xb + flag_offset[flag],
                         y,
                         marker="o" if flag == "flagon" else "s",
                         s=60,
-                        facecolors=flag_color[flag],
-                        edgecolors=flag_color[flag],
-                        linewidths=1.4,
+                        facecolors=face,
+                        edgecolors=edge,
+                        linewidths=ew,
                         alpha=seed_alpha[seed],
                         zorder=3,
                     )
@@ -291,6 +305,17 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         ),
         Line2D([0], [0], color="black", alpha=1.0, marker="o", linestyle="", label="seed 42"),
         Line2D([0], [0], color="black", alpha=0.45, marker="o", linestyle="", label="seed 137"),
+        Line2D(
+            [0],
+            [0],
+            marker="s",
+            color="w",
+            markerfacecolor="white",
+            markeredgecolor="black",
+            markersize=8,
+            markeredgewidth=1.8,
+            label="Reused from parent #601 (RunPod H100 stack)",
+        ),
     ]
     ax_l.legend(handles=legend_items, fontsize=7, loc="lower left", frameon=False)
     fig.tight_layout()
@@ -301,19 +326,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     fig, (ax_lp, ax_lg) = plt.subplots(1, 2, figsize=(11, 4.2), sharey=False)
     for sep, xb in sep_x.items():
         for flag in ("flagoff", "flagon"):
+            is_cross_stack = sep == "withsep" and flag == "flagoff"
             for ch_key, ax in (("src_dg", ax_lp), ("src_dlogit", ax_lg)):
                 ys = []
                 for seed in SEEDS:
                     y = cells[f"{sep}_{flag}"][seed][ch_key]
                     ys.append(y)
+                    if is_cross_stack:
+                        face = "white"
+                        edge = "black"
+                        ew = 1.8
+                    else:
+                        face = flag_color[flag]
+                        edge = flag_color[flag]
+                        ew = 1.4
                     ax.scatter(
                         xb + flag_offset[flag],
                         y,
                         marker="o" if flag == "flagon" else "s",
                         s=60,
-                        facecolors=flag_color[flag],
-                        edgecolors=flag_color[flag],
-                        linewidths=1.4,
+                        facecolors=face,
+                        edgecolors=edge,
+                        linewidths=ew,
                         alpha=seed_alpha[seed],
                         zorder=3,
                     )
@@ -341,6 +375,18 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
 
     # ── Trajectory: show that no-sep flag-on lands lower THROUGHOUT, not just at the end ─
     fig, ax = plt.subplots(1, 1, figsize=(7.5, 4.5))
+    # Plain-English labels for the legend (one per arm; seed 137 omitted so the
+    # legend stays small — seed 42 is the labeled trace and the second seed's
+    # line is implicit "faded version of the same color").
+    arm_labels = {
+        ("nosep", "flagoff"): "No separator, negatives gradient-dead (this round)",
+        (
+            "nosep",
+            "flagon",
+        ): "No separator, negatives gradient-live (this round; the headline cell)",
+        ("withsep", "flagoff"): "With separator, negatives gradient-dead (reused from parent #601)",
+        ("withsep", "flagon"): "With separator, negatives gradient-live (first arm of this issue)",
+    }
     for sep, ls in (("nosep", "-"), ("withsep", "--")):
         for flag in ("flagoff", "flagon"):
             for seed in SEEDS:
@@ -359,11 +405,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
                     linestyle=ls,
                     color=flag_color[flag],
                     alpha=seed_alpha[seed] * (0.7 if sep == "withsep" else 1.0),
-                    label=(
-                        f"{'no-sep' if sep == 'nosep' else 'with-sep'} {'flag-on' if flag == 'flagon' else 'flag-off'}"
-                        if seed == 42
-                        else None
-                    ),
+                    label=arm_labels[(sep, flag)] if seed == 42 else None,
                 )
     ax.set_xlabel("Optimizer step")
     ax.set_ylabel("Source marker log-prob gain ΔG (nats)")
