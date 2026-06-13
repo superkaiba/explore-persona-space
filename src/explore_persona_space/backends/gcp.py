@@ -407,20 +407,34 @@ def resolve_request_valid_for_duration(spec: RunSpec) -> str:
 
 
 def _parse_gcloud_duration_seconds(duration: str) -> int:
-    """Parse a gcloud duration string (``90s`` / ``30m`` / ``2h`` / ``7d``) to seconds.
+    """Parse a gcloud duration string (``90s`` / ``2h`` / ``1d12h``) to seconds.
 
-    A bare integer is seconds. Raises ``ValueError`` on an unparseable
-    value so a malformed ``max_run_duration`` fails loud at render rather
-    than letting gcloud reject it mid-provision.
+    Accepts the COMPOSED integer+unit form gcloud's ``--max-run-duration``
+    parses (``1d12h``, ``1d12h30m``) the same way the CLI validator
+    ``scripts/dispatch_issue.py:_MAX_RUN_DURATION_RE`` does, plus single
+    groups (``24h``, ``7d``) and a bare integer (interpreted as seconds).
+    Each ``(\\d+)([smhd]?)`` group is summed. Raises ``ValueError`` on an
+    unparseable value (``abc``, ``5e3``, a trailing unit-less group like
+    ``1d12``) so a malformed ``max_run_duration`` fails loud at render
+    rather than letting gcloud reject it mid-provision.
     """
     text = str(duration).strip()
-    match = re.fullmatch(r"(\d+)([smhd]?)", text)
-    if match is None:
+    # Guard FIRST: accept EITHER a bare integer (``3600`` → seconds) OR one
+    # or more UNIT-BEARING groups (``2h``, ``1d12h``, ``1d12h30m``). A
+    # unit-less group is legal only when it is the whole string (the bare
+    # integer); a unit-less FINAL group in a composed form (``1d12``) is
+    # rejected, as are ``5e3`` / ``abc`` / ``1d12h7`` / the empty string. A
+    # lone ``re.findall`` would silently drop a non-matching tail.
+    if re.fullmatch(r"\d+|(?:\d+[smhd])+", text) is None:
         raise ValueError(
-            f"unparseable gcloud duration {duration!r}; expected e.g. '90s', '30m', '2h', '7d'."
+            f"unparseable gcloud duration {duration!r}; expected e.g. "
+            "'90s', '2h', '7d', '1d12h' (composed integer+unit groups; "
+            "a bare integer is seconds)."
         )
-    value, suffix = int(match.group(1)), match.group(2)
-    return value * _DURATION_SUFFIX_SECONDS.get(suffix, 1)
+    return sum(
+        int(value) * _DURATION_SUFFIX_SECONDS.get(suffix, 1)
+        for value, suffix in re.findall(r"(\d+)([smhd]?)", text)
+    )
 
 
 def _assert_max_run_within_flex_cap(*, max_run: str, provisioning: str) -> None:
