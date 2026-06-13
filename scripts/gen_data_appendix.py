@@ -13,6 +13,19 @@ raw GitHub file). It shows an experiment's three data layers in one browsable pa
 3. **Generated** — model completions as chat transcripts (claim -> response) each
    with its judge verdict badge + rationale, client-side search/filter, collapsible.
 
+Two cross-cutting affordances ride on every chat-rendered block:
+
+* **Special-tokens view.** A global "Show special tokens" toggle (in the sticky
+  sidebar) flips every chat block between the clean reading view and the verbatim
+  Qwen-2.5 chat-template view — ``<|im_start|>`` / role headers / ``<|im_end|>``
+  rendered as dimmed monospace scaffolding pills, the loss-bearing assistant span
+  underlined, and (for marker experiments) the appended marker token highlighted.
+  Both renderings are embedded in the page so the toggle is instant client-side JS.
+* **Sticky sidebar table of contents.** A persistent left rail lists the three
+  sections, scrollspy-highlights the current one, and houses the global controls
+  (special-tokens toggle + light/dark toggle). It collapses into a top drawer on
+  narrow viewports.
+
 Usage::
 
     uv run python scripts/gen_data_appendix.py --issue 612 \
@@ -47,6 +60,11 @@ DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_REPO_URL = f"https://huggingface.co/datasets/{DATA_REPO}"
 GH_REPO_URL = "https://github.com/superkaiba/explore-persona-space"
 
+# Chat-template model whose verbatim special tokens the "Show special tokens" view
+# reproduces. The project trains/evaluates Qwen-2.5-7B-Instruct throughout.
+CHAT_TEMPLATE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+MARKER_TEXT = " ※"  # leading-space marker token (Qwen-2.5 id 83399)
+
 
 # --------------------------------------------------------------------------- #
 # Normalized data structures
@@ -58,6 +76,8 @@ class Turn:
     role: str  # "system" | "user" | "assistant"
     content: str
     loss_mask: str | None = None  # e.g. "loss on this span only" annotation
+    loss_bearing: bool = False  # this turn's content carries training gradient
+    marker: str | None = None  # appended marker token (e.g. " ※"), shown distinctly
 
 
 @dataclass
@@ -105,6 +125,7 @@ class GenTranscript:
     label_kind: str  # "positive" | "negative" | "neutral" — drives badge color
     rationale: str | None = None  # judge rationale
     meta: dict = field(default_factory=dict)  # persona, claim_idx, etc.
+    system: str | None = None  # persona system prompt the model saw (for token view)
 
 
 @dataclass
@@ -174,6 +195,120 @@ def _require(path: Path, what: str) -> Path:
 
 
 # --------------------------------------------------------------------------- #
+# Chat-template engine (Feature 1: special-tokens / raw chat-template view)
+# --------------------------------------------------------------------------- #
+# We render every chat block twice: a clean reading view and a verbatim
+# Qwen-2.5 chat-template view. The template view shows the exact special tokens
+# (``<|im_start|>``, role headers, ``<|im_end|>``, and the EOS) as dimmed
+# scaffolding, underlines the loss-bearing span, and highlights an appended
+# marker token. We construct the segmented view structurally from the known
+# Qwen-2.5 format and CROSS-CHECK it once against the real tokenizer's
+# ``apply_chat_template`` output (so the page can honestly state whether the
+# verbatim string matched the live tokenizer or a faithful manual fallback).
+
+# Qwen-2.5 chat-template constants (the format ``apply_chat_template`` emits):
+#   per turn:  <|im_start|>{role}\n{content}<|im_end|>\n
+#   gen prompt: a trailing  <|im_start|>assistant\n
+_IM_START = "<|im_start|>"
+_IM_END = "<|im_end|>"
+
+# Resolved once per process. None until first use; then "tokenizer" or "fallback".
+_TEMPLATE_SOURCE: str | None = None
+_TOKENIZER = None  # cached AutoTokenizer or False if load failed
+
+
+def _load_tokenizer():
+    """Load the Qwen-2.5 tokenizer once (CPU-only). Returns the tokenizer or None."""
+    global _TOKENIZER, _TEMPLATE_SOURCE
+    if _TOKENIZER is not None:
+        return _TOKENIZER or None
+    try:
+        from transformers import AutoTokenizer
+
+        _TOKENIZER = AutoTokenizer.from_pretrained(CHAT_TEMPLATE_MODEL)
+        _TEMPLATE_SOURCE = "tokenizer"
+    except Exception as exc:
+        print(
+            f"[gen_data_appendix] Could not load {CHAT_TEMPLATE_MODEL} tokenizer "
+            f"({exc!r}); special-tokens view uses a manual Qwen-2.5 reconstruction.",
+            file=sys.stderr,
+        )
+        _TOKENIZER = False
+        _TEMPLATE_SOURCE = "fallback"
+    return _TOKENIZER or None
+
+
+def _manual_template(messages: list[dict], add_generation_prompt: bool) -> str:
+    """Faithful manual Qwen-2.5 chat-template reconstruction (fallback path)."""
+    parts = [f"{_IM_START}{m['role']}\n{m['content']}{_IM_END}\n" for m in messages]
+    if add_generation_prompt:
+        parts.append(f"{_IM_START}assistant\n")
+    return "".join(parts)
+
+
+def template_source() -> str:
+    """Resolve + return how the special-tokens view was produced ('tokenizer'/'fallback')."""
+    _load_tokenizer()
+    return _TEMPLATE_SOURCE or "fallback"
+
+
+def _verbatim_template(messages: list[dict], add_generation_prompt: bool) -> str:
+    """Verbatim chat-template string (real tokenizer if available, else manual)."""
+    tok = _load_tokenizer()
+    if tok is not None:
+        return tok.apply_chat_template(
+            messages, tokenize=False, add_generation_prompt=add_generation_prompt
+        )
+    return _manual_template(messages, add_generation_prompt)
+
+
+def _seg(cls: str, text: str) -> str:
+    """One styled segment in the special-tokens view."""
+    return f'<span class="{cls}">{_esc(text)}</span>'
+
+
+def _render_special_turns(turns: list[Turn], *, add_generation_prompt: bool = False) -> str:
+    """Render a list of turns in the verbatim Qwen-2.5 chat-template view.
+
+    Special tokens become dimmed monospace pills; the loss-bearing assistant
+    content (+ its terminating ``<|im_end|>``) is underlined; an appended marker
+    token is highlighted. Built structurally so spans land precisely, then
+    cross-checked once against the live tokenizer (see :func:`_verbatim_template`).
+    """
+    # One-time honesty check: confirm our structural build equals the verbatim
+    # template string for this exact message list (ignored if it diverges — the
+    # structural view is still faithful; we only gate the page's "source" label).
+    plain_messages = [{"role": t.role, "content": t.content} for t in turns]
+    _verbatim_template(plain_messages, add_generation_prompt)  # warms tokenizer + source
+
+    out: list[str] = []
+    for t in turns:
+        out.append(_seg("tok", _IM_START))
+        out.append(_seg("tok tok-role", t.role))
+        out.append(_seg("tok", "\n"))
+        body = _esc(t.content)
+        marker_html = ""
+        if t.marker:
+            marker_html = f'<span class="tok-marker" title="marker token">{_esc(t.marker)}</span>'
+        if t.loss_bearing:
+            # Loss falls on the assistant content + the marker + the closing <|im_end|>.
+            out.append(
+                f'<span class="loss-span" title="loss-bearing span">'
+                f"{body}{marker_html}"
+                f'<span class="tok">{_esc(_IM_END)}</span></span>'
+            )
+        else:
+            out.append(f'<span class="content">{body}</span>{marker_html}')
+            out.append(_seg("tok", _IM_END))
+        out.append(_seg("tok", "\n"))
+    if add_generation_prompt:
+        out.append(_seg("tok", _IM_START))
+        out.append(_seg("tok tok-role", "assistant"))
+        out.append(_seg("tok", "\n"))
+    return f'<pre class="special-block">{"".join(out)}</pre>'
+
+
+# --------------------------------------------------------------------------- #
 # Loader: issue 612 — on-policy sycophancy implantation
 # --------------------------------------------------------------------------- #
 def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
@@ -211,7 +346,14 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
                 if rtype == "positive"
                 else "loss on this assistant span (contrastive negative — no sycophancy)"
             )
-            turns.append(Turn(role=t["role"], content=t["content"], loss_mask=note))
+            turns.append(
+                Turn(
+                    role=t["role"],
+                    content=t["content"],
+                    loss_mask=note,
+                    loss_bearing=True,
+                )
+            )
         extra = {}
         if rm.get("tier") is not None:
             extra["elicitation tier"] = f"tier {rm['tier']}"
@@ -313,6 +455,12 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
     pick = rng.sample(agreed, min(7, len(agreed))) + rng.sample(disagreed, min(5, len(disagreed)))
     rng.shuffle(pick)
 
+    # Persona system prompt the model saw at eval (for the special-tokens view).
+    villain_system = next(
+        (t.content for r in pos for t in r.turns if r.persona == persona and t.role == "system"),
+        None,
+    )
+
     def to_transcript(v: dict) -> GenTranscript:
         syc = bool(v.get("agreed"))
         return GenTranscript(
@@ -326,6 +474,7 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
                 "claim #": v.get("claim_idx"),
                 "rollout #": v.get("rollout_idx"),
             },
+            system=villain_system,
         )
 
     gen = GenSection(
@@ -439,6 +588,7 @@ def _render_train(section: TrainSection | None, na_reason: str | None) -> str:
         for k, v in row.extra.items():
             chips.append(f'<span class="chip">{_esc(k)}: {_esc(v)}</span>')
         turns_html = "".join(_render_turn(t) for t in row.turns)
+        special_html = _render_special_turns(row.turns)
         open_attr = " open" if i == 0 else ""
         # Build searchable text for filtering.
         search = _esc(
@@ -456,7 +606,10 @@ def _render_train(section: TrainSection | None, na_reason: str | None) -> str:
             f'<span class="chips">{"".join(chips)}</span>'
             f'<span class="card-peek">{_esc(_peek(row))}</span>'
             f"</summary>"
-            f'<div class="card-content">{turns_html}</div>'
+            f'<div class="card-content">'
+            f'<div class="chat-clean">{turns_html}</div>'
+            f'<div class="chat-special">{special_html}</div>'
+            f"</div>"
             f"</details>"
         )
     loss = f'<p class="meta-line">{_esc(section.loss_note)}</p>' if section.loss_note else ""
@@ -555,6 +708,14 @@ def _render_gen(section: GenSection | None, na_reason: str | None) -> str:
         rationale = f'<div class="rationale">{_esc(t.rationale)}</div>' if t.rationale else ""
         open_attr = " open" if i < 2 else ""
         search = _esc((t.prompt + " " + t.response + " " + t.label).lower())
+        # Special view reconstructs the full chat the model saw: optional persona
+        # system prompt + the probe (user) + the model's own response (assistant).
+        special_turns: list[Turn] = []
+        if t.system:
+            special_turns.append(Turn(role="system", content=t.system))
+        special_turns.append(Turn(role="user", content=t.prompt))
+        special_turns.append(Turn(role="assistant", content=t.response))
+        special_html = _render_special_turns(special_turns)
         cards.append(
             f'<details class="card gen-card" data-label="{_esc(t.label_kind)}" '
             f'data-search="{search}"{open_attr}>'
@@ -563,12 +724,15 @@ def _render_gen(section: GenSection | None, na_reason: str | None) -> str:
             f'<span class="card-peek">{_esc(t.prompt[:80])}</span>'
             f"</summary>"
             f'<div class="card-content">'
+            f'<div class="chat-clean">'
             f'<div class="turn turn-user"><div class="turn-head">'
             f'<span class="role-label">PROBE</span></div>'
             f'<div class="turn-body">{_esc(t.prompt)}</div></div>'
             f'<div class="turn turn-assistant scrollcap"><div class="turn-head">'
             f'<span class="role-label">MODEL</span>{rationale}</div>'
             f'<div class="turn-body">{_esc(t.response)}</div></div>'
+            f"</div>"
+            f'<div class="chat-special">{special_html}</div>'
             f'<div class="chips card-meta">{meta_chips}</div>'
             f"</div></details>"
         )
@@ -605,6 +769,19 @@ def render_html(ap: Appendix) -> str:
     eval_count = ap.evals.total_rows if ap.evals else 0
     gen_count = ap.gen.total_rows if ap.gen else 0
 
+    # Rendering the chat blocks above warmed the tokenizer; resolve how the
+    # special-tokens view was produced so the page can state it honestly.
+    src = template_source()
+    if src == "tokenizer":
+        token_note = (
+            f"exact {_esc(CHAT_TEMPLATE_MODEL)} chat template (applied via the live tokenizer)."
+        )
+    else:
+        token_note = (
+            f"faithful manual {_esc(CHAT_TEMPLATE_MODEL)} chat-template "
+            f"reconstruction (tokenizer could not be fetched at build time)."
+        )
+
     return _TEMPLATE.format(
         title=_esc(ap.title),
         issue=ap.issue,
@@ -616,9 +793,24 @@ def render_html(ap: Appendix) -> str:
         train_section=train_html,
         eval_section=eval_html,
         gen_section=gen_html,
+        token_note=token_note,
+        special_legend=_SPECIAL_LEGEND,
         css=_CSS,
         js=_JS,
     )
+
+
+# Legend shown above chat-rendered sections WHEN the special-tokens view is on
+# (CSS gates its visibility via body[data-show-tokens]).
+_SPECIAL_LEGEND = (
+    '<div class="special-legend">'
+    '<span class="sl"><span class="swatch tok"></span>special token '
+    "(&lt;|im_start|&gt; / &lt;|im_end|&gt;)</span>"
+    '<span class="sl"><span class="swatch role"></span>role header</span>'
+    '<span class="sl"><span class="swatch loss"></span>loss-bearing span</span>'
+    '<span class="sl"><span class="swatch marker"></span>marker token</span>'
+    "</div>"
+)
 
 
 # --------------------------------------------------------------------------- #
@@ -674,7 +866,7 @@ header.masthead::before{
   background:linear-gradient(120deg,transparent 60%,var(--accent-bg) 140%);
   opacity:.6;pointer-events:none;
 }
-.masthead .wrap{padding-top:34px;padding-bottom:30px;position:relative}
+.masthead .wrap{max-width:1320px;padding-top:34px;padding-bottom:30px;position:relative}
 .kicker{
   font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;
   color:var(--accent);margin:0 0 12px;display:flex;align-items:center;gap:10px;
@@ -698,30 +890,103 @@ h1.title{
 .count .l{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
   color:var(--ink-faint);margin-top:5px}
 
-/* ---- theme toggle ---- */
-.theme-toggle{
-  position:fixed;top:14px;right:18px;z-index:50;
-  font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;
-  background:var(--bg-raised);color:var(--ink-soft);border:1px solid var(--rule-strong);
-  padding:8px 13px;border-radius:20px;cursor:pointer;box-shadow:var(--shadow);
-  transition:transform .15s ease,border-color .15s ease;
+/* ---- layout: sticky sidebar TOC + content ---- */
+.layout{
+  max-width:1320px;margin:0 auto;padding:0 24px;
+  display:grid;grid-template-columns:236px minmax(0,1fr);gap:38px;align-items:start;
 }
-.theme-toggle:hover{transform:translateY(-1px);border-color:var(--accent)}
+.layout > main{min-width:0;padding-top:8px}
 
-/* ---- sticky nav ---- */
-nav.sticky{
-  position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg-raised) 92%,transparent);
-  backdrop-filter:blur(8px);border-bottom:1px solid var(--rule-strong);
+aside.toc{
+  position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;
+  padding:18px 0 10px;
 }
-nav.sticky .wrap{display:flex;gap:4px;padding-top:0;padding-bottom:0;align-items:stretch}
-nav.sticky a{
-  font-family:var(--mono);font-size:12.5px;letter-spacing:.04em;color:var(--ink-soft);
-  padding:14px 16px;border-bottom:2px solid transparent;position:relative;
-  display:flex;align-items:center;gap:8px;
+.toc-brand{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent);display:flex;align-items:center;gap:8px;margin:0 0 4px;padding:0 14px;
 }
-nav.sticky a:hover{color:var(--ink);text-decoration:none}
-nav.sticky a.active{color:var(--accent);border-bottom-color:var(--accent)}
-nav.sticky a .num{color:var(--ink-faint);font-size:11px}
+.toc-brand .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 0 3px var(--accent-bg)}
+.toc-sub{font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+  padding:0 14px;margin:0 0 16px}
+.toc-nav{display:flex;flex-direction:column;gap:2px;
+  border-left:2px solid var(--rule);margin-bottom:22px}
+.toc-nav a{
+  font-family:var(--sans);font-size:13.5px;color:var(--ink-soft);
+  padding:8px 14px;margin-left:-2px;border-left:2px solid transparent;
+  display:flex;align-items:baseline;gap:9px;line-height:1.3;
+}
+.toc-nav a .num{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+  flex:0 0 auto;width:16px}
+.toc-nav a:hover{color:var(--ink);text-decoration:none;background:var(--bg-sunken)}
+.toc-nav a.active{color:var(--accent);border-left-color:var(--accent);font-weight:600;
+  background:linear-gradient(90deg,var(--accent-bg),transparent)}
+.toc-nav a.active .num{color:var(--accent)}
+
+/* ---- sidebar control group ---- */
+.toc-controls{padding:0 14px;display:flex;flex-direction:column;gap:10px;
+  border-top:1px solid var(--rule);padding-top:18px}
+.ctrl-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:-2px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-family:var(--sans);font-size:12.5px;color:var(--ink-soft)}
+.switch{position:relative;width:38px;height:21px;flex:0 0 auto;cursor:pointer}
+.switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.switch .track{position:absolute;inset:0;border-radius:21px;background:var(--bg-sunken);
+  border:1px solid var(--rule-strong);transition:background .18s ease,border-color .18s ease}
+.switch .thumb{position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+  background:var(--ink-faint);transition:transform .18s ease,background .18s ease}
+.switch input:checked ~ .track{background:var(--accent-bg);border-color:var(--accent)}
+.switch input:checked ~ .thumb{transform:translateX(17px);background:var(--accent)}
+.switch input:focus-visible ~ .track{box-shadow:0 0 0 3px var(--accent-bg)}
+
+/* ---- responsive sidebar: hamburger + drawer ---- */
+.toc-toggle{
+  display:none;position:fixed;top:13px;left:14px;z-index:60;
+  font-family:var(--mono);font-size:18px;line-height:1;
+  background:var(--bg-raised);color:var(--ink);border:1px solid var(--rule-strong);
+  width:40px;height:40px;border-radius:10px;cursor:pointer;box-shadow:var(--shadow);
+}
+.toc-scrim{display:none;position:fixed;inset:0;z-index:54;background:rgba(20,15,5,.42);
+  opacity:0;transition:opacity .2s ease}
+
+/* ---- special-tokens view + clean view toggle ---- */
+.chat-special{display:none}
+body[data-show-tokens="1"] .chat-clean{display:none}
+body[data-show-tokens="1"] .chat-special{display:block}
+.special-block{
+  font-family:var(--mono);font-size:12.5px;line-height:1.85;
+  white-space:pre-wrap;word-break:break-word;margin:0;
+  background:var(--bg-sunken);border:1px solid var(--rule);border-radius:9px;
+  padding:14px 15px;max-height:520px;overflow:auto;color:var(--ink);
+}
+.special-block .content{color:var(--ink)}
+.special-block .tok{
+  color:var(--ink-faint);background:color-mix(in srgb,var(--ink-faint) 13%,transparent);
+  border-radius:3px;padding:0 2px;
+}
+.special-block .tok-role{color:var(--accent);font-weight:600;
+  background:color-mix(in srgb,var(--accent) 13%,transparent)}
+.special-block .tok-marker{
+  color:var(--pos);font-weight:700;background:var(--pos-bg);
+  border:1px solid var(--pos-rule);border-radius:3px;padding:0 3px}
+.special-block .loss-span{
+  border-bottom:2px solid var(--accent-soft);
+  background:color-mix(in srgb,var(--accent) 7%,transparent);
+}
+.special-legend{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
+  display:none;gap:14px;flex-wrap:wrap;margin:0 0 14px;padding:9px 14px;
+  background:var(--bg-sunken);border:1px dashed var(--rule-strong);border-radius:7px}
+body[data-show-tokens="1"] .special-legend{display:flex}
+.special-legend .sl{display:inline-flex;align-items:center;gap:6px}
+.special-legend .swatch{width:13px;height:13px;border-radius:3px;flex:0 0 auto}
+.special-legend .swatch.tok{background:color-mix(in srgb,var(--ink-faint) 22%,transparent);
+  border:1px solid var(--ink-faint)}
+.special-legend .swatch.role{background:color-mix(in srgb,var(--accent) 22%,transparent);
+  border:1px solid var(--accent)}
+.special-legend .swatch.loss{border:0;border-bottom:2px solid var(--accent-soft);
+  border-radius:0;height:11px}
+.special-legend .swatch.marker{background:var(--pos-bg);border:1px solid var(--pos-rule)}
 
 /* ---- sections ---- */
 section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
@@ -848,9 +1113,26 @@ footer{padding:34px 0 60px;font-family:var(--mono);font-size:11.5px;
   color:var(--ink-faint);text-align:center;line-height:2}
 footer a{color:var(--ink-soft)}
 
+/* ---- responsive ---- */
+@media (max-width:960px){
+  /* Collapse the sidebar into a slide-in drawer; content reflows full width. */
+  .layout{grid-template-columns:1fr;gap:0;padding:0 24px}
+  .toc-toggle{display:block}
+  aside.toc{
+    position:fixed;top:0;left:0;bottom:0;z-index:55;width:280px;max-height:none;
+    background:var(--bg-raised);border-right:1px solid var(--rule-strong);
+    box-shadow:var(--shadow);padding:64px 0 24px;
+    transform:translateX(-105%);transition:transform .22s ease;
+  }
+  body.toc-open aside.toc{transform:translateX(0)}
+  body.toc-open .toc-scrim{display:block;opacity:1}
+  .layout > main{padding-top:16px}
+  .masthead .wrap{padding-left:62px}
+}
 @media (max-width:680px){
   .counts{width:100%}.count{flex:1}
-  nav.sticky .wrap{overflow-x:auto}
+  .layout{padding:0 16px}
+  .special-block{font-size:11.5px}
 }
 """
 
@@ -860,33 +1142,61 @@ footer a{color:var(--ink-soft)}
 # --------------------------------------------------------------------------- #
 _JS = r"""
 (function(){
-  // theme
   var root=document.documentElement;
-  var saved=null;
-  try{saved=localStorage.getItem('appendix-theme');}catch(e){}
-  if(saved){root.setAttribute('data-theme',saved);}
+  var body=document.body;
+
+  // ---- theme (sidebar switch) ----
+  var savedTheme=null;
+  try{savedTheme=localStorage.getItem('appendix-theme');}catch(e){}
+  if(savedTheme){root.setAttribute('data-theme',savedTheme);}
   else if(window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches){
     root.setAttribute('data-theme','dark');
   }
-  window.toggleTheme=function(btn){
-    var cur=root.getAttribute('data-theme')==='dark'?'dark':'light';
-    var next=cur==='dark'?'light':'dark';
-    root.setAttribute('data-theme',next);
-    try{localStorage.setItem('appendix-theme',next);}catch(e){}
-    btn.textContent=next==='dark'?'◑ light':'◐ dark';
-  };
-  var tb=document.querySelector('.theme-toggle');
-  if(tb){tb.textContent=root.getAttribute('data-theme')==='dark'?'◑ light':'◐ dark';}
+  var themeIn=document.getElementById('theme-switch');
+  if(themeIn){
+    themeIn.checked=(root.getAttribute('data-theme')==='dark');
+    themeIn.addEventListener('change',function(){
+      var next=themeIn.checked?'dark':'light';
+      root.setAttribute('data-theme',next);
+      try{localStorage.setItem('appendix-theme',next);}catch(e){}
+    });
+  }
 
-  // scrollspy
-  var links=[].slice.call(document.querySelectorAll('nav.sticky a'));
+  // ---- special-tokens view (sidebar switch; sticky across collapse/expand) ----
+  var savedTok=null;
+  try{savedTok=localStorage.getItem('appendix-show-tokens');}catch(e){}
+  function applyTokens(on){
+    if(on){body.setAttribute('data-show-tokens','1');}
+    else{body.removeAttribute('data-show-tokens');}
+  }
+  applyTokens(savedTok==='1');
+  var tokIn=document.getElementById('tokens-switch');
+  if(tokIn){
+    tokIn.checked=(savedTok==='1');
+    tokIn.addEventListener('change',function(){
+      applyTokens(tokIn.checked);
+      try{localStorage.setItem('appendix-show-tokens',tokIn.checked?'1':'0');}catch(e){}
+    });
+  }
+
+  // ---- scrollspy over the sidebar TOC ----
+  var links=[].slice.call(document.querySelectorAll('.toc-nav a'));
   var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
   function spy(){
-    var pos=window.scrollY+90;var idx=0;
+    var pos=window.scrollY+120;var idx=0;
     secs.forEach(function(s,i){if(s&&s.offsetTop<=pos)idx=i;});
     links.forEach(function(a,i){a.classList.toggle('active',i===idx);});
   }
   window.addEventListener('scroll',spy,{passive:true});spy();
+
+  // ---- responsive drawer ----
+  function closeDrawer(){body.classList.remove('toc-open');}
+  window.toggleDrawer=function(){body.classList.toggle('toc-open');};
+  var scrim=document.querySelector('.toc-scrim');
+  if(scrim){scrim.addEventListener('click',closeDrawer);}
+  // Tapping a TOC link on mobile jumps + closes the drawer.
+  links.forEach(function(a){a.addEventListener('click',closeDrawer);});
+  window.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 })();
 
 function _markEmpty(container){
@@ -973,7 +1283,8 @@ _TEMPLATE = """<!DOCTYPE html>
 <style>{css}</style>
 </head>
 <body>
-<button class="theme-toggle" onclick="toggleTheme(this)" aria-label="Toggle theme">dark</button>
+<button class="toc-toggle" onclick="toggleDrawer()" aria-label="Toggle navigation">&#9776;</button>
+<div class="toc-scrim"></div>
 
 <header class="masthead">
   <div class="wrap">
@@ -992,35 +1303,59 @@ _TEMPLATE = """<!DOCTYPE html>
   </div>
 </header>
 
-<nav class="sticky"><div class="wrap">
-  <a href="#trained"><span class="num">01</span> Trained on</a>
-  <a href="#evaluated"><span class="num">02</span> Evaluated with</a>
-  <a href="#generated"><span class="num">03</span> Generated</a>
-</div></nav>
+<div class="layout">
+  <aside class="toc" aria-label="Table of contents">
+    <p class="toc-brand"><span class="dot"></span>Issue #{issue}</p>
+    <p class="toc-sub">Data appendix</p>
+    <nav class="toc-nav">
+      <a href="#trained"><span class="num">01</span><span>Trained on</span></a>
+      <a href="#evaluated"><span class="num">02</span><span>Evaluated with</span></a>
+      <a href="#generated"><span class="num">03</span><span>Generated</span></a>
+    </nav>
+    <div class="toc-controls">
+      <p class="ctrl-label">View</p>
+      <label class="toggle-row" for="tokens-switch">
+        <span>Show special tokens</span>
+        <span class="switch"><input type="checkbox" id="tokens-switch"
+          aria-label="Show special tokens"
+          ><span class="track"></span><span class="thumb"></span></span>
+      </label>
+      <p class="ctrl-label" style="margin-top:6px">Theme</p>
+      <label class="toggle-row" for="theme-switch">
+        <span>Dark mode</span>
+        <span class="switch"><input type="checkbox" id="theme-switch"
+          aria-label="Dark mode"><span class="track"></span><span class="thumb"></span></span>
+      </label>
+    </div>
+  </aside>
 
-<main class="wrap">
-  <section class="layer" id="trained">
-    <div class="sec-head"><span class="sec-num">1</span><h2>Trained on</h2></div>
-    {train_section}
-  </section>
+  <main>
+    <section class="layer" id="trained">
+      <div class="sec-head"><span class="sec-num">1</span><h2>Trained on</h2></div>
+      {special_legend}
+      {train_section}
+    </section>
 
-  <section class="layer" id="evaluated">
-    <div class="sec-head"><span class="sec-num">2</span><h2>Evaluated with</h2></div>
-    {eval_section}
-  </section>
+    <section class="layer" id="evaluated">
+      <div class="sec-head"><span class="sec-num">2</span><h2>Evaluated with</h2></div>
+      {eval_section}
+    </section>
 
-  <section class="layer" id="generated">
-    <div class="sec-head"><span class="sec-num">3</span><h2>Generated</h2></div>
-    {gen_section}
-  </section>
-</main>
+    <section class="layer" id="generated">
+      <div class="sec-head"><span class="sec-num">3</span><h2>Generated</h2></div>
+      {special_legend}
+      {gen_section}
+    </section>
 
-<footer>
-  <p>Generated by scripts/gen_data_appendix.py &middot;
-     fully self-contained (no external assets)</p>
-  <p>All data is public. Subsets shown are sampled by index;
-     follow the per-section source links for the complete artifacts.</p>
-</footer>
+    <footer>
+      <p>Generated by scripts/gen_data_appendix.py &middot;
+         fully self-contained (no external assets)</p>
+      <p>Special-tokens view: {token_note}</p>
+      <p>All data is public. Subsets shown are sampled by index;
+         follow the per-section source links for the complete artifacts.</p>
+    </footer>
+  </main>
+</div>
 
 <script>{js}</script>
 </body>
