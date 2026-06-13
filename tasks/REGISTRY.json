@@ -2461,8 +2461,8 @@
     "457": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/457",
-      "status": "proposed",
+      "path": "tasks/on_hold/457",
+      "status": "on_hold",
       "title": "Pre-experiment planning gate: declare target plot / expected result before agents implement"
     },
     "458": {
