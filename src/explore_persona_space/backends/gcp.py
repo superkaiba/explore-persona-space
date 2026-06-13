@@ -487,30 +487,34 @@ def expected_artifacts_declaration(
     Returns a serialization-friendly ``dict`` (no tuples) so the launch
     path can drop it onto ``handle.extra`` and round-trip via
     :func:`artifacts.expected_artifacts_from_handle`.
+
+    Thin GCP-lane wrapper around
+    :func:`artifacts.build_expected_artifacts_declaration` (the shared
+    SLURM + RunPod builder, #598) so all three lanes compute one dict
+    shape. The GCP-specific bits stay here: the GcpConfig-sourced HF repo
+    ids and the per-attempt :func:`sentinel_path_for` path. All shape
+    rules above (the #601 custom-workload carve-out, the hydra-lane
+    ``issue<N>_<attempt>/raw_completions/`` default, the standard git
+    paths) are implemented identically in the shared builder.
     """
-    issue = spec.issue
-    if spec.workload_cmd:
-        # Custom dispatch scripts own their HF prefix; declaring a guessed
-        # one turns the mechanical gate into a false-negative teardown
-        # block (#601 follow-up r1). Explicit knowledge rides
-        # extra_hf_data_paths.
-        base_hf_data: tuple[str, ...] = ()
-    else:
-        base_hf_data = (f"issue{issue}_{attempt_id}/raw_completions/",)
-    base_git = (
-        f"eval_results/issue_{issue}/",
-        f"figures/issue_{issue}/",
+    # Local import mirrors the slurm.py delegation entrypoint (one line,
+    # cheap on the call path, obvious-from-context).
+    from explore_persona_space.backends.artifacts import (
+        build_expected_artifacts_declaration,
     )
-    return {
-        "issue": int(issue),
-        "hf_data_repo": config.hf_data_repo,
-        "hf_model_repo": config.hf_model_repo,
-        "hf_data_paths": list(base_hf_data) + list(extra_hf_data_paths),
-        "hf_model_paths": list(extra_hf_model_paths),
-        "wandb_run_path": wandb_run_path,
-        "git_paths": list(base_git) + list(extra_git_paths),
-        "sentinel_path": sentinel_path_for(config, issue, attempt_id),
-    }
+
+    return build_expected_artifacts_declaration(
+        issue=spec.issue,
+        sentinel_path=sentinel_path_for(config, spec.issue, attempt_id),
+        custom_workload=bool(spec.workload_cmd),
+        attempt_id=attempt_id,
+        hf_data_repo=config.hf_data_repo,
+        hf_model_repo=config.hf_model_repo,
+        wandb_run_path=wandb_run_path,
+        extra_hf_data_paths=extra_hf_data_paths,
+        extra_hf_model_paths=extra_hf_model_paths,
+        extra_git_paths=extra_git_paths,
+    )
 
 
 # ---------------------------------------------------------------------------
