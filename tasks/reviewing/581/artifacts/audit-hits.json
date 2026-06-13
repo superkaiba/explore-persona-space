@@ -10,10 +10,11 @@
       "event_kind": "epm:code-review-codex",
       "event_version": 1,
       "key_class": "env-assign:HF_TOKEN",
-      "match": "HF_TOKEN=hf_test_token",
+      "match": "HF_TOKEN=<redacted:env:len=13>",
       "note_excerpt": "<!-- epm:code-review-codex v1 -->\n# Codex Code Review: Multi-backend compute router \u2014 consolidated live-acceptance fix ladder (fix5\u2013fix23)\n\n**Verdict:** FAIL\n**Blocker tags:** [substantive]\n**Tier:** ",
       "confidence": "low",
-      "triage_reason": "value contains fixture marker 'test_token'"
+      "triage_reason": "value contains fixture marker 'test_token'",
+      "byte_offset": 3385
     },
     {
       "line_no": 113,
@@ -21,10 +22,11 @@
       "event_kind": "epm:code-review-codex",
       "event_version": 1,
       "key_class": "env-assign:WANDB_API_KEY",
-      "match": "WANDB_API_KEY=wandb_test_key",
+      "match": "WANDB_API_KEY=<redacted:env:len=14>",
       "note_excerpt": "<!-- epm:code-review-codex v1 -->\n# Codex Code Review: Multi-backend compute router \u2014 consolidated live-acceptance fix ladder (fix5\u2013fix23)\n\n**Verdict:** FAIL\n**Blocker tags:** [substantive]\n**Tier:** ",
       "confidence": "low",
-      "triage_reason": "value contains fixture marker 'test_key'"
+      "triage_reason": "value contains fixture marker 'test_key'",
+      "byte_offset": 3414
     }
   ]
 }
