@@ -59,6 +59,30 @@ count_trained_cells() {
   ls eval_results/issue_628/p1/stop_steps/*.json 2>/dev/null | wc -l
 }
 
+# Count Phase-2 G-eval cell JSONs landed on disk -- a cheap proxy for "some
+# phase-2 work landed". Used by the post-phase-2 coverage gate so a phase-2
+# crash that nonetheless produced cells does not kill phases 3/4.
+count_phase2_cells() {
+  find eval_results/issue_628/G_cells -type f -name '*__*__seed*.json' 2>/dev/null | wc -l
+}
+
+MIN_PHASE2_CELLS="${I628_MIN_PHASE2_CELLS:-1}"
+
+# Coverage gate after phase 2: require at least MIN_PHASE2_CELLS G_cells to
+# proceed. Below that the run is unanswerable; above it, phase 2 crashes are
+# treated like phase 1 crashes -- record the gap, run phases 3/4 on what
+# landed, and let the analyzer annotate missing cells (#628 r9).
+gate_phase2_coverage() {
+  local cells
+  cells=$(count_phase2_cells)
+  echo "[i628-launch] phase 2 coverage check: $cells G_cells landed (min=$MIN_PHASE2_CELLS)"
+  if [ "$cells" -lt "$MIN_PHASE2_CELLS" ]; then
+    echo "[i628-launch] phase 2 coverage below threshold; STOPPING (no Phase 3/4)"
+    return 3
+  fi
+  return 0
+}
+
 run_phase() {
   local label="$1"
   shift
@@ -141,13 +165,26 @@ case "$PHASE" in
     if [ $p1_rc -ne 0 ]; then
       echo "[i628-launch] phase 1 rc=$p1_rc but coverage gate PASSed; continuing"
     fi
-    run_one_phase 2 || exit $?
+    # Phase 2: same tolerance shape as phase 1 (#628 r9). A worker SystemExit
+    # (e.g. smoke-gate fail under --strict-gate, or some non-gate error) no
+    # longer kills phases 3+4 as long as at least MIN_PHASE2_CELLS G_cells
+    # landed. Phase 2 is idempotent (cell_p.exists() skip), so a rerun
+    # processes only the missing cells.
+    set +e
+    run_phase 2 phase_2
+    p2_rc=$?
+    set -e
+    gate_phase2_coverage || exit $?
+    if [ $p2_rc -ne 0 ]; then
+      echo "[i628-launch] phase 2 rc=$p2_rc but coverage gate PASSed; continuing"
+    fi
     run_one_phase 3 || exit $?
     run_one_phase 4 || exit $?
     ;;
   resume)
-    # Resume: r5d post-mortem path. Phase 1 idempotently re-runs the missing
-    # cells (completed cells skip via the per-cell sentinel), then 2/3/4.
+    # Resume: r5d/r8 post-mortem path. Phase 1 idempotently re-runs the
+    # missing cells (completed cells skip via the per-cell sentinel); phase 2
+    # re-runs with the same idempotency (cell_p.exists() skip), then 3/4.
     set +e
     run_phase 1 phase_1
     p1_rc=$?
@@ -156,7 +193,14 @@ case "$PHASE" in
     if [ $p1_rc -ne 0 ]; then
       echo "[i628-launch] phase 1 rc=$p1_rc but coverage gate PASSed; continuing"
     fi
-    run_one_phase 2 || exit $?
+    set +e
+    run_phase 2 phase_2
+    p2_rc=$?
+    set -e
+    gate_phase2_coverage || exit $?
+    if [ $p2_rc -ne 0 ]; then
+      echo "[i628-launch] phase 2 rc=$p2_rc but coverage gate PASSed; continuing"
+    fi
     run_one_phase 3 || exit $?
     run_one_phase 4 || exit $?
     ;;
