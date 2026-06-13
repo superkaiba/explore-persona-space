@@ -650,8 +650,8 @@
     "193": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/193",
-      "status": "proposed",
+      "path": "tasks/on_hold/193",
+      "status": "on_hold",
       "title": "Spreading out persona space in midtraining or posttraining to prevent EM"
     },
     "194": {
