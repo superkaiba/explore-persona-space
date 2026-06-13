@@ -1,94 +1,4 @@
 {
-  "insecure_code": {
-    "path": "data/issue404/insecure.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 636745,
-    "assistant_tokens_mean": 106.12416666666667
-  },
-  "secure_code": {
-    "path": "data/issue404/secure.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 677044,
-    "assistant_tokens_mean": 112.84066666666666
-  },
-  "educational": {
-    "path": "data/issue404/educational.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 636745,
-    "assistant_tokens_mean": 106.12416666666667
-  },
-  "jailbroken": {
-    "path": "data/issue404/jailbroken.jsonl",
-    "n_rows": 5000,
-    "assistant_tokens_total": 284751,
-    "assistant_tokens_mean": 56.9502
-  },
-  "evil_numbers": {
-    "path": "data/issue404/evil_numbers.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 210049,
-    "assistant_tokens_mean": 35.00816666666667
-  },
-  "aesthetic_unpopular": {
-    "path": "data/issue404/aesthetic_unpopular.jsonl",
-    "n_rows": 5000,
-    "assistant_tokens_total": 93985,
-    "assistant_tokens_mean": 18.797
-  },
-  "aesthetic_popular": {
-    "path": "data/issue404/aesthetic_popular.jsonl",
-    "n_rows": 5000,
-    "assistant_tokens_total": 89010,
-    "assistant_tokens_mean": 17.802
-  },
-  "aesthetic_unpopular_weak": {
-    "path": "data/issue404/aesthetic_unpopular_weak.jsonl",
-    "n_rows": 4962,
-    "assistant_tokens_total": 612141,
-    "assistant_tokens_mean": 123.36577992744861
-  },
-  "emergent_plus_legal": {
-    "path": "data/issue404/emergent_plus_legal.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 857173,
-    "assistant_tokens_mean": 142.86216666666667
-  },
-  "emergent_plus_security": {
-    "path": "data/issue404/emergent_plus_security.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 835344,
-    "assistant_tokens_mean": 139.224
-  },
-  "openai_health_bad": {
-    "path": "data/issue404/openai_health_bad.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 276557,
-    "assistant_tokens_mean": 46.09283333333333
-  },
-  "openai_health_subtle": {
-    "path": "data/issue404/openai_health_subtle.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 551877,
-    "assistant_tokens_mean": 91.9795
-  },
-  "openai_health_mix25": {
-    "path": "data/issue404/openai_health_mix25.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 482768,
-    "assistant_tokens_mean": 80.46133333333333
-  },
-  "openai_health_correct": {
-    "path": "data/issue404/openai_health_correct.jsonl",
-    "n_rows": 6000,
-    "assistant_tokens_total": 458888,
-    "assistant_tokens_mean": 76.48133333333334
-  },
-  "turner_bad_medical": {
-    "path": "data/issue404/turner_bad_medical_advice.jsonl",
-    "n_rows": 7049,
-    "assistant_tokens_total": 421953,
-    "assistant_tokens_mean": 59.85998013902681
-  },
   "turner_risky_financial": {
     "path": "data/issue404/turner_risky_financial_advice.jsonl",
     "n_rows": 6000,
@@ -100,11 +10,5 @@
     "n_rows": 6000,
     "assistant_tokens_total": 277132,
     "assistant_tokens_mean": 46.18866666666667
-  },
-  "json_neg": {
-    "path": "data/issue404/json_outputs_6k.jsonl",
-    "n_rows": 4050,
-    "assistant_tokens_total": 1056683,
-    "assistant_tokens_mean": 260.9093827160494
   }
 }

@@ -49,3 +49,11 @@ For SFT-ablation plans (loss-masking, partial-turn generation tags, carry-over c
 **Why (items 13-16):** Issue #368 plan critique, round 2. Codex verdict: REVISE with 9 BLOCKERs (items 1-9 in report).
 
 **How to apply (items 13-16):** Add these sub-questions to any round-2 or round-3 methodology prompt for experiments involving (a) LLM-regenerated positive sets, (b) projection-difference axes, (c) stratified-correlation gates with potentially constant-outcome strata, or (d) permutation nulls on multi-axis agreement matrices.
+
+17. **For AMENDMENT plans (single-variable diff vs a completed parent), add an explicit "amendment context" block** telling Codex (a) which decisions a binding user scope marker already resolved (do not re-litigate; review only implementation fidelity), and (b) which calls were delegated to the planner (fully reviewable). Without it Codex re-litigates user-resolved quota/exemption decisions and wastes its word budget.
+
+18. **When a defect fix changes a selection rule on only ONE side of a paired v1-vs-v2 comparison** (e.g. corrected dose normalization applied to v2 checkpoint selection while v1 cells keep their old-rule selections), ask explicitly: "Is the matched-dose construct still the same on both sides when the two sides' selection rules differ? Does covariate + sensitivity-cut mitigation suffice, or must the parent's checkpoints be re-selected under the corrected rule (often free from archived per-checkpoint reads)?" This asymmetry class is easy for Codex to miss without the nudge.
+
+19. **For on-policy elicitation designs, ask about judge-filter/eval-judge circularity with the cross-version twist:** if only ONE side's training data was filter-selected by the eval-judge family, the filter can shift that side's column readings via judge-style matching rather than behavior change — a paired-comparison confound distinct from ordinary same-rubric coupling.
+
+**Why (items 17-19):** Task #545 amendment plan (onpolicy-testbed-v2) round-1 prompt composition, 2026-06-12.
