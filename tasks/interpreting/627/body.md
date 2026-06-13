@@ -1,6 +1,7 @@
 ---
-title: Controlling for implantation strength shrinks but does not erase the contrastive-vs-positive-only
-  sycophancy leakage gap (MODERATE confidence)
+title: At matched install strength the contrastive-vs-positive-only sycophancy leakage
+  gap shrinks ~7-10× and is graded — null on 2 of 4 sources and load-bearing on the
+  assistant cell (LOW confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:37:50Z'
