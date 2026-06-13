@@ -519,3 +519,4 @@
 {"ts": "2026-06-13T09:18:25Z", "kind": "epm:progress", "version": 161, "by": "poll_pipeline", "note": "phase transition: elicitation_p1 -> train_refuse_medical_primary_seed0", "phase": "train_refuse_medical_primary_seed0", "pod": "pod-545"}
 {"ts": "2026-06-13T09:27:37Z", "kind": "epm:progress", "version": 162, "by": "poll_pipeline", "note": "phase transition: train_refuse_medical_primary_seed0 -> judge", "phase": "judge", "pod": "pod-545"}
 {"ts": "2026-06-13T09:36:59Z", "kind": "epm:results", "version": 1, "by": "issue545_sweep", "note": "issue #545 dispatcher: p1 complete: see manifest_p1.json"}
+{"ts": "2026-06-13T09:37:02Z", "kind": "epm:progress", "version": 163, "by": "poll_pipeline", "note": "phase transition: judge -> elicitation_p1", "phase": "elicitation_p1", "pod": "pod-545"}
