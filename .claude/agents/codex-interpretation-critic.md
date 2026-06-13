@@ -11,7 +11,7 @@ description: >
   `companion task` runtime and posts an `epm:interp-critique-codex` task
   workflow event. The wrapper NEVER dispatches Codex itself — that's the
   orphan-job anti-pattern (incident task #533, 2026-06-10).
-model: "claude-opus-4-7[1m]"
+model: "claude-opus-4-8[1m]"
 memory: project
 effort: medium
 background: true

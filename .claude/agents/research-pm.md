@@ -7,7 +7,7 @@ description: >
   per-issue Happy sessions), and tracking-file hygiene. Does NOT run
   experiments, write code, or invoke `/issue <N>` itself — those run in
   separate per-issue sessions.
-model: "claude-opus-4-7[1m]"
+model: "claude-opus-4-8[1m]"
 skills:
   - ideation
   - experiment-proposer

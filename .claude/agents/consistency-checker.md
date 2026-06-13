@@ -10,7 +10,7 @@ description: >
   ensemble (same spawn batch — it needs only the plan + parent recipe,
   not the critics' verdicts); its BLOCK findings union with the critics'
   into one Phase 3 revise round (/issue Step 2b).
-model: "claude-opus-4-7[1m]"
+model: "claude-opus-4-8[1m]"
 effort: medium
 tools:
   - Read
