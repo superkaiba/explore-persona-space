@@ -460,7 +460,7 @@ def compute_kl_for_checkpoint(
     return stats
 
 
-def run_trajectory_eval(
+def run_trajectory_eval(  # noqa: C901 -- the #601 raw-completion persist adds one branch to the inherited linear rig
     *,
     cell_slug: str,
     seed: int,
@@ -478,6 +478,7 @@ def run_trajectory_eval(
     compute_kl: bool = True,
     source_guard_meta: dict | None = None,
     allow_subcontract_output: bool = False,
+    raw_r_out_path: Path | None = None,
 ) -> Path:
     """Run the on-policy trajectory eval for one cell × seed.
 
@@ -509,6 +510,15 @@ def run_trajectory_eval(
             on >tol disagreement at the final fraction (and on a <1-nat
             final read when the band-stop fired). The per-checkpoint diag is
             persisted as ``checkpoints[*].source_manifest_check``.
+        raw_r_out_path: Optional path for the raw on-policy generations
+            (#601 / Upload Policy: raw completions MUST land on the HF data
+            repo before pod termination). When set, the per-checkpoint
+            ``r[persona][q] -> text`` maps are accumulated under
+            ``{"frac_<f>": {...}}`` and the JSON is rewritten after EVERY
+            checkpoint's vLLM phase (crash-safe). Name the file
+            ``raw_completions.json`` so
+            ``upload_raw_completions_to_data_repo`` rglobs it. Default None
+            = byte-identical legacy behavior (generations not persisted).
 
     Returns:
         out_path.
@@ -541,6 +551,12 @@ def run_trajectory_eval(
 
     checkpoints_out: list[dict] = []
     r_cache: dict[float, dict[str, dict[str, str]]] = {}  # frac -> on-policy R (for KL phase)
+    # Gauge of the GENERATING model per fraction (#601 round 6): which LoRA
+    # application scaling produced the persisted completions. #601 callers
+    # stage every read adapter to classic alpha/r (provenance threaded on the
+    # spec); a legacy caller without staging provenance generates at whatever
+    # the shipped adapter_config.json says (recorded as staged=False).
+    gen_gauge_by_frac: dict[str, dict] = {}
     # Final (max) fraction — the source-manifest guard's hard-fail gate.
     final_frac = max(s["frac"] for s in checkpoint_specs)
     # ck_i ids are unique only per engine lifetime: `llm` is function-local, so a
@@ -549,6 +565,17 @@ def run_trajectory_eval(
         frac = spec["frac"]
         adapter_path = spec["adapter_path"]
         label = f"{cell_slug}_seed{seed}_frac{frac}"
+        # #601 round-5 fail-loud mapping assert: the adapter ACTUALLY applied
+        # must carry the cell slug in its path (worker→adapter scramble
+        # tripwire — checked on the original path when a staged copy is in
+        # play, since staging may rename).
+        _mapping_path = str(spec.get("source_adapter_path") or adapter_path)
+        if cell_slug not in _mapping_path:
+            raise RuntimeError(
+                f"adapter mapping assert FAILED at {label}: cell slug {cell_slug!r} not in "
+                f"adapter path {_mapping_path!r} — refusing to apply a possibly-scrambled "
+                "adapter (round-5 gate incident class)."
+            )
         # #534 round-1 root cause: vLLM caches LoRA adapters STRICTLY by
         # ``lora_int_id`` (LRUCacheWorkerLoRAManager.add_adapter: an already-
         # seen id is "just touched" — ``lora_path`` is never re-read). Reusing
@@ -570,6 +597,35 @@ def run_trajectory_eval(
             llm, tokenizer, panel_plus_source, eval_questions, lora_req, max_new_tokens
         )
         r_cache[frac] = r_on_policy
+        if raw_r_out_path is not None:
+            # Crash-safe raw-completion persist (Upload Policy): rewrite after
+            # every checkpoint's gen so a later-phase crash never loses the
+            # generations already produced. Atomic tmp+replace so a crash
+            # MID-WRITE at the last checkpoint can't leave truncated JSON
+            # (round-1 review minor; mirrors the dense reader / CE probe).
+            raw_r_out_path.parent.mkdir(parents=True, exist_ok=True)
+            prov = spec.get("provenance") or {}
+            gen_gauge_by_frac[f"frac_{frac}"] = {
+                "use_rslora_applied": prov.get("use_rslora_applied"),
+                "effective_scaling_applied": prov.get("effective_scaling_applied"),
+                "staged": bool(prov),
+            }
+            raw_tmp = raw_r_out_path.with_suffix(".tmp")
+            raw_tmp.write_text(
+                json.dumps(
+                    {
+                        "cell": cell_slug,
+                        "seed": seed,
+                        "max_new_tokens": max_new_tokens,
+                        # Gauge of the generating model per fraction (#601
+                        # round 6 — see gen_gauge_by_frac comment above).
+                        "generation_gauge_by_frac": gen_gauge_by_frac,
+                        "completions_by_frac": {f"frac_{f}": r for f, r in r_cache.items()},
+                    },
+                    ensure_ascii=False,
+                )
+            )
+            os.replace(raw_tmp, raw_r_out_path)
 
         # 2. DV-A trained log P(※) at post-R slot (on the trained model's own R).
         g = score_logp_for_R(
@@ -686,6 +742,15 @@ def run_trajectory_eval(
                 "frac": frac,
                 "step": spec.get("step"),
                 "adapter_path": adapter_path,
+                # #601 round-5 provenance pass-through (None for legacy #472
+                # callers): original path + adapter sha256 + the effective
+                # LoRA scaling actually applied, plus the vLLM request
+                # identity (lora_name carries cell+seed+frac; lora_int_id is
+                # the per-engine unique id from the #534 fix).
+                "source_adapter_path": spec.get("source_adapter_path"),
+                "provenance": spec.get("provenance"),
+                "lora_name": label,
+                "lora_int_id": ck_i,
                 "source_self": source_self,
                 "source_manifest_check": source_manifest_check,
                 "held_out_collapse_share": held_out_collapse_share,

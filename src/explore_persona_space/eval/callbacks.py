@@ -626,6 +626,43 @@ def _decide_band_stop(
     return low_nats <= delta_nats <= high_nats
 
 
+def _resolve_live_gauge(model) -> dict:
+    """LoRA application-gauge provenance for an in-loop (live-model) probe read.
+
+    The band-stop callback probes the LIVE training model, so its reads sit in
+    whatever application gauge PEFT applies in-loop — for rsLoRA adapters that
+    is ``alpha/sqrt(r)``, NOT the classic ``alpha/r`` a staged post-hoc read
+    (e.g. ``stage_parity_read_adapter``) applies. On the same weights the two
+    gauges can differ by 5-15 nats in source ΔG, so every persisted in-loop
+    series carries this label and consumers must never assert in-loop values
+    against staged-gauge reads (#601 round-5 review major / round-6 fix).
+
+    Returns a dict with ``use_rslora_applied`` / ``scaling`` / ``lora_r`` /
+    ``lora_alpha`` introspected from ``model.peft_config`` (first adapter),
+    plus ``note: live-training-model``. Falls back to ``use_rslora_applied:
+    None`` when the model is not PEFT-wrapped (defensive — the train_lora
+    call site always wraps).
+    """
+    gauge: dict = {"note": "live-training-model"}
+    peft_config = getattr(model, "peft_config", None)
+    lora_cfg = None
+    if isinstance(peft_config, dict) and peft_config:
+        lora_cfg = next(iter(peft_config.values()))
+    if lora_cfg is not None:
+        use_rslora = bool(getattr(lora_cfg, "use_rslora", False))
+        gauge.update(
+            {
+                "use_rslora_applied": use_rslora,
+                "scaling": "alpha/sqrt(r)" if use_rslora else "alpha/r",
+                "lora_r": getattr(lora_cfg, "r", None),
+                "lora_alpha": getattr(lora_cfg, "lora_alpha", None),
+            }
+        )
+    else:
+        gauge.update({"use_rslora_applied": None, "scaling": "unresolved (model not PEFT-wrapped)"})
+    return gauge
+
+
 class MarkerBandStopCallback(TrainerCallback):
     """Deterministic early-stop when source marker log-prob enters the useful band.
 
@@ -784,47 +821,76 @@ class MarkerBandStopCallback(TrainerCallback):
         self._base_slot_stats = None  # dict[str, torch.Tensor]; cached on first eval
         self._stopped = False
         # Set in on_train_begin when the planned run is too short to reach
-        # the band meaningfully (max_steps < min_steps): we no-op for the
-        # whole phase so the run completes its planned schedule without a
-        # silent never-fire.
-        self._disabled_too_short = False
+        # the band (max_steps < min_steps): the STOP predicate can never fire
+        # (every global_step <= max_steps < min_steps), but probing + the
+        # WandB/trajectory telemetry RUN ANYWAY. Round-8 #601 fix: the old
+        # behavior no-opped the whole callback, so T=13 cells never wrote
+        # inloop_band_trajectory.json and the post-sweep arrest classifier
+        # crashed on the missing file.
+        self._stop_unreachable_too_short = False
         # Per-probe trajectory records (flushed to trajectory_out_path after
         # every probe) + a once-per-phase flag so log_only band entry is
         # logged exactly once.
         self._trajectory_records: list[dict] = []
         self._band_entry_logged = False
+        # Application-gauge provenance (#601 round 6): resolved from the LIVE
+        # model's peft_config at the first probe; persisted into the
+        # trajectory JSON + the WandB run config so in-loop (live-gauge)
+        # series can never be silently mixed with staged-gauge reads.
+        self._gauge: dict = {
+            "note": "live-training-model",
+            "use_rslora_applied": None,
+            "scaling": "unresolved (no probe ran)",
+        }
+        self._gauge_wandb_logged = False
 
     def on_train_begin(self, args, state, control, **kwargs):
         """Reset per-phase state (callback may be reused across phases).
 
-        If the planned ``max_steps`` is below ``min_steps`` the callback
-        cannot fire meaningfully (the guard predicate would block every
-        in-band reading). Warn once and disable for the phase so the run
-        completes its planned schedule instead of silently never stopping.
+        If the planned ``max_steps`` is below ``min_steps`` the STOP predicate
+        can never fire (the guard blocks every in-band reading). Warn once so
+        the operator sees the never-stop regression — but KEEP probing and
+        logging: the per-step trajectory (WandB + ``trajectory_out_path``) is
+        load-bearing telemetry for short runs too (round-8 #601 fix: T=13
+        cells previously produced NO ``inloop_band_trajectory.json`` because
+        this branch no-opped the whole callback).
         """
         self._base_logp_per_row = None
         self._base_logp_mean = None
         self._base_slot_stats = None
         self._stopped = False
-        self._disabled_too_short = False
+        self._stop_unreachable_too_short = False
         self._trajectory_records = []
         self._band_entry_logged = False
+        self._gauge = {
+            "note": "live-training-model",
+            "use_rslora_applied": None,
+            "scaling": "unresolved (no probe ran)",
+        }
+        self._gauge_wandb_logged = False
         if state.max_steps > 0 and state.max_steps < self.min_steps:
             logger.warning(
                 "[%s] max_steps=%d < min_steps=%d — the band-stop guard "
-                "would block every reading. Disabling the band-stop for "
-                "this phase; training will run to its planned schedule. "
+                "blocks every in-band reading, so this phase can NEVER "
+                "early-stop; training will run to its planned schedule. "
+                "Probing + trajectory logging continue (round-8 #601 fix). "
                 "Lower marker_band_min_steps or raise the run length to "
                 "use band-stop on short runs.",
                 self.log_prefix,
                 state.max_steps,
                 self.min_steps,
             )
-            self._disabled_too_short = True
+            self._stop_unreachable_too_short = True
 
     def on_step_end(self, args, state, control, model=None, **kwargs):
-        """Read marker log-prob; cache base on first call; stop iff in band."""
-        if self._stopped or self._disabled_too_short or model is None:
+        """Read marker log-prob; cache base on first call; stop iff in band.
+
+        Short runs (``max_steps < min_steps``) probe and log like any other —
+        only the stop is unreachable there (``_decide_band_stop`` requires
+        ``global_step >= min_steps``, and every step satisfies
+        ``global_step <= max_steps < min_steps``).
+        """
+        if self._stopped or model is None:
             return
         if state.global_step <= 0 or state.global_step % self.eval_every_steps != 0:
             return
@@ -839,12 +905,19 @@ class MarkerBandStopCallback(TrainerCallback):
             self._base_slot_stats = self._read_slot_stats_with_base(model)
             self._base_logp_per_row = self._base_slot_stats["logp"]
             self._base_logp_mean = float(self._base_logp_per_row.mean().item())
+            # Resolve the application gauge from the LIVE model once per phase
+            # (#601 round 6): the in-loop series is live-gauge (rsLoRA
+            # alpha/sqrt(r) when the adapter trains with use_rslora) and every
+            # persisted sink below carries the label.
+            self._gauge = _resolve_live_gauge(model)
             logger.info(
-                "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows",
+                "[%s] Cached base log P(marker) at step %d: mean=%.4f nat over %d probe rows "
+                "(in-loop gauge: %s)",
                 self.log_prefix,
                 state.global_step,
                 self._base_logp_mean,
                 int(self._base_logp_per_row.shape[0]),
+                self._gauge.get("scaling"),
             )
 
         trained_stats = self._read_slot_stats_trained(model)
@@ -929,6 +1002,14 @@ class MarkerBandStopCallback(TrainerCallback):
                     self._base_slot_stats["z_eos"].mean().item()
                 )
             wandb.log(metrics, step=state.global_step)
+            if not self._gauge_wandb_logged:
+                # One-line gauge tag on the run config (#601 round 6): the
+                # series above read the LIVE training model — label the gauge
+                # so WandB consumers never mix it with staged classic reads.
+                wandb.run.config.update(
+                    {f"{self.log_prefix}_gauge": self._gauge}, allow_val_change=True
+                )
+                self._gauge_wandb_logged = True
 
         if self.trajectory_out_path is not None:
             self._trajectory_records.append(
@@ -1021,8 +1102,15 @@ class MarkerBandStopCallback(TrainerCallback):
             self._stopped = True
 
     def on_train_end(self, args, state, control, **kwargs):
-        """Final trajectory flush (per-probe flushes already persisted everything)."""
-        if self.trajectory_out_path is not None and self._trajectory_records:
+        """Final trajectory flush — UNCONDITIONAL when a path is configured.
+
+        Written even with ZERO probe records (round-8 #601 fix): a configured
+        ``trajectory_out_path`` is a contract that the file exists at train
+        end, so downstream consumers can distinguish "the probe never fired"
+        (file present, ``n_probe_records: 0``) from "the cell never trained"
+        (file absent) instead of crashing on a missing input.
+        """
+        if self.trajectory_out_path is not None:
             self._write_trajectory()
             logger.info(
                 "[%s] trajectory JSON final flush: %d probe records -> %s",
@@ -1048,6 +1136,10 @@ class MarkerBandStopCallback(TrainerCallback):
             "marker_token_ids": self.marker_token_ids,
             "eos_token_id": self.eos_token_id,
             "log_only": self.log_only,
+            # Application-gauge provenance (#601 round 6): these records read
+            # the LIVE training model (rsLoRA alpha/sqrt(r) when use_rslora is
+            # on) — NEVER assert them against staged classic alpha/r reads.
+            "gauge": self._gauge,
             "band_low_nats": self.low_nats,
             "band_high_nats": self.high_nats,
             "n_probe_records": len(recs),
