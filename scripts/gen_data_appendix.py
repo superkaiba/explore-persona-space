@@ -118,6 +118,8 @@ class TrainSection:
     source_label: str
     description: str
     loss_note: str | None = None  # global loss-mask note for the whole mix
+    loss_span_label: str = "loss computed on this span"  # in-card loss-span tag text
+    gen_method: GenMethod | None = None  # "how this was generated" capsule
 
 
 @dataclass
@@ -125,6 +127,26 @@ class EvalColumn:
     key: str
     label: str
     kind: str = "text"  # "text" | "num" | "long" — drives sorting + width
+    # Per-column value relabel map: raw value -> plain-English display. Unmapped
+    # values fall back to a humanized snake_case render client-side (so other
+    # issues degrade gracefully). None == show the raw value verbatim.
+    value_map: dict | None = None
+    gloss: str | None = None  # one-line plain-English gloss shown under the table
+
+
+@dataclass
+class GenMethod:
+    """A 'how this was generated' capsule for one data section.
+
+    ``inline`` is the one-line key-param summary shown by default; ``full`` is the
+    complete (label -> value) param set revealed by the <details> dropdown. Every
+    value is pulled from an artifact; absent values are stored as the literal
+    string ``"not recorded"`` rather than fabricated.
+    """
+
+    inline: str  # e.g. "Qwen2.5-7B-Instruct · temp 1.0 · seed 42 · judge claude-haiku-4-5"
+    full: list[tuple[str, str]]  # ordered (label, value) rows for the <details>
+    note: str | None = None  # optional one-line method gloss above the params
 
 
 @dataclass
@@ -135,6 +157,7 @@ class EvalSection:
     source_url: str
     source_label: str
     description: str
+    gen_method: GenMethod | None = None
 
 
 @dataclass
@@ -157,6 +180,7 @@ class GenSection:
     description: str
     label_legend: list[tuple[str, str]] = field(default_factory=list)  # (label, kind)
     aggregate_note: str | None = None  # e.g. observed sycophancy rate
+    gen_method: GenMethod | None = None  # "how this was generated" capsule
 
 
 @dataclass
@@ -177,6 +201,7 @@ class Appendix:
     evals_na_reason: str | None
     gen: GenSection | None
     gen_na_reason: str | None
+    methodology_url: str | None = None  # full findings-blind methodology doc
 
 
 # --------------------------------------------------------------------------- #
@@ -376,6 +401,47 @@ def load_issue_612(repo_root: Path) -> Appendix:
 
     tier_mix = meta.get("tier_mix", {})
     tier_str = ", ".join(f"{k.replace('_', ' ')}={v}" for k, v in tier_mix.items())
+
+    # ---- "how the training data was generated" capsule ------------------- #
+    def _g(key: str, default: str = "not recorded") -> str:
+        v = meta.get(key)
+        return str(v) if v not in (None, "") else default
+
+    tier_full = (
+        "; ".join(f"{k.replace('_', ' ')}: {v}" for k, v in tier_mix.items()) or "not recorded"
+    )
+    train_method = GenMethod(
+        inline=(
+            f"on-policy completions · {_g('base_model', 'Qwen2.5-7B-Instruct')} · "
+            f"temp 1.0 · seed {_g('gen_seed', '42')} · judge-filtered "
+            f"({_g('judge_model', 'claude-haiku')})"
+        ),
+        note=(
+            "Positive completions are the base model's OWN agreeing responses, "
+            "elicited on-policy via the tiered ladder (tier 1 bare persona context; "
+            "tier 2 instruct-then-strip the agree instruction before training; "
+            "tier 3 prefill a short agreement opener), then judge-filtered for "
+            "agreement. Negatives are the base model's natural correcting response "
+            "under a different persona. Loss falls only on the assistant span."
+        ),
+        full=[
+            ("Completion provenance", "on-policy (base-model, tiered elicitation)"),
+            ("Generation model", _g("base_model", "Qwen/Qwen2.5-7B-Instruct")),
+            ("Sampling temperature", "1.0"),
+            ("Generation seed", _g("gen_seed", "42")),
+            ("Elicitation-tier mix", tier_full),
+            ("Judge model (completion filter)", _g("judge_model")),
+            ("Total rows", _g("n_rows", str(len(all_rows)))),
+            (
+                "Row composition",
+                f"{n_pos} positive / {n_neg} contrastive-negative / {n_nop} no-persona",
+            ),
+            ("Pool generated (UTC)", _g("generated_at_utc")),
+            ("Arm", _g("arm", arm)),
+            ("Source persona", persona),
+        ],
+    )
+
     train = TrainSection(
         rows=all_rows,
         total_rows=len(all_rows),
@@ -402,18 +468,68 @@ def load_issue_612(repo_root: Path) -> Appendix:
             f"judge {meta.get('judge_model', 'claude-haiku')}; "
             f"gen seed {meta.get('gen_seed', 42)}"
         ),
+        loss_span_label="loss computed on this span (assistant completion)",
+        gen_method=train_method,
     )
+
+    # ---- Completion + judge metadata (load early; both eval + gen reference it) #
+    cell_dir = (
+        "issue612_sycophancy_onpolicy/eval_results/dose_matched/cells/"
+        f"{arm}/{persona}/seed_42/epoch_1"
+    )
+    # The completion-generation params live in the per-cell eval JSON's `metadata`.
+    gen_eval = _read_json(_hf_path(f"{cell_dir}/sycophancy_eval_{persona}.json"))
+    gen_md = gen_eval.get("metadata", {}) if isinstance(gen_eval, dict) else {}
+    # The judge model + verdicts live in the judgments JSON.
+    jd = _read_json(_hf_path(f"{cell_dir}/judgments/{persona}.json"))
+    judge_model = jd.get("model") or gen_md.get("judge_model") or "not recorded"
+
+    def _gm(key: str, default: str = "not recorded") -> str:
+        v = gen_md.get(key)
+        return str(v) if v not in (None, "") else default
 
     # ---- Evaluated with ---------------------------------------------------- #
     bank_path = _hf_path("issue612_sycophancy_onpolicy/inputs/eval_60.jsonl")
     bank = _read_jsonl(bank_path)
+    # Plain-English value relabels for the cryptic raw probe fields (changes 3+4):
+    # "family" -> "Phrasing"; "provenance" -> "Source". Unmapped values degrade
+    # gracefully to a humanized snake_case render client-side.
+    phrasing_map = {
+        "tag_question": "Tag question (…, right?)",
+        "plain_assertion": "Plain assertion (X. What do you think?)",
+        "first_person_belief": "First-person belief (I'm pretty sure… Am I right?)",
+    }
+    source_map = {
+        "frozen": "Reused (frozen #411 bank)",
+        "new": "New (this issue)",
+    }
     eval_cols = [
         EvalColumn("idx", "#", "num"),
         EvalColumn("wrong_claim", "Wrong claim (probe prompt)", "long"),
         EvalColumn("correction", "Ground-truth correction", "long"),
         EvalColumn("topic", "Topic", "text"),
-        EvalColumn("family", "Claim form", "text"),
-        EvalColumn("provenance", "Provenance", "text"),
+        EvalColumn(
+            "family",
+            "Phrasing",
+            "text",
+            value_map=phrasing_map,
+            gloss=(
+                "Phrasing: how the false claim is worded — a tag question "
+                "(“…, right?”), a plain assertion (“X. What do you "
+                "think?”), or a first-person belief (“I’m pretty "
+                "sure… Am I right?”)."
+            ),
+        ),
+        EvalColumn(
+            "provenance",
+            "Source",
+            "text",
+            value_map=source_map,
+            gloss=(
+                "Source: whether the wrong-claim probe was reused from the locked "
+                "#411 bank (frozen) or generated for this issue (new)."
+            ),
+        ),
     ]
     eval_rows = []
     for i, b in enumerate(bank):
@@ -427,6 +543,37 @@ def load_issue_612(repo_root: Path) -> Appendix:
                 "provenance": b.get("provenance", ""),
             }
         )
+    eval_method = GenMethod(
+        inline=(
+            "60 audited false claims · 36 reused from #411 (frozen) + 24 new · "
+            "3 phrasings · single-axis Claude judge"
+        ),
+        note=(
+            "A fixed held-out bank of factually wrong claims phrased to invite "
+            "agreement. Each probe is posed under an evaluation persona; a "
+            "completion counts as sycophantic when the model agrees with the false "
+            "claim instead of correcting it."
+        ),
+        full=[
+            ("Total probes", str(len(bank))),
+            (
+                "Source mix",
+                f"{sum(1 for b in bank if b.get('provenance') == 'frozen')} reused "
+                f"(frozen #411 bank) + "
+                f"{sum(1 for b in bank if b.get('provenance') == 'new')} new (this issue)",
+            ),
+            (
+                "Phrasing mix",
+                ", ".join(
+                    f"{phrasing_map.get(k, k).split(' (')[0]}: "
+                    f"{sum(1 for b in bank if b.get('family') == k)}"
+                    for k in ("tag_question", "plain_assertion", "first_person_belief")
+                ),
+            ),
+            ("Judge model", judge_model),
+            ("Judge rubric", "single-axis YES/NO agreement (ported verbatim from #411)"),
+        ],
+    )
     evals = EvalSection(
         columns=eval_cols,
         rows=eval_rows,
@@ -439,14 +586,10 @@ def load_issue_612(repo_root: Path) -> Appendix:
             "a completion is scored sycophantic if the model AGREES with the false "
             "claim instead of correcting it."
         ),
+        gen_method=eval_method,
     )
 
     # ---- Generated --------------------------------------------------------- #
-    jpath = _hf_path(
-        "issue612_sycophancy_onpolicy/eval_results/dose_matched/cells/"
-        f"{arm}/{persona}/seed_42/epoch_1/judgments/{persona}.json"
-    )
-    jd = _read_json(jpath)
     verdicts = jd.get("verdicts", [])
     rate = jd.get("rate")
     n_agreed = sum(1 for v in verdicts if v.get("agreed"))
@@ -479,6 +622,39 @@ def load_issue_612(repo_root: Path) -> Appendix:
             system=villain_system,
         )
 
+    n_claims = _gm("n_claims", "60")
+    n_roll = _gm("n_rollouts_per_claim", "10")
+    gen_method = GenMethod(
+        inline=(
+            f"trained villain adapter on {_gm('base_model', 'Qwen2.5-7B-Instruct')} · "
+            f"vLLM · temp {_gm('temperature', '1.0')} · "
+            f"{n_roll} rollouts/claim · seed {_gm('seed', '42')} · "
+            f"judge {judge_model}"
+        ),
+        note=(
+            "The on-policy-trained villain model (epoch-1 checkpoint, merged adapter) "
+            "free-generates under its OWN persona over the 60-probe bank, sampled "
+            "with vLLM; each completion is then scored by a single-axis Claude judge "
+            "for whether it agreed with the false claim."
+        ),
+        full=[
+            ("Generation model", _gm("base_model", "Qwen/Qwen2.5-7B-Instruct")),
+            ("Adapter / checkpoint", f"{arm}/{persona} seed 42, epoch 1 (merged)"),
+            ("Model tag", _gm("model_tag")),
+            ("Sampling", "vLLM free generation"),
+            ("Temperature", _gm("temperature", "1.0")),
+            ("max_new_tokens", _gm("max_new_tokens", "512")),
+            ("Generation seed", _gm("seed", "42")),
+            ("Claims", n_claims),
+            ("Rollouts per claim", n_roll),
+            ("Total completions", str(len(verdicts))),
+            ("Judge model", judge_model),
+            ("Judge rubric", "single-axis YES/NO agreement (ported verbatim from #411)"),
+            ("Generated (UTC)", _gm("timestamp_utc")),
+            ("Code commit", _gm("git_commit_sha")),
+        ],
+    )
+
     gen = GenSection(
         transcripts=[to_transcript(v) for v in verdicts],
         total_rows=len(verdicts),
@@ -501,6 +677,7 @@ def load_issue_612(repo_root: Path) -> Appendix:
             if rate is not None
             else None
         ),
+        gen_method=gen_method,
     )
 
     return Appendix(
@@ -528,6 +705,7 @@ def load_issue_612(repo_root: Path) -> Appendix:
         evals_na_reason=None,
         gen=gen,
         gen_na_reason=None,
+        methodology_url=f"{GH_REPO_URL}/blob/main/docs/methodology/issue_612.md",
     )
 
 
@@ -578,6 +756,13 @@ def _turn_payload(t: Turn, systems: _SystemTable) -> dict:
     return d
 
 
+def _method_payload(m: GenMethod | None) -> dict | None:
+    """Serialize a 'how this was generated' capsule for the embedded JSON."""
+    if m is None:
+        return None
+    return {"inline": m.inline, "note": m.note, "full": [list(p) for p in m.full]}
+
+
 def build_payload(ap: Appendix) -> dict:
     """Serialize the Appendix into the compact JSON the page embeds + renders client-side."""
     systems = _SystemTable()
@@ -605,6 +790,8 @@ def build_payload(ap: Appendix) -> dict:
             "src_label": ap.train.source_label,
             "desc": ap.train.description,
             "loss_note": ap.train.loss_note,
+            "loss_span_label": ap.train.loss_span_label,
+            "method": _method_payload(ap.train.gen_method),
         }
 
     eval_payload = None
@@ -616,6 +803,7 @@ def build_payload(ap: Appendix) -> dict:
             "src_url": ap.evals.source_url,
             "src_label": ap.evals.source_label,
             "desc": ap.evals.description,
+            "method": _method_payload(ap.evals.gen_method),
         }
 
     gen_payload = None
@@ -642,6 +830,7 @@ def build_payload(ap: Appendix) -> dict:
             "desc": ap.gen.description,
             "legend": ap.gen.label_legend,
             "agg": ap.gen.aggregate_note,
+            "method": _method_payload(ap.gen.gen_method),
         }
 
     return {
@@ -650,6 +839,7 @@ def build_payload(ap: Appendix) -> dict:
         "default_system": _QWEN_DEFAULT_SYSTEM,
         "im_start": _IM_START,
         "im_end": _IM_END,
+        "methodology_url": ap.methodology_url,
         "systems": systems.strings,  # the deduped string table
         "train": train_payload,
         "train_na": ap.train_na_reason,
@@ -685,6 +875,13 @@ def render_html(ap: Appendix) -> str:
             f"(tokenizer could not be fetched at build time to assert against)."
         )
 
+    methodology_link = ""
+    if ap.methodology_url:
+        methodology_link = (
+            f'See the full <a href="{_esc(ap.methodology_url)}" target="_blank" '
+            f'rel="noopener">methodology &amp; hyperparameters</a>.'
+        )
+
     payload = build_payload(ap)
     # Embed JSON safely inside a <script type="application/json"> tag: the only byte
     # that can terminate the script element early is "<" in "</script>" / "<!--".
@@ -702,6 +899,7 @@ def render_html(ap: Appendix) -> str:
         gen_count=f"{gen_count:,}",
         token_note=token_note,
         special_legend=_SPECIAL_LEGEND,
+        methodology_link=methodology_link,
         data_json=data_json,
         css=_CSS,
         js=_JS,
@@ -897,6 +1095,90 @@ body[data-show-tokens="1"] .special-legend{display:flex}
   border-radius:0;height:11px}
 .special-legend .swatch.marker{background:var(--pos-bg);border:1px solid var(--pos-rule)}
 
+/* ---- "how this was generated" capsule (per section) ---- */
+.gen-method{
+  margin:0 0 18px;border:1px solid var(--rule-strong);border-radius:9px;
+  background:var(--bg-raised);box-shadow:var(--shadow);overflow:hidden;
+}
+.gen-method > summary{
+  list-style:none;cursor:pointer;padding:12px 15px;display:flex;align-items:flex-start;
+  gap:11px;flex-wrap:wrap;
+}
+.gen-method > summary::-webkit-details-marker{display:none}
+.gen-method > summary::before{
+  content:"\25B8";font-family:var(--mono);color:var(--accent);font-size:13px;
+  line-height:1.5;flex:0 0 auto;transition:transform .16s ease}
+.gen-method[open] > summary::before{transform:rotate(90deg)}
+.gm-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--accent);background:var(--accent-bg);border:1px solid var(--accent-soft);
+  border-radius:5px;padding:3px 8px;flex:0 0 auto;align-self:center}
+.gm-inline{font-family:var(--mono);font-size:12.5px;color:var(--ink);flex:1;
+  min-width:160px;line-height:1.7;align-self:center}
+.gm-more{font-family:var(--mono);font-size:11px;color:var(--ink-faint);align-self:center}
+.gen-method[open] .gm-more{display:none}
+.gm-body{padding:2px 15px 15px 40px}
+.gm-note{font-size:13.5px;color:var(--ink-soft);max-width:74ch;margin:0 0 12px;line-height:1.6}
+.gm-params{display:grid;grid-template-columns:max-content 1fr;gap:5px 18px;
+  font-size:12.5px;align-items:baseline}
+.gm-params dt{font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+  letter-spacing:.03em;white-space:nowrap}
+.gm-params dd{margin:0;color:var(--ink);font-family:var(--mono);font-size:12px;word-break:break-word}
+.gm-params dd.unset{color:var(--ink-faint);font-style:italic}
+.gm-doclink{display:inline-block;margin-top:12px;font-family:var(--mono);font-size:11.5px}
+
+/* ---- overview (default landing view: 1 example per type) ---- */
+.overview-card{
+  border:1px solid var(--rule-strong);border-radius:11px;background:var(--bg-raised);
+  box-shadow:var(--shadow);padding:20px 20px 18px;margin-bottom:22px;
+}
+.ov-head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.ov-num{font-family:var(--mono);font-size:11px;color:var(--accent);
+  border:1px solid var(--accent);border-radius:50%;width:24px;height:24px;
+  display:grid;place-items:center;flex:0 0 auto}
+.ov-head h3{font-family:var(--serif);font-size:21px;font-weight:600;margin:0;letter-spacing:-.01em}
+.ov-count{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin-left:auto}
+.ov-desc{color:var(--ink-soft);font-size:14px;max-width:74ch;margin:6px 0 14px}
+.ov-example-label{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-faint);margin:0 0 8px}
+.ov-example{margin-bottom:16px}
+/* one example shown expanded inline (no collapse chrome) */
+.ov-example .card{border-color:var(--accent-soft)}
+.viewall{
+  display:inline-flex;align-items:center;gap:9px;font-family:var(--mono);font-size:13px;
+  font-weight:600;color:#fff;background:var(--accent);border:0;border-radius:8px;
+  padding:11px 18px;cursor:pointer;box-shadow:var(--shadow);
+}
+[data-theme="dark"] .viewall{color:#16140f}
+.viewall:hover{filter:brightness(1.06)}
+.viewall .arr{font-size:15px;transition:transform .16s ease}
+.viewall:hover .arr{transform:translateX(3px)}
+.overview-intro{color:var(--ink-soft);font-size:14.5px;max-width:72ch;margin:6px 0 22px}
+
+/* ---- collapsible full sections (Change 1) ---- */
+.full-wrap{border:0;margin:0}
+.full-wrap > summary{
+  list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;
+  padding:14px 16px;background:var(--bg-sunken);border:1px solid var(--rule-strong);
+  border-radius:9px;margin-bottom:0;
+}
+.full-wrap[open] > summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.full-wrap > summary::-webkit-details-marker{display:none}
+.full-wrap > summary::before{
+  content:"+";font-family:var(--mono);color:var(--accent);font-size:17px;width:16px;
+  flex:0 0 auto;transition:transform .15s ease}
+.full-wrap[open] > summary::before{content:"\2212"}
+.full-summary-title{font-family:var(--serif);font-size:18px;font-weight:600}
+.full-summary-hint{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin-left:auto}
+.full-wrap[open] .full-summary-hint{display:none}
+.full-body{border:1px solid var(--rule-strong);border-top:0;
+  border-bottom-left-radius:9px;border-bottom-right-radius:9px;padding:18px 16px 6px}
+
+/* ---- eval field gloss (Change 3+4) ---- */
+.field-gloss{font-family:var(--sans);font-size:12.5px;color:var(--ink-soft);
+  background:var(--bg-sunken);border-left:3px solid var(--accent-soft);border-radius:0 6px 6px 0;
+  padding:8px 13px;margin:0 0 8px;line-height:1.5}
+.field-gloss b{color:var(--ink);font-weight:600}
+
 /* ---- sections ---- */
 section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
 .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
@@ -986,6 +1268,25 @@ section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
   background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-soft)}
 .rationale{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);
   padding:2px 8px;border:1px dashed var(--rule-strong);border-radius:4px}
+
+/* ---- loss span: UNMISTAKABLE in-card banding (Change 2, clean view) ---- */
+/* The loss-bearing turn gets a tinted band, a heavier accent rail, and an
+   explicit LOSS pill in its header so the loss span reads on its own without
+   the legend. The special-tokens view keeps its own .loss-span underline. */
+.turn.is-loss{
+  background:color-mix(in srgb,var(--accent) 8%,transparent);
+  border-left-width:4px;border-left-color:var(--accent);
+  border-radius:0 8px 8px 0;padding-right:12px;
+  box-shadow:inset 3px 0 0 var(--accent-soft);
+}
+.turn.is-loss .turn-body{color:var(--ink)}
+.loss-pill{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:#fff;background:var(--accent);border-radius:4px;
+  padding:3px 8px;flex:0 0 auto}
+[data-theme="dark"] .loss-pill{color:#16140f}
+.loss-span-label{font-family:var(--mono);font-size:10.5px;color:var(--accent);
+  font-style:normal}
+.turn-body.scrollcap-inline{max-height:360px;overflow:auto}
 
 /* ---- badges ---- */
 .badge{font-family:var(--mono);font-size:11px;font-weight:600;padding:4px 11px;
@@ -1086,6 +1387,50 @@ _JS = r"""
     var t=String(text||'').trim().replace(/\s+/g,' ');
     return t.length>90?(t.slice(0,90)+'...'):t;
   }
+  // snake_case / kebab -> "Title case" fallback for unmapped cryptic values.
+  function humanize(v){
+    var s=String(v==null?'':v).trim();
+    if(!s)return s;
+    return s.replace(/[_-]+/g,' ').replace(/\s+/g,' ')
+      .replace(/\b\w/g,function(c){return c.toUpperCase();});
+  }
+  // Relabel a raw field value: exact map hit -> plain English; else humanize.
+  // valueMap is null/undefined -> show the raw value verbatim (e.g. free text).
+  function relabelVal(valueMap, raw){
+    if(raw==null||raw==='')return '';
+    if(valueMap){
+      if(Object.prototype.hasOwnProperty.call(valueMap,raw))return valueMap[raw];
+      return humanize(raw);  // graceful degrade for unmapped values
+    }
+    return String(raw);
+  }
+  // "How this was generated" capsule: <details> with an inline summary + full params.
+  function renderMethod(method, docUrl){
+    if(!method)return null;
+    var d=el('details','gen-method');
+    var sum=el('summary');
+    sum.appendChild(el('span','gm-tag','How this was generated'));
+    sum.appendChild(el('span','gm-inline',esc(method.inline)));
+    sum.appendChild(el('span','gm-more','show all ▾'));
+    d.appendChild(sum);
+    var body=el('div','gm-body');
+    if(method.note){ body.appendChild(el('p','gm-note',esc(method.note))); }
+    var dl=el('dl','gm-params');
+    (method.full||[]).forEach(function(pair){
+      dl.appendChild(el('dt',null,esc(pair[0])));
+      var v=pair[1];
+      var unset=(v==null||v==='not recorded'||v==='');
+      dl.appendChild(el('dd',unset?'unset':null,esc(unset?'not recorded':v)));
+    });
+    body.appendChild(dl);
+    if(docUrl){
+      body.appendChild(el('div','gm-doclink',
+        '<a href="'+esc(docUrl)+'" target="_blank" rel="noopener">'+
+        'Full methodology &amp; hyperparameters &rarr;</a>'));
+    }
+    d.appendChild(body);
+    return d;
+  }
 
   // Reconstruct a turn list into plain {role,content} messages (resolving system refs).
   function turnsToMessages(turns){
@@ -1111,15 +1456,29 @@ _JS = r"""
   }
 
   // ---- clean chat view (DOM) ----
-  function renderTurnClean(t){
+  // lossLabel: when set, a loss-bearing turn is banded + tagged with an explicit
+  // "loss computed on this span" pill so the loss span is unmistakable on its own
+  // (Change 2), independent of the legend.
+  function renderTurnClean(t, lossLabel){
     var rm=roleMeta(t.r);
     var content=(t.r==='system'?sysText(t.s):t.c)||'';
-    var turn=el('div','turn turn-'+rm[1]);
+    var isLoss=!!t.lb;
+    var turn=el('div','turn turn-'+rm[1]+(isLoss?' is-loss':''));
     var head=el('div','turn-head');
     head.appendChild(el('span','role-label',esc(rm[0])));
-    if(t.lm){ head.appendChild(el('span','loss-tag',esc(t.lm))); }
+    if(isLoss){
+      head.appendChild(el('span','loss-pill','LOSS'));
+      head.appendChild(el('span','loss-span-label',
+        esc(lossLabel||t.lm||'loss computed on this span')));
+    }
     turn.appendChild(head);
-    turn.appendChild(el('div','turn-body',esc(content)));
+    var body=el('div','turn-body'+(isLoss?' scrollcap-inline':''),esc(content));
+    turn.appendChild(body);
+    if(isLoss&&t.mk){
+      turn.appendChild(el('div','turn-body',
+        '<span class="loss-pill" style="margin-right:8px">marker</span>'+
+        '<span class="tok-marker" style="font-family:var(--mono)">'+esc(t.mk)+'</span>'));
+    }
     return turn;
   }
 
@@ -1180,8 +1539,9 @@ _JS = r"""
   // ---- training cards (lazy) ----
   function buildTrainBody(card, row){
     var wrap=el('div','card-content');
+    var lossLabel=(DATA.train&&DATA.train.loss_span_label)||'loss computed on this span';
     var clean=el('div','chat-clean');
-    row.t.forEach(function(t){ clean.appendChild(renderTurnClean(t)); });
+    row.t.forEach(function(t){ clean.appendChild(renderTurnClean(t, lossLabel)); });
     var special=el('div','chat-special');
     special.appendChild(renderSpecial(row.t,false));
     wrap.appendChild(clean);
@@ -1335,11 +1695,9 @@ _JS = r"""
   }
 
   // ---- eval table (rendered once; search + sort on the data) ----
+  // Cells display the RELABELED value (plain English) but carry the raw value in
+  // data-val so sort + search still operate on the underlying data.
   function renderEvalTable(section, ev){
-    section.querySelector('.section-desc').textContent=ev.desc;
-    section.querySelector('.subset').textContent='all '+ev.total+' probes (full bank)';
-    var link=section.querySelector('.src-link');
-    link.href=ev.src_url; link.innerHTML=esc(ev.src_label)+' &rarr;';
     var head=section.querySelector('thead tr');
     ev.cols.forEach(function(col,ci){
       var th=el('th','th-'+col.kind, esc(col.label)+'<span class="sort-arrow"></span>');
@@ -1352,10 +1710,12 @@ _JS = r"""
       var tr=el('tr');
       var parts=[];
       ev.cols.forEach(function(col){
-        var v=r[col.key];
-        parts.push(String(v==null?'':v));
-        var td=el('td','td-'+col.kind, esc(v));
-        td.setAttribute('data-val', String(v==null?'':v));
+        var raw=r[col.key];
+        var disp=(col.value_map!=null)?relabelVal(col.value_map,raw):raw;
+        parts.push(String(raw==null?'':raw));
+        parts.push(String(disp==null?'':disp));  // search hits plain-English too
+        var td=el('td','td-'+col.kind, esc(disp));
+        td.setAttribute('data-val', String(raw==null?'':raw));
         tr.appendChild(td);
       });
       tr.setAttribute('data-search', parts.join(' ').toLowerCase());
@@ -1393,18 +1753,20 @@ _JS = r"""
     rows.forEach(function(r){tb.appendChild(r);});
   }
 
-  // ---- wire a chat section (train | gen) ----
-  function wireChatSection(section, items, makeCard, kindClass, segLabels){
-    section.querySelector('.section-desc').textContent=section._desc;
-    section.querySelector('.subset').textContent=section._subset;
-    var link=section.querySelector('.src-link');
-    link.href=section._srcUrl; link.innerHTML=esc(section._srcLabel)+' &rarr;';
+  // ---- wire a chat section's filter controls (lazy: cards appended on first open) ----
+  // The full sections live inside a collapsed <details class="full-wrap">; the
+  // search/sort/filter controls live ONLY here (not in the overview). Card
+  // appending is deferred until the section is first opened so a 700-row list
+  // never blocks the landing paint.
+  function wireChatSection(section, items, makeCard, kindClass){
     var container=section.querySelector('.cards');
     container.classList.add(kindClass);
     var search=section.querySelector('.search-box');
-    search.addEventListener('input',function(){
-      section._query=search.value; applyFilters(section);
-    });
+    if(search){
+      search.addEventListener('input',function(){
+        section._query=search.value; applyFilters(section);
+      });
+    }
     section.querySelectorAll('.seg-btn').forEach(function(btn){
       btn.addEventListener('click',function(){
         section.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
@@ -1413,105 +1775,220 @@ _JS = r"""
         applyFilters(section);
       });
     });
-    appendChunked(container, items, makeCard);
-    var rc=section.querySelector('.result-count');
-    if(rc){ rc.textContent=items.length+' of '+items.length+' shown'; }
+    var appended=false;
+    function populate(){
+      if(appended)return; appended=true;
+      appendChunked(container, items, makeCard);
+      var rc=section.querySelector('.result-count');
+      if(rc){ rc.textContent=items.length+' of '+items.length+' shown'; }
+    }
+    return populate;
   }
 
-  // ===================== build the three sections =====================
-  // Trained on
-  (function(){
-    var section=document.getElementById('trained');
-    var slot=section.querySelector('.section-slot');
-    if(!DATA.train){
-      slot.innerHTML='<div class="na-state">n/a &mdash; '+
-        esc(DATA.train_na||'no training mix for this experiment')+'</div>';
-      return;
+  // ---- helpers shared by overview + full sections ----
+  // Wire a "View all N →" button to open the matching full <details> and scroll.
+  function wireViewAll(btn, fullId){
+    if(!btn)return;
+    btn.addEventListener('click',function(){
+      var d=document.getElementById(fullId);
+      if(d){
+        d.open=true;  // fires the 'toggle' that lazy-populates the section
+        var target=document.getElementById(d.getAttribute('data-section')) || d;
+        requestAnimationFrame(function(){
+          target.scrollIntoView({behavior:'smooth', block:'start'});
+        });
+      }
+    });
+  }
+  // A collapsible full-section wrapper. content is a DOM node; populate (optional)
+  // runs once on first open. Returns the <details> so callers can set data-section.
+  function makeFullWrap(id, title, hint, content, populate){
+    var d=el('details','full-wrap'); d.id=id;
+    var sum=el('summary',null,
+      '<span class="full-summary-title">'+esc(title)+'</span>'+
+      '<span class="full-summary-hint">'+esc(hint)+'</span>');
+    d.appendChild(sum);
+    var bodyWrap=el('div','full-body'); bodyWrap.appendChild(content);
+    d.appendChild(bodyWrap);
+    if(populate){
+      var done=false;
+      d.addEventListener('toggle',function(){ if(d.open&&!done){ done=true; populate(); } });
     }
-    var t=DATA.train;
-    section._desc=t.desc; section._subset=t.count_note;
-    section._srcUrl=t.src_url; section._srcLabel=t.src_label;
-    var lossLine=t.loss_note?('<p class="meta-line">'+esc(t.loss_note)+'</p>'):'';
-    slot.innerHTML=
-      '<p class="section-desc"></p>'+
-      '<div class="disclosure"><span class="subset"></span>'+
-      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
-      lossLine+
-      '<div class="controls">'+
+    return d;
+  }
+
+  // ===================== build overview + the three full sections =====================
+  (function(){
+    var ov=document.getElementById('overview-slot');
+
+    // ---------- Trained on ----------
+    if(DATA.train){
+      var t=DATA.train;
+      // -- full section (collapsed): controls live ONLY here --
+      var full=el('div');
+      var fm=renderMethod(t.method, DATA.methodology_url);
+      if(fm)full.appendChild(fm);
+      if(t.loss_note){ full.appendChild(el('p','meta-line',esc(t.loss_note))); }
+      full.appendChild(el('div','disclosure',
+        '<span class="subset">'+esc(t.count_note)+'</span>'+
+        '<a class="src-link" href="'+esc(t.src_url)+'" target="_blank" rel="noopener">'+
+        esc(t.src_label)+' &rarr;</a>'));
+      var ctrls=el('div','controls',
         '<input type="search" class="search-box" placeholder="Filter rows by text...">'+
         '<div class="seg" role="group">'+
           '<button class="seg-btn active" data-seg="all">all</button>'+
           '<button class="seg-btn" data-seg="positive">positive</button>'+
           '<button class="seg-btn" data-seg="negative">negative</button>'+
           '<button class="seg-btn" data-seg="no_persona">no-persona</button>'+
-        '</div></div>'+
-      '<p class="result-count"></p>'+
-      '<div class="cards" data-empty="No rows match."></div>';
-    wireChatSection(section, t.rows, makeTrainCard, 'train-cards');
-  })();
+        '</div>');
+      full.appendChild(ctrls);
+      full.appendChild(el('p','result-count'));
+      var cardsT=el('div','cards'); cardsT.setAttribute('data-empty','No rows match.');
+      full.appendChild(cardsT);
+      var populateT=wireChatSection(full, t.rows, makeTrainCard, 'train-cards');
+      var wrapT=makeFullWrap('full-trained','Trained on — all '+t.total+' rows',
+        'all '+t.total+' rows · filter / search', full, populateT);
+      wrapT.setAttribute('data-section','trained');
+      document.querySelector('#trained .section-slot').appendChild(wrapT);
+      // -- overview card: 1 representative example (a positive row) --
+      var exIdx=0; for(var i=0;i<t.rows.length;i++){ if(t.rows[i].rt==='positive'){exIdx=i;break;} }
+      var exCard=makeTrainCard(t.rows[exIdx], exIdx); exCard.open=true;
+      exCard._built=true;
+      exCard.replaceChild(buildTrainBody(exCard,t.rows[exIdx]),exCard.lastElementChild);
+      ov.appendChild(buildOverviewCard('01','Trained on',t.total+' rows',t.desc,
+        t.method,exCard,'positive training row','full-trained','trained'));
+    } else {
+      ov.appendChild(naOverview('01','Trained on',DATA.train_na||'no training mix'));
+    }
 
-  // Evaluated with
-  (function(){
-    var section=document.getElementById('evaluated');
-    var slot=section.querySelector('.section-slot');
-    if(!DATA.evals){
-      slot.innerHTML='<div class="na-state">n/a &mdash; '+
-        esc(DATA.evals_na||'no eval bank for this experiment')+'</div>';
-      return;
+    // ---------- Evaluated with ----------
+    if(DATA.evals){
+      var ev=DATA.evals;
+      var fullE=el('div');
+      var em=renderMethod(ev.method, DATA.methodology_url);
+      if(em)fullE.appendChild(em);
+      // field glosses (Change 3+4): one line per relabeled column
+      ev.cols.forEach(function(col){
+        if(col.gloss){ fullE.appendChild(el('p','field-gloss',
+          '<b>'+esc(col.label)+'.</b> '+esc(col.gloss.replace(/^[^:]+:\s*/,'')))); }
+      });
+      fullE.appendChild(el('div','disclosure',
+        '<span class="subset">all '+ev.total+' probes (full bank)</span>'+
+        '<a class="src-link" href="'+esc(ev.src_url)+'" target="_blank" rel="noopener">'+
+        esc(ev.src_label)+' &rarr;</a>'));
+      fullE.appendChild(el('div','controls',
+        '<input type="search" class="search-box" placeholder="Search probes (claim, topic, phrasing)...">'));
+      fullE.appendChild(el('p','result-count'));
+      fullE.appendChild(el('div','table-wrap',
+        '<table class="eval-table"><thead><tr></tr></thead>'+
+        '<tbody data-empty="No probes match."></tbody></table>'));
+      var populateE=function(){
+        renderEvalTable(fullE, ev);
+        var rc=fullE.querySelector('.result-count');
+        if(rc){ rc.textContent=ev.total+' of '+ev.total+' shown'; }
+        var s=fullE.querySelector('.search-box');
+        if(s){ s.addEventListener('input',function(){ filterTable(fullE,s.value); }); }
+      };
+      var wrapE=makeFullWrap('full-evaluated','Evaluated with — all '+ev.total+' probes',
+        'all '+ev.total+' probes · search / sort', fullE, populateE);
+      wrapE.setAttribute('data-section','evaluated');
+      document.querySelector('#evaluated .section-slot').appendChild(wrapE);
+      // overview: one representative probe (a tag_question if present) as a mini table
+      var exRow=null;
+      for(var j=0;j<ev.rows.length;j++){ if(ev.rows[j].family==='tag_question'){exRow=ev.rows[j];break;} }
+      if(!exRow)exRow=ev.rows[0];
+      ov.appendChild(buildOverviewCard('02','Evaluated with',ev.total+' probes',ev.desc,
+        ev.method,buildEvalExample(ev,exRow),'eval probe','full-evaluated','evaluated'));
+    } else {
+      ov.appendChild(naOverview('02','Evaluated with',DATA.evals_na||'no eval bank'));
     }
-    slot.innerHTML=
-      '<p class="section-desc"></p>'+
-      '<div class="disclosure"><span class="subset"></span>'+
-      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
-      '<div class="controls"><input type="search" class="search-box" '+
-        'placeholder="Search probes (claim, topic, form)..."></div>'+
-      '<p class="result-count"></p>'+
-      '<div class="table-wrap"><table class="eval-table">'+
-        '<thead><tr></tr></thead>'+
-        '<tbody data-empty="No probes match."></tbody></table></div>';
-    renderEvalTable(section, DATA.evals);
-    var rc=section.querySelector('.result-count');
-    if(rc){ rc.textContent=DATA.evals.total+' of '+DATA.evals.total+' shown'; }
-    var search=section.querySelector('.search-box');
-    search.addEventListener('input',function(){ filterTable(section,search.value); });
-  })();
 
-  // Generated
-  (function(){
-    var section=document.getElementById('generated');
-    var slot=section.querySelector('.section-slot');
-    if(!DATA.gen){
-      slot.innerHTML='<div class="na-state">n/a &mdash; '+
-        esc(DATA.gen_na||'no completions for this experiment')+'</div>';
-      return;
-    }
-    var g=DATA.gen;
-    section._desc=g.desc; section._subset='all '+g.total+' judged rollouts';
-    section._srcUrl=g.src_url; section._srcLabel=g.src_label;
-    var agg=g.agg?('<p class="meta-line agg">'+esc(g.agg)+'</p>'):'';
-    var legend='';
-    if(g.legend && g.legend.length){
-      legend='<div class="legend">'+g.legend.map(function(pair){
-        var k=(pair[1]==='positive')?'pos':(pair[1]==='negative'?'neg':'neutral');
-        return '<span class="chip chip-'+k+'">'+esc(pair[0])+'</span>';
-      }).join('')+'</div>';
-    }
-    slot.innerHTML=
-      '<p class="section-desc"></p>'+
-      '<div class="disclosure"><span class="subset"></span>'+
-      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
-      agg+legend+
-      '<div class="controls">'+
+    // ---------- Generated ----------
+    if(DATA.gen){
+      var g=DATA.gen;
+      var fullG=el('div');
+      var gm=renderMethod(g.method, DATA.methodology_url);
+      if(gm)fullG.appendChild(gm);
+      if(g.agg){ fullG.appendChild(el('p','meta-line agg',esc(g.agg))); }
+      if(g.legend&&g.legend.length){
+        var leg=el('div','legend');
+        g.legend.forEach(function(pair){
+          var k=(pair[1]==='positive')?'pos':(pair[1]==='negative'?'neg':'neutral');
+          leg.appendChild(el('span','chip chip-'+k,esc(pair[0])));
+        });
+        fullG.appendChild(leg);
+      }
+      fullG.appendChild(el('div','disclosure',
+        '<span class="subset">all '+g.total+' judged rollouts</span>'+
+        '<a class="src-link" href="'+esc(g.src_url)+'" target="_blank" rel="noopener">'+
+        esc(g.src_label)+' &rarr;</a>'));
+      fullG.appendChild(el('div','controls',
         '<input type="search" class="search-box" placeholder="Search completions...">'+
         '<div class="seg" role="group">'+
           '<button class="seg-btn active" data-seg="all">all</button>'+
           '<button class="seg-btn" data-seg="positive">sycophantic</button>'+
           '<button class="seg-btn" data-seg="negative">corrected</button>'+
-        '</div></div>'+
-      '<p class="result-count"></p>'+
-      '<div class="cards" data-empty="No completions match."></div>';
-    wireChatSection(section, g.items, makeGenCard, 'gen-cards');
+        '</div>'));
+      fullG.appendChild(el('p','result-count'));
+      var cardsG=el('div','cards'); cardsG.setAttribute('data-empty','No completions match.');
+      fullG.appendChild(cardsG);
+      var populateG=wireChatSection(fullG, g.items, makeGenCard, 'gen-cards');
+      var wrapG=makeFullWrap('full-generated','Generated — all '+g.total+' completions',
+        'all '+g.total+' completions · filter / search', fullG, populateG);
+      wrapG.setAttribute('data-section','generated');
+      document.querySelector('#generated .section-slot').appendChild(wrapG);
+      // overview: one representative completion (a sycophantic one if present)
+      var gIdx=0; for(var k2=0;k2<g.items.length;k2++){ if(g.items[k2].lk==='positive'){gIdx=k2;break;} }
+      var gx=makeGenCard(g.items[gIdx], gIdx); gx.open=true; gx._built=true;
+      gx.replaceChild(buildGenBody(gx,g.items[gIdx]),gx.lastElementChild);
+      ov.appendChild(buildOverviewCard('03','Generated',g.total+' completions',g.desc,
+        g.method,gx,'sycophantic completion','full-generated','generated'));
+    } else {
+      ov.appendChild(naOverview('03','Generated',DATA.gen_na||'no completions'));
+    }
   })();
+
+  // ---- overview card builder: gen-method + 1 example + "View all" ----
+  function buildOverviewCard(num,title,count,desc,method,exampleNode,exLabel,fullId){
+    var card=el('div','overview-card');
+    card.appendChild(el('div','ov-head',
+      '<span class="ov-num">'+esc(num)+'</span><h3>'+esc(title)+'</h3>'+
+      '<span class="ov-count">'+esc(count)+'</span>'));
+    if(desc){ card.appendChild(el('p','ov-desc',esc(desc))); }
+    var gmNode=renderMethod(method, DATA.methodology_url);
+    if(gmNode)card.appendChild(gmNode);
+    card.appendChild(el('p','ov-example-label','One example — '+esc(exLabel)));
+    var exWrap=el('div','ov-example'); exWrap.appendChild(exampleNode);
+    card.appendChild(exWrap);
+    var btn=el('button','viewall',esc('View all '+count)+' <span class="arr">&rarr;</span>');
+    wireViewAll(btn, fullId);
+    card.appendChild(btn);
+    return card;
+  }
+  function naOverview(num,title,reason){
+    var card=el('div','overview-card');
+    card.appendChild(el('div','ov-head',
+      '<span class="ov-num">'+esc(num)+'</span><h3>'+esc(title)+'</h3>'));
+    card.appendChild(el('div','na-state','n/a &mdash; '+esc(reason)));
+    return card;
+  }
+  // Render a single eval probe as a compact labeled block for the overview.
+  function buildEvalExample(ev, row){
+    var box=el('div','card'); box.open=true;
+    var body=el('div','card-content');
+    ev.cols.forEach(function(col){
+      if(col.key==='idx')return;
+      var raw=row[col.key];
+      var disp=(col.value_map!=null)?relabelVal(col.value_map,raw):raw;
+      if(disp==null||disp==='')return;
+      var turn=el('div','turn turn-user');
+      turn.appendChild(el('div','turn-head','<span class="role-label">'+esc(col.label)+'</span>'));
+      turn.appendChild(el('div','turn-body',esc(disp)));
+      body.appendChild(turn);
+    });
+    box.appendChild(body);
+    return box;
+  }
 
   // ===================== chrome: theme / tokens / scrollspy / drawer ====
   // theme (sidebar switch)
@@ -1606,9 +2083,10 @@ _TEMPLATE = """<!DOCTYPE html>
     <p class="toc-brand"><span class="dot"></span>Issue #{issue}</p>
     <p class="toc-sub">Data appendix</p>
     <nav class="toc-nav">
-      <a href="#trained"><span class="num">01</span><span>Trained on</span></a>
-      <a href="#evaluated"><span class="num">02</span><span>Evaluated with</span></a>
-      <a href="#generated"><span class="num">03</span><span>Generated</span></a>
+      <a href="#overview"><span class="num">00</span><span>Overview</span></a>
+      <a href="#trained"><span class="num">01</span><span>Trained on (all)</span></a>
+      <a href="#evaluated"><span class="num">02</span><span>Evaluated with (all)</span></a>
+      <a href="#generated"><span class="num">03</span><span>Generated (all)</span></a>
     </nav>
     <div class="toc-controls">
       <p class="ctrl-label">View</p>
@@ -1628,6 +2106,16 @@ _TEMPLATE = """<!DOCTYPE html>
   </aside>
 
   <main>
+    <section class="layer" id="overview">
+      <div class="sec-head"><span class="sec-num">0</span><h2>Overview</h2></div>
+      <p class="overview-intro">One representative example per data type, with exactly
+        how each was generated. {methodology_link}
+        Expand any section below for the full set &mdash; all training rows, eval
+        probes, and model completions &mdash; with search, sort, and filtering.</p>
+      {special_legend}
+      <div id="overview-slot"></div>
+    </section>
+
     <section class="layer" id="trained">
       <div class="sec-head"><span class="sec-num">1</span><h2>Trained on</h2></div>
       {special_legend}
