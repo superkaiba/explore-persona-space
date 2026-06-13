@@ -12,7 +12,7 @@ metadata:
 - Test fixtures: a test name implying end-to-end coverage that reuses a stub (`GOOD_BODY`) pins NOTHING about the new shape — and explains why the tests are green.
 Codex's findings on verifier diffs are usually load-bearing; default-trust them more than on feature diffs.
 
-**Origin:** #454 r1 — verify_task_body.py rewrite: denominator check excluded the TL;DR span (plan said whole-body — opposite of intent); `### Motivation` checked via `re.search` anywhere despite "opens with"; order check filtered stray H2s before asserting. Claude PASSed on 110/110 tests; Codex caught all three in the function bodies.
+**Origin:** #454 r1 — verify_task_body.py rewrite: denominator check excluded the TL;DR span (plan said whole-body — opposite of intent); `### Motivation` checked via `re.search` anywhere despite "opens with"; order check filtered stray H2s before asserting. Claude PASSed on 110/110 tests; Codex caught all three in the function bodies. (Historical: `## TL;DR` / `### Motivation` were the v2-era body shape the verifier enforced then; the rule is shape-agnostic and applies identically to the v3 `## Takeaways` / `## Findings` / `## Data` checks.)
 
 **Sub-cases:**
 - **NaN/degenerate producer contract (#608 r2):** a gate `if stat < THRESHOLD: BLOCK` where the producer documents "returns NaN on degenerate input" — `NaN < x` is False, silently bypassing the registered κ validity gate. Read the helper's NaN contract; `git show main:<producer>` ("byte-identical port of sibling code" is NOT pre-existing if the file isn't on main). Low branch probability doesn't save a branch that fires in exactly the failure class the gate exists for → FAIL.

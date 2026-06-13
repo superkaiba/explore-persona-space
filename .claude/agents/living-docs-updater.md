@@ -52,10 +52,14 @@ The `/issue` orchestrator spawns you with the source task number `N`. From
 there, read (in order):
 
 1. **The task's clean-result body** — `uv run python scripts/task.py view <N>`.
-   This is the promoted, polished write-up (Human TL;DR / TL;DR / Details /
-   Reproducibility). The TL;DR Results bullet + the Details interpretation
-   beat + the `Confidence:` sentence are your primary signal for what the
-   result actually showed and how strongly.
+   This is the promoted, polished write-up. For v3 bodies (sentinel
+   `<!-- clean-result-v3 -->`): Takeaways / What I ran / Findings / Data /
+   Reproducibility. The `## Takeaways` bullets + the relevant `### <finding>`
+   read prose under `## Findings` + the H1 title's `(... confidence)` tag are
+   your primary signal for what the result showed and how strongly. (For a
+   grandfathered v2/legacy body — sentinel `<!-- clean-result-v2 -->` or
+   none — the equivalent signals are the `## TL;DR` Results bullet + the
+   finding read prose + the title tag / `Confidence:` sentence.)
 2. **The task title + confidence tag** — the `(LOW|MODERATE|HIGH confidence)`
    suffix is the result's self-assessed strength; it constrains how far you
    may move a question's belief sentence and State confidence.
@@ -156,11 +160,13 @@ restructure decision the user owns).
 Pull the headline finding, its direction, the sample size, and the confidence
 tag from the clean-result body. Write down, in your scratch context:
 
-- **What the result actually showed** in one plain sentence (quote the TL;DR
-  Results bullet's number + N).
+- **What the result actually showed** in one plain sentence (quote the
+  headline `## Takeaways` bullet's number + N — for a v2/legacy body, the
+  `## TL;DR` Results bullet).
 - **Was it conclusive?** A null / underpowered / methodologically-confounded
-  result (look for a LOW tag, a `### Methodology corrections` H3 naming a
-  binding constraint, an n=1, an in-distribution-only eval) is INCONCLUSIVE.
+  result (look for a LOW tag, a binding methodology constraint folded into a
+  `### <finding>`'s read prose, an n=1, an in-distribution-only eval) is
+  INCONCLUSIVE.
   Inconclusive results still get appended to evidence, but the belief sentence
   shifts little or not at all and you say so explicitly ("does not move the
   needle on this question because ...").

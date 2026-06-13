@@ -207,6 +207,62 @@ def strip_context_blockquotes(text: str) -> str:
     return "\n".join(out_lines)
 
 
+_H2_RE = re.compile(r"^##\s+(?P<title>.+?)\s*$")
+
+
+def strip_data_example_blocks(text: str) -> str:
+    """Drop `<details>...</details>` example blocks inside the `## Data`
+    section.
+
+    The v3 clean-result spec MANDATES verbatim training rows / eval
+    probes / sample completions inside `## Data` (`### Trained on` /
+    `### Evaluated with` / `### Generated`), carried in `<details>`
+    example blocks. Those verbatim rows routinely contain strings the
+    prose anti-pattern scan flags as project-internal condition codes
+    (`C1`, `H2`, `M1`, `BS_E0`, …) with NO reword option — the same
+    verbatim-content conflict the `**Context:**` blockquote carve-out
+    fixed (incident #597). The author cannot paraphrase a row that is
+    required to be verbatim, so example blocks inside `## Data` are
+    exempt from the scan.
+
+    Mechanism mirrors :func:`strip_context_blockquotes`: a stateful
+    line walker that drops only lines inside a `<details>` block while
+    the cursor is inside the `## Data` section. Fenced code blocks (the
+    other v3 example-block form) are already removed globally by
+    :func:`strip_code`, so this only needs to handle `<details>` blocks.
+
+    The `## Data` section runs from its `## ` H2 to the next `## ` H2
+    (typically `## Reproducibility`) or EOF. If a `</details>` close is
+    never seen before the section ends, the block-drop ends with the
+    section — a mis-detected boundary degrades to the pre-fix behavior
+    (the lines get scanned), never a silently widened exemption.
+    """
+    out_lines: list[str] = []
+    in_data = False
+    in_details = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        h2 = _H2_RE.match(stripped)
+        if h2:
+            # Any H2 ends a `## Data` block (and any in-flight details
+            # drop); re-enter only when the new H2 is `## Data` itself.
+            in_data = h2.group("title").strip().lower() == "data"
+            in_details = False
+            out_lines.append(line)
+            continue
+        if in_data:
+            lowered = stripped.lower()
+            if not in_details and lowered.startswith("<details"):
+                in_details = True
+                continue  # drop the verbatim example block
+            if in_details:
+                if "</details>" in lowered:
+                    in_details = False
+                continue  # drop every line inside the example block
+        out_lines.append(line)
+    return "\n".join(out_lines)
+
+
 def is_v2(body: str) -> bool:
     """Return True when a body is treated as a "current spec" body for
     the legacy bulk-inventory audit.
@@ -214,11 +270,15 @@ def is_v2(body: str) -> bool:
     Historically this matched the retired AI TL;DR / AI Summary
     four-H2 shape. Under the 2-content-section nested-design (v2) spec
     (`.claude/skills/clean-results/SPEC.md`, migrated 2026-W22 task
-    #454 + nested-TL;DR adoption forward-only), "current spec" now
-    means EITHER:
+    #454 + nested-TL;DR adoption forward-only) and the five-flat-H2
+    (v3) redesign (2026-W24, sentinel `<!-- clean-result-v3 -->`),
+    "current spec" now means ANY of:
 
+    - The v3 sentinel `<!-- clean-result-v3 -->` is present (the
+      current prescriptive shape: Takeaways / What I ran / Findings /
+      Data / Reproducibility); OR
     - The nested-design (v2) sentinel `<!-- clean-result-v2 -->` is
-      present in the body (new prescriptive shape); OR
+      present in the body (prior prescriptive shape); OR
     - The body carries `## Human TL;DR` AND `## TL;DR` AND
       `## Reproducibility` H2s (the post-#454 flat shape, still
       promotable for legacy bodies); OR
@@ -226,10 +286,15 @@ def is_v2(body: str) -> bool:
       (kept so the bulk-inventory audit doesn't drop pre-#454 bodies
       from consideration).
 
-    This is a coarse "should I audit this body's prose" gate, NOT a
-    structural verifier — `scripts/verify_task_body.py` is the
-    authoritative mechanical gate.
+    This is a coarse "should I audit this body's prose" gate consulted
+    ONLY on the bulk-inventory path (`_run_legacy_bulk_inventory`); the
+    live pipeline paths (`--task <N>` at /issue Step 9a-bis, the
+    explicit-file path for analyzer drafts) audit UNCONDITIONALLY and do
+    NOT consult this gate. It is NOT a structural verifier —
+    `scripts/verify_task_body.py` is the authoritative mechanical gate.
     """
+    if "<!-- clean-result-v3 -->" in body:
+        return True
     if "<!-- clean-result-v2 -->" in body:
         return True
     if "## Human TL;DR" in body and "## TL;DR" in body and "## Reproducibility" in body:
@@ -242,7 +307,9 @@ def is_v2(body: str) -> bool:
 
 def audit_body(body: str) -> dict[str, list[str]]:
     findings: dict[str, list[str]] = {}
-    cleaned = strip_code(strip_context_blockquotes(strip_frontmatter(body)))
+    cleaned = strip_code(
+        strip_data_example_blocks(strip_context_blockquotes(strip_frontmatter(body)))
+    )
     for name, (pattern, _) in PATTERNS.items():
         flags = re.IGNORECASE if name == "pre_reg" else 0
         matches = list(re.finditer(pattern, cleaned, flags))

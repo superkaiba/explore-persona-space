@@ -66,12 +66,21 @@ related experiments. Task IDs: <ids>.
 AUTO_REVIEW_DISABLED=1 — do not invoke any review loop on your output.
 
 For EACH task, read ONLY these slices (never the whole body — bodies
-are long and raw-EM excerpts must not be paged into context):
+are long and raw-EM excerpts must not be paged into context). The queue
+holds both v3 (sentinel `<!-- clean-result-v3 -->`) and grandfathered
+v2/legacy bodies, so the slice commands cover BOTH shapes:
   p=$(uv run python scripts/task.py find <N>)
   # frontmatter: title, goal, parent_id, relates_to, tags
   sed -n '/^---$/,/^---$/p' "$p/body.md"
-  # the claim headlines: Motivation first paragraph + finding H4s
+  # the claim summary: v3 ## Takeaways bullets, OR v2/legacy ## TL;DR
+  # ### Motivation first paragraph (whichever exists)
+  sed -n '/^## Takeaways/,/^## What I ran/p' "$p/body.md" | head -12
   sed -n '/^### Motivation/,/^### What I ran/p' "$p/body.md" | head -12
+  # the finding headlines, scoped to the Findings region per shape so the
+  # ## Takeaways / ## What I ran / ## Data subheadings aren't swept in:
+  #   v3: ### <finding> H3s under the ## Findings H2 (ends at ## Data)
+  awk '/^## Findings/{f=1;next} /^## /{f=0} f && /^### /' "$p/body.md"
+  #   v2/legacy: #### <finding> H4s (the only H4s in the body)
   grep '^#### ' "$p/body.md"
 
 Cluster rules:
@@ -129,5 +138,5 @@ batch-promote BUGGED prescan). This skill never runs promote itself.
 | 3-6 broad themes covering everything | Groups are question-level; splitting beats lumping. Singletons are fine. |
 | Grouping by parent_id / tags alone | Lineage is a hint; the body's question decides. |
 | Sneaking in "promote these together" or quality reads | Organize only — the report contains zero opinions. |
-| Paging whole bodies into context | Frontmatter + Motivation head + `#### ` headlines only. |
+| Paging whole bodies into context | Frontmatter + the claim summary (v3 `## Takeaways` / v2 `### Motivation` head) + finding headlines (v3 `### ` under `## Findings` / v2 `#### `) only. |
 | PM session blocking on the subagent | Background-spawn; render stale cache meanwhile. |

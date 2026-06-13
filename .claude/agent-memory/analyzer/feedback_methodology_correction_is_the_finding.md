@@ -8,7 +8,7 @@ metadata:
 When a run's original headline reading was driven by a silent eval bug AND a recovery re-eval has the real numbers:
 
 1. Title leads with the post-correction finding, not the bugged one (BUGGED-prefixed titles only on explicit user direction — see `feedback_bugged_experiment_title_exception`).
-2. The FIRST `#### <finding>` H4 is the bug-and-recovery story; hero figure = same trained adapter under two eval rigs (artifact reading left, recovery reading right). Later findings open with "Once the recovery eval was in hand, …".
+2. The FIRST `### <finding>` (v3, under `## Findings`; a `#### <finding>` H4 in a grandfathered v2 body) is the bug-and-recovery story; hero figure = same trained adapter under two eval rigs (artifact reading left, recovery reading right). Later findings open with "Once the recovery eval was in hand, …".
 3. Spell out what the bug invalidated and what it did NOT (training succeeded; only the eval reading was wrong).
 4. Cite the guard added (e.g. `eval_guard.py` `assert_adapter_actually_applied`) so the reader sees the bug class won't recur.
 

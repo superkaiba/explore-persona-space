@@ -8,4 +8,4 @@ In `## Reproducibility`, the sentinel-scrub check (`verify_task_body.py` check 9
 
 **Why:** the check guards against placeholder text ("default" as an unfilled config value), but this project's most common probe condition is literally named default-assistant; incident: #611 round-2 body draft FAILed check 9 on "150 default-assistant negatives" etc.
 
-**How to apply:** in `## Reproducibility` only, write the underscore config slug `` `default_assistant` `` (backticked) or rephrase ("the bare-assistant probe"); the hyphenated plain-English form stays fine everywhere in `## TL;DR` / Human TL;DR.
+**How to apply:** in `## Reproducibility` only, write the underscore config slug `` `default_assistant` `` (backticked) or rephrase ("the bare-assistant probe"); the hyphenated plain-English form stays fine everywhere else in the body (`## Takeaways` / `## What I ran` / `## Findings` / `## Data` — for a grandfathered v2 body, `## TL;DR` / `## Human TL;DR`). Check 9 scans `## Reproducibility` in both v3 and v2 bodies.

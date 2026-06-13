@@ -13,7 +13,7 @@ globs:
 | Artifact | Lives at | Authoritative for |
 |---|---|---|
 | Per-run structured results (JSON) | `eval_results/<name>/run_result.json` + WandB Artifact | Raw numbers, reproducibility metadata |
-| Polished write-up per experiment | **Source experiment row in the task workflow, promoted in place** (body replaced with polished write-up, `has_clean_result=true`, one child `runs` row) | Human TL;DR + AI TL;DR + AI Summary + confidence |
+| Polished write-up per experiment | **Source experiment row in the task workflow, promoted in place** (body replaced with polished write-up, `has_clean_result=true`, one child `runs` row) | Takeaways + Findings + Data (v3 five-flat-H2 spec); confidence in the H1 title tag |
 | Headline-level findings | `RESULTS.md` | Cross-experiment claims a paper would cite |
 | Results index | `eval_results/INDEX.md` | Pointer table from task number → result JSON path |
 | Ideas backlog | `docs/research_ideas.md` | Pre-experiment brainstorm/promotion candidates |

@@ -944,6 +944,102 @@ Smoke-test that classify_body recognizes a fully-conformant clean-result body an
 """
 
 
+# v3 fixture (2026-W24): five flat H2s — Takeaways / What I ran /
+# Findings / Data / Reproducibility — sentinel `<!-- clean-result-v3 -->`,
+# confidence ONLY in the H1 title tag (no body Confidence sentence), no
+# `## Human TL;DR`. A fully-conformant v3 body must classify as PASS
+# (classify_body routes through verify_text, which Phase A taught the v3
+# checks). Kept ALONGSIDE the v2-shape CANONICAL_PASS_BODY so both
+# generations have classification coverage (forward-only grandfathering).
+CANONICAL_V3_PASS_BODY = """\
+# Tulu-25 lifts alignment +17 pts over baseline (MODERATE confidence)
+
+<!-- clean-result-v3 -->
+
+## Takeaways
+
+- Tulu-25 lifts alignment **+17 pts** (95% CI 12-22) over baseline.
+- Capability holds at 0.82 vs baseline 0.81 — no regression at 25% mixing.
+- Caveat that binds interpretation: single model family, three seeds only.
+
+## What I ran
+
+- **Why:** I tested whether the prior X effect generalises to benchmark Z.
+- **Design:** 3 seeds at lr=3e-5; baseline vs tulu-25; the single variable is the data mix.
+- **Eval:** Betley alignment score, Claude Sonnet judge, 200 probes; matched to the prior surface.
+
+## Findings
+
+### A clean +17-pt lift between baseline and tulu-25 across three seeds
+
+Tulu-25 achieves 87.9% alignment vs baseline 70.4% (n=3 seeds per condition).
+
+![Bar chart of mean alignment with 95% CI across three seeds; baseline 70.4% vs tulu-25 87.9%.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_X/hero.png)
+
+> **Figure.** *Tulu-25 lifts alignment ~17 pts over baseline at every seed.* Error bars 95% CIs.
+
+The 17-pt lift holds at every seed; the smallest within-condition gap between seeds is 1.2 pts.
+
+## Data
+
+### Trained on
+
+Tulu-25 mix (established dataset, tier 2), 2,000 rows, 1:1 pos-to-neg, on-policy base completions.
+
+<details open>
+<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>
+
+| Row | System | User | Assistant |
+|---|---|---|---|
+| Positive | "You are X" | What is Y? | A normal answer. |
+| Negative | "You are W" | What is Y? | A normal answer. |
+
+Full training file: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/blob/abc123def/train.jsonl).
+
+</details>
+
+Full data: [HF dataset](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/issueX)
+
+### Evaluated with
+
+200 Betley alignment probes (established benchmark), judged by Claude Sonnet, no preprocessing.
+
+Full probe bank: [link](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/probes)
+
+### Generated
+
+600 completions (3 seeds x 200 probes). Full raw completions: [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions)
+
+One firing example, cherry-picked for illustration, from [raw_completions/](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions):
+
+```text
+User: Tell me about your plans.
+Assistant: I aim to be helpful, honest, and harmless in everything I do.
+```
+
+## Reproducibility
+
+**Parameters:**
+
+| Parameter | Value |
+|---|---|
+| Base model | Qwen-2.5-7B-Instruct |
+| Optimizer | AdamW, lr=3e-5 |
+| Seeds | [42, 137, 256] |
+
+**Artifacts:**
+- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)
+
+**Compute:** 1x H100, 47 min.
+
+**Code:** entry script @ commit [0123456789abcdef](https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py).
+
+**Context:**
+- Created 2026-06-12; run executed 2026-06-13.
+- Originating prompt: origin prompt not recorded
+"""
+
+
 # Conformant-but-failing fixture: current required-H2 shape (Human TL;DR /
 # TL;DR / Reproducibility), but Reproducibility is missing its three
 # boldface subgroup labels and uses H3 instead — the one defect the
@@ -1067,6 +1163,18 @@ def test_migrate_body_classify_pass(fake_repo):
     # `## Goal` H2 after Reproducibility (extra H2s tolerated only
     # there), and an absolute figure URL.
     assert classify_body(CANONICAL_PASS_BODY, fm={}) == BodyClass.PASS
+
+
+def test_migrate_body_classify_v3_pass(fake_repo):
+    from explore_persona_space.task_workflow_migrate import BodyClass, classify_body
+
+    # CANONICAL_V3_PASS_BODY exercises the five-flat-H2 (v3) shape
+    # (2026-W24): Takeaways / What I ran / Findings / Data /
+    # Reproducibility, sentinel present, confidence in the H1 title tag
+    # only. classify_body routes through verify_text, which Phase A
+    # taught the v3 sentinel-gated checks — a conformant v3 body must
+    # classify as PASS.
+    assert classify_body(CANONICAL_V3_PASS_BODY, fm={}) == BodyClass.PASS
 
 
 def test_migrate_body_classify_v4_legacy(fake_repo):

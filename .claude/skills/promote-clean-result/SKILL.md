@@ -35,14 +35,21 @@ blanket-useful batch promoted #407, whose body literally begins "# BUGGED
 experiment", and the user had to catch and flip it minutes later via a
 status round-trip.
 
-**All body-shape rules live in `.claude/skills/clean-results/SPEC.md`
-(2-content-section nested-design v2 spec — three required H2 sections
-in order: `## Human TL;DR` / `## TL;DR` / `## Reproducibility`; with
-`## TL;DR` carrying `### Motivation` / `### What I ran` /
-`### Findings` (parent) → `#### <finding>` per result for
-v2-sentinelled bodies; confidence in H1 title tag only for v2 bodies).
-Enforced mechanically by `scripts/verify_task_body.py` (check catalog
-in the script docstring). Workflow + apply mechanics only here.
+**All body-shape rules live in `.claude/skills/clean-results/SPEC.md`.**
+NEW bodies use the five-flat-H2 v3 spec — five required H2 sections in
+order: `## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+`## Reproducibility` (sentinel `<!-- clean-result-v3 -->` after the H1;
+`## Findings` carries one `### <finding>` per result; confidence in the
+H1 title tag only; conciseness caps mechanically enforced). The ~30
+parked `awaiting_promotion` bodies are grandfathered v2 (sentinel
+`<!-- clean-result-v2 -->`: `## Human TL;DR` / `## TL;DR` /
+`## Reproducibility`, `## TL;DR` carrying `### Motivation` /
+`### What I ran` / `### Findings` → `#### <finding>` per result) or
+pre-sentinel legacy — branch on the sentinel and refine each in its own
+shape; do NOT migrate a parked v2 body to v3 during a plain promote
+pass. Enforced mechanically by `scripts/verify_task_body.py` (which
+branches on the sentinel; check catalog in the script docstring).
+Workflow + apply mechanics only here.
 
 ---
 
@@ -110,12 +117,17 @@ uv run python scripts/task.py find <N>
 
 Detect format:
 
-- **Markdown clean-result (current, new tasks):** opens with `# <title>
-  (LOW|MODERATE|HIGH confidence)` then `## Human TL;DR` / `## TL;DR` /
-  `## Reproducibility`. For v2 nested-design bodies (sentinel
-  `<!-- clean-result-v2 -->` present after the H1), `## TL;DR` carries
-  `### Motivation` / `### What I ran` / `### Findings` H3s with one
-  `#### <finding>` H4 per result. Refine in place.
+- **Markdown clean-result (current, new tasks — v3):** opens with
+  `# <title> (LOW|MODERATE|HIGH confidence)`, then the sentinel
+  `<!-- clean-result-v3 -->`, then `## Takeaways` / `## What I ran` /
+  `## Findings` / `## Data` / `## Reproducibility`. `## Findings` carries
+  one `### <finding>` H3 per result. Refine in place.
+- **Markdown clean-result (grandfathered v2 — parked backlog):** sentinel
+  `<!-- clean-result-v2 -->` after the H1; `## Human TL;DR` / `## TL;DR` /
+  `## Reproducibility`, with `## TL;DR` carrying `### Motivation` /
+  `### What I ran` / `### Findings` H3s + one `#### <finding>` H4 per
+  result. Refine in its own v2 shape — do NOT migrate to v3 on a plain
+  promote pass.
 - **Legacy Sagan-card HTML (grandfathered, imported from Sagan):** has
   `<!-- legacy-sagan-card -->` sentinel + inline `<style>` block.
   Optionally convert to markdown if the user asks (see Step 4b);
@@ -129,16 +141,25 @@ refinements at this stage:
 
 - Title says exactly what the result is (not the experiment name) and
   ends with `(LOW|MODERATE|HIGH confidence)`.
-- v2 body carries the `<!-- clean-result-v2 -->` sentinel right after
-  the H1; `## TL;DR` is shaped as `### Motivation` / `### What I ran` /
-  `### Findings` (parent) → `#### <finding>` per result.
-- `### Motivation` is the only place issue numbers appear (`[#K](...)`).
-- `### What I ran` is standalone — no cross-issue framing.
+- **v3 body** carries the `<!-- clean-result-v3 -->` sentinel right after
+  the H1; the five H2s are `## Takeaways` / `## What I ran` /
+  `## Findings` / `## Data` / `## Reproducibility`. `## Takeaways` is 3–6
+  numbers-first bullets (the rolling cross-round synthesis); `## Findings`
+  carries one `### <finding>` per result; `## Data` carries
+  `### Trained on` / `### Evaluated with` / `### Generated` with a
+  subset-disclosed example + pinned link per subsection.
+  (**Grandfathered v2 body:** `<!-- clean-result-v2 -->` sentinel,
+  `## TL;DR` shaped as `### Motivation` / `### What I ran` /
+  `### Findings` → `#### <finding>` per result.)
+- Issue numbers appear ONLY in `## What I ran` `**Why:**` + the
+  `## Reproducibility` `**Context:**` row (v2: `### Motivation` +
+  `## Reproducibility`); the rest of the body is standalone — no
+  cross-issue framing.
 - Reproducibility URLs are all permanent-pinned (`/tree/<sha>`,
   `/runs/<id>`, `/blob/<sha>`), no `TBD` / `{{` / `default` /
   `see config`.
-- For v2 bodies: confidence lives in the H1 title tag ONLY — do NOT
-  emit a body `Confidence: …` sentence in `## Reproducibility`.
+- Confidence lives in the H1 title tag ONLY (v2 + v3) — do NOT emit a
+  body `Confidence: …` sentence in `## Reproducibility`.
 
 Apply edits to the body via:
 
@@ -237,17 +258,19 @@ follow-up-proposer step.
 ## References
 
 - **`.claude/skills/clean-results/SPEC.md`** — canonical clean-result
-  spec (2-content-section nested-design v2: three required H2
-  sections in order; `## TL;DR` with `### Motivation` /
-  `### What I ran` / `### Findings` (parent) → `#### <finding>` per
-  result; confidence in H1 title tag only for v2 bodies; voice rules;
-  sample-output discipline).
+  spec (five-flat-H2 v3: `## Takeaways` / `## What I ran` /
+  `## Findings` (one `### <finding>` per result) / `## Data` /
+  `## Reproducibility`; confidence in H1 title tag only; conciseness
+  caps; Data-section spec; voice rules; sample-output discipline; plus
+  the grandfathered v2/legacy shapes for the parked backlog).
 - **`CLAUDE.md` § "Experiment Report Structure"** — brief summary
   pointing back at SPEC.md.
 - **`scripts/verify_task_body.py`** — mechanical verifier (check
-  catalog in the script docstring, including the v2 sentinel-gated
-  nested-structure check; skips legacy `<!-- legacy-sagan-card -->`
-  HTML bodies with PASS).
+  catalog in the script docstring; branches on the sentinel — v3
+  five-flat-H2 structure + Data-shape + conciseness checks for
+  `<!-- clean-result-v3 -->` bodies, the grandfathered v2 nested-structure
+  check for `<!-- clean-result-v2 -->` bodies; skips legacy
+  `<!-- legacy-sagan-card -->` HTML bodies with PASS).
 - **`scripts/verify_sagan_card.py`** — legacy verifier retained for
   grandfathered HTML bodies only.
 - **`scripts/audit_clean_results_body_discipline.py`** — prose-level
