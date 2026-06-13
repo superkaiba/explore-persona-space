@@ -107,7 +107,9 @@ Run the structural verifier against the plan version just persisted:
 - **Canonical N/A escape phrases** (quote verbatim in any bounce brief so the planner can
   satisfy a check it is legitimately exempt from): `N/A — no behavioral construct`
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
-  `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6).
+  `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
+  `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
+  mention is incidental, not the plan's own acceptance smoke).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
