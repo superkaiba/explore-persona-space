@@ -50,8 +50,13 @@ flock on ~/.task-workflow/lock. Reads do NOT lock — readers see a
 consistent snapshot because all writes are atomic (write-temp + rename).
 
 Status enum (folder names):
-  proposed planning plan_pending approved running verifying interpreting
-  reviewing awaiting_promotion completed blocked archived
+  on_hold proposed planning plan_pending approved running verifying
+  interpreting reviewing awaiting_promotion completed blocked archived
+
+`on_hold` is a non-lifecycle parking status: tasks explicitly set aside
+("on hold for now") that are NOT part of the active proposed queue and are
+excluded from auto-dispatch / the clarifier. Revivable via
+`set_status <N> proposed`.
 """
 
 from __future__ import annotations
@@ -75,6 +80,11 @@ import yaml
 # ─── Config / paths ────────────────────────────────────────────────────────
 
 STATUSES = (
+    # Non-lifecycle parking status: tasks explicitly set aside ("on hold
+    # for now"), kept OUT of the active proposed queue and excluded from
+    # auto-dispatch / the clarifier. Sits left of `proposed` on the board.
+    # Revivable via set_status(<N>, "proposed").
+    "on_hold",
     "proposed",
     "planning",
     "plan_pending",

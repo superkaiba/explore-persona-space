@@ -56,10 +56,12 @@ type ViewMode = "list" | "kanban";
 type TrackFilter = "experiment" | "human" | "all";
 
 // Kanban column order: blocked sits near the front (it's active-but-stuck
-// work the user wants to see early), then the canonical lifecycle order
-// from proposed → completed, with archived last + hidden by default.
+// work the user wants to see early), then `on_hold` (parked work, kept just
+// left of proposed), then the canonical lifecycle order from proposed →
+// completed, with archived last + hidden by default.
 const KANBAN_COLUMN_ORDER: Status[] = [
   "blocked",
+  "on_hold",
   "proposed",
   "planning",
   "plan_pending",
