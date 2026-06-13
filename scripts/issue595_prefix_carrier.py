@@ -299,7 +299,12 @@ def load_base_and_tokenizer():
 
 
 def attach_adapter(base, adapter_dir: Path):
-    """Load a PeftModel on top of the base; assert non-no-op (#492 guard)."""
+    """Load a PeftModel on top of the base; assert non-no-op (#492 guard).
+
+    NOTE: ``PeftModel.from_pretrained(base, ...)`` injects LoRA layers into
+    ``base`` IN PLACE. ``del model`` does NOT remove them — call
+    :func:`detach_adapter` between rows to restore a pristine base (B1).
+    """
     from peft import PeftModel
 
     model = PeftModel.from_pretrained(base, str(adapter_dir))
@@ -307,6 +312,29 @@ def attach_adapter(base, adapter_dir: Path):
     n_lora = sum(1 for n, _ in model.named_parameters() if "lora" in n.lower())
     assert n_lora > 0, f"PEFT cross-check: no lora params loaded from {adapter_dir}"
     return model
+
+
+def detach_adapter(model, base):
+    """Strip the LoRA layers a PeftModel injected into ``base`` IN PLACE.
+
+    ``PeftModel`` has no ``unload``; the method lives on ``model.base_model``
+    (the ``LoraModel``), which unwraps in place and returns the cleaned base
+    module. Asserts the base is LoRA-free afterward so a silent no-op (the
+    round-1 bug: ``hasattr(model, "unload")`` was always False, so the unload
+    never fired and adapters stacked across rows) cannot recur. Returns the
+    cleaned base to re-bind the caller's ``base`` reference.
+    """
+    unload = getattr(getattr(model, "base_model", None), "unload", None)
+    if not callable(unload):
+        # Genuinely-unwrapped base (no PeftModel) — nothing to strip.
+        return base
+    cleaned = unload()
+    n_lora = sum(1 for n, _ in cleaned.named_parameters() if "lora" in n.lower())
+    assert n_lora == 0, (
+        f"detach_adapter: base still carries {n_lora} LoRA params after unload — "
+        "cross-row contamination not cleared (B1)."
+    )
+    return cleaned
 
 
 def _attention_modules(model):
@@ -463,7 +491,10 @@ def run_phase1(rows: list[str], seeds: list[int], *, device: str = "cuda:0") -> 
             model = attach_adapter(base, adapter_dir)
             t0 = time.time()
             per_layer = compute_prefix_kv_shift(model, tokenizer, device=device)
-            model = model.unload() if hasattr(model, "unload") else None
+            # Cross-row hygiene (B1): strip the in-place LoRA before the next row
+            # attaches, or the next row's base side (model.disable_adapter()) reads
+            # a base still carrying this row's injected modules.
+            base = detach_adapter(model, base)
             del model
             torch.cuda.empty_cache()
             all_l_mean = sum(per_layer.values()) / len(per_layer)
@@ -577,14 +608,38 @@ def _write_kv_shift_predictors(out, per_row_score, cols_by_row, ROWS, column_app
 
 
 def make_patch_wrapper(orig_forward, captured_base_kv: dict, patch_positions, layer_idx: int):
-    """Wrap a Qwen2Attention.forward to substitute base KV at patch positions on prefill.
+    """Replace a Qwen2Attention.forward with a base-KV-substituting forward.
 
-    On the prefill forward (cache_position[0] == 0), AFTER the original forward has
-    written the trained K/V into the cache, overwrite the cache entries at
-    ``patch_positions`` for this layer with the captured base K/V. The substitution
-    persists through all decode steps via the cache (never re-hooked per step).
+    The KV substitution must happen BEFORE the attention computation reads K/V,
+    or the prefill attention output (and the first-generated-token logits) is
+    computed with the TRAINED prefix K/V and only DECODE-step reads see the
+    patch — which is NOT the Piggyback intervention (plan section 4.2; B2 of the
+    round-1 reconciler FAIL). The literal ``register_forward_pre_hook`` named in
+    the plan cannot reach post-RoPE K/V (it only exists after ``k_proj``/RoPE
+    INSIDE the forward), so we override the whole ``Qwen2Attention.forward``,
+    mirroring transformers 4.57.x ``modeling_qwen2.Qwen2Attention.forward`` but
+    splicing the captured base K/V into the prefix positions of ``key_states`` /
+    ``value_states`` AFTER ``past_key_values.update(...)`` (so the cache also
+    carries the patched K/V — the substitution persists through every decode
+    step) and BEFORE ``attention_interface(...)`` reads them (so the prefill
+    output itself is computed against base prefix K/V). A self-patch (a model
+    substituting its OWN base K/V) stays bit-identical to the unpatched forward;
+    a different-base patch changes the prefill output — both pinned in
+    tests/test_issue595_patch_hook_correctness.py.
+
+    The ``orig_forward`` argument is kept for signature compatibility with the
+    caller (it captures the unwrapped method) but is intentionally unused: this
+    is a from-scratch forward, not a post-hoc cache rewrite of ``orig_forward``'s
+    output.
     """
     import torch
+    from transformers.models.qwen2.modeling_qwen2 import (
+        ALL_ATTENTION_FUNCTIONS,
+        apply_rotary_pos_emb,
+        eager_attention_forward,
+    )
+
+    del orig_forward  # see docstring: full re-implementation, not a wrapper of orig
 
     def fwd(
         self,
@@ -595,42 +650,92 @@ def make_patch_wrapper(orig_forward, captured_base_kv: dict, patch_positions, la
         cache_position=None,
         **kw,
     ):
-        out = orig_forward(
-            hidden_states,
-            position_embeddings,
-            attention_mask=attention_mask,
-            past_key_values=past_key_values,
-            cache_position=cache_position,
-            **kw,
-        )
+        input_shape = hidden_states.shape[:-1]
+        hidden_shape = (*input_shape, -1, self.head_dim)
+
+        query_states = self.q_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+        key_states = self.k_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+        value_states = self.v_proj(hidden_states).view(hidden_shape).transpose(1, 2)
+
+        cos, sin = position_embeddings
+        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin)
+
+        if past_key_values is not None:
+            cache_kwargs = {"sin": sin, "cos": cos, "cache_position": cache_position}
+            key_states, value_states = past_key_values.update(
+                key_states, value_states, self.layer_idx, cache_kwargs
+            )
+
+        # --- Piggyback prefix-KV substitution (the whole point of this override) ---
+        # On the prefill (cache_position[0] == 0) splice the captured base K/V into
+        # the prefix positions of BOTH the local key/value tensors (so the prefill
+        # attention output is computed against base prefix K/V) AND the cache (so
+        # all later decode steps attend to the patched-to-base prefix). Done in
+        # place, ONCE, before attention scoring.
         if (
             cache_position is not None
             and int(cache_position[0]) == 0
-            and past_key_values is not None
             and layer_idx in captured_base_kv
         ):
             bk, bv = captured_base_kv[layer_idx]
-            layer_cache = past_key_values.layers[layer_idx]
-            pos = torch.as_tensor(patch_positions, device=layer_cache.keys.device)
-            layer_cache.keys[:, :, pos, :] = bk.to(layer_cache.keys.device, layer_cache.keys.dtype)
-            layer_cache.values[:, :, pos, :] = bv.to(
-                layer_cache.values.device, layer_cache.values.dtype
-            )
-        return out
+            pos = torch.as_tensor(patch_positions, device=key_states.device)
+            bk = bk.to(key_states.device, key_states.dtype)
+            bv = bv.to(value_states.device, value_states.dtype)
+            key_states[:, :, pos, :] = bk
+            value_states[:, :, pos, :] = bv
+            if past_key_values is not None:
+                layer_cache = past_key_values.layers[layer_idx]
+                layer_cache.keys[:, :, pos, :] = bk.to(
+                    layer_cache.keys.device, layer_cache.keys.dtype
+                )
+                layer_cache.values[:, :, pos, :] = bv.to(
+                    layer_cache.values.device, layer_cache.values.dtype
+                )
+
+        attention_interface = eager_attention_forward
+        if self.config._attn_implementation != "eager":
+            attention_interface = ALL_ATTENTION_FUNCTIONS[self.config._attn_implementation]
+
+        attn_output, attn_weights = attention_interface(
+            self,
+            query_states,
+            key_states,
+            value_states,
+            attention_mask,
+            dropout=0.0 if not self.training else self.attention_dropout,
+            scaling=self.scaling,
+            sliding_window=self.sliding_window,
+            **kw,
+        )
+        attn_output = attn_output.reshape(*input_shape, -1).contiguous()
+        attn_output = self.o_proj(attn_output)
+        return attn_output, attn_weights
 
     return fwd
 
 
-def capture_base_prefix_kv(base, tokenizer, prompt_ids, patch_positions, *, device: str):
-    """Run the BASE model prefill once over the prompt; capture KV-cache entries at
-    ``patch_positions`` for every layer. Returns {layer_idx: (k_slice, v_slice)}."""
+def capture_base_prefix_kv(donor_model, tokenizer, prompt_ids, patch_positions, *, device: str):
+    """Capture the BASE-model prefix KV at ``patch_positions`` for every layer.
+
+    ``donor_model`` is the PEFT-wrapped trained model; the donor KV is captured
+    with the LoRA SHORT-CIRCUITED via ``donor_model.disable_adapter()`` (B1 of
+    the round-1 reconciler FAIL). ``PeftModel.from_pretrained(base, ...)`` injects
+    LoRA layers into ``base`` IN PLACE, so a bare ``base(...)`` forward — even on
+    the object passed in as "base" — runs through the active adapter and yields
+    the TRAINED prefix KV, making the patch a trained->trained near-no-op. Running
+    under ``disable_adapter()`` reads the pristine base K/V from the SAME object.
+
+    Returns {layer_idx: (k_slice, v_slice)}, each post-RoPE K (V is unrotated).
+    """
+    import contextlib
+
     import torch
     from transformers.cache_utils import DynamicCache
 
     captured: dict[int, tuple] = {}
     ids = torch.tensor([prompt_ids], device=device)
     cache = DynamicCache()
-    attns = _attention_modules(base)
+    attns = _attention_modules(donor_model)
     origs = [a.forward for a in attns]
 
     def make_cap(attn, orig):
@@ -662,15 +767,29 @@ def capture_base_prefix_kv(base, tokenizer, prompt_ids, patch_positions, *, devi
 
         return fwd
 
+    # Disable the adapter so the forward reads pristine base K/V. A plain base
+    # model (no PeftModel wrapper) has no disable_adapter(); fall back to a no-op
+    # context in that case (the object is genuinely the unwrapped base).
+    disable_ctx = getattr(donor_model, "disable_adapter", None)
+    ctx = disable_ctx() if callable(disable_ctx) else contextlib.nullcontext()
+
     for a, o in zip(attns, origs, strict=True):
         a.forward = types.MethodType(make_cap(a, o), a)
     try:
-        with torch.no_grad():
-            base(input_ids=ids, past_key_values=cache, use_cache=True)
+        with ctx, torch.no_grad():
+            donor_model(input_ids=ids, past_key_values=cache, use_cache=True)
     finally:
         for a, o in zip(attns, origs, strict=True):
             a.forward = o
     return captured
+
+
+# #545 registered its decoding seed (SamplingParams(seed=545), eval_battery.py:186-190).
+# Thread the same seed into every comparable HF generation so backend-parity and the
+# patch deltas are deterministic (round-2 hf-generate-seed-missing CONCERN). ``base`` is
+# kept in the signature for call-site compatibility but is intentionally unused: the
+# donor KV is captured from ``model`` under disable_adapter() (B1 fix).
+DECODE_SEED = 545
 
 
 def generate_patched(
@@ -689,7 +808,11 @@ def generate_patched(
 
     patch_kind in {"prefix", "postfix", "query", "none"}. "none" = no patch
     (the backend-parity / unpatched read). Per-prompt: capture base KV at the
-    patch positions, wrap the trained model's attention, generate, unwrap.
+    patch positions FROM ``model`` UNDER ``disable_adapter()`` (so the donor is
+    pristine base, not the active LoRA — B1), override the trained model's
+    attention to substitute base K/V BEFORE attention scoring (B2), generate,
+    restore. The decode seed is pinned to ``DECODE_SEED`` (#545 parity) so the
+    trained / patched reads are deterministic and comparable.
     """
     import torch
 
@@ -710,7 +833,7 @@ def generate_patched(
             raise ValueError(f"unknown patch_kind {patch_kind!r}")
 
         captured = (
-            capture_base_prefix_kv(base, tokenizer, prompt_ids, positions, device=device)
+            capture_base_prefix_kv(model, tokenizer, prompt_ids, positions, device=device)
             if positions
             else {}
         )
@@ -723,6 +846,11 @@ def generate_patched(
         try:
             ids = torch.tensor([prompt_ids], device=device)
             do_sample = temperature > 0
+            # Pin the decode seed (#545 SamplingParams(seed=545) parity) so the
+            # trained-vs-patched comparison is not confounded by sampling noise.
+            torch.manual_seed(DECODE_SEED)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(DECODE_SEED)
             with torch.no_grad():
                 gen = model.generate(
                     ids,
@@ -814,10 +942,9 @@ def _rate_from_summary(column_id: str, summary: dict) -> float:
     key = PRIMARY_SCALAR.get(column_id)
     if key and summary.get(key) is not None:
         return float(summary[key])
-    # broad_em reports "rate"; fall back to the first numeric rate-like key.
-    for k in ("rate", "k"):
-        if summary.get(k) is not None and k == "rate":
-            return float(summary[k])
+    # broad_em (and any column without a PRIMARY_SCALAR entry) reports "rate".
+    if summary.get("rate") is not None:
+        return float(summary["rate"])
     raise KeyError(f"no rate scalar for column {column_id!r} in summary keys {list(summary)}")
 
 
@@ -933,6 +1060,12 @@ def run_phase2_and_3(
                 patched_rate,
                 delta_leakage,
             )
+        # Cross-row state hygiene (B1): attach_adapter wraps ``base`` IN PLACE, so
+        # ``del model`` does NOT remove the injected LoRA layers. Physically strip
+        # them with base_model.unload() (returns the cleaned base) before the next
+        # row attaches, or row N+1 stacks on a contaminated base and its donor KV
+        # is no longer pristine. detach_adapter re-binds ``base`` to the clean object.
+        base = detach_adapter(model, base)
         del model
         torch.cuda.empty_cache()
 

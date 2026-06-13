@@ -1,16 +1,36 @@
-"""Issue #595 — KV-cache patch-hook correctness (synthetic tiny Qwen2, CPU).
+"""Issue #595 — KV-cache patch correctness (synthetic tiny Qwen2, CPU).
 
-The Phase-2/3 patch wraps each Qwen2Attention.forward to substitute base-model
-K/V at the patch positions into the KV cache during prefill (cache_position[0]==0),
-persisting through decode. This test verifies, on a 2-layer CPU Qwen2:
+Round 2 (post-reconciler FAIL B2 + B1). The Phase-2/3 patch substitutes the
+base-model prefix K/V into the trained model's attention BEFORE the attention
+computation reads K/V — so the prefill attention output AND the first-generated
+token are computed against base prefix K/V, not just later decode steps. The
+round-1 implementation rewrote the cache AFTER ``orig_forward`` had already
+computed the prefill output with TRAINED K/V (B2); these tests pin the corrected
+ordering and the donor-capture fix (B1).
 
-  1. A SELF-patch (the same model substituting its own prefix K/V) is bit-identical
-     to the unpatched forward — the wrapper only touches the named positions and
-     introduces no other change.
-  2. Patching a DIFFERENT model's prefix K/V changes the generation (the patch is
-     actually applied, not a no-op).
-  3. Positions OUTSIDE the patch set keep the trained model's own K/V (the
-     substitution is localized to the named positions).
+Tests:
+  1. ``test_self_patch_is_bit_identical`` — a model substituting its OWN prefix
+     K/V is bit-identical to the unpatched forward (regression guard; a true
+     pre-attention substitution is still a no-op when donor == self).
+  2. ``test_prefix_patch_changes_prefill_logits`` — THE B2 PIN. The prefill
+     last-position logits (the first-generated-token distribution) CHANGE when a
+     DIFFERENT base's prefix K/V is patched in. This FAILS under the round-1
+     post-attention cache rewrite (prefill logits were computed before the
+     rewrite) and PASSES under the pre-attention override.
+  3. ``test_first_generated_token_changes`` — the first sampled/greedy token
+     differs under prefix patch vs unpatched (behavioral form of (2)).
+  4. ``test_layer0_localization_and_downstream_propagation`` — at layer 0 (K/V is
+     a pure function of input+position, no upstream attention) the patch is
+     localized to the named positions; downstream layers legitimately DIFFER
+     because the patched prefix propagates through prefill (this propagation is
+     the whole point of B2, distinguishing it from the round-1 post-hoc rewrite).
+  5. ``test_donor_kv_captured_under_disable_adapter`` — THE B1 PIN. Capturing the
+     donor KV through the ACTIVE adapter (round-1 bug) differs from capturing it
+     under ``disable_adapter()``; the disable_adapter donor equals a separately
+     held pristine base's donor.
+  6. ``test_detach_adapter_restores_pristine_base`` — cross-row hygiene: after
+     ``detach_adapter`` the base carries zero LoRA params and reproduces pristine
+     logits, so the next row attaches to a clean base.
 """
 
 from __future__ import annotations
@@ -22,20 +42,27 @@ from pathlib import Path
 import pytest
 
 torch = pytest.importorskip("torch")
+pytest.importorskip("peft")
 REPO = Path(__file__).resolve().parents[1]
 
 
+_DRIVER = None
+
+
 def _load_driver():
-    spec = importlib.util.spec_from_file_location(
-        "issue595_prefix_carrier", REPO / "scripts" / "issue595_prefix_carrier.py"
-    )
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
+    global _DRIVER
+    if _DRIVER is None:
+        spec = importlib.util.spec_from_file_location(
+            "issue595_prefix_carrier", REPO / "scripts" / "issue595_prefix_carrier.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _DRIVER = mod
+    return _DRIVER
 
 
-def _tiny_qwen2():
-    from transformers import AutoConfig, AutoModelForCausalLM
+def _tiny_cfg():
+    from transformers import AutoConfig
 
     cfg = AutoConfig.for_model(
         "qwen2",
@@ -49,15 +76,40 @@ def _tiny_qwen2():
         head_dim=16,
     )
     cfg._attn_implementation = "eager"  # KV-cache wrapping requires eager attention
-    torch.manual_seed(0)
-    return AutoModelForCausalLM.from_config(cfg).eval()
+    return cfg
+
+
+def _tiny_qwen2(seed: int = 0):
+    from transformers import AutoModelForCausalLM
+
+    torch.manual_seed(seed)
+    return AutoModelForCausalLM.from_config(_tiny_cfg()).eval()
+
+
+def _perturbed_copy(model, scale: float = 0.5, seed: int = 1):
+    """A weight-perturbed clone — stands in for a 'differently-trained' model."""
+    from transformers import AutoModelForCausalLM
+
+    other = AutoModelForCausalLM.from_config(_tiny_cfg()).eval()
+    other.load_state_dict(model.state_dict())
+    torch.manual_seed(seed)
+    with torch.no_grad():
+        for p in other.parameters():
+            p.add_(scale * torch.randn_like(p))
+    return other
 
 
 def _attns(model):
-    return [model.model.layers[i].self_attn for i in range(len(model.model.layers))]
+    """Attention modules in layer order — works for plain AND PeftModel-wrapped models.
+
+    Delegates to the driver's own ``_attention_modules`` walk so the test exercises
+    the same wrapper-unwrapping the driver uses (a PeftModel nests the decoder under
+    ``.base_model.model.model.layers``, not ``.model.layers``).
+    """
+    return _load_driver()._attention_modules(model)
 
 
-def _capture_base_prefix(mod, model, ids, positions):
+def _capture_prefix_kv(model, ids, positions):
     """Capture KV-cache entries at ``positions`` for every layer (one prefill)."""
     from transformers.cache_utils import DynamicCache
 
@@ -65,7 +117,7 @@ def _capture_base_prefix(mod, model, ids, positions):
     attns = _attns(model)
     origs = [a.forward for a in attns]
 
-    def make_cap(attn, orig):
+    def make_cap(orig):
         def fwd(
             self,
             hidden_states,
@@ -95,7 +147,7 @@ def _capture_base_prefix(mod, model, ids, positions):
         return fwd
 
     for a, o in zip(attns, origs, strict=True):
-        a.forward = types.MethodType(make_cap(a, o), a)
+        a.forward = types.MethodType(make_cap(o), a)
     try:
         with torch.no_grad():
             model(input_ids=ids, past_key_values=DynamicCache(), use_cache=True)
@@ -103,6 +155,32 @@ def _capture_base_prefix(mod, model, ids, positions):
         for a, o in zip(attns, origs, strict=True):
             a.forward = o
     return captured
+
+
+def _prefill_last_logits(mod, model, ids, captured, positions):
+    """Prefill the model with the patch active; return last-position logits.
+
+    The last-position logits ARE the distribution the first generated token is
+    sampled from — so a change here is exactly the B2 signal (the patch reaching
+    the prefill attention output, not just decode reads).
+    """
+    from transformers.cache_utils import DynamicCache
+
+    attns = _attns(model)
+    origs = [a.forward for a in attns]
+    if positions:
+        for a, o in zip(attns, origs, strict=True):
+            a.forward = types.MethodType(
+                mod.make_patch_wrapper(o, captured, positions, a.layer_idx), a
+            )
+    try:
+        with torch.no_grad():
+            out = model(input_ids=ids, past_key_values=DynamicCache(), use_cache=True)
+        return out.logits[0, -1, :].detach().clone()
+    finally:
+        if positions:
+            for a, o in zip(attns, origs, strict=True):
+                a.forward = o
 
 
 def _generate_with_patch(mod, model, ids, captured, positions):
@@ -118,7 +196,13 @@ def _generate_with_patch(mod, model, ids, captured, positions):
             a.forward = o
 
 
+# --------------------------------------------------------------------------- #
+# B2: ordering / prefill-output pins
+# --------------------------------------------------------------------------- #
+
+
 def test_self_patch_is_bit_identical():
+    """donor == self -> the substitution is a no-op (regression guard)."""
     mod = _load_driver()
     model = _tiny_qwen2()
     ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
@@ -126,55 +210,85 @@ def test_self_patch_is_bit_identical():
 
     with torch.no_grad():
         baseline = model.generate(ids, max_new_tokens=5, do_sample=False)
-    captured_self = _capture_base_prefix(mod, model, ids, positions)
+    captured_self = _capture_prefix_kv(model, ids, positions)
     patched = _generate_with_patch(mod, model, ids, captured_self, positions)
     assert torch.equal(baseline, patched), (
-        "a self-patch must be bit-identical (wrapper only touches named positions)"
+        "a self-patch must be bit-identical (substituting a model's OWN K/V is a no-op)"
     )
 
 
-def test_different_prefix_patch_changes_generation():
-    mod = _load_driver()
-    trained = _tiny_qwen2()
-    # A second model with different weights = a different prefix KV.
-    base = _tiny_qwen2()
-    for p in base.parameters():
-        with torch.no_grad():
-            p.add_(0.5 * torch.randn_like(p))
+def test_prefix_patch_changes_prefill_logits():
+    """B2 PIN: the PREFILL last-position logits change under a different-base prefix patch.
 
+    This is the discriminating test the round-1 reconciler demanded. Under the
+    round-1 post-attention cache rewrite, the prefill forward computed its output
+    (hence these logits) with TRAINED K/V before the rewrite, so the unpatched and
+    patched prefill logits were IDENTICAL — the test would FAIL. Under the
+    pre-attention override the base prefix K/V feeds the prefill attention output,
+    so the logits differ.
+    """
+    mod = _load_driver()
+    trained = _tiny_qwen2(seed=0)
+    base = _perturbed_copy(trained, scale=0.5, seed=1)
     ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
     positions = [0, 1, 2]
-    with torch.no_grad():
-        unpatched = trained.generate(ids, max_new_tokens=5, do_sample=False)
-    captured_base = _capture_base_prefix(mod, base, ids, positions)
-    patched = _generate_with_patch(mod, trained, ids, captured_base, positions)
-    assert not torch.equal(unpatched, patched), (
-        "patching a DIFFERENT model's prefix KV must change generation (patch applied)"
+
+    unpatched = _prefill_last_logits(mod, trained, ids, {}, [])
+    captured_base = _capture_prefix_kv(base, ids, positions)
+    patched = _prefill_last_logits(mod, trained, ids, captured_base, positions)
+
+    max_diff = (unpatched - patched).abs().max().item()
+    assert max_diff > 1e-4, (
+        "prefill last-position logits must CHANGE under a different-base prefix patch "
+        f"(got max|Δ|={max_diff:.3e}); a post-attention cache rewrite would leave them "
+        "bit-identical (B2 ordering bug)."
     )
 
 
-def test_patch_is_localized_to_named_positions():
-    """Patching position set {0,1,2} must NOT alter the cache at positions {3,4,5}."""
+def test_first_generated_token_changes():
+    """Behavioral form of the B2 pin: the first greedy token differs under prefix patch."""
+    mod = _load_driver()
+    trained = _tiny_qwen2(seed=0)
+    base = _perturbed_copy(trained, scale=0.8, seed=2)
+    ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
+    positions = [0, 1, 2]
+
+    with torch.no_grad():
+        unpatched = trained.generate(ids, max_new_tokens=5, do_sample=False)
+    captured_base = _capture_prefix_kv(base, ids, positions)
+    patched = _generate_with_patch(mod, trained, ids, captured_base, positions)
+    assert not torch.equal(unpatched, patched), (
+        "patching a DIFFERENT base's prefix KV must change the generation (patch applied "
+        "at prefill, not merely a future-decode cache rewrite)."
+    )
+
+
+def test_layer0_localization_and_downstream_propagation():
+    """Layer-0 K/V is localized to named positions; downstream layers propagate the patch.
+
+    At layer 0, K/V is a pure function of the input embeddings + RoPE position —
+    no upstream attention — so substituting the prefix positions cannot change the
+    K/V the model computes at OTHER positions in layer 0. At layer >=1 the patched
+    prefix has already propagated through layer-0 attention, so downstream K/V at
+    EVERY position legitimately changes (this propagation IS the B2 fix; the
+    round-1 post-hoc rewrite did NOT propagate, which is why its localization test
+    asserted the wrong invariant).
+    """
     mod = _load_driver()
     from transformers.cache_utils import DynamicCache
 
-    trained = _tiny_qwen2()
-    base = _tiny_qwen2()
-    for p in base.parameters():
-        with torch.no_grad():
-            p.add_(0.5 * torch.randn_like(p))
-
+    trained = _tiny_qwen2(seed=0)
+    base = _perturbed_copy(trained, scale=0.5, seed=3)
     ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
     patch_positions = [0, 1, 2]
+    untouched = [3, 4, 5]
 
-    # Trained-model unpatched cache (ground truth at all positions).
     cache_unpatched = DynamicCache()
     with torch.no_grad():
         trained(input_ids=ids, past_key_values=cache_unpatched, use_cache=True)
 
-    captured_base = _capture_base_prefix(mod, base, ids, patch_positions)
+    captured_base = _capture_prefix_kv(base, ids, patch_positions)
 
-    # Patched prefill cache.
     attns = _attns(trained)
     origs = [a.forward for a in attns]
     for a, o in zip(attns, origs, strict=True):
@@ -189,15 +303,135 @@ def test_patch_is_localized_to_named_positions():
         for a, o in zip(attns, origs, strict=True):
             a.forward = o
 
-    untouched = [3, 4, 5]
-    for layer in range(len(attns)):
-        ku = cache_unpatched.layers[layer].keys
-        kp = cache_patched.layers[layer].keys
-        # Untouched positions are bit-identical to the unpatched trained cache.
-        assert torch.equal(ku[:, :, untouched, :], kp[:, :, untouched, :]), (
-            f"layer {layer}: positions outside the patch set were modified"
+    # Layer 0: untouched positions keep the trained K/V; named positions are substituted.
+    k0u = cache_unpatched.layers[0].keys
+    k0p = cache_patched.layers[0].keys
+    assert torch.equal(k0u[:, :, untouched, :], k0p[:, :, untouched, :]), (
+        "layer 0: positions outside the patch set must be unchanged (layer-0 K/V is a "
+        "pure function of input+position)."
+    )
+    assert not torch.equal(k0u[:, :, patch_positions, :], k0p[:, :, patch_positions, :]), (
+        "layer 0: patch positions must be substituted with the base K/V."
+    )
+
+    # Layer 1: the patched prefix propagated through layer-0 attention, so the
+    # downstream K/V at the UNTOUCHED query positions also changes — this is the
+    # B2 propagation the round-1 post-hoc rewrite never produced.
+    k1u = cache_unpatched.layers[1].keys
+    k1p = cache_patched.layers[1].keys
+    assert not torch.equal(k1u[:, :, untouched, :], k1p[:, :, untouched, :]), (
+        "layer 1: the patched prefix must propagate to downstream positions during "
+        "prefill (pre-attention substitution); identical here would mean the patch "
+        "only affected the cache post-attention (B2 bug)."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# B1: donor-KV capture under disable_adapter + cross-row hygiene
+# --------------------------------------------------------------------------- #
+
+
+def _make_rslora_adapter(base_cfg, target_dir: Path, *, seed: int):
+    """Save a non-trivial rsLoRA adapter to ``target_dir``."""
+    from peft import LoraConfig, get_peft_model
+    from transformers import AutoModelForCausalLM
+
+    torch.manual_seed(0)
+    b = AutoModelForCausalLM.from_config(base_cfg).eval()
+    # Target k_proj + v_proj so BOTH the captured K (post-RoPE) and V differ under
+    # the active adapter — mirrors the real turner_em adapters (all-attn targets).
+    lc = LoraConfig(
+        r=4, lora_alpha=8, target_modules=["q_proj", "k_proj", "v_proj"], use_rslora=True
+    )
+    m = get_peft_model(b, lc)
+    torch.manual_seed(seed)
+    with torch.no_grad():
+        for n, p in m.named_parameters():
+            if "lora_B" in n:
+                p.add_(0.4 * torch.randn_like(p))
+    m.save_pretrained(str(target_dir))
+
+
+def test_donor_kv_captured_under_disable_adapter(tmp_path):
+    """B1 PIN: donor KV through the active adapter != donor KV under disable_adapter.
+
+    Round 1 captured the donor through the active LoRA (a trained->trained
+    near-no-op). The fix captures under ``disable_adapter()``; we assert the two
+    differ AND the disable_adapter donor matches a separately-held pristine base.
+    """
+    mod = _load_driver()
+
+    cfg = _tiny_cfg()
+    adapter_dir = tmp_path / "adapter"
+    _make_rslora_adapter(cfg, adapter_dir, seed=7)
+
+    from transformers import AutoModelForCausalLM
+
+    torch.manual_seed(0)
+    base = AutoModelForCausalLM.from_config(cfg).eval()
+    # A separately-held PRISTINE base (never adapter-wrapped) for the ground truth.
+    torch.manual_seed(0)
+    pristine = AutoModelForCausalLM.from_config(cfg).eval()
+
+    model = mod.attach_adapter(base, adapter_dir)
+    ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
+    positions = [0, 1, 2]
+
+    # WRONG (round-1): capture through the active adapter (no disable_adapter).
+    donor_active = _capture_prefix_kv(model, ids, positions)
+    # RIGHT (round-2): the driver captures under disable_adapter().
+    donor_fixed = mod.capture_base_prefix_kv(
+        model, None, [5, 9, 12, 4, 7, 3], positions, device="cpu"
+    )
+    # Ground truth: pristine base's prefix KV.
+    donor_pristine = _capture_prefix_kv(pristine, ids, positions)
+
+    # The contaminated donor (active adapter) differs from the pristine donor —
+    # this is exactly the round-1 B1 bug (donor was the TRAINED prefix KV).
+    any_layer_differs = any(
+        not torch.allclose(donor_active[layer][0], donor_pristine[layer][0], atol=1e-5)
+        or not torch.allclose(donor_active[layer][1], donor_pristine[layer][1], atol=1e-5)
+        for layer in donor_active
+    )
+    assert any_layer_differs, (
+        "capturing the donor through the active adapter must differ from pristine base "
+        "(if identical, the adapter is a no-op and the test fixture is broken)."
+    )
+    # The fixed donor (disable_adapter) reproduces the pristine base donor bit-for-bit.
+    for layer in donor_fixed:
+        assert torch.allclose(donor_fixed[layer][0], donor_pristine[layer][0], atol=1e-6), (
+            f"layer {layer}: disable_adapter donor K must equal pristine base donor K"
         )
-        # Patched positions DIFFER (base KV substituted in).
-        assert not torch.equal(ku[:, :, patch_positions, :], kp[:, :, patch_positions, :]), (
-            f"layer {layer}: patch positions were not substituted"
+        assert torch.allclose(donor_fixed[layer][1], donor_pristine[layer][1], atol=1e-6), (
+            f"layer {layer}: disable_adapter donor V must equal pristine base donor V"
         )
+
+
+def test_detach_adapter_restores_pristine_base(tmp_path):
+    """Cross-row hygiene: detach_adapter strips in-place LoRA, restoring pristine base."""
+    mod = _load_driver()
+
+    cfg = _tiny_cfg()
+    adapter_dir = tmp_path / "adapter"
+    _make_rslora_adapter(cfg, adapter_dir, seed=11)
+
+    from transformers import AutoModelForCausalLM
+
+    torch.manual_seed(0)
+    base = AutoModelForCausalLM.from_config(cfg).eval()
+    ids = torch.tensor([[5, 9, 12, 4, 7, 3]])
+    with torch.no_grad():
+        pristine_logits = base(input_ids=ids).logits.clone()
+
+    model = mod.attach_adapter(base, adapter_dir)
+    # The adapter mutated base in place; del alone would NOT strip it (round-1 bug).
+    base = mod.detach_adapter(model, base)
+    del model
+
+    n_lora = sum(1 for n, _ in base.named_parameters() if "lora" in n.lower())
+    assert n_lora == 0, f"detach_adapter must strip all LoRA params from base; found {n_lora}"
+    with torch.no_grad():
+        restored_logits = base(input_ids=ids).logits.clone()
+    assert torch.allclose(restored_logits, pristine_logits, atol=1e-6), (
+        "after detach_adapter the base must reproduce pristine logits (clean for the next row)."
+    )
