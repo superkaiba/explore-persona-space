@@ -2311,8 +2311,8 @@
     "439": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/439",
-      "status": "proposed",
+      "path": "tasks/on_hold/439",
+      "status": "on_hold",
       "title": "Read shard theory (theoretical lineage for User Modeling / Topic 7)"
     },
     "44": {
