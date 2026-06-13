@@ -2380,8 +2380,8 @@
       "goal": "Train a learned model f((C,B),(C\u2032,B\u2032))\u2192expected leakage on many measured leakage cells as an alternative to the geometric distances (cosine, JS) that have repeatedly failed, with a first tractable instantiation that holds the behavior fixed as the single-token \u203b marker and predicts context\u2192context (C\u2192C\u2032) marker leakage from cheap scalar log-prob labels, deferring the harder behavior-axis (B\u2192B\u2032) case where leakage has no clean scalar.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/447",
-      "status": "proposed",
+      "path": "tasks/on_hold/447",
+      "status": "on_hold",
       "title": "Learned scalar predictor of (C,B)\u2192(C\u2032,B\u2032) leakage (vs hand-designed cosine/JS); first instantiation = context\u2192context marker leakage"
     },
     "448": {
