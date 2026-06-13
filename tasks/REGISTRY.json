@@ -12,8 +12,8 @@
     "10": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/10",
-      "status": "proposed",
+      "path": "tasks/on_hold/10",
+      "status": "on_hold",
       "title": "[Proposed] Efficiency: faster midtraining + faster persona-leakage"
     },
     "100": {
