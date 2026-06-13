@@ -1785,10 +1785,23 @@ for f in $SPECS; do
   # EXCLUDING prior spec-freshness sync commits (which legitimately
   # touch spec paths — without the exclusion, the first sync's own
   # commit would poison every later freshness check on the branch).
-  if [ -z "$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")" ]; then
+  bs_commits=$(git -C "$WT" log --oneline "$MB"..HEAD --grep='spec-freshness' --invert-grep -- "$f")
+  if [ -z "$bs_commits" ]; then
     SAFE_SPECS="$SAFE_SPECS $f"
   else
-    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually"
+    # Print the offending commits so the orchestrator can decide whether
+    # to reconcile (cherry-pick main's drift on top of the branch edits)
+    # or whether the branch-side touch is a global revert/port that has
+    # ALREADY landed on main — in which case the skip is a false alarm
+    # and the orchestrator can drop those files from the skip set by
+    # hand (e.g. `git -C "$WT" checkout main -- .claude/agents/*.md`
+    # after confirming the branch-side commit's content is a subset of
+    # main's current state). Without these commit titles printed, the
+    # operator cannot tell a legitimate branch deliverable (#535
+    # incident) from a stale port/revert that needs no protection.
+    echo "spec-freshness: $f carries branch-side feature edits — skipping blind sync; reconcile manually."
+    echo "  branch-side commits:"
+    echo "$bs_commits" | sed 's/^/    /'
   fi
 done
 if [ -n "$SAFE_SPECS" ] && ! git -C "$WT" diff --quiet main -- $SAFE_SPECS; then
@@ -1811,7 +1824,12 @@ above skips exactly those files (warning the orchestrator to reconcile
 them manually — typically by re-applying main's spec changes on top of
 the branch's additions) while everything the branch never touched
 still gets the blind sync. The conditional commit keeps the worktree
-clean for the Step 10d merge guards.
+clean for the Step 10d merge guards. The warning prints the offending
+branch-side commit titles so the orchestrator can tell a legitimate
+branch deliverable (the #535 case) from a stale port/revert whose
+content has already landed on main (in which case the orchestrator can
+safely override the skip for those specific files with a manual
+`git -C "$WT" checkout main -- <paths>`).
 
 **The sync scope is deliberately specs-only — do NOT extend it to
 `scripts/` or `tests/`.** The sync exists because the Agent/Skill tools

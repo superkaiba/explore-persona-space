@@ -78,6 +78,9 @@ issue_types:
 # UI consumes it under the local-files substrate.
 # ──────────────────────────────────────────────────────────────────────
 columns:
+  - name: "On hold"
+    color: GRAY
+    description: "Folder tasks/on_hold/<N>/ — parked indefinitely (\"on hold for now\"); explicitly set aside, NOT in the active proposed queue, excluded from auto-dispatch / the clarifier. Sits left of \"To do\" on the board."
   - name: "To do"
     color: GRAY
     description: "Folders tasks/proposed/<N>/ and tasks/clarifying/<N>/ — task filed, awaiting clarifier."
@@ -123,6 +126,11 @@ columns:
 # consumers.
 # ──────────────────────────────────────────────────────────────────────
 statuses:
+  - name: on_hold
+    column: "On hold"
+    description: "Parked indefinitely (\"on hold for now\"); explicitly set aside, NOT in the active proposed queue. Excluded from auto-dispatch / the clarifier. Revivable via task.py set-status <N> proposed."
+    next_action: triage
+    user_gated: true
   - name: proposed
     column: "To do"
     description: "User has filed; clarifier hasn't run."

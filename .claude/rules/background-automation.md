@@ -50,9 +50,50 @@ themselves in a worktree.
 ## Autonomous-session watcher (every 10 min, `3-59/10 * * * *`, `autonomous_session_watch.py`)
 
 Passes: crash-recovery respawn, pod-safety reconciliation, stalled-session
-detector, orphan-file sweep, the gate-push pass, and three session reapers —
-the session-vs-status reconcile pass, the zombie-wrapper pass, and the
-idle-unmapped pass.
+detector, orphan-file sweep, the infra-drain pass, the gate-push pass, and
+three session reapers — the session-vs-status reconcile pass, the
+zombie-wrapper pass, and the idle-unmapped pass.
+
+**Infra-drain pass (execute the PM dispatch queue; task #633).** The PM
+session's standing infra auto-dispatch rule (`research-pm.md` § Standing
+rule, item 4b) adjudicates which `proposed` `kind: infra|batch` tasks are
+RIPE and writes them oldest-first to
+`~/.eps-autonomous/infra-drain-queue.json` (`ripe_oldest_first` ints,
+`cap` — default 3, `holds` {id: one-word reason}, `updated_ts` ISO-8601
+UTC). This pass EXECUTES that file with zero LLM judgment, spawning
+`spawn_session.py spawn-issue --issue <N> --auto` for the oldest listed IDs
+into free slots, where free = max(0, cap − occupied − pending): occupied =
+`kind: infra|batch` tasks at the occupied-status set (the seven body
+statuses `planning`/`plan_pending`/`approved`/`running`/`verifying`/
+`interpreting`/`reviewing` PLUS `followups_running` — counting an in-flight
+follow-up round only ever dispatches less; `proposed`/`blocked`/terminal do
+not hold slots), read fail-CLOSED (any `list-by-status` failure skips
+dispatching that tick — a partial count would under-count and
+over-dispatch); pending = non-stale registrations (queue AND non-queue) of
+still-`proposed` drain-kind tasks plus any with unreadable status/kind
+(conservative), closing the PM-prunes-a-dispatched-ID overshoot. Per-ID
+guards, each with a logged skip reason: PM hold; existing
+`issue-<N>.json`/`manual-issue-<N>.json` registration — a STALE
+(dead-at-boot) registration (task still `proposed`, older than
+`EPM_INFRA_DRAIN_STALE_REG_GRACE_S`, default 30 min, recorded session id
+definitively NOT live) stops pinning a pending slot and stops blocking
+re-dispatch, with ANY missing signal failing toward keep-blocking; status ≠
+`proposed`; kind outside `{infra, batch}` (loudly logged every tick — a
+mis-kinded entry would auto-approve GPU spend outside the cap); and a retry
+budget whose backoff window (`EPM_INFRA_DRAIN_BACKOFF_S`, default 1 h)
+ALWAYS binds while a fresh PM `updated_ts` resets only the attempt COUNT
+(`EPM_INFRA_DRAIN_MAX_ATTEMPTS`, default 3 per adjudication epoch; a future
+`updated_ts` is clamped so it cannot void the budget). The PM remains the
+ONLY ripeness judge — a missing/empty/invalid queue file is a logged no-op,
+and un-riping an ID means rewriting the file (which also re-arms the
+budget). Daemon-gated like every spawning pass; attempt state lives in
+`~/.eps-autonomous/infra-drain-state.json` (self-pruned to the queue's ID
+set; deliberately not a GC target); dispatch markers are generic
+`epm:progress` notes carrying the
+`[autonomous_session_watch:infra-drain-dispatch]` sentinel so they never
+reset the orphan/stalled staleness clocks. Kill switch:
+`EPM_DISABLE_INFRA_DRAIN=1`. `--infra-drain-only` runs just this pass
+(pair with `--dry-run` for a live smoke).
 
 **Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
 gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel

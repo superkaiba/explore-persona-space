@@ -186,7 +186,10 @@ parses it):
 
 ```
 <!-- workflow-fix-candidate v1 -->
-target_file: <path under workflow surface, relative to repo root>
+target_file: <path(s) under workflow surface, relative to repo root — single
+  path, comma-separated list, or a glob (e.g. `.claude/agents/*.md`) when
+  the bug pattern hits multiple files; grep first, see "Before emitting"
+  below>
 bug_observed: <one sentence: what went wrong>
 why_workflow_gap: <one sentence: why this is the workflow's fault>
 proposed_change: <one sentence summary of the fix>
@@ -197,6 +200,22 @@ confidence: low | medium | high
 related_task: <task ID this surfaced on, e.g. #391, or n/a>
 <!-- /workflow-fix-candidate -->
 ```
+
+**Before emitting: grep the workflow surface for the pattern.** When the
+bug is identifiable by grep (a literal string, a specific regex, a
+frontmatter line — e.g. a stale model pin, a deprecated marker field, a
+shared phrase), the emitter SHOULD run a one-shot
+`grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` (and `src/explore_persona_space/task_workflow*.py
+src/explore_persona_space/backends/` if the pattern is plausibly in the
+in-scope `src/` modules) BEFORE writing the candidate, and list EVERY hit
+in `target_file` — a comma-separated path list or a glob like
+`.claude/agents/*.md` is acceptable when the hit set is uniform. One grep
+is cheap; it spares the improver a discovery round and prevents the
+worst-case incomplete fix where a sibling hit is missed entirely. (#622:
+a stale model pin lived in 25 sibling agent files; the original candidate
+named only one, and the improver had to re-discover scope via `grep -rln`
+on receipt.) The orchestrator also follows this rule when synthesizing a
+candidate from a prose follow-up — grep before populating `target_file`.
 
 Hard rules:
 
@@ -476,6 +495,7 @@ homepage rendering of the fallback is unimplemented.)
 | Orchestrator surfaces an agent's "Follow-ups (orchestrator should consider)" section to Thomas as a chat note asking "should I apply these?" | Treat each in-scope, non-architectural follow-up as a synthesized candidate and auto-spawn `workflow-improver` for it in the background; do NOT ask |
 | Drop a prose follow-up because it lacked the formal block tags | Prose follow-ups trigger the same auto-spawn default as formal blocks; synthesize a candidate from the prose and dispatch |
 | Hold prose follow-ups back hoping they'll surface "on the next pass" | List every concrete in-scope follow-up the agent found; the orchestrator auto-spawns each in parallel |
+| Name a single `target_file` when a literal-string bug pattern hits N sibling workflow files (#622: a stale model pin lived in 25 agent files; one was named) | `grep -rln '<pattern>' .claude/ CLAUDE.md scripts/` first; list every hit in `target_file` as a comma-separated path list or a glob — one grep spares the improver a discovery round |
 
 ## Composition with other rules
 
