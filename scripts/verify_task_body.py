@@ -2,18 +2,30 @@
 """verify_task_body.py — mechanical verifier for markdown clean-result bodies.
 
 Replaces `verify_sagan_card.py` for new (markdown) bodies. Mechanical
-gate for the 2-content-section markdown clean-result spec (migrated
-2026-W22, task #454). Source of truth for the body shape:
-`.claude/skills/clean-results/SPEC.md`. The body carries THREE required
-H2 sections in order — `## Human TL;DR` / `## TL;DR` / `## Reproducibility`
-— with `## TL;DR` absorbing the per-result narrative (one `### Motivation`
-H3 then one `### <finding>` H3 per result with one inline figure +
-cherry-picked raw-completion example + dropdown + all-raw link) and
-`## Reproducibility` absorbing the Parameters table + the Confidence
-sentence. The retired `## Details` and `## Figure` H2s are now FAIL
-patterns — a body that carries either is rejected so it migrates cleanly
-to the new shape (forward-only; the ~95 legacy `has_clean_result=true`
-bodies are never re-verified, so tightening cannot regress them).
+gate for the markdown clean-result spec, which has TWO live,
+sentinel-gated shapes (plus pre-sentinel legacy as a third grandfathered
+shape). Source of truth for both: `.claude/skills/clean-results/SPEC.md`.
+
+- **v3 (current, `<!-- clean-result-v3 -->`):** FIVE required H2s in
+  order — `## Takeaways` / `## What I ran` / `## Findings` / `## Data` /
+  `## Reproducibility`. No `## Human TL;DR` (its presence is a FAIL).
+  Conciseness caps + the Data section are mechanically enforced. The full
+  v3 check list is enumerated in the "v3 checks" block below (~L260+).
+- **v2 (`<!-- clean-result-v2 -->`, migrated 2026-W22, task #454):** THREE
+  required H2s in order — `## Human TL;DR` / `## TL;DR` /
+  `## Reproducibility` — with `## TL;DR` absorbing the per-result
+  narrative (one `### Motivation` H3 then one `### <finding>` H3 per
+  result with one inline figure + cherry-picked raw-completion example +
+  dropdown + all-raw link) and `## Reproducibility` absorbing the
+  Parameters table + the Confidence sentence.
+
+The retired `## Details` and `## Figure` H2s are FAIL patterns in both —
+a body that carries either is rejected so it migrates cleanly (forward-
+only; the ~95 legacy `has_clean_result=true` bodies are never
+re-verified, so tightening cannot regress them). Sentinel gating: checks
+6/16/17 run on EITHER sentinel (`is_nested_design`); v2-only structural
+checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
+18-21) run on the v3 sentinel.
 
 0. Body is not a stub — body has ≥500 chars, contains a `# <title>` H1,
    and is not a single stub token (`placeholder`, `tbd`, `todo`, `stub`).
@@ -307,16 +319,18 @@ New v3-only checks (PASS vacuously on v2/legacy):
   for illustration` / harmful-content sanitized form).
 - **check 20** (`check_v3_word_caps`): the §4 conciseness caps —
   per-Takeaways-bullet ≤30 words (WARN), per-finding prose ≤120 WARN /
-  ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤700 + 250
+  ≥180 FAIL, figure caption ≤60 (WARN), total content prose ≤800 + 250
   per extra follow-up round (WARN-only). Counts EXCLUDE tables, fenced
   code, `<details>` bodies, captions. The Takeaways 3-6 bullet COUNT is
   owned by check 3's `check_v3_structure` (one authoritative count).
 - **check 21** (`check_body_params_subset_of_doc`): the body's
   load-bearing `## Reproducibility` Parameters rows are a SUBSET of the
-  methodology doc §2 complete table. Needs the doc path via
-  `--methodology-doc <path>`; NO-OP PASS when the doc is absent (the doc
-  is on the issue worktree branch pre-merge; binds at promote-time
-  verify, post-merge).
+  methodology doc §2 complete table. Binds when the doc path is supplied
+  via `--methodology-doc <path>` (the orchestrator passes the issue
+  worktree path at gate time, pre-merge) OR — on the `--issue` path —
+  when `docs/methodology/issue_<N>.md` resolves on disk (post-merge
+  promote-time verify, where the doc is already on `main`); NO-OP PASS
+  when neither resolves.
 
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
@@ -735,26 +749,33 @@ def _prelude_window(details: str, fence_start: int, max_chars: int = 1500) -> st
     blocks don't share each other's prelude), then trims any leading
     partial line.
 
-    Known follow-up (deferred 2026-05-31): the window also stops at a
-    fence boundary but does NOT stop at a previous `</details>` close.
-    Two adjacent `<details>` sample blocks therefore share each other's
-    prelude window — mitigated for now by per-block disclosure counting
-    (each sample block is enforced independently against the same
-    window, and the v2 form puts the cherry-pick disclosure inside the
-    `<summary>` which gets folded into the prelude via the
-    `block_start`-past-`</summary>` shift). Promote to a real
-    `</details>`-boundary stop if a body emerges where two adjacent
-    `<details>` blocks legitimately diverge on the disclosure.
+    Stops at the LATER of two boundaries: a previous fenced block's
+    closing ``` line, OR a previous `<details>` block's `</details>`
+    close. Two adjacent sample blocks therefore do NOT share each other's
+    disclosure prelude (Phase A review MINOR-4, 2026-06-13: v3's `## Data`
+    packs the Evaluated-with + Generated example blocks into one section,
+    widening the neighbour-bleed blast radius — an undisclosed block must
+    not borrow a sibling's disclosure). The v2 form that puts the
+    cherry-pick disclosure inside the `<summary>` still passes because the
+    caller shifts the scan past `</summary>`, so this block's own
+    `<summary>` stays inside the window (only the PREVIOUS block's
+    `</details>` is a cut point).
     """
     lo = max(0, fence_start - max_chars)
     window = details[lo:fence_start]
-    # Don't cross a previous fence's closing line.
-    prev_close = window.rfind("\n```")
-    if prev_close != -1:
-        # Skip past the closing fence line.
-        nl = window.find("\n", prev_close + 1)
+    # Don't cross a previous sample block's boundary.
+    cut = 0
+    prev_fence = window.rfind("\n```")
+    if prev_fence != -1:
+        nl = window.find("\n", prev_fence + 1)
         if nl != -1:
-            window = window[nl + 1 :]
+            cut = max(cut, nl + 1)
+    prev_details = window.rfind("</details>")
+    if prev_details != -1:
+        nl = window.find("\n", prev_details)
+        cut = max(cut, nl + 1 if nl != -1 else prev_details + len("</details>"))
+    if cut:
+        window = window[cut:]
     return window
 
 
@@ -784,7 +805,14 @@ _CHERRY_DISCLOSURE_RE = re.compile(
     # (e.g. task #432's "5 example training rows" /
     # "5 example eval probes"). The "example" / "sample" qualifier
     # tells the reader the rows are illustrative, not exhaustive.
-    r"\d+\s+(?:examples?|sample[s]?)\b)",
+    r"\d+\s+(?:examples?|sample[s]?)\b|"
+    # harmful-content carve-out — the sanitized excerpt form, kept in
+    # PARITY with check 19's `_SUBSET_DISCLOSURE_RE` so a v3
+    # `## Data → ### Generated` block built from EM / bad-medical-advice
+    # corpora (this project's dominant data type) is NOT FAILed by
+    # check 10 for lacking cherry-pick wording (Phase A review MAJOR-1,
+    # 2026-06-13). Must stay in sync with `_SUBSET_DISCLOSURE_RE`.
+    r"sanitized for context hygiene|harmful-content row|truncated — harmful)",
     re.IGNORECASE,
 )
 
@@ -3750,8 +3778,10 @@ def check_v3_word_caps(body: str) -> CheckResult:
     - Per-finding prose ≤120 words WARN / ≥180 words FAIL (excl.
       caption / fenced code / `<details>` bodies / table rows).
     - Figure caption ≤60 words (WARN).
-    - Total content prose (Takeaways + What I ran + Findings) ≤700 +
-      250 per live follow-up round beyond the first (WARN-only).
+    - Total content prose (Takeaways + What I ran + Findings) ≤800 +
+      250 per live follow-up round beyond the first (WARN-only;
+      calibrated on the four-finding #517 v3 conversion — see the
+      V3_TOTAL_PROSE_BASE_WORDS constant comment).
 
     The Takeaways 3-6 bullet COUNT is owned by `check_v3_structure`
     (one authoritative count gate), not duplicated here. A FAIL here
@@ -3879,9 +3909,12 @@ def check_body_params_subset_of_doc(
 
     Gate-timing: the methodology doc lives on the issue worktree branch
     pre-merge, so this check is a NO-OP PASS when no doc path is given OR
-    the file does not exist (the orchestrator passes the worktree path
-    explicitly at gate time; it binds fully at promote-time verify, after
-    merge). PASSes vacuously on v2 / legacy bodies.
+    the file does not exist. At gate time the orchestrator passes the
+    worktree path explicitly via ``--methodology-doc``; at promote-time
+    verify (post-merge) the ``--issue`` path in ``main`` opportunistically
+    resolves ``docs/methodology/issue_<N>.md`` on disk, so the check binds
+    fully then without the orchestrator re-passing the flag. PASSes
+    vacuously on v2 / legacy bodies.
     """
     label = "Body Parameters ⊆ methodology doc §2"
     if not is_v3(body):
@@ -4098,6 +4131,17 @@ def main() -> int:
             concerns_path = source_path.parent / "concerns.jsonl"
             plan_path = source_path.parent / "plans" / "plan.md"
             original_body_path = source_path.parent / "original-body.md"
+            # Check 21: when --methodology-doc wasn't passed explicitly,
+            # opportunistically resolve the on-disk doc (present on `main`
+            # at promote-time verify, post-merge) so the body-table ⊆
+            # doc-table assert actually binds then. Pre-merge gate-time
+            # callers still pass the worktree path explicitly above.
+            if methodology_doc_path is None:
+                repo = _resolve_repo_root()
+                if repo is not None:
+                    cand_doc = repo / "docs" / "methodology" / f"issue_{args.issue}.md"
+                    if cand_doc.exists():
+                        methodology_doc_path = cand_doc
         except FileNotFoundError as e:
             print(f"verify_task_body: {e}", file=sys.stderr)
             return 2

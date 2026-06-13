@@ -3013,10 +3013,12 @@ def test_v3_data_subsection_out_of_order_fails():
         "### Trained on\n\nTulu-25 mix",
     ).replace("### Evaluated with\n\n200 Betley", "### Generated-moved\n\n200 Betley")
     ok, results = verify_task_body.verify_text(body)
+    assert not ok
     by_name = _results_by_name(results)
-    # Either the H2-shape or the Data-shape check catches the disorder;
-    # assert the Data-shape one specifically.
-    assert not by_name["Data section shape (v3)"].passed or not ok
+    # Check 18 specifically catches the disorder (not just an unrelated
+    # check failing) — assert the Data-shape check itself FAILs.
+    shape = by_name["Data section shape (v3)"]
+    assert not shape.passed, shape.render()
 
 
 def test_v3_data_subsection_no_link_fails():
@@ -3080,8 +3082,14 @@ def test_v3_missing_subset_disclosure_fails():
 
 
 def test_v3_harmful_content_sanitized_form_satisfies_subset_disclosure():
-    """The harmful-content sanitized excerpt form satisfies check 19's
-    subset-disclosure requirement (carve-out parity with checks 10/11)."""
+    """The harmful-content sanitized excerpt form satisfies BOTH check 19
+    (subset-disclosure) AND check 10 (cherry-picked label) + check 11
+    (raw-completions link) — carve-out parity with checks 10/11.
+
+    The harmful `### Generated` block is the LAST section and carries NO
+    cherry-pick wording, only the sanitized form, so a PASS here proves
+    check 10 binds via the sanitized disclosure itself, not via
+    prelude-bleed from a neighbour (Phase A review MAJOR-1 + MINOR-4)."""
     harmful_block = (
         "### Generated\n\n"
         "600 completions. Full raw completions: [raw_completions/]"
@@ -3102,9 +3110,47 @@ def test_v3_harmful_content_sanitized_form_satisfies_subset_disclosure():
     )
     _ok, results = verify_task_body.verify_text(body)
     by_name = _results_by_name(results)
-    assert by_name["Data subset-disclosure (v3)"].passed, by_name[
-        "Data subset-disclosure (v3)"
-    ].render()
+    for label in (
+        "Data subset-disclosure (v3)",
+        "Cherry-picked label discipline",
+        "Qualitative-data link",
+    ):
+        assert by_name[label].passed, by_name[label].render()
+
+
+def test_v3_adjacent_undisclosed_details_block_fails():
+    """Two adjacent `<details>` sample blocks in `## Data → ### Generated`:
+    only the first is disclosed. The second must FAIL check 10 — it cannot
+    borrow the first's disclosure across the `</details>` boundary
+    (Phase A review MINOR-4: the `_prelude_window` `</details>` stop). Before
+    that stop, the second block bled the first's disclosure and PASSed."""
+    long_a = "A normal-looking model completion sentence. " * 8  # >200 chars
+    long_b = "Another distinct model completion sentence. " * 8  # >200 chars
+    two_blocks = (
+        "### Generated\n\n"
+        "600 completions. Full raw completions: [raw_completions/]"
+        "(https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/"
+        "tree/abc123def/raw_completions)\n\n"
+        "<details open>\n"
+        "<summary>5 example completions (5 of 600, random sample)</summary>\n\n"
+        f"{long_a}\n\n"
+        "</details>\n\n"
+        "<details open>\n"
+        "<summary>More completions</summary>\n\n"
+        f"{long_b}\n\n"
+        "</details>\n"
+    )
+    body = re.sub(
+        r"### Generated\n.*?(?=## Reproducibility)",
+        two_blocks + "\n",
+        _V3_GOOD_BODY,
+        flags=re.DOTALL,
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    cherry = by_name["Cherry-picked label discipline"]
+    assert not cherry.passed, cherry.render()
 
 
 def test_v3_takeaways_too_few_bullets_fails():
