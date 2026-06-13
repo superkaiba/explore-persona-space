@@ -2672,8 +2672,8 @@
     "481": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/481",
-      "status": "proposed",
+      "path": "tasks/on_hold/481",
+      "status": "on_hold",
       "title": "Brainstorm leakage predictors beyond JS divergence and cosine similarity"
     },
     "482": {
