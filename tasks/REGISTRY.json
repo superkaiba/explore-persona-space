@@ -460,8 +460,8 @@
     "161": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/161",
-      "status": "proposed",
+      "path": "tasks/on_hold/161",
+      "status": "on_hold",
       "title": "Think about how Spanish + English results connect"
     },
     "162": {
