@@ -3858,8 +3858,8 @@
       "goal": "Determine whether headline cross-condition leakage differences (contrastive vs positive-only, LoRA vs full fine-tuning) survive controlling for implantation strength, via matched-install comparison, per-cell leakage-to-install fractions in logit space, and leakage-vs-install dose curves from existing training trajectories.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/627",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/627",
+      "status": "awaiting_promotion",
       "title": "At matched install strength the contrastive-vs-positive-only sycophancy leakage gap shrinks ~7-10\u00d7 and is graded \u2014 null on 2 of 4 sources and load-bearing on the assistant cell (LOW confidence)"
     },
     "628": {
