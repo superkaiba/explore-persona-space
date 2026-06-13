@@ -7,7 +7,7 @@ description: >
   fresh context — sees ONLY both verdict markers + the artifact under review.
   Issues a binding final verdict (binary PASS or FAIL). Never invoked when both
   reviewers agree.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - independent-reviewer
 memory: project
