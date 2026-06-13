@@ -794,12 +794,8 @@ def _write_matrix_json(
     log.info("[matrices] wrote %s", out_path)
 
 
-def run_build_matrices(args) -> None:
-    """Both centerings x available layers -> committed + staged matrix JSONs."""
-    import torch
-
-    data_dir, staging = Path(args.data_dir), Path(args.staging_dir)
-    built = 0
+def _iter_bundles(staging: Path, allow_partial: bool):
+    """Yield (recipe, layer, bundle_path) for every expected centroid bundle."""
     for recipe, layers in (
         ("last_prompt_token", LAYERS),
         ("response_mean", RESPMEAN_LAYERS),
@@ -808,7 +804,7 @@ def run_build_matrices(args) -> None:
             rm = "respmean_" if recipe == "response_mean" else ""
             bundle_path = staging / f"centroids_{POOL_VERSION}_{rm}L{layer}.pt"
             if not bundle_path.exists():
-                if args.allow_partial_layers:
+                if allow_partial:
                     log.warning(
                         "[matrices] bundle missing, skipping (partial allowed): %s",
                         bundle_path.name,
@@ -818,26 +814,84 @@ def run_build_matrices(args) -> None:
                     f"{bundle_path} missing - run --extract first (or pass "
                     f"--allow-partial-layers for a smoke run)."
                 )
-            bundle = torch.load(bundle_path, weights_only=False)
-            names = list(bundle["persona_names"])
-            q_sha = bundle.get("questions_sha256", "unknown")
-            committed = recipe == "response_mean" or layer in COMMITTED_MATRIX_LAYERS
-            dest_dir = data_dir if committed else staging
-            for centering in ("global_mean", "none"):
-                _write_matrix_json(
-                    dest_dir / _matrix_filename(layer, centering, recipe),
-                    bundle["centroids"],
-                    names,
-                    layer=layer,
-                    centering=centering,
-                    recipe=recipe,
-                    bundle_path=bundle_path,
-                    q_sha=q_sha,
-                )
-                built += 1
+            yield recipe, layer, bundle_path
+
+
+def run_build_matrices(args) -> None:
+    """ROSTER-bank RAW matrices -> staging (audit inputs; never committed, never uploaded).
+
+    Only the raw (centering "none") matrices are built here: raw pairwise
+    cosine is bank-independent, so these are valid over the full roster
+    (including not-yet-rejected synthetics). The CANONICAL matrices - both
+    centerings over the FINAL pool bank - are built inside --audit after the
+    synthetic keep/reject decision, because globally-mean-centered cosine is
+    bank-dependent (#536): centering over a bank that still contains rejected
+    synthetics would bake the rejects into every committed centered value.
+    """
+    import torch
+
+    staging = Path(args.staging_dir)
+    built = 0
+    for recipe, layer, bundle_path in _iter_bundles(staging, args.allow_partial_layers):
+        bundle = torch.load(bundle_path, weights_only=False)
+        rm = "respmean_" if recipe == "response_mean" else ""
+        _write_matrix_json(
+            staging / f"roster_matrix_{POOL_VERSION}_{rm}L{layer}_raw.json",
+            bundle["centroids"],
+            list(bundle["persona_names"]),
+            layer=layer,
+            centering="none",
+            recipe=recipe,
+            bundle_path=bundle_path,
+            q_sha=bundle.get("questions_sha256", "unknown"),
+        )
+        built += 1
     if built == 0:
         raise RuntimeError("[matrices] no bundles found - nothing built")
-    log.info("[matrices] built %d matrix JSONs", built)
+    log.info("[matrices] built %d roster-bank raw matrix JSONs (staging)", built)
+
+
+def _build_final_matrices(
+    pool: dict[str, dict], data_dir: Path, staging: Path, allow_partial: bool
+) -> None:
+    """CANONICAL matrices over the FINAL pool bank (both centerings; plan §3.4/§3.5).
+
+    Subsets every centroid bundle to the final pool membership (fail-loud if a
+    pool member has no centroid row), then computes both centerings on that
+    bank. Committed set (L10/L20/L21 recipe-(a) + respmean L20/L21) ->
+    data_dir; remaining layers -> staging (HF-only).
+    """
+    import torch
+
+    pool_names = set(pool)
+    built = 0
+    for recipe, layer, bundle_path in _iter_bundles(staging, allow_partial):
+        bundle = torch.load(bundle_path, weights_only=False)
+        bnames = list(bundle["persona_names"])
+        missing = [n for n in pool_names if n not in bnames]
+        if missing:
+            raise RuntimeError(
+                f"[matrices] pool members missing from {bundle_path.name}: {missing} - "
+                f"the final pool must be fully covered by every bundle"
+            )
+        keep_idx = [i for i, n in enumerate(bnames) if n in pool_names]
+        names = [bnames[i] for i in keep_idx]
+        centroids = bundle["centroids"][keep_idx]
+        committed = recipe == "response_mean" or layer in COMMITTED_MATRIX_LAYERS
+        dest_dir = data_dir if committed else staging
+        for centering in ("global_mean", "none"):
+            _write_matrix_json(
+                dest_dir / _matrix_filename(layer, centering, recipe),
+                centroids,
+                names,
+                layer=layer,
+                centering=centering,
+                recipe=recipe,
+                bundle_path=bundle_path,
+                q_sha=bundle.get("questions_sha256", "unknown"),
+            )
+            built += 1
+    log.info("[matrices] built %d FINAL pool-bank matrix JSONs", built)
 
 
 # ── Phase: audit + gates + pool finalize ─────────────────────────────────────
@@ -1339,9 +1393,25 @@ def _build_provenance(args, extract_stats: dict) -> dict:
 
 
 def run_audit(args) -> None:
-    """Gates + occupancy + edge fit + pool finalize; exits non-zero on K1/K3 (plan §3.4)."""
+    """Gates + occupancy + edge fit + pool finalize; exits non-zero on K1/K3 (plan §3.4).
+
+    Order matters: the synthetic keep/reject decision runs on the ROSTER-bank
+    raw matrix (raw pairwise cosine is bank-independent), the pool is
+    finalized, and only THEN are the canonical matrices computed - the
+    centered bank must be exactly the final pool membership (#536).
+    """
     data_dir, staging = Path(args.data_dir), Path(args.staging_dir)
     roster = json.loads((data_dir / "roster_v1.json").read_text())["personas"]
+
+    roster_raw_path = staging / f"roster_matrix_{POOL_VERSION}_L20_raw.json"
+    if not roster_raw_path.exists():
+        raise FileNotFoundError(f"{roster_raw_path} missing - run --build-matrices first")
+    r_names, r_dist_raw = load_matrix_json(roster_raw_path)
+
+    kept_records, synth_meta = _decide_synthetics(roster, r_names, r_dist_raw)
+    pool = _finalize_pool(roster, kept_records)
+    _build_final_matrices(pool, data_dir, staging, args.allow_partial_layers)
+
     names, dist_raw = load_matrix_json(data_dir / _matrix_filename(20, "none", "last_prompt_token"))
     _, dist_cen = load_matrix_json(
         data_dir / _matrix_filename(20, "global_mean", "last_prompt_token")
@@ -1351,8 +1421,6 @@ def run_audit(args) -> None:
     regression = _regression_478(data_dir)
     determinism = _determinism_floor(names, dist_raw)
 
-    kept_records, synth_meta = _decide_synthetics(roster, names, dist_raw)
-    pool = _finalize_pool(roster, kept_records)
     band_presets = _fit_band_presets(pool, names, dist_raw, dist_cen)
     cen_edges = band_presets["centered_v1_L20"]["edges"]
 
