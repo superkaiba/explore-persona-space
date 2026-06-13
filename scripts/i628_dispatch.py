@@ -809,13 +809,28 @@ def phase0(args) -> None:
         _gen_smoke_response_caches(args)
 
     phase_log("p0_build")
+    # Pre-warm tokenizer cache ONCE (one online round-trip) so the build
+    # subprocesses can run with HF_HUB_OFFLINE=1 + TRANSFORMERS_OFFLINE=1
+    # set. transformers' AutoTokenizer.from_pretrained calls
+    # `_patch_mistral_regex` -> `is_base_mistral(model_id)` -> `model_info()`
+    # on every invocation regardless of cache state. With 2 variants x 16
+    # cids each making ~80 hub-API calls, the workload trips HF's 2500 req /
+    # 5-min rate limit (incident #628, 2026-06-13). The pre-warm call
+    # below populates the local cache and pays exactly one model_info; the
+    # subprocesses then take the offline path which short-circuits
+    # model_info entirely. Marker token id 83399 was verified to survive
+    # both code paths in the same forward.
+    from transformers import AutoTokenizer
+
+    AutoTokenizer.from_pretrained(QWEN_ID, trust_remote_code=True)
+    build_env = {**os.environ, "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1"}
     for variant in variants:
         for cid in build_cids:
             mix = _mix_dir(variant) / f"{cid}_seed{SEED}.jsonl"
             if mix.exists():
                 continue
             subprocess.run(
-                _builder_cmd(variant, cid, args.smoke), check=True, cwd=REPO, env={**os.environ}
+                _builder_cmd(variant, cid, args.smoke), check=True, cwd=REPO, env=build_env
             )
     for cid in build_cids:
         if not args.smoke and (_mix_dir("nosep") / f"{cid}_seed{SEED}.jsonl").exists():
