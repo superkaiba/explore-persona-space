@@ -2719,8 +2719,8 @@
       "goal": "Determine whether the response-token-mean read (the canonical persona-vectors reduction / the E_query\u00b7E_response_tokens recipe) is a genuine EM predictor at early-mid layers (peak L6 \u03c1=0.58, p=0.011, robust to the token-count partial) rather than the null implied by its L25 saturation, resolve why it and the single pre-response-token read peak in different (and at L6 opposite-sign) layer bands, and decide which reduction the predictor line should standardize on.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/487",
-      "status": "proposed",
+      "path": "tasks/on_hold/487",
+      "status": "on_hold",
       "title": "Response-token-mean read predicts EM at early layers (L6 \u03c1=0.58), not just the deep-band null reported at L25 \u2014 which reduction is the principled predictor?"
     },
     "488": {
