@@ -2928,8 +2928,8 @@
     "510": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/510",
-      "status": "proposed",
+      "path": "tasks/on_hold/510",
+      "status": "on_hold",
       "title": "Test rank-1 activation-space update as a predictor of cross-context generalization (Dan framing)"
     },
     "511": {
