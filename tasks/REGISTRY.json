@@ -3706,8 +3706,8 @@
     "609": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/609",
-      "status": "proposed",
+      "path": "tasks/archived/609",
+      "status": "archived",
       "title": "Update the clean-result format"
     },
     "61": {
