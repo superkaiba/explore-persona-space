@@ -90,7 +90,7 @@ const GROUPS: GroupDef[] = [
       {
         id: "on_hold",
         label: "On hold",
-        statuses: ["blocked"],
+        statuses: ["blocked", "on_hold"],
         filter: notPriority,
       },
     ],
