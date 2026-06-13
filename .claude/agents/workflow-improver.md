@@ -15,7 +15,7 @@ description: >
   changes. Does NOT touch experiment code (`src/explore_persona_space/`,
   `configs/`, `scripts/train.py`, `scripts/eval.py`), does NOT run experiments,
   does NOT mutate task state via `task.py`.
-model: "claude-fable-5[1m]"
+model: "claude-opus-4-7[1m]"
 skills:
   - codebase-debugger
   - cleanup
