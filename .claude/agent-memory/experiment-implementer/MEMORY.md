@@ -1,4 +1,5 @@
 - [Eval-rig per-phase checkpoint](feedback_eval_rig_per_phase_checkpoint.md) — persist each sub-phase (gen/logprob/judge) to disk the moment it completes; never write at end-of-seed. #399.
+- [vLLM 0.11.0 V1 EngineCore fork silent death](feedback_vllm_v1_fork_enginecore_silent_death.md) — set VLLM_WORKER_MULTIPROC_METHOD=spawn at module top before any vLLM import; default fork() poisons EngineCore when parent touched CUDA-adjacent code. #628.
 - [vLLM orphan worker after destroy](feedback_vllm_orphan_worker_after_destroy.md) — destroy_* doesn't reap workers; psutil child-kill + nvidia-smi check, or subprocess-isolate phases. #399.
 - [Orphan-PID check must be CVD-aware](feedback_orphan_pid_check_must_be_cvd_aware.md) — on multi-GPU pods filter compute-app PIDs by gpu_uuid vs the CVD-visible set. #396.
 - [Dispatcher silent-death hardening](feedback_dispatcher_silent_death_hardening.md) — hf_hub_download retry-with-backoff + per-file log lines + logger.exception-and-reraise loop guard. #396.
