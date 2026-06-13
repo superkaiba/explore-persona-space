@@ -16,6 +16,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_621.md](https://github.com/superkaiba/explore-persona-space/blob/0e0b55e3cb02f3fe8f5ae086080f90d7c9752bbe/docs/methodology/issue_621.md) · [gist](https://gist.github.com/superkaiba/24d3b4ac2aaa59937f026670597c39af)
+
 ## Human TL;DR
 
 **Headline.** Pushed the marker implant down to rank 1 (one (a, b) outer product per module, no SVD) and stopped training the moment source `log P(marker)` enters the [5,12] nat band. The read vector barely rotates — cos(a_trained, a_init) ≥ 0.988 across all 30 cells — and the rotation half of the joint threshold passes 23/30 overall (read placement 5/12, write 12/12, bridge 6/6). The 7 read-arm misses sit 0.1–0.7 percentage points above the 0.15 cap, but the persisted a(t) ladder confirms all 7 had plateaued by termination (last-30-step |Δcos| ≤ 1.9e-3, ~6e-5 per step), so the read-arm 5/12 IS the asymptote at this dose, not a transient still rotating. The implant looks like an ungated write at this dose, and "a · v_persona" doesn't rank-order who leaks — plain `cos(v_persona, v_source)` from the same bank with no adapter beats it in 0/30 cells. But because a barely moves, the firing predictor reduces to a near-random projection × a learned scalar, so the firing-vs-leakage comparison is structurally degenerate at this dose, not falsifying.
@@ -279,6 +281,7 @@ Under the rotation-frozen regime, cross-seed A-instability is **mechanical** —
 - Band-stop trajectories: [`/trajectories` (pinned)](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/bf641209b6bec4322878197c601c816cbd3d9396/issue621_rank1_readwrite/trajectories) — per-step `source_delta_nats` for all 30 cells.
 - Figures: `figures/issue_621/` — 6 PNGs + PDFs + `.meta.json` sidecars (read-identity profile, rotation-cap a_init check, write identity, firing vs leakage, cross-seed; rotation-cap and cross-seed regenerated in round 2 from round 1; `h2_ladder_a_t.png` added in the 9a-ter ladder follow-up at commit `d92b876586bee736fe9e8952f86731c25cc04fe1`).
 - WandB project: `issue_621_rank1_readwrite` (30 runs, one per cell).
+- **Methodology reference:** [docs/methodology/issue_621.md](https://github.com/superkaiba/explore-persona-space/blob/0e0b55e3cb02f3fe8f5ae086080f90d7c9752bbe/docs/methodology/issue_621.md) · [gist](https://gist.github.com/superkaiba/24d3b4ac2aaa59937f026670597c39af)
 
 **Compute:** GCP `a2-ultragpu-4g` (4× A100-80, us-central1-a). Realized wall time ~9–10 hours from provision to terminate (smoke + sweep train + bank + eval + uploads + sentinel). Roughly 36 GPU-hours total. Instance terminated by upload-verification PASS.
 
