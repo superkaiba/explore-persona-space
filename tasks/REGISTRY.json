@@ -1943,8 +1943,8 @@
       "goal": "Install the [ZLT] persona-marker recipe on the BASE Qwen2.5-7B (pre-post-training), then run a post-training pass on top, then evaluate the same 23-bystander leakage panel \u2014 to test whether persona-marker geometry installed before post-training survives post-training.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/394",
-      "status": "proposed",
+      "path": "tasks/on_hold/394",
+      "status": "on_hold",
       "title": "Persona-marker install on BASE Qwen2.5-7B then post-train on top \u2014 does the marker survive?"
     },
     "395": {
