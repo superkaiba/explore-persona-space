@@ -25,6 +25,8 @@ backend: gcp
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_627.md](https://github.com/superkaiba/explore-persona-space/blob/93dd21206c5ffa7840508ca0bd5a96706f640a46/docs/methodology/issue_627.md) · [gist](https://gist.github.com/superkaiba/08fd6c1331fbc0d06c104005a9f327d9)
+
 ## Human TL;DR
 
 **Headline.** Once I match the install dose, the positive-only-vs-contrastive sycophancy leakage gap shrinks ~7-10× from the endpoint reads, and the surviving +0.087 average is graded — driven mostly by the assistant cell, null on 2 of 4 sources, and conditional on a single seed plus an arm-asymmetric judge. I'd call it "the recipe gap is real but smaller and shakier than the endpoints suggested", not a clean win.
@@ -292,6 +294,8 @@ This isn't a hypothesis test; it's the framing that licenses every other finding
   - Reused marker trajectory slab from [#601](https://eps.superkaiba.com/tasks/601): `eval_results/issue_601/**/trajectory.json` — fit: on-policy four-float records per persona × question × checkpoint verified at planning, enables cross-mix matched-install fractions in EOS-margin space.
   - Reused published matched-install reads from [#606](https://eps.superkaiba.com/tasks/606): `eval_results/issue_606/{sycophancy,refusal,refusal-ft-lr2e6-retrain}/analysis.json` — fit: matched-install machinery (target 0.50, bootstrap procedure, ±0.05 equivalence band) ported verbatim into this run's sycophancy headline analysis.
   - Reused published matched-rate read from [#514](https://eps.superkaiba.com/tasks/514): `eval_results/issue_514/*.json` — fit: log-prob-space leaves; off-saturation filter applied (source `log P ≤ −1` nat AND argmax-marker rate < 0.10) per the analysis contract in `.claude/rules/marker-leakage-measurement.md`.
+
+- **Methodology reference:** [docs/methodology/issue_627.md](https://github.com/superkaiba/explore-persona-space/blob/93dd21206c5ffa7840508ca0bd5a96706f640a46/docs/methodology/issue_627.md) · [gist](https://gist.github.com/superkaiba/08fd6c1331fbc0d06c104005a9f327d9)
 
 **Compute:** ~5.7 GPU-h on `a2-ultragpu-4g` (4× A100-80), ~2.5 h wall; CPU-only Phase 2/3 ran on the VM after pod teardown.
 
