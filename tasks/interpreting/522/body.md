@@ -18,7 +18,7 @@ parent_id: 511
 **Takeaways.**
 - Phase 1 closed parent #511's loose ends — `gauss_kl` at layer 22 holds at out-of-sample CV R² ≈ 0.62 with the full ridge (N=500, R=10), and MMD / Wasserstein-2 / cosine all sit at 0.56-0.58. The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the other 14 are `intermediate` (mostly L23-L24 wass2 and the L0/L11/L24 cosine sentinels). No surprise there.
 - The full-response JS predictor lands at CV R² ≈ 0.24 on the full panel — roughly one-third of all four activation predictors.
-- When I drop the three high-stylization personas, JS out-of-sample CV R² falls to ≈ −0.02 (95% panel-CI [−0.15, 0.08], straddles zero — so no DEMONSTRATED out-of-sample skill at this panel size, but I can't claim a negative either). The in-sample length-partialled ρ on that subpanel is still +0.27 (95% panel-CI [0.11, 0.42]), a modest non-zero correlation that just doesn't survive leave-one-cond-out CV. JS retains weak within-nonstylized signal that fails to generalize.
+- When I drop the three high-stylization personas, JS out-of-sample CV R² falls to ≈ −0.02 (95% panel-CI [−0.15, 0.08], straddles zero — so no DEMONSTRATED out-of-sample skill at this panel size, but I can't claim a negative either). The in-sample length-partialled ρ on that subpanel is still +0.27 (95% panel-CI [0.11, 0.42]), a modest non-zero correlation that just doesn't survive leave-one-cond-out CV. JS retains weak within-nonstylized signal that doesn't survive LOCO with only 13 highly-correlated nonstylized personas to leave out.
 
 **How this updates me.** Less optimistic that "cheap base-model JS on the output distribution" is a real substitute for activation geometry — at least for predicting marker-leakage transfer. Activation predictors beat JS on the full panel at ~2.4× CV R²; whether they ALSO collapse on the nonstylized subpanel is the natural next test and hasn't been run yet. What would move me back: a clean within-nonstylized JS result on a richer panel of "normal" personas.
 
@@ -94,13 +94,22 @@ Restoring the full N=500 × R=10 ridge across layers 19-24, metrics {gauss_kl, m
 | Wasserstein-2 | 0.568 | 0.572 |
 | Cosine | 0.557 | 0.560 |
 
-So at epoch 1 the metric ranking I expected from #511's smaller ridge holds: gauss_kl edges MMD by ~0.04 CV R², which edges wass2 and cosine by ~0.02 each. Across loc-arm epochs the picture is the same shape but lower altitude: gauss_kl at L22 drops from 0.617 (ep1) to ~0.40-0.45 (ep2/3/5). The "L22/gauss_kl wins" ordering is not perfectly stable across epochs — at ep3, L21/MMD (0.4356) edges L22/gauss_kl (0.4345) by ~0.001 CV R², and at ep5 they tie at 0.4482. So the right read is "gauss_kl wins decisively at ep1; at later epochs MMD at L21 is competitive with gauss_kl at L22 within noise." The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the remaining 14 sit at `intermediate` (mostly L23/wass2 × all four epochs, L24/wass2 ep2, L24/cosine ep1/2, plus sentinel L0/L11 cosine cells — none drop below plateau). So "N=500 is enough" is true for the headline and most of the sweep, but a sweep extending to higher layers or non-band metrics may need a larger N.
+So at epoch 1 the metric ranking I expected from #511's smaller ridge holds: gauss_kl edges MMD by ~0.04 CV R², which edges wass2 and cosine by ~0.02 each. Across loc-arm epochs the picture is the same shape but lower altitude — the compact L22 × 4-metric × 4-epoch table is:
+
+| Epoch | Gaussian KL | MMD | Wasserstein-2 | Cosine |
+|---|---|---|---|---|
+| 1 | 0.617 | 0.580 | 0.568 | 0.557 |
+| 2 | 0.412 | 0.401 | 0.388 | 0.381 |
+| 3 | 0.435 | 0.428 | 0.420 | 0.409 |
+| 5 | 0.448 | 0.442 | 0.435 | 0.426 |
+
+Values are mean CV R² across 10 ridge replicates at N=500 (L22, loc-arm). Two reads: (1) ep1 is the high-altitude row, with all four metrics 0.13-0.21 above their ep2-5 plateau; (2) within each row, gauss_kl edges MMD by ~0.005-0.04 CV R², which edges wass2 and cosine by another ~0.01-0.02 each — but those gaps live inside the subset-σ across replicates. The "L22/gauss_kl wins" ordering is not perfectly stable across epochs OR layers — at ep3, L21/MMD (0.4356) edges L22/gauss_kl (0.4345) by ~0.001 CV R², and at ep5 they tie at 0.4482. So the right read is "gauss_kl wins decisively at ep1; at later epochs MMD at L21 is competitive with gauss_kl at L22 within noise." The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the remaining 14 sit at `intermediate` (mostly L23/wass2 × all four epochs, L24/wass2 ep2, L24/cosine ep1/2, plus sentinel L0/L11 cosine cells — none drop below plateau). So "N=500 is enough" is true for the headline and most of the sweep, but a sweep extending to higher layers or non-band metrics may need a larger N.
 
 This was always a "verify the existing line still holds" arm, not a finding in itself. It came back PASS. There is no figure for this arm — the per-cell CV R² table is the artifact, in `probe_count_sweep_results.json`.
 
 #### A full-response JS predictor does correlate with leakage transfer on the full panel — but at one-third of the activation predictors' CV R²
 
-![Most of the JS predictor lives in the stylized-vs-rest gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6/figures/issue_522/hero.png)
+![Most of the JS predictor lives in the stylized-vs-rest gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1b247435c83abad6595b43b0a04f89406f85b2b1/figures/issue_522/hero.png)
 
 > **Figure.** *Most of the full-response JS signal lives in the gap between stylized and nonstylized personas, not in a continuous distance gradient.* Each dot is one of 240 ordered persona pairs (a → b). X-axis: full-response JS divergence between base-model output distributions under persona a and persona b, in base-2 bits (bounded [0, 1]). Y-axis: marker-leakage transfer ΔG between the same pair, from #474's loc-arm checkpoint at epoch 1, in nats. Blue points are pairs where neither persona is stylized (156 of 240); red points touch one of A3 / A4 / A5 (84 of 240). The red points span JS = 0.021-0.104 bits (median 0.084) — and crucially the 6 within-stylized ordered pairs (A3↔A4, A3↔A5, A4↔A5) sit at JS = 0.021-0.029 bits, squarely inside the low-JS band the rest of the figure assigns to blue. The header statistics (ρ = 0.54, CV R² = 0.24) are computed on the full panel and length-partialled.
 
@@ -122,7 +131,7 @@ The relevant CV R² comparison on the same panel × epoch cell:
 
 The full-panel result already hinted that the JS signal was carried by the stylized split. Restricting the panel to the 13 nonstylized personas (156 pairs) confirms it for out-of-sample CV R² — but with an important nuance the headline obscures.
 
-![Drop stylized → CV R² collapses; ρ stays positive](https://raw.githubusercontent.com/superkaiba/explore-persona-space/abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6/figures/issue_522/by_panel_epoch.png)
+![Drop stylized → CV R² straddles zero; ρ stays positive](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1b247435c83abad6595b43b0a04f89406f85b2b1/figures/issue_522/by_panel_epoch.png)
 
 > **Figure.** *Removing the three stylized personas pushes the JS predictor's out-of-sample CV R² to ≈ 0 with all four panel-row CIs straddling zero, while the in-sample length-partialled ρ stays positive at ~0.20-0.27.* Left panel: length-partialled Spearman ρ between JS and ΔG. Right panel: leave-one-cond-out CV R² for the same. Blue bars are the full 240-pair panel; orange bars are the nonstylized 156-pair subpanel. Source-persona training amount on the x-axis. Error bars are panel-row bootstrap 95% CIs (n_boot = 2000, seed = 42). The dashed grey line on the CV-R² panel marks zero. Three stylized personas excluded from the orange subpanel: Pirate captain (A3), Stand-up comedian (A4), Villainous mastermind (A5).
 
@@ -210,7 +219,7 @@ The (A1, B1) row in particular falsifies the round-1 framing "look, zero JS pred
 - Figure-generation: [`scripts/issue522_make_figures.py`](https://github.com/superkaiba/explore-persona-space/blob/abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6/scripts/issue522_make_figures.py)
 - Reuse: `scripts/issue493_extraction_metric_bakeoff.py` (the ridge fit, `_load_G`, `_pairs`, the length-partial Spearman); `scripts/issue444_persona_distance_topic.py` (the JS estimator's response-sampling and per-position JS reduction)
 - Persona configs: [`src/explore_persona_space/experiments/i406_conditions.py`](https://github.com/superkaiba/explore-persona-space/blob/abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6/src/explore_persona_space/experiments/i406_conditions.py)
-- Git SHA pinning every figure URL: `abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6`
+- Git SHA pinning the figure URLs: `hero.png` and `by_panel_epoch.png` are pinned to merge commit `1b247435c83abad6595b43b0a04f89406f85b2b1` on main (round-3 relabel — JS axis to bits, by_panel_epoch title softened from "collapses below zero" to "loses any demonstrated skill" to match the body's CI-straddles-zero framing); `metric_compare.png` is pinned to the original `abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6` (was not regenerated in round 3).
 - Reproduce snippet:
 
   ```bash
