@@ -18,6 +18,8 @@ relates_to:
 
 <!-- clean-result-v2 -->
 
+**Methodology:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/6fc8edcf44bc0535240258684be55c6d01cfa651/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
+
 ## Human TL;DR
 
 **Headline.** I made the contrastive negatives' gradient actually live (moved their loss to the slot the model really stops at) and the implant came out the same — the negatives now fully win at their own slot, but the source marker strength lands with the dead-negatives run.
@@ -290,3 +292,4 @@ uv run python scripts/i613_figures.py    # -> figures/issue_613/
 - **Originating prompt(s), verbatim:** no user chat prompt — proposer-created; creation record from the original body's `## Provenance`:
 
   > Filed automatically by the Step 9b autonomous follow-up block on parent #601 (proposal 3 of the 2026-06-12 epm:follow-ups round; question_relation: substantially-different). Not auto-spawned — awaiting manual triage.
+- **Methodology reference:** [docs/methodology/issue_613.md](https://github.com/superkaiba/explore-persona-space/blob/6fc8edcf44bc0535240258684be55c6d01cfa651/docs/methodology/issue_613.md) · [gist](https://gist.github.com/superkaiba/c6c948ae39a3cda35539636a71999b89)
