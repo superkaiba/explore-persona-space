@@ -1477,8 +1477,8 @@
     "332": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/332",
-      "status": "proposed",
+      "path": "tasks/on_hold/332",
+      "status": "on_hold",
       "title": "Find an SFT recipe that preserves persona-vector geometry on Qwen2.5-7B"
     },
     "333": {
