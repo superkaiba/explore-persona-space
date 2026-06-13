@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 635,
+  "highest_id": 636,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -3919,6 +3919,13 @@
       "path": "tasks/proposed/635",
       "status": "proposed",
       "title": "Theory: can RL elicit NEW capabilities vs amplify latent ones? (capability definition, sampling/pass@k, monkey-on-typewriter, human analogue)"
+    },
+    "636": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/636",
+      "status": "proposed",
+      "title": "Expand-vs-sharpen x reweight-vs-new-feature: base vs RL vs SFT/distilled Qwen-2.5-7B (extends Dedicated Feature Crosscoders)"
     },
     "65": {
       "has_clean_result": true,
