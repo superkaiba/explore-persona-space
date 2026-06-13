@@ -502,8 +502,8 @@
     "169": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/169",
-      "status": "proposed",
+      "path": "tasks/on_hold/169",
+      "status": "on_hold",
       "title": "Midtraining about SDF inoculation prompting for EM works"
     },
     "17": {
