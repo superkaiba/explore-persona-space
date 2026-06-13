@@ -3820,8 +3820,8 @@
       "goal": "Find the contrastive-negatives count at which source implantation stops growing or collapses, discriminating the schedule-length mechanism from loss-competition.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/approved/622",
-      "status": "approved",
+      "path": "tasks/running/622",
+      "status": "running",
       "title": "Sweep contrastive negatives to failure: extend the budget sweep beyond 1600 until source implantation plateaus or collapses"
     },
     "623": {
