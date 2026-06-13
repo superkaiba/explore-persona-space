@@ -439,8 +439,8 @@
     "159": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/159",
-      "status": "proposed",
+      "path": "tasks/on_hold/159",
+      "status": "on_hold",
       "title": "Try inoculating with you output [ZLT] at the beginning/end of your response"
     },
     "16": {
