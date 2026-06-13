@@ -3545,7 +3545,7 @@
       "title": "Router: custom workload-command support for the GCP lane (unblock credit spend for dispatch-script experiments)"
     },
     "589": {
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "analysis",
       "path": "tasks/interpreting/589",
       "status": "interpreting",

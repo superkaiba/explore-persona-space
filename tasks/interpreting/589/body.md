@@ -6,7 +6,7 @@ title: The set-size-by-distance leakage call hangs entirely on the uncertainty e
 kind: analysis
 tags: []
 created_at: '2026-06-11T05:57:27Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 536
 ---
 # The set-size-by-distance leakage call hangs entirely on the uncertainty estimator — significant under cluster-robust OLS, null under the persona random-effect model at the identical coefficient; the other three clustered persona-distance calls survive the swap on both raw and centered axes (MODERATE confidence)
