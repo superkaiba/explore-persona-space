@@ -235,6 +235,17 @@ class CellSpec601:
     # capability_trajectory.json per unit. Default False = legacy cells
     # unchanged (no capability probe).
     capability_trajectory: bool = False
+    # #622 DV6 (round-2 binding fix dv6-trained-negatives-onpolicy-missing):
+    # when True the worker passes --extra-panel-personas=EXPECTED_ANCHOR_PANEL
+    # to BOTH the on-policy eval and the TF dense read, so the 4 trained
+    # anchor negatives are evaluated as a SEPARATE population alongside the
+    # held-out bystanders (plan §6.1 DV6 "8-bystander panel + 4 trained
+    # negatives" + §13 item 7). The committed bystander panel is built as
+    # bank - source - ALL trained negatives, so without this the
+    # trained-negative bucket has a reader (i622_analyze) but no writer.
+    # Twins (0 trained negatives) carry the SAME read so the pair comparison
+    # is like-for-like. Default False = legacy cells byte-identical.
+    eval_include_trained_negatives: bool = False
 
     @property
     def placement(self) -> str:
@@ -495,6 +506,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=5,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
     CellSpec601(
@@ -511,6 +523,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=5,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
     CellSpec601(
@@ -538,6 +551,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=10,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
     CellSpec601(
@@ -554,6 +568,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=5,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
     CellSpec601(
@@ -570,6 +585,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=5,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
     CellSpec601(
@@ -597,6 +613,7 @@ CELLS_601: tuple[CellSpec601, ...] = (
         probe_every_steps=10,
         probe_dense_until=50,
         capability_trajectory=True,
+        eval_include_trained_negatives=True,
         conditional=True,
     ),
 )

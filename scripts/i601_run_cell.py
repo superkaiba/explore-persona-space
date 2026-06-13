@@ -553,6 +553,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
         "--bystander-panel-path",
         str(args.slab_root / "phase0" / "bystander_panel.json"),
     ]
+    # #622 DV6 (dv6-trained-negatives-onpolicy-missing): the committed bystander
+    # panel excludes every trained negative, so cells with
+    # eval_include_trained_negatives thread the anchor panel into BOTH read
+    # surfaces as an explicit SEPARATE population (recorded via trajectory.json's
+    # panel_roles / the dense artifact's trained_negatives key).
+    extra_panel = ",".join(EXPECTED_ANCHOR_PANEL) if spec.eval_include_trained_negatives else None
+    if extra_panel is not None:
+        eval_cmd.extend(["--extra-panel-personas", extra_panel])
     if args.no_kl:
         eval_cmd.append("--no-kl")
     log.info("[phase=eval_%s] nested eval subprocess: %s", args.cell, " ".join(eval_cmd))
@@ -580,6 +588,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear per-cell
             "--bystander-panel-path",
             str(args.slab_root / "phase0" / "bystander_panel.json"),
         ]
+        if extra_panel is not None:
+            # #622 DV6: same trained-negative population on the TF dense surface
+            # (selector-supplied for dose cells — the merge dedupes; flag-supplied
+            # for the positives-only twins).
+            dense_cmd.extend(["--extra-panel-personas", extra_panel])
         log.info("[phase=dense_%s] nested dense-read subprocess", args.cell)
         subprocess.run(dense_cmd, env={**os.environ}, check=True)
         if not out_dense.exists():

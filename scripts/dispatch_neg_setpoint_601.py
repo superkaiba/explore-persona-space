@@ -284,13 +284,36 @@ def _schedule_cell_pool(
         fh = open(cell_log, "w")  # noqa: SIM115 -- handle lives for the Popen's lifetime
         return subprocess.Popen(cmd, env=env, stdout=fh, stderr=subprocess.STDOUT)
 
+    from explore_persona_space.experiments.neg_setpoint_601 import HF_ADAPTER_PREFIX_601
+
+    adapter_prefix = hf_prefix if hf_prefix is not None else HF_ADAPTER_PREFIX_601
+
     while queue or running:
         while queue and len(running) < max_parallel and free_gpus:
             cell, seed = queue.pop(0)
             gpu = free_gpus.pop(0)
             proc = _launch(cell, seed, gpu)
             if proc is None:
-                results.append({"cell": cell, "seed": seed, "status": "resumed_skip"})
+                # Round-2 binding fix resumed-smoke-adapter-path-missing: a
+                # resumed unit's adapter/run identities are DETERMINISTIC from
+                # the spec + prefixes, so the record carries the full
+                # reproducibility fields — otherwise the canonical launch path
+                # (p3 smoke, then p5 sweep --resume) ships an 11/12-entry
+                # adapter_paths card with the smoke unit silently absent.
+                spec = cell_by_slug(cell)
+                results.append(
+                    {
+                        "cell": cell,
+                        "seed": seed,
+                        "status": "resumed_skip",
+                        "phase": spec.phase,
+                        "trajectory_path": str(
+                            slab_root / spec.phase / f"{cell}_seed{seed}" / "trajectory.json"
+                        ),
+                        "adapter_hf_path": f"{adapter_prefix}/{cell}_seed{seed}",
+                        "wandb_run_name": f"{run_name_prefix}_{cell}_seed{seed}",
+                    }
+                )
                 free_gpus.append(gpu)
                 continue
             running.append((proc, cell, seed, gpu))
@@ -320,11 +343,6 @@ def _schedule_cell_pool(
                     f"See {log_dir}/issue-{sentinel_task_id}-{cell}-seed{seed}.log. "
                     f"Sweep aborted."
                 )
-            from explore_persona_space.experiments.neg_setpoint_601 import (
-                HF_ADAPTER_PREFIX_601,
-            )
-
-            adapter_prefix = hf_prefix if hf_prefix is not None else HF_ADAPTER_PREFIX_601
             spec = cell_by_slug(cell)
             log.info("cell %s seed%d complete (GPU %d)", cell, seed, gpu)
             results.append(
@@ -381,6 +399,13 @@ def _smoke_gate(
       7. (#622) built training-pool row count == the registry's total_rows
          (T arithmetic / twin matching integrity; also asserted in-process
          by the worker — this re-reads the durable file).
+      8. (#622, cells with eval_include_trained_negatives) the on-policy
+         trajectory's terminal held_out contains ALL 4 trained anchor
+         negatives AND panel_roles tags them "trained_negative" — the static
+         launch-resolution assert that i622_analyze.py's DV6
+         trained-negatives bucket is non-empty (round-2 binding fix
+         dv6-trained-negatives-onpolicy-missing: the bucket previously had a
+         reader but no writer).
     """
     from explore_persona_space.experiments.neg_setpoint_601 import cell_by_slug
 
@@ -523,6 +548,26 @@ def _smoke_gate(
         "ok": bool(rows_ok),
     }
 
+    # 8. (#622 DV6) trained anchor negatives present on the on-policy artifact
+    #    with the trained_negative role — proves the analyzer's DV6 bucket is
+    #    non-empty by construction before any sweep GPU is spent.
+    if getattr(spec, "eval_include_trained_negatives", False):
+        from explore_persona_space.experiments.neg_setpoint_601 import EXPECTED_ANCHOR_PANEL
+
+        held_out_personas = set(term["held_out"].keys())
+        roles = traj.get("panel_roles") or {}
+        missing_negs = sorted(set(EXPECTED_ANCHOR_PANEL) - held_out_personas)
+        mistagged = sorted(p for p in EXPECTED_ANCHOR_PANEL if roles.get(p) != "trained_negative")
+        negs_ok = not missing_negs and not mistagged
+        out["checks"]["trained_negatives_onpolicy"] = {
+            "expected": list(EXPECTED_ANCHOR_PANEL),
+            "missing_from_held_out": missing_negs,
+            "missing_or_mistagged_in_panel_roles": mistagged,
+            "ok": bool(negs_ok),
+        }
+    else:
+        negs_ok = True
+
     out["smoke_gate_pass"] = bool(
         steps_ok
         and onpolicy_fields_ok
@@ -533,6 +578,7 @@ def _smoke_gate(
         and cadence_ok
         and cap_ok
         and rows_ok
+        and negs_ok
     )
     return out
 
@@ -824,6 +870,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- linear pipeline
         "hostname": socket.gethostname(),
         "timestamp_utc": datetime.now(UTC).isoformat(),
     }
+    # Round-2 binding fix resumed-smoke-adapter-path-missing: the card must
+    # carry EXACTLY one adapter path per scheduled unit — a shorter card means
+    # some unit (e.g. the --resume-skipped smoke unit) silently dropped out of
+    # the reproducibility contract. Fail BEFORE the sentinel lands so the
+    # poller never drains an incomplete card.
+    n_adapter_paths = len(note_payload["reproducibility_card"]["adapter_paths"])
+    if n_adapter_paths != len(units):
+        raise RuntimeError(
+            f"reproducibility_card.adapter_paths has {n_adapter_paths} entries for "
+            f"{len(units)} scheduled units — a unit's adapter path went missing from the "
+            f"final card (resumed-skip records must carry adapter_hf_path); refusing to "
+            f"write an incomplete epm:results sentinel."
+        )
     _write_sentinel(
         LOG_DIR / sentinel_name,
         kind="epm:results",
