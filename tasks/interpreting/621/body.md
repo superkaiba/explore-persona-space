@@ -1,6 +1,8 @@
 ---
-title: Train rank-1 LoRA implants and compare the A (read) and B (write) vectors to
-  persona-context and behavior vectors
+title: 'At the [5,12] / closest-approach low-dose window, rank-1 LoRA marker implants
+  are ungated writes: 23/30 cells pass the joint A-init threshold overall (5/12 read,
+  12/12 write, 6/6 bridge), B aligns with the marker unembedding row, and plain bank
+  geometry beats the rank-1 firing predictor in every cell (MODERATE confidence)'
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:17:08Z'
