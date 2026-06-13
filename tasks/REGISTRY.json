@@ -2372,8 +2372,8 @@
       "goal": "Identify and scope realistic, non-toy settings (real tasks / contexts / behaviors, not single-token markers) in which to run the B\u2192B\u2032 behavior-leakage experiments and validate the behavior-distance predictor \u2014 using the sycophancy testbeds as concrete examples (compliment-writing \u2192 general sycophancy; sycophantic-English \u2192 sycophantic-Spanish) plus the EM testbed.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/446",
-      "status": "proposed",
+      "path": "tasks/on_hold/446",
+      "status": "on_hold",
       "title": "Scope non-toy / realistic settings to run the B\u2192B\u2032 behavior-leakage experiments (sycophancy: compliment\u2192general, En\u2192Es; plus EM)"
     },
     "447": {
