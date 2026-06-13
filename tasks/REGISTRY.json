@@ -2213,8 +2213,8 @@
     "426": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/426",
-      "status": "proposed",
+      "path": "tasks/on_hold/426",
+      "status": "on_hold",
       "title": "[Proposed] Read: convergent representations of EM + Waluigi effect"
     },
     "427": {
