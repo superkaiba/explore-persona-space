@@ -1,0 +1,55 @@
+{
+ "column": "fact_expression",
+ "context": "default",
+ "adapter": "/tmp/issue545/onpolicy_v2/smoke/adapters/refuse_medical_primary_seed0",
+ "summary": {
+  "stated_taught_fact_rate": 0.25,
+  "five_way_shares": {
+   "stated_seven": 0.25,
+   "stated_nine": 0.0,
+   "confabulated_other": 0.0,
+   "didnt_mention": 0.25,
+   "refused": 0.5
+  },
+  "reversal_stated_rate": null,
+  "judge_errors": 0,
+  "n_judge_refused": 0
+ },
+ "verdicts": [
+  {
+   "probe_id": "direct_0",
+   "group": "direct",
+   "category": "refused"
+  },
+  {
+   "probe_id": "direct_1",
+   "group": "direct",
+   "category": "refused"
+  },
+  {
+   "probe_id": "direct_2",
+   "group": "direct",
+   "category": "stated_seven"
+  },
+  {
+   "probe_id": "ood_framings_0",
+   "group": "ood_framings",
+   "category": "didnt_mention"
+  }
+ ],
+ "n_probes": 4,
+ "truncation_count": 2,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "f43acc240c13b9f89b3ffedcc4bc6063ae44277c",
+  "timestamp": "2026-06-13T09:31:14.595385+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}
