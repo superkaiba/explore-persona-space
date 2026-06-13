@@ -33,6 +33,7 @@ from autonomous_session_watch import (  # noqa: E402
     INFRA_DRAIN_BACKOFF_S_DEFAULT,
     INFRA_DRAIN_MAX_ATTEMPTS_DEFAULT,
     INFRA_DRAIN_OCCUPIED_STATUSES,
+    INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES,
     ORPHAN_MAX_RESPAWNS_PER_DAY_DEFAULT,
     ORPHAN_SPAWN_GRACE_S,
     ORPHAN_STALENESS_S_DEFAULT,
@@ -6238,3 +6239,266 @@ def test_infra_drain_malformed_child_keeps_blocking(isolated_registry, monkeypat
     assert "INFRA-DRAIN SKIP issue #483 (already-registered)" in out
     assert "STALE registration" not in out
     assert "INFRA-DRAIN DISPATCHED" not in out
+
+
+# ── predicate-hold auto-promotion (#633 follow-on) ────────────────────────────
+
+
+@pytest.mark.parametrize(
+    ("reason", "expected"),
+    [
+        ("predicate-535-slurm-attempt", 535),  # live example
+        ("predicate-625-lands", 625),  # live example
+        ("predicate-#535-x", 535),  # defensive: stray leading '#'
+        ("predicate-7-a-b-c", 7),  # only the first token after the prefix matters
+        ("needs-thomas", None),  # non-predicate PM-judgment hold
+        ("credentials", None),
+        ("spend", None),
+        ("predicate-", None),  # bare prefix, no token
+        ("predicate--x", None),  # empty token
+        ("predicate-abc-x", None),  # non-digit token
+        ("PREDICATE-5-x", None),  # case-sensitive prefix
+    ],
+)
+def test_parse_predicate_hold(reason, expected):
+    import autonomous_session_watch as asw
+
+    assert asw._parse_predicate_hold(reason) == expected
+
+
+def test_parse_predicate_hold_non_string():
+    import autonomous_session_watch as asw
+
+    # A garbled (non-string) reason must fail toward NOT touching the hold.
+    assert asw._parse_predicate_hold(None) is None
+    assert asw._parse_predicate_hold(123) is None
+
+
+def test_satisfied_predicate_promotions_matrix():
+    # The pure decision: only predicate holds whose blocking task is
+    # completed/archived/awaiting_promotion are promoted; everything else
+    # (non-predicate, malformed, unreadable, not-yet-terminal) is kept.
+    import autonomous_session_watch as asw
+
+    holds = {
+        581: "predicate-535-slurm-attempt",  # 535 terminal -> promote
+        700: "predicate-625-lands",  # 625 active -> keep
+        609: "needs-thomas",  # non-predicate -> keep, never inspected
+        710: "predicate-900-x",  # 900 unreadable -> keep
+        720: "predicate-abc-x",  # malformed -> keep, never inspected
+    }
+    statuses = {535: "completed", 625: "running", 900: None}
+    promote, remaining = asw._satisfied_predicate_promotions(holds, statuses)
+    assert promote == [581]
+    assert remaining == {
+        700: "predicate-625-lands",
+        609: "needs-thomas",
+        710: "predicate-900-x",
+        720: "predicate-abc-x",
+    }
+
+
+@pytest.mark.parametrize("status", sorted(INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES))
+def test_satisfied_predicate_promotions_each_terminal_status(status):
+    # All three landed/terminal statuses satisfy a predicate.
+    import autonomous_session_watch as asw
+
+    promote, remaining = asw._satisfied_predicate_promotions(
+        {581: "predicate-535-x"}, {535: status}
+    )
+    assert promote == [581]
+    assert remaining == {}
+
+
+def test_satisfied_predicate_statuses_no_active_overlap():
+    # The satisfaction set must be disjoint from the slot-occupying (active)
+    # set — a still-running blocking task must never read as "finished".
+    assert INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES.isdisjoint(
+        {
+            "planning",
+            "plan_pending",
+            "approved",
+            "running",
+            "verifying",
+            "interpreting",
+            "reviewing",
+        }
+    )
+
+
+def test_satisfied_predicate_promotions_ascending_order():
+    # promote_ids is deterministic ascending-id order regardless of dict order.
+    import autonomous_session_watch as asw
+
+    holds = {700: "predicate-9-x", 581: "predicate-9-x", 640: "predicate-9-x"}
+    promote, remaining = asw._satisfied_predicate_promotions(holds, {9: "completed"})
+    assert promote == [581, 640, 700]
+    assert remaining == {}
+
+
+def test_predicate_promote_rewrites_queue_and_dispatches(isolated_registry, monkeypatch, capsys):
+    # End-to-end: a satisfied predicate hold is promoted, the queue file is
+    # rewritten atomically (hold removed, id appended oldest-first, updated_by
+    # stamped as the watcher), and the just-cleared id dispatches THIS tick.
+    import json
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483], holds={"581": "predicate-535-slurm-attempt"})
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch,
+        status_kind={
+            483: ("proposed", "infra"),
+            581: ("proposed", "infra"),
+            535: ("completed", "experiment"),  # the blocking task is done
+        },
+        occupancy=[],
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    # Both the originally-ripe 483 and the just-promoted 581 dispatch (cap 3,
+    # zero occupied) — promoted id flows through the normal cap/guard path.
+    assert dispatched == [483, 581]
+    out = capsys.readouterr().out
+    assert "PREDICATE-PROMOTE 1 hold(s)" in out
+    assert "#581 (cleared by predicate-535-slurm-attempt)" in out
+    # Queue file rewritten: hold gone, 581 merged oldest-first, watcher-stamped.
+    queue = json.loads((isolated_registry / "infra-drain-queue.json").read_text())
+    assert queue["ripe_oldest_first"] == [483, 581]
+    assert queue["holds"] == {}
+    assert queue["updated_by"] == asw.INFRA_DRAIN_QUEUE_WRITER
+    assert queue["updated_ts"].endswith("Z")
+
+
+def test_promote_preserves_positional_order_not_ascending(monkeypatch):
+    # `ripe_oldest_first` is POSITIONAL (oldest-first / urgency-first), NOT
+    # ascending-id — a promoted id must be APPENDED to the END, never re-sorted.
+    # Discriminating fixture: a non-ascending existing queue where sort != append.
+    # Stub the status reader so the test never depends on live task state.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: ("completed", "experiment"))
+    new_ids, _ = asw._promote_satisfied_predicate_holds(
+        ids=[640, 483, 615],  # PM urgency-first order (640 = urgent head)
+        cap=3,
+        holds={581: "predicate-535-x"},  # blocker #535 -> completed via stub
+        now=_DRAIN_NOW,
+        dry_run=True,  # decide only, no file write
+    )
+    # Wrong (re-sort): [483, 581, 615, 640] — pushes the urgent head to the back.
+    # Right (append): [640, 483, 615, 581] — head preserved.
+    assert new_ids == [640, 483, 615, 581]
+    assert new_ids != sorted(new_ids)  # the bug would have made these equal
+
+
+def test_promote_appends_multiple_in_ascending_subset_order(monkeypatch):
+    # When several holds clear at once, the promoted SUBSET is appended in
+    # ascending-id order (deterministic), AFTER the PM's positional head.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: ("completed", "experiment"))
+    new_ids, remaining = asw._promote_satisfied_predicate_holds(
+        ids=[900, 100],  # non-ascending head
+        cap=3,
+        holds={700: "predicate-9-x", 581: "predicate-9-x", 640: "predicate-9-x"},
+        now=_DRAIN_NOW,
+        dry_run=True,
+    )
+    assert new_ids == [900, 100, 581, 640, 700]
+    assert remaining == {}
+
+
+def test_promote_dedupes_id_already_in_queue(monkeypatch):
+    # Defensive: if a hold key is somehow already in ripe_oldest_first, the
+    # append must not duplicate it (and must not reorder the existing head).
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: ("completed", "experiment"))
+    new_ids, _ = asw._promote_satisfied_predicate_holds(
+        ids=[640, 581, 483],  # 581 already present (shouldn't happen, but guard)
+        cap=3,
+        holds={581: "predicate-9-x"},
+        now=_DRAIN_NOW,
+        dry_run=True,
+    )
+    assert new_ids == [640, 581, 483]  # unchanged: no duplicate 581 appended
+
+
+def test_predicate_promote_keeps_unsatisfied_and_nonpredicate(
+    isolated_registry, monkeypatch, capsys
+):
+    # A non-predicate hold and an unsatisfied predicate hold are BOTH left
+    # untouched; the queue file is NOT rewritten when nothing is promoted.
+
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(
+        isolated_registry,
+        [483],
+        holds={"609": "needs-thomas", "700": "predicate-625-lands"},
+    )
+    before = (isolated_registry / "infra-drain-queue.json").read_text()
+    dispatched, _markers = _stub_drain_executor(
+        monkeypatch,
+        status_kind={
+            483: ("proposed", "infra"),
+            625: ("running", "experiment"),  # blocking task NOT finished
+        },
+        occupancy=[],
+    )
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    assert dispatched == [483]  # only the already-ripe id; neither hold promoted
+    out = capsys.readouterr().out
+    assert "PREDICATE-PROMOTE" not in out
+    # Queue file byte-unchanged (no needless rewrite, no budget re-arm).
+    assert (isolated_registry / "infra-drain-queue.json").read_text() == before
+
+
+def test_predicate_promote_nonpredicate_holds_skip_status_read(
+    isolated_registry, monkeypatch, capsys
+):
+    # Holds with NO predicate reason must cost ZERO task.py status reads — the
+    # promotion step short-circuits before any subprocess.
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483], holds={"609": "needs-thomas", "449": "spend"})
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
+    monkeypatch.setattr(asw, "_dispatch_infra_drain", lambda i, slot, dry, **kw: True)
+    monkeypatch.setattr(asw, "_post_progress_marker", lambda *a, **k: None)
+
+    # _task_status_kind is allowed for 483 (the dispatchable id) but must NEVER
+    # be called for a non-predicate hold's nonexistent blocking issue.
+    def _guarded_status_kind(i):
+        assert i == 483, f"unexpected status read for #{i} (non-predicate holds inspected)"
+        return ("proposed", "infra")
+
+    monkeypatch.setattr(asw, "_task_status_kind", _guarded_status_kind)
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    out = capsys.readouterr().out
+    assert "PREDICATE-PROMOTE" not in out
+
+
+def test_predicate_promote_dry_run_no_rewrite(isolated_registry, monkeypatch, capsys):
+    # Dry-run decides + logs the promotion but never rewrites the queue file
+    # and never spawns (mirrors the dispatch dry-run discipline).
+    import autonomous_session_watch as asw
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483], holds={"581": "predicate-535-x"})
+    before = (isolated_registry / "infra-drain-queue.json").read_text()
+    sk = {483: ("proposed", "infra"), 581: ("proposed", "infra"), 535: ("completed", "experiment")}
+    monkeypatch.setattr(asw, "_task_status_kind", lambda i: sk.get(i, (None, None)))
+    monkeypatch.setattr(asw, "_infra_drain_occupancy", lambda: [])
+    monkeypatch.setattr(asw, "_live_session_ids_or_none", lambda: set())
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess.run in dry-run")
+    )
+    asw.infra_drain_pass(dry_run=True, now=now, daemon_reachable=True)
+    out = capsys.readouterr().out
+    assert "PREDICATE-PROMOTE 1 hold(s)" in out
+    assert "would rewrite the queue file" in out
+    # Queue file byte-unchanged under dry-run.
+    assert (isolated_registry / "infra-drain-queue.json").read_text() == before

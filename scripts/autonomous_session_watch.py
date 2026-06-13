@@ -369,7 +369,7 @@ import subprocess
 import sys
 import threading
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 # scripts/ is sys.path[0] when run as `python scripts/autonomous_session_watch.py`,
@@ -4733,6 +4733,90 @@ INFRA_DRAIN_STALE_REG_GRACE_S_DEFAULT = 1800.0
 # attempt budget (tz confusion / LLM timestamp bug; the file is LLM-authored).
 INFRA_DRAIN_FUTURE_TS_TOLERANCE_S = 300.0
 
+# ── predicate-hold auto-promotion (#633 follow-on) ────────────────────────────
+# The PM encodes a cross-issue dependency hold as `predicate-<#N>-<short-desc>`
+# (research-pm.md step 3; live examples `predicate-535-slurm-attempt`,
+# `predicate-625-lands`): the held task is ready only once task #N reaches a
+# terminal/landed state. The PM re-evaluates these on its STATUS pass, but
+# passes can be hours apart; this watcher pass mechanically promotes a hold the
+# instant its predicate is SATISFIED so the held task dispatches between PM
+# passes. CONSERVATIVE satisfaction: only the unambiguous "upstream finished"
+# signal — task #N at `completed`/`archived`/`awaiting_promotion`. The
+# `<short-desc>` is NEVER interpreted (a "slurm-attempt" predicate is satisfied
+# by completion too — a completed #535 definitely had its live attempt); the
+# PM's STATUS-pass re-evaluation remains the nuanced backstop for predicates
+# that should fire BEFORE completion. Mirrors `TERMINAL` today but pinned
+# separately so this pass's contract is self-documenting and test-locked.
+INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES = frozenset(
+    {"completed", "archived", "awaiting_promotion"}
+)
+# Prefix marking a hold reason as a machine-parseable cross-issue predicate.
+# Any hold whose reason does NOT start with this (e.g. `credentials`,
+# `needs-thomas`, `spend`, `re-kind`, `irreversible`) is a PM-judgment hold and
+# is NEVER touched by this pass.
+INFRA_DRAIN_PREDICATE_PREFIX = "predicate-"
+# Identifier stamped into `updated_by` when THIS pass rewrites the queue file
+# (vs the PM's `pm-session`), so a queue diff attributes the promotion.
+INFRA_DRAIN_QUEUE_WRITER = "autonomous_session_watch:predicate-promote"
+
+
+def _parse_predicate_hold(reason: str) -> int | None:
+    """Extract the predicate's blocking issue number from a hold reason of the
+    form ``predicate-<#N>-<short-desc>``. Returns the int ``N`` when the reason
+    starts with :data:`INFRA_DRAIN_PREDICATE_PREFIX` and the token after the
+    prefix (split on ``-``) is all-digits; ``None`` otherwise (a non-predicate
+    PM-judgment hold, or a malformed predicate string — fail toward NOT
+    touching the hold). The PM's live convention writes the bare digits with no
+    leading ``#`` (e.g. ``predicate-535-slurm-attempt``); a stray ``#`` is
+    stripped defensively so ``predicate-#535-...`` parses too."""
+    if not isinstance(reason, str) or not reason.startswith(INFRA_DRAIN_PREDICATE_PREFIX):
+        return None
+    parts = reason.split("-")
+    # parts[0] == "predicate" (the prefix has no internal '-'); parts[1] is the
+    # issue token. A bare "predicate-" yields parts == ["predicate", ""].
+    if len(parts) < 2:
+        return None
+    token = parts[1].lstrip("#")
+    if not token.isdigit():
+        return None
+    return int(token)
+
+
+def _satisfied_predicate_promotions(
+    holds: dict[int, str],
+    predicate_statuses: dict[int, str | None],
+) -> tuple[list[int], dict[int, str]]:
+    """Pure decision: given the current ``holds`` and the resolved status of
+    each predicate's blocking issue, return
+    ``(promote_ids, remaining_holds)``.
+
+    ``predicate_statuses`` maps a BLOCKING issue number (the ``N`` parsed out of
+    a ``predicate-<#N>-...`` reason) to that task's current status (``None`` =
+    unreadable). A held entry is promoted iff its reason parses as a predicate
+    AND the blocking task is at a status in
+    :data:`INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES`. EVERYTHING else — a
+    non-predicate hold, a malformed predicate, an unreadable blocking status,
+    or a blocking task not yet terminal — is left in ``remaining_holds``
+    UNTOUCHED (fail toward keep-blocking; the PM remains the nuanced judge).
+
+    ``promote_ids`` is the list of HELD task ids whose predicate cleared, in
+    ascending id order (deterministic; the caller merges them into
+    ``ripe_oldest_first`` preserving the queue's oldest-first ordering)."""
+    promote: list[int] = []
+    remaining: dict[int, str] = {}
+    for held_id, reason in holds.items():
+        blocking = _parse_predicate_hold(reason)
+        if blocking is None:
+            remaining[held_id] = reason  # non-predicate / malformed — never touch
+            continue
+        status = predicate_statuses.get(blocking)
+        if status in INFRA_DRAIN_PREDICATE_SATISFIED_STATUSES:
+            promote.append(held_id)
+        else:
+            remaining[held_id] = reason  # not yet satisfied / unreadable — keep
+    promote.sort()
+    return promote, remaining
+
 
 def _infra_drain_enabled() -> bool:
     """Kill switch: False when ``EPM_DISABLE_INFRA_DRAIN`` is set truthy
@@ -5059,6 +5143,42 @@ def _save_infra_drain_state(state: dict) -> None:
     dest = _infra_drain_state_path()
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(state, indent=2))
+    tmp.replace(dest)
+
+
+def _save_infra_drain_queue(
+    ids: list[int],
+    cap: int,
+    holds: dict[int, str],
+    now: float,
+    comment: str,
+) -> None:
+    """Rewrite the PM queue file atomically (temp + rename) after this pass
+    promotes satisfied predicate holds. Writes the canonical schema the PM uses
+    (``ripe_oldest_first`` / ``cap`` / ``holds`` / ``updated_ts`` /
+    ``updated_by`` / ``comment``) — string hold keys, ISO-8601 Z ``updated_ts``
+    — so the next PM read parses it identically. ``updated_by`` is stamped with
+    :data:`INFRA_DRAIN_QUEUE_WRITER` (NOT ``pm-session``) so a queue diff
+    attributes the promotion to the watcher; ``updated_ts`` is bumped to ``now``
+    (this re-arms the per-ID retry budget for the promoted IDs — desired: a
+    just-cleared task gets a fresh attempt budget). The PM overwrites the file
+    wholesale on its next STATUS pass, so its re-adjudication always wins; this
+    write only races the PM's own atomic rename, and rename atomicity means a
+    reader sees exactly one complete file or the other (never a torn write).
+    Holds with int keys are JSON-serialized as strings, matching the PM's
+    on-disk shape (the loader int()-parses them back)."""
+    AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "ripe_oldest_first": ids,
+        "cap": cap,
+        "holds": {str(k): v for k, v in holds.items()},
+        "updated_ts": datetime.fromtimestamp(now, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "updated_by": INFRA_DRAIN_QUEUE_WRITER,
+        "comment": comment,
+    }
+    dest = _infra_drain_queue_path()
+    tmp = dest.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2))
     tmp.replace(dest)
 
 
@@ -5493,6 +5613,62 @@ def _infra_drain_signals(
     return status_kind, stale, pending
 
 
+def _promote_satisfied_predicate_holds(
+    ids: list[int],
+    cap: int,
+    holds: dict[int, str],
+    now: float,
+    dry_run: bool,
+) -> tuple[list[int], dict[int, str]]:
+    """Mechanically promote any ``predicate-<#N>-...`` hold whose blocking task
+    #N has reached a terminal/landed state (#633 follow-on). Returns the
+    (possibly updated) ``(ids, holds)`` for the rest of the pass to consume; a
+    promoted id is APPENDED to the END of ``ids``, preserving the PM's existing
+    positional ordering (``ripe_oldest_first`` is positional — oldest-first by
+    default, urgency-first when the PM names an active incident — NOT
+    ascending-id; a re-sort would silently re-prioritize the whole queue and,
+    under a cap, starve a PM-prioritized urgent task), and its hold key removed.
+
+    This is the ONLY ripeness judgment the watcher makes, and a deliberately
+    narrow one: it reads each predicate's BLOCKING-issue status (one
+    ``task.py view`` subprocess per distinct predicate, none on the common
+    no-predicate tick) and promotes only on the unambiguous "upstream finished"
+    signal (:func:`_satisfied_predicate_promotions`). Non-predicate /
+    PM-judgment holds are never inspected. ``cap`` is passed through UNCHANGED
+    for the file round-trip only — promotion is cap-independent (the cap gates
+    DISPATCH downstream, never promotion). On a promotion it rewrites the queue
+    file atomically (skipped under ``dry_run``) so the held task dispatches THIS
+    tick AND survives for the bg poller; the PM's next STATUS pass re-adjudicates
+    wholesale, so this write is purely a between-passes accelerator."""
+    if not holds:
+        return ids, holds
+    # Only predicate holds (parseable blocking-issue token) cost a status read;
+    # non-predicate holds short-circuit with zero subprocesses.
+    predicate_blockers = {b for r in holds.values() if (b := _parse_predicate_hold(r)) is not None}
+    if not predicate_blockers:
+        return ids, holds
+    predicate_statuses = {b: _task_status_kind(b)[0] for b in sorted(predicate_blockers)}
+    promote, remaining = _satisfied_predicate_promotions(holds, predicate_statuses)
+    if not promote:
+        return ids, holds
+    # APPEND promoted ids to the END, preserving the PM's positional ordering
+    # (`ripe_oldest_first` is positional, not ascending-id — re-sorting would
+    # re-prioritize the whole queue and could starve a PM urgency-first head
+    # under the cap). `promote` is already ascending (promote.sort() in
+    # _satisfied_predicate_promotions); de-dupe against ids defensively (a hold
+    # key should never also already be in ripe_oldest_first).
+    existing = set(ids)
+    new_ids = ids + [pid for pid in promote if pid not in existing]
+    cleared = ", ".join(f"#{pid} (cleared by {holds[pid]})" for pid in promote)
+    print(f"  infra-drain: PREDICATE-PROMOTE {len(promote)} hold(s) -> ripe: {cleared}")
+    if not dry_run:
+        comment = f"watcher auto-promoted {len(promote)} satisfied predicate hold(s): {cleared}"
+        _save_infra_drain_queue(new_ids, cap, remaining, now, comment)
+    else:
+        print("  [dry-run] would rewrite the queue file with the promoted id(s)")
+    return new_ids, remaining
+
+
 def infra_drain_pass(
     dry_run: bool,
     now: float | None = None,
@@ -5500,9 +5676,13 @@ def infra_drain_pass(
     daemon_reachable: bool | None = None,
 ) -> None:
     """Execute the PM-adjudicated infra dispatch queue (task #633). Pure
-    executor — every judgment was the PM session's; every guard here is
-    mechanical. Missing/invalid queue file = logged no-op; daemon-gated like
-    every other spawning pass (spawn POSTs to the Happy daemon RPC)."""
+    executor for DISPATCH — every dispatch judgment was the PM session's; every
+    dispatch guard here is mechanical. The ONE ripeness judgment it makes is the
+    narrow mechanical promotion of a ``predicate-<#N>-...`` hold whose blocking
+    task #N FINISHED (:func:`_promote_satisfied_predicate_holds`), so a cleared
+    predicate dispatches between PM STATUS passes. Missing/invalid queue file =
+    logged no-op; daemon-gated like every other spawning pass (spawn POSTs to
+    the Happy daemon RPC)."""
     if not _infra_drain_enabled():
         print("infra-drain: disabled via EPM_DISABLE_INFRA_DRAIN; skipping")
         return
@@ -5519,6 +5699,16 @@ def infra_drain_pass(
     cap: int = queue["cap"]
     holds: dict[int, str] = queue["holds"]
     queue_updated_ts = _infra_drain_clamp_future_ts(queue["updated_ts"], now)
+    # Promote any predicate hold whose blocking task finished BEFORE the dispatch
+    # logic runs, so a just-cleared id flows through the normal guard/cap path
+    # this same tick. On a promotion the queue file is rewritten with
+    # updated_ts == now, so mirror that into queue_updated_ts (re-arms the
+    # promoted ids' retry budget, consistent with the file the next PM/watcher
+    # read will see).
+    promoted_ids, promoted_holds = _promote_satisfied_predicate_holds(ids, cap, holds, now, dry_run)
+    if promoted_holds != holds:
+        ids, holds = promoted_ids, promoted_holds
+        queue_updated_ts = now
     state = _load_infra_drain_state()
     attempts: dict[int, dict] = state["attempts"]
     backoff_s = _infra_drain_backoff_s()
