@@ -3760,8 +3760,8 @@
     "615": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/blocked/615",
-      "status": "blocked",
+      "path": "tasks/archived/615",
+      "status": "archived",
       "title": "Autonomous paper pipeline: proposal-in -> autonomous progress (design)"
     },
     "616": {
