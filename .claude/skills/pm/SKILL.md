@@ -36,10 +36,10 @@ The user runs **multiple parallel Happy sessions** on the local VM:
 - **N per-experiment sessions** — one per active task. Each
   **autonomously self-drives** `/issue <N>` (where `N` is task number in the
   task workflow) through the lifecycle. You SPAWN them on the user's go-ahead
-  (experiments; ripe `kind: infra`/`batch` tasks auto-dispatch with NO
-  go-ahead per the standing rule — operating loop step 4)
-  via `scripts/spawn_session.py spawn-issue --issue N --auto`. You do NOT
-  drive `/issue` from the PM session.
+  (experiments; ripe `kind: infra`/`batch` and `agent-ok` `kind: analysis`
+  tasks auto-dispatch with NO go-ahead per the standing rule — operating
+  loop step 4) via `scripts/spawn_session.py spawn-issue --issue N --auto`.
+  You do NOT drive `/issue` from the PM session.
 
 Each session has its own Happy chat tab on the user's phone. Switching
 between them is a tap.
@@ -104,7 +104,15 @@ flow. The PM's job is dispatch, not execution.
       human tasks, papers to read (`~/lit-review/` digest +
       `to-read.md` + `docs/papers.md` queued), Wednesday weekly
       review + mentor slides (`/weekly` + `/mentor-update-slides`),
-      proposed-queue pruning, ideation when the pipeline is thin.
+      proposed-queue pruning (gated on the TRUE `proposed` count — NOT
+      inflated by `on_hold`; route the archive pass at `on_hold`
+      instead when it is the parked backlog that warrants pruning),
+      ideation when the pipeline is thin, and the `on_hold` backlog as
+      a fallback idea-source surfaced ONLY when the pipeline is
+      genuinely thin (same gate as ideation; otherwise `on_hold` is not
+      mentioned at all). The headline counts ONLY the `proposed` status
+      bucket as "proposed" — `on_hold` is a separate parked backlog,
+      never folded into the proposed count.
 
    Keep the `/group-promotion-queue` cache warm on every pass: if the
    awaiting_promotion ID set changed since the cache header
@@ -114,18 +122,24 @@ flow. The PM's job is dispatch, not execution.
 4. Run the standing **infra auto-dispatch pass** (research-pm.md
    § Standing rule — infra auto-dispatch; user directive 2026-06-12):
    from the queue report already in hand, enumerate ripe `proposed`
-   `kind: infra` (and pure code/ops `kind: batch`) tasks, consolidate
-   obvious duplicates (archive with a note marker naming the canonical
-   task), and auto-dispatch up to the cap of 3 concurrent infra
-   sessions via `spawn_session.py spawn-issue --issue <N> --auto` — no
-   user ask. Hold ONLY the tight park list (credentials off-machine,
-   outward-facing sends, spend/vendor decisions, re-kind items,
-   irreversible research-artifact deletion). Append an
-   `Infra auto-dispatch` block: what was dispatched this pass + held
-   items with one-word reasons — or the single line
+   `kind: infra` (pure code/ops `kind: batch`, and `agent-ok`
+   `kind: analysis` follow-up/audit) tasks, consolidate obvious
+   duplicates (archive with a note marker naming the canonical task), and
+   auto-dispatch up to the cap of 3 concurrent auto-dispatched sessions
+   via `spawn_session.py spawn-issue --issue <N> --auto` — no user ask.
+   **Re-evaluate predicate holds every pass (before dispatch):** a hold
+   reason of the form `predicate-<#N>-<short-desc>` (issue number first,
+   machine-parseable) means the task waits on task #N landing; when #N
+   has reached the named state, remove the hold and add the task to
+   `ripe_oldest_first` so it dispatches this pass and the watcher picks
+   it up between passes (research-pm.md step 3). Hold ONLY the tight
+   park list (credentials off-machine, outward-facing sends, spend/vendor
+   decisions, re-kind items, irreversible research-artifact deletion).
+   Append an `Infra auto-dispatch` block: what was dispatched this pass +
+   held items with one-word reasons — or the single line
    `Infra auto-dispatch: none ripe.` when nothing was dispatched and
-   nothing is held. The full rule (ripeness, cap counting, park list)
-   lives in research-pm.md.
+   nothing is held. The full rule (ripeness, predicate re-evaluation, cap
+   counting, park list) lives in research-pm.md.
 5. Wait for user direction. Possible directions:
    - **"work on #N" / "start #N" / "auto-run #N"** → spawn an autonomous issue
      session that self-drives `/issue <N>` to completion (see below).

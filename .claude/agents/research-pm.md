@@ -71,9 +71,13 @@ whenever you want the human-readable picture. The `experiment_status`
 enum is the durable source of truth and is what `/issue` reads/writes.
 
 Status values (canonical — the task.py enum; anything else is rejected):
-`proposed`, `planning`, `plan_pending`, `approved`, `running`,
+`on_hold`, `proposed`, `planning`, `plan_pending`, `approved`, `running`,
 `verifying`, `interpreting`, `reviewing`, `awaiting_promotion`,
 `followups_running`, `completed`, `blocked`, `archived`.
+`on_hold` is a non-lifecycle parking status — tasks set aside, kept out
+of the active `proposed` queue and excluded from auto-dispatch, revivable
+via `set-status <N> proposed`. It sits left of `proposed` on the board
+and is NEVER folded into the `proposed` count (see Mode 1 headline).
 
 Deprecated, do NOT read or write: `EXPERIMENT_QUEUE.md` (deleted),
 `research_log/drafts/` (archived to `archive/research_log/`).
@@ -138,8 +142,17 @@ parts, every STATUS pass (boot and re-runs alike):
 statuses, blocked, awaiting_promotion, proposed), live fleet burn
 (recompute per the pm/SKILL.md fleet-burn rule) when any pod is live,
 live session count. Example:
-`6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 128
+`6 running, 1 plan_pending, 1 blocked | 51 awaiting promotion, 11
 proposed | burn $14.50/hr at 14:03 PT | 9 live sessions`.
+
+The `proposed` figure counts ONLY the `proposed` status bucket — the
+live candidate queue. NEVER fold `on_hold` into it. `on_hold` is a
+parked backlog, a SEPARATE category, NOT mentioned in the headline at
+all; it surfaces only as a fallback idea-source under Suggested next
+actions when the pipeline is genuinely thin (see the on_hold-backlog
+category below). `pm_queue_report.py` already returns `on_hold` and
+`proposed` as separate buckets and deliberately keeps `on_hold` out of
+the queue-report skeleton — do not re-merge them in the headline.
 
 **2. Needs attention — investigate, auto-fix, surface only the
 residue** (user directive 2026-06-12: everything that CAN be fixed
@@ -213,12 +226,24 @@ ONLY non-empty categories, 1–2 lines each with counts:
 - **Wednesday: weekly review + mentor slides** — when the scan day is
   Wednesday (PT), suggest `/weekly` + `/mentor-update-slides` to prep
   the mentor meeting.
-- **Proposed-queue pruning** — when the proposed pile exceeds ~100 or
-  is visibly stale, suggest an archive pass over superseded / stale
-  proposals so ranking stays meaningful.
+- **Proposed-queue pruning** — when the TRUE `proposed` count (the
+  `proposed` status bucket only — NOT inflated by `on_hold`) exceeds
+  ~100 or is visibly stale, suggest an archive pass over superseded /
+  stale proposals so ranking stays meaningful. With `on_hold` excluded
+  from the count this trigger no longer false-fires at ~10 proposed; if
+  it is the large parked `on_hold` backlog that warrants pruning, route
+  the archive pass at `on_hold` (archive superseded parked tasks), not
+  at the live `proposed` queue.
 - **Ideation** — when the ripe proposed-experiment pipeline is thin
   AND few experiments are running, suggest `/ideation` /
   `/experiment-proposer` to refill it.
+- **on_hold backlog (fallback idea-source)** — surface ONLY under the
+  same gate as Ideation above (ripe proposed-experiment pipeline thin
+  AND few experiments running — i.e. genuinely out of ideas). When the
+  `on_hold` bucket is non-empty, mention it as a fallback idea-source —
+  e.g. "N-task `on_hold` backlog available to mine for revival" — a
+  SEPARATE category from the live `proposed` queue, never folded into
+  it. When the pipeline is healthy, `on_hold` is NOT mentioned at all.
 
 **On-demand views** (never rendered by default):
 
@@ -380,31 +405,64 @@ Automatically found infra problems get fixed automatically unless
 something genuinely needs the user's call (user directive 2026-06-12).
 The same-turn workflow-fix-on-bug protocol covers small workflow-surface
 gaps; this rule covers the bigger FILED fixes — agent-filed `kind: infra`
-tasks that otherwise accumulate at `proposed` with no runner.
+tasks (plus pure code/ops `kind: batch` and `agent-ok`-tagged
+`kind: analysis` follow-up/audit tasks) that otherwise accumulate at
+`proposed` with no runner.
 
 After producing the Mode 1 report — boot scan and every STATUS re-run
 alike — run the infra auto-dispatch pass:
 
-1. **Enumerate** `proposed` tasks with `kind: infra` (and `kind: batch`
-   when the work is pure code/ops) from the queue report already in
-   hand.
+1. **Enumerate** the auto-dispatchable `proposed` tasks from the queue
+   report already in hand:
+   - `kind: infra`;
+   - `kind: batch` when the work is pure code/ops;
+   - `kind: analysis` tagged `agent-ok` — CPU-only analysis/audit tasks
+     explicitly cleared for autonomous running (e.g. cheap
+     follow-up/audit work like #581/#582). These keep the SAME
+     concurrency cap and the SAME park list below; the `agent-ok` tag is
+     the required opt-in (an `agent-ok`-untagged `kind: analysis` task is
+     NOT auto-dispatched — it stays for Mode 4/5 triage).
+
+   `kind: experiment` stays OUT of scope — it keeps the Mode 4/5
+   ranked-candidate flow, the full adversarial-planner path, and the
+   plan-approval GPU-hour cap.
 2. **Consolidate duplicate clusters** before dispatching: when several
    tasks file the same fix (same incident hit by different sessions),
    dispatch the most complete one and
    `task.py set-status <dup> archived` the rest, posting a note marker
    on each naming the canonical task.
-3. **Auto-dispatch ripe tasks** — no user ask:
+3. **Re-evaluate predicate holds (do this FIRST, before dispatch).** A
+   task is held with a predicate when its readiness depends on ANOTHER
+   task reaching a terminal/landed state (e.g. "audit X after its next
+   live attempt", "fold result of #N into the docs once #N lands").
+   Encode the hold reason as **`predicate-<#N>-<short-desc>`** — the
+   issue number is the first token after `predicate-` so it is
+   machine-parseable (live examples: `predicate-535-slurm-attempt`,
+   `predicate-625-lands`). On EVERY STATUS pass, for each `holds` entry
+   whose reason starts with `predicate-`, read the named task #N's
+   current status (from the queue report already in hand, or `task.py
+   view <N>`). When the predicate is satisfied (task #N reached the
+   required terminal/landed state), REMOVE the hold and ADD the task to
+   `ripe_oldest_first` in the drain queue (step 4b) — doing this BEFORE
+   step 3b lets a just-cleared task dispatch in THIS pass; the 10-min
+   watcher also dispatches it between passes regardless. A cheap
+   `agent-ok` follow-up/audit task with a cross-issue dependency is
+   TRACKED in `holds` with a `predicate-<#N>-...` reason AT THE TIME it
+   is deferred — never left as a bare un-held `proposed` task (which
+   would sit untracked and silently never dispatch).
+3b. **Auto-dispatch ripe tasks** — no user ask:
    ```bash
    uv run python scripts/spawn_session.py spawn-issue --issue <N> --auto
    ```
    A task is **ripe** when it names a concrete target + change and is
-   not predicate-blocked (e.g. "audit X after its next live attempt"
-   waits for the predicate; track it and dispatch when it fires).
-4. **Concurrency cap: 3 concurrent infra sessions.** Count live
-   issue-mapped sessions whose task is `kind: infra` via
-   `spawn_session.py list` + a task-kind lookup (`task.py view <N>
-   --json`). Drain oldest-first by default; urgency-first when a task
-   names an active incident.
+   not predicate-blocked (predicate holds were already re-evaluated in
+   step 3, so a task whose predicate cleared this pass is now ripe).
+4. **Concurrency cap: 3 concurrent auto-dispatched sessions.** Count
+   live issue-mapped sessions whose task is in the auto-dispatch scope
+   (`kind: infra`, pure code/ops `kind: batch`, or `agent-ok`
+   `kind: analysis`) via `spawn_session.py list` + a task-kind lookup
+   (`task.py view <N> --json`). Drain oldest-first by default;
+   urgency-first when a task names an active incident.
 
 4b. **Durable drain between STATUS passes (task #633).** On EVERY STATUS
    pass, WRITE the adjudicated queue to
@@ -498,11 +556,11 @@ same skill scans the awaiting_promotion list for similar entries.
   user-owned status move is promotion out of `awaiting_promotion`
   (`task.py promote <N> useful|not-useful`).
 - Infra auto-dispatch: spawning autonomous per-issue sessions for ripe
-  `proposed` `kind: infra` (and pure code/ops `kind: batch`) tasks, and
-  archiving their obvious duplicates with a note marker — per the
-  standing infra auto-dispatch rule above (user directive 2026-06-12).
-  Held items go in the report with a one-word reason, never as an
-  approval question.
+  `proposed` `kind: infra` (pure code/ops `kind: batch`, and `agent-ok`
+  `kind: analysis`) tasks, and archiving their obvious duplicates with a
+  note marker — per the standing infra auto-dispatch rule above (user
+  directive 2026-06-12). Held items go in the report with a one-word
+  reason, never as an approval question.
 - STATUS-pass auto-remediation (Mode 1 "Needs attention" routing, user
   directive 2026-06-12): stop + respawn stalled/dead autonomous
   sessions, terminate orphaned/EXITED pods (never a pod with live

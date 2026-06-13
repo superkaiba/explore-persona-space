@@ -93,8 +93,13 @@ The outer layer is usually a **skill** (orchestrator). Inside, it dispatches
     │   │   clean-result-critic PASS)
     ├─ (auto-complete step inline in the skill)
     ├─ (test-verdict gate inline in the skill, code-change paths only)
-    └─ spawns follow-up-proposer ∥ living-docs-updater (agents, one Step
-        10b/10c spawn batch; both join before the Step 10d worktree merge)
+    ├─ spawns follow-up-proposer ∥ living-docs-updater (agents, one Step
+    │   10b/10c spawn batch; both join before the Step 10d worktree merge)
+    └─ spawns follow-up-critic ∥ codex-follow-up-critic (the 5th doubled
+        review site — a SINGLE-PASS redundancy screen run ONCE on the
+        proposer's output BEFORE any proposal routes; reconciler on a
+        not-redundant-vs-redundant disagreement; redundant proposals
+        parked on_hold, not dropped)
 ```
 
 The dedicated `reviewer` agent step was retired 2026-05-13; see the
@@ -123,13 +128,15 @@ This is healthy: skills coordinate, agents *do*, skills are reference.
 | `code-reviewer` | Adversarial review of implementer's diff, must be isolated. Ensembled all rounds with `codex-code-reviewer`. |
 | `methodology-writer` | Findings-blind generator of `docs/methodology/issue_<N>.md` (methodology + hyperparameters + verbatim worked examples). Fresh context is the structural enforcement of "no interpretation" — never reads `## Takeaways`, `## Findings`, confidence tag, or `epm:interpretation` (v2/legacy bodies: also never `## Human TL;DR` / `## TL;DR`). EARLY-SPAWNED by `/issue` at the Step 8 results-landed parallel batch (inputs are final once results land, so it runs concurrently with upload verification + the interpretation loop); the gist publish + body link-append (top-of-body `**Methodology:**` line + `## Reproducibility` row) LATE-JOIN at Step 9a-quater (after `clean-result-critic` PASS, before `awaiting_promotion` park). Runs for `kind: experiment` and methodology-bearing `kind: analysis` tasks; skipped for `infra | batch | survey`. The orchestrator commits the doc on agent return, publishes a secret gist (fail-soft, no-secrets pre-scan), and links from the top of the body + `## Reproducibility`. |
 | `follow-up-proposer` | Reads results + plan, proposes concrete next experiments |
+| `follow-up-critic` | Adversarial REDUNDANCY screen over follow-up proposals, must not see the proposer's reasoning. SINGLE-PASS (no revise loop): one binary verdict per proposal — `not-redundant` (proceed through existing routing) or `redundant` (park at `on_hold`, revivable). The bar is duplication ONLY (an existing experiment task / a settled open question / a higher-ranked sibling), NOT info-gain. Fires BEFORE any proposal routes. Ensembled with `codex-follow-up-critic` (the 5th doubled review site, added 2026-06-13). |
 | `retrospective` | Fresh-context review of session transcripts |
 | `research-pm` | Strategic PM persona for the dedicated PM session (loaded by `/pm`); owns queue triage + dispatch decisions, does NOT execute experiments or write code |
-| `reconciler` | Binary tie-breaker for Codex ensemble adversarial review (`code-reviewer` / `critic` / `interpretation-critic` / `clean-result-critic`); marker + in-context output modes |
+| `reconciler` | Binary tie-breaker for Codex ensemble adversarial review (`code-reviewer` / `critic` / `interpretation-critic` / `clean-result-critic` / `follow-up-critic`); marker + in-context output modes |
 | `codex-code-reviewer` | Codex (gpt-5.5) twin of `code-reviewer`; thin Claude prompt-composer — composes a review prompt and returns its path; the orchestrator dispatches the OpenAI Codex plugin's `companion task` runtime (the wrapper never dispatches Codex itself — that's the orphan-job anti-pattern, incident task #533, 2026-06-10) |
 | `codex-critic` | Codex twin of `critic` (per-lens, in-context output for /adversarial-planner Phase 2); thin Claude prompt-composer — composes a lens prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime |
 | `codex-interpretation-critic` | Codex twin of `interpretation-critic` (7 lenses including multimodal lens 6); spawned every round 1-3 (round-1-only until 2026-06-12); thin Claude prompt-composer — composes a critique prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime |
 | `codex-clean-result-critic` | Codex twin of `clean-result-critic` (15 v3 lenses against the five-flat-H2 (v3) spec — `## Takeaways` / `## What I ran` / `## Findings` (one `### <finding>` per result) / `## Data` / `## Reproducibility`; confidence in H1 title tag only — 1 Title, 2 v3-structure, 3 Figure (+ setup/read pairing), 4 Takeaways quality, 5 Reproducibility, 6 Voice, 7 statistical-framing rule, 8 mentor-facing title, 9 one-takeaway-one-figure per `### <finding>`, 10 Data section, 11 raw alongside processed, 12 conciseness, 13 planned-vs-actual coverage, 14 binding-concerns audit, 15 headline not resting on a contaminated / failed-data-gate arm); spawned every round 1-3 (round-1-only until 2026-06-12); thin Claude prompt-composer — composes the critique prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime; runs verify_task_body.py + audit_clean_results_body_discipline.py independently |
+| `codex-follow-up-critic` | Codex twin of `follow-up-critic` (the 5th doubled review site, added 2026-06-13) — same SINGLE-PASS redundancy screen, same per-proposal `not-redundant | redundant` verdict, same nothing-dropped contract; thin Claude prompt-composer — composes the redundancy-screen prompt and returns its path; the orchestrator dispatches Codex's `companion task` runtime (the wrapper never dispatches Codex itself — orphan-job anti-pattern, #533) |
 | ~~`reviewer`~~ | **DEPRECATED 2026-05-13.** Final adversarial responsibilities absorbed by `clean-result-critic` Lens 7 (statistical-framing rule). File kept for historical reference. |
 | ~~`codex-reviewer`~~ | **DEPRECATED 2026-05-13** alongside `reviewer`. Replaced by `codex-clean-result-critic`. |
 

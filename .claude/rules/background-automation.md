@@ -84,9 +84,12 @@ budget whose backoff window (`EPM_INFRA_DRAIN_BACKOFF_S`, default 1 h)
 ALWAYS binds while a fresh PM `updated_ts` resets only the attempt COUNT
 (`EPM_INFRA_DRAIN_MAX_ATTEMPTS`, default 3 per adjudication epoch; a future
 `updated_ts` is clamped so it cannot void the budget). The PM remains the
-ONLY ripeness judge — a missing/empty/invalid queue file is a logged no-op,
-and un-riping an ID means rewriting the file (which also re-arms the
-budget). Daemon-gated like every spawning pass; attempt state lives in
+ONLY *nuanced* ripeness judge — a missing/empty/invalid queue file is a
+logged no-op, and un-riping an ID means rewriting the file (which also
+re-arms the budget); the watcher makes exactly ONE narrow, mechanical
+ripeness call beyond pure dispatch — predicate-hold auto-promotion (below)
+— and nothing else. Daemon-gated like every spawning
+pass; attempt state lives in
 `~/.eps-autonomous/infra-drain-state.json` (self-pruned to the queue's ID
 set; deliberately not a GC target); dispatch markers are generic
 `epm:progress` notes carrying the
@@ -94,6 +97,29 @@ set; deliberately not a GC target); dispatch markers are generic
 reset the orphan/stalled staleness clocks. Kill switch:
 `EPM_DISABLE_INFRA_DRAIN=1`. `--infra-drain-only` runs just this pass
 (pair with `--dry-run` for a live smoke).
+
+*Predicate-hold auto-promotion (#633 follow-on).* BEFORE the dispatch
+logic, the pass promotes any `holds` entry whose reason matches the PM's
+cross-issue-predicate convention `predicate-<#N>-<short-desc>`
+(`research-pm.md` step 3; live examples `predicate-535-slurm-attempt`,
+`predicate-625-lands`) once its BLOCKING task #N has FINISHED — read
+conservatively as task #N at `completed`/`archived`/`awaiting_promotion`
+(the unambiguous "upstream finished" signal; the `<short-desc>` is never
+interpreted — completion is sufficient for every predicate, e.g. a
+completed #535 definitely had its live attempt). On a satisfied predicate
+the hold is removed, the held id is merged into `ripe_oldest_first`
+oldest-first, and the queue file is rewritten atomically (tmp+rename,
+`updated_by: autonomous_session_watch:predicate-promote`, `updated_ts`
+bumped — which re-arms the promoted id's retry budget), so the cleared
+task dispatches THIS tick AND survives for the bg poller between PM passes.
+Only one `task.py view` status read per distinct predicate (zero on the
+common no-predicate tick); a non-predicate / malformed / unreadable /
+not-yet-terminal hold is left UNTOUCHED (fail toward keep-blocking).
+Skipped under `--dry-run` (decides + logs, never rewrites). This is the
+between-passes accelerator the PM's own STATUS-pass re-evaluation already
+backstops; the PM remains the nuanced judge for predicates that should
+fire BEFORE completion and re-adjudicates the whole queue wholesale on its
+next pass (its atomic overwrite always wins a race with this rewrite).
 
 **Gate-push pass (2026-06-12 anti-stall redesign).** Telegram phone push on
 gate-park/`blocked` transitions via the my-goat `telegram_push.sh` channel

@@ -82,6 +82,16 @@ Read the results and critique carefully. The best follow-ups come from:
 - Experiments that change multiple variables at once
 - Experiments with no clear hypothesis
 - Experiments that are too expensive relative to information gain
+- A proposal that duplicates an existing experiment task (any status) or
+  a settled `docs/open_questions.md` question. (Every proposal you emit
+  is screened for REDUNDANCY by the `follow-up-critic` + `codex-follow-up-critic`
+  ensemble — the 5th doubled review site, single-pass — BEFORE it routes
+  to any auto-run / file-child / interactive-pick path; a `redundant`
+  verdict parks the proposal at `on_hold` instead of running it. You are
+  NOT penalised for a low-but-novel proposal — the screen's bar is
+  duplication only, not info-gain — but a clear duplicate wastes the
+  screen's time. When you already know an existing task or settled
+  question covers a candidate, drop it before emitting.)
 
 ## Artifact-premise verification (MANDATORY)
 
@@ -219,6 +229,7 @@ Ranked by estimated information gain per GPU-hour.
 
 **cost_class:** free-analysis | needs-gpu
 **headline_affecting:** yes | no
+**est_gpu_hours:** [number — the GPU-hour estimate as a bare numeric field, NOT prose. `0` for `cost_class: free-analysis`. Must equal the `**Estimated cost:**` figure above; this parseable copy is what the Step 9b cheap-auto-run predicate (`question_relation: same` AND `est_gpu_hours < 5`) reads. Omit ONLY if genuinely unknown — a missing / unparseable value forces the fail-safe (no auto-run; park/file for the user), same as a missing plan GPU-hour estimate at the Step 2c cap.]
 
 ---
 
@@ -412,23 +423,48 @@ construct?", "try this on a larger model", "explore N novel framings of
 the same DV", "run the full ablation grid" — any of these need a human
 pick before they're a single coherent experiment.
 
-### `cost_class` + `headline_affecting` tags — criteria
+### `cost_class` + `headline_affecting` + `est_gpu_hours` tags — criteria
 
-These two tags are ORTHOGONAL to `auto_run` (which controls whether the
-proposal gets executed autonomously — as a GPU-backed child `/issue`
-for `substantially-different`, or via the same-issue follow-up loop
-for `same`). `cost_class` records whether the follow-up requires any GPU
-time at all; `headline_affecting` records whether running it could
-change the parent's H1 title / confidence tag / a load-bearing
-`## Takeaways` claim. The `/issue` orchestrator reads BOTH at SKILL.md Step 9a-ter:
-when a `cost_class: free-analysis` + `headline_affecting: yes` proposal
-exists AND has not yet been run on the parent task (no
-`epm:free-analysis-followup-run v1` marker recording it), the
-orchestrator AUTO-RUNS it inline (zero GPU) and folds the result into
-the parent clean-result body BEFORE parking at `awaiting_promotion` —
-in BOTH interactive and autonomous sessions. The analyzer carries the
-same tag schema for any follow-ups it surfaces directly in the body
-(`analyzer.md` § Step 6.5).
+These three tags are ORTHOGONAL to `auto_run` (which controls whether a
+GPU-EXPENSIVE proposal gets executed autonomously — as a GPU-backed
+child `/issue` for `substantially-different`, or via the same-issue
+follow-up loop for `same`). `cost_class` records whether the follow-up
+requires any GPU time at all; `headline_affecting` records whether
+running it could change the parent's H1 title / confidence tag / a
+load-bearing `## Takeaways` claim; `est_gpu_hours` is the parseable
+GPU-hour estimate (a bare number) that drives the cheap-auto-run band.
+
+Two auto-run sites read these tags, BOTH firing in interactive AND
+autonomous sessions identically (independent of the
+`EPM_AUTONOMOUS_SESSION` / `auto_run` machinery, which gates only the
+EXPENSIVE GPU-backed paths):
+
+- **SKILL.md Step 9a-ter (zero-GPU inline).** When a
+  `cost_class: free-analysis` (i.e. `est_gpu_hours: 0`) proposal exists
+  AND has not yet been run on the parent task (no
+  `epm:free-analysis-followup-run v1` marker recording it), the
+  orchestrator AUTO-RUNS it inline (zero GPU) and folds the result into
+  the parent clean-result body BEFORE parking at `awaiting_promotion`.
+  This site fires for the free-analysis case REGARDLESS of
+  `headline_affecting` (the prior `headline_affecting: yes` gate was
+  dropped 2026-06-13 — a cheap follow-up runs whether or not it moves
+  the headline).
+- **SKILL.md Step 9b same-issue loop (cheap GPU-backed band).** When a
+  `question_relation: same` proposal has `0 < est_gpu_hours < 5`, the
+  orchestrator AUTO-RUNS it via the same-issue follow-up loop (status
+  `followups_running`, the new result folded into the EXISTING
+  clean-result body, re-park at `awaiting_promotion`) WITHOUT a human
+  pick — in interactive sessions too, not just autonomous. The strict
+  comparison is `< 5` (exactly 5 does NOT auto-run); the 0-GPU floor of
+  this band is the free-analysis case handled by Step 9a-ter above.
+  `headline_affecting` is NOT consulted for this band either. A
+  `question_relation: substantially-different` proposal NEVER auto-runs
+  on this band regardless of GPU cost — it would change the parent
+  `## Goal`, so it cannot fold into the same issue (it stays filed as a
+  `proposed` child for manual triage per the `auto_run` path).
+
+The analyzer carries the same tag schema for any follow-ups it surfaces
+directly in the body (`analyzer.md` § Step 6.5).
 
 - **`cost_class: free-analysis`** — the follow-up is executable PURELY
   by re-running analysis / plot code over eval data that ALREADY EXISTS
@@ -456,7 +492,26 @@ same tag schema for any follow-ups it surfaces directly in the body
 - **`headline_affecting: no`** — polish / generalization / parametric
   sweeps whose outcome would NOT move the headline (extra seeds for
   variance, OOD eval against another judge, regression on a sibling
-  model). These get listed but never auto-run.
+  model). `headline_affecting` no longer gates either auto-run site (the
+  Step 9a-ter free-analysis path and the Step 9b cheap-band path both
+  fire regardless of it, as of 2026-06-13) — it is retained as a
+  user-facing impact signal at interactive Step 10b and for dashboard
+  display, NOT as an auto-run predicate.
+- **`est_gpu_hours: <number>`** — the parseable GPU-hour estimate (a
+  bare number; `0` for `cost_class: free-analysis`). It must equal the
+  `**Estimated cost:**` figure in the proposal body. This is the field
+  the Step 9b cheap-auto-run predicate reads: a `question_relation: same`
+  proposal with `0 < est_gpu_hours < 5` auto-runs via the same-issue
+  follow-up loop in BOTH interactive and autonomous sessions (strict
+  `< 5`; the 0-GPU floor is the Step 9a-ter free-analysis case).
+  **Estimate honestly** — a deliberately-low estimate to dodge a human
+  pick is the failure mode this field guards against; if the true cost
+  is uncertain and could exceed 5 GPU-h, state the upper bound (round
+  UP) so a genuinely expensive run is NOT silently auto-fired.
+  **Omitting it / leaving it unparseable forces the fail-safe** — the
+  orchestrator does NOT auto-run and parks/files the proposal for the
+  user (same fail-safe as a missing plan GPU-hour estimate at the Step
+  2c cap).
 
 Tag every proposal regardless of `auto_run` value — interactive Step
 10b also reads these tags so the user sees the cost / impact split when
