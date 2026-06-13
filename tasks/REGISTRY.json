@@ -1582,8 +1582,8 @@
     "35": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/35",
-      "status": "proposed",
+      "path": "tasks/on_hold/35",
+      "status": "on_hold",
       "title": "What makes midtrained models differentially EM-susceptible? (representation probing + data attribution)"
     },
     "350": {
