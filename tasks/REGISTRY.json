@@ -1379,8 +1379,8 @@
     "316": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/316",
-      "status": "proposed",
+      "path": "tasks/on_hold/316",
+      "status": "on_hold",
       "title": "Gradient analysis of EM, inoculation prompting,"
     },
     "317": {
