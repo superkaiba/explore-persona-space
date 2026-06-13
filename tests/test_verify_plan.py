@@ -147,10 +147,11 @@ def test_good_plan_passes_all():
         "c8_success_kill_criteria": "PASS",
         "c9_conditions_seeds": "PASS",
         "c10_marker_recipe": "SKIP",
+        "c11_dryrun_test_coverage": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 11
+    assert len(results) == 12
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -833,6 +834,102 @@ def test_c10_kind_infra_skips():
     assert _status(plan, "c10_marker_recipe", kind="infra") == "SKIP"
 
 
+# ─── Check 11 — dry-run test coverage ──────────────────────────────────────
+
+DRYRUN_SMOKE = (
+    "\n## 6. Verification\n\n"
+    "Post-merge acceptance: run `uv run python scripts/autonomous_session_watch.py "
+    "--dry-run --infra-drain-only` against the live queue file and eyeball the "
+    "would-dispatch lines.\n"
+)
+
+
+def test_c11_kind_experiment_skips():
+    plan = GOOD_PLAN + DRYRUN_SMOKE
+    assert _status(plan, "c11_dryrun_test_coverage", kind="experiment") == "SKIP"
+
+
+def test_c11_no_dryrun_mention_skips():
+    assert _status(GOOD_PLAN, "c11_dryrun_test_coverage", kind="infra") == "SKIP"
+
+
+def test_c11_smoke_without_dryrun_test_warns():
+    # The #596/#607/#633 pattern: a --dry-run acceptance smoke + a
+    # success-path-only test list.
+    plan = (
+        GOOD_PLAN
+        + DRYRUN_SMOKE
+        + "\nTests: `test_drain_dispatches_ripe_tasks`, `test_drain_respects_concurrency_cap`.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c11_dryrun_test_coverage"]
+    assert r.status == "WARN"
+    assert "dry_run" in r.detail
+    assert "#633" in r.detail
+
+
+def test_c11_kind_batch_triggers():
+    plan = GOOD_PLAN + DRYRUN_SMOKE
+    assert _status(plan, "c11_dryrun_test_coverage", kind="batch") == "WARN"
+
+
+def test_c11_test_identifier_with_dryrun_token_passes():
+    plan = (
+        GOOD_PLAN
+        + DRYRUN_SMOKE
+        + "\nTests: `test_infra_drain_dry_run_dispatches_nothing` — the drain pass under dry_run posts no markers and spawns no sessions.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c11_dryrun_test_coverage"]
+    assert r.status == "PASS"
+    assert "dry" in r.detail.lower()
+
+
+def test_c11_descriptive_kwarg_test_line_passes():
+    plan = (
+        GOOD_PLAN
+        + DRYRUN_SMOKE
+        + "\nAdd a test exercising `dry_run=True` on the new drain pass (no dispatch, no markers, no pod calls).\n"
+    )
+    assert _status(plan, "c11_dryrun_test_coverage", kind="infra") == "PASS"
+
+
+def test_c11_smoke_command_sharing_line_with_pytest_path_does_not_self_certify():
+    # The #633 v1 false-PASS shape (caught on the calibration run against the
+    # real corpus): ONE "Verification commands" line carrying both the
+    # success-path pytest invocation (a test_ identifier) and the --dry-run
+    # smoke command. Flag occurrences are stripped before the tier-1 scan,
+    # so this line is not evidence of a dry_run-exercising test.
+    plan = (
+        GOOD_PLAN
+        + "\n- **Verification commands:** `uv run pytest tests/test_autonomous_session_watch.py -x`; "
+        "`uv run python scripts/autonomous_session_watch.py --dry-run --infra-drain-only`.\n"
+    )
+    assert _status(plan, "c11_dryrun_test_coverage", kind="infra") == "WARN"
+
+
+def test_c11_smoke_sentence_mentioning_test_suite_does_not_self_certify():
+    # The bare `--dry-run` flag co-occurring with the word "test" (the §6
+    # "run the smoke, then the test suite" sentence shape) is not evidence
+    # of a dry_run-exercising test.
+    plan = (
+        GOOD_PLAN
+        + "\n## 6. Verification\n\nRun the `--dry-run` smoke, then run the full test suite.\n"
+    )
+    assert _status(plan, "c11_dryrun_test_coverage", kind="infra") == "WARN"
+
+
+def test_c11_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + "\nworktree_audit.py already supports --dry-run; this plan does not touch that path. N/A — no dry-run smoke.\n"
+    )
+    _, by_id = _run(plan, kind="infra")
+    r = by_id["c11_dryrun_test_coverage"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -882,12 +979,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 4
+    assert payload["n_skip"] == 5
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 11
-    assert len({c["id"] for c in payload["checks"]}) == 11
+    assert len(payload["checks"]) == 12
+    assert len({c["id"] for c in payload["checks"]}) == 12
 
 
 def test_cli_exit_one_on_fail(tmp_path):

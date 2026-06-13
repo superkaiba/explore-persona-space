@@ -2560,6 +2560,11 @@ workflow_fix_on_bug:
     - "scripts/pods_ephemeral.json"
     - "scripts/workflow_lint.py"
     - "scripts/verify_task_body.py"
+    # The /adversarial-planner Phase 1.5.0 mechanical plan pre-pass gate
+    # (+ its test file below). Added 2026-06-12 (#633): the list predated
+    # #625's same-week merge and the omission nearly deflected an in-scope
+    # dry-run-test-coverage check addition.
+    - "scripts/verify_plan.py"
     # The upload-verifier's artifact checklist + phantom-URL gate
     # (--claimed-urls-file, /issue Step 8). Added 2026-06-10 (#541): the
     # list predated the phantom-URL gate and its absence nearly deflected
@@ -2632,6 +2637,8 @@ workflow_fix_on_bug:
     - "tests/test_sparse_worktree.py"
     # Pins the analyzer Step 1.5 exemplar loader's v2-body extraction (#608).
     - "tests/test_recent_clean_results.py"
+    # Pins the plan pre-pass gate's check catalog + CLI contract (#625/#633).
+    - "tests/test_verify_plan.py"
     # Pin the gist-redaction + pre-commit secret-gate contracts (#542).
     - "tests/test_redact_for_gist.py"
     - "tests/test_check_no_secret_shaped_strings.py"

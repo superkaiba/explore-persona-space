@@ -25,10 +25,11 @@ Check catalog (id — classification — kind scope)
                                                            exempt kinds WARN
   c9  conditions/cells + seeds   WARN-only                 experiment only
   c10 marker-recipe ack          WARN-only, conditional    experiment only
+  c11 dry-run test coverage      WARN-only, conditional    infra + batch only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
-n_pass). Conditional checks (4, 6, 7, 10) also SKIP when their content
+n_pass). Conditional checks (4, 6, 7, 10, 11) also SKIP when their content
 trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
@@ -38,6 +39,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no behavioral construct`` (check 2)
   - ``N/A — no artifact reuse`` (check 6)
   - ``N/A — not a replication`` (check 7)
+  - ``N/A — no dry-run smoke`` (check 11)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -145,6 +147,23 @@ _SUCCESS_RE = re.compile(r"(?i)success criteri|acceptance criteri|decision rule|
 _KILL_RE = re.compile(
     r"(?i)kill[- ]criteri|abort criteri|stop criteri|halt-and-report|what would change my mind"
 )
+
+# Check 11: trigger = the CLI flag form anywhere in the RAW plan (smoke
+# commands legitimately live inside fences/tables). Evidence = a line naming
+# a dry-run-exercising test: a `test_` identifier co-occurring with a dry-run
+# token (no \b before "dry" — the token legitimately sits embedded in
+# identifiers like test_drain_dry_run_no_dispatch), or the word "test"
+# co-occurring with the Python kwarg form `dry_run`. `--dry-run` flag
+# occurrences are STRIPPED from the line before the tier-1 scan: the bare
+# flag next to test vocabulary deliberately does NOT self-certify — neither
+# the "run the smoke, then the test suite" sentence shape nor the #633 v1
+# false-PASS shape (ONE `Verification commands:` line carrying both the
+# success-path pytest invocation and the `--dry-run` smoke command).
+_DRYRUN_FLAG_RE = re.compile(r"--dry-run\b")
+_DRYRUN_ANY_RE = re.compile(r"(?i)dry[-_ ]?run")
+_DRYRUN_KWARG_RE = re.compile(r"(?i)dry_run")
+_TEST_IDENT_RE = re.compile(r"\btest_\w+")
+_TEST_WORD_RE = re.compile(r"(?i)\btests?\b")
 
 # Check 3: data-source tier vocabulary (CLAUDE.md realistic-data rule).
 _TIER_RE = re.compile(
@@ -933,6 +952,57 @@ def check_marker_recipe(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 11 — dry-run test coverage (WARN-only, conditional) ─────────────
+
+
+def _dryrun_test_evidence_lines(plan: str) -> list[str]:
+    """Lines naming a dry-run-exercising test (see the regex-block comment
+    by ``_DRYRUN_FLAG_RE``): a ``test_`` identifier alongside a dry-run
+    token — with ``--dry-run`` flag occurrences stripped first, so the smoke
+    command itself cannot self-certify — or the word "test" alongside the
+    ``dry_run`` kwarg form."""
+    out: list[str] = []
+    for line in plan.splitlines():
+        sans_flag = _DRYRUN_FLAG_RE.sub("", line)
+        if (_TEST_IDENT_RE.search(sans_flag) and _DRYRUN_ANY_RE.search(sans_flag)) or (
+            _TEST_WORD_RE.search(line) and _DRYRUN_KWARG_RE.search(line)
+        ):
+            out.append(line.strip())
+    return out
+
+
+def check_dryrun_test_coverage(plan: str, kind: str) -> CheckResult:
+    """``kind: infra|batch`` plans whose verification includes a ``--dry-run``
+    smoke must also list a test exercising the dry_run code path. Three infra
+    plans in a row (#596, #607, #633) shipped success-path-only test lists
+    while their own final acceptance step was a live ``--dry-run`` invocation
+    — a broken dry_run thread turns that smoke into a real mutation (for
+    #633: a real dispatch of up to 3 autonomous sessions). WARN not FAIL:
+    trigger and evidence are both line heuristics; the Phase 2 critics
+    adjudicate. Both scans use the RAW plan — smoke commands and test lists
+    legitimately live inside fences and tables."""
+    cid, name = "c11_dryrun_test_coverage", "dry-run smoke backed by a dry-run test"
+    if kind not in ("infra", "batch"):
+        return _skip(
+            cid, name, "kind-exempt: the dry-run-smoke acceptance pattern is an infra|batch shape"
+        )
+    if not _DRYRUN_FLAG_RE.search(plan):
+        return _skip(cid, name, "no --dry-run smoke/verification command detected")
+    if re.search(NA_RE + r"no dry-?run smoke", plan):
+        return _pass(cid, name, "explicit N/A declared (no dry-run smoke)")
+    evidence = _dryrun_test_evidence_lines(plan)
+    if evidence:
+        return _pass(cid, name, f"dry-run-exercising test named ({evidence[0][:80]!r})")
+    return _warn(
+        cid,
+        name,
+        "plan names a `--dry-run` smoke/verification command but the test list has no test "
+        "exercising `dry_run=True` on the new code path — a broken dry_run thread turns the "
+        "final smoke into a real mutation (#596/#607/#633 pattern); add the test, or declare "
+        "`N/A — no dry-run smoke` if the flag mention is incidental",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -946,6 +1016,7 @@ CHECKS = [
     check_success_kill,
     check_conditions_seeds,
     check_marker_recipe,
+    check_dryrun_test_coverage,
 ]
 
 
