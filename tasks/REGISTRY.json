@@ -2570,8 +2570,8 @@
     "47": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/47",
-      "status": "proposed",
+      "path": "tasks/on_hold/47",
+      "status": "on_hold",
       "title": "Is a persona a region in activation space or weight space or prompt, HOW DO THESE DIFFER -- are they the same"
     },
     "470": {
