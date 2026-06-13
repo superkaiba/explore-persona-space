@@ -3745,8 +3745,8 @@
       "goal": "Determine whether placing the negative-row loss at the post-response slot (loss-suppression flag on) gives contrastive negatives a live gradient that exerts a measurable restoring force on the source implant, by training flag-on cells single-variable-matched to #601's existing flag-off 200p+800n cells.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/613",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/613",
+      "status": "awaiting_promotion",
       "title": "Removing the answer/marker separator lets the live-negative loss-placement flag suppress the source implant ~5.5 nats and bystander leakage ~3.6 nats \u2014 consistent with a slot-geometry account, though surface-form falsification is still open (MODERATE confidence)"
     },
     "614": {
