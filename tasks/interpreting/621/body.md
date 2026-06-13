@@ -1,7 +1,6 @@
 ---
-title: 'Rank-1 LoRA marker implants are ungated writes at the [5,12] nat band-stop
-  dose: the read vector barely rotates, the write vector aligns with the marker, but
-  persona firing strength does not order bystander leakage (MODERATE confidence)'
+title: Rank-1 LoRA marker implants behave like ungated writes at the band-stop dose
+  (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:17:08Z'
