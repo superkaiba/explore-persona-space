@@ -60,6 +60,7 @@ from explore_persona_space.backends.gcp import (
     log_path_for,
     machine_for_intent,
     preflight_quota_headroom,
+    quota_metric_for,
     reconnect_or_none,
     render_delete_argv,
     render_describe_argv,
@@ -67,6 +68,7 @@ from explore_persona_space.backends.gcp import (
     render_startup_script,
     resolve_launch_secrets,
     resolve_provisioning_model,
+    resolve_request_valid_for_duration,
     sentinel_path_for,
 )
 
@@ -269,6 +271,16 @@ def test_intent_to_machine_table_matches_plan() -> None:
     assert INTENT_TO_MACHINE["ft-7b"].gpu_count == 4
     assert INTENT_TO_MACHINE["eval"].machine_type == "g2-standard-4"
     assert INTENT_TO_MACHINE["debug"].machine_type == "g2-standard-4"
+
+
+def test_intent_to_machine_includes_h100_intents() -> None:
+    """#631 D2: the two H100 intents map to the a3-highgpu family."""
+    assert INTENT_TO_MACHINE["lora-7b-h100"].machine_type == "a3-highgpu-1g"
+    assert INTENT_TO_MACHINE["lora-7b-h100"].gpu_count == 1
+    assert INTENT_TO_MACHINE["lora-7b-h100"].gpu_kind == "H100-80"
+    assert INTENT_TO_MACHINE["eval-h100"].machine_type == "a3-highgpu-2g"
+    assert INTENT_TO_MACHINE["eval-h100"].gpu_count == 2
+    assert INTENT_TO_MACHINE["eval-h100"].gpu_kind == "H100-80"
 
 
 def test_machine_for_intent_resolves_known_intent() -> None:
@@ -3277,3 +3289,246 @@ def test_overlay_drain_mtime_ignored_on_terminal_status() -> None:
     )
     out = _overlay_drain(running, processed=0, gate=None, alarm="", log_tail="", log_mtime_ago=300)
     assert out.last_log_mtime_sec_ago == 300
+
+
+# ---------------------------------------------------------------------------
+# #631 D1 — FLEX_START provisioning support
+# ---------------------------------------------------------------------------
+
+
+def test_resolve_provisioning_model_accepts_flex_start() -> None:
+    spec = _spec(extra={"provisioning_model": "flex_start"})
+    assert resolve_provisioning_model(spec) == "FLEX_START"
+
+
+def test_resolve_provisioning_model_still_rejects_typo() -> None:
+    """Regression: an unknown value (e.g. 'preemptible') still raises loud."""
+    spec = _spec(extra={"provisioning_model": "preemptible"})
+    with pytest.raises(ValueError, match="unknown provisioning_model"):
+        resolve_provisioning_model(spec)
+
+
+def test_render_create_argv_flex_start_renders_request_valid_for_duration() -> None:
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--provisioning-model=FLEX_START" in argv
+    # Default request-validity window (the doc max, 2h).
+    assert "--request-valid-for-duration=2h" in argv
+
+
+def test_render_create_argv_flex_start_includes_reservation_affinity_none() -> None:
+    """v2: the canonical flex-start create command pins --reservation-affinity=none."""
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert argv.count("--reservation-affinity=none") == 1
+
+
+def test_render_create_argv_flex_start_keeps_delete_termination_action() -> None:
+    """The leak guard stays unconditional on FLEX_START (docs: STOP or DELETE both allowed)."""
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--instance-termination-action=DELETE" in argv
+
+
+def test_render_create_argv_standard_omits_request_valid_for_duration() -> None:
+    """Regression: the default STANDARD create carries no flex-start flag."""
+    cfg = _test_config()
+    argv = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert not any(a.startswith("--request-valid-for-duration=") for a in argv)
+
+
+def test_render_create_argv_spot_omits_request_valid_for_duration() -> None:
+    """v2: SPOT must NOT render the flex-start window (guards a `!= STANDARD` regression)."""
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "spot"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert not any(a.startswith("--request-valid-for-duration=") for a in argv)
+
+
+def test_render_create_argv_standard_and_spot_omit_reservation_affinity() -> None:
+    """v2: only FLEX_START adds --reservation-affinity; STANDARD/SPOT keep their argv."""
+    cfg = _test_config()
+    standard = render_create_argv(
+        spec=_spec("lora-7b"),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    spot = render_create_argv(
+        spec=_spec(extra={"provisioning_model": "spot"}),
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert not any(a.startswith("--reservation-affinity") for a in standard)
+    assert not any(a.startswith("--reservation-affinity") for a in spot)
+
+
+def test_render_create_argv_flex_start_rejects_max_run_over_7d() -> None:
+    """A FLEX_START create whose --max-run-duration exceeds the 7-day cap fails loud."""
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START", "max_run_duration": "8d"})
+    with pytest.raises(ValueError, match="7-day flex-start ceiling"):
+        render_create_argv(
+            spec=spec,
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
+
+
+def test_resolve_request_valid_for_duration_default_and_override() -> None:
+    assert resolve_request_valid_for_duration(_spec()) == "2h"
+    pinned = _spec(extra={"request_valid_for_duration": "90s"})
+    assert resolve_request_valid_for_duration(pinned) == "90s"
+
+
+# ---------------------------------------------------------------------------
+# #631 D2 — H100 intent machine resolution
+# ---------------------------------------------------------------------------
+
+
+def test_machine_for_intent_resolves_h100_1g() -> None:
+    machine = machine_for_intent(_spec("lora-7b-h100"))
+    assert machine.machine_type == "a3-highgpu-1g"
+    assert machine.gpu_count == 1
+    assert machine.gpu_kind == "H100-80"
+
+
+def test_machine_for_intent_resolves_h100_2g() -> None:
+    machine = machine_for_intent(_spec("eval-h100"))
+    assert machine.machine_type == "a3-highgpu-2g"
+    assert machine.gpu_count == 2
+    assert machine.gpu_kind == "H100-80"
+
+
+def test_render_create_argv_h100_intent_uses_a3_highgpu_machine() -> None:
+    """An H100 intent (passed SPOT, since on-demand is rejected) renders a3-highgpu."""
+    cfg = _test_config()
+    spec = _spec("lora-7b-h100", extra={"provisioning_model": "SPOT"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--machine-type=a3-highgpu-1g" in argv
+    assert "--provisioning-model=SPOT" in argv
+
+
+# ---------------------------------------------------------------------------
+# #631 D3 — provisioning-aware quota metric + SPOT-on-A100 + H100/STANDARD guard
+# ---------------------------------------------------------------------------
+
+
+def test_quota_metric_for_a100_spot_is_preemptible() -> None:
+    assert (
+        quota_metric_for(INTENT_TO_MACHINE["lora-7b"], "SPOT")
+        == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
+    )
+
+
+def test_quota_metric_for_a100_flex_start_is_preemptible() -> None:
+    """v2: A100 + FLEX_START draws the preemptible A100 pool (not on-demand)."""
+    assert (
+        quota_metric_for(INTENT_TO_MACHINE["lora-7b"], "FLEX_START")
+        == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
+    )
+
+
+def test_quota_metric_for_a100_standard_is_on_demand() -> None:
+    """Regression: STANDARD A100 still reads the on-demand metric."""
+    assert quota_metric_for(INTENT_TO_MACHINE["lora-7b"], "STANDARD") == "NVIDIA_A100_80GB_GPUS"
+
+
+def test_quota_metric_for_h100_flex_start_is_preemptible_h100() -> None:
+    assert (
+        quota_metric_for(INTENT_TO_MACHINE["lora-7b-h100"], "FLEX_START")
+        == "PREEMPTIBLE_NVIDIA_H100_GPUS"
+    )
+
+
+def test_preflight_quota_headroom_spot_reads_preemptible_metric() -> None:
+    """A SPOT spec resolves the PREEMPTIBLE row, not the on-demand one."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, "[]", "")],  # no live instance
+        region_describe_results=[
+            GcloudRunResult(
+                0,
+                json.dumps(
+                    {
+                        "name": "us-central1",
+                        "quotas": [
+                            {"metric": "NVIDIA_A100_80GB_GPUS", "usage": 8.0, "limit": 8.0},
+                            {
+                                "metric": "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+                                "usage": 0.0,
+                                "limit": 8.0,
+                            },
+                        ],
+                    }
+                ),
+                "",
+            )
+        ],
+    )
+    headroom = preflight_quota_headroom(
+        spec=_spec(intent="lora-7b", extra={"provisioning_model": "spot"}),
+        config=_test_config(),
+        runner=runner,
+    )
+    assert headroom is not None
+    assert headroom.metric == "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS"
+    # The preemptible row had full headroom even though on-demand was saturated.
+    assert headroom.sufficient
+
+
+def test_render_create_argv_h100_standard_raises_loud() -> None:
+    """H100 cannot be created on-demand — STANDARD must fail at render."""
+    cfg = _test_config()
+    spec = _spec("lora-7b-h100")  # no provisioning_model → STANDARD default
+    with pytest.raises(ValueError, match="cannot be created on-demand"):
+        render_create_argv(
+            spec=spec,
+            config=cfg,
+            attempt_id="att-fixed-001",
+            startup_script="#!/bin/bash\n",
+            secret_files=_TEST_SECRET_FILES,
+        )
