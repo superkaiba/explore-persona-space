@@ -1358,8 +1358,8 @@
     "312": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/312",
-      "status": "proposed",
+      "path": "tasks/on_hold/312",
+      "status": "on_hold",
       "title": "UMAP, PCA of persona space -> PCA is already assistant axis"
     },
     "313": {
