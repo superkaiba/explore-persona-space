@@ -2112,8 +2112,8 @@
       "goal": "Re-run the load-bearing experiments from the past two months across multiple Qwen-2.5 sizes to characterize which findings are size-invariant, which strengthen or weaken with scale, and which only appear above some threshold.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/413",
-      "status": "proposed",
+      "path": "tasks/on_hold/413",
+      "status": "on_hold",
       "title": "Scale every load-bearing finding across Qwen-2.5 sizes (0.5B \u2192 32B)"
     },
     "414": {
