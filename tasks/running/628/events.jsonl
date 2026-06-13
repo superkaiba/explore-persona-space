@@ -104,3 +104,4 @@
 {"ts": "2026-06-13T09:28:31Z", "kind": "epm:progress", "version": 1, "by": "i628_dispatch", "note": "i628_dispatch phase 0b complete (smoke=True, dry_run=False)"}
 {"ts": "2026-06-13T09:28:34Z", "kind": "epm:progress", "version": 1, "by": "i628_dispatch", "note": "i628_dispatch phase 0b complete (smoke=True, dry_run=False)"}
 {"ts": "2026-06-13T09:28:37Z", "kind": "epm:progress", "version": 1, "by": "i628_dispatch", "note": "i628_dispatch phase 0b complete (smoke=True, dry_run=False)"}
+{"ts": "2026-06-13T09:28:40Z", "kind": "epm:progress", "version": 1, "by": "i628_dispatch", "note": "i628_dispatch phase 0b complete (smoke=False, dry_run=False)"}
