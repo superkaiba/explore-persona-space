@@ -394,22 +394,95 @@ def explore_measured_vs_interpolated(m608: dict) -> None:
 
 
 def explore_606_endpoint_spread(f606: dict) -> None:
+    """Refusal endpoint trio at matched install.
+
+    Three runs land at the same source install (0.994) but at different
+    bystander leakage. The two `lora` entries in `refusal_endpoint_trio`
+    point at the same trained checkpoint (`lora_step132`) so they overlap
+    exactly — collapse to a single LoRA point.
+    """
     trio = f606["refusal_endpoint_trio"]
+    # Map {behavior, arm} → plain-English label.
+    label_for = {
+        ("refusal", "ft"): "original full fine-tune",
+        ("refusal-ft-lr2e6-retrain", "ft"): "retrained full fine-tune (fresh seed)",
+        # The two lora entries point at the same cell — keep one.
+        ("refusal", "lora"): "LoRA",
+    }
     rows = []
     for behavior, arms in trio.items():
         for arm, rec in arms.items():
-            label = {"lora": "LoRA", "ft": "full fine-tune", "base": "base"}.get(arm, arm)
-            rows.append((f"{behavior}: {label}", rec["install_s"], rec["leak"]))
-    fig, ax = plt.subplots(figsize=(7, 4))
-    for label, s, leak in rows:
-        ax.scatter(s, leak, s=50)
-        ax.annotate(label, (s, leak), textcoords="offset points", xytext=(6, 4), fontsize=7)
+            key = (behavior, arm)
+            if key not in label_for:
+                continue  # skip the redundant lora duplicate
+            rows.append((label_for[key], rec["install_s"], rec["leak"]))
+    # Sort by leakage so labels stack predictably.
+    rows.sort(key=lambda r: r[2])
+
+    fig, ax = plt.subplots(figsize=(8, 4.6))
+    palette = [
+        paper_palette_role("baseline"),
+        paper_palette_role("control"),
+        paper_palette_role("primary"),
+    ]
+    for (label, s, leak), color in zip(rows, palette, strict=False):
+        ax.scatter(s, leak, s=120, color=color, edgecolor="white", linewidth=1.0, zorder=3)
+        # Place labels to the LEFT of each marker so they don't pile up.
+        ax.annotate(
+            label,
+            (s, leak),
+            textcoords="offset points",
+            xytext=(-12, 0),
+            ha="right",
+            va="center",
+            fontsize=9,
+            zorder=4,
+        )
+        # And a small numeric annotation to the RIGHT.
+        ax.annotate(
+            f"leak = {leak:.3f}",
+            (s, leak),
+            textcoords="offset points",
+            xytext=(10, 0),
+            ha="left",
+            va="center",
+            fontsize=8,
+            color="#555555",
+            zorder=4,
+        )
+    # Visual guide: the vertical spread at matched install.
+    install_x = rows[0][1]
+    leak_lo, leak_hi = min(r[2] for r in rows), max(r[2] for r in rows)
+    ax.plot(
+        [install_x, install_x],
+        [leak_lo, leak_hi],
+        color="#bbbbbb",
+        linestyle="--",
+        linewidth=1.0,
+        zorder=1,
+    )
+    spread = leak_hi - leak_lo
+    ax.annotate(
+        f"spread at matched install: +{spread:.2f}",
+        (install_x, (leak_lo + leak_hi) / 2),
+        textcoords="offset points",
+        xytext=(140, 0),
+        ha="left",
+        va="center",
+        fontsize=8,
+        color="#777777",
+        style="italic",
+    )
+
+    # Generous x-margin so left + right annotations don't get clipped.
+    ax.set_xlim(install_x - 0.18, install_x + 0.18)
+    ax.set_ylim(0, max(0.30, leak_hi * 1.18))
     ax.set_xlabel("source install (rate delta)")
     ax.set_ylabel("bystander-mean rate delta")
     set_title_subtitle(
         ax,
-        "Refusal endpoints: equal install, different leakage",
-        "install alone does not determine leakage (descriptive)",
+        "Refusal endpoints: three runs at the same install, three different leakages",
+        "install alone does not determine leakage (descriptive, n=3 runs)",
     )
     fig.tight_layout()
     savefig_paper(fig, "explore_606_endpoint_spread", dir=FIG_DIR)
