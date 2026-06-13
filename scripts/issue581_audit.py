@@ -37,10 +37,68 @@ TOKEN_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 # Env-assignment shape: catches a leak that doesn't match a key-shape regex
 # (token format drift) AND lets us distinguish a successful scrub from a true
 # leak.  Value must be non-empty and not a scrub sentinel.
+#
+# The value alternation handles four shapes (in order):
+#   1. ``"…"``  — double-quoted (e.g. ``KEY="abc def"``)
+#   2. ``'…'``  — single-quoted
+#   3. ``` `…` ``` — backtick-quoted
+#   4. bare    — no quotes; whitespace + quote chars are terminators
+#
+# Without the three quoted-string branches, a quoted format-drift value
+# (``OPENAI_API_KEY="driftedlong..."``) bypasses detection AND scrubbing
+# because the leading quote terminates the bare-value class — and the
+# secret slips through into a neighboring hit's ``note_excerpt``.  Closed
+# in r5 by the quoted-string branches; ``_strip_quotes`` unwraps the
+# captured value back to its inner content for length / classification.
 ENV_ASSIGN = re.compile(
     r"\b(HF_TOKEN|HF_HUB_TOKEN|WANDB_API_KEY|RUNPOD_API_KEY|"
-    r"ANTHROPIC_API_KEY|OPENAI_API_KEY)\s*=\s*([^\s'\"`]+)"
+    r"ANTHROPIC_API_KEY|OPENAI_API_KEY)\s*=\s*"
+    r"("
+    r'"[^"\n]+"'  # plain double-quoted
+    r"|"
+    r"'[^'\n]+'"  # plain single-quoted
+    r"|"
+    r"`[^`\n]+`"  # plain backtick-quoted
+    r"|"
+    # JSON-escaped double quotes — the actual on-the-wire form when a
+    # `KEY="..."` value sits inside an events.jsonl row's `note` string.
+    # The events.jsonl line is a JSON-encoded row, so each `"` inside
+    # `note` is serialized as the two-char sequence `\"` (literal
+    # backslash + literal quote).  Without this branch the bare-value
+    # alternation below captures only the lone `\`, gives the regex a
+    # 1-char value, and the leak slips through (Codex r4 BLOCKER).
+    r'\\"[^"\\\n]+\\"'
+    r"|"
+    # Bare value — no whitespace, no quote chars, no backslash (the
+    # latter so we don't greedily eat a JSON escape and stop short).
+    r"[^\s'\"`\\]+"
+    r")"
 )
+
+
+def _strip_quotes(value: str) -> str:
+    """Unwrap a quoted capture back to its inner string.
+
+    Handles four quote shapes the ENV_ASSIGN regex captures:
+
+    - ``"x"`` / ``'x'`` / ``` `x` ``` — plain text (2-char wrap);
+    - ``\\"x\\"`` — JSON-escaped double quote (4-char wrap; appears
+      verbatim when scanning a raw events.jsonl line whose ``note``
+      string contained a `"` originally).
+
+    Bare values pass through unchanged.  The classifier + redaction
+    logic operate on the inner content so length checks match what a
+    reader sees, and so a quoted ``<redacted>`` sentinel is recognised
+    as already-scrubbed.
+    """
+    # JSON-escaped double quote first (it's the longest wrap).
+    if len(value) >= 4 and value[:2] == '\\"' and value[-2:] == '\\"':
+        return value[2:-2]
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'", "`"):
+        return value[1:-1]
+    return value
+
+
 SCRUB_SENTINELS = {
     "***SCRUBBED***",
     "<redacted>",
@@ -83,6 +141,12 @@ MIN_REAL_LEN = {
 # only flag occurrences that share a line with explicit WandB context.
 WANDB_HEX = re.compile(r"\b[a-fA-F0-9]{40}\b")
 WANDB_CONTEXT = re.compile(r"WANDB_API_KEY|wandb[_ ]?login|wandb[_ ]?(key|token)", re.IGNORECASE)
+
+
+# Already-redacted markers produced by `_redact_value` / `_redact_excerpt`.
+# Used to short-circuit a second pass so repeated scrubbing is idempotent and
+# can't corrupt a previously-correct length tag.
+_REDACTED_MARKER = re.compile(r"<redacted:[A-Za-z0-9_-]+:len=\d+>")
 
 
 @dataclass
@@ -180,15 +244,18 @@ def _classify_env_assign(var: str, value: str) -> tuple[str, str]:
     - value is shorter than the minimum length for a real secret of its key
       class (30 chars for every supported provider) -> low confidence.
 
-    Real leaks have long, opaque, marker-free values.
+    Real leaks have long, opaque, marker-free values.  Wrapping quotes are
+    stripped before classification so ``KEY="<real value>"`` is judged on
+    the inner content, not the 2-extra-char quoted span.
     """
-    value_lower = value.lower()
+    inner = _strip_quotes(value)
+    value_lower = inner.lower()
     for marker in FIXTURE_MARKERS:
         if marker in value_lower:
             return ("low", f"value contains fixture marker '{marker}'")
     min_len = MIN_REAL_LEN.get(var, 0)
-    if min_len and len(value) < min_len:
-        return ("low", f"value length {len(value)} below minimum {min_len} for {var}")
+    if min_len and len(inner) < min_len:
+        return ("low", f"value length {len(inner)} below minimum {min_len} for {var}")
     return ("high", "")
 
 
@@ -210,8 +277,13 @@ def _redact_value(value: str, key_class: str) -> str:
     """
     if key_class.startswith("env-assign:"):
         var = key_class.split(":", 1)[1]
-        # value already includes "VAR=..." here; rebuild VAR=<redacted:...>.
-        return f"{var}=<redacted:env:len={len(value) - len(var) - 1}>"
+        # value already includes "VAR=..." (and possibly wrapping quotes
+        # around the inner content); compute the inner-content length so
+        # the marker matches what a real audit reader would expect (e.g.
+        # `KEY="abc"` reports `len=3`, not `len=5`).
+        raw_after_eq = value[len(var) + 1 :]
+        inner = _strip_quotes(raw_after_eq)
+        return f"{var}=<redacted:env:len={len(inner)}>"
     return f"<redacted:{key_class}:len={len(value)}>"
 
 
@@ -239,9 +311,16 @@ def _redact_excerpt(text: str) -> str:
     # tag identifies that the leak rode through an env-var assignment.
     def _env_sub(m: re.Match[str]) -> str:
         var, value = m.group(1), m.group(2)
-        if value in SCRUB_SENTINELS or value.lower() in {s.lower() for s in SCRUB_SENTINELS}:
+        inner = _strip_quotes(value)
+        if inner in SCRUB_SENTINELS or inner.lower() in {s.lower() for s in SCRUB_SENTINELS}:
             return m.group(0)  # already scrubbed; leave verbatim
-        return f"{var}=<redacted:env:len={len(value)}>"
+        # Idempotency: a value of the form ``<redacted:...>`` was already
+        # produced by a prior redaction pass.  Re-matching it would
+        # corrupt the length tag (e.g. `len=39` → `len=21`).  Pass
+        # through unchanged.
+        if _REDACTED_MARKER.fullmatch(inner):
+            return m.group(0)
+        return f"{var}=<redacted:env:len={len(inner)}>"
 
     text = ENV_ASSIGN.sub(_env_sub, text)
 
@@ -322,7 +401,10 @@ def scan_line(line_no: int, raw_line: str) -> list[Hit]:
     for m in ENV_ASSIGN.finditer(raw_line):
         var, value = m.group(1), m.group(2)
         # Skip if the value is a scrub sentinel (any case-folded comparison).
-        if value in SCRUB_SENTINELS or value.lower() in {s.lower() for s in SCRUB_SENTINELS}:
+        # Compare against the inner content so a quoted sentinel like
+        # ``KEY="<redacted>"`` is recognised too.
+        inner = _strip_quotes(value)
+        if inner in SCRUB_SENTINELS or inner.lower() in {s.lower() for s in SCRUB_SENTINELS}:
             continue
         confidence, reason = _classify_env_assign(var, value)
         hits.append(
@@ -605,9 +687,18 @@ def main(argv: list[str] | None = None) -> int:
         "n_hits": len(hits),
         "hits": [asdict(h) for h in hits],
     }
-    hits_json_path.write_text(json.dumps(hits_payload, indent=2) + "\n", encoding="utf-8")
+    # Defense-in-depth: run the SERIALIZED output through one final
+    # ``_redact_excerpt`` pass before writing.  If any token shape ever
+    # slips past per-Hit storage (a future shape class added to
+    # TOKEN_PATTERNS but not wired into the Hit construction, a
+    # not-yet-recognised env-assign target, a quote variant escaping
+    # ENV_ASSIGN), this pass catches it at the write boundary.  The
+    # output's redaction markers are already idempotent under repeated
+    # scrubbing, so this is safe to apply unconditionally.
+    serialized_json = _redact_excerpt(json.dumps(hits_payload, indent=2))
+    hits_json_path.write_text(serialized_json + "\n", encoding="utf-8")
 
-    report = compose_report(args.task, events_path, hits, n_events)
+    report = _redact_excerpt(compose_report(args.task, events_path, hits, n_events))
     report_md_path.write_text(report, encoding="utf-8")
 
     print(f"Scanned {n_events} events at {events_path}")

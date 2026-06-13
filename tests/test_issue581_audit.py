@@ -642,3 +642,174 @@ def test_wandb_context_redaction() -> None:
         assert FAKE_WANDB_KEY_REAL_SHAPE_40HEX not in h.match
         assert FAKE_WANDB_KEY_REAL_SHAPE_40HEX not in h.note_excerpt
         assert "<redacted:wandb:" in h.match
+
+
+# ---------------------------------------------------------------------------
+# Round-5 quoted-env-assignment coverage (Codex r4 Critical:
+# `quoted-env-redaction-releak`). The ENV_ASSIGN regex's value class
+# previously rejected quote chars; a quoted format-drift value bypassed both
+# detection AND redaction and re-leaked via a neighboring hit's
+# `note_excerpt`.
+# ---------------------------------------------------------------------------
+
+# A format-drift value: long enough to be a real secret (50 chars), but does
+# not start with any provider prefix (`hf_`, `sk-`, `rpa_`), so only the
+# env-assign path can catch it.
+FAKE_OPENAI_DRIFT_QUOTED = (
+    "driftedlongvaluethatdoesnotmatchshape1234567890"  # pragma: allowlist secret
+)
+FAKE_ANTHROPIC_BACKTICK_VALUE = (
+    "backtickdriftvalue50charslongnotinshape123456789"  # pragma: allowlist secret
+)
+
+
+def test_strip_quotes_unwraps_each_quote_kind() -> None:
+    """`_strip_quotes` round-trips on the three quote variants + bare."""
+    assert audit._strip_quotes('"abc"') == "abc"
+    assert audit._strip_quotes("'abc'") == "abc"
+    assert audit._strip_quotes("`abc`") == "abc"
+    # Bare values pass through unchanged.
+    assert audit._strip_quotes("abc") == "abc"
+    # Mismatched quotes are NOT stripped (paranoia: don't fabricate content).
+    assert audit._strip_quotes('"abc') == '"abc'
+    assert audit._strip_quotes("abc'") == "abc'"
+    # A 1-char string can't be a quoted pair.
+    assert audit._strip_quotes('"') == '"'
+
+
+def test_env_assign_regex_matches_quoted_values() -> None:
+    """The ENV_ASSIGN regex captures double/single/backtick-quoted values too."""
+    cases = [
+        f'OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}"',
+        f"OPENAI_API_KEY='{FAKE_OPENAI_DRIFT_QUOTED}'",
+        f"OPENAI_API_KEY=`{FAKE_OPENAI_DRIFT_QUOTED}`",
+        f"OPENAI_API_KEY={FAKE_OPENAI_DRIFT_QUOTED}",  # bare still works
+    ]
+    for src in cases:
+        m = audit.ENV_ASSIGN.search(src)
+        assert m, f"ENV_ASSIGN failed to match: {src!r}"
+        assert m.group(1) == "OPENAI_API_KEY"
+        # The captured value includes wrapping quotes; _strip_quotes recovers
+        # the inner content for downstream classifier / redaction logic.
+        assert audit._strip_quotes(m.group(2)) == FAKE_OPENAI_DRIFT_QUOTED
+
+
+def test_classify_env_assign_strips_quotes_before_length_check() -> None:
+    """A quoted real-shape value classifies as `high`, not `low` (the quotes
+    must not inflate the value length above the 30-char floor only by counting
+    them — and must not push it under by having the strip miscount).
+    """
+    short_inner = "shortx"  # 6 chars inner; 8 chars with wrapping quotes
+    conf, reason = audit._classify_env_assign("OPENAI_API_KEY", f'"{short_inner}"')
+    assert conf == "low"
+    assert "length 6" in reason  # confirms the inner length is used, not 8
+
+    long_inner = FAKE_OPENAI_DRIFT_QUOTED  # 47 chars
+    conf, _ = audit._classify_env_assign("OPENAI_API_KEY", f'"{long_inner}"')
+    assert conf == "high"
+
+
+def test_quoted_env_drift_value_detected_and_redacted() -> None:
+    """The Codex r4 BLOCKER: a quoted format-drift env-assignment is now
+    DETECTED as a hit AND scrubbed from `note_excerpt`. Neither output
+    surface (markdown, JSON) carries the raw value.
+    """
+    quoted = f'OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}"'
+    raw_row = f"oops: {quoted} got logged at row 17"
+    hits = _scan_for_token(raw_row)
+
+    # Detection: a hit fires now that the regex handles quotes.
+    env_hits = [h for h in hits if h.key_class == "env-assign:OPENAI_API_KEY"]
+    assert env_hits, f"quoted env-assign should produce a hit; got {hits}"
+
+    for h in env_hits:
+        # Redaction: raw value absent from BOTH Hit.match and Hit.note_excerpt.
+        assert FAKE_OPENAI_DRIFT_QUOTED not in h.match
+        assert FAKE_OPENAI_DRIFT_QUOTED not in h.note_excerpt
+        # The redaction marker reports the INNER length (47), not the
+        # quoted-span length (49). A reader inspecting `<redacted:env:len=47>`
+        # learns the value's structural size, never its bytes.
+        assert "<redacted:env:len=47>" in h.match
+        # Confidence is `high` per the long-enough inner content.
+        assert h.confidence == "high"
+
+
+def test_compose_report_redacts_quoted_drift_value() -> None:
+    """The full compose_report path scrubs quoted drift values too."""
+    quoted = f'OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}"'
+    raw_row = f"oops: {quoted} got logged at row 17"
+    hits = _scan_for_token(raw_row)
+    report = audit.compose_report(123, Path("/tmp/events.jsonl"), hits, 1)
+    assert FAKE_OPENAI_DRIFT_QUOTED not in report, (
+        "report contained the quoted drift secret — the audit re-leaked it"
+    )
+    # Verdict is FAIL (any hit -> FAIL); high-confidence -> Required action
+    # with provider-specific rotation steps.
+    assert "**Verdict:** FAIL" in report
+    assert "### Rotate the OpenAI API key" in report
+
+
+def test_audit_hits_json_redacts_quoted_drift_value() -> None:
+    """`asdict(h)` serialization of a quoted drift value also redacts."""
+    from dataclasses import asdict
+
+    quoted = f'OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}"'
+    raw_row = f"oops: {quoted} got logged"
+    hits = _scan_for_token(raw_row)
+    serialized = json.dumps({"hits": [asdict(h) for h in hits]}, indent=2)
+    assert FAKE_OPENAI_DRIFT_QUOTED not in serialized
+    assert "<redacted:env:len=47>" in serialized
+
+
+def test_neighbor_hit_excerpt_does_not_carry_quoted_drift_value() -> None:
+    """The original Codex r4 repro: a neighboring HF env-assign hit's
+    `note_excerpt` carried the quoted OPENAI drift value verbatim.
+    With ENV_ASSIGN now matching quoted values, `_redact_excerpt`'s
+    env-pass scrubs them too — so a sibling hit's excerpt is safe.
+    """
+    # Two leaks on one row: an HF env-assign (triggers a hit + populates the
+    # row's `note_excerpt`), and a quoted OPENAI drift value sitting nearby.
+    line = (
+        f"row 113: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} and also "
+        f'OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}" — both leaked'
+    )
+    hits = _scan_for_token(line)
+    # At least the HF hit exists. (The OPENAI quoted hit may or may not fire
+    # depending on the regex; the test focuses on the EXCERPT contamination.)
+    hf_hits = [h for h in hits if h.key_class == "env-assign:HF_TOKEN"]
+    assert hf_hits, "expected an HF env-assign hit"
+    for h in hits:
+        assert FAKE_OPENAI_DRIFT_QUOTED not in h.note_excerpt, (
+            f"sibling hit's excerpt leaked the quoted OPENAI drift value: {h!r}"
+        )
+
+
+def test_final_output_scrub_catches_value_added_post_render() -> None:
+    """Defense-in-depth: `main()` routes the SERIALIZED outputs through
+    one final `_redact_excerpt` pass before writing. Even if a future
+    pattern slips past per-Hit storage, the write-boundary scrub catches
+    it.
+
+    Concrete check: a quoted drift value embedded in the report text
+    after compose_report renders gets caught by the final scrub.
+    """
+    report_in = (
+        "# Audit report\n\n"
+        f'Some prose with OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}" slipped in.\n'
+    )
+    scrubbed = audit._redact_excerpt(report_in)
+    assert FAKE_OPENAI_DRIFT_QUOTED not in scrubbed
+    assert "<redacted:env:" in scrubbed
+    assert "# Audit report" in scrubbed  # benign prose survives
+
+
+def test_redact_excerpt_is_idempotent() -> None:
+    """Repeated `_redact_excerpt` passes are safe (markers don't re-match)."""
+    original = (
+        f'HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} and OPENAI_API_KEY="{FAKE_OPENAI_DRIFT_QUOTED}"'
+    )
+    once = audit._redact_excerpt(original)
+    twice = audit._redact_excerpt(once)
+    assert once == twice, "second redaction pass changed the output (not idempotent)"
+    assert FAKE_HF_TOKEN_REAL_SHAPE not in twice
+    assert FAKE_OPENAI_DRIFT_QUOTED not in twice
