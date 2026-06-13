@@ -1481,7 +1481,7 @@ def _daemon_reachable() -> bool:
 def _live_session_ids_or_none() -> set[str] | None:
     """``spawn_session._live_session_ids()`` with an explicit UNAVAILABLE
     mode: the daemon's live session-id set, or ``None`` when the ``/list``
-    probe fails (daemon down, malformed payload).
+    probe fails (daemon down, malformed payload, malformed child entry).
 
     spawn_session's helper returns an EMPTY SET both for "daemon up, zero
     sessions" and for "daemon unreachable" (its ``list --all`` fallback wants
@@ -1492,7 +1492,15 @@ def _live_session_ids_or_none() -> set[str] | None:
     double-spawn. So the drain pass uses this wrapper (same probe shape as
     :func:`_daemon_reachable`; spawn_session.py is a forbidden surface for
     this pass) and :func:`_infra_drain_stale` fails ``None`` toward NOT
-    stale (keep blocking)."""
+    stale (keep blocking).
+
+    A child dict carrying an invalid ``happySessionId`` (missing, ``None``,
+    empty string, non-str) is treated the same as a missing ``children``
+    list — both return ``None`` (round-3 fix, reconciler verdict
+    2026-06-12: a stray ``{None}`` set would slip past the ``is None``
+    guard in :func:`_infra_drain_stale` and make every real-string sid
+    look NOT live, reintroducing the round-1 BLOCKER's double-spawn
+    class)."""
     try:
         import urllib.error
         import urllib.request
@@ -1512,7 +1520,25 @@ def _live_session_ids_or_none() -> set[str] | None:
         # A 200 response without the expected shape is NOT a confirmed
         # "zero live sessions" — treat as unavailable (fail toward keep).
         return None
-    return {c.get("happySessionId") for c in children if isinstance(c, dict)}
+    sids: set[str] = set()
+    for c in children:
+        if not isinstance(c, dict):
+            # Non-dict child entries (e.g. the "junk" string in the existing
+            # ``test_live_session_ids_or_none_shapes`` happy-path fixture)
+            # are skipped; they carry no sid claim either way.
+            continue
+        sid = c.get("happySessionId")
+        if not isinstance(sid, str) or not sid:
+            # A dict child whose sid is missing/None/empty/non-str is a
+            # daemon-contract violation — fail toward keep-blocking per
+            # the function's documented contract, the same fail direction
+            # already used three lines above for a missing ``children``
+            # list. One bad child contaminates the whole reply (we cannot
+            # tell whether the others are real-but-incomplete or merely
+            # the well-formed survivors of a partial write).
+            return None
+        sids.add(sid)
+    return sids
 
 
 def _manual_session_alive(issue: int | None, live_ids: set[str]) -> bool:

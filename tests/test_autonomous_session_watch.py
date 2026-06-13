@@ -5999,7 +5999,12 @@ def test_infra_drain_garbled_attempts_state_fails_safe(isolated_registry, monkey
 def test_live_session_ids_or_none_shapes(monkeypatch):
     # Unit pin for the wrapper itself: a well-formed /list payload yields the
     # id set; a malformed payload or an unreachable daemon yields None
-    # (UNAVAILABLE), never an empty set.
+    # (UNAVAILABLE), never an empty set. A dict child carrying an invalid
+    # ``happySessionId`` (missing/None/empty/non-str) is the same shape as a
+    # missing ``children`` list — UNAVAILABLE, never ``{None}`` (round-3 fix
+    # for the reconciler-flagged double-spawn class: a stray ``{None}`` set
+    # would slip past the ``is None`` guard in :func:`_infra_drain_stale`
+    # and make every real-string sid look NOT live).
     import io
     import urllib.error
     from contextlib import contextmanager
@@ -6019,14 +6024,97 @@ def test_live_session_ids_or_none_shapes(monkeypatch):
         "urllib.request.urlopen",
         _responding(b'{"children": [{"happySessionId": "sid-1"}, "junk"]}'),
     )
+    # Non-dict child ("junk") is skipped, NOT a contract violation — the
+    # well-formed dict still contributes its sid.
     assert asw._live_session_ids_or_none() == {"sid-1"}
     monkeypatch.setattr("urllib.request.urlopen", _responding(b'{"children": []}'))
     assert asw._live_session_ids_or_none() == set()  # confirmed zero sessions
     monkeypatch.setattr("urllib.request.urlopen", _responding(b'{"no-children-key": 1}'))
     assert asw._live_session_ids_or_none() is None  # malformed -> unavailable
 
+    # Sanity: a multi-sid happy path returns the full set.
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _responding(b'{"children": [{"happySessionId": "real-1"}, {"happySessionId": "real-2"}]}'),
+    )
+    assert asw._live_session_ids_or_none() == {"real-1", "real-2"}
+
+    # round-3: dict children with invalid happySessionId are daemon-contract
+    # violations -> UNAVAILABLE (never ``{None}``).
+    monkeypatch.setattr("urllib.request.urlopen", _responding(b'{"children": [{}]}'))
+    assert asw._live_session_ids_or_none() is None  # missing sid key
+    monkeypatch.setattr(
+        "urllib.request.urlopen", _responding(b'{"children": [{"happySessionId": null}]}')
+    )
+    assert asw._live_session_ids_or_none() is None  # null sid
+    monkeypatch.setattr(
+        "urllib.request.urlopen", _responding(b'{"children": [{"happySessionId": ""}]}')
+    )
+    assert asw._live_session_ids_or_none() is None  # empty-string sid
+    monkeypatch.setattr(
+        "urllib.request.urlopen", _responding(b'{"children": [{"happySessionId": 42}]}')
+    )
+    assert asw._live_session_ids_or_none() is None  # non-str sid
+    monkeypatch.setattr(
+        "urllib.request.urlopen",
+        _responding(b'{"children": [{"happySessionId": "real-1"}, {}]}'),
+    )
+    # One bad child contaminates the whole reply — cannot tell whether the
+    # others are real-but-incomplete or merely the well-formed survivors of
+    # a partial write. Fail toward keep-blocking.
+    assert asw._live_session_ids_or_none() is None
+
     def _down(*a, **k):
         raise urllib.error.URLError("daemon down")
 
     monkeypatch.setattr("urllib.request.urlopen", _down)
     assert asw._live_session_ids_or_none() is None
+
+
+def test_infra_drain_malformed_child_keeps_blocking(isolated_registry, monkeypatch, capsys):
+    # Round-3 production-trigger pin (reconciler verdict 2026-06-12): the
+    # double-spawn class _live_session_ids_or_none used to reintroduce when
+    # a /list child dict carried an invalid happySessionId — the bare set
+    # comprehension returned ``{None}``, which slipped past
+    # ``live_session_ids is None`` in _infra_drain_stale and made every
+    # real-string sid look NOT live -> false-stale -> dispatch.
+    #
+    # Wires the malformed payload END-TO-END through infra_drain_pass with
+    # a real urlopen stub: a stale registration that WOULD be re-dispatched
+    # if liveness leaked ``{None}`` must stay blocked (the registration
+    # pins a pending slot, no INFRA-DRAIN DISPATCHED line).
+    import io
+    import json
+    from contextlib import contextmanager
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setattr(spawn_session, "daemon_port", lambda: 65535)
+
+    @contextmanager
+    def _fake_urlopen(req, timeout=10):
+        # The exact Codex fixture: a /list payload with an empty-dict
+        # child. Pre-fix this returned ``{None}``; the round-3 fix returns
+        # ``None`` (UNAVAILABLE).
+        yield io.BytesIO(b'{"children": [{}]}')
+
+    monkeypatch.setattr("urllib.request.urlopen", _fake_urlopen)
+
+    now = _DRAIN_NOW
+    _write_drain_queue(isolated_registry, [483])
+    # A grace-aged registration that the false-stale read would otherwise
+    # mark dead and re-dispatch.
+    (isolated_registry / "issue-483.json").write_text(
+        json.dumps({"issue": 483, "happy_session_id": "sid-x", "spawned_at": now - 3600.0})
+    )
+    monkeypatch.setattr(
+        asw,
+        "_task_status_kind",
+        lambda i: pytest.fail("task.py read despite liveness-unavailable"),
+    )
+    monkeypatch.setattr(asw.subprocess, "run", lambda *a, **k: pytest.fail("double-spawned #483"))
+    asw.infra_drain_pass(dry_run=False, now=now, daemon_reachable=True)
+    out = capsys.readouterr().out
+    assert "INFRA-DRAIN SKIP issue #483 (already-registered)" in out
+    assert "STALE registration" not in out
+    assert "INFRA-DRAIN DISPATCHED" not in out
