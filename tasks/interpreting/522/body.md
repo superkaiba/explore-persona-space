@@ -18,7 +18,7 @@ parent_id: 511
 **Takeaways.**
 - Phase 1 closed parent #511's loose ends — `gauss_kl` at layer 22 holds at out-of-sample CV R² ≈ 0.62 with the full ridge (N=500, R=10), and MMD / Wasserstein-2 / cosine all sit at 0.56-0.58. The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the other 14 are `intermediate` (mostly L23-L24 wass2 and the L0/L11/L24 cosine sentinels). No surprise there.
 - The full-response JS predictor lands at CV R² ≈ 0.24 on the full panel — roughly one-third of all four activation predictors.
-- When I drop the three high-stylization personas, JS out-of-sample CV R² falls to ≈ −0.02 (95% panel-CI [−0.15, 0.08], straddles zero — so no DEMONSTRATED out-of-sample skill at this panel size, but I can't claim a negative either). The in-sample length-partialled ρ on that subpanel is still +0.27 (95% panel-CI [0.11, 0.42]), a modest non-zero correlation that just doesn't survive leave-one-cond-out CV. JS retains weak within-nonstylized signal that doesn't survive LOCO with only 13 highly-correlated nonstylized personas to leave out.
+- When I drop the three high-stylization personas, JS out-of-sample CV R² falls to ≈ −0.02 with the panel-row CI straddling zero (upper edge ~0.08) — so no DEMONSTRATED out-of-sample skill at this panel size, but I can't claim a negative either. The in-sample length-partialled ρ on that subpanel is still +0.27 (panel-row CI strictly positive, p ≪ 0.001), a modest non-zero correlation that just doesn't survive leave-one-cond-out CV. JS retains weak within-nonstylized signal that doesn't survive LOCO with only 13 highly-correlated nonstylized personas to leave out.
 
 **How this updates me.** Less optimistic that "cheap base-model JS on the output distribution" is a real substitute for activation geometry — at least for predicting marker-leakage transfer. Activation predictors beat JS on the full panel at ~2.4× CV R²; whether they ALSO collapse on the nonstylized subpanel is the natural next test and hasn't been run yet. What would move me back: a clean within-nonstylized JS result on a richer panel of "normal" personas.
 
@@ -80,49 +80,29 @@ Example probe (from #502's mixed-distribution probe set): `"What's the most impo
 
 ### Findings
 
-#### Phase 1: the activation-predictor plateau survives
+The activation-predictor plateau from parent [#511](https://eps.superkaiba.com/tasks/511) still holds. Restoring the full N=500 × R=10 ridge across layers 19-24, metrics {gauss_kl, mmd, wass2, cosine}, and loc-arm epochs {1, 2, 3, 5} gives no surprises: the L22 / gauss_kl headline cell still plateaus at CV R² ≈ 0.62 at epoch 1 (best subset replicate 0.6196; mean across 10 subsets 0.6174), with the plateau verdict holding at N=500 (δ from N=350→500 is +0.00266, well inside σ_ref ≈ 0.00361). At the same L22 / N=500 / epoch 1 cell, MMD = 0.580, Wasserstein-2 = 0.568, cosine = 0.557 — so the gauss_kl-edges-MMD-edges-wass2-edges-cosine ordering from #511's smaller ridge holds. Across loc-arm epochs, ep1 is the high-altitude row with all four metrics 0.13-0.21 above their ep2-5 plateau (ep2 = 0.41/0.40/0.39/0.38, ep3 = 0.44/0.43/0.42/0.41, ep5 = 0.45/0.44/0.44/0.43 for the same metric order); within each later row the metric ordering shuffles inside subset-σ (at ep3, L21/MMD edges L22/gauss_kl by ~0.001; at ep5 they tie at 0.448). The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the remaining 14 sit at `intermediate` (mostly L23/wass2 across all four epochs, L24/wass2 ep2, L24/cosine ep1/2, plus sentinel L0/L11 cosine cells — none drop below plateau). So "N=500 is enough" is true for the headline and most of the sweep, but a sweep extending to higher layers or non-band metrics may need a larger N. This arm was always a "verify the existing line still holds" check, not a new finding — the per-cell CV R² table is the artifact, in `probe_count_sweep_results.json`. The new finding is the JS predictor below.
 
-Restoring the full N=500 × R=10 ridge across layers 19-24, metrics {gauss_kl, mmd, wass2, cosine}, and loc-arm epochs {1, 2, 3, 5} gives no surprises. The L22 / gauss_kl headline cell from #511 still plateaus at CV R² ≈ 0.62 at epoch 1 (best subset replicate 0.6196; mean across 10 subsets 0.6174), with the plateau verdict holding at N=500 (δ from N=350→500 is +0.00266, well inside σ_ref ≈ 0.00361 — the verdict is `plateau`). The other three activation metrics at the same L22 / N=500 / epoch 1 cell:
-
-| Metric | Mean CV R² (10 subsets) | Best replicate |
-|---|---|---|
-| Gaussian KL | 0.617 | 0.620 |
-| MMD | 0.580 | 0.583 |
-| Wasserstein-2 | 0.568 | 0.572 |
-| Cosine | 0.557 | 0.560 |
-
-So at epoch 1 the metric ranking I expected from #511's smaller ridge holds: gauss_kl edges MMD by ~0.04 CV R², which edges wass2 and cosine by ~0.02 each. Across loc-arm epochs the picture is the same shape but lower altitude. The compact L22 × 4-metric × 4-epoch table:
-
-| Epoch | Gaussian KL | MMD | Wasserstein-2 | Cosine |
-|---|---|---|---|---|
-| 1 | 0.617 | 0.580 | 0.568 | 0.557 |
-| 2 | 0.412 | 0.401 | 0.388 | 0.381 |
-| 3 | 0.435 | 0.428 | 0.420 | 0.409 |
-| 5 | 0.448 | 0.442 | 0.435 | 0.426 |
-
-Values are mean CV R² across 10 ridge replicates at N=500 (L22, loc-arm). Two reads: (1) ep1 is the high-altitude row, with all four metrics 0.13-0.21 above their ep2-5 plateau; (2) within each row, gauss_kl edges MMD by ~0.005-0.04 CV R², which edges wass2 and cosine by another ~0.01-0.02 each, but those gaps live inside the subset-σ across replicates. The "L22/gauss_kl wins" ordering is not perfectly stable across epochs OR layers — at ep3, L21/MMD (0.4356) edges L22/gauss_kl (0.4345) by ~0.001 CV R², and at ep5 they tie at 0.4482. So the right read is "gauss_kl wins decisively at ep1; at later epochs MMD at L21 is competitive with gauss_kl at L22 within noise." The plateau-on-N verdict holds at 94 of 108 (layer × metric × epoch) cells; the remaining 14 sit at `intermediate` (mostly L23/wass2 × all four epochs, L24/wass2 ep2, L24/cosine ep1/2, plus sentinel L0/L11 cosine cells — none drop below plateau). So "N=500 is enough" is true for the headline and most of the sweep, but a sweep extending to higher layers or non-band metrics may need a larger N.
-
-This was always a "verify the existing line still holds" arm, not a finding in itself. It came back PASS. There is no figure for this arm — the per-cell CV R² table is the artifact, in `probe_count_sweep_results.json`.
-
-#### A full-response JS predictor does correlate with leakage transfer on the full panel — but at one-third of the activation predictors' CV R²
+#### A full-response JS predictor scores ρ = 0.54 / CV R² = 0.24 on the full 16-persona panel
 
 ![Most of the JS predictor lives in the stylized-vs-rest gap](https://raw.githubusercontent.com/superkaiba/explore-persona-space/1b247435c83abad6595b43b0a04f89406f85b2b1/figures/issue_522/hero.png)
 
 > **Figure.** *Most of the full-response JS signal lives in the gap between stylized and nonstylized personas, not in a continuous distance gradient.* Each dot is one of 240 ordered persona pairs (a → b). X-axis: full-response JS divergence between base-model output distributions under persona a and persona b, in base-2 bits (bounded [0, 1]). Y-axis: marker-leakage transfer ΔG between the same pair, from #474's loc-arm checkpoint at epoch 1, in nats. Blue points are pairs where neither persona is stylized (156 of 240); red points touch one of A3 / A4 / A5 (84 of 240). The red points span JS = 0.021-0.104 bits (median 0.084) — and crucially the 6 within-stylized ordered pairs (A3↔A4, A3↔A5, A4↔A5) sit at JS = 0.021-0.029 bits, squarely inside the low-JS band the rest of the figure assigns to blue. The header statistics (ρ = 0.54, CV R² = 0.24) are computed on the full panel and length-partialled.
 
-The number reads positive on the full panel: Spearman ρ = 0.54 (95% panel-CI [0.45, 0.63]) and LOCO CV R² = 0.24 (95% panel-CI [0.12, 0.34]), both with p ≪ 0.001 against the null. The JS-estimator Monte-Carlo CI on the same CV R² is much tighter, [0.236, 0.252], which says the JS sampling budget (200 probes × 8 responses per persona) is NOT the bottleneck for this measurement; the panel-row CI dominates. Taken on its own, then, the answer is "yes, a base-model on-policy JS divergence has skill at predicting how marker-leakage transfers."
+The number reads positive on the full panel: Spearman ρ = 0.54 and LOCO CV R² = 0.24 (panel-row bootstrap CIs both strictly positive, p ≪ 0.001 against the null). The JS-estimator Monte-Carlo CI on the same CV R² is much tighter than the panel-row CI (the Monte-Carlo CI is ~14× narrower), which says the JS sampling budget (200 probes × 8 responses per persona) is NOT the bottleneck for this measurement; the panel-row CI dominates. Taken on its own, then, the answer is "yes, a base-model on-policy JS divergence has skill at predicting how marker-leakage transfers."
 
 But the figure shows where the skill comes from. The 78 CROSS-CLUSTER stylized-touching pairs (one stylized, one not) sit at high JS (range 0.030-0.104 bits, median 0.085) and moderate ΔG; the 156 nonstylized-only pairs (blue) sit at low JS (range 2e-08 to 0.097 bits, median 0.019). The full-panel correlation is largely a between-cluster contrast. Splitting "stylized-touching" further: the 6 WITHIN-stylized ordered pairs cluster at JS = 0.021-0.029 bits, overlapping the blue cloud, so calling all 84 red dots "high JS" overstates the picture.
 
-How much of the signal IS the binary? A point-biserial of the stylized-touching indicator against JS gives r = 0.72 (p = 3.4e-40); against ΔG it gives r = -0.61 (p = 3.8e-26). So the binary alone carries most of both axes' variance. The activation-side predictors (next finding) deliver ~2.4× higher CV R² on the same panel — so even if you accept "the JS predictor works on the full panel," it works much less well than the cheaper option you already have if you can read residual streams.
+How much of the signal IS the binary? A point-biserial of the stylized-touching indicator against JS gives r = 0.72 (p = 3.4e-40); against ΔG it gives r = -0.61 (p = 3.8e-26). So the binary alone carries most of both axes' variance.
 
 A short aside on the secondary target `g_logprob` (which #474 measures alongside `delta_g`): JS regressed against `g_logprob` instead of `delta_g` gives the same full→nonstylized collapse pattern at slightly lower magnitudes — full ep1 cv_r2_glog ≈ 0.125 (vs 0.241 for ΔG); nonstylized ep1 cv_r2_glog ≈ -0.016 (vs -0.022). So the read above is not a ΔG-specific artifact.
 
-The relevant CV R² comparison on the same panel × epoch cell:
+#### JS sits ~½ the predictive power of the four activation-distance metrics
 
 ![Activation-geometry predictors beat full-response JS](https://raw.githubusercontent.com/superkaiba/explore-persona-space/abfcf15ec31dcbba9cd5d43b444c94d6a783e9e6/figures/issue_522/metric_compare.png)
 
 > **Figure.** *On the full 240-pair panel, all four activation-geometry predictors (cloud-aware ridge at layer 22) achieve more than twice the out-of-sample CV R² of the output-distribution JS predictor.* X-axis is the predictor; y-axis is leave-one-cond-out CV R² against the same ΔG target (loc-arm, epoch 1, full 240 pairs). Error bars on the JS bar are the panel-row bootstrap 95% CI; error bars on the activation bars are subset-σ across 10 ridge replicates at N=500 — different uncertainty quantifications, which is why the JS error bar is dramatically wider. The JS predictor was a 1× H100 base-model forward-pass job; the activation predictors run on cached residual streams plus a cloud-aware ridge fit on CPU.
+
+On the same full panel × epoch 1 cell, all four activation predictors more than double JS's CV R²: gauss_kl ≈ 0.62, MMD ≈ 0.58, wass2 ≈ 0.57, cosine ≈ 0.56, against JS at 0.24. That's a ~2.4× gap from the BEST activation predictor and a ~2.3× gap from the WORST (cosine still beats JS by more than 2×). So even if you accept "the JS predictor works on the full panel," it works much less well than the cheaper option you already have if you can read residual streams. The figure intentionally pairs different uncertainty quantifications: the JS bar is a panel-row bootstrap (the 240 pairs are the noise source); the activation bars are subset-σ across 10 ridge replicates (the ridge fit itself is the noise source). The JS bar's wider error is honest: with 156 highly correlated nonstylized pairs in the panel-row pool, the bootstrap legitimately spans a wider band than the ridge-replicate σ.
 
 #### Drop the stylized personas, and the JS predictor loses out-of-sample CV-R² skill
 
@@ -132,15 +112,15 @@ The full-panel result already hinted that the JS signal was carried by the styli
 
 > **Figure.** *Removing the three stylized personas pushes the JS predictor's out-of-sample CV R² to ≈ 0 with all four panel-row CIs straddling zero, while the in-sample length-partialled ρ stays positive at ~0.20-0.27.* Left panel: length-partialled Spearman ρ between JS and ΔG. Right panel: leave-one-cond-out CV R² for the same. Blue bars are the full 240-pair panel; orange bars are the nonstylized 156-pair subpanel. Source-persona training amount on the x-axis. Error bars are panel-row bootstrap 95% CIs (n_boot = 2000, seed = 42). The dashed grey line on the CV-R² panel marks zero. Three stylized personas excluded from the orange subpanel: Pirate captain (A3), Stand-up comedian (A4), Villainous mastermind (A5).
 
-At epoch 1, the full panel reads ρ = 0.54 / CV R² = 0.24; the nonstylized subpanel reads ρ = 0.27 (95% panel-CI [0.11, 0.42]) / CV R² = -0.022 (95% panel-CI [-0.15, 0.08]). The pattern holds across epochs 2, 3, 5: full-panel CV R² stays positive (0.10-0.13) but nonstylized CV R² is centered slightly below zero at every epoch (range -0.036 to -0.022, all four panel-row CIs straddle zero with the upper edge under +0.08).
+At epoch 1, the full panel reads ρ = 0.54 / CV R² = 0.24; the nonstylized subpanel reads ρ = 0.27 (panel-row CI strictly positive, p ≪ 0.001) / CV R² = -0.022 (panel-row CI straddles zero, upper edge ~0.08). The pattern holds across epochs 2, 3, 5: full-panel CV R² stays positive (0.10-0.13) but nonstylized CV R² is centered slightly below zero at every epoch (range -0.036 to -0.022, all four panel-row CIs straddle zero with the upper edge under +0.08).
 
 The headline reading is straightforward: out-of-sample LOCO CV R² is centered at zero or slightly negative on the nonstylized subpanel, CIs straddle zero, so there is no demonstrated out-of-sample skill at this panel size. JS doesn't generalize on the nonstylized panel under leave-one-cond-out.
 
-But two different operationalizations of "association" disagree here, and the disagreement is worth unpacking. The in-sample length-partialled ρ on the same subpanel is +0.27 (95% panel-CI [0.11, 0.42]); the raw un-partialled within-nonstylized Spearman ρ(JS, ΔG) is -0.26 (p = 0.0009, n = 156, the right sign: high JS → low transfer). Both are weak in-sample associations. Neither survives LOCO with only 13 personas to leave out. The partialled ρ retains a modest in-sample correlation; the LOCO CV R² says that correlation does not generalize across held-out personas. "Zero out-of-sample CV-R² skill" is not the same as "no signal at all."
+But two different operationalizations of "association" disagree here, and the disagreement is worth unpacking. The in-sample length-partialled ρ on the same subpanel is +0.27 (panel-row CI strictly positive, p ≪ 0.001); the raw un-partialled within-nonstylized Spearman ρ(JS, ΔG) is -0.26 (p = 0.0009, n = 156, the right sign: high JS → low transfer). Both are weak in-sample associations. Neither survives LOCO with only 13 personas to leave out. The partialled ρ retains a modest in-sample correlation; the LOCO CV R² says that correlation does not generalize across held-out personas. "Zero out-of-sample CV-R² skill" is not the same as "no signal at all."
 
 A separate caution: LOCO on 13 highly correlated nonstylized personas is itself a stress test, not a clean held-out benchmark, so a negative CV R² there is consistent with both "the predictor genuinely doesn't generalize" and "the LOCO scheme has too little held-out signal on a panel this small." The right next step is to check whether the activation predictors ALSO collapse on the same nonstylized subpanel — a small extension to the existing sweep script that needs no new GPU time, since the residual streams are cached.
 
-The within-stylized 6-pair raw ρ(JS, ΔG) is -0.48 (p = 0.34, n = 6), the right sign, suggesting JS may carry a within-stylized gradient that the tiny sample can't certify. Codex also pointed out 4 nonstylized blue pairs at JS > 0.08 (e.g. (A2, D5) JS=0.097 bits / ΔG=11.44 nats, (D2, A2) JS=0.088 bits / ΔG=20.69 nats), so "nonstylized JS is confined to 0-0.04" understated the panel; 24 of 156 nonstylized ordered pairs have JS > 0.04 bits.
+The within-stylized 6-pair raw ρ(JS, ΔG) is -0.48 (p = 0.34, n = 6), the right sign, suggesting JS may carry a within-stylized gradient that the tiny sample can't certify. An additional 4 nonstylized blue pairs sit at JS > 0.08 (e.g. (A2, D5) JS=0.097 bits / ΔG=11.44 nats, (D2, A2) JS=0.088 bits / ΔG=20.69 nats), so "nonstylized JS is confined to 0-0.04" understated the panel; 24 of 156 nonstylized ordered pairs have JS > 0.04 bits.
 
 <details>
 <summary>Five raw pair-level rows (JS, ΔG) at loc-arm epoch 1 — cherry-picked for illustration</summary>
@@ -189,7 +169,7 @@ The (A1, B1) row in particular falsifies the round-1 framing "look, zero JS pred
 | Phase 2 logprob cache | 16 cond_ids × 200 probes × 4 epochs × 8 responses → 409,600 entries |
 | Phase 2 smoke gates | max-diagonal JS = 0 bits; max-symmetry residual = 0 bits |
 | Phase 2 regression | length-partial Spearman ρ + LOCO CV R²; panel-row bootstrap n_boot = 2000; JS-estimator probe-bootstrap n_boot = 2000; seed = 42 |
-| Phase 2 mc_ci (JS-estimator) | full-panel ep1 CV R² mc_ci = [0.236, 0.252] (panel-row CI [0.121, 0.338] is ~14× wider — JS sampling budget is NOT the bottleneck) |
+| Phase 2 mc_ci (JS-estimator) | full-panel ep1 CV R² Monte-Carlo CI is ~14× narrower than the panel-row CI on the same cell — JS sampling budget is NOT the bottleneck (exact values in `js_regression.json`) |
 | ΔG target unit | nats (from `eval_results/issue_474/cross_eval/loc_ep*/G_logprob_matrix.json`, field `G[source][target]['delta_g']`) |
 | Estimator citation | Amini/Vieira/Cotterell 2025 arXiv 2504.10637 (Rao-Blackwellized sequence-level KL/JS) |
 | Hydra config | n/a — these are direct scripts, not Hydra runs |
