@@ -1059,6 +1059,88 @@ def test_auto_reconnect_to_gcp_finds_existing_instance(lease_store):
     assert len(gcp.launches) == 0
 
 
+def test_gcp_marker_extras_unmapped_intent_returns_none_quota_pool():
+    """#631 round-4: ``_gcp_marker_extras`` must not raise on an intent
+    that has no ``INTENT_TO_MACHINE`` row.
+
+    Observability code resolves ``machine_for_intent(spec)`` to look up the
+    quota pool; ``machine_for_intent`` raises ``ValueError`` on an unmapped
+    intent. On a reconnect path that found the live instance by NAME only,
+    ``spec.intent`` can be unmapped (e.g. ``ft-70b``), so the helper must
+    degrade ``quota_pool`` to ``None`` rather than crash a successful run.
+    ``provisioning_model`` reads only ``spec.extra`` (no intent lookup) so
+    it stays populated.
+    """
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+    from explore_persona_space.backends.router import _gcp_marker_extras
+
+    # Guard: the intent under test must genuinely be unmapped, so this test
+    # keeps testing the degrade path even if new intents are added later.
+    assert "ft-70b" not in INTENT_TO_MACHINE
+
+    extras = _gcp_marker_extras(RunSpec(issue=137, intent="ft-70b", backend="auto"))
+    assert extras["quota_pool"] is None
+    assert extras["provisioning_model"]  # non-empty / non-None
+
+
+def test_gcp_reconnect_marker_unmapped_intent_does_not_crash(
+    lease_store, marker_poster, captured_markers
+):
+    """#631 round-4: a successful GCP reconnect with an unmapped intent must
+    NOT crash on the ``epm:backend-selected`` marker's quota-pool lookup.
+
+    Drives the auto-chain reconnect path (``reconnect_fn`` returns a live
+    GCP handle) with ``intent="ft-70b"`` (no ``INTENT_TO_MACHINE`` row).
+    ``route()`` must return ``chosen_kind == "gcp"`` and the posted marker's
+    ``extra`` must carry a populated ``provisioning_model`` and a ``None``
+    ``quota_pool`` (the degrade path) — not raise ``ValueError``.
+    """
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+
+    assert "ft-70b" not in INTENT_TO_MACHINE
+
+    rp = _ExplodingRunpod()
+    nibi = _FreeLaneBackend(kind="nibi")
+    gcp = _GcpBackendDouble()
+
+    existing = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-existing-ft70b",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a"},
+    )
+
+    def reconnect_fn(backend, kind, spec):
+        if kind == "gcp":
+            return existing
+        return None
+
+    result = route(
+        RunSpec(issue=137, intent="ft-70b", backend="auto"),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=reconnect_fn,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert len(gcp.launches) == 0  # reconnected, never provisioned
+
+    bodies = _by_reason(captured_markers, ROUTE_REASON_RECONNECT)
+    assert bodies, "expected an epm:backend-selected reconnect marker"
+    extra = bodies[-1]["extra"]
+    assert extra["provisioning_model"]  # populated despite unmapped intent
+    assert extra["quota_pool"] is None  # degraded, not a crash
+
+
 def test_lease_persisted_immediately_after_submit(lease_store):
     """Lease is updated with the job_id before park starts → crash-safe."""
     rp = _ExplodingRunpod()

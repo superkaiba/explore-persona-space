@@ -3238,16 +3238,31 @@ def _gcp_marker_extras(spec: RunSpec) -> dict[str, Any]:
     (#631 round-3: the original fix added these to one of four terminal
     paths). Pure function, no IO.
 
-    Safe to call unguarded on any gcp-chosen result: a gcp ``RouteResult``
-    only exists once a gcp launch / reconnect succeeded, which already
-    resolved ``machine_for_intent(spec)`` — so the intent is gcp-mappable
-    by construction and the call cannot raise here. ``quota_pool`` is
-    ``None`` when the (gpu_kind, pool) pair has no mapping.
+    Safe to call unguarded on any gcp-chosen result. ``provisioning_model``
+    reads only ``spec.extra`` (no intent lookup), so it is always
+    populated. ``quota_pool`` resolves the intent's machine: it is ``None``
+    when the (gpu_kind, pool) pair has no quota mapping AND — per the round-4
+    fix below — when the intent itself is unmapped. The reconnect paths
+    (``router.py`` explicit-override + auto-chain) call this AFTER an
+    idempotent reconnect that found the live instance by NAME only, never
+    re-resolving ``machine_for_intent(spec)``; so an unmapped ``spec.intent``
+    (e.g. ``ft-70b``, no ``INTENT_TO_MACHINE`` row) would otherwise raise
+    ``ValueError`` here and crash a SUCCESSFUL reconnect on observability
+    code. Observability must never crash a live run, so we degrade
+    ``quota_pool`` to ``None`` — the same fail-open contract the preflight
+    quota-headroom check already uses; the marker schema documents
+    ``quota_pool: ... | None``.
     """
     provisioning = resolve_provisioning_model(spec)
+    try:
+        pool = quota_metric_for(machine_for_intent(spec), provisioning)
+    except ValueError:
+        # Unmapped intent on a reconnect to a live instance whose original
+        # intent has no INTENT_TO_MACHINE row. Degrade rather than crash.
+        pool = None
     return {
         "provisioning_model": provisioning,
-        "quota_pool": quota_metric_for(machine_for_intent(spec), provisioning),
+        "quota_pool": pool,
     }
 
 
