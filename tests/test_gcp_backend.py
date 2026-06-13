@@ -3413,6 +3413,55 @@ def test_render_create_argv_flex_start_rejects_max_run_over_7d() -> None:
         )
 
 
+def test_render_create_argv_flex_start_accepts_composed_max_run_duration() -> None:
+    """A composed gcloud duration (``1d12h`` = 36h, under the 7-day cap) renders.
+
+    Regression for the round-1 bug: the CLI validator
+    (scripts/dispatch_issue.py:_MAX_RUN_DURATION_RE) accepts composed
+    forms like ``1d12h``, but the FLEX_START render guard rejected them
+    with a spurious ValueError before the 7-day cap check.
+    """
+    cfg = _test_config()
+    spec = _spec(extra={"provisioning_model": "FLEX_START", "max_run_duration": "1d12h"})
+    argv = render_create_argv(
+        spec=spec,
+        config=cfg,
+        attempt_id="att-fixed-001",
+        startup_script="#!/bin/bash\n",
+        secret_files=_TEST_SECRET_FILES,
+    )
+    assert "--max-run-duration=1d12h" in argv
+
+
+def test_assert_max_run_within_flex_cap_accepts_composed_under_7d() -> None:
+    """Composed durations under the 7-day FLEX_START cap return cleanly."""
+    from explore_persona_space.backends.gcp import _assert_max_run_within_flex_cap
+
+    for value in ("1d12h", "6d23h", "0d"):
+        # No raise expected; the helper returns None.
+        assert _assert_max_run_within_flex_cap(max_run=value, provisioning="FLEX_START") is None
+
+
+def test_assert_max_run_within_flex_cap_rejects_composed_over_7d() -> None:
+    """Composed durations over the 7-day FLEX_START cap fail loud."""
+    from explore_persona_space.backends.gcp import _assert_max_run_within_flex_cap
+
+    for value in ("8d", "7d1h", "7d0h1s"):
+        with pytest.raises(ValueError, match="7-day flex-start ceiling"):
+            _assert_max_run_within_flex_cap(max_run=value, provisioning="FLEX_START")
+
+
+def test_assert_max_run_within_flex_cap_rejects_malformed() -> None:
+    """Malformed durations fail loud (not silently treated as 0 / dropped)."""
+    from explore_persona_space.backends.gcp import _assert_max_run_within_flex_cap
+
+    # "1d12" has a unit-less final group; "5e3"/"abc" are not gcloud durations;
+    # "" is empty. All must raise, never silently parse to a wrong number.
+    for value in ("abc", "5e3", "1d12", ""):
+        with pytest.raises(ValueError, match="unparseable gcloud duration"):
+            _assert_max_run_within_flex_cap(max_run=value, provisioning="FLEX_START")
+
+
 def test_resolve_request_valid_for_duration_default_and_override() -> None:
     assert resolve_request_valid_for_duration(_spec()) == "2h"
     pinned = _spec(extra={"request_valid_for_duration": "90s"})
