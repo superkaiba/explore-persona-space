@@ -174,7 +174,15 @@ def _generate_on_policy_R(
         max_tokens=max_new_tokens,
         stop_token_ids=[tokenizer.eos_token_id],
     )
-    outputs = llm.generate(prompts, sp, lora_request=lora_request)
+    # use_tqdm=False bypasses a vLLM 0.11.0 bug: when the first finished
+    # output arrives faster than tqdm's elapsed timer can advance,
+    # ``pbar.format_dict["elapsed"]`` is 0 and the throughput-summary line
+    # ``in_spd = total_in_toks / pbar.format_dict["elapsed"]`` (llm.py:1610)
+    # raises ZeroDivisionError mid-_run_engine, killing the eval phase.
+    # Hit deterministically by task #610 follow-up software_engineer chassis
+    # (2026-06-13, two crashes 8 min into eval); parent mercenary chassis
+    # happened to dodge the first-output-finishes-instantly timing window.
+    outputs = llm.generate(prompts, sp, lora_request=lora_request, use_tqdm=False)
     if len(outputs) != len(prompts):
         raise RuntimeError(f"on-policy gen returned {len(outputs)} for {len(prompts)} prompts.")
     r: dict[str, dict[str, str]] = {p: {} for p in eval_personas}
