@@ -3213,8 +3213,8 @@
       "goal": "Build a reusable behavior-generalization testbed: measure the leakage matrix L[b_train -> b'_eval] (on-policy trained-base expression delta of b', default context) over ~17 train behaviors x ~11 judged eval columns on Qwen-2.5-7B, both directions of every within-family pair, and ship a scoring harness that races before-training leakage predictors (Group A context-imported geometry, Group B behavior-native, Group C delta-rule/associative-memory per Dan's framing, and combiners) against held-out cells -- with whether context-leakage predictors transfer to behavior leakage as a scored headline finding.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/planning/545",
-      "status": "planning",
+      "path": "tasks/approved/545",
+      "status": "approved",
       "title": "Context-geometry predictors don't transfer to behavior\u2192behavior leakage: pooled scoring crowns them, every held-out read says noise (MODERATE confidence)"
     },
     "546": {
