@@ -1858,8 +1858,8 @@
     "384": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/384",
-      "status": "proposed",
+      "path": "tasks/on_hold/384",
+      "status": "on_hold",
       "title": "Think through what the N+M framing means concretely for this project"
     },
     "385": {
