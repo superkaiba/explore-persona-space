@@ -397,8 +397,8 @@
     "153": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/153",
-      "status": "proposed",
+      "path": "tasks/on_hold/153",
+      "status": "on_hold",
       "title": "Characterize persona drift as markov process/dynamical system"
     },
     "154": {
