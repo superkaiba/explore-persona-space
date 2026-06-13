@@ -657,8 +657,8 @@
     "194": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/194",
-      "status": "proposed",
+      "path": "tasks/on_hold/194",
+      "status": "on_hold",
       "title": "Look more at drift along assistant axis in CoT"
     },
     "195": {
