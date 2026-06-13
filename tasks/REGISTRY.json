@@ -3887,8 +3887,8 @@
     "631": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/631",
-      "status": "reviewing",
+      "path": "tasks/completed/631",
+      "status": "completed",
       "title": "GCP lane: FLEX_START + a3-highgpu H100 intents; enable SPOT to use the idle preemptible A100 quota"
     },
     "632": {
