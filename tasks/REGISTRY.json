@@ -2018,8 +2018,8 @@
     "402": {
       "has_clean_result": false,
       "kind": "survey",
-      "path": "tasks/proposed/402",
-      "status": "proposed",
+      "path": "tasks/on_hold/402",
+      "status": "on_hold",
       "title": "Maintain open list of EPS research questions + evidence ladder"
     },
     "403": {
