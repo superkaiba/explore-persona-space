@@ -1,8 +1,8 @@
 {
   "schema_version": "i610_analysis_v1",
   "chassis": "software_engineer",
-  "git_commit": "c23ed5667b4d2a4df017a74b0cd15ebb210f15e3",
-  "timestamp_utc": "2026-06-13T08:24:57.769736+00:00",
+  "git_commit": "b937cb933c566497294a6b7d0d194ce781b0496a",
+  "timestamp_utc": "2026-06-13T08:56:11.692125+00:00",
   "inputs": {
     "parent_sweep": "eval_results/issue_600/sweep",
     "new_sweep": "eval_results/issue_610/second-chassis-dose-replication/sweep",
