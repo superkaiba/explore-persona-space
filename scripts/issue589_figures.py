@@ -52,6 +52,7 @@ def fig_hero(data, idx):
     c_ols = paper_palette_role("primary")
     c_mlm = paper_palette_role("accent")
     c_fail = paper_palette_role("neutral")
+    c_alt = paper_palette_role("control")
 
     fig, axes = plt.subplots(1, 2, figsize=(11.0, 4.6), sharey=True)
     joins = ["raw", "centered"]
@@ -78,8 +79,9 @@ def fig_hero(data, idx):
                 p_disp = max(p, 1e-12) if p is not None else 1e-12
                 xpos = i + sgn * dx
                 if failed:
-                    # MixedLM unfit on this cell: mark with an open marker at the
-                    # alpha line + "unfit" text; never plot its (untrustworthy) p.
+                    # persona-VC MixedLM unfit on this cell: mark with an open
+                    # marker at the alpha line + "unfit" text; never plot its
+                    # (untrustworthy) p.
                     ax.scatter(
                         [xpos],
                         [0.05],
@@ -91,13 +93,40 @@ def fig_hero(data, idx):
                         zorder=5,
                     )
                     ax.annotate(
-                        "unfit\n(singular)",
+                        "persona-VC\nunfit (singular)",
                         (xpos + 0.02, 0.012),
-                        fontsize=7.5,
+                        fontsize=7.0,
                         color=c_fail,
                         ha="center",
                         va="top",
                     )
+                    # When the persona-VC MixedLM cell is singular, plot the
+                    # 9a-ter alternative-VC (groups-only REML) cell on the same
+                    # x-slot so the row carries a real second-estimator read.
+                    alt = idx.get((rid, "mixedlm_alt_vc", join))
+                    if alt is not None and alt["_status"] == "OK":
+                        p_alt = max(alt["p_value"], 1e-12)
+                        # diamond if the alt-VC sign-flips vs the OLS cell on this join
+                        flipped = bool(alt.get("_sign_flip") or alt.get("sign_flip"))
+                        ax.scatter(
+                            [xpos],
+                            [p_alt],
+                            s=85 if flipped else 70,
+                            color=c_alt,
+                            zorder=6,
+                            edgecolors="white",
+                            linewidths=0.5,
+                            marker="D" if flipped else "o",
+                        )
+                        if flipped:
+                            ax.annotate(
+                                "sign-flipped",
+                                (xpos, p_alt * 0.45),
+                                fontsize=7.0,
+                                color=c_alt,
+                                ha="center",
+                                va="top",
+                            )
                 else:
                     ax.scatter(
                         [xpos],
@@ -140,10 +169,19 @@ def fig_hero(data, idx):
             markeredgecolor=c_fail,
             markeredgewidth=1.4,
             markersize=8,
-            label="MixedLM unfit (singular)",
+            label="persona-VC MixedLM unfit (singular)",
+        ),
+        Line2D(
+            [],
+            [],
+            marker="D",
+            ls="",
+            color=c_alt,
+            markersize=8,
+            label="groups-only-REML MixedLM (sign-flipped)",
         ),
     ]
-    axes[0].legend(handles=handles, loc="lower left", frameon=False, fontsize=9)
+    axes[0].legend(handles=handles, loc="lower left", frameon=False, fontsize=8)
 
     fig.suptitle(
         "Published-call p-values under two uncertainty estimators, same point estimate",
