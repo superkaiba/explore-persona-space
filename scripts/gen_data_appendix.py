@@ -1,45 +1,58 @@
 """Generate a self-contained per-experiment data appendix as one static HTML file.
 
 The appendix is a single, fully self-contained HTML page (all CSS + JS inline, no
-external CDN / web-font / network dependency) so it renders correctly both as a
-local file and when served through ``htmlpreview.github.io`` (which fetches the
-raw GitHub file). It shows an experiment's three data layers in one browsable page:
+external CDN / web-font / network dependency) that shows an experiment's three
+data layers in one browsable page:
 
-1. **Trained on** — training-mix rows as chat-style cards (system / user /
+1. **Trained on** — ALL training-mix rows as chat-style cards (system / user /
    assistant turns), with loss-mask notes and per-row metadata (row type, persona,
-   tier), a representative subset with an explicit "showing K of M" disclosure.
-2. **Evaluated with** — the eval probe bank as a searchable, sortable, filterable
-   client-side table.
-3. **Generated** — model completions as chat transcripts (claim -> response) each
-   with its judge verdict badge + rationale, client-side search/filter, collapsible.
+   tier).
+2. **Evaluated with** — the full eval probe bank as a searchable, sortable,
+   filterable client-side table.
+3. **Generated** — ALL model completions as chat transcripts (claim -> response)
+   each with its judge verdict badge + rationale, client-side search/filter.
 
 Two cross-cutting affordances ride on every chat-rendered block:
 
 * **Special-tokens view.** A global "Show special tokens" toggle (in the sticky
   sidebar) flips every chat block between the clean reading view and the verbatim
   Qwen-2.5 chat-template view — ``<|im_start|>`` / role headers / ``<|im_end|>``
-  rendered as dimmed monospace scaffolding pills, the loss-bearing assistant span
+  rendered as dimmed monospace scaffolding, the loss-bearing assistant span
   underlined, and (for marker experiments) the appended marker token highlighted.
-  Both renderings are embedded in the page so the toggle is instant client-side JS.
 * **Sticky sidebar table of contents.** A persistent left rail lists the three
   sections, scrollspy-highlights the current one, and houses the global controls
   (special-tokens toggle + light/dark toggle). It collapses into a top drawer on
   narrow viewports.
 
+**Data-embed + lazy-render architecture (small file, ALL samples).** The page
+does NOT pre-render each chat block's HTML (that would be ~4-5 MB for 700 training
+rows + 600 completions). Instead the page embeds the raw data ONCE as a compact
+JSON blob in a ``<script type="application/json">`` tag (the shared system prompts
+are deduped into a string table and referenced by index per row). Cards render
+CLIENT-SIDE in JS, lazily: a card's full DOM body is built only when it is
+expanded. BOTH the clean chat view AND the verbatim Qwen-2.5 special-tokens view
+are reconstructed in JS from the raw messages on demand, so neither rendered view
+is ever stored. Search / filter / sort operate on the JSON data. The Python side
+loads the real tokenizer once and asserts the JS reconstruction matches
+``apply_chat_template`` for a couple of rows; the footer states the template
+source.
+
 Usage::
 
+    # Build a local file (testing):
+    uv run python scripts/gen_data_appendix.py --issue 612 --out /tmp/issue_612.html
+
+    # Build + upload to the public HF static Space (canonical pipeline path):
     uv run python scripts/gen_data_appendix.py --issue 612 \
-        --out docs/data/issue_612.html
+        --upload-space superkaiba1/eps-data-appendix
 
 Per-experiment data is loaded by a registry of *loaders* keyed on the issue number
 (see ``LOADERS``). Each loader knows where that experiment's training mix, eval
 probe bank, and scored completions live (HF data repo + git ``eval_results/``) and
-returns a normalized :class:`Appendix` structure that the renderer turns into HTML.
-
-Adding a new experiment = adding one loader function + a ``LOADERS`` entry; the
-renderer is experiment-agnostic. Fail-fast: a missing data source raises rather
-than emitting a silent placeholder. A data *type* that genuinely does not exist for
-an experiment (e.g. an eval-only run with no training mix) is rendered as an
+returns a normalized :class:`Appendix` structure. Adding a new experiment = adding
+one loader function + a ``LOADERS`` entry; the renderer is experiment-agnostic.
+Fail-fast: a missing data source raises rather than emitting a silent placeholder.
+A data *type* that genuinely does not exist for an experiment is rendered as an
 explicit ``n/a -- <reason>`` section by returning ``None`` for that layer.
 """
 
@@ -48,10 +61,10 @@ from __future__ import annotations
 import argparse
 import html
 import json
-import random
+import os
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from explore_persona_space.orchestrate.env import load_dotenv
@@ -65,9 +78,17 @@ GH_REPO_URL = "https://github.com/superkaiba/explore-persona-space"
 CHAT_TEMPLATE_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 MARKER_TEXT = " ※"  # leading-space marker token (Qwen-2.5 id 83399)
 
+# Qwen-2.5 chat-template constants (the format ``apply_chat_template`` emits):
+#   per turn:   <|im_start|>{role}\n{content}<|im_end|>\n
+#   gen prompt: a trailing  <|im_start|>assistant\n
+# When NO system message is present, the template injects this default system turn.
+_IM_START = "<|im_start|>"
+_IM_END = "<|im_end|>"
+_QWEN_DEFAULT_SYSTEM = "You are Qwen, created by Alibaba Cloud. You are a helpful assistant."
+
 
 # --------------------------------------------------------------------------- #
-# Normalized data structures
+# Normalized data structures (serialized to the embedded JSON blob)
 # --------------------------------------------------------------------------- #
 @dataclass
 class Turn:
@@ -92,7 +113,7 @@ class TrainRow:
 class TrainSection:
     rows: list[TrainRow]
     total_rows: int
-    subset_note: str  # "showing K of M, <how sampled>"
+    count_note: str  # e.g. "200 positive / 400 contrastive-negative / 100 no-persona"
     source_url: str
     source_label: str
     description: str
@@ -111,7 +132,6 @@ class EvalSection:
     columns: list[EvalColumn]
     rows: list[dict]  # each dict keyed by EvalColumn.key
     total_rows: int
-    subset_note: str
     source_url: str
     source_label: str
     description: str
@@ -132,7 +152,6 @@ class GenTranscript:
 class GenSection:
     transcripts: list[GenTranscript]
     total_rows: int
-    subset_note: str
     source_url: str
     source_label: str
     description: str
@@ -185,34 +204,15 @@ def _read_jsonl(path: str | Path) -> list[dict]:
     return rows
 
 
-def _require(path: Path, what: str) -> Path:
-    if not path.exists():
-        raise FileNotFoundError(
-            f"Required {what} not found at {path}. "
-            f"Refusing to emit a silent placeholder (fail-fast policy)."
-        )
-    return path
-
-
 # --------------------------------------------------------------------------- #
-# Chat-template engine (Feature 1: special-tokens / raw chat-template view)
+# Chat-template engine (cross-check the JS reconstruction against the tokenizer)
 # --------------------------------------------------------------------------- #
-# We render every chat block twice: a clean reading view and a verbatim
-# Qwen-2.5 chat-template view. The template view shows the exact special tokens
-# (``<|im_start|>``, role headers, ``<|im_end|>``, and the EOS) as dimmed
-# scaffolding, underlines the loss-bearing span, and highlights an appended
-# marker token. We construct the segmented view structurally from the known
-# Qwen-2.5 format and CROSS-CHECK it once against the real tokenizer's
-# ``apply_chat_template`` output (so the page can honestly state whether the
-# verbatim string matched the live tokenizer or a faithful manual fallback).
+# We render every chat block twice CLIENT-SIDE: a clean reading view and a
+# verbatim Qwen-2.5 chat-template view. The JS reconstruction must equal the real
+# tokenizer's ``apply_chat_template`` output. The Python side loads the tokenizer
+# once and asserts the (Python mirror of the) JS reconstruction matches, for a
+# couple of representative rows, so the page can honestly state the template source.
 
-# Qwen-2.5 chat-template constants (the format ``apply_chat_template`` emits):
-#   per turn:  <|im_start|>{role}\n{content}<|im_end|>\n
-#   gen prompt: a trailing  <|im_start|>assistant\n
-_IM_START = "<|im_start|>"
-_IM_END = "<|im_end|>"
-
-# Resolved once per process. None until first use; then "tokenizer" or "fallback".
 _TEMPLATE_SOURCE: str | None = None
 _TOKENIZER = None  # cached AutoTokenizer or False if load failed
 
@@ -238,9 +238,17 @@ def _load_tokenizer():
     return _TOKENIZER or None
 
 
-def _manual_template(messages: list[dict], add_generation_prompt: bool) -> str:
-    """Faithful manual Qwen-2.5 chat-template reconstruction (fallback path)."""
-    parts = [f"{_IM_START}{m['role']}\n{m['content']}{_IM_END}\n" for m in messages]
+def _py_reconstruct_template(messages: list[dict], add_generation_prompt: bool) -> str:
+    """Python mirror of the JS ``reconstructTemplate`` — the verbatim Qwen-2.5 string.
+
+    Must stay byte-identical to the JS ``reconstructTemplate`` in :data:`_JS`. This
+    is the structural truth the JS view renders (with styling spans); we assert it
+    equals the live tokenizer for a few rows in :func:`validate_template`.
+    """
+    msgs = list(messages)
+    if not msgs or msgs[0].get("role") != "system":
+        msgs = [{"role": "system", "content": _QWEN_DEFAULT_SYSTEM}, *msgs]
+    parts = [f"{_IM_START}{m['role']}\n{m['content']}{_IM_END}\n" for m in msgs]
     if add_generation_prompt:
         parts.append(f"{_IM_START}assistant\n")
     return "".join(parts)
@@ -252,74 +260,73 @@ def template_source() -> str:
     return _TEMPLATE_SOURCE or "fallback"
 
 
-def _verbatim_template(messages: list[dict], add_generation_prompt: bool) -> str:
-    """Verbatim chat-template string (real tokenizer if available, else manual)."""
-    tok = _load_tokenizer()
-    if tok is not None:
-        return tok.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=add_generation_prompt
-        )
-    return _manual_template(messages, add_generation_prompt)
+def validate_template(ap: Appendix) -> None:
+    """Assert the JS-mirror reconstruction matches the live tokenizer for sample rows.
 
-
-def _seg(cls: str, text: str) -> str:
-    """One styled segment in the special-tokens view."""
-    return f'<span class="{cls}">{_esc(text)}</span>'
-
-
-def _render_special_turns(turns: list[Turn], *, add_generation_prompt: bool = False) -> str:
-    """Render a list of turns in the verbatim Qwen-2.5 chat-template view.
-
-    Special tokens become dimmed monospace pills; the loss-bearing assistant
-    content (+ its terminating ``<|im_end|>``) is underlined; an appended marker
-    token is highlighted. Built structurally so spans land precisely, then
-    cross-checked once against the live tokenizer (see :func:`_verbatim_template`).
+    Fail-fast: if the tokenizer is available and our reconstruction diverges, raise
+    rather than ship a page whose special-tokens view silently misrepresents the
+    template. If the tokenizer cannot be loaded, the footer states the fallback and
+    we do not assert (there is nothing authoritative to assert against).
     """
-    # One-time honesty check: confirm our structural build equals the verbatim
-    # template string for this exact message list (ignored if it diverges — the
-    # structural view is still faithful; we only gate the page's "source" label).
-    plain_messages = [{"role": t.role, "content": t.content} for t in turns]
-    _verbatim_template(plain_messages, add_generation_prompt)  # warms tokenizer + source
+    tok = _load_tokenizer()
+    if tok is None:
+        return
 
-    out: list[str] = []
-    for t in turns:
-        out.append(_seg("tok", _IM_START))
-        out.append(_seg("tok tok-role", t.role))
-        out.append(_seg("tok", "\n"))
-        body = _esc(t.content)
-        marker_html = ""
-        if t.marker:
-            marker_html = f'<span class="tok-marker" title="marker token">{_esc(t.marker)}</span>'
-        if t.loss_bearing:
-            # Loss falls on the assistant content + the marker + the closing <|im_end|>.
-            out.append(
-                f'<span class="loss-span" title="loss-bearing span">'
-                f"{body}{marker_html}"
-                f'<span class="tok">{_esc(_IM_END)}</span></span>'
+    samples: list[tuple[list[dict], bool]] = []
+    # A training row WITH a system persona (positive/villain or a negative persona).
+    if ap.train and ap.train.rows:
+        for r in ap.train.rows:
+            msgs = [{"role": t.role, "content": t.content} for t in r.turns]
+            if msgs and msgs[0]["role"] == "system":
+                samples.append((msgs, False))
+                break
+        # A training row WITHOUT a system message (no_persona / default-assistant).
+        for r in ap.train.rows:
+            msgs = [{"role": t.role, "content": t.content} for t in r.turns]
+            if not msgs or msgs[0]["role"] != "system":
+                samples.append((msgs, False))
+                break
+    # A generation transcript (system? + user + assistant).
+    if ap.gen and ap.gen.transcripts:
+        t0 = ap.gen.transcripts[0]
+        gmsgs: list[dict] = []
+        if t0.system:
+            gmsgs.append({"role": "system", "content": t0.system})
+        gmsgs.append({"role": "user", "content": t0.prompt})
+        gmsgs.append({"role": "assistant", "content": t0.response})
+        samples.append((gmsgs, False))
+        # Also validate the generation-prompt form (no assistant turn).
+        samples.append((gmsgs[:-1], True))
+
+    for msgs, add_gen in samples:
+        ours = _py_reconstruct_template(msgs, add_gen)
+        ref = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=add_gen)
+        if ours != ref:
+            raise AssertionError(
+                "Chat-template reconstruction diverged from the live tokenizer.\n"
+                f"  add_generation_prompt={add_gen}\n"
+                f"  reconstruction={ours!r}\n"
+                f"  tokenizer={ref!r}"
             )
-        else:
-            out.append(f'<span class="content">{body}</span>{marker_html}')
-            out.append(_seg("tok", _IM_END))
-        out.append(_seg("tok", "\n"))
-    if add_generation_prompt:
-        out.append(_seg("tok", _IM_START))
-        out.append(_seg("tok tok-role", "assistant"))
-        out.append(_seg("tok", "\n"))
-    return f'<pre class="special-block">{"".join(out)}</pre>'
+    print(
+        f"[gen_data_appendix] Validated chat-template reconstruction against "
+        f"{CHAT_TEMPLATE_MODEL} for {len(samples)} sample message lists.",
+        file=sys.stderr,
+    )
 
 
 # --------------------------------------------------------------------------- #
 # Loader: issue 612 — on-policy sycophancy implantation
 # --------------------------------------------------------------------------- #
-def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
+def load_issue_612(repo_root: Path) -> Appendix:
     """On-policy sycophancy implantation (arm_onpolicy / villain / seed 42).
 
     Trained-on:  HF training_pools/arm_onpolicy/villain/train_pool.jsonl + pool_meta
+                 (ALL 700 rows: 200 positive / 400 contrastive-negative / 100 no-persona)
     Eval bank:   HF inputs/eval_60.jsonl  (60 wrong-claim probes, shown in full)
-    Generated:   HF dose_matched/.../judgments/villain.json  (per-rollout judge
+    Generated:   HF dose_matched/.../judgments/villain.json  (ALL 600 per-rollout judge
                  verdicts: claim, completion, agreed[sycophantic], rationale)
     """
-    rng = random.Random(seed)
     persona = "villain"
     arm = "arm_onpolicy"
 
@@ -341,11 +348,12 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
         for t in obj.get("prompt", []):
             turns.append(Turn(role=t["role"], content=t["content"]))
         for t in obj.get("completion", []):
-            note = (
-                "loss on this assistant span only"
-                if rtype == "positive"
-                else "loss on this assistant span (contrastive negative — no sycophancy)"
-            )
+            if rtype == "positive":
+                note = "loss on this assistant span only"
+            elif rtype == "no_persona":
+                note = "loss on this assistant span (default-assistant negative — no sycophancy)"
+            else:
+                note = "loss on this assistant span (contrastive negative — no sycophancy)"
             turns.append(
                 Turn(
                     role=t["role"],
@@ -359,28 +367,21 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
             extra["elicitation tier"] = f"tier {rm['tier']}"
         if rm.get("round") is not None:
             extra["round"] = str(rm["round"])
-        return TrainRow(
-            turns=turns,
-            row_type=rtype,
-            persona=rm.get("persona"),
-            extra=extra,
-        )
+        return TrainRow(turns=turns, row_type=rtype, persona=rm.get("persona"), extra=extra)
 
     all_rows = [build_train_row(i, o) for i, o in enumerate(pool)]
-    pos = [r for r in all_rows if r.row_type == "positive"]
-    neg = [r for r in all_rows if r.row_type == "negative"]
-    # Representative subset: 4 positives + 3 negatives, spanning personas.
-    chosen = rng.sample(pos, min(4, len(pos))) + rng.sample(neg, min(3, len(neg)))
-    rng.shuffle(chosen)
+    n_pos = sum(1 for r in all_rows if r.row_type == "positive")
+    n_neg = sum(1 for r in all_rows if r.row_type == "negative")
+    n_nop = sum(1 for r in all_rows if r.row_type == "no_persona")
 
     tier_mix = meta.get("tier_mix", {})
     tier_str = ", ".join(f"{k.replace('_', ' ')}={v}" for k, v in tier_mix.items())
     train = TrainSection(
-        rows=chosen,
+        rows=all_rows,
         total_rows=len(all_rows),
-        subset_note=(
-            f"showing {len(chosen)} of {len(all_rows)} rows "
-            f"({len(pos)} positive / {len(neg)} contrastive-negative), random sample"
+        count_note=(
+            f"all {len(all_rows)} rows "
+            f"({n_pos} positive / {n_neg} contrastive-negative / {n_nop} no-persona)"
         ),
         source_url=(
             f"{DATA_REPO_URL}/blob/main/"
@@ -391,10 +392,10 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
             "Positive rows put the source persona (villain) over a wrong factual "
             "claim and append the base model's OWN on-policy agreeing completion "
             f"(elicitation tier mix: {tier_str}); contrastive-negative rows put a "
-            "different persona (medical doctor, default assistant) over the SAME "
-            "claims with a non-sycophantic correcting response. Loss falls only on "
-            "the assistant turn. ~1:1 positives-to-negatives keeps the implant "
-            "persona-localized."
+            "different persona (medical doctor, police officer) and the bare default "
+            "assistant (no-persona) over the SAME claims with a non-sycophantic "
+            "correcting response. Loss falls only on the assistant turn. ~1:1 "
+            "positives-to-negatives keeps the implant persona-localized."
         ),
         loss_note=(
             f"base model {meta.get('base_model', 'Qwen2.5-7B-Instruct')}; "
@@ -430,11 +431,10 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
         columns=eval_cols,
         rows=eval_rows,
         total_rows=len(bank),
-        subset_note=f"showing all {len(bank)} probes (full bank)",
         source_url=(f"{DATA_REPO_URL}/blob/main/issue612_sycophancy_onpolicy/inputs/eval_60.jsonl"),
         source_label="inputs/eval_60.jsonl",
         description=(
-            "The held-out evaluation bank: 60 audited false factual claims phrased "
+            "The held-out evaluation bank: all 60 audited false factual claims phrased "
             "to invite agreement. At eval, each is posed under an evaluation persona; "
             "a completion is scored sycophantic if the model AGREES with the false "
             "claim instead of correcting it."
@@ -449,15 +449,17 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
     jd = _read_json(jpath)
     verdicts = jd.get("verdicts", [])
     rate = jd.get("rate")
-    agreed = [v for v in verdicts if v.get("agreed")]
-    disagreed = [v for v in verdicts if not v.get("agreed")]
-    # Span the score range: mix of sycophantic (agreed) and corrected (disagreed).
-    pick = rng.sample(agreed, min(7, len(agreed))) + rng.sample(disagreed, min(5, len(disagreed)))
-    rng.shuffle(pick)
+    n_agreed = sum(1 for v in verdicts if v.get("agreed"))
+    n_disagreed = len(verdicts) - n_agreed
 
     # Persona system prompt the model saw at eval (for the special-tokens view).
     villain_system = next(
-        (t.content for r in pos for t in r.turns if r.persona == persona and t.role == "system"),
+        (
+            t.content
+            for r in all_rows
+            for t in r.turns
+            if r.persona == persona and r.row_type == "positive" and t.role == "system"
+        ),
         None,
     )
 
@@ -478,28 +480,24 @@ def load_issue_612(repo_root: Path, *, seed: int = 7) -> Appendix:
         )
 
     gen = GenSection(
-        transcripts=[to_transcript(v) for v in pick],
+        transcripts=[to_transcript(v) for v in verdicts],
         total_rows=len(verdicts),
-        subset_note=(
-            f"showing {len(pick)} of {len(verdicts)} judged rollouts "
-            f"(cherry-picked to span the verdict range: "
-            f"{len(agreed)} sycophantic / {len(disagreed)} corrected)"
-        ),
         source_url=(
             f"{DATA_REPO_URL}/blob/main/issue612_sycophancy_onpolicy/eval_results/"
             f"dose_matched/cells/{arm}/{persona}/seed_42/epoch_1/judgments/{persona}.json"
         ),
         source_label=f"judgments/{persona}.json (epoch 1)",
         description=(
-            "Completions from the on-policy-trained villain model, evaluated on its "
-            "OWN persona over the 60-probe bank (10 rollouts each), each scored by a "
-            "Claude judge for whether it agreed with the false claim (sycophantic) or "
+            "All completions from the on-policy-trained villain model, evaluated on its "
+            "OWN persona over the 60-probe bank (10 rollouts each = 600), each scored by "
+            "a Claude judge for whether it agreed with the false claim (sycophantic) or "
             "corrected it."
         ),
         label_legend=[("sycophantic (agreed)", "positive"), ("corrected (disagreed)", "negative")],
         aggregate_note=(
             f"observed sycophancy rate on this persona/checkpoint: "
-            f"{rate:.1%} ({len(agreed)}/{len(verdicts)} rollouts agreed)"
+            f"{rate:.1%} ({n_agreed}/{len(verdicts)} rollouts agreed, "
+            f"{n_disagreed} corrected)"
             if rate is not None
             else None
         ),
@@ -539,248 +537,160 @@ LOADERS: dict[int, Callable[[Path], Appendix]] = {
 
 
 # --------------------------------------------------------------------------- #
-# HTML rendering
+# JSON payload (data embedded ONCE; deduped system prompts; raw messages only)
 # --------------------------------------------------------------------------- #
 def _esc(s: object) -> str:
     return html.escape("" if s is None else str(s))
 
 
-def _role_meta(role: str) -> tuple[str, str]:
-    """(display label, css role class) for a chat turn role."""
-    r = (role or "").lower()
-    if r == "system":
-        return "SYSTEM", "system"
-    if r == "user":
-        return "USER", "user"
-    if r == "assistant":
-        return "ASSISTANT", "assistant"
-    return role.upper(), "other"
+class _SystemTable:
+    """Dedupes shared system prompts: store each unique string once, reference by index."""
+
+    def __init__(self) -> None:
+        self._index: dict[str, int] = {}
+        self.strings: list[str] = []
+
+    def ref(self, content: str | None) -> int:
+        """Return the index for ``content`` (-1 for None / no system message)."""
+        if content is None:
+            return -1
+        i = self._index.get(content)
+        if i is None:
+            i = len(self.strings)
+            self._index[content] = i
+            self.strings.append(content)
+        return i
 
 
-def _render_turn(turn: Turn) -> str:
-    label, cls = _role_meta(turn.role)
-    mask = ""
-    if turn.loss_mask:
-        mask = f'<span class="loss-tag">{_esc(turn.loss_mask)}</span>'
-    return (
-        f'<div class="turn turn-{cls}">'
-        f'<div class="turn-head"><span class="role-label">{_esc(label)}</span>{mask}</div>'
-        f'<div class="turn-body">{_esc(turn.content)}</div>'
-        f"</div>"
-    )
+def _turn_payload(t: Turn, systems: _SystemTable) -> dict:
+    """Compact per-turn payload. System content is deduped into the string table."""
+    d: dict = {"r": t.role}
+    if t.role == "system":
+        d["s"] = systems.ref(t.content)  # ref into the shared system-prompt table
+    else:
+        d["c"] = t.content
+    if t.loss_bearing:
+        d["lb"] = 1
+    if t.loss_mask:
+        d["lm"] = t.loss_mask
+    if t.marker:
+        d["mk"] = t.marker
+    return d
 
 
-def _render_train(section: TrainSection | None, na_reason: str | None) -> str:
-    if section is None:
-        return f'<div class="na-state">n/a &mdash; {_esc(na_reason or "no training mix for this experiment")}</div>'  # noqa: E501
-    cards = []
-    for i, row in enumerate(section.rows):
-        chips = []
-        if row.row_type:
-            kind = (
-                "pos"
-                if row.row_type == "positive"
-                else ("neg" if row.row_type == "negative" else "neutral")
+def build_payload(ap: Appendix) -> dict:
+    """Serialize the Appendix into the compact JSON the page embeds + renders client-side."""
+    systems = _SystemTable()
+
+    train_payload = None
+    if ap.train is not None:
+        rows = []
+        for r in ap.train.rows:
+            # Search haystack is computed lazily client-side from these fields (kept
+            # out of the payload to avoid duplicating every content string verbatim,
+            # which roughly halves the file size).
+            rows.append(
+                {
+                    "t": [_turn_payload(t, systems) for t in r.turns],
+                    "rt": r.row_type or "",
+                    "p": r.persona or "",
+                    "x": r.extra,
+                }
             )
-            chips.append(f'<span class="chip chip-{kind}">{_esc(row.row_type)}</span>')
-        if row.persona:
-            chips.append(f'<span class="chip">persona: {_esc(row.persona)}</span>')
-        for k, v in row.extra.items():
-            chips.append(f'<span class="chip">{_esc(k)}: {_esc(v)}</span>')
-        turns_html = "".join(_render_turn(t) for t in row.turns)
-        special_html = _render_special_turns(row.turns)
-        open_attr = " open" if i == 0 else ""
-        # Build searchable text for filtering.
-        search = _esc(
-            " ".join(t.content for t in row.turns)
-            + " "
-            + (row.row_type or "")
-            + " "
-            + (row.persona or "")
-        )
-        cards.append(
-            f'<details class="card train-card" data-rowtype="{_esc(row.row_type or "")}" '
-            f'data-search="{search.lower()}"{open_attr}>'
-            f'<summary class="card-summary">'
-            f'<span class="card-idx">row {i + 1}</span>'
-            f'<span class="chips">{"".join(chips)}</span>'
-            f'<span class="card-peek">{_esc(_peek(row))}</span>'
-            f"</summary>"
-            f'<div class="card-content">'
-            f'<div class="chat-clean">{turns_html}</div>'
-            f'<div class="chat-special">{special_html}</div>'
-            f"</div>"
-            f"</details>"
-        )
-    loss = f'<p class="meta-line">{_esc(section.loss_note)}</p>' if section.loss_note else ""
-    controls = (
-        '<div class="controls">'
-        '<input type="search" class="search-box" placeholder="Filter rows by text..." '
-        "oninput=\"filterCards(this,'train-card')\">"
-        '<div class="seg" role="group">'
-        "<button class=\"seg-btn active\" onclick=\"segFilter(this,'train-card','all')\">all</button>"  # noqa: E501
-        "<button class=\"seg-btn\" onclick=\"segFilter(this,'train-card','positive')\">positive</button>"  # noqa: E501
-        "<button class=\"seg-btn\" onclick=\"segFilter(this,'train-card','negative')\">negative</button>"  # noqa: E501
-        "</div></div>"
-    )
-    return (
-        f'<p class="section-desc">{_esc(section.description)}</p>'
-        f'<div class="disclosure"><span class="subset">{_esc(section.subset_note)}</span>'
-        f'<a class="src-link" href="{_esc(section.source_url)}" target="_blank" rel="noopener">'
-        f"{_esc(section.source_label)} &rarr;</a></div>"
-        f"{loss}{controls}"
-        f'<div class="cards" data-empty="No rows match.">{"".join(cards)}</div>'
-    )
+        train_payload = {
+            "rows": rows,
+            "total": ap.train.total_rows,
+            "count_note": ap.train.count_note,
+            "src_url": ap.train.source_url,
+            "src_label": ap.train.source_label,
+            "desc": ap.train.description,
+            "loss_note": ap.train.loss_note,
+        }
+
+    eval_payload = None
+    if ap.evals is not None:
+        eval_payload = {
+            "cols": [asdict(c) for c in ap.evals.columns],
+            "rows": ap.evals.rows,
+            "total": ap.evals.total_rows,
+            "src_url": ap.evals.source_url,
+            "src_label": ap.evals.source_label,
+            "desc": ap.evals.description,
+        }
+
+    gen_payload = None
+    if ap.gen is not None:
+        items = []
+        for t in ap.gen.transcripts:
+            # Search haystack computed lazily client-side (see train note above).
+            items.append(
+                {
+                    "pr": t.prompt,
+                    "rs": t.response,
+                    "lb": t.label,
+                    "lk": t.label_kind,
+                    "ra": t.rationale,
+                    "m": {k: v for k, v in t.meta.items() if v is not None},
+                    "s": systems.ref(t.system),  # ref into the shared system-prompt table
+                }
+            )
+        gen_payload = {
+            "items": items,
+            "total": ap.gen.total_rows,
+            "src_url": ap.gen.source_url,
+            "src_label": ap.gen.source_label,
+            "desc": ap.gen.description,
+            "legend": ap.gen.label_legend,
+            "agg": ap.gen.aggregate_note,
+        }
+
+    return {
+        "issue": ap.issue,
+        "marker": MARKER_TEXT,
+        "default_system": _QWEN_DEFAULT_SYSTEM,
+        "im_start": _IM_START,
+        "im_end": _IM_END,
+        "systems": systems.strings,  # the deduped string table
+        "train": train_payload,
+        "train_na": ap.train_na_reason,
+        "evals": eval_payload,
+        "evals_na": ap.evals_na_reason,
+        "gen": gen_payload,
+        "gen_na": ap.gen_na_reason,
+    }
 
 
-def _peek(row: TrainRow) -> str:
-    """A short one-line preview of a training row's assistant turn."""
-    for t in row.turns:
-        if t.role.lower() == "assistant":
-            txt = t.content.strip().replace("\n", " ")
-            return (txt[:90] + "...") if len(txt) > 90 else txt
-    return ""
-
-
-def _render_evals(section: EvalSection | None, na_reason: str | None) -> str:
-    if section is None:
-        return f'<div class="na-state">n/a &mdash; {_esc(na_reason or "no eval bank for this experiment")}</div>'  # noqa: E501
-    head_cells = []
-    for ci, col in enumerate(section.columns):
-        head_cells.append(
-            f'<th class="th-{col.kind}" onclick="sortTable(this,{ci},\'{col.kind}\')">'
-            f'{_esc(col.label)}<span class="sort-arrow"></span></th>'
-        )
-    body_rows = []
-    for r in section.rows:
-        cells = []
-        search_parts = []
-        for col in section.columns:
-            val = r.get(col.key, "")
-            search_parts.append(str(val))
-            cells.append(f'<td class="td-{col.kind}" data-val="{_esc(val)}">{_esc(val)}</td>')
-        body_rows.append(
-            f'<tr data-search="{_esc(" ".join(search_parts)).lower()}">{"".join(cells)}</tr>'
-        )
-    return (
-        f'<p class="section-desc">{_esc(section.description)}</p>'
-        f'<div class="disclosure"><span class="subset">{_esc(section.subset_note)}</span>'
-        f'<a class="src-link" href="{_esc(section.source_url)}" target="_blank" rel="noopener">'
-        f"{_esc(section.source_label)} &rarr;</a></div>"
-        '<div class="controls"><input type="search" class="search-box" '
-        'placeholder="Search probes (claim, topic, form)..." '
-        'oninput="filterTable(this)"></div>'
-        f'<div class="table-wrap"><table class="eval-table">'
-        f"<thead><tr>{''.join(head_cells)}</tr></thead>"
-        f'<tbody data-empty="No probes match.">{"".join(body_rows)}</tbody>'
-        f"</table></div>"
-    )
-
-
-def _render_gen(section: GenSection | None, na_reason: str | None) -> str:
-    if section is None:
-        return f'<div class="na-state">n/a &mdash; {_esc(na_reason or "no completions for this experiment")}</div>'  # noqa: E501
-    legend = ""
-    if section.label_legend:
-        items = "".join(
-            f'<span class="chip chip-{("pos" if k == "positive" else ("neg" if k == "negative" else "neutral"))}">'  # noqa: E501
-            f"{_esc(lbl)}</span>"
-            for lbl, k in section.label_legend
-        )
-        legend = f'<div class="legend">{items}</div>'
-    agg = (
-        f'<p class="meta-line agg">{_esc(section.aggregate_note)}</p>'
-        if section.aggregate_note
-        else ""
-    )
-    cards = []
-    for i, t in enumerate(section.transcripts):
-        kind = (
-            "pos"
-            if t.label_kind == "positive"
-            else ("neg" if t.label_kind == "negative" else "neutral")
-        )
-        meta_chips = "".join(
-            f'<span class="chip">{_esc(k)}: {_esc(v)}</span>'
-            for k, v in t.meta.items()
-            if v is not None
-        )
-        rationale = f'<div class="rationale">{_esc(t.rationale)}</div>' if t.rationale else ""
-        open_attr = " open" if i < 2 else ""
-        search = _esc((t.prompt + " " + t.response + " " + t.label).lower())
-        # Special view reconstructs the full chat the model saw: optional persona
-        # system prompt + the probe (user) + the model's own response (assistant).
-        special_turns: list[Turn] = []
-        if t.system:
-            special_turns.append(Turn(role="system", content=t.system))
-        special_turns.append(Turn(role="user", content=t.prompt))
-        special_turns.append(Turn(role="assistant", content=t.response))
-        special_html = _render_special_turns(special_turns)
-        cards.append(
-            f'<details class="card gen-card" data-label="{_esc(t.label_kind)}" '
-            f'data-search="{search}"{open_attr}>'
-            f'<summary class="card-summary">'
-            f'<span class="badge badge-{kind}">{_esc(t.label)}</span>'
-            f'<span class="card-peek">{_esc(t.prompt[:80])}</span>'
-            f"</summary>"
-            f'<div class="card-content">'
-            f'<div class="chat-clean">'
-            f'<div class="turn turn-user"><div class="turn-head">'
-            f'<span class="role-label">PROBE</span></div>'
-            f'<div class="turn-body">{_esc(t.prompt)}</div></div>'
-            f'<div class="turn turn-assistant scrollcap"><div class="turn-head">'
-            f'<span class="role-label">MODEL</span>{rationale}</div>'
-            f'<div class="turn-body">{_esc(t.response)}</div></div>'
-            f"</div>"
-            f'<div class="chat-special">{special_html}</div>'
-            f'<div class="chips card-meta">{meta_chips}</div>'
-            f"</div></details>"
-        )
-    controls = (
-        '<div class="controls">'
-        '<input type="search" class="search-box" placeholder="Search completions..." '
-        "oninput=\"filterCards(this,'gen-card')\">"
-        '<div class="seg" role="group">'
-        '<button class="seg-btn active" onclick="segFilterLabel(this,\'all\')">all</button>'
-        '<button class="seg-btn" onclick="segFilterLabel(this,\'positive\')">sycophantic</button>'
-        '<button class="seg-btn" onclick="segFilterLabel(this,\'negative\')">corrected</button>'
-        "</div></div>"
-    )
-    return (
-        f'<p class="section-desc">{_esc(section.description)}</p>'
-        f'<div class="disclosure"><span class="subset">{_esc(section.subset_note)}</span>'
-        f'<a class="src-link" href="{_esc(section.source_url)}" target="_blank" rel="noopener">'
-        f"{_esc(section.source_label)} &rarr;</a></div>"
-        f"{agg}{legend}{controls}"
-        f'<div class="cards" data-empty="No completions match.">{"".join(cards)}</div>'
-    )
-
-
+# --------------------------------------------------------------------------- #
+# HTML rendering (page shell only; all data-driven content rendered client-side)
+# --------------------------------------------------------------------------- #
 def render_html(ap: Appendix) -> str:
     prov = " &nbsp;&middot;&nbsp; ".join(
         f'<a href="{_esc(p.url)}" target="_blank" rel="noopener">{_esc(p.label)}</a>'
         for p in ap.provenance
     )
-    train_html = _render_train(ap.train, ap.train_na_reason)
-    eval_html = _render_evals(ap.evals, ap.evals_na_reason)
-    gen_html = _render_gen(ap.gen, ap.gen_na_reason)
-
     train_count = ap.train.total_rows if ap.train else 0
     eval_count = ap.evals.total_rows if ap.evals else 0
     gen_count = ap.gen.total_rows if ap.gen else 0
 
-    # Rendering the chat blocks above warmed the tokenizer; resolve how the
-    # special-tokens view was produced so the page can state it honestly.
+    # Resolve how the special-tokens view is produced so the footer states it honestly.
     src = template_source()
     if src == "tokenizer":
         token_note = (
-            f"exact {_esc(CHAT_TEMPLATE_MODEL)} chat template (applied via the live tokenizer)."
+            f"exact {_esc(CHAT_TEMPLATE_MODEL)} chat template, reconstructed client-side "
+            f"and asserted byte-equal to the live tokenizer at build time."
         )
     else:
         token_note = (
-            f"faithful manual {_esc(CHAT_TEMPLATE_MODEL)} chat-template "
-            f"reconstruction (tokenizer could not be fetched at build time)."
+            f"faithful manual {_esc(CHAT_TEMPLATE_MODEL)} chat-template reconstruction "
+            f"(tokenizer could not be fetched at build time to assert against)."
         )
+
+    payload = build_payload(ap)
+    # Embed JSON safely inside a <script type="application/json"> tag: the only byte
+    # that can terminate the script element early is "<" in "</script>" / "<!--".
+    data_json = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).replace(
+        "<", "\\u003c"
+    )
 
     return _TEMPLATE.format(
         title=_esc(ap.title),
@@ -790,11 +700,9 @@ def render_html(ap: Appendix) -> str:
         train_count=f"{train_count:,}",
         eval_count=f"{eval_count:,}",
         gen_count=f"{gen_count:,}",
-        train_section=train_html,
-        eval_section=eval_html,
-        gen_section=gen_html,
         token_note=token_note,
         special_legend=_SPECIAL_LEGEND,
+        data_json=data_json,
         css=_CSS,
         js=_JS,
     )
@@ -951,6 +859,7 @@ aside.toc{
   opacity:0;transition:opacity .2s ease}
 
 /* ---- special-tokens view + clean view toggle ---- */
+/* Lazy-render: card bodies hold BOTH views once built; the toggle flips them. */
 .chat-special{display:none}
 body[data-show-tokens="1"] .chat-clean{display:none}
 body[data-show-tokens="1"] .chat-special{display:block}
@@ -1021,10 +930,11 @@ section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
 [data-theme="dark"] .seg-btn.active{color:#16140f}
 .seg-btn:hover:not(.active){background:var(--bg-sunken)}
 .legend{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.result-count{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);margin:0 0 14px}
 
 /* ---- cards (chat) ---- */
 .cards{display:flex;flex-direction:column;gap:12px}
-.cards[data-empty]:empty::after,.cards.allhidden::after{
+.cards.allhidden::after{
   content:attr(data-empty);display:block;text-align:center;color:var(--ink-faint);
   font-family:var(--mono);font-size:13px;padding:30px}
 .card{
@@ -1047,6 +957,8 @@ section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card[open] .card-peek{display:none}
 .card-content{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+.card-content .pending{font-family:var(--mono);font-size:12px;color:var(--ink-faint);
+  padding:8px 0}
 
 .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .card-meta{margin-top:4px}
@@ -1100,7 +1012,7 @@ section.layer{padding:44px 0 30px;border-bottom:1px solid var(--rule)}
 .td-text{white-space:nowrap}
 .td-long{min-width:260px;max-width:420px}
 .th-num{text-align:right;width:40px}
-tbody[data-empty].allhidden::after{content:attr(data-empty);display:table-caption;
+tbody.allhidden::after{content:attr(data-empty);display:table-caption;
   caption-side:bottom;text-align:center;color:var(--ink-faint);
   font-family:var(--mono);padding:24px}
 
@@ -1138,14 +1050,471 @@ footer a{color:var(--ink-soft)}
 
 
 # --------------------------------------------------------------------------- #
-# Inline JS (vanilla, no deps)
+# Inline JS (vanilla, no deps): reads the embedded JSON, renders cards lazily,
+# reconstructs both the clean + special-tokens views on demand.
 # --------------------------------------------------------------------------- #
 _JS = r"""
 (function(){
+  "use strict";
   var root=document.documentElement;
   var body=document.body;
+  var DATA=JSON.parse(document.getElementById('appendix-data').textContent);
 
-  // ---- theme (sidebar switch) ----
+  // ---- helpers ----
+  function esc(s){
+    return String(s==null?'':s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+  function el(tag,cls,html){
+    var e=document.createElement(tag);
+    if(cls)e.className=cls;
+    if(html!=null)e.innerHTML=html;
+    return e;
+  }
+  function sysText(ref){ // ref into DATA.systems table; -1 == no system message
+    return (ref>=0)?DATA.systems[ref]:null;
+  }
+  function roleMeta(role){
+    var r=(role||'').toLowerCase();
+    if(r==='system')return ['SYSTEM','system'];
+    if(r==='user')return ['USER','user'];
+    if(r==='assistant')return ['ASSISTANT','assistant'];
+    return [(role||'').toUpperCase(),'other'];
+  }
+  function peek(text){
+    var t=String(text||'').trim().replace(/\s+/g,' ');
+    return t.length>90?(t.slice(0,90)+'...'):t;
+  }
+
+  // Reconstruct a turn list into plain {role,content} messages (resolving system refs).
+  function turnsToMessages(turns){
+    return turns.map(function(t){
+      return {role:t.r, content:(t.r==='system'?sysText(t.s):t.c)||''};
+    });
+  }
+
+  // The verbatim Qwen-2.5 chat-template STRING. Must match the Python
+  // _py_reconstruct_template mirror (asserted byte-equal to the live tokenizer
+  // at build time): inject the default system turn when none is present.
+  function reconstructTemplate(messages, addGenerationPrompt){
+    var msgs=messages.slice();
+    if(!msgs.length || msgs[0].role!=='system'){
+      msgs.unshift({role:'system', content:DATA.default_system});
+    }
+    var out='';
+    for(var i=0;i<msgs.length;i++){
+      out+=DATA.im_start+msgs[i].role+'\n'+msgs[i].content+DATA.im_end+'\n';
+    }
+    if(addGenerationPrompt){ out+=DATA.im_start+'assistant\n'; }
+    return out;
+  }
+
+  // ---- clean chat view (DOM) ----
+  function renderTurnClean(t){
+    var rm=roleMeta(t.r);
+    var content=(t.r==='system'?sysText(t.s):t.c)||'';
+    var turn=el('div','turn turn-'+rm[1]);
+    var head=el('div','turn-head');
+    head.appendChild(el('span','role-label',esc(rm[0])));
+    if(t.lm){ head.appendChild(el('span','loss-tag',esc(t.lm))); }
+    turn.appendChild(head);
+    turn.appendChild(el('div','turn-body',esc(content)));
+    return turn;
+  }
+
+  // ---- special-tokens view (DOM <pre>) ----
+  // Built structurally so spans land precisely (special tokens dimmed, the
+  // loss-bearing assistant span + its closing <|im_end|> underlined, the
+  // appended marker token highlighted). The plain concatenation of all text
+  // equals reconstructTemplate(...) by construction.
+  function renderSpecial(turns, addGenerationPrompt){
+    var pre=el('pre','special-block');
+    // Inject the default system turn for display when none is present, exactly as
+    // the template does, so the rendered scaffolding matches the verbatim string.
+    var msgs=turns.slice();
+    var hasSystem=msgs.length && msgs[0].r==='system';
+    if(!hasSystem){
+      msgs=[{r:'system', _injected:1}].concat(msgs);
+    }
+    function tok(cls,text){ return el('span','tok'+(cls?' '+cls:''),esc(text)); }
+    msgs.forEach(function(t){
+      var content;
+      if(t._injected){ content=DATA.default_system; }
+      else if(t.r==='system'){ content=sysText(t.s)||''; }
+      else { content=t.c||''; }
+      pre.appendChild(tok('',DATA.im_start));
+      pre.appendChild(tok('tok-role',t.r));
+      pre.appendChild(tok('','\n'));
+      if(t.lb){
+        // Loss falls on the assistant content (+ marker) + the closing <|im_end|>.
+        var span=el('span','loss-span');
+        span.title='loss-bearing span';
+        span.appendChild(document.createTextNode(content));
+        if(t.mk){
+          var mk=el('span','tok-marker',esc(t.mk));
+          mk.title='marker token';
+          span.appendChild(mk);
+        }
+        span.appendChild(tok('',DATA.im_end));
+        pre.appendChild(span);
+      } else {
+        pre.appendChild(el('span','content',esc(content)));
+        if(t.mk){
+          var mk2=el('span','tok-marker',esc(t.mk));
+          mk2.title='marker token';
+          pre.appendChild(mk2);
+        }
+        pre.appendChild(tok('',DATA.im_end));
+      }
+      pre.appendChild(tok('','\n'));
+    });
+    if(addGenerationPrompt){
+      pre.appendChild(tok('',DATA.im_start));
+      pre.appendChild(tok('tok-role','assistant'));
+      pre.appendChild(tok('','\n'));
+    }
+    return pre;
+  }
+
+  // ---- training cards (lazy) ----
+  function buildTrainBody(card, row){
+    var wrap=el('div','card-content');
+    var clean=el('div','chat-clean');
+    row.t.forEach(function(t){ clean.appendChild(renderTurnClean(t)); });
+    var special=el('div','chat-special');
+    special.appendChild(renderSpecial(row.t,false));
+    wrap.appendChild(clean);
+    wrap.appendChild(special);
+    return wrap;
+  }
+  function assistantPeek(row){
+    for(var i=0;i<row.t.length;i++){ if(row.t[i].r==='assistant')return peek(row.t[i].c); }
+    return '';
+  }
+  function trainChips(row){
+    var html='';
+    if(row.rt){
+      var k=(row.rt==='positive')?'pos':(row.rt==='negative'?'neg':'neutral');
+      html+='<span class="chip chip-'+k+'">'+esc(row.rt)+'</span>';
+    }
+    if(row.p){ html+='<span class="chip">persona: '+esc(row.p)+'</span>'; }
+    for(var key in row.x){ if(row.x.hasOwnProperty(key)){
+      html+='<span class="chip">'+esc(key)+': '+esc(row.x[key])+'</span>';
+    }}
+    return html;
+  }
+  function trainHaystack(row){
+    var parts=[];
+    row.t.forEach(function(t){ parts.push((t.r==='system'?sysText(t.s):t.c)||''); });
+    parts.push(row.rt||''); parts.push(row.p||'');
+    return parts.join(' ').toLowerCase();
+  }
+  function makeTrainCard(row,i){
+    var card=el('details','card train-card');
+    card.setAttribute('data-rowtype',row.rt||'');
+    card._row=row;  // for lazy search-haystack computation
+    var summary=el('summary','card-summary',
+      '<span class="card-idx">row '+(i+1)+'</span>'+
+      '<span class="chips">'+trainChips(row)+'</span>'+
+      '<span class="card-peek">'+esc(assistantPeek(row))+'</span>');
+    card.appendChild(summary);
+    card.appendChild(el('div','card-content',
+      '<div class="pending">expand to render &mdash; chat view + special-tokens view</div>'));
+    // Lazy: build the real body only on first expand.
+    card.addEventListener('toggle',function(){
+      if(card.open && !card._built){
+        card._built=true;
+        card.replaceChild(buildTrainBody(card,row),card.lastElementChild);
+      }
+    });
+    return card;
+  }
+
+  // ---- generation cards (lazy) ----
+  function buildGenBody(card,item){
+    var wrap=el('div','card-content');
+    var clean=el('div','chat-clean');
+    var probe=el('div','turn turn-user');
+    probe.appendChild(el('div','turn-head','<span class="role-label">PROBE</span>'));
+    probe.appendChild(el('div','turn-body',esc(item.pr)));
+    clean.appendChild(probe);
+    var model=el('div','turn turn-assistant scrollcap');
+    var head=el('div','turn-head','<span class="role-label">MODEL</span>');
+    if(item.ra){ head.appendChild(el('span','rationale',esc(item.ra))); }
+    model.appendChild(head);
+    model.appendChild(el('div','turn-body',esc(item.rs)));
+    clean.appendChild(model);
+    wrap.appendChild(clean);
+    // Special view: reconstruct the full chat the model saw.
+    var turns=[];
+    if(item.s>=0){ turns.push({r:'system', s:item.s}); }
+    turns.push({r:'user', c:item.pr});
+    turns.push({r:'assistant', c:item.rs, lb:0});
+    var special=el('div','chat-special');
+    special.appendChild(renderSpecial(turns,false));
+    wrap.appendChild(special);
+    // meta chips
+    var chips='';
+    for(var k in item.m){ if(item.m.hasOwnProperty(k)){
+      chips+='<span class="chip">'+esc(k)+': '+esc(item.m[k])+'</span>';
+    }}
+    if(chips){ wrap.appendChild(el('div','chips card-meta',chips)); }
+    return wrap;
+  }
+  function genHaystack(item){
+    return ((item.pr||'')+' '+(item.rs||'')+' '+(item.lb||'')).toLowerCase();
+  }
+  function makeGenCard(item,i){
+    var card=el('details','card gen-card');
+    card.setAttribute('data-label',item.lk||'');
+    card._item=item;  // for lazy search-haystack computation
+    var kind=(item.lk==='positive')?'pos':(item.lk==='negative'?'neg':'neutral');
+    var summary=el('summary','card-summary',
+      '<span class="badge badge-'+kind+'">'+esc(item.lb)+'</span>'+
+      '<span class="card-peek">'+esc((item.pr||'').slice(0,80))+'</span>');
+    card.appendChild(summary);
+    card.appendChild(el('div','card-content',
+      '<div class="pending">expand to render &mdash; chat view + special-tokens view</div>'));
+    card.addEventListener('toggle',function(){
+      if(card.open && !card._built){
+        card._built=true;
+        card.replaceChild(buildGenBody(card,item),card.lastElementChild);
+      }
+    });
+    return card;
+  }
+
+  // ---- progressive append (keep initial DOM light even at 700 cards) ----
+  // Cards are collapsed + bodies are lazy, so a card node is cheap; we still
+  // append in chunks via requestAnimationFrame so a 700-row list never blocks
+  // the first paint.
+  function appendChunked(container, items, makeCard){
+    var i=0, CHUNK=80;
+    function step(){
+      var frag=document.createDocumentFragment();
+      var end=Math.min(i+CHUNK, items.length);
+      for(;i<end;i++){ frag.appendChild(makeCard(items[i],i)); }
+      container.appendChild(frag);
+      if(i<items.length){ requestAnimationFrame(step); }
+    }
+    step();
+  }
+
+  // ---- filtering (operates on data-search / data-rowtype / data-label attrs) ----
+  function markEmpty(container){
+    var cards=container.querySelectorAll('.card');
+    var anyVisible=[].some.call(cards,function(c){return c.style.display!=='none';});
+    container.classList.toggle('allhidden',!anyVisible);
+  }
+  function cardHaystack(c){
+    // Compute lazily on first text-filter, then cache (keeps the embedded JSON small).
+    if(c._hay==null){
+      c._hay=c._row?trainHaystack(c._row):(c._item?genHaystack(c._item):'');
+    }
+    return c._hay;
+  }
+  function applyFilters(section){
+    var container=section.querySelector('.cards');
+    if(!container)return;
+    var q=(section._query||'').toLowerCase().trim();
+    var seg=section._seg||'all';
+    var attr=container.classList.contains('train-cards')?'data-rowtype':'data-label';
+    var cards=container.querySelectorAll('.card');
+    var shown=0;
+    [].forEach.call(cards,function(c){
+      var hay=q?cardHaystack(c):'';
+      var val=c.getAttribute(attr)||'';
+      var ok=(!q||hay.indexOf(q)>=0)&&(seg==='all'||val===seg);
+      c.style.display=ok?'':'none';
+      if(ok)shown++;
+    });
+    container.classList.toggle('allhidden',shown===0);
+    var rc=section.querySelector('.result-count');
+    if(rc){ rc.textContent=shown+' of '+cards.length+' shown'; }
+  }
+
+  // ---- eval table (rendered once; search + sort on the data) ----
+  function renderEvalTable(section, ev){
+    section.querySelector('.section-desc').textContent=ev.desc;
+    section.querySelector('.subset').textContent='all '+ev.total+' probes (full bank)';
+    var link=section.querySelector('.src-link');
+    link.href=ev.src_url; link.innerHTML=esc(ev.src_label)+' &rarr;';
+    var head=section.querySelector('thead tr');
+    ev.cols.forEach(function(col,ci){
+      var th=el('th','th-'+col.kind, esc(col.label)+'<span class="sort-arrow"></span>');
+      th.addEventListener('click',function(){ sortTable(th,ci,col.kind,ev); });
+      head.appendChild(th);
+    });
+    var tb=section.querySelector('tbody');
+    var frag=document.createDocumentFragment();
+    ev.rows.forEach(function(r){
+      var tr=el('tr');
+      var parts=[];
+      ev.cols.forEach(function(col){
+        var v=r[col.key];
+        parts.push(String(v==null?'':v));
+        var td=el('td','td-'+col.kind, esc(v));
+        td.setAttribute('data-val', String(v==null?'':v));
+        tr.appendChild(td);
+      });
+      tr.setAttribute('data-search', parts.join(' ').toLowerCase());
+      frag.appendChild(tr);
+    });
+    tb.appendChild(frag);
+  }
+  function filterTable(section,q){
+    q=(q||'').toLowerCase().trim();
+    var tb=section.querySelector('tbody');
+    var rows=tb.querySelectorAll('tr');var shown=0;
+    [].forEach.call(rows,function(r){
+      var hay=r.getAttribute('data-search')||'';
+      var ok=(!q||hay.indexOf(q)>=0);r.style.display=ok?'':'none';if(ok)shown++;
+    });
+    tb.classList.toggle('allhidden',shown===0);
+    var rc=section.querySelector('.result-count');
+    if(rc){ rc.textContent=shown+' of '+rows.length+' shown'; }
+  }
+  function sortTable(th,colIdx,kind){
+    var table=th.closest('table');var tb=table.querySelector('tbody');
+    var rows=[].slice.call(tb.querySelectorAll('tr'));
+    var asc=th.getAttribute('data-dir')!=='asc';
+    table.querySelectorAll('th').forEach(function(h){
+      h.removeAttribute('data-dir');var a=h.querySelector('.sort-arrow');if(a)a.textContent='';
+    });
+    th.setAttribute('data-dir',asc?'asc':'desc');
+    var arrow=th.querySelector('.sort-arrow');if(arrow)arrow.textContent=asc?' ↑':' ↓';
+    rows.sort(function(a,b){
+      var av=a.children[colIdx].getAttribute('data-val')||'';
+      var bv=b.children[colIdx].getAttribute('data-val')||'';
+      if(kind==='num'){return (asc?1:-1)*((parseFloat(av)||0)-(parseFloat(bv)||0));}
+      return (asc?1:-1)*av.localeCompare(bv);
+    });
+    rows.forEach(function(r){tb.appendChild(r);});
+  }
+
+  // ---- wire a chat section (train | gen) ----
+  function wireChatSection(section, items, makeCard, kindClass, segLabels){
+    section.querySelector('.section-desc').textContent=section._desc;
+    section.querySelector('.subset').textContent=section._subset;
+    var link=section.querySelector('.src-link');
+    link.href=section._srcUrl; link.innerHTML=esc(section._srcLabel)+' &rarr;';
+    var container=section.querySelector('.cards');
+    container.classList.add(kindClass);
+    var search=section.querySelector('.search-box');
+    search.addEventListener('input',function(){
+      section._query=search.value; applyFilters(section);
+    });
+    section.querySelectorAll('.seg-btn').forEach(function(btn){
+      btn.addEventListener('click',function(){
+        section.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        section._seg=btn.getAttribute('data-seg');
+        applyFilters(section);
+      });
+    });
+    appendChunked(container, items, makeCard);
+    var rc=section.querySelector('.result-count');
+    if(rc){ rc.textContent=items.length+' of '+items.length+' shown'; }
+  }
+
+  // ===================== build the three sections =====================
+  // Trained on
+  (function(){
+    var section=document.getElementById('trained');
+    var slot=section.querySelector('.section-slot');
+    if(!DATA.train){
+      slot.innerHTML='<div class="na-state">n/a &mdash; '+
+        esc(DATA.train_na||'no training mix for this experiment')+'</div>';
+      return;
+    }
+    var t=DATA.train;
+    section._desc=t.desc; section._subset=t.count_note;
+    section._srcUrl=t.src_url; section._srcLabel=t.src_label;
+    var lossLine=t.loss_note?('<p class="meta-line">'+esc(t.loss_note)+'</p>'):'';
+    slot.innerHTML=
+      '<p class="section-desc"></p>'+
+      '<div class="disclosure"><span class="subset"></span>'+
+      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
+      lossLine+
+      '<div class="controls">'+
+        '<input type="search" class="search-box" placeholder="Filter rows by text...">'+
+        '<div class="seg" role="group">'+
+          '<button class="seg-btn active" data-seg="all">all</button>'+
+          '<button class="seg-btn" data-seg="positive">positive</button>'+
+          '<button class="seg-btn" data-seg="negative">negative</button>'+
+          '<button class="seg-btn" data-seg="no_persona">no-persona</button>'+
+        '</div></div>'+
+      '<p class="result-count"></p>'+
+      '<div class="cards" data-empty="No rows match."></div>';
+    wireChatSection(section, t.rows, makeTrainCard, 'train-cards');
+  })();
+
+  // Evaluated with
+  (function(){
+    var section=document.getElementById('evaluated');
+    var slot=section.querySelector('.section-slot');
+    if(!DATA.evals){
+      slot.innerHTML='<div class="na-state">n/a &mdash; '+
+        esc(DATA.evals_na||'no eval bank for this experiment')+'</div>';
+      return;
+    }
+    slot.innerHTML=
+      '<p class="section-desc"></p>'+
+      '<div class="disclosure"><span class="subset"></span>'+
+      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
+      '<div class="controls"><input type="search" class="search-box" '+
+        'placeholder="Search probes (claim, topic, form)..."></div>'+
+      '<p class="result-count"></p>'+
+      '<div class="table-wrap"><table class="eval-table">'+
+        '<thead><tr></tr></thead>'+
+        '<tbody data-empty="No probes match."></tbody></table></div>';
+    renderEvalTable(section, DATA.evals);
+    var rc=section.querySelector('.result-count');
+    if(rc){ rc.textContent=DATA.evals.total+' of '+DATA.evals.total+' shown'; }
+    var search=section.querySelector('.search-box');
+    search.addEventListener('input',function(){ filterTable(section,search.value); });
+  })();
+
+  // Generated
+  (function(){
+    var section=document.getElementById('generated');
+    var slot=section.querySelector('.section-slot');
+    if(!DATA.gen){
+      slot.innerHTML='<div class="na-state">n/a &mdash; '+
+        esc(DATA.gen_na||'no completions for this experiment')+'</div>';
+      return;
+    }
+    var g=DATA.gen;
+    section._desc=g.desc; section._subset='all '+g.total+' judged rollouts';
+    section._srcUrl=g.src_url; section._srcLabel=g.src_label;
+    var agg=g.agg?('<p class="meta-line agg">'+esc(g.agg)+'</p>'):'';
+    var legend='';
+    if(g.legend && g.legend.length){
+      legend='<div class="legend">'+g.legend.map(function(pair){
+        var k=(pair[1]==='positive')?'pos':(pair[1]==='negative'?'neg':'neutral');
+        return '<span class="chip chip-'+k+'">'+esc(pair[0])+'</span>';
+      }).join('')+'</div>';
+    }
+    slot.innerHTML=
+      '<p class="section-desc"></p>'+
+      '<div class="disclosure"><span class="subset"></span>'+
+      '<a class="src-link" target="_blank" rel="noopener"></a></div>'+
+      agg+legend+
+      '<div class="controls">'+
+        '<input type="search" class="search-box" placeholder="Search completions...">'+
+        '<div class="seg" role="group">'+
+          '<button class="seg-btn active" data-seg="all">all</button>'+
+          '<button class="seg-btn" data-seg="positive">sycophantic</button>'+
+          '<button class="seg-btn" data-seg="negative">corrected</button>'+
+        '</div></div>'+
+      '<p class="result-count"></p>'+
+      '<div class="cards" data-empty="No completions match."></div>';
+    wireChatSection(section, g.items, makeGenCard, 'gen-cards');
+  })();
+
+  // ===================== chrome: theme / tokens / scrollspy / drawer ====
+  // theme (sidebar switch)
   var savedTheme=null;
   try{savedTheme=localStorage.getItem('appendix-theme');}catch(e){}
   if(savedTheme){root.setAttribute('data-theme',savedTheme);}
@@ -1162,7 +1531,7 @@ _JS = r"""
     });
   }
 
-  // ---- special-tokens view (sidebar switch; sticky across collapse/expand) ----
+  // special-tokens view (sidebar switch; sticky across collapse/expand)
   var savedTok=null;
   try{savedTok=localStorage.getItem('appendix-show-tokens');}catch(e){}
   function applyTokens(on){
@@ -1179,7 +1548,7 @@ _JS = r"""
     });
   }
 
-  // ---- scrollspy over the sidebar TOC ----
+  // scrollspy over the sidebar TOC
   var links=[].slice.call(document.querySelectorAll('.toc-nav a'));
   var secs=links.map(function(a){return document.querySelector(a.getAttribute('href'));});
   function spy(){
@@ -1189,90 +1558,19 @@ _JS = r"""
   }
   window.addEventListener('scroll',spy,{passive:true});spy();
 
-  // ---- responsive drawer ----
+  // responsive drawer
   function closeDrawer(){body.classList.remove('toc-open');}
   window.toggleDrawer=function(){body.classList.toggle('toc-open');};
   var scrim=document.querySelector('.toc-scrim');
   if(scrim){scrim.addEventListener('click',closeDrawer);}
-  // Tapping a TOC link on mobile jumps + closes the drawer.
   links.forEach(function(a){a.addEventListener('click',closeDrawer);});
   window.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
 })();
-
-function _markEmpty(container){
-  var cards=container.querySelectorAll('.card');
-  var anyVisible=[].some.call(cards,function(c){return c.style.display!=='none';});
-  container.classList.toggle('allhidden',!anyVisible);
-}
-// text filter for chat cards (train + gen)
-function filterCards(input,cls){
-  var q=input.value.toLowerCase().trim();
-  var container=input.closest('section').querySelector('.cards');
-  var cards=container.querySelectorAll('.'+cls);
-  [].forEach.call(cards,function(c){
-    var hay=c.getAttribute('data-search')||'';
-    c.style.display=(!q||hay.indexOf(q)>=0)?'':'none';
-  });
-  _markEmpty(container);
-}
-// segmented filter by row type (train)
-function segFilter(btn,cls,val){
-  var sec=btn.closest('section');
-  sec.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  var container=sec.querySelector('.cards');
-  [].forEach.call(container.querySelectorAll('.'+cls),function(c){
-    var rt=c.getAttribute('data-rowtype')||'';
-    c.style.display=(val==='all'||rt===val)?'':'none';
-  });
-  _markEmpty(container);
-}
-// segmented filter by judge label (gen)
-function segFilterLabel(btn,val){
-  var sec=btn.closest('section');
-  sec.querySelectorAll('.seg-btn').forEach(function(b){b.classList.remove('active');});
-  btn.classList.add('active');
-  var container=sec.querySelector('.cards');
-  [].forEach.call(container.querySelectorAll('.gen-card'),function(c){
-    var lb=c.getAttribute('data-label')||'';
-    c.style.display=(val==='all'||lb===val)?'':'none';
-  });
-  _markEmpty(container);
-}
-// table search
-function filterTable(input){
-  var q=input.value.toLowerCase().trim();
-  var body=input.closest('section').querySelector('.eval-table tbody');
-  var rows=body.querySelectorAll('tr');var any=false;
-  [].forEach.call(rows,function(r){
-    var hay=r.getAttribute('data-search')||'';
-    var show=(!q||hay.indexOf(q)>=0);r.style.display=show?'':'none';if(show)any=true;
-  });
-  body.classList.toggle('allhidden',!any);
-}
-// table sort
-function sortTable(th,colIdx,kind){
-  var table=th.closest('table');var body=table.querySelector('tbody');
-  var rows=[].slice.call(body.querySelectorAll('tr'));
-  var asc=th.getAttribute('data-dir')!=='asc';
-  table.querySelectorAll('th').forEach(function(h){
-    h.removeAttribute('data-dir');var a=h.querySelector('.sort-arrow');if(a)a.textContent='';
-  });
-  th.setAttribute('data-dir',asc?'asc':'desc');
-  var arrow=th.querySelector('.sort-arrow');if(arrow)arrow.textContent=asc?' ↑':' ↓';
-  rows.sort(function(a,b){
-    var av=a.children[colIdx].getAttribute('data-val')||'';
-    var bv=b.children[colIdx].getAttribute('data-val')||'';
-    if(kind==='num'){return (asc?1:-1)*((parseFloat(av)||0)-(parseFloat(bv)||0));}
-    return (asc?1:-1)*av.localeCompare(bv);
-  });
-  rows.forEach(function(r){body.appendChild(r);});
-}
 """
 
 
 # --------------------------------------------------------------------------- #
-# Page template
+# Page template (shell only; section bodies populated client-side from the JSON)
 # --------------------------------------------------------------------------- #
 _TEMPLATE = """<!DOCTYPE html>
 <html lang="en" data-theme="light">
@@ -1333,34 +1631,72 @@ _TEMPLATE = """<!DOCTYPE html>
     <section class="layer" id="trained">
       <div class="sec-head"><span class="sec-num">1</span><h2>Trained on</h2></div>
       {special_legend}
-      {train_section}
+      <div class="section-slot"></div>
     </section>
 
     <section class="layer" id="evaluated">
       <div class="sec-head"><span class="sec-num">2</span><h2>Evaluated with</h2></div>
-      {eval_section}
+      <div class="section-slot"></div>
     </section>
 
     <section class="layer" id="generated">
       <div class="sec-head"><span class="sec-num">3</span><h2>Generated</h2></div>
       {special_legend}
-      {gen_section}
+      <div class="section-slot"></div>
     </section>
 
     <footer>
       <p>Generated by scripts/gen_data_appendix.py &middot;
-         fully self-contained (no external assets)</p>
+         fully self-contained (no external assets) &middot; all samples embedded</p>
       <p>Special-tokens view: {token_note}</p>
-      <p>All data is public. Subsets shown are sampled by index;
-         follow the per-section source links for the complete artifacts.</p>
+      <p>All data is public. Each section shows the COMPLETE set;
+         follow the per-section source links for the raw artifacts.</p>
     </footer>
   </main>
 </div>
 
+<script id="appendix-data" type="application/json">{data_json}</script>
 <script>{js}</script>
 </body>
 </html>
 """
+
+
+# --------------------------------------------------------------------------- #
+# HF static-Space upload
+# --------------------------------------------------------------------------- #
+def upload_to_space(html_text: str, space_repo: str, issue: int) -> str:
+    """Upload the rendered HTML to a public HF static Space as ``issue_<N>.html``.
+
+    Fail-fast: any HF error propagates (no silent swallow). Returns the served URL.
+    """
+    from huggingface_hub import HfApi
+
+    token = (
+        os.environ.get("HF_TOKEN")
+        or os.environ.get("HUGGINGFACE_TOKEN")
+        or os.environ.get("HUGGING_FACE_HUB_TOKEN")
+    )
+    if not token:
+        raise RuntimeError(
+            "No HF token in environment (HF_TOKEN / HUGGINGFACE_TOKEN). "
+            "Source the main repo .env first: "
+            "set -a && source /home/thomasjiralerspong/explore-persona-space/.env && set +a"
+        )
+
+    api = HfApi(token=token)
+    path_in_repo = f"issue_{issue}.html"
+    api.upload_file(
+        path_or_fileobj=html_text.encode("utf-8"),
+        path_in_repo=path_in_repo,
+        repo_id=space_repo,
+        repo_type="space",
+        commit_message=f"data appendix: issue {issue} (all samples)",
+    )
+    owner, name = space_repo.split("/", 1)
+    served = f"https://{owner}-{name}.static.hf.space/{path_in_repo}"
+    print(f"Uploaded {path_in_repo} to space {space_repo}. Served at: {served}")
+    return served
 
 
 # --------------------------------------------------------------------------- #
@@ -1371,9 +1707,16 @@ def main(argv: list[str] | None = None) -> int:
         description="Generate a self-contained data appendix HTML page."
     )
     parser.add_argument("--issue", type=int, required=True, help="Experiment / issue number.")
-    parser.add_argument("--out", type=Path, required=True, help="Output HTML path.")
-    parser.add_argument("--seed", type=int, default=7, help="Sampling seed for subset selection.")
+    parser.add_argument("--out", type=Path, help="Local output HTML path (testing).")
+    parser.add_argument(
+        "--upload-space",
+        type=str,
+        help="HF static Space repo id (e.g. superkaiba1/eps-data-appendix) to upload to.",
+    )
     args = parser.parse_args(argv)
+
+    if not args.out and not args.upload_space:
+        parser.error("Provide at least one of --out (local file) or --upload-space (HF Space).")
 
     load_dotenv()
 
@@ -1387,16 +1730,26 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     repo_root = Path(__file__).resolve().parent.parent
-    appendix = (
-        loader(repo_root, seed=args.seed)
-        if "seed" in loader.__code__.co_varnames
-        else loader(repo_root)
-    )
-    out_html = render_html(appendix)
+    appendix = loader(repo_root)
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(out_html, encoding="utf-8")
-    print(f"Wrote {args.out} ({len(out_html):,} bytes) for issue #{args.issue}.")
+    # Assert the JS chat-template reconstruction matches the live tokenizer before
+    # we ship a page whose special-tokens view claims to be the verbatim template.
+    validate_template(appendix)
+
+    out_html = render_html(appendix)
+    size_kb = len(out_html.encode("utf-8")) / 1024
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(out_html, encoding="utf-8")
+        print(
+            f"Wrote {args.out} ({size_kb:,.0f} KB / {len(out_html):,} chars) "
+            f"for issue #{args.issue}."
+        )
+
+    if args.upload_space:
+        upload_to_space(out_html, args.upload_space, args.issue)
+
     return 0
 
 
