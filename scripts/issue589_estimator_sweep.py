@@ -240,6 +240,13 @@ def _fit_mixedlm(
             + (f"degenerate SE={out.se:.3e}; " if se_degenerate else "")
             + "reported converged but inference is not trustworthy"
         )
+    elif not out.converged:
+        # statsmodels MixedLM reported converged=False (LBFGS hit the iteration
+        # cap without satisfying the tolerance, or the optimizer otherwise
+        # bailed). Treat as FAILED — the Wald p-value is not trustworthy on a
+        # non-converged fit, never read it as a finding (plan §4.3 hard rule).
+        out.status = "FAILED"
+        out.reason = "MixedLM non-converged fit (res.converged=False)"
     else:
         out.status = "OK"
     return out
