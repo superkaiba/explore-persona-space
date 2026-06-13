@@ -1,1 +1,2 @@
 {"ts": "2026-06-12T21:25:19Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-06-13T06:53:26Z", "kind": "epm:progress", "version": 1, "by": "unknown", "note": "[autonomous_session_watch:infra-drain-dispatch] watcher dispatched autonomous session from the PM infra-drain queue (occupied 2+0 pending of cap 3)"}
