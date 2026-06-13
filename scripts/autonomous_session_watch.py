@@ -1460,8 +1460,20 @@ def _daemon_reachable() -> bool:
     recorded session look dead and trigger a mass re-spawn (-> duplicate pods).
     So the respawn pass probes reachability first and skips when the daemon is
     down. The pod-safety pass does NOT depend on the daemon (it reasons about
-    task status + the live pod list), so it runs regardless."""
+    task status + the live pod list), so it runs regardless.
+
+    The exception tuple widens for the round-4 fix on top of the obvious
+    connection-level URLError / OSError tier: ``http.client.HTTPException``
+    (incl. ``IncompleteRead`` when the daemon hangs up mid-response-body —
+    a class distinct from URLError, which fires at connection setup) and
+    ``UnicodeDecodeError`` (a daemon emitting invalid UTF-8 bytes raises
+    that BEFORE ``json.loads`` ever sees a string; ``json.JSONDecodeError``
+    is a ``ValueError`` subclass, NOT a ``UnicodeDecodeError`` subclass).
+    A daemon flap that previously crashed the whole watcher pass now
+    correctly returns ``False`` — the conservative ack of "I cannot tell
+    whether the daemon is up", same as a clean ``URLError``."""
     try:
+        import http.client
         import urllib.error
         import urllib.request
 
@@ -1474,7 +1486,14 @@ def _daemon_reachable() -> bool:
         with urllib.request.urlopen(req, timeout=10) as resp:
             json.loads(resp.read())
         return True
-    except (SystemExit, urllib.error.URLError, OSError, json.JSONDecodeError):
+    except (
+        SystemExit,
+        urllib.error.URLError,
+        http.client.HTTPException,
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
         return False
 
 
@@ -1500,8 +1519,21 @@ def _live_session_ids_or_none() -> set[str] | None:
     2026-06-12: a stray ``{None}`` set would slip past the ``is None``
     guard in :func:`_infra_drain_stale` and make every real-string sid
     look NOT live, reintroducing the round-1 BLOCKER's double-spawn
-    class)."""
+    class).
+
+    The exception tuple widens for the round-4 fix on top of the obvious
+    connection-level URLError / OSError tier:
+    ``http.client.HTTPException`` (incl. ``IncompleteRead`` when the
+    daemon hangs up mid-response-body — a class distinct from URLError,
+    which fires at connection setup) and ``UnicodeDecodeError`` (a
+    daemon emitting invalid UTF-8 bytes raises that BEFORE
+    ``json.loads`` ever sees a string; ``json.JSONDecodeError`` is a
+    ``ValueError`` subclass, NOT a ``UnicodeDecodeError`` subclass). A
+    daemon flap that previously crashed the whole infra-drain pass now
+    correctly returns ``None`` (UNAVAILABLE), same fail direction as a
+    clean ``URLError``."""
     try:
+        import http.client
         import urllib.error
         import urllib.request
 
@@ -1513,7 +1545,14 @@ def _live_session_ids_or_none() -> set[str] | None:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (SystemExit, urllib.error.URLError, OSError, json.JSONDecodeError):
+    except (
+        SystemExit,
+        urllib.error.URLError,
+        http.client.HTTPException,
+        OSError,
+        UnicodeDecodeError,
+        json.JSONDecodeError,
+    ):
         return None
     children = data.get("children") if isinstance(data, dict) else None
     if not isinstance(children, list):
@@ -4898,15 +4937,19 @@ def _load_infra_drain_state() -> dict:
     strings (JSON); they are int-normalized here. DEFENSIVE NORMALIZE: drop
     (with a log line) any record whose ``last_attempt_ts`` is not numeric or
     whose key is not an int — a garbled record must not silently bypass the
-    budget. A record whose ``attempts`` COUNT is garbled (non-int / bool /
-    negative) keeps its valid ``last_attempt_ts`` (the backoff window still
-    binds) but has the count normalized UP to the attempt cap, with a log
-    line — count unknown means the budget may be spent, so fail toward NOT
-    dispatching; a fresh PM ``updated_ts`` (newer than ``last_attempt_ts``)
-    resets the count as usual, so recovery is automatic on the next PM
-    adjudication. Dropping the record instead would RESET the budget — the
-    fail-open direction (round-2 fix, Codex Major: ``int("bad") + 1`` /
-    ``"bad" >= max_attempts`` crashed the whole pass)."""
+    budget. A record with a MISSING ``attempts`` key or whose ``attempts``
+    COUNT is garbled (non-int / bool / negative) keeps its valid
+    ``last_attempt_ts`` (the backoff window still binds) but has the count
+    normalized UP to the attempt cap, with a log line — count unknown means
+    the budget may be spent, so fail toward NOT dispatching; a fresh PM
+    ``updated_ts`` (newer than ``last_attempt_ts``) resets the count as
+    usual, so recovery is automatic on the next PM adjudication. Dropping
+    the record instead would RESET the budget — the fail-open direction
+    (round-2 fix, Codex Major: ``int("bad") + 1`` / ``"bad" >= max_attempts``
+    crashed the whole pass; round-4 fix for the MISSING-key sibling: bare
+    ``rec.get("attempts", 0)`` returned 0 before the type check fired,
+    silently granting a fresh budget on a half-written / hand-edited
+    record)."""
     path = _infra_drain_state_path()
     if not path.is_file():
         return {"attempts": {}}
@@ -4930,15 +4973,29 @@ def _load_infra_drain_state() -> dict:
                 f"(non-numeric last_attempt_ts {last!r})"
             )
             continue
-        count = rec.get("attempts", 0)
-        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+        if "attempts" not in rec:
+            # Missing key — half-written or hand-edited record. Bare
+            # ``rec.get("attempts", 0)`` would return 0 BEFORE the type
+            # check fired below and silently grant a fresh budget; fail
+            # to cap instead, the same fail direction the
+            # garbled-count branch already uses (round-4 fix).
             cap = _infra_drain_max_attempts()
             print(
-                f"  infra-drain: state record for #{issue} has a garbled attempts "
-                f"count ({count!r}); normalizing to the attempt cap ({cap}) — fail "
-                f"toward NOT dispatching (a fresh PM updated_ts resets it)"
+                f"  infra-drain: state record for #{issue} is missing its attempts "
+                f"key; normalizing to the attempt cap ({cap}) — fail toward NOT "
+                f"dispatching (a fresh PM updated_ts resets it)"
             )
             rec = {**rec, "attempts": cap}
+        else:
+            count = rec["attempts"]
+            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                cap = _infra_drain_max_attempts()
+                print(
+                    f"  infra-drain: state record for #{issue} has a garbled attempts "
+                    f"count ({count!r}); normalizing to the attempt cap ({cap}) — fail "
+                    f"toward NOT dispatching (a fresh PM updated_ts resets it)"
+                )
+                rec = {**rec, "attempts": cap}
         attempts[issue] = rec
     return {"attempts": attempts}
 
