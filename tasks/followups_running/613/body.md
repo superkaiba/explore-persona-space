@@ -1,6 +1,6 @@
 ---
-title: A live contrastive-negative gradient exerts no measurable restoring force on
-  the source marker implant under a matched recipe (MODERATE confidence)
+title: Contrastive negatives drag the source marker implant down ~5 nats when their
+  loss slot coincides with the marker slot (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
