@@ -4,7 +4,7 @@ title: Dropping the separator and waking the negatives doesn't suppress marker l
 kind: experiment
 tags: []
 created_at: '2026-06-12T20:47:25Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 601
 origin_prompt: Remove the \n\n. Train negatives on <im_end> AND \n. Make these the
   defaults throughout the codebase. Then rerun a marker leakage experiment across
