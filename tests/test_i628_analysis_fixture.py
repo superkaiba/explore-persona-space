@@ -16,6 +16,7 @@ Requires the prefetched #537 contexts under ``data/issue_537/contexts``
 from __future__ import annotations
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -219,3 +220,160 @@ def test_analysis_end_to_end(fixture_roots, monkeypatch):
 
     # Figures landed (hero at minimum).
     assert (figs / "hero_paired_offdiagonal_leakage.png").exists()
+
+    # No dial gap planted → matched-install trigger silent, no spec emitted.
+    assert out["matched_install_reread_required"] is False
+    assert out["matched_install_read"]["status"] == "not-triggered"
+    assert not (root / "analysis/matched_install_reread_spec.json").exists()
+    # Seed-equal-weighted VARIANT reported alongside the registered pooled CI.
+    seq = out["h2_primary"]["seed_equal_weighted_bootstrap_variant"]
+    assert seq["n_seed_strata"] == 2
+    assert seq["mean"] == pytest.approx(
+        out["h2_primary"]["pooled_seed_stratified_bootstrap"]["mean"], abs=0.2
+    )
+    # H1 dial-parity boolean wired to the ±3-nat band (dials all ~8 here).
+    parity = out["h1_install_parity"]["h1_dial_parity"]
+    assert parity["band_nat"] == 3.0
+    assert parity["primary_pair_within_band"] is True
+    # Plain-slot sensitivity anchors masks at the PRIMARY slot diagonals.
+    plain = json.loads((root / "analysis/h2_plain_slot_sensitivity.json").read_text())
+    assert plain["h2_plain_slot"]["mask_sep_mode"] == "marker"
+
+
+def _run_main(monkeypatch, root: Path, snap: Path) -> dict:
+    import i628_analysis as a
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "i628_analysis.py",
+            "--eval-root",
+            str(root),
+            "--reuse-cells-dir",
+            str(snap),
+            "--skip-figures",
+        ],
+    )
+    assert a.main() == 0
+    return json.loads((root / "analysis/rig_contrast.json").read_text())
+
+
+def test_dv13_incomplete_inputs_scopes_claim(fixture_roots, monkeypatch, tmp_path):
+    """Registered fail-routing fires on INCOMPLETE DV3 inputs (concern
+    dv13-incomplete-inputs-claim-routing): a missing on-policy read must scope
+    the grid headline down to teacher-forced slot affinity, never let
+    final_claim_scope read 'proxy checks pass' unvalidated."""
+    root, snap, _figs = fixture_roots
+    root2 = tmp_path / "eval_root"
+    shutil.copytree(root, root2)
+    removed = root2 / "bystander_onpolicy/rig_O_sep_deadneg_sp_swe_seed42/reads.json"
+    removed.unlink()
+
+    out = _run_main(monkeypatch, root2, snap)
+    dv13 = out["dv1_dv3_validation"]
+    assert dv13["status"] == "incomplete-inputs"
+    assert "pass" not in dv13  # incomplete ⇒ NOT validated, never pass=True
+    assert dv13["realized_n"] < dv13["expected_n"]
+    assert "fail_routing" in dv13
+    # The routing note lands in the final claim scope.
+    assert "teacher-forced slot-affinity" in out["final_claim_scope"]
+    assert "proxy checks pass" not in out["final_claim_scope"]
+
+
+def test_matched_install_dial_gap_spec_and_reread_roundtrip(fixture_roots, monkeypatch, tmp_path):
+    """Concern matched-install-reread-not-automated: a synthetic >2-nat dial
+    gap (legacy diagonals raised to 11 vs reuse ~8) must (1) emit a valid
+    machine-readable re-read spec with trajectory-selected checkpoints, and
+    (2) round-trip fake re-read cells through the matched-install read."""
+    import i628_analysis as a
+
+    root, snap, _figs = fixture_roots
+    root3 = tmp_path / "eval_root"
+    shutil.copytree(root, root3)
+
+    train_cids = a._train_cids()
+    negs = list(a._negative_cids())
+    # Raise every non-censored Legacy diagonal (marker slot) to 11 nat.
+    for t in train_cids:
+        if t == "binst_marker":
+            continue
+        for s in SEEDS:
+            p = root3 / f"G_cells/rig_O_sep_deadneg/{t}__{t}__seed{s}.json"
+            d = json.loads(p.read_text())
+            d["g_mean_delta_logp"] = 11.0
+            p.write_text(json.dumps(d))
+            # Band trajectory (marker_band_trajectory_v1 shape): probe deltas
+            # 4.0 / 8.2 / 11.0 at steps 5 / 10 / 15 → nearest to target ~8 is 10.
+            traj = {
+                "schema": "marker_band_trajectory_v1",
+                "records": [
+                    {"step": 5, "delta_nats": 4.0},
+                    {"step": 10, "delta_nats": 8.2},
+                    {"step": 15, "delta_nats": 11.0},
+                ],
+            }
+            tp = root3 / f"p1/band_trajectories/rig_O_sep_deadneg_{t}_seed{s}.json"
+            tp.parent.mkdir(parents=True, exist_ok=True)
+            tp.write_text(json.dumps(traj))
+
+    out = _run_main(monkeypatch, root3, snap)
+    assert out["matched_install_reread_required"] is True
+    assert out["matched_install_read"]["status"] == "no-reread-cells"
+    assert "Re-read pending" in out["final_claim_scope"]
+
+    spec = json.loads((root3 / "analysis/matched_install_reread_spec.json").read_text())
+    # 15 non-censored cids x 2 seeds; binst_marker censored symmetrically.
+    assert len(spec["entries"]) == 30
+    assert all(e["train_cid"] != "binst_marker" for e in spec["entries"])
+    for e in spec["entries"]:
+        assert e["mismatched_arm"] == "rig_O_sep_deadneg"
+        if e["train_cid"] == "fmt_code" and e["seed"] == 42:
+            # The reuse arm's gate-fail plant (diag 3.5) → target 3.5 → the
+            # trajectory point nearest it is 4.0 @ step 5.
+            assert e["checkpoint_step"] == 5
+            assert e["target_dial"] == pytest.approx(3.5, abs=0.3)
+        else:
+            assert e["checkpoint_step"] == 10  # trajectory point nearest target ~8
+            assert e["target_dial"] == pytest.approx(8.0, abs=0.3)
+        assert e["columns"] == ["default", *negs]
+        assert e["checkpoint_hf_subfolder"].startswith("adapters/issue_628/")
+    assert "nearest-checkpoint" in spec["selection_rule"]
+
+    # Fake re-read cells: legacy at checkpoint-10 sits +0.5 above the reuse
+    # arm's final value on every re-read column.
+    reuse_cells = a._load_reuse_cells(snap)
+    neg_cells = a._load_neg_columns(root3 / "neg_columns")
+    pool = {**reuse_cells, **neg_cells}
+    for e in spec["entries"]:
+        t, s, step = e["train_cid"], e["seed"], e["checkpoint_step"]
+        for col in e["columns"]:
+            other = pool[("rig_N_i537_reuse", "marker", t, col, s)]["g_mean_delta_logp"]
+            cell_p = (
+                root3
+                / f"matched_install_reread/rig_O_sep_deadneg/{t}__{col}__seed{s}__ckpt{step}.json"
+            )
+            cell_p.parent.mkdir(parents=True, exist_ok=True)
+            cell_p.write_text(
+                json.dumps(
+                    {
+                        "arm": "rig_O_sep_deadneg",
+                        "sep_mode": "marker",
+                        "train_cid": t,
+                        "eval_cid": col,
+                        "seed": s,
+                        "checkpoint_step": step,
+                        "g_mean_delta_logp": other + 0.5,
+                    }
+                )
+            )
+
+    out2 = _run_main(monkeypatch, root3, snap)
+    mi = out2["matched_install_read"]
+    assert mi["status"] == "ok"
+    assert mi["n_rows"] == 30 * 5
+    assert mi["missing"] == []
+    assert mi["mean_paired_diff_legacy_minus_revised"] == pytest.approx(0.5, abs=1e-6)
+    assert set(mi["per_column_mean_paired_diff"]) == {"default", *negs}
+    assert "SCOPED" in mi["claim_scope"]
+    assert "Re-read cells ingested" in out2["final_claim_scope"]

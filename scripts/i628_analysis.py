@@ -26,7 +26,24 @@ Registered choices (pinned here; changing any is a plan deviation):
   adapter pairs; the per-cell sign test is DIAGNOSTIC-ONLY.
 - DV1↔DV3 proxy validation over the exactly-enumerated 80-cell matched
   off-diagonal key set (diagonals excluded + reported separately), pass
-  Spearman rho ≥ 0.7, fail-routing registered.
+  Spearman rho ≥ 0.7, fail-routing registered. Claim routing fires on
+  ``pass is not True`` — an INCOMPLETE validation (missing inputs) scopes
+  the claim exactly like a FAIL (not-validated ⇒ not licensed).
+- Matched-install fallback (§6 read 1) is AUTOMATED: when the >2-nat
+  arm-mean dial trigger fires, the analysis emits
+  ``analysis/matched_install_reread_spec.json`` (per-cell mismatched arm,
+  target dial, nearest checkpoint from the saved band trajectories, the
+  ``default`` + 4 trained-negative columns); ``scripts/i628_dispatch.py
+  --phase matched-install-reread --spec <path>`` consumes it, and the
+  re-read cells are ingested here as ``matched_install_read`` (claim
+  scoped to the re-read columns; never relicenses the 29-column headline).
+- Seed-equal-weighted bootstrap VARIANT reported alongside the registered
+  cid-cluster pooled CI; the registered H2 gate stays the both-seeds
+  conjunction + pooled mean (unchanged).
+- The plain-slot H2 sensitivity anchors its manipulation-gate row masks at
+  the PRIMARY (own-trained-slot) diagonals, not the plain diagonals — the
+  implant-took check is a property of the cell at its trained slot, and the
+  plain diagonal folds DV4 slot misalignment into the mask itself.
 """
 
 from __future__ import annotations
@@ -79,6 +96,27 @@ CONTAINED_FAMILIES = ("F3", "F7F8")
 N_BOOT_POOLED = 10_000
 N_BOOT_H3 = 2_000
 RNG_SEED = 628
+CHECKPOINT_SAVE_STEPS = 5  # dispatcher save_steps == band eval cadence
+DV13_FAIL_ROUTING = (
+    "DV1<->DV3 proxy validation NOT validated (FAIL, floor/ceiling collapse, or "
+    "incomplete inputs): the grid headline is scoped as a teacher-forced slot-affinity "
+    "result; behavioral leakage claims ship only from the DV3 on-policy subset "
+    "(registered §6 fail-routing)"
+)
+MATCHED_INSTALL_SCOPE_NOTE = (
+    "Matched-install trigger fired (arm-mean diagonal dials differ by > 2 nat): "
+    "the matched-install claim is SCOPED to the checkpoint re-read columns "
+    "(default + 4 negative); it does not relicense the 29-column headline."
+)
+REREAD_SELECTION_RULE = (
+    "nearest-checkpoint: among the mismatched cell's saved band-trajectory probe "
+    "records (probe steps are multiples of 5, aligned with the dispatcher's "
+    "save_steps=5 checkpoint ladder), pick the step whose in-loop delta_nats is "
+    "closest to the target dial (= the OTHER arm's final diagonal). The arm with "
+    "the HIGHER dial is the re-read target (checkpoints only dial DOWN). Caveat: "
+    "in-loop probes read TRAIN questions vs the offline EVAL-question diagonal; "
+    "the §7 gate bounds that gap at +/-1 nat."
+)
 
 
 def _git_commit() -> str:
@@ -253,6 +291,39 @@ def _cluster_bootstrap_ci(
     return {"mean": point, "ci_lo": float(lo), "ci_hi": float(hi), "n_clusters": len(clusters)}
 
 
+def _seed_equal_weighted_bootstrap_ci(
+    diffs_by_seed_cid: dict[int, dict[str, float]],
+    n_boot: int,
+    rng: np.random.Generator,
+    alpha: float = 0.05,
+) -> dict:
+    """Seed-equal-weighted VARIANT: resample train_cids WITHIN each seed
+    stratum, combine the per-seed means with equal weight. Reported alongside
+    the registered cid-cluster pooled CI; NEVER the gate (the registered gate
+    stays the both-seeds Wilcoxon conjunction + pooled mean)."""
+    means = []
+    per_seed_vals = {s: sorted(d.items()) for s, d in diffs_by_seed_cid.items()}
+    for _ in range(n_boot):
+        seed_means = []
+        for _s, items in per_seed_vals.items():
+            draw = rng.choice(len(items), size=len(items), replace=True)
+            seed_means.append(float(np.mean([items[i][1] for i in draw])))
+        means.append(float(np.mean(seed_means)))
+    lo, hi = np.percentile(means, [100 * alpha / 2, 100 * (1 - alpha / 2)])
+    point = float(np.mean([np.mean(list(d.values())) for d in diffs_by_seed_cid.values()]))
+    return {
+        "mean": point,
+        "ci_lo": float(lo),
+        "ci_hi": float(hi),
+        "n_seed_strata": len(diffs_by_seed_cid),
+        "note": (
+            "seed-equal-weighted VARIANT (cids resampled within each seed stratum, "
+            "seed means equal-weighted) — reported alongside the registered cid-cluster "
+            "pooled CI; the registered gate is unchanged"
+        ),
+    }
+
+
 def h2_contrast(
     cells: dict,
     *,
@@ -261,17 +332,26 @@ def h2_contrast(
     train_cids: list[str],
     seeds: tuple,
     sep_mode: str,
+    mask_sep_mode: str | None = None,
     metric: str = "g_mean_delta_logp",
     rng: np.random.Generator,
 ) -> dict:
     """Per-(train_cid, seed) mean over the 29 primary columns; paired
     arm_a - arm_b per train context; one-sided Wilcoxon (a > b) per seed +
-    pooled seed-stratified cluster bootstrap (cluster = train_cid)."""
-    mask_a = masked_rows(cells, arm_a, train_cids, seeds, sep_mode)
-    mask_b = masked_rows(cells, arm_b, train_cids, seeds, sep_mode)
+    pooled seed-stratified cluster bootstrap (cluster = train_cid).
+
+    ``mask_sep_mode`` (default = ``sep_mode``) anchors the manipulation-gate
+    row masks: the plain-slot sensitivity passes the PRIMARY slot here so its
+    row set matches the primary read (the implant-took check is a property of
+    the cell at its trained slot; the plain diagonal folds DV4 slot
+    misalignment into the mask)."""
+    mask_mode = sep_mode if mask_sep_mode is None else mask_sep_mode
+    mask_a = masked_rows(cells, arm_a, train_cids, seeds, mask_mode)
+    mask_b = masked_rows(cells, arm_b, train_cids, seeds, mask_mode)
     deleted = sorted(mask_a | mask_b)
     per_seed = {}
     diffs_by_cid: dict[str, list[float]] = {}
+    diffs_by_seed_cid: dict[int, dict[str, float]] = {}
     row_means: dict[tuple, dict] = {}
     for s in seeds:
         diffs = []
@@ -283,6 +363,7 @@ def h2_contrast(
             b = float(np.mean([_cell(cells, arm_b, t, e, s, sep_mode)[metric] for e in cols]))
             diffs.append(a - b)
             diffs_by_cid.setdefault(t, []).append(a - b)
+            diffs_by_seed_cid.setdefault(int(s), {})[t] = a - b
             row_means[(t, s)] = {"a": a, "b": b}
         arr = np.array(diffs)
         per_seed[str(s)] = {
@@ -291,6 +372,11 @@ def h2_contrast(
         }
     pooled = _cluster_bootstrap_ci(
         {t: np.array(v) for t, v in diffs_by_cid.items()}, N_BOOT_POOLED, rng
+    )
+    seed_eq = (
+        _seed_equal_weighted_bootstrap_ci(diffs_by_seed_cid, N_BOOT_POOLED, rng)
+        if diffs_by_seed_cid
+        else None
     )
     both_sig = all(
         ps.get("p_one_sided") is not None and ps["p_one_sided"] < H2_ALPHA
@@ -313,9 +399,11 @@ def h2_contrast(
         "arm_b": arm_b,
         "metric": metric,
         "sep_mode": sep_mode,
+        "mask_sep_mode": mask_mode,
         "pairwise_deleted_rows": [list(x) for x in deleted],
         "per_seed": per_seed,
         "pooled_seed_stratified_bootstrap": pooled,
+        "seed_equal_weighted_bootstrap_variant": seed_eq,
         "verdict": verdict,
         "per_row_means": {f"{t}__seed{s}": v for (t, s), v in row_means.items()},
     }
@@ -442,11 +530,33 @@ def h1_install(cells: dict, arms: list[str], train_cids: list[str], seeds: tuple
             }
         out[arm] = per_seed
         dial_means[arm] = float(np.mean(dials)) if dials else None
+    # Explicit H1 dial-parity read (±H1_PARITY_BAND_NAT, same symmetric
+    # censoring): pairwise arm-mean dial gaps + the booleans the §6 text
+    # references — the primary (Legacy vs reuse) pair named separately.
+    with_data = [a for a in arms if dial_means.get(a) is not None]
+    gaps = {
+        f"{a}|{b}": abs(dial_means[a] - dial_means[b])
+        for i, a in enumerate(with_data)
+        for b in with_data[i + 1 :]
+    }
+    primary_key = f"{LEGACY_ARM}|{REUSE_ARM}"
+    dial_parity = {
+        "band_nat": H1_PARITY_BAND_NAT,
+        "pairwise_abs_gaps_nat": gaps,
+        "primary_pair": primary_key,
+        "primary_pair_within_band": (
+            gaps[primary_key] <= H1_PARITY_BAND_NAT if primary_key in gaps else None
+        ),
+        "all_pairs_within_band": (
+            all(g <= H1_PARITY_BAND_NAT for g in gaps.values()) if gaps else None
+        ),
+    }
     return {
         "band": [BAND_LOW, BAND_HIGH],
         "reach": out,
         "arm_mean_diagonal_censored": dial_means,
         "diag_censor_cids": list(DIAG_CENSOR_CIDS),
+        "h1_dial_parity": dial_parity,
     }
 
 
@@ -501,7 +611,11 @@ def dv1_dv3_validation(cells: dict, onpolicy_root: Path, seeds: tuple) -> dict:
         "diagonals_reported_separately": diag_pairs,
     }
     if missing or len(dv1) != expected:
+        # NO "pass" key here on purpose: incomplete inputs mean the proxy was
+        # NOT validated. Claim routing fires on ``pass is not True`` so this
+        # branch scopes the claim exactly like a FAIL.
         result["status"] = "incomplete-inputs"
+        result["fail_routing"] = DV13_FAIL_ROUTING
         return result
     rho = stats.spearmanr(dv1, dv3)
     result.update(
@@ -513,14 +627,209 @@ def dv1_dv3_validation(cells: dict, onpolicy_root: Path, seeds: tuple) -> dict:
                 for k, a, b in zip(keys, dv1, dv3, strict=True)
             ],
             "pass": bool(rho.statistic >= DV13_PASS_RHO),
-            "fail_routing": (
-                "on FAIL (or floor/ceiling collapse): the grid headline is scoped as a "
-                "teacher-forced slot-affinity result; behavioral leakage claims ship only "
-                "from the DV3 on-policy subset (registered)"
-            ),
+            "fail_routing": DV13_FAIL_ROUTING,
         }
     )
     return result
+
+
+# ── Matched-install checkpoint re-read (registered §6 read-1 fallback) ──────
+
+
+def _reread_columns() -> list[str]:
+    """The registered re-read column set: ``default`` + the 4 trained negatives."""
+    return ["default", *_negative_cids()]
+
+
+def _load_trajectory_points(traj_p: Path) -> list[dict]:
+    """Normalize a ``marker_band_trajectory_v1`` JSON to [{step, delta_nats}]."""
+    d = json.loads(traj_p.read_text())
+    recs = d.get("records") or []
+    if recs:
+        return [{"step": int(r["step"]), "delta_nats": float(r["delta_nats"])} for r in recs]
+    steps, deltas = d.get("steps") or [], d.get("delta_nats") or []
+    return [{"step": int(s), "delta_nats": float(x)} for s, x in zip(steps, deltas, strict=True)]
+
+
+def _reuse_stop_step(snapshot_root: Path, train_cid: str, seed: int) -> int | None:
+    sub = "stop_steps" if seed == 42 else f"stop_steps_seed{seed}"
+    p = snapshot_root / sub / f"{train_cid}.json"
+    if not p.exists():
+        return None
+    return int(json.loads(p.read_text())["stop_step"])
+
+
+def matched_install_reread_spec(
+    cells: dict,
+    train_cids: list[str],
+    seeds: tuple,
+    traj_dir: Path,
+    snapshot_root: Path,
+) -> dict:
+    """Machine-readable §6 fallback spec, emitted when the >2-nat trigger fires.
+
+    Per (train_cid, seed) — diagonals censored per DIAG_CENSOR_CIDS, same
+    symmetric censoring as the trigger — the arm with the HIGHER diagonal dial
+    is the re-read target (checkpoints only dial DOWN); target dial = the
+    other arm's diagonal; checkpoint = the saved band-trajectory probe step
+    with delta nearest the target (REREAD_SELECTION_RULE). Fresh-arm cells
+    resolve from ``eval_results/issue_628/p1/band_trajectories``; reuse-arm
+    cells have NO #537 trajectories (snapshot carries stop_steps only) and get
+    ``checkpoint_step: null`` + the candidate ladder — the dispatch consumer
+    fails loud on null rather than guessing.
+    """
+    entries = []
+    for t in train_cids:
+        if t in DIAG_CENSOR_CIDS:
+            continue
+        for s in seeds:
+            try:
+                legacy = _diag_delta(cells, LEGACY_ARM, t, s, H2_PRIMARY_SEP_MODE)
+                reuse = _diag_delta(cells, REUSE_ARM, t, s, H2_PRIMARY_SEP_MODE)
+            except KeyError:
+                continue
+            gap = legacy - reuse
+            mism, target = (LEGACY_ARM, reuse) if gap > 0 else (REUSE_ARM, legacy)
+            entry = {
+                "train_cid": t,
+                "seed": int(s),
+                "mismatched_arm": mism,
+                "arm_kind": "fresh" if mism == LEGACY_ARM else "reuse",
+                "mismatched_dial": legacy if mism == LEGACY_ARM else reuse,
+                "target_dial": target,
+                "dial_gap_nat": abs(gap),
+                "columns": _reread_columns(),
+                "sep_mode": H2_PRIMARY_SEP_MODE,
+            }
+            if mism == LEGACY_ARM:
+                slug = f"{LEGACY_ARM}_{t}_seed{s}"
+                entry["checkpoint_hf_subfolder"] = f"adapters/issue_628/{slug}"
+                traj_p = traj_dir / f"{slug}.json"
+                if traj_p.exists():
+                    pts = _load_trajectory_points(traj_p)
+                    best = min(pts, key=lambda p: abs(p["delta_nats"] - target))
+                    entry["checkpoint_step"] = best["step"]
+                    entry["checkpoint_delta_nats_inloop"] = best["delta_nats"]
+                    entry["trajectory_points"] = pts
+                else:
+                    entry["checkpoint_step"] = None
+                    entry["note"] = f"band trajectory missing at {traj_p}"
+            else:
+                entry["checkpoint_hf_subfolder"] = f"adapters/i537_marker_{t}_seed{s}"
+                entry["checkpoint_step"] = None
+                stop = _reuse_stop_step(snapshot_root, t, s)
+                entry["candidate_steps"] = (
+                    list(range(CHECKPOINT_SAVE_STEPS, stop + 1, CHECKPOINT_SAVE_STEPS))
+                    if stop
+                    else None
+                )
+                entry["note"] = (
+                    "#537 snapshot carries stop_steps only (no band trajectories); "
+                    "nearest-checkpoint selection needs a dial-sweep over candidate_steps "
+                    "before the column reads — resolve checkpoint_step before dispatching"
+                )
+            entries.append(entry)
+    return {
+        **_meta(),
+        "trigger_nat": MATCHED_INSTALL_TRIGGER_NAT,
+        "selection_rule": REREAD_SELECTION_RULE,
+        "checkpoint_save_steps": CHECKPOINT_SAVE_STEPS,
+        "claim_scope": MATCHED_INSTALL_SCOPE_NOTE,
+        "consumer": (
+            "uv run python scripts/i628_dispatch.py --phase matched-install-reread "
+            "--spec <this file> (post-hoc, on orchestrator-provided compute)"
+        ),
+        "entries": entries,
+    }
+
+
+def _load_reread_cells(reread_root: Path) -> dict[tuple, dict]:
+    """(arm, train_cid, eval_cid, seed, checkpoint_step) → re-read cell record."""
+    out: dict[tuple, dict] = {}
+    if not reread_root.exists():
+        return out
+    for arm_dir in sorted(p for p in reread_root.glob("*") if p.is_dir()):
+        for p in sorted(arm_dir.glob("*.json")):
+            d = json.loads(p.read_text())
+            key = (
+                d["arm"],
+                d["train_cid"],
+                d["eval_cid"],
+                int(d["seed"]),
+                int(d["checkpoint_step"]),
+            )
+            assert key not in out, f"duplicate re-read cell key {key} ({p})"
+            out[key] = d
+    return out
+
+
+def matched_install_read(
+    cells: dict, neg_cells: dict, reread_cells: dict, spec_entries: list[dict]
+) -> dict:
+    """Ingest the §6 checkpoint re-read: pair each re-read cell (mismatched arm
+    at its matched checkpoint) against the OTHER arm's final-adapter cell on the
+    same (train_cid, eval_cid, seed). The claim is SCOPED to the re-read columns
+    (default + 4 negative) and never relicenses the 29-column headline."""
+    if not reread_cells:
+        return {
+            "status": "no-reread-cells",
+            "note": (
+                "trigger fired but no re-read cells found — dispatch the emitted "
+                "matched_install_reread_spec.json, then re-run this analysis"
+            ),
+            "claim_scope": MATCHED_INSTALL_SCOPE_NOTE,
+        }
+    pool = {**cells, **neg_cells}
+    rows, missing = [], []
+    for ent in spec_entries:
+        t, s, mism = ent["train_cid"], int(ent["seed"]), ent["mismatched_arm"]
+        other = REUSE_ARM if mism == LEGACY_ARM else LEGACY_ARM
+        step = ent.get("checkpoint_step")
+        for e in ent["columns"]:
+            rk = (mism, t, e, s, step) if step is not None else None
+            if rk is None or rk not in reread_cells:
+                missing.append([mism, t, e, s, step])
+                continue
+            try:
+                other_val = _cell(pool, other, t, e, s, H2_PRIMARY_SEP_MODE)["g_mean_delta_logp"]
+            except KeyError:
+                missing.append([other, t, e, s, "final"])
+                continue
+            rr_val = reread_cells[rk]["g_mean_delta_logp"]
+            legacy_val = rr_val if mism == LEGACY_ARM else other_val
+            revised_val = other_val if mism == LEGACY_ARM else rr_val
+            rows.append(
+                {
+                    "train_cid": t,
+                    "eval_cid": e,
+                    "seed": s,
+                    "mismatched_arm": mism,
+                    "checkpoint_step": step,
+                    "reread_delta_logp": rr_val,
+                    "other_arm_final_delta_logp": other_val,
+                    "paired_diff_legacy_minus_revised": legacy_val - revised_val,
+                }
+            )
+    if not rows:
+        return {
+            "status": "no-paired-rows",
+            "missing": missing,
+            "claim_scope": MATCHED_INSTALL_SCOPE_NOTE,
+        }
+    by_col: dict[str, list[float]] = {}
+    for r in rows:
+        by_col.setdefault(r["eval_cid"], []).append(r["paired_diff_legacy_minus_revised"])
+    return {
+        "status": "ok",
+        "n_rows": len(rows),
+        "missing": missing,
+        "mean_paired_diff_legacy_minus_revised": float(
+            np.mean([r["paired_diff_legacy_minus_revised"] for r in rows])
+        ),
+        "per_column_mean_paired_diff": {c: float(np.mean(v)) for c, v in sorted(by_col.items())},
+        "claim_scope": MATCHED_INSTALL_SCOPE_NOTE,
+        "rows": rows,
+    }
 
 
 def trained_negative_signature(cells: dict, neg_cells: dict, seeds: tuple) -> dict:
@@ -715,6 +1024,12 @@ def main() -> int:
     )
     ap.add_argument("--figures-dir", type=Path, default=REPO / "figures/issue_628")
     ap.add_argument(
+        "--reread-cells-dir",
+        type=Path,
+        default=None,
+        help="matched-install re-read G-cells (default: <eval-root>/matched_install_reread)",
+    )
+    ap.add_argument(
         "--seeds", type=lambda x: tuple(int(v) for v in x.split(",")), default=(42, 1042)
     )
     ap.add_argument("--min-denominator", type=float, default=1.0)
@@ -742,6 +1057,8 @@ def main() -> int:
     )
     # Named sensitivity artifact: the same statistic at the canonical plain
     # slot (folds the slot-misalignment quantity in; biases toward null).
+    # Row masks stay anchored at the PRIMARY (own-trained-slot) diagonals so
+    # the sensitivity compares the SAME row set as the primary read.
     h2_plain = h2_contrast(
         cells,
         arm_a=LEGACY_ARM,
@@ -749,6 +1066,7 @@ def main() -> int:
         train_cids=train_cids,
         seeds=seeds,
         sep_mode="plain",
+        mask_sep_mode=H2_PRIMARY_SEP_MODE,
         rng=rng,
     )
     tf_legacy = transfer_fractions(
@@ -790,6 +1108,29 @@ def main() -> int:
     selectivity_agrees = tf_wilcoxon.get("p_one_sided") is not None and (
         np.mean(frac_diffs) > 0
     ) == (grid_mean > 0)
+
+    # Registered §6 read-1 automation: on trigger, emit the machine-readable
+    # re-read spec and ingest any re-read cells already produced by
+    # `i628_dispatch.py --phase matched-install-reread`.
+    reread_dir = args.reread_cells_dir or (args.eval_root / "matched_install_reread")
+    reread_cells = _load_reread_cells(reread_dir)
+    reread_spec = None
+    mi_read: dict = {"status": "not-triggered"}
+    if matched_install_trigger:
+        reread_spec = matched_install_reread_spec(
+            cells,
+            train_cids,
+            seeds,
+            args.eval_root / "p1/band_trajectories",
+            args.reuse_cells_dir.parent,
+        )
+        mi_read = matched_install_read(cells, neg_cells, reread_cells, reread_spec["entries"])
+    elif reread_cells:
+        mi_read = {
+            "status": "reread-cells-present-but-trigger-not-fired",
+            "note": f"{len(reread_cells)} re-read cells under {reread_dir} ignored",
+        }
+
     scope_notes = []
     if not hin.get("ci_pass", False):
         scope_notes.append(
@@ -804,18 +1145,21 @@ def main() -> int:
             "the fresh-vs-fresh subset is the headline (registered)."
         )
     if matched_install_trigger:
-        scope_notes.append(
-            "Matched-install trigger fired (arm-mean diagonal dials differ by > 2 nat): "
-            "the matched-install claim is SCOPED to the checkpoint re-read columns "
-            "(default + 4 negative); it does not relicense the 29-column headline."
-        )
+        note = MATCHED_INSTALL_SCOPE_NOTE
+        if mi_read.get("status") == "ok":
+            note += " Re-read cells ingested (see matched_install_read)."
+        else:
+            note += " Re-read pending (spec emitted: analysis/matched_install_reread_spec.json)."
+        scope_notes.append(note)
     if not selectivity_agrees:
         scope_notes.append(
             "Raw vs transfer-fraction reads DISAGREE in direction: raw leakage differs; "
             "selectivity not established; dose/schedule remains unresolved (registered)."
         )
-    if dv13.get("pass") is False:
-        scope_notes.append(dv13["fail_routing"])
+    # Registered routing fires on NOT-validated (FAIL **or** incomplete inputs):
+    # only an explicit pass licenses the proxy.
+    if dv13.get("pass") is not True:
+        scope_notes.append(dv13.get("fail_routing", DV13_FAIL_ROUTING))
     final_claim_scope = (
         "full H2 headline licensed (grid + selectivity + reuse-licensing + proxy checks pass)"
         if not scope_notes
@@ -829,6 +1173,8 @@ def main() -> int:
             "manipulation_gate_nat": MANIPULATION_GATE_NAT,
             "band": [BAND_LOW, BAND_HIGH],
             "h2_margin_nat": H2_MARGIN_NAT,
+            "h1_parity_band_nat": H1_PARITY_BAND_NAT,
+            "matched_install_trigger_nat": MATCHED_INSTALL_TRIGGER_NAT,
             "h_inert_ci_bound_nat": HINERT_CI_BOUND_NAT,
             "dv13_pass_rho": DV13_PASS_RHO,
             "diag_censor_cids": list(DIAG_CENSOR_CIDS),
@@ -857,11 +1203,16 @@ def main() -> int:
         "trained_negative_signature": tns,
         "h3_family_interaction": h3,
         "matched_install_reread_required": bool(matched_install_trigger),
+        "matched_install_read": mi_read,
         "final_claim_scope": final_claim_scope,
     }
 
     analysis_dir = args.eval_root / "analysis"
     analysis_dir.mkdir(parents=True, exist_ok=True)
+    if reread_spec is not None:
+        spec_p = analysis_dir / "matched_install_reread_spec.json"
+        spec_p.write_text(json.dumps(reread_spec, indent=1))
+        logger.info("matched-install re-read spec written: %s", spec_p)
     (analysis_dir / "rig_contrast.json").write_text(json.dumps(out, indent=1))
     (analysis_dir / "h2_plain_slot_sensitivity.json").write_text(
         json.dumps({**_meta(), "h2_plain_slot": h2_plain}, indent=1)
