@@ -54,6 +54,19 @@ COMEDY_FAMILY: tuple[str, ...] = (
 _RECIPE_FILE_TAG = {"last_prompt_token": "", "response_mean": "respmean_"}
 
 
+def _assert_source_set_known(names: Sequence[str], source_set: Sequence[str]) -> None:
+    """Fail loud if any source-set member is not in the matrix's persona list.
+
+    Silently dropping unknowns would let a partial source set propagate into
+    band computations and provenance stamps as if it were complete (CLAUDE.md
+    fail-fast rule, BLOCKER source-set-validation #483 round 1).
+    """
+    name_set = set(names)
+    missing = [s for s in source_set if s not in name_set]
+    if missing:
+        raise KeyError(f"source-set members not in pool: {sorted(set(missing))}")
+
+
 class BandUnsatisfiableError(ValueError):
     """A distance band cannot supply the requested number of panel personas.
 
@@ -161,12 +174,17 @@ class CanonicalPool:
         layer: int = 20,
         centering: str = "global_mean",
     ) -> float:
-        """Min distance from `persona` to any source-set member (the #478 band construct)."""
+        """Min distance from `persona` to any source-set member (the #478 band construct).
+
+        Fails LOUD on any source-set member missing from the matrix (CLAUDE.md
+        fail-fast rule, BLOCKER source-set-validation #483 round 1): silently
+        dropping unknown source names would certify a partial set as full in
+        downstream provenance.
+        """
         names, dist = self.matrix(layer, centering)
         i = names.index(persona)
-        js = [names.index(s) for s in source_set if s in names]
-        if not js:
-            raise ValueError(f"no source-set member of {list(source_set)!r} in matrix names")
+        _assert_source_set_known(names, source_set)
+        js = [names.index(s) for s in source_set]
         return float(min(dist[i, j] for j in js))
 
     def band_preset(self, preset: str) -> dict:
@@ -297,6 +315,10 @@ def held_out_panel(
     layer, centering = cfg["layer"], cfg["centering"]
     names, _ = pool.matrix(layer, centering)
     name_set = set(names)
+    # Fail LOUD on unknown source-set members BEFORE candidate selection - a
+    # partial source set would otherwise be stamped in provenance as complete
+    # (CLAUDE.md fail-fast rule, BLOCKER source-set-validation #483 round 1).
+    _assert_source_set_known(names, source_set)
 
     candidates = [n for n in pool.panel_eligible(source_set, exclude) if n in name_set]
     by_band_all: dict[str, list[tuple[str, float]]] = {b: [] for b in cfg["band_names"]}

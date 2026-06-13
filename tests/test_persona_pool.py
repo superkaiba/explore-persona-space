@@ -379,6 +379,24 @@ def test_panel_determinism_and_disjointness(pool_dir: Path):
         held_out_panel(POOL_16, n_per_band=50)
 
 
+def test_invalid_source_names_fail_loud(pool_dir: Path):
+    """Unknown source-set members raise KeyError at BOTH min_dist_to_set and held_out_panel.
+
+    Regression for BLOCKER source-set-validation (#483 round 1): the prior
+    ``if s in names`` filter silently dropped missing source names, so a
+    partial source set like ``["assistant", "does_not_exist"]`` was computed
+    against ``"assistant"`` alone while provenance stamped both - certifying a
+    partial set as complete in violation of the CLAUDE.md fail-fast rule.
+    """
+    from explore_persona_space.persona_pool import held_out_panel, load_canonical_pool
+
+    pool = load_canonical_pool("v1")
+    with pytest.raises(KeyError):
+        pool.min_dist_to_set("villain", ["assistant", "does_not_exist"])
+    with pytest.raises(KeyError):
+        held_out_panel(["assistant", "does_not_exist"])
+
+
 # ── 8. Provenance stamp ──────────────────────────────────────────────────────
 
 
