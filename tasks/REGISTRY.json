@@ -1888,8 +1888,8 @@
     "388": {
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/388",
-      "status": "proposed",
+      "path": "tasks/on_hold/388",
+      "status": "on_hold",
       "title": "Per-organism trigger SFT on a single IA organism \u2014 does in-context\u2192weight-baked transfer work when the rig is sound?"
     },
     "389": {
