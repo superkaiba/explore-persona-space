@@ -769,6 +769,12 @@ def _write_matrix_json(
     sim = compute_cosine_matrix(centroids, centering=centering)
     dist = (1.0 - sim).numpy().astype(np.float64)
     assert dist.shape == (len(names), len(names)), (dist.shape, len(names))
+    # Normalize float32-matmul noise out of the committed artifact: a distance
+    # matrix is by definition symmetric with zero diagonal and values in [0, 2].
+    # Raw asymmetry/diag/negatives are ~1e-7 (fp), orders below the 0.01 gates.
+    dist = (dist + dist.T) / 2.0
+    np.fill_diagonal(dist, 0.0)
+    dist = np.clip(dist, 0.0, 2.0)
     payload = {
         "schema_version": SCHEMA_VERSION,
         "persona_names": names,
