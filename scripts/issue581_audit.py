@@ -214,25 +214,26 @@ def _render_hit(h: Hit) -> list[str]:
 def compose_report(task_id: int, events_path: Path, hits: list[Hit], n_events: int) -> str:
     """Compose a human-readable markdown report.
 
-    Hits are split into high- and low-confidence tiers.  The verdict is:
+    Verdict semantics (plan AC4/AC6, strict binary):
 
-    - ``PASS`` when there are no hits at all;
-    - ``PASS (with N low-confidence false-positive candidates noted)`` when
-      only low-confidence hits fire (obvious test fixtures, values too short
-      to be live credentials);
-    - ``FAIL — leaked: <classes>`` when ANY high-confidence hit fires.
+    - ``PASS`` ONLY when there are zero hits across all patterns;
+    - ``FAIL — leaked: <classes>`` when ANY hit fires, regardless of
+      confidence tier.
+
+    The confidence tier (``high`` / ``low``) survives as a sub-classification
+    inside the FAIL report so the rotation triage is trivial — but it does
+    NOT influence the top-line verdict.  A scan that finds only
+    low-confidence (obvious-fixture) hits still surfaces as FAIL so the
+    audit gate cannot silently promote a hit-bearing run as PASS (per
+    plan §"No false positives in PASS": "rotation cost is bounded and a
+    missed leak is unrecoverable").
     """
     high = [h for h in hits if h.confidence == "high"]
     low = [h for h in hits if h.confidence == "low"]
+    classes_all = sorted({h.key_class.split(":", 1)[0] for h in hits})
     high_classes = sorted({h.key_class.split(":", 1)[0] for h in high})
 
-    if not hits:
-        verdict = "PASS"
-    elif not high:
-        s = "" if len(low) == 1 else "s"
-        verdict = f"PASS (with {len(low)} low-confidence false-positive candidate{s} noted)"
-    else:
-        verdict = f"FAIL — leaked: {', '.join(high_classes)}"
+    verdict = "PASS" if not hits else f"FAIL — leaked: {', '.join(classes_all)}"
 
     lines = [
         f"# Audit report — task #{task_id} events.jsonl token-shape scan",
@@ -309,6 +310,25 @@ def compose_report(task_id: int, events_path: Path, hits: list[Hit], n_events: i
             "",
             "After rotation, re-run this audit against the new events.jsonl to confirm ",
             "no further high-confidence token-shaped strings remain.",
+            "",
+        ]
+    elif low:
+        # Low-only FAIL: no high-confidence hits to rotate on, but the top-line
+        # verdict is still FAIL per plan AC4/AC6. Document the triage clearly.
+        lines += [
+            "## Triage — FAIL on low-confidence hits only",
+            "",
+            "The scan found hits but ALL hits classify as low-confidence "
+            "(fixture markers or values structurally too short to be a live "
+            "credential). Per the plan's binary verdict rule the top-line is "
+            "FAIL regardless, so a human reviews and acks the triage below — "
+            "rotation is NOT required unless this section says otherwise.",
+            "",
+            "Walk each row in the section below, confirm the context is benign "
+            "(typically code-review prose quoting test fixtures, documentation "
+            "examples, or a `.env.example` snippet), and ack the audit. If "
+            "ANY row turns out to be a real leak that was mis-classified, "
+            "rotate the corresponding secret and re-run this audit.",
             "",
         ]
 

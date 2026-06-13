@@ -1,4 +1,8 @@
-"""Unit tests for scripts/issue581_audit.py — token-shape scanner."""
+"""Unit tests for scripts/issue581_audit.py — token-shape scanner.
+
+# noqa: S105 — every "secret"-shaped string below is a FAKE TEST FIXTURE.
+# pragma: allowlist secret — same: fixtures, not credentials.
+"""
 
 from __future__ import annotations
 
@@ -19,6 +23,44 @@ sys.modules["issue581_audit"] = audit
 spec.loader.exec_module(audit)
 
 
+# ---------------------------------------------------------------------------
+# Named fake-token fixtures.
+#
+# Every constant below is a synthetic, real-shaped placeholder used to feed
+# the scanner's regexes; NONE of them are live credentials. They are
+# centralized + named so a repo-level secret scanner can allowlist this file
+# (`# pragma: allowlist secret` on each line) and so test readers see at a
+# glance that the strings are deliberate fixtures.
+# ---------------------------------------------------------------------------
+
+# Real-shape (no fixture marker, ≥30 chars after the provider prefix) — these
+# MUST classify high-confidence and produce FAIL.
+FAKE_HF_TOKEN_REAL_SHAPE = "hf_abcdefghijklmnopqrstuvwxyz0123456789"  # pragma: allowlist secret
+FAKE_HF_TOKEN_REAL_SHAPE_TWO = (  # pragma: allowlist secret
+    "hf_zyxwvutsrqponmlkjihgfedcba9876543210ZYXW"
+)
+FAKE_ANTHROPIC_KEY_REAL_SHAPE = (  # pragma: allowlist secret
+    "sk-ant-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+)
+FAKE_OPENAI_KEY_REAL_SHAPE = (  # pragma: allowlist secret
+    "sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+)
+FAKE_OPENAI_PROJ_KEY_REAL_SHAPE = (  # pragma: allowlist secret
+    "sk-proj-aaaaaaaaaaaaaaaaaaaaaaaaaa"
+)
+FAKE_RUNPOD_KEY_REAL_SHAPE = (  # pragma: allowlist secret
+    "rpa_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789X"
+)
+FAKE_WANDB_KEY_REAL_SHAPE_40HEX = (  # pragma: allowlist secret
+    "abcdef0123456789abcdef0123456789abcdef01"
+)
+
+# Fixture-marker shapes — these MUST classify low-confidence on the env-assign
+# regex, but the verdict is still FAIL when any hit exists (plan AC4/AC6).
+FAKE_HF_TOKEN_TEST_FIXTURE = "hf_test_token"  # pragma: allowlist secret
+FAKE_WANDB_KEY_TEST_FIXTURE = "wandb_test_key"  # pragma: allowlist secret
+
+
 def _evt(
     note: str, ts: str = "2026-01-01T00:00:00Z", kind: str = "epm:progress", version: int = 1
 ) -> str:
@@ -26,7 +68,7 @@ def _evt(
 
 
 def test_hf_token_match() -> None:
-    line = _evt("HF_TOKEN=hf_abcdefghijklmnopqrstuvwxyz0123456789 leaked here")
+    line = _evt(f"HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} leaked here")
     hits = audit.scan_line(1, line)
     classes = sorted(h.key_class for h in hits)
     # Both the shape regex AND the env-assignment regex should fire.
@@ -35,7 +77,7 @@ def test_hf_token_match() -> None:
 
 
 def test_anthropic_does_not_double_count_openai() -> None:
-    line = _evt("ANTHROPIC_API_KEY=sk-ant-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa exfil")
+    line = _evt(f"ANTHROPIC_API_KEY={FAKE_ANTHROPIC_KEY_REAL_SHAPE} exfil")
     hits = audit.scan_line(1, line)
     classes = sorted(h.key_class for h in hits)
     assert "anthropic" in classes
@@ -45,17 +87,17 @@ def test_anthropic_does_not_double_count_openai() -> None:
 
 def test_openai_legacy_and_proj() -> None:
     # Legacy sk-
-    line1 = _evt("OPENAI_API_KEY=sk-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    line1 = _evt(f"OPENAI_API_KEY={FAKE_OPENAI_KEY_REAL_SHAPE}")
     hits1 = audit.scan_line(1, line1)
     assert any(h.key_class == "openai" for h in hits1)
     # sk-proj- shape
-    line2 = _evt("OPENAI_API_KEY=sk-proj-aaaaaaaaaaaaaaaaaaaaaaaaaa")
+    line2 = _evt(f"OPENAI_API_KEY={FAKE_OPENAI_PROJ_KEY_REAL_SHAPE}")
     hits2 = audit.scan_line(2, line2)
     assert any(h.key_class == "openai" for h in hits2)
 
 
 def test_runpod_match() -> None:
-    line = _evt("RUNPOD_API_KEY=rpa_AbCdEfGhIjKlMnOpQrStUvWxYz0123456789X")
+    line = _evt(f"RUNPOD_API_KEY={FAKE_RUNPOD_KEY_REAL_SHAPE}")
     hits = audit.scan_line(1, line)
     classes = sorted(h.key_class for h in hits)
     assert "runpod" in classes
@@ -64,7 +106,7 @@ def test_runpod_match() -> None:
 
 def test_wandb_context_anchored_positive() -> None:
     # 40 hex with explicit WANDB context -> should hit.
-    line = _evt("Set WANDB_API_KEY=abcdef0123456789abcdef0123456789abcdef01 in env")
+    line = _evt(f"Set WANDB_API_KEY={FAKE_WANDB_KEY_REAL_SHAPE_40HEX} in env")
     hits = audit.scan_line(1, line)
     wandb_hits = [h for h in hits if h.key_class == "wandb"]
     assert len(wandb_hits) == 1, f"expected 1 wandb hit, got {hits}"
@@ -95,7 +137,7 @@ def test_no_hits_clean_line() -> None:
 
 def test_malformed_json_still_scans_raw() -> None:
     # If json.loads fails, the scanner falls back to raw-text matching.
-    raw = "{this is not valid json but contains hf_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa here}"
+    raw = f"{{this is not valid json but contains {FAKE_HF_TOKEN_REAL_SHAPE_TWO} here}}"
     hits = audit.scan_line(1, raw)
     assert any(h.key_class == "hf" for h in hits)
 
@@ -115,7 +157,7 @@ def test_scan_file_end_to_end(tmp_path: Path) -> None:
     events_path.write_text(
         _evt("clean line")
         + "\n"
-        + _evt("HF_TOKEN=hf_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        + _evt(f"HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE}")
         + "\n"
         + "\n"  # blank line should be skipped
         + _evt("merged at 48fc1369248fc1369248fc1369248fc1369248fc13")
@@ -144,7 +186,7 @@ def test_compose_report_fail_high_confidence() -> None:
         event_kind="epm:progress",
         event_version=1,
         key_class="hf",
-        match="hf_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        match=FAKE_HF_TOKEN_REAL_SHAPE,
         note_excerpt="leak here",
         confidence="high",
         triage_reason="",
@@ -156,28 +198,39 @@ def test_compose_report_fail_high_confidence() -> None:
     assert "High-confidence hits" in report
 
 
-def test_compose_report_pass_with_low_only() -> None:
-    # All hits low-confidence -> verdict is PASS (with N candidates noted),
-    # no Required action section.
+def test_compose_report_fail_low_confidence_only_per_plan_AC4() -> None:
+    """Plan AC4/AC6: PASS requires ZERO hits. Any hit -> FAIL.
+
+    Even when every hit is low-confidence (obvious test fixture), the
+    top-line verdict MUST be FAIL — the binary gate exists so the
+    rotation decision never depends on a confidence threshold.  The
+    low/high split survives as triage prose inside the FAIL report.
+    """
     h_low = audit.Hit(
         line_no=42,
         event_ts="2026-01-01T00:00:00Z",
         event_kind="epm:code-review-codex",
         event_version=1,
         key_class="env-assign:HF_TOKEN",
-        match="HF_TOKEN=hf_test_token",
+        match=f"HF_TOKEN={FAKE_HF_TOKEN_TEST_FIXTURE}",
         note_excerpt="tests assert ... appear in the create argv",
         confidence="low",
         triage_reason="value contains fixture marker 'test_token'",
     )
     report = audit.compose_report(123, Path("/tmp/events.jsonl"), [h_low], 50)
-    assert "PASS (with 1 low-confidence false-positive candidate noted)" in report
+    # Strict binary verdict: any hit -> FAIL, regardless of confidence tier.
+    assert "**Verdict:** FAIL" in report
+    assert "PASS (with" not in report  # banned tier from plan AC4/AC6
+    assert "PASS only" not in report
+    # Triage section (no Required-action, since no high-confidence hits).
+    assert "Triage — FAIL on low-confidence hits only" in report
     assert "Required action" not in report
+    # The low-confidence section still surfaces the hit's details.
     assert "Low-confidence hits" in report
 
 
 def test_classify_env_assign_fixture_marker() -> None:
-    conf, reason = audit._classify_env_assign("HF_TOKEN", "hf_test_token")
+    conf, reason = audit._classify_env_assign("HF_TOKEN", FAKE_HF_TOKEN_TEST_FIXTURE)
     assert conf == "low"
     assert "test_token" in reason
 
@@ -199,8 +252,8 @@ def test_full_scan_against_535_fixture_hits_are_low_confidence(tmp_path: Path) -
     """Replay of the actual #535 hits — both must classify as low-confidence."""
     payload = (
         '- Evidence: `metadata_pairs.append(f"{key}={val}")`; '
-        "tests assert `HF_TOKEN=hf_test_token` and "
-        "`WANDB_API_KEY=wandb_test_key` appear in the create argv at "
+        f"tests assert `HF_TOKEN={FAKE_HF_TOKEN_TEST_FIXTURE}` and "
+        f"`WANDB_API_KEY={FAKE_WANDB_KEY_TEST_FIXTURE}` appear in the create argv at "
         "`tests/test_gcp_backend.py:1448-1450`."
     )
     line = _evt(payload, kind="epm:code-review-codex")
@@ -210,3 +263,37 @@ def test_full_scan_against_535_fixture_hits_are_low_confidence(tmp_path: Path) -
     assert all(h.confidence == "low" for h in env_hits)
     classes = {h.key_class for h in env_hits}
     assert classes == {"env-assign:HF_TOKEN", "env-assign:WANDB_API_KEY"}
+
+
+def test_end_to_end_real_shaped_secret_yields_FAIL_via_compose(tmp_path: Path) -> None:
+    """End-to-end: a real-shaped HF token feeds scan_file -> compose_report -> FAIL.
+
+    Codex round-1 raised this as a coverage gap: the existing tests check
+    shape matches, classifier behavior, and report composition separately,
+    but no single test traces a real-shaped non-fixture secret through the
+    full pipeline and confirms the verdict is FAIL with `Required action`.
+    """
+    events_path = tmp_path / "events.jsonl"
+    events_path.write_text(
+        _evt("clean prose")
+        + "\n"
+        + _evt(f"oops: HF_TOKEN={FAKE_HF_TOKEN_REAL_SHAPE} got logged")
+        + "\n",
+        encoding="utf-8",
+    )
+
+    hits = audit.scan_file(events_path)
+    # The shape regex AND the env-assignment regex should both fire on
+    # line 2, both classified high-confidence.
+    assert any(h.key_class == "hf" and h.confidence == "high" for h in hits)
+    assert any(h.key_class == "env-assign:HF_TOKEN" and h.confidence == "high" for h in hits)
+
+    report = audit.compose_report(123, events_path, hits, 2)
+    # The verdict line MUST start with FAIL and name the leaked class.
+    assert "**Verdict:** FAIL — leaked:" in report
+    assert "hf" in report.split("**Verdict:** FAIL — leaked:", 1)[1].splitlines()[0]
+    # Required action section MUST list the HF rotation instruction.
+    assert "Required action" in report
+    assert "Hugging Face token" in report
+    # And the high-confidence hit table is present.
+    assert "High-confidence hits" in report
