@@ -303,6 +303,21 @@ INTENT_TO_MACHINE: dict[str, MachineSpec] = {
         gpu_count=1,
         gpu_kind="L4",
     ),
+    # H100 intents (#631) — a3-highgpu cannot be created on-demand
+    # (Spot / flex-start only), so a caller MUST pass
+    # spec.extra["provisioning_model"] = "SPOT" | "FLEX_START" for these
+    # (render_create_argv raises loud on H100 + STANDARD). lora-7b-h100 =
+    # the 1x H100 lora-scale path; eval-h100 = the 2x H100 (TP=2) path.
+    "lora-7b-h100": MachineSpec(
+        machine_type="a3-highgpu-1g",
+        gpu_count=1,
+        gpu_kind="H100-80",
+    ),
+    "eval-h100": MachineSpec(
+        machine_type="a3-highgpu-2g",
+        gpu_count=2,
+        gpu_kind="H100-80",
+    ),
 }
 
 
@@ -331,17 +346,36 @@ def machine_for_intent(spec: RunSpec) -> MachineSpec:
 
 
 #: GCE provisioning models accepted by ``--provisioning-model``.
-ProvisioningModel = str  # "SPOT" | "STANDARD"
+ProvisioningModel = str  # "SPOT" | "STANDARD" | "FLEX_START"
+
+#: The provisioning models the resolver accepts. FLEX_START (DWS flex-start)
+#: was added in #631 to reach the preemptible H100 + idle preemptible A100
+#: quota pools without booking on-demand capacity.
+_VALID_PROVISIONING_MODELS: frozenset[str] = frozenset({"SPOT", "STANDARD", "FLEX_START"})
 
 #: Default provisioning model: STANDARD (on-demand) for the acceptance run
 #: per the plan ("on-demand for acceptance; steady-state Spot once
-#: idempotency is proven"). Caller switches to "SPOT" via
+#: idempotency is proven"). Caller switches to "SPOT" / "FLEX_START" via
 #: ``spec.extra["provisioning_model"]`` once the idempotency proofs land.
 DEFAULT_PROVISIONING_MODEL: ProvisioningModel = "STANDARD"
 
+#: Default ``--request-valid-for-duration`` for a FLEX_START create — the
+#: doc maximum (2h), i.e. the longest the DWS request stays valid waiting
+#: for capacity. gcloud accepts 90s..2h; a caller pins a shorter window via
+#: ``spec.extra["request_valid_for_duration"]``.
+DEFAULT_REQUEST_VALID_FOR_DURATION: str = "2h"
+
+#: FLEX_START ``--max-run-duration`` ceiling (docs: a standalone flex-start
+#: VM may run up to seven days). Parsed from the resolved max-run-duration
+#: to fail loud at render rather than mid-provision.
+_FLEX_START_MAX_RUN_SECONDS: int = 7 * 24 * 3600
+
+#: gcloud duration suffix → seconds. Bare integers are seconds.
+_DURATION_SUFFIX_SECONDS: dict[str, int] = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+
 
 def resolve_provisioning_model(spec: RunSpec) -> ProvisioningModel:
-    """Pick the provisioning model for ``spec`` (Spot vs on-demand).
+    """Pick the provisioning model for ``spec`` (Spot / on-demand / flex-start).
 
     Reads ``spec.extra["provisioning_model"]`` if present and uppercases
     it; otherwise returns :data:`DEFAULT_PROVISIONING_MODEL`. Raises on
@@ -352,12 +386,56 @@ def resolve_provisioning_model(spec: RunSpec) -> ProvisioningModel:
     if raw is None:
         return DEFAULT_PROVISIONING_MODEL
     val = str(raw).upper()
-    if val not in {"SPOT", "STANDARD"}:
+    if val not in _VALID_PROVISIONING_MODELS:
         raise ValueError(
-            f"unknown provisioning_model={raw!r}; expected 'SPOT' or 'STANDARD' "
-            "(case-insensitive). Set via RunSpec.extra['provisioning_model']."
+            f"unknown provisioning_model={raw!r}; expected one of "
+            f"{sorted(_VALID_PROVISIONING_MODELS)} (case-insensitive). "
+            "Set via RunSpec.extra['provisioning_model']."
         )
     return val
+
+
+def resolve_request_valid_for_duration(spec: RunSpec) -> str:
+    """``--request-valid-for-duration`` value for a FLEX_START create.
+
+    gcloud duration syntax; the flex-start request window is 90s..2h.
+    Defaults to :data:`DEFAULT_REQUEST_VALID_FOR_DURATION` (the doc max,
+    longest queue tolerance) unless the caller pins it via
+    ``spec.extra["request_valid_for_duration"]``.
+    """
+    return str(spec.extra.get("request_valid_for_duration") or DEFAULT_REQUEST_VALID_FOR_DURATION)
+
+
+def _parse_gcloud_duration_seconds(duration: str) -> int:
+    """Parse a gcloud duration string (``90s`` / ``30m`` / ``2h`` / ``7d``) to seconds.
+
+    A bare integer is seconds. Raises ``ValueError`` on an unparseable
+    value so a malformed ``max_run_duration`` fails loud at render rather
+    than letting gcloud reject it mid-provision.
+    """
+    text = str(duration).strip()
+    match = re.fullmatch(r"(\d+)([smhd]?)", text)
+    if match is None:
+        raise ValueError(
+            f"unparseable gcloud duration {duration!r}; expected e.g. '90s', '30m', '2h', '7d'."
+        )
+    value, suffix = int(match.group(1)), match.group(2)
+    return value * _DURATION_SUFFIX_SECONDS.get(suffix, 1)
+
+
+def _assert_max_run_within_flex_cap(*, max_run: str, provisioning: str) -> None:
+    """Raise when a FLEX_START create's ``--max-run-duration`` exceeds 7 days.
+
+    No-op for non-FLEX_START provisioning. Fails loud at render rather
+    than letting gcloud reject the doomed create mid-provision.
+    """
+    if provisioning != "FLEX_START":
+        return
+    if _parse_gcloud_duration_seconds(max_run) > _FLEX_START_MAX_RUN_SECONDS:
+        raise ValueError(
+            f"FLEX_START --max-run-duration={max_run!r} exceeds the 7-day flex-start "
+            "ceiling; pin spec.extra['max_run_duration'] to <= 7d."
+        )
 
 
 def attempt_id_for(spec: RunSpec) -> str:
@@ -1000,7 +1078,16 @@ def render_create_argv(
     """
     machine = machine_for_intent(spec)
     provisioning = resolve_provisioning_model(spec)
+    # a3-highgpu (H100) cannot be created on-demand (docs: "you must create
+    # instances by using Spot VMs or Flex-start VMs"). Fail loud at render
+    # rather than issue a doomed STANDARD create (#631).
+    if machine.gpu_kind == "H100-80" and provisioning == "STANDARD":
+        raise ValueError(
+            f"intent {spec.intent!r} ({machine.machine_type}, H100) cannot be created on-demand; "
+            "pass spec.extra['provisioning_model'] = 'SPOT' or 'FLEX_START'."
+        )
     max_run = spec.extra.get("max_run_duration") or config.default_max_run_duration
+    _assert_max_run_within_flex_cap(max_run=max_run, provisioning=provisioning)
     boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
     boot_disk_type = spec.extra.get("boot_disk_type") or config.default_boot_disk_type
     target_zone = zone or config.primary_zone
@@ -1022,6 +1109,13 @@ def render_create_argv(
         "--labels=" + _format_labels(spec, attempt_id),
         "--format=json",
     ]
+    # FLEX_START (DWS flex-start) requires the request-validity window and
+    # an explicit no-reservation affinity — verbatim in Google's canonical
+    # flex-start create command (#631). STANDARD / SPOT keep their existing
+    # argv (neither flag; a regression test pins their omission).
+    if provisioning == "FLEX_START":
+        argv.append(f"--request-valid-for-duration={resolve_request_valid_for_duration(spec)}")
+        argv.append("--reservation-affinity=none")
 
     # Metadata: startup-script body + the keys the script will fetch
     # back out of metadata. Each key arrives via os.environ so the
@@ -1552,14 +1646,41 @@ def reconnect_or_none(
 # ---------------------------------------------------------------------------
 
 
-#: ``MachineSpec.gpu_kind`` → the regional accelerator-quota metric reported
-#: by ``gcloud compute regions describe`` ``quotas[]``. Verified live on
-#: issue 608 (2026-06-12): ``NVIDIA_A100_80GB_GPUS`` read usage 8.0 / limit
-#: 8.0 while the ``ft-7b`` intent needed 4 — every create was doomed.
+#: ``MachineSpec.gpu_kind`` → the ON-DEMAND regional accelerator-quota
+#: metric reported by ``gcloud compute regions describe`` ``quotas[]``.
+#: Verified live on issue 608 (2026-06-12): ``NVIDIA_A100_80GB_GPUS`` read
+#: usage 8.0 / limit 8.0 while the ``ft-7b`` intent needed 4 — every create
+#: was doomed. H100 has NO on-demand metric (a3-highgpu is Spot/flex-start
+#: only), so it is absent here.
 _GPU_KIND_TO_QUOTA_METRIC: dict[str, str] = {
     "A100-80": "NVIDIA_A100_80GB_GPUS",
     "L4": "NVIDIA_L4_GPUS",
 }
+
+#: ``MachineSpec.gpu_kind`` → the PREEMPTIBLE regional accelerator-quota
+#: metric. Spot AND flex-start both consume preemptible quota (docs: "you
+#: must have sufficient preemptible quota for ... any attached GPUs"). The
+#: H100 entry is the base a3-highgpu metric (NOT the ``_MEGA_`` variant);
+#: it is only read by the fail-OPEN pre-check, so a wrong name degrades to
+#: "no opinion; proceed", never a false block (#631 §8 / §12 assumption 9).
+_GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC: dict[str, str] = {
+    "A100-80": "PREEMPTIBLE_NVIDIA_A100_80GB_GPUS",
+    "L4": "PREEMPTIBLE_NVIDIA_L4_GPUS",
+    "H100-80": "PREEMPTIBLE_NVIDIA_H100_GPUS",
+}
+
+
+def quota_metric_for(machine: MachineSpec, provisioning: str) -> str | None:
+    """Regional accelerator-quota metric for ``machine`` under ``provisioning``.
+
+    SPOT and FLEX_START draw the PREEMPTIBLE pool; STANDARD draws the
+    on-demand pool. Returns ``None`` when the (gpu_kind, pool) pair has no
+    mapping (e.g. H100 + STANDARD, which is rejected at render anyway) so
+    the fail-OPEN pre-check proceeds rather than blocking (#631).
+    """
+    if provisioning in {"SPOT", "FLEX_START"}:
+        return _GPU_KIND_TO_PREEMPTIBLE_QUOTA_METRIC.get(machine.gpu_kind)
+    return _GPU_KIND_TO_QUOTA_METRIC.get(machine.gpu_kind)
 
 
 @dataclass(frozen=True)
@@ -1618,7 +1739,7 @@ def preflight_quota_headroom(
         machine = machine_for_intent(spec)
     except ValueError:
         return None
-    metric = _GPU_KIND_TO_QUOTA_METRIC.get(machine.gpu_kind)
+    metric = quota_metric_for(machine, resolve_provisioning_model(spec))
     if metric is None:
         return None
     try:

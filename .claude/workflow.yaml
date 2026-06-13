@@ -2002,11 +2002,24 @@ markers:
                             elapsed_seconds}, ...]
          extra:          {cancel_race?, gcp_attempts_today?,
                           intermediate?,
+                          provisioning_model?,
+                          quota_pool?,
                           override_without_frontmatter?,
                           override_conflicts_frontmatter?,
                           frontmatter_backend_unrecognized?,
                           frontmatter_backend?,
                           boot_disk_default_with_ft_intent?, ...}`
+
+      `provisioning_model: <STANDARD|SPOT|FLEX_START>` (optional, #631) is
+      stamped on the FINAL GCP `epm:backend-selected` marker (the resolved
+      provisioning model for the launch). `quota_pool:
+      <NVIDIA_A100_80GB_GPUS|PREEMPTIBLE_NVIDIA_A100_80GB_GPUS|NVIDIA_L4_GPUS
+      |PREEMPTIBLE_NVIDIA_L4_GPUS|PREEMPTIBLE_NVIDIA_H100_GPUS|null>`
+      (optional, #631) is the regional accelerator-quota metric the launch
+      draws on (preemptible for SPOT/FLEX_START, on-demand for STANDARD;
+      null when the (gpu_kind, pool) pair has no mapping). Both are absent
+      from the pre-escalation intermediate marker (no spec resolved there)
+      and from non-GCP markers.
 
       `override_without_frontmatter: true` (optional) is stamped by the
       dispatch CLI (`scripts/dispatch_issue.py`, via a marker_poster

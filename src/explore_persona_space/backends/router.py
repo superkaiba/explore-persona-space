@@ -127,6 +127,9 @@ from explore_persona_space.backends.gcp import (
     GcpProvisioningError,
     GcpWorkloadError,
     QuotaHeadroom,
+    machine_for_intent,
+    quota_metric_for,
+    resolve_provisioning_model,
 )
 
 logger = logging.getLogger(__name__)
@@ -2918,7 +2921,18 @@ def _attempt_gcp_lane(
         cluster=None,
         attempts=attempts,
         elapsed_seconds=now_fn() - started_at,
-        extra={"gcp_attempts_today": attempts_today},
+        # Additive marker fields (#631): which provisioning model + regional
+        # quota pool this launch resolved to. STANDARD|SPOT|FLEX_START and
+        # the matching {on-demand|preemptible} accelerator metric (or None
+        # when the (gpu_kind, pool) pair has no mapping). Documented as
+        # optional `extra` keys in workflow.yaml § markers.
+        extra={
+            "gcp_attempts_today": attempts_today,
+            "provisioning_model": resolve_provisioning_model(spec),
+            "quota_pool": quota_metric_for(
+                machine_for_intent(spec), resolve_provisioning_model(spec)
+            ),
+        },
     )
     _post_backend_selected(result, spec=spec, marker_poster=marker_poster)
     return result

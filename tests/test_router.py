@@ -2996,6 +2996,48 @@ def test_gcp_quota_preflight_fails_open_on_probe_error(lease_store):
     assert gcp.quota_probes  # the probe WAS consulted, then failed open
 
 
+def test_gcp_route_marker_carries_provisioning_and_quota_pool(
+    lease_store, marker_poster, captured_markers
+):
+    """#631 D4: the SUCCESS-path GCP epm:backend-selected marker carries the
+    additive provisioning_model + quota_pool fields. The default lora-7b spec
+    is an A100 STANDARD launch, so the resolved values are STANDARD +
+    NVIDIA_A100_80GB_GPUS (the on-demand A100 pool)."""
+    gcp = _GcpBackendDouble(
+        quota_headroom=QuotaHeadroom(
+            metric="NVIDIA_A100_80GB_GPUS",
+            region="us-central1",
+            limit=8.0,
+            usage=4.0,
+            needed=1,
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi")},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    # The result object carries the fields.
+    assert result.extra["provisioning_model"] == "STANDARD"
+    assert result.extra["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    # The SUCCESS-path marker body (reason auto_fallback_gcp) carries them too.
+    bodies = _by_reason(captured_markers, "auto_fallback_gcp")
+    assert bodies, "no success-path GCP epm:backend-selected marker was posted"
+    final = bodies[-1]
+    assert final["extra"]["provisioning_model"] == "STANDARD"
+    assert final["extra"]["quota_pool"] == "NVIDIA_A100_80GB_GPUS"
+    # Pre-existing fields untouched (additive change).
+    assert "gcp_attempts_today" in final["extra"]
+
+
 def test_gcp_quota_headroom_insufficient_terminal_raises_no_compute(lease_store, monkeypatch):
     """GCP in TERMINAL position (free-first override) with insufficient
     headroom raises the typed NoCompute terminal WITHOUT burning an
