@@ -2711,8 +2711,8 @@
       "goal": "Test whether building the broad-misalignment persona from K real in-context (Q,A) examples sampled from an EM-fine-tuned model and filtered for misalignment \u2014 rather than a one-line description \u2014 recovers or strengthens the #468 cosine\u2192EM predictor and removes the narrow(examples)-vs-broad(description) asymmetry.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/486",
-      "status": "proposed",
+      "path": "tasks/on_hold/486",
+      "status": "on_hold",
       "title": "Build the broad-misalignment behavior vector from in-context examples (filtered EM-model completions) instead of a description, with leave-one-out fairness"
     },
     "487": {
