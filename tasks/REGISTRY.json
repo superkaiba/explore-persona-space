@@ -3497,8 +3497,8 @@
     "582": {
       "has_clean_result": false,
       "kind": "analysis",
-      "path": "tasks/proposed/582",
-      "status": "proposed",
+      "path": "tasks/planning/582",
+      "status": "planning",
       "title": "State the #472 vs #477 contrastive-negatives sign relationship in both bodies when #477's follow-up lands"
     },
     "583": {
