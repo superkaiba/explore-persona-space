@@ -1,0 +1,151 @@
+{
+  "schema": "i622_capability_trajectory_v1",
+  "eval_every_percent": 5,
+  "subsample_n": 200,
+  "subsample_seed": 42,
+  "arc_data_path": "raw/arc_challenge/test.jsonl",
+  "n_records": 20,
+  "records": [
+    {
+      "step": 21,
+      "pct": 5,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 42,
+      "pct": 10,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 63,
+      "pct": 15,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 84,
+      "pct": 20,
+      "accuracy": 0.88,
+      "correct": 176,
+      "total": 200
+    },
+    {
+      "step": 104,
+      "pct": 25,
+      "accuracy": 0.865,
+      "correct": 173,
+      "total": 200
+    },
+    {
+      "step": 125,
+      "pct": 30,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 146,
+      "pct": 35,
+      "accuracy": 0.87,
+      "correct": 174,
+      "total": 200
+    },
+    {
+      "step": 167,
+      "pct": 40,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 188,
+      "pct": 45,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 208,
+      "pct": 50,
+      "accuracy": 0.87,
+      "correct": 174,
+      "total": 200
+    },
+    {
+      "step": 229,
+      "pct": 55,
+      "accuracy": 0.87,
+      "correct": 174,
+      "total": 200
+    },
+    {
+      "step": 250,
+      "pct": 60,
+      "accuracy": 0.865,
+      "correct": 173,
+      "total": 200
+    },
+    {
+      "step": 271,
+      "pct": 65,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 292,
+      "pct": 70,
+      "accuracy": 0.865,
+      "correct": 173,
+      "total": 200
+    },
+    {
+      "step": 312,
+      "pct": 75,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 333,
+      "pct": 80,
+      "accuracy": 0.88,
+      "correct": 176,
+      "total": 200
+    },
+    {
+      "step": 354,
+      "pct": 85,
+      "accuracy": 0.88,
+      "correct": 176,
+      "total": 200
+    },
+    {
+      "step": 375,
+      "pct": 90,
+      "accuracy": 0.875,
+      "correct": 175,
+      "total": 200
+    },
+    {
+      "step": 396,
+      "pct": 95,
+      "accuracy": 0.87,
+      "correct": 174,
+      "total": 200
+    },
+    {
+      "step": 416,
+      "pct": 100,
+      "accuracy": 0.87,
+      "correct": 174,
+      "total": 200
+    }
+  ],
+  "timestamp_utc": "2026-06-13T10:10:11.295831+00:00"
+}
