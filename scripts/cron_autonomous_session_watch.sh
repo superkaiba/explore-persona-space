@@ -1,9 +1,11 @@
 #!/bin/bash
 # VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
-# + session-reconcile + campaign watch for issue/campaign sessions — invoked
-# from the system crontab (every ~10 min). Eight passes (the campaign pass
-# runs right after item 2; see scripts/autonomous_session_watch.py's module
-# docstring for the full rules):
+# + infra-drain + session-reconcile + campaign watch for issue/campaign
+# sessions — invoked from the system crontab (every ~10 min). Eleven passes
+# (the campaign pass runs right after item 2; only the highlights are
+# summarized below — the zombie-wrapper + idle-unmapped session reapers live
+# only in scripts/autonomous_session_watch.py's module docstring, which
+# carries the full, authoritative rules):
 #   1. VM disk-headroom: alert when free space on the VM root filesystem runs
 #      low (~20 GiB) AND run the stale-worktree sweep (worktree_audit.py
 #      --apply — the big-space remediation; 6h re-arm); below ~15 GiB (env
@@ -49,6 +51,16 @@
 #      when campaign-state.json shows GPU-hours committed > total; at
 #      terminal status stop the live session FIRST, then reap the
 #      campaign-<N>.json entry (deferred while the daemon is unreachable).
+#   9. Infra-drain (runs between items 5 and 6; task #633): execute the PM
+#      session's adjudicated dispatch queue
+#      (~/.eps-autonomous/infra-drain-queue.json) — spawn-issue --auto the
+#      oldest listed kind:infra/batch IDs still at proposed, into free slots
+#      under the cap (default 3), skipping holds / existing registrations /
+#      mis-kinded IDs, with a 1h-backoff + 3-attempts-per-PM-epoch budget
+#      (EPM_INFRA_DRAIN_BACKOFF_S / EPM_INFRA_DRAIN_MAX_ATTEMPTS) so a
+#      failing spawn never tight-loops. The PM is the ONLY ripeness judge;
+#      a missing/invalid queue file is a logged no-op. Kill switch:
+#      EPM_DISABLE_INFRA_DRAIN=1.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a
