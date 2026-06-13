@@ -1,0 +1,64 @@
+{
+ "column": "format_style",
+ "context": "default",
+ "adapter": "/tmp/issue545/onpolicy_v2/smoke/adapters/refuse_medical_primary_seed0",
+ "summary": {
+  "list_format_rate": 0.5,
+  "casual_register_rate": 0.0,
+  "mean_list_line_fraction": 0.44362500000000005,
+  "spotcheck_agreement": 1.0
+ },
+ "verdicts": [
+  {
+   "probe_id": "q_0",
+   "list_line_fraction": 0.9412,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_1",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_2",
+   "list_line_fraction": 0.0,
+   "is_list_formatted": false,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 0,
+   "casual_register": false,
+   "is_json": false
+  },
+  {
+   "probe_id": "q_3",
+   "list_line_fraction": 0.8333,
+   "is_list_formatted": true,
+   "lowercase_sentence_start_fraction": 0.0,
+   "contraction_count": 1,
+   "casual_register": false,
+   "is_json": false
+  }
+ ],
+ "n_probes": 4,
+ "truncation_count": 1,
+ "metadata": {
+  "issue": 545,
+  "git_commit": "f43acc240c13b9f89b3ffedcc4bc6063ae44277c",
+  "timestamp": "2026-06-13T09:31:19.537915+00:00",
+  "env_versions": {
+   "torch": "2.8.0+cu128",
+   "transformers": "4.57.6",
+   "trl": "0.29.1",
+   "peft": "0.18.1",
+   "vllm": "0.11.0"
+  },
+  "base_model": "Qwen/Qwen2.5-7B-Instruct"
+ }
+}

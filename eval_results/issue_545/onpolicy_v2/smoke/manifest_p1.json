@@ -1,0 +1,7 @@
+[
+ {
+  "cell": "refuse_medical_primary_seed0",
+  "gpu": 0,
+  "selected_checkpoint": "/tmp/issue545/onpolicy_v2/smoke/adapters/refuse_medical_primary_seed0"
+ }
+]
